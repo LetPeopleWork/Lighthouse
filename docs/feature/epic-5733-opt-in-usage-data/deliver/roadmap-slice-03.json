@@ -1,0 +1,89 @@
+{
+  "feature": "epic-5733-opt-in-usage-data",
+  "slice": "03",
+  "story": "#5836",
+  "status": "approved",
+  "goal": "Epic 5733 slice 03, ADO Story #5836 - the administrator's veto. One control stops both the asking and the sending for a whole instance, and what is on screen is what is in force. The reader-facing half of the feature shipped in slices 01-02; this is the half an administrator can point at during a security review. Per DT-23 the row is a veto rather than an enable: it ships disengaged, so nothing about an existing instance changes on upgrade, and engaging it is a deliberate act that needs a Premium licence. Three things make this more than seeding a row: the master switch reads the opposite way round to the value now stored, the state endpoint claims data is being sent from a browser nothing is sent from, and neither the indicator nor the dialog can currently tell an administrator's decision from the reader's own. DISTILL is committed: 33 scenarios, 15 backend pending behind [Ignore], 18 frontend behind describe.skip, 4 live, plus five items named in the feature delta's 'owed in DELIVER' table.",
+  "phases": [
+    {
+      "id": "be",
+      "name": "Slice 03 backend - the row, the polarity, and telling the truth about what is being sent",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The veto row, seeded disengaged, and a switch that reads it the right way round",
+          "unskips": [
+            "Slice03VetoSettingTest.The_veto_is_offered_to_administrators_as_a_setting_of_its_own",
+            "Slice03VetoSettingTest.A_fresh_instance_starts_with_the_veto_disengaged",
+            "Slice03VetoSettingTest.The_veto_is_a_premium_setting",
+            "Slice03VetoSettingTest.A_later_upgrade_leaves_an_engaged_veto_engaged",
+            "Slice03VetoSettingTest.A_licensed_administrator_engages_the_veto_and_is_told_it_landed",
+            "Slice03VetoSettingTest.A_community_administrator_is_refused_the_veto_out_loud",
+            "Slice03VetoSettingTest.A_community_administrator_can_still_see_the_veto_and_see_that_it_is_disengaged",
+            "Slice03VetoSettingTest.Engaging_the_veto_stores_the_value_and_leaves_every_other_setting_alone",
+            "UsageDataVetoEmitTests.An_engaged_veto_drops_the_batch_of_a_browser_that_had_already_consented",
+            "UsageDataVetoEmitTests.Lifting_the_veto_lets_the_same_browser_send_again_without_asking_it_anything",
+            "UsageDataVetoEmitTests.An_engaged_veto_stops_the_question_being_put_at_all"
+          ],
+          "notes": "The seeding and the inversion are ONE step and must not be split. UsageDataMasterSwitch.IsOn() currently answers Enabled != false; seeding a row as false under that reading switches the whole feature off on every instance the moment the release lands. Invert to Enabled != true in the same commit. An absent row must still mean nothing is vetoed - that rule is what slice 02 relies on and it is covered by a live scenario. OptionalFeatureKeys gains a UsageData constant; the seeder never overwrites a stored Enabled, so the seeded false is a one-shot per instance and cannot be corrected by a later release. The row's Name carries the negation on its own - every other row in that table reads positively, so 'Never send usage data' rather than 'Usage Data'. Its Description carries AC-06.6: engaging it suspends existing consent, lifting it resumes without re-asking. No applier is registered (DT-30); the default one stores the value and the gate reads the row per emit."
+        },
+        {
+          "id": "03-02",
+          "name": "The day's tally says who stopped it",
+          "unskips": [],
+          "notes": "Rename UsageDataSuppressionReason.MasterSwitchOff to DisabledByAdministrator, per DT-24 - under DT-23 the suppression fires when the administrator switched the row ON, and the member name is interpolated into the line an operator reads. Every usage moves with it, including the existing UsageDataGateReportingTests assertion that names the member directly. No new test: that existing one already proves the reason is reported, and because it names the enum member rather than a string, skipping the rename does not compile. An integration-level log assertion was written here and removed - reaching it needed the gate's in-memory tally to flush on a day boundary, which this host cannot produce, so the scenario would have failed on its own harness rather than on the behaviour."
+        },
+        {
+          "id": "03-03",
+          "name": "The footer stops claiming data is being sent from a browser nothing is sent from",
+          "unskips": [
+            "UsageDataVetoEmitTests.An_engaged_veto_makes_a_consenting_browser_be_told_it_is_not_sending",
+            "UsageDataVetoEmitTests.An_engaged_veto_says_the_administrator_stopped_it",
+            "UsageDataVetoEmitTests.A_browser_that_declined_is_not_told_the_administrator_did_it"
+          ],
+          "authors": [
+            "Widening EverythingTheStateAnswerCarries in UsageDataEventPipeTests (owed: the oracle is a closed list and must go red when a field is added - that is what it is for)"
+          ],
+          "notes": "Two changes to UsageDataConsentService.GetStateAsync. Sending must consult the veto as well as this browser's decision - today it is consent?.Decision == Granted alone, so a granted browser is told 'being sent from this browser' while the emit path drops everything it hands in (DT-25). UsageDataState gains AdministratorDisabled, a boolean and not a reason string (DT-26). UsageDataState is a SHARED CONTRACT consumed by the frontend: grep the callers and extend the frontend model and its factory before changing the record. The endpoint is unauthenticated, so the new field must disclose nothing about the tier - it says only that an administrator stopped it, which AC-06.7 requires be disclosed."
+        }
+      ]
+    },
+    {
+      "id": "fe",
+      "name": "Slice 03 browser - say who stopped it, and stop taking answers nobody can act on",
+      "steps": [
+        {
+          "id": "03-04",
+          "name": "Two sentences that name the administrator and name the switch",
+          "unskips": [
+            "usageDataAdminVetoCopy: all 6 cases"
+          ],
+          "notes": "Replaces the throwing scaffold at services/UsageData/usageDataAdminVetoCopy.ts. administratorStoppedItSentence names the administrator and says nothing is being sent, and never uses the second person about a choice the reader did not make. theVetoIsAvailableSentence names Premium and is shown to everybody: the dialog is unauthenticated and has never been told the tier, so a tier-conditional version would disclose it (DT-31, same shape as C5). Keep the two apart - the hint must not become the advertisement. When this step is done, grep -rn 'is not implemented' Lighthouse.Frontend/src/services/UsageData returns nothing."
+        },
+        {
+          "id": "03-05",
+          "name": "The indicator says who stopped it",
+          "unskips": [
+            "UsageDataIndicator, where an administrator has stopped usage data: all 4 cases"
+          ],
+          "notes": "The disabled-by-administrator state already renders today, through the not-sending branch, which is why the scenarios assert that its accessible name DIFFERS from the plain refusal's rather than that it says 'not being sent'. Keep DT-8 (the states are told apart by words, never by colour) and DT-9 (an unknown answer still falls to not-sending; only an explicit administrator flag reads as the administrator's doing). The state has to reach the component: map the new AdministratorDisabled field through the frontend UsageData model and the consent provider, which is where the sending state is derived today."
+        },
+        {
+          "id": "03-06",
+          "name": "The dialog holds its two answers and says why",
+          "unskips": [
+            "UsageDataDialog, where an administrator has stopped usage data: all 8 cases"
+          ],
+          "notes": "Wire administratorDisabled from the provider into the dialog. Both buttons disabled, not only the yes: recording a refusal against something already stopped writes a decision nobody made (DT-28). The dialog stays open and stays readable - the veto suspends the decision rather than ending it (D6), and the footer icon remains the way back in. The hint renders administratorStoppedItSentence; the availability sentence renders for everybody, vetoed or not. Check by eye that the copy reads as one voice with the sentences already in the dialog rather than as two bolted-on lines."
+        }
+      ]
+    }
+  ],
+  "out_of_scope": [
+    "Any change to DeltaSync's behaviour - it is not premium and must not become gated (AC-07.3). Held by a live scenario.",
+    "Writing the premium-refusal fix. Story #5876 shipped it; this slice checks it live and depends on it.",
+    "A new E2E spec (DT-32). The veto is enforced server-side and read back over HTTP; there is nothing an E2E would see that the integration scenarios do not.",
+    "The usage data documentation page. What is sent does not change, so its disclosure does not change; mentioning the administrator's switch is user-facing prose and belongs at feature finalization.",
+    "F4 (decline-after-grant on slice 01a's decide path) and the DoR-9 asked-marker question. Both carried out of slice 02, neither in this slice's path."
+  ]
+}

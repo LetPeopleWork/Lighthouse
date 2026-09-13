@@ -89,3 +89,54 @@ describe("UsageDataIndicator", () => {
 		expect(onOpenDecision).toHaveBeenCalledTimes(1);
 	});
 });
+
+/**
+ * Epic 5733 slice 03 (ADO #5836) - AC-06.7. Skipped until the indicator learns the fourth state.
+ *
+ * The criterion is not "says not-sending". It already does that, for the wrong reason: the new
+ * state falls through to the not-sending branch today, so a reader who agreed and was then
+ * overruled by whoever runs the instance is shown the same words as a reader who refused. What is
+ * missing is the subject of the sentence.
+ */
+describe.skip("UsageDataIndicator, where an administrator has stopped usage data", () => {
+	it("says nothing is being sent", () => {
+		const { button } = renderIndicator("disabled-by-administrator");
+
+		expect(button).toHaveAccessibleName(/not being sent/i);
+	});
+
+	it("says who stopped it, so the reader is not left assuming it was them", () => {
+		const { button } = renderIndicator("disabled-by-administrator");
+
+		expect(button).toHaveAccessibleName(/administrator/i);
+	});
+
+	it("does not read the same as a reader's own refusal", () => {
+		const { unmount } = render(
+			<UsageDataIndicator
+				state="disabled-by-administrator"
+				onOpenDecision={vi.fn()}
+			/>,
+		);
+		const whatTheAdministratorsStateSays = screen
+			.getByRole("button")
+			.getAttribute("aria-label");
+		unmount();
+
+		const { button } = renderIndicator("not-sending");
+
+		expect(button).not.toHaveAccessibleName(
+			whatTheAdministratorsStateSays ?? "",
+		);
+	});
+
+	it("is still the way back into the decision, because the veto suspends it rather than ending it", async () => {
+		const { onOpenDecision, button } = renderIndicator(
+			"disabled-by-administrator",
+		);
+
+		await userEvent.click(button);
+
+		expect(onOpenDecision).toHaveBeenCalledTimes(1);
+	});
+});

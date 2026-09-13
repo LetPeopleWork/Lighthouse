@@ -3067,3 +3067,206 @@ discard a render it never commits. Tree order settles a tie only when both becom
 same commit, and they are gated on two independent responses, so it **is** a race. A benign one:
 whichever response lands first, exactly one prompt shows. But the sentence in DT-20 is the one a
 maintainer would trust next time, and it no longer described the code.
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 decisions
+
+Wave: DISTILL. Date: 2026-09-13. Slice 03, ADO Story #5836. Density: lean, Tier-1 only. DT-1 said
+slices 02-04 re-enter DISTILL when they start; this is that re-entry. DT-2 through DT-13 remain in
+force — no Gherkin, no `.feature` file, no `__SCAFFOLD__` markers, skip markers are NUnit `[Ignore]`
+and Vitest `describe.skip`, no backend scaffold types, no Playwright in this wave. Numbering
+continues from DT-22.
+
+| ID | Decision | Implements |
+|---|---|---|
+| DT-23 | **The row is a veto, not an enable, and it ships disengaged.** Product owner's call, 2026-09-13. `Enabled = false` means usage data flows subject to each reader's own consent; `Enabled = true` means nothing is asked and nothing is sent, whatever anyone consented to. `UsageDataMasterSwitch.IsOn()` inverts from `Enabled != false` to `Enabled != true`; an absent row still means nothing is vetoed, so the fail-open rule slice 02 depends on is unchanged. Two consequences were weighed and accepted: every existing instance keeps behaving exactly as it does today across the upgrade, and what Premium buys is the **off** switch rather than the feature. | AC-06.1, AC-06.2 |
+| DT-24 | **`MasterSwitchOff` is renamed `DisabledByAdministrator`.** Under DT-23 the suppression fires when the administrator switched the row *on*, so the old name states the opposite of what happened — and it is not an internal name: the enum member is interpolated into the daily tally an operator reads. No new test carries this. `UsageDataGateReportingTests` already asserts that this reason is reported, and it names the enum member directly, so a rename that is skipped does not compile — a stronger guarantee than any string match a new scenario could make, and one that cannot be satisfied by accident. | AC-06.3 |
+| DT-25 | **`Sending` has to consult the veto, and today it does not.** `GetStateAsync` derives it from `consent?.Decision == Granted` alone, so with the veto engaged a browser that agreed is told "being sent from this browser" while the emit path drops every batch it hands in. This is a live defect rather than a new requirement: AC-06.7 is unreachable until it is fixed, and the footer currently makes a claim the server knows to be false. | AC-06.7 |
+| DT-26 | **The state answer gains one boolean, `administratorDisabled` — not a reason string.** Two surfaces need the same fact (the indicator's accessible name, the dialog's hint) and a string would be one copy of the wording travelling over an unauthenticated endpoint for both to re-render. The boolean discloses no tier and no identity; AC-06.7 requires the fact itself to be disclosed, so withholding it is not an option. The disclosure oracle in `UsageDataEventPipeTests` is widened for it deliberately, in the same commit. | AC-06.7 |
+| DT-27 | **The indicator gains a fourth state, `disabled-by-administrator`, rather than a second prop.** It keeps DT-8's rule intact — the states are told apart by accessible name — and keeps DT-9's fail-closed shape: an unknown answer still renders as not-sending, and only an explicit administrator flag renders as the administrator's doing. | AC-06.7 |
+| DT-28 | **The dialog stays open, stays readable, and disables its two answers.** Hiding it would remove the reader's own decision along with the instance's, and the veto suspends rather than ends (D6). Both buttons are disabled, not just the yes: recording a refusal against something already stopped writes a decision nobody made. | AC-06.6, AC-06.7, D6 |
+| DT-29 | **The two administrator sentences live in a module of their own, with their own tests.** Same reasoning as DT-19 for the cadence sentence. The failure they guard against is quiet — a hint with no subject reads as the reader's own refusal, and a missing availability sentence means nobody ever learns the control exists. | AC-06.6, AC-06.7 |
+| DT-30 | **No applier is registered for this key; the default one stores the value and does nothing else.** The gate reads the row on every emit, so there is no consequence to apply, and attaching one later would change *when* the veto takes effect without changing any scenario. Asserted rather than assumed: one scenario writes the veto and checks every other setting is untouched. | AC-06.3 |
+| DT-31 | **The availability sentence is the same for everybody, and cannot be tier-conditional.** The dialog is served without authentication and has never been told the licence tier — C5 settled that shape for the cadence sentence and it holds here for the same reason. "An administrator with a Premium licence can switch this off for the whole instance" is true on both tiers and leaks neither. | AC-06.6 |
+| DT-32 | **No new E2E spec.** DT-13's reasons stand, and there is nothing here an E2E would see that the integration scenarios do not: the veto is enforced server-side and read back over HTTP. DT-22's asked-marker fixture is unaffected — seeding the row disengaged changes nothing about whether the dialog appears in the suite. Explicitly N/A rather than skipped. | — |
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 changed acceptance criteria
+
+**US-06 is written with the opposite polarity to the one it ships with, and every criterion in it
+has to be read through DT-23.** As authored, AC-06.1 says `Enabled = true` seeded and AC-06.2
+through AC-06.7 all say "switching it off". Under DT-23 the row seeded `false` is the *unvetoed*
+state, so "switching it off" in the criteria is "engaging the veto" in the code, and `Enabled = true`
+is what an administrator does to stop usage data rather than what ships.
+
+The behaviour each criterion asks for is unchanged. What changes is which stored value produces it,
+and that is not a detail: a reader who carries the old polarity into this file inverts every
+assertion in it, and the seeded default is the one value in the system that a later release cannot
+correct. The scenarios are therefore written in the words "engaged" and "disengaged" throughout and
+never in "on" and "off", so there is no sentence in the test suite that can be read both ways.
+
+**AC-07.4 inverts with it.** As written, a Community administrator "can see that Usage Data exists,
+that it is on, and that turning it off requires Premium". Under DT-23 they see that the veto exists,
+that it is *not* engaged — so usage data is flowing, subject to each reader's own consent — and that
+engaging it requires Premium. The commercial line the product owner is drawing is the same one; it is
+the sentence describing it that had to move.
+
+**One consequence the Epic should watch, because it is the contestable half made concrete.** What
+Premium now buys is the ability to stop usage data, not the ability to send it. The Epic's own
+learning hypothesis already says to watch whether the first community reaction is about the gate
+rather than about the feature — this slice is the one that makes that visible, and selling the
+off-switch is a sharper version of D5 than selling the feature would have been. Recorded, not
+reopened: the product owner took the decision knowing it, on 2026-09-13.
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 scenario list
+
+**32 scenarios as the runners count them: 18 backend (`[Ignore]` 14, live 4), 18 frontend
+(`describe.skip`).** Verified by running both suites: backend 4 passed / 14 skipped / 0 failed,
+frontend 132 passed / 18 skipped / 0 failed suites, `dotnet build` 0 warnings, `pnpm build` clean.
+
+Four backend scenarios are **not** ignored, and that is the point of them. Two are controls without
+which the pending ones would hold against a pipe that never sends at all; two check promises this
+slice inherits rather than writes.
+
+### Backend
+
+| File | Scenarios | Covers |
+|---|---|---|
+| `API/Integration/UsageDataVeto/Slice03VetoSetting{Scenarios,Specifications}.cs` | 10 (8 pending, 2 live) | AC-06.1, AC-06.2, AC-07.1, AC-07.3, AC-07.4, DT-30 |
+| `Integration/UsageData/UsageDataVetoEmitTests.cs` | 8 (6 pending, 2 live) | AC-06.3, AC-06.4, AC-06.5, AC-06.7, DT-25, DT-26 |
+
+`Slice03VetoSettingTest` — the veto as a setting, over HTTP:
+
+| Scenario | Tags |
+|---|---|
+| the veto is offered to administrators as a setting of its own | `@US-06` `@AC-06.1` |
+| a fresh instance starts with the veto disengaged | `@US-06` `@AC-06.1` `@DT-23` |
+| the veto is a premium setting | `@US-06` `@AC-06.1` |
+| a later upgrade leaves an engaged veto engaged | `@US-06` `@AC-06.2` |
+| a licensed administrator engages the veto and is told it landed | `@US-06` `@AC-06.1` |
+| a community administrator is refused the veto out loud | `@US-07` `@AC-07.1` `@AC-07.4` |
+| a community administrator can still see the veto and see that it is disengaged | `@US-07` `@AC-07.4` |
+| engaging the veto stores the value and leaves every other setting alone | `@DT-30` |
+| the refusal this slice depends on is present before anything here relies on it | `@US-07` `@AC-07.1` `@live` `@inherited` |
+| faster updates still toggles on an instance with no premium licence | `@US-07` `@AC-07.3` `@live` `@invariant` |
+
+`UsageDataVetoEmitTests` — what the veto actually stops, read at the network boundary:
+
+| Scenario | Tags |
+|---|---|
+| with nothing vetoed a consenting browser reaches the collector | `@AC-06.3` `@live` `@control` |
+| with no row at all the instance behaves as though nothing were vetoed | `@AC-06.3` `@live` `@fail-open` |
+| an engaged veto drops the batch of a browser that had already consented | `@US-06` `@AC-06.3` `@D6` |
+| lifting the veto lets the same browser send again without asking it anything | `@US-06` `@AC-06.5` `@D6` |
+| an engaged veto stops the question being put at all | `@US-06` `@AC-06.4` `@AC-05.8` |
+| an engaged veto makes a consenting browser be told it is not sending | `@US-06` `@AC-06.7` `@DT-25` |
+| an engaged veto says the administrator stopped it | `@US-06` `@AC-06.7` `@DT-26` |
+| a browser that declined is not told the administrator did it | `@US-06` `@AC-06.7` `@discriminator` |
+
+**The two live controls are load-bearing and belong in this fixture rather than the event pipe's.**
+Every pending scenario here asserts that nothing reached the collector, and a pipe that sends nothing
+at all looks exactly like a veto working perfectly. The control is what tells them apart, and a
+control living in another file can be deleted without anything here going red.
+
+**Nothing here writes to the real collector.** The host is told to send to a `.invalid` address, the
+recorder sits below `HttpClient` so a request is built and handed over without a socket, and the
+teardown fails any scenario that contacted the live census whatever the scenario was about. That
+is inherited from slice 01c's harness and re-asserted here rather than assumed.
+
+### Frontend
+
+| File | Scenarios | Covers |
+|---|---|---|
+| `services/UsageData/usageDataAdminVetoCopy.test.ts` | 6 | AC-06.6, AC-06.7, DT-29, DT-31 |
+| `components/UsageData/UsageDataIndicator.test.tsx` (appended) | 4 | AC-06.7, DT-27 |
+| `components/UsageData/UsageDataDialog.test.tsx` (appended) | 8 | AC-06.6, AC-06.7, DT-28, DT-31 |
+
+The indicator block asserts the criterion rather than the symptom. `disabled-by-administrator`
+already renders as not-sending today, because it falls through to that branch — so a test asserting
+only "says not being sent" would pass before the state means anything. What the scenarios assert is
+that its accessible name differs from the plain refusal's, which is the fact AC-06.7 is about.
+
+**Where each acceptance criterion is actually met:**
+
+| AC | Met at |
+|---|---|
+| AC-06.1 the row, premium, admin-guarded | Backend. The seeded row read back over HTTP; the guard is the endpoint's own `RbacGuard(SystemAdmin)` attribute, already asserted where it lives — not re-asserted here |
+| AC-06.2 survives an upgrade | Backend. Seeders re-run against a database that already carries the administrator's choice |
+| AC-06.3 emission stops, at the emit path | Backend, at the network boundary, with a live control beside it |
+| AC-06.4 the dialog is suppressed | Backend. `mayAsk` false for a browser that would otherwise be due |
+| AC-06.5 lifting it resumes without re-asking | Backend. The same token sends again, its decision unchanged, and `mayAsk` stays false |
+| AC-06.6 the settings copy | Split. The row's own name and description are seeded production copy, checked by eye at DELIVER; the reader-facing half is the dialog's hint and availability sentence |
+| AC-06.7 the indicator distinguishes the two | Split. The server supplies the fact (`administratorDisabled`); the indicator turns it into words; the dialog says it in a sentence |
+| AC-07.1 a refused toggle says so | Inherited from story #5876, and checked live here so this Epic fails if it is ever reverted |
+| AC-07.3 `DeltaSync` stays ungated | Backend, live |
+| AC-07.4 a Community admin sees it and sees why | Backend |
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 scaffolds
+
+One new frontend module, and two contract-only edits to shipped components.
+
+| Scaffold | Contract it declares |
+|---|---|
+| `services/UsageData/usageDataAdminVetoCopy.ts` | `administratorStoppedItSentence()`, `theVetoIsAvailableSentence()` — both throw, naming themselves |
+| `components/UsageData/UsageDataIndicator.tsx` | `UsageDataSendingState` gains `disabled-by-administrator`. Type only; the component still renders it through the not-sending branch |
+| `components/UsageData/UsageDataDialog.tsx` | `UsageDataDialogProps` gains optional `administratorDisabled`. Prop only; nothing reads it yet |
+
+The two edits to shipped components are the DT-4 pattern applied where a scaffold file cannot go: a
+new member on a union and an optional prop both compile, change no behaviour, and let a
+`describe.skip` block type-check under `tsc -b`. Without them the pending tests would not build, and
+`pnpm build` failing is everybody's problem rather than this slice's.
+
+Per DT-3 there are no backend scaffolds. `administratorDisabled` on the state answer, the renamed
+suppression reason and the seeded row are all named through the serialised document, the log text or
+the store — never as types. `grep -rn "is not implemented"
+Lighthouse.Frontend/src/services/UsageData` is the progress check, and must return nothing when
+slice 03 is done.
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 owed in DELIVER
+
+Assertions and edits this wave could not author, named so they cannot be quietly dropped.
+
+| Owed | Why DISTILL could not write it |
+|---|---|
+| Widening the state-answer disclosure oracle | `EverythingTheStateAnswerCarries` in `UsageDataEventPipeTests` is a closed list, and it must go red when a field is added — that is what it is for. DELIVER adds `administratorDisabled` to it in the same commit that adds the field, with the reason recorded, rather than DISTILL loosening it in advance. |
+| The row's shipped name and description | Production copy, and it renders in a table whose every other row reads positively ("Faster Updates" on = faster updates). A row whose ON means *stop* is the one an administrator misreads at a glance, so the name has to carry the negation on its own rather than lean on the description. Proposed: **"Never send usage data"**. |
+| The seeded settings copy for AC-06.6 | Must state, in the description a reader sees, that engaging the veto suspends existing consent and lifting it resumes without re-asking. Checked by eye at DELIVER against the behaviour the scenarios pin. |
+| Renaming the suppression reason | One enum member, every usage, and the existing `UsageDataGateReportingTests` assertions that name it. Naming the new member from a pending test would break the whole assembly's build (DT-3). |
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 wave-decision reconciliation
+
+Reconciliation run 2026-09-13 across DISCUSS D1-D11, DESIGN A1-A14 and its redesign, DEVOPS P1-P13,
+DT-1 to DT-22 and the slice brief. **Four findings, all four resolved before any scenario was
+written; zero left open.**
+
+| Found | Resolution |
+|---|---|
+| US-06 is authored with `Enabled = true` seeded and "switching it off" throughout; the product owner wants the row to be a veto seeded `false` | DT-23, with every affected criterion restated in the changed-acceptance-criteria section above rather than silently reinterpreted |
+| The brief's Watch note says to confirm story #5876's premium-gate fix landed before assuming a working gate | Confirmed in code: `OptionalFeaturesController.UpdateOptionalFeature` returns 403 with the licence refusal, and writes route through an applier registry. Re-checked live by a scenario in this slice so the dependency cannot rot |
+| `MasterSwitchOff` as a suppression-reason name states the opposite of what happens under DT-23 | DT-24 |
+| AC-06.7 is unreachable as the code stands: `Sending` never consults the switch, so a consenting browser is told "sending" while every batch is dropped | DT-25, carried as a defect rather than a new requirement |
+
+**The `Sending` defect is worth naming separately, because it is live today.** It is not reachable
+before this slice — nothing can engage the veto, since the row does not exist — so nothing is
+currently lying to anybody. It becomes reachable the moment the row is seeded, which is why the fix
+and the row belong in the same slice.
+
+**Not re-litigated, and inherited as constraints**: D5 (premium-gated, now the off-switch rather
+than the feature — see the changed-criteria section), D6 (suspend, never revoke), D9, C5 (no tier
+reaches an unauthenticated surface), and DT-2 through DT-13.
+
+**Two items carried out of slice 02 are untouched and remain open**: the DoR-9 question on the
+asked-marker, and F4 (decline-after-grant keyed on state a failed refresh leaves null, on slice 01a's
+`decide` path). Neither is in slice 03's path and neither blocks it — stated explicitly rather than
+skipped.
+

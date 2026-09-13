@@ -283,3 +283,87 @@ describe("UsageDataDialog", () => {
 		}
 	});
 });
+
+/**
+ * Epic 5733 slice 03 (ADO #5836) - AC-06.6 and AC-06.7 where the reader meets them, plus the
+ * sentence that tells everybody the switch exists.
+ *
+ * Skipped until DELIVER wires the prop through. The dialog is deliberately still shown and still
+ * readable while an administrator holds the veto: hiding it would make the reader's own decision
+ * disappear along with the instance's, and it is only suspended.
+ *
+ * The dialog is served without authentication and has never been told this instance's licence
+ * tier, so the sentence about the switch is the same for everybody. A tier-conditional version
+ * would disclose the tier to an anonymous caller, which is the shape C5 already ruled out for the
+ * cadence sentence.
+ */
+describe.skip("UsageDataDialog, where an administrator has stopped usage data", () => {
+	it("is still shown and still readable, because the decision is suspended rather than taken away", () => {
+		renderDialog({ administratorDisabled: true });
+
+		anchorOnRenderedDialog();
+		expect(document.body.textContent ?? "").toMatch(/why we ask for this/i);
+	});
+
+	it("will not take a yes it could not act on", async () => {
+		const { onDecision } = renderDialog({ administratorDisabled: true });
+
+		const agree = screen.getByRole("button", { name: /yes, send it/i });
+
+		expect(agree).toBeDisabled();
+
+		await userEvent.click(agree);
+		expect(onDecision).not.toHaveBeenCalled();
+	});
+
+	it("will not take a no either, because refusing something already stopped records a decision nobody made", async () => {
+		const { onDecision } = renderDialog({ administratorDisabled: true });
+
+		const decline = screen.getByRole("button", { name: /no, thank you/i });
+
+		expect(decline).toBeDisabled();
+
+		await userEvent.click(decline);
+		expect(onDecision).not.toHaveBeenCalled();
+	});
+
+	it("says why the buttons cannot be used, rather than leaving them dead", () => {
+		renderDialog({ administratorDisabled: true });
+
+		anchorOnRenderedDialog();
+		expect(document.body.textContent ?? "").toMatch(/administrator/i);
+	});
+
+	it("does not tell a reader they declined something they never answered", () => {
+		renderDialog({ administratorDisabled: true });
+
+		anchorOnRenderedDialog();
+		const rendered = (document.body.textContent ?? "").toLowerCase();
+		expect(rendered).not.toContain("you declined");
+		expect(rendered).not.toContain("your choice");
+	});
+
+	it("leaves the buttons alone when no administrator has stopped anything", async () => {
+		const { onDecision } = renderDialog();
+
+		await userEvent.click(
+			screen.getByRole("button", { name: /yes, send it/i }),
+		);
+
+		expect(onDecision).toHaveBeenCalledWith("granted");
+	});
+
+	it("tells everybody the switch exists, whatever this instance's licence is", () => {
+		renderDialog();
+
+		anchorOnRenderedDialog();
+		expect(document.body.textContent ?? "").toMatch(/premium/i);
+	});
+
+	it("still says the switch exists once somebody has used it", () => {
+		renderDialog({ administratorDisabled: true });
+
+		anchorOnRenderedDialog();
+		expect(document.body.textContent ?? "").toMatch(/premium/i);
+	});
+});

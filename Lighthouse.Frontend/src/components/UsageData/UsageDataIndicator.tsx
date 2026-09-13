@@ -12,8 +12,16 @@ import type React from "react";
  * render something. It renders as not-sending: the opposite of `useRbac`, which fails open on
  * purpose. A privacy indicator that guesses "sending" when it does not know would be alarming and
  * wrong; one that guesses "not sending" when it does not know is only wrong.
+ *
+ * `disabled-by-administrator` is not-sending with a subject. Somebody who agreed, and whose
+ * instance was then stopped by whoever runs it, is shown the same silence as somebody who refused -
+ * and reads it as their own doing unless the indicator says otherwise.
  */
-export type UsageDataSendingState = "sending" | "not-sending" | "unknown";
+export type UsageDataSendingState =
+	| "sending"
+	| "not-sending"
+	| "unknown"
+	| "disabled-by-administrator";
 
 export interface UsageDataIndicatorProps {
 	state: UsageDataSendingState;

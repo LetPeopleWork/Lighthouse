@@ -18,6 +18,13 @@ export interface UsageDataDialogProps {
 	docsUrl: string;
 	/** Set when the last answer could not be recorded, so the dialog can stay open and say so. */
 	failedToRecord?: boolean;
+	/**
+	 * Set where whoever runs this instance has stopped usage data for everybody. The dialog stays
+	 * readable and stays reachable - the decision is suspended, not taken away - but there is
+	 * nothing to answer while it holds, and an enabled button would record a consent that changes
+	 * nothing.
+	 */
+	administratorDisabled?: boolean;
 	onDecision: (decision: UsageDataDecision) => void;
 	onClose: () => void;
 }
