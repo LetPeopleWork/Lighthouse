@@ -24,6 +24,14 @@ ACKNOWLEDGED_SECRETS = {
     # which ci_verifyauth.yml starts on localhost:38080 for the auth E2E jobs. The realm is
     # created from that export inside the CI container and grants nothing outside it.
     ("ci_verifyauth.yml", "vTa*****************************"),
+    # The usage-data collector's project key. It is write-only: it can hand events to that one
+    # project and cannot read, list or change anything, which is why the vendor intends this kind
+    # of key to be published in client code. Every instance that reports usage data needs it, so
+    # it ships with the product rather than being something an operator has to be given. What it
+    # exposes is that somebody could post junk events into the project, and the per-instance daily
+    # ceiling is what bounds that. The key that must never appear here is the personal one used to
+    # read the data back.
+    ("appsettings.json", "phc*********************************************"),
 }
 
 
