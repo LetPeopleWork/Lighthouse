@@ -13,20 +13,20 @@
  * with Premium" to everybody is both true and the only version that does not leak it.
  */
 
-const notImplemented = (name: string): never => {
-	throw new Error(`${name} is not implemented`);
-};
-
 /**
  * Shown where usage data has been stopped for the whole instance. Says who did it, because "not
  * being sent" on its own reads as the reader's own decision.
+ *
+ * It says nothing about licences. Somebody meeting this sentence has already been overruled, and
+ * telling them at that moment what their organisation could buy answers a question they did not
+ * ask.
  */
 export const administratorStoppedItSentence = (): string =>
-	notImplemented("administratorStoppedItSentence");
+	"Usage data is not being sent from this instance. An administrator has stopped it for everyone here.";
 
 /**
  * Shown to everybody reading the dialog. Tells a reader on a licensed instance that their
  * administrator holds this lever, and a reader on an unlicensed one that the lever exists.
  */
 export const theVetoIsAvailableSentence = (): string =>
-	notImplemented("theVetoIsAvailableSentence");
+	"An administrator with a Premium licence can stop usage data for everyone on this instance, whatever each person has answered.";

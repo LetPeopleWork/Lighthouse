@@ -12,7 +12,7 @@ import {
  * still evaluates, so a call hoisted to describe scope would throw during collection and report a
  * failed suite rather than a pending one.
  */
-describe.skip("usage data admin veto copy", () => {
+describe("usage data admin veto copy", () => {
 	it("names the administrator, because otherwise a reader assumes they did it themselves", () => {
 		expect(administratorStoppedItSentence().toLowerCase()).toContain(
 			"administrator",
