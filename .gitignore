@@ -452,6 +452,18 @@ reports/mutation/
 # actually run and is the only way a later reader can reproduce that run's numbers.
 !docs/feature/*/mutation/vitest.stryker*.ts
 
+# Stryker's JSON *reports* are machine output rather than a record, and are not kept. They can be
+# re-derived from the config beside them, they each embed a copy of every mutated file's source and
+# so go stale the moment that code changes, and Stryker.NET's carries an entry for every file in the
+# project rather than the handful that were mutated - 12 MB of it on this repository.
+#
+# What is worth keeping is the results write-up: the score, and which survivors are real. These
+# patterns are safe alongside the exception above because the two are named apart throughout this
+# repository - a config is stryker.5837.frontend.json, a report is stryker-5837-frontend.json.
+**/mutation/stryker-*.json
+Lighthouse.Frontend/stryker-*.json
+Lighthouse.Backend/**/mutation-report.json
+
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
 .claude/worktrees/
