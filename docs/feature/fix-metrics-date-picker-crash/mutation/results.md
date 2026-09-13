@@ -12,8 +12,8 @@ file under `Lighthouse.Backend/`, so there is nothing for Stryker.NET to mutate.
 
 Configs: `stryker.5915.frontend.picker.json`, `stryker.5915.frontend.trend.json`,
 `stryker.5915.frontend.baseview.json`, with `vitest.stryker.picker.ts`, `vitest.stryker.trend.ts`,
-`vitest.stryker.baseview.ts`. Reports: `stryker-5915-picker.json`, `stryker-5915-trend.json`,
-`stryker-5915-baseview.json`.
+`vitest.stryker.baseview.ts`. The raw JSON reports are not kept - they are re-derivable from those,
+and the numbers below are what they were read for.
 
 ## Why three runs instead of one
 

@@ -13,8 +13,8 @@ Run 2026-08-01 against `main` @ `da18633b1`. Gate is 80 % kill rate on every sta
 `ValidatePortfolioSettings` were already correct and are untouched by this fix — zero backend files
 changed, so there is nothing to mutate.
 
-Configs: `stryker.5628.frontend.json`, `vitest.stryker.mutation.ts`. Report:
-`stryker-5628-frontend.step-01-03.json`.
+Configs: `stryker.5628.frontend.json`, `vitest.stryker.mutation.ts`. The raw JSON report is not
+kept - it is re-derivable from those, and the numbers below are what it was read for.
 
 Scope mutated — the changed lines of `src/hooks/useModifySettings.ts` only: `101-112`
 (`connectorFingerprint` + the warning message), `174-207` (`maybeValidateAfterSave`), `251` (the call
