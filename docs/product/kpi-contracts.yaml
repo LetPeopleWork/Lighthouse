@@ -21,11 +21,21 @@ description: >
                         scope as directional, not statistically representative.
 
     - opt_in_telemetry_required: not measurable until enough people on released
-                                 instances have agreed. The mechanism exists now; the
-                                 population is still small, and until the unprompted
-                                 ask ships it is whoever found the footer icon. Flag
-                                 for product decision; do NOT build instrumentation
-                                 that phones home without consent.
+                                 instances have agreed, AND until an event exists that
+                                 answers the question. Both halves matter: the mechanism
+                                 ships, the unprompted ask ships, and ten named events
+                                 ship - but an outcome asking something none of those ten
+                                 says stays deferred, and now names which event it is
+                                 waiting for rather than waiting on the feature as a
+                                 whole. Flag for product decision; do NOT build
+                                 instrumentation that phones home without consent.
+
+  What the ten events say, in one line each, so an outcome author can tell at a glance
+  whether one of them answers the question: a Team or Portfolio tab was opened (which tab,
+  never which Team or Portfolio); a Team or Portfolio was created or deleted; a forecast was
+  run by hand on a Team; a work tracking system was connected (which kind, never which
+  authentication method, never its address); a Team or Portfolio was refreshed by hand. The
+  full disclosure, which is the authoritative list, is docs/settings/usagedata.md.
 
 outcomes:
 
@@ -130,15 +140,16 @@ outcomes:
       premium feature to build.
     measurement_plan:
       data_collection:
-        - "NOT INSTRUMENTED in this feature. No phone-home telemetry exists."
+        - "NOT INSTRUMENTED. Usage data now reports that a work tracking system was connected and which kind it is, which is half of this ratio - but never which authentication method was used, which is the half this outcome turns on."
         - "Proxy signals (acceptable to use, but biased): (a) support tickets mentioning OAuth, (b) vendor-team interviews with Premium customers, (c) the vendor demo environment as a sample of one."
-        - "Future opt-in telemetry feature (not in scope for Epic 2438) would unlock this."
+        - "Unblocking this needs one more event, or one more field on the connection event, saying which authentication method a new connection uses. Adding it is a disclosure decision, not only an instrumentation one."
       derivation: "N/A — see above."
       surfacing:
         - "Quarterly business review using proxy signals only."
     alerting: []
     status: deferred-pending-telemetry-feature
     blocked_by: "ADO Epic #5015 — Opt-in Product Telemetry (https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5015). State: New, no timeline."
+    blocked_on: "An event, or a field on the connection event, saying which authentication method a new connection uses. The connection event now says which kind of system it is, which is the other half."
     interim_measurement: "Proxy signals only — support tickets, customer interviews, vendor demo env. Treat aggregate numbers as directional, not statistically representative."
     upstream_change_resolution: "Product owner decision 2026-05-14: open a follow-up Epic for opt-in GDPR-compliant telemetry. This KPI's measurement is deferred until that Epic ships; no timeline committed. OAuth feature (Epic 2438) proceeds with the per-instance KPIs."
 
@@ -204,6 +215,7 @@ outcomes:
         - "docs/evolution/filter-forecast-throughput-evolution.md (post-release running notes)"
     alerting: []
     status: deferred-pending-telemetry-feature
+    blocked_on: "An event saying a Team has a non-empty filter rule set. None of the ten says anything about a Team’s configuration, only about what somebody did."
     blocked_by: "ADO Epic #5015 — Opt-in Product Telemetry."
     interim_measurement: "Community / customer-follow-up only; document confirmations in docs/evolution/filter-forecast-throughput-evolution.md"
 
@@ -224,6 +236,7 @@ outcomes:
         - "docs/evolution/filter-forecast-throughput-evolution.md"
     alerting: []
     status: deferred-pending-telemetry-feature
+    blocked_on: "Customer confirmation, which no event can supply. This one is qualitative by nature and its deferral is not about instrumentation at all - it should stop being counted among the outcomes a telemetry feature could unblock."
 
   - id: OUT-filter-default-chart-regression
     feature: filter-forecast-throughput
@@ -259,6 +272,7 @@ outcomes:
       surfacing: ["docs/evolution/filter-forecast-throughput-evolution.md"]
     alerting: []
     status: deferred-pending-telemetry-feature
+    blocked_on: "An event saying a per-run or per-view toggle was changed away from the default. None of the ten says anything about a chart control."
 
   - id: OUT-filter-rule-editor-reuse
     feature: filter-forecast-throughput
@@ -274,6 +288,7 @@ outcomes:
       surfacing: ["docs/evolution/filter-forecast-throughput-evolution.md"]
     alerting: []
     status: deferred-pending-telemetry-feature
+    blocked_on: "Customer feedback about whether the editor is confusing, which no event can supply. Qualitative by nature, like the forecast-shift outcome above."
 
   - id: OUT-filter-rule-engine-regression
     feature: filter-forecast-throughput
@@ -1143,3 +1158,72 @@ outcomes:
       The baseline is explicitly unmeasured. Declaring a number now would be inventing the thing the
       session exists to find out, and a target with a fabricated baseline cannot be failed.
     alerting: []
+
+  - id: OUT-usagedata-capability-use
+    feature: epic-5733-opt-in-usage-data
+    title: A shipped capability is used by somebody outside the vendor
+    target: "Each of the four capability events is seen from at least one consenting browser that is not the vendor's own instance, within 90 days of the release that ships them"
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      The question the Epic exists to answer, and the first one that can be asked at all.
+      Before this, "did anyone ever use the thing we spent a month on" had no answer better
+      than download counts and whoever happened to post in Slack. A capability nobody
+      outside the vendor exercises in three months is a candidate for removal rather than
+      for another round of polish - and that judgement is only defensible if the number
+      behind it exists.
+    measurement_plan:
+      data_collection:
+        - "Usage data events: TeamManualForecastRun, WorkTrackingSystemConnected, TeamRefreshTriggered, PortfolioRefreshTriggered."
+        - "Counted at the collector. The vendor's own instance is excluded from any ratio, because one enthusiastic deployment would otherwise look like adoption."
+      derivation: "Distinct consenting browsers reporting each event, per 30-day window."
+      surfacing:
+        - "docs/settings/usagedata.md is the disclosure; the collector's own dashboard is where the number is read."
+    alerting: []
+    status: live-on-release
+    caveat: >
+      Every number here counts browsers, not installations, and only browsers that agreed.
+      It is a floor rather than a count, and a small one until the consenting population
+      grows. Reading a low number as "nobody uses this" rather than "few people have agreed
+      yet" is the specific mistake this outcome invites.
+
+  - id: OUT-usagedata-connector-mix
+    feature: epic-5733-opt-in-usage-data
+    title: Which kinds of work tracking system people actually connect
+    target: "No target. Descriptive by intent - it informs connector investment and deprecation, and a target would invite steering it."
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      Every connector decision - build another, deprecate one, how hard to chase a bug -
+      currently reopens the same unanswerable question. This does not say how many
+      installations run each connector, which is not measurable by design, but it does say
+      which kinds are being set up by people who agreed to say so.
+    measurement_plan:
+      data_collection:
+        - "Usage data event: WorkTrackingSystemConnected, carrying the kind of system and nothing else."
+      derivation: "Share of connection events by kind, per 90-day window, vendor instance excluded."
+      surfacing:
+        - "The collector's own dashboard."
+    alerting: []
+    status: live-on-release
+    caveat: >
+      Connections that already exist are invisible - only new ones are reported - so this
+      describes what people are adopting now rather than what they run today. A connector
+      with a large installed base and no new connections looks identical to one nobody has.
+
+  - id: OUT-usagedata-manual-refresh-rate
+    feature: epic-5733-opt-in-usage-data
+    title: How often people refresh by hand rather than waiting
+    target: "No target. Descriptive, and read alongside the update queue's own behaviour."
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      Somebody pressing refresh is somebody deciding not to trust the automatic cadence,
+      which is the cheapest available signal that the cadence is wrong. It also bears on
+      the update queue running as a single lane: manual refreshes contend with scheduled
+      ones, so how many there are decides whether that contention is theoretical.
+    measurement_plan:
+      data_collection:
+        - "Usage data events: TeamRefreshTriggered, PortfolioRefreshTriggered."
+      derivation: "Manual refreshes per consenting browser per week."
+      surfacing:
+        - "The collector's own dashboard."
+    alerting: []
+    status: live-on-release
