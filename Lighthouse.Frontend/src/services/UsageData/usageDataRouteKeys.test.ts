@@ -142,15 +142,17 @@ describe("the module only answers the question it was asked", () => {
 	// Mutation testing rewrites this file where it sits and its own scaffolding mentions
 	// globalThis, so under it the text on disk is no longer the text we wrote. The check stands
 	// down rather than reporting on somebody else's code; every ordinary run still makes it.
-	it.runIf(!moduleSource.includes("stryNS_")).each([
-		"window.",
-		"globalThis.",
-		"location",
-		"localStorage",
-		"sessionStorage",
-		"document.",
-		"fetch(",
-	])("never reaches for %s", (forbidden) => {
+	it
+		.runIf(!moduleSource.includes("stryNS_"))
+		.each([
+			"window.",
+			"globalThis.",
+			"location",
+			"localStorage",
+			"sessionStorage",
+			"document.",
+			"fetch(",
+		])("never reaches for %s", (forbidden) => {
 		expect(moduleSource).not.toContain(forbidden);
 	});
 });
