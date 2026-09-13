@@ -77,13 +77,25 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         // second condition never binds. It is written down anyway: if it were left implicit, tuning
         // retention below the re-ask window would reintroduce the early ask with nothing failing to
         // say so.
+        //
+        // And where a refusal is final there is no question left to fall due, so "past its re-ask
+        // date" is not a state that row can reach - it would simply age out like a grant, and the
+        // returning browser would present a token naming nothing, be treated as new, and be asked
+        // again. Being asked again is exactly what its tier promised would not happen. So a final
+        // refusal is kept: forgetting it is indistinguishable, from the outside, from breaking the
+        // promise. Whether a refusal is final depends on the licence, which is not a repository's
+        // to read, so it arrives as an argument like the two dates do.
         public Task<int> PruneStaleAsync(
-            DateTime lastSeenBefore, DateTime owedNothingSince, CancellationToken cancellationToken)
+            DateTime lastSeenBefore,
+            DateTime owedNothingSince,
+            bool refusalsAreFinal,
+            CancellationToken cancellationToken)
         {
             return context.UsageDataConsents
                 .Where(consent => consent.LastSeenAt < lastSeenBefore
                     && (consent.Decision == UsageDataDecision.Granted
-                        || (consent.AskedAt ?? consent.DecidedAt) < owedNothingSince))
+                        || ((consent.AskedAt ?? consent.DecidedAt) < owedNothingSince
+                            && !(refusalsAreFinal && consent.Decision == UsageDataDecision.Declined))))
                 .ExecuteDeleteAsync(cancellationToken);
         }
     }

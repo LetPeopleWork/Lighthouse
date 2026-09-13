@@ -44,15 +44,21 @@ export const evaluateAskEligibility = (
 		return { shouldAsk: false };
 	}
 
-	// The marker is read only for a browser that has never answered, and that restriction is the
-	// load-bearing part. A browser that declined carries a marker from the day it was asked; months
-	// later the server says it is due again, and a marker left over from the first ask must not be
-	// what silences the second.
-	if (input.decision === null) {
-		return { shouldAsk: askedLongEnoughAgo(input) };
-	}
-
-	return { shouldAsk: true };
+	// Read for every browser, not only one that has never answered.
+	//
+	// It used to be consulted only when there was no recorded decision, on the reasoning that a
+	// browser which had answered carried a marker from its first ask and that stale marker must not
+	// silence a later one. That cannot happen: the marker is rewritten every time the question is
+	// put, so it always holds the most recent ask, and it is measured against the same window the
+	// server uses.
+	//
+	// What the restriction did instead was remove this browser's only local defence. Telling the
+	// server it has been asked is one fire-and-forget request; when it does not land - the tab
+	// closed, the machine slept, an anonymous rate limit shared across everyone behind a proxy - the
+	// server goes on saying "due" and the browser had been instructed to ignore the note it had just
+	// written to itself. The dialog then returned on every page load until a request happened to
+	// succeed.
+	return { shouldAsk: askedLongEnoughAgo(input) };
 };
 
 /**
@@ -77,7 +83,16 @@ const askedLongEnoughAgo = (input: AskEligibilityInput): boolean => {
 		return false;
 	}
 
-	const quietFor = input.reAskAfterDays * MILLISECONDS_PER_DAY;
+	const now = (input.now ?? new Date()).getTime();
 
-	return (input.now ?? new Date()).getTime() - askedAt >= quietFor;
+	if (askedAt > now) {
+		// Stamped by a clock that was running ahead - a restored snapshot, a flat CMOS battery, a
+		// machine that booted before the network settled. Left to the arithmetic below, a marker a
+		// year in the future silences the question for a year, and nothing would ever rewrite it,
+		// because the only thing that writes it is an ask that can no longer happen. Counting it as
+		// a fresh ask costs one cycle and lets the next one through.
+		return false;
+	}
+
+	return now - askedAt >= input.reAskAfterDays * MILLISECONDS_PER_DAY;
 };

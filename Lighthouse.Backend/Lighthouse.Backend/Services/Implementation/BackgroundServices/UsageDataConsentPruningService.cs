@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Configuration;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Options;
 
@@ -12,9 +13,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
     /// people who went looking for a footer icon. It does not any more, which is why this exists in
     /// the slice that created the problem rather than the one that happened to write the query.
     ///
-    /// Nothing here decides what may be forgotten. Both thresholds are worked out from configuration
-    /// and handed down, because one of them - how long a refusal is owed its promised question - is
-    /// a promise the dialog's copy makes to a reader, and a promise is not a repository's to weigh.
+    /// Nothing here decides what may be forgotten. The thresholds are worked out from configuration
+    /// and handed down, and so is whether a refusal is permanent, because that is a promise the
+    /// licence makes to a customer and a promise is not a repository's to weigh.
     /// </summary>
     public sealed class UsageDataConsentPruningService(
         IServiceScopeFactory scopeFactory,
@@ -38,9 +39,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             using var scope = scopeFactory.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IUsageDataConsentRepository>();
 
+            // Read here rather than in the repository, for the reason the thresholds are: whether a
+            // refusal is permanent is a product promise made by the licence, and a query is not the
+            // place to decide what the product promised.
+            var licensing = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+
             return await repository.PruneStaleAsync(
                 lastSeenBefore: now - TimeSpan.FromDays(settings.ConsentRetentionDays),
                 owedNothingSince: now - TimeSpan.FromDays(settings.ReAskAfterDays),
+                refusalsAreFinal: licensing.CanUsePremiumFeatures(),
                 cancellationToken);
         }
 

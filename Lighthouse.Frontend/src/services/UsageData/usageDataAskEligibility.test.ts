@@ -82,18 +82,51 @@ describe("evaluateAskEligibility", () => {
 		expect(decision.shouldAsk).toBe(false);
 	});
 
-	// AC-05.5, and the reason the marker is consulted for undecided browsers only. A browser that
-	// declined carries a marker from the day it was asked; three months later the server says it is
-	// due again, and a marker left over from the first ask must not be what silences the second.
-	it("asks again when the server says a browser that answered is due, marker or not", () => {
+	// Written by a clock running ahead - a restored snapshot, a flat battery, a boot before the
+	// network settled. Subtracting plainly would make a marker a year in the future silence the
+	// question for a year, and nothing would ever rewrite it, because the only writer is an ask that
+	// can no longer happen. One cycle lost instead of a year.
+	it("treats a marker dated in the future as a recent ask rather than a very old one", () => {
+		const decision = evaluateAskEligibility(
+			input({ lastAskedAt: daysBefore(-365) }),
+		);
+
+		expect(decision.shouldAsk).toBe(false);
+	});
+
+	// AC-05.5: a browser that answered is asked again once the server says its window has run out,
+	// and the marker from that earlier ask is by then older than the window too, so it agrees.
+	it("asks again when the server says a browser that answered is due", () => {
 		const decision = evaluateAskEligibility(
 			input({
 				decision: "Declined",
-				lastAskedAt: "2026-06-01T09:00:00.000Z",
+				lastAskedAt: daysBefore(RE_ASK_AFTER_DAYS),
 			}),
 		);
 
 		expect(decision.shouldAsk).toBe(true);
+	});
+
+	// The browser's only defence when the server did not hear about the last ask.
+	//
+	// Telling the server is one fire-and-forget request. When it does not land the server goes on
+	// saying "due", because closing the dialog changes nothing it can see - so without this the
+	// question returns on every page load until some later request happens to succeed. That is the
+	// nag the whole cadence exists to rule out, arriving through the mechanism built to prevent it.
+	//
+	// The previous version of this test used a marker four months old, which is past the window: it
+	// returned true whether or not the marker was read at all, and so could not tell a working
+	// implementation from a broken one.
+	it("leaves a browser alone that it asked minutes ago, even though it had answered before", () => {
+		const decision = evaluateAskEligibility(
+			input({
+				mayAsk: true,
+				decision: "Declined",
+				lastAskedAt: daysBefore(0),
+			}),
+		);
+
+		expect(decision.shouldAsk).toBe(false);
 	});
 
 	// The pair that matters, side by side, because an earlier version of this had them disagree.

@@ -52,9 +52,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// <param name="lastSeenBefore">How long ago a browser has to have been seen to count as gone.</param>
         /// <param name="owedNothingSince">The instant a refusal has to predate to have had its
         /// re-ask fall due. A row still owed its promised question is kept whatever its age -
-        /// removing it means the question arrives early on the next visit, which is the promise the
-        /// dialog's own copy makes and this would break.</param>
+        /// removing it means the question arrives early on the next visit.</param>
+        /// <param name="refusalsAreFinal">Whether this instance's licence makes a refusal
+        /// permanent. Where it does, a refusal is never owed another question and so can never
+        /// reach "past its re-ask date" - it would age out like a grant, and the browser that comes
+        /// back would be treated as new and asked again, which is the one thing its tier promised
+        /// would not happen. Those rows are kept.</param>
         Task<int> PruneStaleAsync(
-            DateTime lastSeenBefore, DateTime owedNothingSince, CancellationToken cancellationToken);
+            DateTime lastSeenBefore,
+            DateTime owedNothingSince,
+            bool refusalsAreFinal,
+            CancellationToken cancellationToken);
     }
 }

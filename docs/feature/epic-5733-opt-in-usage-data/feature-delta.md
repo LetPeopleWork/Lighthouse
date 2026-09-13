@@ -3018,3 +3018,52 @@ reading would put the dialog in front of somebody on every single visit; this co
 
 **The DoR-9 open item stands unchanged.** The marker is still written when Lighthouse asks rather
 than when the reader answers, so D2's ePrivacy reasoning still does not stretch to cover it.
+
+---
+
+## Wave: DELIVER / [REF] Slice 02 — adversarial review, 2026-09-13
+
+Two reviews. The first returned six blockers and was **discarded on the facts**: it reported three
+test files as missing that exist, asserted that a React `useRef` survives unmount, and built a
+finding on `openDialog` throwing when it is a `setState` call. Cause was almost certainly the known
+subagent read truncation — it saw the first fraction of each large test file and inferred the rest
+away. One finding of its seven was fair and is fixed: the asked endpoint's oracle guard compared
+status codes only, and now compares the whole answer bar the parts that differ per request.
+
+The second was scoped to logic, given the test inventory up front, and found real defects. Five
+fixed here.
+
+| | Defect | Fix |
+|---|---|---|
+| F1 | A browser that had answered ignored its own marker, so one dropped fire-and-forget POST put the dialog back on **every page load** until a later request happened to land | The marker is read for every browser, not only undecided ones |
+| F5 | The prune is tier-blind, so a **Premium refusal aged out at 180 days**; the returning browser presented a token naming nothing, was treated as new, and was asked again — breaking AC-05.4 | `PruneStaleAsync` takes `refusalsAreFinal`; the pruning service reads it from the licence, beside the two thresholds it already derives |
+| F7 | When `sessionStorage` throws, `slotIsHeldByAnother` answered "free" to **both** prompts, so a private window got the survey popup and the consent dialog together — the exact arrangement AC-05.6 forbids | The claim is mirrored in a page-level variable, kept level with storage whenever storage answers |
+| F2 | A marker stamped by a clock running ahead silenced the ask until the clock caught up, with nothing able to rewrite it | A marker dated in the future counts as a recent ask |
+| F6 | No validation on any duration; `ConsentRetentionDays: 0` deletes every consenting browser on the next pass | `UsageDataConfigurationValidator` fails the boot, naming every setting that is wrong rather than the first |
+
+**Two tests were not merely absent but actively misleading, and both are replaced.** The eligibility
+test for F1 used a marker four months old — past the window — so it returned the same answer whether
+the marker was read or not, and passed against both the broken and the working implementation. The
+storage-failure test for F7 asserted only that neither call threw, while its own preamble promised
+the stronger property it did not check. A test that cannot fail against the defect it names is worse
+than no test, because it is counted.
+
+### Carried, not fixed
+
+- **F4 — decline-after-grant is keyed on `decision` state that a failed refresh leaves null**, so
+  pressing No after a failed load records a fresh refusal instead of withdrawing the existing grant,
+  orphaning the granted row and leaving the event buffer uncleared. Real, but it is slice 01a's
+  `decide` path rather than anything this slice introduced, and the fix changes what a second
+  decline records. Worth its own decision rather than a drive-by.
+- **F3 — the prompt slot is per tab.** Two tabs restored at startup can each claim it. Fixing F1
+  closes the common case, since the second tab now reads the marker the first wrote. A guarantee
+  across tabs needs shared storage or a broadcast channel, which is more than this slice warrants.
+
+### DT-20's rationale was stale and is corrected
+
+DT-20 justified the tie-break as "the survey nudge claims while rendering and usage data claims from
+an effect". The nudge's claim moved into an effect during DELIVER — a claim is a write, and React may
+discard a render it never commits. Tree order settles a tie only when both become eligible in the
+same commit, and they are gated on two independent responses, so it **is** a race. A benign one:
+whichever response lands first, exactly one prompt shows. But the sentence in DT-20 is the one a
+maintainer would trust next time, and it no longer described the code.

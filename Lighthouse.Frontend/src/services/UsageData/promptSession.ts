@@ -19,15 +19,33 @@ export type PromptOwner = "survey-nudge" | "usage-data";
 
 const PROMPT_SLOT_KEY = "lighthouse:prompt-slot";
 
+/**
+ * The claim, held in memory as well as in storage.
+ *
+ * Storage is where it survives a reload; this is where it survives a browser that refuses storage
+ * at all. Both prompts run in the same page, so this is enough to keep them apart even when nothing
+ * can be written down - and keeping them apart is the point, because a consent request put beside
+ * an unrelated one is not freely given.
+ *
+ * Treating a storage failure as "nobody holds it" was the earlier behaviour and did the opposite of
+ * what it claimed: it answered "free" to both askers, so a private window got the survey popup and
+ * the consent dialog at the same time.
+ */
+let heldInThisPage: PromptOwner | null = null;
+
 /** Who holds this session's slot, or null while it is still free. */
 export const promptSlotHolder = (): PromptOwner | null => {
 	try {
-		return sessionStorage.getItem(PROMPT_SLOT_KEY) as PromptOwner | null;
+		// Storage answers whenever it can, and the copy in memory is kept level with it rather than
+		// sitting alongside as a second source of truth - so clearing storage really does free the
+		// slot, and a claim made while storage was refusing does not outlive it.
+		heldInThisPage = sessionStorage.getItem(
+			PROMPT_SLOT_KEY,
+		) as PromptOwner | null;
+
+		return heldInThisPage;
 	} catch {
-		// A browser that will not hold the slot is treated as one where nobody holds it. That lets
-		// one prompt through rather than none, which is the right way for a coordination rule to
-		// fail: the alternative silences a consent dialog somebody is entitled to be shown.
-		return null;
+		return heldInThisPage;
 	}
 };
 
@@ -52,12 +70,13 @@ export const claimPromptSlot = (owner: PromptOwner): boolean => {
 		return false;
 	}
 
+	heldInThisPage = owner;
+
 	try {
 		sessionStorage.setItem(PROMPT_SLOT_KEY, owner);
 	} catch {
-		// The claim stands for this render even though nothing recorded it. A browser that cannot
-		// remember who holds the slot cannot enforce the rule at all, and refusing to show anything
-		// would be enforcing it in the direction that helps nobody.
+		// Only persistence is lost. The claim above already holds for this page, which is where the
+		// other prompt will ask about it.
 	}
 
 	return true;

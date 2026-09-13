@@ -217,6 +217,49 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Assert.That(removed, Is.Zero);
         }
 
+        // Where the licence makes a refusal permanent there is no question left to fall due, so the
+        // row can never reach "past its re-ask date" and would age out exactly like a grant. The
+        // browser that comes back then presents a token naming nothing, is indistinguishable from a
+        // new one, and is asked again - which is the single thing its tier promised would not
+        // happen. From that person's side the product either forgot or lied, and nothing in the logs
+        // connects the dialog to a housekeeping pass six months earlier.
+        [Test]
+        public async Task PruneStaleAsync_KeepsARefusalTheLicenceMadeFinal_HoweverLongAgoItWas()
+        {
+            var refused = Consent("final", UsageDataDecision.Declined, Now.AddDays(-400));
+            refused.DecidedAt = Now.AddDays(-400);
+            await Repository.AddAsync(refused, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180),
+                owedNothingSince: Now.AddDays(-90),
+                refusalsAreFinal: true);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(removed, Is.Zero);
+                Assert.That(await Repository.FindByTokenHashAsync("final", TestContext.CurrentContext.CancellationToken), Is.Not.Null,
+                    "forgetting it is indistinguishable, from outside, from asking again");
+            }
+        }
+
+        // A withdrawal is not a refusal: it leaves the door open on either tier, so it is owed a
+        // question like any other and ages out once that question has fallen due.
+        [Test]
+        public async Task PruneStaleAsync_ForgetsAWithdrawal_EvenWhereRefusalsAreFinal()
+        {
+            var withdrawn = Consent("withdrawn", UsageDataDecision.Revoked, Now.AddDays(-400));
+            withdrawn.DecidedAt = Now.AddDays(-400);
+            await Repository.AddAsync(withdrawn, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180),
+                owedNothingSince: Now.AddDays(-90),
+                refusalsAreFinal: true);
+
+            Assert.That(removed, Is.EqualTo(1));
+        }
+
         [Test]
         public async Task PruneStaleAsync_ForgetsALongGoneBrowserThatAgreed_WhateverItIsOwed()
         {
@@ -232,7 +275,10 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "keeping this row - and it has run out");
         }
 
-        private Task<int> PruneAsync(DateTime lastSeenBefore, DateTime? owedNothingSince = null)
+        private Task<int> PruneAsync(
+            DateTime lastSeenBefore,
+            DateTime? owedNothingSince = null,
+            bool refusalsAreFinal = false)
         {
             // Defaulted so far ahead that nothing is still owed a question, which is what lets a
             // test about ageing be only about ageing. A test that means to exercise the promise
@@ -240,6 +286,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             return Repository.PruneStaleAsync(
                 lastSeenBefore,
                 owedNothingSince ?? Now.AddYears(10),
+                refusalsAreFinal,
                 TestContext.CurrentContext.CancellationToken);
         }
 
