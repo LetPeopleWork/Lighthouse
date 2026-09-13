@@ -67,7 +67,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// data goes, and one thing for the rule above to be about.
         /// </summary>
         [Test]
-        [Ignore(NothingToInspectYet)]
         public void TheAddressTheDataGoesTo_IsWrittenDownInExactlyOnePlace()
         {
             var naming = EveryProductionSourceFile()

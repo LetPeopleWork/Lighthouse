@@ -1406,6 +1406,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IUsageDataConsentService, UsageDataConsentService>();
             builder.Services.AddSingleton<IUsageDataGate, UsageDataGate>();
             builder.Services.AddSingleton<IUsageDataEventQueue, UsageDataEventQueue>();
+            builder.Services.AddUsageDataPublishing();
 
             // Registered as itself as well as as the background job, because emptying the queue is
             // something a caller can ask for at a moment of its choosing - which is the only way a

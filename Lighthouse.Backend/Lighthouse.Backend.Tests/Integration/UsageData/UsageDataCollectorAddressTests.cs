@@ -69,7 +69,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// say so where somebody looking would find it.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task AnInstanceNobodyToldWhereToSend_DoesNotSendToTheLiveCensusAndSaysWhyNot()
         {
             using var host = BuildHost(collectorAddress: null);
@@ -108,7 +107,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// suite would notice, because everything else asserts that things do not get sent.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task AnInstanceToldWhereToSend_SendsThere()
         {
             using var host = BuildHost(AnAddressSomebodySupplied);

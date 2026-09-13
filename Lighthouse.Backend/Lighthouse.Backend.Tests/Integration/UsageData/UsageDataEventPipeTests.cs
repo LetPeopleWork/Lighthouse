@@ -207,7 +207,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// browser with either.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task ATabOpenedOnATeam_ReachesTheCollectorNamingTheTabAndNeverTheTeam()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -238,7 +237,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// written before this one still passes when that mistake is made.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task ABrowserThatRefused_SendsNothingEvenThoughItHoldsAToken()
         {
             var token = await ABrowserThatRefusedAsync();
@@ -264,7 +262,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// and check for itself, on every request.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task ACallerWithNoConsentBehindIt_SendsNothingHoweverWellFormedItsMessageIs()
         {
             using var answer = await HandInAsync(token: null, ABatchOf(TabOpened, TeamMetricsTab));
@@ -280,7 +277,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task ABrowserThatChangedItsMind_SendsNothingOnItsVeryNextEvent()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -314,7 +310,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// outlive the decision.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task AWithdrawalWhileABatchIsStillWaiting_StopsThatBatchToo()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -340,7 +335,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// meaning something only once one does.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task AnInstanceNobodyHasAnsweredOn_ReachesTheCollectorNotOnce()
         {
             using var answer = await HandInAsync(token: null, ABatchOf(TabOpened, TeamMetricsTab));
