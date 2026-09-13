@@ -25,8 +25,22 @@
 
 ## Goal
 
-The maintainer can answer "did anyone actually use this" for a shipped feature, and at least three
-of the seven KPIs blocked on this Epic move to a live source.
+The maintainer can answer "did anyone actually use this" for a shipped feature.
+
+> **The second half of this goal was dropped, 2026-09-13, after the events were chosen.** It read
+> "and at least three of the seven KPIs blocked on this Epic move to a live source" — and none of
+> them does. The brief allowed the set to be chosen either from the deferred-KPI list or from what
+> is in flight; the maintainer chose the second, and the two do not overlap. Of the five deferred
+> outcomes (not seven — that figure was corrected on 2026-09-12), two want an event nobody has
+> built, two want customer feedback no event can ever supply and should stop being counted as
+> telemetry-blocked at all, and the OAuth adoption ratio is a near miss: the connection event now
+> says which *kind* of system was set up, and what it still lacks is which *authentication method*.
+>
+> Three outcomes were added instead for what this slice does answer —
+> `OUT-usagedata-capability-use`, `OUT-usagedata-connector-mix`, `OUT-usagedata-manual-refresh-rate`.
+> Each deferred outcome now names the event it is waiting for rather than waiting on the feature as
+> a whole, which is the more useful state to leave them in: the next person to add an event can see
+> at a glance which question it would close.
 
 ## IN scope
 
