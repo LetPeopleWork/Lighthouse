@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             appSettingsMock.Setup(s => s.GetInstallTimestamp()).Returns(Now.AddDays(-365));
 
             masterSwitchMock = new Mock<IUsageDataMasterSwitch>();
-            masterSwitchMock.Setup(s => s.IsOn()).Returns(true);
+            masterSwitchMock.Setup(s => s.IsAllowed()).Returns(true);
         }
 
         [Test]
@@ -241,7 +241,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         [Test]
         public async Task GetState_WithTheAdministratorsSwitchOff_SaysNotToAsk()
         {
-            masterSwitchMock.Setup(s => s.IsOn()).Returns(false);
+            masterSwitchMock.Setup(s => s.IsAllowed()).Returns(false);
 
             var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
 

@@ -69,6 +69,25 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     IsPreview = false,
                     IsPremium = true,
                 },
+                new OptionalFeature
+                {
+                    Id = 0,
+                    Key = OptionalFeatureKeys.UsageDataKey,
+
+                    // Phrased as the thing it does rather than as the thing it governs. Every other
+                    // row here reads positively - "Faster Updates" on means faster updates - so a
+                    // row called "Usage Data" whose on means stop is the one an administrator reads
+                    // backwards at a glance, and gets wrong in the direction that matters.
+                    Name = "Never send usage data",
+                    Description =
+                        "While this is on, Lighthouse sends no usage data from this instance and "
+                        + "nobody is asked about it, whatever individual people have already agreed "
+                        + "to. Their agreement is suspended rather than withdrawn - turning this "
+                        + "back off resumes sending for them, and nobody is asked again.",
+                    Enabled = false,
+                    IsPreview = false,
+                    IsPremium = true,
+                },
             ];
         }
 

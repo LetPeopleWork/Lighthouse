@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // @driving_port @real-io @AC-06.1 - the row itself. Until it exists the master switch reads no
         // row, concludes the veto is disengaged, and no control renders anywhere.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task The_veto_is_offered_to_administrators_as_a_setting_of_its_own()
         {
             GivenTheCallerAdministersTheInstance();
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // seeder writes exactly once: it never overwrites the stored on/off of a key it already knows,
         // so a release that ships the wrong default cannot be repaired by seeding again.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public void A_fresh_instance_starts_with_the_veto_disengaged()
         {
             ThenTheStoredVetoIsDisengaged();
@@ -46,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // @driving_port @real-io @AC-06.1 - premium, which is what makes the Community half of AC-07.4
         // a commercial line rather than a missing feature.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public void The_veto_is_a_premium_setting()
         {
             ThenTheVetoIsPremium();
@@ -55,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // @driving_port @real-io @AC-06.2 - the upgrade case. An administrator who engaged the veto has
         // made a policy decision, and the next release may not quietly undo it.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task A_later_upgrade_leaves_an_engaged_veto_engaged()
         {
             GivenTheInstanceIsLicensedForPremium();
@@ -70,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // @driving_port @real-io @AC-06.1 - the licensed half of the branch. Without it the slice could
         // be passed by refusing everybody.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task A_licensed_administrator_engages_the_veto_and_is_told_it_landed()
         {
             GivenTheInstanceIsLicensedForPremium();
@@ -86,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // privacy control whose write can be dropped while the response says success is worse than no
         // control, which is why this is asserted here and not only where the gate was written.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task A_community_administrator_is_refused_the_veto_out_loud()
         {
             GivenTheInstanceHasNoPremiumLicence();
@@ -103,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // exists, seeing that usage data is flowing, and seeing that stopping it needs Premium is the
         // whole of what a Community administrator is owed here.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task A_community_administrator_can_still_see_the_veto_and_see_that_it_is_disengaged()
         {
             GivenTheInstanceHasNoPremiumLicence();
@@ -119,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         // reads the row on every emit, so there is no consequence to apply, and a later refactor that
         // attaches one would change when the veto takes effect without changing a single scenario above.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task Engaging_the_veto_stores_the_value_and_leaves_every_other_setting_alone()
         {
             GivenTheInstanceIsLicensedForPremium();

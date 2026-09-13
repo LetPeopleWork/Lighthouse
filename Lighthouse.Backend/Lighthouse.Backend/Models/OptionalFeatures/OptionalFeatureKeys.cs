@@ -22,5 +22,13 @@
         /// administrator arranged, off means the work tracking system's own ranking wins on every refresh.
         /// </summary>
         public const string FeatureOrderingKey = "FeatureOrdering";
+
+        /// <summary>
+        /// An administrator's veto over usage data, and the one setting in this list that reads
+        /// backwards: on means nothing is asked and nothing is sent, for everybody on this instance,
+        /// whatever each person answered for themselves. It ships off, so an instance behaves as it
+        /// always has until somebody deliberately stops it.
+        /// </summary>
+        public const string UsageDataKey = "UsageData";
     }
 }

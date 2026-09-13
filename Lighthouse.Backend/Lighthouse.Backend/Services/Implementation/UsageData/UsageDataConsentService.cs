@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// </summary>
         private bool MayAsk(UsageDataConsent? consent, DateTime now)
         {
-            if (!masterSwitch.IsOn())
+            if (!masterSwitch.IsAllowed())
             {
                 return false;
             }

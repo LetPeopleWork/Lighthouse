@@ -53,8 +53,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string TabOpened = "TeamOrPortfolioTabOpened";
         private const string TeamMetricsTab = "TeamDetail_Metrics";
 
-        private const string NoVetoRowYet =
-            "Pending: no OptionalFeature row exists for usage data yet (Epic 5733 slice 03, ADO #5836).";
+        private const string TheStateAnswerDoesNotConsultTheVetoYet =
+            "Pending: the state answer derives Sending from this browser's own decision alone "
+            + "(Epic 5733 slice 03, ADO #5836).";
 
         private const string NoAdministratorFieldYet =
             "Pending: the state answer does not say who stopped usage data yet (Epic 5733 slice 03, ADO #5836).";
@@ -172,7 +173,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @AC-06.3 - the guarantee the whole slice exists for. The browser is not asked to stop and is
         // not told it was stopped; its request is accepted exactly as before and the batch is dropped.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task An_engaged_veto_drops_the_batch_of_a_browser_that_had_already_consented()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -195,7 +195,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @AC-06.5 - suspended, never revoked. The browser that consented before the veto is not asked
         // anything when it is lifted; it simply starts being counted again.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task Lifting_the_veto_lets_the_same_browser_send_again_without_asking_it_anything()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -224,7 +223,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // due. Suppressing only the sending would leave the dialog appearing on an instance whose
         // administrator has switched the whole thing off.
         [Test]
-        [Ignore(NoVetoRowYet)]
         public async Task An_engaged_veto_stops_the_question_being_put_at_all()
         {
             GivenTheInstanceIsOldEnoughToAsk();
@@ -241,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // from. Today the answer is derived from this browser's own decision alone, so a granted
         // browser is told "sending" while the emit path drops everything it hands in.
         [Test]
-        [Ignore(NoVetoRowYet)]
+        [Ignore(TheStateAnswerDoesNotConsultTheVetoYet)]
         public async Task An_engaged_veto_makes_a_consenting_browser_be_told_it_is_not_sending()
         {
             var token = await ABrowserThatAgreedAsync();

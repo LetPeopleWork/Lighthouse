@@ -142,14 +142,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         /// <summary>
-        /// An operator who turns the feature off wants it off, not off-and-shouting. And what they
-        /// read afterwards has to say it was them: a line that reads like a fault sends somebody
-        /// looking for a problem they created on purpose.
+        /// An operator who stops the feature wants it stopped, not stopped-and-shouting. And what
+        /// they read afterwards has to say it was them: a line that reads like a fault sends
+        /// somebody looking for a problem they created on purpose.
         /// </summary>
         [Test]
-        public async Task TheFeatureSwitchedOffAtTheInstance_LetsNothingOutAndIsReportedAsAChoice()
+        public async Task TheFeatureStoppedAtTheInstance_LetsNothingOutAndIsReportedAsAChoice()
         {
-            switches.Add(new OptionalFeature { Id = 1, Key = MasterSwitchKey, Enabled = false });
+            switches.Add(new OptionalFeature { Id = 1, Key = MasterSwitchKey, Enabled = true });
             var gate = AGate();
 
             var permit = await Ask(gate);
@@ -160,8 +160,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(permit, Is.Null,
-                    "the switch an operator turned off let a batch through anyway, so turning the "
-                    + "feature off does not turn the feature off");
+                    "the veto an operator engaged let a batch through anyway, so stopping usage "
+                    + "data does not stop usage data");
                 Assert.That(reported.Level, Is.EqualTo(LogLevel.Debug),
                     "an instance doing exactly what it was told reports it where an operator sees "
                     + "it, which turns a deliberate setting into a daily complaint");
@@ -176,14 +176,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         [Test]
         public async Task ASwitchBelongingToSomeOtherFeature_DecidesNothingHere()
         {
-            switches.Add(new OptionalFeature { Id = 1, Key = "SomethingElseEntirely", Enabled = false });
-            switches.Add(new OptionalFeature { Id = 2, Key = MasterSwitchKey, Enabled = true });
+            // The other feature's row carries the value that, read as this one's, stops everything.
+            switches.Add(new OptionalFeature { Id = 1, Key = "SomethingElseEntirely", Enabled = true });
+            switches.Add(new OptionalFeature { Id = 2, Key = MasterSwitchKey, Enabled = false });
             AskingTheRecordFindsABrowserThatAgreed();
             var gate = AGate();
 
             Assert.That(await Ask(gate), Is.Not.Null,
                 "a switch belonging to another feature decided whether usage data may leave, so "
-                + "what turns this feature off is not the switch that names it");
+                + "what stops this feature is not the row that names it");
         }
 
         /// <summary>

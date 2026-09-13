@@ -58,6 +58,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             {
                 OptionalFeatureKeys.DeltaSyncKey,
                 OptionalFeatureKeys.FeatureOrderingKey,
+                OptionalFeatureKeys.UsageDataKey,
             }));
         }
 

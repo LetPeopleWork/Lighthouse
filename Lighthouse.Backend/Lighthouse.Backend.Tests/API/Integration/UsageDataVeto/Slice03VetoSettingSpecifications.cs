@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
     /// </summary>
     public partial class Slice03VetoSettingTest : BehaviourSettingsAcceptanceTest
     {
-        internal const string NoVetoRowYet =
-            "Pending: no OptionalFeature row exists for usage data yet (Epic 5733 slice 03, ADO #5836).";
 
         /// <summary>
         /// The key the veto is stored under, read from the switch that governs it rather than written

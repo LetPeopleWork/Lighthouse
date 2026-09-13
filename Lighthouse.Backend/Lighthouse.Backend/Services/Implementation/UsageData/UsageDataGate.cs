@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         {
             using var scope = scopeFactory.CreateScope();
 
-            if (!TheFeatureIsSwitchedOn(scope))
+            if (!TheAdministratorAllowsThis(scope))
             {
                 Suppress(UsageDataSuppressionReason.MasterSwitchOff);
                 return null;
@@ -256,14 +256,14 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         }
 
         // Built here rather than resolved, because what is being reused is a rule and not a
-        // collaborator: "no row means on" has to give the same answer on the emit path as it does
-        // where the dialog asks whether it may appear, or an administrator who switched the feature
-        // off would stop one of the two and not the other.
-        private static bool TheFeatureIsSwitchedOn(IServiceScope scope)
+        // collaborator: "no row means nothing is vetoed" has to give the same answer on the emit
+        // path as it does where the dialog asks whether it may appear, or an administrator who
+        // stopped the feature would stop one of the two and not the other.
+        private static bool TheAdministratorAllowsThis(IServiceScope scope)
         {
             var features = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
 
-            return new UsageDataMasterSwitch(features).IsOn();
+            return new UsageDataMasterSwitch(features).IsAllowed();
         }
 
         private TimeSpan LivenessWindow => TimeSpan.FromDays(configuration.CurrentValue.ConsentLivenessWindowDays);

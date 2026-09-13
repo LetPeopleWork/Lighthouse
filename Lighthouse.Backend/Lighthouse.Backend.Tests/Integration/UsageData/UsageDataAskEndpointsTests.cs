@@ -103,14 +103,26 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        public async Task GetState_WithTheAdministratorsSwitchOff_SaysNobodyIsDue()
+        public async Task GetState_WithTheAdministratorsVetoEngaged_SaysNobodyIsDue()
+        {
+            await InstalledDaysAgo(14);
+            await MasterSwitch(enabled: true);
+
+            Assert.That(await MayAskAsync(), Is.False,
+                "an administrator who stopped usage data has a policy to enforce, and a dialog "
+                + "that still appears is the screenshot that fails their security review");
+        }
+
+        [Test]
+        public async Task GetState_WithTheAdministratorsVetoDisengaged_StillSaysTheBrowserIsDue()
         {
             await InstalledDaysAgo(14);
             await MasterSwitch(enabled: false);
 
-            Assert.That(await MayAskAsync(), Is.False,
-                "an administrator who switched usage data off has a policy to enforce, and a dialog "
-                + "that still appears is the screenshot that fails their security review");
+            // The row is a veto, so the value it ships with means nobody has stopped anything. Read
+            // the other way round this reads as an administrator's refusal, and every instance goes
+            // silent on upgrade.
+            Assert.That(await MayAskAsync(), Is.True);
         }
 
         [Test]
@@ -118,9 +130,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         {
             await InstalledDaysAgo(14);
 
-            // The row does not exist until the slice that introduces the switch. Absent has to mean
-            // "may ask", or shipping this slice ahead of that one silently asks nobody at all and
-            // the uptake number the Epic rests on comes back zero for a reason nothing reports.
+            // Absent has to mean "may ask": an instance between a release landing and its seeder
+            // running would otherwise ask nobody at all, and the uptake number the Epic rests on
+            // would come back zero for a reason nothing reports.
             Assert.That(await MayAskAsync(), Is.True);
         }
 
