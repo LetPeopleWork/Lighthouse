@@ -212,7 +212,30 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 Assert.That(unknown.StatusCode, Is.EqualTo(real.StatusCode),
                     "answering differently would turn this into a way of discovering which tokens "
                     + "are real on this instance");
+
+                // The status code is not the only thing a caller can read. A header present on one
+                // answer and absent on the other tells them the same thing the status would have,
+                // and costs an attacker nothing to look at.
+                Assert.That(HeadersOf(unknown), Is.EqualTo(HeadersOf(real)),
+                    "the two answers have to be indistinguishable in what a caller can actually see, "
+                    + "not only in their status line");
             }
+        }
+
+        /// <summary>
+        /// Everything a caller can read off the response bar the parts that legitimately differ per
+        /// request. Date moves with the clock and the trace identifier is unique by design, so
+        /// including either would make the comparison fail for reasons that disclose nothing.
+        /// </summary>
+        private static string[] HeadersOf(HttpResponseMessage response)
+        {
+            string[] differPerRequestByDesign = ["Date", "traceparent", "Request-Id"];
+
+            return [.. response.Headers
+                .Concat(response.Content.Headers)
+                .Where(header => !differPerRequestByDesign.Contains(header.Key, StringComparer.OrdinalIgnoreCase))
+                .Select(header => $"{header.Key}: {string.Join(",", header.Value)}")
+                .Order()];
         }
 
         [Test]
