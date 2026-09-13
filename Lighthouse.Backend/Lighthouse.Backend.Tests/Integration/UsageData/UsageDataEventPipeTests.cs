@@ -72,9 +72,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string NoIngestEndpointYet =
             "Pending: the ingest endpoint this asserts against does not exist yet (Epic 5733 slice 01c, ADO #5980).";
 
-        private const string NoForwarderYet =
-            "Pending: needs the forwarder and a trigger a test can pull - see the fixture summary (Epic 5733 slice 01c, ADO #5980).";
-
         private static readonly string[] EverythingRecordingAnAnswerHandsBack = ["token"];
 
         private static readonly string[] EverythingTheStateAnswerCarries = ["sending", "decision", "willAskAgain"];
@@ -448,7 +445,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// release, which is what makes the version assertion below meaningful rather than lucky.
         /// </summary>
         [Test]
-        [Ignore(NoForwarderYet)]
         public async Task TheFactsAboutTheInstance_AreAddedHereAndNeverAskedOfTheBrowser()
         {
             var token = await ABrowserThatAgreedAsync();

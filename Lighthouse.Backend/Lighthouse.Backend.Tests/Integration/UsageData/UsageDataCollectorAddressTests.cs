@@ -55,9 +55,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string AnAddressSomebodySupplied = "https://collector.usage-data-tests.invalid/";
         private const string TheHostSomebodySupplied = "collector.usage-data-tests.invalid";
 
-        private const string NoForwarderYet =
-            "Pending: needs the forwarder and the address guard (Epic 5733 slice 01c, ADO #5980).";
-
         private CapturedOutboundRequests outbound = null!;
         private CapturedLogMessages capturedLogs = null!;
         private WebApplicationFactory<Program> builtHost = null!;

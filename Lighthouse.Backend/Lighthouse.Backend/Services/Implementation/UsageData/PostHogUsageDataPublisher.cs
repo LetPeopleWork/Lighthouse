@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
     public sealed class PostHogUsageDataPublisher(
         IHttpClientFactory clients,
         IOptionsMonitor<UsageDataConfiguration> configuration,
+        IUsageDataInstanceProperties instance,
         ILighthouseClock clock,
         ILogger<PostHogUsageDataPublisher> logger) : IUsageDataPublisher
     {
@@ -105,6 +106,10 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         {
             var apiKey = configuration.CurrentValue.ProjectApiKey;
 
+            // Asked once for the whole batch rather than per message. These are facts about the
+            // instance, and one of them reads the licence and the database behind it.
+            var facts = instance.Describe();
+
             return [.. batch.Events.Select(reported => new CollectorMessage(
                 apiKey,
                 reported.Name.ToString(),
@@ -112,6 +117,10 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 clock.Now.AddMilliseconds(-reported.OffsetMs),
                 new WhatEachMessageCarries(
                     UsageDataRoutePatterns.All[reported.Route],
+                    facts.Version,
+                    facts.DeploymentMode.ToString(),
+                    facts.LicenceTier,
+                    facts.AuthenticationEnabled,
                     Ip: null,
                     GeoIpDisable: true)))];
         }
@@ -125,11 +134,16 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         /// <summary>
         /// The address of the page that was opened, as this application publishes it rather than as
-        /// the browser sent it, and the two instructions that keep the caller's own address out of
-        /// what the collector stores.
+        /// the browser sent it; the four facts about the instance, none of which the browser is ever
+        /// asked for; and the two instructions that keep the caller's own address out of what the
+        /// collector stores.
         /// </summary>
         private sealed record WhatEachMessageCarries(
             [property: JsonPropertyName("route")] string Route,
+            [property: JsonPropertyName("version")] string Version,
+            [property: JsonPropertyName("deployment_mode")] string DeploymentMode,
+            [property: JsonPropertyName("licence_tier")] string LicenceTier,
+            [property: JsonPropertyName("auth_enabled")] bool AuthenticationEnabled,
             [property: JsonPropertyName("$ip")] string? Ip,
             [property: JsonPropertyName("$geoip_disable")] bool GeoIpDisable);
     }
@@ -150,6 +164,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
 
+            services.AddSingleton<IUsageDataDeploymentModeResolver, UsageDataDeploymentModeResolver>();
+            services.AddSingleton<IUsageDataInstanceProperties, UsageDataInstanceProperties>();
             services.AddSingleton<IUsageDataPublisher, PostHogUsageDataPublisher>();
 
             return services;
