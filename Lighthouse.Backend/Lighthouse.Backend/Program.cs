@@ -1119,6 +1119,16 @@ namespace Lighthouse.Backend
             }).AllowAnonymous();
         }
 
+        // How many browsers one address is allowed to be speaking for at once. Generous on purpose:
+        // this is the ceiling a real office has to stay under, and the per-browser count beneath it
+        // is what shapes ordinary traffic. At the shipped numbers it leaves room for hundreds of
+        // browsers behind one address flushing far more often than any of them actually does.
+        private const int BrowsersOneAddressMaySpeakFor = 20;
+
+        // One key for everything this ceiling does not apply to, so the limiter holds a single entry
+        // for the whole rest of the application rather than one per address that never asked.
+        private const string NothingHereIsCountedByAddress = "not-counted-by-address";
+
         private static void ConfigureRateLimiting(WebApplicationBuilder builder)
         {
             builder.Services.Configure<RateLimitingConfiguration>(
@@ -1132,8 +1142,7 @@ namespace Lighthouse.Backend
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.OnRejected = (context, cancellationToken) =>
                 {
-                    var policyName = context.HttpContext.GetEndpoint()?
-                        .Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
+                    var policyName = WhatPolicyApplies(context.HttpContext);
 
                     var snapshot = context.HttpContext.RequestServices
                         .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
@@ -1158,7 +1167,59 @@ namespace Lighthouse.Backend
                     options,
                     RateLimitingConfiguration.UsageDataIngestPolicy,
                     ResolveUsageDataIngestPartitionKey);
+
+                options.GlobalLimiter = WhatOneAddressMayHandIn();
             });
+        }
+
+        /// <summary>
+        /// The bound on an address, underneath the per-browser one on the endpoint that takes usage
+        /// events. The browser's handle is presented rather than proved, so a caller who invents a
+        /// new one for every request lands in a fresh allowance every time and is never refused -
+        /// while each of those requests still reaches the database twice. Counting the address as
+        /// well gives that caller somewhere to stop, and leaves an office sharing one address
+        /// counted per browser as before, because this ceiling is a large multiple of that one.
+        ///
+        /// Derived from the per-browser number rather than configured separately: a policy with no
+        /// entry in configuration resolves to no limiter at all, silently, and a ceiling that
+        /// disappears when somebody forgets to configure it is the thing this exists to prevent.
+        /// </summary>
+        private static PartitionedRateLimiter<HttpContext> WhatOneAddressMayHandIn()
+        {
+            return PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                if (WhatPolicyApplies(httpContext) != RateLimitingConfiguration.UsageDataIngestPolicy)
+                {
+                    return RateLimitPartition.GetNoLimiter(NothingHereIsCountedByAddress);
+                }
+
+                var snapshot = httpContext.RequestServices
+                    .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
+
+                if (!snapshot.Policies.TryGetValue(RateLimitingConfiguration.UsageDataIngestPolicy, out var perBrowser)
+                    || perBrowser.PermitLimit <= 0
+                    || perBrowser.WindowSeconds <= 0)
+                {
+                    return RateLimitPartition.GetNoLimiter(NothingHereIsCountedByAddress);
+                }
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    ResolvePartitionKey(httpContext),
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = perBrowser.PermitLimit * BrowsersOneAddressMaySpeakFor,
+                        Window = TimeSpan.FromSeconds(perBrowser.WindowSeconds),
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        AutoReplenishment = true,
+                    });
+            });
+        }
+
+        private static string? WhatPolicyApplies(HttpContext httpContext)
+        {
+            return httpContext.GetEndpoint()?
+                .Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName;
         }
 
         private static void AddFixedWindowPolicy(
@@ -1199,6 +1260,10 @@ namespace Lighthouse.Backend
         /// digested here so the allowance is spent under something that is not the handle itself.
         /// Nothing is looked up to do it: a browser that presents no handle is counted by address,
         /// which is all there is to go on.
+        ///
+        /// Which also means a handle is claimed rather than proved, and a caller who makes up a new
+        /// one each time would never be counted twice. The far larger per-address ceiling above is
+        /// what bounds that; neither of the two is enough on its own.
         /// </summary>
         private static string ResolveUsageDataIngestPartitionKey(HttpContext httpContext)
         {

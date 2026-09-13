@@ -21,14 +21,17 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - the two ceilings, which bound different things and fail in
+    /// Epic 5733 slice 01c (ADO #5980) - the ceilings, which bound different things and fail in
     /// opposite directions.
     ///
-    /// The first bounds one browser against one instance and refuses when it is passed. The second
-    /// bounds the whole world against one allowance the maintainer pays for, shared by every
-    /// instance there is - forty honest instances can exhaust it without any of them misbehaving -
-    /// and it drops silently rather than refusing, because there is nothing useful a browser could
-    /// do with a refusal except try again.
+    /// The first bounds one browser against one instance and refuses when it is passed. Underneath
+    /// it sits a far larger one on the address a request is seen from, which is what a browser
+    /// cannot invent its way out of - the handle the first counts by is claimed rather than proved,
+    /// so on its own it bounds only callers who are willing to be counted. The last bounds the whole
+    /// world against one allowance the maintainer pays for, shared by every instance there is -
+    /// forty honest instances can exhaust it without any of them misbehaving - and it drops silently
+    /// rather than refusing, because there is nothing useful a browser could do with a refusal
+    /// except try again.
     ///
     /// Serial, and on the parallelization allowlist, for the reason the consent limiter fixture
     /// beside this one already carries: exhausting a limiter whose window is process-wide would
@@ -60,6 +63,10 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // that a ceiling this fixture is not about cannot be the thing that stops it: refused
         // consent comes back as no token at all, which would read as a broken allowance.
         private const int ConsentPermitLimit = 200;
+
+        // Enough attempts to pass the ceiling on one address, which is a multiple of the per-browser
+        // one, without running forever if that ceiling is not there at all.
+        private const int AttemptsNoRealBrowserWouldMake = 600;
 
         private CapturedOutboundRequests outbound = null!;
         private CapturedLogMessages capturedLogs = null!;
@@ -137,6 +144,50 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 Assert.That(theOtherOne.StatusCode, Is.Not.EqualTo(HttpStatusCode.TooManyRequests),
                     "counted by address rather than by browser, one busy colleague silences the "
                     + "whole office");
+            }
+        }
+
+        /// <summary>
+        /// The handle a browser presents is claimed, not proved. Counting by it alone means a caller
+        /// who invents a new one for every request is a new browser every time, so the per-browser
+        /// ceiling never refuses any of them - and each one still reaches the database twice before
+        /// being dropped, on a product that is commonly run on a single-writer database and reachable
+        /// from the internet without credentials.
+        ///
+        /// Nothing leaks and nothing is collected on this path: no consent resolves, so every one of
+        /// these is refused where it matters. What is at stake is whether the instance stays up.
+        /// </summary>
+        [Test]
+        public async Task OneAddressInventingANewBrowserEachTime_IsStillBounded()
+        {
+            using var host = BuildHost();
+            using var client = host.CreateClient();
+            await FreshDatabaseAsync(host);
+
+            var taken = 0;
+            HttpStatusCode? refused = null;
+
+            for (var attempt = 0; attempt < AttemptsNoRealBrowserWouldMake && refused is null; attempt++)
+            {
+                using var answer = await HandInAsync(client, Guid.NewGuid().ToString(), OneOffice);
+                if (answer.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    refused = answer.StatusCode;
+                }
+                else
+                {
+                    taken++;
+                }
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(taken, Is.GreaterThan(PermitLimit),
+                    "the per-browser ceiling is what stopped this, which means the handles were not "
+                    + "being counted apart and the scenario above is passing for the wrong reason");
+                Assert.That(refused, Is.EqualTo(HttpStatusCode.TooManyRequests),
+                    "a made-up handle bought a fresh allowance every time, so one anonymous caller "
+                    + "can keep this instance answering database queries for as long as it likes");
             }
         }
 
