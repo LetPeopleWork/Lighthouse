@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import type { UsageDataSendingState } from "../components/UsageData/UsageDataIndicator";
 import type { UsageDataDecisionValue } from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { forgetWhatWasNoticed } from "../services/UsageData/usageDataBuffer";
 
 /**
  * Where this browser keeps its consent token. The token is the only handle on the consent record -
@@ -99,6 +100,13 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 				// browser showed the opposite - the user having done exactly what they were told
 				// would stop it.
 				if (next === "declined" && decision === "Granted" && token) {
+					// Anything noticed but not yet handed in goes before the request does, not after it
+					// comes back. Waiting for the answer leaves a gap in which the clock that hands
+					// pages in can fire against a consent already taken back - the server would turn
+					// that batch away, so nothing would look wrong while this browser carried on doing
+					// the one thing it was asked to stop. Doing it first is also what makes a
+					// withdrawal that never arrives safe: the network failing is no reason to resume.
+					forgetWhatWasNoticed();
 					await usageDataService.revoke(token);
 				} else {
 					writeToken(await usageDataService.recordDecision(next));

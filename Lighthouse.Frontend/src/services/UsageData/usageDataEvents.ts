@@ -4,12 +4,17 @@ import {
 	readUsageDataConsentToken,
 	useUsageDataConsent,
 } from "../../hooks/useUsageDataConsent";
-import type { UsageDataRouteKey } from "../../models/UsageData/UsageData";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
 import {
 	type IUsageDataEvent,
 	UsageDataEventName,
 } from "../Api/UsageDataService";
+import {
+	forgetWhatWasNoticed,
+	type NoticedPage,
+	notice,
+	takeWhatWasNoticed,
+} from "./usageDataBuffer";
 import { usageDataRouteKeyFor } from "./usageDataRouteKeys";
 
 /**
@@ -22,29 +27,6 @@ import { usageDataRouteKeyFor } from "./usageDataRouteKeys";
  * already makes. Shortening this makes that worse, and buys nothing back.
  */
 export const FLUSH_INTERVAL_MS = 30 * 1000;
-
-interface NoticedPage {
-	route: UsageDataRouteKey;
-	noticedAt: number;
-}
-
-/**
- * Everything this module remembers. It is an array and nothing else - no storage key, no database,
- * no worker. A queue kept anywhere it would survive the tab would also survive the withdrawal it is
- * meant to obey, and would send afterwards. Losing what is in here when a tab closes costs nobody
- * anything, which is why it is the cheap side of that trade.
- */
-let noticed: NoticedPage[] = [];
-
-const takeWhatWasNoticed = (): NoticedPage[] => {
-	const taken = noticed;
-	noticed = [];
-	return taken;
-};
-
-const forgetEverything = (): void => {
-	noticed = [];
-};
 
 const asHandedIn = (
 	pages: NoticedPage[],
@@ -82,7 +64,7 @@ export const useUsageDataEventDetector = (): void => {
 		const route = usageDataRouteKeyFor(pathname);
 
 		if (route !== undefined) {
-			noticed.push({ route, noticedAt: Date.now() });
+			notice({ route, noticedAt: Date.now() });
 		}
 	}, [isSending, pathname]);
 
@@ -122,5 +104,5 @@ export const useUsageDataEventDetector = (): void => {
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 	}, [handIn]);
 
-	useEffect(() => forgetEverything, []);
+	useEffect(() => forgetWhatWasNoticed, []);
 };

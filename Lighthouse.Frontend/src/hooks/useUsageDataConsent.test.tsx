@@ -1,9 +1,17 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { IUsageDataState } from "../models/UsageData/UsageData";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	type IUsageDataState,
+	UsageDataRouteKey,
+} from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IUsageDataService } from "../services/Api/UsageDataService";
+import {
+	type NoticedPage,
+	notice,
+	takeWhatWasNoticed,
+} from "../services/UsageData/usageDataBuffer";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { useUsageDataConsent } from "./useUsageDataConsent";
 
@@ -54,6 +62,23 @@ const declined: IUsageDataState = {
 afterEach(() => {
 	localStorage.clear();
 	vi.restoreAllMocks();
+});
+
+/**
+ * The shared test setup builds browser storage out of mock functions, so restoring a spy laid over
+ * one of them does not give reading its behaviour back - it leaves reading with no behaviour at all,
+ * and every test that runs afterwards sees an empty store. Putting reading back before each test
+ * stops the one test that makes storage throw from quietly silencing storage for the rest of the
+ * file.
+ */
+const readStorageAsSetUp = vi
+	.mocked(localStorage.getItem)
+	.getMockImplementation();
+
+beforeEach(() => {
+	if (readStorageAsSetUp !== undefined) {
+		vi.mocked(localStorage.getItem).mockImplementation(readStorageAsSetUp);
+	}
 });
 
 describe("useUsageDataConsent", () => {
@@ -316,5 +341,54 @@ describe("useUsageDataConsent", () => {
 		});
 
 		expect(localStorage.length).toBe(0);
+	});
+
+	// Asserting the buffer is empty once the withdrawal has come back would pass whichever way round
+	// the two are done, so what is asserted here is what was still waiting at the instant the request
+	// went out. Throwing it away afterwards leaves a window in which the flush clock can fire against
+	// a consent the person has already taken back; the server would turn that batch away, so
+	// everything would look correct while this browser carried on doing the one thing it was asked to
+	// stop doing.
+	it("throws away what it has not handed in before sending the withdrawal, not after", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		let stillWaitingWhenTheRequestWentOut: NoticedPage[] = [];
+		const revoke = vi.fn().mockImplementation(() => {
+			stillWaitingWhenTheRequestWentOut = takeWhatWasNoticed();
+			return Promise.resolve();
+		});
+		const { result } = renderConsent(granted, { revoke });
+
+		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
+		notice({
+			route: UsageDataRouteKey.TeamDetail_Metrics,
+			noticedAt: Date.now(),
+		});
+		await act(async () => {
+			await result.current.decide("declined");
+		});
+
+		expect(revoke).toHaveBeenCalledWith("this-browsers-token");
+		expect(stillWaitingWhenTheRequestWentOut).toEqual([]);
+	});
+
+	// The order above is also what makes a withdrawal that never arrives safe. This browser must not
+	// start sending again merely because the network let it down.
+	it("stays emptied when the withdrawal never reaches the server", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		const { result } = renderConsent(granted, {
+			revoke: vi.fn().mockRejectedValue(new Error("the network is gone")),
+		});
+
+		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
+		notice({
+			route: UsageDataRouteKey.PortfolioDetail_Features,
+			noticedAt: Date.now(),
+		});
+		await act(async () => {
+			await result.current.decide("declined");
+		});
+
+		expect(result.current.failedToRecord).toBe(true);
+		expect(takeWhatWasNoticed()).toEqual([]);
 	});
 });
