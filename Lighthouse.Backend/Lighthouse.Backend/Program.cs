@@ -1479,6 +1479,8 @@ namespace Lighthouse.Backend
             // test can observe this at all, since a test host runs no background work.
             builder.Services.AddSingleton<UsageDataForwardingService>();
             builder.Services.AddHostedService(services => services.GetRequiredService<UsageDataForwardingService>());
+            builder.Services.AddSingleton<UsageDataConsentPruningService>();
+            builder.Services.AddHostedService(services => services.GetRequiredService<UsageDataConsentPruningService>());
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);

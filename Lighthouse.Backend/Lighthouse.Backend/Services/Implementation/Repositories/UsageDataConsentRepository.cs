@@ -61,14 +61,29 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     cancellationToken);
         }
 
-        // Rows are removed on how long ago the browser was last seen, never on what it answered. A
-        // refusal that ages out is a browser that has stopped visiting, and deleting it is what lets
-        // a genuinely new browser be asked; deleting refusals sooner than grants would quietly turn
-        // "no" into "ask me again next month".
-        public Task<int> PruneStaleAsync(DateTime threshold, CancellationToken cancellationToken)
+        // Two conditions, not one, and the second is the whole point.
+        //
+        // A row is removed when the browser stopped visiting long enough ago - that is what lets a
+        // genuinely new browser be asked, and it is measured on when it was last seen rather than on
+        // what it answered, because deleting refusals sooner than grants would quietly turn "no"
+        // into "ask me again next month".
+        //
+        // But a browser that refused is still owed something: the dialog told it we would come back
+        // in a few months. Delete that row before the few months are up and the next visit is met by
+        // the question all over again, early, which is the broken promise the copy exists to avoid.
+        // So a row that has not yet reached its re-ask date is never pruned, whatever its age.
+        //
+        // In a normal configuration retention is comfortably longer than the re-ask window and the
+        // second condition never binds. It is written down anyway: if it were left implicit, tuning
+        // retention below the re-ask window would reintroduce the early ask with nothing failing to
+        // say so.
+        public Task<int> PruneStaleAsync(
+            DateTime lastSeenBefore, DateTime owedNothingSince, CancellationToken cancellationToken)
         {
             return context.UsageDataConsents
-                .Where(consent => consent.LastSeenAt < threshold)
+                .Where(consent => consent.LastSeenAt < lastSeenBefore
+                    && (consent.Decision == UsageDataDecision.Granted
+                        || (consent.AskedAt ?? consent.DecidedAt) < owedNothingSince))
                 .ExecuteDeleteAsync(cancellationToken);
         }
     }

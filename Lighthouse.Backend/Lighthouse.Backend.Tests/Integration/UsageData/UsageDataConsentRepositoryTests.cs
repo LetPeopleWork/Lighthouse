@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await Repository.AddAsync(Consent("ancient", UsageDataDecision.Granted, Now.AddDays(-100)), TestContext.CurrentContext.CancellationToken);
             await Repository.AddAsync(Consent("recent", UsageDataDecision.Granted, Now.AddDays(-1)), TestContext.CurrentContext.CancellationToken);
 
-            var removed = await Repository.PruneStaleAsync(Now.AddDays(-30), TestContext.CurrentContext.CancellationToken);
+            var removed = await PruneAsync(lastSeenBefore: Now.AddDays(-30));
 
             using (Assert.EnterMultipleScope())
             {
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             var edge = Now.AddDays(-30);
             await Repository.AddAsync(Consent("edge", UsageDataDecision.Granted, edge), TestContext.CurrentContext.CancellationToken);
 
-            var removed = await Repository.PruneStaleAsync(edge, TestContext.CurrentContext.CancellationToken);
+            var removed = await PruneAsync(lastSeenBefore: edge);
 
             using (Assert.EnterMultipleScope())
             {
@@ -162,6 +162,85 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                     "pruning and counting have to agree about the edge, or a row stops counting as "
                     + "live on one query and is still there for the other");
             }
+        }
+
+        // Slice 02 (#5835). The dialog tells a Community reader we will come back in a few months.
+        // Forgetting the row before then means the next visit is met by the question early, and by a
+        // route nobody would look down: the promise is kept by the cadence and broken by housekeeping.
+        [Test]
+        public async Task PruneStaleAsync_KeepsARefusalThatIsStillOwedItsPromisedQuestion()
+        {
+            var refused = Consent("owed", UsageDataDecision.Declined, Now.AddDays(-200));
+            refused.DecidedAt = Now.AddDays(-30);
+            await Repository.AddAsync(refused, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180), owedNothingSince: Now.AddDays(-90));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(removed, Is.Zero);
+                Assert.That(await Repository.FindByTokenHashAsync("owed", TestContext.CurrentContext.CancellationToken), Is.Not.Null,
+                    "old enough to forget, and still owed the question we said we would ask - so it stays");
+            }
+        }
+
+        [Test]
+        public async Task PruneStaleAsync_ForgetsARefusalOnceItsQuestionHasFallenDue()
+        {
+            var refused = Consent("settled", UsageDataDecision.Declined, Now.AddDays(-200));
+            refused.DecidedAt = Now.AddDays(-200);
+            await Repository.AddAsync(refused, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180), owedNothingSince: Now.AddDays(-90));
+
+            Assert.That(removed, Is.EqualTo(1),
+                "a browser that refused, was owed one more question and never came back for it is a "
+                + "browser that has gone. Keeping the row for ever is how this table grows without bound");
+        }
+
+        // The case the column exists for. This browser refused long ago but was asked again recently
+        // and closed the dialog, so its decision is ancient while the promise it is owed is fresh -
+        // and a prune reading the decision alone would forget it and ask early on the next visit.
+        [Test]
+        public async Task PruneStaleAsync_CountsFromTheLastQuestionRatherThanTheLastAnswer()
+        {
+            var refused = Consent("asked-since", UsageDataDecision.Declined, Now.AddDays(-200));
+            refused.DecidedAt = Now.AddDays(-400);
+            refused.AskedAt = Now.AddDays(-10);
+            await Repository.AddAsync(refused, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180), owedNothingSince: Now.AddDays(-90));
+
+            Assert.That(removed, Is.Zero);
+        }
+
+        [Test]
+        public async Task PruneStaleAsync_ForgetsALongGoneBrowserThatAgreed_WhateverItIsOwed()
+        {
+            var agreed = Consent("gone", UsageDataDecision.Granted, Now.AddDays(-200));
+            agreed.DecidedAt = Now.AddDays(-1);
+            await Repository.AddAsync(agreed, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180), owedNothingSince: Now.AddDays(-90));
+
+            Assert.That(removed, Is.EqualTo(1),
+                "nobody is owed a question they already answered yes to, so age is the only thing "
+                + "keeping this row - and it has run out");
+        }
+
+        private Task<int> PruneAsync(DateTime lastSeenBefore, DateTime? owedNothingSince = null)
+        {
+            // Defaulted so far ahead that nothing is still owed a question, which is what lets a
+            // test about ageing be only about ageing. A test that means to exercise the promise
+            // passes its own instant.
+            return Repository.PruneStaleAsync(
+                lastSeenBefore,
+                owedNothingSince ?? Now.AddYears(10),
+                TestContext.CurrentContext.CancellationToken);
         }
 
         private static UsageDataConsent Consent(string tokenHash, UsageDataDecision decision, DateTime lastSeenAt)

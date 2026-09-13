@@ -45,6 +45,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// response, for the reason withdrawal does not either.</returns>
         Task<int> TryMarkAskedAsync(string tokenHash, DateTime askedAt, CancellationToken cancellationToken);
 
-        Task<int> PruneStaleAsync(DateTime threshold, CancellationToken cancellationToken);
+        /// <summary>
+        /// Forgets browsers that stopped visiting, so the table does not grow by one row for every
+        /// browser ever shown the dialog.
+        /// </summary>
+        /// <param name="lastSeenBefore">How long ago a browser has to have been seen to count as gone.</param>
+        /// <param name="owedNothingSince">The instant a refusal has to predate to have had its
+        /// re-ask fall due. A row still owed its promised question is kept whatever its age -
+        /// removing it means the question arrives early on the next visit, which is the promise the
+        /// dialog's own copy makes and this would break.</param>
+        Task<int> PruneStaleAsync(
+            DateTime lastSeenBefore, DateTime owedNothingSince, CancellationToken cancellationToken);
     }
 }
