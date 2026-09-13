@@ -111,7 +111,7 @@ sending after a revoke.
 The gate is **fail-closed** and never throws. A database failure, an absent token, an unknown token,
 a declined or revoked row, a stale row, the master switch off, a cancellation — every one of them
 resolves to "do not forward". `UsageDataSuppressionReason` is a closed enum:
-`MasterSwitchOff`, `NoLiveConsent`, `RateLimited`, `BudgetExhausted`, `EvaluationFailed`.
+`DisabledByAdministrator`, `NoLiveConsent`, `RateLimited`, `BudgetExhausted`, `EvaluationFailed`.
 
 **The response is `204 No Content` in every case, permitted or not.** The endpoint must not tell a
 caller whether the token it presented is real; that is the same non-oracle rule the shipped
@@ -297,7 +297,7 @@ one whose owner already withdrew.
 
 **So suppression is counted, not logged.** Each `UsageDataSuppressionReason` has a counter. A single
 line per reason per day carries the count, at `Debug` for policy outcomes (`NoLiveConsent`,
-`MasterSwitchOff`) and `Warning` for the two that mean something is wrong (`EvaluationFailed`,
+`DisabledByAdministrator`) and `Warning` for the two that mean something is wrong (`EvaluationFailed`,
 `BudgetExhausted`). `EvaluationFailed` is the one an operator must be able to find, because it is the
 only reason that means the feature is broken rather than switched off.
 

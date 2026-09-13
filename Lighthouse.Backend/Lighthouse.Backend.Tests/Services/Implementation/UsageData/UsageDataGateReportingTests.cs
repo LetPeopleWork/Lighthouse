@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             var permit = await Ask(gate);
             await TomorrowArrivesAndSomethingAsksAgain(gate);
 
-            var reported = TheLineAbout(UsageDataSuppressionReason.MasterSwitchOff);
+            var reported = TheLineAbout(UsageDataSuppressionReason.DisabledByAdministrator);
 
             using (Assert.EnterMultipleScope())
             {

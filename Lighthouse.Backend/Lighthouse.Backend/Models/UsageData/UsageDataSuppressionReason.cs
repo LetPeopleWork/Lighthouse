@@ -6,8 +6,13 @@ namespace Lighthouse.Backend.Models.UsageData
     /// </summary>
     public enum UsageDataSuppressionReason
     {
-        /// <summary>The operator switched the whole feature off.</summary>
-        MasterSwitchOff,
+        /// <summary>
+        /// An administrator has stopped usage data for this whole instance. Named for who did it
+        /// rather than for the value in the row: the setting is a veto, so it is switched <em>on</em>
+        /// to produce this, and a reader of the day's tally needs to know a policy was applied
+        /// rather than that something was left off.
+        /// </summary>
+        DisabledByAdministrator,
 
         /// <summary>
         /// Nobody behind this batch is agreeing right now - no token, an unknown one, a refusal, a

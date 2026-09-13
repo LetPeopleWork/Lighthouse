@@ -194,7 +194,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
             if (!TheAdministratorAllowsThis(scope))
             {
-                Suppress(UsageDataSuppressionReason.MasterSwitchOff);
+                Suppress(UsageDataSuppressionReason.DisabledByAdministrator);
                 return null;
             }
 

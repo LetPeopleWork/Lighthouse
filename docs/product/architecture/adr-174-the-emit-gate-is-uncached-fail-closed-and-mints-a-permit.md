@@ -55,7 +55,7 @@ requires and that nothing outside the gate can construct.**
    ```
 
    `UsageDataEmitDecision` is either `Suppressed(UsageDataSuppressionReason)` or
-   `Permitted(UsageDataEmitPermit)`. Reasons are a closed enum: `MasterSwitchOff`, `NoLiveConsent`,
+   `Permitted(UsageDataEmitPermit)`. Reasons are a closed enum: `DisabledByAdministrator`, `NoLiveConsent`,
    `NoInstanceIdentifier`, `EvaluationFailed`.
 
    Evaluation reads the optional feature and asks `AnyLiveGrantAsync`. Both are indexed reads. At one
@@ -295,7 +295,7 @@ altered).
 | The collector host is named once | ArchUnitNET: only the publisher adapter may reference the host constant |
 | The gate never throws | NUnit: a repository that throws on every call yields `Suppressed(EvaluationFailed)`, not an exception |
 | A revoke stops the very next emit | NUnit: revoke, then evaluate, assert `Suppressed(NoLiveConsent)` - no restart, no cycle boundary |
-| The master switch stops an already-consenting browser | NUnit: live grant present, feature off, assert `Suppressed(MasterSwitchOff)` |
+| The administrator's veto stops an already-consenting browser | NUnit: live grant present, veto engaged, assert `Suppressed(DisabledByAdministrator)` |
 | Zero consent produces zero requests **to the collector host** | NUnit + `DelegatingHandler` on the named client, failing the test on any request across a full emit cycle with no consent. **This is narrower than the outcome's wording — see the honesty note below** |
 | No type may construct its own HTTP client | ArchUnitNET: `new HttpClient(` and `new GitHubClient(` are forbidden outside an explicit whitelist, so the assertion above cannot be bypassed by a future call site |
 | A cache, if added, can only suppress | NUnit (slice 04 only): a stale entry saying "permitted" must still be re-validated before a permit is minted |
