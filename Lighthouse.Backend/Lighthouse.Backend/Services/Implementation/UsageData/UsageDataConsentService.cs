@@ -100,6 +100,16 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             await repository.TryRevokeAsync(UsageDataConsentToken.HashOf(token), now, cancellationToken);
         }
 
+        public async Task RecordAskedAsync(string token, CancellationToken cancellationToken)
+        {
+            var now = timeProvider.GetUtcNow().UtcDateTime;
+
+            // The affected-row count is dropped here for the reason it is dropped in the withdrawal
+            // above: reporting whether anything was written would tell a caller whether the token it
+            // held is one this instance ever minted.
+            await repository.TryMarkAskedAsync(UsageDataConsentToken.HashOf(token), now, cancellationToken);
+        }
+
         private TimeSpan LivenessWindow => TimeSpan.FromDays(configuration.CurrentValue.ConsentLivenessWindowDays);
 
         /// <summary>

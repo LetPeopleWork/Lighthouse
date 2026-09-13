@@ -48,6 +48,19 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     cancellationToken);
         }
 
+        // One predicate again, for the reason the two writes above give. There is no condition on
+        // what the row answered: a browser only reports this when it was actually shown the dialog,
+        // and a repository that second-guessed that would have to re-derive the licence rule that
+        // decided it - the same rule, in a second place, free to drift.
+        public Task<int> TryMarkAskedAsync(string tokenHash, DateTime askedAt, CancellationToken cancellationToken)
+        {
+            return context.UsageDataConsents
+                .Where(consent => consent.TokenHash == tokenHash)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(consent => consent.AskedAt, askedAt),
+                    cancellationToken);
+        }
+
         // Rows are removed on how long ago the browser was last seen, never on what it answered. A
         // refusal that ages out is a browser that has stopped visiting, and deleting it is what lets
         // a genuinely new browser be asked; deleting refusals sooner than grants would quietly turn

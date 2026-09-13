@@ -35,6 +35,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// </summary>
         Task<int> TryRevokeAsync(string tokenHash, DateTime revokedAt, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Records that this browser was shown the dialog without having asked for it, so the next
+        /// window is measured from the question rather than from an answer that never changed.
+        /// Without it a browser that closes the dialog is due again on the very next request, and
+        /// every request after that.
+        /// </summary>
+        /// <returns>How many rows that affected. Callers must not turn the count into a different
+        /// response, for the reason withdrawal does not either.</returns>
+        Task<int> TryMarkAskedAsync(string tokenHash, DateTime askedAt, CancellationToken cancellationToken);
+
         Task<int> PruneStaleAsync(DateTime threshold, CancellationToken cancellationToken);
     }
 }

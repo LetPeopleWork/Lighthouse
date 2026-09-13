@@ -97,6 +97,33 @@ namespace Lighthouse.Backend.API
         }
 
         /// <summary>
+        /// A browser reporting that it was shown the dialog without having asked to be.
+        ///
+        /// It exists so that a browser which closes the dialog is left alone. Its stored answer did
+        /// not change, so without this the server keeps saying it is due and the question arrives
+        /// once a session for ever - the nag this was built to prevent, delivered by the mechanism
+        /// meant to prevent it.
+        ///
+        /// A browser holding no token gets the same empty answer and nothing is written. There is no
+        /// row to write against, and minting one would record a decision nobody made; that browser
+        /// remembers being asked in its own storage instead.
+        /// </summary>
+        [HttpPost("asked")]
+        [EnableRateLimiting(RateLimitingConfiguration.UsageDataConsentPolicy)]
+        public async Task<IActionResult> RecordAsked(
+            [FromHeader(Name = ConsentTokenHeader)] string? token, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                await consentService.RecordAskedAsync(token, cancellationToken);
+            }
+
+            // The same answer for a token that resolved, one that did not, and none at all - the
+            // reason withdrawal answers the way it does.
+            return NoContent();
+        }
+
+        /// <summary>
         /// What a browser hands in. The answer is the same whether the batch will be used or thrown
         /// away, so a caller cannot hold up a token and be told whether this instance minted it -
         /// the same reason withdrawal answers the way it does. A body that cannot be read is the one

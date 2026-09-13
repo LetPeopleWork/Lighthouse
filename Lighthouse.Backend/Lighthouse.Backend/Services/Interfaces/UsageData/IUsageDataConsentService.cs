@@ -21,5 +21,12 @@ namespace Lighthouse.Backend.Services.Interfaces.UsageData
         /// the caller must answer a browser identically whether or not anything was withdrawn.
         /// </summary>
         Task RevokeAsync(string token, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Notes that the browser holding <paramref name="token"/> was shown the dialog unprompted.
+        /// A browser holding no token has no row to write this against and remembers it itself.
+        /// Reports nothing, for the reason withdrawal does not.
+        /// </summary>
+        Task RecordAskedAsync(string token, CancellationToken cancellationToken);
     }
 }

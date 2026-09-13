@@ -136,7 +136,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): the asked endpoint does not exist yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task PostAsked_WithTheBrowsersOwnToken_StopsItBeingDueStraightAway()
         {
             await InstalledDaysAgo(14);
@@ -156,7 +155,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): the asked endpoint does not exist yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task PostAsked_WithNoTokenAtAll_IsAcceptedAndRecordsNothing()
         {
             await InstalledDaysAgo(14);
@@ -177,7 +175,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): the asked endpoint does not exist yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task PostAsked_WithATokenThisInstanceNeverMinted_AnswersExactlyAsARealOneDoes()
         {
             await InstalledDaysAgo(14);
@@ -199,7 +196,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): the asked endpoint does not exist yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task PostAsked_NeedsNoAuthentication_LikeEverySiblingItStandsBeside()
         {
             await InstalledDaysAgo(14);
