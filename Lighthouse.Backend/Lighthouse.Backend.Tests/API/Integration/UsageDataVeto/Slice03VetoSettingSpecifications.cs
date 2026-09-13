@@ -145,6 +145,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(description, Does.Contain("sends no usage data").IgnoreCase,
+                    "the description never says what switching it on actually does, so an "
+                    + "administrator is left inferring it from the name");
+                // "nobody is asked about it", not "nobody is asked" - the shorter phrase is also in
+                // the promise at the end that nobody is asked again, so it held while this half of
+                // the sentence was missing entirely.
+                Assert.That(description, Does.Contain("nobody is asked about it").IgnoreCase,
+                    "it stops the sending and the asking, and an administrator who only learns "
+                    + "about the first will still see the dialog appear and think it failed");
                 Assert.That(description, Does.Contain("suspended").IgnoreCase,
                     "an administrator reading this cannot tell whether flipping it throws away what "
                     + "everybody already answered, which is the fear that stops them using it at all");

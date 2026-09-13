@@ -12,8 +12,8 @@
   "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
   "mutate": [
     "src/services/UsageData/usageDataAdminVetoCopy.ts",
-    "src/components/UsageData/UsageDataIndicator.tsx",
-    "src/components/UsageData/UsageDataDialog.tsx",
+    "src/components/UsageData/UsageDataIndicator.tsx:36-60",
+    "src/components/UsageData/UsageDataDialog.tsx:118-152",
     "src/hooks/useUsageDataConsent.tsx:110-135"
   ],
   "thresholds": { "high": 90, "low": 80, "break": 0 },

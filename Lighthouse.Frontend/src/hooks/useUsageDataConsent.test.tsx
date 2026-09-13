@@ -69,6 +69,18 @@ const declined: IUsageDataState = {
 	administratorDisabled: false,
 };
 
+/**
+ * Somebody who agreed, on an instance whose administrator has since stopped usage data for
+ * everybody. The server reports both halves: this browser said yes, and nothing is being sent.
+ */
+const grantedButStoppedByAnAdministrator: IUsageDataState = {
+	sending: false,
+	decision: "Granted",
+	mayAsk: false,
+	reAskAfterDays: 90,
+	administratorDisabled: true,
+};
+
 afterEach(() => {
 	localStorage.clear();
 	vi.restoreAllMocks();
@@ -92,6 +104,44 @@ beforeEach(() => {
 });
 
 describe("useUsageDataConsent", () => {
+	// The seam between a server that knows an administrator stopped this and a footer that can say
+	// so. Both ends were tested and the wire between them was not: the dialog takes the flag as a
+	// prop and the endpoint returns the field, so killing this branch left every one of those green
+	// while the footer quietly went back to saying nothing about who stopped it.
+	it("says an administrator stopped it, rather than showing the silence of a refusal", async () => {
+		const { result } = renderConsent(grantedButStoppedByAnAdministrator);
+
+		await waitFor(() =>
+			expect(result.current.indicatorState).toBe("disabled-by-administrator"),
+		);
+	});
+
+	// Read before this browser's own answer, deliberately. Somebody who agreed and was then
+	// overruled is not sending either, so an implementation that consulted the decision first would
+	// show them exactly what a refusal shows.
+	it("prefers the administrator's doing over this browser's own answer", async () => {
+		const { result } = renderConsent(grantedButStoppedByAnAdministrator);
+
+		await waitFor(() => expect(result.current.decision).toBe("Granted"));
+		expect(result.current.indicatorState).not.toBe("not-sending");
+		expect(result.current.indicatorState).not.toBe("sending");
+	});
+
+	// The dialog needs the plain fact as well as the rendering state, because it has to hold its two
+	// answers and say why.
+	it("hands the dialog the fact, not only the footer a label", async () => {
+		const { result } = renderConsent(grantedButStoppedByAnAdministrator);
+
+		await waitFor(() => expect(result.current.administratorDisabled).toBe(true));
+	});
+
+	it("says nobody stopped anything when nobody has", async () => {
+		const { result } = renderConsent(granted);
+
+		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
+		expect(result.current.administratorDisabled).toBe(false);
+	});
+
 	// The defect this guards against shipped once and every component test passed over it: saying no
 	// to something already agreed to was recorded as a brand-new refusal, which left the original
 	// grant untouched and still counting. The instance kept sending for the rest of the liveness
