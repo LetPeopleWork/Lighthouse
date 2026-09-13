@@ -105,11 +105,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         /// <summary>
         /// A pin applied too late is silently inert, which reads as covered and is worse than no pin.
+        /// Compared by rules rather than by id: Windows names this zone "W. Europe Standard Time",
+        /// and only Linux and macOS answer with the IANA name. A host left on UTC still fails.
         /// </summary>
         [Test]
         public void TestHost_RunsUnderThePinnedInstanceTimeZone()
         {
-            Assert.That(TimeZoneInfo.Local.Id, Is.EqualTo(InstanceTimeZoneId));
+            Assert.That(
+                TimeZoneInfo.Local.HasSameRules(TimeZoneInfo.FindSystemTimeZoneById(InstanceTimeZoneId)),
+                Is.True,
+                $"Test host is on '{TimeZoneInfo.Local.Id}', which does not keep the same time as {InstanceTimeZoneId}.");
         }
 
         [Test]

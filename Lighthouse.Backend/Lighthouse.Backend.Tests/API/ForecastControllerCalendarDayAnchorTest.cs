@@ -122,11 +122,19 @@ namespace Lighthouse.Backend.Tests.API
         /// Proves the lighthouse.runsettings pin actually took effect on this test host. .NET caches
         /// TimeZoneInfo.Local on first use, so a pin applied too late is silently inert - which reads
         /// as covered and is worse than no pin at all. Never ignored.
+        ///
+        /// Compared by rules rather than by id because the id is not the same word on every host:
+        /// Windows calls this zone "W. Europe Standard Time" and only Linux and macOS answer with the
+        /// IANA name. The rules are what the tests below actually depend on, and a host left on UTC -
+        /// the offset this whole fixture exists to stop us being blind to - still fails here.
         /// </summary>
         [Test]
         public void TestHost_RunsUnderThePinnedInstanceTimeZone()
         {
-            Assert.That(TimeZoneInfo.Local.Id, Is.EqualTo(InstanceTimeZoneId));
+            Assert.That(
+                TimeZoneInfo.Local.HasSameRules(TimeZoneInfo.FindSystemTimeZoneById(InstanceTimeZoneId)),
+                Is.True,
+                $"Test host is on '{TimeZoneInfo.Local.Id}', which does not keep the same time as {InstanceTimeZoneId}.");
         }
 
         [Test]
