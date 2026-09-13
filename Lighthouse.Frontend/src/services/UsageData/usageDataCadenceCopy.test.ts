@@ -10,6 +10,13 @@ describe.skip("cadenceSentence", () => {
 		expect(cadenceSentence(true)).toMatch(/ask you again/i);
 	});
 
+	// "We may ask you again at some point" would satisfy the line above and tell a reader nothing
+	// they can act on. The promise is only worth making if it says roughly when, because roughly
+	// when is what the reader is weighing against the nuisance of being asked at all.
+	it("says roughly when the question will come back", () => {
+		expect(cadenceSentence(true)).toMatch(/month/i);
+	});
+
 	it("tells a reader who will not be asked again that this is the last time", () => {
 		expect(cadenceSentence(false)).toMatch(/not ask you again/i);
 	});

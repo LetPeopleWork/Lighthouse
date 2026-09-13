@@ -59,6 +59,32 @@ describe.skip("evaluateAskEligibility", () => {
 		expect(decision.shouldAsk).toBe(true);
 	});
 
+	// The two cases above, side by side, because the difference between them is the sharpest
+	// consequence of this design and the easiest thing for a later change to erase by accident.
+	//
+	// Closing the dialog suppresses it harder than saying no does. Somebody who answers "no" is
+	// asked once more in a few months, because that is what the dialog promised them; somebody who
+	// closes it is never asked again, because nothing was promised and nothing was recorded on the
+	// server that could bring the question back. Two browsers, identical server answer, opposite
+	// outcomes - the weaker signal producing the stronger silence.
+	//
+	// That is the deliberate reading of AC-05.2 taken on 2026-09-13, not an oversight. It is
+	// asserted here so that anyone who finds it surprising finds it written down rather than
+	// inferring it from a bug report.
+	it("suppresses a dismissal harder than a refusal, deliberately", () => {
+		const wasAsked = "2026-06-01T09:00:00.000Z";
+
+		const dismissed = evaluateAskEligibility(
+			input({ decision: null, lastAskedAt: wasAsked }),
+		);
+		const refused = evaluateAskEligibility(
+			input({ decision: "Declined", lastAskedAt: wasAsked }),
+		);
+
+		expect(dismissed.shouldAsk).toBe(false);
+		expect(refused.shouldAsk).toBe(true);
+	});
+
 	// AC-05.6. Consent collected beside an unrelated request is not freely given, so this outranks
 	// being due: a browser the server says is due still waits for the next session.
 	it("yields to a prompt that already holds the session", () => {

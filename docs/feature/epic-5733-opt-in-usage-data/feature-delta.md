@@ -2775,16 +2775,31 @@ with 0 warnings and 0 errors.
 
 | File | Scenarios | Covers |
 |---|---|---|
-| `services/UsageData/usageDataAskEligibility.test.ts` | 6 | AC-05.1/2/4/5/6/7/8 |
+| `services/UsageData/usageDataAskEligibility.test.ts` | 7 | AC-05.2 and AC-05.6 in full; AC-05.1/4/5/7/8 only as the *browser's* half — that it obeys `mayAsk` rather than re-deriving it. The criteria themselves are met on the server |
 | `services/UsageData/usageDataAskMarker.test.ts` | 5 | AC-05.2, D2 |
 | `services/UsageData/promptSession.test.ts` | 5 | AC-05.6, D9 |
-| `services/UsageData/usageDataCadenceCopy.test.ts` | 5 | AC-02.9, AC-05.5 |
-| `components/UsageData/UsageDataAsk.test.tsx` | 10 | US-05, end to end through the real Footer |
+| `services/UsageData/usageDataCadenceCopy.test.ts` | 6 | AC-02.9, and the *sentence* half of AC-05.5 |
+| `components/UsageData/UsageDataAsk.test.tsx` | 10 | US-05 through the real `Footer`, with the API service doubled |
 | `components/SurveyNudge/SurveyNudge.promptSlot.test.tsx` | 4 | AC-05.6 |
 
-`UsageDataAsk.test.tsx` mounts the real `Footer` beside the component under test. A test asserting
-that `openDialog` had been called would pass against a provider whose dialog nothing renders — the
-wiring defect this slice is most able to ship, and the one an assertion on a mock cannot see.
+**Where each AC is actually met**, since the split means no one file holds a whole criterion:
+
+| AC | Met at |
+|---|---|
+| AC-05.1 install age | Server. `UsageDataConsentServiceTests` (both sides of the threshold, and an install date that could not be established) |
+| AC-05.2 once per browser | Browser. The marker, plus the eligibility rule that reads it |
+| AC-05.3 closing records nothing | Browser. `UsageDataAsk.test.tsx`, as narrowed below |
+| AC-05.4 Premium refusal is final | Server. `UsageDataConsentServiceTests`, five years after the refusal — the tier is invisible to an endpoint answering at one instant |
+| AC-05.5 Community re-ask, and the dialog said so | Split. The arithmetic on the server; the sentence in `usageDataCadenceCopy`; that they are the same boolean, in `UsageDataAsk.test.tsx` |
+| AC-05.6 never beside the survey nudge | Browser. Three files, from both sides of the slot |
+| AC-05.7 a yes is never re-asked | Server |
+| AC-05.8 the administrator's switch | Server, and asserted again with no switch row at all |
+
+`UsageDataAsk.test.tsx` mounts the real `Footer` beside the component under test — component-level
+integration with the API service doubled, not end to end; the end-to-end proof is the E2E skeleton
+owed below. Mounting the real Footer still matters: a test asserting that `openDialog` had been
+called would pass against a provider whose dialog nothing renders, which is the wiring defect this
+slice is most able to ship and the one an assertion on a mock cannot see.
 
 ### Backend
 
@@ -2858,6 +2873,20 @@ The consequence worth watching, because it moves the number the Epic rests on: e
 closes the dialog once is permanently out of the consenting population, so uptake measured after 60
 days is a floor rather than an estimate. If uptake lands just under the 20% the learning hypothesis
 disproves at, this decision is a candidate explanation before the hypothesis is.
+
+**And it leaves an asymmetry that is worth stating out loud, because it is the opposite of what a
+reader would guess.** Closing the dialog now suppresses it *harder* than declining does. Somebody
+who presses "No, thank you" on Community is asked once more in about three months, because that is
+what the dialog promised them. Somebody who closes the same dialog without answering is never asked
+again — nothing was promised, and nothing reached the server that could bring the question back. Two
+browsers, the same answer from the server, opposite outcomes, with the weaker signal producing the
+stronger silence.
+
+This falls straight out of DT-14 and is not an oversight, but nobody chose it on purpose either: it
+was a consequence of the durable marker rather than a decision in its own right. It is asserted
+directly in `usageDataAskEligibility.test.ts` ("suppresses a dismissal harder than a refusal,
+deliberately") so that a later change cannot erase it silently, and it is flagged here so the
+maintainer can overturn it cheaply if it reads wrong — the fix is one branch in one pure function.
 
 ---
 
