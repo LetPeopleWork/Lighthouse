@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -131,6 +131,100 @@ describe("UsageDataAsk", () => {
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 		);
 		expect(service.recordDecision).not.toHaveBeenCalled();
+	});
+
+	// The guard against asking twice is a ref, and nothing exercised it: the effect only re-runs
+	// when its inputs change, and answering is exactly what changes them. Without it the dialog
+	// somebody has just answered reopens on top of their own answer, and the ask is recorded a
+	// second time - moving the window they are waiting out.
+	it("does not reopen over the answer somebody has just given", async () => {
+		const service = usageDataService({ mayAsk: true });
+		service.getState
+			.mockResolvedValueOnce({
+				sending: false,
+				decision: null,
+				mayAsk: true,
+				reAskAfterDays: 90,
+			})
+			.mockResolvedValue({
+				sending: true,
+				decision: "Granted",
+				mayAsk: false,
+				reAskAfterDays: 90,
+			});
+
+		renderAsk(service);
+
+		const dialog = await screen.findByRole("dialog");
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: /^yes/i }),
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(service.acknowledgeAsked).toHaveBeenCalledTimes(1);
+	});
+
+	// What the ref is actually for, and the only case where it decides anything.
+	//
+	// Normally the marker stops a second ask: it is written as the dialog opens, so the next time
+	// eligibility is evaluated the browser has been asked a moment ago. A browser that refuses local
+	// storage - a private window - writes nothing, so the marker never stops it, and every change to
+	// the server's answer would reopen the dialog over whatever the person was doing.
+	it("asks once even when the browser will not remember being asked", async () => {
+		const original = Object.getOwnPropertyDescriptor(
+			window,
+			"localStorage",
+		) as PropertyDescriptor;
+
+		Object.defineProperty(window, "localStorage", {
+			configurable: true,
+			get: () => {
+				throw new Error("denied");
+			},
+		});
+
+		try {
+			const service = usageDataService({ mayAsk: true });
+
+			// Declining is what re-runs the decision: it refreshes the state, so `decision` changes
+			// under the effect. The server still says this browser is due, because on Community a
+			// refusal comes back - and with nothing able to write the marker, the only thing left
+			// standing between the person and the dialog they just dismissed is the ref.
+			service.getState
+				.mockResolvedValueOnce({
+					sending: false,
+					decision: null,
+					mayAsk: true,
+					reAskAfterDays: 90,
+				})
+				.mockResolvedValue({
+					sending: false,
+					decision: "Declined",
+					mayAsk: true,
+					reAskAfterDays: 90,
+				});
+
+			renderAsk(service);
+
+			const dialog = await screen.findByRole("dialog");
+			await userEvent.click(
+				within(dialog).getByRole("button", { name: /^no/i }),
+			);
+
+			// Two fetches: the one on mount and the one the answer triggers. Waiting for the second
+			// is what guarantees the effect has seen the new state and made its decision - asserting
+			// before that would pass against a component about to reopen the dialog a tick later.
+			await waitFor(() => expect(service.getState).toHaveBeenCalledTimes(2));
+			await waitFor(() =>
+				expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+			);
+
+			expect(service.acknowledgeAsked).toHaveBeenCalledTimes(1);
+		} finally {
+			Object.defineProperty(window, "localStorage", original);
+		}
 	});
 
 	it("does not ask twice in one session", async () => {

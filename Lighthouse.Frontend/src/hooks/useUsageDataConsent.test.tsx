@@ -235,6 +235,12 @@ describe("useUsageDataConsent", () => {
 			});
 
 			expect(result.current.indicatorState).toBe("unknown");
+
+			// And so does the decision to ask. A request that failed says nothing about whether an
+			// administrator has switched the asking off or how old this instance is, so carrying the
+			// last "yes" forward would put a consent dialog in front of people on an instance where
+			// it had been turned off - the one place a stale answer does real harm.
+			expect(result.current.mayAsk).toBe(false);
 		} finally {
 			vi.useRealTimers();
 		}

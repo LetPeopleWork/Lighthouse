@@ -70,28 +70,23 @@ export const evaluateAskEligibility = (
  * population the whole feature exists to measure.
  */
 const askedLongEnoughAgo = (input: AskEligibilityInput): boolean => {
-	if (input.lastAskedAt === null) {
-		return true;
-	}
-
-	const askedAt = Date.parse(input.lastAskedAt);
-
-	if (Number.isNaN(askedAt)) {
-		// Something wrote a value nothing can read. Treating it as "never asked" would put the
-		// dialog back in front of somebody on every visit, so it counts as a recent ask instead -
-		// the failure that costs a browser one cycle rather than every one.
-		return false;
-	}
-
+	const askedAt = Date.parse(input.lastAskedAt ?? "");
 	const now = (input.now ?? new Date()).getTime();
 
-	if (askedAt > now) {
-		// Stamped by a clock that was running ahead - a restored snapshot, a flat CMOS battery, a
-		// machine that booted before the network settled. Left to the arithmetic below, a marker a
-		// year in the future silences the question for a year, and nothing would ever rewrite it,
-		// because the only thing that writes it is an ask that can no longer happen. Counting it as
-		// a fresh ask costs one cycle and lets the next one through.
-		return false;
+	// Three ways to have no usable record of when this browser was last asked: never asked at all,
+	// a value nothing can read, and one stamped ahead of now by a clock that was wrong - a restored
+	// snapshot, a flat battery, a boot before the network settled. They were separate branches and
+	// are one, because they mean the same thing and want the same answer.
+	//
+	// That answer is to ask. The tempting reading for the latter two is "recently, so leave it
+	// alone", and it is a trap: nothing rewrites the marker except an ask, so a browser silenced on
+	// an unusable value stays silenced for as long as the value survives - for ever, in the
+	// unreadable case. Asking once re-stamps the marker from a clock that works.
+	//
+	// Written as a branch rather than left to the arithmetic below, which would reach the same
+	// silence by accident: NaN and a negative elapsed time are each never greater than the window.
+	if (Number.isNaN(askedAt) || askedAt > now) {
+		return true;
 	}
 
 	return now - askedAt >= input.reAskAfterDays * MILLISECONDS_PER_DAY;

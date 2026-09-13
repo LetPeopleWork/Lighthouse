@@ -71,27 +71,27 @@ describe("evaluateAskEligibility", () => {
 		expect(decision.shouldAsk).toBe(true);
 	});
 
-	// A browser cannot be silenced for ever by a value nothing can read. Treating an unparseable
-	// marker as "never asked" would be worse - the dialog would return on every single visit - so
-	// it counts as a recent ask, costing one cycle rather than all of them.
-	it("treats a marker it cannot read as a recent ask", () => {
+	// Nothing rewrites the marker except an ask, so a browser silenced on a value it cannot use is
+	// silenced for as long as that value survives - for ever, when nothing can read it. Asking once
+	// re-stamps it from a working clock and returns the browser to the ordinary cadence.
+	//
+	// Both of these once fell through to the arithmetic and reached "leave it alone" by accident:
+	// NaN and a negative elapsed time are each never greater than the window. Mutation testing found
+	// it, by deleting both guards and changing no answer.
+	it("asks a browser whose marker cannot be read, rather than silencing it for ever", () => {
 		const decision = evaluateAskEligibility(
 			input({ lastAskedAt: "not a date" }),
 		);
 
-		expect(decision.shouldAsk).toBe(false);
+		expect(decision.shouldAsk).toBe(true);
 	});
 
-	// Written by a clock running ahead - a restored snapshot, a flat battery, a boot before the
-	// network settled. Subtracting plainly would make a marker a year in the future silence the
-	// question for a year, and nothing would ever rewrite it, because the only writer is an ask that
-	// can no longer happen. One cycle lost instead of a year.
-	it("treats a marker dated in the future as a recent ask rather than a very old one", () => {
+	it("asks a browser whose marker is dated ahead of now, rather than waiting for the clock", () => {
 		const decision = evaluateAskEligibility(
 			input({ lastAskedAt: daysBefore(-365) }),
 		);
 
-		expect(decision.shouldAsk).toBe(false);
+		expect(decision.shouldAsk).toBe(true);
 	});
 
 	// AC-05.5: a browser that answered is asked again once the server says its window has run out,
