@@ -451,21 +451,31 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
             using var accepted = await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             var received = await EverythingTheCollectorReceived();
+            var aboutTheCaller = EverythingSaidAboutTheCaller();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(accepted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
                 Assert.That(received, Is.Not.Empty,
                     "nothing was forwarded, so every claim about what it carried is vacuous");
+                Assert.That(aboutTheCaller, Is.Not.Empty,
+                    "nothing forwarded was a message this could read the two instructions out of, "
+                    + "so the two claims about them would hold for a message that gave neither");
                 Assert.That(received, Does.Contain("unreleased"),
                     "a version built from somebody's working tree is close to unique, and the people "
                     + "running one are the people most likely to be recognisable from it. A test "
                     + "host is exactly such a build");
-                Assert.That(received, Does.Contain("$ip"),
+                Assert.That(
+                    aboutTheCaller.Select(message => message.Address), Is.All.EqualTo(JsonValueKind.Null),
                     "the message carries its own instruction to discard the address, so the promise "
-                    + "does not depend on a setting in somebody else's console staying where it was");
-                Assert.That(received, Does.Contain("geoip").IgnoreCase,
-                    "location lookup is switched off in the message itself for the same reason");
+                    + "does not depend on a setting in somebody else's console staying where it was. "
+                    + "What it is set to is the whole of the instruction: a message handing over a "
+                    + "real address writes the very same field, under the very same name");
+                Assert.That(
+                    aboutTheCaller.Select(message => message.LocationLookup), Is.All.EqualTo(JsonValueKind.True),
+                    "location lookup is switched off in the message itself for the same reason, and "
+                    + "reads the same way round - asked for rather than refused, the field is still "
+                    + "there and still called this");
             }
         }
 
@@ -505,10 +515,13 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 Assert.That(accepted, Is.EqualTo(flushes),
                     "the flushes have to have reached the endpoint for their absence from the log "
                     + "to say anything about the log");
-                Assert.That(aboutUsageData, Has.Count.LessThan(flushes),
+                Assert.That(aboutUsageData, Has.Count.LessThanOrEqualTo(1),
                     "one line per suppressed flush turns the defence into the flood, and whoever "
-                    + "can trigger it is whoever already withdrew. Counted across every level, "
-                    + "because demoting the line to Debug does not stop it filling a disk");
+                    + "can trigger it is whoever already withdrew. The bound is the one total an "
+                    + "operator is meant to read, not twenty flushes minus one: anything that "
+                    + "grows with how often a withdrawn browser flushes is the thing this forbids. "
+                    + "Counted across every level, because demoting the line to Debug does not "
+                    + "stop it filling a disk");
             }
         }
 
@@ -555,6 +568,51 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             using var document = JsonDocument.Parse(body);
             return [.. document.RootElement.EnumerateObject().Select(property => property.Name)];
         }
+
+        /// <summary>
+        /// What each message that reached the collector said about the caller it came from, read out
+        /// of the bytes that were actually sent.
+        ///
+        /// Read as values rather than looked for as names, because a name is written out whatever it
+        /// holds: a message handing the caller's address over and a message telling the collector to
+        /// throw it away are the same text apart from what comes after the colon. A part that is
+        /// missing altogether reads as nothing said, which is the promise not made - left to itself
+        /// the collector takes the address from the connection and looks up where it is.
+        /// </summary>
+        private List<WhatAMessageSaidAboutTheCaller> EverythingSaidAboutTheCaller()
+        {
+            return [.. outbound.ThatReached(CollectorHost)
+                .SelectMany(request => WhatWasSaidIn(request.Body))];
+        }
+
+        private static List<WhatAMessageSaidAboutTheCaller> WhatWasSaidIn(string body)
+        {
+            using var document = JsonDocument.Parse(body);
+
+            if (document.RootElement.ValueKind is not JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            return [.. document.RootElement.EnumerateArray().Select(message =>
+                new WhatAMessageSaidAboutTheCaller(
+                    WhatWasSetIn(message, "properties", "$ip"),
+                    WhatWasSetIn(message, "properties", "$geoip_disable")))];
+        }
+
+        private static JsonValueKind WhatWasSetIn(JsonElement message, string carrier, string instruction)
+        {
+            if (message.ValueKind is not JsonValueKind.Object
+                || !message.TryGetProperty(carrier, out var carried)
+                || carried.ValueKind is not JsonValueKind.Object)
+            {
+                return JsonValueKind.Undefined;
+            }
+
+            return carried.TryGetProperty(instruction, out var value) ? value.ValueKind : JsonValueKind.Undefined;
+        }
+
+        private sealed record WhatAMessageSaidAboutTheCaller(JsonValueKind Address, JsonValueKind LocationLookup);
 
         private async Task<string> ABrowserThatAgreedAsync()
         {

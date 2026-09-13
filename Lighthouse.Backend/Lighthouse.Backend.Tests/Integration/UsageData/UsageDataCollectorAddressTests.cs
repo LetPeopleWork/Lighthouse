@@ -80,9 +80,69 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // one.
         private const string SayingNothingIsSent = "not a published release";
 
-        private CapturedOutboundRequests outbound = null!;
+        private CapturedOutboundRequests outbound = new();
         private CapturedLogMessages capturedLogs = null!;
         private WebApplicationFactory<Program> builtHost = null!;
+
+        /// <summary>
+        /// Runs after every scenario here, and this is the one fixture in the suite whose scenarios
+        /// can actually get to the live census: one of them points a host at the built-in address on
+        /// purpose, because that is the path every real deployment takes and nothing else here would
+        /// notice it dying. So the check cannot be "nobody went there" - it is that exactly the one
+        /// scenario meant to went there, and none of the others did.
+        ///
+        /// What keeps even that one from adding to the real numbers is the recorder answering in
+        /// place of the network, which this fixture proves rather than assumes.
+        /// </summary>
+        [TearDown]
+        public void NobodyWentToTheLiveCensusExceptTheOneScenarioThatMeansTo()
+        {
+            var theOneThatMeansTo = TestContext.CurrentContext.Test.MethodName
+                == nameof(APublishedRelease_WithNoCollectorNamed_ReachesTheCollectorItShipsWith);
+
+            Assert.That(
+                outbound.ThatReached(TheLiveCensusHost),
+                theOneThatMeansTo ? Is.Not.Empty : Is.Empty,
+                "either a scenario that had no business contacting the real collector did, or the "
+                + "one that is about reaching it did not. There is one collector project and it is "
+                + "the live census, so whatever a run invents there lands in the numbers the "
+                + "maintainer reads - and lands silently, because sending degrades without "
+                + "complaint by specification");
+        }
+
+        /// <summary>
+        /// Not about consent, and here because of what the scenarios below are allowed to do. One of
+        /// them aims a host at the built-in address, which is the live census, and it is only
+        /// harmless while the recorder answers in place of the network instead of forwarding.
+        ///
+        /// That is what this establishes. The address below cannot resolve - nothing ending in
+        /// .invalid ever does - so a recorder that had started forwarding would fail here rather
+        /// than hand back an answer. Without it, the day somebody makes it forward is the day this
+        /// fixture starts posting invented events into the real figures on every run, and the only
+        /// visible sign is that everything still passes.
+        /// </summary>
+        [Test]
+        public async Task TheRecorderAnswersInPlaceOfTheNetwork_WhichIsWhatMakesTheRestOfThisSafe()
+        {
+            using var host = BuildHost(AnAddressSomebodySupplied, WhatAPublishedReleaseCallsItself);
+            var clients = host.Services.GetRequiredService<IHttpClientFactory>();
+            using var client = clients.CreateClient("Default");
+
+            using var answer = await client.PostAsync(
+                new Uri($"{AnAddressSomebodySupplied}i/v0/e/"),
+                new StringContent("{\"event\":\"a message only this test sends\"}", Encoding.UTF8, JsonMediaType));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.IsSuccessStatusCode, Is.True,
+                    "an address that cannot resolve was answered by something other than the "
+                    + "recorder, so requests from this fixture are going out to whatever they name "
+                    + "- and one of the scenarios here names the live census");
+                Assert.That(outbound.ThatReached(TheHostSomebodySupplied), Is.Not.Empty,
+                    "the recorder saw nothing, so every claim in this fixture about where a host "
+                    + "did or did not send would hold no matter what it actually did");
+            }
+        }
 
         /// <summary>
         /// The one that keeps invented traffic out of the real numbers - this test suite's own

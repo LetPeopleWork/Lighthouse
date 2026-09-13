@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
+using Lighthouse.Backend.Services.Interfaces.UsageData;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -31,6 +33,28 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static readonly string[] BuildingAClientByHand = ["new HttpClient(", "new SocketsHttpHandler(", "new HttpClientHandler("];
+
+        /// <summary>
+        /// Every field that goes to the collector, and the whole of it. Written out by hand rather
+        /// than worked out from the code, because the point is that adding one is something somebody
+        /// comes here and does: the page this product ships tells people what it collects, and a
+        /// field that turned up without a line added here would be one nobody told them about.
+        /// </summary>
+        private static readonly string[] EveryFieldTheCollectorIsSent =
+        [
+            "$geoip_disable",
+            "$ip",
+            "api_key",
+            "auth_enabled",
+            "deployment_mode",
+            "distinct_id",
+            "event",
+            "licence_tier",
+            "properties",
+            "route",
+            "timestamp",
+            "version",
+        ];
 
         /// <summary>
         /// The rule that keeps "nothing reached the collector" from decaying into a tautology. A
@@ -82,14 +106,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// No field on the wire can carry a sentence somebody typed, a name they chose or an
+        /// Nothing a browser hands in can carry a sentence somebody typed, a name they chose or an
         /// identifier of theirs. That is a property of the message's shape rather than a habit
         /// reviewers have to keep, which is the whole reason the design chose closed lists.
+        ///
+        /// What goes the other way cannot be held like this, and the rule below is the one that
+        /// holds it: the route this application substitutes, the version, the tier and the key are
+        /// all text, and all have to be.
         /// </summary>
         [Test]
-        public void NothingSentOrReceivedOnThisPath_HasAFieldThatCouldHoldFreeText()
+        public void NothingOnTheWayIn_HasAFieldThatCouldHoldFreeText()
         {
-            var messages = EveryMessageTypeOnTheEmitPath();
+            var messages = EveryTypeOnTheWayIn();
 
             var canHoldText = messages
                 .SelectMany(message => message.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -101,13 +129,51 @@ namespace Lighthouse.Backend.Tests.Architecture
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(messages, Is.Not.Empty,
-                    "there is no message to inspect, so this rule permits every shape the message "
-                    + "could eventually take");
+                    "there is nothing arriving to inspect, so this rule permits every shape the "
+                    + "message could eventually take");
                 Assert.That(canHoldText, Is.Empty,
                     "a field of free text is all it takes for a page address, a Team name or "
                     + "something a person typed to reach a third party. Every field here is a "
                     + "choice from a closed list or a bounded number. Found: "
                     + string.Join(", ", canHoldText));
+            }
+        }
+
+        /// <summary>
+        /// The other direction, held by a different promise. What leaves is mostly text and has to
+        /// be - the route this application substitutes for the address the browser was at, what
+        /// version this is, which tier its licence is - so "no field could hold free text" is not
+        /// available here and saying it anyway would be saying nothing.
+        ///
+        /// What is available is this: the fields that go out are the fields written down, all of
+        /// them and only them. Adding one then becomes a thing somebody comes here and does, which
+        /// is the point - the page this product ships tells people what it collects, and the way
+        /// that page goes out of date is a field somebody added in passing.
+        ///
+        /// The shapes are reached through the thing that sends rather than by their names. They are
+        /// declared private, beside the way out and nowhere else, so a rule that went looking for a
+        /// name would inspect nothing at all and hold whatever was added to them.
+        /// </summary>
+        [Test]
+        public void EveryFieldOnTheWayOut_IsOneSomebodyWroteDown()
+        {
+            var shapes = EveryShapeOnTheWayOut();
+
+            var fields = shapes
+                .SelectMany(shape => shape.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(WhatItIsCalledOnTheWire))
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(shapes, Is.Not.Empty,
+                    "nothing was found that goes to the collector, so this rule permits every field "
+                    + "a message could eventually carry");
+                Assert.That(fields, Is.EquivalentTo(EveryFieldTheCollectorIsSent),
+                    "what goes out is not what is written down here. A field that arrived without "
+                    + "somebody adding it to that list is one nobody decided to send and nobody was "
+                    + "told about. Found: " + string.Join(", ", fields));
             }
         }
 
@@ -144,13 +210,48 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        private static List<Type> EveryMessageTypeOnTheEmitPath()
+        private static List<Type> EveryTypeOnTheWayIn()
         {
             return [.. typeof(Backend.Program).Assembly
                 .GetTypes()
                 .Where(type => type.IsPublic
                     && type.Name.StartsWith("UsageDataEvent", StringComparison.Ordinal))
                 .OrderBy(type => type.Name, StringComparer.Ordinal)];
+        }
+
+        /// <summary>
+        /// Every shape that is serialised to the collector, found through whatever implements the
+        /// way out. They are declared inside it and are not public, which is right - nothing else
+        /// has any business naming them - and is why they are reached this way rather than by name.
+        /// </summary>
+        private static List<Type> EveryShapeOnTheWayOut()
+        {
+            var waysOut = typeof(Backend.Program).Assembly
+                .GetTypes()
+                .Where(type => typeof(IUsageDataPublisher).IsAssignableFrom(type) && !type.IsInterface);
+
+            return [.. waysOut
+                .SelectMany(EverythingDeclaredInside)
+                .Distinct()
+                .OrderBy(type => type.Name, StringComparer.Ordinal)];
+        }
+
+        private static IEnumerable<Type> EverythingDeclaredInside(Type declaring)
+        {
+            foreach (var nested in declaring.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                yield return nested;
+
+                foreach (var deeper in EverythingDeclaredInside(nested))
+                {
+                    yield return deeper;
+                }
+            }
+        }
+
+        private static string WhatItIsCalledOnTheWire(PropertyInfo property)
+        {
+            return property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? property.Name;
         }
 
         private static List<string> EverySourceFileOnTheEmitPath()
