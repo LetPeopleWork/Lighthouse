@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         private DateOnly dayBeingCounted;
         private Exception? lastFailure;
+        private int eventsSentToday;
+        private bool alreadySaidTheAllowanceIsSpent;
 
         public async Task<UsageDataEmitPermit?> RequestPermitAsync(string? token, CancellationToken cancellationToken)
         {
@@ -63,6 +65,70 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 Suppress(UsageDataSuppressionReason.EvaluationFailed);
                 return null;
             }
+        }
+
+        public async Task<UsageDataEmitPermit?> RequestPermitToSendAsync(
+            string? token, int events, CancellationToken cancellationToken)
+        {
+            var permit = await RequestPermitAsync(token, cancellationToken);
+
+            if (permit is null)
+            {
+                return null;
+            }
+
+            return TheDaysAllowanceCovers(events) ? permit : null;
+        }
+
+        /// <summary>
+        /// Takes this batch out of what the day has left, or reports that it does not fit. A batch is
+        /// all-or-nothing: sending the first few events of one and dropping the rest would leave the
+        /// collector holding half of somebody's visit, which reads as a person who left rather than a
+        /// number that ran out.
+        /// </summary>
+        private bool TheDaysAllowanceCovers(int events)
+        {
+            ReportWhatTheDayJustEndedCounted();
+
+            var budget = configuration.CurrentValue.DailyEventBudget;
+
+            lock (reporting)
+            {
+                if (eventsSentToday + events <= budget)
+                {
+                    eventsSentToday += events;
+                    return true;
+                }
+
+                SayTheAllowanceIsSpentOnce(budget);
+            }
+
+            Suppress(UsageDataSuppressionReason.BudgetExhausted);
+            return false;
+        }
+
+        /// <summary>
+        /// Once a day, not once a drop. Silent to the browser is not silent to the operator - an
+        /// instance that empties its allowance is either unusually busy or being abused, and those
+        /// are indistinguishable from outside unless it says something. But a line per drop is a
+        /// flood mechanism wearing a monitoring costume, and whoever triggered it could then fill
+        /// the disk of the instance they are already abusing.
+        /// </summary>
+        private void SayTheAllowanceIsSpentOnce(int budget)
+        {
+            if (alreadySaidTheAllowanceIsSpent)
+            {
+                return;
+            }
+
+            alreadySaidTheAllowanceIsSpent = true;
+
+            logger.LogWarning(
+                "Usage data: the day's allowance of {Budget} event(s) is spent after {Count} on {Day}; "
+                + "everything further today is dropped rather than refused",
+                budget,
+                eventsSentToday,
+                dayBeingCounted);
         }
 
         private async Task<UsageDataEmitPermit?> ResolveAsync(string? token, CancellationToken cancellationToken)
@@ -172,6 +238,12 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 suppressedSoFar.Clear();
                 lastFailure = null;
                 dayBeingCounted = today;
+
+                // Held in memory and nowhere else. A restart starts the day over, which is the same
+                // residue the per-browser limiter beside this one already carries - and a counter
+                // written to a customer's database would outlive the thing it counts.
+                eventsSentToday = 0;
+                alreadySaidTheAllowanceIsSpent = false;
             }
         }
 

@@ -135,6 +135,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             gate.Setup(agreeing => agreeing.RequestPermitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new UsageDataEmitPermit("a-pseudonym-this-browser-is-counted-under"));
 
+            // Agreeing to both questions: still consenting, and the day's allowance has room. The
+            // scenarios here are about what sending does when a collector misbehaves, so a gate that
+            // withheld either answer would make them pass for the wrong reason.
+            gate.Setup(agreeing => agreeing.RequestPermitToSendAsync(
+                    It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UsageDataEmitPermit("a-pseudonym-this-browser-is-counted-under"));
+
             return gate.Object;
         }
 

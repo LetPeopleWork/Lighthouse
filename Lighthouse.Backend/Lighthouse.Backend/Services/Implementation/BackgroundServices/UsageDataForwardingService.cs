@@ -51,7 +51,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         {
             try
             {
-                var permit = await gate.RequestPermitAsync(batch.Token, cancellationToken);
+                var permit = await gate.RequestPermitToSendAsync(
+                    batch.Token, batch.Events.Count, cancellationToken);
 
                 if (permit is null)
                 {

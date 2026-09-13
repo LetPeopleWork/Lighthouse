@@ -17,5 +17,19 @@ namespace Lighthouse.Backend.Services.Interfaces.UsageData
         /// </summary>
         /// <returns>A permit when this browser is agreeing right now; otherwise <c>null</c>.</returns>
         Task<UsageDataEmitPermit?> RequestPermitAsync(string? token, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// The same question, asked where the data actually leaves, and the only one that spends the
+        /// day's allowance. Both ends of the pipe ask whether a browser is still agreeing - once when
+        /// a batch is taken in and once when it is sent - so a count kept behind the question above
+        /// would charge every batch twice and stop sending at half the number an operator configured.
+        /// Charging here instead makes the number mean what it says: events that went out.
+        /// </summary>
+        /// <returns>
+        /// A permit when this browser is agreeing right now and the day's allowance covers the whole
+        /// batch; otherwise <c>null</c>, which means dropped rather than refused.
+        /// </returns>
+        Task<UsageDataEmitPermit?> RequestPermitToSendAsync(
+            string? token, int events, CancellationToken cancellationToken);
     }
 }
