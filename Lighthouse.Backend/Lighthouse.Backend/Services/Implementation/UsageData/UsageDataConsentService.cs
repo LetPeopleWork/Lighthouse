@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models.UsageData;
@@ -36,7 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
             var consent = string.IsNullOrWhiteSpace(token)
                 ? null
-                : await repository.FindByTokenHashAsync(Hash(token), cancellationToken);
+                : await repository.FindByTokenHashAsync(UsageDataConsentToken.HashOf(token), cancellationToken);
 
             if (consent != null)
             {
@@ -71,7 +69,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             await repository.AddAsync(
                 new UsageDataConsent
                 {
-                    TokenHash = Hash(token),
+                    TokenHash = UsageDataConsentToken.HashOf(token),
                     Decision = decision,
                     DecidedAt = now,
                     LastSeenAt = now,
@@ -95,7 +93,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             // The affected-row count is deliberately dropped. It is the honest answer to "did anything
             // change", and telling the browser would make this endpoint a way to find out whether a
             // given token is real.
-            await repository.TryRevokeAsync(Hash(token), now, cancellationToken);
+            await repository.TryRevokeAsync(UsageDataConsentToken.HashOf(token), now, cancellationToken);
         }
 
         private TimeSpan LivenessWindow => TimeSpan.FromDays(configuration.CurrentValue.ConsentLivenessWindowDays);
@@ -120,13 +118,6 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 decision == UsageDataDecision.Declined && licenseService.CanUsePremiumFeatures();
 
             return !refusalIsFinal;
-        }
-
-        private static string Hash(string token)
-        {
-            // The token is 256 bits of randomness, so a fast digest is the right tool and a password
-            // KDF is not: there is no low-entropy secret here to slow an attacker down over.
-            return Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         }
     }
 }

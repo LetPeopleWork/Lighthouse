@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Text;
+using System.Collections.Frozen;
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.UsageData;
@@ -39,11 +38,16 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         // own consent alive without a write per flush.
         private const int TouchesPerWindow = 100;
 
-        private static readonly UsageDataSuppressionReason[] ReasonsThatMeanSomethingIsWrong =
-            [UsageDataSuppressionReason.EvaluationFailed, UsageDataSuppressionReason.BudgetExhausted];
+        private static readonly FrozenSet<UsageDataSuppressionReason> ReasonsThatMeanSomethingIsWrong =
+            FrozenSet.ToFrozenSet(
+                [UsageDataSuppressionReason.EvaluationFailed, UsageDataSuppressionReason.BudgetExhausted]);
 
         private readonly ConcurrentDictionary<UsageDataSuppressionReason, int> suppressedSoFar = new();
-        private readonly Lock reporting = new();
+
+        // Guards everything below that resets when the date changes - the tallies and the spent
+        // allowance alike, which have to turn over together or a reader cannot tell which day either
+        // of them is describing.
+        private readonly Lock everythingTheDayIsCounting = new();
 
         private DateOnly dayBeingCounted;
         private Exception? lastFailure;
@@ -88,11 +92,11 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// </summary>
         private bool TheDaysAllowanceCovers(int events)
         {
-            ReportWhatTheDayJustEndedCounted();
+            TurnTheDayOverIfItHas();
 
             var budget = configuration.CurrentValue.DailyEventBudget;
 
-            lock (reporting)
+            lock (everythingTheDayIsCounting)
             {
                 if (eventsSentToday + events <= budget)
                 {
@@ -148,7 +152,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             }
 
             var repository = scope.ServiceProvider.GetRequiredService<IUsageDataConsentRepository>();
-            var consent = await repository.FindByTokenHashAsync(Hash(token), cancellationToken);
+            var consent = await repository.FindByTokenHashAsync(
+                UsageDataConsentToken.HashOf(token), cancellationToken);
 
             if (!IsAgreeingNow(consent))
             {
@@ -214,16 +219,16 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// </summary>
         private void Suppress(UsageDataSuppressionReason reason)
         {
-            ReportWhatTheDayJustEndedCounted();
+            TurnTheDayOverIfItHas();
 
             suppressedSoFar.AddOrUpdate(reason, 1, (_, sofar) => sofar + 1);
         }
 
-        private void ReportWhatTheDayJustEndedCounted()
+        private void TurnTheDayOverIfItHas()
         {
             var today = clock.Today;
 
-            lock (reporting)
+            lock (everythingTheDayIsCounting)
             {
                 if (today == dayBeingCounted)
                 {
@@ -252,7 +257,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             // Only one of these means the feature is broken rather than switched off, so only that
             // one arrives at a level an operator sees without going looking, and it carries what
             // went wrong with it.
-            var somethingIsWrong = Array.IndexOf(ReasonsThatMeanSomethingIsWrong, reason) >= 0;
+            var somethingIsWrong = ReasonsThatMeanSomethingIsWrong.Contains(reason);
 
             logger.Log(
                 somethingIsWrong ? LogLevel.Warning : LogLevel.Debug,
@@ -261,11 +266,6 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 count,
                 dayBeingCounted,
                 reason);
-        }
-
-        private static string Hash(string token)
-        {
-            return Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         }
     }
 }

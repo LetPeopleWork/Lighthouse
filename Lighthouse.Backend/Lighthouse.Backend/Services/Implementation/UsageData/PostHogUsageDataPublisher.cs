@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
             if (!string.IsNullOrWhiteSpace(named))
             {
-                return new Uri($"{named.TrimEnd('/')}/{WhereEventsArePosted}");
+                return EventsPostedTo(named);
             }
 
             if (!facts.IsPublishedRelease)
@@ -95,7 +95,12 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 return null;
             }
 
-            return new Uri($"{TheOnlyCollectorThereIs}/{WhereEventsArePosted}");
+            return EventsPostedTo(TheOnlyCollectorThereIs);
+        }
+
+        private static Uri EventsPostedTo(string collector)
+        {
+            return new Uri($"{collector.TrimEnd('/')}/{WhereEventsArePosted}");
         }
 
         /// <summary>
