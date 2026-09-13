@@ -216,7 +216,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				}
 			}
 		},
-		[team?.id, forecastService, showError],
+		[team?.id, forecastService, showError, reportUsage],
 	);
 
 	const isPremiumFilterActive = hasForecastFilter;
