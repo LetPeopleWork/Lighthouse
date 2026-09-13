@@ -17,6 +17,7 @@ const renderConsent = (
 		getState: vi.fn().mockResolvedValue(state),
 		recordDecision: vi.fn().mockResolvedValue("freshly-minted-token"),
 		revoke: vi.fn().mockResolvedValue(undefined),
+		postEvents: vi.fn().mockResolvedValue(undefined),
 		...overrides,
 	};
 

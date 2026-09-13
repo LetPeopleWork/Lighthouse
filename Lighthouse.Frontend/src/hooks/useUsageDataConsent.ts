@@ -16,7 +16,7 @@ const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
  * to carry out the choice the person just made, and a browser that has only read the dialog leaves
  * no trace at all.
  */
-const readToken = (): string | null => {
+export const readUsageDataConsentToken = (): string | null => {
 	try {
 		return localStorage.getItem(TOKEN_STORAGE_KEY);
 	} catch {
@@ -68,7 +68,9 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 
 	const refresh = useCallback(async () => {
 		try {
-			const state = await usageDataService.getState(readToken());
+			const state = await usageDataService.getState(
+				readUsageDataConsentToken(),
+			);
 			setIndicatorState(state.sending ? "sending" : "not-sending");
 			setWillAskAgain(state.willAskAgain);
 			setDecision(state.decision);
@@ -88,7 +90,7 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 
 	const decide = useCallback(
 		async (next: UsageDataDecisionValue) => {
-			const token = readToken();
+			const token = readUsageDataConsentToken();
 
 			try {
 				// Saying no to something already agreed to is a withdrawal, not a fresh refusal.

@@ -84,6 +84,7 @@ export const createMockUsageDataService = (): IUsageDataService => {
 		}),
 		recordDecision: vi.fn().mockResolvedValue("mock-consent-token"),
 		revoke: vi.fn().mockResolvedValue(undefined),
+		postEvents: vi.fn().mockResolvedValue(undefined),
 	};
 };
 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UsageDataService } from "./UsageDataService";
+import { UsageDataRouteKey } from "../../models/UsageData/UsageData";
+import { UsageDataEventName, UsageDataService } from "./UsageDataService";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, true);
@@ -75,5 +76,58 @@ describe("UsageDataService", () => {
 		expect(mockedAxios.delete).toHaveBeenCalledWith("/usagedata/consent", {
 			headers: { [CONSENT_TOKEN_HEADER]: "this-browsers-token" },
 		});
+	});
+
+	// Taking the token as an argument, exactly as the other two do, is what keeps this class from
+	// knowing where the token is kept. One module owns that, and a service that reached into
+	// storage itself would be a second owner of it with no way to tell them apart later.
+	it("hands in a batch under the token it was given, not one it went looking for", async () => {
+		mockedAxios.post.mockResolvedValueOnce({});
+
+		await service.postEvents("this-browsers-token", [
+			{
+				name: "TeamOrPortfolioTabOpened",
+				route: "TeamDetail_Metrics",
+				offsetMs: 1200,
+				sequence: 0,
+			},
+		]);
+
+		expect(mockedAxios.post).toHaveBeenCalledWith(
+			"/usagedata/events",
+			{
+				events: [
+					{
+						name: "TeamOrPortfolioTabOpened",
+						route: "TeamDetail_Metrics",
+						offsetMs: 1200,
+						sequence: 0,
+					},
+				],
+			},
+			{ headers: { [CONSENT_TOKEN_HEADER]: "this-browsers-token" } },
+		);
+	});
+
+	// Both choices travel as the words the server answers with. A numbered mirror of either list
+	// would still typecheck here and would still be accepted, but every event would arrive naming
+	// whichever member happens to sit at that position - silently, and only for some of them.
+	it("names both choices in words, because that is how the server reads them", async () => {
+		mockedAxios.post.mockResolvedValueOnce({});
+
+		await service.postEvents("this-browsers-token", [
+			{
+				name: UsageDataEventName.TeamOrPortfolioTabOpened,
+				route: UsageDataRouteKey.PortfolioDetail_Deliveries,
+				offsetMs: 0,
+				sequence: 0,
+			},
+		]);
+
+		const body = mockedAxios.post.mock.calls[0][1] as {
+			events: { name: unknown; route: unknown }[];
+		};
+		expect(body.events[0].name).toBe("TeamOrPortfolioTabOpened");
+		expect(body.events[0].route).toBe("PortfolioDetail_Deliveries");
 	});
 });

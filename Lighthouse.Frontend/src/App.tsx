@@ -28,6 +28,7 @@ import {
 	type IApiServiceContext,
 } from "./services/Api/ApiServiceContext";
 import { TerminologyProvider } from "./services/TerminologyContext";
+import { useUsageDataEventDetector } from "./services/UsageData/usageDataEvents";
 import { notifyBackendReady } from "./utils/backendUrl";
 import { hasTauriBackendUrl, isTauriEnv } from "./utils/tauri";
 
@@ -88,6 +89,16 @@ const PortfolioEditRedirect: React.FC = () => {
 };
 
 const SPLASH_MIN_MS = 5000;
+
+/**
+ * Renders nothing. It exists because noticing which page somebody is on needs the router, and the
+ * router only exists below this point - so the one place the detector can be mounted is inside a
+ * child element rather than in the component that sets the router up.
+ */
+const UsageDataEventDetector: React.FC = () => {
+	useUsageDataEventDetector();
+	return null;
+};
 
 const App: React.FC = () => {
 	const theme = useTheme();
@@ -229,6 +240,7 @@ const App: React.FC = () => {
 							</Box>
 							<Footer />
 							<SurveyNudge />
+							<UsageDataEventDetector />
 						</Box>
 					</TerminologyProvider>
 				</ApiServiceContext.Provider>
