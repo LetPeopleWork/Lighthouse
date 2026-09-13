@@ -259,33 +259,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             context.SaveChanges();
         }
 
-        private void StoreTheVeto(bool engaged)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
-
-            var existing = repository.GetByPredicate(feature => feature.Key == UsageDataMasterSwitch.Key);
-
-            if (existing is null)
-            {
-                repository.Add(new OptionalFeature
-                {
-                    Id = 0,
-                    Key = UsageDataMasterSwitch.Key,
-                    Name = "Never send usage data",
-                    Description = "Seeded by a scenario; the product's own wording is asserted elsewhere.",
-                    Enabled = engaged,
-                    IsPremium = true,
-                });
-            }
-            else
-            {
-                existing.Enabled = engaged;
-            }
-
-            repository.Save().GetAwaiter().GetResult();
-        }
-
         // --- When ---
 
         /// <summary>

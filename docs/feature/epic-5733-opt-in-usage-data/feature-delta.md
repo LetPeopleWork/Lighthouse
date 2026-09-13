@@ -3270,3 +3270,104 @@ asked-marker, and F4 (decline-after-grant keyed on state a failed refresh leaves
 `decide` path). Neither is in slice 03's path and neither blocks it — stated explicitly rather than
 skipped.
 
+---
+
+## Wave: DISTILL / [REF] Slice 04 decisions
+
+Wave: DISTILL. Date: 2026-09-13. Slice 04, ADO Story #5837. Density: lean, Tier-1 only. DT-2 through
+DT-13 remain in force — no Gherkin, no `.feature` file, no `__SCAFFOLD__` markers, skip markers are
+NUnit `[Ignore]` and Vitest `describe.skip`, no Playwright in this wave. Numbering continues from
+DT-32.
+
+| ID | Decision | Implements |
+|---|---|---|
+| DT-33 | **Ten events, not the Epic's 2–4.** The maintainer lifted the ceiling deliberately on 2026-09-13, having been shown what the extra names cost: each one is a permanent row on the disclosure page and one more thing the purity invariant has to hold over. The budget the Epic wrote was set when an event was expensive to add; the pipe shipped in slice 01c made the marginal event cheap, and what did not get cheaper is the promise. Recorded as a decision reopened with its cost stated, not as scope creep. | AC-08.1 |
+| DT-34 | **Eight of the ten say somebody used something.** The slice brief requires at least one; the set the maintainer chose makes navigation the minority. `TeamManualForecastRun` is the product's central promise being exercised; `WorkTrackingSystemConnected` answers which connectors matter, which is the question every connector decision reopens; `TeamRefreshTriggered` and `PortfolioRefreshTriggered` say whether people trust the automatic cadence, which bears directly on the single-lane update queue. | AC-08.1 |
+| DT-35 | **`TeamOrPortfolioTabOpened` splits into `TeamTabOpened` and `PortfolioTabOpened`.** The maintainer asked for names specific to the kind of page. Verified free: `UsageDataEventName.cs` does not exist at tag `v26.9.9.9`, so no release has ever sent under the old name and there is no vocabulary split at the collector to carry. Done later it would not have been free. | AC-08.1 |
+| DT-36 | **The split introduces a disagreement the unsplit name could not have, and it is refused rather than tolerated.** The route key already carries the kind of page (`TeamDetail_*` / `PortfolioDetail_*`), so after the split a message can name one kind and carry the other's address. Read straight, that is counted as an opening that never happened — a number quietly wrong rather than a message obviously broken. | AC-08.2 |
+| DT-37 | **An event carries what its own entry says it carries; the blanket "every event has a route" rule goes.** This is the slice's real work. `UsageDataController.AsTakenIn` refuses any event without a route today, and `PostHogUsageDataPublisher` indexes `UsageDataRoutePatterns.All[reported.Route]` unconditionally, so eight of the ten names cannot exist in the shipped shape. A per-event declaration replaces the rule, which makes "no address travels with this event" a property of the entry rather than something each call site has to remember. | AC-08.2, AC-08.3 |
+| DT-38 | **The connector kind is a usage-data-owned closed list, not `WorkTrackingSystems`.** That enum is append-only because EF persists it by position; binding what leaves an instance to a list kept in that shape lets a storage concern decide what a third party is shown. Same reasoning already applied to deployment mode. | AC-08.3 |
+| DT-39 | **No dwell, no time-on-page, no engagement threshold.** Weighed and dropped by the maintainer on 2026-09-13. A dwell bucket on the existing event was the cheaper way to answer "where do people spend time" and would have cost no new name and no extra volume — but it is the one thing in the set that would have meant watching something nobody does deliberately, and every other event here is an action somebody already takes. | — |
+| DT-40 | **Nothing is added to either vocabulary during DISTILL.** `UsageDataDisclosureTest` counts the enum's members against the page's rows and is live, so a name added here without its row would hand DELIVER a red suite. Every pending scenario therefore names its event as text on the wire, exactly as a browser does. This is the Epic's own rule — the name and the disclosure land together — enforced against the wave that would find it most convenient to break. | AC-08.1, AC-08.2 |
+| DT-41 | **The purity invariant is a live test from this wave, not a pending one.** `UsageDataPayloadPurityTest` asserts that nothing a browser sends is text and that every part of it is a choice from a closed list or a whole number. It passes against today's shape, which is the point: it is written before the shape grows, so the commit that adds a field capable of carrying free text is the commit that goes red. | AC-08.3 |
+| DT-42 | **One reporter, and it is a hook.** What decides whether anything is recorded is the answer the server gave about this browser, which lives in state refreshed on a clock. A plain function would have to read the token in local storage instead — and refusing mints a token too, so that reading would collect on behalf of exactly the person who asked us not to. Call sites get a function that quietly does nothing, so none of them carries a consent branch that could be got wrong. | AC-08.1 |
+| DT-43 | **`StoreTheVeto` is promoted to the shared observation fixture.** Slice 04 has to show every new event inheriting the administrator's veto, and the helper was private to slice 03's fixture. A second copy is how one of them quietly stops guarding anything — the reason the fixture was de-duplicated in the first place. | AC-08.1 |
+| DT-44 | **No new E2E spec, and no per-call-site acceptance test.** DT-13 and DT-32's reasons stand. What each event carries and which gate stops it are observable at the boundary the integration scenarios already watch; whether a given button calls the reporter is wiring, asserted in that component's own test file. Explicitly N/A rather than skipped. | — |
+
+---
+
+## Wave: DISTILL / [REF] Slice 04 scenario list
+
+40 scenarios. 33 backend pending behind `[Ignore]`, 7 frontend pending behind `describe.skip`, plus
+4 live payload-purity cases that guard the shape from this wave onward.
+
+| Where | Scenario | Count | Unskipped by |
+|---|---|---|---|
+| `Slice04ProductEventsTests` | A team tab opening arrives as the published address | 1 | 04-01 |
+| `Slice04ProductEventsTests` | A portfolio tab opening arrives as the published address | 1 | 04-01 |
+| `Slice04ProductEventsTests` | A tab opening naming one kind of page and the other's address is refused | 1 | 04-01 |
+| `Slice04ProductEventsTests` | The single name these two replaced is no longer sendable | 1 | 04-01 |
+| `Slice04ProductEventsTests` | An event about something somebody did arrives without any address | 7 | 04-01 |
+| `Slice04ProductEventsTests` | …and is refused if it carries one | 1 | 04-01 |
+| `Slice04ProductEventsTests` | Connecting a work tracking system says which kind it was | 5 | 04-02 |
+| `Slice04ProductEventsTests` | …without saying which kind, refused | 1 | 04-02 |
+| `Slice04ProductEventsTests` | …a kind this product does not have, refused | 1 | 04-02 |
+| `Slice04ProductEventsTests` | An event with no business naming a system is refused for naming one | 1 | 04-02 |
+| `Slice04ProductEventsTests` | Control — with nothing stopping it, one of the new events arrives | 1 | 04-03 |
+| `Slice04ProductEventsTests` | Nothing new leaves an instance whose administrator stopped usage data | 7 | 04-03 |
+| `Slice04ProductEventsTests` | Nothing new leaves a browser that refused | 7 | 04-03 |
+| `Slice04ProductEventsTests` | Nothing travels beyond what the page says travels | 1 | 04-04 |
+| `useUsageDataReporter` | Hands in what somebody did; sends no address; names the connector; refuses for a declined browser, a vetoed instance and an answer that has not arrived; keeps order | 7 | 04-05 |
+| `UsageDataPayloadPurityTest` | Nothing a browser sends can carry text; everything is a choice or a whole number | 4 | **live now** |
+
+**The control scenario is not decoration.** Every "nothing was sent" assertion in this fixture holds
+vacuously against a pipe that sends nothing at all — and a build run from source sends nothing by
+specification, because the publisher returns no address unless a collector is named or the build is a
+published release. The fixture answers that by naming a collector that cannot resolve and recording
+below `HttpClient`, so "it went out" and "it did not" are two observations rather than an inference.
+
+---
+
+## Wave: DISTILL / [REF] Slice 04 scaffolds
+
+| Path | What it is | Replaced by |
+|---|---|---|
+| `Lighthouse.Frontend/src/services/UsageData/usageDataReporter.ts` | Throwing scaffold — the hook's signature and the shape a call site hands in, with the body raising. Nothing calls it yet | 04-05 |
+| `Lighthouse.Frontend/src/models/UsageData/UsageData.ts` — `UsageDataWorkTrackingSystem` | Real closed list, not a scaffold. The browser mirror of the connector kind. Discloses nothing until an event carries it | 04-02 |
+
+No backend scaffold types, per DT-4. The backend scenarios post text over HTTP, so nothing in the
+test assembly references a type that does not exist and the suite compiles green at hand-off.
+
+---
+
+## Wave: DISTILL / [REF] Slice 04 owed in DELIVER
+
+| Owed | Why it is not in DISTILL |
+|---|---|
+| Ten rows under `The complete list of events:` on `docs/settings/usagedata.md` | The page and the enum are counted against each other by a live test; they land in one commit in 04-01 |
+| The page's prose about the browser sending a label for the page | True of two events out of ten after this slice; prose, not a row |
+| `kpi-contracts.yaml` — affected outcomes off `deferred-pending-telemetry-feature`, and the preamble's claim that no phone-home exists | 04-07. The preamble has no test, which is exactly why it is written down here |
+| The eight call sites and their wiring tests | 04-06 |
+
+---
+
+## Wave: DISTILL / [REF] Slice 04 wave-decision reconciliation
+
+Reconciliation run 2026-09-13 across DISCUSS D1–D11, DESIGN A1–A14 and its redesign, DEVOPS P1–P13,
+DT-1 to DT-32 and the slice brief. **Two findings, both resolved before any scenario was written;
+zero left open.**
+
+| Found | Resolution |
+|---|---|
+| The slice brief caps the Epic at 2–4 events and says a fifth is "a decision to reopen, not a small addition"; the maintainer asked for ten | Reopened explicitly with its cost stated — DT-33. The brief's discipline was about the choosing, and the choosing was done against what is in flight |
+| The brief's scope says "1–3 more events … the marginal event should be an enum member, a detector call site and a docs line. If it is not, the pipe was built wrong in 01c" | The marginal event *is* those three — for an event shaped like the one 01c shipped. Seven of these are not: they happen on no particular page, and the pipe requires a route on every event. That is a gap in the shape rather than a fault in the pipe, and DT-37 closes it once for every event that follows |
+
+**Not re-litigated, and inherited as constraints**: D5, D6, D9, C5, DT-2 through DT-13, and the
+administrator's veto exactly as slice 03 shipped it — every event added here inherits it by sitting
+above the same gate, which 04-03 proves rather than assumes.
+
+**AC-08.5 needs no re-consent.** The answer recorded on 2026-09-12 holds within its stated bounds:
+nothing added here is person-scoped or free-text, the purpose has not widened, the parties holding
+the data are unchanged, and retention is untouched. The ingest shape still has no free `string`
+property, and `UsageDataPayloadPurityTest` is what keeps that true.
+

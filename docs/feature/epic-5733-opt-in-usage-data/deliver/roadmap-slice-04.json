@@ -1,0 +1,96 @@
+{
+  "feature": "epic-5733-opt-in-usage-data",
+  "slice": "04",
+  "story": "#5837",
+  "status": "approved",
+  "goal": "Epic 5733 slice 04, ADO Story #5837 - the vocabulary stops being one navigation event. Slice 01c spent the first slot on a tab opening, which says a view was opened and nothing about whether anything in it was used; this slice is where that limitation is fixed. Ten named events, of which eight say somebody used something. The maintainer set the size deliberately and lifted the Epic's own 2-4 ceiling to do it. The work is not the names - a name is an enum member, a call site and a docs line - it is that the shape the pipe shipped with cannot express any of them: UsageDataController.AsTakenIn requires a route on every event and PostHogUsageDataPublisher indexes the published-address table unconditionally, so eight of the ten cannot exist until an event's declared shape decides what it may carry. DISTILL is committed: 33 backend scenarios behind [Ignore], 7 frontend behind describe.skip, 4 live payload-purity cases, and StoreTheVeto promoted to the shared observation fixture.",
+  "out_of_scope": [
+    "Any dwell or time-on-page measurement. The maintainer ruled it out on 2026-09-13: every event here is an action somebody already takes, so nothing new is watched and no new machinery is introduced.",
+    "A new E2E spec. What each event carries and which gate stops it are both observable at the boundary the integration scenarios already watch; an E2E would re-run the same assertions through a slower door.",
+    "Any per-component test for the eight call sites beyond wiring. The acceptance question - does using a capability reach the collector, gated - is answered backend-side against the wire.",
+    "The OAuth adoption events. Named out by the slice brief; the set was chosen against what is actually in flight.",
+    "Widening the collector's own retention or plan. AC-08.5's answer holds only while the payload gains nothing person-scoped or free-text, and it gains neither."
+  ],
+  "phases": [
+    {
+      "id": "be",
+      "name": "Slice 04 backend - an event carries what its own entry says it carries",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The list gains its names, the page gains its rows, and an event stops having to name a page",
+          "unskips": [
+            "Slice04ProductEventsTests.A_team_tab_opening_arrives_as_the_address_this_product_publishes_for_it",
+            "Slice04ProductEventsTests.A_portfolio_tab_opening_arrives_as_the_address_this_product_publishes_for_it",
+            "Slice04ProductEventsTests.A_tab_opening_that_names_one_kind_of_page_and_the_others_address_is_refused",
+            "Slice04ProductEventsTests.The_single_name_these_two_replaced_is_no_longer_something_anyone_can_send",
+            "Slice04ProductEventsTests.An_event_about_something_somebody_did_arrives_without_any_address (7 cases)",
+            "Slice04ProductEventsTests.An_event_about_something_somebody_did_is_refused_if_it_carries_an_address"
+          ],
+          "notes": "These land in ONE commit and must not be split. UsageDataDisclosureTest counts the members of UsageDataEventName against the rows under 'The complete list of events:' on docs/settings/usagedata.md and is live, so a name without a row is a red build by design - that is the transparency non-negotiable enforced rather than remembered. The routeless plumbing has to be in the same commit too, because seven of the names are unusable without it. Four places assume every event has a page: UsageDataEventDto and UsageDataEventReported (Route stops being something every event has), UsageDataController.AsTakenIn (today it refuses any event without a route), and PostHogUsageDataPublisher.EverythingInTheBatch (it indexes UsageDataRoutePatterns.All[reported.Route] unconditionally, which throws for a routeless event rather than omitting the property). Replace the blanket rule with a per-event declaration - one table saying what each name may carry - so 'no address travels with an event' is a property of the event's entry rather than a habit at each call site. TeamOrPortfolioTabOpened becomes TeamTabOpened and PortfolioTabOpened: verified free, the enum is absent at tag v26.9.9.9 so nothing has ever been sent under the old name; the split makes name and route able to disagree, which is why the mismatch is refused. The page also needs its prose adjusted where it says the browser sends a label for the page - that is now true of two events out of ten."
+        },
+        {
+          "id": "04-02",
+          "name": "Which kind of work tracking system it was",
+          "unskips": [
+            "Slice04ProductEventsTests.Connecting_a_work_tracking_system_says_which_kind_it_was (5 cases)",
+            "Slice04ProductEventsTests.Connecting_a_work_tracking_system_without_saying_which_kind_is_refused",
+            "Slice04ProductEventsTests.A_kind_of_work_tracking_system_this_product_does_not_have_is_refused",
+            "Slice04ProductEventsTests.An_event_that_has_no_business_naming_a_work_tracking_system_is_refused_for_naming_one"
+          ],
+          "notes": "A usage-data-owned closed list, not the WorkTrackingSystems enum the rest of the product stores connections under. That one is append-only because EF persists it by position, and tying what leaves an instance to a list kept in that shape lets a storage concern decide what a third party is shown - the same reasoning that already applies to deployment mode. The browser mirror is already in models/UsageData/UsageData.ts. The field is nullable on the DTO and permitted only for the one event whose entry declares it; every other event naming one is refused, which is what keeps the shape table meaningful rather than advisory. The publisher gains a property that is written only when present - omitted, not null, so the collector does not hold an empty column for nine events out of ten."
+        },
+        {
+          "id": "04-03",
+          "name": "Every new event inherits the gates the first one has",
+          "unskips": [
+            "Slice04ProductEventsTests.With_nothing_stopping_it_one_of_the_new_events_reaches_the_collector",
+            "Slice04ProductEventsTests.Nothing_new_leaves_an_instance_whose_administrator_stopped_usage_data (7 cases)",
+            "Slice04ProductEventsTests.Nothing_new_leaves_a_browser_that_refused (7 cases)"
+          ],
+          "notes": "Expected to need no production change: the veto and the consent check sit in UsageDataGate, on the path every batch takes, so an event added above them inherits both without being told about them. That is the claim, and it is worth exactly one commit to prove - the failure mode this guards is a future event emitted down some other path. If any of these scenarios needs production code to pass, the gate is not where it was believed to be and that is the finding. The control scenario is not optional: every 'nothing was sent' assertion here holds vacuously against a pipe that sends nothing, and a pipe that sends nothing looks exactly like a gate working perfectly."
+        },
+        {
+          "id": "04-04",
+          "name": "What travels is checked against what was disclosed",
+          "unskips": [
+            "Slice04ProductEventsTests.Nothing_travels_with_an_event_beyond_what_the_page_says_travels"
+          ],
+          "notes": "Reads the message that actually left and compares every property in it against the fields the usage data page lists. UsageDataPayloadPurityTest is already live and guards the other half - that nothing a browser sends can be text - so between them a field added in passing fails here rather than in somebody else's database. Expect this to pass once 04-01 omits the route property for routeless events; if it fails, the publisher is writing a null route rather than omitting it."
+        }
+      ]
+    },
+    {
+      "id": "fe",
+      "name": "Slice 04 browser - one way to say somebody used something, and eight places that say it",
+      "steps": [
+        {
+          "id": "04-05",
+          "name": "The reporter, and the detector telling the two kinds of page apart",
+          "unskips": [
+            "useUsageDataReporter: all 7 cases"
+          ],
+          "notes": "Replaces the throwing scaffold at services/UsageData/usageDataReporter.ts. It is a hook because what decides whether anything is recorded is the answer the server gave about this browser, which lives in state refreshed on a clock; a plain function would have to read the token in local storage, and a browser that refused holds one of those too. Generalise usageDataBuffer from a noticed page to a noticed event - name, optional route, optional work tracking system - and have the detector choose TeamTabOpened or PortfolioTabOpened from which route key it resolved, so the browser never sends a name and a route that disagree in the first place. IUsageDataEvent.route becomes optional in the same change. When this step is done, grep for 'is not implemented' under services/UsageData and expect nothing."
+        },
+        {
+          "id": "04-06",
+          "name": "The eight places somebody uses something",
+          "unskips": [],
+          "notes": "One call after each confirmed success, never before: pages/Teams/Edit/EditTeam.tsx (TeamCreated), pages/Portfolios/Edit/EditPortfolio.tsx (PortfolioCreated), pages/Overview/OverviewDashboard.tsx handleConfirmDelete (TeamDeleted and PortfolioDeleted, both deletes are there), pages/Teams/Detail/ManualForecaster.tsx (TeamManualForecastRun - team only and only when somebody asks for it, never the automatic forecast), pages/Connections/Edit/EditConnection.tsx (WorkTrackingSystemConnected with the kind), components/Common/Team/ModifyTeamSettings.tsx (TeamRefreshTriggered) and pages/Portfolios/Detail/PortfolioDetail.tsx (PortfolioRefreshTriggered). Each gets one case in its own existing test file asserting the reporter was called with that name and nothing else; the question of whether it then reaches the collector is answered backend-side and must not be re-asserted here. Reporting before the call succeeds would count intent rather than use, which is the one way these numbers could quietly overstate."
+        }
+      ]
+    },
+    {
+      "id": "kpi",
+      "name": "Slice 04 - the outcomes stop saying deferred",
+      "steps": [
+        {
+          "id": "04-07",
+          "name": "The KPI contracts name the events that now source them",
+          "unskips": [],
+          "notes": "The affected outcomes move off status deferred-pending-telemetry-feature and name their event. The preamble states as fact that no phone-home exists, which stops being true the moment 04-01 ships - the same class of stale promise as the sentence UsageDataDisclosureTest already removes from the usage data page, and it has no test, so it is easy to leave behind. Only outcomes an event in this set can actually answer move; one that still needs a number nobody collects stays deferred and says which event it is waiting for."
+        }
+      ]
+    }
+  ]
+}

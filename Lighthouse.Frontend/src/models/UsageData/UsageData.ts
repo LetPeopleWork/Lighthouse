@@ -69,6 +69,28 @@ export const UsageDataRouteKey = {
 export type UsageDataRouteKey =
 	(typeof UsageDataRouteKey)[keyof typeof UsageDataRouteKey];
 
+/**
+ * Which kind of work tracking system was connected, said as a choice from this list.
+ *
+ * Deliberately its own list rather than the one the rest of the product stores connections under.
+ * That one is append-only for a reason that has nothing to do with usage data - it is persisted by
+ * position, so its order cannot move - and tying what leaves this instance to a list kept in that
+ * shape means a storage concern decides what a third party is shown.
+ *
+ * What travels is the kind of system, never the address of one, never its name, and never anything
+ * somebody typed while setting it up.
+ */
+export const UsageDataWorkTrackingSystem = {
+	AzureDevOps: "AzureDevOps",
+	Jira: "Jira",
+	Linear: "Linear",
+	Csv: "Csv",
+	ServiceNow: "ServiceNow",
+} as const;
+
+export type UsageDataWorkTrackingSystem =
+	(typeof UsageDataWorkTrackingSystem)[keyof typeof UsageDataWorkTrackingSystem];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 

@@ -2,7 +2,10 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
+using Lighthouse.Backend.Services.Implementation.UsageData;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -195,6 +198,38 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         protected static string ABatchOf(string name, string route)
         {
             return $"{{\"events\":[{{\"name\":\"{name}\",\"route\":\"{route}\",\"offsetMs\":0,\"sequence\":0}}]}}";
+        }
+
+        /// <summary>
+        /// Engages or lifts the switch that stops usage data for a whole instance. It lives here
+        /// rather than in one fixture because it is now the gate every event has to be shown to
+        /// inherit, and a second copy is how one of them quietly stops guarding anything.
+        /// </summary>
+        protected void StoreTheVeto(bool engaged)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
+
+            var existing = repository.GetByPredicate(feature => feature.Key == UsageDataMasterSwitch.Key);
+
+            if (existing is null)
+            {
+                repository.Add(new OptionalFeature
+                {
+                    Id = 0,
+                    Key = UsageDataMasterSwitch.Key,
+                    Name = "Never send usage data",
+                    Description = "Seeded by a scenario; the product's own wording is asserted elsewhere.",
+                    Enabled = engaged,
+                    IsPremium = true,
+                });
+            }
+            else
+            {
+                existing.Enabled = engaged;
+            }
+
+            repository.Save().GetAwaiter().GetResult();
         }
     }
 }
