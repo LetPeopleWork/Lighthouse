@@ -23,7 +23,7 @@ test.describe("Usage data: the question arrives without being asked for", () => 
 		"Needs an instance started with UsageData__AskAfterInstallDays=0; a fresh one is too young to ask.",
 	);
 
-	test("puts the question to a browser that never went looking for it, and says whether it will come back", async ({
+	test("puts the question to a browser that never went looking for it", async ({
 		page,
 	}) => {
 		await UsageDataDialogPage.asABrowserThatHasNeverBeenAsked(page);
