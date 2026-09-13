@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -22,6 +22,20 @@ import {
 	createMockWorkTrackingSystemService,
 } from "../../tests/MockApiServiceProvider";
 import OverviewDashboard from "./OverviewDashboard";
+
+// The one pair of events nothing else can keep straight. Both call sites sit in the same handler,
+// both take a name from the same list, and swapping them type-checks - so a portfolio deletion
+// counted as a team's would be a quietly wrong number rather than a broken screen.
+const { reportUsage } = vi.hoisted(() => ({ reportUsage: vi.fn() }));
+vi.mock(
+	"../../services/UsageData/usageDataReporter",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("../../services/UsageData/usageDataReporter")
+		>()),
+		useUsageDataReporter: () => reportUsage,
+	}),
+);
 
 // Mock the react-router's useNavigate function
 const mockNavigate = vi.fn();
@@ -869,6 +883,61 @@ describe("OverviewDashboard", () => {
 				Array.from(grid.querySelectorAll("svg[data-testid='EditIcon']")),
 			);
 			expect(editIcons).toHaveLength(4);
+		});
+	});
+
+	describe("what a deletion is reported as", () => {
+		const asASystemAdmin = () => {
+			const rbacService = createMockRbacService();
+			rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin: true,
+				canCreateTeam: true,
+				canCreatePortfolio: true,
+			});
+			return rbacService;
+		};
+
+		const deleteTheFirstRowOf = async (section: "portfolios" | "teams") => {
+			renderWithProviders(<OverviewDashboard />, {
+				rbacService: asASystemAdmin(),
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+
+			// Portfolios are drawn first and Teams second, so the grids arrive in that order.
+			const grids = screen.getAllByTestId("datagrid-container");
+			const grid = section === "portfolios" ? grids[0] : grids[1];
+
+			fireEvent.click(
+				grid.querySelectorAll('[data-testid="delete-item-button"]')[0],
+			);
+
+			fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+		};
+
+		it("reports a deleted Portfolio as a Portfolio", async () => {
+			reportUsage.mockClear();
+
+			await deleteTheFirstRowOf("portfolios");
+
+			await waitFor(() =>
+				expect(reportUsage).toHaveBeenCalledWith({
+					name: "PortfolioDeleted",
+				}),
+			);
+		});
+
+		it("reports a deleted Team as a Team", async () => {
+			reportUsage.mockClear();
+
+			await deleteTheFirstRowOf("teams");
+
+			await waitFor(() =>
+				expect(reportUsage).toHaveBeenCalledWith({ name: "TeamDeleted" }),
+			);
 		});
 	});
 
