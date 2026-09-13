@@ -7,6 +7,10 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import {
+	administratorStoppedItSentence,
+	theVetoIsAvailableSentence,
+} from "../../services/UsageData/usageDataAdminVetoCopy";
 
 export type UsageDataDecision = "granted" | "declined";
 
@@ -49,6 +53,7 @@ export const UsageDataDialog = ({
 	neverSent,
 	docsUrl,
 	failedToRecord = false,
+	administratorDisabled = false,
 	onDecision,
 	onClose,
 }: UsageDataDialogProps): React.ReactElement => {
@@ -94,6 +99,13 @@ export const UsageDataDialog = ({
 					sent.
 				</Typography>
 
+				{/* Shown to everybody, whatever this instance's licence is. The dialog has never been
+				    told which one that is, and a version of this sentence that only appeared for one
+				    tier would disclose it to a caller who arrived without authenticating. */}
+				<Typography variant="body2" sx={{ mb: 2 }}>
+					{theVetoIsAvailableSentence()}
+				</Typography>
+
 				<Typography variant="body2">
 					<Link href={docsUrl} target="_blank" rel="noopener noreferrer">
 						Read the full usage data page
@@ -110,11 +122,29 @@ export const UsageDataDialog = ({
 				</Alert>
 			) : null}
 
+			{/* Next to the buttons it explains, rather than up in the copy where somebody deciding
+			    would have read it before it mattered. Both answers are held, not only the yes:
+			    recording a refusal against something already stopped writes down a decision nobody
+			    made, and leaves it there after the instance starts sending again. */}
+			{administratorDisabled ? (
+				<Alert severity="info" sx={{ mx: 3, mb: 1 }}>
+					{administratorStoppedItSentence()}
+				</Alert>
+			) : null}
+
 			<DialogActions>
-				<Button onClick={() => onDecision("declined")} color="inherit">
+				<Button
+					onClick={() => onDecision("declined")}
+					color="inherit"
+					disabled={administratorDisabled}
+				>
 					No, thank you
 				</Button>
-				<Button onClick={() => onDecision("granted")} variant="contained">
+				<Button
+					onClick={() => onDecision("granted")}
+					variant="contained"
+					disabled={administratorDisabled}
+				>
 					Yes, send it
 				</Button>
 			</DialogActions>

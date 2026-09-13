@@ -46,6 +46,14 @@ const writeToken = (token: string): void => {
 
 export interface UsageDataConsent {
 	indicatorState: UsageDataSendingState;
+	/**
+	 * Whether whoever runs this instance has stopped usage data for everyone on it.
+	 *
+	 * Carried beside the indicator state rather than read off it, because the dialog needs the
+	 * plain fact: it has to hold its two answers and say why, and deriving that from a rendering
+	 * state would make the copy depend on which icon the footer chose.
+	 */
+	administratorDisabled: boolean;
 	/** The server's answer to whether this browser is due to be asked, unprompted. */
 	mayAsk: boolean;
 	/** What this browser last answered, or null when it never has. */
@@ -92,6 +100,7 @@ export function UsageDataConsentProvider({
 
 	const [indicatorState, setIndicatorState] =
 		useState<UsageDataSendingState>("unknown");
+	const [administratorDisabled, setAdministratorDisabled] = useState(false);
 	const [mayAsk, setMayAsk] = useState(false);
 	const [reAskAfterDays, setReAskAfterDays] = useState(0);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -104,17 +113,29 @@ export function UsageDataConsentProvider({
 			const state = await usageDataService.getState(
 				readUsageDataConsentToken(),
 			);
-			setIndicatorState(state.sending ? "sending" : "not-sending");
+			// Asked in this order deliberately. Somebody whose instance was stopped after they
+			// agreed is not sending either, and reading their own decision first would show them
+			// the same words a refusal shows - which is the one thing the fourth state exists to
+			// prevent.
+			if (state.administratorDisabled) {
+				setIndicatorState("disabled-by-administrator");
+			} else {
+				setIndicatorState(state.sending ? "sending" : "not-sending");
+			}
+
+			setAdministratorDisabled(state.administratorDisabled);
 			setMayAsk(state.mayAsk);
 			setReAskAfterDays(state.reAskAfterDays);
 			setDecision(state.decision);
 		} catch {
 			// Not knowing whether to ask means not asking. A dialog opened because a request failed
-			// would arrive for people the administrator had switched it off for.
+			// would arrive for people the administrator had stopped usage data for.
 			setMayAsk(false);
 			// The indicator fails closed. Guessing "sending" when we cannot tell would be alarming
-			// and wrong; guessing "not sending" is only wrong.
+			// and wrong; guessing "not sending" is only wrong. It must not guess that an
+			// administrator did it either - that would put words in somebody's mouth.
 			setIndicatorState("unknown");
+			setAdministratorDisabled(false);
 		}
 	}, [usageDataService]);
 
@@ -184,6 +205,7 @@ export function UsageDataConsentProvider({
 	const consent = useMemo(
 		() => ({
 			indicatorState,
+			administratorDisabled,
 			mayAsk,
 			decision,
 			reAskAfterDays,
@@ -196,6 +218,7 @@ export function UsageDataConsentProvider({
 		}),
 		[
 			indicatorState,
+			administratorDisabled,
 			mayAsk,
 			decision,
 			reAskAfterDays,

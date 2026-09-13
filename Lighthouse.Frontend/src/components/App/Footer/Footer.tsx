@@ -108,6 +108,7 @@ const Footer: React.FC = () => {
 						neverSent={USAGE_DATA_NEVER_SENT}
 						docsUrl={USAGE_DATA_DOCS_URL}
 						failedToRecord={usageData.failedToRecord}
+						administratorDisabled={usageData.administratorDisabled}
 						onDecision={usageData.decide}
 						onClose={usageData.closeDialog}
 					/>

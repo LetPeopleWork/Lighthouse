@@ -34,6 +34,11 @@ export interface UsageDataIndicatorProps {
 const SENDING_LABEL = "Usage data: being sent from this browser";
 const NOT_SENDING_LABEL = "Usage data: not being sent";
 
+// Not-sending with a subject. Somebody who agreed and was then overruled sees the same silence a
+// refusal produces, and the only thing that tells them apart is this sentence naming who did it.
+const STOPPED_BY_ADMINISTRATOR_LABEL =
+	"Usage data: not being sent, stopped by an administrator";
+
 export const UsageDataIndicator = ({
 	state,
 	onOpenDecision,
@@ -41,8 +46,15 @@ export const UsageDataIndicator = ({
 	const theme = useTheme();
 
 	const isSending = state === "sending";
-	const label = isSending ? SENDING_LABEL : NOT_SENDING_LABEL;
 	const Icon = isSending ? CloudUploadIcon : CloudOffIcon;
+
+	let label = NOT_SENDING_LABEL;
+
+	if (isSending) {
+		label = SENDING_LABEL;
+	} else if (state === "disabled-by-administrator") {
+		label = STOPPED_BY_ADMINISTRATOR_LABEL;
+	}
 
 	return (
 		<Tooltip title={label} arrow>

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { UsageDataDialog, type UsageDataDialogProps } from "./UsageDataDialog";
@@ -297,7 +297,7 @@ describe("UsageDataDialog", () => {
  * would disclose the tier to an anonymous caller, which is the shape C5 already ruled out for the
  * cadence sentence.
  */
-describe.skip("UsageDataDialog, where an administrator has stopped usage data", () => {
+describe("UsageDataDialog, where an administrator has stopped usage data", () => {
 	it("is still shown and still readable, because the decision is suspended rather than taken away", () => {
 		renderDialog({ administratorDisabled: true });
 
@@ -305,33 +305,46 @@ describe.skip("UsageDataDialog, where an administrator has stopped usage data", 
 		expect(document.body.textContent ?? "").toMatch(/why we ask for this/i);
 	});
 
-	it("will not take a yes it could not act on", async () => {
+	// Dispatched with fireEvent rather than userEvent on purpose. userEvent refuses to touch an
+	// element the browser would not let a pointer reach, so it throws before the click - which
+	// proves the button is unreachable but never asks the question this test is about, which is
+	// whether the handler behind it can still run.
+	it("will not take a yes it could not act on", () => {
 		const { onDecision } = renderDialog({ administratorDisabled: true });
 
 		const agree = screen.getByRole("button", { name: /yes, send it/i });
 
 		expect(agree).toBeDisabled();
 
-		await userEvent.click(agree);
+		fireEvent.click(agree);
 		expect(onDecision).not.toHaveBeenCalled();
 	});
 
-	it("will not take a no either, because refusing something already stopped records a decision nobody made", async () => {
+	it("will not take a no either, because refusing something already stopped records a decision nobody made", () => {
 		const { onDecision } = renderDialog({ administratorDisabled: true });
 
 		const decline = screen.getByRole("button", { name: /no, thank you/i });
 
 		expect(decline).toBeDisabled();
 
-		await userEvent.click(decline);
+		fireEvent.click(decline);
 		expect(onDecision).not.toHaveBeenCalled();
 	});
 
+	// Asserted through the alert rather than through the dialog's whole text. The sentence telling
+	// everybody the switch exists also says "administrator" and is rendered either way, so a match
+	// against the body would pass with no hint at all.
 	it("says why the buttons cannot be used, rather than leaving them dead", () => {
 		renderDialog({ administratorDisabled: true });
 
+		expect(screen.getByRole("alert")).toHaveTextContent(/administrator/i);
+	});
+
+	it("stays quiet about it when nobody has stopped anything", () => {
+		renderDialog();
+
 		anchorOnRenderedDialog();
-		expect(document.body.textContent ?? "").toMatch(/administrator/i);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
 	it("does not tell a reader they declined something they never answered", () => {

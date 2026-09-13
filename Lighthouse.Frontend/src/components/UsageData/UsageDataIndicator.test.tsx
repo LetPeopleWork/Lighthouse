@@ -98,7 +98,7 @@ describe("UsageDataIndicator", () => {
  * overruled by whoever runs the instance is shown the same words as a reader who refused. What is
  * missing is the subject of the sentence.
  */
-describe.skip("UsageDataIndicator, where an administrator has stopped usage data", () => {
+describe("UsageDataIndicator, where an administrator has stopped usage data", () => {
 	it("says nothing is being sent", () => {
 		const { button } = renderIndicator("disabled-by-administrator");
 
