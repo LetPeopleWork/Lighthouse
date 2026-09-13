@@ -148,14 +148,13 @@ reasonable reading on that instance at all.
 
 ## Where it goes, and who holds it
 
-The collector is **PostHog Cloud EU**, operated by PostHog. Data rests on servers in **Frankfurt**.
+The collector is **PostHog Cloud EU**, operated by PostHog, with data at rest in the EU. Processing
+may also take place outside it, including in the US, under standard contractual clauses.
 
-One thing worth stating plainly rather than leaving you to assume it: *resting in Frankfurt is not the
-same as never leaving the EU.* PostHog's data-processing agreement says processing may happen outside
-that area, including in the US — which in practice covers their own staff and internal tooling under
-standard contractual clauses. The sub-processors holding the data are EU-located; the content delivery
-network that carries it in transit is global, as it is for any web request. We would rather say this
-than let the word "Frankfurt" imply something stronger than it means.
+The authority on that is PostHog's own data processing agreement, not our summary of it:
+<https://posthog.com/dpa>. Restating somebody else's terms here would leave you reading a copy that
+can drift out of date while still sounding authoritative — and the terms that actually bind them are
+the ones worth reading.
 
 **Your browser never contacts the collector.** It tells your own Lighthouse server that something
 happened; your server decides whether consent allows it, and only your server talks to PostHog. That
