@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { useUsageDataConsent } from "../../hooks/useUsageDataConsent";
 import {
 	claimPromptSlot,
-	promptSlotHolder,
+	slotIsHeldByAnother,
 } from "../../services/UsageData/promptSession";
 import { evaluateAskEligibility } from "../../services/UsageData/usageDataAskEligibility";
 import { readAskedMarker } from "../../services/UsageData/usageDataAskMarker";
@@ -30,14 +30,12 @@ export const UsageDataAsk = (): React.ReactElement | null => {
 			return;
 		}
 
-		const holder = promptSlotHolder();
-
 		const { shouldAsk } = evaluateAskEligibility({
 			mayAsk,
 			decision,
 			lastAskedAt: readAskedMarker(),
 			reAskAfterDays,
-			promptSlotTaken: holder !== null && holder !== "usage-data",
+			promptSlotTaken: slotIsHeldByAnother("usage-data"),
 		});
 
 		if (!shouldAsk || !claimPromptSlot("usage-data")) {

@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 // endpoint exists - and would keep passing if the oracle ever leaked through the
                 // status code or a header rather than the body.
                 Assert.That(baseline.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(withoutToken, Does.Contain("willAskAgain").IgnoreCase,
+                Assert.That(withoutToken, Does.Contain("mayAsk").IgnoreCase,
                     "the baseline must actually be the state document before comparing anything to it");
 
                 Assert.That(withUnknownToken, Is.EqualTo(withoutToken),
@@ -60,20 +60,21 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
+        // Every answer this endpoint derives from the licence - and by now there are several - has
+        // to be derived without the licence travelling. The test used to anchor on one named field;
+        // it anchors on the document itself now, so a field arriving or leaving cannot take the
+        // guard with it.
         [Test]
-        public async Task GetState_TellsTheBrowserWhetherItWillBeAskedAgain_WithoutNamingTheLicence()
+        public async Task GetState_NeverNamesTheLicence()
         {
             var state = await ReadStateAsync(token: null);
 
             using var document = JsonDocument.Parse(state);
-            var properties = document.RootElement.EnumerateObject().Select(p => p.Name).ToArray();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(properties.Any(p => string.Equals(p, "willAskAgain", StringComparison.OrdinalIgnoreCase)),
-                    Is.True,
-                    "the dialog's copy depends on it, and deriving it server-side is what keeps the "
-                    + "licence tier off an endpoint that needs no authentication");
+                Assert.That(document.RootElement.EnumerateObject().Any(), Is.True,
+                    "an empty body discloses nothing and would pass the guard below without meaning it");
                 // Over the whole serialised body, not just its top-level property names: a nested
                 // object such as cadence: { tier: "premium" } discloses the tier and would pass a
                 // top-level-only check.

@@ -73,14 +73,19 @@ describe("SurveyNudge and the session's one prompt slot", () => {
 		sessionStorage.clear();
 	});
 
+	// Both halves under waitFor, because they do not happen in the same beat: the popup renders as
+	// soon as it knows it is eligible, and takes the slot from an effect immediately afterwards.
+	// Waiting only for the heading and then reading storage asserts against whichever of the two
+	// won the race, which is how this passed alone and failed in the full suite.
 	it("takes the slot when it appears", async () => {
 		renderNudge();
 
-		await waitFor(() => expect(queryHeading()).toBeInTheDocument());
-
-		expect(sessionStorage.getItem("lighthouse:prompt-slot")).toBe(
-			"survey-nudge",
-		);
+		await waitFor(() => {
+			expect(queryHeading()).toBeInTheDocument();
+			expect(sessionStorage.getItem("lighthouse:prompt-slot")).toBe(
+				"survey-nudge",
+			);
+		});
 	});
 
 	it("stands down when the usage data dialog already holds the session", async () => {

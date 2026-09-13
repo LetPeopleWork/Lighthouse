@@ -14,7 +14,6 @@ import {
 const undecided: IUsageDataState = {
 	sending: false,
 	decision: null,
-	willAskAgain: true,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };
@@ -22,7 +21,6 @@ const undecided: IUsageDataState = {
 const granted: IUsageDataState = {
 	sending: true,
 	decision: "Granted",
-	willAskAgain: false,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };

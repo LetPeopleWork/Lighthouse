@@ -11,7 +11,7 @@ import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import type { SurveyNudgeAction } from "../../services/Api/SurveyNudgeService";
 import {
 	claimPromptSlot,
-	promptSlotHolder,
+	slotIsHeldByAnother,
 } from "../../services/UsageData/promptSession";
 import { evaluateNudgeEligibility } from "./nudgeEligibility";
 
@@ -109,9 +109,7 @@ const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 		}
 	}, [wantsToShow]);
 
-	const holder = promptSlotHolder();
-
-	if (!wantsToShow || (holder !== null && holder !== "survey-nudge")) {
+	if (!wantsToShow || slotIsHeldByAnother("survey-nudge")) {
 		return null;
 	}
 

@@ -101,8 +101,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
             Assert.That(await MayAskAsync(token), Is.False,
                 "whether the refusal is final or merely quiet for a few months, it is not due now. "
-                + "Which of the two applies is a licence question, and the endpoint already answers "
-                + "it separately through willAskAgain without naming the tier");
+                + "Which of the two applies is a licence question, settled on the server so that the "
+                + "tier never travels");
         }
 
         // The browser cannot hold the cadence for a dismissal without knowing how long it runs, and
@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                     "the browser cannot work this out: the install timestamp sits behind "
                     + "authentication and the administrator's switch is not its to read");
 
-                // The same guard slice 01 put on willAskAgain, restated because this field is derived
+                // The same guard the consent endpoints carry, restated because this field is derived
                 // from the tier too. Over the whole body rather than the top-level names: a nested
                 // cadence: { tier: "premium" } would pass a property-name check and still disclose it.
                 Assert.That(

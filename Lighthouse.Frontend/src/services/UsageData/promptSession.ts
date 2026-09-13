@@ -32,13 +32,23 @@ export const promptSlotHolder = (): PromptOwner | null => {
 };
 
 /**
+ * Whether somebody other than `owner` is already showing an unsolicited prompt this session.
+ *
+ * Both prompts have to ask this, and asking it as "is the slot taken, and not by me" in each of
+ * them is one rule written twice - the kind that drifts when only one of the two is edited.
+ */
+export const slotIsHeldByAnother = (owner: PromptOwner): boolean => {
+	const holder = promptSlotHolder();
+
+	return holder !== null && holder !== owner;
+};
+
+/**
  * Takes this session's slot for `owner`, or reports that somebody else already has it.
  * Claiming twice for the same owner succeeds: a re-render must not lose a slot it already holds.
  */
 export const claimPromptSlot = (owner: PromptOwner): boolean => {
-	const holder = promptSlotHolder();
-
-	if (holder !== null && holder !== owner) {
+	if (slotIsHeldByAnother(owner)) {
 		return false;
 	}
 

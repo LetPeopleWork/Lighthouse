@@ -11,7 +11,6 @@ export type UsageDataDecisionValue = "granted" | "declined";
 export interface IUsageDataState {
 	sending: boolean;
 	decision: string | null;
-	willAskAgain: boolean;
 	/**
 	 * Whether to put the question to this browser now, unprompted.
 	 *

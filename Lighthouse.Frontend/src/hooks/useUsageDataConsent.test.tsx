@@ -48,7 +48,6 @@ const renderConsent = (
 const undecided: IUsageDataState = {
 	sending: false,
 	decision: null,
-	willAskAgain: true,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };
@@ -56,7 +55,6 @@ const undecided: IUsageDataState = {
 const granted: IUsageDataState = {
 	sending: true,
 	decision: "Granted",
-	willAskAgain: false,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };
@@ -64,7 +62,6 @@ const granted: IUsageDataState = {
 const declined: IUsageDataState = {
 	sending: false,
 	decision: "Declined",
-	willAskAgain: true,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };
@@ -210,7 +207,9 @@ describe("useUsageDataConsent", () => {
 		});
 
 		expect(result.current.indicatorState).toBe("unknown");
-		expect(result.current.willAskAgain).toBe(false);
+		// Not knowing whether to ask has to mean not asking, or a slow first request would put the
+		// dialog in front of somebody the administrator had switched it off for.
+		expect(result.current.mayAsk).toBe(false);
 		expect(result.current.isDialogOpen).toBe(false);
 		expect(result.current.failedToRecord).toBe(false);
 	});

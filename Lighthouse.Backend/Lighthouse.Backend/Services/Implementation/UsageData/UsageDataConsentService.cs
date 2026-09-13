@@ -60,7 +60,6 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             return new UsageDataState(
                 Sending: sending,
                 Decision: consent?.Decision.ToString(),
-                WillAskAgain: WillAskAgain(consent?.Decision),
                 MayAsk: MayAsk(consent, now),
                 ReAskAfterDays: configuration.CurrentValue.ReAskAfterDays);
         }
@@ -147,10 +146,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 return true;
             }
 
-            // Somebody who agreed has nothing left to be asked, and a refusal the tier makes final
-            // is exactly that. Both are already the answer WillAskAgain gives, which is why this
-            // defers to it rather than re-deriving the licence rule beside it.
-            if (!WillAskAgain(consent.Decision))
+            if (!TheQuestionIsStillOpen(consent.Decision))
             {
                 return false;
             }
@@ -165,10 +161,13 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         }
 
         /// <summary>
-        /// Whether this browser can expect to be asked again. Derived here, on the server, so that the
-        /// anonymous state endpoint can answer it without disclosing the licence tier it depends on.
+        /// Whether there is anything left to ask this browser, ever - before any question of timing.
+        ///
+        /// It depends on the licence, which is why it is settled here rather than anywhere a caller
+        /// could see: the state endpoint needs no authentication, and the tier is not something an
+        /// anonymous caller may learn.
         /// </summary>
-        private bool WillAskAgain(UsageDataDecision? decision)
+        private bool TheQuestionIsStillOpen(UsageDataDecision? decision)
         {
             // Someone who already agreed is not asked again; there is nothing left to ask them.
             if (decision == UsageDataDecision.Granted)

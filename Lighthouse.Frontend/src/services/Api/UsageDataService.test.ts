@@ -22,7 +22,7 @@ describe("UsageDataService", () => {
 
 	it("asks for the state without a token when this browser holds none", async () => {
 		mockedAxios.get.mockResolvedValueOnce({
-			data: { sending: false, decision: null, willAskAgain: true },
+			data: { sending: false, decision: null },
 		});
 
 		await service.getState(null);
@@ -35,7 +35,7 @@ describe("UsageDataService", () => {
 	// nothing visibly breaks while consent silently stops being remembered.
 	it("names this browser by its token when it has one", async () => {
 		mockedAxios.get.mockResolvedValueOnce({
-			data: { sending: true, decision: "Granted", willAskAgain: false },
+			data: { sending: true, decision: "Granted" },
 		});
 
 		await service.getState("this-browsers-token");
@@ -46,7 +46,7 @@ describe("UsageDataService", () => {
 	});
 
 	it("returns what the server said about the instance and this browser", async () => {
-		const state = { sending: true, decision: "Granted", willAskAgain: false };
+		const state = { sending: true, decision: "Granted" };
 		mockedAxios.get.mockResolvedValueOnce({ data: state });
 
 		expect(await service.getState(null)).toEqual(state);

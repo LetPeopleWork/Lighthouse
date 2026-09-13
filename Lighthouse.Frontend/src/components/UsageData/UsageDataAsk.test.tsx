@@ -20,13 +20,11 @@ import { UsageDataAsk } from "./UsageDataAsk";
 const usageDataService = (state: {
 	sending?: boolean;
 	decision?: string | null;
-	willAskAgain?: boolean;
 	mayAsk?: boolean;
 }) => ({
 	getState: vi.fn().mockResolvedValue({
 		sending: false,
 		decision: null,
-		willAskAgain: true,
 		mayAsk: true,
 		...state,
 	}),

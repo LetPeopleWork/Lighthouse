@@ -46,7 +46,6 @@ const writeToken = (token: string): void => {
 
 export interface UsageDataConsent {
 	indicatorState: UsageDataSendingState;
-	willAskAgain: boolean;
 	/** The server's answer to whether this browser is due to be asked, unprompted. */
 	mayAsk: boolean;
 	/** What this browser last answered, or null when it never has. */
@@ -93,7 +92,6 @@ export function UsageDataConsentProvider({
 
 	const [indicatorState, setIndicatorState] =
 		useState<UsageDataSendingState>("unknown");
-	const [willAskAgain, setWillAskAgain] = useState(false);
 	const [mayAsk, setMayAsk] = useState(false);
 	const [reAskAfterDays, setReAskAfterDays] = useState(0);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -107,7 +105,6 @@ export function UsageDataConsentProvider({
 				readUsageDataConsentToken(),
 			);
 			setIndicatorState(state.sending ? "sending" : "not-sending");
-			setWillAskAgain(state.willAskAgain);
 			setMayAsk(state.mayAsk);
 			setReAskAfterDays(state.reAskAfterDays);
 			setDecision(state.decision);
@@ -187,7 +184,6 @@ export function UsageDataConsentProvider({
 	const consent = useMemo(
 		() => ({
 			indicatorState,
-			willAskAgain,
 			mayAsk,
 			decision,
 			reAskAfterDays,
@@ -200,7 +196,6 @@ export function UsageDataConsentProvider({
 		}),
 		[
 			indicatorState,
-			willAskAgain,
 			mayAsk,
 			decision,
 			reAskAfterDays,

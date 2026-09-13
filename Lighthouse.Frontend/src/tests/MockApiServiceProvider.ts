@@ -81,7 +81,6 @@ export const createMockUsageDataService = (): IUsageDataService => {
 		getState: vi.fn().mockResolvedValue({
 			sending: false,
 			decision: null,
-			willAskAgain: true,
 			mayAsk: false,
 			reAskAfterDays: 90,
 		}),

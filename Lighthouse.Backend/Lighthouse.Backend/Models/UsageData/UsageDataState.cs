@@ -9,8 +9,8 @@ namespace Lighthouse.Backend.Models.UsageData
     /// know: whether this instance is currently sending, what this browser previously answered, and
     /// whether it will be asked again.
     ///
-    /// The licence tier is NOT here and must not be added. <c>WillAskAgain</c> is derived from it on
-    /// the server precisely so that the question can be answered without telling an unauthenticated
+    /// The licence tier is NOT here and must not be added. <c>MayAsk</c> is derived from it on the
+    /// server precisely so that the question can be answered without telling an unauthenticated
     /// caller which tier the instance runs.
     ///
     /// <c>MayAsk</c> is derived for the same reason and from more besides: how long this instance
@@ -28,5 +28,5 @@ namespace Lighthouse.Backend.Models.UsageData
     /// browser can tell when that was, and only the server knows how long it should count for.
     /// </remarks>
     public sealed record UsageDataState(
-        bool Sending, string? Decision, bool WillAskAgain, bool MayAsk, int ReAskAfterDays);
+        bool Sending, string? Decision, bool MayAsk, int ReAskAfterDays);
 }

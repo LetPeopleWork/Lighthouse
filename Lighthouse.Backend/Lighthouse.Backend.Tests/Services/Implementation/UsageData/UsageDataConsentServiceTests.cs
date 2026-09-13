@@ -156,23 +156,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             UsageDataDecision decision, bool premium, bool expected)
         {
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(premium);
-            repositoryMock
-                .Setup(r => r.FindByTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UsageDataConsent { TokenHash = "digest", Decision = decision });
 
-            var state = await CreateService().GetStateAsync("a-token", TestContext.CurrentContext.CancellationToken);
+            // Left at its default, which is long enough ago that every window has passed - so this
+            // is only about which answers leave anything still to ask, and never about timing.
+            TheBrowserAnswered(decision, decidedAt: default);
 
-            Assert.That(state.WillAskAgain, Is.EqualTo(expected));
-        }
+            var state = await StateForABrowserWithAToken();
 
-        [Test]
-        public async Task GetState_ForABrowserThatHasNotDecided_WillAskAgainWhateverTheTier()
-        {
-            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
-
-            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
-
-            Assert.That(state.WillAskAgain, Is.True, "nobody has answered yet, so there is still something to ask");
+            Assert.That(state.MayAsk, Is.EqualTo(expected));
         }
 
         /// <summary>
@@ -258,29 +249,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         [Test]
-        public async Task GetState_ForABrowserThatAgreedLongAgo_NeverSaysToAskAgain()
-        {
-            TheBrowserAnswered(UsageDataDecision.Granted, Now.AddYears(-5));
-
-            var state = await StateForABrowserWithAToken();
-
-            Assert.That(state.MayAsk, Is.False,
-                "there is nothing left to ask somebody who already agreed, however long ago they did");
-        }
-
-        [Test]
-        public async Task GetState_ForAPremiumRefusal_NeverSaysToAskAgain_HoweverLongItHasBeen()
-        {
-            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
-            TheBrowserAnswered(UsageDataDecision.Declined, Now.AddYears(-5));
-
-            var state = await StateForABrowserWithAToken();
-
-            Assert.That(state.MayAsk, Is.False,
-                "the dialog told this reader we would not ask again. Five years is still not again");
-        }
-
-        [Test]
         public async Task GetState_ForACommunityRefusal_SaysNotToAskBeforeTheWindowHasPassed()
         {
             TheBrowserAnswered(UsageDataDecision.Declined, Now.AddDays(-ReAskAfterDays).AddDays(1));
@@ -302,19 +270,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             Assert.That(state.MayAsk, Is.True,
                 "the dialog promised the question would come back, and a promise nothing acts on is "
                 + "the same defect as one broken early");
-        }
-
-        [Test]
-        public async Task GetState_ForAWithdrawal_SaysToAskOnceTheWindowHasPassed_OnEitherTier()
-        {
-            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
-            TheBrowserAnswered(UsageDataDecision.Revoked, Now.AddDays(-ReAskAfterDays));
-
-            var state = await StateForABrowserWithAToken();
-
-            Assert.That(state.MayAsk, Is.True,
-                "changing your mind once must not cost you the chance to change it back, which is why "
-                + "a withdrawal is a different answer from a refusal rather than a spelling of it");
         }
 
         // The case that makes AskedAt worth its column. Three months after refusing, this browser was

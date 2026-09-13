@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // this instance's tier. Anything else arriving here should fail this test again rather than
         // be added to the list.
         private static readonly string[] EverythingTheStateAnswerCarries =
-            ["sending", "decision", "willAskAgain", "mayAsk", "reAskAfterDays"];
+            ["sending", "decision", "mayAsk", "reAskAfterDays"];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;

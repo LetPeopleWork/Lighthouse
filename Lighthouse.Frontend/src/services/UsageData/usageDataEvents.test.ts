@@ -17,7 +17,6 @@ const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
 const granted: IUsageDataState = {
 	sending: true,
 	decision: "Granted",
-	willAskAgain: false,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };
@@ -25,7 +24,6 @@ const granted: IUsageDataState = {
 const declined: IUsageDataState = {
 	sending: false,
 	decision: "Declined",
-	willAskAgain: true,
 	mayAsk: false,
 	reAskAfterDays: 90,
 };
