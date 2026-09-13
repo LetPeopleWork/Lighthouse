@@ -49,6 +49,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheVetoIsPremium();
         }
 
+        // @driving_port @real-io @AC-06.6 - the words an administrator decides on. The criterion asks
+        // for the suspend-and-resume behaviour in plain words, because the fear that stops somebody
+        // using this switch is that flipping it destroys what people already answered.
+        [Test]
+        public void The_settings_copy_says_that_stopping_it_suspends_consent_rather_than_erasing_it()
+        {
+            ThenTheVetoExplainsSuspendAndResume();
+        }
+
+        // @driving_port @real-io @AC-06.6 - and the name carries the negation on its own. It sits in a
+        // table where every other switch reads positively, so a name that does not say "never" is read
+        // backwards at a glance, in the direction that matters.
+        [Test]
+        public void The_settings_name_says_what_turning_it_on_does_without_the_description()
+        {
+            ThenTheVetoIsNamedForWhatItStops();
+        }
+
         // @driving_port @real-io @AC-06.2 - the upgrade case. An administrator who engaged the veto has
         // made a policy decision, and the next release may not quietly undo it.
         [Test]

@@ -135,6 +135,46 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
                 + "sending again with nothing on screen saying so");
         }
 
+        /// <summary>
+        /// AC-06.6. Asserted on the seeded row rather than on a rendered page, because the row is
+        /// where the words are written and the settings table renders whatever it holds.
+        /// </summary>
+        private void ThenTheVetoExplainsSuspendAndResume()
+        {
+            var description = ReadStoredOptionalFeature(VetoKey).Description ?? string.Empty;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(description, Does.Contain("suspended").IgnoreCase,
+                    "an administrator reading this cannot tell whether flipping it throws away what "
+                    + "everybody already answered, which is the fear that stops them using it at all");
+                Assert.That(description, Does.Contain("resumes").IgnoreCase,
+                    "nothing says the instance starts sending again when this is turned back off, so "
+                    + "the switch reads as one-way");
+                Assert.That(description, Does.Contain("asked again").IgnoreCase,
+                    "nothing promises that turning it back off does not put the question to everybody "
+                    + "a second time - which is the cost an administrator is weighing");
+            }
+        }
+
+        /// <summary>
+        /// The one row in that table whose "on" means stop. Every neighbour reads positively, so the
+        /// name has to carry the negation without the description underneath it.
+        /// </summary>
+        private void ThenTheVetoIsNamedForWhatItStops()
+        {
+            var stored = ReadStoredOptionalFeature(VetoKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.Name, Does.Contain("never").IgnoreCase,
+                    $"'{stored.Name}' does not say that switching it on stops anything, and it sits "
+                    + "beside switches whose on means the feature runs");
+                Assert.That(stored.IsPreview, Is.False,
+                    "a preview chip on a privacy control invites an administrator to discount it");
+            }
+        }
+
         private void ThenTheVetoIsPremium()
         {
             Assert.That(ReadStoredOptionalFeature(VetoKey).IsPremium, Is.True,
