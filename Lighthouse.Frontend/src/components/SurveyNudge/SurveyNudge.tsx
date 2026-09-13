@@ -9,6 +9,10 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import type { SurveyNudgeAction } from "../../services/Api/SurveyNudgeService";
+import {
+	claimPromptSlot,
+	promptSlotHolder,
+} from "../../services/UsageData/promptSession";
 import { evaluateNudgeEligibility } from "./nudgeEligibility";
 
 export const SURVEY_URL = "https://letpeople.work/survey";
@@ -17,6 +21,13 @@ interface SurveyNudgeProps {
 	now?: Date;
 }
 
+/**
+ * One unsolicited prompt per session, and this popup is no longer the only one.
+ *
+ * The usage data dialog asks for consent, and consent collected alongside an unrelated request is
+ * not freely given - so the two may not share a session. Both are relevant to Community users on
+ * overlapping clocks, which makes meeting each other the normal case rather than an edge one.
+ */
 const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 	const { licensingService, systemInfoService, surveyNudgeService } =
 		useContext(ApiServiceContext);
@@ -80,7 +91,27 @@ const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 		[surveyNudgeService],
 	);
 
-	if (!decision.shouldShow || closed) {
+	// Only once this popup has decided it is actually appearing. Claiming while ineligible would
+	// let a fortnight-old instance silence the usage data dialog on behalf of a nudge nobody sees.
+	//
+	// From an effect rather than during rendering, because a claim is a write and React may throw
+	// away a render it never commits - which would leave the slot held by a popup nobody saw. The
+	// ordering that settles a genuine tie survives the move: this sits above the usage data
+	// component in the tree, so its effect runs first and takes the slot.
+	const wantsToShow = decision.shouldShow && !closed;
+
+	// Stryker disable next-line ArrayDeclaration: the dependency list only shows itself when the
+	// dependency changes, and a test contrived to change it would be watching React re-run an
+	// effect rather than anything this popup promises.
+	useEffect(() => {
+		if (wantsToShow) {
+			claimPromptSlot("survey-nudge");
+		}
+	}, [wantsToShow]);
+
+	const holder = promptSlotHolder();
+
+	if (!wantsToShow || (holder !== null && holder !== "survey-nudge")) {
 		return null;
 	}
 

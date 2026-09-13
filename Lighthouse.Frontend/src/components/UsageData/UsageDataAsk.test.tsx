@@ -2,9 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
-import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
 import Footer from "../App/Footer/Footer";
 import { UsageDataAsk } from "./UsageDataAsk";
 

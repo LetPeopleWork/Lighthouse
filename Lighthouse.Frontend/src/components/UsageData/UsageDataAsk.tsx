@@ -1,12 +1,12 @@
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { useUsageDataConsent } from "../../hooks/useUsageDataConsent";
-import { evaluateAskEligibility } from "../../services/UsageData/usageDataAskEligibility";
-import { readAskedMarker } from "../../services/UsageData/usageDataAskMarker";
 import {
 	claimPromptSlot,
 	promptSlotHolder,
 } from "../../services/UsageData/promptSession";
+import { evaluateAskEligibility } from "../../services/UsageData/usageDataAskEligibility";
+import { readAskedMarker } from "../../services/UsageData/usageDataAskMarker";
 
 /**
  * Puts the usage data question in front of somebody who never went looking for it.

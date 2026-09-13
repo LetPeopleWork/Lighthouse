@@ -12,7 +12,9 @@ import {
  * shown the dialog once and walked away from it.
  */
 
-const input = (overrides?: Partial<AskEligibilityInput>): AskEligibilityInput => ({
+const input = (
+	overrides?: Partial<AskEligibilityInput>,
+): AskEligibilityInput => ({
 	mayAsk: true,
 	decision: null,
 	lastAskedAt: null,

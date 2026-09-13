@@ -9,8 +9,8 @@ import {
 import type { UsageDataSendingState } from "../components/UsageData/UsageDataIndicator";
 import type { UsageDataDecisionValue } from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
-import { forgetWhatWasNoticed } from "../services/UsageData/usageDataBuffer";
 import { writeAskedMarker } from "../services/UsageData/usageDataAskMarker";
+import { forgetWhatWasNoticed } from "../services/UsageData/usageDataBuffer";
 
 /**
  * Where this browser keeps its consent token. The token is the only handle on the consent record -

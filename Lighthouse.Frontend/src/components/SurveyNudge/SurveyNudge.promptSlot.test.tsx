@@ -21,7 +21,9 @@ const FIXED_NOW = new Date("2026-06-01T00:00:00.000Z");
 const daysBefore = (days: number): string =>
 	new Date(FIXED_NOW.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
-const licenseStatus = (overrides?: Partial<ILicenseStatus>): ILicenseStatus => ({
+const licenseStatus = (
+	overrides?: Partial<ILicenseStatus>,
+): ILicenseStatus => ({
 	hasLicense: false,
 	isValid: false,
 	canUsePremiumFeatures: false,
@@ -66,7 +68,7 @@ const renderNudge = () => {
 const queryHeading = () =>
 	screen.queryByRole("heading", { name: /help shape lighthouse/i });
 
-describe.skip("SurveyNudge and the session's one prompt slot", () => {
+describe("SurveyNudge and the session's one prompt slot", () => {
 	beforeEach(() => {
 		sessionStorage.clear();
 	});
