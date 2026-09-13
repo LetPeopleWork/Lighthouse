@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
@@ -35,19 +36,24 @@ const usageDataService = (state: {
 	acknowledgeAsked: vi.fn().mockResolvedValue(undefined),
 });
 
+// The real Footer carries router links, so it needs a router. Rendering it anyway - rather than a
+// stub - is the point of this file: the thing under test is that somebody ends up looking at the
+// dialog, and only the real Footer renders one.
 const renderAsk = (service: ReturnType<typeof usageDataService>) =>
 	render(
-		<ApiServiceContext.Provider
-			value={createMockApiServiceContext({ usageDataService: service })}
-		>
-			<UsageDataConsentProvider>
-				<Footer />
-				<UsageDataAsk />
-			</UsageDataConsentProvider>
-		</ApiServiceContext.Provider>,
+		<MemoryRouter>
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({ usageDataService: service })}
+			>
+				<UsageDataConsentProvider>
+					<Footer />
+					<UsageDataAsk />
+				</UsageDataConsentProvider>
+			</ApiServiceContext.Provider>
+		</MemoryRouter>,
 	);
 
-describe.skip("UsageDataAsk", () => {
+describe("UsageDataAsk", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		sessionStorage.clear();

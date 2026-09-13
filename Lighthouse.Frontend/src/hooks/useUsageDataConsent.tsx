@@ -10,6 +10,7 @@ import type { UsageDataSendingState } from "../components/UsageData/UsageDataInd
 import type { UsageDataDecisionValue } from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { forgetWhatWasNoticed } from "../services/UsageData/usageDataBuffer";
+import { writeAskedMarker } from "../services/UsageData/usageDataAskMarker";
 
 /**
  * Where this browser keeps its consent token. The token is the only handle on the consent record -
@@ -46,11 +47,17 @@ const writeToken = (token: string): void => {
 export interface UsageDataConsent {
 	indicatorState: UsageDataSendingState;
 	willAskAgain: boolean;
+	/** The server's answer to whether this browser is due to be asked, unprompted. */
+	mayAsk: boolean;
+	/** What this browser last answered, or null when it never has. */
+	decision: string | null;
 	isDialogOpen: boolean;
 	failedToRecord: boolean;
 	openDialog: () => void;
 	closeDialog: () => void;
 	decide: (decision: UsageDataDecisionValue) => Promise<void>;
+	/** Records, here and on the server, that the dialog has just been put in front of somebody. */
+	noteAsked: () => void;
 }
 
 /**
@@ -85,6 +92,7 @@ export function UsageDataConsentProvider({
 	const [indicatorState, setIndicatorState] =
 		useState<UsageDataSendingState>("unknown");
 	const [willAskAgain, setWillAskAgain] = useState(false);
+	const [mayAsk, setMayAsk] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [failedToRecord, setFailedToRecord] = useState(false);
 	const [decision, setDecision] = useState<string | null>(null);
@@ -97,8 +105,12 @@ export function UsageDataConsentProvider({
 			);
 			setIndicatorState(state.sending ? "sending" : "not-sending");
 			setWillAskAgain(state.willAskAgain);
+			setMayAsk(state.mayAsk);
 			setDecision(state.decision);
 		} catch {
+			// Not knowing whether to ask means not asking. A dialog opened because a request failed
+			// would arrive for people the administrator had switched it off for.
+			setMayAsk(false);
 			// The indicator fails closed. Guessing "sending" when we cannot tell would be alarming
 			// and wrong; guessing "not sending" is only wrong.
 			setIndicatorState("unknown");
@@ -148,6 +160,21 @@ export function UsageDataConsentProvider({
 		[usageDataService, refresh, decision],
 	);
 
+	const noteAsked = useCallback(() => {
+		const askedAt = new Date().toISOString();
+
+		// Written here first, because this is the half the server cannot hold: a browser with no
+		// consent row has nothing on the server to be remembered by, and it is the browser most in
+		// danger of being asked again tomorrow.
+		writeAskedMarker(askedAt);
+
+		// Sent with or without a token. Without one the server writes nothing, which is the honest
+		// outcome rather than a case the caller has to know about.
+		usageDataService
+			.acknowledgeAsked(readUsageDataConsentToken())
+			.catch(() => undefined);
+	}, [usageDataService]);
+
 	// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	const openDialog = useCallback(() => setIsDialogOpen(true), []);
 	// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
@@ -157,20 +184,26 @@ export function UsageDataConsentProvider({
 		() => ({
 			indicatorState,
 			willAskAgain,
+			mayAsk,
+			decision,
 			isDialogOpen,
 			failedToRecord,
 			openDialog,
 			closeDialog,
 			decide,
+			noteAsked,
 		}),
 		[
 			indicatorState,
 			willAskAgain,
+			mayAsk,
+			decision,
 			isDialogOpen,
 			failedToRecord,
 			openDialog,
 			closeDialog,
 			decide,
+			noteAsked,
 		],
 	);
 

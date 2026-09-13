@@ -38,6 +38,7 @@ export interface IUsageDataService {
 	getState(token: string | null): Promise<IUsageDataState>;
 	recordDecision(decision: UsageDataDecisionValue): Promise<string>;
 	revoke(token: string): Promise<void>;
+	acknowledgeAsked(token: string | null): Promise<void>;
 	postEvents(token: string, events: IUsageDataEvent[]): Promise<void>;
 }
 
@@ -70,6 +71,22 @@ export class UsageDataService
 			await this.apiService.delete("/usagedata/consent", {
 				headers: { [CONSENT_TOKEN_HEADER]: token },
 			});
+		});
+	}
+
+	/**
+	 * Tells the server this browser has just been shown the dialog uninvited, so the next window is
+	 * measured from the question rather than from an answer that did not change. Sent without a
+	 * token too, where it does nothing: the browser has no row to be recorded against and remembers
+	 * this itself, and calling either way keeps the caller from branching on something it cannot see.
+	 */
+	async acknowledgeAsked(token: string | null): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.post(
+				"/usagedata/asked",
+				undefined,
+				token ? { headers: { [CONSENT_TOKEN_HEADER]: token } } : undefined,
+			);
 		});
 	}
 

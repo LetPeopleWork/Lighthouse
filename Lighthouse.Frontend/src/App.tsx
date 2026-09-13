@@ -20,6 +20,7 @@ import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
 import SplashScreen from "./components/App/SplashScreen/SplashScreen";
 import { useAuthGuard } from "./hooks/useAuthGuard";
+import { UsageDataAsk } from "./components/UsageData/UsageDataAsk";
 import { UsageDataConsentProvider } from "./hooks/useUsageDataConsent";
 import "./App.css";
 import SurveyNudge from "./components/SurveyNudge/SurveyNudge";
@@ -243,6 +244,7 @@ const App: React.FC = () => {
 								<Footer />
 								<SurveyNudge />
 								<UsageDataEventDetector />
+								<UsageDataAsk />
 							</Box>
 						</UsageDataConsentProvider>
 					</TerminologyProvider>

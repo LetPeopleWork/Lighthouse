@@ -27,6 +27,7 @@ const renderDialog = (overrides?: Partial<UsageDataDialogProps>) => {
 			open={true}
 			neverSent={NEVER_SENT}
 			docsUrl={DOCS_URL}
+			willAskAgain={true}
 			onDecision={onDecision}
 			onClose={onClose}
 			{...overrides}
@@ -206,15 +207,25 @@ describe("UsageDataDialog", () => {
 		expect(document.body.textContent ?? "").not.toMatch(forbidden);
 	});
 
-	// Nothing asks unprompted yet, so any promise about being asked again - in either direction -
-	// describes behaviour that does not exist. It belongs here only once the cadence does.
-	it("makes no promise about being asked again, in either direction", () => {
-		renderDialog();
+	// This used to assert the opposite: while nothing asked unprompted, a promise about being asked
+	// again described behaviour that did not exist, and the test said so and said it belonged here
+	// only once the cadence did. The cadence now does, so the promise is made - and the thing worth
+	// guarding becomes that it is made once and in one direction.
+	it("promises the reader will be asked again, when they will be", () => {
+		renderDialog({ willAskAgain: true });
 		anchorOnRenderedDialog();
 
-		expect(document.body.textContent ?? "").not.toMatch(
-			/\bask(ed|ing)? (you )?again\b/i,
-		);
+		const copy = document.body.textContent ?? "";
+
+		expect(copy).toMatch(/ask you again/i);
+		expect(copy).not.toMatch(/not ask you again/i);
+	});
+
+	it("promises the reader will not be asked again, when they will not be", () => {
+		renderDialog({ willAskAgain: false });
+		anchorOnRenderedDialog();
+
+		expect(document.body.textContent ?? "").toMatch(/not ask you again/i);
 	});
 
 	it("reports a grant when the reader agrees", async () => {
