@@ -47,6 +47,20 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         ];
 
         /// <summary>
+        /// Every name this product can send. The gates are meant to hold for all of them, and
+        /// nothing about an event's shape is supposed to change that - which is only worth
+        /// asserting if the awkwardly shaped ones are in the list rather than the seven that are
+        /// easy to build a message for.
+        /// </summary>
+        private static readonly string[] EveryEventThereIs =
+        [
+            TeamTabOpened,
+            PortfolioTabOpened,
+            .. EventsThatCarryNothingButTheirName,
+            WorkTrackingSystemConnected,
+        ];
+
+        /// <summary>
         /// The instance facts the usage data page lists as travelling with every event, and the two
         /// instructions that keep the caller's own address out of what the collector stores.
         /// </summary>
@@ -152,7 +166,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             {
                 Assert.That(handedIn.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
                 Assert.That(sent, Does.Contain(name));
-                Assert.That(sent, Does.Not.Contain("\"route\""),
+                Assert.That(WhatTravelledWithTheFirstMessageIn(sent), Does.Not.Contain("route"),
                     "an event about something somebody did carried an address, so the collector now "
                     + "holds a page opening nobody reported");
             }
@@ -286,13 +300,13 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// new call site is a gate that will be forgotten at one of them.
         /// </summary>
         [Test]
-        [TestCaseSource(nameof(EventsThatCarryNothingButTheirName))]
-        public async Task Nothing_new_leaves_an_instance_whose_administrator_stopped_usage_data(string name)
+        [TestCaseSource(nameof(EveryEventThereIs))]
+        public async Task Nothing_leaves_an_instance_whose_administrator_stopped_usage_data(string name)
         {
             var token = await ABrowserThatAgreedAsync();
             StoreTheVeto(engaged: true);
 
-            using var handedIn = await HandInAsync(token, ABatchOfJustTheName(name));
+            using var handedIn = await HandInAsync(token, ABatchOfWhateverShape(name));
 
             var sent = await EverythingTheCollectorReceived();
 
@@ -306,12 +320,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [TestCaseSource(nameof(EventsThatCarryNothingButTheirName))]
-        public async Task Nothing_new_leaves_a_browser_that_refused(string name)
+        [TestCaseSource(nameof(EveryEventThereIs))]
+        public async Task Nothing_leaves_a_browser_that_refused(string name)
         {
             var token = await ABrowserThatRefusedAsync();
 
-            using var handedIn = await HandInAsync(token, ABatchOfJustTheName(name));
+            using var handedIn = await HandInAsync(token, ABatchOfWhateverShape(name));
 
             Assert.That(await EverythingTheCollectorReceived(), Is.Empty);
         }
@@ -334,6 +348,22 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Assert.That(carried, Is.EquivalentTo(EverythingThePageSaysTravels),
                 "something is travelling with an event that the usage data page does not describe");
         }
+
+        /// <summary>
+        /// A message this event would actually be sent in, whatever shape it has to be.
+        ///
+        /// The gates sit behind the reading, so a message the reader turns away never reaches them.
+        /// A tab opening handed in without its page, or a connection without its kind, is refused
+        /// for being malformed - and a scenario about the veto would then pass without the veto
+        /// having done anything.
+        /// </summary>
+        private static string ABatchOfWhateverShape(string name) => name switch
+        {
+            TeamTabOpened => ABatchOf(name, TeamMetricsTab),
+            PortfolioTabOpened => ABatchOf(name, PortfolioMetricsTab),
+            WorkTrackingSystemConnected => ABatchNamingAWorkTrackingSystem(name, "Jira"),
+            _ => ABatchOfJustTheName(name),
+        };
 
         private static string ABatchOfJustTheName(string name)
             => $"{{\"events\":[{{\"name\":\"{name}\",\"offsetMs\":0,\"sequence\":0}}]}}";

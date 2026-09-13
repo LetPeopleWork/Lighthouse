@@ -31,6 +31,20 @@ const declined: IUsageDataState = {
 	administratorDisabled: false,
 };
 
+/**
+ * Somebody who agreed, on an instance whose administrator has since stopped usage data for
+ * everybody. The reader's own answer still says yes, which is exactly why this is worth its own
+ * case: anything deciding from the stored decision rather than from what the server now says is
+ * sending would go on noticing pages here.
+ */
+const stoppedByTheAdministrator: IUsageDataState = {
+	sending: false,
+	decision: "Granted",
+	mayAsk: false,
+	reAskAfterDays: 90,
+	administratorDisabled: true,
+};
+
 const renderDetector = (state: IUsageDataState, path: string) => {
 	const usageDataService: IUsageDataService = {
 		getState: vi.fn().mockResolvedValue(state),
@@ -200,6 +214,27 @@ describe("useUsageDataEventDetector", () => {
 		// open long enough to have been noticed at all. The clock is not advanced past this point on
 		// purpose - doing so would let the threshold elapse and the ordinary flush take over, which
 		// is a different claim.
+		expect(usageDataService.postEvents).not.toHaveBeenCalled();
+	});
+
+	// The administrator's veto stops the whole instance, and this browser agreed - so its own stored
+	// answer still reads Granted. Anything deciding from that answer rather than from what the
+	// server now says is being sent would carry on noticing pages against an instance that has been
+	// switched off, and every other case in this file would still pass.
+	it("notices nothing where an administrator stopped usage data for everybody", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+
+		const { usageDataService } = renderDetector(
+			stoppedByTheAdministrator,
+			"/teams/42/metrics",
+		);
+		await settle(usageDataService);
+		hideTheTab();
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(FLUSH_INTERVAL_MS);
+		});
+
 		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
 
