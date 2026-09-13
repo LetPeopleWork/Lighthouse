@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using Moq;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
@@ -30,13 +32,17 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// a source of invented events aimed at the real numbers. Sending degrades silently by
     /// specification, so this would happen with no error and no red build.
     ///
-    /// The guard is about configuration rather than about environments: a Lighthouse that was never
-    /// told where to send does not send. Every real deployment tells it - the chart renders the
-    /// value, Docker and standalone set it - and no test start does, including the installed macOS
-    /// bundle, which is the one start that cannot be given a per-step override at all.
+    /// The address ships inside the product now, so what decides is what this build is rather than
+    /// what anybody configured. An address named on purpose takes whatever build it is given - that
+    /// is how a fork points at a collector of its own, and how anyone watches the whole path end to
+    /// end before shipping. The built-in one takes published releases only: a release is stamped
+    /// with the date it was built, and nothing a test host, a working tree or a developer's own
+    /// machine calls itself has that shape.
     ///
-    /// Both halves are here on purpose. A guard that refuses everything satisfies the first scenario
-    /// and ships a feature that never sends anything to anybody.
+    /// All three scenarios are here on purpose, and the middle one most of all. A rule that refuses
+    /// everything satisfies the first and ships a pipe that is silent in every real deployment -
+    /// which nothing else in this suite would notice, because everything else asserts that things do
+    /// not get sent.
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]
@@ -49,64 +55,126 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private const string TheLiveCensusHost = "posthog.com";
 
-        // Somewhere that cannot exist, which is what an address supplied on purpose looks like here.
-        // Never an empty value: empty means "fall back to the built-in default", which is exactly the
-        // failure this whole fixture is about.
+        // Somewhere that cannot exist, which is what an address named on purpose looks like here.
+        // Never an empty value: empty is not a name, it is "nobody named one", and that is a
+        // different scenario below with a different answer.
         private const string AnAddressSomebodySupplied = "https://collector.usage-data-tests.invalid/";
         private const string TheHostSomebodySupplied = "collector.usage-data-tests.invalid";
+
+        // Nobody named one. Now that the address ships in the product this is how every real
+        // deployment runs, so it is an ordinary state rather than the refusal case, and what happens
+        // next turns entirely on which kind of build is asking.
+        private const string? NobodyNamedACollector = null;
+
+        // Two-digit year, then month, then day. Every release this product has published is stamped
+        // with the date it was built, and that stamp is the whole of what makes one recognisable.
+        private const string WhatAPublishedReleaseCallsItself = "v26.9.13";
+
+        // What a test host reports about itself, and near enough what anything built from a working
+        // tree reports. Not a date, so not a release.
+        private const string WhatABuildNobodyPublishedCallsItself = "v1.0.0";
+
+        // The phrase only this one warning carries. Matching the whole sentence would turn a
+        // rewording into a missing message, and matching "usage data" would count the other warning
+        // this subsystem can raise - the one about a spent daily allowance - as though it were this
+        // one.
+        private const string SayingNothingIsSent = "not a published release";
 
         private CapturedOutboundRequests outbound = null!;
         private CapturedLogMessages capturedLogs = null!;
         private WebApplicationFactory<Program> builtHost = null!;
 
         /// <summary>
-        /// The one that keeps synthetic traffic out of the real numbers. It is not enough for this
-        /// to be dropped the way any other send failure is dropped: silent is indistinguishable from
-        /// working, so an instance that would have sent to the built-in address and did not has to
-        /// say so where somebody looking would find it.
+        /// The one that keeps invented traffic out of the real numbers - this test suite's own
+        /// first of all, and every copy anyone is running from source after that. It is not enough
+        /// for these events to be dropped the way any other send failure is dropped: silent is
+        /// indistinguishable from working, so an instance holding usage data it will never send has
+        /// to say so where somebody looking would find it.
+        ///
+        /// Saying it once rather than once per batch is half of that. A browser that agreed and
+        /// then left a tab open goes on handing batches in for as long as it is open, so a line per
+        /// batch is how a developer's own machine fills its own disk.
         /// </summary>
         [Test]
-        public async Task AnInstanceNobodyToldWhereToSend_DoesNotSendToTheLiveCensusAndSaysWhyNot()
+        public async Task ABuildNobodyPublished_WithNoCollectorNamed_SendsNothingAndSaysSoOnce()
         {
-            using var host = BuildHost(collectorAddress: null);
+            using var host = BuildHost(NobodyNamedACollector, WhatABuildNobodyPublishedCallsItself);
             using var client = host.CreateClient();
             await FreshDatabaseAsync(host);
 
             var token = await ABrowserThatAgreedAsync(client);
             capturedLogs.Clear();
 
-            using var accepted = await HandInAsync(client, token);
+            using var firstBatch = await HandInAsync(client, token);
+            await TheForwarderHasHadItsChance();
+
+            using var secondBatch = await HandInAsync(client, token);
             await TheForwarderHasHadItsChance();
 
             var saidSo = capturedLogs.AtOrAbove(LogEventLevel.Warning)
-                .Where(line => line.Contains("usage", StringComparison.OrdinalIgnoreCase))
+                .Where(line => line.Contains(SayingNothingIsSent, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(accepted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent),
-                    "the batch has to have been taken in, or this scenario is about an endpoint "
-                    + "that refused rather than about an address that was never supplied");
+                Assert.That(
+                    new[] { firstBatch.StatusCode, secondBatch.StatusCode },
+                    Is.All.EqualTo(HttpStatusCode.NoContent),
+                    "both batches have to have been taken in, or this scenario is about an endpoint "
+                    + "that refused rather than about a build that is kept out of the figures");
                 Assert.That(outbound.ThatReached(TheLiveCensusHost), Is.Empty,
-                    "an instance that was never told where to send fell back to the built-in "
-                    + "address, which is the live census. Every test run that opens a Team tab now "
-                    + "invents events in the real numbers");
-                Assert.That(saidSo, Is.Not.Empty,
-                    "refusing quietly looks exactly like working, and a usage event dropping "
-                    + "silently is normal here by design. Whoever is running an instance that "
-                    + "cannot send has to be able to find out that it cannot");
+                    "a build nobody published reached the built-in address, which is the live "
+                    + "census. Every test run that opens a Team tab now invents events in the real "
+                    + "numbers, and so does every copy anyone is running from source");
+                Assert.That(saidSo, Has.Count.EqualTo(1),
+                    "expected exactly one warning saying why nothing is going out. None means "
+                    + "refusing quietly, which looks exactly like working, given that a usage event "
+                    + "dropping silently is normal here by design. More than one means a line per "
+                    + "batch, which a left-open browser turns into an instance filling its own disk");
             }
         }
 
         /// <summary>
-        /// The other half, and it matters as much. Without it, refusing every address passes the
-        /// scenario above and ships a pipe that is permanently silent - which nothing else in this
-        /// suite would notice, because everything else asserts that things do not get sent.
+        /// The one that stops a permanently silent pipe from shipping. The address is inside the
+        /// product, so a real deployment names nothing and this is the path every one of them takes.
+        /// If it stopped working there would be no setting anywhere for an operator to have got
+        /// wrong, and nothing else here would go red, because every other scenario asserts that
+        /// something was not sent.
         /// </summary>
         [Test]
-        public async Task AnInstanceToldWhereToSend_SendsThere()
+        public async Task APublishedRelease_WithNoCollectorNamed_ReachesTheCollectorItShipsWith()
         {
-            using var host = BuildHost(AnAddressSomebodySupplied);
+            using var host = BuildHost(NobodyNamedACollector, WhatAPublishedReleaseCallsItself);
+            using var client = host.CreateClient();
+            await FreshDatabaseAsync(host);
+
+            var token = await ABrowserThatAgreedAsync(client);
+
+            using var accepted = await HandInAsync(client, token);
+            await TheForwarderHasHadItsChance();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(accepted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+                Assert.That(outbound.ThatReached(TheLiveCensusHost), Is.Not.Empty,
+                    "a published release with nothing configured sent nothing anywhere - and that "
+                    + "is every real deployment there is. The rule that keeps unpublished builds "
+                    + "out is keeping everybody out, and the feature is dead rather than careful");
+            }
+        }
+
+        /// <summary>
+        /// Naming an address lifts the version rule rather than bending it: a fork, or anyone
+        /// watching the path end to end, sends from whatever they happen to be running. Both kinds
+        /// of build are here because "whatever this is" is the whole of what naming an address
+        /// buys, and only the unpublished one can show the version rule was skipped rather than
+        /// satisfied by accident.
+        /// </summary>
+        [TestCase(WhatAPublishedReleaseCallsItself)]
+        [TestCase(WhatABuildNobodyPublishedCallsItself)]
+        public async Task AnInstanceToldWhereToSend_SendsThere(string whatThisBuildCallsItself)
+        {
+            using var host = BuildHost(AnAddressSomebodySupplied, whatThisBuildCallsItself);
             using var client = host.CreateClient();
             await FreshDatabaseAsync(host);
 
@@ -119,10 +187,10 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             {
                 Assert.That(accepted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
                 Assert.That(outbound.ThatReached(TheHostSomebodySupplied), Is.Not.Empty,
-                    "an address was supplied and nothing was sent to it, so the guard refuses "
-                    + "everything and the feature is dead rather than careful");
+                    "an address was named and nothing was sent to it, so naming one buys nothing "
+                    + "and there is no way left to watch this path without joining the real numbers");
                 Assert.That(outbound.ThatReached(TheLiveCensusHost), Is.Empty,
-                    "the supplied address was ignored in favour of the built-in one, which is the "
+                    "the named address was ignored in favour of the built-in one, which is the "
                     + "live census");
             }
         }
@@ -171,10 +239,13 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 .SendWhatIsWaitingAsync(CancellationToken.None);
         }
 
-        private WebApplicationFactory<Program> BuildHost(string? collectorAddress)
+        private WebApplicationFactory<Program> BuildHost(string? collectorAddress, string whatThisBuildCallsItself)
         {
             outbound = new CapturedOutboundRequests();
             capturedLogs = new CapturedLogMessages();
+
+            var releases = new Mock<ILighthouseReleaseService>();
+            releases.Setup(service => service.GetCurrentVersion()).Returns(whatThisBuildCallsItself);
 
             var root = new TestWebApplicationFactory<Program>();
             builtHost = root.WithWebHostBuilder(builder =>
@@ -183,6 +254,13 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 {
                     services.AddSingleton<IHttpMessageHandlerBuilderFilter>(
                         new OutboundRequestRecordingFilter(outbound));
+
+                    // Said out loud by every scenario rather than left to the host. What the version
+                    // looks like is half of what decides whether anything is sent at all, so a test
+                    // that does not say which kind of build it is ends up describing whichever one a
+                    // test host happens to report - which is not a kind anybody runs.
+                    services.RemoveAll<ILighthouseReleaseService>();
+                    services.AddScoped(_ => releases.Object);
 
                     services.RemoveAll<ILoggerFactory>();
                     services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(

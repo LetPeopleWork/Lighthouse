@@ -10,7 +10,8 @@ namespace Lighthouse.Backend.Services.Interfaces.UsageData
         string Version,
         UsageDataDeploymentMode DeploymentMode,
         string LicenceTier,
-        bool AuthenticationEnabled);
+        bool AuthenticationEnabled,
+        bool IsPublishedRelease);
 
     public interface IUsageDataInstanceProperties
     {

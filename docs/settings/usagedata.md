@@ -206,15 +206,26 @@ the part that asks permission.
 
 ## Running without an outbound connection
 
-**An instance that was never told where to send does not send at all.** There is no built-in fallback,
-deliberately: the single collector this product has holds the numbers everybody is counted in, and an
-instance that posted there without being asked to would add invented events to them. An instance in
-that state says so in its log, once, at warning level. It has to say it, because a usage event
-dropping quietly is normal here by design and looks exactly like working.
+Lighthouse ships knowing where it would send, so a release you install needs nothing configured for
+the footer switch to mean what it says. Nothing leaves until somebody on that instance agrees, and
+the address is only ever reached once somebody has.
 
-Where to send is `UsageData:CollectorBaseUrl`. Point it somewhere else and nothing reaches PostHog. Be
-aware that the message format is PostHog's own capture API, so a substitute has to speak that
-protocol — this is not "point it at any URL and it works".
+**A build nobody published sends nothing, whatever anybody agreed to.** If you are running Lighthouse
+from source, or from your own build, it stays out of the shared figures — the people who compile
+their own copy are not the population these numbers are meant to describe, and a version string from
+a working tree is close to unique to whoever built it, which is the opposite of what the rest of this
+page promises. An instance in that state says so in its log, once, at warning level. It has to say
+it, because a usage event dropping quietly is normal here by design and looks exactly like working.
+
+Where to send is `UsageData:CollectorBaseUrl`. Setting it does two things: it replaces the built-in
+address, and it lifts the published-release rule, so an unreleased build with an address set will
+send. That is how you would point an instance at a collector of your own, and how anybody checks what
+this actually puts on the wire without waiting for a release. Be aware that the message format is
+PostHog's own capture API, so a substitute has to speak that protocol — this is not "point it at any
+URL and it works".
+
+Blocking the address at your firewall works too, and needs no setting: sending fails, the failure is
+dropped, and nothing is retried or queued.
 
 ## How the collector is configured
 

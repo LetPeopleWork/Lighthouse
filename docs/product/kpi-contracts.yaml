@@ -7,8 +7,10 @@ description: >
 
   Lighthouse is a SELF-HOSTED product. There is no central vendor pipeline unless the
   customer opts in. Such a mechanism now exists — Usage Data, opt-in per browser and
-  revocable — but no shipped artifact is yet configured to send to a collector, so no
-  instance reports anything today. Therefore each KPI declares its `measurement_scope`:
+  revocable — and a published release ships knowing where to send, so the population is
+  whoever has agreed rather than whoever configured something. Builds nobody published,
+  this repository's own included, stay out of it. Each KPI declares its
+  `measurement_scope`:
 
     - per_instance: structured log events + in-app admin-visible aggregation.
                     The customer admin sees this; the vendor team does NOT, unless
@@ -18,9 +20,10 @@ description: >
                         observable population. Treat aggregate numbers from this
                         scope as directional, not statistically representative.
 
-    - opt_in_telemetry_required: not measurable until enough instances have both a
-                                 configured collector and somebody who agreed. The
-                                 mechanism exists now; the population does not. Flag
+    - opt_in_telemetry_required: not measurable until enough people on released
+                                 instances have agreed. The mechanism exists now; the
+                                 population is still small, and until the unprompted
+                                 ask ships it is whoever found the footer icon. Flag
                                  for product decision; do NOT build instrumentation
                                  that phones home without consent.
 

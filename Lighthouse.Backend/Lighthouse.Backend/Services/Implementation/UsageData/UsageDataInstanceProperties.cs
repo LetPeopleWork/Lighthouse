@@ -38,8 +38,11 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             var licences = scope.ServiceProvider.GetRequiredService<ILicenseService>();
             var authentication = scope.ServiceProvider.GetRequiredService<IAuthModeResolver>();
 
+            var version = releases.GetCurrentVersion();
+            var published = AShapeOnlyAReleaseHas().IsMatch(version);
+
             return new UsageDataInstanceFacts(
-                VersionIfSomebodyPublishedIt(releases.GetCurrentVersion()),
+                published ? version : NotAPublishedRelease,
                 deployment.Resolve(),
                 licences.CanUsePremiumFeatures() ? Premium : Community,
 
@@ -47,12 +50,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 // authentication off every caller is the same subject and a shared screen is a live
                 // possibility, and an instance that cannot let anybody in is not one people have
                 // their own logins on either.
-                authentication.Resolve().Mode == AuthMode.Enabled);
-        }
-
-        private static string VersionIfSomebodyPublishedIt(string version)
-        {
-            return AShapeOnlyAReleaseHas().IsMatch(version) ? version : NotAPublishedRelease;
+                authentication.Resolve().Mode == AuthMode.Enabled,
+                published);
         }
 
         /// <summary>

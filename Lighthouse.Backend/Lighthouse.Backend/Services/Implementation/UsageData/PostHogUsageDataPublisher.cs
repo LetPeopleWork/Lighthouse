@@ -29,10 +29,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         public const string HttpClientName = "UsageDataCollector";
 
         /// <summary>
-        /// The address an instance would send to if nobody told it otherwise - and the reason nobody
-        /// may. This is the one collector this product has, and the numbers in it are read as the
-        /// count of people using Lighthouse. An instance that fell back here without being told to
-        /// would add invented events to that count, so falling back is refused rather than defaulted.
+        /// Where this goes when nobody says otherwise. It is the one collector this product has, and
+        /// what is counted in it is read as how much Lighthouse is used, so what may reach it is
+        /// narrowed below rather than left to whoever happens to start a build.
         /// </summary>
         private const string TheOnlyCollectorThereIs = "https://eu.i.posthog.com";
 
@@ -40,7 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         private static readonly JsonSerializerOptions Wire = new();
 
-        private int timesItRefusedToFallBack;
+        private int timesABuildNobodyPublishedStayedQuiet;
 
         public async Task PublishAsync(
             UsageDataEmitPermit permit, AcceptedUsageDataBatch batch, CancellationToken cancellationToken)
@@ -48,14 +47,18 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             ArgumentNullException.ThrowIfNull(permit);
             ArgumentNullException.ThrowIfNull(batch);
 
-            var address = WhereThisInstanceWasToldToSend();
+            // Asked once for the whole batch rather than per message, because one of these reads the
+            // licence and the database behind it.
+            var facts = instance.Describe();
+
+            var address = WhereThisOneSends(facts);
 
             if (address is null)
             {
                 return;
             }
 
-            var message = JsonSerializer.Serialize(EverythingInTheBatch(permit, batch), Wire);
+            var message = JsonSerializer.Serialize(EverythingInTheBatch(permit, batch, facts), Wire);
 
             using var client = clients.CreateClient(HttpClientName);
             using var content = new StringContent(message, Encoding.UTF8, "application/json");
@@ -67,48 +70,59 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             answer.EnsureSuccessStatusCode();
         }
 
-        private Uri? WhereThisInstanceWasToldToSend()
+        /// <summary>
+        /// Somewhere named on purpose takes whatever this build is - that is how a fork points at its
+        /// own collector, and how anyone checks the whole path end to end before shipping.
+        ///
+        /// The built-in one is narrower, and takes published releases only. Every copy of Lighthouse
+        /// carries the address and the key, so anyone running from source would otherwise land in the
+        /// figures alongside the people actually using the product. A working tree is also where the
+        /// version stops being something a release shares and starts being close to unique to
+        /// whoever built it, which is the other reason to leave it out of a count.
+        /// </summary>
+        private Uri? WhereThisOneSends(UsageDataInstanceFacts facts)
         {
-            var supplied = configuration.CurrentValue.CollectorBaseUrl;
+            var named = configuration.CurrentValue.CollectorBaseUrl;
 
-            if (string.IsNullOrWhiteSpace(supplied))
+            if (!string.IsNullOrWhiteSpace(named))
             {
-                SayThatNothingIsBeingSent();
+                return new Uri($"{named.TrimEnd('/')}/{WhereEventsArePosted}");
+            }
+
+            if (!facts.IsPublishedRelease)
+            {
+                SayThatABuildNobodyPublishedSendsNothing();
                 return null;
             }
 
-            return new Uri($"{supplied.TrimEnd('/')}/{WhereEventsArePosted}");
+            return new Uri($"{TheOnlyCollectorThereIs}/{WhereEventsArePosted}");
         }
 
         /// <summary>
         /// Said once, not once per batch. A browser that agreed and left a tab open goes on handing
-        /// things in forever, so a line each time would let an instance that cannot send fill its own
-        /// disk - and refusing quietly is the one thing that must not happen here, because a usage
-        /// event dropping silently is normal by design and looks exactly like working.
+        /// things in forever, so a line each time would let a developer's own machine fill its own
+        /// disk - and staying quiet about it is the one thing that must not happen here, because a
+        /// usage event dropping silently is normal by design and looks exactly like working.
         /// </summary>
-        private void SayThatNothingIsBeingSent()
+        private void SayThatABuildNobodyPublishedSendsNothing()
         {
-            if (Interlocked.Increment(ref timesItRefusedToFallBack) != 1)
+            if (Interlocked.Increment(ref timesABuildNobodyPublishedStayedQuiet) != 1)
             {
                 return;
             }
 
             logger.LogWarning(
-                "Usage data: nothing is being sent, because UsageData:CollectorBaseUrl was never set. There is no "
-                + "built-in fallback on purpose - {Collector} is the only collector this product has, and an instance "
-                + "that sent there without being told to would add invented events to the numbers everybody else is "
-                + "counted in. This is reported once rather than once per batch.",
+                "Usage data: somebody agreed on this instance, but nothing is being sent, because this is not a "
+                + "published release and no collector was named. Builds nobody published are kept out of the shared "
+                + "figures on purpose. Set UsageData:CollectorBaseUrl to send anyway - to {Collector} to join those "
+                + "figures, or anywhere else to watch what would be sent. Reported once rather than once per batch.",
                 TheOnlyCollectorThereIs);
         }
 
         private List<CollectorMessage> EverythingInTheBatch(
-            UsageDataEmitPermit permit, AcceptedUsageDataBatch batch)
+            UsageDataEmitPermit permit, AcceptedUsageDataBatch batch, UsageDataInstanceFacts facts)
         {
             var apiKey = configuration.CurrentValue.ProjectApiKey;
-
-            // Asked once for the whole batch rather than per message. These are facts about the
-            // instance, and one of them reads the licence and the database behind it.
-            var facts = instance.Describe();
 
             return [.. batch.Events.Select(reported => new CollectorMessage(
                 apiKey,

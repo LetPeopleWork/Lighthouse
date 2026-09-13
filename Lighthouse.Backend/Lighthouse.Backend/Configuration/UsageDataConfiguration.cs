@@ -12,14 +12,14 @@ namespace Lighthouse.Backend.Configuration
         public int ConsentLivenessWindowDays { get; set; } = 30;
 
         /// <summary>
-        /// Where usage data is sent. Deliberately empty until somebody says otherwise: an instance
-        /// that was never told where to send does not send at all, and says so once in its log.
-        /// Nothing that starts this application in a test supplies it, which is what keeps runs of
-        /// the test suite from adding invented events to the numbers real usage is counted in.
+        /// Where usage data goes, when it should not go where it goes by default. Left empty, a
+        /// published release sends to the collector this product ships with, and a build nobody
+        /// published sends nothing at all - which keeps every copy run from source, this test suite
+        /// included, out of the figures real usage is counted in.
         ///
-        /// Nothing supplies it in a shipped artifact yet either, so no deployment sends today. How
-        /// a published build comes to carry an address is still open; whatever answer is chosen has
-        /// to leave a plain checkout without one, or the guard stops meaning anything.
+        /// Naming somewhere lifts that: whatever this build is, it sends there. That is how a fork
+        /// points at a collector of its own, and how anyone watches the whole path end to end
+        /// without a release in hand.
         /// </summary>
         public string? CollectorBaseUrl { get; set; }
 
