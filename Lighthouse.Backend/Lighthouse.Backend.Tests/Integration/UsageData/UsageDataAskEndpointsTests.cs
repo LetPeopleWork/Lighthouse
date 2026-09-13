@@ -105,6 +105,26 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "it separately through willAskAgain without naming the tier");
         }
 
+        // The browser cannot hold the cadence for a dismissal without knowing how long it runs, and
+        // it is the only party that knows a dismissal happened at all - so the number travels. It is
+        // the same for everybody, which is what keeps it off the list of things this endpoint
+        // discloses about a particular browser or instance.
+        [Test]
+        public async Task GetState_TellsTheBrowserHowLongADismissalShouldStayQuiet()
+        {
+            await InstalledDaysAgo(14);
+
+            using var document = JsonDocument.Parse(await ReadStateAsync(token: null));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(document.RootElement.TryGetProperty("reAskAfterDays", out var window), Is.True);
+                Assert.That(window.GetInt32(), Is.GreaterThan(0),
+                    "zero would mean a browser that closed the dialog is asked again on its very next "
+                    + "visit, which is the nag this whole cadence exists to prevent");
+            }
+        }
+
         [Test]
         public async Task GetState_SaysWhetherToAsk_WithoutNamingTheLicence()
         {

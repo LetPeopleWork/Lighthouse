@@ -83,6 +83,7 @@ export const createMockUsageDataService = (): IUsageDataService => {
 			decision: null,
 			willAskAgain: true,
 			mayAsk: false,
+			reAskAfterDays: 90,
 		}),
 		recordDecision: vi.fn().mockResolvedValue("mock-consent-token"),
 		revoke: vi.fn().mockResolvedValue(undefined),

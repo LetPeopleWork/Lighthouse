@@ -61,7 +61,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 Sending: sending,
                 Decision: consent?.Decision.ToString(),
                 WillAskAgain: WillAskAgain(consent?.Decision),
-                MayAsk: MayAsk(consent, now));
+                MayAsk: MayAsk(consent, now),
+                ReAskAfterDays: configuration.CurrentValue.ReAskAfterDays);
         }
 
         public async Task<string> RecordDecisionAsync(UsageDataDecision decision, CancellationToken cancellationToken)

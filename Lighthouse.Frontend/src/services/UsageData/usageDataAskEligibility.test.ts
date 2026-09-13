@@ -12,13 +12,21 @@ import {
  * shown the dialog once and walked away from it.
  */
 
+const NOW = new Date("2026-09-13T12:00:00.000Z");
+const RE_ASK_AFTER_DAYS = 90;
+
+const daysBefore = (days: number): string =>
+	new Date(NOW.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+
 const input = (
 	overrides?: Partial<AskEligibilityInput>,
 ): AskEligibilityInput => ({
 	mayAsk: true,
 	decision: null,
 	lastAskedAt: null,
+	reAskAfterDays: RE_ASK_AFTER_DAYS,
 	promptSlotTaken: false,
+	now: NOW,
 	...overrides,
 });
 
@@ -39,9 +47,36 @@ describe("evaluateAskEligibility", () => {
 
 	// AC-05.2. The marker is the only record that the question was ever put to this browser: it
 	// closed the dialog, so no consent row exists and the server has nothing to remember it by.
-	it("does not ask an undecided browser a second time", () => {
+	it("does not ask an undecided browser again straight away", () => {
 		const decision = evaluateAskEligibility(
-			input({ lastAskedAt: "2026-09-01T09:00:00.000Z" }),
+			input({ lastAskedAt: daysBefore(1) }),
+		);
+
+		expect(decision.shouldAsk).toBe(false);
+	});
+
+	it("still leaves it alone the day before its quiet period is up", () => {
+		const decision = evaluateAskEligibility(
+			input({ lastAskedAt: daysBefore(RE_ASK_AFTER_DAYS - 1) }),
+		);
+
+		expect(decision.shouldAsk).toBe(false);
+	});
+
+	it("asks it once the quiet period has run out", () => {
+		const decision = evaluateAskEligibility(
+			input({ lastAskedAt: daysBefore(RE_ASK_AFTER_DAYS) }),
+		);
+
+		expect(decision.shouldAsk).toBe(true);
+	});
+
+	// A browser cannot be silenced for ever by a value nothing can read. Treating an unparseable
+	// marker as "never asked" would be worse - the dialog would return on every single visit - so
+	// it counts as a recent ask, costing one cycle rather than all of them.
+	it("treats a marker it cannot read as a recent ask", () => {
+		const decision = evaluateAskEligibility(
+			input({ lastAskedAt: "not a date" }),
 		);
 
 		expect(decision.shouldAsk).toBe(false);
@@ -61,29 +96,23 @@ describe("evaluateAskEligibility", () => {
 		expect(decision.shouldAsk).toBe(true);
 	});
 
-	// The two cases above, side by side, because the difference between them is the sharpest
-	// consequence of this design and the easiest thing for a later change to erase by accident.
+	// The pair that matters, side by side, because an earlier version of this had them disagree.
 	//
-	// Closing the dialog suppresses it harder than saying no does. Somebody who answers "no" is
-	// asked once more in a few months, because that is what the dialog promised them; somebody who
-	// closes it is never asked again, because nothing was promised and nothing was recorded on the
-	// server that could bring the question back. Two browsers, identical server answer, opposite
-	// outcomes - the weaker signal producing the stronger silence.
-	//
-	// That is the deliberate reading of AC-05.2 taken on 2026-09-13, not an oversight. It is
-	// asserted here so that anyone who finds it surprising finds it written down rather than
-	// inferring it from a bug report.
-	it("suppresses a dismissal harder than a refusal, deliberately", () => {
-		const wasAsked = "2026-06-01T09:00:00.000Z";
+	// Closing the dialog used to silence it for ever while an explicit refusal came back after a
+	// few months - the weaker signal producing the stronger effect, and a quiet drain on the
+	// population the feature exists to measure. Closing is not a refusal: nobody withheld anything,
+	// they declined to engage. So both wait the same period and then both are asked.
+	it("treats a dismissal and a refusal the same once the quiet period is up", () => {
+		const longEnoughAgo = daysBefore(RE_ASK_AFTER_DAYS);
 
 		const dismissed = evaluateAskEligibility(
-			input({ decision: null, lastAskedAt: wasAsked }),
+			input({ decision: null, lastAskedAt: longEnoughAgo }),
 		);
 		const refused = evaluateAskEligibility(
-			input({ decision: "Declined", lastAskedAt: wasAsked }),
+			input({ decision: "Declined", lastAskedAt: longEnoughAgo }),
 		);
 
-		expect(dismissed.shouldAsk).toBe(false);
+		expect(dismissed.shouldAsk).toBe(true);
 		expect(refused.shouldAsk).toBe(true);
 	});
 

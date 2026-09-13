@@ -2967,3 +2967,54 @@ Running it found a real defect in the spec, which is the argument for the rule t
 committed: the skeleton opened the application through the page object that clicks its way to the
 Overview, and the dialog swallowed that click. The failure every other spec is now protected from,
 arriving in the one spec that removes the protection on purpose.
+
+---
+
+## Wave: DELIVER / [REF] Slice 02 — two acceptance criteria changed after the maintainer saw it running, 2026-09-13
+
+Both changes were made against a running dev instance, which is why they exist: a premium licence
+was on it, and the dialog said the wrong thing.
+
+### AC-02.9 is withdrawn, and with it the "and the dialog said so at the time" half of AC-05.5
+
+The dialog no longer says anything about whether the question will come back. Maintainer's call:
+the sentence does not help a reader decide, and it is one more line on a screen that already asks a
+lot of them.
+
+It was also **wrong on Premium**, which is how it surfaced. The copy read `willAskAgain`, which
+answers *"given what you have already answered, will you be asked again?"* — for somebody who has
+answered nothing that is **true whatever their tier**. So a Premium reader, whose refusal is final
+under D5, was promised we would come back. The field was not wrong; binding a conditional sentence
+to it was. It had gone unnoticed because `willAskAgain` shipped in 01a for exactly this copy and
+**nothing consumed it until this slice**, so its semantics were never exercised.
+
+DT-19 is therefore withdrawn. `usageDataCadenceCopy.ts` is deleted, and the pre-slice-02 guard —
+that the dialog makes no promise about being asked again in either direction — is restored and is
+now permanent rather than provisional.
+
+**Consequence to carry:** `willAskAgain` now has **no consumer at all**, on either stack. It is
+still derived server-side, still on the wire, still in the TypeScript mirror and still in the
+consent context. Left in place deliberately rather than removed in the same change — it is 01a's
+field and removing it touches the pinned disclosure list — but it is dead, and the next person in
+this area should either find it a use or take it out.
+
+### AC-05.3 is restored rather than narrowed
+
+The earlier reading of DT-14 made a dismissal permanent: close the dialog once and never see it
+again. That produced an asymmetry nobody chose — an explicit "no" came back after about three
+months, while closing the box was final, so the **weaker signal produced the stronger effect** and
+quietly drained the population the Epic exists to measure.
+
+Both now wait the same period. Closing the dialog is not a refusal: nobody withheld consent, they
+declined to engage, so re-asking later needs no promise to justify it.
+
+The mechanism is one field. `/usagedata/state` returns `reAskAfterDays` — a single configuration
+number, identical for every caller, disclosing nothing about the browser or the tier. It has to
+travel because the two halves of that cadence live apart: only the browser knows it closed the
+dialog, and only the server knows how long that should count for.
+
+An unreadable marker counts as a **recent** ask, not as never having been asked. The opposite
+reading would put the dialog in front of somebody on every single visit; this costs them one cycle.
+
+**The DoR-9 open item stands unchanged.** The marker is still written when Lighthouse asks rather
+than when the reader answers, so D2's ePrivacy reasoning still does not stretch to cover it.

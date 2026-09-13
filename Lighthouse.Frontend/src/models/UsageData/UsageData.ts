@@ -24,6 +24,15 @@ export interface IUsageDataState {
 	 * and closed it without answering, which leaves no consent row to have recorded it against.
 	 */
 	mayAsk: boolean;
+	/**
+	 * How long a browser that was shown the dialog and did not answer is left alone.
+	 *
+	 * The same number for every caller, straight from the instance's configuration, so it says
+	 * nothing about this browser or the licence. It has to travel because the two halves of that
+	 * cadence live apart: only the browser knows it closed the dialog, and only the server knows how
+	 * long that should count for.
+	 */
+	reAskAfterDays: number;
 }
 
 /**

@@ -19,6 +19,7 @@ const granted: IUsageDataState = {
 	decision: "Granted",
 	willAskAgain: false,
 	mayAsk: false,
+	reAskAfterDays: 90,
 };
 
 const declined: IUsageDataState = {
@@ -26,6 +27,7 @@ const declined: IUsageDataState = {
 	decision: "Declined",
 	willAskAgain: true,
 	mayAsk: false,
+	reAskAfterDays: 90,
 };
 
 const renderDetector = (state: IUsageDataState, path: string) => {

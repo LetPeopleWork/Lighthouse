@@ -51,6 +51,8 @@ export interface UsageDataConsent {
 	mayAsk: boolean;
 	/** What this browser last answered, or null when it never has. */
 	decision: string | null;
+	/** How long a browser that was asked and did not answer is left alone. */
+	reAskAfterDays: number;
 	isDialogOpen: boolean;
 	failedToRecord: boolean;
 	openDialog: () => void;
@@ -93,6 +95,7 @@ export function UsageDataConsentProvider({
 		useState<UsageDataSendingState>("unknown");
 	const [willAskAgain, setWillAskAgain] = useState(false);
 	const [mayAsk, setMayAsk] = useState(false);
+	const [reAskAfterDays, setReAskAfterDays] = useState(0);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [failedToRecord, setFailedToRecord] = useState(false);
 	const [decision, setDecision] = useState<string | null>(null);
@@ -106,6 +109,7 @@ export function UsageDataConsentProvider({
 			setIndicatorState(state.sending ? "sending" : "not-sending");
 			setWillAskAgain(state.willAskAgain);
 			setMayAsk(state.mayAsk);
+			setReAskAfterDays(state.reAskAfterDays);
 			setDecision(state.decision);
 		} catch {
 			// Not knowing whether to ask means not asking. A dialog opened because a request failed
@@ -186,6 +190,7 @@ export function UsageDataConsentProvider({
 			willAskAgain,
 			mayAsk,
 			decision,
+			reAskAfterDays,
 			isDialogOpen,
 			failedToRecord,
 			openDialog,
@@ -198,6 +203,7 @@ export function UsageDataConsentProvider({
 			willAskAgain,
 			mayAsk,
 			decision,
+			reAskAfterDays,
 			isDialogOpen,
 			failedToRecord,
 			openDialog,

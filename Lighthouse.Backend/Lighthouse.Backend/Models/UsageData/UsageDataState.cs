@@ -20,5 +20,13 @@ namespace Lighthouse.Backend.Models.UsageData
     /// leave to a browser anyway, since a privacy gate decided against a clock the caller controls
     /// is not a gate.
     /// </summary>
-    public sealed record UsageDataState(bool Sending, string? Decision, bool WillAskAgain, bool MayAsk);
+    /// <remarks>
+    /// <c>ReAskAfterDays</c> is the one value here that is not about this browser at all - it is the
+    /// same number for every caller, straight from configuration. It has to travel because the
+    /// browser holds the half of the cadence the server cannot see: a browser with no consent row
+    /// that was shown the dialog and closed it leaves nothing behind on the server, so only the
+    /// browser can tell when that was, and only the server knows how long it should count for.
+    /// </remarks>
+    public sealed record UsageDataState(
+        bool Sending, string? Decision, bool WillAskAgain, bool MayAsk, int ReAskAfterDays);
 }

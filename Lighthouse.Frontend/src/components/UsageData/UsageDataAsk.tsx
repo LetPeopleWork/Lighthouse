@@ -16,7 +16,8 @@ import { readAskedMarker } from "../../services/UsageData/usageDataAskMarker";
  * rather than a second one that drifts away from the first.
  */
 export const UsageDataAsk = (): React.ReactElement | null => {
-	const { mayAsk, decision, openDialog, noteAsked } = useUsageDataConsent();
+	const { mayAsk, decision, reAskAfterDays, openDialog, noteAsked } =
+		useUsageDataConsent();
 
 	// Opening the dialog is not idempotent from this component's point of view: it records that the
 	// question was put, and recording it twice would move the window somebody is waiting out. The
@@ -35,6 +36,7 @@ export const UsageDataAsk = (): React.ReactElement | null => {
 			mayAsk,
 			decision,
 			lastAskedAt: readAskedMarker(),
+			reAskAfterDays,
 			promptSlotTaken: holder !== null && holder !== "usage-data",
 		});
 
@@ -48,7 +50,7 @@ export const UsageDataAsk = (): React.ReactElement | null => {
 		// has answered nothing, and is exactly the person this has to remember.
 		noteAsked();
 		openDialog();
-	}, [mayAsk, decision, openDialog, noteAsked]);
+	}, [mayAsk, decision, reAskAfterDays, openDialog, noteAsked]);
 
 	return null;
 };
