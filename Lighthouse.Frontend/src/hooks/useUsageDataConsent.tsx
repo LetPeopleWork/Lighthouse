@@ -89,6 +89,7 @@ export function UsageDataConsentProvider({
 	const [failedToRecord, setFailedToRecord] = useState(false);
 	const [decision, setDecision] = useState<string | null>(null);
 
+	// Stryker disable ArrayDeclaration: the two dependency lists below only show themselves when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	const refresh = useCallback(async () => {
 		try {
 			const state = await usageDataService.getState(
@@ -102,7 +103,6 @@ export function UsageDataConsentProvider({
 			// and wrong; guessing "not sending" is only wrong.
 			setIndicatorState("unknown");
 		}
-		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [usageDataService]);
 
 	useEffect(() => {
@@ -110,8 +110,8 @@ export function UsageDataConsentProvider({
 
 		const timer = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
 		return () => clearInterval(timer);
-		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [refresh]);
+	// Stryker restore ArrayDeclaration
 
 	const decide = useCallback(
 		async (next: UsageDataDecisionValue) => {

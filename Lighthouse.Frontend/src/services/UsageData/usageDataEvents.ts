@@ -68,6 +68,7 @@ export const useUsageDataEventDetector = (): void => {
 		}
 	}, [isSending, pathname]);
 
+	// Stryker disable ArrayDeclaration: the dependency lists below only show themselves when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	const handIn = useCallback((): void => {
 		const token = readUsageDataConsentToken();
 		const pages = takeWhatWasNoticed();
@@ -83,13 +84,11 @@ export const useUsageDataEventDetector = (): void => {
 				// later would be a second chance to send something the person may have withdrawn in
 				// the meantime, and a page opening nobody hears about costs nothing.
 			});
-		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [usageDataService]);
 
 	useEffect(() => {
 		const timer = setInterval(handIn, FLUSH_INTERVAL_MS);
 		return () => clearInterval(timer);
-		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [handIn]);
 
 	useEffect(() => {
@@ -104,9 +103,8 @@ export const useUsageDataEventDetector = (): void => {
 		document.addEventListener("visibilitychange", onVisibilityChange);
 		return () =>
 			document.removeEventListener("visibilitychange", onVisibilityChange);
-		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [handIn]);
 
-	// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	useEffect(() => forgetWhatWasNoticed, []);
+	// Stryker restore ArrayDeclaration
 };
