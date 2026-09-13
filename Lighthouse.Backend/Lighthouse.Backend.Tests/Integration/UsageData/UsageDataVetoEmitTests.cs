@@ -1,19 +1,12 @@
 using System.Net;
-using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.UsageData;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
@@ -28,87 +21,14 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// checkable at the boundary - so every scenario here reads what did or did not reach the
     /// collector rather than what some component was asked to do.
     ///
-    /// Nothing here touches the real collector. This host is told to send to an address that cannot
-    /// resolve, every client the framework hands out is recorded rather than connected, and the
-    /// teardown fails the scenario if the live census was contacted whatever the scenario was about.
-    /// The recorder sits below <c>HttpClient</c>, so a request is built, serialised and handed over -
-    /// which is what makes "it went out" and "it did not" two different observations here, without a
-    /// single byte leaving the process.
+    /// How that boundary is watched, and why nothing here can reach the real collector, lives in
+    /// <see cref="UsageDataCollectorObservationTest"/>.
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]
     [Category("slice-03")]
-    public class UsageDataVetoEmitTests
+    public class UsageDataVetoEmitTests : UsageDataCollectorObservationTest
     {
-        private const string EventsRoute = "/api/latest/usagedata/events";
-        private const string ConsentRoute = "/api/latest/usagedata/consent";
-        private const string StateRoute = "/api/latest/usagedata/state";
-        private const string ConsentTokenHeader = "X-Lighthouse-UsageData-Token";
-        private const string JsonMediaType = "application/json";
-
-        private const string CollectorAddress = "https://collector.usage-data-tests.invalid/";
-        private const string CollectorHost = "collector.usage-data-tests.invalid";
-        private const string TheLiveCensusHost = "posthog.com";
-
-        private const string TabOpened = "TeamOrPortfolioTabOpened";
-        private const string TeamMetricsTab = "TeamDetail_Metrics";
-
-        private TestWebApplicationFactory<Program> rootFactory = null!;
-        private WebApplicationFactory<Program> factory = null!;
-        private HttpClient client = null!;
-        private CapturedOutboundRequests outbound = null!;
-
-        [SetUp]
-        public void Init()
-        {
-            rootFactory = new TestWebApplicationFactory<Program>();
-            outbound = new CapturedOutboundRequests();
-
-            factory = rootFactory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    services.AddSingleton<IHttpMessageHandlerBuilderFilter>(
-                        new OutboundRequestRecordingFilter(outbound));
-                });
-
-                builder.ConfigureAppConfiguration((_, configurationBuilder) =>
-                {
-                    configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["UsageData:CollectorBaseUrl"] = CollectorAddress,
-                    });
-                });
-            });
-
-            client = factory.CreateClient();
-
-            using var scope = factory.Services.CreateScope();
-            var databaseContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            databaseContext.Database.EnsureDeleted();
-            databaseContext.Database.EnsureCreated();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            var reachedTheCensus = outbound.ThatReached(TheLiveCensusHost);
-
-            using (var scope = factory.Services.CreateScope())
-            {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-            }
-
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
-
-            Assert.That(reachedTheCensus, Is.Empty,
-                "a scenario in this fixture contacted the real collector. This host is told to send "
-                + "somewhere that cannot exist, so reaching it means something ignored where it was "
-                + "told to send - and the events it invented are now in the live numbers");
-        }
-
         /// <summary>
         /// The control, and it is not optional. Every scenario below whose point is that nothing was
         /// sent is worthless against a pipe that sends nothing anyway, and a pipe that sends nothing
@@ -120,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         {
             var token = await ABrowserThatAgreedAsync();
 
-            await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
+            await HandInAndForgetTheAnswerAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             var received = await EverythingTheCollectorReceived();
 
             Assert.That(received, Does.Contain(TabOpened),
@@ -144,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             GivenTheInstanceIsOldEnoughToAsk();
             var token = await ABrowserThatAgreedAsync();
 
-            await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
+            await HandInAndForgetTheAnswerAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             var received = await EverythingTheCollectorReceived();
 
             // A browser that has already answered is never asked again whatever the veto says, so the
@@ -171,12 +91,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             var token = await ABrowserThatAgreedAsync();
             GivenTheAdministratorHasEngagedTheVeto();
 
-            var answer = await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
+            using var answer = await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             var received = await EverythingTheCollectorReceived();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(answer, Is.EqualTo(HttpStatusCode.NoContent),
+                Assert.That(answer.StatusCode, Is.EqualTo(HttpStatusCode.NoContent),
                     "refusing the request would tell a browser its token was recognised, and would "
                     + "make a stale tab behave differently from a fresh one");
                 Assert.That(received, Is.Empty,
@@ -192,11 +112,11 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         {
             var token = await ABrowserThatAgreedAsync();
             GivenTheAdministratorHasEngagedTheVeto();
-            await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
+            await HandInAndForgetTheAnswerAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             await EverythingTheCollectorReceived();
 
             GivenTheAdministratorHasLiftedTheVeto();
-            await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
+            await HandInAndForgetTheAnswerAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             var received = await EverythingTheCollectorReceived();
             var state = await TheStateThisBrowserIsToldAsync(token);
 
@@ -214,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @AC-06.4 @AC-05.8 - the asking stops too, and it stops for a browser that would otherwise be
         // due. Suppressing only the sending would leave the dialog appearing on an instance whose
-        // administrator has switched the whole thing off.
+        // administrator has stopped the whole thing.
         [Test]
         public async Task An_engaged_veto_stops_the_question_being_put_at_all()
         {
@@ -224,13 +144,13 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             var state = await TheStateThisBrowserIsToldAsync(token: null);
 
             Assert.That(Flag(state, "mayAsk"), Is.False,
-                "the dialog is still offered on an instance whose administrator switched usage data "
-                + "off, which is the one thing an administrator using this switch is trying to prevent");
+                "the dialog is still offered on an instance whose administrator stopped usage data, "
+                + "which is the one thing an administrator using this switch is trying to prevent");
         }
 
         // @AC-06.7 @DT-25 - the indicator may not say data is being sent from a browser nothing is sent
-        // from. Today the answer is derived from this browser's own decision alone, so a granted
-        // browser is told "sending" while the emit path drops everything it hands in.
+        // from. The answer used to be derived from this browser's own decision alone, so a granted
+        // browser was told "sending" while the emit path dropped everything it handed in.
         [Test]
         public async Task An_engaged_veto_makes_a_consenting_browser_be_told_it_is_not_sending()
         {
@@ -286,7 +206,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private void GivenNoVetoRowExists()
         {
-            using var scope = factory.Services.CreateScope();
+            using var scope = Factory.Services.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
 
             var existing = repository.GetByPredicate(feature => feature.Key == UsageDataMasterSwitch.Key);
@@ -306,7 +226,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         private void GivenTheInstanceIsOldEnoughToAsk()
         {
-            using var scope = factory.Services.CreateScope();
+            using var scope = Factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
 
             var longEnoughAgo = DateTime.UtcNow.AddYears(-1).ToString("O");
@@ -318,7 +238,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             {
                 // This host runs no seeders, so there is no timestamp to move. An instance whose age
                 // cannot be established is never asked anything, which would answer every scenario
-                // below before it got to the veto.
+                // here before it got to the veto.
                 context.AppSettings.Add(new AppSetting
                 {
                     Key = AppSettingKeys.InstallTimestamp,
@@ -335,7 +255,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private void StoreTheVeto(bool engaged)
         {
-            using var scope = factory.Services.CreateScope();
+            using var scope = Factory.Services.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
 
             var existing = repository.GetByPredicate(feature => feature.Key == UsageDataMasterSwitch.Key);
@@ -360,62 +280,18 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             repository.Save().GetAwaiter().GetResult();
         }
 
-        // --- When / observations ---
+        // --- When ---
 
-        private async Task<HttpStatusCode> HandInAsync(string? token, string body)
+        /// <summary>
+        /// A batch handed in for its effect rather than its answer. The response is still disposed;
+        /// the scenarios that need to read it keep it instead.
+        /// </summary>
+        private async Task HandInAndForgetTheAnswerAsync(string? token, string body)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, EventsRoute)
-            {
-                Content = new StringContent(body, Encoding.UTF8, JsonMediaType),
-            };
-
-            if (token is not null)
-            {
-                request.Headers.Add(ConsentTokenHeader, token);
-            }
-
-            using var response = await client.SendAsync(request);
-            return response.StatusCode;
+            using var response = await HandInAsync(token, body);
         }
 
-        private async Task<string> EverythingTheCollectorReceived()
-        {
-            await factory.Services.GetRequiredService<UsageDataForwardingService>()
-                .SendWhatIsWaitingAsync(CancellationToken.None);
-
-            return outbound.EverythingSentTo(CollectorHost);
-        }
-
-        private async Task<JsonElement> TheStateThisBrowserIsToldAsync(string? token)
-        {
-            using var request = new HttpRequestMessage(HttpMethod.Get, StateRoute);
-
-            if (token is not null)
-            {
-                request.Headers.Add(ConsentTokenHeader, token);
-            }
-
-            using var response = await client.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
-
-            using var document = JsonDocument.Parse(body);
-            return document.RootElement.Clone();
-        }
-
-        private async Task<string> ABrowserThatAgreedAsync() => await ADecisionRecordedAsync("granted");
-
-        private async Task<string> ABrowserThatRefusedAsync() => await ADecisionRecordedAsync("declined");
-
-        private async Task<string> ADecisionRecordedAsync(string decision)
-        {
-            using var response = await client.PostAsJsonAsync(ConsentRoute, new { decision });
-            var body = await response.Content.ReadAsStringAsync();
-
-            using var document = JsonDocument.Parse(body);
-            return document.RootElement.TryGetProperty("token", out var token)
-                ? token.GetString() ?? string.Empty
-                : string.Empty;
-        }
+        // --- Reading the answer ---
 
         private static bool? Flag(JsonElement state, string name)
         {
@@ -427,11 +303,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private static string? Text(JsonElement state, string name)
         {
             return state.TryGetProperty(name, out var value) ? value.GetString() : null;
-        }
-
-        private static string ABatchOf(string name, string route)
-        {
-            return $"{{\"events\":[{{\"name\":\"{name}\",\"route\":\"{route}\",\"offsetMs\":0,\"sequence\":0}}]}}";
         }
     }
 }

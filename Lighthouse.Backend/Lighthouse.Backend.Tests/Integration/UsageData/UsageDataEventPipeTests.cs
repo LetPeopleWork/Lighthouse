@@ -2,14 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
@@ -28,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// assertion the moment it is un-ignored.
     ///
     /// What this host is: the real application through the real HTTP surface, the real database over
-    /// SQLite, and a recorder in front of every client the framework hands out - which is how
+    /// SQLite, and a recorder in front of every Client the framework hands out - which is how
     /// "nothing was sent" becomes something a test can see rather than something it infers from a
     /// double that was not called.
     ///
@@ -47,28 +42,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]
-    public class UsageDataEventPipeTests
+    public class UsageDataEventPipeTests : UsageDataCollectorObservationTest
     {
-        private const string EventsRoute = "/api/latest/usagedata/events";
-        private const string ConsentRoute = "/api/latest/usagedata/consent";
-        private const string ConsentTokenHeader = "X-Lighthouse-UsageData-Token";
-        private const string JsonMediaType = "application/json";
-
-        // Where this host is told to send. There is exactly one real collector project and it is the
-        // live census, so no test may aim at it even by accident: a .invalid address can never
-        // resolve, and the recorder answers in place of the network in any case.
-        private const string CollectorAddress = "https://collector.usage-data-tests.invalid/";
-        private const string CollectorHost = "collector.usage-data-tests.invalid";
-
-        // The address a Lighthouse that was never told where to send would fall back to. Named here
-        // so that every scenario in this fixture can be shown not to have reached it.
-        private const string TheLiveCensusHost = "posthog.com";
-
-        // The single product event this slice carries, and the one label that has to survive a page
-        // address which identifies one of the customer's own Teams.
-        private const string TabOpened = "TeamOrPortfolioTabOpened";
-        private const string TeamMetricsTab = "TeamDetail_Metrics";
-
         private const string NoIngestEndpointYet =
             "Pending: the ingest endpoint this asserts against does not exist yet (Epic 5733 slice 01c, ADO #5980).";
 
@@ -85,76 +60,20 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private static readonly string[] EverythingTheStateAnswerCarries =
             ["sending", "decision", "mayAsk", "reAskAfterDays", "administratorDisabled"];
 
-        private TestWebApplicationFactory<Program> rootFactory = null!;
-        private WebApplicationFactory<Program> factory = null!;
-        private HttpClient client = null!;
-        private CapturedOutboundRequests outbound = null!;
         private CapturedLogMessages capturedLogs = null!;
 
-        [SetUp]
-        public void Init()
+        /// <summary>
+        /// Serilog is the pipeline here, so a logging provider added instead of the Factory would be
+        /// dropped and every log assertion in this fixture would read an empty list and pass.
+        /// </summary>
+        protected override void AlsoRegister(IServiceCollection services)
         {
-            rootFactory = new TestWebApplicationFactory<Program>();
-            outbound = new CapturedOutboundRequests();
             capturedLogs = new CapturedLogMessages();
 
-            factory = rootFactory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    services.AddSingleton<IHttpMessageHandlerBuilderFilter>(
-                        new OutboundRequestRecordingFilter(outbound));
-
-                    // Serilog is the pipeline here, so a logging provider added instead of the
-                    // factory would be dropped and every log assertion below would read an empty
-                    // list and pass.
-                    services.RemoveAll<ILoggerFactory>();
-                    services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
-                        new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(capturedLogs).CreateLogger(),
-                        dispose: true));
-                });
-
-                builder.ConfigureAppConfiguration((_, configurationBuilder) =>
-                {
-                    configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["UsageData:CollectorBaseUrl"] = CollectorAddress,
-                    });
-                });
-            });
-
-            client = factory.CreateClient();
-
-            using var scope = factory.Services.CreateScope();
-            var databaseContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            databaseContext.Database.EnsureDeleted();
-            databaseContext.Database.EnsureCreated();
-        }
-
-        /// <summary>
-        /// Runs after every scenario in this fixture, whatever it was about. There is one real
-        /// collector project and it is the live census - a test that reached it would put invented
-        /// events into the numbers the maintainer reads, and would do it silently, because sending
-        /// degrades without complaint by specification.
-        /// </summary>
-        [TearDown]
-        public void Cleanup()
-        {
-            var reachedTheCensus = outbound.ThatReached(TheLiveCensusHost);
-
-            using (var scope = factory.Services.CreateScope())
-            {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-            }
-
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
-
-            Assert.That(reachedTheCensus, Is.Empty,
-                "a scenario in this fixture contacted the real collector. This host is told to send "
-                + "somewhere that cannot exist, so reaching it means something ignored where it was "
-                + "told to send - and the events it invented are now in the live numbers");
+            services.RemoveAll<ILoggerFactory>();
+            services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(capturedLogs).CreateLogger(),
+                dispose: true));
         }
 
         /// <summary>
@@ -165,18 +84,18 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Test]
         public async Task NothingWasSent_IsSomethingThisFixtureCanActuallyTell()
         {
-            var httpClientFactory = factory.Services.GetRequiredService<IHttpClientFactory>();
+            var httpClientFactory = Factory.Services.GetRequiredService<IHttpClientFactory>();
             using var outboundClient = httpClientFactory.CreateClient("Default");
 
             using var answer = await outboundClient.PostAsync(
                 new Uri($"{CollectorAddress}i/v0/e/"),
                 new StringContent("{\"event\":\"a message only this test sends\"}", Encoding.UTF8, JsonMediaType));
 
-            var received = outbound.EverythingSentTo(CollectorHost);
+            var received = Outbound.EverythingSentTo(CollectorHost);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(outbound.SawAnything, Is.True,
+                Assert.That(Outbound.SawAnything, Is.True,
                     "the recorder saw no request at all, so every 'nothing reached the collector' "
                     + "assertion in this fixture would hold no matter what the application did");
                 Assert.That(received, Does.Contain("a message only this test sends"),
@@ -291,7 +210,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             var sentWhileConsenting = await EverythingTheCollectorReceived();
 
             await WithdrawAsync(token);
-            outbound.Clear();
+            Outbound.Clear();
 
             using var afterWithdrawing = await HandInAsync(token, ABatchOf(TabOpened, TeamMetricsTab));
             var sentAfterWithdrawing = await EverythingTheCollectorReceived();
@@ -337,7 +256,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         /// <summary>
         /// This held in the previous slice for the wrong reason: nothing could reach the collector
-        /// because no client to it existed, so there was nothing for the check to find. It starts
+        /// because no Client to it existed, so there was nothing for the check to find. It starts
         /// meaning something only once one does.
         /// </summary>
         [Test]
@@ -548,7 +467,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Test]
         public async Task TheValueThatTellsARepeatVisitFromANewOne_NeverCrossesTheWire()
         {
-            using var recorded = await client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" });
+            using var recorded = await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" });
             var handedBack = await recorded.Content.ReadAsStringAsync();
 
             using var document = JsonDocument.Parse(handedBack);
@@ -556,7 +475,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
             using var request = new HttpRequestMessage(HttpMethod.Get, "/api/latest/usagedata/state");
             request.Headers.Add(ConsentTokenHeader, token);
-            using var state = await client.SendAsync(request);
+            using var state = await Client.SendAsync(request);
             var stateBody = await state.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
@@ -590,7 +509,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         private List<WhatAMessageSaidAboutTheCaller> EverythingSaidAboutTheCaller()
         {
-            return [.. outbound.ThatReached(CollectorHost)
+            return [.. Outbound.ThatReached(CollectorHost)
                 .SelectMany(request => WhatWasSaidIn(request.Body))];
         }
 
@@ -623,72 +542,16 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private sealed record WhatAMessageSaidAboutTheCaller(JsonValueKind Address, JsonValueKind LocationLookup);
 
-        private async Task<string> ABrowserThatAgreedAsync()
-        {
-            return await ADecisionRecordedAsync("granted");
-        }
-
-        private async Task<string> ABrowserThatRefusedAsync()
-        {
-            return await ADecisionRecordedAsync("declined");
-        }
-
-        private async Task<string> ADecisionRecordedAsync(string decision)
-        {
-            using var response = await client.PostAsJsonAsync(ConsentRoute, new { decision });
-            var body = await response.Content.ReadAsStringAsync();
-
-            using var document = JsonDocument.Parse(body);
-            return document.RootElement.TryGetProperty("token", out var token)
-                ? token.GetString() ?? string.Empty
-                : string.Empty;
-        }
-
         private async Task WithdrawAsync(string token)
         {
             using var request = new HttpRequestMessage(HttpMethod.Delete, ConsentRoute);
             request.Headers.Add(ConsentTokenHeader, token);
 
-            using var response = await client.SendAsync(request);
+            using var response = await Client.SendAsync(request);
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent),
                 "the withdrawal did not go through, so whatever happens next is not about having "
                 + "withdrawn");
-        }
-
-        private async Task<HttpResponseMessage> HandInAsync(string? token, string body)
-        {
-            using var request = new HttpRequestMessage(HttpMethod.Post, EventsRoute)
-            {
-                Content = new StringContent(body, Encoding.UTF8, JsonMediaType),
-            };
-
-            if (token is not null)
-            {
-                request.Headers.Add(ConsentTokenHeader, token);
-            }
-
-            return await client.SendAsync(request);
-        }
-
-        /// <summary>
-        /// Everything the collector was sent, as one piece of text, after emptying what is waiting.
-        /// The drain is asked for here rather than waited out: this host runs no background work, so
-        /// waiting would have meant every scenario paying a fixed budget long enough to be reliable
-        /// on a loaded build agent - including every scenario whose whole point is that nothing was
-        /// sent, which is most of them.
-        /// </summary>
-        private async Task<string> EverythingTheCollectorReceived()
-        {
-            await factory.Services.GetRequiredService<UsageDataForwardingService>()
-                .SendWhatIsWaitingAsync(CancellationToken.None);
-
-            return outbound.EverythingSentTo(CollectorHost);
-        }
-
-        private static string ABatchOf(string name, string route)
-        {
-            return $"{{\"events\":[{{\"name\":\"{name}\",\"route\":\"{route}\",\"offsetMs\":0,\"sequence\":0}}]}}";
         }
     }
 }

@@ -20,11 +20,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         private const string ShippedNonPremiumKey = OptionalFeatureKeys.DeltaSyncKey;
 
         /// <summary>
-        /// The refusal the other door onto this setting already gives, quoted from
-        /// <c>LicenseGuardAttribute</c>. The two doors have to answer a client alike, so the wording is
-        /// part of the contract rather than an implementation detail.
+        /// The refusal the other door onto this setting already gives. The two doors have to answer a
+        /// client alike, so the wording is part of the contract rather than an implementation detail -
+        /// which is why the sentence itself lives once, on the shared harness.
         /// </summary>
-        private const string TheRefusalTheOtherDoorGives = "Access Denied: Premium Features Required";
+        private const string TheRefusalTheOtherDoorGives = TheRefusalPremiumSettingsGive;
 
         // --- Given ---
 

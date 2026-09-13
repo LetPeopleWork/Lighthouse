@@ -34,8 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         /// </summary>
         private const string ShippedNonPremiumKey = OptionalFeatureKeys.DeltaSyncKey;
 
-        private const string TheRefusalPremiumSettingsGive = "Access Denied: Premium Features Required";
-
         // --- Given ---
 
         private void GivenTheCallerAdministersTheInstance() => TheCallerAdministersTheWholeInstance();

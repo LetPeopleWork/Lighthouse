@@ -59,6 +59,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         /// </summary>
         protected const string KeyNobodySeeded = "no-such-setting";
 
+        /// <summary>
+        /// The refusal a premium setting gives an instance whose licence does not cover it, quoted
+        /// from <c>LicenseGuardAttribute</c>. Held here rather than in each slice that checks it:
+        /// the promise is that every door onto a premium setting answers a client alike, and a
+        /// second copy of the sentence is how two of them come to differ.
+        /// </summary>
+        protected const string TheRefusalPremiumSettingsGive = "Access Denied: Premium Features Required";
+
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
