@@ -1,0 +1,110 @@
+{
+  "feature": "epic-5733-opt-in-usage-data",
+  "slice": "02",
+  "story": "#5835",
+  "status": "approved",
+  "goal": "Epic 5733 slice 02, ADO Story #5835 - the ask. The Usage Data dialog arrives unprompted at a sensible moment, once per browser, and states honestly whether it will return before the reader chooses. Slice 01c shipped a real product event to a population consisting of the dogfood instance and whoever went hunting for a footer icon; this is the slice that turns that pipe from a demonstrated mechanism into a measurement. It also gives PruneStaleAsync its first production caller, because this is the slice that makes unbounded consent-row growth real: every browser shown the dialog writes a row, refusals included. DISTILL is committed: 46 scenarios pend behind [Ignore] and describe.skip, and four assertions it was structurally unable to author are named in the feature delta's 'owed in DELIVER' table. Every step below names the pending cases it un-skips and the owed cases it authors.",
+  "phases": [
+    {
+      "id": "be",
+      "name": "Slice 02 backend - derive whether to ask, remember having asked, and stop the table growing",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "mayAsk: the server weighs install age, the switch and the decision, and answers one boolean",
+          "unskips": [
+            "UsageDataAskEndpointsTests.GetState_OnAnInstanceInstalledMomentsAgo_SaysTheBrowserIsNotDue",
+            "UsageDataAskEndpointsTests.GetState_OnceTheInstanceHasBeenInstalledLongEnough_SaysAnUndecidedBrowserIsDue",
+            "UsageDataAskEndpointsTests.GetState_WithTheAdministratorsSwitchOff_SaysNobodyIsDue",
+            "UsageDataAskEndpointsTests.GetState_WithNoSwitchRowAtAll_StillSaysTheBrowserIsDue",
+            "UsageDataAskEndpointsTests.GetState_ForABrowserThatAgreed_NeverSaysItIsDueAgain",
+            "UsageDataAskEndpointsTests.GetState_ImmediatelyAfterARefusal_DoesNotSayTheBrowserIsDueAgain",
+            "UsageDataAskEndpointsTests.GetState_SaysWhetherToAsk_WithoutNamingTheLicence"
+          ],
+          "authors": [
+            "A Community refusal becomes due again after ~3 months (owed: needs the injected TimeProvider and the field this step adds)",
+            "A Premium refusal never becomes due again, at any elapsed time"
+          ],
+          "notes": "UsageDataState gains MayAsk. The master-switch reader currently lives as a private static on UsageDataGate with its key as a private const; two copies of 'a missing row means on' is one piece of knowledge in two places, so extract it rather than duplicate. AskAfterInstallDays and ReAskAfterDays join UsageDataConfiguration. Shared contract: UsageDataState is consumed by the frontend - grep callers and extend the test factory first."
+        },
+        {
+          "id": "02-02",
+          "name": "The asked endpoint: a browser that was shown the dialog says so, and only for itself",
+          "unskips": [
+            "UsageDataAskEndpointsTests.PostAsked_WithTheBrowsersOwnToken_StopsItBeingDueStraightAway",
+            "UsageDataAskEndpointsTests.PostAsked_WithNoTokenAtAll_IsAcceptedAndRecordsNothing",
+            "UsageDataAskEndpointsTests.PostAsked_WithATokenThisInstanceNeverMinted_AnswersExactlyAsARealOneDoes",
+            "UsageDataAskEndpointsTests.PostAsked_NeedsNoAuthentication_LikeEverySiblingItStandsBeside"
+          ],
+          "notes": "Sets AskedAt, which already exists on the entity - 01c added the column ahead of this slice so it would not cost a migration on every supported database. A conditional write through an affected-row count, like TryRevokeAsync, and the count is dropped for the same non-oracular reason. Rate-limited under UsageDataConsentPolicy. UsageDataController is a shared contract."
+        },
+        {
+          "id": "02-03",
+          "name": "Pruning, with the re-ask window as a hard floor",
+          "authors": [
+            "Prune leaves a declined row alone until its re-ask date has passed",
+            "Prune removes a granted row long unseen",
+            "Prune removes a declined row whose re-ask date has passed and which stopped visiting"
+          ],
+          "notes": "PruneStaleAsync grows a second concept per DT-21. Its two existing integration tests (RemovesWhatHasAgedOut, LeavesARowSittingExactlyOnTheThreshold) are revisited, not merely added to. A BackgroundService with a pull-able trigger, following UsageDataForwardingService.SendWhatIsWaitingAsync - the test host runs no background work, so a test needs to ask for the pass at a moment it chooses."
+        }
+      ]
+    },
+    {
+      "id": "fe",
+      "name": "Slice 02 browser - remember, coordinate, decide, and open",
+      "steps": [
+        {
+          "id": "02-04",
+          "name": "The two things the browser remembers: that it was asked, and who holds the session",
+          "unskips": [
+            "usageDataAskMarker (5)",
+            "promptSession (5)"
+          ],
+          "notes": "Both wrap storage that throws rather than returning null in private windows. Reading must not write - that is the basis on which anything may be stored without asking first."
+        },
+        {
+          "id": "02-05",
+          "name": "The decision, and the sentence that has to agree with it",
+          "unskips": [
+            "usageDataAskEligibility (6)",
+            "usageDataCadenceCopy (5)"
+          ],
+          "notes": "The marker is consulted only for a browser with no recorded decision. For one that has decided, the server owns the cadence - otherwise a marker left over from the first ask would silence the three-month re-ask it was never about."
+        },
+        {
+          "id": "02-06",
+          "name": "The dialog arrives without being asked for, and says whether it will return",
+          "unskips": [
+            "UsageDataAsk (10)"
+          ],
+          "notes": "UsageDataService gains acknowledgeAsked; the provider carries mayAsk; UsageDataDialog takes willAskAgain and renders cadenceSentence; Footer passes it; App.tsx mounts UsageDataAsk. This is the step that removes the RED scaffold's throw, so it is also the step where an unmounted component becomes a mounted one."
+        },
+        {
+          "id": "02-07",
+          "name": "The survey nudge learns it is no longer alone",
+          "unskips": [
+            "SurveyNudge.promptSlot (4)"
+          ],
+          "notes": "Claims the slot when it appears; stands down when something else holds it; claims nothing when it was never going to appear. A shipped, green component - the change is additive and its existing tests must stay green untouched."
+        }
+      ]
+    },
+    {
+      "id": "e2e",
+      "name": "Slice 02 end to end - suppressed by default, proven once",
+      "steps": [
+        {
+          "id": "02-08",
+          "name": "The fixture stops the modal eating every spec, and one skeleton proves it still appears",
+          "notes": "LighthouseFixture seeds the DT-14 marker through context.addInitScript. One spec clears it, backdates Install:Timestamp, and asserts the unprompted open plus the cadence sentence. Through a page object. Run locally before it is committed - never commit an unrun spec or locator."
+        }
+      ]
+    }
+  ],
+  "out_of_scope": [
+    "The admin switch itself (#5836, slice 03). This slice honours it if the row exists and treats its absence as may-ask.",
+    "Further named product events (#5837, slice 04).",
+    "Stryker mutation testing, ADO transitions and the push - held for the maintainer's manual review."
+  ]
+}

@@ -2741,3 +2741,161 @@ is edited in this wave. **Two are prescribed for DELIVER and carry the house cau
 `UsageDataConsent` entity gains a column, and `UsageDataController` gains an action. Grep callers and
 extend the consent test factory before either is touched.
 
+---
+
+## Wave: DISTILL / [REF] Slice 02 decisions
+
+Wave: DISTILL. Date: 2026-09-13. Slice 02, ADO Story #5835. Density: lean, Tier-1 only. DT-1 said
+slices 02-04 re-enter DISTILL when they start; this is that re-entry. DT-2 through DT-13 remain in
+force — no Gherkin, no `.feature` file, no `__SCAFFOLD__` markers, skip markers are NUnit `[Ignore]`
+and Vitest `describe.skip`, no backend scaffold types, no Playwright in this wave. Numbering
+continues from DT-13.
+
+| ID | Decision | Implements |
+|---|---|---|
+| DT-14 | **A durable per-browser "asked at" marker, not session-scoped suppression.** Product owner's call, 2026-09-13. AC-05.2's "once per browser" is read literally: a browser shown the dialog is not shown it again, whether or not it answered. The alternative considered and declined was suppressing only within a session, which keeps D2's ePrivacy reasoning untouched but asks a daily dismisser daily. **This choice has an unresolved legal consequence — see the DoR-9 open item below.** | AC-05.2 |
+| DT-15 | **The server derives `mayAsk`; the browser is told the answer, never the inputs.** `SystemInfoController` is `[Authorize]` and `UsageDataController` is `[AllowAnonymous]`, so the install timestamp is not reachable where the dialog lives. The same shape C5 settled for the licence tier: return the derived boolean. Install age, the administrator's switch, the stored decision and the three-month arithmetic are all weighed server-side, which also removes any client clock from a privacy gate and makes AC-05.8 unspoofable rather than merely unrendered. | AC-05.1, AC-05.4, AC-05.7, AC-05.8 |
+| DT-16 | **Two stores, one boundary.** The server owns everything it can see. The browser owns exactly one fact the server cannot: that a browser holding no consent row was shown the dialog and walked away. There is no row to write that against, and inventing one would mean recording a decision nobody made. | AC-05.2, AC-05.3 |
+| DT-17 | **A token-holding browser reports the ask back; an undecided one does not.** `POST /usagedata/asked` sets `AskedAt` on the row the presented token names, and is a no-op without one. Without it a Community browser that declines, comes due three months later and closes the dialog is due for ever, because its stored decision never changed — asked once per session from then on, which is the nag the slice exists to rule out. `AskedAt` already exists on the entity; 01c added the column ahead of this slice precisely so this would not cost a migration on every supported database. | AC-05.3, AC-05.5 |
+| DT-18 | **The asked endpoint answers identically for a token this instance never minted.** Same reasoning as revoke and state in 01c: a differing answer turns it into a way of discovering which tokens are real. Asserted with an anchor, because on an unrouted path both calls are 405 and equal. | — |
+| DT-19 | **`cadenceSentence(willAskAgain)` is a module of its own, not a ternary in the dialog.** The sentence and the behaviour are one promise (AC-05.5), so the boolean that decides whether this browser is asked again is the one that picks the words. Separating it gives the copy its own tests — including that the will-ask wording does not appear inside the will-not-ask sentence, which is exactly how a substring match would let the promise invert while every test stayed green. | AC-02.9, AC-05.5 |
+| DT-20 | **AC-05.6 is owned by a claimed session slot, and the tie-break is structural.** One `sessionStorage` key; first claim wins; both prompts check it. On a genuine tie the survey nudge takes it, because it claims while rendering and usage data claims from an effect, which React runs afterwards — deterministic rather than a race. This is the "second ad-hoc rule" the slice brief's Watch note warned about, chosen over one shared scheduler because the scheduler would refactor a shipped, green component inside a slice budgeted at a day, and would straddle two decision locations (the nudge decides client-side, usage data server-side). **If a third unsolicited prompt is ever proposed, this is the point at which the Watch note's shared scheduler stops being premature.** | AC-05.6, D9 |
+| DT-21 | **`PruneStaleAsync` grows a second concept rather than a bigger number.** A declined or revoked row is not prunable until its re-ask date has passed; a granted row is prunable once it has gone unseen far beyond any liveness window. The alternative — one `LastSeenAt` threshold set large enough that the coupling cannot bite — was declined because the safety would be incidental to the number, and the next person to tune it down reintroduces an early re-ask with no test naming why. The existing method's own comment already reasons about not deleting refusals sooner than grants; this makes that reasoning executable. | AC-05.5 |
+| DT-22 | **The E2E suite suppresses the dialog through the production mechanism, not through an accident.** Today nothing in the suite mentions either prompt, because `SurveyNudge` needs a fourteen-day install age and an E2E instance is minutes old. Slice 02's threshold is two to three days — the same immunity, a thinner margin, and a worse failure: a modal eats pointer events for the rest of the spec and reports "element intercepts pointer events". The fixture seeds the DT-14 marker before any page loads. Per DT-13 this is specified here and written in DELIVER. | AC-05.2 |
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 scenario list
+
+**46 pending scenarios as the runners count them: 35 frontend (`describe.skip`), 11 backend
+(`[Ignore]`).** Verified by running: 6 frontend files, 35 skipped, zero failed suites; backend builds
+with 0 warnings and 0 errors.
+
+### Frontend
+
+| File | Scenarios | Covers |
+|---|---|---|
+| `services/UsageData/usageDataAskEligibility.test.ts` | 6 | AC-05.1/2/4/5/6/7/8 |
+| `services/UsageData/usageDataAskMarker.test.ts` | 5 | AC-05.2, D2 |
+| `services/UsageData/promptSession.test.ts` | 5 | AC-05.6, D9 |
+| `services/UsageData/usageDataCadenceCopy.test.ts` | 5 | AC-02.9, AC-05.5 |
+| `components/UsageData/UsageDataAsk.test.tsx` | 10 | US-05, end to end through the real Footer |
+| `components/SurveyNudge/SurveyNudge.promptSlot.test.tsx` | 4 | AC-05.6 |
+
+`UsageDataAsk.test.tsx` mounts the real `Footer` beside the component under test. A test asserting
+that `openDialog` had been called would pass against a provider whose dialog nothing renders — the
+wiring defect this slice is most able to ship, and the one an assertion on a mock cannot see.
+
+### Backend
+
+`Integration/UsageData/UsageDataAskEndpointsTests.cs`, 11 scenarios, black box over HTTP per DT-3:
+install age below and above the threshold; the administrator's switch off; **no switch row at all**
+(the row does not exist until slice 03, and absent must mean may-ask or this slice silently asks
+nobody and the Epic's uptake number returns zero for a reason nothing reports); a browser that
+agreed; a browser that has just refused; the licence-disclosure guard extended to the new field; and
+four on the asked endpoint — with a token, without one, with a token never minted here, and without
+authentication.
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 scaffolds
+
+Per DT-4, frontend scaffolds are real modules that throw and interpolate their arguments, so the
+failure names the missing contract and what it was asked. Per DT-5 every scaffold call sits inside a
+test body — `describe.skip` still evaluates its describe body, and a hoisted call reports a failed
+**suite**, which is BROKEN rather than pending.
+
+| Module | Contract |
+|---|---|
+| `services/UsageData/usageDataAskEligibility.ts` | `evaluateAskEligibility(input): AskDecision` |
+| `services/UsageData/usageDataAskMarker.ts` | `readAskedMarker()`, `writeAskedMarker(askedAt)` |
+| `services/UsageData/promptSession.ts` | `claimPromptSlot(owner)`, `promptSlotHolder()` |
+| `services/UsageData/usageDataCadenceCopy.ts` | `cadenceSentence(willAskAgain)` |
+| `components/UsageData/UsageDataAsk.tsx` | headless component; opens the existing dialog |
+
+`UsageDataAsk` is deliberately **not mounted** in `App.tsx` by this wave. A component that throws on
+render would take the application down; DELIVER mounts it in the step that implements it, which is
+also what keeps the DISTILL hand-off commit green.
+
+Per DT-3 there are no backend scaffolds. `UsageDataState` gaining `MayAsk`, the repository gaining a
+mark-asked write, and the pruning background service are all named only through the serialised
+document or the route, never as types.
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 owed in DELIVER
+
+Assertions this wave could not author, named here so they cannot be quietly dropped.
+
+| Owed | Why DISTILL could not write it |
+|---|---|
+| A Community refusal becomes due again after ~3 months | Moving a clock three months forward is not something an HTTP call can do, and the service method that derives it takes a field this slice adds. A unit test against the injected `TimeProvider`, once `MayAsk` exists. |
+| A Premium refusal never becomes due again, at any elapsed time | Same: the tier lives behind `ILicenseService`, and the derivation is the thing under test. |
+| Prune leaves a declined row alone until its re-ask date has passed | The second concept does not exist on `PruneStaleAsync` yet, and naming a new signature breaks the whole test assembly's build. Authored against Testcontainers.PostgreSql per the infrastructure policy, beside the two existing prune tests — which are **revisited, not merely added to**. |
+| The E2E walking skeleton | DT-13: never commit an unrun spec or page-object locator, never push red, and `pnpm build` runs `tsc -b`, so a spec calling a page-object method nobody has written fails the build for everyone. |
+
+### The E2E walking skeleton, specified
+
+One spec. `LighthouseFixture` seeds the DT-14 marker through `context.addInitScript` before any page
+loads, so every other spec in the suite is suppressed by the same mechanism a real returning browser
+uses — a default, not a test backdoor. The skeleton clears that key, backdates `Install:Timestamp`,
+loads the overview, and asserts the dialog appears unprompted and carries the cadence sentence
+matching the state the server returned. Driven through a page object; run locally before it is
+committed.
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 changed acceptance criteria
+
+**AC-05.3 is narrowed by DT-14, and the change is deliberate.** As written it says closing the dialog
+leaves the browser "undecided and eligible on the next session". Under a durable marker the first
+half still holds — nothing is recorded, the footer indicator is unchanged, and the footer icon
+remains the way back in — but the second half does not: an undecided browser is not asked again
+unprompted. The product owner chose this reading over session-scoped suppression on 2026-09-13, with
+the trade named at the time.
+
+The consequence worth watching, because it moves the number the Epic rests on: every browser that
+closes the dialog once is permanently out of the consenting population, so uptake measured after 60
+days is a floor rather than an estimate. If uptake lands just under the 20% the learning hypothesis
+disproves at, this decision is a candidate explanation before the hypothesis is.
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 open item — the asked marker and DoR-9
+
+**Unresolved, and not resolvable inside this wave.** D2 admits the consent token under the
+strictly-necessary exemption on a specific argument: nothing is written before a click, and the
+token's sole content is the user's own choice. The DT-14 marker satisfies neither half — it is
+written when Lighthouse asks rather than when the reader answers, and what it records is
+Lighthouse's action.
+
+This is the same class of question D2 already deferred to DoR-9 (legal sign-off on the ePrivacy
+reading), and it belongs there rather than being settled by a wave that writes tests. The tests are
+written either way; what is gated is whether the marker ships as specified. If the reading comes back
+negative, the fallback is session-scoped suppression — the option weighed and declined in DT-14 —
+which costs the AC-05.2 wording and nothing else structural.
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 wave-decision reconciliation
+
+Reconciliation run 2026-09-13 across DISCUSS D1-D11, DESIGN A1-A14 and its redesign, DEVOPS P1-P13,
+and the slice brief. **Five contradictions or unowned commitments found, all five resolved by the
+product owner before any scenario was written; zero left open.**
+
+| Found | Resolution |
+|---|---|
+| D2 forbids writing before a click; AC-05.2 requires remembering an unanswered ask | DT-14, with the legal consequence carried as the DoR-9 open item above |
+| AC-05.1 needs install age; `SystemInfoController` is `[Authorize]` and the dialog's endpoint is not | DT-15 |
+| **H2 — AC-05.6 had no owner**, and DESIGN's proposed "shared caller of the two eligibility functions" does not exist | DT-20 |
+| `PruneStaleAsync` had zero production callers, and pruning a declined row early re-asks ahead of schedule | DT-21 |
+| An auto-opening modal would eat pointer events across the E2E suite | DT-22 |
+
+`AnalyticsId` is untouched by this slice: a browser that refuses still has no pseudonym anywhere, and
+recording that it was asked does not change that.
+
+**Not re-litigated, and inherited as constraints**: D5 (Community re-asked, cannot switch the asking
+off), D9 (coordinate, never bundle), and the clock-skew row from the DESIGN peer review — every
+timestamp this slice writes is `timeProvider.GetUtcNow()`, stored UTC, matching `DecidedAt` and
+`LastSeenAt`.
+
