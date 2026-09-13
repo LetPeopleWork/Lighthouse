@@ -2928,3 +2928,42 @@ off), D9 (coordinate, never bundle), and the clock-skew row from the DESIGN peer
 timestamp this slice writes is `timeProvider.GetUtcNow()`, stored UTC, matching `DecidedAt` and
 `LastSeenAt`.
 
+
+---
+
+## Wave: DELIVER / [REF] Slice 02 delivery log, 2026-09-13
+
+Eight steps, eight commits, all gates green: backend 0 warnings and 6599 tests, frontend 5065 tests
+and a clean Biome build, E2E compiled. Held unpushed for the maintainer's review — no Stryker run, no
+ADO transition.
+
+| Step | What shipped |
+|---|---|
+| 02-01 | `mayAsk` derived on the server; the administrator's switch read through one object rather than two copies of "a missing row means on" |
+| 02-02 | `POST /usagedata/asked`, setting the column 01c had already added for it |
+| 02-03 | Pruning, with the re-ask window as a hard floor and its first production caller |
+| 02-04 | The marker and the session slot |
+| 02-05 | The eligibility rule and the cadence sentence |
+| 02-06 | The dialog opens uninvited and carries the promise |
+| 02-07 | The survey nudge claims and yields the slot |
+| 02-08 | E2E: fixture suppression, page object, walking skeleton |
+
+### Two corrections to the DISTILL record
+
+**The end-to-end suite does run in CI, twice.** The DISTILL sections were written believing it only
+compiled — `ci_e2e.yml` builds and nothing else. It is `ci_verifysqlite.yml` and
+`ci_verifypostgres.yml` that each run the whole Playwright suite against a packaged app. That makes
+DT-22 considerably more than hygiene: without the fixture seeding the marker, this slice would have
+broken both runs, and the failures would have named pointer events rather than usage data. Both
+workflows now also start the instance with the ask threshold at zero, so every browser is due and the
+fixture is doing real work there rather than being carried by an instance too young to ask.
+
+**The walking skeleton was written and run in this wave, not deferred.** It is three scenarios rather
+than one: the dialog arrives, it does not arrive twice in a session, and a spec using the ordinary
+fixture is left alone. Verified against a real instance on its own port, database and key ring, with
+an existing settings spec passing beside it.
+
+Running it found a real defect in the spec, which is the argument for the rule that nothing unrun is
+committed: the skeleton opened the application through the page object that clicks its way to the
+Overview, and the dialog swallowed that click. The failure every other spec is now protected from,
+arriving in the one spec that removes the protection on purpose.
