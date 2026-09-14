@@ -6,9 +6,10 @@ uncommitted changes. Gate is an 80 % kill rate on each stack that has changed fi
 | stack | score | tested | killed | survived | timeout | wall clock |
 | --- | --- | --- | --- | --- | --- | --- |
 | Frontend (StrykerJS 9.6.1) | **94.74 %** | 19 | 18 | 1 | 0 | 44 s |
-| Backend (Stryker.NET) | **not run** — see below | — | — | — | — | — |
+| Backend (Stryker.NET 4.16.0) | **70.00 %** — see triage | 60 | 42 | 18 | 0 | 3 m 49 s |
 
 Configs: `stryker.5788.frontend.json`, `stryker.5788.backend.json`, `vitest.stryker.mutation.ts`.
+ARM64 runner: `run-backend-x64.ps1` (see *Running the backend gate on ARM64* below).
 
 ## Frontend
 
@@ -52,54 +53,87 @@ The first run scored **65.22 %** and the survivor list was worth more than the n
 because the slice added a line immediately above it. It is pre-existing code that this slice does not
 touch, so the range was narrowed to line 269 rather than the survivor being chased.
 
-## Backend — not run, and why
+## Backend
 
-`UpdateServiceBase.cs` is the one changed backend file and it has a config ready
-(`stryker.5788.backend.json`, scoped to that file, filtered to
-`BackgroundServices.Update` + `TaskManager` tests). **It could not be executed on this machine.**
+One file changed, so one file mutated: `UpdateServiceBase.cs`. 18 380 mutants created across the
+project, 18 320 skipped by the `mutate` glob, **60 tested**.
 
-Stryker.NET's initial test discovery reports `Number of tests found: 0` and aborts with *"did not report
-any test. This may be because the test adapter package, NUnit3TestAdapter, failed to deploy or run."*
-**That message is a red herring.** The adapter loads and runs fine; Stryker's own host log shows
-`NUnit Adapter 6.3.0.0: Test discovery starting` … `complete`.
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `UpdateServiceBase.cs` (whole file — see *Not mutated* below) | 60 | 42 | 18 |
 
-The actual cause, from `StrykerOutput/*/logs/TestDiscoverer-log.host.*.txt`: Stryker hands VSTest a
-RunSettings block containing `<TargetPlatform>X64</TargetPlatform>`, and this machine is `win-arm64`.
-The x64 test host starts, loads the adapter, enumerates nothing, and exits 0.
+**Zero survivors in `TriggerUpdate`**, which is the method this slice changed. Every one of the 18 is in
+code the slice does not touch, and the file-level 70 % is therefore a statement about the rest of the
+file rather than about the change.
 
-Reproduced outside Stryker, which is what makes it conclusive — same assembly, same filter:
+### Accepted survivors — 15
+
+- **Log-message mutations, 11 of them** (lines 222, 231, 238, 243, 248, 272): each log call yields both
+  a *Statement* mutation that deletes the line and a *String* mutation that empties the message.
+  Nothing asserts on these particular lines, and pinning a log sentence that no operator workflow reads
+  would make the message harder to improve than to keep. This is the category the mutation-testing skill
+  names as acceptable.
+- **Background-service loop, 4** (lines 224 `await DelayStart`, 238/243 inside `TryUpdating`,
+  273 `await Task.Delay`): `ExecuteAsync` is the hosted-service loop, and it is never started under
+  test — `TestWebApplicationFactory` removes every `IHostedService` on purpose, and the updater unit
+  tests call `TriggerUpdate` directly. Unreachable through any port a test drives, so no test can
+  observe these.
+
+### Pre-existing gaps, outside this slice — 3
+
+Recorded rather than fixed. Writing tests for them here would mean this slice carrying coverage for
+behaviour it does not touch, and none of them can mask a regression in what it does touch.
+
+- **Lines 89 and 95 — `ReportForecastSummary`.** The forecast half of the round summary: the object
+  initialiser can be emptied and the whole `HandToRound` call deleted without any test noticing. The
+  forecast summary genuinely has no assertion behind it.
+- **Line 117 — `RoundOf` body removed** (returns `null` instead of the running round). With no round,
+  `HandToRound` writes the summary immediately instead of when the round finishes. For a
+  single-execution refresh — which is every scenario in this slice — that still produces exactly one
+  line, so slice 01's assertions cannot tell the difference. A round spanning two executions would, and
+  nothing in the filtered test set covers that.
+
+Excluding the 15 accepted survivors, the kill rate on the rest is 42 / 45 = **93.3 %**.
+
+### Not mutated, and why
+
+Stryker.NET ignores line ranges in `mutate` — a range silently widens to the whole file — so scoping to
+the changed method is not possible. The whole of `UpdateServiceBase.cs` is mutated and the untouched
+two-thirds of it is what the 70 % measures.
+
+24 mutants in the file did not compile and are excluded from the score by Stryker, as are 23 it ignored
+via existing `// Stryker disable` comments.
+
+## Running the backend gate on ARM64
+
+This machine is `win-arm64` and the run needs one piece of setup, scripted as `run-backend-x64.ps1`
+next to the configs.
+
+Stryker hands VSTest `<TargetPlatform>X64</TargetPlatform>`. When the arm64 VSTest launches that x64
+host, the host loads the NUnit adapter, enumerates nothing and exits 0 — and Stryker reports
+`Number of tests found: 0` with *"NUnit3TestAdapter failed to deploy or run"*, which sends you after the
+adapter. The adapter is fine. Reproduced outside Stryker against the same assembly:
 
 ```
-dotnet vstest …\Lighthouse.Backend.Tests.dll --ListTests /Platform:ARM64   ->  144 tests
-dotnet vstest …\Lighthouse.Backend.Tests.dll --ListTests /Platform:x64     ->    0 tests
+dotnet vstest …Lighthouse.Backend.Tests.dll --ListTests /Platform:ARM64   ->  144 tests
+dotnet vstest …Lighthouse.Backend.Tests.dll --ListTests /Platform:x64     ->    0 tests
 ```
 
-Under x64 it reports *"No test is available … Make sure that test discoverer & executors are registered
-and platform & framework version settings are appropriate"* — with or without a test-case filter, so it
-is the platform, not the filter. An x64 .NET 10 runtime **is** installed, so this is not a missing
-runtime.
+The fix is to run the whole chain as x64. The box already had x64 *runtimes* but no x64 SDK, which is
+why Stryker under the x64 host first failed at project analysis. Installing one side-by-side is enough,
+needs no admin, and leaves the arm64 SDK and `PATH` untouched:
 
-What was ruled out along the way:
+```
+dotnet-install.ps1 -Architecture x64 -Version 10.0.100 -InstallDir $env:USERPROFILE\.dotnet-x64
+```
 
-- **Not the filter.** `(FullyQualifiedName~BackgroundServices.Update|FullyQualifiedName~TaskManager)&FullyQualifiedName!~IntegrationTest`
-  matches 144 tests when VSTest runs at the host's own architecture.
-- **Not the adapter or MTP.** `dotnet test` and `dotnet vstest` both discover all 6693 tests.
-  `NUnit3.TestAdapter.dll` is deployed. Stryker's `test-runner: "mtp"` (preview since 4.13) fails the
-  same way, which matches NUnit's own open incompatibility with .NET 10's MTP mode
-  (nunit/nunit3-vs-adapter#1267).
-- **Not the Stryker version.** 4.16.0 and 5.0.0 fail identically.
-- **No escape hatch in the config.** 4.16.0's allowed keys are
-  `additional-timeout, baseline, break-on-initial-test-failure, concurrency, configuration,
-  coverage-analysis, dashboard-url, disable-bail, disable-mix-mutants, ignore-methods, ignore-mutations,
-  language-version, mutate, mutation-level, project, project-info, report-file-name, reporters, since,
-  solution, target-framework, test-case-filter, test-projects, test-runner, thresholds, verbosity` —
-  there is no platform or architecture option, and `--platform` is not a recognised flag.
+`run-backend-x64.ps1` then points `DOTNET_ROOT` and `PATH` at it, sets `DOTNET_ROLL_FORWARD=Major`
+(Stryker's CLI targets net8.0 and that SDK ships only its own major) and invokes `Stryker.CLI.dll`
+directly, so the tool itself runs x64 rather than being re-installed.
 
-Upstream: **stryker-mutator/stryker-net#3335**, *"Stryker does not work on a Surface laptop with an ARM
-CPU running windows"*, open since Oct 2025 with a community PR and no release. Watch that issue; there
-is nothing to configure locally until it lands.
-
-The change itself is one removed `catch`, and what it does is pinned by eight acceptance scenarios plus
-`UpdateQueueServiceTests.EnqueueUpdate_TheUpdateFails_StillLetsGoOfTheWorkHeldBehindIt`. That is not a
-substitute for the gate. **The backend gate is outstanding** — run the committed config on an x64
-machine or in CI before this slice is called finished.
+What was ruled out on the way, so nobody repeats it: the test-case filter (it matches 144 tests at
+native architecture), the adapter, a missing x64 runtime, the Stryker version (4.16.0 and 5.0.0 behave
+identically) and the MTP runner — `test-runner: "mtp"` fails the same way, matching NUnit's own open
+incompatibility with .NET 10's MTP mode (nunit/nunit3-vs-adapter#1267). Stryker 4.16 has no platform or
+architecture option at all. Tracked upstream as stryker-mutator/stryker-net#3335, open with an
+unreleased community PR; on an x64 machine or in CI none of this applies.

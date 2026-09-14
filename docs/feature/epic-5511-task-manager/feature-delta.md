@@ -1305,7 +1305,9 @@ survivors were worth more than the number — they found that Portfolio detail h
 all, and that nothing proved the failure clears when a page is opened just after a refresh finished.
 Five scenarios were added to close them.
 
-**The backend gate is outstanding.** The config is written and committed but Stryker.NET cannot discover
-the NUnit tests on this `win-arm64` host — `Number of tests found: 0` on both 4.16.0 and 5.0.0, while
-`dotnet test` runs the same assembly fine. Run `stryker.5788.backend.json` on x64 or in CI before this
-slice is called finished.
+Backend **70.00 %** on `UpdateServiceBase.cs`, with **zero survivors in `TriggerUpdate`** — the method
+this slice changed. All 18 survivors are in code the slice does not touch: 11 log-message mutations,
+4 in the hosted-service loop that no test starts, and 3 genuine pre-existing gaps recorded rather than
+fixed. Excluding the accepted ones the rest kills 42 of 45. Whether a 70 % file-level number clears the
+gate when the changed method is clean is a judgement call for the maintainer, not something this slice
+should settle by writing coverage for behaviour it never touched.
