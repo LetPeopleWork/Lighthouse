@@ -13,7 +13,10 @@
 
 param(
     [Parameter(Mandatory = $true)][string]$Config,
-    [string]$StrykerVersion = '4.16.0'
+    [string]$StrykerVersion = '4.16.0',
+    # Stryker resolves `solution` in the config relative to the directory it runs from, so this is not
+    # cosmetic - run it anywhere else and the whole solution simply does not exist.
+    [string]$TestProject = "$PSScriptRoot\..\..\..\..\Lighthouse.Backend\Lighthouse.Backend.Tests"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,5 +36,9 @@ $env:PATH = "$root;$env:PATH"
 # Stryker's CLI targets net8.0 and the x64 SDK ships only its own major, so it has to roll forward.
 $env:DOTNET_ROLL_FORWARD = 'Major'
 
-& (Join-Path $root 'dotnet.exe') $cli --config-file (Resolve-Path $Config)
+$configPath = (Resolve-Path $Config).Path
+Set-Location (Resolve-Path $TestProject).Path
+Remove-Item -Recurse -Force 'StrykerOutput' -ErrorAction SilentlyContinue
+
+& (Join-Path $root 'dotnet.exe') $cli --config-file $configPath
 exit $LASTEXITCODE

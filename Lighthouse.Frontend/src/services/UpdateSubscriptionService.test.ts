@@ -125,6 +125,34 @@ describe("UpdateSubscriptionService", () => {
 		expect(mockedAxios.get).toHaveBeenCalledWith("/update/status");
 	});
 
+	// Epic #5511 slice 02. The route is the whole contract here; nothing else in the browser knows
+	// where the task list lives.
+	it("asks the instance for its task list and hands back what it says", async () => {
+		const tasks = [
+			{
+				updateType: "Team",
+				id: 7,
+				name: "Lagunitas",
+				status: "InProgress",
+			},
+		];
+		mockedAxios.get.mockResolvedValueOnce({ data: tasks });
+
+		const result = await service.getRunningTasks();
+
+		expect(mockedAxios.get).toHaveBeenCalledWith("/update/tasks");
+		expect(result).toEqual(tasks);
+	});
+
+	// Deliberately unlike getGlobalUpdateStatus above, which swallows and reports an idle instance. An
+	// instance that cannot say what it is doing is not an instance doing nothing, and the popover has to
+	// be able to tell those apart.
+	it("lets a failed read surface rather than reporting an idle instance", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new Error("API error"));
+
+		await expect(service.getRunningTasks()).rejects.toThrow("API error");
+	});
+
 	it("should handle errors when getting global update status", async () => {
 		mockedAxios.get.mockRejectedValue(new Error("API error"));
 

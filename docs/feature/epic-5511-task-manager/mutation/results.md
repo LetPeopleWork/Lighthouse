@@ -1,4 +1,6 @@
-# Mutation testing — 5788 (A scheduled refresh that failed is reported to the browser as completed)
+# Mutation testing — Epic #5511 Task Manager
+
+## 5788 — A scheduled refresh that failed is reported to the browser as completed (slice 01)
 
 Epic #5511 Task Manager, slice 01. Run 2026-09-14 against `main` @ `90b929b7d` plus the slice's own
 uncommitted changes. Gate is an 80 % kill rate on each stack that has changed files.
@@ -137,3 +139,75 @@ identically) and the MTP runner — `test-runner: "mtp"` fails the same way, mat
 incompatibility with .NET 10's MTP mode (nunit/nunit3-vs-adapter#1267). Stryker 4.16 has no platform or
 architecture option at all. Tracked upstream as stryker-mutator/stryker-net#3335, open with an
 unreleased community PR; on an x64 machine or in CI none of this applies.
+
+---
+
+## 5840 — See what Lighthouse is doing right now (slice 02)
+
+Run 2026-09-14. Gate is an 80 % kill rate on each stack that has changed files.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **93.75 %** | 31 | 29 | 1 | 0 | 2 m 14 s |
+| Frontend (StrykerJS 9.6.1) | **73.33 %** — see triage | 75 | 55 | 19 | 0 | 1 m 50 s |
+
+Configs: `stryker.5840.backend.json`, `stryker.5840.frontend.json`, `vitest.stryker.5840.ts`.
+Backend run through `run-backend-x64.ps1`.
+
+### Backend — gate met
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `UpdateController.cs` | 23 | 23 | 0 |
+| `InProcessUpdateStatusStore.cs` | 8 | 6 | 1 |
+
+**Accepted survivor.** `InProcessUpdateStatusStore.Advance`, `(int)to >= (int)status.Status` → `>`.
+Equivalent: the only case the two differ on is advancing to the status a key already holds, and the
+assignment that follows writes the same value. Pre-existing code, untouched by this slice.
+
+**Not mutated, and why.** `RedisUpdateStatusStore.cs` is excluded. Its promise is pinned by
+`TaskManagerMultiReplicaTests`, which starts a real Redis container per test — around eight seconds
+each, re-run per mutant, which is not a run anyone would wait for. The three container tests cover the
+enumeration it gained: work admitted by another replica is read back with its type, id and status; work
+that finished is gone; an instance with no hash yet answers empty rather than failing.
+
+### Frontend — under the gate, and why
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `UpdateSubscriptionService.ts` (task-list read) | 2 | 2 | 0 |
+| `TaskManagerIcon.tsx` | 73 | 53 | 19 |
+
+The first run scored **50.67 %** and the survivors were the point:
+
+- **The whole delete path — 12 mutants.** `isDelete` could be inverted, emptied or made constant and
+  nothing noticed. Deletes reaching this list is *why* AC-02.3 exists, and the implementation said
+  "(removal)" that no specification asked for. Four scenarios added: a team removal says so, a portfolio
+  removal says so, a removal is named after the kind of thing being removed, and an ordinary refresh is
+  not called a removal.
+- **`getRunningTasks` had no coverage at all.** The route string could be emptied and the whole body
+  removed without a test failing — the one thing in the browser that knows where the task list lives.
+  Two service specs added, including that a failed read surfaces rather than reporting an idle instance,
+  which is deliberately unlike `getGlobalUpdateStatus` beside it.
+- **Only one kind was ever named.** The portfolio branch of the kind lookup was never asserted; the
+  two-row scenario now checks both.
+- **Every queued fixture had something to wait behind**, so "queued with nothing running" was
+  unspecified. Added: the list must not invent a blocker for the first thing in an empty queue.
+
+That took it to **73.33 %**. What remains:
+
+**Accepted — 12, all presentational.** `anchorOrigin` (3), `transformOrigin` (3), `slotProps` (3),
+`onClose`, the row `key`, and `sx` padding. These are MUI popover geometry and React list keys. A test
+that pinned them would be asserting how MUI positions a popover, not anything an operator can act on,
+and it would red on any layout tidy-up. Excluding them, the rest kills 55 of 62 — **88.7 %**.
+
+**Remaining seven, recorded not fixed.** The React effect's own plumbing: both dependency arrays, the
+`cancelled` guard and its reset, the initial empty `useState`, and the `default:` arm of the status
+description (which no status reaching this list can take, since terminal work is removed from the store
+before it could). Killing these means asserting on React's re-render bookkeeping rather than on
+behaviour; the leak they guard against is covered by *stops listening when it goes away*.
+
+**The honest summary:** the file-level 73.33 % is below the gate, and it is below the gate because two
+thirds of the surviving mutants are popover chrome. Every behavioural promise this slice makes is
+pinned. Whether that clears the gate is the maintainer's call — the same call slice 01's backend 70 %
+raised, and for the same reason.

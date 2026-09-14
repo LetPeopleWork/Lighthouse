@@ -130,6 +130,11 @@ describe("TaskManagerIcon", () => {
 
 		expect(running).toHaveTextContent(/running/i);
 		expect(queued).toHaveTextContent(/queued|waiting/i);
+
+		// Both kinds are named, not only the team one - a portfolio refresh and a team refresh sitting in
+		// the same list have to be tellable apart by more than their names.
+		expect(running).toHaveTextContent(/team/i);
+		expect(queued).toHaveTextContent(/portfolio/i);
 	});
 
 	// The naming half of deferred item G. #5877 is a user who read three teams queued behind one
@@ -185,6 +190,117 @@ describe("TaskManagerIcon", () => {
 		}
 
 		expect(await screen.findByText(/Sierra Nevada/)).toBeInTheDocument();
+	});
+
+	// AC-02.3 / S11 — UpdateType has five members and the browser knew three, so deletes used to reach
+	// this list as a type nothing could render. Saying a removal is a removal is the point: an operator
+	// who reads it as an ordinary refresh will wait for data that is never coming back.
+	it("says when the work in the list is a removal rather than a refresh", async () => {
+		renderIcon([
+			{
+				updateType: "TeamDelete",
+				id: 9,
+				name: "Petaluma",
+				status: "Queued",
+			},
+		]);
+
+		await openThePopover();
+
+		const row = await screen.findByTestId("task-manager-row-TeamDelete-9");
+		expect(row).toHaveTextContent(/Petaluma/);
+		expect(row).toHaveTextContent(/removal/i);
+	});
+
+	// A removal is still a removal of that kind of thing, so it is named in the reader's words too.
+	it("names a removal after the kind of thing being removed", async () => {
+		mockGetTerm.mockImplementation((key: string) =>
+			key === "team" ? "Squad" : key,
+		);
+
+		renderIcon([
+			{
+				updateType: "TeamDelete",
+				id: 9,
+				name: "Petaluma",
+				status: "Queued",
+			},
+		]);
+
+		await openThePopover();
+
+		expect(
+			await screen.findByTestId("task-manager-row-TeamDelete-9"),
+		).toHaveTextContent(/Squad/);
+	});
+
+	// An ordinary refresh must not read as a removal, or the word stops meaning anything.
+	it("does not call an ordinary refresh a removal", async () => {
+		renderIcon([aRunningTeam]);
+
+		await openThePopover();
+
+		expect(
+			await screen.findByTestId("task-manager-row-Team-7"),
+		).not.toHaveTextContent(/removal/i);
+	});
+
+	// A portfolio removal reads the same way a team one does; the list would otherwise be honest about
+	// one kind of deletion and silent about the other.
+	it("says when a portfolio is being removed too", async () => {
+		renderIcon([
+			{
+				updateType: "PortfolioDelete",
+				id: 4,
+				name: "Q3 Platform",
+				status: "Queued",
+			},
+		]);
+
+		await openThePopover();
+
+		const row = await screen.findByTestId("task-manager-row-PortfolioDelete-4");
+		expect(row).toHaveTextContent(/Q3 Platform/);
+		expect(row).toHaveTextContent(/removal/i);
+	});
+
+	// The first thing in an empty queue is waiting for its turn, not behind anything. Saying "behind"
+	// with nothing after it would be the list inventing a blocker.
+	it("does not claim a queued refresh is behind anything when nothing is running", async () => {
+		renderIcon([{ ...aQueuedPortfolio, waitingBehind: null }]);
+
+		await openThePopover();
+
+		const row = await screen.findByTestId("task-manager-row-Features-3");
+		expect(row).toHaveTextContent(/queued/i);
+		expect(row).not.toHaveTextContent(/behind/i);
+	});
+
+	// The popover subscribes for as long as it is on screen and no longer. A header that is torn down
+	// and rebuilt - a sign-out, a route that remounts it - would otherwise leave listeners behind.
+	it("stops listening when it goes away", async () => {
+		const service = createMockUpdateSubscriptionService();
+		service.getRunningTasks = vi.fn().mockResolvedValue([aRunningTeam]);
+
+		const { unmount } = render(
+			<MemoryRouter>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						updateSubscriptionService: service,
+					})}
+				>
+					<TaskManagerIcon />
+				</ApiServiceContext.Provider>
+			</MemoryRouter>,
+		);
+
+		await waitFor(() =>
+			expect(service.subscribeToAllUpdates).toHaveBeenCalled(),
+		);
+
+		unmount();
+
+		expect(service.unsubscribeFromAllUpdates).toHaveBeenCalled();
 	});
 
 	// AC-02.7 — an idle instance is an ordinary answer. An empty box reads as broken.
