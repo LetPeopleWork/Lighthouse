@@ -1794,10 +1794,10 @@ Run 2026-09-14, after slice 03. Slices 01 and 02 shipped with mutation testing b
 pass or an adversarial review; this is that missing pass, and it is recorded here rather than in either
 slice's DELIVER section because it happened after both were written.
 
-Sixteen findings. Two are fixed — both broke the acceptance criteria of the slice that introduced them,
-both were small, and neither had been pushed. The rest are recorded below and **not** fixed: they are
-pre-existing behaviour rather than regressions, and three of them are design decisions rather than
-repairs.
+Sixteen findings. **Five are fixed** — the two that broke the acceptance criteria of the slice that
+introduced them, and then, on the maintainer's call, the three that had first been recorded as deferred.
+The remaining eleven findings are recorded below, as seven entries — the last of them groups three
+narrow queue paths that share one shape.
 
 ## Fixed
 
@@ -1812,63 +1812,68 @@ both `Features` and `Forecasts` and wrote the one shared flag, so a forecast com
 refresh put the icon back to healthy over data that had never been updated. Forecasts are triggered by a
 refresh that has just finished, so the window is not hypothetical. The team page never had this.
 
+**A failed refresh was invisible to any page opened afterwards.** The queue removes the key as the run
+ends and `UpdateNotificationHub.GetUpdateStatus` read only that store, so a page opened at nine in the
+morning after an 03:00 failure saw `null` and rendered the healthy icon. US-01's promise held only for a
+browser that had the page open at the instant of failure. The hub now falls back to the refresh log —
+the durable record AC-01.2 already writes, and the only place that answer still exists once the key is
+gone.
+
+**One failed connect disabled every live update for the life of the page.** `connect()` left nothing to
+retry, and with no `withAutomaticReconnect` and no `onclose` a dropped connection left `isConnected`
+true, so every later invoke went to a dead socket. Because `getUpdateStatus` catches to `null` and the
+detail pages no-op on `null`, that rendered identically to a healthy idle instance. There is now
+automatic reconnect, an `onclose` that lets the next caller reconnect, and a record of this page's own
+subscriptions so a reconnect can ask for them again — the server keeps them per connection, and every
+caller here subscribes once on mount and never asks twice.
+
+**The task list never filtered terminal states** while its sibling `GetUpdateStatus` always has. A key
+orphaned by a pod that died before `Remove`, or by the shutdown drain's timeout, was listed and counted
+for the life of the deployment while `/update/status` called the same instance idle. `GetTasks` now
+filters to what is running and what is waiting. Slice 03's scenario that pinned the old behaviour pins
+the new one instead: its premise — a finished row listed without a duration — was superseded by the
+stronger promise that it is not listed at all.
+
 ## Recorded, not fixed
 
 Ordered by what they cost an operator.
 
-1. **A failed refresh is invisible to any page opened afterwards.** The queue removes the key as the run
-   ends and `UpdateNotificationHub.GetUpdateStatus` reads that store, so a page opened at 09:00 after an
-   03:00 failure sees `null` and renders the healthy icon. US-01's promise holds only for a browser that
-   had the page open at the instant of failure. The truth is persisted — the `RefreshLog` row, AC-01.2 —
-   but nothing the icon reads consults it. Closing this means giving the icon a durable source, which is
-   a slice, not a patch.
-
-2. **One failed SignalR connect disables every live update for the life of the page.** `connect()` leaves
-   `connectionPromise` null and `isConnected` false with nothing to retry, and there is no
-   `withAutomaticReconnect` and no `onclose` handler — so after a backend restart, which is every
-   Lighthouse update, `isConnected` stays true and every invoke throws into a `console.error`. Because
-   `getUpdateStatus` catches to `null` and the detail pages no-op on `null`, a dead connection renders
-   identically to a healthy idle instance.
-
-3. **The task list never filters terminal states.** `GetTasks` maps everything admitted while its sibling
-   `GetUpdateStatus` filters to `Queued` and `InProgress`. A key orphaned by a pod that died before
-   `Remove`, or by the shutdown drain's timeout, shows as a row and counts toward the badge for the life
-   of the deployment, while `/update/status` reports the instance idle. Slice 03 stopped such a row
-   reporting a duration; it did not stop it being listed. The fix is one clause, but it narrows the
-   endpoint's contract, so it belongs to whoever owns AC-02.3.
-
-4. **The popover's first failed read asserts idleness.** `tasks` initialises to `[]` and an empty list
+1. **The popover's first failed read asserts idleness.** `tasks` initialises to `[]` and an empty list
    renders "Nothing is being refreshed right now.", so a 502 or a 403 on the first read produces exactly
    the answer slice 02's own record called worse than none. The "leave the list as it was" comment is
-   true only from the second read on.
+   true only from the second read on: it protects a list that has already been filled once, and says
+   nothing about the first attempt. Needs an error state the popover does not currently have.
 
-5. **`waitingBehind` is wrong by construction on more than one replica.** Already carried from slice 03;
+2. **`waitingBehind` is wrong by construction on more than one replica.** Already carried from slice 03;
    repeated here because this review reached it independently. It also has a same-name variant: a
    `Features` and a `Forecasts` row for one portfolio render identically, so a row can appear to be
    queued behind itself.
 
-6. **Two subscribers share one SignalR handler namespace.** `useUpdateAll` and `TaskManagerIcon` both
+3. **Two subscribers share one SignalR handler namespace.** `useUpdateAll` and `TaskManagerIcon` both
    register on `GlobalUpdateNotification`, and the handler-less `connection.off(name)` removes both.
    This works today only because React fires every cleanup before every create-effect and the awaits
-   resolve in order. Adding an await ahead of it, or enabling automatic reconnect, would silently leave
-   one subscriber holding a group with no handler.
+   resolve in order. The reconnect bookkeeping added above inherits the same flaw rather than repairing
+   it: `joinedGroups` is keyed by group name, so one of the two unsubscribing drops the group for both,
+   and a reconnect after that would not ask for it again. Fixing it properly means counting subscribers
+   per group, or giving each its own handler token — a change to how subscription is modelled, which is
+   why it is here rather than in the commit above.
 
-7. **Concurrent reads of the task list have no sequence guard.** "Update All" enqueues N teams, each
+4. **Concurrent reads of the task list have no sequence guard.** "Update All" enqueues N teams, each
    raising a notification, each starting a `GET /update/tasks` with no `AbortController` — last response
    wins, whichever that is.
 
-8. **The Jira keyed download pages by offset over unordered JQL.** `OrderedForOffsetPaging` is applied to
+5. **The Jira keyed download pages by offset over unordered JQL.** `OrderedForOffsetPaging` is applied to
    the sweep and to release membership but not to `PrepareIssueKeyQuery`, so on Data Center an issue
    edited mid-walk can slide onto a page already read and go silently un-updated for that cycle. The
    comment claiming the full download shares this exposure is wrong.
 
-9. **Three narrower queue paths lose a notification or a key.** An `AcquireAsync` throw sits outside both
+6. **Three narrower queue paths lose a notification or a key.** An `AcquireAsync` throw sits outside both
    `try` blocks and strands the key permanently; `PublishCompletionAsync` and `NotifyListeners` are not in
    a `finally`, so a throw in the first skips the second after the key has already been removed; and
    `AbandonUnqueuedWork` completes its awaiter with a value its caller cannot read, so a delete that never
    ran returns 200.
 
-10. **`UpdateNotificationHub` carries `[Authorize]` and no `RbacGuard`.** AC-02.6 guards the endpoint;
+7. **`UpdateNotificationHub` carries `[Authorize]` and no `RbacGuard`.** AC-02.6 guards the endpoint;
     the hub lets any authenticated user ask about arbitrary ids and learn which entities exist and when
     they refresh. No names leak, which is why it is last.
 
