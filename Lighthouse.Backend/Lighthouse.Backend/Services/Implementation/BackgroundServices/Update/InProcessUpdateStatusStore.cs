@@ -50,6 +50,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             updateStatuses.TryRemove(key, out _);
         }
 
+        public IReadOnlyList<UpdateStatus> GetAdmittedWork()
+        {
+            return [.. updateStatuses.Values];
+        }
+
         public bool HasActiveWork()
         {
             return updateStatuses.Values.Any(status =>

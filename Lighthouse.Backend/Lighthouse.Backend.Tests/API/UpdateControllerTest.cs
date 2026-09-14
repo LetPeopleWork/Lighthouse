@@ -1,7 +1,10 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Moq;
 using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.Tests.API
@@ -137,9 +140,17 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        /// <summary>
+        /// The dictionary is still what backs the store these tests seed, but the controller only ever sees
+        /// the port (Epic #5511 slice 02, AC-02.2). Reading a dictionary directly is what made the old
+        /// endpoint answer about one replica on a multi-replica instance.
+        /// </summary>
         private UpdateController CreateSubject()
         {
-            return new UpdateController(updateStatuses);
+            return new UpdateController(
+                new InProcessUpdateStatusStore(updateStatuses),
+                Mock.Of<IRepository<Team>>(),
+                Mock.Of<IPortfolioRepository>());
         }
     }
 }

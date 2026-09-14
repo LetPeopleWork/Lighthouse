@@ -21,6 +21,13 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
 
         void Remove(UpdateKey key);
 
+        /// <summary>
+        /// Everything currently admitted, whichever replica admitted it. <see cref="HasActiveWork"/> answers
+        /// whether anything is happening; this answers what. Terminal work is not listed, because it is removed
+        /// from the store as its run ends - what comes back is work an operator can still do something about.
+        /// </summary>
+        IReadOnlyList<UpdateStatus> GetAdmittedWork();
+
         bool HasActiveWork();
 
         /// <summary>

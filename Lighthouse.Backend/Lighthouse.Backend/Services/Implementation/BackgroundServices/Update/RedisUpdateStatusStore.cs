@@ -78,6 +78,55 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             database.HashDelete(StatusHashKey, key.ToString());
         }
 
+        /// <summary>
+        /// Reads the whole hash, which is the same shape <see cref="HasActiveWork"/> already scans. Each field
+        /// is the key's own <c>Type_Id</c> rendering and each value the ordinal, so the entity a row belongs to
+        /// has to be reconstructed from the field name - the value alone says only how far it got. A field that
+        /// does not parse is skipped rather than thrown on: one unreadable entry written by a future version
+        /// must not cost an operator the whole list.
+        /// </summary>
+        public IReadOnlyList<UpdateStatus> GetAdmittedWork()
+        {
+            var admitted = new List<UpdateStatus>();
+
+            foreach (var entry in database.HashGetAll(StatusHashKey))
+            {
+                if (TryReadKey(entry.Name, out var key))
+                {
+                    admitted.Add(StatusFor(key!, (long)entry.Value));
+                }
+            }
+
+            return admitted;
+        }
+
+        private static bool TryReadKey(string? field, out UpdateKey? key)
+        {
+            key = null;
+
+            if (string.IsNullOrEmpty(field))
+            {
+                return false;
+            }
+
+            // Split at the last separator: no UpdateType name contains one, but nothing stops an id from
+            // being appended to something that does in a later version.
+            var separator = field.LastIndexOf('_');
+            if (separator <= 0 || separator == field.Length - 1)
+            {
+                return false;
+            }
+
+            if (!Enum.TryParse<UpdateType>(field[..separator], out var updateType)
+                || !int.TryParse(field[(separator + 1)..], out var id))
+            {
+                return false;
+            }
+
+            key = new UpdateKey(updateType, id);
+            return true;
+        }
+
         public bool HasActiveWork()
         {
             return database.HashValues(StatusHashKey)
