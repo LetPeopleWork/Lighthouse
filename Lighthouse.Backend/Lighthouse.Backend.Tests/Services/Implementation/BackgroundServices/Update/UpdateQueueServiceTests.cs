@@ -337,6 +337,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 + $"The browser was told: {string.Join(", ", everythingTheBrowserWasTold)}");
         }
 
+        /// <summary>
+        /// Epic #5511 slice 04, found by an adversarial review. A caller awaiting a delete gets a Task with
+        /// no result to inspect, so completing it on cancellation told the controller the delete had
+        /// happened. It answered 204, the row left the screen, and the entity was still in the database.
+        /// </summary>
+        [Test]
+        public void EnqueueAndAwait_CancelledBeforeItRuns_DoesNotTellTheCallerItSucceeded()
+        {
+            var updateKey = new UpdateKey(UpdateType.TeamDelete, 51);
+            var blockTheQueue = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(UpdateType.Team, 99, async _ => await blockTheQueue.Task);
+
+            var ranTheDelete = false;
+            var deleting = subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ =>
+            {
+                ranTheDelete = true;
+                return Task.CompletedTask;
+            });
+
+            subject.CancelAsync(updateKey).GetAwaiter().GetResult();
+            blockTheQueue.SetResult();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await deleting, Throws.InstanceOf<OperationCanceledException>(),
+                    "Answering the caller normally is how a delete that never ran reports 204 to the browser.");
+                Assert.That(ranTheDelete, Is.False,
+                    "And it really did not run - the caller is not merely being told so.");
+            }
+        }
+
+        /// <summary>
+        /// Epic #5511 slice 04, AC-04.4 and AC-04.7, found by an adversarial review. A write-back round is
+        /// left by the flush at the end of an update task, so work cancelled before that task ever started
+        /// joined a round nothing would leave - and every write staged by the OTHER work sharing that round
+        /// was dropped without a word. Cancelling one entity destroyed another entity results.
+        /// </summary>
+        [Test]
+        public async Task EnqueueUpdate_CancelledBeforeItRuns_StillLeavesTheRoundItJoined()
+        {
+            var cancelledBeforeItRuns = new UpdateKey(UpdateType.Team, 52);
+            var blockTheQueue = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var rounds = new WriteBackRoundContext();
+            var subject = CreateSubject(rounds);
+            subject.EnqueueUpdate(UpdateType.Team, 98, async _ => await blockTheQueue.Task);
+            subject.EnqueueUpdate(cancelledBeforeItRuns.UpdateType, cancelledBeforeItRuns.Id, _ => Task.CompletedTask);
+
+            await subject.CancelAsync(cancelledBeforeItRuns);
+            blockTheQueue.SetResult();
+
+            await WaitUntilKeyIsIdle(cancelledBeforeItRuns);
+
+            Assert.That(rounds.Current is null || rounds.Current.HasFinished, Is.True,
+                "A round left open by a cancelled run never finishes, and the write-backs staged by the work "
+                + "sharing it are lost silently - which is a worse outcome than the refresh the operator stopped.");
+        }
+
         [Test]
         public async Task EnqueueUpdate_NotifiesAboutQueuedOrInProgress()
         {

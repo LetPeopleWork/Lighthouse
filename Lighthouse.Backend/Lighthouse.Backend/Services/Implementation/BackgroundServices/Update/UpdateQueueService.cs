@@ -100,13 +100,44 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         private CancellationToken TokenFor(UpdateKey key)
-            => cancellations.TryGetValue(key, out var cancellation) ? cancellation.Token : CancellationToken.None;
+        {
+            if (!cancellations.TryGetValue(key, out var cancellation))
+            {
+                return CancellationToken.None;
+            }
 
+            try
+            {
+                return cancellation.Token;
+            }
+            catch (ObjectDisposedException)
+            {
+                // The same race as StopLocally, read from the other side. An uncancellable run is a better
+                // outcome than one that throws here, outside the try below, and leaves its key admitted
+                // for good.
+                return CancellationToken.None;
+            }
+        }
+
+        /// <summary>
+        /// The run this belongs to can finish and dispose its source while a cancel is on its way in. That
+        /// is the ordinary case the route calls idempotent - it finished while the operator was reading -
+        /// so it must not become a 500 in front of somebody who did nothing wrong.
+        /// </summary>
         private void StopLocally(UpdateKey key)
         {
-            if (cancellations.TryGetValue(key, out var cancellation))
+            if (!cancellations.TryGetValue(key, out var cancellation))
+            {
+                return;
+            }
+
+            try
             {
                 cancellation.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // The work ended on its own between the lookup and here. Nothing left to stop.
             }
         }
 
@@ -133,6 +164,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
+            // Before admission, not after: the key reaches the task list the instant TryAdmit succeeds, and
+            // a cancel landing in the gap would find no source and silently do nothing.
+            AdmitCancellationFor(updateKey);
+
             var updateStatus = QueuedStatusFor(updateKey);
             if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
@@ -145,8 +180,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued or being processed - scheduling a single follow-up run.", updateType, id);
                 return;
             }
-
-            AdmitCancellationFor(updateKey);
 
             logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
@@ -231,7 +264,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             logger.LogInformation("Update for {UpdateType} with ID {Id} was not queued because the update queue is closing.", updateKey.UpdateType, updateKey.Id);
 
             statusStore.Remove(updateKey);
+            ForgetCancellationFor(updateKey);
             round.Leave();
+        }
+
+        /// <summary>
+        /// A round is left by the flush at the end of the update task, so a run cancelled before that task
+        /// ever started has joined a round that nothing will leave. The round then never finishes and every
+        /// write-back staged by the OTHER work sharing it is dropped without a word - one entity cancelled
+        /// destroying another entity results. AbandonUnqueuedWork leaves it for the same reason.
+        /// </summary>
+        private static void LeaveTheRoundNobodyElseWill(WriteBackRound round, bool startedRunning)
+        {
+            if (!startedRunning)
+            {
+                round.Leave();
+            }
         }
 
         private static UpdateStatus QueuedStatusFor(UpdateKey updateKey)
@@ -389,6 +437,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
             UpdateProgress terminalProgress;
+            var startedRunning = false;
             try
             {
                 // Checked before anything is asked of the tracker. Work cancelled while it was still
@@ -396,6 +445,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 // limit an operator cancelled to protect would give that away for nothing.
                 cancellation.ThrowIfCancellationRequested();
 
+                startedRunning = true;
                 await ExecuteUpdateTask(updateTask, round, cancellation);
                 terminalProgress = UpdateProgress.Completed;
             }
@@ -403,6 +453,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 terminalProgress = UpdateProgress.Cancelled;
                 logger.LogInformation(stopped, "Update for {UpdateType} with ID {Id} was cancelled.", updateKey.UpdateType, updateKey.Id);
+
+                LeaveTheRoundNobodyElseWill(round, startedRunning);
             }
             catch (Exception ex)
             {
@@ -474,6 +526,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // would read exactly the stale state the follow-up is about to correct.
             statusStore.Requeue(updateKey);
 
+            // New work, so a new source. The run that just ended may have been cancelled, and the follow-up
+            // carries a newer intent than the one that was stopped - inheriting a cancelled token would
+            // drop that intent silently, which is the opposite of what the coalescing exists to do.
+            ForgetCancellationFor(updateKey);
+            AdmitCancellationFor(updateKey);
+
             var round = RoundForNewWork();
 
             if (queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, rerun, updateStatus, round)))
@@ -496,9 +554,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
             UpdateStatus terminalStatus = updateStatus;
+            var startedRunning = false;
             try
             {
                 cancellation.ThrowIfCancellationRequested();
+
+                startedRunning = true;
 
                 await ExecuteUpdateTask(updateTask, round, cancellation);
                 terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
@@ -509,9 +570,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Cancelled) ?? terminalStatus;
                 logger.LogInformation(stopped, "Update for {UpdateType} with ID {Id} was cancelled.", updateKey.UpdateType, updateKey.Id);
 
-                // The caller asked to be told when this finished, and it has. Cancelled is an outcome, not
-                // a fault of theirs, so they are released rather than faulted.
-                tcs.TrySetResult(false);
+                LeaveTheRoundNobodyElseWill(round, startedRunning);
+
+                // Cancelled, not done. An awaiting caller gets a Task with no result to inspect, so
+                // completing it at all lets a delete that never ran answer 204 to the browser and vanish
+                // from the list while its row is still in the database.
+                tcs.TrySetCanceled(cancellation);
             }
             catch (Exception ex)
             {

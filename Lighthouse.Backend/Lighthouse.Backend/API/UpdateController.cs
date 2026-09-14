@@ -87,6 +87,15 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<ActionResult> CancelTask(UpdateType updateType, int id)
         {
+            // A delete is not a refresh. Stopping one half-way is not "the data is a bit stale" - the
+            // caller that asked for it is waiting on the answer and would be told the entity had gone
+            // while its row is still in the database. Refusing is the honest answer to a control that
+            // offers to stop refreshing something.
+            if (updateType is UpdateType.TeamDelete or UpdateType.PortfolioDelete)
+            {
+                return BadRequest("A deletion cannot be cancelled once it has been asked for.");
+            }
+
             await updateQueueService.CancelAsync(new UpdateKey(updateType, id));
             return NoContent();
         }

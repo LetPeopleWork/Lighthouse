@@ -254,6 +254,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
             // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
             // whole query - loudly, or nobody learns the cheap path stopped working.
+            // A cancel is not a tracker failure. Caught below it is logged as a scan that broke, and the
+            // refresh is then escalated to a full download - spending the rate limit the operator cancelled
+            // to protect, and telling them the cheap path stopped working when in fact they stopped it.
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
 #pragma warning disable CA1031
             catch (Exception exception)
 #pragma warning restore CA1031
@@ -877,6 +884,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
             // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
             // whole query - loudly, or nobody learns the cheap path stopped working.
+            // A cancel is not a tracker failure. Caught below it is logged as a scan that broke, and the
+            // refresh is then escalated to a full download - spending the rate limit the operator cancelled
+            // to protect, and telling them the cheap path stopped working when in fact they stopped it.
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
 #pragma warning disable CA1031
             catch (Exception exception)
 #pragma warning restore CA1031
@@ -1132,6 +1146,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepParentFeatures(portfolio, parentFeatureIds, Stopping)]);
             }
             // Same rule again: a half-scanned key list falls back to downloading every parent, and says so.
+            // A cancel is not a tracker failure. Caught below it is logged as a scan that broke, and the
+            // refresh is then escalated to a full download - spending the rate limit the operator cancelled
+            // to protect, and telling them the cheap path stopped working when in fact they stopped it.
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
 #pragma warning disable CA1031
             catch (Exception exception)
 #pragma warning restore CA1031

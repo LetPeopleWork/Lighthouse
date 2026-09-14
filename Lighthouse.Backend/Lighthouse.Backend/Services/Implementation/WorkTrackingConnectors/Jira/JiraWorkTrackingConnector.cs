@@ -339,6 +339,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // expand=changelog, so an unsplit list is the longest URL the connector builds.
             foreach (var chunk in keys.Chunk(ReferenceIdsPerQuery))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk), cancellationToken));
             }
 
