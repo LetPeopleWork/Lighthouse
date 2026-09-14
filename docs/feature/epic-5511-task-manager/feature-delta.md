@@ -1686,3 +1686,102 @@ Everything else stays green: frontend 5156 of 5167, backend unchanged from slice
    adapter rather than in `UpdateQueueService`. It buys `IUpdateStatusStore` staying as it is — the
    alternative was widening `Advance` to carry a moment on every transition, for the one transition that
    needs it.
+
+---
+
+# Wave: DELIVER — slice 03
+
+Delivered 2026-09-14. ADO **#5841**. Commits held locally; the push is still blocked on ServiceNow
+upstream, as it was at slice 02's close.
+
+## What changed
+
+**The moments.** `UpdateStatus` carries `QueuedAt` and `StartedAt`, both nullable. `UpdateMoments` owns
+how the pair is written down — unix milliseconds either side of a bar — because that is the part ADR-182
+deliberately left open, and because it is the only thing in the store with no Redis in it.
+
+**The stores.** Both stamp the moments, which is why both now take `ILighthouseClock`. `TryAdmit` records
+the admission, the advance into `InProgress` records the start and only that transition does, and
+`Requeue` starts the wait again and forgets the run that ended. The Redis store keeps the pair in
+`lighthouse:update-moments`, written and deleted alongside the ordinal by ordinary commands, never from
+inside either script.
+
+**The read.** `UpdateController` computes `elapsedMs` per row against the same clock: from the start
+moment while running, from the admission while waiting, from neither once it has finished.
+
+**The row.** `formatElapsed` picks its own unit per value, and the popover appends `for <duration>` when
+there is one. Nothing ticks — see *Carried into DELIVER* below.
+
+## The seam decision, and what it cost
+
+The moments are stamped in the store adapters rather than in `UpdateQueueService`. `Advance` carries an
+ordinal and no moment, so a caller cannot supply one without widening the port for the single transition
+that needs it, and ADR-182 puts the write alongside the ordinal — which is the adapter.
+
+The price is about twenty existing construction sites across ten test files that now hand the stores a
+clock they never read. Paid deliberately: `IUpdateStatusStore` is unchanged, and every caller of it is.
+
+Both the store and the controller read `ILighthouseClock` rather than the store reading `TimeProvider`.
+One seam is what lets a test move time once; two would let a test move one and not the other, and the
+scenario that proves AC-03.4 is precisely a test that moves exactly one thing.
+
+## What the adversarial review found
+
+Two reviews ran. The code-quality pass approved with no findings. The adversarial pass — briefed to break
+the code rather than assess it — found three ways the slice could damage an instance rather than merely
+misinform it. All three are fixed, each with the test that would have caught it.
+
+1. **`Parse` threw on numbers that are valid `long`s and not valid instants.** Today in microseconds is
+   1.79e15 and in ticks 6.4e17; both parse and both throw on the way to a `DateTimeOffset`. "A later build
+   writing a finer unit" is the exact case the format claims to survive, and the claim was false. On the
+   read path it cost the whole task list; on the advance path it abandoned a key that nothing would then
+   run or remove. The original tests probed forgiveness only with non-numeric text, so the one input class
+   that reached the throw was untested.
+
+2. **The moments were declared best-effort and implemented as mandatory.** Every moments command runs
+   after its ordinal has already been committed, so a Redis timeout escaping one of them left a key
+   admitted with no runner — and the team it named stopped refreshing until somebody cleared the hash by
+   hand. Before this slice `TryAdmit` was a single command and the failure mode did not exist; the slice
+   created it. They are now best-effort in the code as well as in the prose.
+
+3. **A finished row reported its time since admission under a `Completed` label**, which reads as time
+   since it completed. Usually a two-statement window, permanent if the replica running it died inside
+   one.
+
+A fourth change came out of the same pass: the in-process store hands out snapshots rather than its live
+entries. The queue advances an entry while a reader is part-way through it, and the Redis store already
+rebuilt each row from what it read — so this is what makes the two implementations of the port agree.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6739 passed, 0 failed |
+| `pnpm test` | 372 files, 5170 tests, all green |
+| Biome | clean |
+| `tsc -b` | clean |
+| Mutation — backend | **95.45 %**, gate met |
+| Mutation — frontend | **100 %**, gate met |
+
+One failure seen mid-session and chased to ground rather than assumed:
+`ServiceContainer_BuildsWithoutScopeViolations` failing on an `IOException` deleting its SQLite file in
+teardown. It reproduces on unmodified `main`, and the assertion itself passes — a Windows file-handle
+race in `Dispose`, not a scope violation and not this slice. It passed on the final run.
+
+## Carried into DELIVER's successors
+
+1. **The popover shows a snapshot, not a running counter.** Nothing in US-03 asks for one and the list
+   re-reads on every `GlobalUpdateNotification`, so a row is as fresh as the last transition. A row
+   sitting at "running for 12s" for a minute while the popover is open is the known cost. Making it tick
+   means interpolating from the server's number rather than reading a local clock — permitted by AC-03.4,
+   but a new promise, so it is the maintainer's call.
+2. **ADR-182's expiry question is still open, and now it is answerable.** `Remove` deletes both hashes
+   and a test pins that, but a crash between the two `HDEL`s orphans a moment, and nothing reaps it —
+   `GetAdmittedWork` transfers the whole moments hash on every popover open. Bounded by crashes rather
+   than by traffic, but unbounded in time for keys that never return, such as a deleted team. Deciding
+   between a TTL, a reap on read, and accepting the leak needs a maintainer.
+3. **`waitingBehind` assumes one lane per instance.** True per process, false under Redis with several
+   replicas, where each runs its own item against one shared ordinal hash — so a queued row can be
+   labelled as waiting behind something running on a different replica that it is not waiting for.
+   Pre-existing, from slice 02, not introduced here. Worth a slice of its own or a correction in 04.
