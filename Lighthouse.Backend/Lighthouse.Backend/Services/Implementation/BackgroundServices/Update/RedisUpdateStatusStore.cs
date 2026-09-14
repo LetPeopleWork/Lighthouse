@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using StackExchange.Redis;
 
@@ -7,7 +8,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         private const string StatusHashKey = "lighthouse:update-status";
 
-        private static readonly LuaScript MonotonicAdvanceScript = LuaScript.Prepare(
+        // internal rather than private so that RedisUpdateStatusScriptFreezeTest can compare them
+        // character for character against the text that shipped before the moments existed.
+        internal static readonly LuaScript MonotonicAdvanceScript = LuaScript.Prepare(
             "local current = redis.call('HGET', @hashKey, @field)\n" +
             "if current == false then return -1 end\n" +
             "if tonumber(@to) >= tonumber(current) then\n" +
@@ -18,7 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         // Redis has no HSETXX and StackExchange.Redis rejects When.Exists on HashSet (only Always /
         // NotExists are legal), so the "reset only an already-admitted key" guard needs a script.
-        private static readonly LuaScript RequeueIfAdmittedScript = LuaScript.Prepare(
+        internal static readonly LuaScript RequeueIfAdmittedScript = LuaScript.Prepare(
             "if redis.call('HEXISTS', @hashKey, @field) == 1 then\n" +
             "    redis.call('HSET', @hashKey, @field, @to)\n" +
             "    return 1\n" +
@@ -27,13 +30,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private readonly IDatabase database;
 
-        public RedisUpdateStatusStore(IConnectionMultiplexer multiplexer)
+        private readonly ILighthouseClock clock;
+
+        public RedisUpdateStatusStore(IConnectionMultiplexer multiplexer, ILighthouseClock clock)
         {
             database = multiplexer.GetDatabase();
+            this.clock = clock;
         }
 
         public bool TryAdmit(UpdateKey key, UpdateStatus status)
         {
+            status.QueuedAt = clock.Now;
             return database.HashSet(StatusHashKey, key.ToString(), (int)status.Status, When.NotExists);
         }
 

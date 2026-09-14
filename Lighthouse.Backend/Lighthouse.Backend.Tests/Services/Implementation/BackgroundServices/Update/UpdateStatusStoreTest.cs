@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -23,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void Advance_RegressingProgress_NeverObservesRegressedProgress()
         {
-            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
             var key = new UpdateKey(UpdateType.Team, 7);
             store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 7, Status = UpdateProgress.Queued });
             store.Advance(key, UpdateProgress.InProgress);
@@ -39,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void Advance_ForwardProgress_MovesToTheHigherOrdinal()
         {
-            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
             var key = new UpdateKey(UpdateType.Features, 3);
             store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Features, Id = 3, Status = UpdateProgress.Queued });
 
@@ -52,7 +53,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void Requeue_AdmittedKeyPastItsTerminalState_ReturnsItToQueuedAndKeepsItActive()
         {
-            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
             var key = new UpdateKey(UpdateType.Team, 5);
             store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 5, Status = UpdateProgress.Queued });
             store.Advance(key, UpdateProgress.Completed);
@@ -72,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void Requeue_KeyThatWasNeverAdmitted_DoesNotFabricateActiveWork()
         {
-            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
 
             store.Requeue(new UpdateKey(UpdateType.Team, 6));
 
@@ -109,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private static InProcessUpdateStatusStore StoreWithOneKeyQueuedAndOneRunning()
         {
-            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
             store.TryAdmit(KeyWaitingToStart, new UpdateStatus { UpdateType = UpdateType.Team, Id = 1, Status = UpdateProgress.Queued });
             store.TryAdmit(KeyAlreadyRunning, new UpdateStatus { UpdateType = UpdateType.Team, Id = 2, Status = UpdateProgress.Queued });
             store.Advance(KeyAlreadyRunning, UpdateProgress.InProgress);

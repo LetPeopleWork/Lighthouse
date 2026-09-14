@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -37,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             serviceScopeMock.Setup(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
-            gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses));
+            gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc));
         }
 
         [Test]
@@ -206,7 +207,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 return Task.CompletedTask;
             });
 
-            var store = new InProcessUpdateStatusStore(updateStatuses);
+            var store = new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc);
             var observedIdle = false;
             var watcher = Task.Run(async () =>
             {
@@ -968,7 +969,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private UpdateQueueService CreateSubject(IUpdateCompletionNotifier completionNotifier, WriteBackRoundContext roundContext)
         {
-            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new UpdateSubstrate(new InProcessUpdateStatusStore(updateStatuses), new InProcessUpdateExecutionLock(), completionNotifier), serviceScopeFactoryMock.Object, gate, roundContext);
+            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new UpdateSubstrate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc), new InProcessUpdateExecutionLock(), completionNotifier), serviceScopeFactoryMock.Object, gate, roundContext);
         }
     }
 }

@@ -2,6 +2,7 @@ using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -15,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void SetUp()
         {
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
-            subject = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses));
+            subject = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc));
         }
 
         [Test]

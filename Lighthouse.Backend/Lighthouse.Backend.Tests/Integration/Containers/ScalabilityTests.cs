@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             });
             await inFlightReached.Task;
 
-            var statusReaderOnPodB = new RedisUpdateStatusStore(multiplexer);
+            var statusReaderOnPodB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
             statusReaderOnPodB.TryGet(key, out var observedOnPodB);
 
             var crossPodAwait = podB.EnqueueAndAwaitAsync(UpdateType.Team, 1, _ => Task.CompletedTask);
@@ -192,8 +192,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             serviceScopeFactory.Setup(factory => factory.CreateScope()).Returns(serviceScope.Object);
 
             var maintenanceGate = new DatabaseMaintenanceGate(
-                new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>()));
-            var sharedStatusStore = new RedisUpdateStatusStore(multiplexer);
+                new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc));
+            var sharedStatusStore = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
             var executionLock = new PostgresUpdateExecutionLock(
                 Options.Create(new DatabaseConfiguration { Provider = "Postgresql", ConnectionString = postgresConnectionString }));
             var completionNotifier = new RedisUpdateCompletionNotifier(multiplexer);

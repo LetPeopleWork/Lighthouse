@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using NUnit.Framework;
 using StackExchange.Redis;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
@@ -25,8 +26,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var podA = new RedisUpdateStatusStore(multiplexer);
-            var podB = new RedisUpdateStatusStore(multiplexer);
+            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
 
             var teamRefresh = new UpdateKey(UpdateType.Team, 7);
             var portfolioRefresh = new UpdateKey(UpdateType.Features, 3);
@@ -59,8 +60,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var podA = new RedisUpdateStatusStore(multiplexer);
-            var podB = new RedisUpdateStatusStore(multiplexer);
+            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
 
             var finished = new UpdateKey(UpdateType.Team, 11);
             var stillGoing = new UpdateKey(UpdateType.Team, 12);
@@ -82,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var store = new RedisUpdateStatusStore(multiplexer);
+            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
 
             Assert.That(store.GetAdmittedWork(), Is.Empty,
                 "Nothing running is an ordinary answer on a fresh instance, and the hash does not exist yet at all.");

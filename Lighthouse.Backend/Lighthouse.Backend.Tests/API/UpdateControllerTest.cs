@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Collections.Concurrent;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -148,7 +149,7 @@ namespace Lighthouse.Backend.Tests.API
         private UpdateController CreateSubject()
         {
             return new UpdateController(
-                new InProcessUpdateStatusStore(updateStatuses),
+                new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc),
                 Mock.Of<IRepository<Team>>(),
                 Mock.Of<IPortfolioRepository>());
         }

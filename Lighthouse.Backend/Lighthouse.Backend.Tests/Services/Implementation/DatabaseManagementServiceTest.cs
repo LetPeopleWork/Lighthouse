@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -63,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns(Enumerable.Empty<ISeeder>());
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
-            gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses));
+            gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc));
             tracker = new DatabaseOperationTracker();
 
             var loggerMock = new Mock<ILogger<DatabaseManagementService>>();

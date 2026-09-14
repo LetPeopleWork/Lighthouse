@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Returns(Task.CompletedTask);
 
             updateStatusStoreMock = new Mock<IUpdateStatusStore>();
-            inProcessUpdateStatusStore = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
+            inProcessUpdateStatusStore = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
 
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             refreshLogServiceMock

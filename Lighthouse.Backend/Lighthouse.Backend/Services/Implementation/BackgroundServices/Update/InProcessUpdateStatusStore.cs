@@ -1,5 +1,6 @@
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
+    using Lighthouse.Backend.Services.Interfaces;
     using Lighthouse.Backend.Services.Interfaces.Update;
     using System.Collections.Concurrent;
 
@@ -7,13 +8,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
 
-        public InProcessUpdateStatusStore(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses)
+        private readonly ILighthouseClock clock;
+
+        public InProcessUpdateStatusStore(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses, ILighthouseClock clock)
         {
             this.updateStatuses = updateStatuses;
+            this.clock = clock;
         }
 
         public bool TryAdmit(UpdateKey key, UpdateStatus status)
         {
+            status.QueuedAt = clock.Now;
             return updateStatuses.TryAdd(key, status);
         }
 

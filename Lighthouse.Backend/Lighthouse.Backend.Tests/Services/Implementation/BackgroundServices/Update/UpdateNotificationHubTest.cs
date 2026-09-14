@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -104,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private UpdateNotificationHub CreateSubject()
         {
-            var hub = new UpdateNotificationHub(new InProcessUpdateStatusStore(updateStatuses), Mock.Of<ILogger<UpdateNotificationHub>>())
+            var hub = new UpdateNotificationHub(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc), Mock.Of<ILogger<UpdateNotificationHub>>())
             {
                 Clients = clientsMock.Object,
                 Groups = groupsMock.Object,
