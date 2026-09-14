@@ -488,13 +488,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             CreateSubject().TriggerUpdate(project.Id);
 
-            var errors = ReadErrors(loggerMock);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(errors, Has.One.Contains("An exception occurred while updating"),
-                    "Swallowing the failure to attach a reason would leave the refresh looking like it merely returned nothing.");
-                Assert.That(errors, Has.Count.EqualTo(1),
-                    "Logging where the reason is attached prints the same failure twice for one broken credential.");
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<UnreadableSecretException>(),
+                    "Swallowing the failure to attach a reason would leave the refresh looking like it merely returned "
+                    + "nothing, and every surface reading the outcome would be told it completed.");
+                Assert.That(ReadErrors(loggerMock), Is.Empty,
+                    "What stopped the refresh is explained on the round's summary line and the failure itself is "
+                    + "reported by the queue; a third account of it here is the same broken credential read twice.");
             }
         }
 

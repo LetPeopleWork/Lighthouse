@@ -24,11 +24,22 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             scopeMock.SetupGet(x => x.ServiceProvider).Returns(serviceProviderMock.Object);
             serviceScopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
 
+            // The real queue runs the task and catches whatever comes out of it, recording the refresh as
+            // failed rather than letting it escape to the caller that triggered it. The double does the
+            // same, so a test whose refresh throws sees what production sees instead of an exception
+            // surfacing at the trigger, which is a place it never reaches in the running application.
             updateQueueServiceMock
                 .Setup(x => x.EnqueueUpdate(It.IsAny<UpdateType>(), It.IsAny<int>(), It.IsAny<Func<IServiceProvider, Task>>()))
                 .Callback((UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask) =>
                 {
-                    updateTask(serviceProviderMock.Object).Wait();
+                    try
+                    {
+                        updateTask(serviceProviderMock.Object).Wait();
+                    }
+                    catch (AggregateException exception)
+                    {
+                        WhatTheRefreshThrew = exception.InnerException ?? exception;
+                    }
                 });
 
             // Every enqueued update now ends in a write-back flush (ADR-144 §4). Registering the
@@ -38,6 +49,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             WriteBackCollectorMock.Setup(c => c.FlushAsync()).ReturnsAsync([]);
             SetupServiceProviderMock(WriteBackCollectorMock.Object);
         }
+
+        /// <summary>
+        /// What the last refresh threw, or null if it did not throw. The queue is where a failing refresh
+        /// stops in production, so this is the only place a test driving an updater can see that it failed.
+        /// </summary>
+        protected Exception? WhatTheRefreshThrew { get; private set; }
 
         protected Mock<IWriteBackCollector> WriteBackCollectorMock { get; }
 

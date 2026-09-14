@@ -322,8 +322,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(recordedRefresh?.Success, Is.False);
-                Assert.That(ReadErrors(), Has.One.Contains("The work tracking system is unreachable"),
-                    "An outage has always been reported as an outage, and this step must not have changed that.");
+                Assert.That(WhatTheRefreshThrew?.Message, Does.Contain("The work tracking system is unreachable"),
+                    "An outage has always been reported as an outage. It now travels out to the queue rather than "
+                    + "stopping inside the refresh, so the browser is told the refresh failed instead of being told it completed.");
                 Assert.That(summary, Does.Not.Contain("cannot be read").IgnoreCase,
                     "Blaming a credential for an outage sends the operator to rotate a key that was never broken.");
                 Assert.That(summary, Does.Not.Contain("credential").IgnoreCase);

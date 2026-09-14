@@ -20,6 +20,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private static string EntityTypeName => typeof(TEntity).Name;
 
+        /// <summary>
+        /// A refresh that throws has to reach the queue as a failure. Catching here instead would leave the
+        /// queue believing the refresh finished, so the browser is told a refresh that broke has completed
+        /// while the row this same execution writes says it did not - and an operator builds a habit on the
+        /// green one. The queue reports the failure and records it; what stopped the refresh is explained on
+        /// the round's own summary line.
+        ///
+        /// The finally still runs on the way out: a refresh that fails owes its round the same report a
+        /// refresh that works does, because a round that never finishes silently drops every write it staged.
+        /// </summary>
         public virtual void TriggerUpdate(int id)
         {
             updateQueueService.EnqueueUpdate(updateType, id, async serviceProvider =>
@@ -27,10 +37,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 try
                 {
                     await Update(id, serviceProvider);
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogError(exception, "An exception occurred while updating {Entity} with ID {Id}: {Exception}", EntityTypeName, id, exception.Message);
                 }
                 finally
                 {
