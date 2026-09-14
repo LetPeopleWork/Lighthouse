@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// window rather than a resting place - unless the replica holding it dies in between, and then the
         /// row stays for good with nothing to reap it.
         /// </summary>
-        private void GivenThatWorkFinishedAnHourAgoButIsStillOnTheList(SeededTeam team)
+        private void GivenThatWorkFinishedAnHourAgoButIsStillInTheStore(SeededTeam team)
             => PutIntoTheStoreWithoutGoingThroughThePort(
                 team,
                 UpdateProgress.Completed,
@@ -266,6 +266,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                     "With no moment recorded there is no honest number to give, and any stand-in - zero, or the "
                     + $"admission of a run already under way - is a duration a reader would believe. Got: {row}");
             }
+        }
+
+        private async Task ThenTheTaskListDoesNotMention(SeededTeam team)
+        {
+            var rows = await TheTaskList();
+
+            Assert.That(
+                rows.Any(row => Text(row, "updateType") == nameof(UpdateType.Team) && Number(row, "id") == team.Id),
+                Is.False,
+                $"A refresh that has finished is not something the instance is doing. Got: {Describe(rows)}");
         }
 
         private async Task<TimeSpan> TheElapsedTimeReportedFor(SeededTeam team)

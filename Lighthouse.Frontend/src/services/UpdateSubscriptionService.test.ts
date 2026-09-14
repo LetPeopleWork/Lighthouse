@@ -26,18 +26,31 @@ const createService = async (): Promise<UpdateSubscriptionService> => {
 describe("UpdateSubscriptionService", () => {
 	let service: UpdateSubscriptionService;
 	let mockConnection: signalR.HubConnection;
+	let closeTheConnection: () => void;
+	let reconnectTheConnection: () => void;
 
 	beforeEach(async () => {
+		closeTheConnection = () => {};
+		reconnectTheConnection = () => {};
+
 		mockConnection = {
 			start: vi.fn().mockResolvedValue(undefined),
 			on: vi.fn(),
 			off: vi.fn(),
 			invoke: vi.fn(),
 			stop: vi.fn(),
+			onclose: vi.fn((handler: () => void) => {
+				closeTheConnection = handler;
+			}),
+			onreconnected: vi.fn((handler: () => void) => {
+				reconnectTheConnection = handler;
+			}),
 		} as unknown as signalR.HubConnection;
 		const withUrlMock = vi.fn().mockReturnValue({
-			configureLogging: vi.fn().mockReturnValue({
-				build: vi.fn().mockReturnValue(mockConnection),
+			withAutomaticReconnect: vi.fn().mockReturnValue({
+				configureLogging: vi.fn().mockReturnValue({
+					build: vi.fn().mockReturnValue(mockConnection),
+				}),
 			}),
 		});
 		signalR.HubConnectionBuilder.prototype.withUrl = withUrlMock;
@@ -160,5 +173,59 @@ describe("UpdateSubscriptionService", () => {
 
 		expect(result).toEqual({ hasActiveUpdates: false, activeCount: 0 });
 		expect(mockedAxios.get).toHaveBeenCalledWith("/update/status");
+	});
+
+	/**
+	 * Epic #5511, found by a retroactive adversarial review of slice 02. A backend restart is what every
+	 * Lighthouse update looks like from here, and the page has to survive one. Before this the connection
+	 * flag stayed true through a drop, so every later call went to a dead socket and failed into a console
+	 * error - while the header and every detail-page icon quietly froze at whatever they last knew, which
+	 * reads exactly like an instance with nothing to report.
+	 */
+	describe("when the connection drops", () => {
+		it("asks the server again for everything this page had subscribed to", async () => {
+			const callback = vi.fn();
+			await service.subscribeToAllUpdates(callback);
+			await service.subscribeToTeamUpdates(7, vi.fn());
+			vi.mocked(mockConnection.invoke).mockClear();
+
+			reconnectTheConnection();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(mockConnection.invoke).toHaveBeenCalledWith(
+				"SubscribeToAllUpdates",
+			);
+			expect(mockConnection.invoke).toHaveBeenCalledWith(
+				"SubscribeToUpdate",
+				"Team",
+				7,
+			);
+		});
+
+		it("does not ask again for something this page had already unsubscribed from", async () => {
+			await service.subscribeToTeamUpdates(7, vi.fn());
+			await service.unsubscribeFromTeamUpdates(7);
+			vi.mocked(mockConnection.invoke).mockClear();
+
+			reconnectTheConnection();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(mockConnection.invoke).not.toHaveBeenCalledWith(
+				"SubscribeToUpdate",
+				"Team",
+				7,
+			);
+		});
+
+		it("connects again on the next call rather than staying dead for the life of the page", async () => {
+			closeTheConnection();
+			vi.mocked(mockConnection.start).mockClear();
+
+			await service.getGlobalUpdateStatus();
+
+			expect(mockConnection.start).toHaveBeenCalled();
+		});
 	});
 });

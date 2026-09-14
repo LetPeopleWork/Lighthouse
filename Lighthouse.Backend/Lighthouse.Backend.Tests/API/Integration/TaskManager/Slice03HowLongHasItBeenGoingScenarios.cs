@@ -127,18 +127,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(recordedInFull, TimeSpan.FromHours(1));
         }
 
-        // @driving_port @real-io @error @AC-03.5 — work that has finished is neither running nor waiting, and
-        // it can still be on this list: briefly as it ends, or for good if the replica running it died in
-        // that window. Time since admission under a "Completed" label reads as time since it completed,
-        // which is a different number and usually a much smaller one.
+        // @driving_port @real-io @error @AC-03.5 — work that has finished is neither running nor waiting, so
+        // it is not on a list of what is running. It can still be in the store: briefly as it ends, and for
+        // good if the replica running it died in that window, because nothing reaps a key its own replica
+        // never removed. A row like that used to be listed and counted for the life of the deployment while
+        // the endpoint beside it called the same instance idle.
         [Test]
-        public async Task Work_that_has_already_finished_does_not_report_its_wait_as_a_duration()
+        public async Task Work_that_has_already_finished_is_not_on_the_list_at_all()
         {
-            var team = GivenATeamThatIsRefreshedOnSchedule();
+            var finished = GivenATeamThatIsRefreshedOnSchedule();
+            var stillWaiting = GivenATeamThatIsRefreshedOnSchedule();
 
-            GivenThatWorkFinishedAnHourAgoButIsStillOnTheList(team);
+            GivenThatWorkFinishedAnHourAgoButIsStillInTheStore(finished);
+            GivenWorkForThatTeamWasAdmittedAnHourAgo(stillWaiting);
 
-            await ThenTheRowForThatTeamIsListedByNameWithNoDurationAtAll(team);
+            await ThenTheTaskListDoesNotMention(finished);
+            await ThenTheRowForThatTeamSaysItHasBeenGoingFor(stillWaiting, TimeSpan.FromHours(1));
         }
 
         // @driving_port @real-io @error @AC-03.4 — the moments are written by whichever replica handled

@@ -1,4 +1,6 @@
-﻿using Lighthouse.Backend.Services.Interfaces.Update;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -8,12 +10,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     public class UpdateNotificationHub : Hub
     {
         private readonly IUpdateStatusStore statusStore;
+        private readonly IRefreshLogService refreshLogService;
         private readonly ILogger<UpdateNotificationHub> logger;
         private const string GlobalUpdatesGroup = "GlobalUpdates";
 
-        public UpdateNotificationHub(IUpdateStatusStore statusStore, ILogger<UpdateNotificationHub> logger)
+        public UpdateNotificationHub(IUpdateStatusStore statusStore, IRefreshLogService refreshLogService, ILogger<UpdateNotificationHub> logger)
         {
             this.statusStore = statusStore;
+            this.refreshLogService = refreshLogService;
             this.logger = logger;
         }
 
@@ -49,15 +53,62 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         public UpdateStatus? GetUpdateStatus(string updateType, int id)
         {
-            if (TryParseUpdateType(updateType, out var parsedUpdateType))
+            if (!TryParseUpdateType(updateType, out var parsedUpdateType))
             {
-                var updateKey = new UpdateKey(parsedUpdateType, id);
-                statusStore.TryGet(updateKey, out var updateStatus);
+                return null;
+            }
+
+            var updateKey = new UpdateKey(parsedUpdateType, id);
+            if (statusStore.TryGet(updateKey, out var updateStatus))
+            {
                 return updateStatus;
             }
 
-            return null;
+            return HowTheLastRunEnded(updateKey);
         }
+
+        /// <summary>
+        /// The store holds a key only while the work is in flight, so a page opened at nine in the morning
+        /// after a refresh broke at three finds nothing there - and shows the same healthy icon it would
+        /// show for an instance that is perfectly well. The answer outlives the run in the refresh log,
+        /// which is the only place it still exists.
+        /// </summary>
+        private UpdateStatus? HowTheLastRunEnded(UpdateKey updateKey)
+        {
+            if (RefreshTypeFor(updateKey.UpdateType) is not RefreshType refreshType)
+            {
+                return null;
+            }
+
+            var lastRun = refreshLogService.GetRefreshLogs()
+                .Where(log => log.Type == refreshType && log.EntityId == updateKey.Id)
+                .OrderByDescending(log => log.ExecutedAt)
+                .FirstOrDefault();
+
+            if (lastRun is null)
+            {
+                return null;
+            }
+
+            return new UpdateStatus
+            {
+                UpdateType = updateKey.UpdateType,
+                Id = updateKey.Id,
+                Status = lastRun.Success ? UpdateProgress.Completed : UpdateProgress.Failed,
+            };
+        }
+
+        /// <summary>
+        /// Only the three a detail page ever subscribes to. A delete has no refresh log and nothing left to
+        /// ask about once it has happened.
+        /// </summary>
+        private static RefreshType? RefreshTypeFor(UpdateType updateType) => updateType switch
+        {
+            UpdateType.Team => RefreshType.Team,
+            UpdateType.Features => RefreshType.Portfolio,
+            UpdateType.Forecasts => RefreshType.Forecast,
+            _ => null,
+        };
 
         private bool TryParseUpdateType(string updateType, out UpdateType parsedUpdateType)
         {

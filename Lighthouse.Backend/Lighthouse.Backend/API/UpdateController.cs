@@ -44,7 +44,14 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType(typeof(IEnumerable<UpdateTaskResponse>), StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<UpdateTaskResponse>> GetTasks()
         {
-            var admitted = updateStatusStore.GetAdmittedWork();
+            // What is running and what is waiting, and nothing else. A key whose replica died before it
+            // could be removed stays in the store with a terminal status and nothing reaps it, so without
+            // this the popover reports a finished refresh for the life of the deployment while the badge
+            // beside it counts one - and /update/status, which has always filtered, calls the same instance
+            // idle.
+            var admitted = updateStatusStore.GetAdmittedWork()
+                .Where(work => work.Status is UpdateProgress.Queued or UpdateProgress.InProgress)
+                .ToList();
 
             // The queue runs one thing at a time, so whatever is running is what everything queued is
             // waiting for. That is the whole claim this field makes - not a position, not an estimate.

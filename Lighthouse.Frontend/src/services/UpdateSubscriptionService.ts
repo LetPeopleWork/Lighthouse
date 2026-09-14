@@ -70,11 +70,21 @@ export interface IUpdateSubscriptionService {
 	unsubscribeFromForecastUpdates(projectId: number): Promise<void>;
 }
 
+const GLOBAL_UPDATES = "GlobalUpdateNotification";
+
 export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	private connection!: signalR.HubConnection;
 	private isConnected = false;
 	private connectionPromise: Promise<void> | null = null;
 	private apiService: AxiosInstance;
+
+	/**
+	 * What this client has asked the server to send it. The server keeps subscriptions per connection, so
+	 * a reconnect starts with none of them — and every caller here subscribed once, on mount, and will
+	 * never ask again. Without this the page survives a reconnect holding handlers the server no longer
+	 * sends anything to, which looks exactly like an instance with nothing to report.
+	 */
+	private readonly joinedGroups = new Set<string>();
 
 	constructor() {
 		this.apiService = axios.create({
@@ -94,22 +104,66 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		if (this.isConnected) return;
 
 		try {
-			this.connection ??= new signalR.HubConnectionBuilder()
-				.withUrl(`${baseUrl}/updateNotificationHub`, {
-					withCredentials: true,
-				})
-				.configureLogging(signalR.LogLevel.Information)
-				.build();
+			if (!this.connection) {
+				this.connection = new signalR.HubConnectionBuilder()
+					.withUrl(`${baseUrl}/updateNotificationHub`, {
+						withCredentials: true,
+					})
+					.withAutomaticReconnect()
+					.configureLogging(signalR.LogLevel.Information)
+					.build();
+
+				// A backend restart is an ordinary event — it is what every Lighthouse update looks like
+				// from here — and it must not leave this client believing it is still connected. Without
+				// these two the flag stays true, every later call goes to a dead socket, and the failure
+				// surfaces as a console error nobody reads while the page quietly stops updating.
+				this.connection.onclose(() => {
+					this.isConnected = false;
+					this.connectionPromise = null;
+				});
+
+				this.connection.onreconnected(() => {
+					this.isConnected = true;
+					void this.rejoinGroups();
+				});
+			}
 
 			await this.connection.start();
 			this.isConnected = true;
+			await this.rejoinGroups();
 		} catch (error) {
 			console.error("Error starting SignalR connection:", error);
+			this.isConnected = false;
+			// Cleared so the next caller tries again. Leaving the settled promise in place would make
+			// ensureConnected return instantly for the life of the page after one failed connect.
 			this.connectionPromise = null;
 		}
 	}
 
+	private async rejoinGroups(): Promise<void> {
+		for (const group of this.joinedGroups) {
+			try {
+				if (group === GLOBAL_UPDATES) {
+					await this.connection.invoke("SubscribeToAllUpdates");
+				} else {
+					const separator = group.lastIndexOf("_");
+					await this.connection.invoke(
+						"SubscribeToUpdate",
+						group.slice(0, separator),
+						Number(group.slice(separator + 1)),
+					);
+				}
+			} catch (err) {
+				console.error("Error restoring a subscription after reconnect:", err);
+			}
+		}
+	}
+
 	private async ensureConnected(): Promise<void> {
+		if (!this.connectionPromise && !this.isConnected) {
+			this.connectionPromise = this.connect();
+		}
+
 		if (this.connectionPromise) {
 			await this.connectionPromise;
 		}
@@ -193,7 +247,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		await this.ensureConnected();
 
 		try {
-			this.connection.on("GlobalUpdateNotification", callback);
+			this.connection.on(GLOBAL_UPDATES, callback);
+			this.joinedGroups.add(GLOBAL_UPDATES);
 			await this.connection.invoke("SubscribeToAllUpdates");
 		} catch (err) {
 			console.error("Error subscribing to all updates:", err);
@@ -204,7 +259,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		await this.ensureConnected();
 
 		try {
-			this.connection.off("GlobalUpdateNotification");
+			this.connection.off(GLOBAL_UPDATES);
+			this.joinedGroups.delete(GLOBAL_UPDATES);
 			await this.connection.invoke("UnsubscribeFromAllUpdates");
 		} catch (err) {
 			console.error("Error unsubscribing from all updates:", err);
@@ -222,6 +278,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 
 		try {
 			this.connection.on(updateKey, callback);
+			this.joinedGroups.add(updateKey);
 			await this.connection.invoke("SubscribeToUpdate", updateType, id);
 		} catch (err) {
 			console.error("Error subscribing to update:", err);
@@ -235,6 +292,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 
 		try {
 			this.connection.off(updateKey);
+			this.joinedGroups.delete(updateKey);
 			await this.connection.invoke("UnsubscribeFromUpdate", updateType, id);
 		} catch (err) {
 			console.error("Error unsubscribing from update:", err);
