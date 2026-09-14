@@ -5,19 +5,21 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  vitest: ^5.0.0
-  ws: ^8.18.0
-  form-data: ^4.0.6
-  undici: ^7.28.0
   '@babel/core': ^7.29.6
   brace-expansion: ^5.0.7
-  immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.8
-  fast-uri: ^3.1.6
-  postcss: ^8.5.23
   browserslist: ^4.28.7
+  fast-uri: ^3.1.6
+  form-data: ^4.0.6
+  immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.8
+  postcss: ^8.5.23
+  undici: ^7.28.0
+  vitest: ^5.0.0
+  ws: ^8.18.0
 
 patchedDependencies:
-  '@stryker-mutator/vitest-runner@9.6.1': 890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0
+  '@stryker-mutator/vitest-runner@9.6.1':
+    hash: 890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0
+    path: patches/@stryker-mutator__vitest-runner@9.6.1.patch
 
 importers:
 
@@ -64,7 +66,7 @@ importers:
         version: 2.11.1
       axios:
         specifier: ^1.20.0
-        version: 1.20.0(debug@4.4.3)
+        version: 1.20.0
       camelcase-keys:
         specifier: ^10.0.2
         version: 10.0.2
@@ -4428,9 +4430,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.20.0(debug@4.4.3):
+  axios@1.20.0:
     dependencies:
-      follow-redirects: 1.16.0(debug@4.4.3)
+      follow-redirects: 1.16.0
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -4735,9 +4737,7 @@ snapshots:
 
   flatqueue@3.0.0: {}
 
-  follow-redirects@1.16.0(debug@4.4.3):
-    optionalDependencies:
-      debug: 4.4.3
+  follow-redirects@1.16.0: {}
 
   form-data@4.0.6:
     dependencies:
