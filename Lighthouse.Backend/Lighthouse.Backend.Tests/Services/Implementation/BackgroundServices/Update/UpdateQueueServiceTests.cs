@@ -786,6 +786,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public async Task EnqueueUpdate_TheUpdateFails_StillLetsGoOfTheWorkHeldBehindIt()
+        {
+            // Epic #5511 slice 01 / AC-01.4. A refresh that throws now reaches the queue as a failure
+            // instead of being swallowed by the updater. Work parked behind that key has to be let go on
+            // that path too - held work waits on a key leaving the queue, not on it leaving successfully,
+            // and a forecast left parked stays parked until something unrelated happens to poke the same
+            // key again.
+            var released = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var subject = CreateSubject();
+
+            HoldThatIsReadyToBeReleased(subject, () => released.TrySetResult());
+
+            subject.EnqueueUpdate(UpdateType.Team, 70, _ => throw new InvalidOperationException("the refresh could not reach the work tracking system"));
+
+            var finished = await Task.WhenAny(released.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            Assert.That(finished, Is.SameAs(released.Task),
+                "A single failing refresh must not strand the work waiting behind it.");
+        }
+
+        [Test]
         public async Task EnqueueUpdate_ReleasingAHoldThrows_StillPublishesTheCompletion()
         {
             // Letting held work go runs a callback that reads from the database. A failure there sits
