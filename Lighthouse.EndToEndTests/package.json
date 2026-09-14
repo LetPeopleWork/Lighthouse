@@ -29,7 +29,7 @@
     "wait-on": "^9.1.0"
   },
   "dependencies": {
-    "@types/pixelmatch": "^5.2.6",
+    "@types/pixelmatch": "^7.1.0",
     "@types/pngjs": "^6.0.5",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0"
