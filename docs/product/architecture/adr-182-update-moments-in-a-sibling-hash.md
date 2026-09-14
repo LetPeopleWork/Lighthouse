@@ -1,6 +1,6 @@
 # ADR-182: Admission and start moments live in a sibling Redis hash, written outside the Lua scripts
 
-- **Status**: **Proposed** (DESIGN, 2026-08-23)
+- **Status**: **Accepted** (DESIGN, 2026-08-23; maintainer ruling recorded in the slice 03 brief, accepted at slice 03 DISTILL on 2026-09-14)
 - **Date**: 2026-08-23
 - **Feature**: epic-5511-task-manager (ADO Epic #5511, slice 03 / ADO #5841)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

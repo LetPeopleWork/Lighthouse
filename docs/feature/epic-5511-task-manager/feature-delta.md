@@ -1487,3 +1487,202 @@ mutants the rest kills 55 of 62. Recorded rather than engineered away, the same 
 - **A real-tracker check (AC-02.9's last mile).** The scenarios drive the production queue against a
   gated connector rather than a seeded dictionary, which is what the criterion asks for; watching it
   against a live Jira stays a manual step at slice close.
+
+---
+
+# Wave: DISTILL — slice 03
+
+Run 2026-09-14. Reconciliation: passed, 0 contradictions. Slice 03 inherits slice 02's task list — there
+is no row to put a duration on before it — and nothing in DESIGN or the ADRs accepted since contradicts
+US-03 as DISCUSS wrote it.
+
+## Wave: DISTILL / [REF] The contract this slice fixes
+
+Each row of `GET /api/latest/update/tasks` gains **one** field:
+
+| field | meaning |
+|---|---|
+| `elapsedMs` | how long the work has been in the state this row's `status` names, measured by the instance. Running counts from the moment it started, waiting from the moment it was admitted. A whole number of milliseconds, never negative, `null` when the moment behind it was never recorded |
+
+One field rather than two moments, decided here. The alternative — shipping `queuedAt` and `startedAt`
+and letting the browser subtract — fails AC-03.4 by construction: the subtrahend would be the reader's
+own `new Date()`, so two people looking at one instance read different answers off the same row, each
+wrong by however far their laptop has drifted. Computing it server-side also makes the degraded case a
+single `null` rather than a pair of absences the browser has to reason about.
+
+Which moment it counts from follows `status`, which is why one number can read as both "running for 12s"
+and "queued for 3m" without the browser knowing which moment it is looking at.
+
+`UpdateStatus` carries `QueuedAt` and `StartedAt` as `DateTimeOffset?` (AC-03.1). Both stores stamp them,
+because `Advance` carries an ordinal and no moment — a caller cannot supply one without widening the port,
+and the ADR puts the write *alongside the ordinal*, which is the adapter. Both store constructors
+therefore take `ILighthouseClock`. The controller reads the same seam to compute `elapsedMs`, deliberately
+one seam rather than two: a store on `TimeProvider` and a controller on `ILighthouseClock` would let a
+test move one and not the other, and the scenario that proves AC-03.4 depends on moving exactly one thing.
+
+## Wave: DISTILL / [REF] Scenario list
+
+**Backend acceptance** — `API/Integration/TaskManager/Slice03HowLongHasItBeenGoing{Scenarios,Specifications}.cs`,
+categories `acceptance` + `epic-5511-task-manager` + `slice-03`. All seven observe the endpoint over HTTP.
+The instance clock is pinned for the fixture, through a new `ConfigureAdditionalServices` hook on
+`TaskManagerAcceptanceTest`; elapsed time asserted against the real wall clock could only ever be
+"greater than zero", which a stopwatch started at the wrong moment satisfies.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `A_running_refresh_says_how_long_it_has_been_running` | `@walking_skeleton @driving_port @real-io` | 03.1, 03.4 |
+| `A_refresh_waiting_its_turn_says_how_long_it_has_been_waiting` | `@driving_port @real-io` | 03.1, 03.4 |
+| `Elapsed_time_follows_the_instances_own_clock_and_nothing_else` | `@driving_port @real-io` | 03.4 |
+| `A_coalesced_follow_up_starts_its_wait_again` | `@driving_port @real-io` | 03.3 |
+| `Work_admitted_before_the_upgrade_is_listed_without_a_duration_beside_work_that_has_one` | `@driving_port @real-io @error` | 03.5 |
+| `A_running_refresh_whose_start_went_unrecorded_says_nothing_rather_than_reporting_its_wait` | `@driving_port @real-io @error` | 03.5 |
+| `A_replica_whose_clock_runs_behind_never_makes_a_row_say_it_started_in_the_future` | `@driving_port @real-io @error` | 03.4, 03.5 |
+
+Error-path share: 3 of 7.
+
+Three are worth calling out as more than restatements of an AC:
+
+*Elapsed time follows the instance's own clock* reads the row twice. Between the readings the instance
+clock moves an hour and the test's own moves milliseconds, and the answer has to grow by the hour. A
+duration computed anywhere else passes every other scenario in the file and fails this one, which is the
+only reason it exists.
+
+*A running refresh whose start went unrecorded* is the half-recorded entry, and it is the case a fallback
+gets wrong quietly. The row has an admission moment and no start moment; falling back to the admission
+reports the wait as the run — forty minutes against something that may have started seconds ago, which is
+worse than saying nothing, because it is believable.
+
+*A replica whose clock runs behind* is not a hypothetical. The moments are written by whichever replica
+handled the transition and the elapsed time computed by whichever replica answers the read, and their
+clocks do not agree to the millisecond. "Started in the future" is an ordinary state; a row reporting it
+as a negative duration reads as broken rather than as new.
+
+Both degradation scenarios carry a **control row** that does have its moments, asserted in the same list.
+Without one they pass on a build where durations do not exist at all — they assert an absence, and the
+absence is currently free. The control is also the honest shape of a rolling upgrade: a mixed list, some
+rows from the old replica and some from the new.
+
+**Backend store guarantees** — `Integration/Containers/TaskManagerMultiReplicaTests.cs`, new fixture
+`TaskManagerMomentsMultiReplicaTests`, categories `epic-5511-task-manager` + `slice-03` +
+`requires-docker`. AC-03.2 and AC-03.3 are enforced inside Lua, across connections, over state neither
+replica owns; an in-process dictionary has nothing to say about any of it.
+
+| Test | AC | Red at hand-off |
+|---|---|---|
+| `MomentsRecordedByOneReplica_AreReadBackByAnother` | 03.1, 03.2 | yes |
+| `Advance_StillRefusesToMoveAKeyBackwards_NowThatAMomentTravelsBesideTheOrdinal` | 03.2 | no — guard |
+| `Requeue_StillRefusesAKeyAnotherReplicaRemoved_AndLeavesNoMomentBehindEither` | 03.2 | no — guard |
+| `Requeue_StartsTheWaitAgain_AndForgetsTheRunThatJustEnded` | 03.3 | yes |
+| `Remove_TakesTheMomentWithTheOrdinal_RatherThanLeavingItToAccumulate` | ADR-182 open question | yes |
+
+The last one closes an open question rather than an AC. ADR-182 left "whether the moments hash needs its
+own expiry, in case an abandoned key leaves a moment behind" to be answered once the code existed. An
+orphan is invisible from the port — the ordinal is gone, so the key is gone from every list — so the test
+reads the sibling hash directly, the only white-box assertion in the slice. It asserts the moment is there
+while the work is admitted **and** gone after `Remove`: the presence half is what stops it passing on a
+build where the hash does not exist at all.
+
+**The script freeze** — `Services/Implementation/BackgroundServices/Update/RedisUpdateStatusScriptFreezeTest.cs`.
+The brief asks for this as a test rather than a probe, and it is the whole safety argument for AC-03.2:
+slice 03 was allowed to add fields to this store only by not touching either script. The scripts are held
+as literals copied from what shipped and compared character for character, in both their authored form and
+the KEYS/ARGV form the client rewrites them into — freezing only the readable half would miss a change in
+how parameters are bound, which is a change to the script even though the source looks untouched. No Redis
+needed, so it runs everywhere the suite does.
+
+It passes on arrival, which is correct for a guard, so it was verified by mutation instead: changing `>=`
+to `>` in the advance script — one character, and precisely the change that would let a key go backwards
+under load — fails 2 of its 3 tests. Reverted.
+
+**Frontend** — `utils/date/formatElapsed.test.ts` (7) and `components/App/Header/TaskManagerIcon.test.tsx`
+(5, under a `how long it has been going` describe).
+
+| Scenario | AC |
+|---|---|
+| says how long a running refresh has been running | 03.5 |
+| says how long a waiting refresh has been waiting, as well as what it waits behind | 03.5 |
+| still lists a refresh whose duration the instance never recorded | 03.5 |
+| gives the rows that have a duration theirs, without inventing one for the row that has none | 03.5 |
+| does not count time on its own, however long the reader leaves the popover open | 03.4 |
+
+The last is AC-03.4's browser half, and it is a real risk rather than a formality: a component that starts
+its own stopwatch is wrong after a reload, wrong for a refresh that began before the tab was opened, and
+wrong by this machine's drift — which is most of the occasions somebody opens this popover. It renders a
+row, advances fake timers an hour, and requires the row to still say what the instance said.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+- **`UpdateStatus`** — `QueuedAt` and `StartedAt`, both `DateTimeOffset?`, with the ADR's reason for
+  absent being legitimate recorded on the property.
+- **Both stores** — constructors widened to take `ILighthouseClock`. `TryAdmit` stamps `QueuedAt` and
+  nothing else does anything; the Redis store does not persist it. This is the *minimum* that compiles:
+  the project's Sonar gate runs in-build as errors, and `S4487` rejects a constructor seam nothing reads,
+  so a pure throwing scaffold is not available here. Everything the slice actually promises — persistence,
+  the start moment, the reset, the deletion, the elapsed computation — is still absent.
+- **`Lighthouse.Backend.Tests/TestHelpers/Clocks.cs`** — `Clocks.SystemUtc`, for the twenty-odd existing
+  construction sites across ten test files that now have to hand the stores a clock they never read.
+- **`TaskManagerAcceptanceTest.ConfigureAdditionalServices`** — a no-op virtual hook called last in the
+  factory's `ConfigureServices`, so a slice can replace something the Epic-wide harness set up. Slice 03
+  pins the instance clock through it. Slices 01 and 02 are unaffected.
+- **`services/UpdateSubscriptionService.ts`** — `elapsedMs?: number | null` on `IUpdateTask`.
+- **`utils/date/formatElapsed.ts`** — throwing scaffold with the `__SCAFFOLD__` marker.
+
+No scaffold for the endpoint or the popover. Both exist; the new field is simply missing from what they
+produce, so the assertions fail on the answer rather than on a compile error.
+
+**Reuse checked and rejected once:** `utils/date/formatDuration.ts` takes a number of *days* plus a chart's
+chosen axis unit, and exists so every point on one chart is expressed the same way. `formatElapsed` takes
+milliseconds and picks its own unit per value, because these rows are independent — a refresh going four
+seconds and one going two days sit side by side and each wants its own unit. Same shape, different
+knowledge.
+
+**One piece of knowledge moved:** reading the task list over HTTP (`TheTaskList`, `TheRowFor`, `Text`,
+`Number`, `Describe`) was private to slice 02's specifications and is now `protected` on
+`TaskManagerAcceptanceTest`, with slice 02's copies deleted. Slice 03 is its second consumer and slices 05
+and 06 will be the third and fourth. Slice 02's seventeen scenarios still pass unchanged.
+
+## Wave: DISTILL / [REF] Red gate
+
+23 fail, each for the right reason — the value is missing, not the test:
+
+- the **7 backend acceptance** scenarios on `elapsedMs` being absent from every row
+- **3 of the 5 multi-replica** store tests on `QueuedAt` / `StartedAt` coming back `null`, and on the
+  moments hash not existing. The other two are guards over behaviour this slice must *not* change; they
+  pass on arrival by design
+- the **7 `formatElapsed`** specs on the scaffold's own `Not yet implemented` message
+- **4 of the 5 popover** specifications on the duration not being rendered. The fifth asserts a row
+  without a duration still reads correctly, which is currently free — its evidence is the mixed-list
+  scenario beside it, which fails
+
+The 3 script-freeze tests pass, as a freeze test should on the day it is written; the mutation check above
+is what makes that meaningful.
+
+Everything else stays green: frontend 5156 of 5167, backend unchanged from slice 02's close.
+
+## Wave: DISTILL / [REF] Answered elsewhere, deliberately
+
+- **AC-03.2** has no acceptance scenario. Both guarantees are enforced inside Lua over a bare number, so
+  the only honest place to assert them is against a real Redis with two stores on one connection — the
+  multi-replica fixture above — and the claim that the scripts did not change is the freeze test. Driving
+  either through the endpoint would prove nothing about the mechanism that carries them.
+- **AC-03.5's rendering half** — a duration rather than a timestamp — is a frontend promise and lives in
+  `formatElapsed.test.ts`. The backend half, degrading to a row without one, is in the acceptance
+  scenarios, because whether the field is absent is the server's decision.
+
+## Wave: DISTILL / [REF] Carried into DELIVER
+
+1. **The popover shows a snapshot, not a running counter.** Nothing in US-03 asks for one, and the list
+   already re-reads on every `GlobalUpdateNotification`, so a row is as fresh as the last transition. A row
+   that sits at "running for 12s" for a minute while the popover is open is the known cost. Making it tick
+   means interpolating from the server's number rather than reading a local clock — permitted by AC-03.4,
+   but it is a new promise, so it is the maintainer's call and not DELIVER's.
+2. **`ADR-182` was still `Proposed`, and is now `Accepted`.** The decision itself was never open — the
+   brief records the maintainer ruling that closed it, and slice 04's `ADR-183`, decided later, was
+   already accepted. The status field was the only thing lagging, and it is the one slice 03 builds on.
+3. **The moments encoding is left open.** ADR-182 fixes the hash name and that it is written outside the
+   scripts; nothing here pins how the pair is encoded in a field. The tests assert the moments survive and
+   that the two hashes carry the same key set, which is what the design actually promises.
+4. **Twenty-odd construction sites now pass a clock they never read.** The cost of putting the seam in the
+   adapter rather than in `UpdateQueueService`. It buys `IUpdateStatusStore` staying as it is — the
+   alternative was widening `Advance` to carry a moment on every transition, for the one transition that
+   needs it.
