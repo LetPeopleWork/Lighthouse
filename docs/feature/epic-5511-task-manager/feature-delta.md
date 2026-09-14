@@ -560,7 +560,7 @@ the analysis rather than repeating it.
 | D | **Write-back round outcome** — what was pushed, what was refused | Jira 403s and *drops* the write; nobody learns. Highest-value of the deferred set | Pulls in #5502's event model; a slice of its own, later |
 | E | **Failure reason** on the last run | `RefreshLog.Success` is a bare bool (S7) — "failed" is recordable, "why" is not | Deferred; note it needs a schema change, so it wants planning with D |
 | F | **Next scheduled run** per entity | Answers "do I need to refresh?" before they refresh | Deferred |
-| G | **Queue position / wait estimate** | Single-reader loop means position is a real wait | Deferred — but **revisit at slice 02's DISTILL**: #5877 shows a real user misreading "queued behind a stuck Portfolio" as "hung" (S23). See Post-DESIGN Reconciliation |
+| G | **Queue position / wait estimate** | Single-reader loop means position is a real wait | **Split, 2026-09-14.** The naming half — a queued row says what is holding the lane — is IN slice 02. Ordinal position and wait estimate stay deferred. See Decisions taken at the foot of this file |
 | H | **Which replica is running it** | `RedisUpdateStatusStore` already knows; SaaS operators ask | Deferred |
 | I | **Trigger a refresh from the popover** | Per-entity buttons exist; no central one | Deferred |
 | J | **Stale-data badge** ("last synced 3d ago") | Ties staleness into the same glance | Deferred |
@@ -1130,15 +1130,182 @@ the URL has to survive a proxy, the other does not.
 3. **S23 belongs in slice 02's read model.** A list that shows a Portfolio refresh running and three
    Team refreshes queued is only honest if it makes clear the Teams are queued *behind* that Portfolio,
    not merely waiting. Deferred item **G** (queue position, Out of Scope) was cut as a nicety; under
-   S23 it is closer to the point. Not pulled in here — flagged for slice 02's DISTILL.
+   S23 it is closer to the point. Resolved below — the naming half is now in slice 02.
 
-## Open decision — not taken here
+## Decisions taken — 2026-09-14
 
-Whether **B becomes a seventh slice of this Epic** or stays #5877's own Story sequenced next to slice 04.
+**B stays #5877's own Story, delivered adjacent to slice 04.** Not a seventh slice. Every slice in this
+Epic shows the operator something they could not see before; B is a throughput change with no surface,
+and folding it in would have made it the one slice that breaks that property. The argument for merging
+was never the subject matter, it was avoiding two passes over `UpdateQueueService` — and adjacency buys
+that without a re-parent. B is built in the same working session as slice 04, on the same branch, after
+slice 04's P5 probe has reported: whether cancellation can reach inside a connector call decides whether
+an eviction path exists at all, and B's shape depends on that answer.
 
-Arguments for folding it in: it edits the class slice 04 edits, it shares slice 04's probe, and #5877
-is tagged `Release Notes`, so it ships to users either way.
-Arguments against: this Epic's subject is *seeing and intervening*, and B is a throughput change with
-no UI — it would be the only slice that does not show the operator anything new.
+**Deferred item G is split; the naming half lands in slice 02.** A queued row says what is holding the
+lane — "behind <Portfolio name>" — and nothing more. No ordinal position and no wait estimate: an
+estimate needs historical durations, which drags `RefreshLog` into slice 02's read path to produce a
+number that is wrong in exactly the case #5877 describes, where the lane-holder is the one that will not
+finish. The naming is what makes the list honest; the arithmetic is what makes it expensive and wrong.
 
 No ADO work items were created, removed or re-parented as part of this reconciliation.
+
+---
+
+# Wave: DISTILL — slice 01
+
+Run 2026-09-14, against slice 01 only. The other five slices are not distilled yet.
+
+Wave-decision reconciliation: passed, 0 contradictions. DESIGN's one correction to DISCUSS (S15/D9, the
+connectors' existing `authentication_failed` code) lands in slice 05 and does not touch slice 01. The
+Post-DESIGN reconciliation above changes slice 01's priority, not its content.
+
+## Wave: DISTILL / [REF] Scenario list
+
+All in `Lighthouse.Backend.Tests/API/Integration/TaskManager/`, categories `acceptance` +
+`epic-5511-task-manager` + `slice-01`.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `A_team_refresh_that_fails_tells_the_browser_it_failed` | `@walking_skeleton @driving_port @real-io @error` | AC-01.1 |
+| `A_portfolio_refresh_that_fails_tells_the_browser_it_failed` | `@driving_port @real-io @error` | AC-01.1 |
+| `A_team_refresh_that_works_still_tells_the_browser_it_completed` | `@driving_port @real-io` | AC-01.1 |
+| `A_failing_refresh_is_announced_as_queued_and_then_as_failed` | `@driving_port @real-io @error` | AC-01.1 |
+| `A_failed_refresh_still_records_that_it_did_not_succeed` | `@driving_port @real-io @error` | AC-01.2 |
+| `A_failed_refresh_still_finishes_its_write_back_round` | `@driving_port @real-io @error` | AC-01.3 |
+| `Asking_for_a_refresh_that_goes_on_to_fail_is_still_accepted` | `@driving_port @real-io @error` | AC-01.5 |
+| `A_caller_awaiting_an_update_still_sees_the_failure_it_always_saw` | `@driving_port @real-io @error` | AC-01.5 |
+
+Error-path share: 6 of 8. The positive control is deliberate — without it, "always report Failed"
+satisfies every other scenario in the file.
+
+**Not acceptance scenarios, and why:**
+
+- **AC-01.4** (held work is let go behind a failed refresh) →
+  `UpdateQueueServiceTests.EnqueueUpdate_TheUpdateFails_StillLetsGoOfTheWorkHeldBehindIt`. A hold only
+  parks while the key it waits on is `Queued` rather than running, and the window between a refresh being
+  admitted and the queue picking it up cannot be stood in deterministically from outside. That class owns
+  the status dictionary, so there the precondition is exact rather than raced for.
+- **AC-01.6** (both authentication configurations) → `TeamDetail.test.tsx`, parametrised over
+  authentication-off and RBAC-on-as-System-Administrator. The backend half needs no scenario: the queue
+  never consults the caller, so the push cannot differ by configuration, and who may subscribe to the hub
+  at all is already pinned by `S3_UpdateNotificationHubAuthorizeTests`.
+
+## Wave: DISTILL / [REF] Test placement
+
+`API/Integration/TaskManager/` — a new folder, mirroring `FasterUpdates/` and `QuietWriteBack/`, with
+`TaskManagerAcceptanceTest` as the Epic-wide harness so slices 02-06 inherit it rather than each standing
+up its own host. `Scenarios.cs` + `Specifications.cs` partial-class split per the project's existing
+convention.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+| Port | Class | Treatment |
+|---|---|---|
+| The scheduled refresh (`ITeamUpdater` / `IPortfolioUpdater`) | Driving | Real, through the production queue in its own DI scope |
+| `POST /api/latest/teams/{id}` | Driving | Real, over `Factory.CreateClient()` |
+| `IUpdateStatusStore`, `IUpdateExecutionLock`, `WriteBackRound`, `IRefreshLogService` | Driven internal | Real, EF over SQLite |
+| `IHubContext<UpdateNotificationHub>` | Driven internal | **Recorded.** The terminal status is never readable after the fact — the store drops the key as the run ends — so the push is the only place the answer exists |
+| `IWorkTrackingConnector` | Driven external | Faked; made to throw for the failure scenarios |
+| `IForecastService`, `ILicenseService` | Driven external / non-deterministic | Faked |
+
+One harness trap worth recording: the queue pushes the same `UpdateStatus` **object** it goes on to
+advance, so a recorder that keeps the reference shows every earlier push wearing the last one's status.
+`CapturedUpdateNotifications` copies each push, which is what a real client is sent anyway.
+
+## Wave: DISTILL / [REF] Upstream findings
+
+1. **`InProgress` is never pushed to the browser.** `EnqueueUpdate` pushes `Queued` and the terminal
+   status; `RunUpdateAsync` advances the store to `InProgress` without notifying. A browser therefore
+   cannot today tell a refresh that is running from one that is merely waiting. Not a slice 01 defect —
+   slice 01 changes the last word and nothing else — but it is **slice 02's problem**, which is exactly
+   the "what is running right now" question. Slice 02 either reads the store through its new route (the
+   design's plan, and enough on its own) or adds the push. Recorded, not fixed.
+2. **`UpdateType` has five members and a portfolio refresh is `Features`, not `Portfolio`.** Already
+   noted as S11 for the frontend union; it bites backend test authors too.
+
+---
+
+# Wave: DELIVER — slice 01
+
+Delivered 2026-09-14. ADO Bug **#5788**. Commits held locally at the user's request — CI is red upstream
+on unrelated ServiceNow tests.
+
+## What changed
+
+One production statement: `UpdateServiceBase.TriggerUpdate` no longer catches the exception from
+`Update()`. The `finally` is untouched, so the write-back flush and the round summary still run on the
+way out. The queue's existing `catch` then records `Failed` and pushes it — that half already worked and
+was already tested; nothing there needed changing.
+
+**The swallow was the whole bug.** All three updaters (`TeamUpdater`, `PortfolioUpdater`,
+`ForecastUpdater`) already let exceptions out of `Update()` and already write their `RefreshLog` row with
+`Success = false` from their own `finally`. The single `catch` in the base class was the one place the
+truth was lost.
+
+## Why the log line was removed rather than rethrown
+
+The obvious change is `catch { log; throw; }`. That would put three accounts of one failure in front of
+an operator — the updater's line, the queue's line, and the summary line — in a codebase that has a whole
+Epic (#5687 slice 01) about not doing that. What an operator actually needs from the removed line is the
+*reason*, and the reason is not in it: `BuildUnreadableSecretReason` attaches to `outcome.Reason`, which
+prints on the summary line's `reason=` field. So the line was dropped and the queue's report is the
+single one.
+
+Two existing tests pinned that line and were rewritten to assert what now happens instead — the failure
+**propagates**, observable on the queue double:
+
+- `TeamUpdaterTest.TriggerUpdate_WorkTrackingSystemUnreachable_*`
+- `PortfolioUpdaterTest.TriggerUpdate_CredentialCannotBeRead_TheFailureStillPropagatesAndIsReportedOnce`
+  — whose name had been describing an intention the code did not keep.
+
+## AC-01.5, answered — the blast radius
+
+`EnqueueAndAwaitAsync` has exactly **two** callers: `TeamController.DeleteTeam` and
+`PortfolioController.DeletePortfolio`. Both pass their own inline lambda and never route through
+`UpdateServiceBase.TriggerUpdate`, so the removed catch cannot reach them. `RunAwaitableUpdateAsync`
+already calls `tcs.TrySetException(ex)`; that path was correct before this slice and is pinned by a
+scenario now.
+
+The fire-and-forget callers (`TriggerUpdate` on the two detail controllers, `DemoController`,
+`PortfoliosController`, `TeamsController`, the two forecast trigger handlers and `PortfolioUpdater`
+itself) return `void` and run on the queue's own loop, so nothing propagates to any of them.
+
+One real consequence, and it was in a test double rather than in production: `UpdateServiceTestBase` ran
+the enqueued task with `.Wait()` and would have surfaced the exception at the trigger — a place it never
+reaches in the running application. The double now catches like the real queue and exposes
+`WhatTheRefreshThrew`, which is what the two rewritten tests read.
+
+## Frontend
+
+`"Failed"` was already in the `UpdateProgress` union and already stopped the spinner — and then showed
+nothing, because the status never arrived. A new `RefreshStatusIcon` renders a `CloudOff` in error colour
+with a `titleAccess` label; Team detail and Portfolio detail both use it, each naming the entity with its
+configured Terminology (`Last ${teamTerm} refresh failed` / `Last ${featuresTerm} refresh failed`). The
+flag clears on the next `Queued`, `InProgress` or `Completed`.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6682 passed, 1 environmental failure |
+| `pnpm test` | 370 files, 5132 tests, all green |
+| `pnpm build` | clean, Biome included |
+
+The one backend failure is `ServiceProviderValidationTest.ServiceContainer_BuildsWithoutScopeViolations_*`
+— an `IOException` deleting its own SQLite file in teardown because the handle is still held. It
+reproduces on unmodified `main` with the change stashed, and it is intermittent (it passed earlier in the
+same session). Environmental, not a regression.
+
+## Mutation testing
+
+Full write-up in `mutation/results.md`. Frontend **94.74 %**, gate met; the first run scored 65 % and its
+survivors were worth more than the number — they found that Portfolio detail had no failed-state test at
+all, and that nothing proved the failure clears when a page is opened just after a refresh finished.
+Five scenarios were added to close them.
+
+**The backend gate is outstanding.** The config is written and committed but Stryker.NET cannot discover
+the NUnit tests on this `win-arm64` host — `Number of tests found: 0` on both 4.16.0 and 5.0.0, while
+`dotnet test` runs the same assembly fine. Run `stryker.5788.backend.json` on x64 or in CI before this
+slice is called finished.

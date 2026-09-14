@@ -17,6 +17,8 @@ One click from anywhere in the app shows a live, truthful list of what is refres
 - Enrichment on the read path: entity display name looked up per row (D8).
 - A new header icon — activity, with an active-count badge — and the popover it opens (D1, D2).
 - Live refresh driven by the existing `GlobalUpdateNotification` on the `GlobalUpdates` group.
+- A queued row names what is holding the lane — "behind <entity>" — resolved through the same display
+  name lookup the running row uses. The naming half of deferred item G, pulled in on 2026-09-14.
 
 ## OUT of scope
 
@@ -25,6 +27,7 @@ One click from anywhere in the app shows a live, truthful list of what is refres
 - Connection health and warnings — slices 05 and 06.
 - **Removing `OAuthHealthIcon`.** It stays, unchanged, beside the new icon until slice 05 (D2).
 - Distinguishing *why* a row is queued (held / coalesced / genuinely waiting) — deferred items A and B.
+- Ordinal queue position and any wait estimate — the rest of deferred item G, still deferred.
 
 ## Learning hypothesis
 

@@ -17,7 +17,8 @@ Each row says how long it has been running or waiting, so a slow refresh can be 
 
 ## OUT of scope
 
-- Queue position or a wait estimate — deferred item G.
+- Ordinal queue position or a wait estimate — the still-deferred half of item G. Naming the lane-holder
+  belongs to slice 02.
 - Next scheduled run — deferred item F.
 - Historical durations. `RefreshLog.DurationMs` already records those and is already displayed under
   Settings → System Info; this slice is about work still in flight.
