@@ -115,6 +115,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             Assert.DoesNotThrow(() => cancellations.Forget(ATeamRefresh));
         }
 
+        /// <summary>
+        /// Every refresh this instance ever runs passes through here, so a source that is dropped from the
+        /// dictionary without being released is a handle leaked per refresh, for the life of the process.
+        /// The token outlives the lookup, which is what makes the release observable at all.
+        /// </summary>
+        [Test]
+        public void ForgettingWork_ReleasesTheSourceRatherThanOnlyDroppingIt()
+        {
+            using var cancellations = new AdmittedCancellations();
+            cancellations.Admit(ATeamRefresh);
+            var heldByTheRun = cancellations.TokenFor(ATeamRefresh);
+
+            cancellations.Forget(ATeamRefresh);
+
+            Assert.That(() => heldByTheRun.WaitHandle, Throws.InstanceOf<ObjectDisposedException>(),
+                "Dropping the source from the dictionary hides the leak without fixing it. The wait handle is "
+                + "the part that holds an operating-system resource, so it is the part worth releasing.");
+        }
+
         [Test]
         public void Disposing_ReleasesEverythingStillOutstanding()
         {

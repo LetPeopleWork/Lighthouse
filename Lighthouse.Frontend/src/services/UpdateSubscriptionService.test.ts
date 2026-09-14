@@ -182,6 +182,38 @@ describe("UpdateSubscriptionService", () => {
 	 * error - while the header and every detail-page icon quietly froze at whatever they last knew, which
 	 * reads exactly like an instance with nothing to report.
 	 */
+	/**
+	 * Epic #5511 slice 04. The ask itself: which entity, and that a refusal is not swallowed into looking
+	 * like success - the popover re-reads the list on the strength of this returning.
+	 */
+	describe("stopping a refresh", () => {
+		it("asks the instance to stop the entity it was given", async () => {
+			mockedAxios.post.mockResolvedValueOnce({ data: undefined });
+
+			await service.cancelTask("Team", 7);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/update/tasks/Team/7/cancel",
+			);
+		});
+
+		it("names the update type as the instance spells it, not as the reader reads it", async () => {
+			mockedAxios.post.mockResolvedValueOnce({ data: undefined });
+
+			await service.cancelTask("Features", 3);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/update/tasks/Features/3/cancel",
+			);
+		});
+
+		it("lets a refusal reach the caller rather than reporting it as done", async () => {
+			mockedAxios.post.mockRejectedValueOnce(new Error("refused"));
+
+			await expect(service.cancelTask("Team", 7)).rejects.toThrow("refused");
+		});
+	});
+
 	describe("when the connection drops", () => {
 		it("asks the server again for everything this page had subscribed to", async () => {
 			const callback = vi.fn();

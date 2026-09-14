@@ -294,3 +294,94 @@ against a real Redis for the moments, the two Lua guarantees and the no-orphan p
 `RedisUpdateStatusScriptFreezeTest` for both scripts, character for character, verified by mutating
 one of them by hand; and `RedisUpdateStatusStoreBestEffortMomentsTest`, which drives the failure paths
 through a mocked `IDatabase` — the paths a working Redis cannot be asked to demonstrate.
+
+---
+
+## 5842 — Cancel a queued or running update (slice 04)
+
+Epic #5511 Task Manager, slice 04. Run 2026-09-14 against `main` @ `99b1249b6`. Gate is an 80 % kill rate
+on each stack that has changed files.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **89.19 %** | 35 | 33 | 2 | 0 | 5 m 51 s |
+| Frontend (StrykerJS 9.6.1) | **66.67 %** — see triage | 6 | 4 | 2 | 0 | 23 s |
+
+Configs: `stryker.5842.backend.json`, `stryker.5842.frontend.json`, `vitest.stryker.5842.ts`.
+ARM64 runner: `run-backend-x64.ps1`.
+
+Both stacks ran twice; everything under *Closed by this pass* is the difference.
+
+### Backend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `AdmittedCancellations.cs` (whole file) | 14 | 13 | 1 |
+| `UpdateController.cs` (whole file) | 13 | 12 | 1 |
+| `InProcessUpdateCancellationNotifier.cs` (whole file) | 6 | 6 | 0 |
+| `UpdateCancellationContext.cs` (whole file) | 2 | 2 | 0 |
+
+#### Closed by this pass
+
+- **`Forget` dropping the source without releasing it.** Nothing noticed, because both the lookup and the
+  cancel answer the same way once the key is out of the dictionary. Every refresh this instance runs passes
+  through here, so the mutant is a handle leaked per refresh for the life of the process. Killed by holding
+  the token across the call and asking for its wait handle — the part that holds an operating-system
+  resource, and the only part whose release is observable.
+- **A disposed subscription still hearing cancellations.** `InProcessUpdateCancellationNotifier.Dispose`
+  could stop removing the handler and no test cared. The handler closes over the whole queue, so the leak
+  is not a callback — it is a cancel delivered to a queue that has gone.
+
+#### Accepted survivors
+
+- **`UpdateController.cs`** — `elapsed < TimeSpan.Zero` relaxed to `<=`. Equivalent, and already accepted
+  for the same reason in slice 03: at exactly zero both branches produce `0`.
+- **`AdmittedCancellations.cs`** — the losing side of a concurrent `Admit` not disposing the source it
+  failed to insert. Behaviourally invisible by construction: the loser's source was never handed to
+  anybody. It is a resource-only mutant on a path reachable solely by two threads admitting one key in the
+  same instant.
+
+### Frontend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `UpdateSubscriptionService.ts:239-248` | 2 | 2 | 0 |
+| `TaskManagerIcon.tsx:86-105` | 4 | 2 | 2 |
+
+#### Closed by this pass
+
+The first run scored **33 %** and the reason was a genuine hole rather than a scoring artefact:
+`cancelTask` had no service-level test at all. The popover specs drove the button, so the component was
+covered while the method it called was not — the whole of `UpdateSubscriptionService.ts` reported *no
+coverage*. Three specs now pin which entity is asked about, that the update type is spelled as the instance
+spells it, and that a refusal reaches the caller rather than being swallowed into looking like success.
+That is the one the popover depends on: it re-reads the list on the strength of this returning.
+
+#### Accepted survivors, and why the stack is under its gate
+
+Both are `ArrayDeclaration` on React `useCallback` dependency arrays — `[updateSubscriptionService]` and
+`[refresh, updateSubscriptionService]`. Emptying either leaves the callback closing over a stale value,
+which changes nothing a test can see without re-rendering with a different service and asserting on which
+instance was called. That is a test of React's memoisation rather than of anything Lighthouse promises,
+and the project's doctrine is to test behaviour.
+
+So the denominator is four behavioural mutants and two framework ones, and **66.67 % is four of six with
+both survivors equivalent**. On a denominator this small the percentage says less than the list does.
+
+For context, the whole of `TaskManagerIcon.tsx` scores **71.91 %** across 89 mutants, the survivors
+dominated by MUI popover geometry and effect bookkeeping — the same shape, and close to the same number,
+that slice 02 recorded at 73.33 % and chose to record rather than engineer away. The narrow scope is kept
+here because it answers the question the per-feature gate asks: was *this slice's* change tested well.
+
+### Not mutated
+
+- **`UpdateQueueService.cs`** — excluded. The cancellation it carries is now in `AdmittedCancellations`,
+  which is mutated whole; what remains is the queue mechanics slices 01 and 02 already exercise, and
+  mutating a 600-line class to re-measure them would bury this slice's score under untouched code.
+- **`RedisUpdateCancellationNotifier.cs`** — excluded for the reason its sibling store is: the tests that
+  reach it start a container per test, which under `perTestInIsolation` is several container starts per
+  mutant. Covered instead by `TaskManagerCancellationMultiReplicaTests` against a real Redis.
+- **The Jira paging walks** — not in this run. They are covered by `JiraCancellationGranularityTest`,
+  which counts real HTTP round trips and was itself verified by hand-mutating the two calls to
+  `CancellationToken.None`, killing both Data Center tests. That check is recorded in the commit rather
+  than here because it was a deliberate one-off, not a Stryker run.

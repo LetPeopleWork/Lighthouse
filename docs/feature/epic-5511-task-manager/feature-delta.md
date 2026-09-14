@@ -1884,3 +1884,99 @@ parent keys; partial chunk failure, which throws and falls back to a full downlo
 gap as a deletion; `TryScheduleRerun`'s hardcoded `Advance(Completed)`, which cannot mask a failure
 because `Failed` outranks `Completed` under the monotonic advance; and the badge and popover, which read
 one array and so cannot disagree with each other.
+
+---
+
+# Wave: DELIVER — slice 04
+
+Delivered 2026-09-14. ADO **#5842**. Cancel is honest for Jira and structural for the other four
+connectors — see *Not done here*.
+
+## What changed
+
+**The ask.** `POST /api/latest/update/tasks/{updateType}/{id}/cancel`, System-Administrator-guarded,
+answering 204, and idempotent in the strongest sense: accepted for work running, waiting, already
+finished, or never admitted. A deletion is refused with 400 — see below.
+
+**The carry.** `IUpdateCancellationNotifier`, a sibling of the completion notifier, publishing to every
+replica. The token source lives in the process that admitted the work and the task list shows work from
+any replica, so the pod taking the click is usually not the pod that can act on it.
+
+**The hold.** `AdmittedCancellations` owns one `CancellationTokenSource` per admitted key, created as the
+key is admitted and disposed as it leaves the store.
+
+**The reach.** `UpdateCancellationContext`, an `AsyncLocal` set by the queue, read by `WorkItemService`
+and handed to the connector as an explicit parameter. Eight paging methods on `IWorkTrackingConnector`
+widened. Jira checks once per page in all three of its walks and passes the token to the request itself.
+
+**The row.** `Cancelled` appended to `UpdateProgress` after `Failed`, with the ordinals frozen in a test.
+A Cancel control per popover row, which re-reads the list rather than editing it in place.
+
+## What the adversarial review found
+
+Eleven findings, four blocking. All four fixed, the two worst with regression tests. Two of them were
+defects this slice introduced rather than inherited:
+
+**A cancelled delete reported success.** `EnqueueAndAwaitAsync` returns `Task`, not `Task<bool>`, so
+completing the awaiter on cancellation was unobservable — the delete controller awaited it and answered
+204 while the row stayed in the database. The awaiter is now cancelled, and the route refuses deletes
+outright: stopping one half-way is not a staleness problem, and the control offering it says *stop
+refreshing*.
+
+**Cancelling one entity destroyed another entity's staged writes.** A write-back round is left by the
+flush at the end of an update task, so work cancelled *before* that task started joined a round nothing
+would ever leave — and every write staged by the other work sharing it was dropped silently. AC-04.4 and
+AC-04.7 together, and the invariant ADR-183 flags as the easy one to miss.
+
+Also fixed: the coalesced follow-up inheriting a cancelled token (ADR-183 says it must not), an
+`ObjectDisposedException` race turning the explicitly idempotent cancel into a 500, a window before the
+token source existed where a cancel silently did nothing, cancels being logged as connector failures and
+escalated into full downloads, and two missing checkpoints.
+
+## The thing this slice got wrong, and how it was caught
+
+The first DELIVER commit called the slice done while **every connector took the token and read none of
+it** — eight mentions per file, all of them the parameter declaration. The acceptance scenarios passed
+because they cancel a *mock written to honour the token*: they prove the ask arrives, never that a
+connector acts on it.
+
+What caught it was reading the production code rather than trusting a green suite. What proves the fix is
+`JiraCancellationGranularityTest`, which counts real HTTP round trips against a stub tracker claiming a
+hundred thousand records, and which was itself verified by hand-mutating the two calls to
+`CancellationToken.None` — killing both Data Center tests.
+
+Worth recording for the four connectors still to come: **CA2016 and S8949 are errors in this project**, so
+once a method takes a token the build refuses to let it go unused. The decorative-parameter failure is
+caught by the gates. A deliberate `CancellationToken.None` is not, which is why the mutation check is the
+one that matters.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6779 passed, 1 environmental |
+| `pnpm test` | 372 files, 5181 tests, all green |
+| `pnpm build` | clean, Biome included |
+| Mutation — backend | **89.19 %**, gate met |
+| Mutation — frontend | **66.67 %** — four of six, both survivors equivalent; see `mutation/results.md` |
+
+## Cost, recorded because it was under-quoted twice
+
+ADR-183 priced the port widening at "six signatures across five implementations". Actual: **8 signatures,
+5 implementations, 41 call sites, 9 callbacks, 59 files, +750/−519** — and that is before four of the five
+connectors honour the token at all. The sweep broke the suite twice on the way (83 failures, then 62), both
+times caught only by tests that already existed.
+
+## Not done here
+
+1. **Azure DevOps, CSV, Linear and ServiceNow still take the token without reading it.** Scheduled next,
+   in that order, one connector per commit with its own round-trip-counting test verified by mutation.
+   Not a sweep.
+2. **AC-04.2's measured granularity is a floor for the sweep, not for the Jira Cloud download path**,
+   where per-issue changelog fetches inside a page are uncancellable — up to fifty sequential round trips
+   after a cancel. Decided 2026-09-14: thread the token into the changelog fetch so the recorded number
+   becomes true.
+3. **A cancel still writes `Success = false` to `RefreshLog`**, so refresh history shows a red row for
+   something an operator chose. Decided 2026-09-14: add a cancelled state, which is a schema change and
+   an EF migration through `Create-Migration.ps1`.
