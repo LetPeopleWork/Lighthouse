@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// and the caller falls back to the whole query.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
-            => SweepIdentities(team, [PrepareQuery(team)], $"Team {team.Name}");
+            => SweepIdentities(team, [PrepareQuery(team)], $"Team {team.Name}", cancellationToken);
 
         /// <summary>
         /// The one sweep every caller goes through: walk each query in full, keep identity and the change stamp,
@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// so the transport has to be settled before the first request goes out.
         /// </summary>
         private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
-            IWorkItemQueryOwner owner, IEnumerable<string> sweepQueries, string sweptDescription)
+            IWorkItemQueryOwner owner, IEnumerable<string> sweepQueries, string sweptDescription, CancellationToken cancellationToken)
         {
             var connection = owner.WorkTrackingSystemConnection;
             var transport = SearchTransportOf(connection);
@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var sweepQuery in sweepQueries)
             {
-                var rejection = await WalkSweep(client, transport, sweepQuery, pageLimit, CollectStamp);
+                var rejection = await WalkSweep(client, transport, sweepQuery, pageLimit, CollectStamp, cancellationToken);
 
                 if (rejection is not null)
                 {
@@ -218,7 +218,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var query = PrepareQuery(team);
-            var issues = await GetIssuesByQuery(team, query);
+            var issues = await GetIssuesByQuery(team, query, cancellationToken);
 
             workItems.AddRange(await CreateWorkItemsFromIssues(team, issues));
 
@@ -246,7 +246,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // chunks its id list.
             foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
             {
-                issues.AddRange(await GetIssuesByQuery(team, PrepareIssueKeyQuery(chunk)));
+                // Chunking is paging by another name - each chunk is its own round trip - so it is a
+                // checkpoint for the same reason the offset loop is.
+                cancellationToken.ThrowIfCancellationRequested();
+                issues.AddRange(await GetIssuesByQuery(team, PrepareIssueKeyQuery(chunk), cancellationToken));
             }
 
             return await CreateWorkItemsFromIssues(team, issues);
@@ -283,7 +286,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
             var query = PrepareQuery(project);
-            var issues = await GetIssuesByQuery(project, query);
+            var issues = await GetIssuesByQuery(project, query, cancellationToken);
             var features = await CreateFeaturesFromIssues(project, issues);
 
             ReportLinksThatMeantNothingHere(project, issues, features);
@@ -311,7 +314,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // to survive whatever proxy sits in front of Jira.
             foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
             {
-                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk)));
+                cancellationToken.ThrowIfCancellationRequested();
+                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk), cancellationToken));
             }
 
             return await CreateFeaturesFromIssues(project, issues);
@@ -322,7 +326,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// issues, narrowed to identity plus the change stamp.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
-            => SweepIdentities(project, [PrepareQuery(project)], $"Portfolio {project.Name}");
+            => SweepIdentities(project, [PrepareQuery(project)], $"Portfolio {project.Name}", cancellationToken);
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
@@ -335,7 +339,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // expand=changelog, so an unsplit list is the longest URL the connector builds.
             foreach (var chunk in keys.Chunk(ReferenceIdsPerQuery))
             {
-                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk)));
+                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk), cancellationToken));
             }
 
             return await CreateFeaturesFromIssues(project, issues);
@@ -349,7 +353,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => SweepIdentities(
                 project,
                 parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(PrepareIssueKeyQuery),
-                $"the parent Features of Portfolio {project.Name}");
+                $"the parent Features of Portfolio {project.Name}",
+                cancellationToken);
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
@@ -1045,7 +1050,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
                 var workItemsQuery = PrepareQuery(team);
-                var issues = await GetIssuesByQuery(team, workItemsQuery, 10);
+                var issues = await GetIssuesByQuery(team, workItemsQuery, CancellationToken.None, 10);
                 var totalItems = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Issues with specified Query settings", totalItems);
@@ -1082,7 +1087,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
                 var query = PrepareQuery(portfolio);
-                var issues = await GetIssuesByQuery(portfolio, query, 10);
+                var issues = await GetIssuesByQuery(portfolio, query, CancellationToken.None, 10);
                 var totalFeatures = issues.Count();
 
                 logger.LogInformation("Found a total of {NumberOfFeature} Features with the specified Query", totalFeatures);
@@ -1563,7 +1568,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return customFieldReferences;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, int? maxResultsOverride = null)
+        private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, CancellationToken cancellationToken, int? maxResultsOverride = null)
         {
             logger.LogDebug("Getting Issues by JQL Query: '{Query}'", jqlQuery);
             var client = await GetJiraRestClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
@@ -1574,10 +1579,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (deployment == JiraDeployment.Cloud)
             {
-                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride);
+                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride, cancellationToken);
             }
 
-            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride);
+            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride, cancellationToken);
         }
 
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)
@@ -1601,7 +1606,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return false;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, CancellationToken cancellationToken)
         {
             var issues = new List<Issue>();
             var startAt = 0;
@@ -1611,9 +1616,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             while (!isLast)
             {
+                // Before each page, and the request itself carries the token too. This is the checkpoint
+                // AC-04.2 is measured against: nearly all of a refresh's wall-clock is inside this loop, so
+                // a cancel that only bit between phases would, on the full-fetch path, not bite at all.
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var url = $"rest/api/latest/search?jql={encodedJqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
-                var response = await client.GetAsync(url);
-                var responseBody = await response.Content.ReadAsStringAsync();
+                var response = await client.GetAsync(url, cancellationToken);
+                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -1647,7 +1657,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// could only ever replace the sentence naming what was wrong with a notice about an endpoint the
         /// operator never chose to call.
         /// </summary>
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, CancellationToken cancellationToken)
         {
             var issues = new List<Issue>();
             var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
@@ -1660,7 +1670,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 SinglePage: maxResultsOverride.HasValue);
 
             var rejection = await WalkCloudSearchPages(client, request, async jsonIssue =>
-                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName)));
+                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName)), cancellationToken);
 
             if (rejection is not null)
             {
@@ -1760,26 +1770,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// Answers what Jira said when it rejected a page, and null when every page came back.
         /// </summary>
         private static Task<JiraSearchRejection?> WalkSweep(
-            HttpClient client, JiraDeployment transport, string sweepQuery, int pageLimit, Func<JsonElement, Task> onIssue)
+            HttpClient client, JiraDeployment transport, string sweepQuery, int pageLimit, Func<JsonElement, Task> onIssue, CancellationToken cancellationToken)
             => transport == JiraDeployment.Cloud
                 ? WalkCloudSearchPages(
                     client,
                     new CloudSearchRequest(sweepQuery, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
-                    onIssue)
-                : WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), SweepFields, pageLimit, onIssue);
+                    onIssue,
+                    cancellationToken)
+                : WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), SweepFields, pageLimit, onIssue, cancellationToken);
 
         /// <summary>
         /// The one token-paged walk over Jira Cloud's search endpoint. Both the whole-query download and the
         /// identity sweep go through it, which is what keeps the two enumerating the same result set.
         /// Answers what Jira said when it rejects a page, and null when every page came back.
         /// </summary>
-        private static async Task<JiraSearchRejection?> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue)
+        private static async Task<JiraSearchRejection?> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue, CancellationToken cancellationToken)
         {
             string? nextPageToken = null;
             var pageCount = 0;
 
             do
             {
+                // One check per page, which is the granularity AC-04.2 promises: a refresh told to stop
+                // stops after the round trip it is already in, not after the whole result set.
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var url = new StringBuilder("rest/api/3/search/jql?");
                 url.Append("jql=").Append(Uri.EscapeDataString(request.Jql));
                 url.Append("&fields=").Append(Uri.EscapeDataString(request.Fields));
@@ -1796,8 +1811,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     url.Append("&nextPageToken=").Append(Uri.EscapeDataString(nextPageToken));
                 }
 
-                var response = await client.GetAsync(url.ToString());
-                var body = await response.Content.ReadAsStringAsync();
+                var response = await client.GetAsync(url.ToString(), cancellationToken);
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -1828,7 +1843,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// caller to decide between falling back and failing, and null when every page came back.
         /// </summary>
         private static async Task<JiraSearchRejection?> WalkDataCenterSearchOffsets(
-            HttpClient client, string jql, string fields, int pageLimit, Func<JsonElement, Task> onIssue)
+            HttpClient client, string jql, string fields, int pageLimit, Func<JsonElement, Task> onIssue, CancellationToken cancellationToken)
         {
             var encodedJql = Uri.EscapeDataString(jql);
             var startAt = 0;
@@ -1837,10 +1852,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             while (startAt < total)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var url = $"rest/api/latest/search?jql={encodedJql}&fields={Uri.EscapeDataString(fields)}&startAt={startAt}&maxResults={pageSize}";
 
-                var response = await client.GetAsync(url);
-                var body = await response.Content.ReadAsStringAsync();
+                var response = await client.GetAsync(url, cancellationToken);
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -2483,10 +2500,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     ? await WalkCloudSearchPages(
                         client,
                         new CloudSearchRequest(query, ReleaseMembershipFields, ExpandChangelog: false, pageLimit, SinglePage: false),
-                        issue => CollectCarriedWork(issue, carriedWork))
+                        issue => CollectCarriedWork(issue, carriedWork),
+                        CancellationToken.None)
                     : await WalkDataCenterSearchOffsets(
                         client, OrderedForOffsetPaging(query), ReleaseMembershipFields, pageLimit,
-                        issue => CollectCarriedWork(issue, carriedWork));
+                        issue => CollectCarriedWork(issue, carriedWork),
+                        CancellationToken.None);
 
                 if (rejection is not null)
                 {
