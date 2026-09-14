@@ -60,12 +60,44 @@ touch, so the range was narrowed to line 269 rather than the survivor being chas
 
 Stryker.NET's initial test discovery reports `Number of tests found: 0` and aborts with *"did not report
 any test. This may be because the test adapter package, NUnit3TestAdapter, failed to deploy or run."*
-Confirmed to be environmental rather than a config error:
+**That message is a red herring.** The adapter loads and runs fine; Stryker's own host log shows
+`NUnit Adapter 6.3.0.0: Test discovery starting` … `complete`.
 
-- `dotnet test` discovers and runs all 6693 tests in the same assembly without complaint.
-- `NUnit3.TestAdapter.dll` is present in `bin/Debug/net10.0/` alongside the test assembly.
-- Both **5.0.0** and **4.16.0** (the version the ServiceNow evidence was produced with) fail identically.
-- The host is `win-arm64`, which is the same footing as the other ARM64 tooling gaps in this checkout.
+The actual cause, from `StrykerOutput/*/logs/TestDiscoverer-log.host.*.txt`: Stryker hands VSTest a
+RunSettings block containing `<TargetPlatform>X64</TargetPlatform>`, and this machine is `win-arm64`.
+The x64 test host starts, loads the adapter, enumerates nothing, and exits 0.
+
+Reproduced outside Stryker, which is what makes it conclusive — same assembly, same filter:
+
+```
+dotnet vstest …\Lighthouse.Backend.Tests.dll --ListTests /Platform:ARM64   ->  144 tests
+dotnet vstest …\Lighthouse.Backend.Tests.dll --ListTests /Platform:x64     ->    0 tests
+```
+
+Under x64 it reports *"No test is available … Make sure that test discoverer & executors are registered
+and platform & framework version settings are appropriate"* — with or without a test-case filter, so it
+is the platform, not the filter. An x64 .NET 10 runtime **is** installed, so this is not a missing
+runtime.
+
+What was ruled out along the way:
+
+- **Not the filter.** `(FullyQualifiedName~BackgroundServices.Update|FullyQualifiedName~TaskManager)&FullyQualifiedName!~IntegrationTest`
+  matches 144 tests when VSTest runs at the host's own architecture.
+- **Not the adapter or MTP.** `dotnet test` and `dotnet vstest` both discover all 6693 tests.
+  `NUnit3.TestAdapter.dll` is deployed. Stryker's `test-runner: "mtp"` (preview since 4.13) fails the
+  same way, which matches NUnit's own open incompatibility with .NET 10's MTP mode
+  (nunit/nunit3-vs-adapter#1267).
+- **Not the Stryker version.** 4.16.0 and 5.0.0 fail identically.
+- **No escape hatch in the config.** 4.16.0's allowed keys are
+  `additional-timeout, baseline, break-on-initial-test-failure, concurrency, configuration,
+  coverage-analysis, dashboard-url, disable-bail, disable-mix-mutants, ignore-methods, ignore-mutations,
+  language-version, mutate, mutation-level, project, project-info, report-file-name, reporters, since,
+  solution, target-framework, test-case-filter, test-projects, test-runner, thresholds, verbosity` —
+  there is no platform or architecture option, and `--platform` is not a recognised flag.
+
+Upstream: **stryker-mutator/stryker-net#3335**, *"Stryker does not work on a Surface laptop with an ARM
+CPU running windows"*, open since Oct 2025 with a community PR and no release. Watch that issue; there
+is nothing to configure locally until it lands.
 
 The change itself is one removed `catch`, and what it does is pinned by eight acceptance scenarios plus
 `UpdateQueueServiceTests.EnqueueUpdate_TheUpdateFails_StillLetsGoOfTheWorkHeldBehindIt`. That is not a
