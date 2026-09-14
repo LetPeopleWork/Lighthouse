@@ -1526,3 +1526,38 @@ get re-applied.
   infrastructure, not a regression — the stack ends in EF's `RelationalDatabaseCreator`, never in
   product code. Re-run alone before investigating. Distinguish it from the GitHub-quota failures in
   `LighthouseReleaseServiceIntegrationTest`, which look similar in a summary but are a different cause.
+
+### 2026-09-14 — a reclaimed ServiceNow PDI 502s and blocks every connector PR, and rebuilding it has two steps no script can do
+- **Symptom**: every test under `Category=ServiceNowIntegration` fails against `dev191338`, which
+  answers **502 Bad Gateway** from `snow_adc` on every path. `ci_changes.yml` selects that category
+  whenever a diff touches the ServiceNow connector, a shared connector path, or any `ci*.yml`, so
+  every PR in that area is blocked. `updatedemoenv.yml` fails nightly for the same reason.
+- **Root cause**: ServiceNow reclaims a Personal Developer Instance after ~10 days idle. A 502 from
+  `snow_adc` means reclaimed and gone — distinct from *hibernating*, which answers 200 with a
+  "wake this instance up" page and does come back. Waiting does not help.
+- **Fix**: request a replacement PDI, rebuild the fixture with
+  `Scripts/DemoEnv/ServiceNowPdiProvisioner.py` (new; also runnable on demand via
+  `.github/workflows/provision-servicenow-pdi.yml`), then set the
+  `SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE` and `SERVICENOWLIGHTHOUSEINTEGRATIONTESTTOKEN`
+  secrets. The full runbook, including everything below, is `Scripts/DemoEnv/README.md`.
+- **Rule going forward**: when ServiceNow integration tests fail, `curl` the instance root FIRST —
+  a 502 from `snow_adc` is an environment rebuild, not a regression, and no amount of reading the
+  connector will reveal it. Four things about the rebuild are not discoverable from the errors they
+  produce, so read the runbook rather than re-deriving them:
+  (a) **an unknown user name, a wrong password, and a basic-auth request blocked by the
+  `snc_basic_auth_api_access` restriction all return the byte-identical 401 body** — never diagnose
+  a ServiceNow 401 from the response, compare the `sys_user` records instead, and note that a
+  successful browser login proves the password is correct since both paths check the same
+  credential;
+  (b) **writing `sys_user.user_password` over the Table API succeeds, returns 2xx, and leaves the
+  account permanently unable to authenticate** — the value is stored verbatim instead of hashed
+  (a working account holds ~92 characters in that field, a broken one holds the password's own
+  length, in clear text). Passwords must be set server side in a background script via
+  `setDisplayValue`; role grants through `sys_user_has_role` are fine over the API;
+  (c) **the inbound basic-auth restriction has a per-instance enforcement date** in
+  `glide.authenticate.basic_auth.restriction.*` — any instance created after it enforces from birth,
+  and `admin` itself must be granted the role in the browser because the Table API is the thing
+  being refused;
+  (d) **seeded record counts collide with the fixture's paging thresholds** — the fixture needs open
+  incidents and open changes each under one page of 100 while the two together exceed it, and a
+  stock instance already carries ~90 open changes, so `ServiceNowSystemUpdater.py` seeds only 8.
