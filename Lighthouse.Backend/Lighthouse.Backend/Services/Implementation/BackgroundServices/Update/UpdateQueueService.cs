@@ -26,11 +26,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly IDisposable cancellationSubscription;
 
         /// <summary>
-        /// One source per admitted key, so cancelling one entity's refresh cannot reach another's. Created
-        /// when the key is admitted and disposed when it leaves the store, which is the same lifetime the
-        /// status has.
+        /// One source per admitted key, so cancelling one entity refresh cannot reach another. Its lifetime
+        /// is the key's own: created as the key is admitted, disposed as it leaves the store.
         /// </summary>
-        private readonly ConcurrentDictionary<UpdateKey, CancellationTokenSource> cancellations = new();
+        private readonly AdmittedCancellations cancellations = new();
         private readonly DatabaseMaintenanceGate maintenanceGate;
         private readonly Task processingTask;
 
@@ -58,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             // Subscribed here rather than on demand because the ask arrives from whichever replica took the
             // operator's click, which is usually not this one.
-            cancellationSubscription = cancellationNotifier.Subscribe(StopLocally);
+            cancellationSubscription = cancellationNotifier.Subscribe(cancellations.Stop);
             processingTask = StartProcessingQueue();
         }
 
@@ -76,69 +75,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // one holds no source for it. Accepted whatever state the key is in, including gone - the row
             // was drawn before it was clicked.
             return cancellationNotifier.PublishCancellationAsync(key);
-        }
-
-        private void AdmitCancellationFor(UpdateKey key)
-        {
-            var admitted = new CancellationTokenSource();
-            if (!cancellations.TryAdd(key, admitted))
-            {
-                admitted.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Disposed alongside the key leaving the store. A source kept past that would mean a cancel asked
-        /// for now could stop work admitted later under the same key - which is a different refresh.
-        /// </summary>
-        private void ForgetCancellationFor(UpdateKey key)
-        {
-            if (cancellations.TryRemove(key, out var finished))
-            {
-                finished.Dispose();
-            }
-        }
-
-        private CancellationToken TokenFor(UpdateKey key)
-        {
-            if (!cancellations.TryGetValue(key, out var cancellation))
-            {
-                return CancellationToken.None;
-            }
-
-            try
-            {
-                return cancellation.Token;
-            }
-            catch (ObjectDisposedException)
-            {
-                // The same race as StopLocally, read from the other side. An uncancellable run is a better
-                // outcome than one that throws here, outside the try below, and leaves its key admitted
-                // for good.
-                return CancellationToken.None;
-            }
-        }
-
-        /// <summary>
-        /// The run this belongs to can finish and dispose its source while a cancel is on its way in. That
-        /// is the ordinary case the route calls idempotent - it finished while the operator was reading -
-        /// so it must not become a 500 in front of somebody who did nothing wrong.
-        /// </summary>
-        private void StopLocally(UpdateKey key)
-        {
-            if (!cancellations.TryGetValue(key, out var cancellation))
-            {
-                return;
-            }
-
-            try
-            {
-                cancellation.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The work ended on its own between the lookup and here. Nothing left to stop.
-            }
         }
 
         public async Task DrainAsync(CancellationToken cancellationToken = default)
@@ -166,7 +102,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             // Before admission, not after: the key reaches the task list the instant TryAdmit succeeds, and
             // a cancel landing in the gap would find no source and silently do nothing.
-            AdmitCancellationFor(updateKey);
+            cancellations.Admit(updateKey);
 
             var updateStatus = QueuedStatusFor(updateKey);
             if (!statusStore.TryAdmit(updateKey, updateStatus))
@@ -224,7 +160,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             awaiters[updateKey] = tcs;
 
-            AdmitCancellationFor(updateKey);
+            cancellations.Admit(updateKey);
 
             logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
@@ -264,7 +200,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             logger.LogInformation("Update for {UpdateType} with ID {Id} was not queued because the update queue is closing.", updateKey.UpdateType, updateKey.Id);
 
             statusStore.Remove(updateKey);
-            ForgetCancellationFor(updateKey);
+            cancellations.Forget(updateKey);
             round.Leave();
         }
 
@@ -433,7 +369,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // the lock that keeps two replicas from running the same key at once.
             await using var executionScope = await executionLock.AcquireAsync(updateKey, CancellationToken.None);
 
-            var cancellation = TokenFor(updateKey);
+            var cancellation = cancellations.TokenFor(updateKey);
             statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
             UpdateProgress terminalProgress;
@@ -478,7 +414,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             var terminalStatus = statusStore.Advance(updateKey, terminalProgress) ?? updateStatus;
             statusStore.Remove(updateKey);
-            ForgetCancellationFor(updateKey);
+            cancellations.Forget(updateKey);
 
             // A trigger can land in the window between the check above and this removal: it saw the key
             // still admitted, so it parked a rerun instead of admitting its own. Re-check now that the
@@ -529,8 +465,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // New work, so a new source. The run that just ended may have been cancelled, and the follow-up
             // carries a newer intent than the one that was stopped - inheriting a cancelled token would
             // drop that intent silently, which is the opposite of what the coalescing exists to do.
-            ForgetCancellationFor(updateKey);
-            AdmitCancellationFor(updateKey);
+            cancellations.Forget(updateKey);
+            cancellations.Admit(updateKey);
 
             var round = RoundForNewWork();
 
@@ -550,7 +486,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             await using var executionScope = await executionLock.AcquireAsync(updateKey, CancellationToken.None);
 
-            var cancellation = TokenFor(updateKey);
+            var cancellation = cancellations.TokenFor(updateKey);
             statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
             UpdateStatus terminalStatus = updateStatus;
@@ -587,7 +523,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 awaiters.TryRemove(updateKey, out _);
                 statusStore.Remove(updateKey);
-                ForgetCancellationFor(updateKey);
+                cancellations.Forget(updateKey);
                 ReleaseClearedHoldsWithoutFailingTheUpdate();
                 await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
@@ -657,13 +593,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 completionSubscription.Dispose();
                 cancellationSubscription.Dispose();
-
-                foreach (var outstanding in cancellations.Values)
-                {
-                    outstanding.Dispose();
-                }
-
-                cancellations.Clear();
+                cancellations.Dispose();
             }
         }
     }
