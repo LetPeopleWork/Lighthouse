@@ -43,4 +43,18 @@ describe("formatElapsed", () => {
 	it("does not round a value down into a unit that reads as nothing", () => {
 		expect(formatElapsed(59_600)).not.toBe("0m");
 	});
+
+	// The three switchover points, pinned exactly. Each is a boundary a reader watches a row cross while
+	// the popover is open, and getting one wrong by a millisecond shows "60s" or "60m" - a unit that has
+	// run out, which reads as a bug in the page rather than as elapsed time.
+	it.each([
+		{ elapsedMs: 60_000, reads: "1m", boundary: "a minute" },
+		{ elapsedMs: 60 * 60_000, reads: "1h 0m", boundary: "an hour" },
+		{ elapsedMs: 24 * 60 * 60_000, reads: "1d 0h", boundary: "a day" },
+	])(
+		"changes unit exactly at $boundary, not a millisecond either side",
+		({ elapsedMs, reads }) => {
+			expect(formatElapsed(elapsedMs)).toBe(reads);
+		},
+	);
 });

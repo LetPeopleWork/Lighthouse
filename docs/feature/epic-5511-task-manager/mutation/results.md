@@ -211,3 +211,86 @@ behaviour; the leak they guard against is covered by *stops listening when it go
 thirds of the surviving mutants are popover chrome. Every behavioural promise this slice makes is
 pinned. Whether that clears the gate is the maintainer's call — the same call slice 01's backend 70 %
 raised, and for the same reason.
+
+---
+
+## 5841 — See how long an update has been running (slice 03)
+
+Epic #5511 Task Manager, slice 03. Run 2026-09-14 against `main` @ `f3f1ff87c`. Gate is an 80 % kill
+rate on each stack that has changed files.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS 9.6.1) | **100.00 %** | 37 | 37 | 0 | 0 | 29 s |
+| Backend (Stryker.NET 4.16.0) | **95.45 %** | 65 | 62 | 2 | 1 | 4 m 09 s |
+
+Configs: `stryker.5841.frontend.json`, `stryker.5841.backend.json`, `vitest.stryker.5841.ts`.
+ARM64 runner: `run-backend-x64.ps1`.
+
+Both stacks were run twice. The first pass scored 91.89 % frontend and 90.91 % backend; everything
+below under *Closed by this pass* is the difference, and all of it was worth having.
+
+### Frontend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `formatElapsed.ts` (whole file) | 32 | 32 | 0 |
+| `TaskManagerIcon.tsx:51-64` | 5 | 5 | 0 |
+
+#### Closed by this pass
+
+Three survivors, all the same shape: `<` relaxed to `<=` at each unit switchover in `formatElapsed`.
+They survived because the specs asserted 12 s, 3 m, 64 m and 51 h — values comfortably inside a band,
+never on its edge. The boundaries are pinned exactly now, at one minute, one hour and one day.
+
+Worth more than the score suggests. These are the points a reader watches a row cross while the
+popover is open, and getting one wrong by a millisecond renders "60s" or "60m" — a unit that has run
+out, which reads as a broken page rather than as elapsed time.
+
+### Backend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `UpdateMoments.cs` (whole file) | 31 | 31 | 0 |
+| `UpdateController.cs` (whole file) | 19 | 18 | 1 |
+| `InProcessUpdateStatusStore.cs` (whole file) | 15 | 13 | 1 + 1 timeout |
+
+#### Closed by this pass
+
+- **`InProcessUpdateStatusStore`, `&&` relaxed to `||`** in the guard that decides when a start moment
+  is recorded. Under the mutant, work advancing straight from waiting to finished gets a start moment
+  it never earned — and the task list then reports a refresh that never ran as having been running all
+  along. Closed by `Advance_StraightFromWaitingToFinished_RecordsNoStartMoment`, with its positive
+  control beside it.
+- **`UpdateMoments`, the written form replaced wholesale.** Nothing asserted what the stored value
+  actually looks like, only that it round-tripped — which a mutant that corrupts both directions
+  equally survives. The form is now pinned as unix milliseconds either side of a bar. It is a contract
+  between Lighthouse versions rather than an internal detail: the replica that writes it is often not
+  the one that reads it.
+- **`UpdateMoments`, the lower end of the range guard.** The guard added after the adversarial review
+  had a test on its upper bound and none on its lower, so `>=` relaxed to `>` went unnoticed.
+
+#### Accepted survivors
+
+- **`UpdateController.cs:102`** — `elapsed < TimeSpan.Zero` relaxed to `<=`. Equivalent: at exactly
+  zero the true branch returns `0` and the false branch returns `(long)0.0`. There is no input that
+  tells them apart.
+- **`InProcessUpdateStatusStore.cs:41`** — `(int)to >= (int)status.Status` relaxed to `>`. Advancing a
+  key to the status it already holds is a no-op under either operator. The one state that would
+  distinguish them — running with no start moment recorded — is not reachable through the port; it can
+  only be written into the dictionary by hand.
+- **`InProcessUpdateStatusStore.cs:74`, block removal, reported as a timeout.** Emptying
+  `GetAdmittedWork` hangs the acceptance harness, which polls that method waiting for the queue to go
+  idle. Stryker counts a timeout as detected, and it is: the suite does notice.
+
+#### Not mutated
+
+`RedisUpdateStatusStore.cs` is excluded, as it was for slice 02, and the reason is unchanged: most of
+it is only reachable against a real Redis, and the tests that reach it start a container per test.
+Under `perTestInIsolation` that is several container starts per mutant across roughly 150 mutants.
+
+What covers it instead: `TaskManagerMomentsMultiReplicaTests` and `UpdateStatusStoreContainerTests`
+against a real Redis for the moments, the two Lua guarantees and the no-orphan promise;
+`RedisUpdateStatusScriptFreezeTest` for both scripts, character for character, verified by mutating
+one of them by hand; and `RedisUpdateStatusStoreBestEffortMomentsTest`, which drives the failure paths
+through a mocked `IDatabase` — the paths a working Redis cannot be asked to demonstrate.

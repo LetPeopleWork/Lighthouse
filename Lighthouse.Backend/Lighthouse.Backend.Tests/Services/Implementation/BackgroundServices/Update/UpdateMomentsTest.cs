@@ -107,6 +107,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        /// <summary>
+        /// The written form is read by replicas running a different build of Lighthouse, so it is a contract
+        /// between versions rather than an internal detail. Pinned exactly, because a change to it is
+        /// invisible on one node and only shows up as every row losing its duration mid-upgrade.
+        /// </summary>
+        [Test]
+        public void TheWrittenForm_IsTheTwoMomentsInUnixMillisecondsSeparatedByABar()
+        {
+            var written = new UpdateMoments(Admitted, Admitted.AddMinutes(5)).ToStorageValue();
+
+            Assert.That(written, Is.EqualTo($"{Admitted.ToUnixTimeMilliseconds()}|{Admitted.AddMinutes(5).ToUnixTimeMilliseconds()}"));
+        }
+
+        [Test]
+        public void WorkThatIsOnlyWaiting_IsWrittenWithAnEmptySecondHalf()
+        {
+            var written = new UpdateMoments(Admitted, null).ToStorageValue();
+
+            Assert.That(written, Is.EqualTo($"{Admitted.ToUnixTimeMilliseconds()}|"));
+        }
+
+        [Test]
+        public void TheEarliestExpressibleInstant_IsStillAMoment()
+        {
+            var read = UpdateMoments.Parse($"{DateTimeOffset.MinValue.ToUnixTimeMilliseconds()}|");
+
+            Assert.That(read.QueuedAt, Is.Not.Null,
+                "The range guard has to refuse what cannot be expressed and nothing else. Both ends of it.");
+        }
+
         [Test]
         public void TheLastExpressibleInstant_IsStillAMoment()
         {

@@ -108,6 +108,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             ];
         }
 
+        /// <summary>
+        /// Only the transition into running records a start. Work that goes straight from waiting to finished
+        /// - a refresh that failed before the tracker was reached, or one the queue abandoned - never ran, and
+        /// a start moment on it would have the task list report it as having been running all along.
+        /// </summary>
+        [Test]
+        public void Advance_StraightFromWaitingToFinished_RecordsNoStartMoment()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+            var key = new UpdateKey(UpdateType.Team, 9);
+            store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 9, Status = UpdateProgress.Queued });
+
+            var finished = store.Advance(key, UpdateProgress.Completed);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(finished?.Status, Is.EqualTo(UpdateProgress.Completed));
+                Assert.That(finished?.StartedAt, Is.Null,
+                    "It never started, and saying otherwise puts a duration on a row that was only ever waiting.");
+            }
+        }
+
+        [Test]
+        public void Advance_IntoRunning_RecordsWhenItStarted()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+            var key = new UpdateKey(UpdateType.Team, 10);
+            store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 10, Status = UpdateProgress.Queued });
+
+            var running = store.Advance(key, UpdateProgress.InProgress);
+
+            Assert.That(running?.StartedAt, Is.Not.Null,
+                "Without it the row can only say how long it waited, which is the wrong number once it is running.");
+        }
+
         private static InProcessUpdateStatusStore StoreWithOneKeyQueuedAndOneRunning()
         {
             var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
