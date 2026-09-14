@@ -667,6 +667,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "Chunked the way the keyed detail fetch is chunked - a single 250-clause URL is one no proxy is obliged to carry.");
         }
 
+        [Test]
+        public async Task GetParentFeaturesDetails_SplitsALargeSetAcrossSeveralRequests()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            var requestsBefore = jira.SearchRequests.Count();
+            var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
+
+            await subject.GetParentFeaturesDetails(portfolio, manyKeys);
+
+            Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
+                "A Data Center user's refresh sent 210 keys as one query - about 7.5 KB URL-encoded, with "
+                + "expand=changelog, against the 8 KB ceiling a proxy or Tomcat typically enforces. Every other "
+                + "by-key fetch in this connector already splits at the same size.");
+        }
+
         // --- Jira Data Center ---
 
         [Test]

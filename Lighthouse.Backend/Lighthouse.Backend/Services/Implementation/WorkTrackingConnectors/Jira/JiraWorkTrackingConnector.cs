@@ -326,9 +326,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
-            logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", parentFeatureIds));
+            var keys = parentFeatureIds.ToList();
+            logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", keys));
 
-            var issues = await GetIssuesByQuery(project, PrepareIssueKeyQuery(parentFeatureIds));
+            var issues = new List<Issue>();
+
+            // Same reason the sweep half chunks: each key is another OR clause, and this fetch also asks for
+            // expand=changelog, so an unsplit list is the longest URL the connector builds.
+            foreach (var chunk in keys.Chunk(ReferenceIdsPerQuery))
+            {
+                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk)));
+            }
+
             return await CreateFeaturesFromIssues(project, issues);
         }
 
