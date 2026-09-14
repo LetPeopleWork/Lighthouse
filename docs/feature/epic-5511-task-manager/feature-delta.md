@@ -1418,3 +1418,72 @@ Everything else stays green: backend 6683, frontend 5138.
    live as `GlobalUpdateNotification`, which *is* raised on every transition.
 3. The endpoint being replaced, `/update/status`, stays for now: `useUpdateAll` reads it. Removing it is
    not in this slice.
+
+---
+
+# Wave: DELIVER — slice 02
+
+Delivered 2026-09-14. ADO **#5840**. Commits held locally; CI is still red upstream on ServiceNow.
+
+## What changed
+
+**The port.** `IUpdateStatusStore.GetAdmittedWork()`. The in-process store hands back its dictionary's
+values. The Redis store reads the whole hash — the shape `HasActiveWork` already scans — and
+reconstructs each row's entity from the field name, because the hash keeps one ordinal per key and the
+value alone says only how far the work got. A field that does not parse is skipped rather than thrown
+on: one unreadable entry written by a later version must not cost an operator the whole list.
+
+**The controller.** `UpdateController` stops injecting `ConcurrentDictionary<UpdateKey, UpdateStatus>`
+and reads the port. That is the correctness fix hiding inside AC-02.2, not a tidy-up — the dictionary is
+per-process, so the status endpoint has been answering about whichever replica took the request.
+
+**The route.** `GET /api/latest/update/tasks`, guarded the way the refresh history is and for the same
+reason: it names every entity on the instance. Each row carries type, id, name and status, with the name
+resolved as the list is read (D8) so a rename shows immediately and the update path stays ignorant of
+anything a screen needs.
+
+**`waitingBehind`.** The queue runs one thing at a time, so whatever is running is what everything
+queued is waiting on. That is the entire claim — not a position, not an estimate. Item G's naming half.
+
+**The header.** An activity icon with a count, beside the OAuth one rather than instead of it, opening a
+popover that lists the work. Kinds render in the tenant's Terminology. Deletes say they are removals.
+The popover follows the instance over the existing `GlobalUpdates` group — no new transport — and
+neither renders nor fetches for a non-administrator, because a hidden control is not the same as not
+asking for instance-wide data on somebody's behalf.
+
+## Decisions taken while building
+
+- **A failed read leaves the list as it was** rather than emptying it. Deliberately unlike
+  `getGlobalUpdateStatus` beside it, which swallows and reports an idle instance. Here a confident
+  "nothing is running" is the one answer worse than none.
+- **`UpdateTaskType` widens the browser's three update types to five for the task list only**, leaving
+  `IUpdateStatus` alone. A detail page subscribes to three types and has no business knowing about
+  deletes.
+- **`/update/status` stays.** `useUpdateAll` reads it. It now answers through the port, so it is correct
+  on multiple replicas for the first time; removing it is not this slice's business.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6695 passed, 0 failed |
+| `pnpm test` | 371 files, 5155 tests, all green |
+| `pnpm build` | clean, Biome included |
+| Mutation — backend | **93.75 %**, gate met |
+| Mutation — frontend | **73.33 %**, under the gate — see `mutation/results.md` |
+
+The frontend number is under the gate because two thirds of the surviving mutants are MUI popover
+geometry and React effect bookkeeping. Every behavioural promise is pinned; excluding the presentational
+mutants the rest kills 55 of 62. Recorded rather than engineered away, the same call slice 01's backend
+70 % raised.
+
+## Not done here
+
+- **Slice 04's cancellation probe.** DESIGN asks for it during this slice because its answer can resize
+  the Epic. Not run — slice 02 was already the largest slice, and the probe is a question about
+  `IWorkTrackingConnector`'s call boundaries rather than about anything this slice touches. It is the
+  first thing slice 03 or 04 should do, and it is still the Epic's highest-uncertainty question.
+- **A real-tracker check (AC-02.9's last mile).** The scenarios drive the production queue against a
+  gated connector rather than a seeded dictionary, which is what the criterion asks for; watching it
+  against a live Jira stays a manual step at slice close.
