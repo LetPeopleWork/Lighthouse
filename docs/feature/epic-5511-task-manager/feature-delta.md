@@ -1,18 +1,27 @@
 <!-- markdownlint-disable MD024 -->
 # Feature Delta — epic-5511-task-manager
 
-ADO Epic **#5511 "Task Manager"** (New, Size 2, Priority 2, tags `Community; Documentation;
-nwave-discuss; Release Notes`, board column Options, forecasted delivery 2026-08-29).
+ADO Epic **#5511 "Task Manager"** (Planned, Size 6, Priority 2, tags `Community; Documentation;
+nwave-discuss; nwave-design; Release Notes`, board column Planned, no target date). Board read
+2026-09-14; at DISCUSS time on 2026-08-23 it was New, Size 2, column Options.
 
-Children absorbed into this Epic:
+Children absorbed into this Epic — the six slices, all New / Backlog as of 2026-09-14:
 
-- **#5019** — "I get warned when any connection's authentication breaks, not just OAuth" (User Story, New)
-- **#5788** — "A scheduled refresh that failed is reported to the browser as completed" (Bug, New)
+- **#5788** — "A scheduled refresh that failed is reported to the browser as completed" (Bug) — slice 01
+- **#5840** — "Slice 02: See what Lighthouse is doing right now" (User Story) — slice 02
+- **#5841** — "Slice 03: See how long an update has been running" (User Story) — slice 03
+- **#5842** — "Slice 04: Cancel a queued or running update" (User Story) — slice 04
+- **#5019** — "I get warned when any connection's authentication breaks, not just OAuth" (User Story) — slice 05
+- **#5843** — "Slice 06: Recent warnings and errors without opening the log" (User Story) — slice 06
 
-Predecessor **#5733 Opt-In Usage Data** (Planned) — not a build dependency; see Pre-requisites.
+Predecessor **#5733 Opt-In Usage Data** (Resolved) — not a build dependency; see Pre-requisites.
 Related **#5502 Event-driven write-back collection** (Closed) — its write-back rounds are a *deferred*
 surface here, see Out of Scope.
+Related **#5877 "Update queue is a single lane"** (User Story, New) — raised 2026-08-31, after DESIGN.
+A field report whose root cause is the subsystem this Epic instruments; see Post-DESIGN Reconciliation
+at the foot of this file.
 Successor **#5510 Sizing Poker** — unrelated, board ordering only.
+Predecessor **#5512 GitLab Integration** — **Removed** on the board; a dead link, not a dependency.
 
 Wave DISCUSS run 2026-08-23. Cold DISCUSS — no DISCOVER or DIVERGE artifacts existed for this Epic.
 Grounded in an ADO read of the Epic plus its five linked items, and a code reality check of the update
@@ -80,12 +89,27 @@ Established by reading the code before writing requirements. Every decision belo
 | S21 | **`team`, `teams`, `portfolio`, `portfolios`, `feature`, `features`, `workTrackingSystem`, `workTrackingSystems` are configurable Terminology keys.** Every row label and section heading below renders the tenant's word. | `Seeding/TerminologySeeder.cs` |
 | S22 | **Settings already has seven tabs**, including `System Info` (which hosts `RefreshHistorySection`, the RefreshLog table) and a log viewer under `LogSettings`. The material a task manager wants is scattered across two of them and neither is live. | `pages/Settings/Settings.tsx`, `pages/Settings/SystemInfo/`, `pages/Settings/LogSettings/` |
 
+S23–S25 were added on 2026-09-14 when #5877 was reconciled in. They are verified the same way as the
+rest — read from the code as it stands today, not taken from the bug report's own analysis.
+
+| # | Fact | Evidence |
+|---|---|---|
+| S23 | **The update queue is one lane, and every update type shares it.** `UpdateQueueService` holds a single `Channel.CreateUnbounded<Func<Task>>()` drained by one `await foreach (… ReadAllAsync())` loop that awaits each task to completion before taking the next, and it is registered as a singleton. Teams, Portfolios and Forecasts therefore queue behind each other: one slow Portfolio refresh starves every Team refresh. | `UpdateQueueService.cs:11,442`, `Program.cs:1505` |
+| S24 | **`GetParentFeaturesDetails` is the one by-key Jira fetch that does not chunk.** It passes the whole id list into `PrepareIssueKeyQuery` in a single query. Its own phase-1 twin `SweepParentFeatures` chunks at `ReferenceIdsPerQuery` (200), and the by-reference Feature fetch chunks too — carrying a comment that says why: every key is another OR clause in a URL that has to survive whatever proxy sits in front of Jira. | `JiraWorkTrackingConnector.cs:327-333` vs `:312,342`, `ReferenceIdsPerQuery` at `:50` |
+| S25 | **Nothing bounds an update's total wall-time and nothing names what holds the lane.** The consumer loop awaits each task inside a bare `try/catch` that logs only "Error processing update task". A refresh that never returns occupies the lane indefinitely, and no log line identifies the `UpdateKey` responsible. | `UpdateQueueService.cs:442-452` |
+
 ∴ **S5 + S6 are the reason nothing can be built first.** A list that reports the same lie in five more
 places is worse than no list. **S1 + S2 + S3 are the shape of the build** — the port must learn to
 enumerate, and anything richer than an ordinal has to survive Redis. **S9 + S10 are the honest risk on
 cancellation**, and they are why slice 04 opens with a probe rather than an estimate. **S14 + S15 are
 the #5019 gap and its cost**: generalising health is not a rename, it needs a signal that does not
 exist yet. **S17 is why the warning feed is a new sink, not a query.**
+
+∴ **S23 + S25 are why #5877 is this Epic's problem and not a neighbour's.** A single lane with no
+watchdog is precisely the condition under which an operator cannot tell "wedged" from "slow" — the
+question slices 02 and 03 exist to answer — and S23 makes the starvation invisible in exactly the way
+S12 already makes a held row invisible. **S24 is separable from all of it**: a one-line fix to a Jira
+paging asymmetry, sharing only the bug report that found it.
 
 ---
 
@@ -536,7 +560,7 @@ the analysis rather than repeating it.
 | D | **Write-back round outcome** — what was pushed, what was refused | Jira 403s and *drops* the write; nobody learns. Highest-value of the deferred set | Pulls in #5502's event model; a slice of its own, later |
 | E | **Failure reason** on the last run | `RefreshLog.Success` is a bare bool (S7) — "failed" is recordable, "why" is not | Deferred; note it needs a schema change, so it wants planning with D |
 | F | **Next scheduled run** per entity | Answers "do I need to refresh?" before they refresh | Deferred |
-| G | **Queue position / wait estimate** | Single-reader loop means position is a real wait | Deferred |
+| G | **Queue position / wait estimate** | Single-reader loop means position is a real wait | Deferred — but **revisit at slice 02's DISTILL**: #5877 shows a real user misreading "queued behind a stuck Portfolio" as "hung" (S23). See Post-DESIGN Reconciliation |
 | H | **Which replica is running it** | `RedisUpdateStatusStore` already knows; SaaS operators ask | Deferred |
 | I | **Trigger a refresh from the popover** | Per-entity buttons exist; no central one | Deferred |
 | J | **Stale-data badge** ("last synced 3d ago") | Ties staleness into the same glance | Deferred |
@@ -611,8 +635,9 @@ Lighthouse is self-hosted and there is no vendor telemetry pipeline, so every KP
 | P3 | Connectors able to name an authentication failure | **Unproven.** S15. Slice 05's hypothesis is aimed at it; it may resize that slice. |
 | P4 | Redis representation able to carry more than an ordinal | **Unproven.** S3. Slice 03 opens with a probe. |
 | P5 | `IWorkTrackingConnector` cancellation reach | **Unproven and consequential.** S9 + S10. Slice 04's probe runs early, during slices 02/03. |
-| P6 | Opt-in usage data (#5733) | **Not a dependency.** It is a board predecessor. Without it the KPIs stay `per_instance`, which is what they are declared as. |
+| P6 | Opt-in usage data (#5733) | **Not a dependency.** It is a board predecessor. Without it the KPIs stay `per_instance`, which is what they are declared as. Now **Resolved** on the board (2026-09-14). |
 | P7 | Premium licence | **Not required.** D4. |
+| P8 | Queue lane structure (#5877) | **Not a blocker, but a sequencing constraint.** #5877's lane work and slice 04's cancellation edit the same class (S23, `UpdateQueueService`). Slice 04's probe answers part of #5877 for free. See Post-DESIGN Reconciliation. |
 
 ---
 
@@ -1054,3 +1079,66 @@ Suggested expansions (triggered by: contested decision, quality attributes in te
 - `trade-off-analysis` — the multi-replica-correctness vs hot-path-cost matrix behind DDD-3 and DDD-9
 
 Apply? `[Y/n/all/none/custom]`
+
+---
+
+# Post-DESIGN Reconciliation — #5877, 2026-09-14
+
+DESIGN closed on 2026-08-23. **#5877** was raised on **2026-08-31** and linked Related to this Epic,
+so it is the one input the six slices were not planned against. Reconciled here rather than folded
+in silently, because it changes sequencing and possibly scope.
+
+## What #5877 reports
+
+A field report via Jan McConnell on behalf of a user running 26.8.14.1 standalone (Tauri, macOS,
+SQLite) against Jira Data Center. The symptom was "keeps getting hung updating team metrics",
+recovering only on restart.
+
+What the logs showed: a Portfolio refresh ran **77.7 minutes**, failed on a DNS error when the machine
+slept, and its coalesced follow-up immediately retook the lane. From 06:11 until the 09:49 restart,
+**every Team refresh logged "already queued or being processed" — 3h38m with zero team updates**.
+After the restart the same three teams completed in 23s, 31s and 26s.
+
+Nothing was deadlocked. Team updates were queued behind a Portfolio refresh that would not finish.
+
+## What was verified against the code
+
+The bug report carries its own root-cause analysis. It was re-derived from the code on 2026-09-14
+rather than accepted, and it holds on all three counts — recorded as **S23, S24 and S25** in the
+Current-State Surface Inventory above, with file and line citations.
+
+Worth noting for whoever picks this up: S24 is not a missing optimisation, it is an **inconsistency**.
+Two sibling methods in the same class fetch by key; one chunks and carries a comment explaining that
+the URL has to survive a proxy, the other does not.
+
+## How it relates to the six slices
+
+| #5877's proposed work | Relation to this Epic | Verdict |
+|---|---|---|
+| **A** — chunk `GetParentFeaturesDetails` at `ReferenceIdsPerQuery` | None. A Jira paging asymmetry (S24) that shares only the report that found it. One line, low risk, no dependency on any slice. | **Ship independently, now.** Do not wait for this Epic. |
+| **B** — per-type lanes, or N consumers, so a Portfolio cannot starve Teams | Collides with slice 04. Both rewrite `UpdateQueueService`'s execution path; slice 04 adds a `CancellationTokenSource` per admitted key and an ambient scoped token (D5, DDD-4). Doing them apart means touching that class twice, and B has to reason about the write-back round boundary and the execution lock that slice 04 is already reasoning about. | **Sequence with slice 04.** Slice 04's probe (P5, S9+S10) answers part of B for free: whether cancellation can reach inside a connector call determines whether an eviction path is even possible. |
+| **C** — total-duration watchdog plus a log line naming what holds the lane | Subsumed. C is a worse version of slices 02 and 03: it puts the diagnosis in a log file the operator has to choose to read, which is exactly the habit slice 06 exists to break (S17). The task list *is* C's answer, delivered to the surface the operator already looks at. | **Covered by 02 + 03.** Only the wall-time *bound* is genuinely new; the *visibility* half is the Epic's subject. |
+
+## What this changes
+
+1. **The Epic's priority case is stronger, not its scope.** #5877 is a user who watched an instance
+   appear wedged for 3h38m and had no way to see why, no way to stop the refresh holding the lane, and
+   no signal that anything had failed. That is slices 01, 02, 03 and 04 described from the outside by
+   somebody who did not know they were asking for them.
+2. **Slice 04 gains a second justification.** It was the riskiest slice (P5) and the one most likely to
+   be cut on cost. It is now also the fix for a reported production problem.
+3. **S23 belongs in slice 02's read model.** A list that shows a Portfolio refresh running and three
+   Team refreshes queued is only honest if it makes clear the Teams are queued *behind* that Portfolio,
+   not merely waiting. Deferred item **G** (queue position, Out of Scope) was cut as a nicety; under
+   S23 it is closer to the point. Not pulled in here — flagged for slice 02's DISTILL.
+
+## Open decision — not taken here
+
+Whether **B becomes a seventh slice of this Epic** or stays #5877's own Story sequenced next to slice 04.
+
+Arguments for folding it in: it edits the class slice 04 edits, it shares slice 04's probe, and #5877
+is tagged `Release Notes`, so it ships to users either way.
+Arguments against: this Epic's subject is *seeing and intervening*, and B is a throughput change with
+no UI — it would be the only slice that does not show the operator anything new.
+
+No ADO work items were created, removed or re-parented as part of this reconciliation.
