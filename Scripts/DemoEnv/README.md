@@ -157,6 +157,28 @@ The provisioner now deactivates any other offered board whose filter does not na
 picker with boards that can actually demonstrate what a board is for. Its verification checks
 **every** offered board rather than the first one, which is the mistake the earlier version made.
 
+### A board without columns pre-fills a team nobody can create
+
+The one the backend suite cannot catch, and the reason the end-to-end tests exist.
+
+A board created through the Table API carries a table and a filter, which is enough to be offered by
+the picker and enough to satisfy every board assertion the integration tests make. But the team
+wizard reads its **states** from the board's columns (`vtb_lane`), and fewer than three of them
+means no states at all — deliberately, because an invented split is worse than an empty one. The
+Configure step then renders with the query and the work item type filled in, three empty state
+lists, and **Next disabled**. The wizard can never reach the name field.
+
+What that looks like from CI is a Playwright timeout on `setName`, two steps and one screen away
+from the actual problem. Worse, the message reads `Test timeout of 120000ms exceeded` — the
+whole-test budget, not a per-action timeout — so the line it blames is merely where the clock ran
+out. Read the page snapshot in the Playwright report, not the stack.
+
+The provisioner creates five columns named after real incident states, giving
+To Do `New`, Doing `In Progress, On Hold, Resolved`, Done `Closed`. The names must be states the
+records actually report, because they are handed to the team as its state mapping. Verification
+checks every offered board has at least three in-flow columns (`Canceled`/`Cancelled` are excluded
+from the flow wherever they sit).
+
 ### Seeded record counts collide with the fixture's paging thresholds
 
 The fixture needs open incidents **and** open changes each to fit inside one page of 100, while the

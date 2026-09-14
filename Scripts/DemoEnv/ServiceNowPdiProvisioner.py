@@ -94,13 +94,26 @@ PROBE_ACCOUNTS = [
 USABLE_BOARDS = "active=true^tableISNOTEMPTY^filterISNOTEMPTY"
 
 PROBE_BOARD = {
-    "name": "Lighthouse integration probe board",
+    # The name is a contract, not a label: the end-to-end spec picks this board out of the wizard by
+    # name (Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts). Renaming it here
+    # breaks that test on the next instance, with an error about the wizard rather than about a
+    # board, so change both together or neither.
+    "name": "Incidents Kanban",
     "table": "incident",
     "filter": "active=true^priorityIN1,2",
     "readable_filter": "Active = true AND Priority is one of 1 - Critical, 2 - High",
     "description": "Created by ServiceNowPdiProvisioner so the board picker has something real to "
                    "read. Shared with admin only.",
 }
+
+# A board's columns are what the wizard turns into a team's flow: the first is where work starts,
+# the last is where it ends, everything between is under way. A board with fewer than three of them
+# pre-fills no states at all, the Next button stays disabled, and the team can never be created —
+# which is what a board carrying a table and a filter but no columns does.
+#
+# The names have to be states the records actually report, because they are handed straight to the
+# team as its state mapping. Anything else pre-fills a team that reads nothing.
+PROBE_BOARD_LANES = ["New", "In Progress", "On Hold", "Resolved", "Closed"]
 
 
 class Instance:
@@ -320,9 +333,27 @@ def ensure_board(admin):
         if admin.create("vtb_board_member", {"board": board_id, "user": admin_id}):
             print(f"  [new] shared the probe board with {admin.user}")
 
+    ensure_lanes(admin, board_id)
     retire_boards_that_do_not_narrow(admin, board_id)
 
     return board_id
+
+
+def ensure_lanes(admin, board_id):
+    """Give the board the columns the wizard reads its states from.
+
+    Ordering is the whole meaning here, so each lane is written with an explicit order rather than
+    relying on insertion sequence."""
+    _, existing, _ = admin.read("vtb_lane", f"board={board_id}", limit=50, fields="sys_id,name")
+    already_there = {value_of(lane.get("name")) for lane in existing}
+
+    for position, name in enumerate(PROBE_BOARD_LANES, start=1):
+        if name in already_there:
+            continue
+        if admin.create(
+            "vtb_lane", {"board": board_id, "name": name, "order": str(position * 100)}
+        ):
+            print(f"  [new] added the '{name}' column")
 
 
 def retire_boards_that_do_not_narrow(admin, keep_board_id):
@@ -502,6 +533,34 @@ def verify(admin, instance_url, password):
         whole = admin.count(table, "")
         summary = f"'{value_of(board.get('name'))}' selects {selected} of {whole} on {table}"
         (narrowing if 0 < selected < whole else passengers).append(summary)
+
+    # Checked separately from the filter, because a board can be perfectly offerable and still
+    # pre-fill a team nobody can create: with fewer than three columns the wizard produces no states,
+    # leaves Next disabled, and stops on Configure. The board tests never notice — they read the
+    # query and the kind of work, not the flow.
+    lane_report = []
+    for board in offered:
+        _, lanes, _ = admin.read(
+            "vtb_lane", f"board={value_of(board.get('sys_id'))}", limit=50, fields="name"
+        )
+        in_flow = [
+            value_of(lane.get("name"))
+            for lane in lanes
+            if value_of(lane.get("name")).strip().lower() not in ("canceled", "cancelled")
+            and value_of(lane.get("name")).strip()
+        ]
+        lane_report.append((value_of(board.get("name")), in_flow))
+
+    check(
+        bool(lane_report) and all(len(flow) >= 3 for _, flow in lane_report),
+        "every offered board has columns the wizard can read a flow from",
+        "; ".join(
+            f"'{name}' has {len(flow)} ({', '.join(flow) or 'none'})" for name, flow in lane_report
+        )
+        + " — fewer than three and the team wizard pre-fills no states and cannot be completed"
+        if lane_report
+        else "no board to read columns from",
+    )
 
     check(
         bool(narrowing) and not passengers,
