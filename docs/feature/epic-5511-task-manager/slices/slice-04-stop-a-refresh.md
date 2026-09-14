@@ -93,3 +93,60 @@ can observe a token today?
    refresh stopping.
 
 Record the verdict here, including the number that AC-04.2 asserts against.
+
+## Probe verdict — 2026-09-14
+
+Run during slice 02, as scheduled. Experiments live in
+`API/Integration/TaskManager/Slice04CancellationReachProbe.cs` and run in the ordinary suite, because a
+probe whose result is load-bearing should keep being true.
+
+### 1. A token *can* reach inside a connector call, without touching the port
+
+**This corrects the premise, not just the answer.** S9 is a true statement about signatures and was read
+as implying that cancellation cannot reach inside a connector call. It does not imply that.
+
+`WriteBackRoundContext` is an `AsyncLocal`, and `UpdateQueueService` sets it immediately before invoking
+an update task. The probe asserts that this value — production code, nothing added — is readable
+*inside* `GetWorkItemsForTeam`, through the queue, the updater, the data service and the work-item
+service, into a method whose signature mentions nothing of the kind. A sibling `UpdateCancellationContext`
+reaches exactly as far.
+
+So widening the six paging methods is **not required for reach**. It is a choice about whether a
+connector's dependency on the update pipeline is written down at the boundary or left ambient.
+
+### 2. Phase boundaries are not a granularity anyone would feel
+
+Measured: a Team refresh took **954 ms**, of which **600 ms** was one connector call and **355 ms** was
+everything Lighthouse does itself — database reads, the sync loop, the saves, the events — against a
+seeded-empty tracker that makes Lighthouse's own share look as large as it ever will.
+
+Structurally it is worse than the ratio suggests. The ordinary full-fetch path makes **one** connector
+call, so it contains **zero** phase boundaries to check a token at. Only the delta path has one, between
+the sweep and the fetch.
+
+**The number AC-04.2 asserts against.** With phase-boundary checkpoints only, the interval between
+pressing Cancel and the refresh stopping is *the whole remaining fetch*. The worst real observation
+available is Epic #5687's Data Center dogfood: **468 856 ms** before that Epic's paging work, **2 087 ms**
+after. With the token observed inside the connector's paging loops instead, the interval is **one page
+round-trip** — Jira chunks reference ids at 200 per query and pages boards at 50, so one HTTP call.
+
+### 3. What this means for the slice
+
+ADR-183's conclusion survives — both parts — and the slice's own decision rule settles it: phase
+boundaries alone do **not** suffice, so the paging work is done. But the rule's other half now applies to
+the port widening, which the probe shows is optional:
+
+- **Ambient only** — `UpdateCancellationContext` read by the paging loops. No port change at all. The
+  connector quietly depends on an update-pipeline concept.
+- **Ambient + widened paging signatures** — ADR-183 as written. The dependency is explicit and a
+  connector can be tested against a token directly, at the cost of six signatures.
+
+**This is a decision the maintainer takes, not one the slice should take quietly**, because ADR-183 chose
+the second on a premise the probe has just corrected.
+
+### 4. What this means for #5877 item B
+
+B was sequenced next to slice 04 partly because "whether cancellation can reach inside a connector call
+determines whether an eviction path is even possible". It can. So evicting a running Portfolio refresh to
+let starved Teams through is on the table, not only reordering what has not started yet. That widens B's
+options; it does not decide them.
