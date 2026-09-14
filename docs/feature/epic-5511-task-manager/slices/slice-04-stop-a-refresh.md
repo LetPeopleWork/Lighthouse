@@ -141,8 +141,10 @@ the port widening, which the probe shows is optional:
 - **Ambient + widened paging signatures** — ADR-183 as written. The dependency is explicit and a
   connector can be tested against a token directly, at the cost of six signatures.
 
-**This is a decision the maintainer takes, not one the slice should take quietly**, because ADR-183 chose
-the second on a premise the probe has just corrected.
+**Decided 2026-09-14: the second — ADR-183 stands, with its reasoning amended.** The widening is kept not
+because reach requires it but because a driven adapter should not depend on update-pipeline state with
+nothing in the code saying so. ADR-183 moved to Accepted and now carries a *Probe correction* section and
+"ambient only" in its alternatives.
 
 ### 4. What this means for #5877 item B
 
