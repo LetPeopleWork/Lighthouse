@@ -32,6 +32,16 @@ export interface IUpdateTask {
 	status: UpdateProgress;
 	/** The entity holding the lane this one is waiting for. Absent for work that is running. */
 	waitingBehind?: string | null;
+	/**
+	 * How long the work has been in the state `status` names, measured by the instance. Running counts
+	 * from when it started, waiting from when it was admitted, so one number reads correctly either way.
+	 *
+	 * It arrives already computed because the browser's clock is not the instance's, and the two can be
+	 * minutes apart; subtracting a server timestamp from a local `new Date()` would give two people
+	 * looking at one instance different answers. Absent when the moment behind it was never recorded,
+	 * which happens to anything admitted by a replica still on an older build mid-upgrade.
+	 */
+	elapsedMs?: number | null;
 }
 
 export interface IUpdateSubscriptionService {

@@ -335,4 +335,97 @@ describe("TaskManagerIcon", () => {
 			expect(service.getRunningTasks).not.toHaveBeenCalled();
 		});
 	});
+
+	/**
+	 * DISTILL specifications, slice 03 / #5841. US-03: AC-03.5 (a duration, and a row that still reads
+	 * without one) and the browser half of AC-03.4 (the number is the instance's, not this machine's).
+	 *
+	 * The backend half of AC-03.4 — that the number is computed against the instance clock at all — is in
+	 * `Slice03HowLongHasItBeenGoing*`. AC-03.1, AC-03.2 and AC-03.3 are about what the store records and
+	 * have no frontend surface.
+	 */
+	describe("how long it has been going", () => {
+		// AC-03.5 — the difference the slice exists for: a refresh four seconds old and one forty minutes
+		// old are the same row without this.
+		it("says how long a running refresh has been running", async () => {
+			renderIcon([{ ...aRunningTeam, elapsedMs: 12_000 }]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByTestId("task-manager-row-Team-7"),
+			).toHaveTextContent(/running for 12s/i);
+		});
+
+		// AC-03.5 — the waiting half. A queue that has been moving and one that is wedged look identical
+		// until the row says how long it has been sitting there.
+		it("says how long a waiting refresh has been waiting, as well as what it waits behind", async () => {
+			renderIcon([{ ...aQueuedPortfolio, elapsedMs: 3 * 60_000 }]);
+
+			await openThePopover();
+
+			const queued = await screen.findByTestId("task-manager-row-Features-3");
+
+			expect(queued).toHaveTextContent(/3m/);
+			expect(queued).toHaveTextContent(/Lagunitas/);
+		});
+
+		// AC-03.5 — mid-rolling-upgrade a replica on the older build admits work without recording
+		// anything. The row loses its duration and nothing else; it must not vanish, say "NaN", or read
+		// as a duration of nothing.
+		it("still lists a refresh whose duration the instance never recorded", async () => {
+			renderIcon([aRunningTeam]);
+
+			await openThePopover();
+
+			const row = await screen.findByTestId("task-manager-row-Team-7");
+
+			expect(row).toHaveTextContent(/Lagunitas/);
+			expect(row).toHaveTextContent(/running/i);
+			expect(row).not.toHaveTextContent(/NaN|undefined|null|for\s*$/i);
+		});
+
+		// AC-03.5 — a mixed list is the real shape of a rolling upgrade, and the row that can answer has
+		// to keep answering while the row that cannot stays quiet.
+		it("gives the rows that have a duration theirs, without inventing one for the row that has none", async () => {
+			renderIcon([
+				{ ...aRunningTeam, elapsedMs: 12_000 },
+				{ ...aQueuedPortfolio, elapsedMs: null },
+			]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByTestId("task-manager-row-Team-7"),
+			).toHaveTextContent(/12s/);
+			expect(
+				screen.getByTestId("task-manager-row-Features-3"),
+			).not.toHaveTextContent(/\d+\s*[smhd]\b/);
+		});
+
+		/**
+		 * AC-03.4, browser half. The row shows what the instance measured; it does not start a stopwatch
+		 * of its own. A component counting locally is wrong after a reload, wrong for a refresh that began
+		 * before the tab was opened, and wrong by however far this machine's clock has drifted — and those
+		 * are most of the occasions somebody opens this popover.
+		 */
+		it("does not count time on its own, however long the reader leaves the popover open", async () => {
+			vi.useFakeTimers({ shouldAdvanceTime: true });
+
+			try {
+				renderIcon([{ ...aRunningTeam, elapsedMs: 12_000 }]);
+
+				await openThePopover();
+				const row = await screen.findByTestId("task-manager-row-Team-7");
+
+				expect(row).toHaveTextContent(/12s/);
+
+				await vi.advanceTimersByTimeAsync(60 * 60_000);
+
+				expect(row).toHaveTextContent(/12s/);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+	});
 });
