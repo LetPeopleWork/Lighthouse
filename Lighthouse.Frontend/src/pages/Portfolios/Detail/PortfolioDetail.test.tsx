@@ -889,4 +889,84 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 			screen.getByRole("button", { name: "System WIP Limit" }),
 		).toBeInTheDocument();
 	});
+	// Epic #5511 slice 01 / AC-01.6, portfolio half. Until this slice a refresh that broke arrived as
+	// "Completed", so the icon went back to idle and nothing on the page said the data had stopped moving.
+	describe("a refresh that failed", () => {
+		let featuresCallback: ((update: IUpdateStatus) => void) | null;
+
+		beforeEach(() => {
+			featuresCallback = null;
+			mockSubscribeToFeatureUpdates.mockImplementation(
+				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+					featuresCallback = callback;
+				},
+			);
+		});
+
+		afterEach(() => {
+			mockSubscribeToFeatureUpdates.mockReset();
+		});
+
+		const renderAndWaitForTheUpdateFeed = async () => {
+			renderWithMockApiProvider();
+			await waitFor(() => {
+				expect(featuresCallback).not.toBeNull();
+			});
+			return (update: IUpdateStatus) => featuresCallback?.(update);
+		};
+
+		it("says so on the refresh button", async () => {
+			const tell = await renderAndWaitForTheUpdateFeed();
+
+			await act(async () => {
+				await tell({ status: "Failed", updateType: "Features", id: 2 });
+			});
+
+			expect(
+				screen.getByTitle("Last Features refresh failed"),
+			).toBeInTheDocument();
+		});
+
+		it("stops saying so once the next refresh works", async () => {
+			const tell = await renderAndWaitForTheUpdateFeed();
+
+			await act(async () => {
+				await tell({ status: "Failed", updateType: "Features", id: 2 });
+			});
+			await act(async () => {
+				await tell({ status: "Completed", updateType: "Features", id: 2 });
+			});
+
+			expect(
+				screen.queryByTitle("Last Features refresh failed"),
+			).not.toBeInTheDocument();
+		});
+
+		it("stops saying so the moment the next refresh is taken on", async () => {
+			const tell = await renderAndWaitForTheUpdateFeed();
+
+			await act(async () => {
+				await tell({ status: "Failed", updateType: "Features", id: 2 });
+			});
+			await act(async () => {
+				await tell({ status: "Queued", updateType: "Features", id: 2 });
+			});
+
+			expect(
+				screen.queryByTitle("Last Features refresh failed"),
+			).not.toBeInTheDocument();
+		});
+
+		it("leaves the button alone when the failure belongs to something else", async () => {
+			const tell = await renderAndWaitForTheUpdateFeed();
+
+			await act(async () => {
+				await tell({ status: "Failed", updateType: "Team", id: 2 });
+			});
+
+			expect(
+				screen.queryByTitle("Last Features refresh failed"),
+			).not.toBeInTheDocument();
+		});
+	});
 });

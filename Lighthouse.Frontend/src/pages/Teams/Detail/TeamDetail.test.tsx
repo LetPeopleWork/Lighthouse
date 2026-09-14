@@ -1063,4 +1063,145 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 			screen.getByRole("button", { name: "System WIP Limit" }),
 		).toBeInTheDocument();
 	});
+	// Epic #5511 slice 01 / AC-01.6. Until this slice a refresh that broke arrived as "Completed", so the
+	// icon went back to idle and the only sign anything was wrong was a chart that quietly stopped moving.
+	const renderAndCaptureTheUpdateFeed = (
+		summary: {
+			isRbacEnabled: boolean;
+			isSystemAdmin: boolean;
+			adminTeamIds?: number[];
+		},
+		statusOnArrival?: IUpdateStatus,
+	) => {
+		const mockTeamService = createMockTeamService();
+		(mockTeamService.getTeam as ReturnType<typeof vi.fn>).mockResolvedValue(
+			buildMockTeam(),
+		);
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			...summary,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+		});
+
+		let theUpdateFeed: ((update: IUpdateStatus) => void) | null = null;
+		const mockUpdateSubscription = createMockUpdateSubscriptionService();
+		mockUpdateSubscription.subscribeToTeamUpdates = vi
+			.fn()
+			.mockImplementation(
+				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+					theUpdateFeed = callback;
+				},
+			);
+		mockUpdateSubscription.getUpdateStatus = vi
+			.fn()
+			.mockResolvedValue(statusOnArrival ?? null);
+
+		render(
+			<BrowserRouter>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						teamService: mockTeamService,
+						rbacService: mockRbacService,
+						updateSubscriptionService: mockUpdateSubscription,
+					})}
+				>
+					<TeamDetail />
+				</ApiServiceContext.Provider>
+			</BrowserRouter>,
+		);
+
+		return { tell: (update: IUpdateStatus) => theUpdateFeed?.(update) };
+	};
+
+	it.each([
+		["authentication is off", { isRbacEnabled: false, isSystemAdmin: false }],
+		[
+			"a System Administrator is signed in",
+			{ isRbacEnabled: true, isSystemAdmin: true },
+		],
+	])("says a refresh failed when %s", async (_configuration, summary) => {
+		const { tell } = renderAndCaptureTheUpdateFeed(summary);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Update Team Data" }),
+			).toBeInTheDocument();
+		});
+
+		await act(async () => {
+			await tell({ status: "Failed", updateType: "Team", id: 1 });
+		});
+
+		expect(screen.getByTitle("Last Team refresh failed")).toBeInTheDocument();
+	});
+
+	it("says nothing about failure when the refresh in progress on arrival is not a failed one", async () => {
+		// The page asks for the current status as it mounts, and that answer reaches the same place a
+		// live push does. Somebody opening a page just after a refresh finished must not be told it broke.
+		renderAndCaptureTheUpdateFeed(
+			{ isRbacEnabled: false, isSystemAdmin: false },
+			{ status: "Completed", updateType: "Team", id: 1 },
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Update Team Data" }),
+			).toBeInTheDocument();
+		});
+
+		expect(
+			screen.queryByTitle("Last Team refresh failed"),
+		).not.toBeInTheDocument();
+	});
+
+	it("stops saying a refresh failed the moment the next one is taken on", async () => {
+		const { tell } = renderAndCaptureTheUpdateFeed({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Update Team Data" }),
+			).toBeInTheDocument();
+		});
+
+		await act(async () => {
+			await tell({ status: "Failed", updateType: "Team", id: 1 });
+		});
+		await act(async () => {
+			await tell({ status: "Queued", updateType: "Team", id: 1 });
+		});
+
+		// A refresh that is under way says so on its own; leaving the previous failure showing would
+		// have the icon reporting two different things about two different refreshes at once.
+		expect(
+			screen.queryByTitle("Last Team refresh failed"),
+		).not.toBeInTheDocument();
+	});
+
+	it("stops saying a refresh failed once the next one works", async () => {
+		const { tell } = renderAndCaptureTheUpdateFeed({
+			isRbacEnabled: false,
+			isSystemAdmin: false,
+		});
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Update Team Data" }),
+			).toBeInTheDocument();
+		});
+
+		await act(async () => {
+			await tell({ status: "Failed", updateType: "Team", id: 1 });
+		});
+		await act(async () => {
+			await tell({ status: "Completed", updateType: "Team", id: 1 });
+		});
+
+		expect(
+			screen.queryByTitle("Last Team refresh failed"),
+		).not.toBeInTheDocument();
+	});
 });

@@ -1,7 +1,5 @@
-import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import {
 	Alert,
-	CircularProgress,
 	Container,
 	IconButton,
 	Stack,
@@ -24,6 +22,7 @@ import SleQuickSetting from "../../../components/Common/QuickSettings/SleQuickSe
 import SystemWipQuickSetting from "../../../components/Common/QuickSettings/SystemWipQuickSetting";
 import ThroughputQuickSetting from "../../../components/Common/QuickSettings/ThroughputQuickSetting";
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
+import RefreshStatusIcon from "../../../components/Common/RefreshStatusIcon/RefreshStatusIcon";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -95,6 +94,8 @@ const TeamDetail: React.FC = () => {
 	const [hasNoAccess, setHasNoAccess] = useState(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isTeamUpdating, setIsTeamUpdating] = useState<boolean>(false);
+	const [lastTeamRefreshFailed, setLastTeamRefreshFailed] =
+		useState<boolean>(false);
 	const [activeView, setActiveView] = useState<TeamViewType>(
 		getInitialView(tab, undefined),
 	);
@@ -265,6 +266,7 @@ const TeamDetail: React.FC = () => {
 		const handleTeamUpdate = async (update: IUpdateStatus) => {
 			if (update.status === "Completed") {
 				setIsTeamUpdating(false);
+				setLastTeamRefreshFailed(false);
 				if (activeViewRef.current === "settings") {
 					setPendingTeamRefresh(true);
 				} else {
@@ -280,6 +282,7 @@ const TeamDetail: React.FC = () => {
 				const isUpdating =
 					update.status === "Queued" || update.status === "InProgress";
 				setIsTeamUpdating(isUpdating);
+				setLastTeamRefreshFailed(update.status === "Failed");
 			}
 		};
 
@@ -505,11 +508,11 @@ const TeamDetail: React.FC = () => {
 														disabled={!canUpdateTeamData || isTeamUpdating}
 														color="primary"
 													>
-														{isTeamUpdating ? (
-															<CircularProgress size={24} />
-														) : (
-															<CloudSyncIcon />
-														)}
+														<RefreshStatusIcon
+															isUpdating={isTeamUpdating}
+															hasFailed={lastTeamRefreshFailed}
+															failedLabel={`Last ${teamTerm} refresh failed`}
+														/>
 													</IconButton>
 												</span>
 											</LicenseTooltip>

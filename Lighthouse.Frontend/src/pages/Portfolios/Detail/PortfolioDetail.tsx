@@ -1,13 +1,4 @@
-import CloudSyncIcon from "@mui/icons-material/CloudSync";
-import {
-	Alert,
-	CircularProgress,
-	Container,
-	IconButton,
-	Stack,
-	Tab,
-	Tabs,
-} from "@mui/material";
+import { Alert, Container, IconButton, Stack, Tab, Tabs } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -23,6 +14,7 @@ import PortfolioFeatureWipQuickSetting from "../../../components/Common/QuickSet
 import SleQuickSetting from "../../../components/Common/QuickSettings/SleQuickSetting";
 import SystemWipQuickSetting from "../../../components/Common/QuickSettings/SystemWipQuickSetting";
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
+import RefreshStatusIcon from "../../../components/Common/RefreshStatusIcon/RefreshStatusIcon";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
@@ -62,6 +54,8 @@ const PortfolioDetail: React.FC = () => {
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isPortfolioUpdating, setIsPortfolioUpdating] =
+		useState<boolean>(false);
+	const [lastPortfolioRefreshFailed, setLastPortfolioRefreshFailed] =
 		useState<boolean>(false);
 
 	const getInitialActiveView = (tabParam?: string): PortfolioViewType => {
@@ -335,6 +329,7 @@ const PortfolioDetail: React.FC = () => {
 				const isUpdating =
 					update?.status === "Queued" || update?.status === "InProgress";
 				setIsPortfolioUpdating(isUpdating);
+				setLastPortfolioRefreshFailed(update?.status === "Failed");
 			}
 		};
 
@@ -482,11 +477,11 @@ const PortfolioDetail: React.FC = () => {
 														}
 														color="primary"
 													>
-														{isPortfolioUpdating ? (
-															<CircularProgress size={24} />
-														) : (
-															<CloudSyncIcon />
-														)}
+														<RefreshStatusIcon
+															isUpdating={isPortfolioUpdating}
+															hasFailed={lastPortfolioRefreshFailed}
+															failedLabel={`Last ${featuresTerm} refresh failed`}
+														/>
 													</IconButton>
 												</span>
 											</LicenseTooltip>
