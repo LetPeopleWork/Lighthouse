@@ -5,6 +5,7 @@ env:
   JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
   LinearLighthouseIntegrationTestToken: ${{ secrets.LINEARAPIKEY }}
   ServiceNowLighthouseIntegrationTestToken: ${{ secrets.ServiceNowLighthouseIntegrationTestToken }}
+  ServiceNowLighthouseIntegrationTestInstance: ${{ secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE }}
 
 # Run at 2 AM CET (which is midnight UTC in winter and 1 AM UTC in summer)
 # Also allow manual triggering via workflow_dispatch

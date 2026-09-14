@@ -1,0 +1,96 @@
+# Deliberately not named ci_*.yml: ci_changes.yml treats any change to a `ci*.yml` file as a
+# reason to run every connector's integration suite, and editing this one should not cost a full
+# CI cycle.
+name: Provision ServiceNow PDI
+
+on:
+  workflow_dispatch:
+    inputs:
+      instance:
+        description: >-
+          Instance URL, e.g. https://dev340014.service-now.com. Leave empty to use the
+          SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE secret. Set it to try a replacement
+          instance before committing to it as the secret — but update the TOKEN secret to that
+          instance's admin password first, or this will fail to authenticate.
+        required: false
+        type: string
+      mode:
+        description: Provision the instance, or only measure what is already true of it
+        required: true
+        default: provision
+        type: choice
+        options:
+          - provision
+          - verify-only
+      skip_seed:
+        description: Skip the record seeder (probe accounts and board only)
+        required: false
+        default: false
+        type: boolean
+      seed_passes:
+        description: >-
+          Seeder passes. A new instance needs at least two before any transition history
+          exists, because a record only leaves a trace behind when it moves after the metric
+          definition already exists.
+        required: false
+        default: "2"
+        type: string
+
+jobs:
+  provision:
+    name: Provision ServiceNow PDI
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Provision the instance
+        env:
+          # The password is never a workflow input. Dispatch inputs are recorded against the run
+          # and readable by anyone who can see it, so the admin password has to come from the
+          # secret even when the instance it belongs to is being named on the form above.
+          ServiceNowLighthouseIntegrationTestToken: ${{ secrets.ServiceNowLighthouseIntegrationTestToken }}
+          ServiceNowLighthouseIntegrationTestInstance: ${{ inputs.instance || secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE }}
+        run: |
+          args=(--seed-passes "${{ inputs.seed_passes }}")
+
+          if [ "${{ inputs.mode }}" == "verify-only" ]; then
+            args+=(--verify-only)
+          fi
+
+          if [ "${{ inputs.skip_seed }}" == "true" ]; then
+            args+=(--skip-seed)
+          fi
+
+          python ./Scripts/DemoEnv/ServiceNowPdiProvisioner.py "${args[@]}"
+
+      - name: Say what still has to be done by hand
+        if: ${{ success() && inputs.instance != '' }}
+        run: |
+          {
+            echo "### Instance provisioned"
+            echo
+            echo "\`${{ inputs.instance }}\` now satisfies every precondition."
+            echo
+            echo "It was named on the dispatch form rather than read from a secret, so CI is still"
+            echo "pointing somewhere else. Update both repository secrets before re-running the"
+            echo "connector suite:"
+            echo
+            echo '```'
+            echo "gh secret set SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE --body '${{ inputs.instance }}'"
+            echo "gh secret set SERVICENOWLIGHTHOUSEINTEGRATIONTESTTOKEN --body '<the admin password>'"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

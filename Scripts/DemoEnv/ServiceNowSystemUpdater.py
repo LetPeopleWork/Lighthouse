@@ -5,7 +5,11 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
-INSTANCE_URL = "https://dev191338.service-now.com"
+# A PDI is reclaimed after about ten days idle, and the replacement has a different hostname. The
+# override exists so moving to a new one is a secret change rather than a code change; the default
+# is only a convenience for whoever is pointing at the instance that is current today.
+DEFAULT_INSTANCE_URL = "https://dev340014.service-now.com"
+INSTANCE_ENV_VAR = "ServiceNowLighthouseIntegrationTestInstance"
 USERNAME = "admin"
 
 # Everything this script creates carries the marker, and it only ever touches marked
@@ -87,7 +91,11 @@ RECORD_TYPES = [
     },
     {
         "table": "change_request",
-        "target_open": 12,
+        # Kept deliberately small. The integration fixture needs the open changes to fit inside one
+        # page of 100 while open changes and open incidents together spill past it, and a stock
+        # instance already carries about 90 open ones — so there is only room for a handful more.
+        # Nothing here is walked anyway; these exist so the class is represented.
+        "target_open": 8,
         "walks": False,
         "states": ["-5", "-4", "-3", "-2", "-1", "0", "3"],
         "labels": {
@@ -166,12 +174,23 @@ parser.add_argument(
     default=None,
     help="Seed one table only (incident, change_request, problem) instead of all of them",
 )
+parser.add_argument(
+    "--instance",
+    type=str,
+    default=None,
+    help=f"Base URL of the instance to seed; defaults to ${INSTANCE_ENV_VAR}, "
+         f"then to {DEFAULT_INSTANCE_URL}",
+)
 args = parser.parse_args()
+
+INSTANCE_URL = (args.instance or os.environ.get(INSTANCE_ENV_VAR) or DEFAULT_INSTANCE_URL).rstrip("/")
 
 # Prefer the environment over argv — argv is readable by any process via /proc.
 password = args.password or os.environ.get(PASSWORD_ENV_VAR)
 if not password:
     raise SystemExit(f"No password given: pass it as an argument or set ${PASSWORD_ENV_VAR}")
+
+print(f"🎯 {INSTANCE_URL}")
 
 session = requests.Session()
 session.auth = (USERNAME, password)
