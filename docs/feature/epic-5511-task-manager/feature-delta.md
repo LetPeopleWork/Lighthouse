@@ -1785,3 +1785,97 @@ race in `Dispose`, not a scope violation and not this slice. It passed on the fi
    replicas, where each runs its own item against one shared ordinal hash — so a queued row can be
    labelled as waiting behind something running on a different replica that it is not waiting for.
    Pre-existing, from slice 02, not introduced here. Worth a slice of its own or a correction in 04.
+
+---
+
+# Retroactive review — slices 01 and 02
+
+Run 2026-09-14, after slice 03. Slices 01 and 02 shipped with mutation testing but without a refactor
+pass or an adversarial review; this is that missing pass, and it is recorded here rather than in either
+slice's DELIVER section because it happened after both were written.
+
+Sixteen findings. Two are fixed — both broke the acceptance criteria of the slice that introduced them,
+both were small, and neither had been pushed. The rest are recorded below and **not** fixed: they are
+pre-existing behaviour rather than regressions, and three of them are design decisions rather than
+repairs.
+
+## Fixed
+
+**The coalescing path never reported how a run ended.** `RunUpdateAsync` returned early whenever a
+follow-up had been parked, skipping the terminal advance, the completion publish and the notification.
+The regression test's own output is the clearest statement of what that cost: with the early return in
+place, a refresh that threw left the browser told *"Completed, Queued"*. That is Bug #5788 — a failed
+refresh reported as a success — surviving on the one path slice 01 did not walk. AC-01.1 did not hold.
+
+**A forecast run cleared the portfolio's failed-refresh mark.** `updatePortfolioRefreshButton` accepted
+both `Features` and `Forecasts` and wrote the one shared flag, so a forecast completing after a failed
+refresh put the icon back to healthy over data that had never been updated. Forecasts are triggered by a
+refresh that has just finished, so the window is not hypothetical. The team page never had this.
+
+## Recorded, not fixed
+
+Ordered by what they cost an operator.
+
+1. **A failed refresh is invisible to any page opened afterwards.** The queue removes the key as the run
+   ends and `UpdateNotificationHub.GetUpdateStatus` reads that store, so a page opened at 09:00 after an
+   03:00 failure sees `null` and renders the healthy icon. US-01's promise holds only for a browser that
+   had the page open at the instant of failure. The truth is persisted — the `RefreshLog` row, AC-01.2 —
+   but nothing the icon reads consults it. Closing this means giving the icon a durable source, which is
+   a slice, not a patch.
+
+2. **One failed SignalR connect disables every live update for the life of the page.** `connect()` leaves
+   `connectionPromise` null and `isConnected` false with nothing to retry, and there is no
+   `withAutomaticReconnect` and no `onclose` handler — so after a backend restart, which is every
+   Lighthouse update, `isConnected` stays true and every invoke throws into a `console.error`. Because
+   `getUpdateStatus` catches to `null` and the detail pages no-op on `null`, a dead connection renders
+   identically to a healthy idle instance.
+
+3. **The task list never filters terminal states.** `GetTasks` maps everything admitted while its sibling
+   `GetUpdateStatus` filters to `Queued` and `InProgress`. A key orphaned by a pod that died before
+   `Remove`, or by the shutdown drain's timeout, shows as a row and counts toward the badge for the life
+   of the deployment, while `/update/status` reports the instance idle. Slice 03 stopped such a row
+   reporting a duration; it did not stop it being listed. The fix is one clause, but it narrows the
+   endpoint's contract, so it belongs to whoever owns AC-02.3.
+
+4. **The popover's first failed read asserts idleness.** `tasks` initialises to `[]` and an empty list
+   renders "Nothing is being refreshed right now.", so a 502 or a 403 on the first read produces exactly
+   the answer slice 02's own record called worse than none. The "leave the list as it was" comment is
+   true only from the second read on.
+
+5. **`waitingBehind` is wrong by construction on more than one replica.** Already carried from slice 03;
+   repeated here because this review reached it independently. It also has a same-name variant: a
+   `Features` and a `Forecasts` row for one portfolio render identically, so a row can appear to be
+   queued behind itself.
+
+6. **Two subscribers share one SignalR handler namespace.** `useUpdateAll` and `TaskManagerIcon` both
+   register on `GlobalUpdateNotification`, and the handler-less `connection.off(name)` removes both.
+   This works today only because React fires every cleanup before every create-effect and the awaits
+   resolve in order. Adding an await ahead of it, or enabling automatic reconnect, would silently leave
+   one subscriber holding a group with no handler.
+
+7. **Concurrent reads of the task list have no sequence guard.** "Update All" enqueues N teams, each
+   raising a notification, each starting a `GET /update/tasks` with no `AbortController` — last response
+   wins, whichever that is.
+
+8. **The Jira keyed download pages by offset over unordered JQL.** `OrderedForOffsetPaging` is applied to
+   the sweep and to release membership but not to `PrepareIssueKeyQuery`, so on Data Center an issue
+   edited mid-walk can slide onto a page already read and go silently un-updated for that cycle. The
+   comment claiming the full download shares this exposure is wrong.
+
+9. **Three narrower queue paths lose a notification or a key.** An `AcquireAsync` throw sits outside both
+   `try` blocks and strands the key permanently; `PublishCompletionAsync` and `NotifyListeners` are not in
+   a `finally`, so a throw in the first skips the second after the key has already been removed; and
+   `AbandonUnqueuedWork` completes its awaiter with a value its caller cannot read, so a delete that never
+   ran returns 200.
+
+10. **`UpdateNotificationHub` carries `[Authorize]` and no `RbacGuard`.** AC-02.6 guards the endpoint;
+    the hub lets any authenticated user ask about arbitrary ids and learn which entities exist and when
+    they refresh. No names leak, which is why it is last.
+
+## What the review confirmed was right
+
+The chunking boundaries in the Jira connector, including the empty and exact-multiple cases; duplicate
+parent keys; partial chunk failure, which throws and falls back to a full download rather than reading a
+gap as a deletion; `TryScheduleRerun`'s hardcoded `Advance(Completed)`, which cannot mask a failure
+because `Failed` outranks `Completed` under the monotonic advance; and the badge and popover, which read
+one array and so cannot disagree with each other.
