@@ -17,7 +17,7 @@ export class TestConfig {
 	// Instance and account the backend integration tests default to as well
 	// (ServiceNowWorkTrackingConnectorIntegrationTest.DefaultInstanceUrl / AdminUser).
 	static readonly SERVICENOWDEFAULTINSTANCE: string =
-		"https://dev191338.service-now.com";
+		"https://dev340014.service-now.com";
 	static readonly SERVICENOWDEFAULTUSER: string = "admin";
 
 	static readonly AUTH_TEST_USER_USERNAME: string = "test@user.com";

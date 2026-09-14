@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         // PDIs are reclaimed after ~10 days idle, so the instance moves. Override without a code
         // change when it does.
-        private const string DefaultInstanceUrl = "https://dev191338.service-now.com";
+        private const string DefaultInstanceUrl = "https://dev340014.service-now.com";
 
         private const string AdminUser = "admin";
 
