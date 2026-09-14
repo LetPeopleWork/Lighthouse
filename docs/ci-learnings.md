@@ -1561,3 +1561,50 @@ get re-applied.
   (d) **seeded record counts collide with the fixture's paging thresholds** — the fixture needs open
   incidents and open changes each under one page of 100 while the two together exceed it, and a
   stock instance already carries ~90 open changes, so `ServiceNowSystemUpdater.py` seeds only 8.
+
+### 2026-09-14 — a direct package pin below a transitive floor fails the build, and names files the change never touched
+- **Symptom**: `Verify Backend` and `Generate SBOM` fail on a Dependabot PR that only bumps
+  `Microsoft.AspNetCore.DataProtection.StackExchangeRedis` 10.0.11 → 10.0.12, with
+  `error NU1605: Warning As Error: Detected package downgrade: System.Security.Cryptography.Xml from
+  10.0.12 to 10.0.11`, reported against `Lighthouse.Migrations.Postgres.csproj` and
+  `Lighthouse.Migrations.Sqlite.csproj` — two projects the PR does not modify.
+- **Root cause**: both migration projects carry a **direct** `PackageReference` to
+  `System.Security.Cryptography.Xml` at 10.0.11. `DataProtection 10.0.12` requires `>= 10.0.12`
+  transitively, so NuGet resolves the direct pin as a downgrade of the transitive requirement.
+  `TreatWarningsAsErrors` turns NU1605 into a build error. Nothing is wrong with the dependency being
+  bumped; the pin is simply now too low.
+- **Fix**: raised both pins to 10.0.12 (`Lighthouse.Migrations.Postgres.csproj:18`,
+  `Lighthouse.Migrations.Sqlite.csproj:16`). The blocked PR then merged unchanged.
+- **Rule going forward**: an NU1605 downgrade naming a package the change never touched means a
+  **direct pin somewhere else** now sits below what a transitive dependency requires — fix the pin,
+  do not re-run and do not pin the consumer down. Grep the solution for a direct `PackageReference`
+  to the package NU1605 names before reading anything else; the projects it blames are where the pin
+  lives, not where the problem was introduced. Note this blocks **every** future update that pulls
+  the higher transitive version, not just the one that surfaced it, so treat it as unblocking work
+  rather than as one PR's problem.
+
+### 2026-09-14 — Dependabot and CI installed different pnpm versions, and only the pinned one could see the failure
+- **Symptom**: every Dependabot npm PR touching `Lighthouse.Frontend` failed `Generate SBOM` at
+  `Install pnpm dependencies` in ~24 s with
+  `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current
+  "patchedDependencies" configuration doesn't match the value found in the lockfile`.
+  `@dependabot recreate` reproduced it exactly, so it was not a stale branch.
+- **Root cause**: `ci_sbom.yml` (and `ci_sonar_gates.yml`, and all three `ci_package-*-standalone.yml`)
+  pin **pnpm 10.33.2** via `pnpm/action-setup`. Dependabot regenerates lockfiles with a newer pnpm.
+  The two versions record a patched dependency differently — 10 writes an object carrying `hash` and
+  `path`, newer versions write the bare hash — and `Lighthouse.Frontend/pnpm-workspace.yaml` patches
+  `@stryker-mutator/vitest-runner@9.6.1`. A frozen install under 10 reads a lockfile naming no patch
+  path, compares it to a config that does, and refuses.
+- **Fix**: regenerated the lockfile under 10.33.2 to unblock the PR, then added
+  `"packageManager": "pnpm@10.33.2"` to `Lighthouse.Frontend/package.json` so Dependabot and corepack
+  both generate with the version CI verifies with. `pnpm/action-setup` resolves its version from the
+  **repository root**, which carries no `package.json`, so the field is invisible to it and the
+  existing `version:` pins keep working — it only errors when a version it *can* see disagrees.
+- **Rule going forward**: any project whose lockfile CI installs with a pinned pnpm must name that
+  same version in its own `package.json` `packageManager` field, or an outside tool will eventually
+  write a lockfile the pipeline rejects. When diagnosing `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`, read
+  the workflow's pnpm version FIRST and reproduce with exactly that: newer pnpm accepts both lockfile
+  shapes and rewrites neither, so a local `--frozen-lockfile` on any other version passes cleanly and
+  proves nothing. `Lighthouse.EndToEndTests` is deliberately not pinned — its workflows activate
+  `pnpm@latest` and it patches nothing, so pinning it would create the disagreement rather than close
+  it.

@@ -4,6 +4,15 @@
 name: Provision ServiceNow PDI
 
 on:
+  # A reclaimed instance, a board that lost its columns, a table that drifted past a page — each of
+  # these is invisible until a pull request fails on it, and then it reads as a broken connector
+  # rather than a broken fixture. Measuring every precondition nightly turns that into a failed
+  # scheduled run naming the one that moved, hours before anyone is blocked by it.
+  #
+  # Scheduled runs only ever measure. Nothing on the instance is created or changed without someone
+  # asking for it on the form below.
+  schedule:
+    - cron: '23 4 * * *'
   workflow_dispatch:
     inputs:
       instance:
@@ -65,9 +74,14 @@ jobs:
           ServiceNowLighthouseIntegrationTestToken: ${{ secrets.ServiceNowLighthouseIntegrationTestToken }}
           ServiceNowLighthouseIntegrationTestInstance: ${{ inputs.instance || secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE }}
         run: |
-          args=(--seed-passes "${{ inputs.seed_passes }}")
+          # A scheduled run carries no inputs at all, so each one falls back to the value that makes
+          # an unattended run safe: measure, change nothing.
+          mode="${{ inputs.mode || 'verify-only' }}"
+          seed_passes="${{ inputs.seed_passes || '2' }}"
 
-          if [ "${{ inputs.mode }}" == "verify-only" ]; then
+          args=(--seed-passes "$seed_passes")
+
+          if [ "$mode" == "verify-only" ]; then
             args+=(--verify-only)
           fi
 
@@ -75,6 +89,7 @@ jobs:
             args+=(--skip-seed)
           fi
 
+          echo "mode=$mode"
           python ./Scripts/DemoEnv/ServiceNowPdiProvisioner.py "${args[@]}"
 
       - name: Say what still has to be done by hand
