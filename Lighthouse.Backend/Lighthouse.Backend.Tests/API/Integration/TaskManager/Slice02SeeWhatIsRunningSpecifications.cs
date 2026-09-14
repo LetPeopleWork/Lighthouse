@@ -26,8 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// </summary>
     public partial class Slice02SeeWhatIsRunningTest : TaskManagerAcceptanceTest
     {
-        private const string TaskListRoute = "/api/latest/update/tasks";
-
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
 
         private TaskCompletionSource theTrackerMayAnswer = null!;
@@ -331,50 +329,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             }
         }
 
-        // --- Reading the list ---
-
-        private async Task<JsonElement> TheRowFor(UpdateType updateType, int id)
-        {
-            var rows = await TheTaskList();
-
-            var matches = rows
-                .Where(candidate => Text(candidate, "updateType") == updateType.ToString() && Number(candidate, "id") == id)
-                .ToList();
-
-            Assert.That(matches, Has.Count.EqualTo(1),
-                $"Expected exactly one row for {updateType} {id}. Got: {Describe(rows)}");
-
-            return matches[0];
-        }
-
-        private async Task<IReadOnlyList<JsonElement>> TheTaskList()
-        {
-            using var client = Factory.CreateClient();
-            using var response = await client.GetAsync(new Uri(TaskListRoute, UriKind.Relative));
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The task list is the driving port for this whole slice; {TaskListRoute} answered {(int)response.StatusCode}.");
-
-            var body = await response.Content.ReadAsStringAsync();
-            using var document = JsonDocument.Parse(body);
-
-            Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array),
-                $"The popover renders a list of rows, so the endpoint answers an array. Got: {body}");
-
-            return [.. document.RootElement.EnumerateArray().Select(element => element.Clone())];
-        }
-
-        private static string? Text(JsonElement row, string property)
-            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.String
-                ? value.GetString()
-                : null;
-
-        private static int? Number(JsonElement row, string property)
-            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.Number
-                ? value.GetInt32()
-                : null;
-
-        private static string Describe(IReadOnlyList<JsonElement> rows)
-            => rows.Count == 0 ? "(an empty list)" : string.Join(" | ", rows.Select(row => row.ToString()));
     }
 }

@@ -23,6 +23,8 @@ using NUnit.Framework;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using System.Net;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
@@ -121,6 +123,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                             .WriteTo.Sink(CapturedLogs)
                             .CreateLogger(),
                         dispose: true));
+
+                    ConfigureAdditionalServices(services);
                 });
             });
 
@@ -133,6 +137,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+        }
+
+        /// <summary>
+        /// Registered last, so a slice can replace something the harness itself set up. Slice 03 pins the
+        /// instance clock here: elapsed time is only assertable if the test decides what "now" is.
+        /// </summary>
+        protected virtual void ConfigureAdditionalServices(IServiceCollection services)
+        {
         }
 
         [TearDown]
@@ -310,5 +322,53 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         protected IReadOnlyList<string> TheOperatorVisibleLines => CapturedLogs.AtOrAbove(LogEventLevel.Information);
+
+        // --- Reading the task list ---
+
+        protected const string TaskListRoute = "/api/latest/update/tasks";
+
+        protected async Task<JsonElement> TheRowFor(UpdateType updateType, int id)
+        {
+            var rows = await TheTaskList();
+
+            var matches = rows
+                .Where(candidate => Text(candidate, "updateType") == updateType.ToString() && Number(candidate, "id") == id)
+                .ToList();
+
+            Assert.That(matches, Has.Count.EqualTo(1),
+                $"Expected exactly one row for {updateType} {id}. Got: {Describe(rows)}");
+
+            return matches[0];
+        }
+
+        protected async Task<IReadOnlyList<JsonElement>> TheTaskList()
+        {
+            using var client = Factory.CreateClient();
+            using var response = await client.GetAsync(new Uri(TaskListRoute, UriKind.Relative));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"The task list is the driving port for this whole slice; {TaskListRoute} answered {(int)response.StatusCode}.");
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(body);
+
+            Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array),
+                $"The popover renders a list of rows, so the endpoint answers an array. Got: {body}");
+
+            return [.. document.RootElement.EnumerateArray().Select(element => element.Clone())];
+        }
+
+        protected static string? Text(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.String
+                ? value.GetString()
+                : null;
+
+        protected static int? Number(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.Number
+                ? value.GetInt32()
+                : null;
+
+        protected static string Describe(IReadOnlyList<JsonElement> rows)
+            => rows.Count == 0 ? "(an empty list)" : string.Join(" | ", rows.Select(row => row.ToString()));
     }
 }
