@@ -148,8 +148,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private WorkItemService CreateSubject(Portfolio portfolio, params Feature[] incomingFeatures)
         {
             var connectorMock = new Mock<IWorkTrackingConnector>();
-            connectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).ReturnsAsync(incomingFeatures.ToList());
-            connectorMock.Setup(x => x.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
+            connectorMock.Setup(x => x.GetFeaturesForProject(portfolio, CancellationToken.None)).ReturnsAsync(incomingFeatures.ToList());
+            connectorMock.Setup(x => x.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
             return new WorkItemServiceTestBuilder()
                 .WithConnector(connectorMock.Object)

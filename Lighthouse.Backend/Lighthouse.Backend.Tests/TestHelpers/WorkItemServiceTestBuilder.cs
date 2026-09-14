@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -128,7 +129,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 // fixture that faked it would be hiding the one thing it does.
                 new DependencyRefreshReporter(
                     new DependencyDecision(new DependencyHonourPolicy(), ALicensedInstance()),
-                    Mock.Of<ILogger<DependencyRefreshReporter>>()));
+                    Mock.Of<ILogger<DependencyRefreshReporter>>()),
+                new UpdateCancellationContext());
 
         /// <summary>
         /// Licensed, because these fixtures are about what a refresh stores and none of them is about what

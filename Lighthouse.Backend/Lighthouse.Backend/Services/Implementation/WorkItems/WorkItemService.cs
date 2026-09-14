@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
@@ -30,11 +31,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IFeatureOrdering featureOrdering,
         IRepository<OptionalFeature> optionalFeatureRepository,
         IDependencyReconciler dependencyReconciler,
-        IDependencyRefreshReporter dependencyRefreshReporter)
+        IDependencyRefreshReporter dependencyRefreshReporter,
+        UpdateCancellationContext cancellationContext)
         : IWorkItemService
 #pragma warning restore S107
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new();
+
+        /// <summary>
+        /// Whether the refresh this call belongs to has been told to stop. Read from the ambient context the
+        /// update queue sets and handed to the connector explicitly: the pipeline is where the ambient
+        /// belongs, and a driven adapter should be told rather than have to go looking.
+        /// </summary>
+        private CancellationToken Stopping => cancellationContext.Current;
 
         public async Task<SyncOutcome> UpdateFeaturesForPortfolio(Portfolio portfolio)
         {
@@ -241,7 +250,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             try
             {
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepWorkItemsForTeam(team)]);
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepWorkItemsForTeam(team, Stopping)]);
             }
             // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
             // whole query - loudly, or nobody learns the cheap path stopped working.
@@ -262,7 +271,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task<RemoteFetch> FetchEverything(IWorkTrackingConnector connector, Team team)
         {
-            var recordsFromTracker = (await connector.GetWorkItemsForTeam(team)).ToList();
+            var recordsFromTracker = (await connector.GetWorkItemsForTeam(team, Stopping)).ToList();
             var actualWorkItems = DeduplicateByReferenceId(recordsFromTracker, team.Name, workItem => workItem.ReferenceId);
 
             return new RemoteFetch(
@@ -281,7 +290,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             List<WorkItem> downloaded = movedReferenceIds.Count == 0
                 ? []
-                : DeduplicateByReferenceId((await connector.GetWorkItemsForTeam(team, movedReferenceIds)).ToList(), team.Name, workItem => workItem.ReferenceId);
+                : DeduplicateByReferenceId((await connector.GetWorkItemsForTeam(team, movedReferenceIds, Stopping)).ToList(), team.Name, workItem => workItem.ReferenceId);
 
             return new RemoteFetch(
                 downloaded,
@@ -428,22 +437,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             switch (domainEvent)
             {
                 case WorkItemTransitioned transitioned:
-                    await domainEventDispatcher.PublishAsync(transitioned);
+                    await domainEventDispatcher.PublishAsync(transitioned, CancellationToken.None);
                     break;
                 case WorkItemBlocked blocked:
-                    await domainEventDispatcher.PublishAsync(blocked);
+                    await domainEventDispatcher.PublishAsync(blocked, CancellationToken.None);
                     break;
                 case WorkItemUnblocked unblocked:
-                    await domainEventDispatcher.PublishAsync(unblocked);
+                    await domainEventDispatcher.PublishAsync(unblocked, CancellationToken.None);
                     break;
                 case WorkItemBecameStale becameStale:
-                    await domainEventDispatcher.PublishAsync(becameStale);
+                    await domainEventDispatcher.PublishAsync(becameStale, CancellationToken.None);
                     break;
                 case FeatureBlocked featureBlocked:
-                    await domainEventDispatcher.PublishAsync(featureBlocked);
+                    await domainEventDispatcher.PublishAsync(featureBlocked, CancellationToken.None);
                     break;
                 case FeatureUnblocked featureUnblocked:
-                    await domainEventDispatcher.PublishAsync(featureUnblocked);
+                    await domainEventDispatcher.PublishAsync(featureUnblocked, CancellationToken.None);
                     break;
             }
         }
@@ -818,9 +827,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// </summary>
         private sealed record RemoteFeatureFetch(List<Feature> Features, List<string> StillOnTheTracker, SyncOutcome Outcome);
 
-        private static async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio)
+        private static async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio, CancellationToken stopping)
         {
-            var recordsFromTracker = (await connector.GetFeaturesForProject(portfolio)).ToList();
+            var recordsFromTracker = (await connector.GetFeaturesForProject(portfolio, stopping)).ToList();
 
             return new RemoteFeatureFetch(
                 recordsFromTracker,
@@ -851,7 +860,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             return mode == SyncMode.Delta
                 ? await FetchOnlyTheFeaturesThatMoved(connector, portfolio, storedFeatures, scan.Stamps)
-                : await FetchEveryFeature(connector, portfolio);
+                : await FetchEveryFeature(connector, portfolio, Stopping);
         }
 
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>
@@ -864,7 +873,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             try
             {
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepFeaturesForPortfolio(portfolio)]);
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepFeaturesForPortfolio(portfolio, Stopping)]);
             }
             // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
             // whole query - loudly, or nobody learns the cheap path stopped working.
@@ -897,7 +906,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             List<Feature> downloaded = movedReferenceIds.Count == 0
                 ? []
-                : DeduplicateByReferenceId((await connector.GetFeaturesForProject(portfolio, movedReferenceIds)).ToList(), portfolio.Name, feature => feature.ReferenceId);
+                : DeduplicateByReferenceId((await connector.GetFeaturesForProject(portfolio, movedReferenceIds, Stopping)).ToList(), portfolio.Name, feature => feature.ReferenceId);
 
             return new RemoteFeatureFetch(
                 downloaded,
@@ -1090,7 +1099,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             return mode == SyncMode.Delta
                 ? await FetchOnlyTheParentFeaturesThatMoved(connector, portfolio, parentFeatureIds, storedParentFeatures, scan.Stamps)
-                : await connector.GetParentFeaturesDetails(portfolio, parentFeatureIds);
+                : await connector.GetParentFeaturesDetails(portfolio, parentFeatureIds, Stopping);
         }
 
         private List<Feature> TheStoredParentFeatures(List<string> parentFeatureIds)
@@ -1120,7 +1129,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             try
             {
-                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepParentFeatures(portfolio, parentFeatureIds)]);
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepParentFeatures(portfolio, parentFeatureIds, Stopping)]);
             }
             // Same rule again: a half-scanned key list falls back to downloading every parent, and says so.
 #pragma warning disable CA1031
@@ -1152,7 +1161,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             return keysToDownload.Count == 0
                 ? []
-                : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, keysToDownload), portfolio.Name, feature => feature.ReferenceId);
+                : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, keysToDownload, Stopping), portfolio.Name, feature => feature.ReferenceId);
         }
 
         // Inverts the Feature half's rule: parents are excluded from the orphaned-Feature cleanup by

@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio) = APortfolioWhoseParentComesFromACustomField();
 
-            var feature = (await subject.GetFeaturesForProject(portfolio)).Single();
+            var feature = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, payloadReads) = ATeamWhoseParentComesFromACustomField();
 
-            var workItem = (await subject.GetWorkItemsForTeam(team)).Single();
+            var workItem = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolio())).Single();
+            var feature = (await subject.GetFeaturesForProject(APortfolio(), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -194,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1801;1799");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField())).Single();
+            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -215,7 +215,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField())).Single();
+            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
 
             Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheOtherItemItWaitsOn),
                 $"The relations name {TheItemTheFeatureWaitsOn} as a predecessor, and the named field does not.");
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = APortfolioReadingItsDependenciesFromAField();
             portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
 
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(payloadReads.Select(read => read.Expand), Has.None.EqualTo(WorkItemExpand.Relations),
                 "The relations carry the parent link and the dependency links and nothing else a refresh wants. "
@@ -245,7 +245,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
 
-            await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField());
+            await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None);
 
             Assert.That(payloadReads.Count(read => read.Expand == WorkItemExpand.Relations), Is.EqualTo(1),
                 "The relations are still the only place the parent link can be read from.");
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "");
 
-            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField())).Single();
+            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField(), CancellationToken.None)).Single();
 
             Assert.That(feature.DependsOnReferences, Is.Empty);
         }

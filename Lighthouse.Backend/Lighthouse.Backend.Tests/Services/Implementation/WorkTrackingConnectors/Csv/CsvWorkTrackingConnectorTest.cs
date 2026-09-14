@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("team-valid-required-only.csv");
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("team-valid-all-optional.csv");
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader, string.Empty);
             AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader, string.Empty);
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("team-valid-with-optional.csv");
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -263,7 +263,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = CreateProject("project-valid-required-only.csv");
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = CreateProject("project-valid-all-optional.csv");
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = CreateProject("project-valid-depends-on.csv");
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = CreateProject("project-valid-depends-on.csv");
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             Assert.That(features[1].DependsOnReferences.Single().Source, Is.EqualTo(DependencySource.TrackerLink));
         }
@@ -328,7 +328,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreateProject("project-valid-depends-on.csv");
             AdjustWorkTrackingSystemOption(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.DependsOnHeader, string.Empty);
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             Assert.That(features.SelectMany(feature => feature.DependsOnReferences), Is.Empty);
         }
@@ -339,7 +339,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var project = CreateProject("project-valid-with-optional.csv");
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -374,7 +374,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.DoingStates = ["Doing"];
             AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, "StateSince");
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var inProgressItem = workItems.Single(w => w.ReferenceId == "ITEM-001");
             var doneItem = workItems.Single(w => w.ReferenceId == "ITEM-002");
@@ -397,7 +397,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam("team-valid-state-since.csv");
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             Assert.That(workItems.SelectMany(w => w.SyncedTransitions), Is.Empty);
         }
@@ -408,7 +408,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateInterpolatedDemoJourneyTeam();
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var done = workItems.Single(w => w.ReferenceId == "DONE-1");
             var transitions = done.SyncedTransitions;
@@ -447,7 +447,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateInterpolatedDemoJourneyTeam();
             AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo, bool.FalseString);
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var done = workItems.Single(w => w.ReferenceId == "DONE-1");
 
@@ -465,7 +465,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateInterpolatedDemoJourneyTeam();
             AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateEnteredDateHeader, string.Empty);
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var done = workItems.Single(w => w.ReferenceId == "DONE-1");
 
@@ -480,7 +480,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateInterpolatedDemoJourneyTeam();
             team.WorkTrackingSystemConnection.Options.RemoveAll(o => o.Key == CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo);
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var done = workItems.Single(w => w.ReferenceId == "DONE-1");
 
@@ -508,7 +508,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             team.WorkItemTypes.Remove("Task");
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             Assert.That(workItems, Has.Count.EqualTo(2));
         }
@@ -521,7 +521,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             team.ToDoStates = ["New"];
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             Assert.That(workItems, Has.Count.EqualTo(4));
         }
@@ -534,7 +534,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             project.WorkItemTypes.Remove("Feature");
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             Assert.That(features, Has.Count.EqualTo(4));
         }
@@ -547,7 +547,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             project.ToDoStates = ["New"];
 
-            var features = (await subject.GetFeaturesForProject(project)).ToList();
+            var features = (await subject.GetFeaturesForProject(project, CancellationToken.None)).ToList();
 
             Assert.That(features, Has.Count.EqualTo(4));
         }

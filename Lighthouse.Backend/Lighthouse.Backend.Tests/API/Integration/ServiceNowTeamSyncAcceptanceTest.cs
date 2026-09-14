@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var team = await GivenATeamReadingItsOwnServiceNowQuery();
             var connector = ConnectorFor(team);
 
-            var workItems = (await connector.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await connector.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
             var finishedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
 
             using (Assert.EnterMultipleScope())

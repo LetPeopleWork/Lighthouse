@@ -56,10 +56,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             // between it and the read port - WorkItemService, EF, the ordering seam - stays production.
             ConnectorMock = new Mock<IWorkTrackingConnector>();
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
             ConnectorMock
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
+                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
 
             // The forecast runner is a background queue, so a scenario that waited for it would be timing
@@ -446,7 +446,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         protected async Task DriveAPortfolioRefresh(int portfolioId, params (string ReferenceId, string Name, string SourceOrder)[] rowsFromTheTracker)
         {
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => rowsFromTheTracker
                     .Select(row => new Feature
                     {

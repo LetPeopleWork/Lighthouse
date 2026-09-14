@@ -88,21 +88,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ConnectorMock = new Mock<IWorkTrackingConnector>();
             ConnectorMock.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
             ConnectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
-            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
             // Epic #5687 slice 02: a connector that cannot scan is the default, so nothing in slice 01
             // changes shape. A scenario that wants the two-phase path says so explicitly.
             ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
-            ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
             // Epic #5687 slice 03: the portfolio half of the same default. A portfolio whose scenario says
             // nothing about the two-phase path behaves exactly as it did in slices 01 and 02.
-            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult());
@@ -257,8 +257,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         protected void TheTrackerReturnsWorkItems(int count)
         {
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
-                .ReturnsAsync((Team team) => [.. Enumerable.Range(1, count).Select(index => new WorkItem(new WorkItemBase
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Team team, CancellationToken _) => [.. Enumerable.Range(1, count).Select(index => new WorkItem(new WorkItemBase
                 {
                     ReferenceId = $"ITEM-{index}",
                     Name = $"Work Item {index}",
@@ -274,7 +274,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         protected void TheTrackerReturnsFeatures(int count)
         {
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([.. Enumerable.Range(1, count).Select(index => new Feature(new WorkItemBase
                 {
                     ReferenceId = $"FEAT-{index}",
@@ -289,8 +289,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         protected void TheTrackerIsUnreachable(Exception failure)
         {
-            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>())).ThrowsAsync(failure);
-            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>())).ThrowsAsync(failure);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
         }
 
         // --- Driving port: the scheduled refresh ---
@@ -459,15 +459,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             remoteRecords.AddRange(records);
 
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
-                .ReturnsAsync((Team team) =>
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Team team, CancellationToken _) =>
                 {
                     FullDownloadsIssued++;
                     return AsWorkItems(remoteRecords, team);
                 });
 
             ConnectorMock
-                .Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>()))
+                .Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() =>
                 {
                     ScansIssued++;
@@ -475,8 +475,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 });
 
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync((Team team, IReadOnlyCollection<string> referenceIds) =>
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Team team, IReadOnlyCollection<string> referenceIds, CancellationToken _) =>
                 {
                     PayloadDownloads.Add([.. referenceIds]);
                     return AsWorkItems(remoteRecords.Where(record => referenceIds.Contains(record.ReferenceId)), team);
@@ -487,7 +487,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             => ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
 
         protected void TheScanFails(Exception failure)
-            => ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>())).ThrowsAsync(failure);
+            => ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
 
         protected void OnTheTrackerTheIssueChanges(string referenceId, DateTime changedAt, string? state = null)
         {
@@ -528,7 +528,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             remoteFeatures.AddRange(records);
 
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() =>
                 {
                     FullFeatureDownloadsIssued++;
@@ -536,7 +536,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 });
 
             ConnectorMock
-                .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>()))
+                .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() =>
                 {
                     FeatureScansIssued++;
@@ -544,8 +544,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 });
 
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>()))
-                .ReturnsAsync((Portfolio _, IReadOnlyCollection<string> referenceIds) =>
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Portfolio _, IReadOnlyCollection<string> referenceIds, CancellationToken _) =>
                 {
                     FeaturePayloadDownloads.Add([.. referenceIds]);
                     return AsFeatures(remoteFeatures.Where(record => referenceIds.Contains(record.ReferenceId)));
@@ -563,8 +563,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             remoteParentFeatures.AddRange(records);
 
             ConnectorMock
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
-                .ReturnsAsync((Portfolio _, IEnumerable<string> parentFeatureIds) =>
+                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Portfolio _, IEnumerable<string> parentFeatureIds, CancellationToken _) =>
                 {
                     var requested = parentFeatureIds.ToList();
                     ParentFeatureDownloads.Add(requested);
@@ -572,8 +572,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 });
 
             ConnectorMock
-                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
-                .ReturnsAsync((Portfolio _, IEnumerable<string> parentFeatureIds) =>
+                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Portfolio _, IEnumerable<string> parentFeatureIds, CancellationToken _) =>
                 {
                     var requested = parentFeatureIds.ToList();
                     ParentFeatureScans.Add(requested);
@@ -584,7 +584,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         protected void TheFeatureScanFails(Exception failure)
-            => ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>())).ThrowsAsync(failure);
+            => ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
 
         protected void OnTheTrackerTheFeatureChanges(string referenceId, DateTime changedAt, string? state = null)
         {
@@ -600,7 +600,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         protected void TheParentFeatureScanFails(Exception failure)
             => ConnectorMock
-                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
+                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(failure);
 
         /// <summary>

@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam(query: TeamsOwnQuery, kindOfWork: "change_request"));
+            await subject.GetWorkItemsForTeam(ATeam(query: TeamsOwnQuery, kindOfWork: "change_request"), CancellationToken.None);
 
             var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.AbsoluteUri)).ToList();
 
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             var asked = instance.Requests.Select(uri => uri.AbsoluteUri).ToList();
 
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 2);
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             Assert.That(workItems.ToList(), Has.Count.EqualTo(5));
         }
@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 2);
             var subject = CreateSubject(instance);
 
-            var referenceIds = (await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState())).Select(item => item.ReferenceId).ToList();
+            var referenceIds = (await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None)).Select(item => item.ReferenceId).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 2);
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(instance.Requests, Has.Count.LessThanOrEqualTo(3),
                 "Five records over pages of two is three reads. Anything approaching one call per record is a five-minute sync on a real instance.");
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, GainsARecordAfterTheFirstPage = true });
             var subject = CreateSubject(instance);
 
-            var referenceIds = (await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState())).Select(item => item.ReferenceId).ToList();
+            var referenceIds = (await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None)).Select(item => item.ReferenceId).ToList();
 
             Assert.That(referenceIds, Is.SupersetOf(EveryRecordInTheFixture),
                 "Without an explicit order the row created between the pages lands ahead of the rows already read, and the ones it displaced past the offset are never read at all.");
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.Query)).ToList();
 
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam(query: "active=true^ORDERBYDESCopened_at"));
+            await subject.GetWorkItemsForTeam(ATeam(query: "active=true^ORDERBYDESCopened_at"), CancellationToken.None);
 
             var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.Query)).ToList();
 
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10);
             var subject = CreateSubject(instance);
 
-            var workItems = (await subject.GetWorkItemsForTeam(ATeam())).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10), logger.Object);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             logger.Verify(ALogEntryContaining("Awaiting Vendor"), Times.Never,
                 "The label the team deliberately left out is named nowhere, at no level.");
@@ -207,7 +207,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
             var subject = CreateSubject(instance, logger.Object);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam(query: string.Empty));
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(query: string.Empty), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -241,7 +241,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10);
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
             var finishedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
 
             using (Assert.EnterMultipleScope())
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding([ARecord("INC0000009", "Resolved", "6")], pageSize: 10);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).Single();
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(AnInstanceThatBreaksAfterTheFirstPage(breakage));
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
-                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             Assert.That(failure?.Code, Is.EqualTo(expectedCode),
                 "The read path routes through slice 01's ladder, so a denial keeps the name the settings page would have given it.");
@@ -303,7 +303,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, IgnoresTheOffset = true }));
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
-                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
             {
@@ -326,7 +326,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(instance);
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
-                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
             {
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, OmitsTheResultSetSize = true });
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -365,7 +365,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, OmitsTheResultSetSize = true, OmitsThePagingLinks = true });
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             Assert.That(workItems.ToList(), Has.Count.EqualTo(5));
         }
@@ -589,7 +589,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState()));
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
-                async () => await subject.GetWorkItemsForTeam(ATeam(instanceUrl: "not-an-instance")));
+                async () => await subject.GetWorkItemsForTeam(ATeam(instanceUrl: "not-an-instance"), CancellationToken.None));
 
             Assert.That(failure?.Code, Is.EqualTo("invalid_url"));
         }
@@ -614,7 +614,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, PagingLinksPointElsewhere = true });
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -637,7 +637,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, PagingLinksAreNotAbsolute = true });
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -657,7 +657,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 10, OmitsThePagingLinks = true });
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             Assert.That(instance.Requests, Has.Count.EqualTo(1));
         }
@@ -671,7 +671,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [ARecordWithoutANumber("first"), ARecordWithoutANumber("second")],
                 pageSize: 10));
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(workItems.ToList(), Has.Count.EqualTo(2));
         }
@@ -690,7 +690,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ],
                 pageSize: 10));
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(workItems.ToList(), Has.Count.EqualTo(2),
                 "Two records that happen to share a number are two records, and the guard exists to catch a repeated page rather than a repeated label.");
@@ -707,7 +707,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new InstanceBehaviour { PageSize = 2, ResendsTheFirstRecordAmended = true }));
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
-                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"),
                 "Comparing the bytes rather than the record would let an edited row through and count the same work twice.");
@@ -720,7 +720,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10), logger.Object);
 
-            await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+            await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None);
 
             logger.Verify(AWarning(), Times.Never);
         }
@@ -733,7 +733,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 AnInstanceHolding([ARecord("INC0000009", string.Empty, string.Empty)], pageSize: 10),
                 logger.Object);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(workItems, Is.Empty,
                 "A record carrying no state at all is in no state the team mapped, so it is left out like any other.");

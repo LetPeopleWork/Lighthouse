@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 var byId = rows.ToDictionary(row => int.Parse(row.ReferenceId, System.Globalization.CultureInfo.InvariantCulture));
                 var client = AClientAnsweringWith(byId);
 
-                return await new RecordedAzureDevOpsConnector(client).GetFeaturesForProject(APortfolio());
+                return await new RecordedAzureDevOpsConnector(client).GetFeaturesForProject(APortfolio(), CancellationToken.None);
             }
 
             private static WorkItemTrackingHttpClient AClientAnsweringWith(Dictionary<int, TrackedFeature> byId)
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
                 ItsTypeAndStates(portfolio, "Epic", "In Progress");
 
-                return await JiraConnectorTestSetup.AConnectorOver(handler).GetFeaturesForProject(portfolio);
+                return await JiraConnectorTestSetup.AConnectorOver(handler).GetFeaturesForProject(portfolio, CancellationToken.None);
             }
 
             private static string AnEpic(TrackedFeature row)
@@ -207,7 +207,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                 return await new LinearWorkTrackingConnector(
                     Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService(), handler)
-                    .GetFeaturesForProject(APortfolio());
+                    .GetFeaturesForProject(APortfolio(), CancellationToken.None);
             }
 
             private static Portfolio APortfolio()

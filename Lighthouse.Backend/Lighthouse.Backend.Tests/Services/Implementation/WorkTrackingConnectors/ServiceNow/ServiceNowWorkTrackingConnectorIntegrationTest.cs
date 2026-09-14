@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var team = ATeamReadingIncidents("active=true");
 
-            var workItems = (await CreateSubject().GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await CreateSubject().GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var team = ATeamReadingEveryChange("numberSTARTSWITHCHG");
 
-            var workItems = (await CreateSubject().GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await CreateSubject().GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -236,9 +236,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject();
 
-            var incidents = await subject.GetWorkItemsForTeam(ATeamCovering(["incident"], "active=true", AdminUser));
-            var changes = await subject.GetWorkItemsForTeam(ATeamCovering([ChangeTable], "active=true", AdminUser));
-            var both = (await subject.GetWorkItemsForTeam(ATeamCovering(["incident", ChangeTable], "active=true", AdminUser))).ToList();
+            var incidents = await subject.GetWorkItemsForTeam(ATeamCovering(["incident"], "active=true", AdminUser), CancellationToken.None);
+            var changes = await subject.GetWorkItemsForTeam(ATeamCovering([ChangeTable], "active=true", AdminUser), CancellationToken.None);
+            var both = (await subject.GetWorkItemsForTeam(ATeamCovering(["incident", ChangeTable], "active=true", AdminUser), CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -261,7 +261,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var team = ATeamReadingIncidents("state=6");
 
-            var workItems = (await CreateSubject().GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await CreateSubject().GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -425,7 +425,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var team = ATeamCovering(["incident"], "active=true", AdminUser);
 
-            var workItems = (await CreateSubject().GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await CreateSubject().GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {

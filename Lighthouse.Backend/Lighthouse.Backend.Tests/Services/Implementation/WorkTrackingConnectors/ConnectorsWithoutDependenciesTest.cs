@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = ServiceProvider.GetService<CsvWorkTrackingConnector>()
                 ?? throw new InvalidOperationException("Could not resolve the CSV connector");
 
-            var features = await subject.GetFeaturesForProject(APortfolioReadFromCsv());
+            var features = await subject.GetFeaturesForProject(APortfolioReadFromCsv(), CancellationToken.None);
 
             Assert.That(features.TrueForAll(feature => feature.DependsOnReferences.Count == 0), Is.True);
         }
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<IWorkTrackingAuthStrategyFactory>());
 
             Assert.That(
-                async () => await subject.GetFeaturesForProject(new Portfolio()),
+                async () => await subject.GetFeaturesForProject(new Portfolio(), CancellationToken.None),
                 Throws.TypeOf<NotSupportedException>());
         }
 

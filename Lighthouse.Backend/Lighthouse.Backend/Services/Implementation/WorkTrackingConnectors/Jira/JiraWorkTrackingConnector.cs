@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// half-walked query would delete whatever the missing pages held - a rejected page throws instead,
         /// and the caller falls back to the whole query.
         /// </summary>
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
             => SweepIdentities(team, [PrepareQuery(team)], $"Team {team.Name}");
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
             var workItems = new List<WorkItem>();
 
@@ -230,7 +230,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The team's own filter is deliberately not re-applied - the sweep already decided what belongs to
         /// the query, and a second cutoff evaluation could drop an item the sweep just reported as changed.
         /// </summary>
-        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             if (referenceIds.Count == 0)
             {
@@ -278,7 +278,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return workItems;
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
@@ -296,7 +296,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The portfolio's own filter is deliberately not re-applied - the sweep already decided what belongs to
         /// the query, and a second cutoff evaluation could drop a Feature the sweep just reported as changed.
         /// </summary>
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             if (referenceIds.Count == 0)
             {
@@ -321,10 +321,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The sweep half of the two-phase fetch: the very query <see cref="GetFeaturesForProject(Portfolio)"/>
         /// issues, narrowed to identity plus the change stamp.
         /// </summary>
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => SweepIdentities(project, [PrepareQuery(project)], $"Portfolio {project.Name}");
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             var keys = parentFeatureIds.ToList();
             logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", keys));
@@ -345,7 +345,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// Phase 1 for the parent Features: the very keys <see cref="GetParentFeaturesDetails"/> asks for,
         /// chunked the same way, narrowed to identity plus the change stamp.
         /// </summary>
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => SweepIdentities(
                 project,
                 parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(PrepareIssueKeyQuery),

@@ -194,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
 
-            var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             var waitedOn = features.Single().DependsOnReferences.Select(reference => reference.ReferenceId);
             var expected = new[] { "PROJ-2" };
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlocksLink("PROJ-2")));
 
-            var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(features.Single().DependsOnReferences, Is.Empty);
         }
@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
 
-            var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(features.Single().DependsOnReferences.Single().Source, Is.EqualTo(DependencySource.TrackerLink));
         }
@@ -234,10 +234,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var recorded = new RecordedRequests();
             var withoutLinks = await AConnectorReturning(recorded, AnEpic("PROJ-1"))
-                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             var withLinks = await AConnectorReturning(new RecordedRequests(), AnEpic("PROJ-1", BlockedByLink("PROJ-2")))
-                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             var before = withoutLinks.Single();
             var after = withLinks.Single();
@@ -268,11 +268,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var withoutLinks = new RecordedRequests();
             await AConnectorReturning(withoutLinks, AnEpic("PROJ-1"))
-                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             var withLinks = new RecordedRequests();
             await AConnectorReturning(withLinks, AnEpic("PROJ-1", BlockedByLink("PROJ-2")))
-                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+                .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(withLinks.Paths, Is.EqualTo(withoutLinks.Paths));
         }
@@ -283,7 +283,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
 
-            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(recorded.FieldsAskedForInTheLastSearch(), Is.EqualTo("*all"));
         }
@@ -303,9 +303,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             // The sweep refuses an instance Lighthouse has never reached, because the two Jira deployments
             // page their results differently and neither endpoint answers on the other's path.
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
-            await subject.SweepFeaturesForPortfolio(portfolio);
+            await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(recorded.FieldsAskedForInTheLastSearch(), Is.EqualTo("key,updated"));
         }
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
             var subject = AConnectorReturning(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
 
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             var warning = logger.Warnings.Single();
 
@@ -345,7 +345,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 AnEpic("PROJ-2", InwardLink("is halted by", "PROJ-9")),
                 AnEpic("PROJ-3", InwardLink("waits for", "PROJ-9")));
 
-            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             var warning = logger.Warnings.Single();
 
@@ -368,7 +368,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 AnEpic("PROJ-1", BlockedByLink("PROJ-9")),
                 AnEpic("PROJ-2", InwardLink("is halted by", "PROJ-9")));
 
-            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(logger.Warnings, Is.Empty);
         }
@@ -383,7 +383,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var logger = new RecordingLogger<JiraWorkTrackingConnector>();
             var subject = AConnectorReturning(logger, AnEpic("PROJ-1"));
 
-            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(logger.Warnings, Is.Empty);
         }
@@ -394,7 +394,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var logger = new RecordingLogger<JiraWorkTrackingConnector>();
             var subject = AConnectorReturning(logger, AnEpic("PROJ-1", BlocksLink("PROJ-9")));
 
-            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud(), CancellationToken.None);
 
             Assert.That(logger.Warnings, Is.Empty);
         }
@@ -419,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var portfolio = APortfolioReadingAFieldOfItsOwn();
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -444,7 +444,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = APortfolioReadingAFieldOfItsOwn();
             portfolio.DependencyOverrideAdditionalFieldDefinitionId = null;
 
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(logger.Warnings.Single(), Does.Contain("is halted by"));
         }

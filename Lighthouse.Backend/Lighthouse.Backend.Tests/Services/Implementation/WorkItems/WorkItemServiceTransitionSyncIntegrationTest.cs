@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private WorkItemService CreateSubject(Team team, params WorkItem[] incomingItems)
         {
             var connectorMock = new Mock<IWorkTrackingConnector>();
-            connectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync(incomingItems.ToList());
+            connectorMock.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None)).ReturnsAsync(incomingItems.ToList());
 
             return new WorkItemServiceTestBuilder()
                 .WithConnector(connectorMock.Object)

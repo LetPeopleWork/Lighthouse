@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateTeam();
             team.DataRetrievalValue = AQueryTheOperatorOrdered;
 
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             var jql = QueryValue(jira.SearchRequests.Last(), "jql");
 
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = CreatePortfolio(CreateTeam());
             portfolio.DataRetrievalValue = AQueryTheOperatorOrdered;
 
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             var jql = QueryValue(jira.SearchRequests.Last(), "jql");
 
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = CreatePortfolio(CreateTeam());
             portfolio.DataRetrievalValue = AnOrderingAndNothingElse;
 
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             AssertJiraCanParseTheWholeFilter(QueryValue(jira.SearchRequests.Last(), "jql"));
         }
@@ -236,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(async () => await subject.SweepWorkItemsForTeam(CreateTeam()), Throws.TypeOf<NotSupportedException>(),
+                Assert.That(async () => await subject.SweepWorkItemsForTeam(CreateTeam(), CancellationToken.None), Throws.TypeOf<NotSupportedException>(),
                     "The two deployments page their search results differently and each one's endpoint answers 404 on "
                     + "the other, so which one to walk has to be settled before the first request goes out. Guessing "
                     + "wrong returns nothing, 'nothing' reads as 'the query holds no records', and removal is 'stored "
@@ -272,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
             var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql");
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
                 "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact "
@@ -284,7 +284,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             var sweep = jira.SearchRequests.Last();
 
@@ -304,7 +304,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: TheSecondPage);
             jira.QueueSweepPage(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"), nextPageToken: null);
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
                 "A sweep that stops at page one under-reports the query, and 'stored minus swept' deletes everything it missed.");
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
             jira.QueueSweepPage(SweepIssue("PROJ-1", StampWithNoZone), nextPageToken: null);
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(TheInstantThatStampNames),
                 "The sweep reads the stamp exactly the way the full fetch reads it. A zone the sweep assumes and the "
@@ -330,8 +330,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud, StampTwoHoursAheadOfUtc);
             jira.QueueSweepPage(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc), nextPageToken: null);
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
-            var stored = (await subject.GetWorkItemsForTeam(team)).Single();
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
+            var stored = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).Single();
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
                 "The swept stamp is compared against the stored one item by item. Two different parses of the "
@@ -344,7 +344,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
             jira.QueueSweepPage(SweepIssue("PROJ-1", updated: null), nextPageToken: null);
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -364,7 +364,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<InvalidOperationException>(),
+                Assert.That(async () => await subject.SweepWorkItemsForTeam(team, CancellationToken.None), Throws.TypeOf<InvalidOperationException>(),
                     "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
                     + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
                     + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
@@ -381,7 +381,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor);
+            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the team filter would let the cutoff "
@@ -394,7 +394,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
             var requestsBefore = jira.SearchRequests.Count();
 
-            var workItems = await subject.GetWorkItemsForTeam(team, []);
+            var workItems = await subject.GetWorkItemsForTeam(team, [], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -411,7 +411,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var requestsBefore = jira.SearchRequests.Count();
             var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
 
-            await subject.GetWorkItemsForTeam(team, manyKeys);
+            await subject.GetWorkItemsForTeam(team, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
                 "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
@@ -424,7 +424,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
             jira.ChangelogEntryCount = 31;
 
-            var workItems = await subject.GetWorkItemsForTeam(team, ["PROJ-1"]);
+            var workItems = await subject.GetWorkItemsForTeam(team, ["PROJ-1"], CancellationToken.None);
 
             var byKeyRequest = jira.SearchRequests.Last();
 
@@ -444,10 +444,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor);
+            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor, CancellationToken.None);
             var byKeyQuery = QueryValue(jira.SearchRequests.Last(), "jql");
 
-            await subject.GetParentFeaturesDetails(CreatePortfolio(team), TheTwoKeysAskedFor);
+            await subject.GetParentFeaturesDetails(CreatePortfolio(team), TheTwoKeysAskedFor, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(byKeyQuery),
                 "Two callers, one query. A second copy of the key-OR builder drifts the moment either side "
@@ -460,7 +460,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
             var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql");
 
-            await subject.SweepFeaturesForPortfolio(portfolio);
+            await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
                 "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact "
@@ -472,7 +472,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.SweepFeaturesForPortfolio(portfolio);
+            await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var sweep = jira.SearchRequests.Last();
 
@@ -492,7 +492,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: TheSecondPage);
             jira.QueueSweepPage(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"), nextPageToken: null);
 
-            var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
+            var stamps = await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
                 "A sweep that stops at page one under-reports the query, and 'stored minus swept' deletes every Feature it missed.");
@@ -507,7 +507,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.TypeOf<InvalidOperationException>(),
+                Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None), Throws.TypeOf<InvalidOperationException>(),
                     "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
                     + "every Feature on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
                     + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
@@ -525,8 +525,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud, StampTwoHoursAheadOfUtc);
             jira.QueueSweepPage(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc), nextPageToken: null);
 
-            var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
-            var stored = (await subject.GetFeaturesForProject(portfolio)).Single();
+            var stamps = await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
+            var stored = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
                 "The swept stamp is compared against the stored one Feature by Feature. Two different parses of "
@@ -539,7 +539,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
             jira.QueueSweepPage(SweepIssue("PROJ-1", updated: null), nextPageToken: null);
 
-            var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
+            var stamps = await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -555,7 +555,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor);
+            await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the cutoff "
@@ -569,7 +569,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var searchesBefore = jira.SearchRequests.Count();
             var requestsBefore = jira.Requests.Count;
 
-            var features = await subject.GetFeaturesForProject(portfolio, []);
+            var features = await subject.GetFeaturesForProject(portfolio, [], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -591,7 +591,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var requestsBefore = jira.SearchRequests.Count();
             var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
 
-            await subject.GetFeaturesForProject(portfolio, manyKeys);
+            await subject.GetFeaturesForProject(portfolio, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
                 "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
@@ -604,7 +604,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
             jira.ChangelogEntryCount = 31;
 
-            var features = await subject.GetFeaturesForProject(portfolio, ["PROJ-1"]);
+            var features = await subject.GetFeaturesForProject(portfolio, ["PROJ-1"], CancellationToken.None);
 
             var byKeyRequest = jira.SearchRequests.Last();
 
@@ -627,10 +627,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor);
+            await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
             var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql");
 
-            await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor);
+            await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names "
@@ -642,7 +642,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.SweepParentFeatures(portfolio, ["PROJ-1"]);
+            await subject.SweepParentFeatures(portfolio, ["PROJ-1"], CancellationToken.None);
 
             var sweep = jira.SearchRequests.Last();
 
@@ -661,7 +661,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var requestsBefore = jira.SearchRequests.Count();
             var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
 
-            await subject.SweepParentFeatures(portfolio, manyKeys);
+            await subject.SweepParentFeatures(portfolio, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
                 "Chunked the way the keyed detail fetch is chunked - a single 250-clause URL is one no proxy is obliged to carry.");
@@ -674,7 +674,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var requestsBefore = jira.SearchRequests.Count();
             var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
 
-            await subject.GetParentFeaturesDetails(portfolio, manyKeys);
+            await subject.GetParentFeaturesDetails(portfolio, manyKeys, CancellationToken.None);
 
             Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
                 "A Data Center user's refresh sent 210 keys as one query - about 7.5 KB URL-encoded, with "
@@ -702,7 +702,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.OffsetSweepIssues.Add(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"));
             var searchesBefore = jira.SearchRequests.Count();
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             var sweepRequests = jira.SearchRequests.Skip(searchesBefore).ToList();
 
@@ -725,7 +725,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.OffsetSweepIssues.AddRange(FourRecordsOverTwoPages.Select(key => SweepIssue(key, "2026-08-01T10:00:00.000+0000")));
             var searchesBefore = jira.SearchRequests.Count();
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -745,7 +745,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             var sweep = jira.SearchRequests.Last();
 
@@ -765,7 +765,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
             var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql").Trim();
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(fullFetchQuery),
                 "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact query the "
@@ -777,7 +777,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Does.EndWith(TheDeterministicOrdering),
                 "Offset paging asks for 'issues 500 to 549 of the current answer'. Someone editing an issue mid-walk "
@@ -793,7 +793,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
             team.DataRetrievalValue = AQueryTheOperatorOrdered;
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             var jql = QueryValue(jira.SearchRequests.Last(), "jql");
 
@@ -818,7 +818,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<InvalidOperationException>(),
+                Assert.That(async () => await subject.SweepWorkItemsForTeam(team, CancellationToken.None), Throws.TypeOf<InvalidOperationException>(),
                     "Returning the first offset as if it were the whole query is the one answer removal cannot survive: "
                     + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
                     + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
@@ -835,8 +835,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter, StampTwoHoursAheadOfUtc);
             jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc));
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
-            var stored = (await subject.GetWorkItemsForTeam(team)).Single();
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
+            var stored = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).Single();
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
                 "The sweep and the full fetch are compared against each other per record, with no watermark in "
@@ -849,7 +849,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
             jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", updated: null));
 
-            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stamps = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -866,7 +866,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
             var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql").Trim();
 
-            await subject.SweepFeaturesForPortfolio(portfolio);
+            await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             var sweep = jira.SearchRequests.Last();
 
@@ -885,10 +885,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
 
-            await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor);
+            await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
             var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql").Trim();
 
-            await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor);
+            await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
             Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names a "
@@ -900,7 +900,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
 
-            var features = await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor);
+            var features = await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -916,7 +916,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
 
-            var workItems = await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor);
+            var workItems = await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -944,7 +944,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             // The deployment is discovered by asking the instance, so the capability probe only answers once a
             // first cycle has run - and that first cycle is a full download.
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             return (subject, team, jira);
         }
@@ -969,7 +969,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             // Same reason as the team-side helper: the deployment is discovered by asking the instance, so the
             // capability probe only answers once a first cycle has run - and that first cycle is a full download.
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             return (subject, portfolio, jira);
         }
@@ -983,7 +983,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             // Lighthouse learns the deployment by asking the instance, so the capability probe can only answer
             // once a first cycle has run. That first cycle is a full download, which is the safe resolution anyway.
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             return (subject, team, jira);
         }
@@ -1038,7 +1038,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateTeam();
             team.DataRetrievalValue = theTeamsOwnQuery;
 
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             return QueryValue(jira.SearchRequests.Last(), "jql");
         }
@@ -1048,7 +1048,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var jira = new JiraStub(deploymentType) { Updated = updated };
             var subject = CreateSubject(jira.Handler);
 
-            var workItems = await subject.GetWorkItemsForTeam(CreateTeam());
+            var workItems = await subject.GetWorkItemsForTeam(CreateTeam(), CancellationToken.None);
 
             Assert.That(workItems.Count(), Is.EqualTo(1), "positive control: the canned response was not read at all.");
 

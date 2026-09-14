@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = ALinearThat(WillNotAnswer());
 
-            Assert.That(async () => await subject.GetWorkItemsForTeam(ATeamOnLinear()),
+            Assert.That(async () => await subject.GetWorkItemsForTeam(ATeamOnLinear(), CancellationToken.None),
                 Throws.Exception,
                 "A workspace that cannot be reached is not a workspace with no issues. Answering with no "
                 + "records hands removal an empty query, which deletes every Work Item the team has.");
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = ALinearThat(WillNotAnswer());
 
-            Assert.That(async () => await subject.GetFeaturesForProject(APortfolioOnLinear()),
+            Assert.That(async () => await subject.GetFeaturesForProject(APortfolioOnLinear(), CancellationToken.None),
                 Throws.Exception,
                 "On the portfolio half an empty answer strips every Feature's portfolio claim, and the "
                 + "orphaned-Feature cleanup then deletes outright whatever no portfolio still claims.");
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = ALinearThat(AnsweringWith(NoProjects()));
 
-            var features = await subject.GetFeaturesForProject(APortfolioOnLinear());
+            var features = await subject.GetFeaturesForProject(APortfolioOnLinear(), CancellationToken.None);
 
             Assert.That(features, Is.Empty,
                 "The distinction is the whole point. A portfolio whose workspace really holds no projects has "
@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = ALinearWhoseCryptoHoldsOnlyTheActiveKey(AHandlerRecordingInto(requestsSentToLinear));
 
             Assert.ThrowsAsync<UnreadableSecretException>(
-                () => subject.GetWorkItemsForTeam(ATeamOnLinear(ACredentialTheInstanceCannotRead())));
+                () => subject.GetWorkItemsForTeam(ATeamOnLinear(ACredentialTheInstanceCannotRead()), CancellationToken.None));
 
             Assert.That(requestsSentToLinear, Is.Empty,
                 "No request may reach Linear at all, because every one the client makes would carry the key it could not read.");

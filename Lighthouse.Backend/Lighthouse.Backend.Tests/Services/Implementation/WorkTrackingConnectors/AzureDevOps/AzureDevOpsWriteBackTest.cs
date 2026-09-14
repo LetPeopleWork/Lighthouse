@@ -546,7 +546,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.AdditionalFieldDefinitions.Clear();
             connection.AdditionalFieldDefinitions.Add(additionalFieldDef);
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.SingleOrDefault(f => f.ReferenceId == workItemId);
 
             return feature?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
@@ -576,7 +576,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.AdditionalFieldDefinitions.Clear();
             connection.AdditionalFieldDefinitions.Add(additionalFieldDef);
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
             var workItem = workItems.SingleOrDefault(wi => wi.ReferenceId == workItemId);
 
             return workItem?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);

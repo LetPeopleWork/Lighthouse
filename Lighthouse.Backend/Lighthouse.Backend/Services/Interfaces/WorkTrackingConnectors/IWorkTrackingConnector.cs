@@ -4,6 +4,11 @@ using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
+    // Every method here that loops over pages takes a CancellationToken; the ones that do not - validating a
+    // connection, reading predefined fields, writing back - do not, because a token they could not honour
+    // would teach the next reader that the parameter is decorative. A driven adapter should not have to
+    // reach into the update pipeline's ambient state to learn it has been told to stop, so the ask arrives
+    // where a reader meets it. ADR-183.
     public interface IWorkTrackingConnector
     {
         bool SupportsTransitionHistory(WorkTrackingSystemConnection connection);
@@ -17,29 +22,29 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 
         IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection);
 
-        Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team);
+        Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken);
 
         /// <summary>
         /// Phase 2 of the two-phase fetch (DDD-2): full payloads - fields, changelog, transitions - for
         /// the named records only.
         /// </summary>
-        Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds);
+        Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken);
 
         /// <summary>
         /// Phase 1 of the two-phase fetch (D1): the same query the full fetch issues, asking only for
         /// identity plus the remote change timestamp. It enumerates the WHOLE result set - that is what
         /// keeps <c>removed = stored - swept</c> meaning exactly what it means today (D2).
         /// </summary>
-        Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team);
+        Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken);
 
-        Task<List<Feature>> GetFeaturesForProject(Portfolio project);
+        Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken);
 
         /// <summary>
         /// Phase 2 of the two-phase portfolio fetch (Epic #5687 slice 03): full payloads - fields,
         /// changelog, transitions - for the named Features only. Adjacent to its sibling on purpose:
         /// S4136 is error-severity here and fires in every implementing file at once.
         /// </summary>
-        Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds);
+        Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken);
 
         /// <summary>
         /// Phase 1 of the two-phase portfolio fetch (Epic #5687 slice 03): the same query
@@ -47,9 +52,9 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         /// change timestamp. It enumerates the WHOLE result set, which is what keeps
         /// <c>removed = stored - swept</c> meaning exactly what it means today (D2).
         /// </summary>
-        Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project);
+        Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken);
 
-        Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds);
+        Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken);
 
         /// <summary>
         /// Phase 1 of the parent-Feature fetch (Epic #5687 slice 03). The parent path is already a keyed
@@ -60,7 +65,7 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         /// <paramref name="parentFeatureIds"/> is derived from what is STORED, never from what this cycle
         /// fetched: deriving it from the fetched set shrinks it under delta and parents drop out silently.
         /// </summary>
-        Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds);
+        Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken);
 
         Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection);
 

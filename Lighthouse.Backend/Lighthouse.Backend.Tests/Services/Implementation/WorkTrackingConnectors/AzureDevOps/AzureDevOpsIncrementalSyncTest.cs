@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
 
-            var workItem = (await subject.GetWorkItemsForTeam(team)).Single();
+            var workItem = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
 
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(ado.FieldsOfTheItemRead, Does.Contain(AzureDevOpsFieldNames.ChangedDate),
                 "A payload read that never names the stamp gets no stamp back, however carefully the mapping "
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, _) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
 
-            var feature = (await subject.GetFeaturesForProject(portfolio)).Single();
+            var feature = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
 
             Assert.That(feature.LastChangedRemote, Is.EqualTo(WhenTheTrackerSaysItLastChanged),
                 "The portfolio half stores its own stamps; a Feature without one keeps the portfolio on full "
@@ -90,11 +90,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
 
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
             var whatTheDownloadAsked = ado.WiqlQueries[^1];
             ado.WiqlQueries.Clear();
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(ado.WiqlQueries, Has.One.EqualTo(whatTheDownloadAsked),
                 "Removal is 'stored minus swept'. Any drift between the two queries deletes whatever they "
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(ado.PayloadReads, Has.Count.EqualTo(1),
                 "One read per batch of ids is the whole sweep. A second read is the payload, the relations or the "
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(ado.RevisionReads, Is.Empty,
                 "One revision read per item per cycle is the dominant cost on Azure DevOps. A sweep that pays "
@@ -142,8 +142,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
 
-            var whatTheDownloadStores = (await subject.GetWorkItemsForTeam(team)).Single().LastChangedRemote;
-            var whatTheSweepReports = (await subject.SweepWorkItemsForTeam(team)).Single();
+            var whatTheDownloadStores = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).Single().LastChangedRemote;
+            var whatTheSweepReports = (await subject.SweepWorkItemsForTeam(team, CancellationToken.None)).Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.ChangedDate = null;
 
-            var swept = await subject.SweepWorkItemsForTeam(team);
+            var swept = await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
             ado.AnswerPayloadReadsWithNothing = true;
 
-            Assert.That(async () => await subject.SweepWorkItemsForTeam(team),
+            Assert.That(async () => await subject.SweepWorkItemsForTeam(team, CancellationToken.None),
                 Throws.TypeOf<InvalidOperationException>(),
                 "A sweep that answers for fewer ids than the query returned puts every unanswered id in "
                 + "'stored minus swept'. Refusing outright costs one full download; answering costs the items.");
@@ -191,7 +191,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
             ado.RejectTheQuery = true;
 
-            Assert.That(async () => await subject.SweepWorkItemsForTeam(team),
+            Assert.That(async () => await subject.SweepWorkItemsForTeam(team, CancellationToken.None),
                 Throws.Exception,
                 "An empty sweep does not mean 'the query failed', it means 'the query matches nothing' - and "
                 + "removal is 'stored minus swept', so answering a rejected query with an empty sweep deletes "
@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
             ado.AnswerTheQueryWithoutAResultSet = true;
 
-            Assert.That(async () => await subject.SweepWorkItemsForTeam(team),
+            Assert.That(async () => await subject.SweepWorkItemsForTeam(team, CancellationToken.None),
                 Throws.TypeOf<InvalidOperationException>(),
                 "No result set is not the same answer as an empty one. Treating it as 'nothing matched' hands "
                 + "removal an empty sweep, which deletes every record the team has.");
@@ -215,7 +215,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved);
 
-            var workItems = await subject.GetWorkItemsForTeam(team, []);
+            var workItems = await subject.GetWorkItemsForTeam(team, [], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -232,7 +232,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds([.. Enumerable.Range(1, 201)]);
 
-            await subject.SweepWorkItemsForTeam(team);
+            await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -248,11 +248,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
 
-            await subject.GetFeaturesForProject(portfolio);
+            await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var whatTheDownloadAsked = ado.WiqlQueries[^1];
             ado.WiqlQueries.Clear();
 
-            await subject.SweepFeaturesForPortfolio(portfolio);
+            await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
             Assert.That(ado.WiqlQueries, Has.One.EqualTo(whatTheDownloadAsked),
                 "The portfolio half is a second implementation of the same contract, and the orphaned-Feature "
@@ -265,11 +265,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheItemThatMoved, 3);
             var parentIds = TheTwoIdsAskedFor.Select(id => $"{id}").ToList();
 
-            await subject.GetParentFeaturesDetails(portfolio, parentIds);
+            await subject.GetParentFeaturesDetails(portfolio, parentIds, CancellationToken.None);
             var whatTheDetailFetchAsked = ado.WiqlQueries[^1];
             ado.WiqlQueries.Clear();
 
-            await subject.SweepParentFeatures(portfolio, parentIds);
+            await subject.SweepParentFeatures(portfolio, parentIds, CancellationToken.None);
 
             Assert.That(ado.WiqlQueries, Has.One.EqualTo(whatTheDetailFetchAsked),
                 "A stored parent key the sweep does not answer for is downloaded rather than removed, so a "
@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot, 3);
 
-            var workItems = await subject.GetWorkItemsForTeam(team, TheTwoIdsAskedFor.Select(id => $"{id}").ToList());
+            var workItems = await subject.GetWorkItemsForTeam(team, TheTwoIdsAskedFor.Select(id => $"{id}").ToList(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved);
             team.DoneItemsCutoffDays = 1;
 
-            await subject.GetWorkItemsForTeam(team, [$"{TheItemThatMoved}"]);
+            await subject.GetWorkItemsForTeam(team, [$"{TheItemThatMoved}"], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
 
-            await subject.GetWorkItemsForTeam(team, [$"{TheItemThatMoved}"]);
+            await subject.GetWorkItemsForTeam(team, [$"{TheItemThatMoved}"], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -335,7 +335,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheItemThatMoved);
 
-            var workItem = (await subject.GetWorkItemsForTeam(team, [$"{TheItemThatMoved}"])).Single();
+            var workItem = (await subject.GetWorkItemsForTeam(team, [$"{TheItemThatMoved}"], CancellationToken.None)).Single();
 
             Assert.That(workItem.SyncedTransitions, Is.Not.Empty,
                 "A phase two that skips the revision read is fast and silently wrong: time-in-state, aging pace "
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheItemThatMoved, TheItemThatDidNot, 3);
 
-            var features = await subject.GetFeaturesForProject(portfolio, TheTwoIdsAskedFor.Select(id => $"{id}").ToList());
+            var features = await subject.GetFeaturesForProject(portfolio, TheTwoIdsAskedFor.Select(id => $"{id}").ToList(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {

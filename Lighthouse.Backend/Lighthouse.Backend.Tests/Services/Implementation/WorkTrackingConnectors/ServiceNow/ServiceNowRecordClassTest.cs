@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges))).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges), CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges), CancellationToken.None);
 
             var workReads = QueriesAskedOf(instance, TheWholeHierarchy);
 
@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents]));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents]), CancellationToken.None);
 
             var workReads = QueriesAskedOf(instance, TheWholeHierarchy);
 
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance, logger.Object);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamWorkingOn([]));
+            var workItems = await subject.GetWorkItemsForTeam(ATeamWorkingOn([]), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -350,7 +350,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges), CancellationToken.None);
 
             Assert.That(QueriesAskedOf(instance, "metric_definition"),
                 Has.Some.Contains("tableINincident,change_request"),
@@ -365,7 +365,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents]));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents]), CancellationToken.None);
 
             Assert.That(QueriesAskedOf(instance, "metric_definition"),
                 Has.Some.Contains("table=incident"));
@@ -407,7 +407,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]), CancellationToken.None);
 
             Assert.That(QueriesAskedOf(instance, TheWholeHierarchy)[0],
                 Does.Contain("sys_class_nameINincident,change_request"),
@@ -426,7 +426,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(TheKindsThisTeamNamed))).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(TheKindsThisTeamNamed), CancellationToken.None)).ToList();
 
             Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(TheKindsThisTeamNamed),
                 "The team named its work the way ServiceNow does, so that is what its rows say.");
@@ -445,7 +445,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = ATeamWorkingOn([firstKindOfWork, secondKindOfWork]);
 
             await subject.ValidateTeamSettings(team);
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -464,7 +464,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .Where("u_maintenance_task", HttpStatusCode.OK, holds: 3, visible: 3);
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["u_maintenance_task"]));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["u_maintenance_task"]), CancellationToken.None);
 
             Assert.That(QueriesAskedOf(instance, TheWholeHierarchy)[0],
                 Does.Contain("sys_class_name=u_maintenance_task"),
@@ -505,7 +505,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]), CancellationToken.None);
 
             Assert.That(QueriesAskedOf(instance, "metric_definition")[0],
                 Does.Contain("incident").And.Contain("change_request"),

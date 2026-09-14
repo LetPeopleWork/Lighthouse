@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             team.ResetUpdateTime();
 
-            var matchingItems = await subject.GetWorkItemsForTeam(team);
+            var matchingItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(matchingItems.Count(), Is.EqualTo(2));
         }
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             
             team.DoneItemsCutoffDays =  cutOffDays;
 
-            var actualItems = await subject.GetWorkItemsForTeam(team);
+            var actualItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(actualItems.ToList(), Has.Count.EqualTo(expectedItems));
         }
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 team.ParentOverrideAdditionalFieldDefinitionId = 1;
             }
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
 
             Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
             }
 
-            var workItems = await subject.GetFeaturesForProject(portfolio);
+            var workItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
 
             Assert.That(workItem.ParentReferenceId, Is.EqualTo(expectedParentReference));
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
             
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             // This runs against a live, mutable Azure DevOps project whose item count drifts over time
             // (and write-back fixtures create transient scratch items in parallel). Assert the OR-case
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
             
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '396'");
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
             
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.DoingStates.Add("ACTIVE");
             team.DoingStates.Add("ReSoLvED");
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -231,7 +231,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -252,7 +252,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '396'");
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -275,7 +275,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -299,7 +299,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             team.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var result = await subject.GetWorkItemsForTeam(team);
+            var result = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -346,7 +346,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var team = CreateTeam($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'");
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
             var workItem = workItems.Single(wi => wi.ReferenceId == workItemId);
 
             using (Assert.EnterMultipleScope())
@@ -363,7 +363,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'NotExistingTag'");
 
-            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -374,7 +374,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
-            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -388,7 +388,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("Bug");
 
-            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -399,7 +399,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\NotExistingAreaPath'");
 
-            Assert.That(async () => await subject.GetFeaturesForProject(portfolio),
+            Assert.That(async () => await subject.GetFeaturesForProject(portfolio, CancellationToken.None),
                 Throws.Exception,
                 "Unlike a tag nobody uses, an area path that does not exist is a query Azure DevOps refuses to "
                 + "run at all. Answering that with no Features strips every Feature's portfolio claim, and the "
@@ -415,7 +415,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("User Story");
 
-            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(itemsByTag, Has.Count.EqualTo(1));
         }
@@ -429,7 +429,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("Bug");
 
-            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
+            var itemsByTag = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(itemsByTag, Is.Empty);
         }
@@ -443,7 +443,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("User Story");
 
-            var actualItems = await subject.GetFeaturesForProject(portfolio);
+            var actualItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(actualItems, Has.Count.EqualTo(1));
         }
@@ -460,7 +460,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var actualItems = await subject.GetFeaturesForProject(portfolio);
+            var actualItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(actualItems, Has.Count.EqualTo(1));
         }
@@ -474,7 +474,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("User Story");
 
-            var actualItems = await subject.GetFeaturesForProject(portfolio);
+            var actualItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(actualItems, Has.Count.EqualTo(1));
         }
@@ -491,7 +491,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startDate = new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             portfolio.DoneItemsCutoffDays =  (DateTime.UtcNow - startDate).Days;
 
-            var actualItems = await subject.GetFeaturesForProject(portfolio);
+            var actualItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(actualItems, Has.Count.EqualTo(2));
         }
@@ -510,7 +510,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             
             portfolio.DoneItemsCutoffDays =  cutOffDays;
 
-            var actualItems = await subject.GetFeaturesForProject(portfolio);
+            var actualItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             Assert.That(actualItems, Has.Count.EqualTo(expectedItems));
         }
@@ -523,7 +523,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("User Story");
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == "366");
 
             using (Assert.EnterMultipleScope())
@@ -542,7 +542,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == "370");
 
             using (Assert.EnterMultipleScope())
@@ -562,7 +562,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.DoingStates.Remove("Resolved");
             portfolio.DoneStates.Add("Resolved");
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == "370");
 
             using (Assert.EnterMultipleScope())
@@ -580,7 +580,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.DoingStates.Remove("Resolved");
             portfolio.DoneStates.Add("Resolved");
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == "370");
 
             using (Assert.EnterMultipleScope())
@@ -610,7 +610,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = CreatePortfolioWithAdditionalFields($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'", additionalFieldDefs);
             portfolio.SizeEstimateAdditionalFieldDefinitionId = sizeFieldId;
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == workItemId);
 
             Assert.That(feature.EstimatedSize, Is.EqualTo(expectedEstimatedSize));
@@ -639,7 +639,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = CreatePortfolioWithAdditionalFields($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'", additionalFieldDefs);
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = ownerFieldId;
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == workItemId);
 
             Assert.That(feature.OwningTeam, Is.EqualTo(expectedFeatureOwnerFieldValue));
@@ -651,7 +651,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '370'");
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -668,7 +668,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Tags}] CONTAINS 'Release1'");
 
-            var parentItems = await subject.GetParentFeaturesDetails(portfolio, ["400"]);
+            var parentItems = await subject.GetParentFeaturesDetails(portfolio, ["400"], CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {

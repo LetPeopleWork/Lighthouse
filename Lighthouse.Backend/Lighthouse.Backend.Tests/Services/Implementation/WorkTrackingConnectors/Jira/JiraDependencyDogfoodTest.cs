@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
                 new DeliveryForecastBlockRenderer());
 
-            return await subject.GetFeaturesForProject(TheDemoPortfolio());
+            return await subject.GetFeaturesForProject(TheDemoPortfolio(), CancellationToken.None);
         }
 
         private static Portfolio TheDemoPortfolio()

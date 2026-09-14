@@ -169,7 +169,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject(HandlerReturning(projectsResponse, recordQuery));
 
-            return await subject.GetFeaturesForProject(CreatePortfolio());
+            return await subject.GetFeaturesForProject(CreatePortfolio(), CancellationToken.None);
         }
 
         private static string ProjectsWithOneDependency()

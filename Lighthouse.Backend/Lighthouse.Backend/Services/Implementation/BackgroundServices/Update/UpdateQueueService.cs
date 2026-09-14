@@ -21,6 +21,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly AsyncLocal<WriteBackRound?> roundBeingHandedOver = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly WriteBackRoundContext roundContext;
+        private readonly UpdateCancellationContext cancellationContext;
+        private readonly IUpdateCancellationNotifier cancellationNotifier;
+        private readonly IDisposable cancellationSubscription;
+
+        /// <summary>
+        /// One source per admitted key, so cancelling one entity's refresh cannot reach another's. Created
+        /// when the key is admitted and disposed when it leaves the store, which is the same lifetime the
+        /// status has.
+        /// </summary>
+        private readonly ConcurrentDictionary<UpdateKey, CancellationTokenSource> cancellations = new();
         private readonly DatabaseMaintenanceGate maintenanceGate;
         private readonly Task processingTask;
 
@@ -30,7 +40,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             UpdateSubstrate substrate,
             IServiceScopeFactory serviceScopeFactory,
             DatabaseMaintenanceGate maintenanceGate,
-            WriteBackRoundContext roundContext)
+            WriteBackRoundContext roundContext,
+            UpdateCancellationContext cancellationContext)
         {
             this.logger = logger;
             this.hubContext = hubContext;
@@ -40,8 +51,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
             this.roundContext = roundContext;
+            this.cancellationContext = cancellationContext;
+            cancellationNotifier = substrate.CancellationNotifier;
 
             completionSubscription = completionNotifier.Subscribe(ReleaseAwaiter);
+
+            // Subscribed here rather than on demand because the ask arrives from whichever replica took the
+            // operator's click, which is usually not this one.
+            cancellationSubscription = cancellationNotifier.Subscribe(StopLocally);
             processingTask = StartProcessingQueue();
         }
 
@@ -53,14 +70,44 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
-        /// <summary>
-        /// RED scaffold (DISTILL, slice 04). It throws rather than doing nothing: a cancel that quietly has
-        /// no effect is the exact failure this slice exists to remove, so an unfinished one must not be able
-        /// to pass for a working one.
-        /// </summary>
         public Task CancelAsync(UpdateKey key)
         {
-            throw new NotImplementedException("Not yet implemented - RED scaffold");
+            // Published rather than acted on here: the work is usually running on another replica, and this
+            // one holds no source for it. Accepted whatever state the key is in, including gone - the row
+            // was drawn before it was clicked.
+            return cancellationNotifier.PublishCancellationAsync(key);
+        }
+
+        private void AdmitCancellationFor(UpdateKey key)
+        {
+            var admitted = new CancellationTokenSource();
+            if (!cancellations.TryAdd(key, admitted))
+            {
+                admitted.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Disposed alongside the key leaving the store. A source kept past that would mean a cancel asked
+        /// for now could stop work admitted later under the same key - which is a different refresh.
+        /// </summary>
+        private void ForgetCancellationFor(UpdateKey key)
+        {
+            if (cancellations.TryRemove(key, out var finished))
+            {
+                finished.Dispose();
+            }
+        }
+
+        private CancellationToken TokenFor(UpdateKey key)
+            => cancellations.TryGetValue(key, out var cancellation) ? cancellation.Token : CancellationToken.None;
+
+        private void StopLocally(UpdateKey key)
+        {
+            if (cancellations.TryGetValue(key, out var cancellation))
+            {
+                cancellation.Cancel();
+            }
         }
 
         public async Task DrainAsync(CancellationToken cancellationToken = default)
@@ -98,6 +145,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued or being processed - scheduling a single follow-up run.", updateType, id);
                 return;
             }
+
+            AdmitCancellationFor(updateKey);
 
             logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
@@ -141,6 +190,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
 
             awaiters[updateKey] = tcs;
+
+            AdmitCancellationFor(updateKey);
 
             logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
@@ -330,15 +381,28 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task RunUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, WriteBackRound round)
         {
-            await using var executionScope = await executionLock.AcquireAsync(updateKey);
+            // Deliberately not the update's own token: cancelling a refresh must not abandon the wait for
+            // the lock that keeps two replicas from running the same key at once.
+            await using var executionScope = await executionLock.AcquireAsync(updateKey, CancellationToken.None);
 
+            var cancellation = TokenFor(updateKey);
             statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
             UpdateProgress terminalProgress;
             try
             {
-                await ExecuteUpdateTask(updateTask, round);
+                // Checked before anything is asked of the tracker. Work cancelled while it was still
+                // waiting its turn is the one case where stopping it can be absolute, and spending a rate
+                // limit an operator cancelled to protect would give that away for nothing.
+                cancellation.ThrowIfCancellationRequested();
+
+                await ExecuteUpdateTask(updateTask, round, cancellation);
                 terminalProgress = UpdateProgress.Completed;
+            }
+            catch (OperationCanceledException stopped) when (cancellation.IsCancellationRequested)
+            {
+                terminalProgress = UpdateProgress.Cancelled;
+                logger.LogInformation(stopped, "Update for {UpdateType} with ID {Id} was cancelled.", updateKey.UpdateType, updateKey.Id);
             }
             catch (Exception ex)
             {
@@ -362,6 +426,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             var terminalStatus = statusStore.Advance(updateKey, terminalProgress) ?? updateStatus;
             statusStore.Remove(updateKey);
+            ForgetCancellationFor(updateKey);
 
             // A trigger can land in the window between the check above and this removal: it saw the key
             // still admitted, so it parked a rerun instead of admitting its own. Re-check now that the
@@ -425,16 +490,28 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task RunAwaitableUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs, WriteBackRound round)
         {
-            await using var executionScope = await executionLock.AcquireAsync(updateKey);
+            await using var executionScope = await executionLock.AcquireAsync(updateKey, CancellationToken.None);
 
+            var cancellation = TokenFor(updateKey);
             statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
             UpdateStatus terminalStatus = updateStatus;
             try
             {
-                await ExecuteUpdateTask(updateTask, round);
+                cancellation.ThrowIfCancellationRequested();
+
+                await ExecuteUpdateTask(updateTask, round, cancellation);
                 terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
                 tcs.TrySetResult(true);
+            }
+            catch (OperationCanceledException stopped) when (cancellation.IsCancellationRequested)
+            {
+                terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Cancelled) ?? terminalStatus;
+                logger.LogInformation(stopped, "Update for {UpdateType} with ID {Id} was cancelled.", updateKey.UpdateType, updateKey.Id);
+
+                // The caller asked to be told when this finished, and it has. Cancelled is an outcome, not
+                // a fault of theirs, so they are released rather than faulted.
+                tcs.TrySetResult(false);
             }
             catch (Exception ex)
             {
@@ -446,13 +523,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 awaiters.TryRemove(updateKey, out _);
                 statusStore.Remove(updateKey);
+                ForgetCancellationFor(updateKey);
                 ReleaseClearedHoldsWithoutFailingTheUpdate();
                 await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
             }
         }
 
-        private async Task ExecuteUpdateTask(Func<IServiceProvider, Task> updateTask, WriteBackRound round)
+        private async Task ExecuteUpdateTask(Func<IServiceProvider, Task> updateTask, WriteBackRound round, CancellationToken cancellation)
         {
             // Set before the scope exists, so anything the update resolves out of that scope - the
             // write-back collector above all - already knows which round it is working for. The value is
@@ -460,6 +538,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // returned - the coalesced follow-up, say - opens a round of its own rather than joining this
             // one, and work started from outside an update sees no round at all.
             roundContext.Current = round;
+
+            // Same seam, same reason: anything resolved out of the scope below - the connector's paging
+            // loops above all - can ask whether it has been told to stop without every signature between
+            // here and there learning about it.
+            cancellationContext.Current = cancellation;
 
             using (var scope = serviceScopeFactory.CreateScope())
             {
@@ -469,9 +552,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private Task StartProcessingQueue()
         {
+            // The loop below is the queue itself, not an update: it has to outlive every token any update
+            // carries, or cancelling one refresh would stop the instance processing any others.
             return Task.Run(async () =>
             {
-                await foreach (var updateTask in queue.Reader.ReadAllAsync())
+                // The reader outlives any one update, so it takes no update's token. It ends when the
+                // channel completes, which is what shutdown does.
+                await foreach (var updateTask in queue.Reader.ReadAllAsync(CancellationToken.None))
                 {
                     try
                     {
@@ -482,14 +569,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         logger.LogError(ex, "Error processing update task");
                     }
                 }
-            });
+            }, CancellationToken.None);
         }
 
         private async Task NotifyListeners(UpdateKey updateKey, UpdateStatus status)
         {
-            await hubContext.Clients.Group(updateKey.ToString()).SendAsync(updateKey.ToString(), status);
+            // Telling the browser how a run ended is not part of the run. A cancelled update still owes its
+            // listeners the last word, so this must not inherit the token that just stopped it.
+            await hubContext.Clients.Group(updateKey.ToString()).SendAsync(updateKey.ToString(), status, CancellationToken.None);
 
-            await hubContext.Clients.Group("GlobalUpdates").SendAsync("GlobalUpdateNotification");
+            await hubContext.Clients.Group("GlobalUpdates").SendAsync("GlobalUpdateNotification", CancellationToken.None);
         }
 
         public void Dispose()
@@ -503,6 +592,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             if (disposing)
             {
                 completionSubscription.Dispose();
+                cancellationSubscription.Dispose();
+
+                foreach (var outstanding in cancellations.Values)
+                {
+                    outstanding.Dispose();
+                }
+
+                cancellations.Clear();
             }
         }
     }

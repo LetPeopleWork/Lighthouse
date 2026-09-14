@@ -160,9 +160,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(async () => await subject.GetFeaturesForProject(new Portfolio()),
+                Assert.That(async () => await subject.GetFeaturesForProject(new Portfolio(), CancellationToken.None),
                     Throws.InstanceOf<NotSupportedException>());
-                Assert.That(async () => await subject.GetParentFeaturesDetails(new Portfolio(), ["PRJ0001"]),
+                Assert.That(async () => await subject.GetParentFeaturesDetails(new Portfolio(), ["PRJ0001"], CancellationToken.None),
                     Throws.InstanceOf<NotSupportedException>());
             }
         }

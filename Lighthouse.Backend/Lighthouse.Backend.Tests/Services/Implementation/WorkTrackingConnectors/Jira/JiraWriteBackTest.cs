@@ -540,7 +540,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             // single immediate read (see docs/ci-learnings.md 2026-07-23 read-after-write race).
             for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
             {
-                var features = await subject.GetFeaturesForProject(portfolio);
+                var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
                 var value = features.SingleOrDefault(f => f.ReferenceId == issueKey)
                     ?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
                 if (!string.IsNullOrEmpty(value))
@@ -592,7 +592,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             // (see docs/ci-learnings.md 2026-07-23 read-after-write race).
             for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
             {
-                var workItems = await subject.GetWorkItemsForTeam(team);
+                var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
                 var value = workItems.SingleOrDefault(wi => wi.ReferenceId == issueKey)
                     ?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
                 if (!string.IsNullOrEmpty(value))

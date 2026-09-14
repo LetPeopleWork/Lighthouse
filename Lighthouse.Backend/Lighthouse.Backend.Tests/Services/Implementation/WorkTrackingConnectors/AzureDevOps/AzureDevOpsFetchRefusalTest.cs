@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.RejectTheQuery = true;
 
-            Assert.That(async () => await subject.GetWorkItemsForTeam(team),
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "An expired token or a timeout is not the tracker saying the query matches nothing. Answering "
                 + "with no records hands removal an empty query, which deletes every Work Item the team has.");
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.RejectTheFieldLookup = true;
 
-            Assert.That(async () => await subject.GetWorkItemsForTeam(team),
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "The field lookup runs after the query already succeeded and before any payload is read, so "
                 + "its failure is invisible to anything watching the query - and empties the team just the same.");
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.AnswerTheQueryWithoutAResultSet = true;
 
-            Assert.That(async () => await subject.GetWorkItemsForTeam(team),
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
                 Throws.TypeOf<InvalidOperationException>(),
                 "No result set is not the same answer as an empty one, and the difference between them is "
                 + "every record the team has.");
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.RejectPayloadReads = true;
 
-            Assert.That(async () => await subject.GetWorkItemsForTeam(team),
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "Azure DevOps fails a whole batch over one id deleted since the query ran. Reading that as an "
                 + "empty query deletes the other one hundred and ninety-nine records in the batch too.");
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.RejectTheFieldLookup = true;
 
-            Assert.That(async () => await subject.GetWorkItemsForTeam(team, [$"{TheOnlyItem}"]),
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team, [$"{TheOnlyItem}"], CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "The keyed fetch is where the cheap refresh sends its traffic. A failure it answers with no "
                 + "records reports the moved items as gone.");
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
             ado.RejectTheQuery = true;
 
-            Assert.That(async () => await subject.GetFeaturesForProject(portfolio),
+            Assert.That(async () => await subject.GetFeaturesForProject(portfolio, CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "On the portfolio half an empty answer strips every Feature's portfolio claim, and the "
                 + "orphaned-Feature cleanup then deletes outright whatever no portfolio still claims.");
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
             ado.RejectTheQuery = true;
 
-            Assert.That(async () => await subject.GetParentFeaturesDetails(portfolio, [$"{TheOnlyItem}"]),
+            Assert.That(async () => await subject.GetParentFeaturesDetails(portfolio, [$"{TheOnlyItem}"], CancellationToken.None),
                 Throws.TypeOf<VssServiceException>(),
                 "Parent Features are fetched by the same swallowing path, and a parent that comes back empty "
                 + "is one every child Feature stops being able to name.");
@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds();
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(workItems, Is.Empty,
                 "The distinction is the whole point. A team whose query really matches nothing has to keep "

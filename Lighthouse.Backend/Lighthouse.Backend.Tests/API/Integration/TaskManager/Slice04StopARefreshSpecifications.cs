@@ -65,8 +65,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             theTrackerMayAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
-                .Returns(async (Team team) =>
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .Returns(async (Team team, CancellationToken _) =>
                 {
                     lock (teamsTheTrackerWasAskedAbout)
                     {
@@ -89,24 +89,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             theTrackerMayAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
-                .Returns(async (Team team) =>
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .Returns(async (Team team, CancellationToken stopping) =>
                 {
                     lock (teamsTheTrackerWasAskedAbout)
                     {
                         teamsTheTrackerWasAskedAbout.Add(team.Name);
                     }
 
-                    Interlocked.Increment(ref pagesTheTrackerWasAskedFor);
+                    // A tracker with more to give than this refresh will ever ask for. Each turn of the loop
+                    // is a page, and a page is where a real connector notices it has been told to stop - so
+                    // a refresh that carries on looping here is one that ignored the ask.
+                    for (var page = 0; page < PagesTheTrackerCouldGiveForever; page++)
+                    {
+                        stopping.ThrowIfCancellationRequested();
+                        Interlocked.Increment(ref pagesTheTrackerWasAskedFor);
+                        await Task.Delay(20, CancellationToken.None);
+                    }
+
                     await theTrackerMayAnswer.Task;
                     return [];
                 });
         }
 
+        /// <summary>
+        /// Far more pages than any scenario here lets run, so "it stopped" cannot be satisfied by a tracker
+        /// that simply ran out of things to say.
+        /// </summary>
+        private const int PagesTheTrackerCouldGiveForever = 10_000;
+
         private void GivenTheTrackerAnswersNormallyAgain()
         {
             theTrackerMayAnswer?.TrySetResult();
-            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
         }
 
         /// <summary>
@@ -179,6 +194,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task ThenTheTrackerWasNeverAskedAbout(SeededTeam team)
         {
+            // The cancelled team is queued behind one that is still gated, so nothing moves until the
+            // tracker is let go. Releasing here is what lets the cancelled key reach the runner at all -
+            // and reaching it without contacting the tracker is the whole claim.
+            theTrackerMayAnswer.TrySetResult();
             await TheQueueSettles(team);
 
             lock (teamsTheTrackerWasAskedAbout)

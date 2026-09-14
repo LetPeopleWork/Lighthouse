@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             theTrackerMayAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     await theTrackerMayAnswer.Task;

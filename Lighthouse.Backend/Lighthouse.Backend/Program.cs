@@ -1493,14 +1493,17 @@ namespace Lighthouse.Backend
                 builder.Services.AddSingleton<IUpdateStatusStore, RedisUpdateStatusStore>();
                 builder.Services.AddSingleton<IUpdateExecutionLock, PostgresUpdateExecutionLock>();
                 builder.Services.AddSingleton<IUpdateCompletionNotifier, RedisUpdateCompletionNotifier>();
+                builder.Services.AddSingleton<IUpdateCancellationNotifier, RedisUpdateCancellationNotifier>();
             }
             else
             {
                 builder.Services.AddSingleton<IUpdateStatusStore, InProcessUpdateStatusStore>();
                 builder.Services.AddSingleton<IUpdateExecutionLock, InProcessUpdateExecutionLock>();
                 builder.Services.AddSingleton<IUpdateCompletionNotifier, InProcessUpdateCompletionNotifier>();
+                builder.Services.AddSingleton<IUpdateCancellationNotifier, InProcessUpdateCancellationNotifier>();
             }
 
+            builder.Services.AddSingleton<UpdateCancellationContext>();
             builder.Services.AddScoped<IUpdateTaskNaming, UpdateTaskNaming>();
 
             builder.Services.AddSingleton<UpdateSubstrate>();

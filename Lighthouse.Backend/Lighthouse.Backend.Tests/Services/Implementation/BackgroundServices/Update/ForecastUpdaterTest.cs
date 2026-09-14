@@ -503,10 +503,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return new UpdateQueueService(
                 Mock.Of<ILogger<UpdateQueueService>>(),
                 hubContextMock.Object,
-                new UpdateSubstrate(inProcessUpdateStatusStore, new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier()),
+                new UpdateSubstrate(inProcessUpdateStatusStore, new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier(), new InProcessUpdateCancellationNotifier()),
                 ServiceScopeFactory,
                 new DatabaseMaintenanceGate(inProcessUpdateStatusStore),
-                new WriteBackRoundContext());
+                new WriteBackRoundContext(),
+                new UpdateCancellationContext());
         }
 
         private Portfolio CreatePortfolioWorkedOnBy(Team team)

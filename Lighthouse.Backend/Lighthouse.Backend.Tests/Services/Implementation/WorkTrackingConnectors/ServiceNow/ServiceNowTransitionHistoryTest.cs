@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresStateSpans();
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.True);
         }
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceRefusing(HttpStatusCode.Forbidden);
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresNothing();
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceAnsweringMetricsWith(ASignInPage);
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceAnsweringMetricsWith(ASignInPage, onlyTheSpanRead: true);
             var subject = CreateSubject(instance, logger);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansReturnToTheQueue: true);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000003");
 
             using (Assert.EnterMultipleScope())
             {
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansShowAReopen: true);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000001");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000001");
 
             Assert.That(workItem.ClosedDate, Is.Null,
                 "It is In Progress again. A Done span in its history is where it has been, not where it is.");
@@ -173,7 +173,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansSkipDoing: true);
             var subject = CreateSubject(instance);
 
-            var finished = (await subject.GetWorkItemsForTeam(ATeam()))
+            var finished = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None))
                 .Single(item => item.ReferenceId == "INC0000003");
 
             using (Assert.EnterMultipleScope())
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var subject = CreateSubject(AnInstanceRefusing(HttpStatusCode.Forbidden), logger);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             VerifyWarnsThatHistoryIsUnavailable(logger);
         }
@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresStateSpans();
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.AbsoluteUri)).ToList();
             var definitionRead = asked.FindIndex(uri => uri.Contains("/api/now/table/metric_definition", StringComparison.Ordinal));
@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresStateSpans();
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             var spanReads = instance.Requests
                 .Select(uri => Uri.UnescapeDataString(uri.AbsoluteUri))
@@ -248,7 +248,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresStateSpans();
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000001");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000001");
 
             using (Assert.EnterMultipleScope())
             {
@@ -266,7 +266,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresStateSpans();
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000001");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000001");
 
             Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)),
                 "Not opened_at. The span is when someone actually picked the work up.");
@@ -280,7 +280,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceRefusing(HttpStatusCode.Forbidden);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000001");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000001");
 
             Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 20, 6, 0, 0, DateTimeKind.Utc)),
                 "ADR-117's fallback. Inflated by queue time, and the only thing the record itself supports.");
@@ -295,7 +295,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresStateSpans();
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000003");
 
             using (Assert.EnterMultipleScope())
             {
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceRefusing(HttpStatusCode.Forbidden);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000003");
 
             Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 31, 15, 0, 0, DateTimeKind.Utc)),
                 "ADR-117's fallback. closed_at is the only instant on the record that means the work is over.");
@@ -332,7 +332,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansMeasureSomethingElse: true);
             var subject = CreateSubject(instance, logger);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -355,7 +355,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spanReadIsEmpty: true);
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.True,
                 "The definition is there and readable. Nothing has crossed it yet, which is a quiet team rather than a broken one.");
@@ -372,7 +372,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOnTwoKindsOfRecord());
+            await subject.GetWorkItemsForTeam(ATeamWorkingOnTwoKindsOfRecord(), CancellationToken.None);
 
             Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False,
                 "The stub measures incident only. change_request would sync with no dates and no transitions, and saying history is available would hide that.");
@@ -386,7 +386,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeamWorkingOnTwoKindsOfRecord()))
+            var workItem = (await subject.GetWorkItemsForTeam(ATeamWorkingOnTwoKindsOfRecord(), CancellationToken.None))
                 .First(item => item.ReferenceId == "INC0000003");
 
             Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc)),
@@ -407,7 +407,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 RecordsOfTwoClasses(), measuresStateSpans: true, changeRequestsAreMeasuredOnTypeOnly: true);
             var subject = CreateSubject(instance, logger);
 
-            await subject.GetWorkItemsForTeam(ATeamThatTypedItsKindsOfWorkAsLabels());
+            await subject.GetWorkItemsForTeam(ATeamThatTypedItsKindsOfWorkAsLabels(), CancellationToken.None);
 
             VerifyWarnsThatNothingMeasuresStateOn(logger, "Change Request");
         }
@@ -424,7 +424,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 RecordsOfTwoClasses(), measuresStateSpans: true, changeRequestsAreMeasuredOnTypeOnly: true);
             var subject = CreateSubject(instance);
 
-            var workItems = (await subject.GetWorkItemsForTeam(ATeamThatTypedItsKindsOfWorkAsLabels())).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamThatTypedItsKindsOfWorkAsLabels(), CancellationToken.None)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -447,7 +447,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
             var subject = CreateSubject(instance, logger);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             logger.Verify(
                 call => call.Log(
@@ -476,7 +476,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansMeasureSomethingElse: true);
             var subject = CreateSubject(instance);
 
-            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None)).First(item => item.ReferenceId == "INC0000003");
 
             using (Assert.EnterMultipleScope())
             {
@@ -497,7 +497,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceThatMeasuresNothing();
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             var spanReads = instance.Requests
                 .Select(uri => Uri.UnescapeDataString(uri.AbsoluteUri))
@@ -516,7 +516,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding([], measuresStateSpans: true);
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            await subject.GetWorkItemsForTeam(ATeam(), CancellationToken.None);
 
             Assert.That(
                 instance.Requests.Where(uri => uri.AbsoluteUri.Contains("metric_instance", StringComparison.Ordinal)),

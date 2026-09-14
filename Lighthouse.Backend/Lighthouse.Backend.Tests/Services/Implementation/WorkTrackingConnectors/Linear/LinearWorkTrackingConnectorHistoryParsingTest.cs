@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var team = CreateTeam();
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var issue = workItems.Single(w => w.ReferenceId == "lig-1");
             var transition = issue.SyncedTransitions.Single();
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
             var transition = feature.SyncedTransitions.Single();
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var team = CreateTeam();
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var issue = workItems.Single(w => w.ReferenceId == "lig-1");
             var transition = issue.SyncedTransitions.Single();
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
 
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
 
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = await subject.GetFeaturesForProject(portfolio);
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
             var transition = feature.SyncedTransitions.Single();
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var portfolio = CreatePortfolio();
 
-            var features = (await subject.GetFeaturesForProject(portfolio)).ToList();
+            var features = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).ToList();
 
             var feature = features.Single(f => f.ReferenceId == "project-1");
 
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject(handler);
 
-            await subject.GetWorkItemsForTeam(CreateTeam());
+            await subject.GetWorkItemsForTeam(CreateTeam(), CancellationToken.None);
 
             var issueQuery = requestBodies.Single(b => b.Contains("issues", StringComparison.Ordinal));
 
@@ -213,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var team = CreateTeam();
 
-            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
 
             var issue = workItems.Single(w => w.ReferenceId == "lig-1");
 

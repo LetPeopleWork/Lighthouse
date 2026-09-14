@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             var connectorWasCalled = false;
 
             ConnectorMock
-                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .Returns(() =>
                 {
                     connectorWasCalled = true;

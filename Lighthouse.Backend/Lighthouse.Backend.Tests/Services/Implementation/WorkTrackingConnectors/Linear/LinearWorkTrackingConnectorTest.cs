@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var team = CreateTeam();
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.ToDoStates.Clear();
             team.DoingStates.Clear();
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             team.DoneStates.Clear();
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -210,7 +210,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
 
             Assert.That(features, Has.Count.EqualTo(0));
         }
@@ -222,7 +222,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var subject = CreateSubject();
 
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
 
             // At least verify the ParentReferenceId is set for projects that have initiatives
             // Not all projects may be linked to initiatives, so we just check the field is populated when present
@@ -262,14 +262,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             // First get features to find any initiative references
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
             var initiativeIds = features
                 .Where(f => !string.IsNullOrEmpty(f.ParentReferenceId))
                 .Select(f => f.ParentReferenceId)
                 .Distinct()
                 .ToList();
 
-            var parentFeatures = await subject.GetParentFeaturesDetails(project, initiativeIds);
+            var parentFeatures = await subject.GetParentFeaturesDetails(project, initiativeIds, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -289,7 +289,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var invalidIds = new[] { "00000000-0000-0000-0000-000000000000" };
 
-            var parentFeatures = await subject.GetParentFeaturesDetails(project, invalidIds);
+            var parentFeatures = await subject.GetParentFeaturesDetails(project, invalidIds, CancellationToken.None);
 
             Assert.That(parentFeatures, Has.Count.EqualTo(0));
         }
@@ -300,7 +300,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreatePortfolio();
             var subject = CreateSubject();
             
-            var features = await subject.GetFeaturesForProject(project);
+            var features = await subject.GetFeaturesForProject(project, CancellationToken.None);
 
             var featureWithParent = features.Single(x => x.Name == "Integration Test Project");
             Assert.That(featureWithParent.ParentReferenceId, Is.EqualTo("b87bc74b-cb77-4c45-84a5-4dd7460c6873"));
@@ -312,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var project = CreatePortfolio();
             var subject = CreateSubject();
             
-            var parentDetails = await subject.GetParentFeaturesDetails(project, ["b87bc74b-cb77-4c45-84a5-4dd7460c6873"]);
+            var parentDetails = await subject.GetParentFeaturesDetails(project, ["b87bc74b-cb77-4c45-84a5-4dd7460c6873"], CancellationToken.None);
 
             var testInitiative = parentDetails.Single();
             Assert.That(testInitiative.Name, Is.EqualTo("Test Initative"));

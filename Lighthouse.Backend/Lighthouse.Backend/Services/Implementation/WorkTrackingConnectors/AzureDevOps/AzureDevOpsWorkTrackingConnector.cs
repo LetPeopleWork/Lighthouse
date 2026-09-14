@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// answers for fewer records than the query returned would delete the difference - it refuses instead,
         /// and the caller falls back to the whole query.
         /// </summary>
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
             => SweepIdentities(team, TheQueryATeamIsFetchedBy(team), $"Team {team.Name}");
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private static SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
 
-        public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team)
+        public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// <summary>
         /// Phase two for a team: the records the sweep reported as moved, and no others.
         /// </summary>
-        public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds);
 
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return workItems.Select(workItem => new LighthouseWorkItem(workItem, team));
         }
 
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
@@ -129,17 +129,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// <summary>
         /// Phase two for a portfolio: the Features the sweep reported as moved, and no others.
         /// </summary>
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(project, referenceIds);
 
             return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldReferences);
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => SweepIdentities(project, TheQueryAPortfolioIsFetchedBy(project), $"Portfolio {project.Name}");
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
 
@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return features;
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => SweepIdentities(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), $"Parent Features of Portfolio {project.Name}");
 
         /// <summary>

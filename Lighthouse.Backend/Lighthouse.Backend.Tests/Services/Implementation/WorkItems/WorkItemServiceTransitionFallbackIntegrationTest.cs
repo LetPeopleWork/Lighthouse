@@ -24,11 +24,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var connector = ConnectorWithoutHistory();
             var subject = CreateSubject(team, connector);
 
-            connector.Setup(x => x.GetWorkItemsForTeam(team))
+            connector.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None))
                 .ReturnsAsync([IncomingItem(team, referenceId: "CSV-1", rawState: "New", category: StateCategories.ToDo, syncedTransitions: [])]);
             await subject.UpdateWorkItemsForTeam(team);
 
-            connector.Setup(x => x.GetWorkItemsForTeam(team))
+            connector.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None))
                 .ReturnsAsync([IncomingItem(team, referenceId: "CSV-1", rawState: "Active", category: StateCategories.Doing, syncedTransitions: [])]);
             await subject.UpdateWorkItemsForTeam(team);
 
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var connector = ConnectorWithoutHistory();
             var subject = CreateSubject(team, connector);
 
-            connector.Setup(x => x.GetWorkItemsForTeam(team))
+            connector.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None))
                 .ReturnsAsync([IncomingItem(team, referenceId: "CSV-2", rawState: "Active", category: StateCategories.Doing, syncedTransitions: [])]);
             await subject.UpdateWorkItemsForTeam(team);
             await subject.UpdateWorkItemsForTeam(team);
@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var incoming = IncomingItem(team, referenceId: "LIN-1", rawState: "Active", category: StateCategories.Doing,
                 syncedTransitions: WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, team));
-            connector.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+            connector.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None)).ReturnsAsync([incoming]);
 
             await subject.UpdateWorkItemsForTeam(team);
 

@@ -39,12 +39,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         /// <summary>Epic #5687 slice 08 turns this on for Linear; until then the sweep is unreachable.</summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not sweep yet - Epic #5687 slice 08 implements it.");
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not fetch by reference id yet - Epic #5687 slice 08 implements it.");
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         /// returned, so answering a failed fetch with no records deletes every Work Item the team has - and
         /// their blocked spells, which no tracker can rebuild, do not come back with them.
         /// </summary>
-        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}", team.Name);
 
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         /// from what this answers with, and a Feature no portfolio claims is deleted outright by the
         /// orphaned-Feature cleanup.
         /// </summary>
-        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Features for Project {ProjectName} - retrieving all Linear projects as features", project.Name);
 
@@ -155,13 +155,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return features;
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not fetch Features by reference id on this port yet - Epic #5687 names it in a later slice.");
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not sweep Features yet - Epic #5687 names it in a later slice.");
 
-        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Parent Features (initiatives) for Linear portfolio {ProjectName}", project.Name);
 
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return parentFeatures;
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("Linear does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)

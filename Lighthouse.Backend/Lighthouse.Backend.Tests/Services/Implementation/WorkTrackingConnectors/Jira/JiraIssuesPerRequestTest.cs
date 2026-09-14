@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject(handler);
             var team = CreateTeam(issuesPerRequestOption);
 
-            await subject.GetWorkItemsForTeam(team);
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             return capturedSearchUrl;
         }

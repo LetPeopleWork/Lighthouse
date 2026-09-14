@@ -60,10 +60,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
             ConnectorMock = new Mock<IWorkTrackingConnector>();
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
             ConnectorMock
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
+                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => []);
 
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
@@ -380,7 +380,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected async Task DrivePortfolioRefresh(int portfolioId, List<Feature> connectorFeatures)
         {
             ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => connectorFeatures.Select(f => new Feature(f)).ToList());
 
             using var scope = Factory.Services.CreateScope();

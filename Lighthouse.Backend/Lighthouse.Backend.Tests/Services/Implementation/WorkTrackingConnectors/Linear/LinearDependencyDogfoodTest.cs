@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = new LinearWorkTrackingConnector(
                 Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService());
 
-            return await subject.GetFeaturesForProject(TheDemoPortfolio());
+            return await subject.GetFeaturesForProject(TheDemoPortfolio(), CancellationToken.None);
         }
 
         private static Portfolio TheDemoPortfolio()

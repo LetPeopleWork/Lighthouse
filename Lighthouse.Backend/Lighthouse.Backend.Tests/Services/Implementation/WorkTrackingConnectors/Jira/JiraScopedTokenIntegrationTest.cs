@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var team = CreateTeam("project = PROJ AND labels = ExistingLabel");
             team.ResetUpdateTime();
 
-            var matchingItems = await subject.GetWorkItemsForTeam(team);
+            var matchingItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(matchingItems.Count(), Is.EqualTo(2));
         }

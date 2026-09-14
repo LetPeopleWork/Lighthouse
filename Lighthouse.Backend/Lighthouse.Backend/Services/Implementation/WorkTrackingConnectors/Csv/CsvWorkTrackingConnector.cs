@@ -27,12 +27,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         /// </summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload is not swept - it has no remote query to sweep (Epic #5687, D11).");
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
             var workItems = new List<WorkItem>();
 
@@ -55,10 +55,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(workItems.AsEnumerable());
         }
 
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project)
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
         {
             var features = new List<Feature>();
 
@@ -91,18 +91,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(features);
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
-        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             return Task.FromResult(new List<Feature>());
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
         public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)

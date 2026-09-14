@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>Epic #5687 slice 07 turns this on for ServiceNow; until then the sweep is unreachable.</summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
             => throw new NotSupportedException("ServiceNow does not sweep yet - Epic #5687 slice 07 implements it.");
 
         // ADR-125. A stock instance's Visual Task Boards already carry the two things a Lighthouse
@@ -250,13 +250,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             }
         }
 
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("ServiceNow does not fetch by reference id yet - Epic #5687 slice 07 implements it.");
 
         // AC1. The query the flow coach wrote is the query that gets asked, and a team that has not
         // written one reads nothing rather than everything: asking the Table API with no query at
         // all returns the whole table, which is how a team ends up reporting the whole instance.
-        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
             var teamsOwnQuery = team.DataRetrievalValue;
 
@@ -748,23 +748,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return $"{query}{OrderByClause}{StableOrderField}{OrderByClause}{TieBreakerField}";
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project)
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
         {
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
             => throw new NotSupportedException(WorkItemReadingUnavailableMessage);
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => throw new NotSupportedException("ServiceNow does not sweep Features yet - Epic #5687 names it in a later slice.");
 
-        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
             => throw new NotSupportedException("ServiceNow does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         // Two pre-flight rules the instance is never asked about, then everything that needs it.
