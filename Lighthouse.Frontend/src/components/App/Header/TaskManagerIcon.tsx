@@ -13,6 +13,7 @@ import type {
 	IUpdateTask,
 	UpdateTaskType,
 } from "../../../services/UpdateSubscriptionService";
+import { formatElapsed } from "../../../utils/date/formatElapsed";
 
 const ACTIVITY_LABEL = "Activity";
 
@@ -34,7 +35,7 @@ const useKindOf = () => {
 	};
 };
 
-const describeStatus = (task: IUpdateTask): string => {
+const describeState = (task: IUpdateTask): string => {
 	switch (task.status) {
 		case "InProgress":
 			return "Running";
@@ -45,6 +46,21 @@ const describeStatus = (task: IUpdateTask): string => {
 		default:
 			return task.status;
 	}
+};
+
+/**
+ * The duration is the instance's own measurement, rendered as it arrived. Counting locally instead
+ * would be wrong after a reload, wrong for a refresh that began before the tab was opened, and wrong
+ * by however far this machine's clock has drifted - which is most of the occasions somebody opens
+ * this list. A row whose moment the instance never recorded keeps its state and loses only the
+ * duration; that is an ordinary mid-upgrade state, not a fault worth showing.
+ */
+const describeStatus = (task: IUpdateTask): string => {
+	const state = describeState(task);
+
+	return task.elapsedMs == null
+		? state
+		: `${state} for ${formatElapsed(task.elapsedMs)}`;
 };
 
 const isDelete = (updateType: UpdateTaskType): boolean =>

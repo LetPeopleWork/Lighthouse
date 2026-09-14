@@ -151,7 +151,8 @@ namespace Lighthouse.Backend.Tests.API
             return new UpdateController(
                 new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc),
                 Mock.Of<IRepository<Team>>(),
-                Mock.Of<IPortfolioRepository>());
+                Mock.Of<IPortfolioRepository>(),
+                Clocks.SystemUtc);
         }
     }
 }

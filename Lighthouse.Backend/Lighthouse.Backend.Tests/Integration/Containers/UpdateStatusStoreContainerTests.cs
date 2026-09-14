@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using System.Globalization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -19,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         internal static readonly (Type Store, Func<IConnectionMultiplexer, IUpdateStatusStore> Build)[] StoresComparedAgainstEachOther =
         [
             (typeof(InProcessUpdateStatusStore), _ => new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc)),
-            (typeof(RedisUpdateStatusStore), multiplexer => new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc)),
+            (typeof(RedisUpdateStatusStore), multiplexer => new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance)),
         ];
 
         private static readonly (string Description, UpdateKey[] Keys)[] QueuedLookups =
@@ -37,8 +38,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
             var key = new UpdateKey(UpdateType.Team, 11);
-            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
-            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
             podA.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 11, Status = UpdateProgress.Queued });
 
             var lifecycle = new[]
@@ -93,7 +94,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             var admitted = new UpdateKey(UpdateType.Team, 12);
             var removed = new UpdateKey(UpdateType.Team, 13);
-            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
 
             store.TryAdmit(admitted, new UpdateStatus { UpdateType = UpdateType.Team, Id = 12, Status = UpdateProgress.Queued });
             store.Advance(admitted, UpdateProgress.Completed);

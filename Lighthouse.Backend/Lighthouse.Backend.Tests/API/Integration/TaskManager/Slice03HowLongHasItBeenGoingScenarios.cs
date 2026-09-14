@@ -127,6 +127,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(recordedInFull, TimeSpan.FromHours(1));
         }
 
+        // @driving_port @real-io @error @AC-03.5 — work that has finished is neither running nor waiting, and
+        // it can still be on this list: briefly as it ends, or for good if the replica running it died in
+        // that window. Time since admission under a "Completed" label reads as time since it completed,
+        // which is a different number and usually a much smaller one.
+        [Test]
+        public async Task Work_that_has_already_finished_does_not_report_its_wait_as_a_duration()
+        {
+            var team = GivenATeamThatIsRefreshedOnSchedule();
+
+            GivenThatWorkFinishedAnHourAgoButIsStillOnTheList(team);
+
+            await ThenTheRowForThatTeamIsListedByNameWithNoDurationAtAll(team);
+        }
+
         // @driving_port @real-io @error @AC-03.4 — the moments are written by whichever replica handled
         // the transition and the elapsed time computed by whichever replica answers the read. Their clocks
         // do not agree to the millisecond, so "started in the future" is an ordinary state, and a row that

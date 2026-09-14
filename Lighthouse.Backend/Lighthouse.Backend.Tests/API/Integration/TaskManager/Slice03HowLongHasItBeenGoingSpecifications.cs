@@ -132,6 +132,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 queuedAt: theInstanceClock.Now - TimeSpan.FromMinutes(40),
                 startedAt: null);
 
+        /// <summary>
+        /// The queue advances a key to its terminal status and removes it two statements later, so this is a
+        /// window rather than a resting place - unless the replica holding it dies in between, and then the
+        /// row stays for good with nothing to reap it.
+        /// </summary>
+        private void GivenThatWorkFinishedAnHourAgoButIsStillOnTheList(SeededTeam team)
+            => PutIntoTheStoreWithoutGoingThroughThePort(
+                team,
+                UpdateProgress.Completed,
+                queuedAt: theInstanceClock.Now - TimeSpan.FromHours(1),
+                startedAt: theInstanceClock.Now - TimeSpan.FromMinutes(59));
+
         private void GivenThatWorkWasStampedByAReplicaWhoseClockIsAheadOfThisOne(SeededTeam team)
             => PutIntoTheStoreWithoutGoingThroughThePort(
                 team,

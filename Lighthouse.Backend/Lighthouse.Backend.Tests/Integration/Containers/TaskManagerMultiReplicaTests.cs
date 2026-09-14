@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using NUnit.Framework;
 using StackExchange.Redis;
@@ -27,8 +28,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
-            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
 
             var teamRefresh = new UpdateKey(UpdateType.Team, 7);
             var portfolioRefresh = new UpdateKey(UpdateType.Features, 3);
@@ -61,8 +62,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
-            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
 
             var finished = new UpdateKey(UpdateType.Team, 11);
             var stillGoing = new UpdateKey(UpdateType.Team, 12);
@@ -84,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
 
             Assert.That(store.GetAdmittedWork(), Is.Empty,
                 "Nothing running is an ordinary answer on a fresh instance, and the hash does not exist yet at all.");
@@ -129,8 +130,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
             var clock = new FakeLighthouseClock(Admitted);
-            var podA = new RedisUpdateStatusStore(multiplexer, clock);
-            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podA = new RedisUpdateStatusStore(multiplexer, clock, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
 
             var key = new UpdateKey(UpdateType.Team, 31);
             podA.TryAdmit(key, QueuedStatusFor(key));
@@ -157,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
             var key = new UpdateKey(UpdateType.Team, 32);
 
             store.TryAdmit(key, QueuedStatusFor(key));
@@ -176,8 +177,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
-            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var podA = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podB = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
 
             var key = new UpdateKey(UpdateType.Team, 33);
             podA.TryAdmit(key, QueuedStatusFor(key));
@@ -203,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
             var clock = new FakeLighthouseClock(Admitted);
-            var store = new RedisUpdateStatusStore(multiplexer, clock);
+            var store = new RedisUpdateStatusStore(multiplexer, clock, NullLogger<RedisUpdateStatusStore>.Instance);
 
             var key = new UpdateKey(UpdateType.Team, 34);
             store.TryAdmit(key, QueuedStatusFor(key));
@@ -231,7 +232,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc);
+            var store = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
             var key = new UpdateKey(UpdateType.Team, 35);
 
             store.TryAdmit(key, QueuedStatusFor(key));

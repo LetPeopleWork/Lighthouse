@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using StackExchange.Redis;
 
@@ -7,6 +8,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     public class RedisUpdateStatusStore : IUpdateStatusStore
     {
         private const string StatusHashKey = "lighthouse:update-status";
+
+        /// <summary>
+        /// The moments live in their own hash, field-for-field alongside the ordinal, and are written and
+        /// deleted by ordinary commands rather than from inside either script. That is what keeps the two
+        /// guarantees the scripts carry - a key cannot go backwards, and a key another replica removed
+        /// cannot be resurrected - provably unaffected by anything recorded here. ADR-182.
+        ///
+        /// The consequence is that a moment can be missing while its ordinal exists, and that is a normal
+        /// state rather than a fault: a replica still on an older build records nothing at all.
+        /// </summary>
+        private const string MomentsHashKey = "lighthouse:update-moments";
 
         // internal rather than private so that RedisUpdateStatusScriptFreezeTest can compare them
         // character for character against the text that shipped before the moments existed.
@@ -32,16 +44,29 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private readonly ILighthouseClock clock;
 
-        public RedisUpdateStatusStore(IConnectionMultiplexer multiplexer, ILighthouseClock clock)
+        private readonly ILogger<RedisUpdateStatusStore> logger;
+
+        public RedisUpdateStatusStore(IConnectionMultiplexer multiplexer, ILighthouseClock clock, ILogger<RedisUpdateStatusStore> logger)
         {
             database = multiplexer.GetDatabase();
             this.clock = clock;
+            this.logger = logger;
         }
 
         public bool TryAdmit(UpdateKey key, UpdateStatus status)
         {
-            status.QueuedAt = clock.Now;
-            return database.HashSet(StatusHashKey, key.ToString(), (int)status.Status, When.NotExists);
+            var admittedAt = clock.Now;
+
+            if (!database.HashSet(StatusHashKey, key.ToString(), (int)status.Status, When.NotExists))
+            {
+                return false;
+            }
+
+            status.QueuedAt = admittedAt;
+            status.StartedAt = null;
+            WriteMoments(key, new UpdateMoments(admittedAt, null));
+
+            return true;
         }
 
         public UpdateStatus? Advance(UpdateKey key, UpdateProgress to)
@@ -55,16 +80,34 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return null;
             }
 
-            return StatusFor(key, resultingOrdinal);
+            // Only when the key actually landed on InProgress. The script is monotonic, so an advance that
+            // was refused returns the ordinal the key already had, and stamping on that would restart the
+            // clock of a run that has been going for some time.
+            var moments = to == UpdateProgress.InProgress && resultingOrdinal == (int)UpdateProgress.InProgress
+                ? StampStartedUnlessAlreadyRunning(key)
+                : MomentsFor(key);
+
+            return StatusFor(key, resultingOrdinal, moments);
         }
 
         public void Requeue(UpdateKey key)
         {
             // HEXISTS-guarded: only an admitted key may be re-queued, so a key another pod already
             // removed cannot be resurrected into a phantom active entry that never completes.
-            database.ScriptEvaluate(
+            var requeued = (long)database.ScriptEvaluate(
                 RequeueIfAdmittedScript,
                 new { hashKey = (RedisKey)StatusHashKey, field = key.ToString(), to = (int)UpdateProgress.Queued });
+
+            if (requeued != 1)
+            {
+                // The guard refused, so there is no ordinal. Writing a moment now would leave the two hashes
+                // carrying different key sets, which is the drift keeping them side by side has to avoid.
+                return;
+            }
+
+            // A coalesced follow-up is new work waiting, not the old work still waiting, and the run that
+            // just ended is over.
+            WriteMoments(key, new UpdateMoments(clock.Now, null));
         }
 
         public bool TryGet(UpdateKey key, out UpdateStatus? status)
@@ -76,13 +119,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return false;
             }
 
-            status = StatusFor(key, (long)value);
+            status = StatusFor(key, (long)value, MomentsFor(key));
             return true;
         }
 
         public void Remove(UpdateKey key)
         {
             database.HashDelete(StatusHashKey, key.ToString());
+            database.HashDelete(MomentsHashKey, key.ToString());
         }
 
         /// <summary>
@@ -96,11 +140,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             var admitted = new List<UpdateStatus>();
 
+            // Both hashes in one pass each, rather than a moments lookup per row: the list is read whenever
+            // an operator opens the popover, and the ordinal hash is the one that decides who is on it. If the
+            // moments cannot be read the list is still answered, without durations - an operator asking what
+            // is running gets a worse answer rather than none.
+            var moments = BestEffortMoments();
+
             foreach (var entry in database.HashGetAll(StatusHashKey))
             {
                 if (TryReadKey(entry.Name, out var key))
                 {
-                    admitted.Add(StatusFor(key!, (long)entry.Value));
+                    moments.TryGetValue(entry.Name, out var recorded);
+                    admitted.Add(StatusFor(key!, (long)entry.Value, recorded));
                 }
             }
 
@@ -155,14 +206,111 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 .Any(value => !value.IsNull && (UpdateProgress)(int)(long)value == UpdateProgress.Queued);
         }
 
-        private static UpdateStatus StatusFor(UpdateKey key, long ordinal)
+        private static UpdateStatus StatusFor(UpdateKey key, long ordinal, UpdateMoments moments)
         {
             return new UpdateStatus
             {
                 UpdateType = key.UpdateType,
                 Id = key.Id,
                 Status = (UpdateProgress)(int)ordinal,
+                QueuedAt = moments.QueuedAt,
+                StartedAt = moments.StartedAt,
             };
+        }
+
+        private UpdateMoments StampStartedUnlessAlreadyRunning(UpdateKey key)
+        {
+            var recorded = MomentsFor(key);
+            if (recorded.StartedAt is not null)
+            {
+                return recorded;
+            }
+
+            // The admission moment is carried through as it stands, including when it is missing: an entry
+            // admitted by an older replica can still say honestly when it started, even though nothing can
+            // say any more when it began waiting.
+            var started = recorded with { StartedAt = clock.Now };
+
+            // Report what was written down rather than what was meant to be. A moment the store failed to
+            // keep would make this answer disagree with every read that comes after it.
+            return WriteMoments(key, started) ? started : recorded;
+        }
+
+        private Dictionary<RedisValue, UpdateMoments> BestEffortMoments()
+        {
+            try
+            {
+                return database.HashGetAll(MomentsHashKey)
+                    .ToDictionary(entry => entry.Name, entry => UpdateMoments.Parse(entry.Value));
+            }
+            catch (RedisException ex)
+            {
+                WarnListHasNoDurations(ex);
+            }
+            catch (TimeoutException ex)
+            {
+                WarnListHasNoDurations(ex);
+            }
+
+            return [];
+        }
+
+        private void WarnListHasNoDurations(Exception ex)
+        {
+            logger.LogWarning(ex, "Could not read when the admitted updates were admitted or started; the task list will show no durations.");
+        }
+
+        private UpdateMoments MomentsFor(UpdateKey key)
+            => BestEffort(
+                () => UpdateMoments.Parse(database.HashGet(MomentsHashKey, key.ToString())),
+                UpdateMoments.NothingRecorded,
+                key);
+
+        private bool WriteMoments(UpdateKey key, UpdateMoments moments)
+            => BestEffort(
+                () =>
+                {
+                    database.HashSet(MomentsHashKey, key.ToString(), moments.ToStorageValue());
+                    return true;
+                },
+                false,
+                key);
+
+        /// <summary>
+        /// ADR-182 calls the moments best-effort, and that has to hold for the command as well as the value.
+        /// Every one of them runs after the ordinal it accompanies has already been committed - the admission
+        /// is already visible instance-wide, the advance has already moved the key - so letting a Redis
+        /// timeout escape from here would abandon a key that is admitted but that nothing will now run or
+        /// remove, and the team or portfolio it names would never refresh again.
+        ///
+        /// Losing a moment costs a row its duration, which is a state every reader already handles. Losing
+        /// the refresh costs the instance the work. The trade is not close.
+        /// </summary>
+        private T BestEffort<T>(Func<T> moments, T whenUnavailable, UpdateKey key)
+        {
+            try
+            {
+                return moments();
+            }
+            catch (RedisException ex)
+            {
+                WarnMomentUnavailable(ex, key);
+            }
+            catch (TimeoutException ex)
+            {
+                WarnMomentUnavailable(ex, key);
+            }
+
+            return whenUnavailable;
+        }
+
+        private void WarnMomentUnavailable(Exception ex, UpdateKey key)
+        {
+            logger.LogWarning(
+                ex,
+                "Could not record or read when the update for {UpdateType} with ID {Id} was admitted or started. The refresh itself is unaffected; its row will show no duration.",
+                key.UpdateType,
+                key.Id);
         }
     }
 }

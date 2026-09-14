@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Authorization;
@@ -16,7 +17,8 @@ namespace Lighthouse.Backend.API
     public class UpdateController(
         IUpdateStatusStore updateStatusStore,
         IRepository<Team> teamRepository,
-        IPortfolioRepository portfolioRepository)
+        IPortfolioRepository portfolioRepository,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpGet("status")]
@@ -55,10 +57,49 @@ namespace Lighthouse.Backend.API
                     work.Id,
                     NameOf(work),
                     work.Status,
-                    work.Status == UpdateProgress.Queued ? laneHolderName : null))
+                    work.Status == UpdateProgress.Queued ? laneHolderName : null,
+                    ElapsedOn(work)))
                 .ToList();
 
             return Ok(tasks);
+        }
+
+        /// <summary>
+        /// How long the work has been in the state it is in, measured here rather than in the browser. A
+        /// reader's clock is wrong by whatever their machine is wrong by, so letting the browser subtract
+        /// would give two people looking at one instance different answers to the same question.
+        ///
+        /// Running counts from when it started and waiting from when it was admitted, which is what lets
+        /// one number read as "running for" or "queued for" without the caller knowing which moment it has.
+        /// </summary>
+        private long? ElapsedOn(UpdateStatus work)
+        {
+            var since = work.Status switch
+            {
+                UpdateProgress.InProgress => work.StartedAt,
+                UpdateProgress.Queued => work.QueuedAt,
+
+                // Work that has finished is neither running nor waiting, and it can still be on this list -
+                // briefly as it ends, or for good if the replica that was running it died in that window.
+                // Time since admission under a "Completed" label reads as time since it completed, which is a
+                // different number and usually a much smaller one.
+                _ => null,
+            };
+
+            if (since is null)
+            {
+                // Nothing recorded it - an entry admitted by a replica still on an older build, or one that
+                // started before this instance began keeping the moment. There is no honest number, and any
+                // stand-in is a duration a reader would believe.
+                return null;
+            }
+
+            var elapsed = clock.Now - since.Value;
+
+            // The moment is written by whichever replica handled the transition and read by whichever
+            // answers this call, and their clocks do not agree to the millisecond. Something that started
+            // fractionally in the future has just started.
+            return elapsed < TimeSpan.Zero ? 0 : (long)elapsed.TotalMilliseconds;
         }
 
         /// <summary>
@@ -85,6 +126,7 @@ namespace Lighthouse.Backend.API
             int Id,
             string Name,
             UpdateProgress Status,
-            string? WaitingBehind);
+            string? WaitingBehind,
+            long? ElapsedMs);
     }
 }
