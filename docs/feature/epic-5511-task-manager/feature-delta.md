@@ -1311,3 +1311,110 @@ this slice changed. All 18 survivors are in code the slice does not touch: 11 lo
 fixed. Excluding the accepted ones the rest kills 42 of 45. Whether a 70 % file-level number clears the
 gate when the changed method is clean is a judgement call for the maintainer, not something this slice
 should settle by writing coverage for behaviour it never touched.
+
+---
+
+# Wave: DISTILL — slice 02
+
+Run 2026-09-14. Reconciliation: passed, 0 contradictions. Slice 02 inherits slice 01's truthful terminal
+status (D6), which is why it could only be distilled after slice 01 shipped.
+
+## Wave: DISTILL / [REF] The contract this slice fixes
+
+`GET /api/latest/update/tasks`, System-Administrator-guarded, answering a JSON array with one object per
+admitted piece of work:
+
+| field | meaning |
+|---|---|
+| `updateType` | `Team`, `Features`, `Forecasts`, `TeamDelete` or `PortfolioDelete` — by name, because the browser's own union is strings |
+| `id` | the entity's id |
+| `name` | resolved on the read path (D8), falling back to something that still identifies the work when the entity has gone |
+| `status` | `Queued` / `InProgress` / `Completed` / `Failed`, by name |
+| `waitingBehind` | the entity holding the lane; absent for work that is running |
+
+`waitingBehind` is the naming half of deferred item G, decided 2026-09-14. Everything else follows
+US-02 as written.
+
+## Wave: DISTILL / [REF] Scenario list
+
+**Backend** — `API/Integration/TaskManager/Slice02SeeWhatIsRunning{Scenarios,Specifications}.cs`,
+categories `acceptance` + `epic-5511-task-manager` + `slice-02`. All nine observe the endpoint over
+HTTP, so the shape of the port the controller reads underneath stays DELIVER's decision.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `A_refresh_that_is_running_is_listed_by_name` | `@walking_skeleton @driving_port @real-io` | 02.1, 02.3, 02.9 |
+| `A_portfolio_refresh_that_is_running_is_listed_by_name` | `@driving_port @real-io` | 02.1, 02.3 |
+| `A_refresh_waiting_its_turn_is_listed_as_queued` | `@driving_port @real-io` | 02.1, 02.3 |
+| `A_queued_refresh_names_what_is_holding_the_lane` | `@driving_port @real-io` | item G |
+| `A_refresh_whose_entity_has_gone_is_still_listed_by_what_it_is` | `@driving_port @real-io @error` | 02.3 |
+| `With_nothing_running_the_task_list_is_empty_and_says_so_without_failing` | `@driving_port @real-io` | 02.7 |
+| `The_task_list_is_refused_to_somebody_who_is_not_a_system_administrator` | `@driving_port @real-io @error` | 02.6 |
+| `The_task_list_reports_work_admitted_through_the_shared_store` | `@driving_port @real-io` | 02.2 |
+| `A_delete_that_is_waiting_is_listed_as_something_a_reader_can_understand` | `@driving_port @real-io` | 02.3 |
+
+**Frontend** — `components/App/Header/TaskManagerIcon.test.tsx` (8) and one in `Header.test.tsx`.
+
+| Scenario | AC |
+|---|---|
+| lists what is running and what is waiting, by name | 02.3 |
+| says which of them is running and which is waiting | 02.3 |
+| says what a waiting refresh is waiting behind | item G |
+| names the kind of thing being refreshed in the reader's own words | 02.4 |
+| refreshes itself when the instance says something changed | 02.5 |
+| says in words that nothing is running, rather than showing an empty box | 02.7 |
+| does not appear at all for somebody who is not a System Administrator | 02.6 |
+| does not ask for the list when the reader may not see it | 02.6 |
+| shows the activity icon beside the OAuth health icon, not instead of it | 02.8 |
+
+Two of these are worth calling out as more than restatements of an AC. *The task list is refused …
+the same way the refresh log does* asks both endpoints and compares their answers rather than writing a
+status code down twice and letting the two drift apart. *Does not ask for the list when the reader may
+not see it* is the half of AC-02.6 that a hidden icon does not cover: not rendering a control is not the
+same as not fetching instance-wide data for someone who may not read it.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+- `services/UpdateSubscriptionService.ts` — `UpdateTaskType`, `IUpdateTask` and `getRunningTasks()` on
+  the port; the implementation throws with a `__SCAFFOLD__` marker. It throws rather than returning
+  `[]`, so a specification that reaches it fails loudly instead of quietly agreeing the instance is idle.
+- `components/App/Header/TaskManagerIcon.tsx` — throwing scaffold. DESIGN splits the popover out as
+  `TaskManagerPopover`; that is a structure decision the scaffold deliberately does not make, and the
+  specifications drive the icon rather than the split.
+- `tests/MockApiServiceProvider.ts` — `getRunningTasks` added to the update-subscription mock.
+
+No backend scaffold. Every backend scenario is driven over HTTP, so a missing route is a 404 and the
+assertion fails on the answer rather than on a compile error.
+
+## Wave: DISTILL / [REF] Red gate
+
+All 18 fail, each for the right reason:
+
+- the nine backend scenarios on `404` from `/api/latest/update/tasks`
+- the eight icon specifications on the scaffold's own `Not yet implemented` message
+- the header scenario on there being no activity control, with its OAuth half passing — which is what
+  makes it a guard against replacing the old icon rather than adding beside it
+
+Everything else stays green: backend 6683, frontend 5138.
+
+## Wave: DISTILL / [REF] Answered elsewhere, deliberately
+
+- **AC-02.1, multi-replica half** — that the Redis store answers about work admitted by *any* replica is
+  a promise about an adapter method that does not exist yet, so there is nothing to drive from outside.
+  It is authored at the start of DELIVER beside the port change, in `Integration/Containers/`, where
+  `RedisContainerFixture` and the cross-pod fixtures already live.
+- **AC-02.9** — "verified against a real instance with a real connector refresh in flight" is satisfied
+  by the backend scenarios, which run the production queue against a gated connector rather than seeding
+  a status dictionary. What they do not do is exercise a real tracker; that stays a manual check at
+  slice close, as it was for slice 01.
+
+## Wave: DISTILL / [REF] Carried into DELIVER
+
+1. `UpdateType` has five members and the frontend union knew three. `UpdateTaskType` widens it for the
+   task list only, leaving `IUpdateStatus` alone — the detail pages subscribe to three types and have no
+   business knowing about deletes.
+2. `InProgress` is never pushed to the browser (recorded at slice 01). The scenarios here read the list
+   rather than the push, so slice 02 can be built without adding one — but the popover will only be as
+   live as `GlobalUpdateNotification`, which *is* raised on every transition.
+3. The endpoint being replaced, `/update/status`, stays for now: `useUpdateAll` reads it. Removing it is
+   not in this slice.

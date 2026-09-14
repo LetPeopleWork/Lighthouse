@@ -7,6 +7,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
 import {
 	createMockApiServiceContext,
+	createMockOAuthService,
 	createMockRbacService,
 } from "../../../tests/MockApiServiceProvider";
 import Header from "./Header";
@@ -83,6 +84,52 @@ describe("Header component", () => {
 			</QueryClientProvider>,
 		);
 	};
+	// Epic #5511 slice 02 / AC-02.8. The OAuth icon's badge is folded into the activity icon in slice 05
+	// and not before, so for the length of this slice an administrator has two icons, not one. Pinning
+	// that here is what stops the new icon quietly replacing the old one a slice early.
+	it("shows the activity icon beside the OAuth health icon, not instead of it", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: false,
+			canCreatePortfolio: false,
+		});
+
+		const mockOAuthService = createMockOAuthService();
+		mockOAuthService.getHealth = vi.fn().mockResolvedValue({
+			totalOAuthConnections: 2,
+			disconnectedCount: 1,
+			firstDisconnectedConnectionId: 4,
+		});
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						licensingService: mockLicensingService,
+						rbacService: mockRbacService,
+						oauthService: mockOAuthService,
+					})}
+				>
+					<MemoryRouter>
+						<Header />
+					</MemoryRouter>
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: /reconnect|healthy/i }),
+			).toBeInTheDocument();
+		});
+
+		expect(
+			screen.getByRole("button", { name: /activity/i }),
+		).toBeInTheDocument();
+	});
+
 	it("should render the LighthouseLogo", () => {
 		renderHeader();
 		const logo = screen.getByAltText("Lighthouse logo");

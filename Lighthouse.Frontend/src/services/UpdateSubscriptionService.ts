@@ -17,12 +17,30 @@ export interface IGlobalUpdateStatus {
 	activeCount: number;
 }
 
+/**
+ * The update types that reach the task list. Wider than UpdateType, which names only the three a
+ * detail page ever subscribes to - deletes go through the same queue and an operator watching the
+ * instance sees them too.
+ */
+export type UpdateTaskType = UpdateType | "TeamDelete" | "PortfolioDelete";
+
+/** One piece of work the instance has admitted: what it is, what it is called, and where it has got to. */
+export interface IUpdateTask {
+	updateType: UpdateTaskType;
+	id: number;
+	name: string;
+	status: UpdateProgress;
+	/** The entity holding the lane this one is waiting for. Absent for work that is running. */
+	waitingBehind?: string | null;
+}
+
 export interface IUpdateSubscriptionService {
 	getUpdateStatus(
 		updateType: UpdateType,
 		id: number,
 	): Promise<IUpdateStatus | null>;
 	getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus>;
+	getRunningTasks(): Promise<IUpdateTask[]>;
 	subscribeToAllUpdates(callback: () => void): Promise<void>;
 	unsubscribeFromAllUpdates(): Promise<void>;
 	subscribeToTeamUpdates(
@@ -139,6 +157,13 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			console.error("Error getting update status:", err);
 			return null;
 		}
+	}
+
+	// __SCAFFOLD__ - DISTILL placeholder for Epic #5511 slice 02. DELIVER replaces this with the real
+	// read; it throws rather than returning nothing so a test that reaches it fails loudly instead of
+	// quietly agreeing that the instance is idle.
+	public getRunningTasks(): Promise<IUpdateTask[]> {
+		throw new Error("Not yet implemented - RED scaffold (Epic #5511 slice 02)");
 	}
 
 	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {
