@@ -9,6 +9,7 @@ import {
 	createMockApiServiceContext,
 	createMockOAuthService,
 	createMockRbacService,
+	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
 import Header from "./Header";
 
@@ -72,6 +73,7 @@ describe("Header component", () => {
 		const mockApiContext = createMockApiServiceContext({
 			licensingService: mockLicensingService,
 			rbacService: mockRbacService,
+			updateSubscriptionService: createMockUpdateSubscriptionService(),
 		});
 
 		return render(
@@ -110,6 +112,7 @@ describe("Header component", () => {
 						licensingService: mockLicensingService,
 						rbacService: mockRbacService,
 						oauthService: mockOAuthService,
+						updateSubscriptionService: createMockUpdateSubscriptionService(),
 					})}
 				>
 					<MemoryRouter>

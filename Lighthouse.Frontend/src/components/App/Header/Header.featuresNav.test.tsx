@@ -10,6 +10,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 	createMockTerminologyService,
+	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
 import Header from "./Header";
 
@@ -41,6 +42,7 @@ const renderHeaderWhereFeaturesAreCalled = (featuresTerm: string) => {
 	const apiContext = createMockApiServiceContext({
 		rbacService: createMockRbacService(),
 		terminologyService,
+		updateSubscriptionService: createMockUpdateSubscriptionService(),
 	});
 
 	return render(

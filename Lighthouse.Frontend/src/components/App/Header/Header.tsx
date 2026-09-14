@@ -26,6 +26,7 @@ import ExternalLinkButton from "./ExternalLinkButton";
 import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
 import OAuthHealthIcon from "./OAuthHealthIcon";
+import TaskManagerIcon from "./TaskManagerIcon";
 import UpdateAllButton from "./UpdateAllButton";
 
 interface HeaderProps {
@@ -121,6 +122,7 @@ const Header: React.FC<HeaderProps> = ({
 				{isMobile ? (
 					<>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
+							<TaskManagerIcon />
 							<OAuthHealthIcon />
 							<LicenseStatusIcon />
 							<ThemeToggler />
@@ -158,6 +160,7 @@ const Header: React.FC<HeaderProps> = ({
 						</Box>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
 							{rbac.isSystemAdmin && <UpdateAllButton />}
+							<TaskManagerIcon />
 							<OAuthHealthIcon />
 							<LicenseStatusIcon />
 							<ThemeToggler />

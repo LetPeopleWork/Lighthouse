@@ -104,13 +104,19 @@ describe("TaskManagerIcon", () => {
 	});
 
 	// AC-02.3 — an id is not an answer to "what is running"; the name is what an operator recognises.
+	// Asserted per row: the name of whatever holds the lane legitimately appears twice, once as the row
+	// that is running and once inside what the waiting row says it is waiting for.
 	it("lists what is running and what is waiting, by name", async () => {
 		renderIcon([aRunningTeam, aQueuedPortfolio]);
 
 		await openThePopover();
 
-		expect(await screen.findByText(/Lagunitas/)).toBeInTheDocument();
-		expect(screen.getByText(/Q4 Platform/)).toBeInTheDocument();
+		expect(
+			await screen.findByTestId("task-manager-row-Team-7"),
+		).toHaveTextContent(/Lagunitas/);
+		expect(screen.getByTestId("task-manager-row-Features-3")).toHaveTextContent(
+			/Q4 Platform/,
+		);
 	});
 
 	// AC-02.3 — running and waiting are different answers, and the whole point of the glance.

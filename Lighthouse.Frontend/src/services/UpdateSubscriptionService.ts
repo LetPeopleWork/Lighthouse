@@ -159,11 +159,11 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		}
 	}
 
-	// __SCAFFOLD__ - DISTILL placeholder for Epic #5511 slice 02. DELIVER replaces this with the real
-	// read; it throws rather than returning nothing so a test that reaches it fails loudly instead of
-	// quietly agreeing that the instance is idle.
-	public getRunningTasks(): Promise<IUpdateTask[]> {
-		throw new Error("Not yet implemented - RED scaffold (Epic #5511 slice 02)");
+	public async getRunningTasks(): Promise<IUpdateTask[]> {
+		await this.ensureConnected();
+
+		const response = await this.apiService.get<IUpdateTask[]>("/update/tasks");
+		return response.data;
 	}
 
 	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {

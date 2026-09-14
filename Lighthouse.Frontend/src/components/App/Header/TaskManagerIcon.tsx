@@ -1,14 +1,144 @@
-// __SCAFFOLD__ - DISTILL placeholder for Epic #5511 slice 02 (#5840).
-//
-// The header's activity icon and the popover it opens: what the instance is refreshing and what is
-// waiting. DELIVER replaces this with the real component; DESIGN splits the popover out as
-// TaskManagerPopover, which is a structure decision this scaffold deliberately does not make.
-//
-// It throws rather than rendering nothing, so a specification that reaches it fails loudly instead of
-// quietly agreeing that there is nothing to show.
+import TimelineIcon from "@mui/icons-material/Timeline";
+import Badge from "@mui/material/Badge";
+import IconButton from "@mui/material/IconButton";
+import Popover from "@mui/material/Popover";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { useRbac } from "../../../hooks/useRbac";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
+import type {
+	IUpdateTask,
+	UpdateTaskType,
+} from "../../../services/UpdateSubscriptionService";
 
-const TaskManagerIcon = (): never => {
-	throw new Error("Not yet implemented - RED scaffold (Epic #5511 slice 02)");
+const ACTIVITY_LABEL = "Activity";
+
+/**
+ * What an operator is told a piece of work is. The update type is the instance's own vocabulary; this
+ * is the reader's, so a tenant who renamed Team to Squad never meets the seeded default here.
+ */
+const useKindOf = () => {
+	const { getTerm } = useTerminology();
+
+	return (updateType: UpdateTaskType): string => {
+		switch (updateType) {
+			case "Team":
+			case "TeamDelete":
+				return getTerm(TERMINOLOGY_KEYS.TEAM);
+			default:
+				return getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+		}
+	};
+};
+
+const describeStatus = (task: IUpdateTask): string => {
+	switch (task.status) {
+		case "InProgress":
+			return "Running";
+		case "Queued":
+			return task.waitingBehind
+				? `Queued behind ${task.waitingBehind}`
+				: "Queued";
+		default:
+			return task.status;
+	}
+};
+
+const isDelete = (updateType: UpdateTaskType): boolean =>
+	updateType === "TeamDelete" || updateType === "PortfolioDelete";
+
+const TaskManagerIcon = () => {
+	const { isSystemAdmin } = useRbac();
+	const { updateSubscriptionService } = useContext(ApiServiceContext);
+	const kindOf = useKindOf();
+
+	const [tasks, setTasks] = useState<IUpdateTask[]>([]);
+	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+
+	const refresh = useCallback(async () => {
+		try {
+			setTasks(await updateSubscriptionService.getRunningTasks());
+		} catch {
+			// An instance that cannot say what it is doing is not an instance doing nothing, so the list is
+			// left as it was rather than being emptied into a confident "nothing is running".
+		}
+	}, [updateSubscriptionService]);
+
+	useEffect(() => {
+		if (!isSystemAdmin) {
+			return;
+		}
+
+		let cancelled = false;
+		const reread = () => {
+			if (!cancelled) {
+				void refresh();
+			}
+		};
+
+		reread();
+		void updateSubscriptionService.subscribeToAllUpdates(reread);
+
+		return () => {
+			cancelled = true;
+			void updateSubscriptionService.unsubscribeFromAllUpdates();
+		};
+	}, [isSystemAdmin, refresh, updateSubscriptionService]);
+
+	if (!isSystemAdmin) {
+		return null;
+	}
+
+	return (
+		<>
+			<Tooltip title={ACTIVITY_LABEL}>
+				<IconButton
+					aria-label={ACTIVITY_LABEL}
+					color="inherit"
+					onClick={(event) => setAnchor(event.currentTarget)}
+				>
+					<Badge badgeContent={tasks.length} color="primary">
+						<TimelineIcon />
+					</Badge>
+				</IconButton>
+			</Tooltip>
+
+			<Popover
+				open={anchor !== null}
+				anchorEl={anchor}
+				onClose={() => setAnchor(null)}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+				transformOrigin={{ vertical: "top", horizontal: "right" }}
+				slotProps={{ paper: { sx: { p: 2, minWidth: 320 } } }}
+			>
+				<Typography variant="subtitle2" gutterBottom>
+					{ACTIVITY_LABEL}
+				</Typography>
+
+				{tasks.length === 0 ? (
+					<Typography variant="body2" color="text.secondary">
+						Nothing is being refreshed right now.
+					</Typography>
+				) : (
+					tasks.map((task) => (
+						<Typography
+							key={`${task.updateType}-${task.id}`}
+							data-testid={`task-manager-row-${task.updateType}-${task.id}`}
+							variant="body2"
+							sx={{ py: 0.5 }}
+						>
+							{kindOf(task.updateType)} '{task.name}'
+							{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
+							{describeStatus(task)}
+						</Typography>
+					))
+				)}
+			</Popover>
+		</>
+	);
 };
 
 export default TaskManagerIcon;
