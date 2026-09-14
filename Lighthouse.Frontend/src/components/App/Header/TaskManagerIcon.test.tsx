@@ -428,4 +428,83 @@ describe("TaskManagerIcon", () => {
 			}
 		});
 	});
+
+	/**
+	 * DISTILL specifications, slice 04 / #5842. US-04: AC-04.6 (the control exists and asking is accepted
+	 * whatever state the work is in) and AC-04.7 (cancelling one row does not touch another).
+	 *
+	 * What actually stops is the backend's promise, pinned in Slice04StopARefresh*. What this pins is that
+	 * the operator can ask at all, asks about the right row, and is not told a comfortable lie when the ask
+	 * fails.
+	 */
+	describe("stopping a refresh", () => {
+		it("offers a way to stop each refresh, named after what it would stop", async () => {
+			renderIcon([aRunningTeam, aQueuedPortfolio]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: /stop refreshing Q4 Platform/i }),
+			).toBeInTheDocument();
+		});
+
+		it("asks the instance to stop the row that was clicked, and no other", async () => {
+			const service = renderIcon([aRunningTeam, aQueuedPortfolio]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			expect(service.cancelTask).toHaveBeenCalledWith("Team", 7);
+			expect(service.cancelTask).toHaveBeenCalledTimes(1);
+		});
+
+		// The instance decides what stopped, not this component. Re-reading is what keeps the row honest
+		// when the ask arrived too late, or was refused.
+		it("re-reads the list rather than assuming the refresh stopped", async () => {
+			const service = renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			vi.mocked(service.getRunningTasks).mockClear();
+
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(service.getRunningTasks).toHaveBeenCalled();
+			});
+		});
+
+		// A refused or failed ask must not leave the row claiming something the instance never agreed to.
+		it("leaves the row as the instance last described it when the ask fails", async () => {
+			const service = renderIcon([aRunningTeam], (svc) => {
+				svc.cancelTask = vi.fn().mockRejectedValue(new Error("refused"));
+			});
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(service.getRunningTasks).toHaveBeenCalled();
+			});
+			expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+				/running/i,
+			);
+		});
+	});
 });

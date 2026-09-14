@@ -1,24 +1,27 @@
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
 {
+    // S6960 counts the injected services and reads three of them as three jobs. They are one: this is the
+    // HTTP surface of the update queue, and the three routes are "is anything running", "what exactly", and
+    // "stop that one" - a question an operator asks in that order, about one subsystem. Splitting them puts
+    // two controllers on one route prefix and gives the System-Administrator guard two places to drift apart.
+#pragma warning disable S6960
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
     [Authorize]
     public class UpdateController(
         IUpdateStatusStore updateStatusStore,
-        IRepository<Team> teamRepository,
-        IPortfolioRepository portfolioRepository,
-        ILighthouseClock clock)
+        IUpdateTaskNaming naming,
+        ILighthouseClock clock,
+        IUpdateQueueService updateQueueService)
         : ControllerBase
     {
         [HttpGet("status")]
@@ -56,19 +59,36 @@ namespace Lighthouse.Backend.API
             // The queue runs one thing at a time, so whatever is running is what everything queued is
             // waiting for. That is the whole claim this field makes - not a position, not an estimate.
             var holdingTheLane = admitted.FirstOrDefault(work => work.Status == UpdateProgress.InProgress);
-            var laneHolderName = holdingTheLane is null ? null : NameOf(holdingTheLane);
+            var laneHolderName = holdingTheLane is null ? null : naming.NameOf(holdingTheLane);
 
             var tasks = admitted
                 .Select(work => new UpdateTaskResponse(
                     work.UpdateType,
                     work.Id,
-                    NameOf(work),
+                    naming.NameOf(work),
                     work.Status,
                     work.Status == UpdateProgress.Queued ? laneHolderName : null,
                     ElapsedOn(work)))
                 .ToList();
 
             return Ok(tasks);
+        }
+
+        /// <summary>
+        /// Stops a queued or running refresh. Guarded like the list it is reached from, and for the same
+        /// reason: it acts on every entity on the instance.
+        ///
+        /// Accepted whatever state the work is in, including gone. The row an operator clicked was drawn
+        /// before they clicked it, so "it finished while you were reading" is the ordinary case rather than
+        /// an error, and answering one would put a failure in front of somebody who did nothing wrong.
+        /// </summary>
+        [HttpPost("tasks/{updateType}/{id:int}/cancel")]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<ActionResult> CancelTask(UpdateType updateType, int id)
+        {
+            await updateQueueService.CancelAsync(new UpdateKey(updateType, id));
+            return NoContent();
         }
 
         /// <summary>
@@ -109,23 +129,6 @@ namespace Lighthouse.Backend.API
             return elapsed < TimeSpan.Zero ? 0 : (long)elapsed.TotalMilliseconds;
         }
 
-        /// <summary>
-        /// Resolved as the list is read rather than stored alongside the status, so a rename shows up
-        /// immediately and the update path stays ignorant of anything a screen needs. An entity that has
-        /// gone - deleted while its own refresh was in flight - still has a type and an id, and saying
-        /// those is more use to an operator than a blank row.
-        /// </summary>
-        private string NameOf(UpdateStatus work)
-        {
-            var name = work.UpdateType switch
-            {
-                UpdateType.Team or UpdateType.TeamDelete => teamRepository.GetById(work.Id)?.Name,
-                _ => portfolioRepository.GetById(work.Id)?.Name,
-            };
-
-            return string.IsNullOrWhiteSpace(name) ? $"{work.UpdateType} {work.Id}" : name;
-        }
-
         public sealed record UpdateStatusResponse(bool HasActiveUpdates, int ActiveCount);
 
         public sealed record UpdateTaskResponse(
@@ -136,4 +139,5 @@ namespace Lighthouse.Backend.API
             string? WaitingBehind,
             long? ElapsedMs);
     }
+#pragma warning restore S6960
 }

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -150,9 +151,9 @@ namespace Lighthouse.Backend.Tests.API
         {
             return new UpdateController(
                 new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc),
-                Mock.Of<IRepository<Team>>(),
-                Mock.Of<IPortfolioRepository>(),
-                Clocks.SystemUtc);
+                new UpdateTaskNaming(Mock.Of<IRepository<Team>>(), Mock.Of<IPortfolioRepository>()),
+                Clocks.SystemUtc,
+                Mock.Of<IUpdateQueueService>());
         }
     }
 }

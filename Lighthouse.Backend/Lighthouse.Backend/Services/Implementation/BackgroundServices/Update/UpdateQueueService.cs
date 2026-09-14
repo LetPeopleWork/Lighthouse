@@ -53,6 +53,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
+        /// <summary>
+        /// RED scaffold (DISTILL, slice 04). It throws rather than doing nothing: a cancel that quietly has
+        /// no effect is the exact failure this slice exists to remove, so an unfinished one must not be able
+        /// to pass for a working one.
+        /// </summary>
+        public Task CancelAsync(UpdateKey key)
+        {
+            throw new NotImplementedException("Not yet implemented - RED scaffold");
+        }
+
         public async Task DrainAsync(CancellationToken cancellationToken = default)
         {
             queue.Writer.TryComplete();

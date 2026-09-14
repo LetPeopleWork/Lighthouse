@@ -1,5 +1,7 @@
+import CancelIcon from "@mui/icons-material/Cancel";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
@@ -83,6 +85,24 @@ const TaskManagerIcon = () => {
 		}
 	}, [updateSubscriptionService]);
 
+	/**
+	 * The list is re-read rather than edited in place: what actually stopped is the instance's answer, not
+	 * this component's guess, and a cancel that was refused or arrived too late would otherwise leave a row
+	 * showing a state the server never agreed to.
+	 */
+	const cancel = useCallback(
+		async (task: IUpdateTask) => {
+			try {
+				await updateSubscriptionService.cancelTask(task.updateType, task.id);
+			} catch {
+				// Nothing is claimed on the strength of a failed ask.
+			}
+
+			await refresh();
+		},
+		[refresh, updateSubscriptionService],
+	);
+
 	useEffect(() => {
 		if (!isSystemAdmin) {
 			return;
@@ -140,16 +160,30 @@ const TaskManagerIcon = () => {
 					</Typography>
 				) : (
 					tasks.map((task) => (
-						<Typography
+						<Box
 							key={`${task.updateType}-${task.id}`}
-							data-testid={`task-manager-row-${task.updateType}-${task.id}`}
-							variant="body2"
-							sx={{ py: 0.5 }}
+							sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}
 						>
-							{kindOf(task.updateType)} '{task.name}'
-							{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
-							{describeStatus(task)}
-						</Typography>
+							<Typography
+								data-testid={`task-manager-row-${task.updateType}-${task.id}`}
+								variant="body2"
+								sx={{ flexGrow: 1 }}
+							>
+								{kindOf(task.updateType)} '{task.name}'
+								{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
+								{describeStatus(task)}
+							</Typography>
+
+							<Tooltip title={`Stop refreshing ${task.name}`}>
+								<IconButton
+									aria-label={`Stop refreshing ${task.name}`}
+									size="small"
+									onClick={() => void cancel(task)}
+								>
+									<CancelIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
+						</Box>
 					))
 				)}
 			</Popover>

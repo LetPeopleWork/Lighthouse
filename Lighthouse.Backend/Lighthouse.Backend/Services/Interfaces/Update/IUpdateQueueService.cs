@@ -24,6 +24,17 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         /// </summary>
         bool IsHeld(UpdateKey heldFor);
 
+        /// <summary>
+        /// Asks the work for <paramref name="key"/> to stop. Queued work leaves without ever reaching the
+        /// tracker; running work stops at its next page. Idempotent by design - cancelling something that
+        /// has already finished, or was never admitted, is accepted and changes nothing, because the row an
+        /// operator clicked was drawn before they clicked it.
+        ///
+        /// On a multi-replica instance the work is often running on a different pod from the one answering
+        /// the click, so this is published to every replica rather than handled locally.
+        /// </summary>
+        Task CancelAsync(UpdateKey key);
+
         Task DrainAsync(CancellationToken cancellationToken = default);
     }
 }

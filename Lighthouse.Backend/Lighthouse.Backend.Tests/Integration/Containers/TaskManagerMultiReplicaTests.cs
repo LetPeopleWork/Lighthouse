@@ -255,4 +255,91 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private static UpdateStatus QueuedStatusFor(UpdateKey key)
             => new() { UpdateType = key.UpdateType, Id = key.Id, Status = UpdateProgress.Queued };
     }
+
+    /// <summary>
+    /// Epic #5511 slice 04, the cross-pod half of cancel — a DISTILL correction to ADR-183 rather than
+    /// something the ADR asked for.
+    ///
+    /// The token source lives in the process that admitted the work, and slice 02 deliberately made the
+    /// task list answer about work admitted by any replica. So the pod that takes an operator's click is
+    /// usually not the pod that can act on it, and a cancel handled where it lands would do nothing at all
+    /// for most rows on a multi-replica instance — with nothing to tell an operator which rows those were.
+    ///
+    /// That is the same shape as the defect this Epic exists to remove, one slice later, which is why it is
+    /// pinned against a real Redis rather than argued about.
+    /// </summary>
+    [TestFixture]
+    [Category("epic-5511-task-manager")]
+    [Category("slice-04")]
+    [Category("requires-docker")]
+    public class TaskManagerCancellationMultiReplicaTests
+    {
+        [Test]
+        public async Task ACancelAskedForOnOneReplica_ReachesTheReplicaThatIsRunningTheWork()
+        {
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var podRunningTheWork = new RedisUpdateCancellationNotifier(multiplexer);
+            var podTakingTheClick = new RedisUpdateCancellationNotifier(multiplexer);
+
+            var cancelled = new TaskCompletionSource<UpdateKey>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var subscription = podRunningTheWork.Subscribe(key => cancelled.TrySetResult(key));
+
+            var runawayRefresh = new UpdateKey(UpdateType.Team, 42);
+            await podTakingTheClick.PublishCancellationAsync(runawayRefresh);
+
+            var reached = await Task.WhenAny(cancelled.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reached, Is.SameAs(cancelled.Task),
+                    "The pod answering the click holds no token source for this key. If the ask does not travel, "
+                    + "Cancel is a button that silently does nothing for every row another replica is running.");
+                Assert.That(cancelled.Task.Result, Is.EqualTo(runawayRefresh),
+                    "Cancel is per entity across the whole instance, not only within one process.");
+            }
+        }
+
+        [Test]
+        public async Task ACancelForOneEntity_DoesNotReachAnother()
+        {
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var notifier = new RedisUpdateCancellationNotifier(multiplexer);
+
+            var everythingCancelled = new List<UpdateKey>();
+            using var subscription = notifier.Subscribe(key =>
+            {
+                lock (everythingCancelled)
+                {
+                    everythingCancelled.Add(key);
+                }
+            });
+
+            await notifier.PublishCancellationAsync(new UpdateKey(UpdateType.Team, 42));
+
+            var settled = DateTime.UtcNow.AddSeconds(10);
+            while (DateTime.UtcNow < settled)
+            {
+                lock (everythingCancelled)
+                {
+                    if (everythingCancelled.Count > 0)
+                    {
+                        break;
+                    }
+                }
+
+                await Task.Delay(20);
+            }
+
+            lock (everythingCancelled)
+            {
+                Assert.That(everythingCancelled, Is.EqualTo(new[] { new UpdateKey(UpdateType.Team, 42) }),
+                    "Broadcasting the ask must not broaden it. A cancel that reaches every replica and then "
+                    + "stops everything they are running is worse than no cancel at all.");
+            }
+        }
+    }
 }

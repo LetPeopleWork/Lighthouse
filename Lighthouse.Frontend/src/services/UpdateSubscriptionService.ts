@@ -51,6 +51,7 @@ export interface IUpdateSubscriptionService {
 	): Promise<IUpdateStatus | null>;
 	getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus>;
 	getRunningTasks(): Promise<IUpdateTask[]>;
+	cancelTask(updateType: UpdateTaskType, id: number): Promise<void>;
 	subscribeToAllUpdates(callback: () => void): Promise<void>;
 	unsubscribeFromAllUpdates(): Promise<void>;
 	subscribeToTeamUpdates(
@@ -228,6 +229,20 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 
 		const response = await this.apiService.get<IUpdateTask[]>("/update/tasks");
 		return response.data;
+	}
+
+	/**
+	 * Asks the instance to stop a refresh. Accepted whatever state the work is in, including gone - the row
+	 * was drawn before it was clicked, so "it finished while you were reading" is ordinary rather than an
+	 * error worth putting in front of somebody.
+	 */
+	public async cancelTask(
+		updateType: UpdateTaskType,
+		id: number,
+	): Promise<void> {
+		await this.ensureConnected();
+
+		await this.apiService.post(`/update/tasks/${updateType}/${id}/cancel`);
 	}
 
 	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {

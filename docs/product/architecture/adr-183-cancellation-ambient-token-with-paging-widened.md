@@ -1,8 +1,9 @@
 # ADR-183: Cancellation is an ambient scoped token, and `IWorkTrackingConnector` widens only where it pages
 
 - **Status**: **Accepted** (maintainer, 2026-09-14) — proposed at DESIGN 2026-08-23, amended after the
-  slice-04 probe corrected one of its premises. See *Probe correction* below.
-- **Date**: 2026-08-23, amended 2026-09-14
+  slice-04 probe corrected one of its premises, and again at slice-04 DISTILL. See *Probe correction* and
+  *DISTILL corrections* below.
+- **Date**: 2026-08-23, amended 2026-09-14 (probe) and 2026-09-14 (DISTILL)
 - **Feature**: epic-5511-task-manager (ADO Epic #5511, slice 04 / ADO #5842)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 
@@ -114,7 +115,48 @@ source, which is correct: it is new work, and cancelling the run that preceded i
 **Enforced by**: an ArchUnit rule that nothing but `UpdateQueueService` writes
 `UpdateCancellationContext`.
 
+## DISTILL corrections (2026-09-14)
+
+Two things this ADR settled were settled against a one-replica picture. Slice 02 had since made the task
+list answer about work admitted by *any* replica, which changes both. Neither was in DESIGN's open
+questions — they were not deferred, they were not noticed.
+
+### Cancel is published to every replica, not handled where the click lands
+
+The token source lives in the process that admitted the work. The task list deliberately shows work from
+every replica, so on a multi-replica instance the pod answering an operator's click is usually **not** the
+pod that can act on it. As written, this ADR would have shipped a Cancel button that does nothing for most
+rows, with nothing to tell an operator which rows those were — the exact failure the Epic exists to remove,
+rebuilt one slice later.
+
+So cancellation is published over a substrate, not handled locally: **`IUpdateCancellationNotifier`**,
+deliberately the same shape as `IUpdateCompletionNotifier` — one in-process implementation, one over Redis,
+the queue subscribing once at construction. That port already solves this exact problem for completion, so
+this is a sibling rather than a new mechanism, and `UpdateQueueService` already holds a subscription it can
+be modelled on.
+
+`CancelAsync` stays idempotent and per-`UpdateKey`, and now means "ask whoever is running this to stop"
+rather than "stop this if it happens to be mine".
+
+### Every method that pages widens, not the six named above
+
+The Decision names "the six paging methods … (and `SweepParentFeatures` where it pages)". Two problems.
+`GetParentFeaturesDetails` also pages — it chunks reference ids at 200 per query, on the portfolio
+parent-feature path, which is the slowest path the Jira connector has — and it is not on the list. And
+"where it pages" is a condition a reader has to evaluate rather than a rule they can apply.
+
+The rule this ADR actually states is *widen where it loops*. Applied literally that is every paging method
+including `GetParentFeaturesDetails` and `SweepParentFeatures` unconditionally, and that is what slice 04
+pins. Leaving one loop unable to observe a token would put a checkpoint-free hole in the path most likely
+to need one, for the sake of a shorter list.
+
+**Maintainer's call, 2026-09-14, on both.**
+
 ## Alternatives considered
+
+**Cancel handled only where the click lands.** No notifier; `CancelAsync` cancels the token source in the
+process that took the request. Simplest, and correct on a single replica. Rejected at DISTILL: on a
+multi-replica instance it is a button that silently does nothing for most rows — see *DISTILL corrections*.
 
 **Ambient only, connector port untouched.** The paging loops read `UpdateCancellationContext`
 themselves. Identical cancel granularity to the decision above — between pages — at none of its cost:

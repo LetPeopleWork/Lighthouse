@@ -349,6 +349,7 @@ export const createMockUpdateSubscriptionService =
 			getUpdateStatus: vi.fn(),
 			getGlobalUpdateStatus: vi.fn(),
 			getRunningTasks: vi.fn().mockResolvedValue([]),
+			cancelTask: vi.fn().mockResolvedValue(undefined),
 			unsubscribeFromFeatureUpdates: vi.fn(),
 			unsubscribeFromForecastUpdates: vi.fn(),
 			unsubscribeFromTeamUpdates: vi.fn(),
