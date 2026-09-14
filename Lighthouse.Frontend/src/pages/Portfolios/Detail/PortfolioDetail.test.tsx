@@ -957,6 +957,25 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 			).not.toBeInTheDocument();
 		});
 
+		// A forecast run is not a refresh. It has its own schedule and is triggered by a refresh that has
+		// just finished, so treating it as one means a forecast quietly clears the mark left by the refresh
+		// that broke - and the icon reads healthy over data that was never updated. That is the defect this
+		// whole slice exists to remove, rebuilt on the page rather than in the queue.
+		it("keeps saying so when a forecast run finishes afterwards", async () => {
+			const tell = await renderAndWaitForTheUpdateFeed();
+
+			await act(async () => {
+				await tell({ status: "Failed", updateType: "Features", id: 2 });
+			});
+			await act(async () => {
+				await tell({ status: "Completed", updateType: "Forecasts", id: 2 });
+			});
+
+			expect(
+				screen.getByTitle("Last Features refresh failed"),
+			).toBeInTheDocument();
+		});
+
 		it("leaves the button alone when the failure belongs to something else", async () => {
 			const tell = await renderAndWaitForTheUpdateFeed();
 

@@ -287,6 +287,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        /// <summary>
+        /// Epic #5511 slice 01, AC-01.1, on the one path that did not honour it. A trigger landing while a
+        /// refresh is running parks a follow-up, and the run that was already going then finished without
+        /// telling anyone how it ended - so a refresh that broke left the browser looking at a spinner, and
+        /// if the follow-up worked the failure was never reported on any live surface at all.
+        ///
+        /// Found by an adversarial review of the slice after the fact, which is also why it is pinned here
+        /// rather than in the acceptance scenarios: standing in the window between a trigger being parked
+        /// and the in-flight run failing needs the queue's own seams.
+        /// </summary>
+        [Test]
+        public async Task EnqueueUpdate_TheRunFailsWithAFollowUpAlreadyParked_StillSaysThatItFailed()
+        {
+            var updateKey = new UpdateKey(UpdateType.Team, 41);
+            var inFlightStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseInFlight = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var everythingTheBrowserWasTold = new ConcurrentBag<UpdateProgress>();
+            clientProxyMock
+                .Setup(client => client.SendCoreAsync(updateKey.ToString(), It.IsAny<object[]>(), default))
+                .Callback((string _, object[] parameters, CancellationToken _) =>
+                {
+                    if (parameters.Length > 0 && parameters[0] is UpdateStatus status)
+                    {
+                        everythingTheBrowserWasTold.Add(status.Status);
+                    }
+                });
+
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                inFlightStarted.TrySetResult();
+                await releaseInFlight.Task;
+                throw new InvalidOperationException("The tracker was unreachable.");
+            });
+
+            await inFlightStarted.Task;
+
+            // Parks a follow-up against the key that is about to fail.
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            releaseInFlight.SetResult();
+            await WaitUntilKeyIsIdle(updateKey);
+
+            Assert.That(everythingTheBrowserWasTold, Does.Contain(UpdateProgress.Failed),
+                "A refresh that broke has to say so even when a follow-up is already waiting behind it. "
+                + $"The browser was told: {string.Join(", ", everythingTheBrowserWasTold)}");
+        }
+
         [Test]
         public async Task EnqueueUpdate_NotifiesAboutQueuedOrInProgress()
         {

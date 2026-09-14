@@ -325,11 +325,20 @@ const PortfolioDetail: React.FC = () => {
 			const isFeatureUpdate =
 				update?.updateType === "Features" || update?.updateType === "Forecasts";
 
-			if (isFeatureUpdate) {
-				const isUpdating =
-					update?.status === "Queued" || update?.status === "InProgress";
-				setIsPortfolioUpdating(isUpdating);
-				setLastPortfolioRefreshFailed(update?.status === "Failed");
+			if (!isFeatureUpdate) {
+				return;
+			}
+
+			const isUpdating =
+				update?.status === "Queued" || update?.status === "InProgress";
+			setIsPortfolioUpdating(isUpdating);
+
+			// Only what this button actually refreshes. Forecasts run on their own schedule and are
+			// triggered by a refresh that has just finished, so letting one report on this flag means a
+			// forecast completing quietly clears the mark left by the refresh that failed - and the icon
+			// goes back to healthy over data that was never updated.
+			if (update?.updateType === "Features") {
+				setLastPortfolioRefreshFailed(update.status === "Failed");
 			}
 		};
 

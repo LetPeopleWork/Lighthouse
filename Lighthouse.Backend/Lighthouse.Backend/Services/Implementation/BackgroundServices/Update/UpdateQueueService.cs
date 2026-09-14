@@ -342,6 +342,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // already landed in it.
             if (TryScheduleRerun(updateKey, updateStatus))
             {
+                // The follow-up has already put the key back to Queued, so the store must not be advanced
+                // here - but the run that just ended still has to say how it ended. Returning silently is
+                // the same defect Bug #5788 fixed one layer up, wearing a different hat: a refresh breaks
+                // and the last thing the browser was told is that it was running.
+                await NotifyListeners(updateKey, HowThatRunEnded(updateStatus, terminalProgress));
                 return;
             }
 
@@ -363,6 +368,23 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             await completionNotifier.PublishCompletionAsync(updateKey);
             await NotifyListeners(updateKey, terminalStatus);
+        }
+
+        /// <summary>
+        /// A copy, because the follow-up is already using the entry this was built from - in the in-process
+        /// store it is the very object the queue is about to advance again, so saying how the last run ended
+        /// must not overwrite where the next one has got to.
+        /// </summary>
+        private static UpdateStatus HowThatRunEnded(UpdateStatus updateStatus, UpdateProgress terminalProgress)
+        {
+            return new UpdateStatus
+            {
+                UpdateType = updateStatus.UpdateType,
+                Id = updateStatus.Id,
+                Status = terminalProgress,
+                QueuedAt = updateStatus.QueuedAt,
+                StartedAt = updateStatus.StartedAt,
+            };
         }
 
         private bool TryScheduleRerun(UpdateKey updateKey, UpdateStatus updateStatus)
