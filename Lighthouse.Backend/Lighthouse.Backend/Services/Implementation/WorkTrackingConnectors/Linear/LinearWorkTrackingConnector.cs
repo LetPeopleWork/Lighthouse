@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 return [];
             }
 
-            var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName);
+            var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName, cancellationToken);
 
             if (string.IsNullOrEmpty(teamId))
             {
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
 
             var workItems = new List<WorkItem>();
-            var allTeamIssues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId);
+            var allTeamIssues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId, cancellationToken);
             var issues = FilterIssuesForStates(team, allTeamIssues);
 
             if (issues.Count == 0)
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             logger.LogInformation("Getting Features for Project {ProjectName} - retrieving all Linear projects as features", project.Name);
 
             var features = new List<Feature>();
-            var projects = await GetAllProjects(project.WorkTrackingSystemConnection);
+            var projects = await GetAllProjects(project.WorkTrackingSystemConnection, cancellationToken);
 
             if (projects.Count == 0)
             {
@@ -172,9 +172,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
             foreach (var parentFeatureId in parentIdList)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
-                    var initiative = await GetInitiativeById(project.WorkTrackingSystemConnection, parentFeatureId);
+                    var initiative = await GetInitiativeById(project.WorkTrackingSystemConnection, parentFeatureId, cancellationToken);
 
                     if (initiative != null)
                     {
@@ -201,6 +203,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                         logger.LogDebug("Initiative {InitiativeId} not found or inaccessible for portfolio {ProjectName}", parentFeatureId, project.Name);
                         initiativesFailed++;
                     }
+                }
+                // A cancel is not an initiative that could not be fetched. Caught below it is counted as a
+                // failure and the walk moves on to the next one, which is how a stopped refresh keeps going.
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -232,7 +240,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                         }
                     }";
 
-                _ = await SendQuery<ViewerResponse>(connection, viewerQuery);
+                _ = await SendQuery<ViewerResponse>(connection, viewerQuery, CancellationToken.None);
                 return ConnectionValidationResult.Success();
             }
             catch (Exception ex)
@@ -251,7 +259,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 logger.LogInformation("Validating Portfolio Settings for Project {ProjectName} - checking workspace projects", portfolio.Name);
 
-                var projects = await GetAllProjects(portfolio.WorkTrackingSystemConnection);
+                var projects = await GetAllProjects(portfolio.WorkTrackingSystemConnection, CancellationToken.None);
 
                 logger.LogInformation("Found {TotalProjects} projects in workspace for portfolio {ProjectName}",
                     projects.Count, portfolio.Name);
@@ -292,7 +300,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                         "DataRetrievalValue");
                 }
 
-                var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName);
+                var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName, CancellationToken.None);
 
                 if (string.IsNullOrEmpty(teamId))
                 {
@@ -306,7 +314,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
                 logger.LogInformation("Validating Team Settings for Team {TeamName} with resolved team identity {TeamId}", team.Name, teamId);
 
-                var issues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId);
+                var issues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId, CancellationToken.None);
                 var filteredIssues = FilterIssuesForStates(team, issues);
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Work Items for team {TeamName}", filteredIssues.Count, team.Name);
@@ -482,20 +490,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, portfolio);
         }
 
-        private async Task<List<IssueNode>> GetAllIssuesForTeam(WorkTrackingSystemConnection connection, string teamId)
+        private async Task<List<IssueNode>> GetAllIssuesForTeam(
+            WorkTrackingSystemConnection connection, string teamId, CancellationToken cancellationToken)
         {
-            var issues = await FetchAllIssuesForTeam(connection, teamId);
+            var issues = await FetchAllIssuesForTeam(connection, teamId, cancellationToken);
 
             if (issues == null)
             {
                 DowngradeHistorySupport();
-                issues = await FetchAllIssuesForTeam(connection, teamId) ?? [];
+                issues = await FetchAllIssuesForTeam(connection, teamId, cancellationToken) ?? [];
             }
 
             return issues;
         }
 
-        private async Task<List<IssueNode>?> FetchAllIssuesForTeam(WorkTrackingSystemConnection connection, string teamId)
+        private async Task<List<IssueNode>?> FetchAllIssuesForTeam(
+            WorkTrackingSystemConnection connection, string teamId, CancellationToken cancellationToken)
         {
             var issues = new List<IssueNode>();
             var historyFieldRejected = false;
@@ -510,7 +520,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 historyFieldRejected = !historyUnavailable && errors.Any();
                 return !historyFieldRejected;
-            });
+            }, cancellationToken);
 
             return historyFieldRejected ? null : issues;
         }
@@ -521,20 +531,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             logger.LogWarning("Linear rejected the issue history connection for this query. Falling back to sync-delta transition derivation for this connection.");
         }
 
-        private async Task<List<ProjectNode>> GetAllProjects(WorkTrackingSystemConnection connection)
+        private async Task<List<ProjectNode>> GetAllProjects(
+            WorkTrackingSystemConnection connection, CancellationToken cancellationToken)
         {
-            var projects = await FetchAllProjects(connection);
+            var projects = await FetchAllProjects(connection, cancellationToken);
 
             if (projects == null)
             {
                 DowngradeHistorySupport();
-                projects = await FetchAllProjects(connection) ?? [];
+                projects = await FetchAllProjects(connection, cancellationToken) ?? [];
             }
 
             return projects;
         }
 
-        private async Task<List<ProjectNode>?> FetchAllProjects(WorkTrackingSystemConnection connection)
+        private async Task<List<ProjectNode>?> FetchAllProjects(
+            WorkTrackingSystemConnection connection, CancellationToken cancellationToken)
         {
             var projects = new List<ProjectNode>();
             var historyFieldRejected = false;
@@ -549,19 +561,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 historyFieldRejected = !historyUnavailable && errors.Any();
                 return !historyFieldRejected;
-            });
+            }, cancellationToken);
 
             return historyFieldRejected ? null : projects;
         }
 
-        private async Task<InitiativeNode?> GetInitiativeById(WorkTrackingSystemConnection connection, string initiativeId)
+        private async Task<InitiativeNode?> GetInitiativeById(
+            WorkTrackingSystemConnection connection, string initiativeId, CancellationToken cancellationToken)
         {
             var query = GetInitiativeByIdQuery(initiativeId);
-            var response = await SendQuery<InitiativeResponse>(connection, query);
+            var response = await SendQuery<InitiativeResponse>(connection, query, cancellationToken);
             return response?.Initiative;
         }
 
-        private async Task<string?> ResolveTeamIdByName(WorkTrackingSystemConnection connection, string teamName)
+        private async Task<string?> ResolveTeamIdByName(
+            WorkTrackingSystemConnection connection, string teamName, CancellationToken cancellationToken)
         {
             var teams = new List<TeamNode>();
 
@@ -570,7 +584,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 var fetchedTeams = teamsResponse?.Teams?.Nodes ?? [];
                 teams.AddRange(fetchedTeams);
                 return true;
-            });
+            }, cancellationToken);
 
             var match = teams.FirstOrDefault(t => string.Equals(t.Name, teamName, StringComparison.OrdinalIgnoreCase));
 
@@ -582,10 +596,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return match?.Id;
         }
 
-        private async Task<TeamDetailNode?> GetTeamDetail(WorkTrackingSystemConnection connection, string teamId)
+        private async Task<TeamDetailNode?> GetTeamDetail(
+            WorkTrackingSystemConnection connection, string teamId, CancellationToken cancellationToken)
         {
             var query = GetTeamDetailQuery(teamId);
-            var response = await SendQuery<TeamDetailResponse>(connection, query);
+            var response = await SendQuery<TeamDetailResponse>(connection, query, cancellationToken);
             return response?.Team;
         }
 
@@ -596,12 +611,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             return issues.Where(i => states.Contains(i.State.Name)).ToList();
         }
 
-        private Task GetWithPagination<T>(WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult) where T : class, IPagedRespone
+        private Task GetWithPagination<T>(
+            WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult, CancellationToken cancellationToken) where T : class, IPagedRespone
         {
-            return GetWithPagination(connection, getQuery, processResult, _ => true);
+            return GetWithPagination(connection, getQuery, processResult, _ => true, cancellationToken);
         }
 
-        private async Task GetWithPagination<T>(WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult, Func<IEnumerable<GraphQLError>, bool> onErrors) where T : class, IPagedRespone
+        /// <summary>
+        /// The only place Linear pages. Linear supports no identity sweep, so every cycle takes the
+        /// whole-query path through here and there is no cheaper walk to fall back on when an operator wants
+        /// it stopped. Stopping is honoured one level down, on the request itself.
+        /// </summary>
+        private async Task GetWithPagination<T>(
+            WorkTrackingSystemConnection connection, Func<string, string> getQuery, Func<T, bool> processResult, Func<IEnumerable<GraphQLError>, bool> onErrors, CancellationToken cancellationToken) where T : class, IPagedRespone
         {
             string? cursor = null;
             bool hasNextPage = true;
@@ -612,7 +634,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
                 var query = getQuery(cursorParam);
 
-                var (response, errors) = await SendQueryWithErrors<T>(connection, query);
+                var (response, errors) = await SendQueryWithErrors<T>(connection, query, cancellationToken);
 
                 if (!onErrors(errors))
                 {
@@ -637,17 +659,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
-        private async Task<T> SendQuery<T>(WorkTrackingSystemConnection connection, string query) where T : class
+        private async Task<T> SendQuery<T>(
+            WorkTrackingSystemConnection connection, string query, CancellationToken cancellationToken) where T : class
         {
-            var (data, _) = await SendQueryWithErrors<T>(connection, query);
+            var (data, _) = await SendQueryWithErrors<T>(connection, query, cancellationToken);
             return data;
         }
 
-        private async Task<(T Data, IReadOnlyList<GraphQLError> Errors)> SendQueryWithErrors<T>(WorkTrackingSystemConnection connection, string query) where T : class
+        /// <summary>
+        /// Every Linear round trip goes through here, which makes the token on this request the one place
+        /// cancellation has to be honoured: the client refuses a cancelled one before the query is sent, so
+        /// a stopped walk spends nothing further. A guard in front of this would guard nothing.
+        /// </summary>
+        private async Task<(T Data, IReadOnlyList<GraphQLError> Errors)> SendQueryWithErrors<T>(
+            WorkTrackingSystemConnection connection, string query, CancellationToken cancellationToken) where T : class
         {
             var client = GetLinearGraphQLClient(connection);
 
-            var response = await client.SendQueryAsync<T>(query);
+            var response = await client.SendQueryAsync<T>(query, cancellationToken: cancellationToken);
             var errors = response.Errors ?? [];
 
             foreach (var error in errors)
@@ -875,7 +904,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 var teams = teamsResponse?.Teams?.Nodes ?? [];
                 boards.AddRange(teams.Select(t => new Board { Id = t.Id, Name = t.Name }));
                 return true;
-            });
+            }, CancellationToken.None);
 
             return boards;
         }
@@ -886,7 +915,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
             try
             {
-                var teamDetail = await GetTeamDetail(workTrackingSystemConnection, boardId);
+                var teamDetail = await GetTeamDetail(workTrackingSystemConnection, boardId, CancellationToken.None);
 
                 if (teamDetail == null)
                 {

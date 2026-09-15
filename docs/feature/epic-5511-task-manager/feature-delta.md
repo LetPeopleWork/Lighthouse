@@ -2384,3 +2384,125 @@ file — parsing, validation, dependency columns — not about this change.
 1. **The four `NotSupportedException` methods still ignore their token.** They throw before doing anything,
    and `NotSupportedException` says more about why a CSV upload cannot be swept than a cancellation would.
 2. **Linear and ServiceNow are unchanged.** Next, in that order.
+
+---
+
+# Wave: DISTILL — slice 04, Linear
+
+Third of the four connectors. Linear pages in exactly one place — `GetWithPagination` — and both halves of
+the fetch walk through it, so unlike Azure DevOps there is no second walk shape to reason about. It also
+supports **no identity sweep at all**, which means every Linear cycle takes the whole-query path and there
+is no cheaper walk to fall back on when an operator wants one stopped.
+
+## Wave: DISTILL / [REF] Scenario list
+
+`LinearCancellationGranularityTest`, over a workspace that always has another page:
+
+| Scenario | Asserts |
+|---|---|
+| portfolio fetch cancelled before it starts | the workspace is never asked anything |
+| team fetch cancelled before it starts | the workspace is never asked anything |
+| portfolio fetch cancelled while paging | stops after the query it is in — 3 |
+| team fetch cancelled while paging | stops after the query it is in — 3 |
+| initiative walk cancelled part way | stops instead of counting failures — 3 of 10 |
+
+The team-half paging scenario was added after review. Both halves reach the same loop, which was the
+argument for testing one of them — but the team half gets there through **two** walks rather than one, the
+first resolving the team by name, and two walks into one loop is not the same claim as one.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+Linear already had the seam: the connector takes an `HttpMessageHandler` for testing, and
+`LinearFetchRefusalTest` already drove it. The workspace double answers every query shape from **one JSON
+envelope** carrying `projects`, `teams` and `team` at once — every GraphQL request goes to the same
+endpoint, so the deserialiser takes the branch its response type wants and ignores the rest.
+
+It offers **forty** pages rather than endless ones. An endless supply would make a connector that ignores
+the token hang rather than fail, and a test that hangs teaches nothing. The RED run bore that out: forty
+queries where three were required.
+
+---
+
+# Wave: DELIVER — slice 04, Linear
+
+## What changed
+
+The token threaded from the three public fetch entry points to the GraphQL request through eleven private
+methods, plus a guard in the per-initiative walk and a re-throw ahead of its catch-all. Validation and
+board discovery pass `CancellationToken.None` in the open.
+
+## The bug the analyzers caught, which the tests would have caught second
+
+`client.SendQueryAsync<T>(query, cancellationToken)` **compiles**. The GraphQL client's second positional
+parameter is `object? variables`, so that boxes a `CancellationToken` into the variables argument and
+cancels precisely nothing — the decorative-token failure this Epic has already made once, in a new
+disguise. `CA2016` and `S8949` rejected it at build time; it is now `cancellationToken: cancellationToken`.
+
+Worth carrying to ServiceNow: a token in the right position is not the same as a token in the right
+parameter, and only the named form is obviously either.
+
+## The catch-all that would have eaten the cancel
+
+`GetParentFeaturesDetails` fetches one initiative per round trip inside `catch (Exception ex)`, counting
+what it catches as an initiative that could not be fetched and moving on to the next one. A cancel caught
+there is a refresh that was told to stop, kept going, and said nothing about it. It now re-throws
+`OperationCanceledException` ahead of the catch-all — the same shape `WorkItemService.ScanRemoteIdentities`
+already uses.
+
+## What mutation testing found
+
+**The guard inside the paging loop guarded nothing, and was removed.** `HttpClient` refuses an
+already-cancelled token before it ever reaches the handler, so a walk cannot issue the doomed request the
+guard existed to prevent — no test could distinguish its presence, because the behaviour is identical. The
+checkpoint is the token on the request, and `SendQueryWithErrors` now says so where a reader will find it.
+This is the same conclusion Azure DevOps reached about its six guards, by a different mechanism.
+
+Sharpening the double to count a query when it is **asked for** rather than when it succeeds — the fix
+that made the Azure DevOps harness discriminate — did not help here, and the reason is worth recording:
+there the throttle was inside the connector, so an attempt was observable; here the refusal happens inside
+`HttpClient`, above the handler, so the attempt never reaches anything a test can see.
+
+**The two initiative guards are individually redundant and jointly essential.** Removing either leaves the
+other to stop the walk. Removing **both** is killed — and what it produces is the dangerous shape: every
+cancel swallowed, all ten initiatives walked, a partial list returned, and no exception raised at all.
+
+| Probe | Verdict |
+|---|---|
+| the request is handed `CancellationToken.None` | compile-blocked (S1172) |
+| the token goes back to the variables parameter | compile-blocked (CA2016) |
+| the paging loop stops checking the token | survived — guard removed as dead |
+| the initiative walk loses either guard | survived — the other still stops it |
+| the initiative walk loses **both** guards | **killed** |
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| Linear tests | 38 passed — 33 pre-existing, 5 new |
+| `dotnet test` (connector categories excluded) | 6 799 passed, 1 environmental |
+| Hand-mutation of the guards | the dangerous shape killed, the rest compile-blocked or dead |
+| Mutation — backend (Stryker) | 35.07 % raw; 3 survivors on touched lines, all accounted for |
+
+## The three Stryker survivors on touched lines
+
+35.07 % over the whole connector (172 tested, 100 killed), with the same caveat as the others — the filter
+excludes `LinearWorkTrackingConnectorTest`, which is `LinearIntegration`-categorised. Of 72 survivors,
+three sit on lines this change touched:
+
+| Line | Survivor | Verdict |
+|---|---|---|
+| 175 | the per-initiative guard | the pair above: its twin still stops the walk |
+| 501, 542 | `?? []` on the downgrade-and-retry path | pre-existing; the line is touched only by an appended parameter, and nothing here exercises a history downgrade at all |
+
+## Not done here
+
+1. **Nothing exercises the history-downgrade retry.** `FetchAllIssuesForTeam` and `FetchAllProjects` answer
+   null when Linear rejects the history field, and the caller then walks the whole query a second time.
+   That second walk is untested on both halves, which is why two of the three survivors above are there.
+2. **`GetAllIssuesForTeam` and `GetAllProjects` duplicate a downgrade-and-retry wrapper** almost line for
+   line. That is repeated knowledge rather than repeated shape, so it is a real finding — but it is
+   pre-existing, and merging it needs generics over both the response type and the query. Out of scope for
+   a cancellation slice; recorded so the next person to touch either one sees it.
+3. **ServiceNow is unchanged.** Last, and the deepest: `ReadEveryPage` sits five private methods below the
+   public surface and already hardcodes a `CancellationToken.None`.
