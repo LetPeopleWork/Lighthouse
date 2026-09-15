@@ -8,6 +8,15 @@ not open source under the Open Source Initiative's definition, and it is not
 closed. The two parts below set out what you may and may not do; the summary in
 this notice is not a substitute for reading them.
 
+IF YOU WANT THE PLAIN-LANGUAGE VERSION FIRST, it is here, with worked examples of
+what this license allows and does not allow:
+
+  https://docs.lighthouse.letpeople.work/licensing/licensing.html
+
+That page is guidance and is not a substitute for this file. The binding terms
+are the two parts below; the closing paragraph of Part 1 says what the examples
+do and do not do.
+
 THIS LICENSE HAS TWO PARTS. Both are binding, both are in this file, and neither
 stands alone:
 
@@ -53,6 +62,10 @@ LicenseRef-Lighthouse-SAL-1.0.
 These Additional Terms are part of this license. They are read together with the
 Elastic License 2.0 reproduced in Part 2 below. Where the two parts conflict,
 these Additional Terms govern.
+
+Part 1 only ever narrows Part 2. It grants nothing. Where Part 1 says that
+something is permitted, that means Part 1 does not restrict it - not that Part
+2's limits fall away. A use must be permitted by both parts to be licensed.
 
 WHEN THESE TERMS APPLY TO YOU
 

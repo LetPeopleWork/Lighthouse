@@ -6,6 +6,10 @@ These Additional Terms are part of this license. They are read together with the
 Elastic License 2.0 reproduced in Part 2 below. Where the two parts conflict,
 these Additional Terms govern.
 
+Part 1 only ever narrows Part 2. It grants nothing. Where Part 1 says that
+something is permitted, that means Part 1 does not restrict it - not that Part
+2's limits fall away. A use must be permitted by both parts to be licensed.
+
 WHEN THESE TERMS APPLY TO YOU
 
 These Additional Terms apply to you from the moment you obtain any part of the

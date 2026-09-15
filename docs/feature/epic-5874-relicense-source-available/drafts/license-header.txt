@@ -8,6 +8,15 @@ not open source under the Open Source Initiative's definition, and it is not
 closed. The two parts below set out what you may and may not do; the summary in
 this notice is not a substitute for reading them.
 
+IF YOU WANT THE PLAIN-LANGUAGE VERSION FIRST, it is here, with worked examples of
+what this license allows and does not allow:
+
+  https://docs.lighthouse.letpeople.work/licensing/licensing.html
+
+That page is guidance and is not a substitute for this file. The binding terms
+are the two parts below; the closing paragraph of Part 1 says what the examples
+do and do not do.
+
 THIS LICENSE HAS TWO PARTS. Both are binding, both are in this file, and neither
 stands alone:
 
