@@ -1,7 +1,6 @@
-import CancelIcon from "@mui/icons-material/Cancel";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Badge from "@mui/material/Badge";
-import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
@@ -10,70 +9,26 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IConnectionHealth } from "../../../services/Api/ConnectionHealthService";
 import { useTerminology } from "../../../services/TerminologyContext";
-import type {
-	IUpdateTask,
-	UpdateTaskType,
-} from "../../../services/UpdateSubscriptionService";
-import { formatElapsed } from "../../../utils/date/formatElapsed";
-
-const ACTIVITY_LABEL = "Activity";
-
-/**
- * What an operator is told a piece of work is. The update type is the instance's own vocabulary; this
- * is the reader's, so a tenant who renamed Team to Squad never meets the seeded default here.
- */
-const useKindOf = () => {
-	const { getTerm } = useTerminology();
-
-	return (updateType: UpdateTaskType): string => {
-		switch (updateType) {
-			case "Team":
-			case "TeamDelete":
-				return getTerm(TERMINOLOGY_KEYS.TEAM);
-			default:
-				return getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
-		}
-	};
-};
-
-const describeState = (task: IUpdateTask): string => {
-	switch (task.status) {
-		case "InProgress":
-			return "Running";
-		case "Queued":
-			return task.waitingBehind
-				? `Queued behind ${task.waitingBehind}`
-				: "Queued";
-		default:
-			return task.status;
-	}
-};
-
-/**
- * The duration is the instance's own measurement, rendered as it arrived. Counting locally instead
- * would be wrong after a reload, wrong for a refresh that began before the tab was opened, and wrong
- * by however far this machine's clock has drifted - which is most of the occasions somebody opens
- * this list. A row whose moment the instance never recorded keeps its state and loses only the
- * duration; that is an ordinary mid-upgrade state, not a fault worth showing.
- */
-const describeStatus = (task: IUpdateTask): string => {
-	const state = describeState(task);
-
-	return task.elapsedMs == null
-		? state
-		: `${state} for ${formatElapsed(task.elapsedMs)}`;
-};
-
-const isDelete = (updateType: UpdateTaskType): boolean =>
-	updateType === "TeamDelete" || updateType === "PortfolioDelete";
+import type { IUpdateTask } from "../../../services/UpdateSubscriptionService";
+import ActivitySection from "./TaskManager/ActivitySection";
+import ConnectionsSection from "./TaskManager/ConnectionsSection";
+import {
+	ACTIVITY_LABEL,
+	badgeColourFor,
+	describeHeaderState,
+	isBroken,
+} from "./TaskManager/connectionHealthWording";
 
 const TaskManagerIcon = () => {
 	const { isSystemAdmin } = useRbac();
-	const { updateSubscriptionService } = useContext(ApiServiceContext);
-	const kindOf = useKindOf();
+	const { updateSubscriptionService, connectionHealthService } =
+		useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
 
 	const [tasks, setTasks] = useState<IUpdateTask[]>([]);
+	const [connections, setConnections] = useState<IConnectionHealth[]>([]);
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
 	const refresh = useCallback(async () => {
@@ -83,7 +38,14 @@ const TaskManagerIcon = () => {
 			// An instance that cannot say what it is doing is not an instance doing nothing, so the list is
 			// left as it was rather than being emptied into a confident "nothing is running".
 		}
-	}, [updateSubscriptionService]);
+
+		try {
+			setConnections(await connectionHealthService.getHealth());
+		} catch {
+			// Same reason, and it matters more here: emptying the list would turn a read that failed into
+			// a header that says every credential is fine.
+		}
+	}, [connectionHealthService, updateSubscriptionService]);
 
 	/**
 	 * The list is re-read rather than edited in place: what actually stopped is the instance's answer, not
@@ -101,6 +63,34 @@ const TaskManagerIcon = () => {
 			await refresh();
 		},
 		[refresh, updateSubscriptionService],
+	);
+
+	/**
+	 * The answer comes back from the instance and replaces the row wholesale. Deciding locally what the
+	 * test must have meant would let the header disagree with the popover it was opened from.
+	 */
+	const test = useCallback(
+		async (connection: IConnectionHealth) => {
+			try {
+				const verdict = await connectionHealthService.testConnection(
+					connection.connectionId,
+				);
+
+				// Which row the answer belongs to is read here rather than inside the updater below: React
+				// runs that during a later render, so anything it throws lands outside this try and takes the
+				// header down instead of leaving the row as it was.
+				const answeredFor = verdict.connectionId;
+
+				setConnections((current) =>
+					current.map((candidate) =>
+						candidate.connectionId === answeredFor ? verdict : candidate,
+					),
+				);
+			} catch {
+				// Nothing is claimed on the strength of a failed ask.
+			}
+		},
+		[connectionHealthService],
 	);
 
 	useEffect(() => {
@@ -128,15 +118,20 @@ const TaskManagerIcon = () => {
 		return null;
 	}
 
+	const headerState = describeHeaderState(connections);
+
 	return (
 		<>
-			<Tooltip title={ACTIVITY_LABEL}>
+			<Tooltip title={headerState}>
 				<IconButton
-					aria-label={ACTIVITY_LABEL}
+					aria-label={headerState}
 					color="inherit"
 					onClick={(event) => setAnchor(event.currentTarget)}
 				>
-					<Badge badgeContent={tasks.length} color="primary">
+					<Badge
+						badgeContent={tasks.length + connections.filter(isBroken).length}
+						color={badgeColourFor(connections)}
+					>
 						<TimelineIcon />
 					</Badge>
 				</IconButton>
@@ -154,38 +149,18 @@ const TaskManagerIcon = () => {
 					{ACTIVITY_LABEL}
 				</Typography>
 
-				{tasks.length === 0 ? (
-					<Typography variant="body2" color="text.secondary">
-						Nothing is being refreshed right now.
-					</Typography>
-				) : (
-					tasks.map((task) => (
-						<Box
-							key={`${task.updateType}-${task.id}`}
-							sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}
-						>
-							<Typography
-								data-testid={`task-manager-row-${task.updateType}-${task.id}`}
-								variant="body2"
-								sx={{ flexGrow: 1 }}
-							>
-								{kindOf(task.updateType)} '{task.name}'
-								{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
-								{describeStatus(task)}
-							</Typography>
+				<ActivitySection tasks={tasks} onCancel={(task) => void cancel(task)} />
 
-							<Tooltip title={`Stop refreshing ${task.name}`}>
-								<IconButton
-									aria-label={`Stop refreshing ${task.name}`}
-									size="small"
-									onClick={() => void cancel(task)}
-								>
-									<CancelIcon fontSize="small" />
-								</IconButton>
-							</Tooltip>
-						</Box>
-					))
-				)}
+				<Divider sx={{ my: 1.5 }} />
+
+				<Typography variant="subtitle2" gutterBottom>
+					{getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS)}
+				</Typography>
+
+				<ConnectionsSection
+					connections={connections}
+					onTest={(connection) => void test(connection)}
+				/>
 			</Popover>
 		</>
 	);

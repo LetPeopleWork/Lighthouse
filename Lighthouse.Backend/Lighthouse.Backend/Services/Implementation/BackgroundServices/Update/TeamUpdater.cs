@@ -97,6 +97,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 });
 
                 ReportUpdateSummary(serviceProvider, team.Name, outcome, stopwatch.ElapsedMilliseconds, success);
+
+                await RecordConnectionHealth(team.WorkTrackingSystemConnection, success, cancelled);
             }
         }
 

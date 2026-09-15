@@ -2,6 +2,7 @@ import { vi } from "vitest";
 import type { IApiKeyService } from "../services/Api/ApiKeyService";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IBlackoutPeriodService } from "../services/Api/BlackoutPeriodService";
+import type { IConnectionHealthService } from "../services/Api/ConnectionHealthService";
 import type { IDeliveryService } from "../services/Api/DeliveryService";
 import type { IEncryptionService } from "../services/Api/EncryptionService";
 import type { IFeatureService } from "../services/Api/FeatureService";
@@ -67,6 +68,7 @@ export const createMockApiServiceContext = (
 		databaseManagementService:
 			null as unknown as IApiServiceContext["databaseManagementService"],
 		oauthService: createMockOAuthService(),
+		connectionHealthService: createMockConnectionHealthService(),
 		encryptionService: createMockEncryptionService(),
 		usageDataService: createMockUsageDataService(),
 		...overrides,
@@ -127,13 +129,18 @@ export const createMockOAuthService = (): IOAuthService => {
 	return {
 		initiateConnect: vi.fn(),
 		disconnect: vi.fn(),
-		getHealth: vi.fn().mockResolvedValue({
-			totalOAuthConnections: 0,
-			disconnectedCount: 0,
-			firstDisconnectedConnectionId: null,
-		}),
 	};
 };
+
+export const createMockConnectionHealthService =
+	(): IConnectionHealthService => {
+		return {
+			// An instance with no connections at all, so a test that forgets to override this gets a header
+			// with nothing to warn about rather than an invented problem over whatever it was really testing.
+			getHealth: vi.fn().mockResolvedValue([]),
+			testConnection: vi.fn(),
+		};
+	};
 
 export const createMockTerminologyService = (): ITerminologyService => {
 	return {

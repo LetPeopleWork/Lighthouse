@@ -13,7 +13,6 @@ import {
 import { TerminologyProvider } from "../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
-	createMockOAuthService,
 	createMockPortfolioService,
 	createMockRbacService,
 	createMockTeamService,
@@ -271,20 +270,6 @@ const renderWithProviders = (
 		},
 	});
 
-	const mockOAuthService = createMockOAuthService();
-	mockOAuthService.getHealth = vi.fn().mockResolvedValue({
-		setupSuccessRate30d: {
-			value: null,
-			unavailableReason: "event_store_pending",
-		},
-		refreshSuccessRate7d: {
-			value: null,
-			unavailableReason: "event_store_pending",
-		},
-		staleRefreshFailedCount24h: 0,
-		staleRefreshFailedCount7d: 0,
-	});
-
 	const mockApiServiceContext = createMockApiServiceContext({
 		portfolioService: mockPortfolioService,
 		teamService: mockTeamService,
@@ -292,7 +277,6 @@ const renderWithProviders = (
 		terminologyService: mockTerminologyService,
 		updateSubscriptionService: mockUpdateSubscriptionService,
 		workTrackingSystemService: mockWorkTrackingSystemService,
-		oauthService: mockOAuthService,
 		licensingService: {
 			getLicenseStatus: vi.fn().mockResolvedValue({
 				canUsePremiumFeatures: true,

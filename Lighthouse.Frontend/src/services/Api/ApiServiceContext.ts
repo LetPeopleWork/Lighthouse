@@ -11,6 +11,10 @@ import {
 	type IBlackoutPeriodService,
 } from "./BlackoutPeriodService";
 import {
+	ConnectionHealthService,
+	type IConnectionHealthService,
+} from "./ConnectionHealthService";
+import {
 	DatabaseManagementService,
 	type IDatabaseManagementService,
 } from "./DatabaseManagementService";
@@ -95,6 +99,7 @@ export interface IApiServiceContext {
 	recurringBlackoutRuleService: IRecurringBlackoutRuleService;
 	databaseManagementService: IDatabaseManagementService;
 	oauthService: IOAuthService;
+	connectionHealthService: IConnectionHealthService;
 	encryptionService: IEncryptionService;
 	usageDataService: IUsageDataService;
 }
@@ -127,6 +132,7 @@ const defaultServices: IApiServiceContext = {
 	recurringBlackoutRuleService: new RecurringBlackoutRuleService(),
 	databaseManagementService: new DatabaseManagementService(),
 	oauthService: new OAuthService(),
+	connectionHealthService: new ConnectionHealthService(),
 	encryptionService: new EncryptionService(),
 	usageDataService: new UsageDataService(),
 };

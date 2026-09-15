@@ -19,7 +19,6 @@ vi.mock("../../../hooks/useOAuthPopup", () => ({
 const createMockOAuthService = (): IOAuthService => ({
 	initiateConnect: vi.fn(),
 	disconnect: vi.fn(),
-	getHealth: vi.fn(),
 });
 
 const getMockConnection = (

@@ -2789,3 +2789,299 @@ legitimate stat — brittleness bought with no defect caught. Left, deliberately
    expand-then-contract, which is what the guard is asking for. Nobody should attempt it as one commit.
 2. **Both decided fixes are now done**, which closes everything slice 04 recorded against itself. What
    remains on the Epic is slices 05 and 06.
+
+---
+
+# Wave: DISTILL — slice 05
+
+Run 2026-09-15. Reconciliation: passed, 0 contradictions. DESIGN's one correction to DISCUSS — the
+`authentication_failed` code three connectors already emit — is what this slice is built on, and
+nothing accepted since contradicts US-05 as DISCUSS wrote it.
+
+## Wave: DISTILL / [REF] The contract this slice fixes
+
+Two routes, both System-Administrator-guarded, and one new row.
+
+`GET /api/latest/connectionhealth` answers a JSON array with one object per configured connection:
+
+| field | meaning |
+|---|---|
+| `connectionId`, `connectionName` | which connection this is about |
+| `workTrackingSystem` | the tracker's name, rendered as its enum name |
+| `state` | `Unknown`, `Healthy`, `Unreachable` or `AuthenticationFailed`, rendered as the name — the browser's own union is strings, and a renumbering would otherwise silently relabel the colour an operator reads |
+| `message` | the sentence an administrator reads, written by the connector. Absent while the state is `Unknown` |
+| `observedAt` | when the state was observed. Absent while the state is `Unknown` |
+
+`POST /api/latest/connectionhealth/{connectionId}/test` answers the single row for that connection, or
+404 when no connection has that id.
+
+`ConnectionHealthVerdict` is one row per connection — state, code, message, observed-at — with a unique
+index on the connection id and a cascade delete. At most one row, because the question the popover asks
+is "how is this connection now", not "how has it been".
+
+### Three decisions taken here, because the ACs do not settle them
+
+**A successful refresh clears the verdict; it does not record health.** D9 is explicit that until a
+connection has failed once its health is `Unknown` rather than `Healthy`, and AC-05.3 says the same.
+But a connection that failed at 02:00 and refreshed cleanly at 08:00 must not still read broken at
+09:00 — D9 derives health from *the most recent refresh outcome*, and a success is an outcome. So a
+successful refresh removes the recorded failure and the connection returns to `Unknown`. **Test
+connection is the only thing that can say `Healthy`**, which is what gives the button a reason to exist.
+
+**A secret this instance can no longer decrypt reads `AuthenticationFailed`, and the tracker is never
+asked.** This is the one place the slice deliberately does not degrade to `Unreachable`. Handing an
+undecryptable secret to Jira gets it refused exactly as an expired token is refused, and an
+administrator reading that goes off to reissue a credential that was intact — the precise harm
+`BuildUnreadableSecretReason` exists to prevent. The pre-flight asks the same total reader the
+connection screen asks, before anything leaves the machine, and the message names the field and the
+key rather than the tracker.
+
+**Everything else the connectors can say reads `Unreachable`.** Only `authentication_failed` means the
+credential was refused. `connection_failed`, `invalid_url`, `validation_failed` and
+`insufficient_permissions` all carry their own message and none of them is evidence about a credential.
+Linear and CSV emit no auth code at all, so they read `Unreachable` on failure — honest, not degraded,
+and OQ-3 stays open.
+
+## Wave: DISTILL / [REF] Scenario list
+
+**Backend acceptance** — `API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSo{Scenarios,Specifications}.cs`,
+categories `acceptance` + `epic-5511-task-manager` + `slice-05`. All seventeen observe the two routes
+over HTTP; the refresh half is driven through the production queue exactly as slices 01-04 drive it.
+The last three were written by mutation testing and are marked — see the DELIVER section below for what
+each of them caught.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `A_refresh_that_fails_on_a_rejected_credential_says_the_credential_was_rejected` | `@walking_skeleton @driving_port @real-io @error` | 05.1, 05.2 |
+| `A_refresh_that_fails_where_the_tracker_cannot_say_why_reads_unreachable_not_rejected` | `@driving_port @real-io @error` | 05.2 |
+| `A_connection_nothing_has_been_observed_about_is_listed_without_claiming_it_is_healthy` | `@driving_port @real-io` | 05.1, 05.3 |
+| `A_refresh_that_works_clears_the_failure_before_it_without_claiming_health` | `@driving_port @real-io` | 05.3 |
+| `A_refresh_an_operator_stopped_says_nothing_about_the_credential` | `@driving_port @real-io @error` | 05.2 |
+| `A_credential_this_instance_can_no_longer_read_is_never_offered_to_the_tracker` | `@driving_port @real-io @error` | 05.2 |
+| `Testing_a_connection_asks_that_tracker_once_and_records_what_it_answered` | `@driving_port @real-io` | 05.4 |
+| `Testing_one_connection_leaves_every_other_connection_as_it_found_it` | `@driving_port @real-io @error` | 05.4 |
+| `Testing_a_connection_that_is_no_longer_there_is_refused_rather_than_answered` | `@driving_port @real-io @error` | 05.4 |
+| `An_oauth_connection_that_lost_its_grant_still_says_it_needs_reconnecting` | `@driving_port @real-io @error` | 05.5 |
+| `An_oauth_connection_whose_grant_is_intact_is_not_reported_as_broken` | `@driving_port @real-io` | 05.5 |
+| `A_rejected_refresh_outranks_an_oauth_grant_that_still_believes_it_is_valid` | `@driving_port @real-io @error` | 05.5 |
+| `Every_connection_is_listed_whatever_it_authenticates_with` | `@driving_port @real-io` | 05.1 |
+| `Connection_names_are_not_handed_to_somebody_who_is_not_an_administrator` | `@driving_port @real-io @error` | 05.8 |
+| `A_credential_this_instance_can_no_longer_read_says_which_field_to_enter_again` † | `@driving_port @real-io @error` | 05.2 |
+| `A_connection_that_fails_twice_says_why_it_failed_the_second_time` † | `@driving_port @real-io @error` | 05.2 |
+| `Testing_an_oauth_connection_whose_grant_is_broken_still_says_it_needs_reconnecting` † | `@driving_port @real-io @error` | 05.4, 05.5 |
+
+† written to close a mutation survivor. Error-path share: 11 of 17.
+
+Four are worth calling out as more than restatements of an AC:
+
+*A refresh an operator stopped* is the trap this slice inherits from slice 04. A cancel arrives at the
+updater as a failed `try` like any other, and recording it would put "authentication failed" against a
+connection somebody had just protected from a rate limit. Nothing was learned about the credential, so
+nothing is recorded.
+
+*A credential this instance can no longer read* asserts something no other scenario can: that the
+tracker was **never contacted**. Every other scenario would pass on a build that asks the tracker and
+believes the answer.
+
+*A rejected refresh outranks an OAuth grant that still believes it is valid* is the precedence between
+the two sources. Without it, "fold OAuth in" and "let OAuth win" are indistinguishable.
+
+*An OAuth connection whose grant is intact is not reported as broken* is the positive control for the
+two OAuth scenarios. Without it, "every OAuth connection needs reconnecting" satisfies both.
+
+**Architecture** — `Architecture/ConnectionHealthSingleWriterArchUnitTest.cs`. One verdict row, one
+writer. `Program` is exempt: naming a type is how a composition root registers it.
+
+**Frontend** — `components/App/Header/TaskManagerIcon.test.tsx`, under a `connections` describe (18),
+plus the header's own composition spec in `Header.test.tsx` (1).
+
+| Scenario | AC |
+|---|---|
+| lists every connection with what is known about it | 05.1 |
+| says so when there are no connections at all † | 05.1 |
+| says a connection has not been checked rather than calling it healthy | 05.3 |
+| says a tracker it could not reach was not reached, rather than blaming the credential † | 05.2 |
+| shows what to do about a connection that is broken † | 05.2 |
+| says nothing further about a connection that is not broken † | 05.2 |
+| names what is wrong on the icon itself | 05.7 |
+| says nothing is wrong when nothing is wrong | 05.7 |
+| leaves the icon its ordinary colour when no connection is in trouble † | 05.7 |
+| colours the icon for the worst of the connection states, not the first | 05.7 |
+| colours the icon for a tracker it could not reach differently from a credential it could not use | 05.7 |
+| warns when only one of several connections cannot be reached † | 05.7 |
+| names every connection that is in trouble, not just one † | 05.7 |
+| tests only the connection whose button was pressed | 05.4 |
+| shows what the test answered rather than assuming it worked | 05.4 |
+| leaves the row as the instance last described it when the test fails | 05.4 |
+| offers the way to the connection that needs fixing | 05.5 |
+| takes the reader to the connection that needs fixing † | 05.5 |
+| shows nothing at all to somebody who is not a System Administrator | 05.8 |
+| *(Header.test.tsx)* shows one status icon, and it is the activity icon | 05.6 |
+
+† written to close a mutation survivor.
+
+The colour scenarios are asserted on the badge's MUI colour class, which is the only place MUI
+expresses it — nothing in the accessibility tree carries a colour. The unreachable connection is listed
+**first** in the worst-of scenario precisely so "take the first one" cannot pass it, and the
+warning-rung scenarios beside it are what stop "always red" and "always warn" passing.
+
+Two of them wait for a connection row to render before asserting, and that is not ceremony: the icon
+reads "Activity" before the health read returns, so a spec that asserts the absence of a warning
+immediately passes on a component that has not yet looked at anything.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+| Port | Class | Treatment |
+|---|---|---|
+| `GET /api/latest/connectionhealth`, `POST .../test` | Driving | Real, over `Factory.CreateClient()` |
+| The scheduled refresh (`ITeamUpdater`) | Driving | Real, through the production queue in its own DI scope |
+| `IRepository<ConnectionHealthVerdict>`, `IRepository<OAuthCredential>`, `IUpdateStatusStore` | Driven internal | Real, EF over SQLite |
+| `IWorkTrackingConnector.ValidateConnection` | Driven external | Faked; made to answer each of the three codes the slice distinguishes |
+| `ICryptoService` | Driven internal | A fake that has lost **one** key. Modelling a total loss would make every connection in the fixture unreadable and the scenario would pass on a build that never looked |
+
+## Wave: DISTILL / [REF] Red gate
+
+13 of the first 14 backend scenarios failed against the scaffold, each for the right reason — the endpoint
+answering 500 from a `NotImplementedException` carrying the scaffold's own message, or the scaffold
+throwing directly. The fourteenth is `Connection_names_are_not_handed_to_somebody_who_is_not_an_administrator`,
+which passes on arrival: it is a guard over the `RbacGuard` attribute, and a guard that fails on the day
+it is written would mean the attribute was missing.
+
+Two migration tests also failed at the red gate, on `PendingModelChangesWarning`, and the migration
+closed them. That is the model-vs-migration gap the ledger warns about, arriving on schedule.
+
+## Wave: DISTILL / [REF] Deviations from DESIGN, and why
+
+1. **No `/api/latest/update/summary`.** ADR-186 planned a small always-live summary to feed the header
+   badge. Slice 02 never built it — `TaskManagerIcon` reads the task list on mount and on every
+   `GlobalUpdateNotification`, and badges off its length. Slice 05 follows the shipped shape and reads
+   connection health the same way rather than inventing a second header feed for one slice.
+2. **`ConnectionHealthService.ts`, not `SystemActivityService.ts`.** DESIGN named one frontend HTTP
+   adapter for all four new surfaces. Slices 02 and 04 put the activity and cancel calls on
+   `UpdateSubscriptionService` instead, so `SystemActivityService` does not exist. A dedicated service
+   registered on `ApiServiceContext` beside the other 29 matches what is actually there.
+3. **`WorkTrackingSystemConnectionDto.RequiresReconnect` is untouched**, as ADR-184 says. Two sources
+   for one question remains OQ-5.
+
+---
+
+# Wave: DELIVER — slice 05
+
+## What changed
+
+**Backend.** `ConnectionHealthVerdict` — one additive table, one row per connection, unique index on
+the connection id, cascade delete. `ConnectionHealthService` is its only writer, enforced by
+`ConnectionHealthSingleWriterArchUnitTest`. `ConnectionHealthController` serves the two new routes,
+`SystemAdmin`-guarded like the refresh log and the log file already are.
+
+`UpdateServiceBase` gains `RecordConnectionHealth`, called from the `finally` of both `TeamUpdater` and
+`PortfolioUpdater` beside the `RefreshLog` write — the one place a refresh's outcome is already
+classified. It returns early on a cancel and swallows its own failures: a health verdict must not
+decide whether the refresh that produced it succeeded.
+
+**Deleted, per D2 and ADR-184**: `OAuthHealthAggregator`, `IOAuthHealthAggregator`,
+`OAuthHealthController`, `OAuthHealthDto`, `GET /api/oauth/health`, `OAuthService.getHealth`,
+`OAuthHealthIcon.tsx`, and both of their test files. One question, one answer.
+
+**Frontend.** `ConnectionHealthService.ts` is the adapter; `TaskManagerIcon` reads health on mount and
+on every `GlobalUpdateNotification`, badges the worst of what it finds, and names the broken connection
+in its tooltip. The popover gains a section headed with the tenant's own term for a work tracking
+system, one row per connection, with **Test connection** and a route to the connection's edit page.
+
+`TaskManagerIcon` was also split: `ActivitySection`, `ConnectionsSection` and `connectionHealthWording`
+now live under `Header/TaskManager/`, which is where DESIGN put them. Adding a second section inline
+would have pushed the render body past the cognitive-complexity limit the ledger has already lost two
+CI cycles to.
+
+## The cost this adds to a failed refresh, recorded because it is on #5877's path
+
+A failed refresh now makes one extra outbound call — `ValidateConnection` — to the tracker that just
+turned it away. ADR-184 accepted that call. What the ADR did not weigh is **where** it happens: inside
+the updater's `finally`, while the single update lane is still held.
+
+The bound is the connector's own per-request timeout, configurable per connection and **100 seconds by
+default**. So a refresh that fails against an unreachable tracker can hold the lane for roughly twice
+as long as it did before. That is bounded, not open-ended, and it is one small request rather than a
+paging loop — but it lands on exactly the pathology #5877 reported, so it is written down here rather
+than discovered later. If it proves to matter, the passive typed-exception path ADR-184 set aside is
+the fix, and the verdict record is the same shape either way.
+
+## What the adversarial review found
+
+One blocker, and it was right: the ArchUnit rule's `Because` string opened with `ADR-184:`, which is
+the pointer-instead-of-reason pattern this project bans — the message a developer reads when the rule
+trips has to explain itself. Rewritten to say why a second writer is the defect. The review's other two
+flags, an unverified CA1861 grep and the unique-index assumption, were checked and clean.
+
+The review also traced the concurrency shape and judged it acceptable; independent checking agrees. Two
+refreshes failing on one shared connection can both find no verdict and both insert, and the second
+`Save` loses to the unique index. It throws into `RecordConnectionHealth`'s catch, is logged non-fatally,
+and the refresh is unaffected — which is the right outcome, because the verdict that won says the same
+thing the loser would have.
+
+## What mutation testing found, after the review had approved
+
+Both stacks started **below the gate** — backend 75.00 %, frontend 75.00 % — and the survivors were
+not noise. Full triage in `mutation/results.md`; the three that changed shipped behaviour or design:
+
+| Probe | What it exposed |
+|---|---|
+| the unreadable-secret message blanked to `""` | **Nothing asserted the message.** The scenario proved the state and proved the tracker was never contacted, but the sentence naming which field to re-enter — the whole reason this case does not read as a rejected token — was unpinned. |
+| `verdict ??= new(...)` → `verdict = new(...)` | **No connection had ever failed twice.** Under the mutant the second failure loses to the unique index and is swallowed, so the row keeps showing the *first* cause forever. Closing it then proved `verdictRepository.Update` was **dead code** — the entity is already tracked by the same context — so the branch that justified it is gone. |
+| the row's `Tooltip` title | **The connector's message was only reachable by hovering a row inside a popover.** Killing the mutant and fixing the design were one change: a broken connection now renders its explanation under the row. |
+
+And one about a test rather than the code: `leaves the icon its ordinary colour when no connection is
+in trouble` was **passing against an empty list**, because the icon reads "Activity" before the health
+read returns. A hand-mutation to an unconditional `true` did not reveal it; only Stryker's narrower
+mutation of the `some` callback did, since with an empty array the two agree. Worth generalising: a
+component spec asserting an *absence* has to wait on something the data itself produces.
+
+Final: backend **91.89 %** (3 survivors, all equivalent), frontend **86.96 %** (9 survivors, all MUI
+`sx` layout props and one separator string).
+
+## The defect the pre-push run caught, and why it was nearly missed
+
+The rebase-and-push run failed `DeletePortfolio_WhileQueueTaskInFlight_AwaitsQueueDrain`, which had
+passed every earlier run and passed again on the next one. Re-running is what the ledger warns against
+treating as an answer, so the mechanism was traced instead — and there was one.
+
+`RecordConnectionHealth` resolved `IConnectionHealthService` from **the refresh's own scope**, so
+`verdictRepository.Save()` flushed that scope's database context: every pending tracked change the
+refresh was still holding, not just the verdict. A verdict could therefore commit half-finished refresh
+work, or fail because of it. And because the catch logs the exception — which it must, so the type
+reaches the log — a `DbUpdateConcurrencyException` raised by somebody else's pending change would be
+logged under connection health, which is exactly the string that test asserts never appears.
+
+The comment above the method already claimed a health verdict must not decide whether the refresh
+succeeded. The shared context quietly contradicted it. `RecordConnectionHealth` now takes its own
+scope, so `Save` can only ever write the verdict.
+
+Recorded rather than quietly fixed because the failure looked exactly like the environmental flake
+sitting next to it in the same run.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6 817 passed, 0 failed |
+| `dotnet format analyzers --severity info` | **0 findings in any file this slice touches**; the 39 reported are all pre-existing CA1861/CA1825 in generated migrations plus one S6561 in an ADO connector test |
+| `pnpm test` | 371 files, 5 194 tests, all green |
+| `pnpm build` (Biome included) | clean |
+| Mutation — backend | **91.89 %** |
+| Mutation — frontend | **86.96 %** |
+| Migrations | SQLite + Postgres, `CreateTable` + `CreateIndex` only; expand-only guard passes |
+
+## Not done here
+
+1. **The popover is still undocumented.** Nothing in the public docs describes the Task Manager at all —
+   slices 02, 03 and 04 added none either. Writing it now means rewriting it when slice 06 adds the last
+   section, so it is deliberately carried to the end of the Epic. This departs from the per-feature docs
+   rule and is recorded as a departure rather than skipped.
+2. **OQ-3 stays open.** Linear and CSV still emit no `authentication_failed` code, so they read
+   `Unreachable` on failure. Honest, and a separate small piece of work.
+3. **OQ-5 stays open.** `WorkTrackingSystemConnectionDto.RequiresReconnect` is still computed the
+   OAuth-only way for the connection edit page. Two sources for one question, untouched by design.
+4. **PAT expiry dates remain invisible.** #5019's description notes them; Lighthouse gains no awareness
+   of them here, exactly as the slice brief scoped it.
+5. **What remains on the Epic is slice 06.**

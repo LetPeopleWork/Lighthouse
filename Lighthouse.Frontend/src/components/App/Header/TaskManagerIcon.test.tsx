@@ -1,14 +1,19 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes, useParams } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type {
+	IConnectionHealth,
+	IConnectionHealthService,
+} from "../../../services/Api/ConnectionHealthService";
 import type {
 	IUpdateSubscriptionService,
 	IUpdateTask,
 } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
+	createMockConnectionHealthService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
 import TaskManagerIcon from "./TaskManagerIcon";
@@ -90,6 +95,60 @@ const renderIcon = (
 	);
 
 	return updateSubscriptionService;
+};
+
+const renderIconWithConnections = (
+	connections: IConnectionHealth[],
+	configure?: (service: IConnectionHealthService) => void,
+) => {
+	const updateSubscriptionService = createMockUpdateSubscriptionService();
+	updateSubscriptionService.getRunningTasks = vi.fn().mockResolvedValue([]);
+
+	const connectionHealthService = createMockConnectionHealthService();
+	connectionHealthService.getHealth = vi.fn().mockResolvedValue(connections);
+	configure?.(connectionHealthService);
+
+	const { container } = render(
+		<MemoryRouter>
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					updateSubscriptionService,
+					connectionHealthService,
+				})}
+			>
+				<TaskManagerIcon />
+				{/* Somewhere for the row's Edit button to actually arrive, so "it offers a route" and "the
+				    route goes to this connection" are different claims. */}
+				<Routes>
+					<Route
+						path="/connections/:connectionId/edit"
+						element={<EditConnectionPage />}
+					/>
+				</Routes>
+			</ApiServiceContext.Provider>
+		</MemoryRouter>,
+	);
+
+	return { service: connectionHealthService, container };
+};
+
+const EditConnectionPage = () => {
+	const { connectionId } = useParams();
+
+	return <div data-testid="edit-connection-page">{connectionId}</div>;
+};
+
+/**
+ * The colour is the only part of AC-05.7 a reader takes in without hovering, and MUI expresses it as
+ * a class on the badge rather than as anything the accessibility tree carries.
+ */
+const theBadgeColour = (container: HTMLElement): string => {
+	const badge = container.querySelector(".MuiBadge-badge");
+	const colour = [...(badge?.classList ?? [])].find((name) =>
+		name.startsWith("MuiBadge-color"),
+	);
+
+	return colour ?? "no badge was rendered";
 };
 
 const openThePopover = async () => {
@@ -505,6 +564,316 @@ describe("TaskManagerIcon", () => {
 			expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
 				/running/i,
 			);
+		});
+	});
+
+	/**
+	 * Slice 05 / #5019. US-05: AC-05.6 (one icon, the OAuth one is gone), AC-05.7 (the colour and the
+	 * tooltip name what is wrong) and the rendering half of AC-05.1 … AC-05.5.
+	 *
+	 * AC-05.6's other half — that the header no longer mounts a second status icon — is a promise about
+	 * the header's composition and lives in `Header.test.tsx`.
+	 */
+	describe("connections", () => {
+		const aBrokenCredential: IConnectionHealth = {
+			connectionId: 11,
+			connectionName: "Jira Cloud",
+			workTrackingSystem: "Jira",
+			state: "AuthenticationFailed",
+			message: "Authentication failed for Jira.",
+			observedAt: "2026-09-15T02:00:00+00:00",
+		};
+
+		const anUnreachableTracker: IConnectionHealth = {
+			connectionId: 12,
+			connectionName: "Linear",
+			workTrackingSystem: "Linear",
+			state: "Unreachable",
+			message: "Could not validate the Linear connection.",
+			observedAt: "2026-09-15T02:00:00+00:00",
+		};
+
+		const anUntestedConnection: IConnectionHealth = {
+			connectionId: 13,
+			connectionName: "Contoso Board",
+			workTrackingSystem: "AzureDevOps",
+			state: "Unknown",
+		};
+
+		const aHealthyConnectionWithSomethingToSay: IConnectionHealth = {
+			connectionId: 14,
+			connectionName: "Contoso Board",
+			workTrackingSystem: "AzureDevOps",
+			state: "Healthy",
+			message: "Connection validated successfully.",
+			observedAt: "2026-09-15T09:00:00+00:00",
+		};
+
+		// AC-05.1 — a connection with no OAuth credential row is precisely the one the deleted aggregator
+		// could not see, so every connection has to appear whatever it authenticates with.
+		it("lists every connection with what is known about it", async () => {
+			renderIconWithConnections([aBrokenCredential, anUntestedConnection]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByTestId("connection-health-row-11"),
+			).toHaveTextContent(/Jira Cloud.*Authentication failed/i);
+			expect(screen.getByTestId("connection-health-row-13")).toHaveTextContent(
+				/Contoso Board/,
+			);
+		});
+
+		// AC-05.3 — the whole point of the state. Rendering "Unknown" as healthy is how the icon this
+		// replaced came to be decorative, and "Healthy" is a word this row may only use after a test.
+		it("says a connection has not been checked rather than calling it healthy", async () => {
+			renderIconWithConnections([anUntestedConnection]);
+
+			await openThePopover();
+
+			const row = await screen.findByTestId("connection-health-row-13");
+			expect(row).toHaveTextContent(/not checked yet/i);
+			expect(row).not.toHaveTextContent(/healthy/i);
+		});
+
+		// AC-05.7 — the tooltip is what an administrator reads without opening anything, so it has to name
+		// the connection rather than say that something, somewhere, is wrong.
+		it("names what is wrong on the icon itself", async () => {
+			renderIconWithConnections([aBrokenCredential]);
+
+			expect(
+				await screen.findByRole("button", { name: /Jira Cloud/i }),
+			).toBeInTheDocument();
+		});
+
+		// AC-05.7 — the positive control. Without it, "always warn" satisfies the scenario above.
+		//
+		// The row is waited for first, and that is not ceremony: the icon is labelled "Activity" before
+		// the health read comes back, so asserting straight away would pass on a component that had not
+		// yet looked at anything.
+		it("says nothing is wrong when nothing is wrong", async () => {
+			renderIconWithConnections([anUntestedConnection]);
+
+			// Opening and closing is how this test knows the health read has been applied. The icon reads
+			// "Activity" before the read comes back too, so asserting straight away would pass on a
+			// component that had not yet looked at anything.
+			await openThePopover();
+			await screen.findByTestId("connection-health-row-13");
+			await userEvent.keyboard("{Escape}");
+
+			expect(
+				await screen.findByRole("button", { name: /activity/i }),
+			).toHaveAccessibleName("Activity");
+		});
+
+		// AC-05.7 — a credential that was refused is something an administrator can go and fix; a tracker
+		// that could not be reached may well fix itself. One icon has to show the worse of the two, and
+		// the unreachable connection is listed first precisely so "the first one" cannot pass this.
+		it("colours the icon for the worst of the connection states, not the first", async () => {
+			const { container } = renderIconWithConnections([
+				anUnreachableTracker,
+				aBrokenCredential,
+			]);
+
+			await screen.findByRole("button", { name: /Jira Cloud/i });
+
+			expect(theBadgeColour(container)).toBe("MuiBadge-colorError");
+		});
+
+		// AC-05.7 — the other two rungs, so "always red" cannot satisfy the one above.
+		it("colours the icon for a tracker it could not reach differently from a credential it could not use", async () => {
+			const { container } = renderIconWithConnections([anUnreachableTracker]);
+
+			await screen.findByRole("button", { name: /Linear/i });
+
+			expect(theBadgeColour(container)).toBe("MuiBadge-colorWarning");
+		});
+
+		// AC-05.4 — one outbound check, for the connection whose button was pressed.
+		it("tests only the connection whose button was pressed", async () => {
+			const { service } = renderIconWithConnections([
+				aBrokenCredential,
+				anUntestedConnection,
+			]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /test connection Jira Cloud/i,
+				}),
+			);
+
+			expect(service.testConnection).toHaveBeenCalledWith(11);
+			expect(service.testConnection).toHaveBeenCalledTimes(1);
+		});
+
+		// AC-05.4 — the row shows what the instance answered, not what the click hoped for.
+		it("shows what the test answered rather than assuming it worked", async () => {
+			const { service } = renderIconWithConnections(
+				[aBrokenCredential],
+				(svc) => {
+					svc.testConnection = vi
+						.fn()
+						.mockResolvedValue({ ...aBrokenCredential, state: "Healthy" });
+				},
+			);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /test connection Jira Cloud/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("connection-health-row-11"),
+				).toHaveTextContent(/Healthy/i);
+			});
+			expect(service.testConnection).toHaveBeenCalledTimes(1);
+		});
+
+		// AC-05.4 — a refused or failed ask must not leave the row claiming something the instance never said.
+		it("leaves the row as the instance last described it when the test fails", async () => {
+			renderIconWithConnections([aBrokenCredential], (svc) => {
+				svc.testConnection = vi.fn().mockRejectedValue(new Error("refused"));
+			});
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /test connection Jira Cloud/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("connection-health-row-11"),
+				).toHaveTextContent(/Authentication failed/i);
+			});
+		});
+
+		// AC-05.5 — the route the deleted icon offered. Being told a credential is broken without a way to
+		// go and fix it is the same dead end as not being told at all.
+		it("offers the way to the connection that needs fixing", async () => {
+			renderIconWithConnections([aBrokenCredential]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByRole("button", {
+					name: /edit connection Jira Cloud/i,
+				}),
+			).toBeInTheDocument();
+		});
+
+		// AC-05.2 — the state says something is wrong; the message says what to do about it, and getting
+		// that wrong is an afternoon spent reissuing a credential that was never the problem.
+		it("shows what to do about a connection that is broken", async () => {
+			renderIconWithConnections([aBrokenCredential]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByTestId("connection-health-explanation-11"),
+			).toHaveTextContent(/Authentication failed for Jira/i);
+		});
+
+		// The inverse, so the explanation does not become a line that is always there saying nothing.
+		// A connection that has just been tested successfully carries a message too — "connection
+		// validated" — and repeating it under every healthy row is noise in a box read at a glance.
+		it("says nothing further about a connection that is not broken", async () => {
+			renderIconWithConnections([aHealthyConnectionWithSomethingToSay]);
+
+			await openThePopover();
+
+			await screen.findByTestId("connection-health-row-14");
+			expect(
+				screen.queryByTestId("connection-health-explanation-14"),
+			).not.toBeInTheDocument();
+		});
+
+		// AC-05.2 — the third rung. Without it the wording table can lose this entry and nothing notices.
+		it("says a tracker it could not reach was not reached, rather than blaming the credential", async () => {
+			renderIconWithConnections([anUnreachableTracker]);
+
+			await openThePopover();
+
+			const row = await screen.findByTestId("connection-health-row-12");
+			expect(row).toHaveTextContent(/Unreachable/i);
+			expect(row).not.toHaveTextContent(/Authentication failed/i);
+		});
+
+		// AC-05.7 — the bottom rung of the colour ladder. Without it "always warn" passes every other
+		// colour scenario in this file.
+		it("leaves the icon its ordinary colour when no connection is in trouble", async () => {
+			const { container } = renderIconWithConnections([anUntestedConnection]);
+
+			await openThePopover();
+			await screen.findByTestId("connection-health-row-13");
+
+			expect(theBadgeColour(container)).toBe("MuiBadge-colorPrimary");
+		});
+
+		// AC-05.7 — a tracker that could not be reached still warns when it sits beside a connection that
+		// is perfectly fine. "All of them" and "any of them" are different questions.
+		it("warns when only one of several connections cannot be reached", async () => {
+			const { container } = renderIconWithConnections([
+				anUnreachableTracker,
+				anUntestedConnection,
+			]);
+
+			await screen.findByRole("button", { name: /Linear/i });
+
+			expect(theBadgeColour(container)).toBe("MuiBadge-colorWarning");
+		});
+
+		// AC-05.7 — an administrator with two broken connections has to learn both from the tooltip, or
+		// the second one is a surprise waiting after they fix the first.
+		it("names every connection that is in trouble, not just one", async () => {
+			renderIconWithConnections([aBrokenCredential, anUnreachableTracker]);
+
+			const icon = await screen.findByRole("button", { name: /Jira Cloud/i });
+
+			expect(icon).toHaveAccessibleName(/Jira Cloud/i);
+			expect(icon).toHaveAccessibleName(/Linear/i);
+		});
+
+		// AC-05.5 — the route the deleted icon offered has to actually go somewhere.
+		it("takes the reader to the connection that needs fixing", async () => {
+			renderIconWithConnections([aBrokenCredential]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /edit connection Jira Cloud/i,
+				}),
+			);
+
+			expect(
+				await screen.findByTestId("edit-connection-page"),
+			).toHaveTextContent("11");
+		});
+
+		// AC-05.1 — an instance with no connections says so, rather than rendering a heading over nothing.
+		it("says so when there are no connections at all", async () => {
+			renderIconWithConnections([]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByText(/no connections are configured/i),
+			).toBeInTheDocument();
+		});
+
+		// AC-05.8 — the section names every connection on the instance, so it is administrator-only for the
+		// same reason the rest of the popover is.
+		it("shows nothing at all to somebody who is not a System Administrator", () => {
+			mockIsSystemAdmin.mockReturnValue(false);
+
+			const { container } = renderIconWithConnections([aBrokenCredential]);
+
+			expect(container).toBeEmptyDOMElement();
 		});
 	});
 });

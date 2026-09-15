@@ -385,3 +385,104 @@ here because it answers the question the per-feature gate asks: was *this slice'
   which counts real HTTP round trips and was itself verified by hand-mutating the two calls to
   `CancellationToken.None`, killing both Data Center tests. That check is recorded in the commit rather
   than here because it was a deliberate one-off, not a Stryker run.
+
+---
+
+## 5019 — I get warned when any connection's authentication breaks, not just OAuth (slice 05)
+
+Epic #5511 Task Manager, slice 05. Run 2026-09-15 against `main` @ `5372e8353` plus the slice's own
+uncommitted changes. Gate is an 80 % kill rate on each stack that has changed files.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **91.89 %** | 37 | 34 | 3 | 0 | 2 m 41 s |
+| Frontend (StrykerJS 9.6.1) | **86.96 %** | 69 | 60 | 9 | 0 | 1 m 38 s |
+
+Configs: `stryker.5019.backend.json`, `stryker.5019.frontend.json`, `vitest.stryker.5019.ts`.
+ARM64 runner: `run-backend-x64.ps1`. Pass `-TestProject` explicitly — `$PSScriptRoot` does not populate
+in the param-block default under `powershell -File`, and the script then resolves the test project to
+`C:\..\..\..\..` and dies before Stryker starts.
+
+Both stacks started below the gate. The survivors are the reason this pass exists, so they are recorded
+in the order they were found.
+
+### Backend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `ConnectionHealthService.cs` | 32 | 29 | 3 |
+| `ConnectionHealthController.cs` | 5 | 5 | 0 |
+
+First run: **75.00 %**. Three clusters, all real.
+
+| Probe | What it exposed |
+|---|---|
+| the unreadable-secret message blanked to `""` | **Nothing asserted the message at all.** The scenario proved the state was `AuthenticationFailed` and that the tracker was never contacted — but the sentence naming *which field to re-enter* was unpinned, and that sentence is the entire reason this case does not read as a rejected token. |
+| `verdict ??= new(...)` → `verdict = new(...)`, and the `isNew` branch inverted | **No connection ever failed twice.** Under the mutant the second failure inserts a second row, loses to the unique index, and the resulting `DbUpdateException` is swallowed as non-fatal — so the connection goes on showing the *first* cause forever and an administrator chases the wrong problem. |
+| `CredentialFor`'s predicate `==` → `!=` (no coverage) | **Test connection had never been pressed on an OAuth connection.** The button could have answered `Healthy` for a connection whose grant Lighthouse already knew was broken. |
+
+Three scenarios closed them. The second run reached **87.50 %** and left two of the three clusters'
+mutants alive, which turned out to be the more interesting finding:
+
+| Probe | What it exposed |
+|---|---|
+| `verdictRepository.Update(verdict)` removed | **Equivalent — and the call was therefore dead.** An existing verdict is read through the same scoped context, so writing to its properties is enough to have `Save` persist them. `Update` read as though it were doing something. Deleted, along with the `isNew`/`??=` branch it justified. |
+| `CredentialFor`'s predicate, still | **The Test connection route's own answer was never asserted.** Every scenario re-read `GET /connectionhealth` afterwards, so the `POST` could have returned anything — and the popover writes that response straight into the row it was pressed from. `ThenTheTestItselfAnswered` now pins it. |
+
+Final: **91.89 %**, 3 survivors, all equivalent:
+
+| Survivor | Why it cannot be killed meaningfully |
+| --- | --- |
+| `ArgumentNullException.ThrowIfNull(connection)` ×2, removed | Defensive guards on two methods only the updaters call, and they always pass a loaded connection. Nothing reachable through a port can observe the difference. |
+| the early `return` in `RecordRefreshSucceededAsync`, removed | `RepositoryBase.Remove(T?)` is null-tolerant, so dropping the guard behaves identically. What it actually costs is a pointless `Save` on **every** successful refresh — a performance difference no assertion at the port can see. |
+
+### Frontend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `connectionHealthWording.ts` | 45 | 44 | 1 |
+| `ConnectionsSection.tsx` | 24 | 16 | 8 |
+
+First run: **75.00 %**. What it found, beyond missing tests:
+
+| Probe | What it exposed |
+|---|---|
+| the `Tooltip` title on each row | **The connector's message — the half that says what to do — was only reachable by hovering a row inside a popover.** Killing the mutant and fixing the design were the same change: the explanation is now rendered under the row for a connection that is broken. |
+| `if (connections.length === 0)` → `false` | No test rendered an instance with no connections at all. |
+| `Unreachable: "Unreachable"` → `""` | The third rung of the wording table was never read. |
+| `"primary"` → `""`, and the `some(Unreachable)` condition | No test asserted the ordinary badge colour, or a list where only *one* of several connections is unreachable. |
+| the Edit button's `navigate(...)` arrow → `() => undefined` | Nothing asserted the route goes anywhere. The spec now renders a real `/connections/:id/edit` route and clicks through to it. |
+
+Second run: **84.06 %**, and it caught a test that was passing for the wrong reason. The icon reads
+`Activity` *before* the health read returns, so
+`leaves the icon its ordinary colour when no connection is in trouble` was asserting against an empty
+list rather than against the data. A hand-mutation to an unconditional `true` did **not** reveal this —
+only Stryker's narrower mutation of the `some` callback did, because with an empty array both agree.
+Both affected specs now wait for a row to render first. Worth generalising: **a component spec that
+asserts an absence has to wait for the data whose arrival would change the answer**, and the wait has to
+be on something the data itself produces.
+
+Third run: **85.51 %**, one real survivor left — `isBroken(connection) && connection.message` → `||`.
+A connection that has just been tested successfully carries a message too ("Connection validated
+successfully"), so the `&&` is doing real work: the fixture was strengthened from a connection with no
+message to a healthy one that has one.
+
+Final: **86.96 %**, 9 survivors, all cosmetic:
+
+| Survivor | Why it cannot be killed meaningfully |
+| --- | --- |
+| 8 × MUI `sx` layout props (`{ py: 0.5 }`, `{ display: "flex", … }`, `{ flexGrow: 1 }`, `{ display: "block" }`, `" "`) | jsdom does not compute emotion's styles, so there is nothing to assert. Pinning them would mean asserting the `sx` object itself, which is a copy of the source rather than a claim about behaviour. |
+| `.join(", ")` → `""` in the header tooltip | The separator between two named connections. The spec asserts both names are present, which is the claim; asserting the exact punctuation between them buys brittleness and no defect. |
+
+### Not mutated, and why
+
+`TaskManagerIcon.tsx` is excluded. Its slice-05 change is the wiring — one more fetch in `refresh`,
+one more callback, and the two sections it now composes — and mutating the whole file would bury this
+slice's score under slices 02, 03 and 04's code, which has its own recorded runs. The logic that moved
+out of it (`connectionHealthWording.ts`) is mutated at 97.78 %.
+
+`UpdateServiceBase.RecordConnectionHealth` is excluded for the same reason: 20 lines added to a
+276-line file the previous four slices already mutated. Its two branches — the cancel that records
+nothing and the success/failure split — are pinned by
+`A_refresh_an_operator_stopped_says_nothing_about_the_credential` and by the four refresh scenarios
+either side of it.

@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
@@ -82,6 +83,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<ProcessBehaviorSnapshot> ProcessBehaviorSnapshots { get; set; } = null!;
 
         public DbSet<UsageDataConsent> UsageDataConsents { get; set; } = null!;
+
+        public DbSet<ConnectionHealthVerdict> ConnectionHealthVerdicts { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -409,6 +412,17 @@ namespace Lighthouse.Backend.Data
                       .HasForeignKey(c => c.WorkTrackingSystemConnectionId)
                       .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(c => c.WorkTrackingSystemConnectionId)
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<ConnectionHealthVerdict>(entity =>
+            {
+                entity.HasKey(v => v.Id);
+                entity.HasOne<WorkTrackingSystemConnection>()
+                      .WithMany()
+                      .HasForeignKey(v => v.WorkTrackingSystemConnectionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(v => v.WorkTrackingSystemConnectionId)
                       .IsUnique();
             });
 

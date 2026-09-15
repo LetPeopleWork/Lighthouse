@@ -379,6 +379,37 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("BlockedCountSnapshots");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.ConnectionHealth.ConnectionHealthVerdict", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ObservedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("State")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WorkTrackingSystemConnectionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkTrackingSystemConnectionId")
+                        .IsUnique();
+
+                    b.ToTable("ConnectionHealthVerdicts");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
                 {
                     b.Property<int>("Id")
@@ -1698,6 +1729,15 @@ namespace Lighthouse.Backend.Migrations
                     b.HasOne("Lighthouse.Backend.Models.Auth.UserProfile", null)
                         .WithMany()
                         .HasForeignKey("UserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.ConnectionHealth.ConnectionHealthVerdict", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.WorkTrackingSystemConnection", null)
+                        .WithMany()
+                        .HasForeignKey("WorkTrackingSystemConnectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

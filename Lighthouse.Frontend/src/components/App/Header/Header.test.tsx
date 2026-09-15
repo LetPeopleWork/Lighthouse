@@ -7,7 +7,6 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
 import {
 	createMockApiServiceContext,
-	createMockOAuthService,
 	createMockRbacService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
@@ -86,10 +85,10 @@ describe("Header component", () => {
 			</QueryClientProvider>,
 		);
 	};
-	// Epic #5511 slice 02 / AC-02.8. The OAuth icon's badge is folded into the activity icon in slice 05
-	// and not before, so for the length of this slice an administrator has two icons, not one. Pinning
-	// that here is what stops the new icon quietly replacing the old one a slice early.
-	it("shows the activity icon beside the OAuth health icon, not instead of it", async () => {
+	// Epic #5511 slice 05 / AC-05.6. The OAuth icon is gone and the activity icon carries its badge.
+	// Two adjacent status icons make an administrator decide which one to look at, which is the
+	// opposite of a glance - and the OAuth one could only ever speak for connections that use OAuth.
+	it("shows one status icon, and it is the activity icon", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -98,20 +97,12 @@ describe("Header component", () => {
 			canCreatePortfolio: false,
 		});
 
-		const mockOAuthService = createMockOAuthService();
-		mockOAuthService.getHealth = vi.fn().mockResolvedValue({
-			totalOAuthConnections: 2,
-			disconnectedCount: 1,
-			firstDisconnectedConnectionId: 4,
-		});
-
 		render(
 			<QueryClientProvider client={queryClient}>
 				<ApiServiceContext.Provider
 					value={createMockApiServiceContext({
 						licensingService: mockLicensingService,
 						rbacService: mockRbacService,
-						oauthService: mockOAuthService,
 						updateSubscriptionService: createMockUpdateSubscriptionService(),
 					})}
 				>
@@ -122,15 +113,12 @@ describe("Header component", () => {
 			</QueryClientProvider>,
 		);
 
-		await waitFor(() => {
-			expect(
-				screen.getByRole("button", { name: /reconnect|healthy/i }),
-			).toBeInTheDocument();
-		});
-
 		expect(
-			screen.getByRole("button", { name: /activity/i }),
+			await screen.findByRole("button", { name: /activity/i }),
 		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /reconnect|healthy/i }),
+		).not.toBeInTheDocument();
 	});
 
 	it("should render the LighthouseLogo", () => {

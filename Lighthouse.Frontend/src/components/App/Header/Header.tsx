@@ -25,7 +25,6 @@ import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
 import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
-import OAuthHealthIcon from "./OAuthHealthIcon";
 import TaskManagerIcon from "./TaskManagerIcon";
 import UpdateAllButton from "./UpdateAllButton";
 
@@ -123,7 +122,6 @@ const Header: React.FC<HeaderProps> = ({
 					<>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
 							<TaskManagerIcon />
-							<OAuthHealthIcon />
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<IconButton
@@ -161,7 +159,6 @@ const Header: React.FC<HeaderProps> = ({
 						<Box sx={{ display: "flex", alignItems: "center" }}>
 							{rbac.isSystemAdmin && <UpdateAllButton />}
 							<TaskManagerIcon />
-							<OAuthHealthIcon />
 							<LicenseStatusIcon />
 							<ThemeToggler />
 							<ExternalLinkButton

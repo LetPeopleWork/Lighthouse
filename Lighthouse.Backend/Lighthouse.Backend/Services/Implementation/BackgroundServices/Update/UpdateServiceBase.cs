@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Globalization;
@@ -199,6 +200,53 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return $"{subject} on connection '{connection.Name}' cannot be read with the current encryption key{namedKey}, " +
                 "so this refresh stopped before contacting the work tracking system. " +
                 "Enter the credential again to store it under the key this instance uses now.";
+        }
+
+        /// <summary>
+        /// Tells connection health how this refresh ended, so the popover can say whether a credential is
+        /// the reason the data stopped moving. A cancel is deliberately silent: somebody chose to stop it,
+        /// and nothing was learned about the credential — recording it as a failure would put "authentication
+        /// failed" against a connection an operator had just protected from a rate limit.
+        ///
+        /// Recording must never take a refresh down with it. The refresh has already done its work and
+        /// written its row by the time this runs; failing here would turn a completed refresh into a failed
+        /// one over a health verdict nobody asked for.
+        ///
+        /// It gets its own scope for the same reason. Saving the verdict through the refresh's own
+        /// database context would flush whatever else that context is still holding - so a verdict could
+        /// commit half-finished refresh work, or fail because of it, and the failure would be reported
+        /// against connection health rather than against whatever actually went wrong.
+        /// </summary>
+        protected async Task RecordConnectionHealth(
+            WorkTrackingSystemConnection connection,
+            bool success,
+            bool cancelled)
+        {
+            if (cancelled)
+            {
+                return;
+            }
+
+            try
+            {
+                using var scope = CreateServiceScope();
+                var connectionHealthService = GetServiceFromServiceScope<IConnectionHealthService>(scope);
+
+                if (success)
+                {
+                    await connectionHealthService.RecordRefreshSucceededAsync(connection);
+                }
+                else
+                {
+                    await connectionHealthService.RecordRefreshFailedAsync(connection);
+                }
+            }
+#pragma warning disable CA1031 // a health verdict must not decide whether the refresh that produced it succeeded
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                Logger.LogWarning(exception, "Recording connection health for '{ConnectionName}' failed (non-fatal)", connection.Name);
+            }
         }
 
         protected static T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull

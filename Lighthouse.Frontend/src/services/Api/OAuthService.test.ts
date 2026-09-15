@@ -50,25 +50,4 @@ describe("OAuthService", () => {
 			);
 		});
 	});
-
-	describe("getHealth", () => {
-		it("gets the OAuth health endpoint and returns the connection + disconnected counts", async () => {
-			const mockResponse = {
-				totalOAuthConnections: 3,
-				disconnectedCount: 1,
-				firstDisconnectedConnectionId: 47,
-			};
-			mockedAxios.get.mockResolvedValueOnce({ data: mockResponse });
-
-			const result = await oauthService.getHealth();
-
-			expect(result.totalOAuthConnections).toBe(3);
-			expect(result.disconnectedCount).toBe(1);
-			expect(result.firstDisconnectedConnectionId).toBe(47);
-			expect(mockedAxios.get).toHaveBeenCalledWith(
-				"/oauth/health",
-				expect.objectContaining({ baseURL: expect.stringContaining("/api") }),
-			);
-		});
-	});
 });
