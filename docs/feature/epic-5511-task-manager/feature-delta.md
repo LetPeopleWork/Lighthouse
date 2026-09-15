@@ -2704,3 +2704,88 @@ braces of their own. It now composes the issue explicitly, and takes links like 
 1. **A cancelled refresh still writes `Success = false` to `RefreshLog`**, so refresh history shows a red
    row for something an operator chose. That is the second decided fix: a schema change through
    `Create-Migration.ps1`, and it touches the history UI.
+
+---
+
+# Wave: DELIVER — slice 04, a cancelled refresh says cancelled
+
+The second of the two fixes decided on 2026-09-14, and the first work in this Epic to cross into the
+frontend.
+
+## What was wrong
+
+A cancelled refresh was written to `RefreshLog` with `Success = false`, because that is what the `finally`
+records when anything at all escapes the `try`. An operator who stopped a refresh on purpose was then
+shown it as a failure — and `UpdateNotificationHub`, which answers the header and the detail page from the
+same last run, reported `UpdateProgress.Failed` for it. The task list said cancelled; every other screen
+said broken.
+
+## The design that could not ship, and why
+
+The first attempt replaced `bool Success` with a `RefreshOutcome { Failed, Succeeded, Cancelled }` enum,
+which makes the meaningless state unrepresentable and reads better at every call site.
+
+It cannot ship here. **`ExpandOnlyMigrationGuard` forbids `DropColumn` and `RenameColumn` in a migration's
+`Up`**, and replacing a column generates exactly those. The attempt was reverted whole.
+
+It was found the expensive way: the model changed, and the backend suite went from one failure to **172**,
+every one of them `PendingModelChangesWarning` — "you changed the model and owe a migration". Chasing the
+migration led to the script, and the script's neighbourhood led to the guard. Worth recording as the order
+to do it in: **read the migration guard before choosing a schema shape**, not after.
+
+## What shipped
+
+`Cancelled`, additive beside `Success`. No rename, no drop, no backfill — existing rows default to false,
+which is true of every refresh recorded before cancellation existed. Both migrations are a single
+`AddColumn<bool>(nullable: false, defaultValue: false)`.
+
+All three updaters — Team, Portfolio and Forecast — rethrow `OperationCanceledException` above their
+catch-alls and record it. Uniformly, on the CSV principle: a Cancel button that reports two of three
+honestly is one nobody can trust.
+
+`UpdateNotificationHub` reads `Cancelled` first, so the header and the detail page now agree with the task
+list.
+
+On the frontend, **Success Rate no longer counts a cancelled run against the rate** — it divides by the
+runs that were left to finish, and shows a `Cancelled` count of its own so every run is still accounted
+for. A refresh somebody stopped is not evidence about whether refreshing works.
+
+The representable-but-meaningless state, `Success && Cancelled`, is unreachable: `success = true` is the
+last statement of each `try`, so nothing that throws afterwards can have set it. The review traced all
+three.
+
+## What mutation testing found, after the review had approved
+
+The adversarial review approved this with no defects, and was right about the design. Mutation testing
+then found **three gaps in the tests holding that conclusion up**:
+
+| Probe | What it exposed |
+|---|---|
+| `var cancelled = false` → `true` | **Nothing asserted `Cancelled` is false on a successful run.** Flip the initialiser and every healthy refresh is logged as cancelled, excluded from the rate, and the panel reports nothing at all. |
+| `throw;` removed, in all three updaters | The cancel is **swallowed** — the updater returns as though it finished and the queue tells the browser the work completed. The same catch-all defect this Epic already found in Linear, in three more places. |
+| the frontend `> 0` guards | Distinguishable **only at zero**: every run cancelled (divide by zero), and no runs cancelled (a `Cancelled: 0` row on every healthy entity). Neither was tested. |
+
+All are closed. Final: backend **0 survivors on touched lines** (from 6), frontend **95.45 %**.
+
+The one frontend survivor left is the `: []` else-branch of a conditional spread, mutated to a junk array.
+Killing it means asserting the exact contents of the stats list, which breaks the moment somebody adds a
+legitimate stat — brittleness bought with no defect caught. Left, deliberately.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6 806 passed, 1 environmental |
+| `pnpm test` | 372 files, 5 184 tests, all green |
+| `pnpm build` (Biome included) | clean |
+| Mutation — backend | 71.77 % raw; **0 survivors on touched lines** |
+| Mutation — frontend | **95.45 %**, one equivalent survivor |
+| Migrations | SQLite + Postgres, both `AddColumn` only; expand-only guard passes |
+
+## Not done here
+
+1. **`Success` stays a bool.** The outcome enum is the better model and remains available as a two-release
+   expand-then-contract, which is what the guard is asking for. Nobody should attempt it as one commit.
+2. **Both decided fixes are now done**, which closes everything slice 04 recorded against itself. What
+   remains on the Epic is slices 05 and 06.

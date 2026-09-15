@@ -34,5 +34,13 @@ namespace Lighthouse.Backend.Models
         public DateTime ExecutedAt { get; set; }
 
         public bool Success { get; set; }
+
+        /// <summary>
+        /// Whether an operator stopped this refresh. A cancel is not a failure - somebody chose it - and
+        /// reporting the two the same way puts a red row in refresh history for something that went exactly
+        /// as asked. Kept beside <see cref="Success"/> rather than replacing it: migrations here are
+        /// expand-only, so a column cannot be renamed or dropped.
+        /// </summary>
+        public bool Cancelled { get; set; }
     }
 }

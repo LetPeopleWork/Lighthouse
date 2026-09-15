@@ -151,6 +151,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 + "would put a verdict on the icon that no run ever earned.");
         }
 
+        /// <summary>
+        /// The other half of the same question. A cancel is not a failure, and the header saying so
+        /// contradicts the row the operator just cancelled in the task list one screen away.
+        /// </summary>
+        [Test]
+        public void GetUpdateStatus_TheKeyIsGoneAndTheLastRunWasCancelled_SaysItWasCancelled()
+        {
+            var refreshLog = new Mock<IRefreshLogService>();
+            refreshLog.Setup(s => s.GetRefreshLogs()).Returns(
+            [
+                new RefreshLog { Type = RefreshType.Team, EntityId = 12, Success = true, ExecutedAt = new DateTime(2031, 4, 16, 9, 0, 0, DateTimeKind.Utc) },
+                new RefreshLog { Type = RefreshType.Team, EntityId = 12, Success = false, Cancelled = true, ExecutedAt = new DateTime(2031, 4, 17, 9, 0, 0, DateTimeKind.Utc) },
+            ]);
+
+            using var subject = CreateSubject(refreshLog.Object);
+
+            var status = subject.GetUpdateStatus(nameof(UpdateType.Team), 12);
+
+            Assert.That(status!.Status, Is.EqualTo(UpdateProgress.Cancelled),
+                "Reported as Failed, an operator who stopped a refresh on purpose is shown a broken entity "
+                + "and goes looking for the breakage.");
+        }
+
         private UpdateNotificationHub CreateSubject() => CreateSubject(Mock.Of<IRefreshLogService>());
 
         private UpdateNotificationHub CreateSubject(IRefreshLogService refreshLogService)

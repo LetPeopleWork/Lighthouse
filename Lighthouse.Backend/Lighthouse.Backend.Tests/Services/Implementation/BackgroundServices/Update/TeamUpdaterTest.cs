@@ -299,11 +299,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(recordedRefresh?.Success, Is.True);
+
+                Assert.That(recordedRefresh?.Cancelled, Is.False,
+                    "Nobody stopped this one. Marked cancelled, every healthy refresh would be excluded "
+                    + "from the success rate and the panel would report nothing at all.");
                 Assert.That(summary, Does.Not.Contain("reason="),
                     "A healthy refresh has nothing to explain, and a reason on every line is what made these logs unreadable.");
                 Assert.That(summary, Does.Not.Contain("read").IgnoreCase);
                 Assert.That(summary, Does.Not.Contain("encryption").IgnoreCase);
                 Assert.That(summary, Does.Not.Contain("credential").IgnoreCase);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_Cancelled_RecordsTheRefreshAsCancelledRatherThanFailed()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ThrowsAsync(new OperationCanceledException());
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedRefresh?.Cancelled, Is.True,
+                    "An operator pressed stop. Refresh history showing a red row for that sends somebody "
+                    + "looking for a broken connection that was working perfectly.");
+
+                Assert.That(recordedRefresh?.Success, Is.False,
+                    "It is still not a refresh that finished - the work it was asked to do did not happen, "
+                    + "and a run counted as successful would inflate the success rate with runs nobody ran.");
+
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<OperationCanceledException>(),
+                    "Recording the cancel is half of it. Swallowed here the refresh returns as though it "
+                    + "finished, and the queue tells the browser the work completed.");
             }
         }
 

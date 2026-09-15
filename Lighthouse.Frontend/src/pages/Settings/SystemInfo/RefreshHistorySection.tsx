@@ -161,8 +161,17 @@ const RefreshHistorySection: React.FC = () => {
 		);
 
 		const runs = filtered.length;
+		const cancelledCount = filtered.filter((l) => l.cancelled).length;
+
+		// A refresh somebody stopped says nothing about whether refreshing works, so it is not counted
+		// against the rate. Reported as a failure it sends whoever stopped it looking for a broken
+		// connection - and it is shown on its own line so the runs are still all accounted for.
+		const runsThatWereLeftToFinish = runs - cancelledCount;
 		const successCount = filtered.filter((l) => l.success).length;
-		const successRate = runs > 0 ? Math.round((successCount / runs) * 100) : 0;
+		const successRate =
+			runsThatWereLeftToFinish > 0
+				? Math.round((successCount / runsThatWereLeftToFinish) * 100)
+				: 0;
 		const avgItems =
 			runs > 0
 				? Math.round(filtered.reduce((s, l) => s + l.itemCount, 0) / runs)
@@ -192,6 +201,9 @@ const RefreshHistorySection: React.FC = () => {
 		const stats: { label: string; value: string | number }[] = [
 			{ label: "Total Runs", value: runs },
 			{ label: "Success Rate", value: `${successRate}%` },
+			...(cancelledCount > 0
+				? [{ label: "Cancelled", value: cancelledCount }]
+				: []),
 			{ label: "Avg Items", value: avgItems },
 			{ label: "Avg Duration", value: `${avgDuration.toFixed(2)} s` },
 			{ label: "Min Duration", value: `${minDuration.toFixed(2)} s` },

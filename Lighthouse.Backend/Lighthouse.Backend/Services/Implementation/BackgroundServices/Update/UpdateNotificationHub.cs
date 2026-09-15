@@ -94,8 +94,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 UpdateType = updateKey.UpdateType,
                 Id = updateKey.Id,
-                Status = lastRun.Success ? UpdateProgress.Completed : UpdateProgress.Failed,
+                Status = WhatTheLastRunSaysHappened(lastRun),
             };
+        }
+
+        /// <summary>
+        /// A cancelled run is its own answer. Reported as Failed here the header contradicts the row the
+        /// operator just cancelled in the task list, one screen away.
+        /// </summary>
+        private static UpdateProgress WhatTheLastRunSaysHappened(RefreshLog lastRun)
+        {
+            if (lastRun.Cancelled)
+            {
+                return UpdateProgress.Cancelled;
+            }
+
+            return lastRun.Success ? UpdateProgress.Completed : UpdateProgress.Failed;
         }
 
         /// <summary>

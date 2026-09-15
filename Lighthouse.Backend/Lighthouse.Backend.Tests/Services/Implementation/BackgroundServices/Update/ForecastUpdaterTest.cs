@@ -194,6 +194,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(recorded.Entry.EntityId, Is.EqualTo(portfolio.Id));
                 Assert.That(recorded.Entry.EntityName, Is.EqualTo(portfolio.Name));
                 Assert.That(recorded.Entry.Success, Is.True);
+
+                Assert.That(recorded.Entry.Cancelled, Is.False,
+                    "Nobody stopped this one. Marked cancelled, every healthy forecast would be excluded "
+                    + "from the success rate and the panel would report nothing at all.");
             }
         }
 
@@ -233,6 +237,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(recorded.Entry.Type, Is.EqualTo(RefreshType.Forecast));
                 Assert.That(recorded.Entry.EntityId, Is.EqualTo(portfolio.Id));
                 Assert.That(recorded.Entry.Success, Is.False);
+            }
+        }
+
+        [Test]
+        public void Update_ShouldRecordTheRefreshAsCancelled_WhenTheForecastIsStopped()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Cancelled, Is.True,
+                    "Forecasts log their own refresh, so this half can report a cancel as a failure whatever "
+                    + "the team and portfolio halves do.");
+
+                Assert.That(recorded.Entry.Success, Is.False,
+                    "Still not a refresh that finished - the forecast it was asked for never ran.");
+
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<OperationCanceledException>(),
+                    "Recording the cancel is half of it. Swallowed here the forecast returns as though it "
+                    + "finished, and the queue tells the browser the work completed.");
             }
         }
 

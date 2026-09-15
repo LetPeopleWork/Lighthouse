@@ -7,4 +7,5 @@ export interface RefreshLog {
 	durationMs: number;
 	executedAt: string;
 	success: boolean;
+	cancelled: boolean;
 }

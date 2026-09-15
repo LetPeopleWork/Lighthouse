@@ -44,6 +44,7 @@ const mockLogs: RefreshLog[] = [
 		durationMs: 300,
 		executedAt: "2026-03-01T10:00:00Z",
 		success: true,
+		cancelled: false,
 	},
 	{
 		id: 2,
@@ -54,6 +55,7 @@ const mockLogs: RefreshLog[] = [
 		durationMs: 400,
 		executedAt: "2026-03-02T10:00:00Z",
 		success: true,
+		cancelled: false,
 	},
 	{
 		id: 3,
@@ -64,6 +66,7 @@ const mockLogs: RefreshLog[] = [
 		durationMs: 800,
 		executedAt: "2026-03-01T11:00:00Z",
 		success: true,
+		cancelled: false,
 	},
 ];
 
@@ -148,5 +151,132 @@ describe("RefreshHistorySection", () => {
 
 		expect(screen.getByText("Success Rate")).toBeInTheDocument();
 		expect(screen.getByText("Avg Duration")).toBeInTheDocument();
+	});
+
+	it("does not count a cancelled refresh against the success rate", async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			...mockLogs,
+			{
+				id: 4,
+				type: "Team",
+				entityId: 1,
+				entityName: "Team Alpha",
+				itemCount: 0,
+				durationMs: 120,
+				executedAt: "2026-03-03T10:00:00Z",
+				success: false,
+				cancelled: true,
+			},
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByRole("combobox"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Team: Team Alpha"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Total Runs")).toBeInTheDocument();
+		});
+
+		// Two refreshes ran and both worked; the third was stopped by an operator. Counting that as a
+		// failure reports the connection as broken to whoever stopped it.
+		expect(screen.getByText("100%")).toBeInTheDocument();
+		expect(screen.getByText("Cancelled")).toBeInTheDocument();
+	});
+
+	it("says nothing about cancellations when there were none", async () => {
+		mockGetRefreshLogs.mockResolvedValue(mockLogs);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByRole("combobox"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Team: Team Alpha"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Total Runs")).toBeInTheDocument();
+		});
+
+		// A row reading "Cancelled: 0" on every healthy entity is noise that teaches people to skip the
+		// panel, which is where the number that does matter lives.
+		expect(screen.queryByText("Cancelled")).not.toBeInTheDocument();
+	});
+
+	it("reports no success rate rather than a broken one when every run was cancelled", async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{
+				id: 10,
+				type: "Team",
+				entityId: 1,
+				entityName: "Team Alpha",
+				itemCount: 0,
+				durationMs: 90,
+				executedAt: "2026-03-04T10:00:00Z",
+				success: false,
+				cancelled: true,
+			},
+			{
+				id: 11,
+				type: "Team",
+				entityId: 1,
+				entityName: "Team Alpha",
+				itemCount: 0,
+				durationMs: 110,
+				executedAt: "2026-03-05T10:00:00Z",
+				success: false,
+				cancelled: true,
+			},
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByRole("combobox"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByText("Team: Team Alpha"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Total Runs")).toBeInTheDocument();
+		});
+
+		// Nothing was left to finish, so there is no rate to report. Dividing anyway puts NaN% on the
+		// screen, which reads as a bug in Lighthouse rather than as an operator stopping every run.
+		expect(screen.getByText("0%")).toBeInTheDocument();
 	});
 });

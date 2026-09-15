@@ -44,6 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var refreshLogService = serviceProvider.GetRequiredService<IRefreshLogService>();
             var stopwatch = Stopwatch.StartNew();
             var success = false;
+            var cancelled = false;
             var itemCount = 0;
             var outcome = SyncOutcome.None;
 
@@ -59,6 +60,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
                 itemCount = team.WorkItems.Count;
                 success = true;
+            }
+            catch (OperationCanceledException)
+            {
+                cancelled = true;
+                throw;
             }
             catch (UnreadableSecretException exception)
             {
@@ -86,7 +92,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     RecordsFetched = outcome.RecordsFetched,
                     DurationMs = stopwatch.ElapsedMilliseconds,
                     ExecutedAt = DateTime.UtcNow,
-                    Success = success
+                    Success = success,
+                    Cancelled = cancelled
                 });
 
                 ReportUpdateSummary(serviceProvider, team.Name, outcome, stopwatch.ElapsedMilliseconds, success);

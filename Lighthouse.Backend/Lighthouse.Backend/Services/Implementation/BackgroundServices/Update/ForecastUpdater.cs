@@ -161,6 +161,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var refreshLogService = serviceProvider.GetRequiredService<IRefreshLogService>();
             var stopwatch = Stopwatch.StartNew();
             var success = false;
+            var cancelled = false;
             var itemCount = 0;
 
             try
@@ -168,11 +169,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 itemCount = await ForecastPortfolio(portfolio, serviceProvider);
                 success = true;
             }
+            catch (OperationCanceledException)
+            {
+                cancelled = true;
+                throw;
+            }
             finally
             {
                 stopwatch.Stop();
 
-                await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success);
+                await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success, cancelled);
                 ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success);
             }
         }
@@ -196,7 +202,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// tracking system - there is nothing scanned or downloaded to record.
         /// </summary>
         private static Task LogForecastRefresh(
-            IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success)
+            IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success, bool cancelled)
         {
             var nothingFetched = SyncOutcome.None;
 
@@ -211,7 +217,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 RecordsFetched = nothingFetched.RecordsFetched,
                 DurationMs = durationMs,
                 ExecutedAt = DateTime.UtcNow,
-                Success = success
+                Success = success,
+                Cancelled = cancelled
             });
         }
     }
