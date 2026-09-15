@@ -371,8 +371,8 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  joi@18.2.3:
-    resolution: {integrity: sha512-N5A3KTWQpPWT4ExxxPlUx7WmykGXRzhNidWhV41d6Abu9YfI2NyWCJuxdPnslJCPWtbRpSVOWSnSS6GakLM/Rg==}
+  joi@18.2.9:
+    resolution: {integrity: sha512-2mD929bUVKUhOLQQEVhlf6EZ0Mlo0DeRb5MO7cViR9AXLtBauuccEtB1py9Ocxpo/P7ucnh442iY/iOwrh3IQw==}
     engines: {node: '>= 20'}
 
   lodash@4.18.1:
@@ -705,7 +705,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  joi@18.2.3:
+  joi@18.2.9:
     dependencies:
       '@hapi/address': 5.1.1
       '@hapi/formula': 3.0.2
@@ -785,7 +785,7 @@ snapshots:
   wait-on@9.1.0(debug@4.4.3):
     dependencies:
       axios: 1.18.1(debug@4.4.3)
-      joi: 18.2.3
+      joi: 18.2.9
       lodash: 4.18.1
       minimist: 1.2.8
       rxjs: 7.8.2
