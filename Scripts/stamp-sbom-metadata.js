@@ -45,6 +45,24 @@ function restamp(identifier, newVersion) {
   return identifier.replace(/@[^@]*$/, `@${newVersion}`);
 }
 
+// cdxgen annotates the component with how it classified the licence it found —
+// "Unstated License" when it found none, which is our case. Once we have written
+// the licence in, that annotation describes a licence that is no longer there, so
+// it goes rather than being replaced with a category we would be guessing at.
+function dropStaleLicenseCategory(component) {
+  if (!Array.isArray(component.properties)) {
+    return;
+  }
+
+  component.properties = component.properties.filter(
+    (property) => property && property.name !== 'cdx:license:category',
+  );
+
+  if (component.properties.length === 0) {
+    delete component.properties;
+  }
+}
+
 for (const file of files) {
   let bom;
 
@@ -62,6 +80,7 @@ for (const file of files) {
 
   component.version = version;
   component.licenses = LICENSES;
+  dropStaleLicenseCategory(component);
 
   if (typeof component['bom-ref'] === 'string') {
     component['bom-ref'] = restamp(component['bom-ref'], version);
