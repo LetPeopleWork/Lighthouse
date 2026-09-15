@@ -100,7 +100,7 @@ Core dashboards and widget screenshots are available in the docs:
 
 ## License & Security
 
-Lighthouse is source available under the Lighthouse Source Available License 1.0 — see the LICENSE file. Releases up to and including v26.9.9.9 remain MIT licensed. The product runs fully on your infrastructure; data is not sent to third-party cloud providers by default.
+Lighthouse is source available under the Lighthouse Source Available License 1.0 — see the LICENSE file, or https://docs.lighthouse.letpeople.work/licensing/licensing.html for the plain-language version with worked examples of what is and is not allowed. Releases up to and including v26.9.9.9 remain MIT licensed. The product runs fully on your infrastructure; data is not sent to third-party cloud providers by default.
 
 ## Known limitations
 

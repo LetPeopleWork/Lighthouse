@@ -22,14 +22,17 @@ Lighthouse was published under the MIT License from 2025 until **v26.9.9.9**, re
 
 Source from after that point is under the Lighthouse Source Available License 1.0. The full text is in the [LICENSE file](https://github.com/LetPeopleWork/Lighthouse/blob/main/LICENSE).
 
-## What it means if you run Lighthouse
+## What this means for you
 
-For almost everyone, nothing changes. You can still:
+For almost everyone, nothing changes. Find yourself below; the tables after it have the detail.
 
-- run Lighthouse on your own infrastructure, for as many people in your company as you like;
-- read and audit every line of the source — which is what makes "your data never leaves your network" a checkable claim rather than a promise;
-- change the code for your own needs, as much as you like, and run your modified version;
-- use a code assistant to help you do it.
+**You run Lighthouse inside your company.** Nothing changes. Run it on your own infrastructure for as many people as you like. Read and audit every line — which is what makes "your data never leaves your network" a checkable claim rather than a promise. Change the code for your own needs, as much as you like, run your modified version, and use a code assistant to help you do it.
+
+**You consult or coach with Lighthouse.** Both shapes of that work are permitted, and stay permitted even though we offer such services ourselves: helping a client set up and run **their own** deployment, and pulling a client's data into **your own** instance and handing them the forecast, report or advice. What you may not do is give the client access to your instance — see the note below the tables.
+
+**You build on top of Lighthouse.** Plugins, extensions, integrations, applications built around it, and tools that consume its output or API are all fine. The line is a separate product whose *primary purpose* is to provide what Lighthouse provides, instead of Lighthouse — and that line holds even when the product never leaves your own company.
+
+**You are evaluating Lighthouse.** Read it, run it, study it, test it, fork it and keep your changes to yourself. Reading and studying the source to understand how it works is a right no license can take away from you. And everything up to v26.9.9.9 is MIT in perpetuity.
 
 The restrictions are about what you may provide to **other people**, not about what you do with your own instance.
 
@@ -47,6 +50,7 @@ These examples are guidance to help you find the boundary. They do not expand or
 | Write a plugin or extension for Lighthouse | Yes |
 | Integrate Lighthouse with another tool you use | Yes |
 | Build a dashboard or report that consumes Lighthouse's output or API | Yes |
+| Build an internal tool that does something else and happens to overlap Lighthouse in places | Yes — unless replacing Lighthouse becomes its primary purpose |
 | Fork the repository and keep your changes to yourself | Yes |
 | Read, study and test the source to understand how it works | Yes — and no license can take that right away |
 | Install, configure, operate, train on or consult about Lighthouse **on a client's own deployment** | Yes |
@@ -63,6 +67,15 @@ These examples are guidance to help you find the boundary. They do not expand or
 | Remove or alter the licensing and copyright notices | Named directly in the license |
 | Build a separate forecasting product out of Lighthouse's source that replaces it | It is a competing substitute — and this holds even if it is free, even if it is only used inside one company, and even if it is rewritten in a different language |
 | Feed the source to an AI to produce any of the above | The result is what matters, not how it was produced |
+
+{: .note}
+> **"Can our platform team build our own internal dashboard?"** Almost always yes. The question splits three ways:
+>
+> - **It reads what Lighthouse produces** — forecasts, exports, the API — and presents it your way. **Fine.** That is a tool consuming output, and it stays fine however polished it gets.
+> - **It does something else** — a delivery portal, an exec report, a team scorecard — and overlaps Lighthouse in places. **Fine**, unless providing substantially what Lighthouse provides becomes its primary purpose.
+> - **It reimplements the forecasting so you can stop running Lighthouse.** That is the case that is not allowed, and it stays not allowed even though the tool never leaves your company and you never sell it.
+>
+> The test is not how much it overlaps. It is whether the thing is built to replace Lighthouse or to work with it. If you are building the first kind and it grows into the third, talk to us before it does — that is a conversation, not an enforcement problem.
 
 {: .note}
 > If you are a consultant or coach working with Lighthouse, both of these are explicitly permitted, and stay permitted even though we offer such services ourselves:
