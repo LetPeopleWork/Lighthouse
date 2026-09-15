@@ -94,6 +94,34 @@ nothing. Part 1 section 3 now says a violation of the Additional Terms is a
 violation of this licence for the purposes of that Termination section,
 including its cure and reinstatement provisions. **Does that close it?**
 
+**A6. Contract formation against someone who obtained the source but never ran
+it.**
+Part 1 states when it applies: *"from the moment you obtain any part of the
+software or its source code — by copying, downloading, cloning, forking, or
+receiving it from anyone… They do not depend on your running the software."*
+The only acceptance hook in the composite, however, is ELv2's *"By using the
+software, you agree to all of the terms and conditions below."*
+
+This matters unevenly. Where the prohibited act infringes copyright, the scope
+sentence in A2 does the work and formation is beside the point. But A2's second
+sentence deliberately preserves a **contract-only** branch for prohibited uses
+that infringe nothing — and against someone who cloned the repository, trained
+on it and never once ran it, that branch appears to rest on an agreement they
+never triggered.
+
+  (a) **Is there formation** against a recipient who obtains but never runs?
+  (b) If not, does the "from the moment you obtain" sentence still achieve
+      anything, or does asserting reach we cannot support weaken the clause?
+  (c) Would an additional acceptance hook — *"by obtaining, copying or
+      distributing the software, you agree…"* — improve the position, or does
+      adding a second, differently-worded trigger alongside Part 2's create an
+      inconsistency that costs more than it gains? Part 2 cannot be edited, so
+      any such hook would sit in Part 1 only.
+
+This overlaps C2: the TDM/training case is precisely where the contract-only
+branch is load-bearing and where the recipient is least likely to have run
+anything.
+
 ---
 
 ## B. Scope — is section 1 drafted so people can actually apply it?
