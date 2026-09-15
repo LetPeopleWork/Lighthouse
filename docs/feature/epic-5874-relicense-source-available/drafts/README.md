@@ -11,11 +11,18 @@
 > expecting the repository licence to change, and never read it expecting to
 > learn the current terms. Read `/LICENSE`.
 >
-> To change the licence: edit `license-header.txt` or `license-terms.txt`,
-> reassemble with the command below, verify the ELv2 tail is still byte-identical,
-> and copy the result to `/LICENSE`. Never hand-edit `/LICENSE` — Part 2 has to
-> stay byte-for-byte Elastic's text, and a stray edit there is the one mistake
-> this whole structure exists to prevent.
+> To change the licence: **first check that a fresh assembly still reproduces the
+> current `/LICENSE` exactly** (the command below) — if it does not, `/LICENSE`
+> was hand-edited and reassembling would silently revert that edit. Then edit
+> `license-header.txt` or `license-terms.txt`, reassemble, verify the ELv2 tail is
+> still byte-identical, and copy the result to `/LICENSE`. Never hand-edit
+> `/LICENSE` — Part 2 has to stay byte-for-byte Elastic's text, and a stray edit
+> there is the one mistake this whole structure exists to prevent.
+>
+> This has already happened once. `336a19747` ("permit services run on your own
+> deployment") edited `/LICENSE` directly and left the sources behind, so for four
+> days the documented process would have deleted the amendment. Back-ported
+> 2026-09-15; the sources and `/LICENSE` agree again.
 
 **Status while drafting: DRAFT, not in force.** The repository was still
 MIT-licensed while these files sat here alone.
@@ -67,6 +74,20 @@ it:
 ```sh
 diff <(tail -n "$(wc -l < elv2-verbatim.txt)" LICENSE) elv2-verbatim.txt
 ```
+
+**Check the sources still reproduce the shipped `LICENSE`** — run this *before*
+editing anything, not just after. It is the only thing that catches a hand-edit
+to `/LICENSE`, and a hand-edit is invisible until a reassembly quietly undoes it:
+
+```sh
+cat license-header.txt license-terms.txt elv2-marker.txt elv2-verbatim.txt \
+  | diff - ../../../../LICENSE
+```
+
+Both checks compare working-tree bytes. On a Windows checkout `text=auto` gives
+these files CRLF locally while the committed blobs are LF, so the recorded
+sha256 above will not match a local `sha256sum` — compare like for like, or hash
+`git cat-file` output instead.
 
 ## No placeholders. Nothing to fill at release.
 

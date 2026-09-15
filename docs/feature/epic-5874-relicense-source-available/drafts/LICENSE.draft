@@ -119,13 +119,22 @@ the software, on a deployment that your client controls, is permitted - and
 stays permitted even though the licensor offers such services itself. Section 1
 does not restrict it.
 
+PROFESSIONAL SERVICES PERFORMED ON YOUR OWN DEPLOYMENT ARE PERMITTED. Using your
+own deployment of the software to analyze data belonging to a client, and
+delivering the resulting analysis, reports, forecasts or advice to that client,
+is permitted - and stays permitted even though the licensor offers such services
+itself. Section 1 does not restrict it. What your client receives is your work
+product, not the software.
+
 What is not permitted is running the software as a service that you operate on
 your client's behalf, on infrastructure you control, so that your client
 receives access to the software rather than running it. That is a hosted or
 managed service, and Part 2 prohibits it separately.
 
 The line section 1 draws is between your deployment of the software, or a
-deployment your client controls, and a separate product built out of it.
+deployment your client controls, and a separate product built out of it. The
+line Part 2 draws is between a client who receives the output of the software
+and a client who receives access to the software.
 
 1.2 IF THE LICENSOR LATER BRINGS YOUR PRODUCT INTO COMPETITION
 
