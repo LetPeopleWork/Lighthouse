@@ -896,9 +896,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var state = workItem.ExtractStateFromWorkItem();
             var stateCategory = workItemQueryOwner.MapStateToStateCategory(state);
 
-            var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, stateCategory, workItem.Id, cancellationToken);
+            var revisions = await RevisionsOfWorkItem(workItemQueryOwner, workItem.Id, cancellationToken);
 
-            var syncedTransitions = await GetSyncedTransitionsForWorkItem(workItemQueryOwner, workItem.Id, cancellationToken);
+            var (startedDate, closedDate) = StartedAndClosedDateFrom(revisions, workItemQueryOwner, stateCategory);
+
+            var syncedTransitions = SyncedTransitionsFrom(revisions, workItemQueryOwner);
 
             var additionalFields = new Dictionary<int, string?>();
             foreach (var additionalField in additionalFieldDefinitions)
@@ -925,7 +927,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             };
         }
 
-        private async Task<IReadOnlyList<WorkItemStateTransition>> GetSyncedTransitionsForWorkItem(
+        /// <summary>
+        /// Azure DevOps has no endpoint that answers when an item crossed into a category, so the only way
+        /// to know is to download every revision it has. Four separate questions are answered off this one
+        /// list - started, closed, last re-entry into To Do, and the transitions to sync - and asking the
+        /// tracker separately for each got four identical answers at four times the price, on every item of
+        /// every refresh.
+        /// </summary>
+        private async Task<List<AdoWorkItem>> RevisionsOfWorkItem(
             IWorkItemQueryOwner workItemQueryOwner, int? workItemId, CancellationToken cancellationToken)
         {
             if (!workItemId.HasValue)
@@ -934,15 +943,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
-            var rawTransitions = await GetAllStateTransitionsThrottled(witClient, workItemId.Value, cancellationToken);
-            return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, workItemQueryOwner);
+
+            return await ExecuteWithThrottle(
+                witClient.BaseAddress!.ToString(),
+                () => witClient.GetRevisionsAsync(workItemId.Value, cancellationToken: cancellationToken),
+                cancellationToken);
         }
 
-        private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(
-            IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId, CancellationToken cancellationToken)
-        {
-            var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
+        private static IReadOnlyList<WorkItemStateTransition> SyncedTransitionsFrom(
+            List<AdoWorkItem> revisions, IWorkItemQueryOwner workItemQueryOwner)
+            => WorkItemStateTransitionMapper.MapToMappedStates(StateTransitionsIn(revisions), workItemQueryOwner);
 
+        private static (DateTime? StartedDate, DateTime? ClosedDate) StartedAndClosedDateFrom(
+            List<AdoWorkItem> revisions, IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory)
+        {
             var rawToDoStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.ToDoStates);
             var rawDoingStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoingStates);
             var rawDoneStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoneStates);
@@ -952,10 +966,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             if (stateCategory == StateCategories.Done)
             {
-                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates, cancellationToken);
-                closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoneStates, [], cancellationToken);
+                startedDate = StateTransitionDateFrom(revisions, rawDoingStates, rawDoneStates);
+                closedDate = StateTransitionDateFrom(revisions, rawDoneStates, []);
 
-                var lastToDoEntryDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawToDoStates, rawDoneStates, cancellationToken);
+                var lastToDoEntryDate = StateTransitionDateFrom(revisions, rawToDoStates, rawDoneStates);
                 if (lastToDoEntryDate.HasValue && startedDate.HasValue && lastToDoEntryDate.Value > startedDate.Value)
                 {
                     startedDate = null;
@@ -963,7 +977,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
             else if (stateCategory == StateCategories.Doing)
             {
-                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates, cancellationToken);
+                startedDate = StateTransitionDateFrom(revisions, rawDoingStates, rawDoneStates);
             }
 
             if (startedDate == null && closedDate != null)
@@ -974,18 +988,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (startedDate, closedDate);
         }
 
-        private static async Task<DateTime?> GetStateTransitionDateThrottled(
-            WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore, CancellationToken cancellationToken)
-        {
-            if (!workItemId.HasValue) return null;
-
-            var revisions = await ExecuteWithThrottle(
-                witClient.BaseAddress!.ToString(),
-                () => witClient.GetRevisionsAsync(workItemId.Value, cancellationToken: cancellationToken),
-                cancellationToken);
-
-            return WorkItemCategoryCrossing.LastEntryInto(StateChangesIn(revisions), targetStates, statesToIgnore);
-        }
+        private static DateTime? StateTransitionDateFrom(
+            List<AdoWorkItem> revisions, List<string> targetStates, List<string> statesToIgnore)
+            => WorkItemCategoryCrossing.LastEntryInto(StateChangesIn(revisions), targetStates, statesToIgnore);
 
         // Every revision that changed the state, paired with the state it came from. The earliest one
         // comes from nothing, which is how an item created straight into a category is still dated.
@@ -1019,6 +1024,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 () => witClient.GetRevisionsAsync(workItemId, cancellationToken: cancellationToken),
                 cancellationToken);
 
+            return StateTransitionsIn(revisions);
+        }
+
+        /// <summary>
+        /// The state changes an item actually made, collapsed: a revision that re-saved the same state is
+        /// not a transition, and the first state an item ever held is where the walk starts rather than
+        /// something it moved from.
+        /// </summary>
+        private static List<WorkItemStateTransition> StateTransitionsIn(IEnumerable<AdoWorkItem> revisions)
+        {
             var transitions = new List<WorkItemStateTransition>();
             var previousState = string.Empty;
 

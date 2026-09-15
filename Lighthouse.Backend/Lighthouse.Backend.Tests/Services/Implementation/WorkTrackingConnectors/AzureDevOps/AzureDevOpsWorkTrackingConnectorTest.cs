@@ -1146,6 +1146,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task GetAllStateTransitions_RevisionsThatResavedTheSameState_CountsOneMove()
+        {
+            var witClient = CreateWitClientReturningRevisions(
+                CreateRevision("New", new DateTime(2025, 4, 24, 8, 0, 0, DateTimeKind.Utc)),
+                CreateRevision("Active", new DateTime(2025, 4, 24, 9, 0, 0, DateTimeKind.Utc)),
+                CreateRevision("Active", new DateTime(2025, 4, 24, 10, 0, 0, DateTimeKind.Utc)),
+                CreateRevision("Active", new DateTime(2025, 4, 24, 11, 0, 0, DateTimeKind.Utc)));
+
+            var transitions = await AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, 42, CancellationToken.None);
+
+            Assert.That(transitions.Select(t => (t.FromState, t.ToState)), Is.EqualTo(new[] { ("New", "Active") }),
+                "Editing a field writes a revision without moving the item. Counting those as moves gives an "
+                + "item a transition history it never had, and every duration measured between two of them.");
+        }
+
+        [Test]
+        public async Task GetAllStateTransitions_TrackerDatesThatCarryNoZone_ComeBackAsInstants()
+        {
+            var witClient = CreateWitClientReturningRevisions(
+                CreateRevision("New", new DateTime(2025, 4, 24, 8, 0, 0, DateTimeKind.Unspecified)),
+                CreateRevision("Active", new DateTime(2025, 4, 24, 9, 0, 0, DateTimeKind.Unspecified)));
+
+            var transitions = await AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, 42, CancellationToken.None);
+
+            Assert.That(transitions[0].TransitionedAt.Kind, Is.EqualTo(DateTimeKind.Utc),
+                "A transition stored without a zone is reduced to a calendar day in whatever zone the host "
+                + "runs in, which is how a duration lands a day out on one machine and not another.");
+        }
+
         private static WorkItemTrackingHttpClient CreateWitClientReturningRevisions(params AdoWorkItem[] revisions)
         {
             var witClientMock = new Mock<WorkItemTrackingHttpClient>(new Uri("https://dev.azure.com/lighthouse-test"), new VssCredentials());

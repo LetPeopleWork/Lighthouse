@@ -2178,3 +2178,87 @@ the ledger's self-satisfying-constant trap, caught only because the probe was ru
    additionally aborts a request already on the wire, which matters when a batch read takes minutes — and
    nothing here measures it. The Jira baseline has the same gap.
 2. **CSV, Linear and ServiceNow are unchanged.** Next, in that order.
+
+---
+
+# Wave: DELIVER — slice 04, Azure DevOps history reads
+
+A separate commit from the cancellation work, because it is a refactor and changes no behaviour.
+
+## What it costs to know when an item moved
+
+Azure DevOps has no endpoint that answers "when did this cross into Doing". The only way to know is to
+download every revision an item has and read the state changes out of them — and the connector wanted that
+same list for four different questions:
+
+| Question | Where it was asked |
+|---|---|
+| When did work start? | `GetStateTransitionDateThrottled`, Doing states |
+| When did it close? | `GetStateTransitionDateThrottled`, Done states |
+| Did it re-enter To Do after starting? | `GetStateTransitionDateThrottled`, To Do states |
+| Which transitions should be synced? | `GetAllStateTransitionsThrottled` |
+
+Each asked the tracker separately. Four identical answers at four times the price, per item, per cycle — a
+done item cost four revision downloads, and a two thousand record team up to eight thousand. Against the
+ten batch reads that fetched the same team, this is where the refresh actually spends its wall clock.
+
+## What changed
+
+The history is read **once** per item, and the four answers are computed from that one list. The read and
+the arithmetic are now separate things: `RevisionsOfWorkItem` does the I/O, and `StartedAndClosedDateFrom`,
+`StateTransitionDateFrom` and `SyncedTransitionsFrom` are pure static functions over the list it returns.
+
+`GetAllStateTransitionsThrottled` keeps its signature for its one existing caller and now delegates its
+mapping half to an extracted `StateTransitionsIn`.
+
+## The thing that made this risky
+
+The two old paths built transition lists with **different semantics**, and a refactor that blurred them
+would have changed started and closed dates — the inputs to cycle time, work item age and every forecast —
+without failing anything:
+
+| | Dating path (`StateChangesIn`) | Sync path (`StateTransitionsIn`) |
+|---|---|---|
+| A revision that re-saved the same state | kept | skipped |
+| The state an item was created in | kept, paired with an empty origin | skipped |
+| `DateTimeKind` | left alone; normalised later by `LastEntryInto` | normalised to UTC here |
+
+Both are preserved. The adversarial review was pointed at this specifically and confirmed it line by line.
+
+## What the adversarial review found
+
+**The new test asserted `SyncedTransitions` was `Is.Not.Empty` and nothing more** (blocker). That passes for
+a list with the wrong count, the wrong states, or the wrong `DateTimeKind` — which is to say it passes for
+every semantic change the table above is about. Now bounded on count, both states, and kind.
+
+Its other finding — that nothing proves the tracker returns revisions in the same order on two separate
+calls — is worth recording the other way round: reading once **removes** that window rather than opening
+one. Four reads of a changing item could disagree with each other; one read cannot.
+
+## What mutation testing found
+
+Five hand-applied probes against the behaviour the refactor had to preserve. The first run killed two and
+**survived two**, and the reason matters more than the count: the shared fixture could not express either
+defect. Its revisions were already stamped `DateTimeKind.Utc`, making every normalisation downstream a
+no-op no assertion could see fail, and it contained no re-save of the same state at all.
+
+So the fixture was fixed rather than the assertions: `TheRevisionsOf` now hands back unzoned instants, the
+way a tracker that promises nothing about zones would, and the parser test gained a four-revision case
+where an item is re-saved in the state it is already in. On the second run all four killable probes died:
+
+| Probe | Verdict |
+|---|---|
+| the created-in state leaks through as a move | killed |
+| a re-save of the same state counts as a move | killed |
+| the transitions stop being normalised to UTC | killed |
+| the history is read per question again, not once | killed |
+| the dating reader is handed the sync semantics | compile-blocked (S1144) |
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| Azure DevOps unit tests | 69 passed |
+| `dotnet test` (connector categories excluded) | green |
+| Hand-mutation of the preserved behaviour | 4 killed, 1 compile-blocked |

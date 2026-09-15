@@ -316,10 +316,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return item;
         }
 
+        /// <summary>
+        /// Deliberately unzoned. The tracker does not promise its revision dates arrive normalised, and an
+        /// organisation that hands back instants already stamped UTC makes every normalisation downstream a
+        /// no-op that no test can see fail.
+        /// </summary>
         private static List<AdoWorkItem> TheRevisionsOf(int id) =>
         [
-            ARevision(id, "New", new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc)),
-            ARevision(id, "Active", new DateTime(2026, 8, 5, 14, 30, 0, DateTimeKind.Utc)),
+            ARevision(id, "New", new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Unspecified)),
+            ARevision(id, "Active", new DateTime(2026, 8, 5, 14, 30, 0, DateTimeKind.Unspecified)),
         ];
 
         private static AdoWorkItem ARevision(int id, string state, DateTime changedDate) => new()
