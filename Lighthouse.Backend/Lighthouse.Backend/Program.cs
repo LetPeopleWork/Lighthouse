@@ -14,6 +14,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.ConnectionHealth;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Services.Implementation.Logging;
 using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
@@ -1581,10 +1582,29 @@ namespace Lighthouse.Backend
 
             builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
 
-            var logger = LoggingConfigurator.CreateLogger(builder.Configuration, serilogConfiguration.LoggingLevelSwitch);
+            // Same route the level switch already takes, and for the same reason: the logger is built here,
+            // before dependency injection exists, so anything the rest of the application must also reach is
+            // constructed at this point and registered beside it.
+            var recentProblems = new RecentProblemsSink(RecentProblemsCapacityFrom(builder.Configuration));
+            builder.Services.AddSingleton<IRecentProblems>(recentProblems);
+
+            var logger = LoggingConfigurator.CreateLogger(builder.Configuration, serilogConfiguration.LoggingLevelSwitch, recentProblems);
 
             Log.Logger = logger;
             builder.Host.UseSerilog(logger, true);
+        }
+
+        /// <summary>
+        /// The buffer refuses to be built with room for no problems, and the number it is built from
+        /// arrives out of a settings file nobody validated. A typo there must not be the reason the whole
+        /// instance will not start, least of all for the sake of a buffer whose only job is to make
+        /// trouble easier to notice, so a value no instance could use falls back to the default.
+        /// </summary>
+        private static int RecentProblemsCapacityFrom(ConfigurationManager configuration)
+        {
+            var configured = configuration.GetValue("RecentProblems:Capacity", RecentProblemsSink.DefaultCapacity);
+
+            return configured > 0 ? configured : RecentProblemsSink.DefaultCapacity;
         }
 
         private static void ConfigureHttps(WebApplicationBuilder builder)

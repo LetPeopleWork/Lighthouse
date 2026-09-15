@@ -34,7 +34,11 @@ export const createMockApiServiceContext = (
 		authService: null as unknown as IApiServiceContext["authService"],
 		apiKeyService: null as unknown as IApiServiceContext["apiKeyService"],
 		forecastService: null as unknown as IApiServiceContext["forecastService"],
-		logService: null as unknown as IApiServiceContext["logService"],
+		// A real one rather than the null the rest of this default context still holds: the header's
+		// popover reads recent problems on every render, and a null here made that read throw, which
+		// left the section absent from every test that did not ask for it by name. A section nothing
+		// renders is a section nothing covers.
+		logService: createMockLogService(),
 		portfolioService: null as unknown as IApiServiceContext["portfolioService"],
 		settingsService: null as unknown as IApiServiceContext["settingsService"],
 		teamService: null as unknown as IApiServiceContext["teamService"],
@@ -373,6 +377,9 @@ export const createMockOptionalFeatureService = (): IOptionalFeatureService => {
 
 export const createMockLogService = (): ILogService => {
 	return {
+		// An instance that has had nothing go wrong, so a test that forgets to override this gets a quiet
+		// popover rather than an invented failure over whatever it was really testing.
+		getRecentProblems: vi.fn().mockResolvedValue([]),
 		getLogs: vi.fn(),
 		getLogLevel: vi.fn(),
 		getSupportedLogLevels: vi.fn(),

@@ -3085,3 +3085,314 @@ sitting next to it in the same run.
 4. **PAT expiry dates remain invisible.** #5019's description notes them; Lighthouse gains no awareness
    of them here, exactly as the slice brief scoped it.
 5. **What remains on the Epic is slice 06.**
+
+---
+
+# Wave: DISTILL — slice 06
+
+Run 2026-09-15. Reconciliation: passed, 0 contradictions. DISCUSS (D10, US-06), DESIGN (DDD-8,
+ADR-185) and the surface inventory (S17, S18) all say the same thing about this slice — a new bounded
+in-process sink, read through the controller that already guards the log file — and nothing accepted
+since contradicts any of it.
+
+## Wave: DISTILL / [REF] The contract this slice fixes
+
+One route, on the controller that already exists, and one new setting.
+
+`GET /api/latest/logs/problems` answers a JSON array, most recent first, with one object per retained
+event:
+
+| field | meaning |
+|---|---|
+| `recordedAt` | when it happened |
+| `level` | `Warning`, `Error` or `Fatal`, rendered as the name — the browser reads it as a word, and renumbering would silently relabel what an operator sees |
+| `source` | which part of Lighthouse is complaining |
+| `message` | the sentence as it was rendered |
+| `exceptionType` | the type of whatever threw, absent when nothing did |
+
+It sits on `LogsController`, which has carried `RbacGuard(SystemAdmin)` since 2026-08-06 (S18), so the
+guard is inherited rather than re-argued. `RecentProblems:Capacity` bounds the buffer and defaults to
+200; eviction is oldest-first.
+
+The section is per-process, starts empty, and does not survive a restart. That is a property of the
+design (D10) and the UI states it in words rather than leaving it to be inferred — see the copy pinned
+in AC-06.5 below.
+
+## Wave: DISTILL / [REF] OQ-4 answered — the buffer holds 200
+
+**Measured, not guessed.** Nine real day-logs from the dev instance
+(`Lighthouse.Backend/Lighthouse.Backend/logs/`) were counted before the slice was written:
+warning-and-above lands at **1–39 entries per day, median 7**. 200 therefore covers roughly five of the
+busiest day observed, which is the right order for "what has gone wrong lately" without holding a month
+of failures in memory. **OQ-4 is closed.**
+
+**The secondary finding matters more than the number.** 65 % of those entries — **69 of 106** — are
+startup chatter rather than connector signal: `Migrations: PRAGMA foreign_keys = 0`,
+`Kestrel: Overriding address(es)` and their kin. That is dilution, not failure: the interesting
+warnings are all still there and still few enough to read. Curation stays out of scope per D10, and
+this is the measurement the follow-up would start from if the hypothesis does fire.
+
+No test pins 200. A test that compares a value to the constant it came from is self-satisfying, and
+200 is a tuning default rather than a promise — what is promised, and tested, is that the bound is
+honoured and that the oldest goes first.
+
+## Wave: DISTILL / [REF] Scenario list
+
+**Backend acceptance** — `API/Integration/TaskManager/Slice06TheWarningsWithoutTheLog{Scenarios,Specifications}.cs`,
+categories `acceptance` + `epic-5511-task-manager` + `slice-06`. All eight observe the route over HTTP.
+Every one of them that has a problem to read produces it by running a **real refresh against a
+connector that will not answer**, through the production queue, exactly as slices 01-05 drive it —
+which is AC-06.7's whole point.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `A_refresh_that_broke_is_waiting_in_the_popover_instead_of_in_the_log_file` | `@walking_skeleton @driving_port @real-io @error` | 06.1, 06.7 |
+| `A_recent_problem_says_when_it_happened_how_serious_it_is_where_it_came_from_and_what_broke` | `@driving_port @real-io @error` | 06.1, 06.7 |
+| `A_refresh_that_worked_leaves_nothing_behind_for_an_operator_to_worry_about` | `@driving_port @real-io` | 06.1 |
+| `The_problem_that_just_happened_is_the_one_an_operator_reads_first` | `@driving_port @real-io @error` | 06.1 |
+| `The_oldest_problem_makes_way_for_the_newest_once_there_is_no_more_room` | `@driving_port @real-io @error` | 06.2 |
+| `Telling_the_instance_to_report_only_the_very_worst_takes_effect_on_the_spot` | `@driving_port @real-io @error` | 06.3 |
+| `Telling_it_to_report_problems_again_takes_effect_on_the_spot_too` | `@driving_port @real-io @error` | 06.3 |
+| `Recent_problems_are_not_handed_to_somebody_who_may_not_read_the_log_either` | `@driving_port @real-io @error` | 06.4 |
+
+Error-path share: 6 of 8.
+
+Three are worth calling out as more than restatements of an AC:
+
+*A refresh that worked leaves nothing behind* is the negative control and the one that keeps the
+section honest. Every refresh writes its own summary line; a section that carried those would be a wall
+of text within the hour, which is exactly the outcome the hypothesis says would disprove the slice. Its
+positive control is that the refresh really ran — without it, a read that silently answers nothing
+passes.
+
+*Telling it to report problems again* is the control on the scenario before it. A section that has
+quietly stopped recording anything at all satisfies "report only the very worst" perfectly, and only
+the pair distinguishes a level that took effect from a buffer that broke.
+
+*Recent problems are not handed to somebody who may not read the log either* asserts against the log
+file's own answer rather than against a status code, so the two cannot drift apart. It is the one
+scenario not held back: it passes on arrival, and a guard that failed on the day it was written would
+mean the attribute had gone missing.
+
+**Frontend** — `components/App/Header/TaskManagerIcon.test.tsx`, under a `recent problems` describe (6),
+following the shape slice 05 used for its own half.
+
+| Scenario | AC |
+|---|---|
+| says what went wrong and how serious it was | 06.1 |
+| reads newest first, in the order the instance gave them | 06.1 |
+| says plainly that this is only since the instance started, and is not a complete history | 06.5 |
+| says nothing has gone wrong rather than rendering an empty section | 06.6 |
+| offers the way through to the full log | 06.5 |
+| does not claim nothing has gone wrong when it could not ask | — |
+
+The AC-06.5 copy is pinned against the **literal sentence**, not against the constant it will be read
+from: *"Only what has gone wrong since this instance started. Not a complete history, and not kept
+after a restart."* Blanking that constant has to turn the test red, and a test that reads the sentence
+from the source cannot do that — this is the single most common survivor in copy-bearing code.
+
+The last row is not an AC. Rendering "nothing has gone wrong" after a read that failed is the same
+false reassurance the icon this popover replaced was built out of, so it is specified alongside the
+empty state rather than left to be discovered.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+| Port | Class | Treatment |
+|---|---|---|
+| `GET /api/latest/logs/problems` | Driving | Real, over `Factory.CreateClient()` |
+| `POST /api/latest/logs/level` | Driving | Real, over `Factory.CreateClient()` — the level control the log viewer already offers |
+| The scheduled refresh (`ITeamUpdater`) | Driving | Real, through the production queue in its own DI scope |
+| The Serilog pipeline and the sink behind `IRecentProblems` | Driven internal | Real — built by `Program.ConfigureLogging`, not by the test. See the wiring decision below |
+| `IRepository<Team>`, `IRepository<WorkTrackingSystemConnection>`, `IUpdateStatusStore` | Driven internal | Real, EF over SQLite |
+| `IWorkTrackingConnector` | Driven external | Faked; made to turn every refresh away, because a scenario about a tracker that will not answer cannot ask a real one to stop answering |
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend.Tests/API/Integration/TaskManager/` — beside slices 01-05, on the harness they all
+share. Precedent: the driving port for this Epic is a refresh run by the production queue, and
+`TaskManagerAcceptanceTest` is where that is already stood up.
+
+Frontend promises go in `TaskManagerIcon.test.tsx` under their own describe, which is where slice 05
+put its own half. The **component** under test belongs in
+`components/App/Header/TaskManager/RecentProblemsSection.tsx`, a sibling of `ActivitySection` and
+`ConnectionsSection` — not inline in `TaskManagerIcon`, whose render body is already near the
+cognitive-complexity limit this repository has lost two CI cycles to, and whose split exists precisely
+to prevent a third section being added to it.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| Recent-problems read on `LogsController` | All eight backend scenarios, over HTTP |
+| Level control on `LogsController` | The two AC-06.3 scenarios, over HTTP |
+| Scheduled refresh (`ITeamUpdater` through the production queue) | Six backend scenarios |
+| `RecentProblemsSection` in the popover | Six frontend promises, through `TaskManagerIcon` |
+
+No entry point in this slice is left to a service-level test.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | State |
+|---|---|
+| `Models/Logging/RecentProblem.cs` | NEW — the record, real |
+| `Services/Interfaces/IRecentProblems.cs` | NEW — the read-only port, real |
+| `Services/Implementation/Logging/RecentProblemsSink.cs` | NEW — **scaffold**. `MostRecentFirst()` throws with the scaffold's own message; the ring buffer is DELIVER's |
+| `Startup/LoggingConfigurator.cs` | EXTEND — takes the sink and wires it at `Warning` and above, the same way it already takes the level switch |
+| `Program.ConfigureLogging` | EXTEND — constructs the sink from `RecentProblems:Capacity`, registers it as a singleton, hands it to `CreateLogger` |
+| `API/LogsController.cs` | EXTEND — the read route; `#pragma warning disable S6960` with the reason written out, because a second injected service reads to Sonar as a second controller and D10/S18 say the opposite |
+| `services/Api/LogService.ts` | EXTEND — `getRecentProblems`, real, on the service that already owns this controller |
+| `tests/MockApiServiceProvider.ts` | EXTEND — the mock defaults to an instance that has had nothing go wrong |
+
+`Emit` deliberately does **not** throw. The sink sits inside the log pipeline, so a scaffold that threw
+from it would take logging down across the whole application instead of failing the tests waiting for
+the buffer. It touches instance state instead — which is also what keeps S2325 and S4487 off a stub
+that would otherwise not compile here.
+
+The wiring is written now rather than left to DELIVER because it is the part the acceptance tests have
+to prove; what is scaffolded is the behaviour. The cost is recorded rather than discovered: **adding a
+line to `Program.cs` force-fulls every live-connector integration suite in CI** (`path-classifier.sh`
+sets `connector_shared=true`), so this slice's first push runs Jira, ADO, Linear, ServiceNow and the
+GitHub pair whether or not it touched them.
+
+## Wave: DISTILL / [REF] The wiring decision — logging through the production logger, not a rebuilt one
+
+`TaskManagerAcceptanceTest.Init()` removes `ILoggerFactory` and installs one writing to `CapturedLogs`.
+In that harness an application warning would **never** reach a sink attached by
+`Program.ConfigureLogging`, so a naively written scenario here would pass against a buffer that is not
+wired into the product at all — the Tested-But-Unwired defect the port-to-port principle exists to
+prevent.
+
+**The decision**: the slice-06 `ConfigureAdditionalServices` rebuilds the factory around **the running
+host's own production Serilog logger**, resolved from the container `UseSerilog` registered it in, with
+`CapturedLogs` teed alongside. Nothing is re-configured and no second logger is constructed, so if
+`Program` stops handing the sink to `CreateLogger` — or hands it one instance and registers another —
+every scenario goes red.
+
+Two shape differences had to be reconciled deliberately:
+
+1. **Levels.** The harness pins `MinimumLevel.Verbose()` with `Microsoft.EntityFrameworkCore` and
+   `Microsoft.AspNetCore` overridden to `Warning`; the production configurator reads from
+   `IConfiguration`. The wrapper here keeps `Verbose` and applies **no overrides at all**, because
+   anything it filtered would be filtered before the production logger ever saw it — and what the
+   production logger sees is the subject. All the filtering that matters is the production logger's own,
+   which is what AC-06.1 and AC-06.3 are about. The cost is a noisier `CapturedLogs`; nothing in this
+   fixture asserts on it.
+2. **Capacity.** The buffer's size has to be overridable for the eviction scenario, and the channel is
+   `UseSetting`, not `ConfigureAppConfiguration`. Measured, not assumed: the sink is built on the way in
+   to `builder.Build()`, and configuration sources added the other way are not applied until the build
+   itself, so they arrive after the sink already exists. With `ConfigureAppConfiguration` the sink
+   reported room for 200 while the fixture asked for 5, and the eviction scenario would have passed for
+   the wrong reason.
+
+`TaskManagerAcceptanceTest` was **not** modified. `ConfigureAdditionalServices` is the hook it already
+provides for exactly this, and the capacity override chains a factory off `Factory` in the derived
+`[SetUp]`, which is the same move slice 05 makes for its non-administrator scenario.
+
+## Wave: DISTILL / [REF] Red gate
+
+Seven of the eight backend scenarios failed against the scaffold, each for the right reason — the route
+answering 500 from the `NotImplementedException` carrying the scaffold's own message. The eighth is
+`Recent_problems_are_not_handed_to_somebody_who_may_not_read_the_log_either`, which passes on arrival
+for the same reason its slice-05 twin does: it guards an attribute that is already there.
+
+The wiring was verified separately rather than assumed. A throwaway probe resolved `IRecentProblems`
+from the container after a real failing refresh and read the scaffold's own exception message back:
+
+> Retaining recent problems is not implemented - DISTILL scaffold (room for 5, worst level seen so far Error)
+
+Both halves are in that one line — *room for 5* proves the capacity override reached the sink the host
+actually built, and *worst level seen so far Error* proves the failing refresh's error travelled the
+production pipeline into the DI-registered instance. The probe was deleted; its output is the evidence.
+
+Scenarios are held with `[Ignore]` so the hand-off commit is green. Unskipping one is the first act of
+the DELIVER step that implements it.
+
+## Wave: DISTILL / [REF] Upstream findings, and what is carried into DELIVER
+
+**The row names the failing refresh by id, not by name — and that is the hypothesis, arriving early.**
+AC-06.7 asks for verification against a real failing connector, and doing it surfaced an asymmetry
+nobody had written down. The only line at warning-and-above that identifies a failed refresh is
+`UpdateQueueService`'s own — *"Error processing update task for Team with ID 7"* — which carries the
+update type and the id. The line that carries the team's **name** is the refresh summary
+(*"Update completed | Team 'Lagunitas' | … | success=False"*), written at `Information` by slice 01's
+one-line-per-refresh work, and therefore below this section's threshold by design.
+
+So a severity filter surfaces the line with the id and hides the line with the name. The scenarios
+assert what is actually there — the row identifies which refresh broke and what broke it — rather than
+demanding the name, because naming the team in the queue's error line would mean a repository lookup
+inside the queue, which DDD-10 argues against, and it is not in this slice's scope. **This is a finding
+about the hypothesis, not a defect**: it is a concrete instance of "a level filter alone yields signal
+rather than noise" being only half true, and it is the first thing to look at if the section reads
+badly on a real instance. The curated-operational-events follow-up D10 names is where it would be
+fixed.
+
+**Carried into DELIVER:**
+
+1. The ring buffer itself — bounded, oldest-first, thread-safe, and the `LogEvent` to `RecentProblem`
+   projection including trimming `SourceContext` to its last segment the way the file template does.
+2. `RecentProblemsSection.tsx` and its wiring into `TaskManagerIcon`, including the link to
+   `/settings?tab=system-info`.
+3. A unit-level check that a rolled-over buffer holds exactly its capacity. The acceptance scenario
+   proves the oldest goes first; the exact count at the boundary is a data-structure invariant and is
+   cheaper to pin there.
+4. The public docs for the Task Manager, which slices 02-05 deliberately deferred to the end of the
+   Epic. Slice 06 is the end of the Epic.
+
+---
+
+## Wave: DELIVER / [REF] What slice 06 shipped
+
+`RecentProblemsSink` is a bounded ring buffer — a `Queue<RecentProblem>` behind one lock taken by both
+`Emit` and `MostRecentFirst`, evicting oldest-first, answering most-recent-first. It projects each event
+to time, level, short source name, rendered message and exception type. The scaffold DISTILL left behind
+(whose `MostRecentFirst` threw) is gone; the Scaffolds table above records the state at DISTILL, not now.
+
+`RecentProblemsSection.tsx` sits beside `ActivitySection` and `ConnectionsSection`. It takes
+`IRecentProblem[] | null`: `null` means the instance was asked and did not answer, and the section renders
+nothing rather than the reassuring empty state — an unanswered question is not a clean bill of health, which
+is the failure mode the icon slice 05 deleted was built out of.
+
+### Two things decided during DELIVER that the acceptance criteria did not settle
+
+**A mistyped buffer size does not stop the instance starting.** The sink's constructor refuses a
+non-positive capacity, because a ring buffer with no room is meaningless. The *configuration boundary*
+is lenient instead: `RecentProblems:Capacity` set to zero or a negative number falls back to 200. The
+invariant belongs to the type; the leniency belongs where the untrusted number arrives, and only there can
+a programmer's mistake be told from an operator's typo. A diagnostic buffer must never be the reason the
+whole application will not boot.
+
+**`RecentProblems:Capacity` exists at all** because AC-06.2 is otherwise untestable at the port — pinning
+eviction against the shipped default would mean provoking two hundred real failures.
+
+### The hypothesis, answered early and not entirely in its favour
+
+The slice set out to disprove that a level filter alone yields signal rather than noise. It survives, but
+with two findings that belong to whoever picks up the follow-up D10 names:
+
+**Volume is not the problem.** Nine days of a real instance's logs hold 1–39 warning-or-worse events per
+day, median 7. A level filter leaves a readable list, not a wall.
+
+**Composition partly is.** Two thirds of those entries (69 of 106) are startup chatter — `Migrations:
+PRAGMA foreign_keys = 0`, `Kestrel: Overriding address(es)` — rather than anything about a connector, so a
+freshly started instance opens on framework noise.
+
+**And the filter hides the better line.** The only warning-or-above line identifying a failed refresh is
+the queue's own, which names it by id: *Error processing update task for Team with ID 7*. The line that
+carries the team's **name** is the refresh summary, written at `Information` and therefore below this
+section's threshold by design. The severity filter keeps the row with the id and drops the row with the
+name. The acceptance scenarios match on the id rather than smoothing this over, because it is evidence
+about the instrument, not an implementation detail: it is the sharpest argument yet that the follow-up
+wants a named set of operational events rather than a severity threshold.
+
+### Gates
+
+`dotnet build` zero warnings · backend suite 6837 passed / 10 skipped, the single failure the known
+`ServiceContainer_BuildsWithoutScopeViolations` teardown `IOException` · `dotnet format analyzers
+--severity info` zero findings in any touched file · `pnpm test` 5200 passed · `pnpm build` clean ·
+mutation **95.65 % backend**, **66.67 % frontend with 12 of 12 behavioural mutants killed** and six
+cosmetic survivors recorded in `mutation/results.md`.
+
+### Carried out of this slice
+
+The public Task Manager docs, which slices 02–05 deferred to the end of the Epic. Slice 06 is the last
+slice, so they are now the Epic's only outstanding work.

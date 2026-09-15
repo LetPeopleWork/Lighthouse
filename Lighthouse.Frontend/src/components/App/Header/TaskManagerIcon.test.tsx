@@ -1,6 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes, useParams } from "react-router";
+import {
+	MemoryRouter,
+	Route,
+	Routes,
+	useParams,
+	useSearchParams,
+} from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type {
@@ -8,12 +14,17 @@ import type {
 	IConnectionHealthService,
 } from "../../../services/Api/ConnectionHealthService";
 import type {
+	ILogService,
+	IRecentProblem,
+} from "../../../services/Api/LogService";
+import type {
 	IUpdateSubscriptionService,
 	IUpdateTask,
 } from "../../../services/UpdateSubscriptionService";
 import {
 	createMockApiServiceContext,
 	createMockConnectionHealthService,
+	createMockLogService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
 import TaskManagerIcon from "./TaskManagerIcon";
@@ -130,6 +141,54 @@ const renderIconWithConnections = (
 	);
 
 	return { service: connectionHealthService, container };
+};
+
+/**
+ * DISTILL specifications (Epic #5511 — Task Manager), slice 06 / #5843, frontend half. US-06:
+ * AC-06.1 (what a row says), AC-06.5 (the copy that stops this being read as an audit log) and
+ * AC-06.6 (an instance with nothing wrong says so). AC-06.2, AC-06.3, AC-06.4 and AC-06.7 are backend
+ * promises and live in `Slice06TheWarningsWithoutTheLog{Scenarios,Specifications}.cs`.
+ *
+ * The section under test belongs in its own file — `TaskManager/RecentProblemsSection.tsx`, beside
+ * `ActivitySection` and `ConnectionsSection` — rather than inline in the icon, whose render body is
+ * already close to the cognitive-complexity limit this repository has lost CI cycles to.
+ */
+const renderIconWithProblems = (
+	problems: IRecentProblem[],
+	configure?: (service: ILogService) => void,
+) => {
+	const updateSubscriptionService = createMockUpdateSubscriptionService();
+	updateSubscriptionService.getRunningTasks = vi.fn().mockResolvedValue([]);
+
+	const logService = createMockLogService();
+	logService.getRecentProblems = vi.fn().mockResolvedValue(problems);
+	configure?.(logService);
+
+	render(
+		<MemoryRouter>
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					updateSubscriptionService,
+					logService,
+				})}
+			>
+				<TaskManagerIcon />
+				{/* Somewhere for the link to the full log to actually arrive, so "it offers a way there" and
+				    "it goes to the log viewer" are different claims. */}
+				<Routes>
+					<Route path="/settings" element={<LogViewerPage />} />
+				</Routes>
+			</ApiServiceContext.Provider>
+		</MemoryRouter>,
+	);
+
+	return logService;
+};
+
+const LogViewerPage = () => {
+	const [searchParams] = useSearchParams();
+
+	return <div data-testid="log-viewer-page">{searchParams.get("tab")}</div>;
 };
 
 const EditConnectionPage = () => {
@@ -363,12 +422,19 @@ describe("TaskManagerIcon", () => {
 	});
 
 	// AC-02.7 — an idle instance is an ordinary answer. An empty box reads as broken.
+	//
+	// The whole sentence, not merely a word out of it: the popover holds more than one section that
+	// answers with a "nothing", and a matcher loose enough to catch any of them is satisfied by the
+	// wrong one — or, once two are on screen together, by neither, because `findByText` refuses a
+	// match it cannot make unambiguously.
 	it("says in words that nothing is running, rather than showing an empty box", async () => {
 		renderIcon([]);
 
 		await openThePopover();
 
-		expect(await screen.findByText(/nothing/i)).toBeInTheDocument();
+		expect(
+			await screen.findByText(/nothing is being refreshed right now/i),
+		).toBeInTheDocument();
 	});
 
 	// AC-02.6 — the list names every entity on the instance, which is why it is administrator-only.
@@ -874,6 +940,117 @@ describe("TaskManagerIcon", () => {
 			const { container } = renderIconWithConnections([aBrokenCredential]);
 
 			expect(container).toBeEmptyDOMElement();
+		});
+	});
+
+	describe("recent problems", () => {
+		const aRefreshThatBroke: IRecentProblem = {
+			recordedAt: "2026-09-15T09:31:00+00:00",
+			level: "Error",
+			source: "UpdateQueueService",
+			message: "Error processing update task for Team with ID 7",
+			// The short name, which is what the instance actually sends: the type is trimmed to its last
+			// segment for the same reason the source is, so a namespace in front of it here would have the
+			// fixture describing a contract nobody implements.
+			exceptionType: "InvalidOperationException",
+		};
+
+		const somethingThatOnlyWarned: IRecentProblem = {
+			recordedAt: "2026-09-15T09:12:00+00:00",
+			level: "Warning",
+			source: "UpdateQueueService",
+			message: "Update queue drain exceeded the shutdown timeout",
+			exceptionType: null,
+		};
+
+		// AC-06.1 — the row is the whole feature. An operator reading it has to learn what went wrong and
+		// how seriously to take it without opening anything else.
+		it("says what went wrong and how serious it was", async () => {
+			renderIconWithProblems([aRefreshThatBroke]);
+
+			await openThePopover();
+
+			const row = await screen.findByTestId("recent-problem-row");
+			expect(row).toHaveTextContent(/Error processing update task/i);
+			expect(row).toHaveTextContent(/error/i);
+		});
+
+		// AC-06.1 — the instance decides the order, and a short list is read from the top. Re-sorting here
+		// would put the failure that has already been dealt with above the one that has not.
+		it("reads newest first, in the order the instance gave them", async () => {
+			renderIconWithProblems([aRefreshThatBroke, somethingThatOnlyWarned]);
+
+			await openThePopover();
+
+			const rows = await screen.findAllByTestId("recent-problem-row");
+			expect(rows[0]).toHaveTextContent(/Error processing update task/i);
+			expect(rows[1]).toHaveTextContent(/drain exceeded/i);
+		});
+
+		// AC-06.5 — the promise that stops this being mistaken for an audit log. Somebody who reads three
+		// entries as "three things have ever gone wrong" draws exactly the wrong conclusion from a restart.
+		// Written out as a literal rather than compared against the constant it came from: blanking that
+		// constant has to turn this red, and a test that reads it from the source cannot.
+		it("says plainly that this is only since the instance started, and is not a complete history", async () => {
+			renderIconWithProblems([aRefreshThatBroke]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByText(
+					"Only what has gone wrong since this instance started. Not a complete history, and not kept after a restart.",
+				),
+			).toBeInTheDocument();
+		});
+
+		// AC-06.6 — an empty box reads as "this feature is broken". Saying nothing has gone wrong is the
+		// answer, and it is a different answer from saying nothing at all.
+		// Written out in full rather than matched loosely: this sentence is JSX text, which the mutation
+		// runner does not rewrite, so a substring match is the only thing standing behind it and a
+		// substring match would survive losing the half that says how far back "nothing" reaches.
+		it("says nothing has gone wrong rather than rendering an empty section", async () => {
+			renderIconWithProblems([]);
+
+			await openThePopover();
+
+			expect(
+				await screen.findByText(
+					"Nothing has gone wrong since this instance started.",
+				),
+			).toBeInTheDocument();
+		});
+
+		// AC-06.5 — the section holds a bounded handful; everything else is still in the log. Being shown
+		// the last few problems with no way on to the rest is a dead end.
+		it("offers the way through to the full log", async () => {
+			renderIconWithProblems([aRefreshThatBroke]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", { name: /open the full log/i }),
+			);
+
+			expect(await screen.findByTestId("log-viewer-page")).toHaveTextContent(
+				"system-info",
+			);
+		});
+
+		// The instance could not be asked, which is not the same as the instance having nothing to report.
+		// Rendering the reassuring answer to a question that was never answered is the failure mode the
+		// icon this popover replaced was built out of.
+		it("does not claim nothing has gone wrong when it could not ask", async () => {
+			renderIconWithProblems([], (service) => {
+				service.getRecentProblems = vi
+					.fn()
+					.mockRejectedValue(new Error("refused"));
+			});
+
+			await openThePopover();
+
+			await screen.findByText(/nothing is being refreshed right now/i);
+			expect(
+				screen.queryByText(/nothing has gone wrong/i),
+			).not.toBeInTheDocument();
 		});
 	});
 });

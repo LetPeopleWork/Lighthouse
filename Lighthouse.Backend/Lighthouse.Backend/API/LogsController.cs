@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -9,8 +10,13 @@ namespace Lighthouse.Backend.API
     // The log file is instance-wide: every team and portfolio name, every work-tracking URL, every
     // connector error, whatever the current level captures. Until 2026-08-06 this controller carried
     // no guard at all and was admitted by the fallback policy, which asks only that the caller be
-    // authenticated — so any account on the instance could download it, and after ADR-137 that set
-    // includes every viewer who reaches the Jira frame.
+    // authenticated — so any account on the instance could download it, and that set now includes
+    // every viewer who reaches the embedded Jira frame.
+    // S6960 counts the injected services and reads two of them as two jobs. They are one: this is the
+    // instance's own record of what it has been doing, and what has gone wrong lately is the part of it an
+    // operator reads first. Splitting it puts a second controller on the same material and gives the
+    // System-Administrator guard a second place to drift away from this one.
+#pragma warning disable S6960
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
@@ -18,12 +24,25 @@ namespace Lighthouse.Backend.API
     public class LogsController : ControllerBase
     {
         private readonly ILogConfiguration logConfiguration;
+        private readonly IRecentProblems recentProblems;
         private readonly ILogger<LogsController> logger;
 
-        public LogsController(ILogConfiguration logConfiguration, ILogger<LogsController> logger)
+        public LogsController(ILogConfiguration logConfiguration, IRecentProblems recentProblems, ILogger<LogsController> logger)
         {
             this.logConfiguration = logConfiguration;
+            this.recentProblems = recentProblems;
             this.logger = logger;
+        }
+
+        /// <summary>
+        /// The same material the log file carries, filtered to what has gone wrong and answered as records
+        /// rather than as text — so it lives behind the guard this controller already carries rather than
+        /// behind a second one that would have to argue the case again.
+        /// </summary>
+        [HttpGet("problems")]
+        public ActionResult<IReadOnlyList<RecentProblem>> GetRecentProblems()
+        {
+            return Ok(recentProblems.MostRecentFirst());
         }
 
         [HttpGet("level/supported")]
@@ -74,4 +93,5 @@ namespace Lighthouse.Backend.API
             public string Level { get; set; }
         }
     }
+#pragma warning restore S6960
 }

@@ -9,12 +9,14 @@ namespace Lighthouse.Backend.Tests.API
     public class LogsControllerTest
     {
         private Mock<ILogConfiguration> logConfigurationMock;
+        private Mock<IRecentProblems> recentProblemsMock;
         private Mock<ILogger<LogsController>> loggerMock;
 
         [SetUp]
         public void Setup()
         {
             logConfigurationMock = new Mock<ILogConfiguration>();
+            recentProblemsMock = new Mock<IRecentProblems>();
             loggerMock = new Mock<ILogger<LogsController>>();
         }
 
@@ -177,7 +179,7 @@ And a hundred percent reason to remember the name (Mike!)
 
         private LogsController CreateSubject()
         {
-            return new LogsController(logConfigurationMock.Object, loggerMock.Object);
+            return new LogsController(logConfigurationMock.Object, recentProblemsMock.Object, loggerMock.Object);
         }
     }
 }

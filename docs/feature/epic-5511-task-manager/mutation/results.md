@@ -486,3 +486,78 @@ out of it (`connectionHealthWording.ts`) is mutated at 97.78 %.
 nothing and the success/failure split — are pinned by
 `A_refresh_an_operator_stopped_says_nothing_about_the_credential` and by the four refresh scenarios
 either side of it.
+
+## 5843 — The warnings, without reading the log (slice 06)
+
+Epic #5511 Task Manager, slice 06. Run 2026-09-15 against `main` @ `d4f8532ac` plus the slice's own
+uncommitted changes. Gate is an 80 % kill rate on each stack that has changed files.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **95.65 %** | 23 | 22 | 1 | 0 | 4 m 46 s |
+| Frontend (StrykerJS 9.6.1) | **66.67 %** — see triage | 18 | 12 | 6 | 0 | 42 s |
+
+Configs: `stryker.5843.backend.json`, `stryker.5843.frontend.json`, `vitest.stryker.5843.ts`.
+ARM64 runner: `run-backend-x64.ps1`, `-TestProject` passed explicitly.
+
+### Backend
+
+First run **82.61 %**, 4 survivors. Three were real gaps in new code and were closed:
+
+| Survivor | What it showed |
+| --- | --- |
+| `RecentProblemsSink.cs:51` — `ArgumentNullException.ThrowIfNull(logEvent)` deleted | Nothing pinned that a null event is refused. |
+| `LoggingConfigurator.cs:27` — `ArgumentNullException.ThrowIfNull(recentProblems)` deleted | Same shape, same gap. |
+| `RecentProblemsSink.cs:100` — `shortName.Length == 0 ? TheApplicationItself : shortName` forced to `shortName` | The existing test reached the `Lighthouse` fallback by the *other* road — a missing `SourceContext`, which returns early at line 92. A `SourceContext` that ends in a separator (`"Lighthouse.Backend.Services."`) is the only way to reach the trimming and get an empty string back, and nothing exercised it. |
+
+All three confirmed by applying the mutations **simultaneously** and rebuilding: exactly three failures, one per
+mutant, no collateral — which is what shows they were genuine gaps rather than incidentally covered. The two
+guard tests assert the refusal names its parameter, since a guard that throws about the wrong argument is not
+the guard it looks like.
+
+#### Accepted survivor
+
+- **`LogsController.cs:69`** — the message inside `SetLogLevel`'s catch block blanked to `""`. Pre-existing
+  code from an earlier slice, swept in because the config mutates whole files rather than byte ranges. No
+  caller branches on the sentence; asserting on it would break the next time someone improves the wording.
+
+### Frontend
+
+`RecentProblemsSection.tsx`, whole file. **Every behavioural mutant was killed — 12 of 12:** all four
+mutations of the `problems === null` guard, all three of the `length === 0` branch, the row `.map`, the
+navigate handler, and both module constants blanked (the copy sentence and the log route).
+
+The six survivors are the whole of the shortfall, and all are cosmetic:
+
+| Survivor | Why it cannot be killed meaningfully |
+| --- | --- |
+| 4 × MUI `sx` layout props (`{ my: 1.5 }`, `{ py: 0.5 }`, `{ display: "block", mt: 1 }`, and `display` blanked within it) | jsdom does not compute emotion's styles, so there is nothing to assert. Same class accepted in slice 05. |
+| The React `key` blanked | Reconciliation identity, not rendered output. Killing it would mean asserting on React internals. |
+| `—{" "}` → `—{""}` | The space between the timestamp and the level. `toHaveTextContent` normalises whitespace, so pinning it buys brittleness and no defect. Slice 05 accepted the same mutant. |
+
+On a denominator of 18, for a component that is 80 lines of almost-pure presentation, the percentage says
+less than the list does: excluding the six cosmetic survivors the kill rate is **12 / 12**.
+
+#### A gap the gate is silent on, closed by hand
+
+**StrykerJS does not mutate JSX text content.** The section's empty state — "Nothing has gone wrong since
+this instance started." — is JSX text, so no mutant was ever generated for it: it appears in neither the
+killed nor the survived list. It was asserted by the substring `/nothing has gone wrong/i`, which would hold
+even if the half of the sentence saying *how far back* "nothing" reaches were lost — and that half is the
+whole of AC-06.6. Tightened to the full literal. Both module-level constants were already pinned against
+literals and both mutants were killed, so this was the only copy in the section standing on a loose match.
+
+### Running the frontend gate — the config cannot run from where it is stored
+
+`vitest.stryker.*.ts` has to be **copied to `Lighthouse.Frontend/`** before the run, and the Stryker config
+must reference it by bare filename. Two separate resolution rules make this the only arrangement that works:
+`vitest.configFile` resolves against the working directory, and Node resolves `vitest/config` upward from the
+config file's own directory — so a config left in `docs/` fails to be found from the frontend, and a config
+*pointed at* in `docs/` is found but cannot import vitest, because `node_modules` is under
+`Lighthouse.Frontend/`. `.gitignore` already encodes the arrangement — line 450 ignores
+`**/vitest.stryker*.ts`, line 453 carves out `docs/feature/*/mutation/` — so the working copy cannot be
+committed by accident.
+
+Also: an `include:` entry naming a spec file that **does not exist** leaves the runner with nothing to run
+and reports every mutant alive, which is indistinguishable in the report from a real test gap. The existing
+ledger note warns about a spec *missing* from the list; this is the same failure from the other direction.
