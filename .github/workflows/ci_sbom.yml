@@ -71,6 +71,12 @@ jobs:
       - name: Copy Frontend SBOM
         run: cp ./Lighthouse.Frontend/frontend-sbom.json ./sbom-output/lighthouse-frontend-sbom.cdx.json
 
+      - name: Stamp version and licence on the component being described
+        run: |
+          node Scripts/stamp-sbom-metadata.js "${{ inputs.version }}" \
+            ./sbom-output/lighthouse-backend-sbom.cdx.json \
+            ./sbom-output/lighthouse-frontend-sbom.cdx.json
+
       - name: Create SBOM Summary
         run: |
           cat > ./sbom-output/SBOM-README.md << 'EOF'
