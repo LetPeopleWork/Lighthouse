@@ -948,7 +948,10 @@ describe("TaskManagerIcon", () => {
 			recordedAt: "2026-09-15T09:31:00+00:00",
 			level: "Error",
 			source: "UpdateQueueService",
-			message: "Error processing update task for Team with ID 7",
+			// What the instance sends: a row about a refresh names what the refresh was of. A fixture
+			// carrying the id instead would have this file describing a sentence nobody produces, and the
+			// section renders whatever it is given either way.
+			message: "Error processing update task for Lagunitas",
 			// The short name, which is what the instance actually sends: the type is trimmed to its last
 			// segment for the same reason the source is, so a namespace in front of it here would have the
 			// fixture describing a contract nobody implements.

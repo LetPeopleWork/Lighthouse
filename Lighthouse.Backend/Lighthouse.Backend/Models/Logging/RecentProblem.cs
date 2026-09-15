@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Lighthouse.Backend.Models.Logging
 {
     /// <summary>
@@ -10,5 +12,14 @@ namespace Lighthouse.Backend.Models.Logging
         string Level,
         string Source,
         string Message,
-        string? ExceptionType);
+        string? ExceptionType)
+    {
+        /// <summary>
+        /// Set on the few events that are about a refresh, so that whoever reads the problem can say what
+        /// the refresh was of. Kept out of the answer sent to a browser: it exists to have a name looked up
+        /// for it, and by the time the browser is told anything that has already happened.
+        /// </summary>
+        [JsonIgnore]
+        public RefreshSubject? Refresh { get; init; }
+    }
 }

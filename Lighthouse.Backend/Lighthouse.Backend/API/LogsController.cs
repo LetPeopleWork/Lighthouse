@@ -24,10 +24,10 @@ namespace Lighthouse.Backend.API
     public class LogsController : ControllerBase
     {
         private readonly ILogConfiguration logConfiguration;
-        private readonly IRecentProblems recentProblems;
+        private readonly IRecentProblemsReport recentProblems;
         private readonly ILogger<LogsController> logger;
 
-        public LogsController(ILogConfiguration logConfiguration, IRecentProblems recentProblems, ILogger<LogsController> logger)
+        public LogsController(ILogConfiguration logConfiguration, IRecentProblemsReport recentProblems, ILogger<LogsController> logger)
         {
             this.logConfiguration = logConfiguration;
             this.recentProblems = recentProblems;

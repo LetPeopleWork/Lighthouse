@@ -1,7 +1,9 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,9 +35,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// <item><c>level</c> — <c>Warning</c>, <c>Error</c> or <c>Fatal</c>, rendered as the name, because the
     /// browser reads it as a word and a renumbering would silently relabel what an operator sees</item>
     /// <item><c>source</c> — the part of Lighthouse the event came from</item>
-    /// <item><c>message</c> — the sentence as it was rendered</item>
+    /// <item><c>message</c> — the sentence as it was rendered, and where the row is about a refresh, naming
+    /// whatever the refresh was of rather than pointing at it by id. A team or portfolio that has gone by
+    /// the time the section is read has only a type and an id left to be called, and the row says those
+    /// instead of naming nobody. Anything that was never about a refresh reads exactly as it was
+    /// written</item>
     /// <item><c>exceptionType</c> — the type of what broke, absent when nothing threw</item>
     /// </list>
+    ///
+    /// <para>Names are resolved as the section is read, so a team renamed after its refresh broke is read
+    /// under the name it has now — which is why nothing here asserts on what was captured at the time.</para>
     ///
     /// The buffer holds <c>RecentProblems:Capacity</c> entries (200 by default) and evicts oldest-first.
     ///
@@ -63,10 +72,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         private const string LogFileRoute = "/api/latest/logs";
 
         /// <summary>
+        /// Where an identity provider comes back to when somebody signs in, including to say they were
+        /// refused. Used here because it is the shortest way to a real complaint that has nothing to do
+        /// with any refresh and so carries nothing a name could be looked up by.
+        /// </summary>
+        private const string TheSignInCallback = "/api/oauth/callback";
+
+        /// <summary>
         /// What the tracker says when it turns a refresh away. One sentence, so a scenario can tell the
         /// failure it caused from anything else the instance happened to be complaining about.
         /// </summary>
         private const string TheTrackerComplaint = "Jira did not answer";
+
+        /// <summary>
+        /// What the instance says went wrong, with nothing about which team or portfolio it was. Written
+        /// out here because a row has two halves and the name is only one of them: putting a name into the
+        /// sentence means replacing the words that stood for the thing being refreshed, and a replacement
+        /// that reaches too far takes the half that says anything broke at all with it. A row that has been
+        /// reduced to a bare team name reads like a heading, not like trouble.
+        /// </summary>
+        private const string WhatTheInstanceSaysWhenARefreshBreaks = "Error processing update task";
 
         /// <summary>
         /// The level at which nothing this fixture can produce is reported. Used to observe that the
@@ -86,7 +111,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private string? theReportingLevelThisTestChanged;
 
-        private readonly record struct SeededTeam(int Id, string Name);
+        /// <summary>
+        /// Something an operator recognises and the queue's own name for the work of refreshing it. A
+        /// portfolio's refresh is queued under the kind of work it does rather than under the word
+        /// "portfolio", so the two cannot be told apart by id alone.
+        /// </summary>
+        private readonly record struct SeededWork(UpdateType Kind, int Id, string Name);
 
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
@@ -136,14 +166,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- Given ---
 
-        private SeededTeam GivenATeamCalled(string name)
-            => new(SeedTeam(SeedConnection(), name), name);
+        private SeededWork GivenATeamCalled(string name)
+            => new(UpdateType.Team, SeedTeam(SeedConnection(), name), name);
+
+        private SeededWork GivenAPortfolioCalled(string name)
+            => new(UpdateType.Features, SeedPortfolio(SeedConnection(), name), name);
 
         /// <summary>
         /// One more team than the instance has room for problems, so that running all of them is guaranteed
         /// to have pushed the first one out — however many lines each failure happens to produce.
         /// </summary>
-        private List<SeededTeam> GivenMoreTeamsThanTheInstanceHasRoomToRememberProblemsFor()
+        private List<SeededWork> GivenMoreTeamsThanTheInstanceHasRoomToRememberProblemsFor()
             => [.. Enumerable
                 .Range(1, RoomForProblems + 1)
                 .Select(number => GivenATeamCalled($"Brewery {number.ToString(CultureInfo.InvariantCulture)}"))];
@@ -167,15 +200,61 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- When ---
 
-        private Task WhenTheScheduledRefreshOfThatTeamRuns(SeededTeam team)
+        private Task WhenTheScheduledRefreshOfThatTeamRuns(SeededWork team)
             => TheTeamRefreshRuns(team.Id);
 
-        private async Task WhenTheScheduledRefreshOfEachOfThoseTeamsRuns(IEnumerable<SeededTeam> teams)
+        private Task WhenTheScheduledRefreshOfThatPortfolioRuns(SeededWork portfolio)
+            => ThePortfolioRefreshRuns(portfolio.Id);
+
+        private async Task WhenTheScheduledRefreshOfEachOfThoseTeamsRuns(IEnumerable<SeededWork> teams)
         {
             foreach (var team in teams)
             {
                 await WhenTheScheduledRefreshOfThatTeamRuns(team);
             }
+        }
+
+        /// <summary>
+        /// Answers with what the team is called now, because that is what the rest of the scenario is
+        /// about: a section read after a rename has to say the name somebody would recognise today.
+        /// </summary>
+        private SeededWork WhenThatTeamIsRenamedTo(SeededWork team, string newName)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            var renamed = repository.GetById(team.Id)!;
+            renamed.Name = newName;
+            repository.Update(renamed);
+            repository.Save().GetAwaiter().GetResult();
+
+            return team with { Name = newName };
+        }
+
+        private void WhenThatTeamIsDeleted(SeededWork team)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            repository.Remove(team.Id);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// A complaint with nothing to do with any refresh, raised the way the instance really raises one:
+        /// the identity provider comes back saying the person was refused. Nothing in it carries a team or
+        /// a portfolio, which is what makes it the control on rows that do.
+        /// </summary>
+        private async Task WhenAnIdentityProviderTurnsSomebodyAway(string refusal)
+        {
+            using var client = Factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+            using var response = await client.GetAsync(
+                new Uri($"{TheSignInCallback}?error={refusal}", UriKind.Relative));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
+                $"Positive control: the instance was meant to take the refusal and send the browser on, and "
+                + $"it answered {(int)response.StatusCode} — so nothing was complained about and the rest of "
+                + $"this scenario would be reading an empty list.");
         }
 
         private async Task WhenTheOperatorTellsTheInstanceToReportOnlyTheVeryWorst()
@@ -202,7 +281,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- Then ---
 
-        private async Task ThenRecentProblemsSaysWhatBrokeFor(SeededTeam team)
+        private async Task ThenRecentProblemsSaysWhatBrokeFor(SeededWork team)
         {
             var problems = await TheRecentProblems();
 
@@ -211,7 +290,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 + $"only way to find out is still to go and read the log. Recent problems held: {Describe(problems)}");
         }
 
-        private async Task ThenRecentProblemsSaysNothingAbout(SeededTeam team)
+        private async Task ThenRecentProblemsSaysNothingAbout(SeededWork team)
         {
             var problems = await TheRecentProblems();
 
@@ -226,7 +305,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// is complaining and what actually broke — anything less and the section is a list of sentences
         /// with no way to act on them.
         /// </summary>
-        private async Task ThenThatProblemSaysWhenHowSeriousWhereFromAndWhatBroke(SeededTeam team)
+        private async Task ThenThatProblemSaysWhenHowSeriousWhereFromAndWhatBroke(SeededWork team)
         {
             var problem = await TheProblemAbout(team);
 
@@ -247,10 +326,86 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         /// <summary>
+        /// The whole row, not only the name in it. An id identifies the refresh to whoever is reading the
+        /// source, and identifies nothing at all to the person the section was built for: they cannot look
+        /// it up, cannot tell whether it matters, and are back in the log file working out which team it
+        /// was — which is the trip the section exists to save them.
+        ///
+        /// So the row has to say three things at once, and the two that are easy to lose are the ones that
+        /// get a sentence each here. It still says what went wrong, because a row reduced to a bare team
+        /// name reads as a heading and is worse than the id it replaced. And it no longer says the id,
+        /// because a name printed beside the number it was meant to replace leaves the operator doing the
+        /// looking-up anyway.
+        /// </summary>
+        private async Task ThenThatProblemSaysWhoseRefreshBroke(SeededWork work)
+        {
+            var problem = await TheProblemAbout(work);
+            var message = TheSentence(problem);
+            var number = work.Id.ToString(CultureInfo.InvariantCulture);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(message, Does.Contain(work.Name),
+                    $"The row does not say that this is '{work.Name}', so the only way to find out which one "
+                    + $"broke is still to go and read the log. The row said: {problem}");
+                Assert.That(message, Does.Contain(WhatTheInstanceSaysWhenARefreshBreaks),
+                    $"The row names '{work.Name}' and no longer says anything went wrong, which is worse than "
+                    + $"the id it replaced: an operator scanning the section reads it as a heading and moves "
+                    + $"on. The row said: {problem}");
+                Assert.That(message, Does.Not.Contain(number),
+                    $"The row still carries the id {number} somewhere. The name was meant to take its place, "
+                    + $"not to be added beside it — nothing else in this section makes an operator do the "
+                    + $"looking-up themselves. The row said: {problem}");
+            }
+        }
+
+        /// <summary>
+        /// Something whose refresh broke can be gone by the time anybody reads about it, and then there is
+        /// no name left to say. What is left is the kind of work and the id it ran under, and a row saying
+        /// those is worth more than a row naming nobody.
+        /// </summary>
+        private async Task ThenThatProblemStillSaysWhichRefreshBroke(SeededWork work)
+        {
+            var problem = await TheProblemAbout(work);
+            var message = TheSentence(problem);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(message, Does.Contain(work.Kind.ToString()),
+                    $"With nothing left to name, the row has to say what kind of work it was. It said: {problem}");
+                Assert.That(message, Does.Contain(work.Id.ToString(CultureInfo.InvariantCulture)),
+                    $"With nothing left to name, the row has to say which one it was. It said: {problem}");
+            }
+        }
+
+        /// <summary>
+        /// Most of what lands in this section was never about a refresh and carries nothing a name could be
+        /// looked up by. Those rows say what they always said — or making one kind of row readable has
+        /// quietly emptied every other kind.
+        /// </summary>
+        private async Task ThenThatProblemStillReadsAsTheInstanceWroteIt(string whatTheInstanceSaid, string whatItWasTold)
+        {
+            var problems = await TheRecentProblems();
+            var message = problems
+                .Select(TheSentence)
+                .FirstOrDefault(text => text.Contains(whatTheInstanceSaid, StringComparison.OrdinalIgnoreCase));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(message, Is.Not.Null,
+                    $"Nothing in the section says '{whatTheInstanceSaid}', so a complaint that was never about "
+                    + $"a refresh has stopped being reported at all. It held: {Describe(problems)}");
+                Assert.That(message ?? string.Empty, Does.Contain(whatItWasTold),
+                    $"The row is there but no longer carries what the instance was told, so it tells an "
+                    + $"operator less than it did. It held: {Describe(problems)}");
+            }
+        }
+
+        /// <summary>
         /// Position, not contents. A short list read from the top has to open on what just happened; two
         /// failures a minute apart are otherwise indistinguishable in it.
         /// </summary>
-        private async Task ThenTheProblemAboutIsReadBeforeTheProblemAbout(SeededTeam newer, SeededTeam older)
+        private async Task ThenTheProblemAboutIsReadBeforeTheProblemAbout(SeededWork newer, SeededWork older)
         {
             var problems = await TheRecentProblems();
 
@@ -267,7 +422,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             }
         }
 
-        private async Task ThenTheRefreshOfThatTeamReallyRan(SeededTeam team)
+        private async Task ThenTheRefreshOfThatTeamReallyRan(SeededWork team)
         {
             var problems = await TheRecentProblems();
 
@@ -327,32 +482,46 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             return [.. document.RootElement.EnumerateArray().Select(element => element.Clone())];
         }
 
-        private async Task<JsonElement> TheProblemAbout(SeededTeam team)
+        private async Task<JsonElement> TheProblemAbout(SeededWork work)
         {
             var problems = await TheRecentProblems();
-            var matches = problems.FindAll(problem => IsAbout(problem, team));
+            var matches = problems.FindAll(problem => IsAbout(problem, work));
 
             Assert.That(matches, Is.Not.Empty,
-                $"'{team.Name}' broke and nothing in recent problems says so. It held: {Describe(problems)}");
+                $"'{work.Name}' broke and nothing in recent problems says so. It held: {Describe(problems)}");
 
             return matches[0];
         }
 
         /// <summary>
-        /// Which refresh a row is about. The only line at warning-or-above that identifies a refresh that
-        /// failed is the queue's own, and it identifies it by update type and id — the line that carries the
-        /// team's <em>name</em> is the refresh summary, which is written at Information and is therefore
-        /// below this section's threshold by design. That asymmetry is exactly what this slice's hypothesis
-        /// is about, so it is matched here rather than smoothed over.
+        /// The row as an operator reads it. A row with nothing to say is not a state the section has, so a
+        /// row that arrives without its sentence is matched and asserted on as the empty one it is, rather
+        /// than throwing somewhere further down and hiding which promise broke.
         /// </summary>
-        private static bool IsAbout(JsonElement problem, SeededTeam team)
-        {
-            var message = Text(problem, "message") ?? string.Empty;
+        private static string TheSentence(JsonElement problem) => Text(problem, "message") ?? string.Empty;
 
-            return message.Contains("Team", StringComparison.OrdinalIgnoreCase)
-                && message.Contains(
-                    $"ID {team.Id.ToString(CultureInfo.InvariantCulture)}",
-                    StringComparison.OrdinalIgnoreCase);
+        /// <summary>
+        /// Which refresh a row is about — picking the row out, not judging what it says, which is what the
+        /// Then steps are for. A row about a refresh names what the refresh was of; one whose subject has
+        /// gone has only the kind of work and the id left, so both forms find the same refresh.
+        /// </summary>
+        private static bool IsAbout(JsonElement problem, SeededWork work)
+        {
+            var message = TheSentence(problem);
+
+            return message.Contains(work.Name, StringComparison.OrdinalIgnoreCase)
+                || PointsAtTheRefreshWithoutNamingIt(message, work);
+        }
+
+        /// <summary>
+        /// A row that says which refresh broke without saying what it was of: the wording the queue falls
+        /// back to when the thing it was refreshing has gone and there is nothing left to name.
+        /// </summary>
+        private static bool PointsAtTheRefreshWithoutNamingIt(string message, SeededWork work)
+        {
+            var number = work.Id.ToString(CultureInfo.InvariantCulture);
+
+            return message.Contains($"{work.Kind} {number}", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

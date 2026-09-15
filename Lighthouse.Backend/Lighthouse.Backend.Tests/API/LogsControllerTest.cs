@@ -9,14 +9,14 @@ namespace Lighthouse.Backend.Tests.API
     public class LogsControllerTest
     {
         private Mock<ILogConfiguration> logConfigurationMock;
-        private Mock<IRecentProblems> recentProblemsMock;
+        private Mock<IRecentProblemsReport> recentProblemsMock;
         private Mock<ILogger<LogsController>> loggerMock;
 
         [SetUp]
         public void Setup()
         {
             logConfigurationMock = new Mock<ILogConfiguration>();
-            recentProblemsMock = new Mock<IRecentProblems>();
+            recentProblemsMock = new Mock<IRecentProblemsReport>();
             loggerMock = new Mock<ILogger<LogsController>>();
         }
 

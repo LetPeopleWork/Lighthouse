@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
@@ -136,6 +136,83 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
             await ThenRecentProblemsSaysWhatBrokeFor(afterwards);
             await ThenRecentProblemsSaysNothingAbout(silenced);
+        }
+
+        // @driving_port @real-io @error @AC-06.1
+        // The row an operator is being asked to act on says which of their teams stopped refreshing. An id
+        // identifies it to whoever is reading the source and to nobody else: it cannot be looked up from
+        // the popover, it does not say whether this is the team that matters, and working it out means
+        // opening the log — which is the trip this whole section exists to save.
+        [Test]
+        public async Task A_problem_about_a_refresh_that_broke_says_whose_refresh_it_was()
+        {
+            var team = GivenATeamCalled("Pliny the Elder");
+            GivenTheTrackerTurnsEveryRefreshAway();
+
+            await WhenTheScheduledRefreshOfThatTeamRuns(team);
+
+            await ThenThatProblemSaysWhoseRefreshBroke(team);
+        }
+
+        // @driving_port @real-io @error @AC-06.1
+        // The other half of what refreshes. A portfolio's refresh is queued under the kind of work it does
+        // rather than under the word "portfolio", so whatever makes a team's row readable has to be asked
+        // about a portfolio separately or half the section stays unreadable.
+        [Test]
+        public async Task A_problem_about_a_portfolio_refresh_that_broke_says_which_portfolio_it_was()
+        {
+            var portfolio = GivenAPortfolioCalled("Winter Seasonals");
+            GivenTheTrackerTurnsEveryRefreshAway();
+
+            await WhenTheScheduledRefreshOfThatPortfolioRuns(portfolio);
+
+            await ThenThatProblemSaysWhoseRefreshBroke(portfolio);
+        }
+
+        // @driving_port @real-io @error @AC-06.1
+        // The case that stops a readable row turning into a blank one. Something whose refresh broke can be
+        // gone by the time anybody reads about it, and then there is no name to say — so the row falls back
+        // to the kind of work and the id, which is less than a name and far more than nothing.
+        [Test]
+        public async Task A_problem_about_a_team_that_has_since_gone_still_says_which_refresh_broke()
+        {
+            var team = GivenATeamCalled("Dogfish Head");
+            GivenTheTrackerTurnsEveryRefreshAway();
+            await WhenTheScheduledRefreshOfThatTeamRuns(team);
+
+            WhenThatTeamIsDeleted(team);
+
+            await ThenThatProblemStillSaysWhichRefreshBroke(team);
+        }
+
+        // @driving_port @real-io @error @AC-06.1
+        // The regression guard on the whole change. Most of what lands in this section — a sign-in refused,
+        // a migration that complained, the host grumbling on the way up — was never about a refresh and
+        // carries nothing a name could be looked up by. Those rows have to go on saying exactly what they
+        // said, or making one kind of row readable has quietly emptied every other kind.
+        [Test]
+        public async Task A_problem_that_was_never_about_a_refresh_still_reads_as_the_instance_wrote_it()
+        {
+            await WhenAnIdentityProviderTurnsSomebodyAway("access_denied");
+
+            await ThenThatProblemStillReadsAsTheInstanceWroteIt("oauth.callback.idp_error", "access_denied");
+        }
+
+        // @driving_port @real-io @error @AC-06.1
+        // Names are read off the instance as the section is read, not copied into the record when the
+        // failure happens. A team renamed this morning reads under the name it has now, and an operator is
+        // never shown a name that no longer exists anywhere else in the product. This is the promise that
+        // would break silently if somebody later decided it was cheaper to keep the name in the buffer.
+        [Test]
+        public async Task A_team_renamed_after_its_refresh_broke_is_read_under_the_name_it_has_now()
+        {
+            var team = GivenATeamCalled("New Belgium");
+            GivenTheTrackerTurnsEveryRefreshAway();
+            await WhenTheScheduledRefreshOfThatTeamRuns(team);
+
+            var renamed = WhenThatTeamIsRenamedTo(team, "Odell");
+
+            await ThenThatProblemSaysWhoseRefreshBroke(renamed);
         }
 
         // @driving_port @real-io @error @AC-06.4

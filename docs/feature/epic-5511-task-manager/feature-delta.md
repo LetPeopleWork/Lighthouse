@@ -3396,3 +3396,46 @@ cosmetic survivors recorded in `mutation/results.md`.
 
 The public Task Manager docs, which slices 02–05 deferred to the end of the Epic. Slice 06 is the last
 slice, so they are now the Epic's only outstanding work.
+
+---
+
+## Wave: DELIVER / [REF] The rows say whose refresh broke (OQ-6, follow-up to slice 06)
+
+Slice 06 shipped rows reading `Error processing update task for Team with ID 7`. The maintainer's call on
+review: an id is not something an operator can act on, and the row must say the entity's name.
+
+This turned out to cost nothing in new concepts, because the log call was **already structured** —
+`"...for {UpdateType} with ID {Id}"` — so the values arrive at the sink as properties rather than as text
+to be parsed back out.
+
+- `RefreshSubject(Kind, Id, AsWritten)` names a concept that had none: which refresh a problem was about,
+  plus the exact stretch of the sentence standing for it. Captured while the unrendered template is still
+  in hand, so naming it later is a search for a piece of text and nothing more.
+- `RecentProblemsSink` captures the reference and **never touches the database** — it runs on every thread
+  in the application, inside the log pipeline.
+- `RecentProblemsReport` resolves the name on read through the existing `IUpdateTaskNaming`, which the
+  task list already uses. No second resolver, no port widening, and the answer is never older than the
+  moment it is read, so a rename shows immediately.
+- `RecentProblem.Refresh` is `[JsonIgnore]`. **The wire contract is unchanged**: the reference exists to
+  have a name looked up for it, and by the time the browser is answered that has happened. The frontend
+  needed no production change at all.
+
+### What the change revealed
+
+**A portfolio refresh was worse off than a team one.** `UpdateType` has no `Portfolio` member — portfolios
+queue as `Features` — so those rows read `Error processing update task for Features with ID 1`: an
+unhelpful id *and* a type name no operator would recognise. Both now route through the naming port.
+
+### Two things a future reader needs
+
+**A deleted entity still reads `Team 7`**, because the naming port falls back to kind-and-id rather than
+returning nothing. That fallback is permanent, not transitional — it is what stops the change turning a
+row blank for an entity that vanished mid-refresh.
+
+**Detection requires both properties, with their types.** `Id` is about as generic a property name as
+exists, so a line using it for a work-item reference would otherwise be rewritten into the name of team
+nought. The pairing with a real `UpdateType` is what makes it narrow, and a template carrying `{Id}`
+before `{UpdateType}` is deliberately not enriched rather than enriched wrongly.
+
+Mutation **95.00 %** backend after the assertion-strength gaps found at 80.00 % were closed — see
+`mutation/results.md`, which records the two survivors kept alive and why.

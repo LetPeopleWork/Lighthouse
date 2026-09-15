@@ -1,7 +1,9 @@
 using Lighthouse.Backend.Models.Logging;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Parsing;
 using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation.Logging
@@ -32,6 +34,10 @@ namespace Lighthouse.Backend.Services.Implementation.Logging
         private const string TheApplicationItself = "Lighthouse";
 
         private const string SourceContextProperty = "SourceContext";
+
+        private const string UpdateTypeProperty = "UpdateType";
+
+        private const string IdProperty = "Id";
 
         private readonly Queue<RecentProblem> retained = new();
 
@@ -80,7 +86,67 @@ namespace Lighthouse.Backend.Services.Implementation.Logging
                 logEvent.Level.ToString(),
                 SourceOf(logEvent),
                 logEvent.RenderMessage(CultureInfo.InvariantCulture),
-                logEvent.Exception?.GetType().Name);
+                logEvent.Exception?.GetType().Name)
+            {
+                Refresh = RefreshOf(logEvent),
+            };
+
+        /// <summary>
+        /// What the event was a refresh of, for the few events that are about one. Only the reference is
+        /// taken, never the name: a name copied in here would be the name the thing had when it broke, and
+        /// somebody reading about it after a rename has to see what it is called now.
+        /// </summary>
+        private static RefreshSubject? RefreshOf(LogEvent logEvent)
+        {
+            if (!TryReadProperty(logEvent, UpdateTypeProperty, out UpdateType kind)
+                || !TryReadProperty(logEvent, IdProperty, out int id))
+            {
+                return null;
+            }
+
+            var asWritten = HowTheLinePointsAtIt(logEvent);
+
+            return asWritten.Length == 0 ? null : new RefreshSubject(kind, id, asWritten);
+        }
+
+        private static bool TryReadProperty<T>(LogEvent logEvent, string name, out T value)
+        {
+            if (logEvent.Properties.TryGetValue(name, out var captured) && captured is ScalarValue { Value: T scalar })
+            {
+                value = scalar;
+                return true;
+            }
+
+            value = default!;
+            return false;
+        }
+
+        /// <summary>
+        /// The stretch of the sentence that stands for the thing being refreshed: from where the line names
+        /// what kind of thing it is to where it gives the number, along with whatever wording it puts
+        /// between the two. Worked out here, where the unrendered template is still to hand, so that
+        /// swapping a name into the sentence later is a search for a piece of text and nothing more.
+        /// </summary>
+        private static string HowTheLinePointsAtIt(LogEvent logEvent)
+        {
+            var tokens = logEvent.MessageTemplate.Tokens.ToArray();
+            var kindAt = Array.FindIndex(tokens, token => token is PropertyToken { PropertyName: UpdateTypeProperty });
+            var numberAt = Array.FindIndex(tokens, token => token is PropertyToken { PropertyName: IdProperty });
+
+            if (kindAt < 0 || numberAt < kindAt)
+            {
+                return string.Empty;
+            }
+
+            using var howItIsWritten = new StringWriter(CultureInfo.InvariantCulture);
+
+            for (var index = kindAt; index <= numberAt; index++)
+            {
+                tokens[index].Render(logEvent.Properties, howItIsWritten, CultureInfo.InvariantCulture);
+            }
+
+            return howItIsWritten.ToString();
+        }
 
         /// <summary>
         /// The last segment of the source context, which is the same thing the console template already

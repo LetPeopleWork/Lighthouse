@@ -1510,6 +1510,7 @@ namespace Lighthouse.Backend
 
             builder.Services.AddSingleton<UpdateCancellationContext>();
             builder.Services.AddScoped<IUpdateTaskNaming, UpdateTaskNaming>();
+            builder.Services.AddScoped<IRecentProblemsReport, RecentProblemsReport>();
 
             builder.Services.AddSingleton<UpdateSubstrate>();
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Logging;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Logging;
 using Serilog.Events;
 using Serilog.Parsing;
@@ -149,6 +150,75 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Logging
             Assert.That(TheOnlyProblemIn(sink).ExceptionType, Is.EqualTo(nameof(InvalidOperationException)));
         }
 
+        // A sentence that opens by naming what it is about. The words standing for the thing being
+        // refreshed start at the very first one and run to the number, and a reader that takes any less
+        // than that stretch leaves part of the id sitting in the row with a name in front of it.
+        [Test]
+        public void Emit_AProblemThatOpensByNamingWhatItIsAbout_KnowsWhichWordsStandForIt()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemCarrying(
+                "{UpdateType} with ID {Id} could not be refreshed",
+                TheKindOfWork(UpdateType.Team),
+                TheNumber(7)));
+
+            Assert.That(
+                TheOnlyProblemIn(sink).Refresh?.AsWritten,
+                Is.EqualTo("Team with ID 7"),
+                "A name is put into the sentence by standing in for the words that pointed at the thing "
+                + "without naming it. Take in too little and the row keeps half the number; take in too "
+                + "much and it loses the half that said anything went wrong.");
+        }
+
+        // "Id" is a name any logger might use, and "UpdateType" is not far behind. A line that uses them
+        // for something that is not a refresh - a work item's reference, say - is not about a refresh, and
+        // treating it as one has the section replace a perfectly good sentence with the name of team nought.
+        [Test]
+        public void Emit_AProblemWhoseIdIsNotARefreshsAtAll_IsNotTakenForARefresh()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemCarrying(
+                "Error processing update task for {UpdateType} with ID {Id}",
+                TheKindOfWork("Feature"),
+                TheNumber("PROJ-42")));
+
+            Assert.That(
+                TheOnlyProblemIn(sink).Refresh,
+                Is.Null,
+                "Nothing about this line is a refresh; only the two words it happens to have borrowed. A "
+                + "row built from it would be looked up, found to be nobody, and rewritten to say so.");
+        }
+
+        // One shape of this is deliberately not pinned, and it is worth saying why rather than leaving a
+        // gap somebody later fills with an assertion about the inside of the sink. A line that gives the
+        // number before it says what kind of thing it is has no run of words leading from one to the
+        // other, and a line with nothing for a name to stand in for is left exactly as it was written. So
+        // whether such a line is turned away early or simply found to have nothing to offer, the row an
+        // operator ends up reading is the same one, and no test can tell the two apart.
+        //
+        // The two values can reach the sink without the sentence mentioning either: an enricher attaches
+        // them to everything written while a refresh is running, including lines about something else. There
+        // is then nowhere in the sentence for a name to go, and the line has to be left exactly as written
+        // rather than the sink hunting for words that are not there.
+        [Test]
+        public void Emit_AProblemCarryingARefreshsValuesInASentenceThatNamesNeither_IsNotTakenForARefresh()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemCarrying(
+                "The update queue drain exceeded the shutdown timeout",
+                TheKindOfWork(UpdateType.Team),
+                TheNumber(7)));
+
+            Assert.That(
+                TheOnlyProblemIn(sink).Refresh,
+                Is.Null,
+                "The sentence says nothing about which team, so there is no stretch of it a name could "
+                + "replace. Looking for one anyway runs off the front of the line.");
+        }
+
         // Room for no problems is not a smaller buffer, it is a buffer that cannot hold the event it was
         // just handed. The sink refuses to be built that way, and Program turns a misconfigured number into
         // the default rather than letting it reach here - see RecentProblemsCapacityConfigurationTest.
@@ -170,6 +240,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Logging
         private static RecentProblem TheOnlyProblemIn(RecentProblemsSink sink)
         {
             return sink.MostRecentFirst().Single();
+        }
+
+        /// <summary>
+        /// A complaint that carries structured values alongside its sentence, which is how the queue's own
+        /// line reaches the sink. Handed over separately from the wording on purpose: a Serilog enricher
+        /// can attach them to a line that mentions neither, and that is a case the sink has to survive.
+        /// </summary>
+        private static LogEvent AProblemCarrying(string message, params LogEventProperty[] values)
+        {
+            return new LogEvent(
+                DateTimeOffset.UtcNow,
+                LogEventLevel.Error,
+                null,
+                TemplateParser.Parse(message),
+                values);
+        }
+
+        private static LogEventProperty TheKindOfWork(object value)
+        {
+            return new LogEventProperty("UpdateType", new ScalarValue(value));
+        }
+
+        private static LogEventProperty TheNumber(object value)
+        {
+            return new LogEventProperty("Id", new ScalarValue(value));
         }
 
         private static LogEvent AProblemSaying(string message, string? from = null, Exception? thrown = null)
