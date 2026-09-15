@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             try
             {
                 return await ReadEveryPage(
-                    connection, table, query, WhenRefused.Downgrade, HowTheResultSetIsSized.OnlyTheRowsCount);
+                    connection, table, query, WhenRefused.Downgrade, CancellationToken.None, HowTheResultSetIsSized.OnlyTheRowsCount);
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             try
             {
-                var answer = await Read(probeUri, connection);
+                var answer = await Read(probeUri, connection, CancellationToken.None);
                 var body = ParseRecords(answer.Body);
 
                 // A working connection says so and stops. It used to carry an advisory about where
@@ -284,7 +284,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             }
 
             var records = (await ReadEveryPage(
-                connection, ServiceNowReadScope.RootTable, scope.ScopedQuery(teamsOwnQuery), WhenRefused.Fail)).Records;
+                connection, ServiceNowReadScope.RootTable, scope.ScopedQuery(teamsOwnQuery), WhenRefused.Fail, cancellationToken)).Records;
 
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
 
@@ -295,7 +295,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     ServiceNowWorkItemMapper.MapRecord(record, team, scope, instanceUrl)))
                 .ToList();
 
-            var history = await ReadHistory(connection, scope, mapped, team);
+            var history = await ReadHistory(connection, scope, mapped, team, cancellationToken);
 
             // Linear's precedent: a team only sees work in the states it has mapped. An unmapped
             // label is work the flow coach never told Lighthouse how to interpret.
@@ -310,7 +310,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // into state transitions. What the instance answers here is also the only evidence
         // SupportsTransitionHistory ever answers from.
         private async Task<Dictionary<string, List<ServiceNowStateSpan>>> ReadHistory(
-            WorkTrackingSystemConnection connection, ServiceNowReadScope scope, List<MappedRecord> mapped, Team team)
+            WorkTrackingSystemConnection connection, ServiceNowReadScope scope, List<MappedRecord> mapped, Team team, CancellationToken cancellationToken)
         {
             var recordIds = mapped
                 .Select(entry => entry.RecordId)
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return [];
             }
 
-            var definitions = await ReadStateSpanDefinitions(connection, scope.DefinitionTables());
+            var definitions = await ReadStateSpanDefinitions(connection, scope.DefinitionTables(), cancellationToken);
             observedAvailability = definitions.Availability;
 
             if (definitions.Availability != ServiceNowHistoryAvailability.Available)
@@ -343,7 +343,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return [];
             }
 
-            var spans = await ReadSpans(connection, recordIds, definitions.Ids, team);
+            var spans = await ReadSpans(connection, recordIds, definitions.Ids, team, cancellationToken);
 
             if (observedAvailability == ServiceNowHistoryAvailability.Available)
             {
@@ -371,7 +371,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // rate limiting (SPIKE Q7) the constraint is wall clock, and one call per work item would
         // turn a 500-item sync into five minutes.
         private async Task<SpanRead> ReadSpans(
-            WorkTrackingSystemConnection connection, List<string> recordIds, List<string> stateSpanDefinitions, Team team)
+            WorkTrackingSystemConnection connection, List<string> recordIds, List<string> stateSpanDefinitions, Team team, CancellationToken cancellationToken)
         {
             var spansByRecord = new Dictionary<string, List<ServiceNowStateSpan>>(StringComparer.Ordinal);
             var recordsThatReturnedRows = new HashSet<string>(StringComparer.Ordinal);
@@ -383,7 +383,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     connection,
                     MetricInstanceTable,
                     ServiceNowHistoryQuery.SpanQueryFor(batch, stateSpanDefinitions),
-                    WhenRefused.Downgrade);
+                    WhenRefused.Downgrade,
+                    cancellationToken);
 
                 if (!read.CarriesRecords)
                 {
@@ -432,10 +433,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // ADR-118 D5: capability is read from the instance, never inferred — the administrator's
         // validation and the sync ask this same question of the same table.
         private async Task<StateSpanDefinitions> ReadStateSpanDefinitions(
-            WorkTrackingSystemConnection connection, List<string> definitionTables)
+            WorkTrackingSystemConnection connection, List<string> definitionTables, CancellationToken cancellationToken)
         {
             var read = await ReadEveryPage(
-                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(definitionTables), WhenRefused.Downgrade);
+                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(definitionTables), WhenRefused.Downgrade, cancellationToken);
 
             var definitionIds = read.Records
                 .Select(ServiceNowWorkItemMapper.ReadRecordId)
@@ -568,6 +569,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             string table,
             string query,
             WhenRefused whenRefused,
+            CancellationToken cancellationToken,
             HowTheResultSetIsSized sizing = HowTheResultSetIsSized.TheInstanceCounts)
         {
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
@@ -580,7 +582,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             while (pageUri is not null)
             {
-                var answer = await Read(pageUri, connection);
+                // Checked before the request rather than left to the transport. The instance is asked for
+                // the next page here, and an operator who has said stop should not be charged for a page
+                // that will be thrown away the moment it arrives.
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var answer = await Read(pageUri, connection, cancellationToken);
 
                 // A history read carries the refusal home instead of throwing on it: a role revoked
                 // after the connection validated must downgrade the sync, not fail it (ADR-118 D5).
@@ -910,7 +917,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         private async Task<ProbedTable> Probe(WorkTrackingSystemConnection connection, Uri probeUri)
         {
-            var answer = await Read(probeUri, connection);
+            var answer = await Read(probeUri, connection, CancellationToken.None);
             var body = ParseRecords(answer.Body);
 
             return new ProbedTable(answer.StatusCode, body.CarriesRecords, answer.TotalCount, body.Records.Count);
@@ -930,7 +937,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return (ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl), 0);
             }
 
-            var answer = await Read(countUri, connection);
+            var answer = await Read(countUri, connection, CancellationToken.None);
             var body = ParseRecords(answer.Body);
 
             if (answer.StatusCode != HttpStatusCode.OK || !body.ResponseIsJson)
@@ -974,16 +981,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             throw new NotSupportedException(WriteBackUnsupportedMessage);
         }
 
-        private async Task<ServiceNowAnswer> Read(Uri uri, WorkTrackingSystemConnection connection)
+        /// <summary>
+        /// Every ServiceNow round trip goes through here, which makes this the one place cancellation has
+        /// to be honoured: the client refuses a cancelled token before the request is sent, so a stopped
+        /// walk spends nothing further on an instance an operator is trying to leave alone.
+        /// </summary>
+        private async Task<ServiceNowAnswer> Read(Uri uri, WorkTrackingSystemConnection connection, CancellationToken cancellationToken)
         {
             var authStrategy = authStrategyFactory.Resolve(ResolveAuthenticationMethodKey(connection));
 
             using var client = CreateHttpClient();
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            await authStrategy.ApplyAsync(request, connection, CancellationToken.None);
+            await authStrategy.ApplyAsync(request, connection, cancellationToken);
 
-            using var response = await client.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
+            using var response = await client.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
             var (paging, nextPage) = ReadPagingLinks(response, uri);
 
             return new ServiceNowAnswer(response.StatusCode, body, ReadTotalCount(response), paging, nextPage);

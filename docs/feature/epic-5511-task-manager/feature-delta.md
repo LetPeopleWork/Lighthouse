@@ -2506,3 +2506,121 @@ three sit on lines this change touched:
    a cancellation slice; recorded so the next person to touch either one sees it.
 3. **ServiceNow is unchanged.** Last, and the deepest: `ReadEveryPage` sits five private methods below the
    public surface and already hardcodes a `CancellationToken.None`.
+
+---
+
+# Wave: DISTILL — slice 04, ServiceNow
+
+Last of the four, and the one that hid its cancellation deepest. Every ServiceNow round trip goes through
+a single private `Read`, five methods below the public surface:
+
+`GetWorkItemsForTeam` → `ReadHistory` → `ReadSpans` → `ReadEveryPage` → `Read`
+
+`Read` did not merely fail to pass a token on. It wrote **`CancellationToken.None` out by hand** when
+applying the credential, and gave `SendAsync` no token at all. Nothing in any signature above it said so.
+
+## Wave: DISTILL / [REF] Scenario list
+
+| Scenario | Asserts |
+|---|---|
+| team fetch cancelled before it starts | the instance is never asked anything |
+| team fetch cancelled while paging | stops after the page it is reading — 3 |
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+The connector already takes an `HttpMessageHandler` for testing. The instance double has to satisfy three
+things the connector checks before it will page at all, and each one failed the first attempt in a way
+that looked nothing like a cancellation defect:
+
+- **Every record needs its own `sys_id`.** The connector aborts a read that sees one twice, because
+  `number` is not unique on a real instance and a collision would cost a team every work item.
+- **`X-Total-Count` has to agree with the `Link` headers.** The pager falls back to counting when the
+  instance stops linking, so a count that outran the pages on offer walked to the connector's own
+  thousand-page ceiling and died there — the first RED read 1 000 pages and threw `PagingDidNotTerminate`.
+- **The fields arrive as `{ display_value, value }` pairs**, because the read asks for
+  `sysparm_display_value=all`.
+
+Once the count and the links agreed, RED was 120 reads where 3 were wanted, with no exception at all.
+
+---
+
+# Wave: DELIVER — slice 04, ServiceNow
+
+## What changed
+
+The token threaded from `GetWorkItemsForTeam` through `ReadHistory`, `ReadSpans`,
+`ReadStateSpanDefinitions` and `ReadEveryPage` into `Read`, which now hands it to `ApplyAsync`,
+`SendAsync` and `ReadAsStringAsync`. One guard at the top of the pager's `while (pageUri is not null)`
+loop. Board discovery and validation pass `CancellationToken.None` in the open.
+
+## The guard Linear did not need and this connector does
+
+On Linear the equivalent guard was **removed** after mutation testing showed it guards nothing: the
+GraphQL client's `HttpClient` refuses an already-cancelled token before the handler is ever reached, so
+the doomed request could not be issued.
+
+Here the same test setup gave **1 and 4** where 0 and 3 were wanted — the request reached the handler and
+was counted before anything refused it. The guard is load-bearing, and mutation confirms it: removing it
+is killed. Two connectors, opposite conclusions, and only counting attempts told them apart.
+
+## What mutation testing found
+
+| Probe | Verdict |
+|---|---|
+| the pager stops checking before each page | **killed** |
+| the fetch hands the pager `CancellationToken.None` | **killed** |
+| the request goes out with no token again | compile-blocked (CA2016) |
+| the pager guard and the request token both go | compile-blocked (CA2016) |
+| the history spans are read without the token | compile-blocked (S1172) |
+| the credential is applied with `None` again | **survived** — see below |
+
+**The credential opt-out survives, and is worth naming.** `authStrategy.ApplyAsync(request, connection,
+CancellationToken.None)` still compiles, and nothing here can see it, because the strategy this test
+supplies does no work. On a basic-auth connection that is genuinely harmless — applying a header is local.
+It is not harmless on an OAuth strategy that refreshes a token over the network, and that call is now
+cancellable only because the parameter is threaded. Testing it belongs with the auth strategies, not here.
+
+## What the adversarial review found, and why both findings were rejected
+
+The review verified the four claims that mattered — the `TaskCanceledException` catches are unreachable
+from the fetch path, a cancelled history read throws rather than downgrading, no path returns partial
+records without throwing, and the parameter binding is correct at every call site. Its two findings were
+both wrong, and the second one dangerously so:
+
+**"Use `ThePageTheCancelArrivesOn` in the assertion instead of the literal `3`."** That is the
+self-satisfying-constant trap the ledger names, and this Epic hit it earlier in the same session: an
+assertion pinned to the constant that drives the trigger moves with it, so changing the trigger silently
+changes what is asserted. The literal stays.
+
+**"The three `TaskCanceledException` handlers are unreachable dead code — remove them."** They are
+reachable, just not by cancellation. `CreateHttpClient` builds a plain `HttpClient`, whose **default
+hundred-second timeout raises `TaskCanceledException`**, and those handlers are what turn a timed-out
+validation into "the instance could not be reached". Removing them would replace a config admin's
+diagnosis with an unhandled exception.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| ServiceNow tests | 339 passed — 337 pre-existing, 2 new |
+| `dotnet test` (connector categories excluded) | 6 801 passed, 1 environmental |
+| Hand-mutation of the guards | 2 killed, 3 compile-blocked, 1 recorded survivor |
+| Mutation — backend (Stryker) | **90.07 %**, gate met; 0 survivors on touched lines |
+
+## The one connector whose Stryker number means something
+
+272 mutants, 249 killed, **90.07 %** — the only one of the four to clear the 80 % gate on the raw number,
+and the reason is not that this change is better tested than the others. It is that ServiceNow keeps its
+coverage in unit tests: 337 of them run without an instance. Azure DevOps and Linear keep theirs in
+classes categorised `AdoIntegration` and `LinearIntegration`, which the mutation filter excludes because
+they talk to real trackers — so their headline numbers were measuring parsing and validation code that no
+unit test was ever meant to reach.
+
+Zero of the 23 survivors fall on a line this change touched.
+
+## Not done here
+
+1. **The credential application is not covered.** See the surviving probe above: an auth strategy that
+   goes to the network on `ApplyAsync` can now be cancelled, and nothing here proves it.
+2. **The keyed and sweep methods still throw `NotSupportedException`.** ServiceNow supports neither yet.
