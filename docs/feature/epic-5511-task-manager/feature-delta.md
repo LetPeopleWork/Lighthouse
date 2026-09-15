@@ -1980,3 +1980,201 @@ times caught only by tests that already existed.
 3. **A cancel still writes `Success = false` to `RefreshLog`**, so refresh history shows a red row for
    something an operator chose. Decided 2026-09-14: add a cancelled state, which is a schema change and
    an EF migration through `Create-Migration.ps1`.
+
+---
+
+# Wave: DISTILL — slice 04, Azure DevOps
+
+The first of the four connectors slice 04 left taking the token without reading it. Order agreed
+2026-09-14: **Azure DevOps → CSV → Linear → ServiceNow**, one per commit, never a sweep.
+
+## Wave: DISTILL / [REF] The contract this connector must satisfy
+
+AC-04.2, measured against Azure DevOps rather than assumed from Jira. The acceptance scenarios cancel a
+mock written to honour the token, so they prove the ask arrives and nothing more. What is missing is
+evidence that a real `AzureDevOpsWorkTrackingConnector` acts on it.
+
+Azure DevOps reaches its records in a different shape from Jira, and the shape decides where the
+checkpoint has to be:
+
+| Phase | Round trips for a 2 000-record team | Cancellable before this slice |
+|---|---|---|
+| WIQL — answers with ids alone | 1 | no |
+| Field-definition lookup | 1 | no |
+| Payload read, batched at 200 | 10 | no |
+| **Per item: up to 4 `GetRevisionsAsync`** | **up to 8 000** | no |
+
+The last row is the finding that shaped the slice. On Jira the per-issue changelog fetch is a Cloud
+download-path special case; on Azure DevOps a revision read happens for **every item on every cycle**, so
+the conversion phase, not the batch loop, is where a refresh actually spends its wall clock. Threading the
+token into the batch loop alone would have produced a test that passes and a Cancel button that stops
+roughly one part in eight hundred of the work.
+
+## Wave: DISTILL / [REF] Scenario list
+
+`AzureDevOpsCancellationGranularityTest`, four scenarios over the two walk shapes the connector has:
+
+| Scenario | Asserts |
+|---|---|
+| `GetWorkItemsForTeam` cancelled before it starts | no request of any kind was attempted |
+| `GetWorkItemsForTeam` cancelled while it reads batches | stops after the batch it is in — 3 of 10 |
+| `SweepWorkItemsForTeam` cancelled before it starts | no request of any kind was attempted |
+| `SweepWorkItemsForTeam` cancelled while it reads batches | stops after the batch it is in — 3 of 10 |
+
+The organisation holds 2 000 records against a batch size of 200, so "it stopped" can never be satisfied
+by a tracker that ran out of records to give — seven batches remain unread when the assertion is taken.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+No new double. `AzureDevOpsOrganisation` already runs the real connector over a recording
+`WorkItemTrackingHttpClient` and was extended twice:
+
+- **It refuses a round trip whose token is already set**, exactly as a socket would. Without this the fake
+  answers a cancelled request happily and the walk never learns it was told to stop.
+- **It records the attempt before refusing it, not after.** This one is the difference between a test that
+  discriminates and a test that cannot. A count taken *after* the refusal is identical whether the walk
+  stopped or issued a doomed request that the socket rejected — and those are not the same thing to an
+  operator whose rate limit pays for the attempt either way.
+
+## Wave: DISTILL / [REF] Red gate
+
+All four red before any production edit, and for the right reason rather than a compile error: the sweep
+read all **10** batches after being told to stop after 3.
+
+---
+
+# Wave: DELIVER — slice 04, Azure DevOps
+
+## What changed
+
+**The thread.** The token now runs from the four public entry points through every private method on the
+fetch path — 18 signatures in `AzureDevOpsWorkTrackingConnector`, ending at the SDK call on each of the
+five round-trip kinds (WIQL, field lookup, batched payload read, revision read, relations read).
+
+**The checkpoint.** `ExecuteWithThrottle` is the one place every Azure DevOps round trip passes through,
+and it is now where cancellation is honoured: the wait for a throttle slot refuses once the token is set,
+so a cancelled refresh stops before it spends the quota. Its retry loop also stops sleeping — a
+rate-limited organisation can back off for up to 90 seconds across six attempts, and a cancel arriving
+into that used to sleep out the full backoff before noticing.
+
+**The explicit opt-outs.** Five call sites pass `CancellationToken.None` in the open: connection and
+settings validation, write-back, and board discovery. These are the three methods slice 04 put out of
+scope, and none of them takes a token to forward. Written out rather than defaulted, so the next reader
+sees a decision instead of an omission.
+
+## What mutation testing found
+
+Seven hand-applied probes, run before Stryker, and they changed the shape of the code:
+
+**Every explicit `ThrowIfCancellationRequested()` checkpoint was dead.** Six of them, at the top of both
+batch loops and in front of the WIQL, the sweep and the payload phase. All six survived mutation — because
+`ExecuteWithThrottle` already refuses a cancelled token before taking a slot, so the guards in front of it
+guarded nothing. They were removed. The cancellation promise now rests in one legible place rather than
+six that read like protection and were not.
+
+**The total opt-out is compile-blocked, not test-blocked.** Handing a read `CancellationToken.None` while
+the method still takes a token fails the build with **S1172** (unused parameter, error-severity here), and
+dropping the forward to `WaitAsync` fails with **CA2016**. This extends what slice 04 recorded: the ledger
+said CA2016 catches a decorative parameter but not a deliberate `CancellationToken.None`. On this connector
+S1172 catches that too — *as long as the token has no other use in the method*. A **partial** opt-out,
+where the token is forwarded to one call and dropped at another, compiles cleanly, and that is exactly
+what the round-trip test exists to catch.
+
+**The dangerous mutant is killed.** A sweep that swallows the cancellation and answers with the batches it
+managed to read is caught. It matters more than anything else here: removal is "stored minus swept", so a
+partial answer reported as whole deletes every record on the batches that were never read.
+
+**One survivor, recorded rather than fixed.** A swallowed cancellation in the *fetch* batch loop survives,
+masked by the conversion phase throwing on the same token a moment later. The observable behaviour is
+still correct — the caller gets an `OperationCanceledException` either way — so there is no defect to fix,
+but the loop itself is not independently pinned.
+
+## What the adversarial review found
+
+`nw-software-crafter-reviewer`, given the diff and the mutation results. One blocker and two advisories,
+all three fixed:
+
+**The throttle bounding the conversion was never disposed** (blocker). `new SemaphoreSlim(8)`, one per
+team or portfolio refresh, never released. Pre-existing — it sits on `HEAD` — but inside a method this
+slice touched, so it is fixed here rather than left for someone else to find. `Task.WhenAll` waits for
+every task including the faulted ones, so nothing still holds a slot when the `using` closes.
+
+**The attempt after the retry loop gives up went out without re-reading the token.** Six rate-limited
+attempts, and if the cancel landed during the last backoff the seventh request was still issued. Narrow —
+the token is baked into the delegate, so the call itself would refuse — but a refresh told to stop should
+not reach that point at all.
+
+**The history assertion had only an upper bound.** `LessThan(50)` also passes for a walk that died in the
+batch reads and never reached the history phase — a different defect wearing the same number. Now bounded
+at both ends.
+
+Two claims the review made that did not survive checking: that `GetWorkItemFieldsAsync` runs with
+`CancellationToken.None` (it does on the validation path, which is deliberate; on the fetch path it gets
+the real token), and its mutation table recording L774/L823 as killed when both survived.
+
+Two findings the review confirmed rather than raised, both mine:
+
+**A cancelled sweep reaches the caller as a cancel, not as a tracker failure.** Verified rather than
+assumed: `WorkItemService.ScanRemoteIdentities` carries a dedicated `catch (OperationCanceledException)
+{ throw; }` above its catch-all, added by slice 04 for precisely this. Without it a cancel would have been
+logged as a broken cheap path and escalated into the full download the operator cancelled to avoid.
+
+**`relationsTask` is abandoned when the conversion phase throws.** `TheTeamsWorkItemsFrom` starts the
+relations read, awaits the conversion, then awaits the relations. A cancel makes the middle step throw and
+the first task is dropped un-awaited. Pre-existing shape — true of any exception, not just cancellation —
+and the dropped task now observes the same token, so it stops on its own. Left alone deliberately:
+restructuring it would cost the parallelism that makes the fetch fast.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6 793 passed, 1 environmental |
+| Azure DevOps unit tests | 63 passed — 59 pre-existing, 4 new |
+| Hand-mutation of the token | the two that matter killed, the rest compile-blocked |
+| Mutation — backend (Stryker) | 24.65 % raw; **6 survivors on touched lines**, see below |
+
+## What the Stryker number is and is not
+
+24.65 % — 190 mutants tested in the connector, 84 killed, 103 survived — and it should not be read as a
+verdict on this change. The test filter excludes `AzureDevOpsWorkTrackingConnectorTest`, which is
+`AdoIntegration`-categorised and carries most of this 1 300-line file's coverage, so the score is largely
+measuring parsing, validation and board code that no unit test was ever meant to reach.
+
+What is worth reading is that of 106 survivors, **6 fall on lines this change touched**:
+
+| Line | Survivor | Verdict |
+|---|---|---|
+| 70, 140, 153 | string mutation on the sweep description | text used only inside exception messages; pre-existing, touched only because a parameter was appended |
+| 774 | `limiter.WaitAsync(cancellationToken)` removed | equivalent — the SDK call carries the token too |
+| 797 | the guard in the retry backoff | **a real gap**: nothing here exercises a rate-limited retry |
+| 823 | `throttler.WaitAsync(cancellationToken)` | equivalent — `ExecuteWithThrottle` stops the reads underneath it |
+
+The retry-backoff gap is left open deliberately. Closing it means a test that waits on a real backoff, and
+the ledger already records a wall-clock budget taken on a developer machine failing on the CI agent.
+
+## The test that could not be made to fail, and what was done about it
+
+`GetWorkItemsForTeam_CancelledWhileItRebuildsHistory_StopsReadingRevisions` was written to pin the
+conversion phase, and then survived every attempt to break it — handing the conversion gate
+`CancellationToken.None`, swallowing the cancellation per item, both. `ExecuteWithThrottle` refuses
+underneath all of them, so nothing above it can change the count.
+
+It is kept, because it does pin something no other test does: that the revision reads go through a
+cancellable path at all. A future read that bypasses the throttle would fail this and nothing else. But it
+does not pin the gate it was named for, and saying otherwise would be the same mistake slice 04 made
+twice.
+
+Both of its bounds were then verified falsifiable by moving the trigger: with the cancel never firing the
+upper bound fails, and with the cancel firing before the history phase the lower bound fails. The first
+draft of that lower bound was pinned to the constant driving the trigger and therefore moved with it —
+the ledger's self-satisfying-constant trap, caught only because the probe was run.
+
+## Not done here
+
+1. **An in-flight page is not proven to abort.** The tests cancel between round trips, and the fake answers
+   synchronously, so what they pin is "issues no further request". Passing the token to the SDK call
+   additionally aborts a request already on the wire, which matters when a batch read takes minutes — and
+   nothing here measures it. The Jira baseline has the same gap.
+2. **CSV, Linear and ServiceNow are unchanged.** Next, in that order.

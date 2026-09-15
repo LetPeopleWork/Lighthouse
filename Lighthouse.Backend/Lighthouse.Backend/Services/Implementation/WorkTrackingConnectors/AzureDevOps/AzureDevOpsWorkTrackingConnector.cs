@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// and the caller falls back to the whole query.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team, CancellationToken cancellationToken)
-            => SweepIdentities(team, TheQueryATeamIsFetchedBy(team), $"Team {team.Name}");
+            => SweepIdentities(team, TheQueryATeamIsFetchedBy(team), $"Team {team.Name}", cancellationToken);
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
@@ -83,9 +83,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team));
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
         }
 
         /// <summary>
@@ -93,16 +93,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds);
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds, cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
         }
 
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
-            Team team, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
+            Team team, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences, CancellationToken cancellationToken)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, dependenciesComeFromRelations: false);
-            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, dependenciesComeFromRelations: false, cancellationToken);
+            var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences, cancellationToken);
 
             var relations = await relationsTask;
 
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
-            var features = await GetFeaturesForProjectByQuery(project, TheQueryAPortfolioIsFetchedBy(project));
+            var features = await GetFeaturesForProjectByQuery(project, TheQueryAPortfolioIsFetchedBy(project), cancellationToken);
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
 
@@ -131,33 +131,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(project, referenceIds);
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(project, referenceIds, cancellationToken);
 
-            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldReferences);
+            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldReferences, cancellationToken);
         }
 
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
-            => SweepIdentities(project, TheQueryAPortfolioIsFetchedBy(project), $"Portfolio {project.Name}");
+            => SweepIdentities(project, TheQueryAPortfolioIsFetchedBy(project), $"Portfolio {project.Name}", cancellationToken);
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
             logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
 
-            var features = await GetFeaturesForProjectByQuery(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds));
+            var features = await GetFeaturesForProjectByQuery(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), cancellationToken);
 
             logger.LogInformation("Found Parent Features with IDs {ParentFeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
             return features;
         }
 
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
-            => SweepIdentities(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), $"Parent Features of Portfolio {project.Name}");
+            => SweepIdentities(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), $"Parent Features of Portfolio {project.Name}", cancellationToken);
 
         /// <summary>
         /// The one sweep every caller goes through. A WIQL answers with ids alone, so the stamps cost a second
         /// read - narrowed to the one field, batched at the size the tracker accepts, and with nothing expanded,
         /// because every expansion there is would download what the sweep exists to skip.
         /// </summary>
-        private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(IWorkItemQueryOwner owner, string sweepQuery, string sweptDescription)
+        private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
+            IWorkItemQueryOwner owner, string sweepQuery, string sweptDescription, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(owner.WorkTrackingSystemConnection);
             var url = witClient.BaseAddress!.ToString();
@@ -165,7 +166,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             // Not GetWorkItemReferencesByQuery, which answers with references alone: the sweep needs to keep
             // reading from the same answer, and the two refusals below are what stop an unanswerable sweep
             // from reading as "the query matches nothing" - which removes every record the entity has.
-            var answer = await ExecuteWithThrottle(url, () => witClient.QueryByWiqlAsync(new Wiql { Query = sweepQuery }));
+            var answer = await ExecuteWithThrottle(url, () => witClient.QueryByWiqlAsync(new Wiql { Query = sweepQuery }, cancellationToken: cancellationToken), cancellationToken);
 
             // An answer carrying no result set at all is not an answer of "nothing matched": reading it as one
             // would remove every record the entity has, on a cycle nothing else complains about.
@@ -180,7 +181,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var chunk in swept.Chunk(MaxChunkSize))
             {
-                var answered = await ExecuteWithThrottle(url, () => witClient.GetWorkItemsAsync(chunk, TheChangeStampOnly, expand: null));
+                var answered = await ExecuteWithThrottle(url, () => witClient.GetWorkItemsAsync(chunk, TheChangeStampOnly, expand: null, cancellationToken: cancellationToken), cancellationToken);
 
                 if (answered.Count != chunk.Length)
                 {
@@ -282,7 +283,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 var query = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
                 var witClient = await GetWorkItemTrackingHttpClientAsync(team.WorkTrackingSystemConnection);
-                var workItems = await GetWorkItemReferencesByQuery(witClient, query);
+                var workItems = await GetWorkItemReferencesByQuery(witClient, query, CancellationToken.None);
 
                 var workItemCount = workItems.Count();
 
@@ -317,7 +318,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
 
-                var (workItems, _) = await FetchAdoWorkItemsByQuery(portfolio, query);
+                var (workItems, _) = await FetchAdoWorkItemsByQuery(portfolio, query, CancellationToken.None);
                 var workItemCount = workItems.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
@@ -489,8 +490,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     Value = update.Value,
                 }));
 
-                await ExecuteWithThrottle(url, () =>
-                    witClient.UpdateWorkItemAsync(patchDocument, workItemId, suppressNotifications: true));
+                await ExecuteWithThrottle(
+                    url,
+                    () => witClient.UpdateWorkItemAsync(patchDocument, workItemId, suppressNotifications: true),
+                    CancellationToken.None);
 
                 return (true, string.Empty);
             }
@@ -578,8 +581,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             try
             {
-                var boardsPerProject = await ExecuteWithThrottle(workClient.BaseAddress.ToString(),
-                    () => workClient.GetBoardsAsync(new TeamContext(project.Id)));
+                var boardsPerProject = await ExecuteWithThrottle(
+                    workClient.BaseAddress.ToString(),
+                    () => workClient.GetBoardsAsync(new TeamContext(project.Id)),
+                    CancellationToken.None);
 
                 return boardsPerProject.Select(boardReference => new Board
                 {
@@ -602,8 +607,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             do
             {
-                var page = await ExecuteWithThrottle(projectClient.BaseAddress.ToString(),
-                    () => projectClient.GetProjects(continuationToken: continuationToken));
+                var page = await ExecuteWithThrottle(
+                    projectClient.BaseAddress.ToString(),
+                    () => projectClient.GetProjects(continuationToken: continuationToken),
+                    CancellationToken.None);
 
                 allProjects.AddRange(page);
                 continuationToken = (page as IPagedList<TeamProjectReference>)?.ContinuationToken;
@@ -613,20 +620,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return allProjects;
         }
 
-        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query)
+        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query, CancellationToken cancellationToken)
         {
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(portfolio, query);
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(portfolio, query, cancellationToken);
 
-            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldReferences);
+            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldReferences, cancellationToken);
         }
 
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
-            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
+            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences, CancellationToken cancellationToken)
         {
             var dependenciesComeFromRelations = DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio);
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations, cancellationToken);
 
-            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences);
+            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences, cancellationToken);
 
             var relations = await relationsTask;
             var features = new List<Feature>();
@@ -663,7 +670,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var tempId = -1;
             fieldDefinitions.ForEach(f => f.Id = tempId--);
 
-            var customFieldReferences = await GetCustomFieldReferences(witClient, fieldDefinitions);
+            var customFieldReferences = await GetCustomFieldReferences(witClient, fieldDefinitions, CancellationToken.None);
 
             return fieldDefinitions
                 .Where(field => string.IsNullOrEmpty(customFieldReferences[field.Id]))
@@ -671,9 +678,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 .ToList();
         }
 
-        private static async Task<Dictionary<int, string>> GetCustomFieldReferences(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
+        private static async Task<Dictionary<int, string>> GetCustomFieldReferences(
+            WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
         {
-            var availableFields = await witClient.GetWorkItemFieldsAsync();
+            var availableFields = await witClient.GetWorkItemFieldsAsync(cancellationToken: cancellationToken);
 
             var customFieldMappings = new Dictionary<int, string>();
 
@@ -694,12 +702,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// returned, so answering a failed fetch with no records deletes every record the team or portfolio
         /// has - and their blocked spells, which no tracker can rebuild, do not come back with them.
         /// </summary>
-        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
+        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(
+            IWorkItemQueryOwner workItemQueryOwner, string query, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
-            var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
+            var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query, cancellationToken);
 
-            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList());
+            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList(), cancellationToken);
         }
 
         /// <summary>
@@ -711,11 +720,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// the ones that survive the cycle.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsById(
-            IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds)
+            IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
-            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds));
+            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds), cancellationToken);
         }
 
         /// <summary>
@@ -724,15 +733,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// no keys is still a remote round trip.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> ThePayloadsAndFieldsFor(
-            IWorkItemQueryOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds)
+            IWorkItemQueryOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, CancellationToken cancellationToken)
         {
             if (workItemIds.Count == 0)
             {
                 return ([], new Dictionary<int, string>());
             }
 
-            var additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
-            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Select(field => field.Value));
+            var additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions, cancellationToken);
+            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Select(field => field.Value), cancellationToken);
 
             return (adoWorkItems, additionalFieldsRef);
         }
@@ -754,13 +763,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return workItemIds;
         }
 
-        private static async Task<T> ExecuteWithThrottle<T>(string url, Func<Task<T>> action)
+        /// <summary>
+        /// Every round trip to Azure DevOps goes through here, which makes this the one place cancellation
+        /// has to be honoured: the wait for a throttle slot refuses outright once the token is set, so a
+        /// cancelled refresh stops before it spends the quota an operator cancelled to protect.
+        /// </summary>
+        private static async Task<T> ExecuteWithThrottle<T>(string url, Func<Task<T>> action, CancellationToken cancellationToken)
         {
             var limiter = GetLimiter(url);
-            await limiter.WaitAsync();
+            await limiter.WaitAsync(cancellationToken);
             try
             {
-                return await ExecuteWithRetry(action);
+                return await ExecuteWithRetry(action, cancellationToken);
             }
             finally
             {
@@ -775,45 +789,51 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 || msg.Contains("exceeding usage of resource 'Concurrency'", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static async Task<T> ExecuteWithRetry<T>(Func<Task<T>> action)
+        private static async Task<T> ExecuteWithRetry<T>(Func<Task<T>> action, CancellationToken cancellationToken)
         {
             var delay = TimeSpan.FromSeconds(1);
             for (var attempt = 0; attempt < 6; attempt++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     return await action();
                 }
                 catch (VssServiceException ex) when (IsRateLimited(ex))
                 {
-                    await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250)));
+                    await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250)), cancellationToken);
                     delay = TimeSpan.FromSeconds(Math.Min(30, delay.TotalSeconds * 2));
                 }
                 catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
                 {
-                    await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250)));
+                    await Task.Delay(delay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 250)), cancellationToken);
                     delay = TimeSpan.FromSeconds(Math.Min(30, delay.TotalSeconds * 2));
                 }
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
             return await action();
         }
 
-        private async Task<IEnumerable<WorkItemBase>> ConvertAdoWorkItemToLighthouseWorkItemBase(IEnumerable<AdoWorkItem> adoWorkItems, IWorkItemQueryOwner workItemQueryOwner, Dictionary<int, string> fieldReferences)
+        private async Task<IEnumerable<WorkItemBase>> ConvertAdoWorkItemToLighthouseWorkItemBase(
+            IEnumerable<AdoWorkItem> adoWorkItems, IWorkItemQueryOwner workItemQueryOwner, Dictionary<int, string> fieldReferences, CancellationToken cancellationToken)
         {
-            var throttler = new SemaphoreSlim(8);
+            using var throttler = new SemaphoreSlim(8);
             var tasks = adoWorkItems.Select(async wi =>
             {
-                await throttler.WaitAsync();
-                try { return await ConvertAdoWorkItemToLighthouseWorkItem(wi, workItemQueryOwner, fieldReferences); }
+                await throttler.WaitAsync(cancellationToken);
+                try { return await ConvertAdoWorkItemToLighthouseWorkItem(wi, workItemQueryOwner, fieldReferences, cancellationToken); }
                 finally { throttler.Release(); }
             });
             return await Task.WhenAll(tasks);
         }
 
-        private async Task<IEnumerable<WorkItemReference>> GetWorkItemReferencesByQuery(WorkItemTrackingHttpClient witClient, string query)
+        private async Task<IEnumerable<WorkItemReference>> GetWorkItemReferencesByQuery(
+            WorkItemTrackingHttpClient witClient, string query, CancellationToken cancellationToken)
         {
             var result = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(),
-                () => witClient.QueryByWiqlAsync(new Wiql { Query = query }));
+                () => witClient.QueryByWiqlAsync(new Wiql { Query = query }, cancellationToken: cancellationToken), cancellationToken);
 
             // An answer carrying no result set at all is not an answer of "nothing matched": reading it as
             // one removes every record the query owner has, on a cycle nothing else complains about.
@@ -826,7 +846,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return result.WorkItems;
         }
 
-        private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, IEnumerable<string> additionalFields)
+        private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(
+            IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, IEnumerable<string> additionalFields, CancellationToken cancellationToken)
         {
             if (!workItemIds.Any())
             {
@@ -851,31 +872,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
 
-            return await GetWorkItemsInChunks(workItemIds, witClient, WorkItemExpand.Links, fields);
+            return await GetWorkItemsInChunks(workItemIds, witClient, WorkItemExpand.Links, fields, cancellationToken);
         }
 
-        private static async Task<IEnumerable<AdoWorkItem>> GetWorkItemsInChunks(IEnumerable<int> workItemIds, WorkItemTrackingHttpClient witClient, WorkItemExpand expand, IEnumerable<string> fields)
+        private static async Task<IEnumerable<AdoWorkItem>> GetWorkItemsInChunks(
+            IEnumerable<int> workItemIds, WorkItemTrackingHttpClient witClient, WorkItemExpand expand, IEnumerable<string> fields, CancellationToken cancellationToken)
         {
             var url = witClient.BaseAddress!.ToString();
             var workItems = new List<AdoWorkItem>();
 
             foreach (var chunk in workItemIds.Chunk(MaxChunkSize))
             {
-                var result = await ExecuteWithThrottle(url, () => witClient.GetWorkItemsAsync(chunk, fields, expand: expand));
+                var result = await ExecuteWithThrottle(url, () => witClient.GetWorkItemsAsync(chunk, fields, expand: expand, cancellationToken: cancellationToken), cancellationToken);
                 workItems.AddRange(result);
             }
 
             return workItems;
         }
 
-        private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner, Dictionary<int, string> additionalFieldDefinitions)
+        private async Task<WorkItemBase> ConvertAdoWorkItemToLighthouseWorkItem(
+            AdoWorkItem workItem, IWorkItemQueryOwner workItemQueryOwner, Dictionary<int, string> additionalFieldDefinitions, CancellationToken cancellationToken)
         {
             var state = workItem.ExtractStateFromWorkItem();
             var stateCategory = workItemQueryOwner.MapStateToStateCategory(state);
 
-            var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, stateCategory, workItem.Id);
+            var (startedDate, closedDate) = await GetStartedAndClosedDateForWorkItem(workItemQueryOwner, stateCategory, workItem.Id, cancellationToken);
 
-            var syncedTransitions = await GetSyncedTransitionsForWorkItem(workItemQueryOwner, workItem.Id);
+            var syncedTransitions = await GetSyncedTransitionsForWorkItem(workItemQueryOwner, workItem.Id, cancellationToken);
 
             var additionalFields = new Dictionary<int, string?>();
             foreach (var additionalField in additionalFieldDefinitions)
@@ -902,7 +925,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             };
         }
 
-        private async Task<IReadOnlyList<WorkItemStateTransition>> GetSyncedTransitionsForWorkItem(IWorkItemQueryOwner workItemQueryOwner, int? workItemId)
+        private async Task<IReadOnlyList<WorkItemStateTransition>> GetSyncedTransitionsForWorkItem(
+            IWorkItemQueryOwner workItemQueryOwner, int? workItemId, CancellationToken cancellationToken)
         {
             if (!workItemId.HasValue)
             {
@@ -910,11 +934,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
-            var rawTransitions = await GetAllStateTransitionsThrottled(witClient, workItemId.Value);
+            var rawTransitions = await GetAllStateTransitionsThrottled(witClient, workItemId.Value, cancellationToken);
             return WorkItemStateTransitionMapper.MapToMappedStates(rawTransitions, workItemQueryOwner);
         }
 
-        private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId)
+        private async Task<(DateTime? startedDate, DateTime? closedDate)> GetStartedAndClosedDateForWorkItem(
+            IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory, int? workItemId, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
@@ -927,10 +952,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             if (stateCategory == StateCategories.Done)
             {
-                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates);
-                closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoneStates, []);
+                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates, cancellationToken);
+                closedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoneStates, [], cancellationToken);
 
-                var lastToDoEntryDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawToDoStates, rawDoneStates);
+                var lastToDoEntryDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawToDoStates, rawDoneStates, cancellationToken);
                 if (lastToDoEntryDate.HasValue && startedDate.HasValue && lastToDoEntryDate.Value > startedDate.Value)
                 {
                     startedDate = null;
@@ -938,7 +963,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
             else if (stateCategory == StateCategories.Doing)
             {
-                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates);
+                startedDate = await GetStateTransitionDateThrottled(witClient, workItemId, rawDoingStates, rawDoneStates, cancellationToken);
             }
 
             if (startedDate == null && closedDate != null)
@@ -949,11 +974,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (startedDate, closedDate);
         }
 
-        private static async Task<DateTime?> GetStateTransitionDateThrottled(WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore)
+        private static async Task<DateTime?> GetStateTransitionDateThrottled(
+            WorkItemTrackingHttpClient witClient, int? workItemId, List<string> targetStates, List<string> statesToIgnore, CancellationToken cancellationToken)
         {
             if (!workItemId.HasValue) return null;
 
-            var revisions = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId.Value));
+            var revisions = await ExecuteWithThrottle(
+                witClient.BaseAddress!.ToString(),
+                () => witClient.GetRevisionsAsync(workItemId.Value, cancellationToken: cancellationToken),
+                cancellationToken);
 
             return WorkItemCategoryCrossing.LastEntryInto(StateChangesIn(revisions), targetStates, statesToIgnore);
         }
@@ -982,9 +1011,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        internal static async Task<IReadOnlyList<WorkItemStateTransition>> GetAllStateTransitionsThrottled(WorkItemTrackingHttpClient witClient, int workItemId)
+        internal static async Task<IReadOnlyList<WorkItemStateTransition>> GetAllStateTransitionsThrottled(
+            WorkItemTrackingHttpClient witClient, int workItemId, CancellationToken cancellationToken)
         {
-            var revisions = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId));
+            var revisions = await ExecuteWithThrottle(
+                witClient.BaseAddress!.ToString(),
+                () => witClient.GetRevisionsAsync(workItemId, cancellationToken: cancellationToken),
+                cancellationToken);
 
             var transitions = new List<WorkItemStateTransition>();
             var previousState = string.Empty;
@@ -1030,7 +1063,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<RelationsOfWorkItems> GetRelationsOfWorkItems(
             IEnumerable<AdoWorkItem> adoWorkItems,
             WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner,
-            bool dependenciesComeFromRelations)
+            bool dependenciesComeFromRelations,
+            CancellationToken cancellationToken)
         {
             // The relations carry two different things at once: the link to the parent, and the links to
             // whatever this item is waiting on. So naming a field to read the parent from is no longer
@@ -1051,10 +1085,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             logger.LogDebug("Getting Relations for Work Items with IDs {ItemIds}", string.Join(",", itemIds));
 
-            return await ReadRelationsFromTracker(workTrackingSystemOptionOwner, itemIds);
+            return await ReadRelationsFromTracker(workTrackingSystemOptionOwner, itemIds, cancellationToken);
         }
 
-        private async Task<RelationsOfWorkItems> ReadRelationsFromTracker(WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner, List<int> itemIds)
+        private async Task<RelationsOfWorkItems> ReadRelationsFromTracker(
+            WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner, List<int> itemIds, CancellationToken cancellationToken)
         {
             logger.LogDebug("Reading the parent link and the dependency links off the relations of {ItemCount} Work Items", itemIds.Count);
 
@@ -1065,7 +1100,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var witClient = await GetWorkItemTrackingHttpClientAsync(workTrackingSystemOptionOwner.WorkTrackingSystemConnection);
-            var workItemsWithRelations = await GetWorkItemsInChunks(itemIds, witClient, WorkItemExpand.Relations, NoFieldsBesideTheRelations);
+            var workItemsWithRelations = await GetWorkItemsInChunks(itemIds, witClient, WorkItemExpand.Relations, NoFieldsBesideTheRelations, cancellationToken);
 
             foreach (var adoWorkItem in workItemsWithRelations)
             {

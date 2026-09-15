@@ -35,6 +35,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// Each round trip can also be told to fail, because the whole-query fetch has to tell "the query
     /// matched nothing" apart from "we could not ask" - reading the second as the first removes every
     /// record the team has.
+    ///
+    /// A round trip is recorded when it is <em>attempted</em>, and only then refused if the token it was
+    /// handed is already set - exactly as a socket would. Counting the attempt is the point: a walk that
+    /// issues its next request and has it refused has still spent the quota an operator cancelled to
+    /// protect, and a count taken after the refusal cannot tell that apart from a walk that stopped.
     /// </summary>
     internal sealed class AzureDevOpsOrganisation
     {
@@ -48,9 +53,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             clientMock
                 .Setup(client => client.QueryByWiqlAsync(It.IsAny<Wiql>(), It.IsAny<bool?>(), It.IsAny<int?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                .Returns((Wiql wiql, bool? _, int? _, object _, CancellationToken _) =>
+                .Returns((Wiql wiql, bool? _, int? _, object _, CancellationToken cancellationToken) =>
                 {
                     WiqlQueries.Add(wiql.Query);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    OnRequest?.Invoke();
 
                     if (RejectTheQuery)
                     {
@@ -67,10 +74,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             clientMock
                 .Setup(client => client.GetWorkItemsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DateTime?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<WorkItemErrorPolicy?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                .Returns((IEnumerable<int> ids, IEnumerable<string> fields, DateTime? _, WorkItemExpand? expand, WorkItemErrorPolicy? _, object _, CancellationToken _) =>
+                .Returns((IEnumerable<int> ids, IEnumerable<string> fields, DateTime? _, WorkItemExpand? expand, WorkItemErrorPolicy? _, object _, CancellationToken cancellationToken) =>
                 {
                     var askedFor = ids.ToList();
                     PayloadReads.Add(new PayloadRead(askedFor, fields?.ToList() ?? [], expand));
+                    cancellationToken.ThrowIfCancellationRequested();
+                    OnRequest?.Invoke();
 
                     if (RejectPayloadReads)
                     {
@@ -84,9 +93,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             clientMock
                 .Setup(client => client.GetWorkItemFieldsAsync(It.IsAny<GetFieldsExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                .Returns(() =>
+                .Returns((GetFieldsExpand? _, object _, CancellationToken cancellationToken) =>
                 {
                     FieldLookups++;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    OnRequest?.Invoke();
 
                     if (RejectTheFieldLookup)
                     {
@@ -98,9 +109,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             clientMock
                 .Setup(client => client.GetRevisionsAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                .Returns((int id, int? _, int? _, WorkItemExpand? _, object _, CancellationToken _) =>
+                .Returns((int id, int? _, int? _, WorkItemExpand? _, object _, CancellationToken cancellationToken) =>
                 {
                     RevisionReads.Add(id);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    OnRequest?.Invoke();
                     return Task.FromResult(TheRevisionsOf(id));
                 });
 
@@ -114,6 +127,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public List<PayloadRead> PayloadReads { get; } = [];
 
         public List<int> RevisionReads { get; } = [];
+
+        /// <summary>
+        /// Run after each round trip is recorded, so a test that wants to cancel on the third page can read
+        /// the counts above to decide when it has arrived.
+        /// </summary>
+        public Action? OnRequest { get; set; }
 
         /// <summary>The stamp every item carries. Null stands for a tracker that reports no stamp at all.</summary>
         public DateTime? ChangedDate { get; set; } = WhenTheTrackerSaysItLastChanged;

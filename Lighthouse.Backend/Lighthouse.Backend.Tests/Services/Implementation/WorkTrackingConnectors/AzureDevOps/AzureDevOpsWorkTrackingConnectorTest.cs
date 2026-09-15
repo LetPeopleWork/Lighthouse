@@ -1130,7 +1130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 CreateRevision("Resolved", resolvedDate),
                 CreateRevision("Closed", closedDate));
 
-            var transitions = await AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, 42);
+            var transitions = await AzureDevOpsWorkTrackingConnector.GetAllStateTransitionsThrottled(witClient, 42, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
