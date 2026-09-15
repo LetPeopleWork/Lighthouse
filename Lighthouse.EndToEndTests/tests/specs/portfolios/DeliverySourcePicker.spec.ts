@@ -80,9 +80,13 @@ test("@walking_skeleton a dated Jira Release picked in the form becomes a Delive
 	);
 
 	const lighthousePage = overviewPage.lighthousePage;
-	const portfolioPage = await (
-		await lighthousePage.goToOverview()
-	).goToPortfolio(portfolio.name);
+
+	// The Overview reads its Portfolios once, while the page loads, and this browser opened before
+	// the Portfolio above existed. Clicking the Overview link is not a load - the browser is already
+	// on the Overview - so only an actual load puts the new Portfolio on screen.
+	const portfolioPage = await (await lighthousePage.open()).goToPortfolio(
+		portfolio.name,
+	);
 	await portfolioPage.refreshFeatures();
 	await waitForBackgroundUpdates(request);
 
