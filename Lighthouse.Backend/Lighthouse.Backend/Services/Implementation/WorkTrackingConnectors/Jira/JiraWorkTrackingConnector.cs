@@ -1250,7 +1250,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return 0;
         }
 
-        private async Task<List<JsonElement>> GetAllChangelogEntriesForIssue(HttpClient jiraClient, string issueId)
+        /// <summary>
+        /// One issue's history, re-read on its own endpoint because the copy that came with the search
+        /// result was truncated. This is a whole walk per issue, nested inside the page walk - a page of
+        /// fifty long-lived issues is fifty of them - which is why the token has to reach in here. Without
+        /// it a cancelled Cloud download still pays for every one before the page loop notices.
+        /// </summary>
+        private async Task<List<JsonElement>> GetAllChangelogEntriesForIssue(
+            HttpClient jiraClient, string issueId, CancellationToken cancellationToken)
         {
             var allChangelogHistories = new List<JsonElement>();
             var startAt = 0;
@@ -1260,11 +1267,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             while (!isLast)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var changelogUrl = $"rest/api/latest/issue/{issueId}/changelog?startAt={startAt}&maxResults={maxResults}";
-                var changelogResponse = await jiraClient.GetAsync(changelogUrl);
+                var changelogResponse = await jiraClient.GetAsync(changelogUrl, cancellationToken);
                 changelogResponse.EnsureSuccessStatusCode();
 
-                var changelogBody = await changelogResponse.Content.ReadAsStringAsync();
+                var changelogBody = await changelogResponse.Content.ReadAsStringAsync(cancellationToken);
                 using var changelogJson = JsonDocument.Parse(changelogBody);
 
                 // Try v3 format first (Cloud), then fall back to v2 format (Data Center)
@@ -1672,7 +1681,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 SinglePage: maxResultsOverride.HasValue);
 
             var rejection = await WalkCloudSearchPages(client, request, async jsonIssue =>
-                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName)), cancellationToken);
+                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName, cancellationToken)), cancellationToken);
 
             if (rejection is not null)
             {
@@ -1744,14 +1753,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private async Task<Issue> CreateIssueWithCompleteChangelog(HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName)
+        private async Task<Issue> CreateIssueWithCompleteChangelog(
+            HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName, CancellationToken cancellationToken)
         {
             var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
             var issueToProcess = jsonIssue;
 
             if (ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
             {
-                var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey);
+                var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey, cancellationToken);
                 issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, allChangelogHistories);
                 logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, allChangelogHistories.Count);
             }

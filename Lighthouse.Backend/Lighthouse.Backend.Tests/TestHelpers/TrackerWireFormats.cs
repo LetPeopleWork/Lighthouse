@@ -36,8 +36,26 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static string AnEpic(string key, params string[] links) => AnEpicNamed(key, $"{key} summary", links);
 
         public static string AnEpicNamed(string key, string summary, params string[] links)
+            => AnIssue(key, TheFieldsOf(summary, links), changelogEntries: null);
+
+        /// <summary>
+        /// An issue whose history is long enough that the connector will not trust the copy that came with
+        /// the search result, and re-reads it on the issue's own changelog endpoint. The threshold is thirty.
+        /// </summary>
+        public static string AnIssueWithAChangelogOf(string key, int entries, params string[] links)
+            => AnIssue(key, TheFieldsOf($"{key} summary", links), entries);
+
+        private static string AnIssue(string key, string fields, int? changelogEntries)
         {
-            var fields = "{\"summary\": \"" + summary + "\""
+            var changelog = changelogEntries is null
+                ? string.Empty
+                : ", \"changelog\": {\"total\": " + changelogEntries + "}";
+
+            return "{\"key\": \"" + key + "\", \"fields\": " + fields + changelog + "}";
+        }
+
+        private static string TheFieldsOf(string summary, string[] links)
+            => "{\"summary\": \"" + summary + "\""
                 + ", \"issuetype\": {\"name\": \"Epic\"}"
                 + ", \"status\": {\"name\": \"In Progress\"}"
                 + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
@@ -45,8 +63,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 + ", \"labels\": []"
                 + ", \"issuelinks\": [" + string.Join(",", links) + "]}";
 
-            return "{\"key\": \"" + key + "\", \"fields\": " + fields + "}";
-        }
+        /// <summary>One page of that re-read. The connector keeps asking until a page says it is the last.</summary>
+        public static string AChangelogPage(int entries, bool isLast)
+            => "{\"values\": [], \"total\": " + entries + ", \"isLast\": " + (isLast ? "true" : "false") + "}";
 
         /// <summary>This issue is waiting on <paramref name="key"/>.</summary>
         public static string BlockedByLink(string key) => InwardLink("is blocked by", key);

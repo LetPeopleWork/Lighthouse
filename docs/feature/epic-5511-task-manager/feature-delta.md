@@ -2624,3 +2624,83 @@ Zero of the 23 survivors fall on a line this change touched.
 1. **The credential application is not covered.** See the surviving probe above: an auth strategy that
    goes to the network on `ApplyAsync` can now be cancelled, and nothing here proves it.
 2. **The keyed and sweep methods still throw `NotSupportedException`.** ServiceNow supports neither yet.
+
+---
+
+# Wave: DELIVER — slice 04, the Jira changelog re-read
+
+The first of the two fixes decided on 2026-09-14, and the one that makes AC-04.2's recorded number true
+rather than approximately true.
+
+## What was wrong
+
+AC-04.2 says a cancelled refresh stops within one page round trip, and slice 04 measured that on the sweep
+and on the page walk. It was never true of the Cloud download. Any issue carrying more than thirty
+changelog entries is re-read on its own `/changelog` endpoint — and that re-read **pages on its own**, so a
+page of fifty long-lived issues is fifty nested walks, none of which looked at the token.
+
+The reason it survived slice 04 is the instructive part: **it still threw.** The outer page walk noticed
+the cancel at its next checkpoint, so from the outside cancellation appeared to work. It simply did so
+after paying for every nested changelog walk first. The RED reads **20 round trips where 3 were wanted**,
+with an `OperationCanceledException` raised at the end of them.
+
+## What changed
+
+The token now reaches `CreateIssueWithCompleteChangelog` and `GetAllChangelogEntriesForIssue`, which
+passes it to the request and to the body read, and checks once per changelog page.
+
+**Data Center is not affected, and was checked rather than assumed.** It asks for `expand=changelog` on the
+search itself and builds its issues straight from the answer; it never calls
+`CreateIssueWithCompleteChangelog`. The nested re-read is a Cloud-only shape, so the fix is Cloud-only.
+
+## What mutation testing found
+
+| Probe | Verdict |
+|---|---|
+| the changelog request goes out with no token — *the original bug* | compile-blocked (CA2016) |
+| the changelog walk is handed `CancellationToken.None` | compile-blocked (S1172) |
+| the page guard and the request token both go | compile-blocked (CA2016) |
+| **the per-issue walk is handed `CancellationToken.None`** | **killed** |
+| the changelog walk stops checking per page | survived — see below |
+
+The defect this fix exists for **can no longer be written**: reintroducing it fails the build. What the
+test pins is the half the compiler cannot see — that the token handed to the per-issue walk is the live
+one.
+
+**The per-page guard is redundant and was kept anyway.** `HttpClient` refuses an already-cancelled token
+before the handler is reached, so no test can distinguish it — the same finding Linear produced, where the
+equivalent guard was deleted. It stays here because all four sibling walks in this file carry the
+identical guard and shipped that way in slice 04. Deleting only the new one would read as an oversight,
+and deleting theirs is not this fix's business. Consistency inside the file wins over the cross-connector
+rule, deliberately.
+
+Stryker: 54.96 % over the connector (565 tested, 368 killed) — the usual caveat, `JiraIntegration` carries
+most of this 2 683-line file's coverage and the filter excludes it. **Zero survivors on the 16 lines this
+change touched.**
+
+## What the adversarial review found
+
+Approved, having verified the four things that mattered: Data Center genuinely has no nested re-read,
+nothing on the path converts the cancellation into a `JiraSearchRejection` (which would tell an operator
+Jira refused their query when in fact they stopped it themselves), no partial issue list escapes to
+`WorkItemService`, and the token is checked before the request rather than after.
+
+Its one finding was mine to fix and real: `AnIssueWithAChangelogOf` built its JSON by slicing the last `}`
+off `AnEpic(key)` and appending — which breaks the moment anyone passes issue links, because those contain
+braces of their own. It now composes the issue explicitly, and takes links like its neighbours do.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| Jira tests | 243 passed |
+| `dotnet test` (connector categories excluded) | 6 803 passed, 0 failed |
+| Hand-mutation of the changelog walk | the original bug compile-blocked; the live token killed |
+| Mutation — backend (Stryker) | 54.96 % raw; 0 survivors on touched lines |
+
+## Not done here
+
+1. **A cancelled refresh still writes `Success = false` to `RefreshLog`**, so refresh history shows a red
+   row for something an operator chose. That is the second decided fix: a schema change through
+   `Create-Migration.ps1`, and it touches the history UI.

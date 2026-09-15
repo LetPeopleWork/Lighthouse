@@ -21,6 +21,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     ///
     /// Jira Cloud and Data Center page by completely different mechanisms - a continuation token and an
     /// offset - and neither endpoint exists on the other, so both are counted.
+    ///
+    /// The page walk is not the whole of what a Cloud download does. Any issue carrying more than thirty
+    /// changelog entries is re-read on its own endpoint, which pages again - so one page of fifty such
+    /// issues is fifty nested walks, and none of them used to look at the token. The granularity AC-04.2
+    /// records was measured on the sweep and was simply false here.
     /// </summary>
     [TestFixture]
     public class JiraCancellationGranularityTest
@@ -30,6 +35,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// ran out of pages to give.
         /// </summary>
         private const int TotalTheTrackerClaims = 100_000;
+
+        /// <summary>Over the thirty that make the connector re-read an issue's changelog on its own endpoint.</summary>
+        private const int ChangelogEntriesThatForceASecondRead = 100;
+
+        /// <summary>
+        /// Five issues on the page, four changelog pages each: twenty nested round trips available, so
+        /// stopping after three is unmistakably stopping rather than running out.
+        /// </summary>
+        private const int IssuesOnThePage = 5;
+
+        private const int ChangelogPagesPerIssue = 4;
 
         [TestCase("Server", TestName = "DataCenter_CancelledBeforeItStarts_NeverAsksTheTrackerAnything")]
         [TestCase("Cloud", TestName = "Cloud_CancelledBeforeItStarts_NeverAsksTheTrackerAnything")]
@@ -76,6 +92,95 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 + "checkpoint is outside the loop, where the tracker has thousands of pages left to give.");
         }
 
+        [Test]
+        public void Cloud_CancelledWhileItRereadsChangelogs_StopsWithinOneChangelogRoundTrip()
+        {
+            using var stopAfterTheThirdChangelog = new CancellationTokenSource();
+
+            var changelogReads = 0;
+            var connector = AConnectorWhoseIssuesAllCarryLongChangelogs(() =>
+            {
+                changelogReads++;
+                if (changelogReads == 3)
+                {
+                    stopAfterTheThirdChangelog.Cancel();
+                }
+            });
+
+            Assert.That(
+                async () => await connector.GetWorkItemsForTeam(ATeam(), stopAfterTheThirdChangelog.Token),
+                Throws.InstanceOf<OperationCanceledException>());
+
+            Assert.That(changelogReads, Is.EqualTo(3),
+                "The re-read is where a Cloud download actually spends its time: one walk per issue with a "
+                + "long history, nested inside the page walk. Reading the remaining seventeen after an "
+                + "operator said stop is the whole cost this slice exists to stop paying.");
+        }
+
+        /// <summary>
+        /// A Cloud tracker whose every issue carries a history long enough to be re-read, and whose changelog
+        /// endpoint has several pages per issue. Bounded on both axes: a connector that ignores the token
+        /// finishes and fails the count rather than hanging.
+        /// </summary>
+        private static JiraWorkTrackingConnector AConnectorWhoseIssuesAllCarryLongChangelogs(Action onChangelog)
+        {
+            var changelogPagesServed = new Dictionary<string, int>(StringComparer.Ordinal);
+
+            var handler = new Mock<HttpMessageHandler>();
+            handler.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                    if (path.Contains("/changelog", StringComparison.Ordinal))
+                    {
+                        onChangelog();
+
+                        var issueKey = path.Split('/')[^2];
+                        changelogPagesServed.TryGetValue(issueKey, out var served);
+                        changelogPagesServed[issueKey] = served + 1;
+
+                        return Task.FromResult(AnAnswerOf(JiraWireFormat.AChangelogPage(
+                            ChangelogEntriesThatForceASecondRead, isLast: served + 1 >= ChangelogPagesPerIssue)));
+                    }
+
+                    var body = path switch
+                    {
+                        _ when path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal)
+                            => "{\"deploymentType\":\"Cloud\"}",
+                        _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal)
+                            => "[]",
+                        _ when path.Contains("rest/api/3/search/jql", StringComparison.Ordinal)
+                            => APageOfIssuesWithLongChangelogs(),
+                        _ => "{}",
+                    };
+
+                    return Task.FromResult(AnAnswerOf(body));
+                });
+
+            return JiraConnectorTestSetup.AConnectorOver(handler.Object);
+        }
+
+        private static string APageOfIssuesWithLongChangelogs()
+        {
+            var issues = string.Join(",", Enumerable.Range(1, IssuesOnThePage).Select(issue =>
+                JiraWireFormat.AnIssueWithAChangelogOf($"LGHTHS-{issue}", ChangelogEntriesThatForceASecondRead)));
+
+            return $"{{\"issues\":[{issues}],\"nextPageToken\":\"there-is-always-more\"}}";
+        }
+
+        private static HttpResponseMessage AnAnswerOf(string body)
+            => new(HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            };
+
         private static JiraWorkTrackingConnector AConnectorCounting(string deployment, Action onSearch)
         {
             var handler = new Mock<HttpMessageHandler>();
@@ -121,10 +226,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 _ => "{}",
             };
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(body, Encoding.UTF8, "application/json"),
-            };
+            return AnAnswerOf(body);
         }
 
         private static Team ATeam() => JiraConnectorTestSetup.ATeamOnJiraCloud(null);
