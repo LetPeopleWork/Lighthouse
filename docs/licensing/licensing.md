@@ -32,7 +32,7 @@ For almost everyone, nothing changes. Find yourself below; the tables after it h
 
 **You build on top of Lighthouse.** Plugins, extensions, integrations, applications built around it, and tools that consume its output or API are all fine. The line is a separate product whose *primary purpose* is to provide what Lighthouse provides, instead of Lighthouse — and that line holds even when the product never leaves your own company.
 
-**You are evaluating Lighthouse.** Read it, run it, study it, test it, fork it and keep your changes to yourself. Reading and studying the source to understand how it works is a right no license can take away from you. And everything up to v26.9.9.9 is MIT in perpetuity.
+**You are evaluating Lighthouse.** Read it, run it, study it, test it, fork it and keep your changes to yourself. Reading and studying the source to understand how it works is a right no license can take away from you. If you are looking at an older release, *What changed, and when* above tells you which terms it carries.
 
 The restrictions are about what you may provide to **other people**, not about what you do with your own instance.
 
