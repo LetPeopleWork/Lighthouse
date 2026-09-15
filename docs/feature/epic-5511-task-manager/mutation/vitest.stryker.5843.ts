@@ -22,7 +22,10 @@ export default defineConfig({
 		// RecentProblemsSection has no spec of its own - it is covered through TaskManagerIcon, which is
 		// where the popover's other two sections are covered too. Listing a file that does not exist
 		// leaves the runner with nothing to run and reports every mutant as alive.
-		include: ["src/components/App/Header/TaskManagerIcon.test.tsx"],
+		include: [
+			"src/components/App/Header/TaskManagerIcon.test.tsx",
+			"src/components/App/Header/UpdateAllButton.test.tsx",
+		],
 		exclude: [
 			"**/node_modules/**",
 			"**/dist/**",

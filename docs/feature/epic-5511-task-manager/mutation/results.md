@@ -561,3 +561,97 @@ committed by accident.
 Also: an `include:` entry naming a spec file that **does not exist** leaves the runner with nothing to run
 and reports every mutant alive, which is indistinguishable in the report from a real test gap. The existing
 ledger note warns about a spec *missing* from the list; this is the same failure from the other direction.
+
+### 5843b — the rows say whose refresh broke (follow-up to slice 06)
+
+Run 2026-09-15 against `efabdb80e` plus the follow-up's own uncommitted changes. Same configs, with
+`RecentProblemsReport.cs` added to the backend `mutate` list.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **95.00 %** | 40 | 38 | 2 | 0 | 6 m 31 s |
+| Frontend | not re-run — no production file changed (the section renders `message` verbatim; only a fixture sentence was corrected) | | | | | |
+
+**First run scored 80.00 %**, 7 survivors, all in `RecentProblemsSink.cs` and all in code this change
+introduced. Two were assertion-strength gaps that let a *wrong message* pass, because the new promises
+asserted the name was present and nothing about what else survived:
+
+| Survivor | The row it produced, which the tests accepted |
+| --- | --- |
+| `:133` pattern negated — the replaced span widens to the whole sentence | `Lagunitas` — "Error processing update task for" gone entirely. A bare name reads as a heading. |
+| `:143` `index < numberAt` — the id token falls outside the span | `Error processing update task for Lagunitas1` — a stray digit where the id was. |
+
+Closed by sharpening one `Then` rather than adding scenarios: the row must still say **what went wrong**,
+and must **no longer say the id**. All three naming scenarios inherit both. The second half also pins the
+change's actual intent, which nothing previously did — every earlier assertion would have passed against
+an implementation that appended the name and left `ID 7` in place.
+
+**`:133` has two mutant shapes and only one dies at the acceptance layer.** Negating the whole pattern
+gives the bare-name row above. Negating only the property name makes the search skip to `{Id}`, so the
+span becomes just the number and the row reads `…for Team with ID Pliny the Elder` — which still says what
+broke, still names the team, and no longer contains the id. **All three sharpened acceptance assertions
+pass it.** It dies only to the unit test asserting the captured span. Found because a falsifier run
+reported one failure where four were expected; the discrepancy was the finding.
+
+#### Accepted survivors
+
+- **`RecentProblemsSink.cs:136`** — `numberAt < kindAt` → `<=`. **Equivalent**: two distinct property
+  names can never resolve to the same token index, and when both are absent both are `-1`, where the
+  short-circuiting first clause has already returned. Verified empirically under the mutation (29/29
+  green), not only argued, and independently re-derived in review. The reason is recorded beside the guard
+  tests so the next reader gets an answer rather than filling the gap with an assertion about internals.
+- **`LogsController.cs:69`** — unchanged from the slice-06 run: a pre-existing log message from an earlier
+  slice, no caller branching on it.
+
+#### A load-bearing fixture assumption, recorded because it is invisible
+
+The assertion that the row no longer says the id works because the seeded names in those three scenarios
+carry no digits. A team called "Brewery 3" added to them would fail the assertion for a reason that has
+nothing to do with the behaviour. The eviction scenario's `Brewery 1…6` names are safe — that scenario
+never asserts on the id.
+
+### 5843c — the Update All button stops duplicating the activity icon
+
+Run 2026-09-15. Maintainer's review decision: the button's pending-count badge and its spinner are both
+duplicated by the activity icon beside it, so both go; `disabled={hasActiveUpdates}` stays, so the button
+still cannot be fired while an update runs. Two tests pinning the removed behaviour were deleted with it.
+
+Frontend config gained `UpdateAllButton.tsx` as a mutate target and `UpdateAllButton.test.tsx` in the
+runner's include list. Backend not re-run — no backend file changed.
+
+| file | score | tested | killed | survived |
+| --- | --- | --- | --- | --- |
+| `UpdateAllButton.tsx` | **76.47 %** | 17 | 13 | 4 |
+| `RecentProblemsSection.tsx` | 66.67 % | 18 | 12 | 6 (unchanged, see above) |
+
+**The question this run existed to answer was not the percentage.** Removing the badge and the spinner
+could plausibly have orphaned the coverage of the guard that was deliberately kept. It did not: `||` → `&&`
+on `isDisabled`, both conditional replacements, and dropping the `!` all die.
+
+#### What it found instead — a pre-existing crash path with no coverage
+
+First run scored 58.82 %, with two survivors and one mutant carrying **no coverage at all**, all pointing
+at the same hole: nothing rendered the component with `licenseStatus` unset.
+
+That state is not an edge case. `useLicenseRestrictions` initialises `licenseStatus` to `null`, so it is
+null on every initial render, and its fetch swallows errors — so a failed licensing call leaves it null
+for the life of the page. The optional chaining is load-bearing there: without it,
+`licenseStatus.canUsePremiumFeatures` throws during render and takes the **whole header** down, not just
+the button.
+
+Two tests closed it — the button renders and refuses when nothing is known, and it says why. 58.82 % →
+76.47 %, and the uncovered mutant is gone.
+
+Worth recording: the second test was nearly skipped on the reasoning that telling somebody to buy a
+licence when their licence state is unknown is a product guess. What settled it is that the line above
+already makes that decision — treating *unknown* as *not permitted* — so the explanation follows the
+stance rather than inventing one. Had it been skipped, the `?? false` → `?? true` mutant would have
+survived and been written up as equivalent when it is not.
+
+#### Accepted survivors
+
+| Survivor | Why |
+| --- | --- |
+| `:28` `if (!isDisabled)` → `true` | Equivalent. MUI does not fire `onClick` on a button carrying `disabled`, so the inner guard cannot be reached in the state it guards against. Defence in depth, not a gap. |
+| `:36` tooltip string blanked, `:49` `sx` emptied | The cosmetic class. jsdom computes no styles; asserting them means copying the source. |
+| `:35` `?? false` → `&& false` | **A real gap, left open deliberately.** Nothing asserts the *plain* tooltip appears when the licence IS valid, so "always show the premium message" would pass — the positive control for the test added above. Pre-existing, produces wrong copy rather than a crash, and closing it was judged disproportionate to a change that removed a badge. Cheap to close if anyone wants it. |

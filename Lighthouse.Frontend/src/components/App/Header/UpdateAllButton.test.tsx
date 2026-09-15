@@ -43,39 +43,6 @@ describe("UpdateAllButton", () => {
 		);
 	});
 
-	it("should show circular progress when updates are active", () => {
-		mockUseUpdateAll.mockReturnValue({
-			handleUpdateAll: mockHandleUpdateAll,
-			globalUpdateStatus: {
-				hasActiveUpdates: true,
-				activeCount: 3,
-			},
-
-			hasError: false,
-		});
-
-		render(<UpdateAllButton />);
-
-		// CircularProgress should be rendered
-		expect(screen.getByRole("progressbar")).toBeInTheDocument();
-	});
-
-	it("should show badge with active count when there are updates pending", () => {
-		mockUseUpdateAll.mockReturnValue({
-			handleUpdateAll: mockHandleUpdateAll,
-			globalUpdateStatus: {
-				hasActiveUpdates: false,
-				activeCount: 5,
-			},
-			hasError: false,
-		});
-
-		render(<UpdateAllButton />);
-
-		// Badge should be rendered with count
-		expect(screen.getByText("5")).toBeInTheDocument();
-	});
-
 	it("should be disabled when user cannot update all teams and portfolios", () => {
 		mockUseLicenseRestrictions.mockReturnValue({
 			licenseStatus: { canUsePremiumFeatures: false },
@@ -101,6 +68,43 @@ describe("UpdateAllButton", () => {
 
 		const button = screen.getByTestId("update-all-button");
 		expect(button).toBeDisabled();
+	});
+
+	// No license status is not an edge case: nothing is known about the license on the first paint of
+	// every page, and nothing is known for the life of the page if the licensing call fails. The button
+	// has to survive that and refuse the action, because offering somebody an action nobody has
+	// established they are allowed is how they find out by being told no halfway through it.
+	it("should render and be disabled when no license status is known", () => {
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: null,
+		} as ReturnType<typeof useLicenseRestrictions>);
+
+		render(<UpdateAllButton />);
+
+		const button = screen.getByTestId("update-all-button");
+		expect(button).toBeInTheDocument();
+		expect(button).toBeDisabled();
+	});
+
+	// A button that refuses and says nothing is a dead end. The component already treats an unknown
+	// license as permission it does not have, and the reason it offers has to agree with that - the
+	// ordinary tooltip on a button that cannot be pressed explains nothing at all.
+	it("should say why it is refusing when no license status is known", async () => {
+		const user = userEvent.setup();
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: null,
+		} as ReturnType<typeof useLicenseRestrictions>);
+
+		render(<UpdateAllButton />);
+
+		// A disabled button takes no pointer events, which is exactly why it is wrapped - the wrapper is
+		// what the tooltip listens on.
+		const button = screen.getByTestId("update-all-button");
+		await user.hover(button.parentElement ?? button);
+
+		expect(
+			await screen.findByText(/This feature requires a/i),
+		).toBeInTheDocument();
 	});
 
 	it("should call handleUpdateAll when clicked", async () => {

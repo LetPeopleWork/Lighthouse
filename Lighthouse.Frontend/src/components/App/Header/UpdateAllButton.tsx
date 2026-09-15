@@ -1,6 +1,4 @@
 import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
-import Badge from "@mui/material/Badge";
-import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import type React from "react";
@@ -26,52 +24,6 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 		!licenseStatus?.canUsePremiumFeatures ||
 		globalUpdateStatus.hasActiveUpdates;
 
-	const handleClick = async () => {
-		if (!isDisabled) {
-			await handleUpdateAll();
-		}
-	};
-
-	const renderIcon = () => {
-		if (globalUpdateStatus.hasActiveUpdates) {
-			const icon = (
-				<CircularProgress
-					size={24}
-					style={{ color: theme.palette.primary.main }}
-				/>
-			);
-
-			// Show badge with count even when updates are active
-			if (globalUpdateStatus.activeCount > 0) {
-				return (
-					<Badge
-						badgeContent={globalUpdateStatus.activeCount}
-						color="primary"
-						max={99}
-					>
-						{icon}
-					</Badge>
-				);
-			}
-
-			return icon;
-		}
-
-		if (globalUpdateStatus.activeCount > 0) {
-			return (
-				<Badge
-					badgeContent={globalUpdateStatus.activeCount}
-					color="secondary"
-					max={99}
-				>
-					<AllInclusiveIcon style={{ color: theme.palette.primary.main }} />
-				</Badge>
-			);
-		}
-
-		return <AllInclusiveIcon style={{ color: theme.palette.primary.main }} />;
-	};
-
 	return (
 		<LicenseTooltip
 			canUseFeature={licenseStatus?.canUsePremiumFeatures ?? false}
@@ -82,13 +34,13 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 				<IconButton
 					size="large"
 					color="inherit"
-					onClick={handleClick}
+					onClick={() => void handleUpdateAll()}
 					disabled={isDisabled}
 					aria-label={`Update All ${teamsTerm} and ${portfoliosTerm}`}
 					data-testid="update-all-button"
 					className={className}
 				>
-					{renderIcon()}
+					<AllInclusiveIcon style={{ color: theme.palette.primary.main }} />
 				</IconButton>
 			</span>
 		</LicenseTooltip>

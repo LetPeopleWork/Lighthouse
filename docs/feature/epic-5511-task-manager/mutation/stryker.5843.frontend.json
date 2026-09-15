@@ -24,7 +24,8 @@
     "reports"
   ],
   "mutate": [
-    "src/components/App/Header/TaskManager/RecentProblemsSection.tsx"
+    "src/components/App/Header/TaskManager/RecentProblemsSection.tsx",
+    "src/components/App/Header/UpdateAllButton.tsx"
   ],
   "thresholds": {
     "high": 90,
