@@ -2262,3 +2262,125 @@ where an item is re-saved in the state it is already in. On the second run all f
 | Azure DevOps unit tests | 69 passed |
 | `dotnet test` (connector categories excluded) | green |
 | Hand-mutation of the preserved behaviour | 4 killed, 1 compile-blocked |
+
+---
+
+# Wave: DISTILL — slice 04, CSV
+
+Second of the four connectors. CSV is unlike the rest and the difference decides the whole shape of the
+slice: it makes **no remote calls at all**. The upload is carried on the entity as text and parsed in
+memory, so there are no round trips to count, no rate limit being spent, and no socket to refuse.
+
+## Wave: DISTILL / [REF] What is left to promise when there are no round trips
+
+Three things, and they are the reason this connector is worth doing rather than waving through:
+
+- **A large upload is real time.** Parsing holds the update slot while it runs.
+- **The promise has to hold uniformly.** A Cancel button that stops four connectors and quietly finishes
+  the fifth is a button nobody can trust.
+- **The failure mode is the worst one in the Epic.** Removal is computed as stored minus fetched, so a
+  parse that handed back the rows it managed before stopping would delete every record on the rows it
+  never reached. On CSV this is not a theoretical ordering concern — it is one `break` away.
+
+Only two methods do any work: `GetWorkItemsForTeam(team, ct)` and `GetFeaturesForProject(project, ct)`.
+Four of the six paging methods throw `NotSupportedException` outright — both sweeps and both
+by-reference-id overloads — and legitimately cannot honour a token they never get to use.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+A seam was needed, because nothing outside the connector could otherwise see how far a parse had got, and
+how far it got is the entire claim. `ContentOf(owner)` is `internal virtual` and returns the `TextReader`
+the parse reads from — the same precedent as
+`AzureDevOpsWorkTrackingConnector.GetWorkItemTrackingHttpClientAsync`.
+
+The double hands out a **fresh reader per call**, exactly as production does. The first version handed out
+one shared instance, which the review caught: any second read of the same entity would have been given a
+spent reader, and the only reason no test failed was that none happened to validate before fetching.
+Keeping the list of readers handed out turned out to be worth more than the reader counts — it lets
+"never opened the upload" be asserted as itself, rather than as "opened it and read nothing".
+
+## Wave: DISTILL / [REF] Scenario list
+
+| Scenario | Asserts |
+|---|---|
+| team fetch cancelled before it starts | the upload is never opened |
+| portfolio fetch cancelled before it starts | the upload is never opened |
+| team fetch cancelled while parsing | throws, and stops pulling the upload |
+| portfolio fetch cancelled while parsing | throws, and stops pulling the upload |
+| parent-feature details cancelled | stops rather than answering with none |
+
+The upload holds 5 000 rows, about 229 KB, which CsvHelper pulls in roughly fifty buffer-sized bites. The
+cancel lands on the **third** bite, not the first: cancelling on the first would land during the header
+read, and a test that stops a parse before it has parsed anything says nothing the cancelled-before-start
+test does not already say. That distinction is asserted directly — `Bites > 1`.
+
+---
+
+# Wave: DELIVER — slice 04, CSV
+
+## What changed
+
+`cancellationToken.ThrowIfCancellationRequested()` at the entry of both fetches and once per row inside
+both `while (csv.Read())` loops, plus the entry of `GetParentFeaturesDetails`.
+
+That is the whole change, and unlike Azure DevOps every one of those guards is load-bearing. There is no
+throttle, no socket, no SDK underneath to refuse on the connector's behalf: the row is the only place a
+CSV parse can be stopped.
+
+## What the adversarial review found
+
+**`GetParentFeaturesDetails` accepted the token and ignored it** (blocker). It answers with no features —
+a CSV upload has no parent features to fetch — so nothing about it is slow. But answering normally lets a
+cancelled refresh walk on to its next step, which is what the operator pressed the button to prevent.
+`WorkItemService` calls it at two sites with the cancellation token, so this was a real silent gap.
+
+The review's proposed fix was to throw `NotSupportedException` instead, matching the sweeps. **That was
+checked and rejected**: both call sites consume the empty list, so throwing would break every CSV
+portfolio refresh. The token check is the correct half of the finding.
+
+**The test double handed out one shared reader.** Any second call to `ContentOf` in the same scenario
+would have been given a spent one. Production already mints a fresh reader per call; the double now does
+too.
+
+**The mid-parse test cancelled on the first hand-over**, which happens while the header is being read —
+so it was not testing a parse in progress at all. It now cancels on the third bite and asserts it landed
+mid-stream.
+
+`CA1859` was caught by the local build on a new `IReadOnlyList` property, the ledger rule with seven prior
+recurrences.
+
+## What mutation testing found
+
+Six hand-applied probes, **all six killed**:
+
+| Probe | Verdict |
+|---|---|
+| team fetch: entry guard dropped | killed |
+| team fetch: per-row guard dropped | killed |
+| team fetch: stops but answers with the rows it had | killed |
+| portfolio fetch: entry guard dropped | killed |
+| portfolio fetch: per-row guard dropped | killed |
+| parent features: guard dropped | killed |
+
+The third is the one that matters. It is the data-loss shape — a `break` instead of a throw — and on this
+connector it compiles, reads as reasonable, and would silently delete every record on the unread rows.
+
+Stryker: **66.22 %** over the whole connector (132 tested, 98 killed, 34 survived), and **zero survivors
+on the 25 lines this change touched**. As with Azure DevOps the headline number is about the rest of the
+file — parsing, validation, dependency columns — not about this change.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| CSV tests | 64 passed — 59 pre-existing, 5 new |
+| `dotnet test` (connector categories excluded) | 6 794 passed, 1 environmental |
+| Hand-mutation of the guards | 6 of 6 killed |
+| Mutation — backend (Stryker) | 66.22 % raw, 0 survivors on touched lines |
+
+## Not done here
+
+1. **The four `NotSupportedException` methods still ignore their token.** They throw before doing anything,
+   and `NotSupportedException` says more about why a CSV upload cannot be swept than a cancellation would.
+2. **Linear and ServiceNow are unchanged.** Next, in that order.

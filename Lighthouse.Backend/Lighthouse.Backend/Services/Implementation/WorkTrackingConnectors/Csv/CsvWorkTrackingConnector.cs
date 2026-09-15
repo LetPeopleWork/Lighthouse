@@ -34,12 +34,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var workItems = new List<WorkItem>();
 
             using var csv = ReadCsv(team);
 
             while (csv.Read())
             {
+                // Stopping has to throw rather than return early: removal is computed as stored minus
+                // fetched, so answering with the rows read so far deletes every record on the rest.
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var workItemBase = CreateWorkItemBaseForRow(csv, team);
 
                 if (workItemBase == null)
@@ -60,12 +66,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         public Task<List<Feature>> GetFeaturesForProject(Portfolio project, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var features = new List<Feature>();
 
             using var csv = ReadCsv(project);
 
             while (csv.Read())
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var workItemBase = CreateWorkItemBaseForRow(csv, project);
 
                 if (workItemBase != null)
@@ -97,8 +107,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
+        /// <summary>
+        /// A CSV upload has no parent features to go and fetch, so this answers with none - but it still has
+        /// to stop when told to. Answering normally lets the refresh walk on to its next step, which is the
+        /// one thing a cancelled refresh must not do.
+        /// </summary>
         public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             return Task.FromResult(new List<Feature>());
         }
 
@@ -382,11 +399,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return missing.Length == 0;
         }
 
+        /// <summary>
+        /// Where the upload is read from. A CSV entity carries its own content, so this is a string in
+        /// production - but nothing outside can otherwise see how far a parse got, and how far it got is the
+        /// whole claim a cancelled parse makes.
+        /// </summary>
+        internal virtual TextReader ContentOf(IWorkItemQueryOwner owner) => new StringReader(owner.DataRetrievalValue);
+
         private CsvReader ReadCsv(IWorkItemQueryOwner owner)
         {
             string delimiter = GetDelimiter(owner.WorkTrackingSystemConnection);
             var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = delimiter, IgnoreBlankLines = true, MissingFieldFound = null };
-            var csv = new CsvReader(new StringReader(owner.DataRetrievalValue), csvConfig);
+            var csv = new CsvReader(ContentOf(owner), csvConfig);
 
             var dateFormat = GetAdditionalDateTimeFormat(owner.WorkTrackingSystemConnection);
 
