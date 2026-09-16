@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-31
+updated: 2026-09-16
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -43,6 +43,7 @@ feature_context:
   - epic-4365-dependencies
   - epic-5792-dependency-aware-forecasting
   - epic-5698-deliveries-as-durable-records
+  - epic-4127-sle-risk
   - epic-5565-delivery-date-sync
   - epic-5733-opt-in-usage-data
   - epic-5511-task-manager
@@ -6804,3 +6805,80 @@ jobs:
         damage than the change itself. Current satisfaction 0 — nothing exists today; every surface
         asserts open source. Gap 4 — the largest in this feature, and the one carrying the only
         measurable commercial risk (organic traffic to the comparison page).
+
+  - id: job-flow-coach-act-before-sle-breach
+    title: Act on an item before it breaks the SLE we published
+    persona: flow-coach
+    feature_context: epic-4127-sle-risk
+    ado: Epic #4127 (tags Community; Productboard)
+    job_story: >
+      When I look at what is in flight during a standup,
+      I want to know which items are more likely than not to break the Service Level Expectation we
+      published — while there is still time to do something about it,
+      so I can spend the standup on those items instead of finding out at the retro that we missed.
+    not_this_job: >
+      job-flow-coach-spot-pace-outliers asks how UNUSUAL an item is for the state it is currently in —
+      a per-state comparison against the team's own distribution, with no commitment involved. This
+      job asks whether a PROMISE is about to be broken, end-to-end, and is meaningless without an SLE.
+      An item can be a wild per-state outlier and still finish comfortably inside the SLE; an item can
+      be entirely ordinary in every state and still be about to breach. Different question, different
+      arithmetic, different history window. This is the only job in this file whose trigger is a
+      published promise.
+    dimensions:
+      functional: >
+        Read, per in-flight item, the probability that it will exceed the SLE's day range — computed
+        from what actually happened to the completed items that got this far, not from the declared
+        target. Sort by it in the work item dialog, count it on the team page, read it as zones on
+        the aging chart, and optionally carry it into the work tracking system.
+      emotional: >
+        Move from "I can see the SLE line, but it only tells me who has already missed" to "three
+        items are past fifty-fifty and I know which" — the difference between an explanation and an
+        intervention.
+      social: >
+        Bring a defensible sentence to the standup — "of everything that was still open on day nine,
+        six in seven went on to miss" — rather than "this one feels old". The number is explainable
+        out loud, without preparation and without statistics, to the person whose item it is.
+    forces:
+      push: >
+        The SLE reference line on the aging chart (WorkItemAgingChart.tsx:662) says whether an item
+        has ALREADY breached; nothing says one is about to. By the time the line is crossed the
+        intervention window has closed. ragRules.ts reports the population's hit rate after the fact
+        ("Only 70.0% within the SLE target"), which is a retro input, not a standup one. The age
+        bands from story-5884 say how unusual an item is, not whether a commitment is at risk.
+      pull: >
+        One percentage per in-flight item, computed from the same history the chart already uses, read
+        as a sortable column, counted as a chip on the page the coach already lands on, and shaped as
+        zones on the chart they already read. No new screen, no new concept beyond "how many of the
+        items that got this far ended up missing".
+      anxiety: >
+        Is the number stable enough to act on? (The load-bearing worry, not a footnote: the
+        denominator shrinks as the age grows, so on a thin history one closed item entering or leaving
+        the window can move a displayed risk sharply. Addressed by making it slice 01's learning
+        hypothesis with OUT-4127-risk-stability gating every surface built on top.)
+        Will it be read as a forecast of the item's completion date? (No — it is a breach probability
+        against one day range and nothing else; it says nothing about when the item will finish.)
+        Does it become another number nobody trusts? (Measured by whether anyone chooses to write it
+        into their own tracker, which costs them noise to do.)
+      habit: >
+        Coaches currently eyeball the aging chart against the SLE line and act once an item crosses
+        it — that is, after the breach rather than before. The whole change is moving the moment of
+        attention earlier, which means the number has to be trusted at a point where the evidence is
+        thinner than it will be later.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 — the SLE is the one commitment Lighthouse lets a team publish, and today it is
+        only ever evaluated after the fact. Raised through both the community and Productboard.
+        Current satisfaction 1 — the SLE appears as a static reference line and a population RAG;
+        nothing addresses an individual in-flight item's odds, and the nearest surfaces (pace bands,
+        age percentiles) answer a different question. Gap 3 — a genuine missing capability, kept
+        tractable because the arithmetic is two counts over data both stacks already hold and every
+        surface it lands on already exists.
+    satisfaction_review:
+      due: after epic-4127-sle-risk slice 01 ships and OUT-4127-risk-stability has been read
+      note: >
+        Do not re-score on delivery alone. The gate is whether the number proved stable on real
+        teams — if it did not, satisfaction has not moved and the remaining slices should not have
+        been built.

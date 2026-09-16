@@ -1,0 +1,237 @@
+schema_version: 1
+feature_id: epic-4127-sle-risk
+created: 2026-09-16
+research_depth: lightweight
+ado: Epic #4127 "Show SLE Probability for In Progress Items" (tags Community; Productboard)
+
+note: >
+  One persona acts (flow-coach) across four surfaces, so this journey is a single narrative with
+  four reading moments rather than four journeys. The Epic arrived as a high-level description with
+  three open questions and a proposed formula; DISCUSS answered all three from the data model and
+  replaced the formula. Full reasoning and the worked comparison live in
+  docs/feature/epic-4127-sle-risk/feature-delta.md.
+
+  Distinguish this from its two neighbours, which look adjacent and answer different questions:
+  aging-pace-percentiles and story-5884-work-item-age-bands both ask "how unusual is this item for
+  the state it is in" — a per-state comparison with no commitment involved. This journey asks "is a
+  commitment we published about to be broken" — end-to-end, and only meaningful when an SLE exists.
+  An item can be a wild per-state outlier and still finish comfortably inside the SLE.
+
+journeys:
+
+  - name: act-before-the-sle-breaks
+    goal: >
+      Flow coach opens the team page during a standup, sees at a glance whether anything in flight is
+      more likely than not to break the SLE the team published, opens the list to find out which items
+      those are, and spends the standup on them — while there is still time to change the outcome.
+    persona: flow-coach
+    job_id: job-flow-coach-act-before-sle-breach
+
+    emotional_arc:
+      start: Blind — "I can see the SLE line on the chart, but it only tells me who has already
+        missed. By then the conversation is an explanation, not an intervention."
+      middle: Oriented — "three items are past fifty-fifty, and the number says why: of everything
+        that was still open on day nine, six in seven went on to miss."
+      end: In time — "we talked about the right two items this morning, and it was still possible to
+        do something about them."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Which formula computes the per-item risk?
+        decision: >
+          The empirical conditional — count(T > R AND T >= a) / count(T >= a) over the window's
+          closed cycle times, where a is the item's age and R the SLE range in days. Read as: of every
+          item still open at this age, what fraction went on to exceed the target. The formula in the
+          Epic description, (100 - p) / (100 - percentile(a)), is the same identity but takes its
+          numerator from the DECLARED SLE probability and its denominator from the EMPIRICAL
+          distribution; those agree only when the team is hitting its target exactly, and it needs a
+          clamp above 100%, a divide-by-zero guard and a hard-coded "age >= range means 100%" rule.
+          The empirical form needs none of the three and produces that last case as arithmetic.
+          User-decided 2026-09-16 against a worked 20-item comparison.
+      - id: D2
+        question: Is the SLE's probability half used per item?
+        decision: >
+          No — only the day range. The probability is a property of the population, not of one item,
+          and ragRules.ts already reports it there ("Only 70.0% within the SLE target (80% @ 10
+          days)"). Consequence: no "enable SLE" toggle is needed, because range > 0 IS the
+          enablement. This answers the Epic's own question about a settings switch by removing the
+          need for one.
+      - id: D3
+        question: What happens when no SLE is set?
+        decision: >
+          Nothing is computed and nothing is rendered. No derived default, no 85th-percentile
+          fallback. A self-derived SLE makes the breach rate (100 - p) true by construction, which
+          collapses the metric into a restatement of the item's own percentile — that is
+          story-5884-work-item-age-bands with a percent sign. An owner without an SLE is an expected
+          and acceptable silent state; the feature is deliberately for teams that have made a promise.
+      - id: D4
+        question: What about an item in multiple teams or portfolios?
+        decision: >
+          Half the question is closed by the data model and needs no warning: WorkItem.TeamId is a
+          single non-nullable int, so a work item belongs to exactly one team and team-level ambiguity
+          cannot occur. Feature.Portfolios is genuinely many-to-many, each portfolio carrying its own
+          SLE and its own history, so one feature would have N risks and write-back has one field to
+          put them in. Portfolios are therefore OUT of scope for this Epic; portfolio surfaces take
+          the same code path as "no SLE set" and render exactly as today.
+      - id: D5
+        question: Where is the number computed — frontend or backend?
+        decision: >
+          Once, in the backend domain, consumed by every surface including write-back. The frontend
+          could compute it (cycleTimeData and inProgressItems are both already in useMetricsData), but
+          write-back must compute it server-side regardless, and two implementations of one rule
+          drift. This drift would be worse than the one story-5884 D8 guards against: the disagreement
+          would be between Lighthouse and the user's own tracker, across systems, with no way to see
+          both at once.
+      - id: D6
+        question: Which history window, given the Epic asks "how far back should we look"?
+        decision: >
+          Whatever window the caller already uses — no new setting. Display surfaces pass the metrics
+          view's startDate/endDate, so the number follows the range picker like every other value on
+          the page; write-back has no picker and uses the team's configured history. One domain
+          function, two callers, two windows. A second SLE-specific window would let two numbers on
+          the same page disagree.
+      - id: D8
+        question: Where do the boundaries fall?
+        decision: >
+          Denominator T >= a, numerator T > R AND T >= a. An item at age a may still close today with
+          cycle time a, so it belongs in the survivor set; an item that took exactly R days MET the
+          SLE and is not a breach. Both WorkItemAge and CycleTime count inclusive whole days through
+          GetDateDifference, so no conversion is needed. story-5884 D8 records that boundary
+          conventions are exactly where two surfaces silently start disagreeing.
+      - id: D9
+        question: What shows when no closed item ever ran this long?
+        decision: >
+          The sentinel "Beyond history", muted and unpainted, sorting off-scale — deliberately not
+          100% and not blank, mirroring story-5884 D7's "No history". An absence of evidence must not
+          read as certainty. It IS counted as at-risk for the card chip, because an item older than
+          everything ever completed is not a safe item.
+      - id: D12
+        question: How does the aging chart show this without becoming unreadable?
+        decision: >
+          As a THIRD MODE of the existing background control (Off / Pace percentiles / SLE Risk), not
+          a second independent toggle. Both paint the same background channel so they are mutually
+          exclusive by construction — the stance work-item-age-percentiles took for cycle-time versus
+          age percentile lines on one chart. Crucially the two have different geometry: pace bands are
+          per-state-column because age-in-state is per-column, while risk is end-to-end and therefore
+          depends only on a dot's height, making it full-width horizontal zones. The existing boolean
+          localStorage key migrates to tri-state so no user's chart changes on upgrade.
+      - id: D13
+        question: Do the risk zones duplicate the SLE reference line already on the chart?
+        decision: >
+          No — the line IS the top zone's labelled lower edge. The 100% zone begins exactly at R days,
+          which is where the sleVisible reference line already sits (WorkItemAgingChart.tsx:662).
+          Keeping both is not saying one thing twice; the line supplies the label the boundary would
+          otherwise need. If the zone and the line ever disagree, the chart is asserting two different
+          deadlines — which is the central correctness check of that slice.
+      - id: D16
+        question: How noisy may write-back be, given the value moves on every refresh?
+        decision: >
+          Raw integer percent, every update, for all in-flight items — the shape the Epic asked for.
+          Threshold-crossing writes were offered in DISCUSS and declined: write-back is opt-in per
+          mapping, so the choice belongs to the user who enabled it. The cost is recorded rather than
+          mitigated: per quiet-jira-writeback D1, Jira can suppress watcher EMAIL only — issue
+          history, the Updated timestamp, webhooks, listeners and automation rules fire on every
+          deployment regardless. A future noise report is this decision surfacing, not a new defect.
+
+    steps:
+
+      - id: step-land-on-the-team-page
+        action: >
+          Flow coach opens /teams/{teamId} at the start of a standup on a team that has published an
+          SLE.
+        expected_output: >
+          The Items In Progress card shows, on each row, a chip counting that row's items at 50% risk
+          or higher — "3 at risk" — coloured by severity. No chip when the count is zero, and no chip
+          at all when no SLE is set, in which case the card renders exactly as today.
+        emotional_state: Alerted — "there is something to talk about this morning, and I know that
+          before I have opened anything"
+        shared_artifacts:
+          - ServiceLevelExpectationRange (existing, team settings, editable via SleQuickSetting)
+          - per-item risk (new; computed once in the backend domain per D5, never recomputed per surface)
+
+      - id: step-open-the-list
+        action: Flow coach clicks the row to open the work item dialog, and sorts by the risk column.
+        expected_output: >
+          The dialog lists in-flight items with an "SLE Risk" column reading an integer percentage per
+          row, next to the "Work Item Age Band" column story-5884 already added. Sorting is numeric,
+          not lexical; "Beyond history" ranks off-scale and lands last in the worst-first direction.
+          The chip's count and the number of rows at or above 50% always agree — they read the same
+          computed value for the same range.
+        emotional_state: Focused — "these three, in this order"
+        shared_artifacts:
+          - selected date range (existing; the risk follows the range picker like every other value on
+            the page, per D6)
+
+      - id: step-understand-why
+        action: >
+          Flow coach reads the column's tooltip, or explains the number to someone in the standup who
+          asks where it comes from.
+        expected_output: >
+          The explanation is one sentence with no statistics in it: of every item that was still open
+          at this age, this fraction went on to take longer than the target. A coach can say it out
+          loud in a standup without preparing.
+        emotional_state: Credible — "I can defend this number to the person whose item it is"
+        shared_artifacts: []
+
+      - id: step-read-the-gradient
+        action: >
+          Flow coach switches the aging chart's background control from "Pace percentiles" to
+          "SLE Risk".
+        expected_output: >
+          The per-state coloured columns are replaced by full-width horizontal zones at the ages where
+          risk crosses 25, 50, 75 and 100 percent. The 100% zone begins exactly at the SLE reference
+          line the chart already draws. Dot colouring is untouched — blocked state and group still own
+          the dot colour.
+        emotional_state: Oriented — "the dots just under the 75% edge are the ones still worth
+          saving; that is not something the deadline line alone could tell me"
+        shared_artifacts:
+          - PACE_BAND_COLORS_LOW_TO_HIGH (WorkItemAgingChart.tsx:60 — one palette across the chart
+            background, the dialog column and the card chip, so a colour means one thing)
+          - background mode (localStorage, migrated from the boolean workItemAgingPaceBandsEnabled)
+
+      - id: step-put-it-where-the-work-is
+        action: >
+          Config admin configures a write-back mapping with value source "SLE Risk" on the team's Jira
+          or Azure DevOps connection.
+        expected_output: >
+          After the next team update, the mapped field on each in-flight issue carries the integer
+          percentage, so the team's own board filters and dashboards can sort and alert on breach risk
+          without anyone opening Lighthouse. Items with no computable risk produce no write at all.
+        emotional_state: Extended — "the signal reaches the people working the board, not just the
+          people watching the dashboard"
+        shared_artifacts:
+          - WriteBackValueSource.SleRisk (new; team-scoped only per D4)
+          - the team's configured history window and clock.Today (not the UI range — D6)
+
+    error_paths_summary:
+      - No SLE set on the owner: nothing is computed and nothing is rendered anywhere — no column, no
+        chip, no chart mode, no write. Expected and common; this is deliberately an advanced feature
+        for teams that have made a promise (D3).
+      - Portfolio scope: identical to the no-SLE case. The dialog, card and chart are shared
+        components that render on portfolio pages, and they must there behave exactly as today (D4).
+      - Item older than every closed item in the window: denominator is zero, so there is no evidence
+        to divide by. Renders "Beyond history" rather than a fabricated 100%, and counts as at-risk
+        (D9).
+      - Item already past the SLE range: reads 100% as the arithmetic result, not as a special case —
+        every item in the denominator set necessarily exceeds R (D8). This is the Epic's scenario 3,
+        subsumed.
+      - Item at an age exactly equal to a closed item's cycle time: counted in the denominator. An
+        item that took exactly R days met the SLE and is NOT counted as a breach. The single most
+        likely place for an off-by-one to hide (D8).
+      - Thin history: the denominator shrinks fast as the age grows, so one closed item entering or
+        leaving the window can move a displayed risk sharply. This is the feature's load-bearing risk,
+        not an edge case — it is slice 01's learning hypothesis and OUT-4127-risk-stability gates
+        slices 02, 03 and 04 on it.
+      - Chart zone boundaries collapsing onto one another on a thin history: the zones must degrade
+        legibly rather than paint zero-height bands.
+      - Upgrade with an existing pace-band preference: "true" resolves to Pace percentiles and "false"
+        to Off, so no user's chart changes appearance (D12).
+
+    success_signal:
+      - A flow coach intervenes on an item that had not yet breached, on the strength of the number —
+        the whole point, and the thing OUT-4127-early-warning measures retrospectively.
+      - The displayed risk is stable enough on real teams that it is read as fact rather than noise
+        (OUT-4127-risk-stability). This gates everything built on top of it.
+      - Zero reports of a card chip disagreeing with the dialog column, or of a written-back tracker
+        value disagreeing with the Lighthouse display for the same team and day
+        (OUT-4127-no-support-contradiction) — the cross-system agreement D5 exists to guarantee.

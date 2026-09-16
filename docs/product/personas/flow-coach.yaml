@@ -23,6 +23,7 @@ primary_jobs:
   - job-flow-coach-stale-when-blocked-too-long  # epic-5074-blocked-items (2026-06-11, #5074): blocked-duration staleness trigger
   - job-flow-coach-see-predictability-trend  # epic-5427-percentiles-over-time (2026-07-22, #5427): CT/WIA percentiles over time
   - job-snow-flow-coach-see-flow-metrics  # epic-5513-servicenow-integration (2026-07-27, #5513): same flow metrics on ServiceNow work as on Jira/ADO work
+  - job-flow-coach-act-before-sle-breach  # epic-4127-sle-risk (2026-09-16, #4127): per-item probability of breaching the published SLE, while there is still time to act
 
 goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast
@@ -40,6 +41,7 @@ mental_model:
   - "Stuck" means an item is in a state much longer than that team's normal — the threshold is team-specific
   - "Stale" is a useful warning signal, similar to "blocked", that demands a conversation
   - Some coaches read a table faster than a chart; for them the pace band IS the sort key, and total age is the misleading one  # story-5884-work-item-age-bands (2026-09-05, #5884): evidenced by ValueFlow, which drops the aging chart's colouring and shows a table of the bands instead
+  - The SLE is a promise with a deadline, not a statistic — "are we about to break it on this item" is a different question from "is this item unusual", and only the first one is worth interrupting a standup for  # epic-4127-sle-risk (2026-09-16, #4127)
 
 vocabulary:
   - "stuck" — item sitting in a state longer than expected (term flow coaches use; staleness is the Lighthouse-internal term that drives the UI)
