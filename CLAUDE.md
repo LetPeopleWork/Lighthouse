@@ -37,6 +37,23 @@ See `docs/product/architecture/brief.md` for full architecture documentation.
 
 Source of truth for "what's in flight" is the Azure DevOps board at `dev.azure.com/letpeoplework` (project `Lighthouse`). The `/ado-sync` slash command encodes the full sync workflow (Epic → child Stories/Bugs, state auto-transitions, pause-before-push, confirm-before-create/remove/Release-Notes-tag) — apply its rules proactively, not only when invoked.
 
+## Wave Sequence
+
+The waves run **DISCOVER → DIVERGE → DISCUSS → DESIGN → DEVOPS → DISTILL → DELIVER**, and they run in
+that order. A request to "go on with X" means *carry on through the sequence as far as X*, not *jump
+to X*. If a wave between the current state and the one asked for has no artifacts, say so and run it
+first.
+
+Skipping is allowed, but only when the user says so in as many words — "skip design", "go straight to
+distill", "no devops for this one". Anything less explicit, including a request that merely names a
+later wave, is a request for the full sequence. A typo is the common case; a deliberate skip is the
+rare one, so resolve the ambiguity towards running the wave.
+
+Unblocking one narrow question from a skipped wave is **not** a substitute for running it. A wave's
+own skill may hard-block on a missing predecessor (DISTILL blocks on missing DESIGN, for instance) and
+name one thing to ask for; answering that question clears the block but leaves every other decision
+that wave would have made to be improvised silently somewhere downstream. Run the wave.
+
 ## DISCUSS Wave & DELIVER Wave
 
 `nw-discuss` and `nw-finalize` each carry their own checklists (RBAC impact, Lighthouse-Clients CLI/MCP versioning, website marketing surface for DISCUSS; docs prose, per-feature screenshots, demo data, website asset freshness for DELIVER). Apply those checklists in full when running those waves — see the command definitions for the current rules rather than this file, so there's one place to update them.
