@@ -1,0 +1,62 @@
+{
+  "roadmap": {
+    "project_id": "fix-jira-field-lookup-error-message",
+    "created_at": "2026-09-16T00:00:00Z",
+    "total_steps": 2
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Jira additional-field lookup: stop crashing, then say what went wrong",
+      "description": "Bug #6012. On Jira Data Center the custom-field lookup throws instead of reporting a miss, which makes the 'field not found' verdict unreachable and kills every team and portfolio refresh. Separately, a refused field list is reported as a broken URL. Root cause analysis: docs/feature/fix-jira-field-lookup-error-message/rca.md",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A property that is not there is a miss, not a crash",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldLookupTest.cs",
+          "criteria": [
+            "An unmatched additional field on a Data Center-shaped field list reports additional_fields_invalid and names the field, instead of throwing",
+            "An unmatched additional field on a Cloud-shaped field list keeps reporting the same way it does today",
+            "A team on a Data Center instance whose field list has no Flagged field and no customfield_10001 is read without throwing, with no additional fields configured",
+            "Existing Cloud field resolution by name, by id and by key is unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldLookupTest.cs"
+          ],
+          "implementation_notes": "Root cause, and the whole of this step: GetIdForCustomFieldByProperty reads each property with the throwing accessor, f.GetProperty(propertyIdentifier). Callers pass name, id and key. Jira Data Center's field list carries no key property, so the third pass - reached only when name and id have both missed, which is exactly when a reference does not resolve - throws KeyNotFoundException instead of returning a miss. Switch to TryGetProperty, matching what the rest of the file already does. This step stands alone and must ship first: it is what stops Data Center instances failing, and it restores the 'Some additional fields could not be found' verdict that is currently unreachable for every Data Center customer. RCA section 7 F3 carries the exact expression; RCA section 9 tests 3, 4 and 9 are this step's regression tests. Note test 9 fails today with KeyNotFoundException and is the one that proves refreshes stop dying."
+        },
+        {
+          "id": "01-02",
+          "name": "A refused field list is not a broken URL",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldLookupTest.cs",
+          "criteria": [
+            "A refused field list reports field_list_unreadable against the Additional Fields input, and the message does not blame the URL",
+            "Jira's own sentence from the response body reaches the technical details",
+            "Team validation and portfolio validation carry the same verdict instead of reporting an unexpected error, and do not run the search first",
+            "A refused credential still reports authentication_failed",
+            "A genuinely unreachable Jira still reports connection_failed against the URL input"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraFieldLookupTest.cs"
+          ],
+          "implementation_notes": "Four edits that must land together - shipping the throw without the catches makes the message strictly worse, because JiraReadException is not an HttpRequestException and would fall through to the bare catch with no details at all. F1: a FieldListRefused factory on JiraReadException, plus an Additional Fields const hoisted and also used at the existing site, because this file has already tripped S1192 once. F2: GetCustomFieldMappings reads the body once, before the status check, and throws the factory instead of EnsureSuccessStatusCode; it drops static so it can log, which forces SetStoredFieldKeys to drop static too - one call site, the ripple stops there. F4 and F5: catch WorkTrackingReadException and return its Verdict, in ValidateConnection before the HttpRequestException catch and in both ValidateTeamSettings and ValidatePortfolioSettings before the JiraQueryRejectedException catch. Do not log in the new catches - the throw site logs, and a log-and-return here is the duplicate S2139 exists to catch. The URL verdict stays as it is: after this change the only HttpRequestException the field call can raise is a genuine transport failure, which is what that verdict is for. RCA section 7 F1, F2, F4, F5 carry the exact code; RCA section 9 tests 1, 2, 5, 6, 7 and 8 are this step's regression tests."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "orchestrator",
+    "notes": "Two-step split follows the dependency order the RCA derived in section 7: F3 stands alone and ships first, F1+F2+F4+F5 land together. Deliberately out of scope and recorded in the RCA: the changelog and tenant_info sites (Cloud-only, off this path), the Azure DevOps twin (Bug #6013), the write-back connection-level outcome, and the hard-coded customfield_10001 fallback."
+  }
+}
