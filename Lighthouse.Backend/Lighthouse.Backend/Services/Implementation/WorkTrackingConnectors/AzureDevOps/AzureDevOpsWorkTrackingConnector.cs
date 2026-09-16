@@ -1366,11 +1366,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
-            var query = string.Join($" {queryOperator} ", options.Select(opt => $"[{fieldName}] {queryComparison} '{opt}'"));
+            var conditions = options.Select(opt => $"[{fieldName}] {queryComparison} '{opt}'").ToList();
 
-            query = options.Any() ? $"AND ({query}) " : string.Empty;
-
-            return query;
+            return conditions.Count == 0
+                ? string.Empty
+                : $"AND ({string.Join($" {queryOperator} ", conditions)}) ";
         }
 
         // Overridable so a test can hand the connector a recording client. Which requests this connector

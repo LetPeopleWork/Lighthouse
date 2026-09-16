@@ -1968,7 +1968,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var workItemsQuery = PrepareGenericQuery(owner.WorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
             var stateQuery = PrepareGenericQuery(owner.AllStates, JiraFieldNames.StatusFieldName, "OR", "=");
-            var cutoffDateFilter = PrepareCutoffDateFilter(owner.DoneItemsCutoffDays);
             var configuredFilter = RemoveOrderByClause(owner.DataRetrievalValue);
 
             if (NothingNarrowsTheQuery(configuredFilter, workItemsQuery, stateQuery))
@@ -1976,6 +1975,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 throw JiraReadException.NothingNarrowsTheQuery();
             }
 
+            var cutoffDateFilter = PrepareCutoffDateFilter(owner.DoneItemsCutoffDays);
             var lighthousesOwnFilters = $"{workItemsQuery} {stateQuery} {cutoffDateFilter}";
 
             return string.IsNullOrWhiteSpace(configuredFilter)
@@ -2023,9 +2023,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
-            var query = string.Join($" {queryOperator} ", options.Select(o => $"{fieldName} {queryComparison} \"{QuotedForJql(o)}\""));
-            query = options.Any() ? $"AND ({query}) " : string.Empty;
-            return query;
+            var conditions = options.Select(o => $"{fieldName} {queryComparison} \"{QuotedForJql(o)}\"").ToList();
+
+            return conditions.Count == 0
+                ? string.Empty
+                : $"AND ({string.Join($" {queryOperator} ", conditions)}) ";
         }
 
         /// <summary>

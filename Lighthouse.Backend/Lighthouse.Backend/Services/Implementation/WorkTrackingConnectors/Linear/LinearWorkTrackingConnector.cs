@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             {
                 var state = linearProject.Status?.Name ?? UnknownStateIdentifier;
 
-                if (states.Count > 0 && !states.Contains(state))
+                if (!WantedByTheMappedStates(states, state))
                 {
                     continue;
                 }
@@ -608,7 +608,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         {
             var states = team.AllStates.ToList();
 
-            return issues.Where(i => states.Count == 0 || states.Contains(i.State.Name)).ToList();
+            return issues.Where(i => WantedByTheMappedStates(states, i.State.Name)).ToList();
+        }
+
+        /// <summary>
+        /// A team or a portfolio that has mapped no states has said nothing about which records it wants,
+        /// which is not the same as wanting none of them. Matched against an empty list nothing comes back,
+        /// and removal is "stored minus fetched", so an unmapped list read as a filter deletes everything
+        /// that owner holds. Both halves share one settings screen, so both have to read it the same way.
+        /// </summary>
+        private static bool WantedByTheMappedStates(List<string> mappedStates, string state)
+        {
+            return mappedStates.Count == 0 || mappedStates.Contains(state);
         }
 
         private Task GetWithPagination<T>(
