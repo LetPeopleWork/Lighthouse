@@ -31,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @walking_skeleton @driving_port @real-io @AC-07A.1 — a real refresh, running, through the
         // production queue, read back beside work that is genuinely waiting on it.
         [Test]
-        [Ignore("pending — DELIVER unskips this first")]
         public async Task The_refresh_that_is_under_way_is_read_first_and_what_is_waiting_follows_it_oldest_first()
         {
             var running = GivenATeamThatIsRefreshedOnSchedule();
@@ -53,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @AC-07A.1 — the waiting half on its own, admitted newest-first so that a list
         // handed back in the order it was filled is wrong rather than coincidentally right.
         [Test]
-        [Ignore("pending")]
         public async Task Work_that_has_been_waiting_longest_is_the_next_thing_the_queue_will_reach()
         {
             var oldestFirst = GivenAQueueAdmittedInTheReverseOfTheOrderItShouldRead(3);
@@ -64,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @error @AC-07A.2 — the promise the defect is actually about. One read of an
         // unordered list can come out right; five agreeing on a twelve-row answer cannot.
         [Test]
-        [Ignore("pending")]
         public async Task The_queue_reads_the_same_way_every_time_it_is_read()
         {
             var oldestFirst = GivenAQueueAdmittedInTheReverseOfTheOrderItShouldRead(ALongQueue);
@@ -95,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // and records nothing. The row has no place to claim in the order, so it takes the last one, and
         // it keeps everything else about itself.
         [Test]
-        [Ignore("pending")]
         public async Task Work_whose_admission_was_never_recorded_waits_at_the_end_and_still_says_it_is_waiting()
         {
             var recorded = GivenATeamThatIsRefreshedOnSchedule();
@@ -114,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // Sorting it to the very end would drop the one thing the instance is doing below three things it
         // is not, which is the reading this slice exists to fix. Last of what is running, not last of all.
         [Test]
-        [Ignore("pending")]
         public async Task A_refresh_that_is_running_is_read_first_even_though_nobody_recorded_when_it_started()
         {
             var runningWithNoStartRecorded = GivenATeamThatIsRefreshedOnSchedule();
