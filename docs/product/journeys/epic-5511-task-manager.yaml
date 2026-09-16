@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-5511-task-manager
-updated: 2026-08-23
+updated: 2026-09-16
 note: >
   ADO Epic #5511, with child Bug #5788 and child User Story #5019 absorbed rather than DISCUSSed
   separately. Grounded in a pre-DISCUSS code reality check that turned up four facts the Epic's shape
@@ -104,3 +104,13 @@ journeys:
       - artifact: recent warnings
         source: a bounded in-memory Serilog sink, per process, read through the already-guarded logs
           controller.
+      - artifact: the order of the activity rows
+        source: the StartedAt and QueuedAt moments already on UpdateStatus, sorted on the read path.
+          Running first, then queued oldest-admission-first. Never the status store's iteration order,
+          which is hash order under Redis and dictionary order in process - neither is an order.
+      - artifact: "the fact that a stop was asked for"
+        source: >
+          Open as of 2026-09-16 (OQ-07.1). Either the browser that clicked, or a flag on the read path.
+          CancelAsync registers in AdmittedCancellations, a per-instance field, and never advances the
+          status store - so the row reads InProgress across the whole gap between the request and the
+          next checkpoint, measured at 11 seconds.

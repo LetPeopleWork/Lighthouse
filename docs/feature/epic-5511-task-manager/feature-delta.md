@@ -14,6 +14,12 @@ Children absorbed into this Epic — the six slices, all New / Backlog as of 202
 - **#5019** — "I get warned when any connection's authentication breaks, not just OAuth" (User Story) — slice 05
 - **#5843** — "Slice 06: Recent warnings and errors without opening the log" (User Story) — slice 06
 
+Added after delivery, from the maintainer's manual review on 2026-09-16:
+
+- **#6011** — "Slice 07: See the queue in order, and know a cancel was heard" (User Story, New) — slice 07
+- **#6010** — "Task Manager: Test connection on an Azure DevOps connection fails with a 500" (Bug, New) —
+  parked, not scheduled into a slice
+
 Predecessor **#5733 Opt-In Usage Data** (Resolved) — not a build dependency; see Pre-requisites.
 Related **#5502 Event-driven write-back collection** (Closed) — its write-back rounds are a *deferred*
 surface here, see Out of Scope.
@@ -565,6 +571,7 @@ the analysis rather than repeating it.
 | I | **Trigger a refresh from the popover** | Per-entity buttons exist; no central one | Deferred |
 | J | **Stale-data badge** ("last synced 3d ago") | Ties staleness into the same glance | Deferred |
 | K | **Toast when a background refresh fails** while you are elsewhere | Failures are only visible if you look | Deferred |
+| L | **A requested stop, visible to everyone** — `GetTasks` reports `cancellationRequested` | Slice 07 acknowledges a stop in the browser that asked. Another tab, another administrator, or a reload sees nothing across the ~11s window | **Added 2026-09-16** (OQ-07.1). Needs `AdmittedCancellations` to stop being per-instance, which under Redis is the multi-replica defect class D7 exists to avoid |
 
 Recommended re-entry order if this is picked up again: **A + B + C + E** first — they are what make a
 queued or failed row *explain itself* — then **D**, which is the largest and needs #5502's events.
@@ -3439,3 +3446,398 @@ before `{UpdateType}` is deliberately not enriched rather than enriched wrongly.
 
 Mutation **95.00 %** backend after the assertion-strength gaps found at 80.00 % were closed — see
 `mutation/results.md`, which records the two survivors kept alive and why.
+
+---
+
+# Wave: DISCUSS — slice 07
+
+ADO **#6011 "Slice 07: See the queue in order, and know a cancel was heard"** (User Story, New), child of
+Epic #5511. Raised from the maintainer's own manual review of the whole Epic on **2026-09-16**, run
+against a local instance on the delivered build.
+
+Nothing here is new capability. Every item is behaviour that was built, shipped, looked at by the person
+it was built for, and found to read wrongly — which is the only kind of evidence this wave did not have
+when it ran cold on 2026-08-23.
+
+Density: `lean` + `ask-intelligent` — Tier-1 `[REF]` only.
+
+---
+
+## Wave: DISCUSS / [REF] Locked Decisions — slice 07
+
+Numbering continues from D11. Three of these supersede a decision this Epic already locked, and say so.
+
+### D12 — The Recent problems caveat goes, and AC-06.5 goes with it
+
+**Decision** (maintainer, 2026-09-16). The sentence *"Only what has gone wrong since this instance
+started. Not a complete history, and not kept after a restart."* is deleted outright. No shortened form,
+no tooltip.
+
+**This supersedes AC-06.5**, which required exactly that copy, and the stated consequence of **D10**,
+which reasoned that *"an operator who believes it is an audit log will draw a wrong conclusion from a
+short list."*
+
+**Why the reversal is sound rather than convenient**: D10's reasoning was about a hypothetical reader.
+The actual reader has now used it and reports the sentence as noise in a surface whose entire purpose is
+a glance. A paragraph of disclaimer above four rows is itself a reason not to read the four rows. The
+misreading D10 feared — mistaking a short list for a clean bill of health — is better prevented by the
+`Open Full Log` link that sits in the same heading row and is the thing an operator actually reaches for.
+
+**Consequence**: a reader can, in principle, mistake the list for complete. That risk is accepted
+explicitly, by the person who owns the product, on the strength of having used it.
+
+### D13 — Connection state is an icon, and *Not checked* is drawn as an absence
+
+**Decision** (maintainer, 2026-09-16). The words `Healthy` / `Not checked` / `Unreachable` /
+`Authentication failed` stop being rendered as the row's state. Three icons carry it: a **grey outlined**
+circle for not-checked, a **solid green** tick for healthy, a **solid red** alert for broken. The
+explanatory message under a broken row stays exactly as it is.
+
+**Why the outline matters and is not decoration**: **D9** is explicit that *"claiming 'healthy' from an
+absence of evidence is how the current icon would mislead"*, which is the defect slice 05 existed to
+repair. Outline-versus-solid is the encoding that keeps *"nobody has asked"* visually distinct from
+*"asked, and the answer was yes"* without spending a word on it. An icon set where not-checked reads as
+a muted tick would reintroduce the bug, and this decision exists to forbid that specific drawing.
+
+**Consequence**: the icon must carry an accessible name, because a colour-and-fill distinction is not
+one. The state word survives as the `aria-label` and the tooltip; it just stops occupying the row.
+
+### D14 — Duration leaves the rows entirely
+
+**Decision** (maintainer, 2026-09-16). `Running for 2m 14s` becomes `Running`. `formatElapsed` and the
+`elapsedMs` field stop being rendered.
+
+**This closes the finding deferred on 2026-09-15** — *elapsed seconds in the popover do not update live*
+— by deleting the number rather than making it tick. The maintainer's verdict: *"the seconds etc. we can
+remove, that is not helping. Running/Queued is relevant info."*
+
+**Why deletion beats a live counter**: a ticking second-counter is a re-render per second per row for a
+number nobody acts on, and the comment shipped alongside it argued at length that the duration had to
+come from the instance rather than the browser precisely because it was hard to get right. A number that
+is both hard to get right and not acted upon is a number to remove.
+
+**Consequence**: the backend keeps recording `StartedAt` and `QueuedAt` — they are what D15 sorts on —
+and `elapsedMs` stays on the wire. Only the rendering goes. Whether the field should follow it out of the
+contract is a DELIVER-time call, not a requirement.
+
+### D15 — The list is ordered the way the queue will work it
+
+**Decision.** `GetTasks` returns running work first, then queued work oldest-admission-first. Rows whose
+moment was never recorded sort last, keeping their state.
+
+**Why**: the maintainer saw *"the first item say queued, the 2nd being actively refreshed, the third
+being queued"*. `GetTasks` projects `GetAdmittedWork()` in store order, which under Redis is hash order
+and under the in-process store is dictionary order — neither is an order, and both change between reads.
+A list whose order means nothing, in a surface about a queue, invites the reader to believe it means
+something.
+
+**Why it costs nothing**: `UpdateStatus` already carries `QueuedAt` and `StartedAt` — slice 03 put them
+there for the duration D14 now removes. The sort key exists; no store change, no schema change, no Redis
+representation question.
+
+**This is not deferred idea G.** G is ordinal position and wait estimate — *"3rd in queue, about 4
+minutes"* — and stays deferred. Sorting the rows is a weaker claim than numbering them, and it is the
+whole of what this decision makes.
+
+### D16 — A cancel that was asked for says so, until the instance agrees it stopped
+
+**Decision** (maintainer, 2026-09-16). On cancel the row stays and reads `Stopping…` with a spinner. It
+leaves only when the instance stops reporting the work.
+
+**Why**: **D5** decided cancellation would be *"cooperative and best-effort, and says so"*. The mechanism
+shipped; the *says so* did not. The measured gap is real — the backend log shows a team cancel landing
+**11 seconds** after the request — and across that window the row is unchanged, so the control reads as
+dead. The maintainer's two observations are the same defect seen twice: *"I click on the 'x' and nothing
+seems to happen"* and, later, *"it seems that jira cancel works… a bit confused now what works and what
+doesn't."* A control that is sometimes instant and sometimes silent for eleven seconds teaches nobody
+anything.
+
+**Rejected**: removing the row on click. It claims an outcome the instance has not agreed to, and the row
+returns on the next read when the cancel arrived too late — which is worse than never having moved.
+
+**Consequence**: something has to remember *"this one was asked to stop"* between the click and the next
+read. Where that memory lives is the slice's one open question — see below.
+
+### D17 — The sections do not collapse
+
+**Decision** (maintainer, 2026-09-16). Icons beside the three headings, no collapse control, no
+remembered per-section state.
+
+**Why**: three sections in a 320-pixel popover opened for a glance. A collapse control adds a click
+before the content can be read and a stored preference to keep, to solve a length problem this surface
+does not have. The maintainer raised it and immediately qualified it — *"not sure if needed though"* —
+and the honest answer is that the scannability being asked for is what the icons deliver.
+
+**Revisit trigger, named so it is not a matter of taste later**: if any section routinely exceeds roughly
+a dozen rows in use, collapsing becomes worth its cost. Until then it is chrome.
+
+### D18 — The popover re-reads when it is opened
+
+**Decision.** Opening the popover triggers a read, in addition to the existing hub subscription.
+
+**Why**: today the only trigger is `subscribeToAllUpdates`, which fires on refresh activity. Adding a
+work tracking system fires nothing, so a connection added a minute ago is absent until a full page
+reload. The maintainer: *"I add a new work tracking system, and the activity bar does not include it.
+need to hard refresh so it appears --> bad."* A surface that answers *"what is true right now"* and
+answers it as of some earlier moment is the same class of defect as slice 01.
+
+**Consequence**: one read per open, of three endpoints already sized for a popover open. No polling
+timer is added — an open is the signal, and a popover nobody opened needs no fresh answer.
+
+---
+
+## Wave: DISCUSS / [REF] Terminology — already correct, verified not assumed
+
+The maintainer expected the *Work Tracking System* heading to follow a tenant rename and flagged it as
+likely missing. **It already does**: `TaskManagerIcon.tsx` renders
+`getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS)`, and `workTrackingSystem` / `workTrackingSystems` are
+seeded keys in `TerminologySeeder.cs`. The activity rows likewise resolve `TEAM` and `PORTFOLIO` through
+`useTerminology`.
+
+**No work. Recorded rather than dropped**, because "we checked and it was already right" is an answer and
+a silent omission is not.
+
+---
+
+## Wave: DISCUSS / [REF] User Stories — slice 07
+
+### US-07A — The list reads like a queue
+
+`job_id: job-operator-see-what-lighthouse-is-doing-right-now`
+
+As a System Administrator glancing at the Task Manager, I want the activity list ordered the way the
+queue will actually work it, and progress shown rather than spelled out, so that what I read in half a
+second is true.
+
+#### Elevator Pitch
+
+Before: the list arrives in hash order, so a queued row can sit above the running one, and every row
+carries a second-count that stopped advancing the moment it was drawn.
+After: open the Task Manager popover → sees the running refresh at the top with a spinner, queued ones
+beneath it in the order they were admitted, each reading `Queued` with no stale number.
+Decision enabled: whether the thing I care about is next or behind four others — read off position, not
+reconstructed from timestamps.
+
+**Acceptance criteria**
+
+- **AC-07A.1** — With one `InProgress` and two `Queued` rows admitted at different moments, the response
+  from `GET /api/latest/update/tasks` lists the running one first, then the two queued oldest-first.
+- **AC-07A.2** — Two queued rows admitted in a known order keep that order across repeated reads. (The
+  defect is non-determinism, so a single correct read proves nothing.)
+- **AC-07A.3** — A row with no recorded moment sorts last and still renders its state.
+- **AC-07A.4** — The running row renders a progress indicator; queued rows render a distinct waiting
+  affordance and no spinner.
+- **AC-07A.5** — No row renders a duration. `Running for 2m 14s` reads `Running`.
+- **AC-07A.6** — `Queued behind '<name>'` survives unchanged. It is a naming claim, not a duration.
+- **AC-07A.7** — Each of the three section headings renders an icon beside its text, and no section
+  renders a collapse control.
+- **AC-07A.8** — Headings still render the tenant's configured Terminology (regression guard on the
+  verification above, since this story edits those lines).
+
+### US-07B — A cancel that was heard
+
+`job_id: job-operator-stop-a-refresh-that-is-doing-harm`
+
+As a System Administrator stopping a refresh that is doing harm, I want the row to tell me the stop was
+asked for, so that I do not click again, or conclude the control is broken, during the ten seconds it
+takes to land.
+
+#### Elevator Pitch
+
+Before: clicking the stop control changes nothing on screen for up to eleven seconds, so the button reads
+as dead — and when the work happens to stop instantly, it reads as working. Same control, two lessons.
+After: click the stop control on a running row → sees that row read `Stopping…` with a spinner, and
+disappear when the instance confirms it stopped.
+Decision enabled: whether to wait, or to go and look at why the connector is wedged — instead of clicking
+a second time.
+
+**Acceptance criteria**
+
+- **AC-07B.1** — Clicking stop on a running row leaves the row in place reading `Stopping…`.
+- **AC-07B.2** — The row leaves the list only when the instance stops reporting the work.
+- **AC-07B.3** — The stop control does not re-arm while the row reads `Stopping…`.
+- **AC-07B.4** — A cancel the server refuses leaves the row in its previous state, not in `Stopping…`.
+  (`TeamDelete` / `PortfolioDelete` are refused with `400` by design, and that refusal must remain
+  legible.)
+- **AC-07B.5** — Verified against a **real connector refresh**, not a stubbed one. The behaviour being
+  fixed only exists in the gap between request and checkpoint, and a double that cancels instantly does
+  not have that gap.
+
+### US-07C — Connection state at a glance
+
+`job_id: job-config-admin-know-any-credential-is-failing-not-just-oauth`
+
+As a System Administrator scanning my connections, I want each one's state as an icon, so that I read
+four connections in one glance instead of four sentences.
+
+#### Elevator Pitch
+
+Before: each row spells its state in words — `Jira Cloud — Not checked` — so four connections are four
+sentences to read and compare.
+After: open the Task Manager popover → sees a grey outlined circle, a green tick or a red alert against
+each connection name, with the words available on hover and to a screen reader.
+Decision enabled: which connection needs attention, without reading anything.
+
+**Acceptance criteria**
+
+- **AC-07C.1** — `Healthy` renders a solid, positively-coloured icon; `Unknown` / not-checked renders a
+  **grey outlined** icon; both broken states render a solid alert icon.
+- **AC-07C.2** — The not-checked icon is distinguishable from the healthy icon by **fill and shape, not
+  only colour** (D13, and the reason D9 exists).
+- **AC-07C.3** — Every state icon carries an accessible name that is the state word it replaced, and the
+  same word appears on hover.
+- **AC-07C.4** — The explanatory message beneath a broken connection is unchanged in text and placement.
+- **AC-07C.5** — `Test connection` and `Edit` are unchanged. The maintainer's verdict on Edit: *"Edit is
+  nice, makes it easy to go and identify the problem."*
+
+### US-07D — Recent problems, without the caveat
+
+`job_id: job-operator-read-the-warnings-without-reading-the-log`
+
+As a System Administrator checking what has gone wrong lately, I want the list and not a paragraph about
+the list, so that the four rows I came for are the first thing I read.
+
+#### Elevator Pitch
+
+Before: a two-sentence disclaimer about retention sits above the entries, and is the first thing read
+every time.
+After: open the Task Manager popover → sees the *Recent problems* heading, the `Open Full Log` link, and
+the entries, with no preamble.
+Decision enabled: what broke recently — reached in one glance rather than after a paragraph.
+
+**Acceptance criteria**
+
+- **AC-07D.1** — The disclaimer sentence is absent from the rendered popover.
+- **AC-07D.2** — The `Open Full Log` link is unchanged and still reaches the log viewer. It is what now
+  carries "there is more than this".
+- **AC-07D.3** — The empty state and the read-failed state are unchanged: a failed read still leaves what
+  was there rather than claiming nothing has gone wrong.
+- **AC-07D.4** — The test asserting the disclaimer is **deleted, not inverted**. A test asserting the
+  absence of a sentence pins a decision that was reversed once and can be reversed again.
+
+---
+
+## Wave: DISCUSS / [REF] Open Question carried to DESIGN — slice 07
+
+**OQ-07.1 — where does "this one was asked to stop" live?**
+
+`UpdateQueueService.CancelAsync` publishes to `IUpdateCancellationNotifier` and registers in
+`AdmittedCancellations`, a per-instance field. The status store is never advanced — the row stays
+`InProgress` until the work actually stops, then becomes `Cancelled` and is removed. So nothing the read
+path returns today can say a stop was requested.
+
+Two shapes, and the cheaper one is recommended:
+
+- **Client-side (recommended for this slice)** — the popover remembers which rows it asked to stop and
+  clears each when the row leaves the list. No backend change. The operator who clicked is the operator
+  who needs the feedback, and a ten-second window does not need to survive a reload.
+- **Server-side** — `GetTasks` reports a `cancellationRequested` flag per row. Correct across tabs, across
+  administrators and across a reload — but `AdmittedCancellations` is per-instance, so under Redis with
+  more than one replica a stop requested on one pod would not show on another. That is the same defect
+  class D7 was written to avoid, which makes it a real piece of work rather than a field.
+
+**Recommendation**: client-side now; record the multi-replica, multi-administrator gap as a deferred idea
+alongside the other eleven, so the next pass starts from this analysis. Deciding otherwise resizes the
+slice and should resize it deliberately.
+
+**Settled (maintainer, 2026-09-16): client-side.** No backend change, and the slice needs no DESIGN wave.
+
+**The gap this accepts, stated so nobody rediscovers it as a bug**: a stop asked for in one tab shows
+`Stopping…` only in that tab; a reload during the window loses the acknowledgement and the row reverts to
+`Running` until the cancel lands; a second administrator watching the same instance sees nothing. All
+three are the same missing fact — that the *instance* was asked — and all three resolve the same way, by
+the server-side shape above. Added to the deferred set as **idea L**.
+
+---
+
+## Wave: DISCUSS / [REF] Out of Scope — slice 07
+
+- **Everything in slice 08**: persisting health across a successful refresh (today
+  `RecordRefreshSucceededAsync` deletes the verdict row, which is what the maintainer saw as *"the health
+  for wts seems to reset on every refresh"*), health probing at startup or on a schedule, and a badge for
+  an unavailable connection. All three reopen **D9**, which ruled out a background credential probe loop
+  for stated reasons — shared tracker rate limits, and not adding a second scheduler to the product whose
+  first one this Epic exists to explain. That reopening is a decision, not an addition.
+- **ADO Bug #6010** — `Test connection` on an Azure DevOps connection returns a 500.
+- **Deferred idea G's remaining half** — ordinal queue position and wait estimate (D15).
+- **Removing `elapsedMs` from the wire contract** (D14).
+- **Anything from the eleven deferred surfaces** (D11).
+
+---
+
+## Wave: DISCUSS / [REF] Scope Assessment — slice 07
+
+**Verdict: right-sized. PASS.**
+
+Four stories, one bounded context plus its UI, one backend change that is a sort over fields that already
+exist. No new component, no new port, no schema change, no Redis representation question. Zero of the
+five oversize heuristics fire.
+
+Effort: **half a day**, of which the only part that is not mechanical is US-07B's `Stopping…` state and
+its real-connector verification.
+
+---
+
+## Wave: DISCUSS / [REF] Outcome KPIs — slice 07
+
+| KPI | Target | Measurement | Scope |
+|---|---|---|---|
+| `OUT-5511-07-queue-order` | **100%** of reads return running-first then oldest-queued-first; order is stable across repeated reads | Admit a known sequence, read twice, compare (AC-07A.1, AC-07A.2) | per_instance |
+| `OUT-5511-07-cancel-legibility` | A stop is acknowledged on screen in **< 1s**, against the measured 11s of silence today | Click-to-first-visible-change on a real connector refresh | vendor_demo_only |
+| `OUT-5511-07-freshness-on-open` | **100%** of connections configured since the tab loaded appear on the next popover open, against 0% today | Add a connection, open the popover, do not reload (D18) | per_instance |
+
+---
+
+## Wave: DISCUSS / [REF] Definition of Ready — slice 07
+
+| # | Item | Evidence |
+|---|---|---|
+| 1 | Business value stated | Four stories against four existing jobs; the evidence is a maintainer review of the shipped build, not a hypothesis |
+| 2 | Acceptance criteria testable | 22 ACs, each naming an observable outcome; AC-07B.5 names a real-connector verification |
+| 3 | Dependencies identified | Slices 02–06 all shipped. No unshipped dependency |
+| 4 | Sized | One slice, half a day |
+| 5 | No blocking unknowns | One open question (OQ-07.1), scoped to one story, with a recommended answer that needs no backend change |
+| 6 | UX defined | D13, D16, D17 settled with the maintainer on 2026-09-16, each against a rendered alternative |
+| 7 | Job traceability | Four real `job_id`s; no infrastructure-only escape valve |
+| 8 | Non-functional constraints stated | Icon states must not rely on colour alone (AC-07C.2); Terminology regression guard (AC-07A.8); RBAC unchanged — the whole surface stays `SystemAdmin` (D3) |
+| 9 | Out-of-scope explicit | Slice 08's three items with the D9 reopening named, plus #6010 and idea G |
+
+**Verdict: READY.** Requirements completeness 0.97 — the shortfall is OQ-07.1, which has a recommended
+answer and a named cost for the alternative.
+
+---
+
+## Wave: DISCUSS / [REF] Wave Decisions Summary — slice 07
+
+### Key decisions
+
+- **D12** The Recent problems caveat is deleted, superseding AC-06.5 and D10's consequence — on the
+  evidence of the reader it was written for.
+- **D13** Connection state as icons; not-checked drawn as an absence, because D9 forbids it reading as a
+  verdict.
+- **D14** Duration leaves the rows, closing the deferred not-live finding by deletion.
+- **D15** The list is ordered running-first then oldest-queued-first; the sort key already exists.
+- **D16** A cancel says it was asked for until the instance agrees it stopped — completing D5's *"and
+  says so"*, which shipped only half.
+- **D17** No collapsing, with a named revisit trigger.
+- **D18** The popover re-reads on open.
+
+### Requirements summary
+
+- **Primary jobs**: the four this Epic already validated. No new job; this slice repairs how three of them
+  read.
+- **Feature type**: user-facing, with one backend sort.
+
+### Constraints established
+
+- A state encoded only in colour is not encoded. Fill and shape carry it; the word survives as the
+  accessible name.
+- Order in a surface about a queue is a claim. Either make it true or do not present rows in a sequence.
+- A control whose effect is delayed must acknowledge the request, or it teaches the reader it is broken.
+
+### Upstream changes
+
+**Three decisions from this Epic's own DISCUSS are superseded or completed here**, each recorded at the
+decision that replaces it: AC-06.5 and D10's consequence by **D12**; D5's unshipped *"says so"* completed
+by **D16**; D9's `Unknown` state preserved rather than reversed by **D13**, which constrains the new
+drawing rather than relaxing the old rule.
