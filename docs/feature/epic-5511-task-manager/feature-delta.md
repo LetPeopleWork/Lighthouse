@@ -5365,3 +5365,80 @@ could not break it.
    these ship.
 4. A connection carrying additional field definitions in the fixture — every existing scenario seeds one
    without them, which is the shape that never reproduces this.
+
+# Wave: DELIVER — slice 08, both reopened defects fixed
+
+Fixed on 2026-09-16, against the two defects recorded above.
+
+## Wave: DELIVER / [DEC] #6010's actual cause: a validation that rewrote stored identities
+
+`AzureDevOpsWorkTrackingConnector.GetMissingAdditionalFields` stamped a descending negative id onto every
+`AdditionalFieldDefinition` it was handed, so that `GetCustomFieldReferences` could key its lookup on
+`AdditionalFieldDefinition.Id` — unsaved definitions all carry `Id == 0`, and the dictionary refuses a
+duplicate key. Those objects are the rows `.Include(c => c.AdditionalFieldDefinitions)` is tracking. The
+next save through that connection's context ran change detection, found a primary key that had moved, and
+refused.
+
+The line is old. It became a defect when slice 08 put a save *after* classification — `RecordAsync` is the
+first write in that request, so it is the one that met the damage.
+
+The fix removes the lookup from that path rather than the mutation from the lookup: the validate path now
+resolves each configured field straight against the organisation's field list, so it needs no key at all.
+The refresh path keeps its id-keyed dictionary, where the ids are real and unique and nothing is written.
+`TheFieldsTheOrganisationDefines` is the field-list read both paths share.
+
+**Correcting the analysis above:** this is Azure-DevOps-only for a reason the reopening note got wrong. It
+is not that ADO happened to be the connection with additional fields configured. Jira's
+`GetMissingAdditionalFields` keys on the field *reference* and never touches `Id`; ServiceNow resolves no
+fields at all. A Jira connection with additional fields does **not** reproduce it.
+
+## Wave: DELIVER / [DEC] A pass gives each connection a database context of its own
+
+Moving the claim inside the per-connection `catch` was necessary and not sufficient. Every connection in a
+pass shared one `LighthouseAppContext`, and a context whose save has failed refuses every later save
+through it — so the connections behind the first failure fail too, and AC-08B.5 would have been satisfied
+on paper by a log line per silenced connection.
+
+`RefreshStaleVerdictsAsync` now resolves a `ConnectionHealthService` per connection from its own scope, and
+that instance claims, asks and records over its own context. The idiom and its rationale already existed in
+`UpdateServiceBase.RecordConnectionHealth`, which takes a scope for the same reason. `Program` registers
+the service as itself alongside the interface; the single-writer ArchUnit rule exempts `Program` explicitly.
+
+Cost: one context per *stale* connection per pass. A pass that finds nothing stale creates none, which is
+the ordinary case the staleness rule exists to produce.
+
+## Wave: DELIVER / [DEC] What the suite was missing, and what it holds now
+
+Two gaps, both of the same kind — the fixture could not express the shape the defect needs:
+
+- **`AzureDevOpsFetchRefusalTest.ValidateConnection_LeavesTheAdditionalFieldsItWasGivenExactlyAsItFoundThem`**
+  drives the real connector over the offline `AzureDevOpsOrganisation` double and asserts the stored ids
+  survive. The acceptance scenario for #6010 cannot reach this: it points at an organisation that does not
+  exist, so the connection check throws long before the field lookup runs.
+- **`A_verdict_that_cannot_be_written_does_not_silence_the_connections_after_it`** makes the *recording*
+  fail rather than the connector. `A_connector_that_throws_does_not_silence_the_other_connections` asserted
+  AC-08B.5 against a connector that raises — which happens inside the guard and leaves nothing behind — so
+  it passed throughout the period a pass really was ending on its first failure. The new scenario fails
+  against the old code with the maintainer's own stack trace, `TryInsertClaimAsync` included.
+- Every connection the fixture seeds now carries an additional field definition. A connection with none is
+  the one shape this defect cannot occur on.
+
+## Wave: DELIVER / [REF] Three more gaps, found by the gates rather than by reading
+
+The review and the mutation run each found something the fix's own tests did not, and all three were in
+code written the same day:
+
+- **An adversarial review** found that a shutdown mid-pass would be reported as a connection that failed,
+  because the new per-connection guard caught `OperationCanceledException` along with everything else. It
+  now returns quietly; the loop's own check ends the pass. It also found the new scenario resting on
+  seeding order implicitly — that is now a stated precondition, and the scenario asserts the broken
+  connection reads `Unknown` as well as the other reading `Healthy`, which rules out "both simply worked".
+- **Mutation testing** found the validate path's filter untested from the positive side:
+  `string.IsNullOrEmpty(reference)` mutated to `reference != null` reports *every* configured field as
+  missing, and every existing test used a field that was genuinely missing. The same shape sat one layer
+  down on the refresh path's warning. Both have tests now.
+- **Mutation testing** also found the new cancellation guard had no coverage at all, and that the
+  failed-check warning was unasserted — the one line that tells an operator *which* connection to look at,
+  since its verdict says `Unknown` either way.
+
+Scores and the survivors deliberately left alive are in `mutation/results.md`.

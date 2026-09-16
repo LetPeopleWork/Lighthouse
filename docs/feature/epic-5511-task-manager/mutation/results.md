@@ -859,3 +859,59 @@ refresh from one that simply finished.
   about 25 minutes.
 - **Invocation**: the shell allowlist refuses `run-backend-x64.ps1` by path and mis-splits a multi-line
   PowerShell equivalent. `pwsh -NoProfile -File <script> -Config <json>` is the form that works.
+
+## 6010 — Test connection on Azure DevOps, and one connection ending a whole health pass (reopened)
+
+Bug #6010, reopened after the slice-08 build was run against the maintainer's own instance. Run
+2026-09-16 against `main` @ `6a49e1972` plus the fix's uncommitted changes.
+
+| target | score | tested | killed | survived | wall clock |
+| --- | --- | --- | --- | --- | --- |
+| `ConnectionHealthService.cs` (whole file) | **90.48 %** | 41 | 38 | 3 | 18 m |
+| `AzureDevOpsWorkTrackingConnector.cs` — **the changed methods** | **83.33 %** | 12 | 10 | 2 | 6 m |
+| `AzureDevOpsWorkTrackingConnector.cs` — whole file | 34.16 % | 363 | 121 | 101 | 6 m |
+
+Configs: `stryker.6010.health.backend.json`, `stryker.6010.ado.backend.json`.
+
+**Read the whole-file Azure DevOps number as a baseline, not as a verdict on this change.** 138 of its
+mutants have no coverage at all: the connector is ~1000 lines and most of it is reachable only through
+the `AdoIntegration` tests, which the filter excludes on purpose because they call a real organisation
+over the network. The row that answers "is this change tested" is the changed-methods row, counted over
+lines 686-740 (`GetMissingAdditionalFields`, `TheFieldsTheOrganisationDefines`,
+`GetCustomFieldReferences`). Whole-file moved 33.33 % → 34.16 % across this work, which is the same
+three kills seen from the other end.
+
+### Closed by this pass
+
+Two of the three survivors that mattered were in code written the same day, which is the argument for
+running the gate before the push rather than after.
+
+- **`string.IsNullOrEmpty(reference)` → `reference != null` survived** on the new validate path.
+  `TheReferenceOfTheFieldNamed` answers `string.Empty` and never null, so the mutant reports *every*
+  configured field as missing — and the only test used a field that genuinely was missing, which passes
+  either way. A filter that answers "everything" is only visible against a field that is really there:
+  `ValidateConnection_ReportsNothingMissingWhenTheOrganisationHasTheFieldTheConfigurationAsksFor`.
+- **The same shape one layer down, on the refresh path.** `GetWorkItemsForTeam_...DoesNotHave` asserted
+  the warning is present for a missing field; nothing asserted it is *absent* for a field that resolved.
+  Mutated, every field on every cycle gets "nothing will be read for it", which is how an operator learns
+  to skim the line that was telling them something. Added `...SaysNothingAboutAnAdditionalFieldTheOrganisationDoesHave`.
+- **The new cancellation guard had no test at all** — the negate survived and the `return` behind it was
+  NoCoverage. `A_pass_entered_while_the_host_is_stopping_says_nothing_about_any_connection` pins both:
+  a pass entered during shutdown asks nothing and reports nothing.
+- **The failed-check warning was unasserted.** A connection that could not be checked reads `Unknown`,
+  which is also what a connection nobody asked reads — so that log line is the only place the difference
+  exists. The failure scenario now asserts the operator is told which connection.
+
+### Survivors judged, not killed
+
+- **`LogWarning` at the field-list refusal** (statement removal, and message blanking) — 2 of the 2
+  survivors in the changed region. Unlike its sibling above, this one is *not* the only trace: the
+  exception thrown on the next line carries `WhatAdoSaid(refusal)` into the verdict, and two existing
+  tests assert that verdict's code, message and field name. Asserting the log line as well would be a
+  test written for the score.
+- **`ArgumentNullException.ThrowIfNull(connection)` ×2** — pre-existing guards on the two record methods.
+  A test for these is a language-guarantee test.
+- **The `return` in the loop's own cancellation check.** Equivalent as the code now stands: the catch
+  below it handles a cancelled claim identically, so removing the guard changes nothing observable. It
+  stays because it is the safety net for a provider that does not honour the token, which is a property
+  no test here can exhibit.
