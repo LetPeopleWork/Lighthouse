@@ -4579,7 +4579,7 @@ Every one of them is about mechanism, and none is about whether to build it.
 - **Public Task Manager docs and screenshots** — carried since slice 05, six slices of deferral, and
   still not this slice. It is now the Epic's largest outstanding debt and belongs to the Epic rather
   than to a slice.
-- **Deferred idea L** — a stop asked for is remembered only in the browser that asked (OQ-07.1).
+- ~~**Deferred idea L**~~ — closed 2026-09-16: the queue now advances a still-queued key to `Cancelled` and pushes it, so a stop is truthful on reload and in every tab, not only the one that asked.
 - **Deferred idea G's remaining half**, `elapsedMs` on the wire, and the eleven surfaces of D11.
 
 ---
@@ -5442,3 +5442,53 @@ code written the same day:
   since its verdict says `Unknown` either way.
 
 Scores and the survivors deliberately left alive are in `mutation/results.md`.
+
+# Wave: DELIVER — cancel says so at once, and deferred idea L closes
+
+Found on 2026-09-16 by the maintainer testing the running instance: press Cancel on a refresh that is
+queued behind a running one, and the row sits there until the queue reaches it. The queue's reader is a
+single sequential loop, so "until it reaches it" is however long the refresh ahead takes.
+
+## Wave: DELIVER / [DEC] The cancel was always immediate; only the row was not
+
+Nothing was actually waiting. `AdmittedCancellations.Admit` creates the token source when the key is
+admitted, so publishing a cancel cancels it at once and the work is already dead. What waited was the
+*status*: `RunUpdateAsync` does not read the token until the reader dequeues that key, and only then does
+`ThrowIfCancellationRequested` turn it into `Cancelled`.
+
+The cancellation subscriber now advances a still-queued key to `Cancelled` and pushes it to listeners.
+Both list endpoints already filter to `Queued or InProgress`, so the row leaves and the active count drops
+without removing anything from the store — which is what keeps this clear of `HasActiveWork`.
+
+**Work already running is deliberately left alone.** Its row stays because it is still running: the token
+is cancelled and it stops at the connector's next round trip, and its own terminal path writes the outcome.
+Marking it terminal early would take a live refresh out of `HasActiveWork` while it is still talking to a
+tracker, and everything that waits for the instance to go idle would stop waiting — the failure mode
+`docs/ci-learnings.md` records at length for the DELETE-versus-queue race.
+
+The reader's own check stays as the backstop. This advances the row; it does not replace what stops the work.
+
+## Wave: DELIVER / [DEC] Deferred idea L is closed by this, not deferred again
+
+L was "a stop asked for is remembered only in the browser that asked" — `Stopping…` was client-side
+optimism (D16, OQ-07.1), so a reload or a second tab showed the work still queued. With the status advanced
+server-side and pushed, the row is now truthful everywhere. L is closed as a side effect rather than as a
+piece of work of its own.
+
+## Wave: DELIVER / [REF] The scenario that already claimed this, and could not see it
+
+`A_refresh_that_is_still_waiting_is_cancelled_without_the_tracker_ever_being_asked` asserts the row is
+gone — but its Then step releases the gated refresh and drains the queue *before* it reads the list:
+
+```csharp
+theTrackerMayAnswer.TrySetResult();
+await TheQueueGoesIdle();
+var rows = await TheTaskList();
+```
+
+So it asserts an absence after everything finished, which holds whether or not the cancel is acted on
+promptly. The same shape as the two defects found earlier the same day: the step tidies up before it
+measures, and what it measures is no longer the thing in question.
+`A_refresh_cancelled_while_it_waits_leaves_the_list_without_waiting_its_turn` reads the list with the
+refresh ahead still gated, and failed against the old code with the maintainer's own symptom —
+`"status":"Queued","waitingBehind":"Team …"` after the cancel was accepted.

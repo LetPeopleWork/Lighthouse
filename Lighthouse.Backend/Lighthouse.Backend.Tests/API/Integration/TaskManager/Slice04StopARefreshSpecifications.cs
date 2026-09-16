@@ -301,6 +301,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 $"Cancelled work is not work the instance is doing. Got: {Describe(rows)}");
         }
 
+        /// <summary>
+        /// Read with the refresh ahead of it still gated — which is the whole difference from
+        /// <see cref="ThenTheTaskListDoesNotMention"/>, and the reason that one could not see this. An
+        /// operator who has been told the cancel was accepted is looking at the list *now*, with whatever
+        /// they did not cancel still running.
+        /// </summary>
+        private async Task ThenTheTaskListAlreadyDoesNotMention(SeededTeam team)
+        {
+            var rows = await TheTaskList();
+
+            Assert.That(
+                rows.Any(row => Text(row, "updateType") == nameof(UpdateType.Team) && Number(row, "id") == team.Id),
+                Is.False,
+                "The cancel was accepted, so the instance is no longer going to do this - and the row is the "
+                + "only thing saying otherwise. Leaving it until the queue reaches it means an operator who "
+                + $"reloads sees work they already stopped. Got: {Describe(rows)}");
+        }
+
         private async Task ThenThatTeamIsStillOnTheTaskList(SeededTeam team)
         {
             var row = await TheRowFor(UpdateType.Team, team.Id);

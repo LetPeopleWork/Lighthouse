@@ -48,6 +48,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListDoesNotMention(waiting);
         }
 
+        // @driving_port @real-io @AC-04.1 — *when* the row goes, not just that it does. The scenario above
+        // releases the refresh ahead of it and drains the queue before it looks, so it passes just as well
+        // against a cancel nobody acts on until the reader eventually reaches the row — which is what the
+        // maintainer met: press Cancel, and the work sits there until whatever is running finishes. The
+        // queue is one sequential reader, so "eventually" is as long as the refresh ahead of it takes.
+        [Test]
+        public async Task A_refresh_cancelled_while_it_waits_leaves_the_list_without_waiting_its_turn()
+        {
+            var running = GivenATeamThatIsRefreshedOnSchedule();
+            var waiting = GivenATeamThatIsRefreshedOnSchedule();
+            GivenTheTrackerDoesNotAnswerUntilWeSaySo();
+
+            await WhenARefreshOfThatTeamIsUnderWay(running);
+            await WhenARefreshOfThatTeamIsAlsoAskedFor(waiting);
+            await WhenTheOperatorCancels(waiting);
+
+            await ThenTheTaskListAlreadyDoesNotMention(waiting);
+            await ThenThatTeamIsStillOnTheTaskList(running);
+        }
+
         // @driving_port @real-io @AC-04.2 — a running refresh stops rather than running to completion. The
         // interval is the subject of the probe's measurement; what this pins is that it stops at all.
         [Test]

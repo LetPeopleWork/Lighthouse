@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             // Subscribed here rather than on demand because the ask arrives from whichever replica took the
             // operator's click, which is usually not this one.
-            cancellationSubscription = cancellationNotifier.Subscribe(cancellations.Stop);
+            cancellationSubscription = cancellationNotifier.Subscribe(StopItAndSaySoIfItHasNotStarted);
             processingTask = StartProcessingQueue();
         }
 
@@ -66,6 +66,57 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             if (awaiters.TryRemove(updateKey, out var awaiter))
             {
                 awaiter.TrySetResult(true);
+            }
+        }
+
+        /// <summary>
+        /// Stopping work that has not started yet is absolute, so the list should say so at once rather
+        /// than when the queue happens to reach it. The reader is a single sequential loop, so "when it
+        /// reaches it" is however long the refresh ahead of it takes — an operator who cancels something
+        /// queued behind a slow refresh is told the cancel was accepted and then watches the row sit there.
+        ///
+        /// Only work that is still waiting is marked here. Work already running keeps its row, because it
+        /// is genuinely still running: its token has just been cancelled and it stops at the connector's
+        /// next round trip, and its own terminal path writes the outcome. Marking that one terminal early
+        /// would take it out of <c>HasActiveWork</c> while it is still talking to a tracker, and things
+        /// that wait for the instance to go idle would stop waiting.
+        ///
+        /// The check the reader already makes on the way in stays as the backstop: this advances the row,
+        /// it does not replace the mechanism that actually stops the work.
+        /// </summary>
+        private void StopItAndSaySoIfItHasNotStarted(UpdateKey key)
+        {
+            cancellations.Stop(key);
+
+            if (!statusStore.TryGet(key, out var status) || status?.Status != UpdateProgress.Queued)
+            {
+                return;
+            }
+
+            var cancelled = statusStore.Advance(key, UpdateProgress.Cancelled);
+
+            if (cancelled != null)
+            {
+                _ = TellListenersWithoutFailingTheCancel(key, cancelled);
+            }
+        }
+
+        /// <summary>
+        /// The subscriber is synchronous — it is called from whichever notifier delivered the cancel — and
+        /// telling the browser is not what makes the cancel true. A push that fails must not leave the work
+        /// uncancelled, so this is dispatched rather than awaited and swallows its own failure.
+        /// </summary>
+        private async Task TellListenersWithoutFailingTheCancel(UpdateKey key, UpdateStatus status)
+        {
+            try
+            {
+                await NotifyListeners(key, status);
+            }
+#pragma warning disable CA1031 // the cancel has already happened; a failed push must not undo it
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogWarning(exception, "Telling listeners that {UpdateType} with ID {Id} was cancelled failed", key.UpdateType, key.Id);
             }
         }
 
