@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 
@@ -26,6 +27,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const int TheOnlyItem = 1;
         private const int TheItemThatMoved = 1;
         private const int TheItemThatDidNot = 2;
+
+        private const string ARefusalHereStopsAWorkingTeam =
+            "One of the three things a configuration can narrow on is enough to ask a question with. A "
+            + "guard that refuses this stops an installation that was refreshing fine yesterday.";
 
         private static readonly int[] TheTwoIdsAskedFor = [TheItemThatMoved, 3];
 
@@ -405,16 +410,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// from nothing. What reaches Azure DevOps is a WHERE with no condition under it, which it refuses -
         /// so the refusal is only ever as clear as whatever the tracker happens to say about the syntax.
         /// Saying it here instead names the configuration that caused it.
+        ///
+        /// A query typed as nothing but spaces is that same configuration with something in the box. It
+        /// narrows no more than an empty one does, so it has to be refused rather than sent.
         /// </summary>
-        [Test]
-        public async Task ValidateTeamSettings_NothingIsConfiguredAtAll_RefusesRatherThanAskingAzureDevOpsForEverything()
+        [TestCase("")]
+        [TestCase("   ")]
+        public async Task ValidateTeamSettings_NothingIsConfiguredAtAll_RefusesRatherThanAskingAzureDevOpsForEverything(string queryOfItsOwn)
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
-            team.WorkItemTypes.Clear();
-            team.ToDoStates.Clear();
-            team.DoingStates.Clear();
-            team.DoneStates.Clear();
-            team.DataRetrievalValue = string.Empty;
+            NarrowOnNothing(team);
+            team.DataRetrievalValue = queryOfItsOwn;
 
             var verdict = await subject.ValidateTeamSettings(team);
 
@@ -442,14 +448,108 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void GetWorkItemsForTeam_NothingIsConfiguredAtAll_RefusesRatherThanFetchingNothing()
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
-            team.WorkItemTypes.Clear();
-            team.ToDoStates.Clear();
-            team.DoingStates.Clear();
-            team.DoneStates.Clear();
-            team.DataRetrievalValue = string.Empty;
+            NarrowOnNothing(team);
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
                 Throws.InstanceOf<AzureDevOpsReadException>());
+        }
+
+        /// <summary>
+        /// The refusal fires only when all three of the things a configuration can narrow on are missing.
+        /// One of them on its own is an ordinary, valid team - a team scoped by a query of its own and
+        /// nothing else, or one scoped by its types alone - and refusing any of those stops a working
+        /// installation from refreshing at all. These three say where the boundary is, which a test that
+        /// only ever configures nothing cannot: every such test passes just as well against a guard that
+        /// refuses whenever any one thing is missing.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_OnlyAQueryOfItsOwn_AsksItRatherThanRefusing()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            NarrowOnNothing(team);
+            team.DataRetrievalValue = TheTeamsFilter;
+
+            var verdict = await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.True, ARefusalHereStopsAWorkingTeam);
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"WHERE ({TheTeamsFilter})"),
+                    "positive control: the operator's query has to be what the team is scoped by, or the "
+                    + "refusal was avoided by asking Azure DevOps for the whole organisation instead.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_OnlyWorkItemTypesMapped_AsksForThemRatherThanRefusing()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            NarrowOnNothing(team);
+            team.WorkItemTypes.Add("User Story");
+
+            var verdict = await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.True, ARefusalHereStopsAWorkingTeam);
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"WHERE ([{AzureDevOpsFieldNames.WorkItemType}] = 'User Story')"),
+                    "positive control: the type clause has to survive becoming the only one.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_OnlyStatesMapped_AsksForThemRatherThanRefusing()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            NarrowOnNothing(team);
+            team.DoingStates.Add("Active");
+
+            var verdict = await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.True, ARefusalHereStopsAWorkingTeam);
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"WHERE ([{AzureDevOpsFieldNames.State}] = 'Active')"),
+                    "positive control: the state clause has to survive becoming the only one.");
+            }
+        }
+
+        /// <summary>
+        /// The refusal is the whole of what an administrator gets: no query was sent, so there is no tracker
+        /// answer to fall back on. Each phrase below is the only place its sentence says what it says, so
+        /// emptying any one of them fails here on its own rather than being covered by the rest.
+        /// </summary>
+        [TestCase("selects no work item types")]
+        [TestCase("nothing for Lighthouse to ask Azure DevOps for")]
+        [TestCase("map at least one state")]
+        public async Task ValidateTeamSettings_NothingIsConfiguredAtAll_SaysWhatIsMissingAndWhatToDoAboutIt(string phrase)
+        {
+            var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            NarrowOnNothing(team);
+
+            var verdict = await subject.ValidateTeamSettings(team);
+
+            Assert.That(verdict.Message, Does.Contain(phrase));
+        }
+
+        /// <summary>
+        /// The code is what the settings screen matches on to decide which input to highlight, and the
+        /// technical detail is what an operator quotes into a support conversation. Neither is in the
+        /// sentence the user reads, so neither is pinned by the phrases above.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_NothingIsConfiguredAtAll_NamesTheRefusalAndSaysNoQueryWasSent()
+        {
+            var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            NarrowOnNothing(team);
+
+            var verdict = await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo("nothing_to_query"));
+                Assert.That(verdict.TechnicalDetails, Does.Contain("empty WHERE clause"));
+            }
         }
 
         /// <summary>
@@ -503,6 +603,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 + $"WHERE ({TheTeamsFilter}) AND ([{AzureDevOpsFieldNames.WorkItemType}] = 'User Story')  "
                 + $"AND ([{AzureDevOpsFieldNames.State}] = 'New' OR [{AzureDevOpsFieldNames.State}] = 'Active' "
                 + $"OR [{AzureDevOpsFieldNames.State}] = 'Closed')  "));
+        }
+
+        /// <summary>
+        /// Strips the team back to what the settings API will happily save and what a restored database can
+        /// carry: no types, no states, no query of its own - nothing at all to select on.
+        /// </summary>
+        private static void NarrowOnNothing(Team team)
+        {
+            team.WorkItemTypes.Clear();
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+            team.DataRetrievalValue = string.Empty;
         }
     }
 }
