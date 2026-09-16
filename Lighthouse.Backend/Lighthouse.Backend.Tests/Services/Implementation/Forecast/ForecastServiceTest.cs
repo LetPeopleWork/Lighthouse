@@ -14,6 +14,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {
     public class ForecastServiceTest
     {
+        /// <summary>
+        /// The two real-data tests below check that a known throughput forecasts into a known
+        /// neighbourhood, and they say so in windows two or three days wide. A seedless simulation
+        /// lands outside such a window every so often — three times on record for the 70th percentile
+        /// alone, always 32 against a (29,31) window — and each time it reported a regression that was
+        /// not one. Pinning the draw makes the same claim once instead of re-rolling it every build.
+        /// The windows are unchanged, so what those tests assert is unchanged; only the dice are gone.
+        /// </summary>
+        private const int TheSeedTheRealDataForecastsShare = 20260916;
+
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
@@ -174,7 +184,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public void HowMany_RealData_RunRealForecast_ExpectCorrectResults()
         {
-            var subject = CreateSubjectWithRealThroughput();
+            var subject = CreateSubjectWithPinnedDraws();
             var throughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0]));
 
             var forecast = subject.HowMany(throughput, 30);
@@ -191,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public async Task When_RealData_RunRealForecast_ExpectCorrectResults()
         {
-            var subject = CreateSubjectWithRealThroughput();
+            var subject = CreateSubjectWithPinnedDraws();
 
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
             var forecast = await subject.When(CreateTeam(1, throughput), 28);
@@ -569,6 +579,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private ForecastService CreateSubjectWithRealThroughput()
         {
             return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default);
+        }
+
+        /// <summary>
+        /// Both draw sources are pinned, because either one left loose puts the dice back.
+        /// Deliberately not the factory above: most of its callers forecast several Teams at once, and
+        /// one seeded sequence handed to concurrent draws is not reproducible either — see
+        /// <see cref="SeededRandomNumberService"/>. Only the two single-stream real-data tests use this.
+        /// </summary>
+        private ForecastService CreateSubjectWithPinnedDraws()
+        {
+            return new ForecastService(
+                new SeededRandomNumberService(TheSeedTheRealDataForecastsShare),
+                Mock.Of<ILogger<ForecastService>>(),
+                teamMetricsServiceMock.Object,
+                featureRepositoryMock.Object,
+                new NothingWaitsForAnything(),
+                new DrawsFromAPinnedStartingNumber(TheSeedTheRealDataForecastsShare),
+                ForecastSimulationLimits.Default);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)
