@@ -14,6 +14,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// every field a "key", Data Center gives none of them one. Both shapes are read by the same lookup,
     /// so a Data Center field list is the only way to see what happens when a field reference matches
     /// nothing - which is the situation the administrator is supposed to be told about by name.
+    ///
+    /// The field list is also the read Jira is most likely to refuse outright: it needs project-browse
+    /// permission to return anything, and it is far larger than anything else Lighthouse asks for, so a
+    /// proxy in front of Jira can cut it off on its own. The refusal tests here pin what the administrator
+    /// is told when that happens, and which input on the screen the message is pinned to.
     /// </summary>
     [TestFixture]
     public class JiraFieldLookupTest
@@ -29,6 +34,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string MyselfPath = "rest/api/2/myself";
 
+        private const string SearchPath = "/search";
+
+        private const string TheAdditionalFieldsInput = "Additional Fields";
+
+        private const string FieldListUnreadable = "field_list_unreadable";
+
         /// <summary>
         /// A field list as Jira Data Center returns it. No object carries a "key", and nothing here is
         /// named "Flagged" or holds the id Jira Cloud gives the flag, so every lookup this fixture makes
@@ -43,6 +54,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             "[{\"id\":\"summary\",\"key\":\"summary\",\"name\":\"Summary\",\"custom\":false,\"schema\":{\"type\":\"string\"}},"
             + "{\"id\":\"customfield_10100\",\"key\":\"customfield_10100\",\"name\":\"Story Points\",\"custom\":true,\"schema\":{\"type\":\"number\"}}]";
 
+        private const string JirasOwnSentence = "You do not have permission to view fields.";
+
+        private const string ARefusalCarryingJirasOwnSentence =
+            "{\"errorMessages\":[\"" + JirasOwnSentence + "\"],\"errors\":{}}";
+
         private const string OnePageHoldingOneIssue =
             "{\"startAt\":0,\"maxResults\":50,\"total\":1,\"issues\":[{\"key\":\"PROJ-1\",\"fields\":{"
             + "\"summary\":\"An issue\",\"created\":\"2026-08-01T09:00:00.000+0000\","
@@ -50,10 +66,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheIssueOnThePage = ["PROJ-1"];
 
+        private static readonly StubAnswer AnAuthenticatedUser = new(HttpStatusCode.OK, "{\"accountId\":\"someone\"}");
+
         [Test]
         public async Task ValidateConnection_OnDataCenter_UnmatchedField_SaysWhichFieldIsMissing()
         {
-            var verdict = await TheVerdictOnAConnectionAskingFor(UnmatchedFieldReference, DataCenterFieldList);
+            var verdict = await TheVerdictOnAConnectionAskingFor(UnmatchedFieldReference, AFieldListOf(DataCenterFieldList));
 
             using (Assert.EnterMultipleScope())
             {
@@ -65,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateConnection_OnCloud_UnmatchedField_StillSaysWhichFieldIsMissing()
         {
-            var verdict = await TheVerdictOnAConnectionAskingFor(UnmatchedFieldReference, CloudFieldList);
+            var verdict = await TheVerdictOnAConnectionAskingFor(UnmatchedFieldReference, AFieldListOf(CloudFieldList));
 
             using (Assert.EnterMultipleScope())
             {
@@ -75,18 +93,105 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task ValidateConnection_FieldListRefused_NamesTheFieldListAndNotTheUrl()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(
+                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.Forbidden, ARefusalCarryingJirasOwnSentence));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo(FieldListUnreadable));
+                Assert.That(verdict.FieldName, Is.EqualTo(TheAdditionalFieldsInput));
+                Assert.That(verdict.Message, Does.Not.Contain("provided URL"));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_FieldListRefused_CarriesJirasOwnSentence()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(
+                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.Forbidden, ARefusalCarryingJirasOwnSentence));
+
+            Assert.That(verdict.TechnicalDetails, Does.Contain(JirasOwnSentence));
+        }
+
+        [Test]
+        public async Task ValidateConnection_MyselfRefused_StillNamesTheCredential()
+        {
+            var connection = JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(
+                AFieldListOf(CloudFieldList), new StubAnswer(HttpStatusCode.Unauthorized, "{\"errorMessages\":[]}")));
+
+            var verdict = await connector.ValidateConnection(connection);
+
+            Assert.That(verdict.Code, Is.EqualTo("authentication_failed"));
+        }
+
+        [Test]
+        public async Task ValidateConnection_JiraUnreachable_StillNamesTheUrl()
+        {
+            var connection = JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerThatCannotReachJira());
+
+            var verdict = await connector.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo("connection_failed"));
+                Assert.That(verdict.FieldName, Is.EqualTo(JiraWorkTrackingOptionNames.Url));
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_FieldListRefused_DoesNotSayUnexpectedError()
+        {
+            var requestedUrls = new List<string>();
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(
+                new StubAnswer(HttpStatusCode.BadGateway, ARefusalCarryingJirasOwnSentence), requestedUrls: requestedUrls));
+
+            var verdict = await connector.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo(FieldListUnreadable));
+                Assert.That(UrlsReaching(requestedUrls, SearchPath), Is.Empty);
+            }
+        }
+
+        [Test]
+        public async Task ValidatePortfolioSettings_FieldListRefused_DoesNotSayUnexpectedError()
+        {
+            var requestedUrls = new List<string>();
+            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(
+                new StubAnswer(HttpStatusCode.BadGateway, ARefusalCarryingJirasOwnSentence), requestedUrls: requestedUrls));
+
+            var verdict = await connector.ValidatePortfolioSettings(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo(FieldListUnreadable));
+                Assert.That(UrlsReaching(requestedUrls, SearchPath), Is.Empty);
+            }
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_OnDataCenterWithoutAFlaggedField_ReadsTheTeamAnyway()
         {
             var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
-            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(DataCenterFieldList));
+            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(AFieldListOf(DataCenterFieldList)));
 
             var workItems = await connector.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(workItems.Select(workItem => workItem.ReferenceId), Is.EquivalentTo(TheIssueOnThePage));
         }
 
+        private static List<string> UrlsReaching(List<string> requestedUrls, string path)
+            => requestedUrls.Where(url => url.Contains(path, StringComparison.Ordinal)).ToList();
+
         private static async Task<ConnectionValidationResult> TheVerdictOnAConnectionAskingFor(
-            string fieldReference, string fieldList)
+            string fieldReference, StubAnswer fieldList)
         {
             var connection = JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
@@ -100,7 +205,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return await connector.ValidateConnection(connection);
         }
 
-        private static HttpMessageHandler AHandlerServing(string fieldList)
+        private static StubAnswer AFieldListOf(string fieldList) => new(HttpStatusCode.OK, fieldList);
+
+        private static HttpMessageHandler AHandlerServing(
+            StubAnswer fieldList, StubAnswer? myself = null, List<string>? requestedUrls = null)
+        {
+            var whoIsSignedIn = myself ?? AnAuthenticatedUser;
+
+            var mock = new Mock<HttpMessageHandler>();
+            mock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    requestedUrls?.Add(request.RequestUri?.ToString() ?? string.Empty);
+
+                    return Task.FromResult(Answer(request, fieldList, whoIsSignedIn));
+                });
+
+            return mock.Object;
+        }
+
+        private static HttpMessageHandler AHandlerThatCannotReachJira()
         {
             var mock = new Mock<HttpMessageHandler>();
             mock.Protected()
@@ -108,28 +236,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "SendAsync",
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((request, _) => Task.FromResult(Answer(request, fieldList)));
+                .ThrowsAsync(new HttpRequestException("No such host is known."));
 
             return mock.Object;
         }
 
-        private static HttpResponseMessage Answer(HttpRequestMessage request, string fieldList)
+        private static HttpResponseMessage Answer(HttpRequestMessage request, StubAnswer fieldList, StubAnswer myself)
         {
             var path = request.RequestUri?.AbsolutePath ?? string.Empty;
 
-            var body = path switch
+            var answer = path switch
             {
-                _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal) => $"{{\"deploymentType\":\"{OnDataCenter}\"}}",
+                _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal)
+                    => new StubAnswer(HttpStatusCode.OK, $"{{\"deploymentType\":\"{OnDataCenter}\"}}"),
                 _ when path.EndsWith(FieldListPath, StringComparison.Ordinal) => fieldList,
-                _ when path.EndsWith(MyselfPath, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
-                _ when path.Contains("/search", StringComparison.Ordinal) => OnePageHoldingOneIssue,
-                _ => "{}",
+                _ when path.EndsWith(MyselfPath, StringComparison.Ordinal) => myself,
+                _ when path.Contains(SearchPath, StringComparison.Ordinal)
+                    => new StubAnswer(HttpStatusCode.OK, OnePageHoldingOneIssue),
+                _ => new StubAnswer(HttpStatusCode.OK, "{}"),
             };
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
+            return new HttpResponseMessage(answer.Status)
             {
-                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                Content = new StringContent(answer.Body, Encoding.UTF8, "application/json"),
             };
         }
+
+        /// <summary>One status and one body, so a test can say what Jira answers on a single endpoint.</summary>
+        private sealed record StubAnswer(HttpStatusCode Status, string Body);
     }
 }

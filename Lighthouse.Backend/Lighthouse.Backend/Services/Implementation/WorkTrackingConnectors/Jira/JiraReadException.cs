@@ -12,6 +12,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     /// </summary>
     public class JiraReadException : WorkTrackingReadException
     {
+        /// <summary>
+        /// The input on the connection screen that additional fields are typed into. Every verdict about
+        /// those fields has to name it identically, or the message is shown without an input highlighted.
+        /// </summary>
+        internal const string AdditionalFieldsFieldName = "Additional Fields";
+
         public JiraReadException(ConnectionValidationResult verdict)
             : base(verdict)
         {
@@ -31,6 +37,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         public static JiraReadException BoardFilterCarriedNoQuery(string filterId, HttpStatusCode status)
             => Unreadable(filterId, status, $"Jira answered {(int)status} ({status}), but the filter it returned holds no query.");
+
+        /// <summary>
+        /// Jira would not hand over the list of fields on the instance, so no additional field can be
+        /// checked against it. This is not a broken URL: the same connection had just answered on
+        /// rest/api/2/myself, so the address and the credential are both good enough to be talked to.
+        /// </summary>
+        public static JiraReadException FieldListRefused(HttpStatusCode status, string whatJiraSaid)
+            => new(ConnectionValidationResult.Failure(
+                "field_list_unreadable",
+                $"Lighthouse could not read the list of fields on this Jira instance, so it cannot check "
+                + $"the additional fields against it. Jira answered {(int)status} ({status}). The account "
+                + "this connection signs in with needs to be able to browse at least one project for Jira "
+                + "to return the field list; a proxy in front of Jira can also refuse this response, which "
+                + "is much larger than the others Lighthouse asks for.",
+                $"GET rest/api/latest/field answered {(int)status} {status}. {whatJiraSaid}",
+                AdditionalFieldsFieldName));
 
         private static JiraReadException Unreadable(string filterId, HttpStatusCode status, string whatCameBack)
             => new(ConnectionValidationResult.Failure(
