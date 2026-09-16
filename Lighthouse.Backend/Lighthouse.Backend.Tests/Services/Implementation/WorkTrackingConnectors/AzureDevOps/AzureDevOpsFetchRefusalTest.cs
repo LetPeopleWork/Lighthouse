@@ -39,6 +39,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string TheReferenceTheConfigurationNames = "Custom.StoryPoints";
 
+        private const string TheNameTheFieldIsDisplayedUnder = "Story Points";
+
         [Test]
         public void GetWorkItemsForTeam_RefusesWhenTheTrackerWillNotRunTheQuery()
         {
@@ -213,6 +215,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// This sentence is the whole of what an administrator who cannot get past the connection screen
+        /// reads, and the only place the two things they can go and change are named. Each phrase below sits
+        /// inside one fragment the message is built from, so a fragment that goes missing fails a test rather
+        /// than shipping - while the wording around them stays free to improve.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_SaysWhatAzureDevOpsAnsweredAndWhatCanBeDoneAboutTheFieldListItRefused()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.RejectTheFieldLookup = true;
+            ado.HowTheFieldLookupIsRefused = AProxyPageInsteadOfAnError(HttpStatusCode.Forbidden);
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Message, Does.Contain(WhatTheFieldListVerdictSays));
+                Assert.That(result.Message, Does.Contain("cannot check the additional fields against it"));
+                Assert.That(result.Message, Does.Contain("Azure DevOps answered: 403 (Forbidden)"));
+                Assert.That(result.Message, Does.Contain("signs in with needs to be able to read work"));
+                Assert.That(result.Message, Does.Contain("in at least one project for Azure DevOps to return the field list"));
+                Assert.That(result.Message, Does.Contain("in front of an on-premises server can also refuse this response"));
+                Assert.That(result.Message, Does.Contain("larger than the others Lighthouse asks for"));
+            }
+        }
+
         [Test]
         public async Task ValidateConnection_DoesNotBlameTheTokenWhenTheFieldListIsTheThingThatCameBackUnauthorised()
         {
@@ -314,7 +343,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             AskFor(TheReferenceTheConfigurationNames, team.WorkTrackingSystemConnection);
             ado.FieldsTheOrganisationHolds.AddRange([
-                AField("Story Points", TheReferenceTheConfigurationNames),
+                AField(TheNameTheFieldIsDisplayedUnder, TheReferenceTheConfigurationNames),
                 AField(TheReferenceTheConfigurationNames, "Custom.SomethingElse"),
             ]);
 
@@ -324,6 +353,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "A field created through the REST API may be displayed under a name that is another field's "
                 + "reference name, which the portal would not allow. Two matches are not an error to fail the "
                 + "refresh over - the reference name is the exact identifier, so it is the one that wins.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ReadsTheFieldTheConfigurationNamesByTheNameItIsDisplayedUnder()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            AskFor(TheNameTheFieldIsDisplayedUnder, team.WorkTrackingSystemConnection);
+            ado.FieldsTheOrganisationHolds.Add(AField(TheNameTheFieldIsDisplayedUnder, TheReferenceTheConfigurationNames));
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(ado.FieldsOfTheItemRead, Does.Contain(TheReferenceTheConfigurationNames),
+                "Azure DevOps shows a field under its display name and identifies it by its reference name, so "
+                + "a configuration carrying the displayed one is an ordinary thing to have. Resolving reference "
+                + "names only would read nothing for it, silently, on every cycle.");
         }
 
         [Test]
@@ -375,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static void AskFor(string reference, WorkTrackingSystemConnection connection)
             => connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
             {
-                DisplayName = "Story Points",
+                DisplayName = TheNameTheFieldIsDisplayedUnder,
                 Reference = reference,
             });
 
