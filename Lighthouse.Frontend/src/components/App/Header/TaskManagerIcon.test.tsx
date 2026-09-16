@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
 	MemoryRouter,
@@ -870,9 +870,20 @@ describe("TaskManagerIcon", () => {
 
 			await openThePopover();
 
+			// The state moved out of the row's own text and into the drawing beside it, so this reads it
+			// from there. Scoped to the connection it belongs to rather than looked up across the whole
+			// popover, because "every connection, with what is known about it" is a claim about the pairing
+			// and a loose lookup would be satisfied by the right word beside the wrong name.
+			const theBrokenOne = within(
+				await screen.findByTestId("connection-health-11"),
+			);
 			expect(
-				await screen.findByTestId("connection-health-row-11"),
-			).toHaveTextContent(/Jira Cloud.*Authentication failed/i);
+				theBrokenOne.getByTestId("connection-health-row-11"),
+			).toHaveTextContent(/Jira Cloud/);
+			expect(theBrokenOne.getByRole("img")).toHaveAccessibleName(
+				"Authentication failed",
+			);
+
 			expect(screen.getByTestId("connection-health-row-13")).toHaveTextContent(
 				/Contoso Board/,
 			);
@@ -885,9 +896,11 @@ describe("TaskManagerIcon", () => {
 
 			await openThePopover();
 
-			const row = await screen.findByTestId("connection-health-row-13");
-			expect(row).toHaveTextContent(/not checked yet/i);
-			expect(row).not.toHaveTextContent(/healthy/i);
+			const state = within(
+				await screen.findByTestId("connection-health-13"),
+			).getByRole("img");
+			expect(state).toHaveAccessibleName(/not checked yet/i);
+			expect(state).not.toHaveAccessibleName(/healthy/i);
 		});
 
 		// AC-05.7 — the tooltip is what an administrator reads without opening anything, so it has to name
@@ -981,8 +994,8 @@ describe("TaskManagerIcon", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("connection-health-row-11"),
-				).toHaveTextContent(/Healthy/i);
+					within(screen.getByTestId("connection-health-11")).getByRole("img"),
+				).toHaveAccessibleName(/Healthy/i);
 			});
 			expect(service.testConnection).toHaveBeenCalledTimes(1);
 		});
@@ -1002,8 +1015,8 @@ describe("TaskManagerIcon", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByTestId("connection-health-row-11"),
-				).toHaveTextContent(/Authentication failed/i);
+					within(screen.getByTestId("connection-health-11")).getByRole("img"),
+				).toHaveAccessibleName(/Authentication failed/i);
 			});
 		});
 
@@ -1053,9 +1066,11 @@ describe("TaskManagerIcon", () => {
 
 			await openThePopover();
 
-			const row = await screen.findByTestId("connection-health-row-12");
-			expect(row).toHaveTextContent(/Unreachable/i);
-			expect(row).not.toHaveTextContent(/Authentication failed/i);
+			const state = within(
+				await screen.findByTestId("connection-health-12"),
+			).getByRole("img");
+			expect(state).toHaveAccessibleName(/Unreachable/i);
+			expect(state).not.toHaveAccessibleName(/Authentication failed/i);
 		});
 
 		// AC-05.7 — the bottom rung of the colour ladder. Without it "always warn" passes every other
@@ -1142,7 +1157,7 @@ describe("TaskManagerIcon", () => {
 		describe("state at a glance", () => {
 			// AC-07C.1 — four connections were four sentences to read and compare. The word does not
 			// disappear, it stops taking a line: it moves to the accessible name, asserted below.
-			it.skip("draws each connection's state instead of spelling it out in the row", async () => {
+			it("draws each connection's state instead of spelling it out in the row", async () => {
 				renderIconWithConnections([
 					aBrokenCredential,
 					anUntestedConnection,
@@ -1170,7 +1185,7 @@ describe("TaskManagerIcon", () => {
 			// set where not-checked reads as a muted tick would be that bug wearing a redesign. The outline
 			// is what keeps "nobody has asked" apart from "asked, and the answer was yes" for a reader who
 			// gets nothing from the colour.
-			it.skip("tells a connection nobody has checked from a healthy one without relying on colour", async () => {
+			it("tells a connection nobody has checked from a healthy one without relying on colour", async () => {
 				renderIconWithConnections([
 					anUntestedConnection,
 					aHealthyConnectionWithSomethingToSay,
@@ -1187,7 +1202,7 @@ describe("TaskManagerIcon", () => {
 			// AC-07C.3 — a distinction drawn in fill and shape is not one a screen reader can make, and a
 			// reader who is unsure what a drawing means has to be able to ask. Both answers are the word the
 			// row used to carry, so nothing is lost by moving it.
-			it.skip("keeps the state word within reach of a screen reader and of a hover", async () => {
+			it("keeps the state word within reach of a screen reader and of a hover", async () => {
 				renderIconWithConnections([anUntestedConnection]);
 
 				await openThePopover();
