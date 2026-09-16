@@ -5305,3 +5305,63 @@ not what causes it.
    is a state change nobody has asked for yet.
 4. **Public Task Manager docs and screenshots** — carried since slice 05, now seven slices, still the
    Epic's largest outstanding debt and still not a slice's to absorb.
+
+---
+
+# Wave: DELIVER — slice 08, reopened by running it
+
+Found on 2026-09-16 by starting the dev server against the maintainer's own data, minutes after the
+slice was pushed. Two defects, both live, neither caught by the acceptance suite.
+
+## Wave: DELIVER / [REF] #6010 was closed against the wrong cause
+
+`Test connection` on an Azure DevOps connection still returns 500, and the health prober still cannot
+record a verdict for one. The exception is not the missing-option read this slice fixed:
+
+```
+System.InvalidOperationException: The property 'AdditionalFieldDefinition.Id' is part of a key and so
+cannot be modified or marked as modified.
+   at ConnectionHealthService.RecordAsync(...)          [ConnectionHealthService.cs:133 / :173]
+   at ConnectionHealthService.TestConnectionAsync(...)  [via ConnectionHealthController:37]
+```
+
+Saving the verdict runs change detection over everything the context is tracking, and the connection was
+loaded with `.Include(c => c.AdditionalFieldDefinitions)`. Something on that path marks an additional
+field's key as modified, and the save that follows refuses it. **That is why only Azure DevOps ever
+showed it** — it is the connection in this instance that has additional fields configured, not anything
+particular to the connector. A Jira connection with additional fields should reproduce it.
+
+The missing-option fix shipped in `746c5fa4e` is still correct and still needed; it is a different
+defect that happened to share a symptom. **#6010 was moved to Resolved on the strength of the wrong
+reproduction and should be reopened.**
+
+## Wave: DELIVER / [REF] One failing connection does silence the rest, despite AC-08B.5
+
+Observed in the same log: after `RecordAsync` threw for the Azure DevOps connection, the next
+connection's claim threw too — from `TryInsertClaimAsync`, which sits **outside** the per-connection
+`catch` in `AskHowItIs` — and the whole pass ended:
+
+```
+ERROR ConnectionHealthProber: Checking connection health failed
+   at ConnectionHealthVerdictRepository.TryInsertClaimAsync(...)   [:56]
+   at ConnectionHealthService.RefreshStaleVerdictsAsync(...)       [:98]
+```
+
+Two Jira connections were never checked as a result. The failed save leaves the `DbContext` unusable, so
+every later claim in the same pass fails.
+
+**Why the suite passed.** `A_connector_that_throws_does_not_silence_the_other_connections` makes the
+*connector* throw, which happens inside the guarded region. Nothing made the *recording* throw, and the
+recording is what poisons the scope. The test asserted the promise against the one failure mode that
+could not break it.
+
+## Wave: DELIVER / [REF] What the fix has to cover
+
+1. The root cause of the tracked-graph modification, not a catch around it — the same rule that governed
+   the first attempt at #6010.
+2. The claim brought inside the per-connection failure boundary, or the scope made recoverable, so one
+   connection's failure genuinely cannot end the pass.
+3. A scenario where **recording** throws rather than the connector, which is the gap that let both of
+   these ship.
+4. A connection carrying additional field definitions in the fixture — every existing scenario seeds one
+   without them, which is the shape that never reproduces this.
