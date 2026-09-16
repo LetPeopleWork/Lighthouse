@@ -21,6 +21,7 @@ import {
 	type AgeBandColumnDescriptor,
 	paceBandSortRank,
 } from "../../../utils/charts/paceBands";
+import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import {
 	certainColor,
@@ -50,6 +51,12 @@ export interface WorkItemsDialogProps {
 	 * percentile is; without one, nothing about the dialog changes.
 	 */
 	ageBandColumn?: AgeBandColumnDescriptor;
+	/**
+	 * Given one, the dialog draws a column naming each row's chance of missing the team's target. As
+	 * with the band above, the descriptor already knows how to answer that for an item, so the dialog
+	 * never learns what a cycle time is; without one, nothing about the dialog changes.
+	 */
+	sleRiskColumn?: SleRiskColumnDescriptor;
 }
 
 export interface HighlightColumnDefinition {

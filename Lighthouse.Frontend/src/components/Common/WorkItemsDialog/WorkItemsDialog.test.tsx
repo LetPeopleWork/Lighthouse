@@ -6,6 +6,10 @@ import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import {
+	SLE_RISK_BEYOND_HISTORY_LABEL,
+	type SleRiskColumnDescriptor,
+} from "../../../utils/charts/sleRisk";
+import {
 	certainColor,
 	confidentColor,
 	errorColor,
@@ -1424,6 +1428,234 @@ describe("Work Item Age Band column", () => {
 			expect(
 				screen.getByRole("columnheader", { name: /Time in State/ }),
 			).toHaveAttribute("aria-sort", "descending");
+		});
+	});
+});
+
+// --- Epic #4127 slice 01: the chance an in-flight item has of missing the team's target ---
+//
+// Zenith published a ten-day target. The risks below are what the endpoint answered for these items
+// and this window; how they were computed is the backend's promise, pinned in
+// Lighthouse.Backend.Tests/API/Integration/SleRisk/. Here the only question is what a coach sees, and
+// whether they can order and carry out the list by it.
+const riskByReference: Record<string, number | undefined> = {
+	"ZEN-388": 100,
+	"ZEN-412": 86,
+	"ZEN-470": 46,
+	"ZEN-433": 32,
+	"ZEN-455": undefined, // nothing the team finished ever ran this long
+	"ZEN-401": 74,
+	"ZEN-604": 100,
+};
+
+const riskColors: Record<string, string> = {
+	low: certainColor,
+	moderate: confidentColor,
+	elevated: "#fbc02d",
+	high: realisticColor,
+	certain: errorColor,
+};
+
+const sleRiskColumn: SleRiskColumnDescriptor = {
+	headerName: "SLE Risk",
+	description:
+		"Of every item still open at this age, the share that went on to miss the target",
+	riskFor: (item) => riskByReference[item.referenceId],
+	labelFor: (item) => {
+		const risk = riskByReference[item.referenceId];
+		return risk === undefined ? SLE_RISK_BEYOND_HISTORY_LABEL : `${risk}%`;
+	},
+	colorForRisk: (risk) => {
+		if (risk === undefined) return undefined;
+		if (risk >= 100) return riskColors.certain;
+		if (risk >= 75) return riskColors.high;
+		if (risk >= 50) return riskColors.elevated;
+		if (risk >= 25) return riskColors.moderate;
+		return riskColors.low;
+	},
+};
+
+const riskCellTexts = () =>
+	screen
+		.getAllByTestId("sleRiskColumnContent")
+		.map((cell) => cell.textContent?.trim());
+
+const riskColumnHeader = () =>
+	screen.getByRole("columnheader", { name: /SLE Risk/ });
+
+// Specified before the column exists. DELIVER drops the .skip as it implements slice 01; until then
+// these would report a missing column header as a failure on every build. Verified red for the right
+// reason first: 10 of 11 on the absent header, the eleventh passing only because it asserts absence.
+describe.skip("SLE Risk column", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	describe("reading the risk on every in-flight row", () => {
+		test("heads the column with the configured term and shows a whole-number percentage on every row", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			expect(riskColumnHeader()).toBeInTheDocument();
+			expect(screen.getAllByTestId("sleRiskColumnContent")).toHaveLength(
+				zenithInFlightItems.length,
+			);
+			expect(riskCellTexts()).toContain("86%");
+		});
+
+		test("says beyond history rather than a number for an item nothing can be compared against", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			// Not "0%", and not blank. An item older than everything the team ever finished has no
+			// answer, and a number here would read as one.
+			expect(riskCellTexts()).toContain(SLE_RISK_BEYOND_HISTORY_LABEL);
+		});
+
+		test("paints the worst risks in the same colour the chart paints its worst zone", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			const certain = screen
+				.getAllByTestId("sleRiskColumnContent")
+				.find((cell) => cell.textContent?.trim() === "100%");
+
+			expect(certain).toHaveStyle(`color: ${errorColor}`);
+		});
+
+		test("leaves an item with no answer muted and unpainted", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			const unanswered = screen
+				.getAllByTestId("sleRiskColumnContent")
+				.find((cell) =>
+					cell.textContent?.includes(SLE_RISK_BEYOND_HISTORY_LABEL),
+				);
+
+			for (const riskColor of Object.values(riskColors)) {
+				expect(unanswered).not.toHaveStyle(`color: ${riskColor}`);
+			}
+			expect(unanswered).toHaveStyle("background-color: rgba(0, 0, 0, 0)");
+			expect(unanswered).toHaveStyle("color: rgba(0, 0, 0, 0.6)");
+		});
+
+		test("shows no risk column at all for a team that published no target", () => {
+			render(<WorkItemsDialog {...agingDialogProps} />);
+
+			expect(
+				screen.queryByRole("columnheader", { name: /SLE Risk/ }),
+			).not.toBeInTheDocument();
+			expect(screen.queryAllByTestId("sleRiskColumnContent")).toHaveLength(0);
+		});
+
+		test("stays visible for a coach whose saved column arrangement predates it", () => {
+			localStorage.setItem(
+				"lighthouse:datagrid:work-items-dialog:state",
+				JSON.stringify({
+					columnOrder: [
+						"referenceId",
+						"name",
+						"type",
+						"state",
+						"additionalColumn",
+					],
+				}),
+			);
+
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			expect(riskColumnHeader()).toBeInTheDocument();
+		});
+
+		test("sits beside the band it belongs with when both are offered", () => {
+			render(
+				<WorkItemsDialog
+					{...agingDialogProps}
+					ageBandColumn={ageBandColumn}
+					sleRiskColumn={sleRiskColumn}
+				/>,
+			);
+
+			const headerNames = screen
+				.getAllByRole("columnheader")
+				.map((header) => header.textContent?.trim() ?? "");
+			const bandIndex = headerNames.findIndex((name) =>
+				name.startsWith("Work Item Age Band"),
+			);
+			const riskIndex = headerNames.findIndex((name) =>
+				name.startsWith("SLE Risk"),
+			);
+
+			expect(riskIndex).toBe(bandIndex + 1);
+		});
+	});
+
+	describe("ordering and carrying out the list", () => {
+		test("orders by the risk itself, not by the spelling of the risk", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			await user.click(riskColumnHeader());
+			await user.click(riskColumnHeader());
+
+			// Sorting the rendered text instead would put "32%" and "46%" above "86%", because "3"
+			// and "4" come before "8" — and "100%" below all three.
+			expect(riskCellTexts()).toEqual([
+				"100%",
+				"100%",
+				"86%",
+				"74%",
+				"46%",
+				"32%",
+				SLE_RISK_BEYOND_HISTORY_LABEL,
+			]);
+		});
+
+		test("never lets an item with no answer head a worst-first list", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			await user.click(riskColumnHeader());
+			await user.click(riskColumnHeader());
+
+			const worstFirst = riskCellTexts();
+			expect(worstFirst[worstFirst.length - 1]).toBe(
+				SLE_RISK_BEYOND_HISTORY_LABEL,
+			);
+		});
+
+		test("carries the percentage into the export, not the number behind it", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			// The export reads the column's VALUE rather than the cell it rendered, so a value
+			// getter returning 86 would put a bare "86" in the file and lose what it is 86 of.
+			expect(riskCellTexts()).toContain("86%");
+			expect(riskCellTexts()).not.toContain("86");
+		});
+
+		test("does not take over which column the dialog opens sorted by", () => {
+			render(
+				<WorkItemsDialog
+					{...agingDialogProps}
+					sleRiskColumn={sleRiskColumn}
+					timeInStateColumn={{ now: new Date("2026-09-16") }}
+				/>,
+			);
+
+			expect(riskColumnHeader()).toHaveAttribute("aria-sort", "none");
 		});
 	});
 });
