@@ -18,7 +18,11 @@ Added after delivery, from the maintainer's manual review on 2026-09-16:
 
 - **#6011** — "Slice 07: See the queue in order, and know a cancel was heard" (User Story, New) — slice 07
 - **#6010** — "Task Manager: Test connection on an Azure DevOps connection fails with a 500" (Bug, New) —
-  parked, not scheduled into a slice
+  **no longer parked**: folded into slice 08 as US-08C, because the health prober D20 adds runs the same
+  path that returns the 500 (see D22)
+
+- **#6018** — "Slice 08: Connection health that persists and checks itself" (User Story, **Active**) —
+  slice 08, created 2026-09-16, reopens and narrows **D9**
 
 Predecessor **#5733 Opt-In Usage Data** (Resolved) — not a build dependency; see Pre-requisites.
 Related **#5502 Event-driven write-back collection** (Closed) — its write-back rounds are a *deferred*
@@ -4258,3 +4262,1046 @@ deleting an open file is legal there.
    three are the same missing fact and resolve the same way, server-side.
 4. **Mutation testing not run** — a later phase.
 5. **Docs and screenshots** — the popover is still undocumented, carried since slice 05.
+
+---
+
+# Wave: DISCUSS — slice 08
+
+ADO **#6011**'s successor. Raised from the same maintainer review of **2026-09-16** that produced slice
+07, run against a local instance on the delivered build. Three items were deferred out of slice 07
+because all three reopen **D9**, and reopening a locked decision is a decision to take rather than an
+addition to make quietly.
+
+This wave takes it. **D9 is reopened and narrowed rather than reversed** — see D20.
+
+Density: `lean` + `ask-intelligent` — Tier-1 `[REF]` only.
+
+---
+
+## Wave: DISCUSS / [REF] Current-State Surface Inventory — slice 08
+
+Read from the code on 2026-09-16, before any requirement below was written. S26–S31 continue the
+Epic's numbering.
+
+| # | Fact | Evidence |
+|---|---|---|
+| S26 | **A successful refresh erases the verdict rather than recording one.** `RecordRefreshSucceededAsync` reads the row, and if one exists, `Remove`s it. The connection falls back to `Unknown`, because `Describe` resolves a missing verdict to `verdict?.State ?? Unknown`. So pressing *Test connection*, getting `Healthy`, and waiting for the next scheduled refresh returns the row to *Not checked yet*. | `ConnectionHealthService.cs:64-76`, `:179-182` |
+| S27 | **A health probe costs one or two requests.** `ValidateConnection` is: Jira — one `GET rest/api/2/myself` plus an additional-fields lookup when any are configured; Linear — one `viewer { id }` GraphQL query; Azure DevOps — a client build plus one WIQL query for a single id; ServiceNow — one root-table read; CSV — no network call at all. None of them page. | the five `ValidateConnection` implementations under `WorkTrackingConnectors/` |
+| S28 | **A refresh against the same connection already runs every 60 minutes and costs orders of magnitude more.** `TeamDataRefreshInterval` and `FeaturesRefreshInterval` are both seeded at `"60"` minutes, and a refresh pages every work item in scope — Epic #5687's dogfood measured a single Data-Center refresh at 468 856 ms before the paging fix. | `AppSettingSeeder.cs:28-33`, `UpdateServiceBase.TryUpdating`, S10 |
+| S29 | **The product already runs five background services.** `TeamUpdater`, `PortfolioUpdater`, `UsageDataForwardingService`, `UsageDataConsentPruningService` and `KeyRingFileWatcher` are all registered with `AddHostedService`. "A second scheduler" is not what a prober would be. | `Program.cs:543,1077,1402,1407,1487,1489` |
+| S30 | **The unavailable-connection badge already exists and is already tested.** `TaskManagerIcon` renders `badgeContent={tasks.length + connections.filter(isBroken).length}` with `color={badgeColourFor(connections)}`, which returns `error` for an authentication failure and `warning` for an unreachable tracker; `describeHeaderState` names the failing connection in the tooltip and the accessible name. Three tests assert the colour and one asserts the count. | `TaskManagerIcon.tsx`, `connectionHealthWording.ts:20-60`, `TaskManagerIcon.test.tsx:1086,1095,1236,1429` |
+| S31 | **Azure DevOps's own `ValidateConnection` cannot be the source of Bug #6010's 500.** Its body ends in a bare `catch` that returns a `Failure` result, so nothing thrown inside it escapes. The throw is above it — in `ClassifyAsync`'s unreadable-secret walk, in `RecordAsync`'s save, or between the `url` lookup at the top of `ValidateConnection` and the `try` that follows it, which is the one line outside the guard. | `AzureDevOpsWorkTrackingConnector.cs:201-276`, `ConnectionHealthService.cs:85-134` |
+
+∴ **S26 is the whole of item (1)** and needs no analysis beyond reading it. **S27 + S28 + S29 are what
+reopen D9**: both of that decision's stated reasons were about magnitude, and the magnitudes are now
+measured rather than assumed. **S30 says item (3) is already built**, which turns it from work into a
+verification. **S31 says Bug #6010 is in the health service or its inputs, not in the connector** — so a
+prober calling the same path inherits it.
+
+---
+
+## Wave: DISCUSS / [REF] Locked Decisions — slice 08
+
+Numbering continues from D18.
+
+### D19 — A refresh that reached the tracker records `Healthy`, rather than erasing what was there
+
+**Decision** (maintainer, 2026-09-16). `RecordRefreshSucceededAsync` stops deleting the verdict row and
+records `Healthy` with the moment it was observed, through the same `RecordAsync` path that
+*Test connection* uses.
+
+**This supersedes the rule written into `IConnectionHealthService`** — *"It does not record health:
+until somebody tests it, 'it worked once' is not a promise the popover makes."*
+
+**Why the reversal is sound rather than convenient**: that rule mistakes the weaker evidence for the
+stronger one. A refresh authenticated against the tracker and read real data from it; *Test connection*
+authenticates and reads one trivial record. If either is a promise, the refresh is the better one. And
+the rule as written produced the defect the maintainer reported — *"the health for wts seems to reset on
+every refresh"* — because an administrator who pressed the button, got a green tick, and came back after
+the hourly refresh found *Not checked yet* and no way to tell what had undone their check.
+
+**D9's consequence is preserved, not relaxed.** *"Until a connection has failed once, its health is
+`Unknown` rather than `Healthy` — claiming healthy from an absence of evidence is how the current icon
+would mislead."* Nothing here claims health from an absence. It claims health from a completed round
+trip to the tracker, which is evidence, and it is the same evidence D9's own reasoning called *"a
+by-product of work already being done"*.
+
+**Consequence**: the verdict row is now written on every successful refresh rather than only on failure,
+so several teams sharing one connection each write it once per interval. One row per connection, one
+`UPDATE` per refresh — named here so DESIGN sizes it rather than discovers it, along with the ordering
+question it raises (OQ-08.4).
+
+### D20 — D9 is reopened. Health is topped up by staleness, not polled on a cadence
+
+**Decision** (maintainer, 2026-09-16). Lighthouse checks a connection's health by itself. The rule is
+**not** "ask every connection every N minutes". It is: **ask the connections whose verdict is missing or
+older than a threshold, and leave the rest alone.**
+
+**What this reverses in D9, precisely.** D9 ruled out *"a background loop that periodically calls every
+tracker"*. That specific thing is still ruled out. What is now built is narrower: a loop that calls the
+trackers **nothing else has heard from**.
+
+**Why both of D9's reasons fail against measurement rather than against preference.**
+
+- *"A recurring outbound call per connection to systems whose rate limits we already share and already
+  trip."* S27 measures the call: one or two requests, none of them paged. S28 measures what already
+  happens to the same connection on the same schedule: a full refresh every sixty minutes, paging
+  everything in scope. The probe is not a new order of cost; it is a rounding error on an existing one.
+  And because D19 now records `Healthy` from that refresh, a connection being refreshed is **never
+  probed at all** — its verdict is never stale. On an instance where every connection is attached to a
+  team or a portfolio, the steady-state cost of this decision is **zero additional outbound calls**.
+  (The Linear-key-shared-with-CI hazard D9 cited is a hazard of the *test suite's* shared key, which is
+  not what a running instance uses.)
+- *"The second scheduler in a product whose first one this Epic exists to explain."* S29: there are five
+  hosted services already. The objection describes a product that does not exist.
+
+**What the probe is actually for, and it is not redundancy.** A connection that no team and no portfolio
+uses is refreshed by nothing, so under D9 it reads `Unknown` for as long as the instance lives — and
+`Unknown` is exactly the state D13 draws as an absence, correctly. The prober's entire job is that gap.
+The maintainer's question — *"do I always have to click it? or will this automatically be run when I
+wait long enough?"* — has, today, the answer *yes, for those connections, forever*.
+
+**Startup is not a separate mechanism.** A verdict outlives the process, so a restart does not reset
+anything; what a fresh process finds is a set of verdicts of various ages. Probing the stale ones is the
+same rule as always, and "at startup" is simply its first tick. **Startup-only was offered and
+declined**, for the stated reason that it answers *"will this run if I wait?"* with *"only if you
+restart"*, which on a container up for six weeks is indistinguishable from no.
+
+**Consequence, and this is what keeps `Unknown` meaningful**: `Unknown` stops being a resting state and
+becomes a brief one — a connection created a moment ago, or one the prober has not yet reached. It is
+still never claimed from silence: a probe that cannot reach the tracker records `Unreachable`, which is
+what `StateFor` already does with a failed validation. D13's grey outlined circle keeps its job and
+keeps its meaning; it just stops being the only thing most instances ever show.
+
+**Second consequence, which is why this replaces showing an age**: because a `Healthy` verdict is now
+bounded by the staleness threshold, "Healthy" *means* "observed within the threshold". Rendering
+*checked 4 hours ago* would be the alternative, and D14 removed durations from this surface for reasons
+that have not changed. The bound does the work the number would have done.
+
+### D21 — The header badge is verified, not rebuilt
+
+**Decision** (maintainer, 2026-09-16). Nothing is built for item (3). S30 establishes that an
+unavailable connection is already badged in the header, with the right colour, the right count and the
+connection named in the tooltip and the accessible name.
+
+**Why the badge read as missing**: nothing had ever recorded a broken state to badge. The two causes are
+the other two items — D19's erasure sent every checked connection back to `Unknown`, and the connections
+most likely to be quietly broken are the ones no refresh touches, which D20 is what reaches. Fixing (1)
+and (2) is what makes the existing badge start appearing.
+
+**Recorded rather than dropped**, the same way slice 07 recorded the Terminology check: *"we looked, and
+it was already right"* is an answer, and a silent omission is not. Two alternative readings were put to
+the maintainer and **declined** — splitting the merged running-tasks-and-broken-connections count into
+two signals, and making the header icon animate while work is running as **D2** originally promised.
+Both stay available; neither is this slice.
+
+### D22 — Bug #6010 is folded into this slice, because the prober would run into it
+
+**Decision** (maintainer, 2026-09-16). The Azure DevOps 500 stops being parked and becomes a story here.
+
+**Why it cannot stay parked once D20 is taken**: the prober's only mechanism is `ValidateConnection`
+through `TestConnectionAsync`'s own classification path — the same path that returns a 500 today for an
+Azure DevOps connection. Shipping D20 with #6010 open means shipping a feature that runs known-throwing
+code against every Azure DevOps connection on every tick, and whose failure mode is silence: the
+connection stays `Unknown`, which is indistinguishable from *nobody has asked yet*. The one state D9
+worked to keep honest becomes the place the bug hides.
+
+**Consequence**: root-causing the 500 is inside this slice. S31 narrows where to look — not in the
+Azure DevOps connector, whose bare `catch` returns a result rather than throwing, but above it in
+`ClassifyAsync`, in `RecordAsync`'s save, or in the one `url` lookup that sits outside
+`ValidateConnection`'s own `try` and throws `ArgumentException` on a missing key.
+
+### D23 — No spike. The rate-limit question is answered by reading, not by measuring
+
+**Decision** (maintainer, 2026-09-16). The timeboxed probe against real trackers, offered before
+committing to a cadence, is **not run**.
+
+**Why**: S27 and S28 are counts of requests taken from the code, not estimates. A probe is one or two
+requests; a refresh against the same connection is hundreds, every sixty minutes, today. And under D20's
+staleness rule the probe does not fire at all for a connection a refresh is already covering, so the
+quantity a spike would measure is, in the common case, zero. There is nothing left for half a day of
+measurement to settle.
+
+**What this does not claim**: that no cadence question remains. The threshold's value, the back-off for
+a tracker that is genuinely down, and which replica probes are all still open — and they are open
+questions about *design*, not about rate limits. They go to DESIGN as OQ-08.1 through OQ-08.5.
+
+---
+
+## Wave: DISCUSS / [REF] User Stories — slice 08
+
+### US-08A — A check that stays checked
+
+`job_id: job-config-admin-know-any-credential-is-failing-not-just-oauth`
+
+As a System Administrator who has just tested a connection, I want the green tick to still be there
+after the next scheduled refresh, so that I can tell what I have checked from what I have not.
+
+#### Elevator Pitch
+
+Before: press `Test connection`, see a green tick, come back after the hourly refresh and the row reads
+*Not checked yet* — with nothing on screen to say what undid it.
+After: press `Test connection` → sees the green tick → the next successful refresh keeps it green, and
+the row says `Healthy` because a refresh reached the tracker and came back.
+Decision enabled: which connections I still need to check, instead of re-checking all of them because
+the surface forgot.
+
+**Acceptance criteria**
+
+- **AC-08A.1** — A successful refresh against a connection whose verdict is `Healthy` leaves it
+  `Healthy`, with `ObservedAt` advanced to the moment of that refresh.
+- **AC-08A.2** — A successful refresh against a connection with **no** verdict records `Healthy`, rather
+  than leaving it `Unknown`.
+- **AC-08A.3** — A successful refresh against a connection whose verdict is `Unreachable` or
+  `AuthenticationFailed` replaces it with `Healthy`. Recovery must be visible, not only failure.
+- **AC-08A.4** — No verdict row is deleted by a successful refresh. (The defect is a delete; a test that
+  only asserts the resulting state can pass against a delete-then-insert.)
+- **AC-08A.5** — A **cancelled** refresh still records nothing, as it does today. Nothing was learned
+  about the credential, and `RecordConnectionHealth`'s existing early return for a cancel stands.
+- **AC-08A.6** — A connection whose OAuth grant is invalid still reads `AuthenticationFailed` even after
+  a successful refresh records `Healthy`. (`Describe` folds the credential row in; a refresh that
+  succeeded on a *different* authentication method must not overwrite a broken grant with a tick.)
+- **AC-08A.7** — Recording still cannot fail the refresh that produced it. The existing non-fatal
+  `catch` in `RecordConnectionHealth` is exercised, not removed.
+
+### US-08B — Lighthouse checks, so I do not have to
+
+`job_id: job-config-admin-know-any-credential-is-failing-not-just-oauth`
+
+As a System Administrator with a connection no team uses, I want Lighthouse to notice by itself that its
+credential has stopped working, so that finding out is not conditional on me remembering to click.
+
+#### Elevator Pitch
+
+Before: a connection that nothing refreshes reads *Not checked yet* for as long as the instance runs.
+The only thing that will ever change it is an administrator pressing a button.
+After: leave the instance running → open the Task Manager popover → sees that connection carrying a real
+verdict, green or red, that nobody asked for by hand.
+Decision enabled: whether a credential is dead — noticed by the product before a team notices their data
+stopped moving.
+
+**Acceptance criteria**
+
+- **AC-08B.1** — A connection whose verdict is absent is probed, and its verdict recorded, without any
+  user action.
+- **AC-08B.2** — A connection whose verdict is **older than the staleness threshold** is probed and its
+  verdict refreshed.
+- **AC-08B.3** — A connection whose verdict is **newer than the threshold is not probed**. This is the
+  criterion that makes D20 cheap, and the one a naive "probe everything on a timer" passes AC-08B.1 and
+  AC-08B.2 without satisfying — so it is tested by asserting the connector was **not** called.
+- **AC-08B.4** — A probe the tracker refuses records `AuthenticationFailed`; a probe that cannot reach
+  the tracker records `Unreachable`. Neither leaves the connection `Unknown` — a probe that ran is
+  evidence, whatever it found.
+- **AC-08B.5** — A probe that throws — a connector raising rather than returning, as #6010 does — is
+  caught, logged, and **does not stop the prober**. A single broken connection must not silence every
+  other connection's health.
+- **AC-08B.6** — Verdicts survive a restart, and a fresh process probes only what is stale. Starting up
+  does not re-ask every tracker. (Verified by observation, not asserted from the design.)
+- **AC-08B.7** — With more than one replica, a connection due for a probe is probed by **one** of them
+  per threshold window, not by each. (Mechanism is OQ-08.1; the criterion is the same whichever is
+  chosen.)
+- **AC-08B.8** — The badge and tooltip in the header reflect a probe-derived failure with no code change
+  to `TaskManagerIcon` or `connectionHealthWording` — this is the regression guard on D21's claim that
+  item (3) is already built.
+
+### US-08C — Testing an Azure DevOps connection answers instead of failing
+
+`job_id: job-config-admin-know-any-credential-is-failing-not-just-oauth` · ADO Bug **#6010**
+
+As a System Administrator with an Azure DevOps connection, I want `Test connection` to tell me what is
+wrong with it, so that the one control built for checking a credential is not itself the thing that
+breaks.
+
+#### Elevator Pitch
+
+Before: press `Test connection` on an Azure DevOps connection → the request returns `500` and the row
+tells you nothing, about a connection that may be perfectly healthy.
+After: press `Test connection` on an Azure DevOps connection → sees a verdict — `Healthy`, or a named
+reason it is not.
+Decision enabled: whether an Azure DevOps credential needs reissuing — which today cannot be asked at
+all through the control built to ask it.
+
+**Acceptance criteria**
+
+- **AC-08C.1** — `POST /api/latest/connectionhealth/{id}/test` against a **working** Azure DevOps
+  connection returns `200` with `Healthy`.
+- **AC-08C.2** — The same call against a **broken** Azure DevOps connection returns `200` with a failure
+  state and a message, not a `500`.
+- **AC-08C.3** — The regression test names the actual root cause, not the symptom. A test that only
+  asserts "not 500" passes against a `catch`-all that hides the next defect of the same shape.
+- **AC-08C.4** — The other four connector types keep the behaviour they have today. Whatever the fix
+  turns out to be, S31 places it in shared code, so every connection type is downstream of it.
+- **AC-08C.5** — A connection with an unreadable secret still reports the unreadable-secret message and
+  names the field, rather than being swallowed by whatever guard the fix adds.
+
+---
+
+## Wave: DISCUSS / [REF] Open Questions carried to DESIGN — slice 08
+
+DESIGN is **not skipped**: a prober is a new background component, and five things about it are open.
+Every one of them is about mechanism, and none is about whether to build it.
+
+- **OQ-08.1 — which replica probes?** Under Redis with several pods, each would otherwise probe every
+  stale connection. Three shapes: the **verdict row as the claim** (a conditional write on `ObservedAt`
+  wins the right to probe; needs no new component, and the worst case is a handful of duplicate
+  single-request probes inside one window); `IUpdateExecutionLock`, which exists — but its key is an
+  `UpdateKey` and `PostgresUpdateExecutionLock` takes a **blocking** `pg_advisory_lock`, so the losing
+  pods would wait rather than skip; or leader election, which is new infrastructure for a cheap problem.
+- **OQ-08.2 — the threshold, and whether an administrator sets it.** The neighbouring settings
+  (`PeriodicRefresh:*`) are seeded `AppSetting` rows with a Settings screen behind them. A constant is
+  cheaper; an `AppSetting` is the pattern. The value itself matters less than the fact that `Healthy`
+  means "within it" (D20).
+- **OQ-08.3 — back-off for a tracker that is genuinely down.** A dead tracker is stale on every tick and
+  would be probed on every tick. The answer must not be so aggressive that recovery goes unnoticed for
+  hours.
+- **OQ-08.4 — ordering between a prober write and a refresh-outcome write** to the same verdict row
+  (D19's consequence). Two writers now exist for one row per connection, and under Redis they can be on
+  different pods. A prober's stale `Healthy` must not land on top of a refresh's fresh
+  `AuthenticationFailed`. There is an ArchUnit test already asserting a single writer for this table —
+  `ConnectionHealthSingleWriterArchUnitTest` — which DESIGN must either satisfy or deliberately restate.
+- **OQ-08.5 — does the prober share the update lane, or run beside it?** S23 says the update queue is a
+  single lane that awaits each task to completion. Sharing it means one wedged refresh stops all health
+  probing, which is precisely the situation in which health matters most. Not sharing it means the
+  prober is genuinely concurrent with refreshes against the same tracker. This is the last live remnant
+  of D9's "second scheduler" objection, and it is a real design question rather than a rhetorical one.
+
+---
+
+## Wave: DISCUSS / [REF] Out of Scope — slice 08
+
+- **Splitting the header badge count**, and making the header icon animate while work is running as D2
+  promised. Both offered on 2026-09-16 and declined (D21). Available, not scheduled.
+- **Rendering the age of a `Healthy` verdict** — *checked 4 minutes ago*. D14 removed durations from
+  this surface, and D20's threshold is what now carries the freshness claim.
+- **Probing a connection more eagerly than the threshold** — no probe on popover open, no probe on
+  connection save. D18 already re-reads the stored verdicts on open; asking the tracker because somebody
+  opened a box is the loop D9 was right to refuse.
+- **Public Task Manager docs and screenshots** — carried since slice 05, six slices of deferral, and
+  still not this slice. It is now the Epic's largest outstanding debt and belongs to the Epic rather
+  than to a slice.
+- **Deferred idea L** — a stop asked for is remembered only in the browser that asked (OQ-07.1).
+- **Deferred idea G's remaining half**, `elapsedMs` on the wire, and the eleven surfaces of D11.
+
+---
+
+## Wave: DISCUSS / [REF] Scope Assessment — slice 08
+
+**Verdict: right-sized. PASS — with one named split trigger.**
+
+Three stories, one bounded context (connection health) plus the one background component D20 adds. Of
+the five oversize heuristics, exactly **one** fires: US-08A and US-08B are independent user outcomes
+that could ship separately. Two are needed to call it oversized.
+
+Effort: **one day**, and the estimate is uneven on purpose. US-08A is an hour — a delete becomes a
+record, through a method that already exists. US-08B is most of the day and carries all five open
+questions. US-08C is **unbounded until its root cause is found**, because nobody has yet looked.
+
+**Split trigger, named so it is not a matter of mood later**: if #6010's root cause is not identified
+within about an hour of looking, US-08C leaves this slice and becomes its own. It is folded in here
+because the prober would otherwise run into it (D22), not because it is small — and the prober can ship
+with the Azure DevOps gap explicitly recorded if the alternative is a slice that will not close.
+
+**Internal ship order**: US-08A, then US-08C, then US-08B. Each lands on its own. US-08A alone already
+answers *"the health for wts seems to reset on every refresh"*, and US-08C alone already un-breaks a
+control that is currently returning a 500 to anybody who presses it.
+
+---
+
+## Wave: DISCUSS / [REF] Outcome KPIs — slice 08
+
+| KPI | Target | Measurement | Scope |
+|---|---|---|---|
+| `OUT-5511-08-health-survives-refresh` | **100%** of `Healthy` verdicts survive a subsequent successful refresh, against 0% today | Test a connection, run a refresh, read `/api/latest/connectionhealth` (AC-08A.1, AC-08A.4) | per_instance |
+| `OUT-5511-08-unattended-coverage` | **100%** of connections carry a non-`Unknown` verdict within one threshold window of instance start, with **no** user action — against the connections-without-teams subset that is permanently `Unknown` today | Start an instance with a connection no team uses; wait one window; read the health endpoint (AC-08B.1, AC-08B.6) | per_instance |
+| `OUT-5511-08-probe-cost` | **0** probe requests for a connection whose verdict is fresher than the threshold; **≤2** requests per probed connection per window | Count connector calls across one window with a mix of refreshed and unrefreshed connections (AC-08B.3) | per_instance |
+| `OUT-5511-08-ado-test-answers` | **100%** of `Test connection` calls on an Azure DevOps connection return a verdict, against 0% today | `POST /api/latest/connectionhealth/{id}/test` against a real Azure DevOps connection (AC-08C.1, AC-08C.2) | vendor_demo_only |
+
+---
+
+## Wave: DISCUSS / [REF] Definition of Ready — slice 08
+
+| # | Item | Evidence |
+|---|---|---|
+| 1 | Business value stated | Three stories against one already-validated job. The evidence is a maintainer review of the shipped build plus a measured reading of the code (S26–S31), not a hypothesis |
+| 2 | Acceptance criteria testable | 20 ACs, each naming an observable outcome. AC-08B.3 asserts a **negative** — that the connector was not called — because that is what separates D20 from the loop D9 refused |
+| 3 | Dependencies identified | Slices 01–07 shipped. Bug **#6010 is a dependency and is folded in** (D22) rather than parked, with the reason stated and a split trigger if it proves deep |
+| 4 | Sized | One slice, one day, uneven across the three stories and said so |
+| 5 | No blocking unknowns | Five open questions (OQ-08.1 … OQ-08.5), all about mechanism, all for DESIGN, none about whether to build. #6010's root cause is unknown and is the one unbounded item — it has a named split trigger |
+| 6 | UX defined | Nothing new is drawn. D13's three icons and the existing header badge (S30) carry every state this slice produces; D21 records that verification |
+| 7 | Job traceability | One real `job_id` across all three stories; no infrastructure-only escape valve |
+| 8 | Non-functional constraints stated | Probe cost bounded by the staleness rule (D20, `OUT-5511-08-probe-cost`); per-replica single-probe (AC-08B.7); recording must never fail the refresh that produced it (AC-08A.7); one broken connector must not silence the prober (AC-08B.5); RBAC unchanged — `SystemAdmin` throughout (D3) |
+| 9 | Out-of-scope explicit | Six items, including the two badge readings the maintainer declined and the docs debt now named as the Epic's, not a slice's |
+
+**Verdict: READY.** Requirements completeness **0.96** — the shortfall is #6010's unexamined root cause,
+which has a bounded reaction (the split trigger) rather than an unbounded risk.
+
+---
+
+## Wave: DISCUSS / [REF] Wave Decisions Summary — slice 08
+
+### Key decisions
+
+- **D19** A successful refresh records `Healthy` instead of deleting the verdict — superseding the
+  "it worked once is not a promise" rule, on the grounds that a refresh is the *stronger* evidence, not
+  the weaker one.
+- **D20** **D9 is reopened and narrowed.** Health is topped up by staleness, so a connection a refresh
+  already covers is never probed and the steady-state cost on a normal instance is zero additional
+  outbound calls. Startup is the first tick, not a separate mechanism. Startup-only was declined.
+- **D21** The header badge is verified, not rebuilt — it already exists and is already tested (S30).
+  Two alternative readings were offered and declined.
+- **D22** Bug #6010 is folded in, because the prober runs the path that 500s.
+- **D23** No spike. S27 and S28 are counts from the code, and under D20 the quantity a spike would
+  measure is usually zero.
+
+### Requirements summary
+
+- **Primary job**: `job-config-admin-know-any-credential-is-failing-not-just-oauth`, the one this Epic
+  validated for #5019. No new job. This slice closes the half of it that slice 05 left open — slice 05
+  made *failure* legible for every authentication method; nothing yet makes *absence of failure*
+  distinguishable from *absence of asking*.
+- **Feature type**: backend, with no new pixel. Every state it produces is drawn by UI that already
+  ships.
+
+### Constraints established
+
+- Evidence of health has an age, and a claim of health is only as good as its bound. The staleness
+  threshold is what makes `Healthy` mean something without rendering a number.
+- `Unknown` must never be where a bug hides. A probe that ran always records what it found — including
+  that it could not reach the tracker — so the grey outlined circle keeps meaning *nobody asked yet* and
+  nothing else.
+- A rule that was locked on a magnitude should be re-examined when the magnitude is measured. D9 was
+  right on 2026-08-23 with the numbers it had; S27 and S28 are different numbers.
+
+### Upstream changes
+
+**Two decisions from this Epic's own DISCUSS are superseded here**, each recorded at the decision that
+replaces it: `IConnectionHealthService`'s "does not record health" rule by **D19**, and **D9**'s
+prohibition on background probing by **D20** — narrowed rather than reversed, with D9's `Unknown`
+consequence preserved verbatim and made *more* meaningful rather than less.
+
+**SSOT back-propagation**: `docs/product/jobs.yaml` and
+`docs/product/journeys/epic-5511-task-manager.yaml` both carry *"never from a background probe loop"* as
+a stated source of truth for connection health. Both are updated in this wave to record the narrowing
+and the reason.
+
+---
+
+# Wave: DESIGN — slice 08
+
+Run 2026-09-16, straight after DISCUSS. **Not skipped**, because D20 adds a background component and
+five things about it were open. Two of the five answered themselves in the code; three were settled with
+the maintainer. Numbering continues from D23.
+
+Density: `lean` + `ask-intelligent` — Tier-1 `[REF]` only.
+
+---
+
+## Wave: DESIGN / [REF] Design-Time Surface Inventory — slice 08
+
+Read before the decisions below, same discipline as DISCUSS. S32–S35 continue the Epic's numbering.
+
+| # | Fact | Evidence |
+|---|---|---|
+| S32 | **`ConnectionHealthVerdicts` already carries a unique index** on `WorkTrackingSystemConnectionId`, created with the table. Two processes racing to insert a verdict for the same connection cannot both win. | `20260915100026_AddConnectionHealthVerdict.cs:37-41` (and the Postgres twin) |
+| S33 | **The single-writer rule already names the way in for a new caller.** `ConnectionHealthSingleWriterArchUnitTest` forbids every production type but `ConnectionHealthService`, its repository and the context from depending on `ConnectionHealthVerdict` — and its `Because` string says *"If a new path genuinely needs to record a verdict, take `IConnectionHealthService` instead."* | `ConnectionHealthSingleWriterArchUnitTest.cs:12-38` |
+| S34 | **The Epic's acceptance tests run against a real relational database**, not the in-memory provider: `IntegrationTestBase` does `EnsureDeleted`/`EnsureCreated` and closes a real `DbConnection` in teardown. So a conditional `ExecuteUpdateAsync` is testable at the level the other seven slices are tested at. | `IntegrationTestBase.cs:41-68`, `API/Integration/TaskManager/Slice0*` |
+| S35 | **`UpdateServiceBase` already models the shape a prober needs** — a `BackgroundService` that reads its interval from `IAppSettingService` on every tick through a fresh `IServiceScope`, rather than capturing a scoped service in a singleton. `RecordConnectionHealth` does the same for its own scope, with the reason written out. | `UpdateServiceBase.cs:205-260,300-324` |
+
+∴ **S32 + S34 are why the per-replica question needs no new infrastructure.** **S33 is why the prober
+writes nothing.** **S35 is why it is not a new pattern** — it is the one the two updaters already use.
+
+---
+
+## Wave: DESIGN / [REF] Component Shape — slice 08
+
+```
+ConnectionHealthProber (BackgroundService, singleton)
+  │  owns WHEN. Ticks. Creates a scope. Calls one method. Knows nothing about a verdict.
+  ▼
+IConnectionHealthService  ── the single writer (S33), unchanged as a boundary
+  │  owns WHAT. Computes the staleness cutoff, claims, probes, records.
+  ├─▶ IRepository<WorkTrackingSystemConnection>   (which connections exist)
+  ├─▶ ConnectionHealthVerdictRepository            (+ the claim, below)
+  ├─▶ IWorkTrackingConnectorFactory → ValidateConnection()   1–2 requests, no paging (S27)
+  └─▶ IAppSettingService                           (the refresh intervals the threshold derives from)
+```
+
+One new production type. One new method on an existing port. No new port, no new table, no migration,
+no new configuration surface, no Redis representation question, and no frontend change at all (D21).
+
+**The new method on `IConnectionHealthService`**:
+
+```csharp
+/// Asks the connections nothing has heard from lately, and records what they answered.
+Task RefreshStaleVerdictsAsync(CancellationToken cancellationToken);
+```
+
+Note that `IConnectionHealthService`'s existing doc-comment says no method takes a cancellation token
+*because nothing on this path can honour one*. This one can and must: it is the only method on the port
+called from a `BackgroundService`, and it must stop when the host stops. That comment is corrected
+rather than worked around.
+
+---
+
+## Wave: DESIGN / [REF] Locked Decisions — slice 08
+
+### D24 — The prober owns *when*. It does not own a verdict
+
+**Decision.** `ConnectionHealthProber` is a `BackgroundService` whose whole body is a tick and a call to
+`IConnectionHealthService.RefreshStaleVerdictsAsync`. It never touches `ConnectionHealthVerdict`, the
+repository, or the context.
+
+**Why**: S33. The architecture test that guards this table does not merely forbid a second writer — it
+names the remedy, in a `Because` string written for exactly this situation. Satisfying it costs nothing
+here and keeps the property it protects: one answer to *"is this credential working"*, so an
+administrator never meets two. **The test stays green unmodified**, which is the cheapest possible
+evidence that this slice did not quietly become a second writer.
+
+**Consequence**: the staleness rule lives in the service, beside the `ObservedAt` it reads and the
+`StateFor` that interprets a probe's answer. That is also where it belongs on meaning — D20's threshold
+is what makes the word `Healthy` true, and the prober has no opinion about what `Healthy` means.
+
+### D25 — The threshold is derived from the refresh interval, and is not a setting
+
+**Decision** (maintainer, 2026-09-16). The staleness threshold is
+**2 × max(`TeamDataRefreshInterval`, `FeaturesRefreshInterval`)** — 240 minutes at the seeded defaults of
+60 and 60. No `AppSetting`, no seeded row, no migration, no Settings section.
+
+**Why derived rather than chosen**: the threshold has one job, which is to be comfortably longer than the
+interval at which a refresh already freshens a verdict (D19). If it is shorter, a connection that is
+being refreshed goes stale between refreshes and gets probed anyway — and D20's whole claim, that a
+covered connection costs zero additional outbound calls, quietly stops being true. Deriving it makes that
+guarantee hold **at every configuration**, not only at the shipped default. Slow the refreshes to six
+hours and probing follows; a fixed number would not.
+
+**Why the 2×**: refresh drift. The lane is single (S23) and nothing bounds a refresh's wall-time (S25),
+so verdict-to-verdict spacing is the interval *plus* however long the refresh took. A threshold equal to
+the interval would sit exactly on that boundary and probe intermittently, for no reason anybody could
+read off the configuration.
+
+**Rejected: a new `AppSetting` beside `PeriodicRefresh:*`.** It is the established pattern and it was
+offered. It costs an EF migration across every provider, a Settings section, a docs entry — and it hands
+an administrator a dial whose wrong setting (below the refresh interval) silently switches probing on for
+every connection. A derived value cannot be set wrongly.
+
+**Rejected: a hard-coded constant.** Cheapest, and wrong for anybody who changes their refresh interval.
+
+**Tick interval**: `threshold / 4` — 60 minutes at the default. The threshold is the *freshness* knob;
+the tick is the *responsiveness* one, and a quarter means a connection is asked within 25% of the
+threshold past falling out of date. Each tick that finds nothing stale costs one indexed query and no
+outbound call.
+
+### D26 — The verdict row is the claim. No lock, no leader
+
+**Decision.** Under more than one replica, the right to probe a stale connection is won by a conditional
+update on the row itself:
+
+```sql
+UPDATE ConnectionHealthVerdicts SET ObservedAt = @now
+ WHERE WorkTrackingSystemConnectionId = @id AND ObservedAt < @cutoff
+```
+
+One row affected means this replica probes; zero means another already has. A connection with no verdict
+row at all is claimed by the insert, which S32's unique index resolves to exactly one winner.
+
+**Why this and not `IUpdateExecutionLock`**: it exists, but its key is an `UpdateKey`, and
+`PostgresUpdateExecutionLock` takes a **blocking** `pg_advisory_lock`. The losing replicas would queue up
+behind the winner and then each probe in turn, which is the outcome the lock was supposed to prevent.
+Making it non-blocking means changing a port three other things depend on, for a problem the table
+already solves.
+
+**Why not leader election**: new infrastructure, a new failure mode, and a new thing to explain — for a
+decision about which of three pods makes one HTTP request.
+
+**Why claiming *before* probing rather than after**: the claim has to exclude, and a claim taken after
+the answer arrives has already let every other replica start. The cost is that `ObservedAt` briefly
+describes the moment the probe began rather than the moment it answered; the probe overwrites it seconds
+later with its real result. That window is bounded by one unpaged request.
+
+**This also settles OQ-08.4.** D19 gives the verdict row a second writer — refresh outcomes and probes —
+and the worry was that a prober's stale `Healthy` could land on a refresh's fresh
+`AuthenticationFailed`. It cannot: the claim means only one probe is ever in flight for a connection, and
+a probe's answer is seconds old, not stale. Two honest observations seconds apart, either of which is
+true, is not a correctness problem and is not worth a version column.
+
+**Consequence**: the insert race produces a unique-constraint violation on the losing replica. It is
+caught where the insert happens and treated as *another replica got there first* — benign, logged at
+Debug, not surfaced. **Rejected alternative**: seeding an `Unknown` verdict row when a connection is
+created, so the claim is always an update and the race never happens. It is tidier and costs a data
+migration to backfill every existing connection plus a change to a bounded context this slice otherwise
+does not touch — to avoid an exception that occurs at most once per connection, ever.
+
+### D27 — A broken connection is asked on the same cadence as a healthy one
+
+**Decision** (maintainer, 2026-09-16). No back-off. A connection whose last verdict was
+`Unreachable` or `AuthenticationFailed` is stale on the same schedule as any other and is re-probed on
+the same tick rule.
+
+**Why**: at the default threshold that is six requests a day at a tracker that is refusing — while that
+same connection's refreshes are already hitting it far harder on the same schedule, and always were.
+There is nothing to save. What there is to lose is recovery: an administrator who reissues a credential
+wants the icon to go green, and the honest bound on that is one window.
+
+**Rejected: exponential back-off capped at a few hours.** It buys a handful of requests and pays with a
+red icon that outlives the fix. *"I fixed it, why is it still red"* is a worse support conversation than
+the calls it avoids.
+
+**Rejected: probing broken connections faster.** More outbound calls precisely at the tracker that is
+already unhappy — the shape D9 was originally right to be wary of, reintroduced at the one connection
+where it is least welcome.
+
+**Consequence**: the cadence is one rule, uniform across states, with no second timer and nothing
+state-dependent to explain. That is also what makes AC-08B.2 and AC-08B.3 a complete description of the
+behaviour.
+
+### D28 — The prober's `catch` is not the fix for #6010
+
+**Decision.** Two separate things, deliberately not conflated.
+
+1. **AC-08B.5's per-connection `catch`** in `RefreshStaleVerdictsAsync` exists so that one connector
+   raising instead of returning cannot silence every other connection's health. It is about the loop's
+   resilience and it would be built even if #6010 did not exist.
+2. **US-08C fixes #6010 at its root.** `POST /connectionhealth/{id}/test` must return a verdict, and a
+   `catch` in the prober does nothing for the administrator pressing the button.
+
+**Why this needs saying**: with the loop guarded, an unfixed #6010 stops being visible anywhere. Every
+Azure DevOps connection would read `Unknown` — indistinguishable from *nobody has asked yet*, which is
+exactly the state D9 built and D20 preserved, now serving as a hiding place. That is the failure D22
+predicted, and the guard is what would make it silent.
+
+**Where to look, from S31**: not in `AzureDevOpsWorkTrackingConnector.ValidateConnection`, whose bare
+`catch` returns a `Failure` rather than throwing. Above it — `ClassifyAsync`'s unreadable-secret walk,
+`RecordAsync`'s save, or the `url` lookup on the first line of `ValidateConnection`, which sits outside
+that method's own `try` and throws `ArgumentException` when the option key is absent.
+
+**AC-08C.3 is the guard on the guard**: the regression test names the root cause. A test that only
+asserts *not a 500* passes against a `catch`-all and hides the next defect of the same shape.
+
+### D29 — The prober runs beside the update lane, not in it
+
+**Decision** (maintainer, 2026-09-16). `ConnectionHealthProber` is its own `AddHostedService`
+registration. It does not enqueue through `UpdateQueueService`.
+
+**Why**: S23 — the update queue is one channel with one reader that awaits each task to completion, and
+S25 says nothing bounds a refresh's wall-time and nothing names what holds the lane. Probing through it
+means one wedged connector stops all health checking, which is precisely the situation in which health
+is the thing you need. A surface built to explain a wedged pipeline cannot have its health signal queued
+behind the wedge.
+
+**What this concedes to D9, honestly**: this is a sixth hosted service, and it can call a tracker at the
+same moment a refresh is calling it. The concession is one unpaged request alongside a refresh already
+making hundreds (S27, S28), and D9's own objection was to a *second scheduler* in a product that already
+has five (S29).
+
+**Rejected: enqueueing through the update queue.** It would inherit admission, cancellation and status
+plumbing, and a probe would even appear as a row in the Task Manager activity list — which sounds like a
+feature until you notice it puts credential checks into a surface that is about refreshes, and makes the
+list longer for a reason nobody asked about.
+
+**Rejected: skipping a connection while a refresh for it is in flight.** It avoids the concurrent call
+without coupling to the lane, and costs a lookup from every running `UpdateKey` — which is keyed by team
+or portfolio id — back to its connection, on every tick. To save at most one request, in a window where
+that very refresh is about to freshen the verdict anyway (D19).
+
+**Consequence**: probes within a tick run **sequentially**, not in parallel. A fleet of simultaneous
+outbound calls the moment a process starts is the picture D9 had in mind, and the sequential version
+costs a few seconds nobody is waiting on.
+
+---
+
+## Wave: DESIGN / [REF] What Changes — slice 08
+
+| Change | Where | Note |
+|---|---|---|
+| `Remove` → record `Healthy` | `ConnectionHealthService.RecordRefreshSucceededAsync` | US-08A. Goes through the existing `RecordAsync`, which already inserts-or-updates |
+| Doc-comment correction | `IConnectionHealthService` | The *"does not record health"* rule is superseded by D19 and must not survive as a comment contradicting the code |
+| `RefreshStaleVerdictsAsync(CancellationToken)` | `IConnectionHealthService` + `ConnectionHealthService` | US-08B. The only new method. Computes the cutoff, claims, probes sequentially, records |
+| Conditional claim | `ConnectionHealthVerdictRepository` | D26. A specific method on the concrete repository — **not** on `IRepository<T>`, which is a cross-cutting contract with many implementors |
+| `IAppSettingService` dependency | `ConnectionHealthService` | D25. The threshold derives from the two refresh intervals |
+| `ConnectionHealthProber` | `Services/Implementation/BackgroundServices/` | D24, D29. New `BackgroundService`, registered with `AddHostedService`, scope per tick (S35) |
+| #6010's root cause | unknown until looked at; S31 narrows it | US-08C. **Not** a `catch` (D28) |
+| *(nothing)* | `Lighthouse.Frontend/` | D21. Every state this slice produces is already drawn |
+
+**No EF migration.** The table, its columns and its unique index all already exist (S32), and the claim
+is a query rather than a schema change. Worth stating because `CreateMigration` across every provider is
+the expensive part of most changes in this area, and this one avoids it.
+
+---
+
+## Wave: DESIGN / [REF] Failure Modes — slice 08
+
+| Situation | Behaviour | Why |
+|---|---|---|
+| A connector throws instead of returning (#6010 today) | Caught per connection, logged, loop continues; that connection keeps its previous verdict | AC-08B.5. One broken connection must not silence the rest — and D28 says this is not the fix |
+| The tracker is unreachable | `Unreachable` recorded, not `Unknown` | AC-08B.4. A probe that ran is evidence, whatever it found. `Unknown` must never be where a fault hides |
+| Two replicas both find the same connection stale | One claim wins; the other skips | D26 / AC-08B.7 |
+| Two replicas both find a connection with no verdict row | The unique index refuses the second insert; caught as benign | D26 / S32 |
+| A refresh finishes while a probe is in flight | Both record; last write wins. Both are observations seconds apart, and both are true | D26 |
+| The process restarts | Verdicts outlive it. The first tick probes only what is stale | AC-08B.6. Startup is the first tick, not a separate mechanism (D20) |
+| An administrator presses *Test connection* on a connection the prober just probed | It probes again immediately. An explicit ask is never answered from a cache | `TestConnectionAsync` is untouched |
+| The host is shutting down mid-tick | The cancellation token stops the loop between connections | Why this one method takes a token where the port's others do not |
+
+---
+
+## Wave: DESIGN / [REF] Non-Functional Budget — slice 08
+
+- **Per tick, nothing stale**: one indexed query. Zero outbound calls.
+- **Per probed connection**: one claim `UPDATE`, one or two outbound requests (S27), one record
+  `UPDATE`.
+- **Steady state on an instance where every connection is attached to something**: **zero** outbound
+  probes, because D19 keeps every verdict inside D25's threshold. This is the number D20 was taken on,
+  and `OUT-5511-08-probe-cost` is what checks it did not quietly stop being true.
+- **Worst realistic case**: every connection unattached and broken — N connections × 2 requests every
+  240 minutes, sequential. At ten connections that is 120 requests a day, against trackers whose refresh
+  traffic is already orders of magnitude larger where any exists at all.
+
+---
+
+## Wave: DESIGN / [REF] Handoff to DISTILL — slice 08
+
+All five DISCUSS open questions are closed: **OQ-08.1** by D26, **OQ-08.2** by D25, **OQ-08.3** by D27,
+**OQ-08.4** by D26, **OQ-08.5** by D29. Nothing is carried.
+
+The acceptance tests belong in
+`Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08…Scenarios.cs` / `…Specifications.cs`,
+matching the seven slices before them, and they run against a real database (S34) so the conditional
+claim is testable where it lives.
+
+Three ACs need a shape the earlier slices did not:
+
+- **AC-08B.3** is a **negative** — the connector is *not* called for a connection whose verdict is fresh.
+  It is the one criterion a naive "probe everything on a timer" fails, and the only evidence that D25's
+  derivation does what D20 was taken on.
+- **AC-08B.7** needs **two service scopes racing one claim** rather than a single-threaded pass. The
+  unique index and the conditional update are real database behaviour, and a mocked repository asserts
+  nothing about either.
+- **AC-08A.4** must assert **no delete occurred**, not merely that the resulting state is `Healthy`. A
+  delete-then-insert produces the same end state and is the defect wearing a different shape.
+
+`ConnectionHealthSingleWriterArchUnitTest` is a **hard gate on this slice** and must pass unmodified
+(D24). If it needs an exemption, the design was not followed.
+
+---
+
+# Wave: DISTILL — slice 08
+
+Run 2026-09-16. Reconciliation gate: DISCUSS (D19–D23) against DESIGN (D24–D29) — **0 contradictions**.
+No DEVOPS wave for this slice; the graceful-degradation default applies and costs nothing, because the
+slice adds no infrastructure (D25 adds no setting, D26 adds no migration).
+
+Density: `lean` + `ask-intelligent` — Tier-1 `[REF]` only. No trigger fired.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 08
+
+`Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice08HealthThatChecksItself{Scenarios,Specifications}.cs`,
+the partial-class split the seven slices before it use. They inherit `TaskManagerAcceptanceTest`, so the
+update queue, the status store, the execution lock, the refresh log and the verdict row all stay
+production and only the work tracking system is doubled.
+
+**Filter note**: `TestCategory=slice-08` alone also matches
+`API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs` from a different Epic. Scope runs with
+`TestCategory=epic-5511-task-manager&TestCategory=slice-08`.
+
+---
+
+## Wave: DISTILL / [REF] Scenarios — slice 08
+
+20 scenarios. Error and edge paths: 10 of 20 (**50%**).
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `A_check_survives_the_refresh_that_follows_it` | `@driving_port @real-io` | AC-08A.1 |
+| `A_refresh_that_works_records_health_for_a_connection_nobody_checked` | `@driving_port @real-io` | AC-08A.2 |
+| `A_refresh_that_works_replaces_the_failure_before_it` | `@driving_port @real-io` | AC-08A.3 |
+| `A_successful_refresh_updates_the_verdict_rather_than_deleting_it` | `@driving_port @real-io` | AC-08A.4 |
+| `A_refresh_an_operator_stopped_still_says_nothing_about_the_credential` | `@driving_port @real-io @error` | AC-08A.5 |
+| `A_broken_oauth_grant_outlives_a_refresh_that_worked` | `@driving_port @real-io @error` | AC-08A.6 |
+| `A_health_verdict_that_cannot_be_recorded_does_not_fail_the_refresh` | `@driving_port @real-io @error` | AC-08A.7 |
+| `An_instance_left_running_checks_a_connection_nobody_clicked` | `@walking_skeleton @driving_adapter @real-io` | AC-08B.1 |
+| `A_connection_whose_answer_has_gone_stale_is_asked_again` | `@driving_port @real-io` | AC-08B.2 |
+| `A_connection_answered_recently_is_left_alone` | `@driving_port @real-io` | AC-08B.3 |
+| `A_connection_a_refresh_keeps_fresh_is_never_probed` | `@driving_port @real-io` | AC-08B.3 |
+| `A_probe_the_tracker_refuses_is_recorded_as_a_credential_problem` | `@driving_port @real-io @error` | AC-08B.4 |
+| `A_probe_that_cannot_reach_the_tracker_says_unreachable_rather_than_nothing` | `@driving_port @real-io @error` | AC-08B.4 |
+| `A_connector_that_throws_does_not_silence_the_other_connections` | `@driving_port @real-io @error` | AC-08B.5 |
+| `A_verdict_that_outlived_the_process_is_not_asked_again_at_startup` | `@driving_port @real-io` | AC-08B.6 |
+| `Two_replicas_that_both_find_a_connection_stale_ask_it_once` | `@driving_port @real-io @error` | AC-08B.7 |
+| `Testing_an_azure_devops_connection_answers_a_verdict_rather_than_failing` | `@driving_port @real-io @error` | AC-08C.1, AC-08C.2 |
+| `Testing_an_azure_devops_connection_with_no_url_answers_rather_than_throwing` | `@driving_port @real-io @error` | AC-08C.2 |
+| `Testing_a_connection_that_works_still_answers_that_it_is_healthy` | `@driving_port @real-io` | AC-08C.4 |
+| `A_connection_with_an_unreadable_secret_still_names_the_field_to_enter_again` | `@driving_port @real-io @error` | AC-08C.5 |
+
+**Two scenarios carry the slice's whole argument.** `A_connection_answered_recently_is_left_alone` and
+`A_connection_a_refresh_keeps_fresh_is_never_probed` assert an **absence of a call**. Every other
+scenario here passes against a naive "ask everything on a timer" — which is the loop D9 refused. These
+two are the only evidence that what was built is D20 and not that.
+
+**Driving-adapter coverage.** The health read and Test connection are entered over HTTP. The refresh is
+entered through `ITeamUpdater`, as every slice in this Epic enters it. The prober is entered through
+**the registered hosted service resolved from the container**, not through the service behind it — a
+prober that works when a test calls the service directly and is wired into nothing would satisfy every
+other US-08B scenario while answering the maintainer's question ("do I always have to click it?") with
+*yes*. That is the wiring defect this Epic's harness exists to make impossible.
+
+---
+
+## Wave: DISTILL / [REF] Bug #6010 — root cause found, and it is not where it looked
+
+**`Testing_an_azure_devops_connection_with_no_url_answers_rather_than_throwing` reproduces it, with no
+network and no credential:**
+
+```
+System.ArgumentException : Key Azure DevOps Url not found in Work Tracking Options
+```
+
+The path: `ConnectionHealthService.ClassifyAsync` → `AzureDevOpsWorkTrackingConnector.ValidateConnection`
+→ its **first line**, `connection.GetWorkTrackingSystemConnectionOptionByKey(Url)`, which throws when the
+option row is absent — and which sits **outside that method's own `try`**, the one line that does. S31
+predicted the throw was above the connector's guard rather than inside it; it is on the guard's doorstep.
+
+**Why the Task Manager 500s where the connection screen does not.** They validate different objects. The
+connection screen's `POST /worktrackingsystemconnections/validate` builds a connection from the DTO the
+browser just sent, so every option the form rendered is present. `TestConnectionAsync` validates the
+**stored entity** from `GetById`. A stored Azure DevOps connection missing that option row therefore
+throws on a path the other never reaches.
+
+**What is confirmed and what is not.** Confirmed: this is a real defect, on exactly #6010's path,
+reproducing deterministically. Not confirmed: that the maintainer's own connection is the one missing an
+option — that would need their instance. The structural fault stands either way, and Jira's
+`ValidateConnection` opens with the identical unguarded line, so this is not an Azure DevOps bug that
+happens to be shaped like a shared one.
+
+**AC-08C.3 is now authorable.** DISCUSS wrote it as the criterion DISTILL might not be able to meet —
+*"the regression test names the actual root cause, not the symptom"* — and left the split trigger for a
+root cause that took more than about an hour. It took one test. The fix DELIVER owes is **not** a
+`catch` around the classifier: it is the option reads moving inside the guard each connector already has,
+so a missing option is answered as a verdict that names the missing field, the way an unreadable secret
+already is. **The slice does not split.**
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues Found — slice 08
+
+Two slice 05 acceptance tests were invalidated by D19. Both are repaired in place rather than deleted,
+because the promise each guards survives; only what it lands on changed.
+
+**1. `A_refresh_that_works_clears_the_failure_before_it_without_claiming_health` → renamed
+`A_refresh_that_works_replaces_the_failure_before_it`, now expecting `Healthy`.** DISCUSS predicted this
+one: slice 05's DISTILL took the decision that *"a successful refresh clears the verdict; it does not
+record health … Test connection is the only thing that can say Healthy"*, which D19 reverses.
+
+**2. `A_refresh_an_operator_stopped_says_nothing_about_the_credential` was racy, and nothing could see
+it.** The step released the tracker's gate immediately after posting the cancel — so whether the update
+observed the cancel or simply finished was a race. It never mattered, because under the old behaviour a
+completed refresh and a cancelled one both left the connection `Unknown`; the test could not tell its two
+outcomes apart. **D19 is the first thing that can**: a completed refresh now records `Healthy`. Under
+load the scenario lost its own race and failed.
+
+The connector waits on the update's own cancellation token, so the cancel is what frees it and releasing
+the gate as well was never needed. Both slices' steps now leave it gated and assert the queue actually
+went idle. **This is the honest finding of the wave**: a green test that could not distinguish its
+subject from its opposite was passing for six slices.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds — slice 08
+
+Per Mandate 7, created so the scenarios compile and fail RED rather than BROKEN. Each carries a
+`__SCAFFOLD__` marker; zero should remain after DELIVER.
+
+| Scaffold | File |
+|---|---|
+| `IConnectionHealthService.RefreshStaleVerdictsAsync(CancellationToken)` | `Services/Interfaces/ConnectionHealth/IConnectionHealthService.cs` — the port, with its doc-comment corrected for D19/D20 |
+| `ConnectionHealthService.RefreshStaleVerdictsAsync` | throws `__SCAFFOLD__` |
+| `ConnectionHealthProber` | `Services/Implementation/BackgroundServices/ConnectionHealthProber.cs` — real `CheckWhatHasNotBeenHeardFromAsync`, scaffolded `ExecuteAsync` |
+| registration | `Program.cs`, beside `IConnectionHealthService`, as singleton + hosted service — the pattern `UsageDataForwardingService` set, for the reason it recorded |
+
+**`RecordRefreshSucceededAsync` is not a scaffold — it is implemented.** D19 is one line (`Remove` becomes
+`RecordAsync(connection, ConnectionValidationResult.Success())`), and scaffolding a one-line change would
+have produced more ceremony than code. All seven US-08A scenarios are green.
+
+**`ConnectionHealthSingleWriterArchUnitTest` passes unmodified**, which is D24's evidence that the prober
+did not become a second writer.
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (pre-DELIVER gate) — slice 08
+
+`dotnet test --filter "TestCategory=epic-5511-task-manager"` → **139 tests, 129 passed, 10 failed.**
+Every failure is slice 08's, and every one is `MISSING_FUNCTIONALITY`.
+
+| Count | Failure | Classification |
+|---|---|---|
+| 9 | `NotSupportedException: __SCAFFOLD__ RefreshStaleVerdictsAsync is not implemented yet.` | ✅ RED — US-08B is unbuilt |
+| 1 | `ArgumentException: Key Azure DevOps Url not found in Work Tracking Options` | ✅ RED — US-08C, the defect itself |
+
+**Zero `BROKEN`** (no import error, no fixture failure, no DI failure). **Zero wrong-shape** (no assertion
+couples to an internal field; the one scenario that reads stored state, AC-08A.4, does so because a
+delete and a delete-then-insert are indistinguishable at the port and the AC is *about* the delete).
+
+Two scenarios failed for the wrong reason during authoring and were fixed before this run: fixture state
+leaking between scenarios (NUnit builds one instance per class, so the flag that makes recording throw
+outlived its scenario), and the cancel race above. Neither is in the classification because neither
+survives.
+
+---
+
+## Wave: DISTILL / [REF] Handoff to DELIVER — slice 08
+
+What DELIVER owes, in the order the slice ships (DISCUSS scope assessment):
+
+1. **US-08A — done.** D19 is implemented and its seven scenarios are green.
+2. **US-08C** — move each connector's pre-flight option reads inside the guard it already has, so a
+   missing option is answered as a verdict naming the field. Not a `catch` (D28).
+3. **US-08B** — `RefreshStaleVerdictsAsync`: derive the cutoff (D25), claim by conditional update
+   (D26), probe sequentially, record; and give `ConnectionHealthProber.ExecuteAsync` its tick.
+
+**AC-08B.8** is not in this suite. It is the frontend regression guard on D21 — the existing
+`TaskManagerIcon.test.tsx` badge assertions must keep passing untouched, which is a fact about
+`pnpm test` rather than a scenario. DELIVER checks it there.
+
+**Known risk carried into DELIVER**: `Two_replicas_that_both_find_a_connection_stale_ask_it_once` runs two
+concurrent scopes against SQLite. If the conditional claim serialises rather than racing, the scenario
+still asserts the right thing; if SQLite refuses the concurrent write outright, the claim's shape — not
+the test — is what needs revisiting, and OQ-08.1's alternatives are recorded in DESIGN.
+
+---
+
+# Wave: DELIVER — slice 08
+
+ADO **#6018 "Slice 08: Connection health that persists and checks itself"** (User Story, Active),
+created and parented to Epic #5511 on 2026-09-16. Delivered the same day.
+
+Density: `lean` + `ask-intelligent` — Tier-1 `[REF]` only.
+
+---
+
+## Wave: DELIVER / [REF] What Was Built — slice 08
+
+| Change | File | Story |
+|---|---|---|
+| A successful refresh records `Healthy` rather than removing the row | `ConnectionHealthService.RecordRefreshSucceededAsync` | US-08A |
+| `RefreshStaleVerdictsAsync` — cutoff, claim, ask in turn, record | `ConnectionHealthService` | US-08B |
+| `TryClaimForProbeAsync` — conditional `UPDATE … WHERE ObservedAt < cutoff`, insert guarded by the existing unique index | `ConnectionHealthVerdictRepository` | US-08B |
+| `ConnectionHealthProber` — hosted service, single-pass method, tick | `Services/Implementation/BackgroundServices/` | US-08B |
+| `ConnectionHealthCadence` — the threshold and the tick, derived once | `Services/Implementation/ConnectionHealth/` | refactor |
+| `FindWorkTrackingSystemConnectionOptionByKey` — a lookup that answers instead of throwing | `Models/WorkTrackingSystemConnection.cs` | US-08C |
+| Pre-flight option reads moved onto it | Azure DevOps **and** Jira connectors | US-08C |
+| Registrations | `Program.cs` | — |
+
+**No EF migration**, as DESIGN predicted: the table, its columns and its unique index all already
+existed, and the claim is a query rather than a schema change.
+
+**Nothing in `Lighthouse.Frontend/`.** Not one file. That is the whole of what item (3) needed, and the
+evidence for it is that the badge tests pass untouched.
+
+---
+
+## Wave: DELIVER / [REF] Bug #6010 — what it actually was
+
+`AzureDevOpsWorkTrackingConnector.ValidateConnection` opened by reading a connection option **outside
+its own `try`** — the one line in the method that was not covered by the guard. A stored connection
+missing that option row threw `ArgumentException` straight past every catch in the method and out of the
+request. Jira's `ValidateConnection` opened with the identical unguarded line.
+
+**Why the connection screen never hit it.** The screen validates a connection built from the DTO the
+browser just sent, so every option the form rendered is present. Test connection validates the **stored
+entity**, which carries whatever option rows it has.
+
+**The fix is the read, not a catch.** `FindWorkTrackingSystemConnectionOptionByKey` answers `null` where
+the throwing version treated absence as a programming error — which it is on a path that has been
+through the connection screen, and is not on a path that has been through the database. The `Uri.TryCreate`
+guard already sitting on the next line then produces the verdict that names the field, the way an
+unreadable secret already does. A `catch` around the classifier would have answered the same 200 while
+hiding the next defect of the same shape, which is what the decision on this slice ruled out.
+
+---
+
+## Wave: DELIVER / [REF] Refactor — L1–L6
+
+One finding worth the name, at L2 (duplicated knowledge):
+
+**The staleness formula existed twice** — in `ConnectionHealthService` and again in
+`ConnectionHealthProber`, which needed it to size its own tick. Two copies of one piece of arithmetic
+whose disagreement is silent and whose silent failure is the bad one: look less often than answers
+expire and connections sit stale without anything ever being stale long enough to notice. Extracted to
+`ConnectionHealthCadence`, which owns both `HowFreshAnAnswerMustBe` and `HowOftenToLook` so the two
+cannot drift apart.
+
+Also L1: `CheckWhatHasNotBeenHeardFrom` and `CheckWhatHasNotBeenHeardFromAsync` differed by a suffix and
+did different things. The private one is now `LookWithoutLettingOneFailureEndTheLoop`, which says what it
+is for.
+
+---
+
+## Wave: DELIVER / [REF] Adversarial Review — slice 08
+
+Independent `nw-software-crafter-reviewer`, briefed to attack the specific claims rather than read for
+style. Verdict: rejected pending fixes. Two taken, one refused.
+
+**Taken — `ChangeTracker.Clear()` inside a catch.** The lost-insert-race path emptied the entire change
+tracker. `ConnectionHealthVerdictRepository` is scoped, and Test connection runs in the request scope
+beside whatever else that request has in flight; throwing all of it away to handle one refused row is
+wrong however unlikely. Now detaches only the refused verdict.
+
+**Taken — a tracked copy going stale behind `ExecuteUpdateAsync`.** The claim writes straight to the
+database, so a copy of that row read earlier in the same scope still holds its pre-claim moment. It does
+not bite today: within a pass the claim runs before anything reads the row, and the record that follows
+overwrites the moment with the same value. But the failure mode if it ever did bite is precisely the one
+this slice exists to prevent — a connection handed back to every pass forever — and the same targeted
+detach defuses it.
+
+Worth recording because it shaped the fix: **the review's own prescription for the second finding was
+`ChangeTracker.Clear()`**, the thing its first finding correctly called a violation. The targeted detach
+is what satisfies both.
+
+**Refused — "depend on `IRepository<ConnectionHealthVerdict>` rather than the concrete repository."**
+Three reasons, all of which would have to be wrong for the change to be right:
+
+1. `ConnectionHealthSingleWriterArchUnitTest` deliberately names these two types as the only production
+   types permitted to know a verdict exists. Depending on the concrete one is what that decision already
+   settled, not a violation of it.
+2. The claim needs a method that cannot go on `IRepository<T>` without changing a generic interface with
+   many implementors, to serve one entity.
+3. The stated cost — "tests cannot substitute a fake repository" — is not a cost here. The scenario that
+   exercises the claim is *about* the unique index and the conditional update, which a fake repository
+   can neither exhibit nor disprove.
+
+The review also confirmed comment discipline (no internal reference cited as an explanation), both
+`CA1031` justifications, entry-point wiring, and that the two absence-of-a-call assertions are sound.
+
+---
+
+## Wave: DELIVER / [REF] Gates — slice 08
+
+| Gate | Result |
+|---|---|
+| `dotnet build` (backend) | **0 warnings, 0 errors** |
+| Epic suite (`TestCategory=epic-5511-task-manager`) | **139 / 139** |
+| Full backend suite, live connectors excluded | 6883 passed, 1 failed — see below |
+| `pnpm test` | **5204 passed, 0 failed**, 370 files |
+
+**The one backend failure is not this slice's.** `ServiceContainer_BuildsWithoutScopeViolations` fails in
+`Dispose`, deleting its own freshly created SQLite file:
+`IOException: the process cannot access the file … DiValidation_*.db`. The container built fine — the
+name makes it look like a scope violation and it is not one. Verified by stashing every change in this
+slice and running it against unmodified `main`, where it fails identically. It is the Defender
+file-lock family the CI ledger already records, and the filename is random per run, so a stale file is
+not what causes it.
+
+---
+
+## Wave: DELIVER / [REF] Not Done Here — slice 08
+
+1. **`AC-08B.7` is asserted against SQLite, not Postgres.** Two scopes race one claim and one wins, which
+   is the promise. What the local suite cannot show is the same race under the Postgres provider, which
+   is the one that actually runs with more than one replica.
+2. **Bug #6010's confirmed reproduction is a connection missing an option row.** Whether the
+   maintainer's own Azure DevOps connection is in that state is unverified and needs their instance. The
+   structural fault is fixed either way, and the same fault existed on the Jira connector.
+3. **#6010's ADO item is not transitioned.** The fix is delivered and tested; moving the Bug to Resolved
+   is a state change nobody has asked for yet.
+4. **Public Task Manager docs and screenshots** — carried since slice 05, now seven slices, still the
+   Epic's largest outstanding debt and still not a slice's to absorb.

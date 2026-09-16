@@ -6378,9 +6378,18 @@ jobs:
       OAuthCredential.Status, so a connection with no OAuth credential row is invisible to it - which is
       every PAT and every scoped API token. Generalising it is not a rename: a Jira 401 currently
       arrives at the updater as an untyped Exception, so the signal this job needs does not yet exist.
-      Health is derived from classified refresh failures plus an on-demand test, never from a background
-      probe loop - a loop would add recurring outbound calls to rate limits we already share and already
-      trip. A connection that has never failed and never been tested reads Unknown, not Healthy.
+      Health is derived from classified refresh failures plus an on-demand test.
+      REVISED 2026-09-16 (slice 08, D20). Background probing was originally ruled out outright, on the
+      grounds that a loop would add recurring outbound calls to rate limits we already share and already
+      trip. Both magnitudes were then measured: a probe is one or two unpaged requests, against a refresh
+      that already pages the same connection every sixty minutes. So a NARROWER rule replaces the
+      prohibition - ask only the connections whose verdict is missing or older than a staleness
+      threshold, which means a connection a refresh already covers is never probed at all, and the
+      steady-state cost on a normal instance is zero additional outbound calls. What probing exists for
+      is the connection no team and no portfolio uses, which nothing else ever asks about.
+      Unchanged, and made stronger rather than weaker: a connection nothing has observed reads Unknown,
+      not Healthy. A probe that ran always records what it found, including that it could not reach the
+      tracker - so Unknown keeps meaning "nobody has asked yet" and nothing else.
     job_story: >
       When a connection's credential stops working - a revoked token, an expired PAT, a deprovisioned
       owner -
@@ -6400,7 +6409,8 @@ jobs:
         freezes, and the first signal is a flat throughput chart nobody can date.
       pull: >
         The refresh that would notice is already happening on a schedule. The signal is a by-product of
-        work already being done, not a new outbound cost.
+        work already being done, not a new outbound cost. Where no refresh happens - a connection no team
+        and no portfolio uses - a staleness-triggered probe covers the gap at one or two requests.
       anxiety: >
         That a mis-classified failure sends someone to reissue a credential that was never the problem.
         Answered by refusing to say "authentication failed" unless the connector actually said so.

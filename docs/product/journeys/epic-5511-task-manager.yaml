@@ -80,7 +80,12 @@ journeys:
           administrator to reissue a credential that was never the problem.
       - situation: A connection has never failed and has never been tested
         recovery: It reads Unknown, not Healthy. Claiming health from an absence of evidence is how a
-          status icon becomes decorative.
+          status icon becomes decorative. Since slice 08 that state is brief rather than permanent - the
+          probe reaches it - but what the probe records is always what it found, never a default.
+      - situation: A connection no team and no portfolio uses
+        recovery: A staleness-triggered probe asks it directly, because nothing else ever will. Before
+          slice 08 it read Unknown for as long as the instance ran, and the only thing that could change
+          that was an administrator remembering to press Test connection.
       - situation: The instance has just restarted
         recovery: The Recent problems section is empty and says why - the buffer is per-process and
           holds events since this instance started. It is not an audit log and the copy does not imply
@@ -99,8 +104,14 @@ journeys:
       - artifact: the row and section labels
         source: the tenant's configured Terminology for team, portfolio and feature.
       - artifact: connection health
-        source: the outcome of the most recent refresh for that connection, classified where the
-          connector can say so, plus an on-demand test. Never a background probe loop.
+        source: >
+          The outcome of the most recent refresh for that connection, classified where the connector can
+          say so, plus an on-demand test - and, since 2026-09-16 (slice 08, D20), a staleness-triggered
+          probe for the connections the first two never reach. A success records Healthy rather than
+          erasing the verdict, so a connection something refreshes is never stale and is never probed;
+          the probe exists for the connection no team and no portfolio uses, which otherwise reads
+          Unknown for as long as the instance lives. Still never a loop that asks every tracker on a
+          timer.
       - artifact: recent warnings
         source: a bounded in-memory Serilog sink, per process, read through the already-guarded logs
           controller.
