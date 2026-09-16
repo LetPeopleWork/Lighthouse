@@ -608,7 +608,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         {
             var states = team.AllStates.ToList();
 
-            return issues.Where(i => states.Contains(i.State.Name)).ToList();
+            return issues.Where(i => states.Count == 0 || states.Contains(i.State.Name)).ToList();
         }
 
         private Task GetWithPagination<T>(

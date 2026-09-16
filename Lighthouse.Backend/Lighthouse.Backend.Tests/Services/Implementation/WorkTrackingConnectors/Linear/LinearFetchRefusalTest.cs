@@ -36,6 +36,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly byte[] OffRingKeyMaterial = Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg=");
 
+        private static readonly string[] BothIssues = ["lig-1", "lig-2"];
+
+        private static readonly string[] OnlyTheInProgressIssue = ["lig-1"];
+
+        private static readonly string[] BothProjects = ["project-active", "project-backlog"];
+
         [Test]
         public void GetWorkItemsForTeam_RefusesWhenLinearWillNotAnswer()
         {
@@ -119,6 +125,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "No request may reach Linear at all, because every one the client makes would carry the key it could not read.");
         }
 
+        [Test]
+        public async Task GetWorkItemsForTeam_NoStatesMapped_ReadsTheTeamsIssuesRatherThanNoneOfThem()
+        {
+            var subject = ALinearThat(AnsweringWith(TwoIssuesAndTwoProjects()));
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeamOnLinearWithNoStatesMapped(), CancellationToken.None);
+
+            Assert.That(workItems.Select(w => w.ReferenceId), Is.EquivalentTo(BothIssues),
+                "A team that has mapped no states has said nothing about which issues it wants, which is not "
+                + "the same as wanting none. Matching against an empty list matches nothing, and removal then "
+                + "deletes every Work Item the team has.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_StatesMapped_KeepsOnlyTheIssuesInThoseStates()
+        {
+            var subject = ALinearThat(AnsweringWith(TwoIssuesAndTwoProjects()));
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeamOnLinear(), CancellationToken.None);
+
+            Assert.That(workItems.Select(w => w.ReferenceId), Is.EquivalentTo(OnlyTheInProgressIssue),
+                "Letting an unmapped state list through must not let a mapped one through too. The backlog "
+                + "issue is outside the states this team mapped and has to stay out.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_NoStatesMapped_ReadsThePortfoliosProjectsRatherThanNoneOfThem()
+        {
+            var subject = ALinearThat(AnsweringWith(TwoIssuesAndTwoProjects()));
+
+            var features = await subject.GetFeaturesForProject(APortfolioOnLinearWithNoStatesMapped(), CancellationToken.None);
+
+            Assert.That(features.Select(f => f.ReferenceId), Is.EquivalentTo(BothProjects),
+                "The portfolio half already reads an unmapped state list as 'no opinion'. Both halves share "
+                + "the same settings screen, so an operator who leaves the states empty must not get one "
+                + "answer for their features and the opposite one for their work items.");
+        }
+
         private static HttpMessageHandler WillNotAnswer()
         {
             return HandlerReturning(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)
@@ -190,6 +234,81 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static string NoProjects()
         {
             return @"{ ""data"": { ""projects"": { ""nodes"": [], ""pageInfo"": { ""hasNextPage"": false, ""endCursor"": null } } } }";
+        }
+
+        /// <summary>
+        /// Every GraphQL request goes to the same endpoint, so one envelope can carry every shape the fetch
+        /// asks for and let the deserialiser take the branch it wants. One issue and one project sit in a
+        /// state the fixtures below map; the other two sit in a state they do not.
+        /// </summary>
+        private static string TwoIssuesAndTwoProjects()
+        {
+            const string LastPage = @"{ ""hasNextPage"": false, ""endCursor"": null }";
+
+            return $@"{{ ""data"": {{
+                ""teams"": {{ ""nodes"": [ {{ ""id"": ""team-1"", ""name"": ""Demo"" }} ], ""pageInfo"": {LastPage} }},
+                ""team"": {{ ""id"": ""team-1"", ""name"": ""Demo"", ""issues"": {{ ""nodes"": [
+                    {AnIssue("issue-1", "LIG-1", "In Progress")},
+                    {AnIssue("issue-2", "LIG-2", "Backlog")}
+                ], ""pageInfo"": {LastPage} }} }},
+                ""projects"": {{ ""nodes"": [
+                    {AProject("project-active", "In Progress")},
+                    {AProject("project-backlog", "Backlog")}
+                ], ""pageInfo"": {LastPage} }}
+            }} }}";
+        }
+
+        private static string AnIssue(string id, string identifier, string state)
+        {
+            return $@"{{
+                ""id"": ""{id}"",
+                ""title"": ""{identifier}"",
+                ""identifier"": ""{identifier}"",
+                ""url"": ""https://linear.app/demo/issue/{identifier}"",
+                ""number"": ""1"",
+                ""sortOrder"": 1.0,
+                ""createdAt"": ""2026-05-19T00:00:00.000Z"",
+                ""startedAt"": null,
+                ""completedAt"": null,
+                ""state"": {{ ""id"": ""s-{id}"", ""name"": ""{state}"" }}
+            }}";
+        }
+
+        private static string AProject(string id, string status)
+        {
+            return $@"{{
+                ""id"": ""{id}"",
+                ""name"": ""{id}"",
+                ""status"": {{ ""id"": ""s-{id}"", ""name"": ""{status}"", ""type"": ""started"", ""color"": ""#000"" }},
+                ""url"": ""https://linear.app/demo/project/{id}"",
+                ""sortOrder"": 1.0,
+                ""createdAt"": ""2026-05-19T00:00:00.000Z"",
+                ""startDate"": ""2026-05-19T00:00:00.000Z"",
+                ""completedAt"": null,
+                ""initiatives"": {{ ""nodes"": [] }}
+            }}";
+        }
+
+        private static Team ATeamOnLinearWithNoStatesMapped()
+        {
+            var team = ATeamOnLinear();
+
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+
+            return team;
+        }
+
+        private static Portfolio APortfolioOnLinearWithNoStatesMapped()
+        {
+            var portfolio = APortfolioOnLinear();
+
+            portfolio.ToDoStates.Clear();
+            portfolio.DoingStates.Clear();
+            portfolio.DoneStates.Clear();
+
+            return portfolio;
         }
 
         private static Team ATeamOnLinear(string storedApiKey = StoredApiKey)
