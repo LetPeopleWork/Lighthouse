@@ -1,4 +1,5 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Logging;
@@ -183,6 +184,42 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         {
             var name = $"Team {Guid.NewGuid():N}";
             return new SeededTeam(SeedTeam(connection.Id, name), name);
+        }
+
+        /// <summary>
+        /// A connection whose last answer is of a chosen age. Written straight to the row rather than
+        /// produced by a probe, because the age is the precondition under test and a probe would be the
+        /// thing being ruled out.
+        /// </summary>
+        private SeededConnection GivenAConnectionCheckedThisLongAgo(TimeSpan howLongAgo)
+        {
+            var connection = NewConnection(secretValue: null);
+
+            using var scope = Factory.Services.CreateScope();
+            var verdicts = scope.ServiceProvider.GetRequiredService<IRepository<ConnectionHealthVerdict>>();
+
+            verdicts.Add(new ConnectionHealthVerdict
+            {
+                WorkTrackingSystemConnectionId = connection.Id,
+                State = ConnectionHealthState.Healthy,
+                Code = string.Empty,
+                Message = string.Empty,
+                ObservedAt = theInstanceClock.Now.UtcDateTime - howLongAgo,
+            });
+            verdicts.Save().GetAwaiter().GetResult();
+
+            return connection;
+        }
+
+        private async Task GivenTheTwoRefreshIntervalsAre(int anHour, int andSixHours)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var settings = scope.ServiceProvider.GetRequiredService<IAppSettingService>();
+
+            await settings.UpdateTeamDataRefreshSettings(
+                new RefreshSettings { Interval = anHour, RefreshAfter = 180, StartDelay = 10 });
+            await settings.UpdateFeatureRefreshSettings(
+                new RefreshSettings { Interval = andSixHours, RefreshAfter = 180, StartDelay = 15 });
         }
 
         // --- Given: the tracker ---
@@ -381,6 +418,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 $"A connection something has been observed about carries the moment it was. The row said: {row}");
             Assert.That(observedAt, Is.GreaterThanOrEqualTo(TheInstantTheInstanceBelievesIn.UtcDateTime),
                 $"The refresh observed this connection, so its moment is the refresh's. The row said: {row}");
+        }
+
+        private async Task ThenThatConnectionWasObservedThisLongAgo(SeededConnection connection, TimeSpan howLongAgo)
+        {
+            var row = await TheHealthRowFor(connection);
+            var observedAt = row.GetProperty("observedAt").GetDateTime();
+            var expected = theInstanceClock.Now.UtcDateTime - howLongAgo;
+
+            Assert.That(observedAt, Is.EqualTo(expected).Within(TimeSpan.FromSeconds(1)),
+                $"'{connection.Name}' should carry the moment this scenario put on it. The row said: {row}");
         }
 
         private int TheStoredVerdictIdFor(SeededConnection connection)

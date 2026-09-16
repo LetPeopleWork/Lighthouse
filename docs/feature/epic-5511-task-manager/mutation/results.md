@@ -788,3 +788,74 @@ pool handle still open when `Dispose` runs. Slice 07's write-up attributed this 
 accumulating in `bin/`; that is not the whole story. Deleting all fourteen of them and running the class
 alone still fails, and it fails identically with this pass's changes stashed. Not a regression, and
 nothing this pass touched can reach it.
+
+## 6018 — Connection health that persists and checks itself (slice 08)
+
+Epic #5511 Task Manager, slice 08. Run 2026-09-16 against `main` @ `d27609385`. Gate is an 80 % kill
+rate on each stack that has changed files. **Frontend: not run — the slice changed no frontend file.**
+
+| stack | score | killed | survived | no coverage | timeout |
+| --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **82.8 %** | 47 | 10 | 13 | 1 |
+
+Config: `stryker.6018.backend.json` (concurrency 1 — see *Two ways this run wasted an hour* below).
+
+| File | score | survivors |
+| --- | --- | --- |
+| `ConnectionHealthCadence.cs` | **100 %** | — |
+| `ConnectionHealthProber.cs` | **100 %** | — (8 uncovered, all in `ExecuteAsync`) |
+| `ConnectionHealthService.cs` | **88.9 %** | 4, all guard clauses and log text |
+| `ConnectionHealthVerdictRepository.cs` | **68.4 %** | 6, five of them one defensive call |
+
+### What the first run found, which was worth more than the number
+
+The first pass scored **80.4 %** — over the gate, and hiding two defects in the tests.
+
+**The threshold formula was not tested at all.** Both mutations to
+`ConnectionHealthCadence.HowFreshAnAnswerMustBe` survived: `Math.Max` → `Math.Min`, and the `2 *`
+arithmetic. Every scenario had deliberately set verdict ages far from any boundary so that none of them
+would pass or fail on arithmetic — and the price of that was that the arithmetic itself was unpinned.
+With both seeded refresh intervals at 60 minutes, `min` and `max` cannot be told apart; at 60 and 360
+they can, and the difference is the whole of the claim that a connection something refreshes never goes
+stale. `An_answer_is_judged_against_the_longest_refresh_interval_not_the_shortest` sets the two intervals
+an hour and six hours apart and asks about an answer three hours old — fresh against the longest, stale
+against the shortest. That file is now 100 %.
+
+**A test written to kill the claim's connection match did not kill it, and neither did the first fix.**
+Mutating `WorkTrackingSystemConnectionId == connectionId` to `!=` makes the claim match the *other*
+connection: with one stale row and one fresh row, the stale connection's claim finds the fresh row and
+does not match, the fresh connection's claim finds the stale row and does, so the tracker is still asked
+**exactly once** and both connections still read **Healthy**. A count assertion and a state assertion are
+both satisfied by the mirror image of the correct behaviour.
+
+The first attempt to fix that seeded the fresh connection at `TimeSpan.Zero` and asserted both ended up
+observed "just now" — which also holds either way. Seeding it an hour old is what makes the moment the
+discriminator: the correct code leaves it an hour old, the mutant advances it to now. Mutant killed;
+82.8 %.
+
+Two tests in one slice that looked right, passed, and proved nothing. The other was found at DISTILL —
+a slice 05 cancel scenario that had been green for six slices while unable to distinguish a cancelled
+refresh from one that simply finished.
+
+### Survivors left deliberately
+
+- **`ForgetAnyTrackedCopyOf`, five mutants (L34, L68, L76, L80).** Removing the call changes no test
+  outcome, which is consistent with how it was accepted in review: it guards a stale tracked copy in a
+  scope where, on today's paths, none is ever read back. It is defensive rather than covered, and a test
+  that killed these would have to construct a flow the product does not have. Recorded as a known gap
+  rather than papered over.
+- **`ConnectionHealthProber.ExecuteAsync`, 8 uncovered.** The integration harness removes every
+  `IHostedService`, so the loop cannot run under test; the single-pass method it calls is covered.
+- **Guard clauses and log message text** — `ArgumentNullException.ThrowIfNull`, `LogWarning` strings, and
+  the two placeholder `string.Empty` values a claim inserts and the recording immediately overwrites.
+
+### Two ways this run wasted an hour
+
+- **Stryker holds the test assembly.** A `dotnet build` of the test project during a mutation run fails
+  to copy `Lighthouse.Backend.Tests.dll` (`locked by .NET Host`), and `dotnet test --no-build` then runs
+  the *previous* binaries and reports a pass that means nothing. This nearly shipped an unverified
+  rebase. Do not run mutation concurrently with anything that rebuilds the test project.
+- **Concurrency 4 gets the run killed** on this machine (OS low-memory). Concurrency 1 completes in
+  about 25 minutes.
+- **Invocation**: the shell allowlist refuses `run-backend-x64.ps1` by path and mis-splits a multi-line
+  PowerShell equivalent. `pwsh -NoProfile -File <script> -Config <json>` is the form that works.

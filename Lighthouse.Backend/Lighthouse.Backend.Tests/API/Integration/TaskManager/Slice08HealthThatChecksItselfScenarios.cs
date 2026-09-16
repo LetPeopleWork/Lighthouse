@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
@@ -216,6 +216,69 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
             ThenTheTrackerWasNotAskedAgain();
             await ThenThatConnectionReads(connection, "Healthy");
+        }
+
+        // @driving_port @real-io @AC-08B.2 @AC-08B.3
+        // What "too old" is derived from, pinned. Every other scenario here sets the age far from any
+        // boundary on purpose, so all of them pass whether the threshold is twice the longest refresh
+        // interval, twice the shortest, or a fraction of either - and the difference is the whole of why
+        // a connection something refreshes is never asked. With the two intervals an hour and six hours
+        // apart, an answer three hours old is fresh against the longest and stale against the shortest.
+        [Test]
+        public async Task An_answer_is_judged_against_the_longest_refresh_interval_not_the_shortest()
+        {
+            await GivenTheTwoRefreshIntervalsAre(anHour: 60, andSixHours: 360);
+            GivenAConnectionCheckedThisLongAgo(TimeSpan.FromHours(3));
+            GivenTheTrackerIsWatchedFromNowOn();
+
+            await WhenTheInstanceChecksWhatItHasNotHeardFrom();
+
+            ThenTheTrackerWasNotAskedAgain();
+        }
+
+        // @driving_port @real-io @AC-08B.3
+        // The claim has to match the connection it was asked about. Matching on anything else asks the
+        // wrong tracker and advances the wrong row, and with one connection in the fixture that is
+        // indistinguishable from working.
+        [Test]
+        public async Task Only_the_connection_that_has_gone_stale_is_asked()
+        {
+            var stale = GivenAConnectionCheckedThisLongAgo(TimeSpan.FromDays(30));
+
+            // An hour old: comfortably inside the four-hour threshold the seeded intervals derive, and
+            // deliberately not zero. Seeded at zero, both connections would read "observed just now"
+            // whichever one was actually asked, and the assertions below would hold either way.
+            var fresh = GivenAConnectionCheckedThisLongAgo(TimeSpan.FromHours(1));
+            GivenTheTrackerAnswersNormally();
+
+            await WhenTheInstanceChecksWhatItHasNotHeardFrom();
+
+            ThenTheTrackerWasAskedExactlyOnce();
+
+            // Which of the two was asked, not merely that one was. Claiming the wrong row still asks a
+            // tracker exactly once and still leaves both reading Healthy, so a count and a state between
+            // them cannot tell the right claim from the mirror image of it. The moment is what moves.
+            await ThenThatConnectionWasObservedThisLongAgo(stale, TimeSpan.Zero);
+            await ThenThatConnectionWasObservedThisLongAgo(fresh, TimeSpan.FromHours(1));
+        }
+
+        // @driving_port @real-io @AC-08B.2
+        // Two stale connections in one pass, both already carrying a verdict. The second one's row has
+        // been read into memory by the first one's recording, so this is the pass where a copy held from
+        // earlier could be written back over the claim - and a connection handed back to every pass is
+        // the cost this whole shape exists to avoid.
+        [Test]
+        public async Task Two_stale_connections_in_one_pass_both_end_up_answered()
+        {
+            var first = GivenAConnectionCheckedThisLongAgo(TimeSpan.FromDays(30));
+            var second = GivenAConnectionCheckedThisLongAgo(TimeSpan.FromDays(30));
+            GivenTheTrackerAnswersNormally();
+
+            await WhenTheInstanceChecksWhatItHasNotHeardFrom();
+
+            await ThenThatConnectionReads(first, "Healthy");
+            await ThenThatConnectionReads(second, "Healthy");
+            await ThenThatConnectionWasObservedThisLongAgo(second, TimeSpan.Zero);
         }
 
         // @driving_port @real-io @error @AC-08B.4
