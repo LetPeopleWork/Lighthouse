@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
 {
+#pragma warning disable S107 // Answering "how is this connection" needs all three stored facts - the connection, its verdict and its OAuth grant - plus the connector that asks the tracker, the reader that refuses an undecryptable secret before anything leaves the machine, and the clock the observed-at moment comes from. No subset of those is ever decided together, so a parameter object here would name nothing and only move the count.
     public sealed class ConnectionHealthService(
         IRepository<WorkTrackingSystemConnection> connectionRepository,
         ConnectionHealthVerdictRepository verdictRepository,
@@ -21,6 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
         ILighthouseClock clock,
         ILogger<ConnectionHealthService> logger)
         : IConnectionHealthService
+#pragma warning restore S107
     {
         /// <summary>
         /// The one code that means "the credential was refused". Every other code a connector can answer
