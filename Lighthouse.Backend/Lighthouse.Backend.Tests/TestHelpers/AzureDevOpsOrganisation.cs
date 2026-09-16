@@ -18,8 +18,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// The real connector over a recording client. Only the client is substituted: the queries, the field
     /// lists, the chunking and the conversion are all the production code path.
     /// </summary>
-    internal sealed class RecordedAzureDevOpsConnector(WorkItemTrackingHttpClient client) : AzureDevOpsWorkTrackingConnector(
-        Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
+    internal sealed class RecordedAzureDevOpsConnector(WorkItemTrackingHttpClient client, ILogger<AzureDevOpsWorkTrackingConnector>? logger = null) : AzureDevOpsWorkTrackingConnector(
+        logger ?? Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
         Mock.Of<IWorkTrackingAuthStrategyFactory>())
     {
         internal override Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                         throw HowTheFieldLookupIsRefused ?? new VssServiceException("The field definitions could not be read.");
                     }
 
-                    return Task.FromResult(new List<WorkItemField2>());
+                    return Task.FromResult(FieldsTheOrganisationHolds);
                 });
 
             clientMock
@@ -166,6 +166,19 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public Exception? HowTheFieldLookupIsRefused { get; set; }
 
         /// <summary>
+        /// The fields the organisation defines, which is what an additional field in the configuration is
+        /// resolved against. Empty by default: most tests do not ask for an additional field, and one that
+        /// does needs to choose the pair it is about.
+        /// </summary>
+        public List<WorkItemField2> FieldsTheOrganisationHolds { get; } = [];
+
+        /// <summary>
+        /// What the connector wrote while it worked. Some of what a refresh does for an operator is tell
+        /// them something, and there is no return value carrying that.
+        /// </summary>
+        public RecordingLogger<AzureDevOpsWorkTrackingConnector> Log { get; } = new();
+
+        /// <summary>
         /// How often the connector asked the organisation for its field definitions. Counted because it is
         /// the request that hides: it precedes every payload read, and a test counting only payload reads
         /// reports "nothing was fetched" for a cycle that still went to the tracker.
@@ -194,14 +207,14 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             var ado = new AzureDevOpsOrganisation(itemIds);
 
-            return (new RecordedAzureDevOpsConnector(ado.Client), ATeamOnAzureDevOps(), ado);
+            return (new RecordedAzureDevOpsConnector(ado.Client, ado.Log), ATeamOnAzureDevOps(), ado);
         }
 
         internal static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio, AzureDevOpsOrganisation Ado) AnAzureDevOpsPortfolioThatHolds(params int[] itemIds)
         {
             var ado = new AzureDevOpsOrganisation(itemIds);
 
-            return (new RecordedAzureDevOpsConnector(ado.Client), APortfolioOnAzureDevOps(), ado);
+            return (new RecordedAzureDevOpsConnector(ado.Client, ado.Log), APortfolioOnAzureDevOps(), ado);
         }
 
         /// <summary>
@@ -219,7 +232,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 Reference = "Microsoft.VSTS.Scheduling.StoryPoints",
             });
 
-            return (new RecordedAzureDevOpsConnector(ado.Client), connection, ado);
+            return (new RecordedAzureDevOpsConnector(ado.Client, ado.Log), connection, ado);
         }
 
         private static Team ATeamOnAzureDevOps()

@@ -1,7 +1,9 @@
 ﻿using System.Net;
 
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
@@ -34,6 +36,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string WhatTheFieldListVerdictSays = "could not read the list of fields";
 
         private const string TheAdditionalFieldsInput = "Additional Fields";
+
+        private const string TheReferenceTheConfigurationNames = "Custom.StoryPoints";
 
         [Test]
         public void GetWorkItemsForTeam_RefusesWhenTheTrackerWillNotRunTheQuery()
@@ -280,6 +284,84 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(result.Message, Does.Contain(WhatTheFieldListVerdictSays));
             }
         }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ReadsTheFieldWhoseReferenceNameMatchesWhenAnotherIsDisplayedUnderThatName()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            AskFor(TheReferenceTheConfigurationNames, team.WorkTrackingSystemConnection);
+            ado.FieldsTheOrganisationHolds.AddRange([
+                AField("Story Points", TheReferenceTheConfigurationNames),
+                AField(TheReferenceTheConfigurationNames, "Custom.SomethingElse"),
+            ]);
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(ado.FieldsOfTheItemRead, Does.Contain(TheReferenceTheConfigurationNames),
+                "A field created through the REST API may be displayed under a name that is another field's "
+                + "reference name, which the portal would not allow. Two matches are not an error to fail the "
+                + "refresh over - the reference name is the exact identifier, so it is the one that wins.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_TellsTheOperatorWhichAdditionalFieldTheOrganisationDoesNotHave()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            AskFor(TheReferenceTheConfigurationNames, team.WorkTrackingSystemConnection);
+            ado.FieldsTheOrganisationHolds.Add(AFieldTheOrganisationDoesHold());
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(ado.Log.Warnings, Has.Some.Contains(TheReferenceTheConfigurationNames),
+                "Nothing else reports this on a refresh. The field is simply never fetched, on every cycle, "
+                + "for as long as the configuration carries it, and the log line is the only trace of it.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_StillReturnsItsWorkItemsWhenAnAdditionalFieldMatchesNothing()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            AskFor(TheReferenceTheConfigurationNames, team.WorkTrackingSystemConnection);
+            ado.FieldsTheOrganisationHolds.Add(AFieldTheOrganisationDoesHold());
+
+            var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(workItems.Select(workItem => workItem.ReferenceId), Does.Contain($"{TheOnlyItem}"),
+                "A stale field reference in a saved configuration is an ordinary mistake. Refusing the refresh "
+                + "over one would turn a cosmetic problem into an outage for every team on that connection.");
+        }
+
+        [Test]
+        public async Task ValidateConnection_StillReportsAnAdditionalFieldThatMatchesNothingInTheOrganisation()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.FieldsTheOrganisationHolds.Add(AFieldTheOrganisationDoesHold());
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo("additional_fields_invalid"));
+                Assert.That(result.Message, Does.Contain("Microsoft.VSTS.Scheduling.StoryPoints"),
+                    "The administrator can only fix the field they are told about, so a reference that "
+                    + "resolves to nothing has to keep reaching the connection screen by name.");
+                Assert.That(result.FieldName, Is.EqualTo(TheAdditionalFieldsInput));
+            }
+        }
+
+        private static void AskFor(string reference, WorkTrackingSystemConnection connection)
+            => connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = "Story Points",
+                Reference = reference,
+            });
+
+        private static WorkItemField2 AField(string name, string referenceName)
+            => new() { Name = name, ReferenceName = referenceName };
+
+        /// <summary>Some field other than the one the configuration asks for, so an empty list is never why a lookup found nothing.</summary>
+        private static WorkItemField2 AFieldTheOrganisationDoesHold()
+            => AField("Effort", "Microsoft.VSTS.Scheduling.Effort");
 
         /// <summary>A 401 that carries a challenge header, which is what dev.azure.com answers with.</summary>
         private static VssUnauthorizedException AChallengedRefusal()

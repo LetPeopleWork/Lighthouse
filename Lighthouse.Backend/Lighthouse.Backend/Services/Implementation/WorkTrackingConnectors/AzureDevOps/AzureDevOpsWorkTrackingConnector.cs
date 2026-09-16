@@ -710,15 +710,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var additionalFieldDefinition in additionalFieldDefinitions)
             {
-                var fieldReference = availableFields.SingleOrDefault(f =>
-                    string.Equals(f.Name, additionalFieldDefinition.Reference, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(f.ReferenceName, additionalFieldDefinition.Reference, StringComparison.OrdinalIgnoreCase))?.ReferenceName ?? string.Empty;
+                var fieldReference = TheReferenceOfTheFieldNamed(additionalFieldDefinition.Reference, availableFields);
+
+                if (string.IsNullOrEmpty(fieldReference))
+                {
+                    logger.LogWarning(
+                        "No field in this Azure DevOps organisation is called {AdditionalField} or references it, so nothing will be read for it",
+                        additionalFieldDefinition.Reference);
+                }
 
                 customFieldMappings.Add(additionalFieldDefinition.Id, fieldReference);
             }
 
             return customFieldMappings;
         }
+
+        /// <summary>
+        /// A configured field can be named either by its reference name or by the name it is displayed under,
+        /// and one organisation can hold both spellings for two different fields - so the reference name, being
+        /// the exact identifier, wins rather than the match being ambiguous.
+        ///
+        /// A name matching nothing answers with no reference rather than refusing: a stale entry in a saved
+        /// configuration is an ordinary mistake, and refusing would stop the refresh for everyone on that
+        /// connection over a field nobody is reading. The caller that validates a connection reports it, and
+        /// on a refresh the log line above is the only trace there is.
+        /// </summary>
+        private static string TheReferenceOfTheFieldNamed(string reference, List<WorkItemField2> availableFields)
+            => (availableFields.Find(field => string.Equals(field.ReferenceName, reference, StringComparison.OrdinalIgnoreCase))
+                ?? availableFields.Find(field => string.Equals(field.Name, reference, StringComparison.OrdinalIgnoreCase)))
+                ?.ReferenceName ?? string.Empty;
 
         /// <summary>
         /// Every failure here travels on to the caller. Removal is a set difference against what this fetch
