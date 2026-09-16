@@ -1,0 +1,60 @@
+{
+  "roadmap": {
+    "project_id": "fix-empty-jql-bracket-guard",
+    "created_at": "2026-09-16T00:00:00Z",
+    "total_steps": 2
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "An empty mapped collection must not read as an empty tracker",
+      "description": "Bug #5974, re-scoped. Removal is a set difference against what the tracker returned and has no floor, so any connector that answers an empty mapped collection with zero records deletes everything that owner holds. Linear's team read does exactly that today. Jira and Azure DevOps instead assemble a query that matches everything, or in the fully-empty case a query that filters nothing at all. Root cause analysis: docs/feature/fix-empty-jql-bracket-guard/rca.md",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "An empty state list must not read as a team with no work",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A Linear team whose mapped state list is empty reads its work items rather than none of them",
+            "A Linear team with mapped states keeps filtering by them exactly as it does now",
+            "The team path and the portfolio path answer an empty state list the same way"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTest.cs"
+          ],
+          "implementation_notes": "FilterIssuesForStates answers zero issues for an empty state list, because Contains on an empty list is always false. The portfolio path in the same file already guards the identical concept with a count check before the membership test, and leaves everything through when nothing is mapped. Make the team path agree with it. The consequence of not doing so is not a narrow query but total deletion: removal is stored minus swept, the sweep set would be empty, and the only trace is a Debug line nobody sees at the default level. Its sweep is unreachable today and Epic #5687 slices 07 and 08 turn it on, so this is cheap now and a live data-loss bug later. Check whether the offline Linear fixture can drive the team read without a network call before assuming a new one is needed - an earlier investigation on this bug wrongly assumed a connector had no offline fixture and had to retract it."
+        },
+        {
+          "id": "01-02",
+          "name": "A query that filters nothing must be refused, not sent",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "A Jira team whose types, states and stored query are all empty is refused rather than having an empty query sent on its behalf",
+            "An Azure DevOps owner in the same state is refused the same way",
+            "A refusal carries a verdict naming what is missing from the configuration, and reaches the caller rather than being swallowed",
+            "Every configuration that assembles a real query today still assembles the same one",
+            "An empty type list and an empty state list each still emit no bracket pair, and that is now pinned by a test"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs"
+          ],
+          "implementation_notes": "The post-condition belongs where the query is assembled, so the restore path and the direct API path are both covered rather than only the screens. No new exception type: WorkTrackingReadException and its per-connector subclasses already carry a verdict and are already caught in the validation methods. Reuse them. The measured failure this closes is an empty jql= on the wire, which Jira answers with either every issue or none depending on an instance setting, and removal has no floor either way. Do not add the guard at query-build time as a behaviour choice for the connector to make: Jira and Azure DevOps fail open and the other three fail closed, so no single query-build behaviour is right for all five, which is why this step refuses rather than substitutes. The two tests the original work item asked for belong here, driving ValidateTeamSettings and asserting on the emitted query rather than on a boolean."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "user",
+    "notes": "Scope agreed with the user 2026-09-16: stop the live deletions first, and carry the original item's regression tests along. Deliberately deferred, recorded in the RCA: save-time API validation on SettingsOwnerDtoBase, the ServiceNow state filter, the CSV row filter, an empty-collection contract across IWorkTrackingConnector, correcting the overstated comment on WithoutTheLeadingConjunction, and a warning when a cycle removes every stored record for an owner."
+  }
+}

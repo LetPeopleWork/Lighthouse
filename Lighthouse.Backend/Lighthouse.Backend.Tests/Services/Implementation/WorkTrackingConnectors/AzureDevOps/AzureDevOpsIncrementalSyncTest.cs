@@ -357,5 +357,99 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// An owner can reach the settings API with no states mapped, and the clause built from them is then
+        /// built from nothing. Emitting the bracket pair anyway writes a WIQL Azure DevOps cannot parse, and
+        /// an owner whose refresh fails outright records nothing at all. Asking for the absent bracket pair,
+        /// rather than for the clause that replaces it, is what keeps this from passing on a query that
+        /// happens to contain the right substring somewhere else.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_NoStatesMapped_LeavesTheStateClauseOutRatherThanEmpty()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+
+            await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ado.WiqlQueries, Has.None.Contains("()"));
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"AND ([{AzureDevOpsFieldNames.WorkItemType}] = 'User Story')"),
+                    "positive control: a change that dropped every clause would satisfy the assertion above "
+                    + "while asking Azure DevOps for the whole organisation.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_NoWorkItemTypesMapped_LeavesTheTypeClauseOutRatherThanEmpty()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            team.WorkItemTypes.Clear();
+
+            await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ado.WiqlQueries, Has.None.Contains("()"));
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"AND ([{AzureDevOpsFieldNames.State}] = 'New' OR [{AzureDevOpsFieldNames.State}] = 'Active' OR [{AzureDevOpsFieldNames.State}] = 'Closed')"),
+                    "positive control: a change that dropped every clause would satisfy the assertion above "
+                    + "while asking Azure DevOps for the whole organisation.");
+            }
+        }
+
+        /// <summary>
+        /// Nothing configured leaves nothing to select on, and every part of the WHERE clause is then built
+        /// from nothing. What reaches Azure DevOps is a WHERE with no condition under it, which it refuses -
+        /// so the refusal is only ever as clear as whatever the tracker happens to say about the syntax.
+        /// Saying it here instead names the configuration that caused it.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_NothingIsConfiguredAtAll_RefusesRatherThanAskingAzureDevOpsForEverything()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            team.WorkItemTypes.Clear();
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+            team.DataRetrievalValue = string.Empty;
+
+            var verdict = await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ado.WiqlQueries, Is.Empty,
+                    "A query that selects on nothing must not be issued at all - whatever Azure DevOps "
+                    + "answers it with is a number of items the configuration never asked for.");
+                Assert.That(verdict.IsValid, Is.False);
+                Assert.That(verdict.Message, Does.Contain("work item type").IgnoreCase.And.Contains("state").IgnoreCase,
+                    "The refusal has to name what is missing, or it reads as a broken connection and the "
+                    + "administrator goes looking at the wrong screen.");
+                Assert.That(verdict.FieldName, Is.Not.Null.And.Not.Empty,
+                    "The settings screen highlights the input the verdict names; without one the message is "
+                    + "shown against nothing.");
+            }
+        }
+
+        /// <summary>
+        /// The refresh path has no verdict to return, so the refusal has to leave as an exception. Answering
+        /// a refresh with an empty result would be read as "the team has no work left" and remove every
+        /// record it has.
+        /// </summary>
+        [Test]
+        public void GetWorkItemsForTeam_NothingIsConfiguredAtAll_RefusesRatherThanFetchingNothing()
+        {
+            var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            team.WorkItemTypes.Clear();
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+            team.DataRetrievalValue = string.Empty;
+
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
+                Throws.InstanceOf<AzureDevOpsReadException>());
+        }
     }
 }

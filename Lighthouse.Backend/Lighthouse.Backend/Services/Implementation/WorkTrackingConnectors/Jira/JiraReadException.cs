@@ -18,10 +18,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         internal const string AdditionalFieldsFieldName = "Additional Fields";
 
+        /// <summary>
+        /// The input a team's or a portfolio's own JQL is typed into. Named the same way everywhere for the
+        /// same reason as the field above.
+        /// </summary>
+        internal const string QueryFieldName = "DataRetrievalValue";
+
         public JiraReadException(ConnectionValidationResult verdict)
             : base(verdict)
         {
         }
+
+        /// <summary>
+        /// Nothing in the configuration narrows what to fetch - no types, no states, no query of the
+        /// operator's - so the JQL comes out saying nothing at all. Jira answers an empty query with either
+        /// every issue on the instance or none of them, depending on a setting Lighthouse cannot see from
+        /// here, and "none" is indistinguishable from a team whose work has genuinely all gone: the next
+        /// refresh deletes every record it holds, and their blocked spells, which no tracker can rebuild,
+        /// do not come back. Refusing is the only answer that is right whichever way the instance is set.
+        /// </summary>
+        public static JiraReadException NothingNarrowsTheQuery()
+            => new(ConnectionValidationResult.Failure(
+                "nothing_to_query",
+                "This configuration selects no work item types, no states and carries no query of its own, "
+                + "so there is nothing for Lighthouse to ask Jira for. An empty query returns either every "
+                + "issue on the instance or none of them, depending on how the instance is set up, and "
+                + "neither is what was configured. Choose at least one work item type, map at least one "
+                + "state, or write a JQL query.",
+                "The assembled JQL was empty, so no request was sent.",
+                QueryFieldName));
 
         /// <summary>
         /// Jira would not hand over the saved filter a board is built on. The board itself can be perfectly
@@ -59,6 +84,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 "board_filter_unreadable",
                 $"Lighthouse could not read the filter behind this board. {whatCameBack} The account this connection signs in with may not have permission to see that saved filter - a board stays visible even when the filter behind it is shared with a smaller group. Ask a Jira administrator to share filter {filterId} with that account, or configure the team with a JQL query instead of a board.",
                 $"GET rest/api/2/filter/{filterId} answered {(int)status} {status}.",
-                "DataRetrievalValue"));
+                QueryFieldName));
     }
 }

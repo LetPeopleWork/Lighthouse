@@ -20,10 +20,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         internal const string AdditionalFieldsFieldName = "Additional Fields";
 
+        /// <summary>
+        /// The input a team's or a portfolio's own query is typed into. Named the same way everywhere for
+        /// the same reason as the field above.
+        /// </summary>
+        internal const string QueryFieldName = "DataRetrievalValue";
+
         public AzureDevOpsReadException(ConnectionValidationResult verdict)
             : base(verdict)
         {
         }
+
+        /// <summary>
+        /// Nothing in the configuration narrows what to fetch - no types, no states, no query of the
+        /// operator's - so the WHERE clause comes out with no condition under it. Azure DevOps refuses that
+        /// outright, and all the operator would see is whatever the tracker says about the syntax of a query
+        /// they never wrote. Saying it here instead names the configuration that caused it, on the request
+        /// that caused it.
+        /// </summary>
+        public static AzureDevOpsReadException NothingNarrowsTheQuery()
+            => new(ConnectionValidationResult.Failure(
+                "nothing_to_query",
+                "This configuration selects no work item types, no states and carries no query of its own, "
+                + "so there is nothing for Lighthouse to ask Azure DevOps for. Choose at least one work item "
+                + "type, map at least one state, or write a query.",
+                "The assembled WIQL would have carried an empty WHERE clause, so no query was sent.",
+                QueryFieldName));
 
         /// <summary>
         /// Azure DevOps would not hand over the list of fields in the organisation, so no additional

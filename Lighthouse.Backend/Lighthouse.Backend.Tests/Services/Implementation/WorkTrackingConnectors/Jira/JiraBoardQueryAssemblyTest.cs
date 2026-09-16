@@ -655,6 +655,108 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
+        /// A team can reach the settings API with no states mapped, and the clause built from them is then
+        /// built from nothing. Emitting the bracket pair anyway writes an expression Jira cannot parse, and
+        /// a team whose refresh fails outright records nothing at all. Asking for the absent bracket pair,
+        /// rather than for the clause that replaces it, is what keeps this from passing on a query that
+        /// happens to contain the right substring somewhere else.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_NoStatesMapped_LeavesTheStateClauseOutRatherThanEmpty()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+
+            var jql = await TheQueryIssuedFor(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Does.Not.Contain("()"));
+                Assert.That(jql, Does.Contain("AND (issuetype = \"Story\")"),
+                    "positive control: a change that dropped every clause would satisfy the assertion above "
+                    + "while asking Jira for the whole instance.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_NoWorkItemTypesMapped_LeavesTheTypeClauseOutRatherThanEmpty()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.WorkItemTypes.Clear();
+
+            var jql = await TheQueryIssuedFor(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Does.Not.Contain("()"));
+                Assert.That(jql, Does.Contain("AND (status = \"To Do\" OR status = \"In Progress\" OR status = \"Done\")"),
+                    "positive control: a change that dropped every clause would satisfy the assertion above "
+                    + "while asking Jira for the whole instance.");
+            }
+        }
+
+        /// <summary>
+        /// Nothing configured leaves nothing to select on, and the query then says nothing at all. Jira reads
+        /// an empty query as either every issue on the instance or none of them, depending on a setting no
+        /// one here can see - and "none" is indistinguishable from a team whose work has all been deleted, so
+        /// the next refresh deletes it for real.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_NothingIsConfiguredAtAll_RefusesRatherThanAskingJiraForEverything()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.WorkItemTypes.Clear();
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+            team.DataRetrievalValue = string.Empty;
+
+            var requestedUrls = new List<string>();
+            var handler = AHandlerWhereSearch(OnCloud, _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
+            var connector = JiraConnectorTestSetup.AConnectorOver(handler);
+
+            var verdict = await connector.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(UrlsReaching(requestedUrls, CloudSearchPath), Is.Empty,
+                    "A query that selects on nothing must not be issued at all - whatever Jira answers it "
+                    + "with is a number of items the team's configuration never asked for.");
+                Assert.That(verdict.IsValid, Is.False);
+                Assert.That(verdict.Message, Does.Contain("work item type").IgnoreCase.And.Contains("state").IgnoreCase,
+                    "The refusal has to name what is missing, or it reads as a broken connection and the "
+                    + "administrator goes looking at the wrong screen.");
+                Assert.That(verdict.FieldName, Is.Not.Null.And.Not.Empty,
+                    "The settings screen highlights the input the verdict names; without one the message is "
+                    + "shown against nothing.");
+            }
+        }
+
+        /// <summary>
+        /// The refresh path has no verdict to return, so the refusal has to leave as an exception. Answering
+        /// a refresh with an empty result would be read as "the team has no work left" and remove every
+        /// record it has.
+        /// </summary>
+        [Test]
+        public void GetWorkItemsForTeam_NothingIsConfiguredAtAll_RefusesRatherThanFetchingNothing()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.WorkItemTypes.Clear();
+            team.ToDoStates.Clear();
+            team.DoingStates.Clear();
+            team.DoneStates.Clear();
+            team.DataRetrievalValue = string.Empty;
+
+            var handler = AHandlerWhereSearch(OnCloud, _ => Respond(HttpStatusCode.OK, OnePageHoldingNothing));
+            var connector = JiraConnectorTestSetup.AConnectorOver(handler);
+
+            Assert.That(async () => await connector.GetWorkItemsForTeam(team, CancellationToken.None),
+                Throws.InstanceOf<JiraReadException>());
+        }
+
+        /// <summary>
         /// A Cloud instance as it actually answers once the old search endpoint is gone: the endpoint Jira
         /// still has says what is wrong with the query, and the one it removed says only that it is removed.
         /// </summary>

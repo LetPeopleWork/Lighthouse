@@ -1278,6 +1278,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return PrepareQuery(includedWorkItemTypes, includedStates, query, null, cutOffDays);
         }
 
+        /// <summary>
+        /// A configuration that narrows nothing is refused rather than asked. The settings API accepts empty
+        /// type and state lists, and a restored database can carry them too, and with no query of the
+        /// operator's either the WHERE clause comes out with no condition under it. The cutoff does not count
+        /// as narrowing: it only bounds how far back finished work is read, so a query made of nothing else
+        /// still asks for the whole organisation.
+        /// </summary>
         private static string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> includedStates,
@@ -1287,6 +1294,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var workItemsQuery = PrepareWorkItemTypeQuery(includedWorkItemTypes);
             var stateQuery = PrepareStateQuery(includedStates);
+
+            if (NothingNarrowsTheQuery(query, workItemsQuery, stateQuery))
+            {
+                throw AzureDevOpsReadException.NothingNarrowsTheQuery();
+            }
 
             var extraFieldsQuery = string.Empty;
             if (!string.IsNullOrEmpty(extraField))
@@ -1303,6 +1315,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             return wiql;
         }
+
+        private static bool NothingNarrowsTheQuery(string query, string workItemsQuery, string stateQuery)
+            => string.IsNullOrWhiteSpace(query)
+                && string.IsNullOrWhiteSpace(workItemsQuery)
+                && string.IsNullOrWhiteSpace(stateQuery);
 
         private static string PrepareCutoffDateFilter(int cutOffDays)
         {

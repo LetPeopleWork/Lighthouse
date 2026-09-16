@@ -1957,6 +1957,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// expression - which Jira rejects, and the team or portfolio then fetches nothing at all. An ordering
         /// says nothing about what a query selects, so it costs nothing to drop, the same way it already comes
         /// off the JQL of a saved Jira filter.
+        ///
+        /// A configuration that narrows nothing is refused rather than asked. The settings API accepts empty
+        /// type and state lists, and a restored database can carry them too, and with no query of the
+        /// operator's either there is nothing left to select on. The cutoff does not count as narrowing: it
+        /// only bounds how far back finished work is read, so a query made of nothing else still asks for the
+        /// whole instance.
         /// </summary>
         private static string PrepareQuery(IWorkItemQueryOwner owner)
         {
@@ -1964,6 +1970,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var stateQuery = PrepareGenericQuery(owner.AllStates, JiraFieldNames.StatusFieldName, "OR", "=");
             var cutoffDateFilter = PrepareCutoffDateFilter(owner.DoneItemsCutoffDays);
             var configuredFilter = RemoveOrderByClause(owner.DataRetrievalValue);
+
+            if (NothingNarrowsTheQuery(configuredFilter, workItemsQuery, stateQuery))
+            {
+                throw JiraReadException.NothingNarrowsTheQuery();
+            }
+
             var lighthousesOwnFilters = $"{workItemsQuery} {stateQuery} {cutoffDateFilter}";
 
             return string.IsNullOrWhiteSpace(configuredFilter)
@@ -1971,13 +1983,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 : $"({configuredFilter}) {lighthousesOwnFilters}";
         }
 
+        private static bool NothingNarrowsTheQuery(string configuredFilter, string workItemsQuery, string stateQuery)
+            => string.IsNullOrWhiteSpace(configuredFilter)
+                && string.IsNullOrWhiteSpace(workItemsQuery)
+                && string.IsNullOrWhiteSpace(stateQuery);
+
         /// <summary>
         /// A query that is nothing but an ordering clause - valid JQL, and a plausible thing to find in a saved
         /// filter - has nothing left once the ordering comes off, and there is then no filter of the operator's
-        /// to wrap. Wrapping it anyway writes an empty bracket pair, and what Jira does with one is not knowable
-        /// from here: reading it as "matches nothing" would make the sweep report no records, and removal is
-        /// "stored minus swept", so every stored record for that team or portfolio would be deleted. Leaving the
-        /// pair out asks the question Lighthouse's own filters ask and nothing more, which at worst over-fetches.
+        /// to wrap. Wrapping it anyway writes an empty bracket pair, which Jira will not parse: a pair of
+        /// brackets has to hold an expression, so the whole query comes back rejected and the team or portfolio
+        /// fetches nothing at all. Leaving the pair out asks the question Lighthouse's own filters ask and
+        /// nothing more, which at worst over-fetches.
         /// </summary>
         private static string WithoutTheLeadingConjunction(string filters)
         {
