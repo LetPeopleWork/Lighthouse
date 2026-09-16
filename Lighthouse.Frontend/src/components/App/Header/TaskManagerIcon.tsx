@@ -1,10 +1,11 @@
+import AutorenewIcon from "@mui/icons-material/Autorenew";
+import HubIcon from "@mui/icons-material/Hub";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Badge from "@mui/material/Badge";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -22,6 +23,7 @@ import {
 	isBroken,
 } from "./TaskManager/connectionHealthWording";
 import RecentProblemsSection from "./TaskManager/RecentProblemsSection";
+import SectionHeading from "./TaskManager/SectionHeading";
 
 /**
  * An instance that cannot say what it is doing is not an instance doing nothing. A read that failed
@@ -219,9 +221,12 @@ const TaskManagerIcon = () => {
 				transformOrigin={{ vertical: "top", horizontal: "right" }}
 				slotProps={{ paper: { sx: { p: 2, minWidth: 320 } } }}
 			>
-				<Typography variant="subtitle2" gutterBottom>
+				<SectionHeading
+					testId="task-manager-section-activity"
+					icon={<AutorenewIcon fontSize="small" color="action" />}
+				>
 					{ACTIVITY_LABEL}
-				</Typography>
+				</SectionHeading>
 
 				<ActivitySection
 					tasks={tasks}
@@ -231,9 +236,12 @@ const TaskManagerIcon = () => {
 
 				<Divider sx={{ my: 1.5 }} />
 
-				<Typography variant="subtitle2" gutterBottom>
+				<SectionHeading
+					testId="task-manager-section-connections"
+					icon={<HubIcon fontSize="small" color="action" />}
+				>
 					{getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS)}
-				</Typography>
+				</SectionHeading>
 
 				<ConnectionsSection
 					connections={connections}

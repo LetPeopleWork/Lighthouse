@@ -1,17 +1,11 @@
+import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router";
 import type { IRecentProblem } from "../../../../services/Api/LogService";
 import LocalDateTimeDisplay from "../../../Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
-
-/**
- * Somebody who reads three entries as "three things have ever gone wrong" draws exactly the wrong
- * conclusion from a restart, so the section says what it is in words rather than leaving it to be
- * inferred from how short the list looks.
- */
-const WHAT_THIS_SECTION_IS =
-	"Only what has gone wrong since this instance started. Not a complete history, and not kept after a restart.";
+import SectionHeading from "./SectionHeading";
 
 /**
  * Where the rest of it still lives. Being shown the last few problems with no way on to the full log
@@ -40,9 +34,12 @@ const RecentProblemsSection = ({ problems }: RecentProblemsSectionProps) => {
 		<>
 			<Divider sx={{ my: 1.5 }} />
 
-			<Typography variant="subtitle2" gutterBottom>
+			<SectionHeading
+				testId="task-manager-section-problems"
+				icon={<ReportProblemOutlinedIcon fontSize="small" color="action" />}
+			>
 				Recent problems
-			</Typography>
+			</SectionHeading>
 
 			{problems.length === 0 ? (
 				<Typography variant="body2" color="text.secondary">
@@ -62,14 +59,9 @@ const RecentProblemsSection = ({ problems }: RecentProblemsSectionProps) => {
 				))
 			)}
 
-			<Typography
-				variant="caption"
-				color="text.secondary"
-				sx={{ display: "block", mt: 1 }}
-			>
-				{WHAT_THIS_SECTION_IS}
-			</Typography>
-
+			{/* What now carries "there is more than this": the section holds a bounded handful and the rest
+			    is still in the log, which is the thing an operator reaches for anyway. A paragraph saying so
+			    sat above four rows and was itself a reason not to read them. */}
 			<Button size="small" onClick={() => navigate(THE_FULL_LOG)}>
 				Open the full log
 			</Button>

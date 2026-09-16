@@ -589,7 +589,7 @@ describe("TaskManagerIcon", () => {
 		// AC-07A.7 — three sections in a box opened for a glance. An icon beside each heading is what makes
 		// them findable; a control that folds one away puts a click in front of content that is already
 		// short enough to read, and a preference to remember afterwards.
-		it.skip("puts a mark beside each heading, and offers no way to fold a section away", async () => {
+		it("puts a mark beside each heading, and offers no way to fold a section away", async () => {
 			renderTheWholePopover();
 
 			await openThePopover();
@@ -604,7 +604,7 @@ describe("TaskManagerIcon", () => {
 
 		// AC-07A.8 — a regression guard rather than a repair. The heading already resolves the tenant's
 		// word, and this story edits the lines it sits on.
-		it.skip("still names the connections section in the reader's own words", async () => {
+		it("still names the connections section in the reader's own words", async () => {
 			mockGetTerm.mockImplementation((key: string) =>
 				key === "workTrackingSystems" ? "Trackers" : key,
 			);
