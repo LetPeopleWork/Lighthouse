@@ -616,9 +616,9 @@ describe("TaskManagerIcon", () => {
 			expect(await screen.findByText("Trackers")).toBeInTheDocument();
 		});
 
-		// D18 — the only thing that provokes a read today is refresh activity, so a connection added a
-		// minute ago is missing until the page is reloaded. Opening the popover is the moment somebody
-		// wants the answer to be current, and it is the only moment worth spending a read on.
+		// The only thing that provokes a read today is refresh activity, so a connection added a minute
+		// ago is missing until the page is reloaded. Opening the popover is the moment somebody wants the
+		// answer to be current, and it is the only moment worth spending a read on.
 		it("asks the instance again every time the popover is opened", async () => {
 			const service = renderIcon([aRunningTeam]);
 
@@ -1181,7 +1181,7 @@ describe("TaskManagerIcon", () => {
 				).not.toHaveTextContent(/not checked/i);
 			});
 
-			// AC-07C.2 — D9 exists because an icon claimed health from an absence of evidence, and an icon
+			// AC-07C.2 — the icon this replaced claimed health from an absence of evidence, and an icon
 			// set where not-checked reads as a muted tick would be that bug wearing a redesign. The outline
 			// is what keeps "nobody has asked" apart from "asked, and the answer was yes" for a reader who
 			// gets nothing from the colour.
