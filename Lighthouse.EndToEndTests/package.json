@@ -21,7 +21,7 @@
   "license": "LicenseRef-Lighthouse-SAL-1.0",
   "description": "",
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.5.13",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.5.1",
     "cross-env": "^10.1.0",
