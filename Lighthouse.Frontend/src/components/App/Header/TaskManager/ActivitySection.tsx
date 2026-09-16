@@ -1,5 +1,7 @@
 import CancelIcon from "@mui/icons-material/Cancel";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -9,7 +11,21 @@ import type {
 	IUpdateTask,
 	UpdateTaskType,
 } from "../../../../services/UpdateSubscriptionService";
-import { formatElapsed } from "../../../../utils/date/formatElapsed";
+
+const RUNNING = "Running";
+
+const WAITING = "Queued";
+
+/**
+ * What the row says between the click and the instance agreeing the work has stopped. Cancellation is
+ * cooperative: the connector only notices at its next checkpoint, which has been measured at eleven
+ * seconds against a real tracker, and for that whole window an unchanged row reads as a dead control.
+ */
+const STOPPING = "Stopping…";
+
+/** What identifies one piece of work across a re-read, so the browser can remember asking to stop it. */
+export const taskKey = (task: IUpdateTask): string =>
+	`${task.updateType}-${task.id}`;
 
 /**
  * What an operator is told a piece of work is. The update type is the instance's own vocabulary; this
@@ -29,32 +45,57 @@ const useKindOf = () => {
 	};
 };
 
-const describeState = (task: IUpdateTask): string => {
+const describeState = (task: IUpdateTask, stopping: boolean): string => {
+	if (stopping) {
+		return STOPPING;
+	}
+
 	switch (task.status) {
 		case "InProgress":
-			return "Running";
+			return RUNNING;
 		case "Queued":
 			return task.waitingBehind
-				? `Queued behind ${task.waitingBehind}`
-				: "Queued";
+				? `${WAITING} behind ${task.waitingBehind}`
+				: WAITING;
 		default:
 			return task.status;
 	}
 };
 
 /**
- * The duration is the instance's own measurement, rendered as it arrived. Counting locally instead
- * would be wrong after a reload, wrong for a refresh that began before the tab was opened, and wrong
- * by however far this machine's clock has drifted - which is most of the occasions somebody opens
- * this list. A row whose moment the instance never recorded keeps its state and loses only the
- * duration; that is an ordinary mid-upgrade state, not a fault worth showing.
+ * Something turning means something is happening, and there is only ever one of those: the queue runs a
+ * single piece of work at a time. Three spinners in a column would say three things are under way when
+ * one is, so what is waiting gets a mark that means waiting instead.
+ *
+ * Drawn rather than spelled out, and the word is still in the row beside it — the drawing is what a
+ * reader takes in without reading, not a replacement for what it says.
  */
-const describeStatus = (task: IUpdateTask): string => {
-	const state = describeState(task);
+const RowProgress = ({
+	task,
+	stopping,
+}: {
+	task: IUpdateTask;
+	stopping: boolean;
+}) => {
+	if (stopping) {
+		return <CircularProgress size={16} aria-label={STOPPING} />;
+	}
 
-	return task.elapsedMs == null
-		? state
-		: `${state} for ${formatElapsed(task.elapsedMs)}`;
+	if (task.status === "InProgress") {
+		return <CircularProgress size={16} aria-label={RUNNING} />;
+	}
+
+	if (task.status === "Queued") {
+		return (
+			<HourglassEmptyIcon
+				fontSize="small"
+				color="disabled"
+				titleAccess={WAITING}
+			/>
+		);
+	}
+
+	return null;
 };
 
 const isDelete = (updateType: UpdateTaskType): boolean =>
@@ -62,10 +103,21 @@ const isDelete = (updateType: UpdateTaskType): boolean =>
 
 interface ActivitySectionProps {
 	tasks: IUpdateTask[];
+	/**
+	 * The work this browser has asked the instance to stop. It is remembered here rather than reported by
+	 * the instance because the instance has nowhere to keep it: the store is not advanced until the work
+	 * actually stops. The operator who clicked is the one who needs the answer, and a ten-second window
+	 * does not need to survive a reload.
+	 */
+	stopAsked: ReadonlySet<string>;
 	onCancel: (task: IUpdateTask) => void;
 }
 
-const ActivitySection = ({ tasks, onCancel }: ActivitySectionProps) => {
+const ActivitySection = ({
+	tasks,
+	stopAsked,
+	onCancel,
+}: ActivitySectionProps) => {
 	const kindOf = useKindOf();
 
 	if (tasks.length === 0) {
@@ -76,31 +128,54 @@ const ActivitySection = ({ tasks, onCancel }: ActivitySectionProps) => {
 		);
 	}
 
-	return tasks.map((task) => (
-		<Box
-			key={`${task.updateType}-${task.id}`}
-			sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}
-		>
-			<Typography
-				data-testid={`task-manager-row-${task.updateType}-${task.id}`}
-				variant="body2"
-				sx={{ flexGrow: 1 }}
-			>
-				{kindOf(task.updateType)} '{task.name}'
-				{isDelete(task.updateType) ? " (removal)" : ""} — {describeStatus(task)}
-			</Typography>
+	return tasks.map((task) => {
+		const stopping = stopAsked.has(taskKey(task));
 
-			<Tooltip title={`Stop refreshing ${task.name}`}>
-				<IconButton
-					aria-label={`Stop refreshing ${task.name}`}
-					size="small"
-					onClick={() => onCancel(task)}
+		return (
+			<Box
+				key={taskKey(task)}
+				data-task-row=""
+				tabIndex={-1}
+				sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}
+			>
+				<RowProgress task={task} stopping={stopping} />
+
+				<Typography
+					data-testid={`task-manager-row-${task.updateType}-${task.id}`}
+					variant="body2"
+					sx={{ flexGrow: 1 }}
 				>
-					<CancelIcon fontSize="small" />
-				</IconButton>
-			</Tooltip>
-		</Box>
-	));
+					{kindOf(task.updateType)} '{task.name}'
+					{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
+					{describeState(task, stopping)}
+				</Typography>
+
+				<Tooltip title={`Stop refreshing ${task.name}`}>
+					{/* A disabled button is not an event target, so the tooltip needs something of its own to
+					    hang on while the row is waiting for the instance to agree it stopped. */}
+					<span>
+						<IconButton
+							aria-label={`Stop refreshing ${task.name}`}
+							size="small"
+							disabled={stopping}
+							onClick={(event) => {
+								// This control is about to stop accepting input, and a disabled element receives
+								// no key presses - so leaving focus on it would leave a keyboard reader unable to
+								// close the popover it is standing in. Focus moves onto the row instead, which
+								// also means the next thing a screen reader announces is the row's new state.
+								event.currentTarget
+									.closest<HTMLElement>("[data-task-row]")
+									?.focus();
+								onCancel(task);
+							}}
+						>
+							<CancelIcon fontSize="small" />
+						</IconButton>
+					</span>
+				</Tooltip>
+			</Box>
+		);
+	});
 };
 
 export default ActivitySection;

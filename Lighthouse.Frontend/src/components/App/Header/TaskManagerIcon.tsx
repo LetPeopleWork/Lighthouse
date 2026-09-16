@@ -13,7 +13,7 @@ import type { IConnectionHealth } from "../../../services/Api/ConnectionHealthSe
 import type { IRecentProblem } from "../../../services/Api/LogService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateTask } from "../../../services/UpdateSubscriptionService";
-import ActivitySection from "./TaskManager/ActivitySection";
+import ActivitySection, { taskKey } from "./TaskManager/ActivitySection";
 import ConnectionsSection from "./TaskManager/ConnectionsSection";
 import {
 	ACTIVITY_LABEL,
@@ -43,6 +43,28 @@ const readAndKeepWhatWasThereIfItFails = async <T,>(
 	}
 };
 
+/**
+ * A row the browser asked to stop stops being one the moment the instance stops reporting the work. It
+ * is dropped rather than kept, so a key that comes back — because the ask arrived after the refresh had
+ * already been requeued — reads as running again rather than as forever stopping.
+ *
+ * The same set is returned when there is nothing to drop, so an unremarkable re-read does not make the
+ * popover render again.
+ */
+const forgetWhatTheInstanceNoLongerReports = (
+	asked: ReadonlySet<string>,
+	stillListed: IUpdateTask[],
+): ReadonlySet<string> => {
+	if (asked.size === 0) {
+		return asked;
+	}
+
+	const present = new Set(stillListed.map(taskKey));
+	const kept = [...asked].filter((key) => present.has(key));
+
+	return kept.length === asked.size ? asked : new Set(kept);
+};
+
 const TaskManagerIcon = () => {
 	const { isSystemAdmin } = useRbac();
 	const { updateSubscriptionService, connectionHealthService, logService } =
@@ -53,11 +75,17 @@ const TaskManagerIcon = () => {
 	const [connections, setConnections] = useState<IConnectionHealth[]>([]);
 	const [problems, setProblems] = useState<IRecentProblem[] | null>(null);
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+	const [stopAsked, setStopAsked] = useState<ReadonlySet<string>>(new Set());
 
 	const refresh = useCallback(async () => {
 		await readAndKeepWhatWasThereIfItFails(
 			() => updateSubscriptionService.getRunningTasks(),
-			setTasks,
+			(running) => {
+				setTasks(running);
+				setStopAsked((asked) =>
+					forgetWhatTheInstanceNoLongerReports(asked, running),
+				);
+			},
 		);
 
 		await readAndKeepWhatWasThereIfItFails(
@@ -72,16 +100,30 @@ const TaskManagerIcon = () => {
 	}, [connectionHealthService, logService, updateSubscriptionService]);
 
 	/**
-	 * The list is re-read rather than edited in place: what actually stopped is the instance's answer, not
-	 * this component's guess, and a cancel that was refused or arrived too late would otherwise leave a row
-	 * showing a state the server never agreed to.
+	 * The row says the stop was asked for straight away, because the connector will not notice until its
+	 * next checkpoint and a control that does nothing visible for eleven seconds teaches the reader it is
+	 * broken. What it does not say is that the work stopped: removing the row here would claim an outcome
+	 * nobody agreed to, and it would come back on the next read whenever the ask arrived too late.
+	 *
+	 * The list is re-read rather than edited in place, so what is on screen is always the instance's answer
+	 * rather than this component's guess.
 	 */
 	const cancel = useCallback(
 		async (task: IUpdateTask) => {
+			const key = taskKey(task);
+			setStopAsked((asked) => new Set(asked).add(key));
+
 			try {
 				await updateSubscriptionService.cancelTask(task.updateType, task.id);
 			} catch {
-				// Nothing is claimed on the strength of a failed ask.
+				// The instance refused the ask or never heard it, so the row must stop saying it is stopping.
+				// A deletion is refused by design, and a row stuck on a word that will never come true is
+				// how the word stops meaning anything.
+				setStopAsked((asked) => {
+					const withoutIt = new Set(asked);
+					withoutIt.delete(key);
+					return withoutIt;
+				});
 			}
 
 			await refresh();
@@ -150,7 +192,15 @@ const TaskManagerIcon = () => {
 				<IconButton
 					aria-label={headerState}
 					color="inherit"
-					onClick={(event) => setAnchor(event.currentTarget)}
+					onClick={(event) => {
+						setAnchor(event.currentTarget);
+
+						// The only other thing that provokes a read is refresh activity, so a work tracking
+						// system added a minute ago is missing from this box until the page is reloaded.
+						// Opening it is the moment somebody wants the answer to be current, and the only moment
+						// worth spending a read on - a box nobody opened needs no fresh answer.
+						void refresh();
+					}}
 				>
 					<Badge
 						badgeContent={tasks.length + connections.filter(isBroken).length}
@@ -173,7 +223,11 @@ const TaskManagerIcon = () => {
 					{ACTIVITY_LABEL}
 				</Typography>
 
-				<ActivitySection tasks={tasks} onCancel={(task) => void cancel(task)} />
+				<ActivitySection
+					tasks={tasks}
+					stopAsked={stopAsked}
+					onCancel={(task) => void cancel(task)}
+				/>
 
 				<Divider sx={{ my: 1.5 }} />
 

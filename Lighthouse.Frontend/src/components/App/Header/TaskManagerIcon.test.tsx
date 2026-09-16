@@ -544,7 +544,7 @@ describe("TaskManagerIcon", () => {
 		// AC-07A.4 — what is turning and what is waiting, told apart without reading. The running row gets
 		// the affordance that means "something is happening"; the waiting ones deliberately do not, because
 		// three spinners in a column say three things are under way when one is.
-		it.skip("shows the refresh that is running turning, and the ones waiting waiting", async () => {
+		it("shows the refresh that is running turning, and the ones waiting waiting", async () => {
 			renderIcon([aRunningTeam, aQueuedPortfolio]);
 
 			await openThePopover();
@@ -561,7 +561,7 @@ describe("TaskManagerIcon", () => {
 		// AC-07A.5 — the instance still measures and still sends the number; the row no longer spends a
 		// reader's attention on it. Asserted against a row that HAS one, because a row with nothing to
 		// render satisfies "renders no duration" whatever the component does with it.
-		it.skip("says a refresh is running without saying for how long", async () => {
+		it("says a refresh is running without saying for how long", async () => {
 			renderIcon([{ ...aRunningTeam, elapsedMs: 134_000 }]);
 
 			await openThePopover();
@@ -575,7 +575,7 @@ describe("TaskManagerIcon", () => {
 
 		// AC-07A.6 — naming what a row is waiting for is a claim about the queue, not a measurement, and
 		// #5877 is a user who read three teams queued behind one portfolio as a hang. It survives D14.
-		it.skip("still says what a waiting refresh is waiting behind", async () => {
+		it("still says what a waiting refresh is waiting behind", async () => {
 			renderIcon([{ ...aQueuedPortfolio, elapsedMs: 3 * 60_000 }]);
 
 			await openThePopover();
@@ -619,7 +619,7 @@ describe("TaskManagerIcon", () => {
 		// D18 — the only thing that provokes a read today is refresh activity, so a connection added a
 		// minute ago is missing until the page is reloaded. Opening the popover is the moment somebody
 		// wants the answer to be current, and it is the only moment worth spending a read on.
-		it.skip("asks the instance again every time the popover is opened", async () => {
+		it("asks the instance again every time the popover is opened", async () => {
 			const service = renderIcon([aRunningTeam]);
 
 			await openThePopover();
@@ -651,7 +651,7 @@ describe("TaskManagerIcon", () => {
 	describe("a cancel that was heard", () => {
 		// AC-07B.1 — measured at eleven seconds on the backend log, during which the row is unchanged and
 		// the control reads as dead. Clicking twice is what an operator does next.
-		it.skip("says the stop was asked for while the instance is still working on it", async () => {
+		it("says the stop was asked for while the instance is still working on it", async () => {
 			renderIcon([aRunningTeam]);
 
 			await openThePopover();
@@ -671,7 +671,7 @@ describe("TaskManagerIcon", () => {
 		// AC-07B.2 — the instance decides what stopped. Removing the row on the click would claim an
 		// outcome nobody agreed to, and the row would come back on the next read when the stop landed too
 		// late — which is worse than never having moved.
-		it.skip("keeps the row until the instance stops reporting the work", async () => {
+		it("keeps the row until the instance stops reporting the work", async () => {
 			const service = renderIcon([aRunningTeam]);
 
 			await openThePopover();
@@ -700,7 +700,7 @@ describe("TaskManagerIcon", () => {
 
 		// AC-07B.3 — the second click is the thing this story exists to prevent. A control that still
 		// invites one is a control that has not answered.
-		it.skip("does not invite the stop to be asked for a second time", async () => {
+		it("does not invite the stop to be asked for a second time", async () => {
 			renderIcon([aRunningTeam]);
 
 			await openThePopover();
@@ -719,7 +719,7 @@ describe("TaskManagerIcon", () => {
 
 		// AC-07B.4 — a removal is refused by design, and the refusal has to stay legible. A row stuck on
 		// "stopping" for something that will never stop teaches the reader the word means nothing.
-		it.skip("leaves the row as it was when the instance refuses to stop it", async () => {
+		it("leaves the row as it was when the instance refuses to stop it", async () => {
 			renderIcon([aRunningTeam], (svc) => {
 				svc.cancelTask = vi.fn().mockRejectedValue(new Error("refused"));
 			});
