@@ -4231,11 +4231,16 @@ wrong name.
 | Scenarios | **19 of 19 green** — 6 backend, 13 frontend — plus one new Redis-backed guard |
 
 **One environmental failure, checked rather than assumed.**
-`ServiceProviderValidationTest.ServiceContainer_BuildsWithoutScopeViolations` failed one run with an
-`IOException` deleting its own throwaway `DiValidation_*.db`. It reproduces on the base commit with
-this slice's changes stashed — nine stale copies of that file had accumulated in `bin/` — and it
-passed on the next full run. Not a regression, and not re-run-until-green: it was confirmed against
-`9a117cb33` before being dismissed.
+`ServiceProviderValidationTest.ServiceContainer_BuildsWithoutScopeViolations` fails with an
+`IOException` deleting its own throwaway `DiValidation_*.db`. Reproduced on the base commit with this
+slice's changes stashed before being dismissed, so nothing here can reach it.
+
+**Corrected during the mutation pass:** this first read as stale copies accumulating in `bin/`, and
+that is not the cause — all fourteen were deleted, the class run alone, and it still failed. The
+standing diagnosis for this whole family on this machine is Windows Defender real-time scanning still
+holding a *newly created* `.db` when the fixture deletes it, which is why clearing old files changes
+nothing and why the fix is a Defender exclusion rather than a cleanup. Linux CI never sees it, because
+deleting an open file is legal there.
 
 ## Not done here
 
