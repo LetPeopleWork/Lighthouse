@@ -1456,7 +1456,11 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
             builder.Services.AddScoped<ConnectionHealthCadence>();
-            builder.Services.AddScoped<IConnectionHealthService, ConnectionHealthService>();
+            // Registered as itself as well, because a pass over the stale connections resolves one of these
+            // per connection so that each gets a database context of its own. The interface then resolves
+            // to that same object, so a scope holds one health service rather than two.
+            builder.Services.AddScoped<ConnectionHealthService>();
+            builder.Services.AddScoped<IConnectionHealthService>(services => services.GetRequiredService<ConnectionHealthService>());
 
             // Registered as itself as well as as the background job, for the same reason the usage-data
             // services are: asking the stale connections at a moment of the caller's choosing is the only

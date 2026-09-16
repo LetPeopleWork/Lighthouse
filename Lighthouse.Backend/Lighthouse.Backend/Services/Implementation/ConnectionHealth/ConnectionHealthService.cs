@@ -11,7 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
 {
-#pragma warning disable S107 // Answering "how is this connection" needs all three stored facts - the connection, its verdict and its OAuth grant - plus the connector that asks the tracker, the reader that refuses an undecryptable secret before anything leaves the machine, and the clock the observed-at moment comes from. No subset of those is ever decided together, so a parameter object here would name nothing and only move the count.
+#pragma warning disable S107 // Answering "how is this connection" needs all three stored facts - the connection, its verdict and its OAuth grant - plus the connector that asks the tracker, the reader that refuses an undecryptable secret before anything leaves the machine, and the clock the observed-at moment comes from. No subset of those is ever decided together, so a parameter object here would name nothing and only move the count. The scope factory is the ninth and belongs to none of them: a pass over the stale connections gives each one a database context of its own, and a scope is the only way to get one (Bug #6010).
     public sealed class ConnectionHealthService(
         IRepository<WorkTrackingSystemConnection> connectionRepository,
         ConnectionHealthVerdictRepository verdictRepository,
@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
         ICryptoService cryptoService,
         ConnectionHealthCadence cadence,
         ILighthouseClock clock,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<ConnectionHealthService> logger)
         : IConnectionHealthService
 #pragma warning restore S107
@@ -95,32 +96,66 @@ namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
                     return;
                 }
 
-                if (await verdictRepository.TryClaimForProbeAsync(connection.Id, cutoff, now, cancellationToken))
-                {
-                    await AskHowItIs(connection);
-                }
+                await AskHowItIs(connection, cutoff, now, cancellationToken);
             }
         }
 
         /// <summary>
-        /// One connection that answers by raising must not cost every other connection its health. The
+        /// One connection that cannot be checked must not cost every other connection its health. The
         /// connection keeps the verdict the claim left it - the moment advanced, so it is not asked again
         /// until it goes stale again, which is what stops a broken connector being retried on every tick.
+        ///
+        /// Two things make that true rather than merely intended. The claim is taken inside the same guard
+        /// as the asking, because a claim can fail too. And the whole of it runs over a database context of
+        /// its own: a save that fails leaves its context refusing every later save through it, so one
+        /// shared across the pass carries the first connection's failure into every connection behind it -
+        /// which is how a single connection ended an entire pass and left the rest reading as though
+        /// nobody had asked (Bug #6010).
         /// </summary>
-        private async Task AskHowItIs(WorkTrackingSystemConnection connection)
+        private async Task AskHowItIs(WorkTrackingSystemConnection connection, DateTime cutoff, DateTime now, CancellationToken cancellationToken)
         {
             try
             {
-                await RecordAsync(connection, await ClassifyAsync(connection));
+                using var scope = serviceScopeFactory.CreateScope();
+
+                await scope.ServiceProvider.GetRequiredService<ConnectionHealthService>()
+                    .ClaimAndAsk(connection.Id, cutoff, now, cancellationToken);
             }
-#pragma warning disable CA1031 // one connection's connector must not decide whether the others get asked
+#pragma warning disable CA1031 // one connection's failure must not decide whether the others get asked
             catch (Exception exception)
 #pragma warning restore CA1031
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    // The host is stopping, and a shutdown is not a connection that failed. The loop's own
+                    // check ends the pass on its next turn; saying anything here would put a warning naming
+                    // a perfectly healthy connection into the log of every clean restart.
+                    return;
+                }
+
                 logger.LogWarning(exception, "Checking the health of '{ConnectionName}' failed", connection.Name);
             }
         }
 
+        /// <summary>
+        /// Everything one connection's check touches, on the context this instance was resolved with.
+        /// Nothing is read before the claim is won: a connection somebody else is already asking about
+        /// costs this pass a single conditional update and no reading at all.
+        /// </summary>
+        private async Task ClaimAndAsk(int connectionId, DateTime cutoff, DateTime now, CancellationToken cancellationToken)
+        {
+            if (!await verdictRepository.TryClaimForProbeAsync(connectionId, cutoff, now, cancellationToken))
+            {
+                return;
+            }
+
+            var connection = connectionRepository.GetById(connectionId);
+
+            if (connection != null)
+            {
+                await RecordAsync(connection, await ClassifyAsync(connection));
+            }
+        }
 
         /// <summary>
         /// Why this connection is not working, asked of the connection itself. The refresh that failed

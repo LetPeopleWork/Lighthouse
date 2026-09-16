@@ -266,6 +266,74 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 .ThrowsAsync(new ArgumentException("Key Url not found in Work Tracking Options"));
         }
 
+        /// <summary>
+        /// A connector that answers perfectly well, having changed the identity of one of the connection's
+        /// stored rows on its way past — which is what the Azure DevOps connector did, and what #6010
+        /// actually was. Nothing fails here. It fails at the next write, which is the recording of the
+        /// verdict, and from then on every write through that same database context is refused too.
+        ///
+        /// That last part is why making the connector throw cannot stand in for this. A connector that
+        /// raises fails inside the guarded region and leaves nothing behind it; recording is the step that
+        /// writes, and a write that fails is the one that can reach the connections checked after it.
+        /// </summary>
+        private void GivenTheTrackerQuietlyBreaksWhatThatConnectionStores(SeededConnection connection)
+        {
+            ConnectorMock
+                .Setup(c => c.ValidateConnection(It.Is<WorkTrackingSystemConnection>(candidate => candidate.Id == connection.Id)))
+                .ReturnsAsync((WorkTrackingSystemConnection candidate) =>
+                {
+                    candidate.AdditionalFieldDefinitions.ForEach(field => field.Id = -field.Id);
+
+                    return ConnectionValidationResult.Success();
+                });
+        }
+
+        /// <summary>
+        /// The opening of the one line a connection that could not be checked leaves behind. Its verdict
+        /// says "Unknown", which is also what a connection nobody has asked about says — so the log is the
+        /// only place the difference exists, and the only thing that tells an operator which connection to
+        /// go and look at.
+        /// </summary>
+        private const string WhatAFailedCheckSays = "Checking the health of";
+
+        private void ThenTheOperatorIsToldWhichConnectionCouldNotBeChecked(SeededConnection connection)
+        {
+            var failures = TheOperatorVisibleLines
+                .Where(line => line.Contains(WhatAFailedCheckSays, StringComparison.Ordinal))
+                .ToList();
+
+            Assert.That(failures, Has.Some.Contains(connection.Name),
+                $"'{connection.Name}' could not be checked and its verdict cannot say why, so this line is all "
+                + $"there is. Operator-visible lines: {string.Join(" | ", TheOperatorVisibleLines)}");
+        }
+
+        /// <summary>
+        /// A pass entered while the host is stopping is not a pass that failed. Every connection it did not
+        /// get to still reads exactly as it did, and nothing about it belongs in the log an operator reads
+        /// after a restart.
+        /// </summary>
+        private void ThenNothingWasReportedAsAConnectionThatCouldNotBeChecked()
+        {
+            var failures = TheOperatorVisibleLines
+                .Where(line => line.Contains(WhatAFailedCheckSays, StringComparison.Ordinal))
+                .ToList();
+
+            Assert.That(failures, Is.Empty,
+                "A shutdown is not a broken connection. Reported as one, every clean restart leaves a warning "
+                + $"naming a connection that is fine. It said: {string.Join(" | ", failures)}");
+        }
+
+        /// <summary>
+        /// States the ordering the scenario rests on instead of relying on it. A pass walks the connections
+        /// in the order the repository returns them, which is the order they were seeded — so the connection
+        /// whose write fails has to be seeded first for the other one to be *behind* the failure. Reversed,
+        /// the scenario still passes and proves nothing, because the defect was only ever visible to a
+        /// connection checked after a failed write.
+        /// </summary>
+        private static void ThePassReachesTheBrokenConnectionFirst(SeededConnection breaks, SeededConnection answers)
+            => Assert.That(breaks.Id, Is.LessThan(answers.Id),
+                $"'{breaks.Name}' has to be reached before '{answers.Name}' for this scenario to mean anything.");
+
         private void GivenTheTrackerAnswersNormallyFor(SeededConnection connection)
         {
             ConnectorMock
@@ -376,6 +444,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// scopes against the real database, because the claim is a conditional update and a unique
         /// index — database behaviour that a doubled repository cannot exhibit and cannot disprove.
         /// </summary>
+        /// <summary>
+        /// The pass a host entered on its way down. Entered through the prober with a token that is already
+        /// cancelled, which is what a <c>BackgroundService</c> hands it when the application is stopping.
+        /// </summary>
+        private async Task WhenTheInstanceChecksWhileItIsAlreadyStopping()
+        {
+            var prober = Factory.Services.GetRequiredService<ConnectionHealthProber>();
+
+            using var theHostIsStopping = new CancellationTokenSource();
+            await theHostIsStopping.CancelAsync();
+
+            await prober.CheckWhatHasNotBeenHeardFromAsync(theHostIsStopping.Token);
+        }
+
         private async Task WhenTwoInstancesCheckAtTheSameMoment()
         {
             using var oneReplica = Factory.Services.CreateScope();
@@ -576,6 +658,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- Seeding ---
 
+        /// <summary>
+        /// Every connection this fixture seeds carries one, and it is not decoration. A connection with no
+        /// additional fields is the one shape #6010 cannot happen to: the defect was a validation rewriting
+        /// the identity of these rows, and a fixture where no connection has any row to rewrite reports a
+        /// clean pass on the build that shipped it.
+        /// </summary>
+        private static void GiveItAnAdditionalFieldSomebodyConfigured(WorkTrackingSystemConnection connection)
+            => connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = "Story Points",
+                Reference = "Custom.StoryPoints",
+            });
+
         private SeededConnection NewConnection(string? secretValue)
         {
             using var scope = Factory.Services.CreateScope();
@@ -586,6 +681,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 Name = $"Connection {Guid.NewGuid():N}",
                 WorkTrackingSystem = WorkTrackingSystems.Jira,
             };
+
+            GiveItAnAdditionalFieldSomebodyConfigured(connection);
 
             if (secretValue != null)
             {
@@ -613,6 +710,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 Name = $"Azure DevOps {Guid.NewGuid():N}",
                 WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
             };
+
+            GiveItAnAdditionalFieldSomebodyConfigured(connection);
 
             if (url != null)
             {

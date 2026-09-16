@@ -324,6 +324,48 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(answers, "Healthy");
         }
 
+        // @driving_port @real-io @error @AC-08B.5
+        // The same promise against the failure that can actually break it. The scenario above makes the
+        // connector raise, which happens inside the per-connection guard and leaves nothing behind — so it
+        // held while a pass really was ending on the first connection that failed, and two connections on
+        // the maintainer's own instance went unchecked with nothing on screen to say so. Here the failure
+        // lands on the write instead, which is the half that outlives the connection it belongs to.
+        [Test]
+        public async Task A_verdict_that_cannot_be_written_does_not_silence_the_connections_after_it()
+        {
+            var breaks = GivenAConnection();
+            var answers = GivenAConnection();
+            GivenTheTrackerQuietlyBreaksWhatThatConnectionStores(breaks);
+            GivenTheTrackerAnswersNormallyFor(answers);
+            ThePassReachesTheBrokenConnectionFirst(breaks, answers);
+
+            await WhenTheInstanceChecksWhatItHasNotHeardFrom();
+
+            // Both halves are the promise. Healthy alone would also be true of a pass where the write never
+            // failed at all, which is the shape this scenario exists to rule out.
+            await ThenThatConnectionReads(answers, "Healthy");
+            await ThenThatConnectionReads(breaks, "Unknown");
+            ThenTheOperatorIsToldWhichConnectionCouldNotBeChecked(breaks);
+        }
+
+        // @driving_port @real-io @error @AC-08B.5
+        // The other half of surviving a failure: a pass the host is stopping has not failed at all. Without
+        // this, the guard that tells the two apart is free to disappear — and what replaces it is a warning
+        // naming a perfectly healthy connection in the log of every clean restart, which is how an operator
+        // learns to skim past the line that matters.
+        [Test]
+        public async Task A_pass_entered_while_the_host_is_stopping_says_nothing_about_any_connection()
+        {
+            GivenAConnection();
+            GivenTheTrackerAnswersNormally();
+            GivenTheTrackerIsWatchedFromNowOn();
+
+            await WhenTheInstanceChecksWhileItIsAlreadyStopping();
+
+            ThenTheTrackerWasNotAskedAgain();
+            ThenNothingWasReportedAsAConnectionThatCouldNotBeChecked();
+        }
+
         // @driving_port @real-io @AC-08B.6
         // A verdict outlives the process that observed it, so a fresh instance does not start from
         // nothing and must not re-ask every tracker on the way up. Startup is the loop's first tick, not
