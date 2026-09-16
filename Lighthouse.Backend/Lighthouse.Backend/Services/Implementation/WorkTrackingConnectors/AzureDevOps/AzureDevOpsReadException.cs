@@ -27,8 +27,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         /// <summary>
         /// Azure DevOps would not hand over the list of fields in the organisation, so no additional
-        /// field can be checked against it. This is not a broken URL and not a bad token: the same
-        /// connection had just answered a work item query.
+        /// field can be checked against it.
+        ///
+        /// The message says what Azure DevOps answered and what can be done about it, and claims
+        /// nothing about what else is or is not working. Two of the paths that reach here - a refresh
+        /// looking work items up by id, and a portfolio read - never issue a query first, so a
+        /// reassurance that the connection has just been proven good would be false on them. The
+        /// status Azure DevOps gave is in the sentence, which is what tells a refused permission apart
+        /// from a credential that has expired.
         /// </summary>
         public static AzureDevOpsReadException FieldListRefused(Exception refusal)
             => new(ConnectionValidationResult.Failure(
@@ -36,8 +42,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 "Lighthouse could not read the list of fields in this Azure DevOps organisation, so "
                 + "it cannot check the additional fields against it. "
                 + $"Azure DevOps answered: {WhatAdoSaid(refusal)} "
-                + "The connection itself is good - a work item query on it succeeded moments before "
-                + "this. The account this connection signs in with needs to be able to read work "
+                + "The account this connection signs in with needs to be able to read work "
                 + "items in at least one project for Azure DevOps to return the field list; a proxy "
                 + "in front of an on-premises server can also refuse this response, which is much "
                 + "larger than the others Lighthouse asks for.",

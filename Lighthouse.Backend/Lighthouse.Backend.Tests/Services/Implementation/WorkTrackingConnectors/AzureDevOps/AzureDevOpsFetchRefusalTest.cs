@@ -99,6 +99,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 + "records reports the moved items as gone.");
         }
 
+        /// <summary>
+        /// This fetch looks work items up by id and never issues a query, so it is the path on which a
+        /// verdict that described the connection as freshly proven would have been untrue. The refusal it
+        /// carries is read by an operator the same way the one on the connection screen is, so it is
+        /// asserted the same way.
+        /// </summary>
+        [Test]
+        public void GetWorkItemsForTeam_ByReferenceId_CarriesTheSameFieldListVerdictTheConnectionScreenShows()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            ado.RejectTheFieldLookup = true;
+
+            var refusal = Assert.ThrowsAsync<AzureDevOpsReadException>(
+                async () => await subject.GetWorkItemsForTeam(team, [$"{TheOnlyItem}"], CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal!.Verdict.Code, Is.EqualTo(TheFieldListVerdict));
+                Assert.That(refusal.Verdict.Message, Does.Contain(WhatTheFieldListVerdictSays));
+                Assert.That(refusal.Verdict.FieldName, Is.EqualTo(TheAdditionalFieldsInput));
+            }
+        }
+
         [Test]
         public void GetFeaturesForProject_RefusesWhenTheTrackerWillNotRunTheQuery()
         {
