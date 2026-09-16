@@ -1453,11 +1453,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string GetIdForCustomFieldByProperty(string customField, string propertyIdentifier, JsonDocument allFields)
         {
+            // Jira Data Center's field list has no "key" on any field, so a field that simply does not
+            // carry the property being read has to count as "no match here" - reading it as an error made
+            // every unmatched field reference an unhandled exception on that deployment.
             var elements = allFields.RootElement.EnumerateArray()
-                .Where(f => string.Equals(
-                    f.GetProperty(propertyIdentifier).GetString(),
-                    customField,
-                    StringComparison.OrdinalIgnoreCase))
+                .Where(f => f.TryGetProperty(propertyIdentifier, out var propertyValue)
+                    && string.Equals(
+                        propertyValue.GetString(),
+                        customField,
+                        StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             var element = new JsonElement();
