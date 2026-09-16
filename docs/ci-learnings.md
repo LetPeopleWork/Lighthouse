@@ -54,6 +54,16 @@ is luck, not process: the gate job starts as soon as the backend job finishes.
 (refactor → review → four Stryker rounds) is exactly when this step gets skipped, because the tree has
 been green locally for an hour by then — and none of those gates surface INFO diagnostics.
 
+**Recurrence: 5 — 2026-09-16, Bug #6012 (Jira field lookup).** Run **after** `git push` for the
+fourth time, under conditions the Recurrence-2 note named exactly: a long local gauntlet (RCA →
+two crafter dispatches → two adversarial reviews → two Stryker rounds → a third-failure
+investigation → rebase onto 22 commits), a tree green locally for hours, three changed `.cs` files
+one of which was new. Clean again — 40 findings, none in a touched file — which is the third time
+in a row this step has been skipped and got away with it. The pattern is now unmistakable: the
+skip does not happen on short changes, it happens at the end of long ones, precisely when the
+tree has been green so long that one more check feels redundant. **Treat the length of the
+session as the trigger to run it, not as a reason it is unnecessary.**
+
 **Recurrence: 4 — 2026-08-23, forecast test-workload change.** Run **after** `git push`, not before,
 for the third time. Same conditions the Recurrence-2 note already named: a long local gauntlet
 (subagent implementation → review → two load-test rounds → rebase onto 31 commits), a tree green
@@ -1635,3 +1645,33 @@ get re-applied.
   proves nothing. `Lighthouse.EndToEndTests` is deliberately not pinned — its workflows activate
   `pnpm@latest` and it patches nothing, so pinning it would create the disagreement rather than close
   it.
+
+### 2026-09-16 — the change-detector's base ref was six weeks stale, so a Jira-only change ran every live connector and died on Linear's 503
+- **Symptom**: run `35073810008` (commit `d504bfeec`, a change touching only
+  `WorkTrackingConnectors/Jira/*.cs` plus docs) went red on `Verify Backend` with **1 failed, 7123
+  passed** — `GetWorkItemsForTeam_AllWorkItemsHaveIssueType`,
+  `GraphQLHttpRequestException : The HTTP request failed with status code ServiceUnavailable`, in the
+  **Linear** suite. No Jira test failed. `sonar-gates` was then `skipped`, so the change shipped with
+  no Sonar verdict.
+- **Root cause**: two layers, and the second is the one worth knowing. The proximate cause is a Linear
+  API 503 — an upstream outage, not a code defect. The reason a Jira-only change was exposed to it at
+  all is that `ci_changes.yml`'s "Find last successful workflow run" resolved the base ref to
+  `b26f32652` — **2026-08-03, six weeks and 1462 commits earlier**. It walks runs looking for one where
+  the `sqlite` *and* `postgres` verify jobs both concluded `success`, and on `main` it had to go back
+  that far to find one. The resulting diff was 1680 files, which inevitably contains `Program.cs`, both
+  `.csproj` files and four `Services/Interfaces/WorkTrackingConnectors/I*.cs` — every one of them on
+  `SHARED_REGEX`. So `connector_shared=true`, `force_full=true`, and
+  `filter=Category!=Integration|(Category=Integration&Category!=UsageDataCanary)` ran Jira, ADO, Linear,
+  ServiceNow and GitHub live. The change's own diff matches no shared path: measured directly, our five
+  commits alone would not have force-fulled.
+- **Fix**: none applied to the code — the failure is upstream and the change is sound. Recorded because
+  the base-ref staleness is the thing to fix, and it is invisible unless you read the `Detect Changes`
+  job log for the `Comparing against last successful workflow run at:` line.
+- **Rule going forward**: before concluding that a backend run force-fulled because *your* change
+  touched a shared path, read `Detect Changes` for `Found last successful run:` and check how old that
+  commit is — if the base is weeks stale, `connector_shared` is true for everyone's change and tells you
+  nothing about yours. While the base stays stale, treat **every** push to `main` as running all five
+  live connector suites, so any one vendor's outage can redden an unrelated change and skip
+  `sonar-gates` with it. The durable fix is the one the 2026-05-25 Jira-incident entry already
+  recommends — move the live connector categories out of the gating `Verify Backend` job — plus making
+  the base-ref lookup fall back to a bounded window rather than walking back indefinitely.
