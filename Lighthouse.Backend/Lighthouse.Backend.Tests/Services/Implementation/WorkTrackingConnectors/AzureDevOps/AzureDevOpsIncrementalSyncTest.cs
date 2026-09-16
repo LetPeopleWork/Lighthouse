@@ -451,5 +451,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
                 Throws.InstanceOf<AzureDevOpsReadException>());
         }
+
+        /// <summary>
+        /// An owner can have types and states mapped and still carry no query of its own - nothing asks for
+        /// one, and the settings API will save it that way. The operator's query used to be wrapped in
+        /// brackets whether or not there was anything to wrap, so that owner's every refresh failed on a
+        /// syntax error about a query nobody wrote. Dropping the brackets leaves whatever follows starting
+        /// with AND, which is no more valid than the empty pair was, so the leading conjunction has to come
+        /// off with them.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_NoQueryOfItsOwn_LeavesTheBracketPairOutRatherThanEmptyingIt()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            team.DataRetrievalValue = string.Empty;
+
+            await subject.ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ado.WiqlQueries, Has.None.Contains("()"));
+                Assert.That(ado.WiqlQueries, Has.None.Contains("WHERE AND"),
+                    "Dropping the empty pair and leaving the conjunction behind trades one invalid WIQL for "
+                    + "another, and the owner's refresh fails exactly as it did before.");
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"WHERE ([{AzureDevOpsFieldNames.WorkItemType}] = 'User Story')"),
+                    "positive control: the type clause has to survive becoming the first one, or the fix has "
+                    + "widened the query to the whole organisation instead of narrowing it.");
+                Assert.That(ado.WiqlQueries, Has.One.Contains($"AND ([{AzureDevOpsFieldNames.State}] = 'New' OR [{AzureDevOpsFieldNames.State}] = 'Active' OR [{AzureDevOpsFieldNames.State}] = 'Closed')"),
+                    "positive control: the clauses after the first keep their conjunctions.");
+            }
+        }
+
+        /// <summary>
+        /// The whole WIQL, spacing included, for the configuration everyone actually has. An owner with a
+        /// query of its own has to come out of this byte for byte unchanged - the sweep and the download
+        /// build their queries here, and removal is stored minus swept, so the two drifting apart by a
+        /// character reports work items as removed that were only ever described differently. The cutoff is
+        /// off because its clause carries today's date, and a query that changes daily cannot be pinned.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_AQueryOfItsOwn_StillAssemblesExactlyTheWiqlItAlwaysDid()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            team.DoneItemsCutoffDays = 0;
+
+            await subject.ValidateTeamSettings(team);
+
+            Assert.That(ado.WiqlQueries, Has.One.EqualTo(
+                $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], "
+                + $"[{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems "
+                + $"WHERE ({TheTeamsFilter}) AND ([{AzureDevOpsFieldNames.WorkItemType}] = 'User Story')  "
+                + $"AND ([{AzureDevOpsFieldNames.State}] = 'New' OR [{AzureDevOpsFieldNames.State}] = 'Active' "
+                + $"OR [{AzureDevOpsFieldNames.State}] = 'Closed')  "));
+        }
     }
 }

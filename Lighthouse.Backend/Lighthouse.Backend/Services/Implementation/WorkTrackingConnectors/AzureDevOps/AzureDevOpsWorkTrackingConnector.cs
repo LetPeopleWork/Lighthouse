@@ -1307,13 +1307,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var cutoffDateFilter = PrepareCutoffDateFilter(cutOffDays);
+            var lighthousesOwnFilters = $"{workItemsQuery} {stateQuery} {cutoffDateFilter}";
 
-            var wiql = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{extraFieldsQuery} FROM WorkItems WHERE ({query}) " +
-                $"{workItemsQuery} " +
-                $"{stateQuery} " +
-                $"{cutoffDateFilter}";
+            var conditions = string.IsNullOrWhiteSpace(query)
+                ? WithoutTheLeadingConjunction(lighthousesOwnFilters)
+                : $"({query}) {lighthousesOwnFilters}";
 
-            return wiql;
+            return $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}]{extraFieldsQuery} FROM WorkItems WHERE {conditions}";
+        }
+
+        /// <summary>
+        /// Nothing asks an owner for a query of its own, and one that has none has no filter to wrap. Wrapping
+        /// it anyway writes an empty bracket pair, which Azure DevOps will not parse: a pair of brackets has to
+        /// hold a condition, so every refresh that owner runs fails on a syntax error about a query nobody
+        /// wrote. Leaving the pair out moves whatever came next to the front, and a WHERE that opens on AND is
+        /// refused just as flatly, so the conjunction comes off with the brackets.
+        /// </summary>
+        private static string WithoutTheLeadingConjunction(string filters)
+        {
+            const string conjunction = "AND ";
+            var withoutLeadingSpace = filters.TrimStart();
+
+            return withoutLeadingSpace.StartsWith(conjunction, StringComparison.Ordinal)
+                ? withoutLeadingSpace[conjunction.Length..]
+                : withoutLeadingSpace;
         }
 
         private static bool NothingNarrowsTheQuery(string query, string workItemsQuery, string stateQuery)
