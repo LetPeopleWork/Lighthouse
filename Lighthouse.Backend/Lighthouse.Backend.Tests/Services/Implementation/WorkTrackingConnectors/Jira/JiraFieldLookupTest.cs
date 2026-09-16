@@ -95,8 +95,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateConnection_FieldListRefused_NamesTheFieldListAndNotTheUrl()
         {
-            var verdict = await TheVerdictOnAConnectionAskingFor(
-                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.Forbidden, ARefusalCarryingJirasOwnSentence));
+            var verdict = await TheVerdictWhenJiraRefusesTheFieldListWith(HttpStatusCode.Forbidden);
 
             using (Assert.EnterMultipleScope())
             {
@@ -106,13 +105,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// This sentence is the whole point of the verdict - it is what an administrator who cannot get
+        /// past the connection screen reads, and the only place the two things they can act on are named.
+        /// Pinning the phrases it is built from, rather than the sentence as a whole, leaves the wording
+        /// free to improve while keeping the message from silently emptying out.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_FieldListRefused_SaysWhatJiraAnsweredAndWhatToTry()
+        {
+            var verdict = await TheVerdictWhenJiraRefusesTheFieldListWith(HttpStatusCode.Forbidden);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Message, Does.Contain("could not read the list of fields"));
+                Assert.That(verdict.Message, Does.Contain("Jira answered 403 (Forbidden)"));
+                Assert.That(verdict.Message, Does.Contain("browse at least one project"));
+                Assert.That(verdict.Message, Does.Contain("a proxy in front of Jira"));
+                Assert.That(verdict.Message, Does.Contain("is much larger than the others"));
+            }
+        }
+
         [Test]
         public async Task ValidateConnection_FieldListRefused_CarriesJirasOwnSentence()
         {
-            var verdict = await TheVerdictOnAConnectionAskingFor(
-                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.Forbidden, ARefusalCarryingJirasOwnSentence));
+            var verdict = await TheVerdictWhenJiraRefusesTheFieldListWith(HttpStatusCode.Forbidden);
 
-            Assert.That(verdict.TechnicalDetails, Does.Contain(JirasOwnSentence));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.TechnicalDetails, Does.Contain(FieldListPath));
+                Assert.That(verdict.TechnicalDetails, Does.Contain("answered 403 Forbidden"));
+                Assert.That(verdict.TechnicalDetails, Does.Contain(JirasOwnSentence));
+            }
         }
 
         [Test]
@@ -146,11 +170,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task ValidateTeamSettings_FieldListRefused_DoesNotSayUnexpectedError()
         {
             var requestedUrls = new List<string>();
-            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
-            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(
-                new StubAnswer(HttpStatusCode.BadGateway, ARefusalCarryingJirasOwnSentence), requestedUrls: requestedUrls));
+            var connector = AConnectorRefusedTheFieldListWith(HttpStatusCode.BadGateway, requestedUrls);
 
-            var verdict = await connector.ValidateTeamSettings(team);
+            var verdict = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
 
             using (Assert.EnterMultipleScope())
             {
@@ -163,11 +185,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task ValidatePortfolioSettings_FieldListRefused_DoesNotSayUnexpectedError()
         {
             var requestedUrls = new List<string>();
-            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
-            var connector = JiraConnectorTestSetup.AConnectorOver(AHandlerServing(
-                new StubAnswer(HttpStatusCode.BadGateway, ARefusalCarryingJirasOwnSentence), requestedUrls: requestedUrls));
+            var connector = AConnectorRefusedTheFieldListWith(HttpStatusCode.BadGateway, requestedUrls);
 
-            var verdict = await connector.ValidatePortfolioSettings(portfolio);
+            var verdict = await connector.ValidatePortfolioSettings(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
             using (Assert.EnterMultipleScope())
             {
@@ -204,6 +224,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             return await connector.ValidateConnection(connection);
         }
+
+        private static Task<ConnectionValidationResult> TheVerdictWhenJiraRefusesTheFieldListWith(HttpStatusCode status)
+            => TheVerdictOnAConnectionAskingFor(
+                UnmatchedFieldReference, new StubAnswer(status, ARefusalCarryingJirasOwnSentence));
+
+        private static JiraWorkTrackingConnector AConnectorRefusedTheFieldListWith(
+            HttpStatusCode status, List<string> requestedUrls)
+            => JiraConnectorTestSetup.AConnectorOver(AHandlerServing(
+                new StubAnswer(status, ARefusalCarryingJirasOwnSentence), requestedUrls: requestedUrls));
 
         private static StubAnswer AFieldListOf(string fieldList) => new(HttpStatusCode.OK, fieldList);
 
