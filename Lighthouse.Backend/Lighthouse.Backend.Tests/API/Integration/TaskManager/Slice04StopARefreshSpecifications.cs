@@ -257,6 +257,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 + "who did nothing wrong, and invites them to press it again.");
         }
 
+        /// <summary>
+        /// Both halves are the promise. The refusal is what stops a half-finished delete, and the sentence
+        /// is the only thing the operator gets: the popover shows the row unchanged afterwards and says
+        /// nothing of its own about why the control did not work.
+        /// </summary>
+        private async Task ThenCancellingARemovalOfThatTeamIsRefusedWithAReasonToShow(SeededTeam team)
+        {
+            using var client = Factory.CreateClient();
+            using var response = await client.PostAsync(CancelRouteFor(UpdateType.TeamDelete, team.Id), null);
+            var explanation = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                    "A deletion is not a refresh. Stopping one half-way leaves the caller waiting on it told "
+                    + "the entity has gone while its row is still in the database, so the honest answer to a "
+                    + $"control that offers to stop refreshing is to refuse. Answered {(int)response.StatusCode}.");
+
+                Assert.That(explanation, Does.Contain("deletion cannot be cancelled"),
+                    "A refusal an operator cannot read is a button that silently does nothing. Nothing else "
+                    + $"tells them why the removal is still going. Answered: '{explanation}'");
+            }
+        }
+
         private async Task ThenTheTaskListIsAnsweredAndEmpty()
         {
             var rows = await TheTaskList();

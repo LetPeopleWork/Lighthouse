@@ -111,9 +111,11 @@ const renderIcon = (
 const renderIconWithConnections = (
 	connections: IConnectionHealth[],
 	configure?: (service: IConnectionHealthService) => void,
+	/** Left empty unless the scenario is about the two halves together, as the badge count is. */
+	tasks: IUpdateTask[] = [],
 ) => {
 	const updateSubscriptionService = createMockUpdateSubscriptionService();
-	updateSubscriptionService.getRunningTasks = vi.fn().mockResolvedValue([]);
+	updateSubscriptionService.getRunningTasks = vi.fn().mockResolvedValue(tasks);
 
 	const connectionHealthService = createMockConnectionHealthService();
 	connectionHealthService.getHealth = vi.fn().mockResolvedValue(connections);
@@ -208,6 +210,28 @@ const theBadgeColour = (container: HTMLElement): string => {
 	);
 
 	return colour ?? "no badge was rendered";
+};
+
+/**
+ * What the badge says without the box being opened. An empty string is what MUI renders for a count of
+ * zero, which is the same thing a reader sees when there is genuinely nothing to report.
+ */
+const theBadgeCount = (container: HTMLElement): string =>
+	container.querySelector(".MuiBadge-badge")?.textContent ??
+	"no badge was rendered";
+
+/**
+ * Which of MUI's inks a drawing was given, which it carries as a class rather than as anything the
+ * accessibility tree exposes. Shape is what a reader who cannot tell the colours apart goes on - that
+ * is asserted separately - and colour is what everyone else takes in first.
+ */
+const theInkOfTheIconNamed = (name: string): string => {
+	const icon = screen.getByRole("img", { name });
+	const ink = [...icon.classList].find((className) =>
+		className.startsWith("MuiSvgIcon-color"),
+	);
+
+	return ink ?? `${name} was drawn in no particular ink`;
 };
 
 const openThePopover = async () => {
@@ -717,6 +741,121 @@ describe("TaskManagerIcon", () => {
 			});
 		});
 
+		// The mark beside the word has to say the same thing the word does. Deciding what the row is
+		// doing separately in each is how they come to disagree, and a row reading "Stopping…" beside a
+		// mark that still means "waiting its turn" is worse than either alone.
+		it("marks the row as still being worked on while the stop is being heard", async () => {
+			renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			expect(
+				await screen.findByRole("progressbar", { name: "Stopping…" }),
+			).toBeInTheDocument();
+		});
+
+		// A team and a portfolio are numbered separately, so two rows can carry the same number and be
+		// different work. Remembering the ask by number alone would have one press of Stop put every row
+		// that happens to share it into a state nobody asked for.
+		it("remembers which row the stop was asked for, not merely its number", async () => {
+			renderIcon([
+				aRunningTeam,
+				{
+					updateType: "Features",
+					id: 7,
+					name: "Q4 Platform",
+					status: "Queued",
+				},
+			]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+					/stopping/i,
+				);
+			});
+			expect(
+				screen.getByTestId("task-manager-row-Features-7"),
+			).not.toHaveTextContent(/stopping/i);
+		});
+
+		// The control is about to stop accepting input, and a disabled element receives no key presses,
+		// so focus has to go somewhere a keyboard reader can still work from. The row takes it — which
+		// also puts the row's new state in front of a screen reader — and it takes it without joining the
+		// tab order, because a row that did would sit ahead of everything else on the page.
+		it("moves focus onto the row rather than leaving it on a control that has gone dead", async () => {
+			renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			const row = screen
+				.getByTestId("task-manager-row-Team-7")
+				.closest("[data-task-row]");
+
+			await waitFor(() => {
+				expect(row).toHaveFocus();
+			});
+			expect(row).toHaveAttribute("tabindex", "-1");
+		});
+
+		// The browser remembers the ask only for as long as the instance still reports the work. A key
+		// that comes back — because the ask arrived after the refresh had already been requeued — has to
+		// read as running again, or the word "stopping" outlives everything it was ever true about.
+		it("stops saying a refresh is stopping once the instance lists it afresh", async () => {
+			const service = renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+					/stopping/i,
+				);
+			});
+
+			vi.mocked(service.getRunningTasks).mockResolvedValue([]);
+			await userEvent.keyboard("{Escape}");
+			await openThePopover();
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("task-manager-row-Team-7"),
+				).not.toBeInTheDocument();
+			});
+
+			vi.mocked(service.getRunningTasks).mockResolvedValue([aRunningTeam]);
+			await userEvent.keyboard("{Escape}");
+			await openThePopover();
+
+			await waitFor(() => {
+				expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+					/running/i,
+				);
+			});
+			expect(
+				screen.getByTestId("task-manager-row-Team-7"),
+			).not.toHaveTextContent(/stopping/i);
+		});
+
 		// AC-07B.4 — a removal is refused by design, and the refusal has to stay legible. A row stuck on
 		// "stopping" for something that will never stop teaches the reader the word means nothing.
 		it("leaves the row as it was when the instance refuses to stop it", async () => {
@@ -1213,6 +1352,81 @@ describe("TaskManagerIcon", () => {
 				expect(
 					await screen.findByRole("tooltip", { name: /not checked yet/i }),
 				).toBeInTheDocument();
+			});
+
+			// Shape is what a reader who cannot separate the colours goes on, and it is asserted above.
+			// Colour is what everybody else takes in first, and it has to mean the same thing the shape
+			// does: red for something to go and fix, green for something that answered, grey for a
+			// question nobody has asked. All four states, so one ink used everywhere cannot satisfy this.
+			it("draws a connection in trouble in a different ink from one that is fine", async () => {
+				renderIconWithConnections([
+					aBrokenCredential,
+					anUnreachableTracker,
+					anUntestedConnection,
+					aHealthyConnectionWithSomethingToSay,
+				]);
+
+				await openThePopover();
+				await screen.findByRole("img", { name: "Healthy" });
+
+				expect(theInkOfTheIconNamed("Authentication failed")).toBe(
+					"MuiSvgIcon-colorError",
+				);
+				expect(theInkOfTheIconNamed("Unreachable")).toBe(
+					"MuiSvgIcon-colorError",
+				);
+				expect(theInkOfTheIconNamed("Healthy")).toBe("MuiSvgIcon-colorSuccess");
+				expect(theInkOfTheIconNamed("Not checked yet")).toBe(
+					"MuiSvgIcon-colorDisabled",
+				);
+			});
+		});
+
+		// The answer names the connection it is about, and it belongs to that row alone. A verdict
+		// written across the whole list would have one press of Test connection re-describe connections
+		// nobody asked about — and describe them, every time, as whatever the tested one turned out to be.
+		it("writes the test's answer into the row it was pressed from and no other", async () => {
+			renderIconWithConnections(
+				[aBrokenCredential, anUntestedConnection],
+				(svc) => {
+					svc.testConnection = vi
+						.fn()
+						.mockResolvedValue({ ...aBrokenCredential, state: "Healthy" });
+				},
+			);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /test connection Jira Cloud/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					within(screen.getByTestId("connection-health-11")).getByRole("img"),
+				).toHaveAccessibleName(/Healthy/i);
+			});
+			expect(
+				within(screen.getByTestId("connection-health-13")).getByRole("img"),
+			).toHaveAccessibleName(/Not checked yet/i);
+		});
+
+		// The number is the whole of what an operator reads without opening the box, and it answers one
+		// question: how many things want attention. Work in hand and a connection that is broken are both
+		// such things, so leaving either out — or setting one against the other — describes an instance
+		// nobody is running.
+		it("counts both the work in hand and the connections that need attention", async () => {
+			const { container } = renderIconWithConnections(
+				[aBrokenCredential, aHealthyConnectionWithSomethingToSay],
+				undefined,
+				[aRunningTeam],
+			);
+
+			await screen.findByRole("button", { name: /Jira Cloud/i });
+
+			await waitFor(() => {
+				expect(theBadgeCount(container)).toBe("2");
 			});
 		});
 	});

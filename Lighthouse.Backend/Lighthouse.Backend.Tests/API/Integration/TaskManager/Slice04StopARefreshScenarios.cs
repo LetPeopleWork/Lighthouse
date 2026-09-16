@@ -138,6 +138,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListIsAnsweredAndEmpty();
         }
 
+        // @driving_port @real-io @error — the one thing the route does not accept. A removal is listed with
+        // a Stop control beside it like everything else, so this is a button an operator can genuinely
+        // press; stopping a delete half-way would tell the caller waiting on it that the entity had gone
+        // while its row is still in the database.
+        [Test]
+        public async Task Asking_to_stop_a_removal_is_refused_and_says_why()
+        {
+            var team = GivenATeamThatIsRefreshedOnSchedule();
+
+            await ThenCancellingARemovalOfThatTeamIsRefusedWithAReasonToShow(team);
+        }
+
         // @driving_port @real-io @error @AC-04.6 — the same refusal the list it is reached from gives. A
         // cancel route that is guarded more loosely than the list would let somebody stop every refresh on
         // an instance they cannot even see.
