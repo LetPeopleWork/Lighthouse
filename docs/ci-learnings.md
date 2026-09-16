@@ -1646,32 +1646,37 @@ get re-applied.
   `pnpm@latest` and it patches nothing, so pinning it would create the disagreement rather than close
   it.
 
-### 2026-09-16 — the change-detector's base ref was six weeks stale, so a Jira-only change ran every live connector and died on Linear's 503
-- **Symptom**: run `35073810008` (commit `d504bfeec`, a change touching only
-  `WorkTrackingConnectors/Jira/*.cs` plus docs) went red on `Verify Backend` with **1 failed, 7123
-  passed** — `GetWorkItemsForTeam_AllWorkItemsHaveIssueType`,
+### 2026-09-16 — a stale run listing set the change-detection base six weeks back, so a Jira-only change ran every live connector
+- **Symptom**: run `35073810008` (commit `d504bfeec`, touching only `WorkTrackingConnectors/Jira/*.cs`
+  plus docs) went red on `Verify Backend` with **1 failed, 7123 passed** —
+  `GetWorkItemsForTeam_AllWorkItemsHaveIssueType`,
   `GraphQLHttpRequestException : The HTTP request failed with status code ServiceUnavailable`, in the
-  **Linear** suite. No Jira test failed. `sonar-gates` was then `skipped`, so the change shipped with
-  no Sonar verdict.
-- **Root cause**: two layers, and the second is the one worth knowing. The proximate cause is a Linear
-  API 503 — an upstream outage, not a code defect. The reason a Jira-only change was exposed to it at
-  all is that `ci_changes.yml`'s "Find last successful workflow run" resolved the base ref to
-  `b26f32652` — **2026-08-03, six weeks and 1462 commits earlier**. It walks runs looking for one where
-  the `sqlite` *and* `postgres` verify jobs both concluded `success`, and on `main` it had to go back
-  that far to find one. The resulting diff was 1680 files, which inevitably contains `Program.cs`, both
-  `.csproj` files and four `Services/Interfaces/WorkTrackingConnectors/I*.cs` — every one of them on
-  `SHARED_REGEX`. So `connector_shared=true`, `force_full=true`, and
-  `filter=Category!=Integration|(Category=Integration&Category!=UsageDataCanary)` ran Jira, ADO, Linear,
-  ServiceNow and GitHub live. The change's own diff matches no shared path: measured directly, our five
-  commits alone would not have force-fulled.
-- **Fix**: none applied to the code — the failure is upstream and the change is sound. Recorded because
-  the base-ref staleness is the thing to fix, and it is invisible unless you read the `Detect Changes`
-  job log for the `Comparing against last successful workflow run at:` line.
-- **Rule going forward**: before concluding that a backend run force-fulled because *your* change
-  touched a shared path, read `Detect Changes` for `Found last successful run:` and check how old that
-  commit is — if the base is weeks stale, `connector_shared` is true for everyone's change and tells you
-  nothing about yours. While the base stays stale, treat **every** push to `main` as running all five
-  live connector suites, so any one vendor's outage can redden an unrelated change and skip
-  `sonar-gates` with it. The durable fix is the one the 2026-05-25 Jira-incident entry already
-  recommends — move the live connector categories out of the gating `Verify Backend` job — plus making
-  the base-ref lookup fall back to a bounded window rather than walking back indefinitely.
+  **Linear** suite. No Jira test failed. `sonar-gates` was then `skipped`, so the change shipped with no
+  Sonar verdict until a re-run of the same commit went green.
+- **Root cause**: three layers. The failing test is a Linear API 503 — an upstream outage, not a defect;
+  the re-run proves it. It ran at all because `connector_shared=true` force-fulled every connector
+  suite. And *that* happened because `ci_changes.yml`'s "Find last successful workflow run" resolved the
+  base ref to `b26f32652` — **2026-08-03, 1462 commits and 1680 files back**. A window that wide always
+  contains `Program.cs`, both `.csproj` files and the shared `I*.cs` connector interfaces, so
+  `connector_shared` is true no matter what the change touched. Measured directly: the five commits
+  alone match no `SHARED_REGEX` path.
+  **Why the base was that old is the part worth knowing, and it is not "no recent run qualified".**
+  Re-querying `/actions/workflows/ci.yml/runs?branch=main` afterwards returned the correct newest run
+  consistently, at every page size, on repeated attempts (`total_count` 2334). During the incident the
+  same endpoint returned a listing whose newest entry was from **05.09** with `total_count` 1816 — it
+  was silently missing ten days of runs. The lookup trusts a single read, so a stale one sends the walk
+  weeks back and nothing says so.
+- **Fix**: `ci_changes.yml` — the run listing is now fetched through a `listRunsPage` helper that checks
+  page 1 contains the current run (the current run is by definition a run of this workflow on this
+  branch, so a listing that cannot reach it is provably stale) and retries up to three times with
+  backoff before giving up loudly. The `Check for changes` step now prints how many commits the base is
+  behind and its date, and raises a `::warning::` past 200, so the next wide window is attributable from
+  the job summary instead of by reverse-engineering.
+- **Rule going forward**: never read `connector_shared=true` as evidence that *your* change touched a
+  shared path — check the `Detect Changes` log for `Found last successful run:` and the commit span
+  beside it first. A GitHub Actions run listing can be silently stale by days, so any logic that walks it
+  for a base ref must verify the listing reaches the present before trusting what it finds, and must say
+  out loud how far back it landed. The durable fix for the blast radius remains the one the 2026-05-25
+  Jira-incident entry already recommends — move the live connector categories out of the gating
+  `Verify Backend` job, as ADO already is — so no vendor's outage can redden an unrelated change and
+  skip `sonar-gates` with it.

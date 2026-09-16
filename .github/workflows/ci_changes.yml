@@ -46,23 +46,49 @@ jobs:
           script: |
             const workflow_id = 'ci.yml';
             const branch = 'main';
-            
+
             let page = 1;
             const per_page = 100;
             let foundCommit = null;
-            
-            // Paginate through workflow runs
-            while (!foundCommit) {
-              // Get workflow runs for this workflow on main branch (no status filter to include in-progress runs)
-              const runs = await github.rest.actions.listWorkflowRuns({
+
+            // This listing has been observed serving a view missing the most recent ten days of
+            // runs. The walk below then finds its first match weeks back, the diff widens to over a
+            // thousand commits, and every change looks like it touched a shared connector path - so
+            // one vendor being down reddens an unrelated push. The current run is itself a run of
+            // this workflow on this branch, so a listing that does not reach it is provably stale
+            // and worth asking again for.
+            async function listRunsPage(p) {
+              for (let attempt = 1; attempt <= 3; attempt++) {
+                const res = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: workflow_id,
+                  branch: branch,
+                  per_page: per_page,
+                  page: p
+                });
+                if (p > 1 || res.data.workflow_runs.length === 0) return res;
+                const reachesNow = res.data.workflow_runs.some(r => r.id === context.runId);
+                if (reachesNow) return res;
+                console.log(`Run listing did not include this run (attempt ${attempt}/3) - stale read, retrying`);
+                await new Promise(r => setTimeout(r, 5000 * attempt));
+              }
+              console.log('WARNING: run listing never included this run; the base ref may be far older than it should be');
+              return await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: workflow_id,
                 branch: branch,
                 per_page: per_page,
-                page: page
+                page: p
               });
-              
+            }
+
+            // Paginate through workflow runs
+            while (!foundCommit) {
+              // Get workflow runs for this workflow on main branch (no status filter to include in-progress runs)
+              const runs = await listRunsPage(page);
+
               // If no more runs, break
               if (runs.data.workflow_runs.length === 0) {
                 console.log('No more workflow runs to check');
@@ -130,6 +156,14 @@ jobs:
                 if git cat-file -e "$last_success_sha" 2>/dev/null; then
                   base_ref="$last_success_sha"
                   echo "Comparing against last successful workflow run at: $base_ref"
+                  # A window this wide always spans a shared connector path, which force-fulls every
+                  # live connector suite for a change that touched none of them. Say so here, where
+                  # whoever is reading a red Linear job on a Jira change will see it.
+                  span=$(git rev-list --count "$base_ref..HEAD" 2>/dev/null || echo 0)
+                  echo "Base is $span commit(s) behind HEAD (base dated $(git log -1 --format=%cs "$base_ref" 2>/dev/null))"
+                  if [ "$span" -gt 200 ]; then
+                    echo "::warning::Change-detection base is $span commits behind. Every connector suite will run regardless of what this change touched; a stale run listing is the usual cause."
+                  fi
                 else
                   echo "Warning: Last successful commit $last_success_sha not found in repository"
                   echo "This can happen after a force push that rewrote history"
