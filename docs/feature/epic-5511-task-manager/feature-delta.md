@@ -4132,3 +4132,124 @@ re-pointed honestly.
 7. The live verification of AC-07B.5 against a real connector.
 8. Whether `elapsedMs` should follow its rendering out of the wire contract. D14 leaves this open on
    purpose and calls it a DELIVER-time judgement, not a requirement.
+
+---
+
+# Wave: DELIVER — slice 07
+
+## What changed
+
+**Backend, and it is one sort.** `GetTasks` answers rows in the order the queue will work them:
+running first, then longest-waiting first, an unrecorded moment last within its own group, and ties
+settled on update type and entity id. `QueuedAt` and `StartedAt` were already on `UpdateStatus`; no
+store change, no schema change, no Redis representation change.
+
+The rule moved out of the controller into `AdmittedWorkOrdering`, beside the two stores whose
+iteration order it exists to replace. That was not tidying: it is what lets the only substrate on
+which its tie-break can fail — a Redis hash across two replicas — reach it without standing a whole
+`WebApplicationFactory` up against Redis to observe a pure function. The switch choosing between the
+two moments was duplicated inside the elapsed-time calculation and is now one method, since where a
+row sits and how long it has been there are two answers about the same moment.
+
+**The D15 ambiguity DISTILL raised is settled as it recommended.** A running refresh whose start went
+unrecorded sorts last *within the running group*, not last overall.
+`A_refresh_that_is_running_is_read_first_even_though_nobody_recorded_when_it_started` holds it.
+
+**Frontend.** Durations leave the rows — `Running for 2m 14s` reads `Running` — and `formatElapsed`
+is deleted with its own test file rather than left orphaned. `elapsedMs` stays on the wire, as D14
+scoped it. A spinner marks the row that is running and a distinct waiting mark the ones that are not.
+A stop that was asked for reads `Stopping…` with a spinner and the control stops accepting a second
+press, remembered in the browser that asked. Connection state is drawn — solid green tick, solid red
+alert, grey outlined ring — with the word as the accessible name and the tooltip. A mark beside each
+of the three headings, no collapse control. The retention caveat above *Recent problems* is gone. The
+popover re-reads when it is opened, in addition to the hub subscription.
+
+## What the red gate actually said, per scenario
+
+**The walking skeleton passed on its first run, and that was luck rather than a pass.** Under the
+whole `slice-07` category it came out green; run alone it failed on each of three consecutive runs.
+The fixture's team ids and the dictionary's bucket order line up differently depending on what else
+is running beside it — which is the defect stated precisely. It was then proved live rather than
+argued about: emptying the response reds it, and so does inverting either half of the sort.
+
+Two backend branches passed on arrival once the walking skeleton had driven the sort — missing moment
+last within its group, and running before waiting. Neither was taken on trust. Inverting the
+missing-moment rank reds
+`Work_whose_admission_was_never_recorded_waits_at_the_end_and_still_says_it_is_waiting` and nothing
+else; inverting the running-first group reds both scenarios that name it.
+
+Note for the next probe, because it cost a build: neutralising a ternary so it returns the same value
+either way does **not** compile here — `S3923` is error-severity — so a hand probe has to be an
+inversion or a value swap, exactly as the ledger already says about the other sabotage shapes.
+
+## The Redis tie scenario was written twice, and the first one was worthless
+
+Docker was available, so it ran rather than being recorded as unrunnable.
+
+The first version read the same hash five times from two replicas and asserted every read agreed. It
+passed **with the tie-break deleted**: a Redis hash does not move its own layout while nothing is
+happening, so "read it twice" has no more power there than the in-process dictionary DISTILL had
+already ruled out. A guard that cannot fail is not a guard.
+
+What moves the layout is more work arriving — the ordinary case rather than an exotic one: an
+operator opens the popover, more refreshes are admitted, they open it again. At 160 rows admitted in
+one instant, growing the hash by another 500 re-lays the 160 already there, and with the tie-break
+removed their order relative to each other changed between the two glances. That is the red the test
+now has, and it is the one AC-07A.2 was written about.
+
+## What the frontend scenarios caught that nobody predicted
+
+**Disabling the stop control stranded keyboard focus.** `does not invite the stop to be asked for a
+second time` requires the control to be disabled, and a disabled element receives no key presses — so
+Escape stopped reaching the popover and a keyboard reader could not close the box they had just acted
+in. `keeps the row until the instance stops reporting the work` is what surfaced it, by closing and
+reopening. Focus now moves to the row, which also puts the row's new state in front of a screen
+reader. Recorded because it is a real accessibility defect, and only a scenario doing two things in
+sequence could have found it.
+
+## The five slice-05 assertions, re-pointed rather than loosened
+
+DISTILL named them and named the trap: an SVG `<title>` counts towards its parent's text content, so
+a state icon rendered *inside* `connection-health-row-N` would have left all five passing by accident
+while the state vanished from view. The icon is a sibling, the row's text is the connection name, and
+each assertion now reads the state off its own element — scoped to the connection it belongs to via a
+new `connection-health-{id}` container, because "every connection, with what is known about it" is a
+claim about the *pairing*, and a popover-wide lookup would be satisfied by the right word beside the
+wrong name.
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | **6 853 passed, 0 failed, 10 skipped** — all ten skips pre-existing (backup fixtures, key-store projection, a benchmark), none from this slice |
+| `dotnet format analyzers --severity info` | 39 findings, **0 in any file this slice touches** — all pre-existing CA1861 in generated EF migrations. The filter was taken as the union of `git diff` and `git status --porcelain`, so the new file was not invisible to it |
+| `pnpm test` | **370 files, 5 197 tests, all green, 0 skipped** |
+| `pnpm build` | clean, Biome included |
+| `pnpm biome check ./src` | clean |
+| `biome lint --only=complexity/noExcessiveCognitiveComplexity` | clean on all five touched components |
+| Scenarios | **19 of 19 green** — 6 backend, 13 frontend — plus one new Redis-backed guard |
+
+**One environmental failure, checked rather than assumed.**
+`ServiceProviderValidationTest.ServiceContainer_BuildsWithoutScopeViolations` failed one run with an
+`IOException` deleting its own throwaway `DiValidation_*.db`. It reproduces on the base commit with
+this slice's changes stashed — nine stale copies of that file had accumulated in `bin/` — and it
+passed on the next full run. Not a regression, and not re-run-until-green: it was confirmed against
+`9a117cb33` before being dismissed.
+
+## Not done here
+
+1. **AC-07B.5 — live verification against a real connector — is outstanding, and is for the
+   maintainer.** It cannot be automated and should not be faked: the behaviour being fixed exists only
+   in the gap between the stop request and the connector's next checkpoint, measured at eleven seconds
+   against a real tracker, and a doubled service resolves immediately and has no gap. What to do: stop
+   a real connector refresh on a running instance, and confirm the row acknowledges within a second
+   and clears when the instance agrees it stopped.
+2. **`elapsedMs` stays on the wire.** D14 left this open as a DELIVER-time judgement. It stays: the
+   field is cheap, the moments behind it are what the sort reads, and removing it is a contract change
+   in a slice whose whole backend cost was meant to be one sort.
+3. **Deferred idea L stands** — a stop asked for in one tab shows `Stopping…` only in that tab, a
+   reload during the window loses the acknowledgement, and a second administrator sees nothing. All
+   three are the same missing fact and resolve the same way, server-side.
+4. **Mutation testing not run** — a later phase.
+5. **Docs and screenshots** — the popover is still undocumented, carried since slice 05.
