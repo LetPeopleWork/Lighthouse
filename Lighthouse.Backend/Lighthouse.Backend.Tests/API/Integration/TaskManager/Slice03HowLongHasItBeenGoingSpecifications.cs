@@ -51,8 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private readonly List<UpdateKey> admittedByHand = [];
 
-        private readonly record struct SeededTeam(int Id, string Name);
-
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
             theInstanceClock = new FakeLighthouseClock(TheInstantTheInstanceBelievesIn);
@@ -85,12 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         // --- Given ---
-
-        private SeededTeam GivenATeamThatIsRefreshedOnSchedule()
-        {
-            var teamName = $"Team {Guid.NewGuid():N}";
-            return new SeededTeam(SeedTeam(SeedConnection(), teamName), teamName);
-        }
 
         /// <summary>
         /// A refresh that is genuinely in flight. Nothing about how long something has been running can be
@@ -222,17 +214,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             }
 
             Assert.Fail($"{key.UpdateType} {key.Id} never reached {reached}; the scenario cannot ask how long it has been going.");
-        }
-
-        private async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
         }
 
         // --- Then ---

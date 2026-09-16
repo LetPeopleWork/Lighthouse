@@ -53,8 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private readonly List<UpdateKey> admittedByHand = [];
 
-        private readonly record struct SeededTeam(int Id, string Name);
-
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
             theInstanceClock = new FakeLighthouseClock(TheInstantTheInstanceBelievesIn);
@@ -87,12 +85,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         // --- Given ---
-
-        private SeededTeam GivenATeamThatIsRefreshedOnSchedule()
-        {
-            var teamName = $"Team {Guid.NewGuid():N}";
-            return new SeededTeam(SeedTeam(SeedConnection(), teamName), teamName);
-        }
 
         /// <summary>
         /// A refresh that is genuinely in flight. The queue runs one thing at a time, so a held fetch is
@@ -216,17 +208,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             }
 
             Assert.Fail($"{key.UpdateType} {key.Id} never started running; the scenario cannot ask where it is listed.");
-        }
-
-        private async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
         }
 
         // --- Then ---

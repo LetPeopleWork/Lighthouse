@@ -38,8 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private int pagesTheTrackerWasAskedFor;
 
-        private readonly record struct SeededTeam(int Id, string Name);
-
         /// <summary>
         /// Runs before the harness tears the host down, because NUnit unwinds from the derived class
         /// outwards. A scenario that left the tracker gated would otherwise leave a refresh parked in the
@@ -53,12 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         // --- Given ---
-
-        private SeededTeam GivenATeamThatIsRefreshedOnSchedule()
-        {
-            var teamName = $"Team {Guid.NewGuid():N}";
-            return new SeededTeam(SeedTeam(SeedConnection(), teamName), teamName);
-        }
 
         private void GivenTheTrackerDoesNotAnswerUntilWeSaySo()
         {
@@ -177,17 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             }
 
             Assert.Fail($"{key.UpdateType} {key.Id} never reached {reached}; the scenario cannot cancel it.");
-        }
-
-        private async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
         }
 
         // --- Then ---

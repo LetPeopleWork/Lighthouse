@@ -54,8 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private readonly record struct SeededConnection(int Id, string Name);
 
-        private readonly record struct SeededTeam(int Id, string Name);
-
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
             services.RemoveAll<ICryptoService>();

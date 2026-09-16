@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private readonly List<UpdateKey> admittedByHand = [];
 
-        private readonly record struct SeededTeam(int Id, string Name);
-
         private readonly record struct SeededPortfolio(int Id, string Name);
 
         private readonly record struct ExpectedRow(string UpdateType, int Id, string Name, string Status);
@@ -62,12 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         // --- Given ---
-
-        private SeededTeam GivenATeamThatIsRefreshedOnSchedule()
-        {
-            var teamName = $"Team {Guid.NewGuid():N}";
-            return new SeededTeam(SeedTeam(SeedConnection(), teamName), teamName);
-        }
 
         private SeededPortfolio GivenAPortfolioThatIsRefreshedOnSchedule()
         {
@@ -167,17 +159,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             }
 
             Assert.Fail($"{key.UpdateType} {key.Id} never reached {reached}; the scenario cannot ask what is running.");
-        }
-
-        private async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
         }
 
         // --- Then ---

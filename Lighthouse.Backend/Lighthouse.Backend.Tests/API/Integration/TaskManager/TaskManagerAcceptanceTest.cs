@@ -181,6 +181,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- Seeding (preconditions only — never the expected output) ---
 
+        /// <summary>
+        /// A team this instance knows about, and the name an operator would recognise it by. Every slice
+        /// asserts on the name rather than the id, so the two travel together.
+        /// </summary>
+        protected readonly record struct SeededTeam(int Id, string Name);
+
+        /// <summary>
+        /// The name is unique per call because these fixtures assert on names: two teams sharing one would
+        /// let an assertion pass against the wrong row.
+        /// </summary>
+        protected SeededTeam GivenATeamThatIsRefreshedOnSchedule()
+        {
+            var teamName = $"Team {Guid.NewGuid():N}";
+            return new SeededTeam(SeedTeam(SeedConnection(), teamName), teamName);
+        }
+
+        /// <summary>
+        /// Waits until the queue reports nothing active, bounded so a wedged fixture fails rather than
+        /// hangs. Teardown needs it: a refresh still running while the database beneath it is deleted is
+        /// what it exists to prevent.
+        /// </summary>
+        protected async Task TheQueueGoesIdle()
+        {
+            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+
+            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+        }
+
         protected int SeedConnection(WorkTrackingSystems system = WorkTrackingSystems.Jira)
         {
             using var scope = Factory.Services.CreateScope();

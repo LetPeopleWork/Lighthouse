@@ -19,19 +19,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     {
         private const string SummaryMarker = "Update completed";
 
-        private readonly record struct SeededTeam(int Id, string Name);
-
         private readonly record struct SeededPortfolio(int Id, string Name);
 
         // --- Given ---
-
-        private SeededTeam GivenATeamThatIsRefreshedOnSchedule()
-        {
-            var connectionId = SeedConnection();
-            var teamName = $"Team {Guid.NewGuid():N}";
-
-            return new SeededTeam(SeedTeam(connectionId, teamName), teamName);
-        }
 
         private SeededPortfolio GivenAPortfolioThatIsRefreshedOnSchedule()
         {
