@@ -1440,14 +1440,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning(
-                    "Jira would not return the field list: {StatusCode} ({ReasonPhrase}). Jira answered: {ResponseBody}",
-                    (int)response.StatusCode,
-                    response.ReasonPhrase,
-                    responseBody);
-
-                throw JiraReadException.FieldListRefused(
-                    response.StatusCode, ExplanationIn(new JiraRefusal(response.StatusCode, responseBody)));
+                throw RefusedFieldList(new JiraRefusal(response.StatusCode, responseBody));
             }
 
             var jsonResponse = JsonDocument.Parse(responseBody);
@@ -1738,6 +1731,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             LogTheRefusal(jqlQuery, rejection);
 
             return new JiraQueryRejectedException(ExplanationIn(rejection), jqlQuery, rejection.StatusCode);
+        }
+
+        /// <summary>
+        /// Jira would not hand over the list of fields on the instance. Logging the whole answer is what
+        /// tells the two causes apart afterwards: an account that cannot browse any project gets a refusal
+        /// from Jira in JSON, while a proxy cutting off the largest response Lighthouse asks for answers
+        /// with an HTML page of its own.
+        /// </summary>
+        private JiraReadException RefusedFieldList(JiraRefusal refusal)
+        {
+            logger.LogWarning(
+                "Jira would not return the field list: {StatusCode} ({Status}). Jira answered: {ResponseBody}",
+                (int)refusal.StatusCode,
+                refusal.StatusCode,
+                refusal.ResponseBody);
+
+            return JiraReadException.FieldListRefused(refusal.StatusCode, ExplanationIn(refusal));
         }
 
         /// <summary>
