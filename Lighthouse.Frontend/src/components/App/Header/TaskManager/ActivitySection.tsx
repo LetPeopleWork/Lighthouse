@@ -45,15 +45,38 @@ const useKindOf = () => {
 	};
 };
 
-const describeState = (task: IUpdateTask, stopping: boolean): string => {
+/**
+ * What the row is doing, decided once. The word and the drawing are two ways of saying it, and deciding
+ * separately in each is how they come to disagree - a row reading "Stopping…" beside a spinner that
+ * still means "running" would be worse than either alone.
+ *
+ * A stop that has been asked for outranks what the instance last said, because the instance has not
+ * heard about it yet.
+ */
+type RowActivity = "stopping" | "running" | "waiting" | "finished";
+
+const activityOf = (task: IUpdateTask, stopping: boolean): RowActivity => {
 	if (stopping) {
-		return STOPPING;
+		return "stopping";
 	}
 
 	switch (task.status) {
 		case "InProgress":
-			return RUNNING;
+			return "running";
 		case "Queued":
+			return "waiting";
+		default:
+			return "finished";
+	}
+};
+
+const describeState = (task: IUpdateTask, activity: RowActivity): string => {
+	switch (activity) {
+		case "stopping":
+			return STOPPING;
+		case "running":
+			return RUNNING;
+		case "waiting":
 			return task.waitingBehind
 				? `${WAITING} behind ${task.waitingBehind}`
 				: WAITING;
@@ -70,32 +93,23 @@ const describeState = (task: IUpdateTask, stopping: boolean): string => {
  * Drawn rather than spelled out, and the word is still in the row beside it — the drawing is what a
  * reader takes in without reading, not a replacement for what it says.
  */
-const RowProgress = ({
-	task,
-	stopping,
-}: {
-	task: IUpdateTask;
-	stopping: boolean;
-}) => {
-	if (stopping) {
-		return <CircularProgress size={16} aria-label={STOPPING} />;
+const RowProgress = ({ activity }: { activity: RowActivity }) => {
+	switch (activity) {
+		case "stopping":
+			return <CircularProgress size={16} aria-label={STOPPING} />;
+		case "running":
+			return <CircularProgress size={16} aria-label={RUNNING} />;
+		case "waiting":
+			return (
+				<HourglassEmptyIcon
+					fontSize="small"
+					color="disabled"
+					titleAccess={WAITING}
+				/>
+			);
+		default:
+			return null;
 	}
-
-	if (task.status === "InProgress") {
-		return <CircularProgress size={16} aria-label={RUNNING} />;
-	}
-
-	if (task.status === "Queued") {
-		return (
-			<HourglassEmptyIcon
-				fontSize="small"
-				color="disabled"
-				titleAccess={WAITING}
-			/>
-		);
-	}
-
-	return null;
 };
 
 const isDelete = (updateType: UpdateTaskType): boolean =>
@@ -129,7 +143,7 @@ const ActivitySection = ({
 	}
 
 	return tasks.map((task) => {
-		const stopping = stopAsked.has(taskKey(task));
+		const activity = activityOf(task, stopAsked.has(taskKey(task)));
 
 		return (
 			<Box
@@ -138,7 +152,7 @@ const ActivitySection = ({
 				tabIndex={-1}
 				sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}
 			>
-				<RowProgress task={task} stopping={stopping} />
+				<RowProgress activity={activity} />
 
 				<Typography
 					data-testid={`task-manager-row-${task.updateType}-${task.id}`}
@@ -147,7 +161,7 @@ const ActivitySection = ({
 				>
 					{kindOf(task.updateType)} '{task.name}'
 					{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
-					{describeState(task, stopping)}
+					{describeState(task, activity)}
 				</Typography>
 
 				<Tooltip title={`Stop refreshing ${task.name}`}>
@@ -157,7 +171,7 @@ const ActivitySection = ({
 						<IconButton
 							aria-label={`Stop refreshing ${task.name}`}
 							size="small"
-							disabled={stopping}
+							disabled={activity === "stopping"}
 							onClick={(event) => {
 								// This control is about to stop accepting input, and a disabled element receives
 								// no key presses - so leaving focus on it would leave a keyboard reader unable to
