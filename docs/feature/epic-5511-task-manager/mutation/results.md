@@ -655,3 +655,136 @@ survived and been written up as equivalent when it is not.
 | `:28` `if (!isDisabled)` → `true` | Equivalent. MUI does not fire `onClick` on a button carrying `disabled`, so the inner guard cannot be reached in the state it guards against. Defence in depth, not a gap. |
 | `:36` tooltip string blanked, `:49` `sx` emptied | The cosmetic class. jsdom computes no styles; asserting them means copying the source. |
 | `:35` `?? false` → `&& false` | **A real gap, left open deliberately.** Nothing asserts the *plain* tooltip appears when the licence IS valid, so "always show the premium message" would pass — the positive control for the test added above. Pre-existing, produces wrong copy rather than a crash, and closing it was judged disproportionate to a change that removed a badge. Cheap to close if anyone wants it. |
+
+---
+
+## 6011 — The queue reads like a queue (slice 07)
+
+Epic #5511 Task Manager, slice 07. Run 2026-09-16 against `main` @ `c8932fea0` plus the test
+strengthening this pass added. Gate is an 80 % kill rate on each stack that has changed files.
+
+| Stack | Score | Tested | Killed | Survived | Timeout | Duration |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **96.30 %** | 27 | 26 | 1 | 0 | 11 m 49 s |
+| Frontend (StrykerJS 9.6.1) | **80.95 %** | 252 | 204 | 48 | 0 | 6 m 56 s |
+
+Configs: `stryker.6011.backend.json`, `stryker.6011.frontend.json`, `vitest.stryker.6011.ts`.
+ARM64 runner: `run-backend-x64.ps1`, `-TestProject` passed explicitly. Whole files mutated on both
+stacks — the range suffix in `mutate` produces zero tested mutants and a vacuous pass, which is in
+`docs/ci-learnings.md`.
+
+Both stacks were run twice. The first pass scored 92.59 % backend and 74.21 % frontend; the frontend
+was under its gate and the reason was real rather than a scoring artefact.
+
+**`connectionHealthWording.ts` is mutated although this slice did not in the end change it.** Two
+commits in the range touch it and the second undoes the first, so `git diff 9a117cb33..HEAD` shows
+nothing for that file. Left in the set because the slice's own commits pass through it, and dropping a
+file from the set after seeing it score well is how a gate stops meaning anything. It scores 97.78 %,
+the same as it did for slice 05.
+
+### Backend
+
+`AdmittedWorkOrdering.cs` — the file this slice introduced — is at **7 of 7**. Both ranks of the sort
+key, the fallback for a missing moment and the sort direction itself all die, and they die on the
+acceptance scenarios rather than on a unit test written to meet the gate.
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `AdmittedWorkOrdering.cs` (whole file) | 7 | 7 | 0 |
+| `UpdateController.cs` (whole file) | 20 | 19 | 1 |
+
+#### Closed by this pass — a promise with no test at all
+
+The first run reported `UpdateController.cs:96` — the sentence inside the delete refusal — as
+**NoCoverage**: no test executes that line. The guard *condition* on the line above is covered, because
+every ordinary cancel runs through it, which is what made this easy to miss. Nothing had ever asked the
+route to stop a removal.
+
+That is not a decorative path. The popover draws a Stop control on every row including a removal, and
+the frontend's `leaves the row as it was when the instance refuses to stop it` is written about exactly
+this refusal — so the browser half of the contract was pinned while the instance half was not. The
+guard could have been deleted outright and the suite would have stayed green.
+
+`Asking_to_stop_a_removal_is_refused_and_says_why` now presses it: 400, and the sentence an operator
+reads, which is the only thing they get — the row is unchanged afterwards and the popover says nothing
+of its own about why. Verified by applying Stryker's own mutant (the message blanked to an empty
+string) and rebuilding: the new test reds and nothing else does. Probe reverted, `git diff` on the
+production tree empty.
+
+#### Accepted survivor
+
+- **`UpdateController.cs:127`** — `elapsed < TimeSpan.Zero` relaxed to `<=`. **Equivalent**: at exactly
+  zero both arms answer 0. Accepted for the same reason in slices 03 and 04, and re-checked rather than
+  carried over on trust.
+
+### Frontend
+
+| File | tested | killed | survived |
+| --- | --- | --- | --- |
+| `connectionHealthWording.ts` | 45 | 44 | 1 |
+| `ActivitySection.tsx` | 75 | 63 | 12 |
+| `ConnectionsSection.tsx` | 34 | 27 | 7 |
+| `useTaskManagerPopover.ts` | 54 | 43 | 11 |
+| `TaskManagerIcon.tsx` | 25 | 15 | 10 |
+| `RecentProblemsSection.tsx` | 15 | 11 | 4 |
+| `SectionHeading.tsx` | 4 | 1 | 3 |
+
+#### Closed by this pass — 17 mutants, seven scenarios
+
+The first run's 74.21 % was not a rounding problem. Six separate promises this slice makes had nothing
+holding them.
+
+| What survived | What it meant |
+| --- | --- |
+| `taskKey` emptied, and reduced to `undefined` | **The browser remembered the stop by number alone.** A team and a portfolio are numbered separately, so one press of Stop could have put every row sharing that number into a state nobody asked for. Nothing had ever rendered two rows carrying the same number. |
+| the stopping arm of `RowProgress`, and its accessible name | **Nothing asserted the mark beside the word.** The row read "Stopping…" and the drawing beside it was never looked at, so the two could have disagreed — which is the exact failure the single `RowActivity` decision was extracted to prevent. |
+| `tabIndex={-1}` → `+1` | **A positive tabindex, unnoticed.** Focus moving onto the row is covered indirectly — the Escape in `keeps the row until the instance stops reporting the work` only reaches the popover because focus left the disabled button — but nothing said the row must stay out of the tab order, and a row that joined it would sit ahead of every other control on the page. |
+| the four ink choices in `HOW_EACH_STATE_IS_DRAWN` | **Only shape was asserted, never colour.** The spec that separates a ring from a tick says in its own name that it does not rely on colour; nothing else did either, so all four states could have been drawn in one ink. |
+| `forgetWhatTheInstanceNoLongerReports`'s filter, and both branches of its "did anything change" test — five mutants | **The browser never forgot an ask.** The keys the reader has asked to stop are dropped when the instance stops listing the work, so a key that comes back — because the ask arrived after the refresh had been requeued — reads as running again. Nothing exercised a row leaving and returning, so a stale key could have left a row saying "Stopping…" for good. |
+| `candidate.connectionId === answeredFor` → `true` | **A test verdict could have been written across every row.** The existing specs press Test connection on a list of one, or assert only the row they pressed. One press could have re-described every connection as whatever the tested one turned out to be. |
+| the badge count, both halves | **The number nobody checked.** It could have been a subtraction, or could have counted every connection rather than the broken ones, and no spec read the badge's text — only its colour. |
+
+All seven scenarios were written against the un-mutated code and pass there; the re-run is what proves
+they kill, and it moved exactly the mutants predicted and no others.
+
+#### Accepted survivors — 48, in eight groups
+
+| Group | Count | Why |
+| --- | --- | --- |
+| MUI `sx` objects and the strings inside them (`ActivitySection` 153, 160; `ConnectionsSection` 74, 76, 82, 114; `RecentProblemsSection` 35, 54; `SectionHeading` 26; `TaskManagerIcon` 71, 72, 73, 88) | 26 | jsdom computes no emotion styles, so there is nothing to assert. Pinning them means asserting a copy of the source rather than a claim about behaviour. Accepted the same way in slices 02, 05 and 06. |
+| Whitespace and empty strings in JSX (`ActivitySection:163` twice, `RecentProblemsSection:56`, and the `", "` separator in `connectionHealthWording:57`) | 4 | `toHaveTextContent` normalises whitespace, and the else-arm of the removal marker is already empty. The words on either side are asserted; the punctuation between them buys brittleness and no defect. |
+| The `default:` arms of `activityOf`, `describeState` and `RowProgress`, and the word they answer (`ActivitySection` 68, 69, 83, 110) | 4 | **Unreachable through the port.** `GET /update/tasks` filters to queued and running work before answering, so no status that reaches this list can take these arms. Reported as NoCoverage rather than Survived, which is the honest label for it. |
+| `RecentProblemsSection:51`, the React `key` blanked | 1 | Reconciliation identity, not rendered output. Accepted in slice 06 for the same reason. |
+| `ActivitySection:167`, the Stop tooltip title blanked | 1 | It is the same sentence as the button's `aria-label`, which every cancel scenario queries by. Killing it means asserting a hover for a string already pinned two lines below. |
+| `ActivitySection:180`, the optional chaining on `focus` removed | 1 | Equivalent in the rendered tree: the handler runs on a button inside the row it is looking for, so `closest` cannot answer null. Defence against a future rearrangement, not a gap. |
+| `useTaskManagerPopover` 37 (`false`, and the block emptied) and 44 (`false`) | 3 | **Equivalent by construction.** Both are shortcuts: the empty-set early return, and handing back the same set when nothing was dropped. Removing either leaves the general path computing the same membership — only the object identity differs, and identity is a render count rather than a claim. Every mutant that *changed* the membership dies. |
+| `useTaskManagerPopover` 76, 77 (the initial `useState` values), 101, 128, 156, 178 (dependency arrays), 166 and 175 (the unmount guard) | 8 | The React plumbing. An initial value is replaced by the first answer before anything renders it, a dependency array is React's memoisation rather than a Lighthouse promise, and the `gone` flag guards a subscription callback firing between unmount and unsubscribe — a window no test can open. Slices 02 and 04 accepted the same set. |
+
+Excluding the 26 `sx` mutants — one accepted class rather than 26 findings — the rest kills 204 of 226,
+**90.3 %**.
+
+#### Not mutated, and why
+
+`UpdateAllButton.tsx` was in the slice-06 config and is not in this one: this slice does not touch it.
+`Header.test.tsx` is in the vitest include list all the same, because it is what renders the icon for
+somebody who is not a System Administrator — and a spec that covers mutated lines but is missing from
+that list leaves every mutant in it alive for want of a test *run*, which reads in the report exactly
+like a missing test.
+
+### Gates after the test strengthening
+
+| Gate | Result |
+| --- | --- |
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` (connector categories excluded) | 6 853 passed, **1 failed**, 10 skipped — see below |
+| `pnpm test` | 370 files, 5 204 tests, all green |
+| `pnpm build` | clean, Biome included |
+| `pnpm biome check ./src` | 816 files checked, no fixes applied |
+
+**The one failure is environmental, and was proved so rather than assumed.**
+`ServiceProviderValidationTest.ServiceContainer_BuildsWithoutScopeViolations_WhenValidateScopesIsEnforced`
+fails with an `IOException` deleting the throwaway `DiValidation_*.db` it has just created — a SQLite
+pool handle still open when `Dispose` runs. Slice 07's write-up attributed this to stale copies
+accumulating in `bin/`; that is not the whole story. Deleting all fourteen of them and running the class
+alone still fails, and it fails identically with this pass's changes stashed. Not a regression, and
+nothing this pass touched can reach it.

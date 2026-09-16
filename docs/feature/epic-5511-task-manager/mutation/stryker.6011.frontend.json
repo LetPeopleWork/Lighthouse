@@ -1,0 +1,44 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6011.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/components/App/Header/TaskManagerIcon.tsx",
+    "src/components/App/Header/TaskManager/useTaskManagerPopover.ts",
+    "src/components/App/Header/TaskManager/ActivitySection.tsx",
+    "src/components/App/Header/TaskManager/ConnectionsSection.tsx",
+    "src/components/App/Header/TaskManager/RecentProblemsSection.tsx",
+    "src/components/App/Header/TaskManager/SectionHeading.tsx",
+    "src/components/App/Header/TaskManager/connectionHealthWording.ts"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6011-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6011"
+}
