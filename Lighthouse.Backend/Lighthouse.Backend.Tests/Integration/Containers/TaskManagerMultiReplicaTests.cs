@@ -348,14 +348,16 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private static string[] TheOrderOf(UpdateKey[] rowsOfInterest, IReadOnlyList<UpdateStatus> admitted)
         {
-            var wanted = rowsOfInterest.Select(Describe).ToHashSet(StringComparer.Ordinal);
+            var wanted = rowsOfInterest
+                .Select(key => Describe(key.UpdateType, key.Id))
+                .ToHashSet(StringComparer.Ordinal);
 
             return [.. AdmittedWorkOrdering.InTheOrderTheQueueWillReachThem(admitted)
-                .Select(work => Describe(new UpdateKey(work.UpdateType, work.Id)))
+                .Select(work => Describe(work.UpdateType, work.Id))
                 .Where(wanted.Contains)];
         }
 
-        private static string Describe(UpdateKey key) => $"{key.UpdateType}-{key.Id}";
+        private static string Describe(UpdateType updateType, int id) => $"{updateType}-{id}";
 
         private static UpdateStatus QueuedStatusFor(UpdateKey key)
             => new() { UpdateType = key.UpdateType, Id = key.Id, Status = UpdateProgress.Queued };

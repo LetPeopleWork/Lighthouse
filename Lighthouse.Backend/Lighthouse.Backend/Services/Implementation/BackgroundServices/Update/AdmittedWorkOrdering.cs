@@ -47,7 +47,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             _ => null,
         };
 
-        private static (int Group, int MomentIsMissing, DateTimeOffset Moment, UpdateType UpdateType, int Id) WhereItSitsInTheQueue(UpdateStatus work)
+        /// <summary>
+        /// Each element is a rank rather than a fact about the row, and they are read in order until one
+        /// of them settles the pair. Zero sorts first, so each name reads as the rule it encodes.
+        /// </summary>
+        private static (int RunningBeforeWaiting, int RecordedBeforeUnrecorded, DateTimeOffset Moment, UpdateType UpdateType, int Id) WhereItSitsInTheQueue(UpdateStatus work)
         {
             var moment = WhenItsCurrentStateBegan(work);
 
