@@ -1551,11 +1551,12 @@ get re-applied.
   line, an identifier or any culture-independent string is built from interpolation. `Invariant(...)`
   reads more naturally and is the habit worth unlearning here.
 
-### 2026-08-22 — flake: `SQLite Error 15: 'locking protocol'` in `IntegrationTestBase.Init`
+### 2026-09-16 (first seen 2026-08-22) — flake: `SQLite Error 15: 'locking protocol'` in `IntegrationTestBase.Init` (Recurrence: 3)
 - **Symptom**: a single integration test fails in `SetUp` at `EnsureCreated()` with
   `Microsoft.Data.Sqlite.SqliteException : SQLite Error 15: 'locking protocol'`, taking ~10 s where it
-  normally runs in under a second. Seen twice in one day, on a different test each time
-  (`TeamInProject_WithExistingForecasts_DeleteTeam_SucceedsAsync` both times, but the class varies).
+  normally runs in under a second. Seen twice on 2026-08-22, and again on 2026-09-16 (run 35091633703,
+  `TeamsInProject_DeleteTeam_DeletesRemainingWorkOfTeamAsync`, on a docs-only HEAD whose diff cannot
+  reach the deletion repository at all).
 - **Root cause**: not established. It is a file-locking error raised before any test body runs, so it
   cannot be caused by the code under test.
 - **Fix**: none. Re-run the test alone; it passes.
@@ -1563,6 +1564,14 @@ get re-applied.
   infrastructure, not a regression — the stack ends in EF's `RelationalDatabaseCreator`, never in
   product code. Re-run alone before investigating. Distinguish it from the GitHub-quota failures in
   `LighthouseReleaseServiceIntegrationTest`, which look similar in a summary but are a different cause.
+- **This is one face of a family, and the family is what now deserves the fix.** The same
+  `EnsureCreated()`-in-`SetUp` position has produced error 15 (`locking protocol`), error 10
+  (`disk I/O error`, 2026-08-17, Recurrence 2), error 1 (`table already exists`, 2026-05-18) and
+  `disk image is malformed` (2026-08-19). One process-wide SQLite connection pool under
+  `Parallelizable(ParallelScope.Fixtures)` explains all four, and the 2026-05-18 entry already named
+  the durable fix — `[NonParallelizable]` on `IntegrationTestBase`. Counting each error code as its own
+  flake is what has kept that fix from being taken: individually none reaches the "three runs, different
+  commits" bar, and together they passed it long ago.
 
 ### 2026-09-14 — a reclaimed ServiceNow PDI 502s and blocks every connector PR, and rebuilding it has two steps no script can do
 - **Symptom**: every test under `Category=ServiceNowIntegration` fails against `dev191338`, which
