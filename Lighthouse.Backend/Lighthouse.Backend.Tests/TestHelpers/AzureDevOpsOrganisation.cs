@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                     if (RejectTheQuery)
                     {
-                        throw new VssServiceException("The query could not be run.");
+                        throw HowTheQueryIsRefused ?? new VssServiceException("The query could not be run.");
                     }
 
                     return Task.FromResult(new WorkItemQueryResult
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                     if (RejectTheFieldLookup)
                     {
-                        throw new VssServiceException("The field definitions could not be read.");
+                        throw HowTheFieldLookupIsRefused ?? new VssServiceException("The field definitions could not be read.");
                     }
 
                     return Task.FromResult(new List<WorkItemField2>());
@@ -146,6 +146,13 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// <summary>A tracker that will not run the query at all - an expired token, a timeout, a blip.</summary>
         public bool RejectTheQuery { get; set; }
 
+        /// <summary>
+        /// Which refusal the query comes back with, for a test that cares. Azure DevOps raises a different
+        /// exception type per response shape, and the connector reads the type rather than the status, so
+        /// "refused" on its own is not enough to say what an administrator will be told.
+        /// </summary>
+        public Exception? HowTheQueryIsRefused { get; set; }
+
         /// <summary>A tracker that answers the query with no result set rather than with an empty one.</summary>
         public bool AnswerTheQueryWithoutAResultSet { get; set; }
 
@@ -154,6 +161,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// so it fails after the query already succeeded - the shape that reads as "the query matched nothing".
         /// </summary>
         public bool RejectTheFieldLookup { get; set; }
+
+        /// <summary>Which refusal the field lookup comes back with. See <see cref="HowTheQueryIsRefused"/>.</summary>
+        public Exception? HowTheFieldLookupIsRefused { get; set; }
 
         /// <summary>
         /// How often the connector asked the organisation for its field definitions. Counted because it is
@@ -192,6 +202,24 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             var ado = new AzureDevOpsOrganisation(itemIds);
 
             return (new RecordedAzureDevOpsConnector(ado.Client), APortfolioOnAzureDevOps(), ado);
+        }
+
+        /// <summary>
+        /// The connector and a connection that asks for one additional field, so that validating it has to
+        /// read the organisation's field list after the query it makes first has already succeeded.
+        /// </summary>
+        internal static (AzureDevOpsWorkTrackingConnector Subject, WorkTrackingSystemConnection Connection, AzureDevOpsOrganisation Ado) AnAzureDevOpsConnectionAskingForAnAdditionalField()
+        {
+            var ado = new AzureDevOpsOrganisation([]);
+            var connection = AConnection();
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = "Story Points",
+                Reference = "Microsoft.VSTS.Scheduling.StoryPoints",
+            });
+
+            return (new RecordedAzureDevOpsConnector(ado.Client), connection, ado);
         }
 
         private static Team ATeamOnAzureDevOps()

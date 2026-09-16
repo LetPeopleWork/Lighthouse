@@ -1,4 +1,9 @@
+﻿using System.Net;
+
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 
 using static Lighthouse.Backend.Tests.TestHelpers.AzureDevOpsOrganisation;
 
@@ -24,6 +29,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         private const int TheOnlyItem = 1;
 
+        private const string TheFieldListVerdict = "field_list_unreadable";
+
+        private const string WhatTheFieldListVerdictSays = "could not read the list of fields";
+
+        private const string TheAdditionalFieldsInput = "Additional Fields";
+
         [Test]
         public void GetWorkItemsForTeam_RefusesWhenTheTrackerWillNotRunTheQuery()
         {
@@ -43,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheFieldLookup = true;
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team, CancellationToken.None),
-                Throws.TypeOf<VssServiceException>(),
+                Throws.TypeOf<AzureDevOpsReadException>(),
                 "The field lookup runs after the query already succeeded and before any payload is read, so "
                 + "its failure is invisible to anything watching the query - and empties the team just the same.");
         }
@@ -79,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheFieldLookup = true;
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team, [$"{TheOnlyItem}"], CancellationToken.None),
-                Throws.TypeOf<VssServiceException>(),
+                Throws.TypeOf<AzureDevOpsReadException>(),
                 "The keyed fetch is where the cheap refresh sends its traffic. A failure it answers with no "
                 + "records reports the moved items as gone.");
         }
@@ -153,5 +164,132 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     + "failed round trip is not one.");
             }
         }
+
+        [Test]
+        public async Task ValidateConnection_NamesTheAdditionalFieldsInputWhenAzureDevOpsWillNotHandOverItsFieldList()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.RejectTheFieldLookup = true;
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo(TheFieldListVerdict));
+                Assert.That(result.Message, Does.Contain(WhatTheFieldListVerdictSays));
+                Assert.That(result.FieldName, Is.EqualTo(TheAdditionalFieldsInput),
+                    "The additional fields are the input the administrator can act on. Naming the connection "
+                    + "settings instead sends them to rewrite a URL and a token that had just answered a query.");
+                Assert.That(result.TechnicalDetails, Does.Contain("The field definitions could not be read."),
+                    "Azure DevOps's own sentence is the only thing that tells one refusal from another.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_DoesNotBlameTheTokenWhenTheFieldListIsTheThingThatCameBackUnauthorised()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.RejectTheFieldLookup = true;
+            ado.HowTheFieldLookupIsRefused = AChallengedRefusal();
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo(TheFieldListVerdict));
+                Assert.That(result.Message, Does.Contain(WhatTheFieldListVerdictSays));
+                Assert.That(result.FieldName, Is.EqualTo(TheAdditionalFieldsInput),
+                    "dev.azure.com challenges a 401, which is what turns this into an authorisation exception. "
+                    + "Reading that as a bad token sends the administrator to replace a credential that had "
+                    + "signed in successfully one call earlier.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_CarriesTheStatusWhenAzureDevOpsAnsweredWithABodyItsOwnErrorContractDoesNotRecognise()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.RejectTheFieldLookup = true;
+            ado.HowTheFieldLookupIsRefused = AProxyPageInsteadOfAnError(HttpStatusCode.Forbidden);
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo(TheFieldListVerdict));
+                Assert.That(result.Message, Does.Contain("403 (Forbidden)"),
+                    "A proxy page carries no error contract, so the exception message is the bare status name. "
+                    + "The number survives on the exception alone, and the word Forbidden by itself tells "
+                    + "nobody what answered.");
+                Assert.That(result.FieldName, Is.EqualTo(TheAdditionalFieldsInput));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_StillReportsAnAzureDevOpsItCouldNotReachAgainstTheUrl()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.RejectTheFieldLookup = true;
+            ado.HowTheFieldLookupIsRefused = new HttpRequestException("No such host is known. (dev.azure.com:443)");
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo("connection_failed"));
+                Assert.That(result.Message, Does.Contain("Could not reach Azure DevOps with the provided URL."));
+                Assert.That(result.FieldName, Is.EqualTo(AzureDevOpsWorkTrackingOptionNames.Url),
+                    "A transport failure is the one case where the URL really is what the administrator should "
+                    + "look at, and it stays that way after the field-list refusal stops being reported as one.");
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_StillReportsARefusedCredentialAgainstTheToken()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.RejectTheQuery = true;
+            ado.HowTheQueryIsRefused = AChallengedRefusal();
+
+            var result = await subject.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo("authentication_failed"));
+                Assert.That(result.Message, Does.Contain("Authentication failed for Azure DevOps."));
+                Assert.That(result.FieldName, Is.EqualTo(AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken),
+                    "The first call a validation makes is a work item query. A credential refused there has "
+                    + "proved nothing, and the token is exactly what to go and check.");
+            }
+        }
+
+        [Test]
+        public async Task ValidatePortfolioSettings_ReportsARefusedFieldListAsOneRatherThanAsAnUnexpectedError()
+        {
+            var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
+            ado.RejectTheFieldLookup = true;
+
+            var result = await subject.ValidatePortfolioSettings(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo(TheFieldListVerdict),
+                    "Validating a portfolio reads the field list too, once its query matched something. "
+                    + "An unexpected error is the same dead end there as on the connection screen.");
+                Assert.That(result.Message, Does.Contain(WhatTheFieldListVerdictSays));
+            }
+        }
+
+        /// <summary>A 401 that carries a challenge header, which is what dev.azure.com answers with.</summary>
+        private static VssUnauthorizedException AChallengedRefusal()
+            => new("VS30063: You are not authorized to access https://dev.azure.com.");
+
+        /// <summary>
+        /// What a WAF or a sign-in page in front of an on-premises server answers with: a status, and a body
+        /// that is not the JSON error Azure DevOps would have sent.
+        /// </summary>
+        private static VssServiceResponseException AProxyPageInsteadOfAnError(HttpStatusCode status)
+            => new(status, $"{status}", null);
     }
 }

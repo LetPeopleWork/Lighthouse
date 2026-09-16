@@ -223,10 +223,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                         "additional_fields_invalid",
                         $"Some additional fields could not be found: {string.Join(", ", missingFields)}",
                         "Verify field names or references in Azure DevOps and update the additional field configuration.",
-                        "Additional Fields");
+                        AzureDevOpsReadException.AdditionalFieldsFieldName);
                 }
 
                 return ConnectionValidationResult.Success();
+            }
+            catch (WorkTrackingReadException refusal)
+            {
+                return refusal.Verdict;
             }
             catch (VssUnauthorizedException ex)
             {
@@ -300,6 +304,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 return ConnectionValidationResult.Success();
             }
+            catch (WorkTrackingReadException refusal)
+            {
+                return refusal.Verdict;
+            }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
@@ -333,6 +341,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 }
 
                 return ConnectionValidationResult.Success();
+            }
+            catch (WorkTrackingReadException refusal)
+            {
+                return refusal.Verdict;
             }
             catch (Exception exception)
             {
@@ -664,7 +676,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
         }
 
-        private static async Task<List<string>> GetMissingAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
+        private async Task<List<string>> GetMissingAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
             var fieldDefinitions = additionalFieldDefinitions.ToList();
             var tempId = -1;
@@ -678,10 +690,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 .ToList();
         }
 
-        private static async Task<Dictionary<int, string>> GetCustomFieldReferences(
+        private async Task<Dictionary<int, string>> GetCustomFieldReferences(
             WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
         {
-            var availableFields = await witClient.GetWorkItemFieldsAsync(cancellationToken: cancellationToken);
+            List<WorkItemField2> availableFields;
+
+            try
+            {
+                availableFields = await witClient.GetWorkItemFieldsAsync(cancellationToken: cancellationToken);
+            }
+            catch (VssException refusal)
+            {
+                logger.LogWarning(refusal, "Azure DevOps would not return the field list for this organisation");
+
+                throw AzureDevOpsReadException.FieldListRefused(refusal);
+            }
 
             var customFieldMappings = new Dictionary<int, string>();
 
