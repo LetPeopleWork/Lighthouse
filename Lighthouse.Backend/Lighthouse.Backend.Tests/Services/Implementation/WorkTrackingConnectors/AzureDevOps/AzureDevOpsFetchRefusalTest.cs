@@ -41,6 +41,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string TheNameTheFieldIsDisplayedUnder = "Story Points";
 
+        /// <summary>Any number a stored row could carry. Zero is the one value a mutation could not move away from.</summary>
+        private const int TheIdTheStoredFieldWasReadWith = 7;
+
+        /// <summary>What the fixture's connection asks for, spelled the way Azure DevOps spells it.</summary>
+        private const string TheReferenceTheConnectionAsksFor = "Microsoft.VSTS.Scheduling.StoryPoints";
+
         [Test]
         public void GetWorkItemsForTeam_RefusesWhenTheTrackerWillNotRunTheQuery()
         {
@@ -380,9 +386,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
             Assert.That(ado.Log.Warnings, Has.Some.Contains(TheReferenceTheConfigurationNames),
-                "Nothing else reports this on a refresh. The field is simply never fetched, on every cycle, "
-                + "for as long as the configuration carries it, and the log line is the only trace of it.");
+                TheWarningIsWorthKeepingBecause);
         }
+
+        /// <summary>
+        /// The other side of the line above. "This field resolved to nothing" is only worth reading if it is
+        /// absent when the field did resolve — said about every field on every cycle it is noise, and an
+        /// operator who learns to skim it loses the one warning that was telling them something.
+        /// </summary>
+        [Test]
+        public async Task GetWorkItemsForTeam_SaysNothingAboutAnAdditionalFieldTheOrganisationDoesHave()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            AskFor(TheReferenceTheConfigurationNames, team.WorkTrackingSystemConnection);
+            ado.FieldsTheOrganisationHolds.Add(AField(TheNameTheFieldIsDisplayedUnder, TheReferenceTheConfigurationNames));
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(ado.Log.Warnings, Has.None.Contains(TheReferenceTheConfigurationNames),
+                "The organisation defines this field and the configuration asks for it by its reference, so "
+                + $"there is nothing to warn about. It said: {string.Join(" | ", ado.Log.Warnings)}");
+        }
+
+        private const string TheWarningIsWorthKeepingBecause =
+            "Nothing else reports this on a refresh. The field is simply never fetched, on every cycle, "
+            + "for as long as the configuration carries it, and the log line is the only trace of it.";
 
         [Test]
         public async Task GetWorkItemsForTeam_StillReturnsItsWorkItemsWhenAnAdditionalFieldMatchesNothing()
@@ -409,11 +437,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Code, Is.EqualTo("additional_fields_invalid"));
-                Assert.That(result.Message, Does.Contain("Microsoft.VSTS.Scheduling.StoryPoints"),
+                Assert.That(result.Message, Does.Contain(TheReferenceTheConnectionAsksFor),
                     "The administrator can only fix the field they are told about, so a reference that "
                     + "resolves to nothing has to keep reaching the connection screen by name.");
                 Assert.That(result.FieldName, Is.EqualTo(TheAdditionalFieldsInput));
             }
+        }
+
+        /// <summary>
+        /// The positive half of the one above, and not symmetry for its own sake: "which fields are missing"
+        /// is a filter, and a filter that answers *everything* is wrong in a way only a field that is really
+        /// there can show. With nothing but the negative case, reporting every configured field as missing
+        /// reads exactly like working.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_ReportsNothingMissingWhenTheOrganisationHasTheFieldTheConfigurationAsksFor()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.FieldsTheOrganisationHolds.Add(AField(TheNameTheFieldIsDisplayedUnder, TheReferenceTheConnectionAsksFor));
+
+            var result = await subject.ValidateConnection(connection);
+
+            Assert.That(result.IsValid, Is.True,
+                $"The organisation defines '{TheReferenceTheConnectionAsksFor}' and the connection asks for it, "
+                + $"so there is nothing to report. It answered: {result.Code} / {result.Message}");
+        }
+
+        [Test]
+        public async Task ValidateConnection_LeavesTheAdditionalFieldsItWasGivenExactlyAsItFoundThem()
+        {
+            var (subject, connection, ado) = AnAzureDevOpsConnectionAskingForAnAdditionalField();
+            ado.FieldsTheOrganisationHolds.Add(AFieldTheOrganisationDoesHold());
+            var theStoredField = connection.AdditionalFieldDefinitions[0];
+            theStoredField.Id = TheIdTheStoredFieldWasReadWith;
+
+            await subject.ValidateConnection(connection);
+
+            Assert.That(theStoredField.Id, Is.EqualTo(TheIdTheStoredFieldWasReadWith),
+                "Bug #6010. The fields handed to a validation belong to a connection somebody loaded from the "
+                + "database, and that number is how the database tells one row from another. Change it and the "
+                + "next save through that connection's context is refused - not the save at the end of this "
+                + "method, but whichever one happens to come next, anywhere. That is why pressing Test "
+                + "connection answered 500 with a message about a key nobody had touched, and why one "
+                + "connection's check took an entire health pass down with it.");
         }
 
         private static void AskFor(string reference, WorkTrackingSystemConnection connection)

@@ -679,28 +679,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             await witClient.QueryByWiqlAsync(new Wiql() { Query = query });
         }
 
+        /// <summary>
+        /// Which of the configured fields this organisation has nothing to match them with. Each one is
+        /// resolved straight against the field list rather than through the id-keyed lookup below, and it
+        /// has to stay that way: these definitions belong to a connection the caller loaded from the
+        /// database, so the only way to make their ids unique enough to key a dictionary on would be to
+        /// write to them - and writing to a stored row's identity is refused by the next save through that
+        /// connection, wherever that next save happens to be (Bug #6010).
+        /// </summary>
         private async Task<List<string>> GetMissingAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
-            var fieldDefinitions = additionalFieldDefinitions.ToList();
-            var tempId = -1;
-            fieldDefinitions.ForEach(f => f.Id = tempId--);
+            var availableFields = await TheFieldsTheOrganisationDefines(witClient, CancellationToken.None);
 
-            var customFieldReferences = await GetCustomFieldReferences(witClient, fieldDefinitions, CancellationToken.None);
-
-            return fieldDefinitions
-                .Where(field => string.IsNullOrEmpty(customFieldReferences[field.Id]))
+            return additionalFieldDefinitions
+                .Where(field => string.IsNullOrEmpty(TheReferenceOfTheFieldNamed(field.Reference, availableFields)))
                 .Select(field => field.Reference)
                 .ToList();
         }
 
-        private async Task<Dictionary<int, string>> GetCustomFieldReferences(
-            WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
+        private async Task<List<WorkItemField2>> TheFieldsTheOrganisationDefines(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
-            List<WorkItemField2> availableFields;
-
             try
             {
-                availableFields = await witClient.GetWorkItemFieldsAsync(cancellationToken: cancellationToken);
+                return await witClient.GetWorkItemFieldsAsync(cancellationToken: cancellationToken);
             }
             catch (VssException refusal)
             {
@@ -708,6 +709,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 throw AzureDevOpsReadException.FieldListRefused(refusal);
             }
+        }
+
+        private async Task<Dictionary<int, string>> GetCustomFieldReferences(
+            WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
+        {
+            var availableFields = await TheFieldsTheOrganisationDefines(witClient, cancellationToken);
 
             var customFieldMappings = new Dictionary<int, string>();
 
