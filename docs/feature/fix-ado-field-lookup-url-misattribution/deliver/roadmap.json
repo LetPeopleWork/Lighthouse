@@ -1,0 +1,64 @@
+{
+  "roadmap": {
+    "project_id": "fix-ado-field-lookup-url-misattribution",
+    "created_at": "2026-09-16T00:00:00Z",
+    "total_steps": 2
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Azure DevOps: say what the field list did, and stop losing fields in silence",
+      "description": "Bug #6013, twin of #6012. A refused field list is reported as a rejected connection or an invalid credential, on a connection that answered a WIQL two lines earlier. Separately, the field-resolution expression throws on an ambiguous match and drops an unresolvable one without a word. Root cause analysis: docs/feature/fix-ado-field-lookup-url-misattribution/rca.md",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A refused field list is not a rejected connection or a bad token",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs",
+          "criteria": [
+            "A refused field list reports its own code against the Additional Fields input, carrying the status Azure DevOps answered with",
+            "A challenged 401 on the field list no longer tells the administrator to replace a credential that just worked",
+            "A body Azure DevOps did not send as JSON still yields a message that says what happened, not a single word",
+            "A genuinely unreachable Azure DevOps still reports connection_failed against the URL input",
+            "A credential refused at VerifyConnection still reports authentication_failed against the token input",
+            "The two existing refusal expectations are updated to the new type, not weakened to a bare exception"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsReadException.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/AzureDevOpsOrganisation.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs"
+          ],
+          "implementation_notes": "RCA sections 7 F1, F2, F3 and F4 carry the exact code. Azure DevOps is the only connector without a WorkTrackingReadException subclass; Jira and ServiceNow both have one, and ServiceNow is the reference implementation. The new type must be neither a Vss* type nor an HttpRequestException - if it shared a base with the connector's existing catches they would swallow it and the fix would be a no-op, which is the same reasoning JiraReadException records. Catch VssException rather than VssServiceException at the fields call, because VssUnauthorizedException does not derive from VssServiceException. Do not catch HttpRequestException there: after this change it means a genuine transport failure and the URL verdict is then correct. The three edits ship as one commit - the throw without the catches makes the message strictly worse. Two methods drop static so the log line can run; the ripple stops at their single callers."
+        },
+        {
+          "id": "01-02",
+          "name": "Pick a field deterministically, and say when one cannot be found",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs",
+          "criteria": [
+            "A reference matching one field by reference name and another by display name resolves to the reference-name match, rather than throwing",
+            "A reference matching nothing still resolves to empty, so validation keeps reporting it as a field that could not be found",
+            "A reference that resolves to nothing on a refresh is named in the log at a level an operator sees, instead of disappearing",
+            "A refresh carrying an unresolvable field still completes and still returns its work items"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsFetchRefusalTest.cs"
+          ],
+          "implementation_notes": "RCA section 7 F5 carries the deterministic pick: reference name wins, then display name, then nothing, using List<T>.Find rather than SingleOrDefault. SingleOrDefault throws when two fields match, which is reachable only where fields were created outside the ADO UI - latent, but the failure is an unhandled exception that both blanks the verdict and kills a refresh. The second half is NOT in the RCA's proposal and is a deliberate addition: the trailing null-coalesce to empty means an unresolvable reference is dropped without a word on every refresh, not only during validation. Log it, naming the reference. Do NOT make the refresh refuse - a stale field reference in a saved configuration is a user's ordinary mistake, and refusing would turn a cosmetic problem into an outage for anyone who has one."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "user",
+    "notes": "Scope confirmed with the user 2026-09-16: verdict plus both field-resolution defects. Bug #6013 re-titled the same day - the URL misattribution it originally described was measured and is not reproducible, the URL verdict being reachable only for genuine transport failure. Deliberately out of scope and recorded in RCA section 5: GetBoards and GetBoardInformation silent empties, the OAuth path into the bare catch, ExecuteWithRetry's dead status check, and wiring fieldName to an input highlight across all five connectors."
+  }
+}
