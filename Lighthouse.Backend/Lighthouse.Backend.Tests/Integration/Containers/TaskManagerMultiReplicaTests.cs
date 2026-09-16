@@ -257,6 +257,111 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     }
 
     /// <summary>
+    /// Epic #5511 slice 07, AC-07A.2's other half — the half the in-process acceptance suite cannot fail.
+    ///
+    /// That suite keeps its admitted work in a dictionary, and a dictionary hands back the same sequence
+    /// every time as long as nothing is added or removed, so a scenario about a list that wanders has no
+    /// substrate there on which to wander. A Redis hash does: once it holds more entries than the server's
+    /// listpack threshold it becomes a real hash table, and the order its fields come back in is the order
+    /// the table happens to be laid out in — not the order anybody wrote them.
+    ///
+    /// So these are sized past that threshold deliberately, and every row is admitted in the same instant,
+    /// which is the case where the moments settle nothing and only the tie-break stands between the
+    /// operator and a list that reads differently on every glance.
+    ///
+    /// Reading the same hash twice with nothing else happening is not enough to catch that, and was tried:
+    /// the layout does not move on its own, so a version with no tie-break at all passed. What moves it is
+    /// more work arriving, which is the ordinary case — an operator opens the popover, four more refreshes
+    /// are admitted, they open it again. The rows that did not move must not appear to have moved.
+    /// </summary>
+    [TestFixture]
+    [Category("epic-5511-task-manager")]
+    [Category("slice-07")]
+    [Category("requires-docker")]
+    public class TaskManagerQueueOrderMultiReplicaTests
+    {
+        /// <summary>
+        /// Comfortably past redis 7's default <c>hash-max-listpack-entries</c> of 128, above which the hash
+        /// stops being a flat list kept in insertion order and becomes a hash table that is not.
+        /// </summary>
+        private const int MoreRowsThanTheHashWillKeepInOrder = 160;
+
+        /// <summary>
+        /// Enough further admissions to take the hash well past its next growth step, so the rows that were
+        /// already there are laid out somewhere new.
+        /// </summary>
+        private const int EnoughFurtherWorkToMakeTheHashLayItselfOutAgain = 500;
+
+        private static readonly DateTimeOffset TheOneInstantTheyWereAllAdmittedIn =
+            new(2031, 4, 17, 9, 30, 0, TimeSpan.Zero);
+
+        [Test]
+        public async Task WorkAdmittedInTheSameInstant_KeepsItsOrderWhenMoreWorkArrivesBesideIt()
+        {
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var clock = new FakeLighthouseClock(TheOneInstantTheyWereAllAdmittedIn);
+            var podThatAdmittedTheWork = new RedisUpdateStatusStore(multiplexer, clock, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podAnsweringTheOperator = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+
+            var whatTheOperatorSawFirst = AdmitTeams(podThatAdmittedTheWork, from: 1, upTo: MoreRowsThanTheHashWillKeepInOrder);
+
+            var theFirstGlance = TheOrderOf(whatTheOperatorSawFirst, podAnsweringTheOperator.GetAdmittedWork());
+
+            AdmitTeams(
+                podThatAdmittedTheWork,
+                from: MoreRowsThanTheHashWillKeepInOrder + 1,
+                upTo: MoreRowsThanTheHashWillKeepInOrder + EnoughFurtherWorkToMakeTheHashLayItselfOutAgain);
+
+            var theSecondGlance = TheOrderOf(whatTheOperatorSawFirst, podAnsweringTheOperator.GetAdmittedWork());
+            var theOtherReplicasGlance = TheOrderOf(whatTheOperatorSawFirst, podThatAdmittedTheWork.GetAdmittedWork());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theFirstGlance, Has.Length.EqualTo(MoreRowsThanTheHashWillKeepInOrder),
+                    "Without this a store that answered nothing at all would satisfy \"it never changes\" perfectly.");
+
+                Assert.That(theSecondGlance, Is.EqualTo(theFirstGlance),
+                    "Nothing in the moments tells these rows apart, so whatever settles the tie has to settle it the "
+                    + "same way after the hash has been laid out again. A list that re-shuffles between two glances "
+                    + "is the defect this slice exists to remove, and equal moments alone do not prevent it.");
+
+                Assert.That(theOtherReplicasGlance, Is.EqualTo(theFirstGlance),
+                    "And it has to settle it the same way whichever replica the load balancer sent the operator to.");
+            }
+        }
+
+        private static UpdateKey[] AdmitTeams(RedisUpdateStatusStore store, int from, int upTo)
+        {
+            var admitted = new UpdateKey[upTo - from + 1];
+
+            for (var id = from; id <= upTo; id++)
+            {
+                var key = new UpdateKey(UpdateType.Team, id);
+                store.TryAdmit(key, QueuedStatusFor(key));
+                admitted[id - from] = key;
+            }
+
+            return admitted;
+        }
+
+        private static string[] TheOrderOf(UpdateKey[] rowsOfInterest, IReadOnlyList<UpdateStatus> admitted)
+        {
+            var wanted = rowsOfInterest.Select(Describe).ToHashSet(StringComparer.Ordinal);
+
+            return [.. AdmittedWorkOrdering.InTheOrderTheQueueWillReachThem(admitted)
+                .Select(work => Describe(new UpdateKey(work.UpdateType, work.Id)))
+                .Where(wanted.Contains)];
+        }
+
+        private static string Describe(UpdateKey key) => $"{key.UpdateType}-{key.Id}";
+
+        private static UpdateStatus QueuedStatusFor(UpdateKey key)
+            => new() { UpdateType = key.UpdateType, Id = key.Id, Status = UpdateProgress.Queued };
+    }
+
+    /// <summary>
     /// Epic #5511 slice 04, the cross-pod half of cancel — a DISTILL correction to ADR-183 rather than
     /// something the ADR asked for.
     ///

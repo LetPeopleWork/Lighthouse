@@ -61,8 +61,7 @@ namespace Lighthouse.Backend.API
             var holdingTheLane = admitted.FirstOrDefault(work => work.Status == UpdateProgress.InProgress);
             var laneHolderName = holdingTheLane is null ? null : naming.NameOf(holdingTheLane);
 
-            var tasks = admitted
-                .OrderBy(InTheOrderTheQueueWillReachIt)
+            var tasks = AdmittedWorkOrdering.InTheOrderTheQueueWillReachThem(admitted)
                 .Select(work => new UpdateTaskResponse(
                     work.UpdateType,
                     work.Id,
@@ -74,52 +73,6 @@ namespace Lighthouse.Backend.API
 
             return Ok(tasks);
         }
-
-        /// <summary>
-        /// The popover draws these rows as a sequence, so the sequence is a claim about which one the queue
-        /// reaches next - and the store has no order to give. In process it hands back its dictionary's
-        /// buckets and under Redis its hash's, neither of which is an order and both of which move between
-        /// reads, so an operator would see the refresh that is actually running listed below three that are
-        /// only waiting for it.
-        ///
-        /// Running first, because that is what everything else is waiting for. Then longest-waiting first,
-        /// because that is the one the queue reaches next. A row whose moment nobody recorded goes to the
-        /// end of its own group rather than the end of the list: it still is what it says it is, and a
-        /// refresh under way during a rolling upgrade must not drop below work that has not begun. Ties are
-        /// settled on what the row is and which entity it names, which is the only thing about it that
-        /// cannot change between two glances.
-        /// </summary>
-        private static (int Group, int MomentIsMissing, DateTimeOffset Moment, UpdateType UpdateType, int Id) InTheOrderTheQueueWillReachIt(UpdateStatus work)
-        {
-            var moment = WhenItsCurrentStateBegan(work);
-
-            return (
-                work.Status == UpdateProgress.InProgress ? 0 : 1,
-                moment.HasValue ? 0 : 1,
-                moment ?? DateTimeOffset.MinValue,
-                work.UpdateType,
-                work.Id);
-        }
-
-        /// <summary>
-        /// The moment the work entered the state it is now in: when it started running, or when it was
-        /// admitted to wait. How long it has been there and where it sits in the list are two answers about
-        /// that same moment, so both read it from here.
-        ///
-        /// Work that has finished is neither running nor waiting, and it can still be on this list - briefly
-        /// as it ends, or for good if the replica running it died in that window. Time since admission under
-        /// a "Completed" label reads as time since it completed, which is a different and usually much
-        /// smaller number.
-        ///
-        /// Absent is an ordinary answer rather than a fault. A replica still on an older build admits work
-        /// without recording anything.
-        /// </summary>
-        private static DateTimeOffset? WhenItsCurrentStateBegan(UpdateStatus work) => work.Status switch
-        {
-            UpdateProgress.InProgress => work.StartedAt,
-            UpdateProgress.Queued => work.QueuedAt,
-            _ => null,
-        };
 
         /// <summary>
         /// Stops a queued or running refresh. Guarded like the list it is reached from, and for the same
@@ -157,7 +110,7 @@ namespace Lighthouse.Backend.API
         /// </summary>
         private long? ElapsedOn(UpdateStatus work)
         {
-            var since = WhenItsCurrentStateBegan(work);
+            var since = AdmittedWorkOrdering.WhenItsCurrentStateBegan(work);
 
             if (since is null)
             {
