@@ -183,12 +183,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                     $"Cancelling is how this scenario stops the refresh; it answered {(int)response.StatusCode}.");
             }
 
-            theTrackerMayAnswer.TrySetResult();
-
+            // The gate is deliberately NOT released here. The connector is waiting on the update's own
+            // cancellation token, so the cancel is what frees it — releasing the gate as well makes this a
+            // race between a cancel that landed and a refresh that simply finished. That race was
+            // invisible while a completed refresh left the connection Unknown, exactly as a cancelled one
+            // did; slice 08's D19 gives a completed refresh a verdict, and the two outcomes stopped
+            // agreeing. The teardown still releases it, so a scenario that never cancels cannot hang.
             while (store.HasActiveWork() && DateTime.UtcNow < deadline)
             {
                 await Task.Delay(20);
             }
+
+            Assert.That(store.HasActiveWork(), Is.False,
+                "The refresh never stopped, so nothing was cancelled and the scenario proves nothing.");
         }
 
         private async Task WhenTheAdministratorTestsThatConnection(SeededConnection connection)

@@ -1320,7 +1320,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
             builder.Services.AddScoped<IDeliveryMetricSnapshotRepository, DeliveryMetricSnapshotRepository>();
             builder.Services.AddScoped<IRepository<RefreshLog>, RefreshLogRepository>();
-            builder.Services.AddScoped<IRepository<ConnectionHealthVerdict>, ConnectionHealthVerdictRepository>();
+            builder.Services.AddScoped<ConnectionHealthVerdictRepository>();
+            builder.Services.AddScoped<IRepository<ConnectionHealthVerdict>>(services => services.GetRequiredService<ConnectionHealthVerdictRepository>());
             builder.Services.AddScoped<IRepository<UserProfile>, UserProfileRepository>();
             builder.Services.AddScoped<IRepository<ApiKeyPermission>, ApiKeyPermissionRepository>();
             builder.Services.AddScoped<IEmbedSessionTokenRepository, EmbedSessionTokenRepository>();
@@ -1454,7 +1455,14 @@ namespace Lighthouse.Backend
 
             builder.Services.AddScoped<IRepository<OAuthCredential>, OAuthCredentialRepository>();
             builder.Services.AddScoped<IOAuthService, OAuthService>();
+            builder.Services.AddScoped<ConnectionHealthCadence>();
             builder.Services.AddScoped<IConnectionHealthService, ConnectionHealthService>();
+
+            // Registered as itself as well as as the background job, for the same reason the usage-data
+            // services are: asking the stale connections at a moment of the caller's choosing is the only
+            // way a test can observe this at all, since a test host runs no background work.
+            builder.Services.AddSingleton<ConnectionHealthProber>();
+            builder.Services.AddHostedService(services => services.GetRequiredService<ConnectionHealthProber>());
             builder.Services.AddScoped<PatAuthStrategy>();
             builder.Services.AddScoped<JiraCloudBasicAuthStrategy>();
             builder.Services.AddScoped<LinearApiKeyAuthStrategy>();

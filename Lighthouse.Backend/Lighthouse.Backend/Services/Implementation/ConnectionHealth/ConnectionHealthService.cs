@@ -1,9 +1,10 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.ConnectionHealth;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -12,11 +13,13 @@ namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
 {
     public sealed class ConnectionHealthService(
         IRepository<WorkTrackingSystemConnection> connectionRepository,
-        IRepository<ConnectionHealthVerdict> verdictRepository,
+        ConnectionHealthVerdictRepository verdictRepository,
         IRepository<OAuthCredential> credentialRepository,
         IWorkTrackingConnectorFactory connectorFactory,
         ICryptoService cryptoService,
-        ILighthouseClock clock)
+        ConnectionHealthCadence cadence,
+        ILighthouseClock clock,
+        ILogger<ConnectionHealthService> logger)
         : IConnectionHealthService
     {
         /// <summary>
@@ -65,14 +68,7 @@ namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
         {
             ArgumentNullException.ThrowIfNull(connection);
 
-            var recorded = VerdictFor(connection.Id);
-            if (recorded == null)
-            {
-                return;
-            }
-
-            verdictRepository.Remove(recorded);
-            await verdictRepository.Save();
+            await RecordAsync(connection, ConnectionValidationResult.Success());
         }
 
         public async Task RecordRefreshFailedAsync(WorkTrackingSystemConnection connection)
@@ -81,6 +77,48 @@ namespace Lighthouse.Backend.Services.Implementation.ConnectionHealth
 
             await RecordAsync(connection, await ClassifyAsync(connection));
         }
+
+        public async Task RefreshStaleVerdictsAsync(CancellationToken cancellationToken)
+        {
+            var now = clock.Now.UtcDateTime;
+            var cutoff = now - cadence.HowFreshAnAnswerMustBe;
+
+            // One at a time. Every connection asked at once is a burst of outbound calls the moment a
+            // process starts, which is the picture the decision against a probe loop had in mind; asked in
+            // turn it is a handful of requests spread over a few seconds that nobody is waiting on.
+            foreach (var connection in connectionRepository.GetAll().ToList())
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                if (await verdictRepository.TryClaimForProbeAsync(connection.Id, cutoff, now, cancellationToken))
+                {
+                    await AskHowItIs(connection);
+                }
+            }
+        }
+
+        /// <summary>
+        /// One connection that answers by raising must not cost every other connection its health. The
+        /// connection keeps the verdict the claim left it - the moment advanced, so it is not asked again
+        /// until it goes stale again, which is what stops a broken connector being retried on every tick.
+        /// </summary>
+        private async Task AskHowItIs(WorkTrackingSystemConnection connection)
+        {
+            try
+            {
+                await RecordAsync(connection, await ClassifyAsync(connection));
+            }
+#pragma warning disable CA1031 // one connection's connector must not decide whether the others get asked
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogWarning(exception, "Checking the health of '{ConnectionName}' failed", connection.Name);
+            }
+        }
+
 
         /// <summary>
         /// Why this connection is not working, asked of the connection itself. The refresh that failed

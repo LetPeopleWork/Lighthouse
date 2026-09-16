@@ -69,10 +69,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // @driving_port @real-io @AC-05.3
         // A refresh that reached the tracker and came back is evidence the credential was accepted, so a
-        // failure recorded before it no longer describes this connection - and equally, it is not a test,
-        // so it does not get to claim health either.
+        // failure recorded before it no longer describes this connection.
+        //
+        // This scenario used to end on "Unknown", on the reasoning that a refresh clears a failure but
+        // only Test connection may claim health. Slice 08's D19 reversed that: a refresh authenticated
+        // and read real data, which is stronger evidence than the button, and erasing the verdict is what
+        // sent an administrator who had just checked a connection back to "not checked yet" after the
+        // next hourly refresh. The promise this scenario guards is unchanged — a recorded failure must
+        // not outlive the good refresh that follows it — only the state it lands on.
         [Test]
-        public async Task A_refresh_that_works_clears_the_failure_before_it_without_claiming_health()
+        public async Task A_refresh_that_works_replaces_the_failure_before_it()
         {
             var connection = GivenAConnectionAuthenticatingWithAToken();
             var team = GivenATeamOn(connection);
@@ -82,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             GivenTheTrackerAnswersNormally();
             await WhenTheScheduledRefreshOfThatTeamRuns(team);
 
-            await ThenThatConnectionReads(connection, "Unknown");
+            await ThenThatConnectionReads(connection, "Healthy");
         }
 
         // @driving_port @real-io @error @AC-05.2
