@@ -3520,6 +3520,19 @@ is both hard to get right and not acted upon is a number to remove.
 and `elapsedMs` stays on the wire. Only the rendering goes. Whether the field should follow it out of the
 contract is a DELIVER-time call, not a requirement.
 
+**Reconciliation with slice 03, raised at the DISTILL gate on 2026-09-16 and settled by the maintainer.**
+This does not merely close a deferred finding — it **un-ships US-03**, whose whole outcome was the
+rendered duration, and retires **AC-03.5** (*"Times are rendered as a duration, not a timestamp"*), which
+nothing can satisfy once no row renders one. AC-03.1 through AC-03.4 survive untouched: the moments are
+still recorded, still survive the Redis store, still computed against the instance clock — they are what
+D15 sorts on.
+
+The cost was put to the maintainer in those words and accepted: a refresh wedged for forty minutes now
+looks identical to one that started four seconds ago, and the *"wait or cancel"* judgement US-03 named
+has no signal behind it. A threshold-triggered duration (silent under N minutes, shown above it) was
+offered as the middle and **declined**. Slice 03's backend half stands; its user-visible half is
+deliberately withdrawn.
+
 ### D15 — The list is ordered the way the queue will work it
 
 **Decision.** `GetTasks` returns running work first, then queued work oldest-admission-first. Rows whose
@@ -3841,3 +3854,281 @@ answer and a named cost for the alternative.
 decision that replaces it: AC-06.5 and D10's consequence by **D12**; D5's unshipped *"says so"* completed
 by **D16**; D9's `Unknown` state preserved rather than reversed by **D13**, which constrains the new
 drawing rather than relaxing the old rule.
+
+---
+
+# Wave: DISTILL — slice 07
+
+Run 2026-09-16. Density: `lean` — Tier-1 `[REF]` only.
+
+**Reconciliation: passed, after one contradiction was surfaced and settled.** D14 removes the rendered
+duration, which un-ships US-03's whole user-visible half and leaves AC-03.5 — *"times are rendered as a
+duration, not a timestamp"* — with nothing able to satisfy it. That was put to the maintainer in those
+words, together with what it costs: a refresh wedged for forty minutes now looks the same as one that
+started four seconds ago, and the *wait or cancel* judgement US-03 named has no signal behind it. A
+duration that appeared only above a threshold was offered as the middle and declined. AC-03.5 is
+**retired**; the record of that exchange is inside D14 itself. Nothing else across DISCUSS, DESIGN and
+DEVOPS disagrees.
+
+**No DESIGN wave, deliberately, and the graceful-degradation block does not apply.** That block exists
+because driving ports are unknowable without DESIGN and the hexagonal boundary cannot be checked. Here
+they are known and unchanged, so it is recorded rather than left implicit: the ports this slice is
+observed through are `GET /api/latest/update/tasks`,
+`POST /api/latest/update/tasks/{updateType}/{id}/cancel`, `GET /api/latest/connectionhealth` and
+`GET /api/latest/logs/problems` — all four already on shipped controllers, all four already
+System-Administrator-guarded. One backend change, a sort on a read path, over two fields the store has
+carried since slice 03.
+
+## Wave: DISTILL / [REF] The contract this slice fixes
+
+`GET /api/latest/update/tasks` answers its rows in the order the queue will work them: whatever is
+running first, then whatever is waiting, oldest admission first. A row whose moment was never recorded
+goes to the end of its own group and keeps everything else about itself.
+
+The order is **total**, not merely usually right. Two rows admitted inside one tick of the clock share a
+moment, and a comparison that stops at the moment hands the tie back to the store — which is hash order
+under Redis and bucket order in process. Neither is an order. A list presented as a sequence makes a
+claim about that sequence whether it means to or not, and this slice exists because the maintainer read
+the claim and it was false.
+
+No store change, no schema change, no Redis representation question. `QueuedAt` and `StartedAt` are
+already on `UpdateStatus`; slice 03 put them there for the duration that slice 07 now stops rendering.
+
+## Wave: DISTILL / [REF] Scenario list
+
+**Backend acceptance** — `API/Integration/TaskManager/Slice07TheQueueReadsLikeAQueue{Scenarios,Specifications}.cs`,
+categories `acceptance` + `epic-5511-task-manager` + `slice-07`. All six read the route over HTTP.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| `The_refresh_that_is_under_way_is_read_first_and_what_is_waiting_follows_it_oldest_first` | `@walking_skeleton @driving_port @real-io` | 07A.1 |
+| `Work_that_has_been_waiting_longest_is_the_next_thing_the_queue_will_reach` | `@driving_port` | 07A.1 |
+| `The_queue_reads_the_same_way_every_time_it_is_read` | `@driving_port @error` | 07A.2 |
+| `Work_admitted_in_the_very_same_instant_still_settles_into_one_order` | `@driving_port @error` | 07A.2 |
+| `Work_whose_admission_was_never_recorded_waits_at_the_end_and_still_says_it_is_waiting` | `@driving_port @error` | 07A.3 |
+| `A_refresh_that_is_running_is_read_first_even_though_nobody_recorded_when_it_started` | `@driving_port @error` | 07A.3, 07A.1 |
+
+Error-and-edge share: 4 of 6.
+
+Three are worth more than a restatement of their criterion.
+
+*The refresh that is under way is read first* is the walking skeleton and also the scenario that rules
+out the likeliest wrong answer. A running row's moment is always **newer** than the moments of everything
+waiting on it, because a refresh starts after the work behind it was admitted. So a list sorted on
+whichever moment each row happens to carry puts the one thing actually happening at the bottom — which is
+the shape the maintainer saw. The scenario is realistic and adversarial at the same time, which is why it
+is the one held for DELIVER to unskip first.
+
+*The queue reads the same way every time it is read* is the one carrying the risk, and it is designed so
+a lucky read cannot satisfy it. The defect is that the order means nothing, not that it is wrong: an
+unordered list comes out right roughly as often as it comes out anything else, so a single correct read
+proves nothing at all. Two things answer that. Twelve rows, because twelve arriving in the right order by
+chance is one in four hundred and seventy-nine million; and five consecutive reads, all of which have to
+agree with the queue's working order, which also means all of them have to agree with each other. The
+rows are also admitted in the exact reverse of the answer, so a list handed back in the order it was
+filled fails on every read rather than on some of them — a scenario that fails only sometimes teaches
+nobody anything. The reasoning is written into the file itself in plain language, without naming a
+criterion a future reader cannot look up.
+
+*Work admitted in the very same instant* is the tie, and it is the one scenario **not** held back: it
+passes on arrival and is honest about why. See the red gate below.
+
+**Frontend** — `components/App/Header/TaskManagerIcon.test.tsx`, three describes, following the shape
+slices 05 and 06 used for their own halves.
+
+| Scenario | AC |
+|---|---|
+| shows the refresh that is running turning, and the ones waiting waiting | 07A.4 |
+| says a refresh is running without saying for how long | 07A.5 |
+| still says what a waiting refresh is waiting behind | 07A.6 |
+| puts a mark beside each heading, and offers no way to fold a section away | 07A.7 |
+| still names the connections section in the reader's own words | 07A.8 |
+| asks the instance again every time the popover is opened | D18 |
+| says the stop was asked for while the instance is still working on it | 07B.1 |
+| keeps the row until the instance stops reporting the work | 07B.2 |
+| does not invite the stop to be asked for a second time | 07B.3 |
+| leaves the row as it was when the instance refuses to stop it | 07B.4 |
+| draws each connection's state instead of spelling it out in the row | 07C.1 |
+| tells a connection nobody has checked from a healthy one without relying on colour | 07C.2 |
+| keeps the state word within reach of a screen reader and of a hover | 07C.3 |
+
+Nineteen scenarios in all, five of them error or edge — 26 %, below the 40 % this wave usually holds to,
+and deliberately so. This slice changes no data path: every failure mode it could have covered is already
+covered and passing. A read that failed leaves the popover as it was, a cancel that was refused leaves
+the row as the instance described it, a connection that could not be reached is not blamed on its
+credential, an empty section says so in words and a non-administrator sees nothing — all of those ship
+with tests, in the same file and the same fixture folder. Writing second copies to reach a ratio would
+put the same promise in two places to drift apart.
+
+Two of the frontend scenarios are written differently from the criterion that asks for them, and both are
+deliberate.
+
+**AC-07A.5 is asserted against a row that HAS a duration.** The instance still measures elapsed time and
+still sends it; only the rendering goes. A row with nothing to render satisfies *renders no duration*
+whatever the component does with the field, so the fixture carries `elapsedMs: 134_000` and the assertion
+is that neither `2m` nor `14s` reaches the reader.
+
+**AC-07C.2 is asserted on the rendered outline, not on a colour.** The criterion asks that not-checked be
+distinguishable from healthy by fill and shape, and the reason it asks is that D9 exists because an icon
+once claimed health from an absence of evidence. A test comparing colours passes on two icons that are
+the same drawing in two inks, which is precisely the failure the criterion names. So the two icons' `path`
+geometry is read off the DOM and the assertion is that they differ — which is the thing a reader who gets
+nothing from the colour actually has.
+
+## Wave: DISTILL / [REF] What no test carries, and why
+
+**AC-07D.1 — the disclaimer's absence — is carried by no test, on purpose.** AC-07D.4 asks for the
+existing test to be deleted rather than inverted, and the reasoning holds: a test asserting the absence of
+a sentence pins a decision that has now been reversed once and can be reversed again. The test is gone.
+The `Open Full Log` link, the empty state and the read-failed state are unchanged and still pinned by the
+scenarios slice 06 shipped, so US-07D contributes one deletion and nothing else.
+
+**AC-07B.5 is not a Vitest test and should not be pretended into one.** The behaviour being fixed exists
+only in the gap between the stop request and the connector's next checkpoint, measured at eleven seconds
+against a real tracker. A doubled service resolves immediately and has no gap, so a jsdom test can show
+the row says `Stopping…` and can never show that it says it for long enough to be read. This is a **live
+verification item**: stop a real connector refresh on a running instance and confirm the row acknowledges
+within a second and clears when the instance agrees. Recorded here rather than left to be discovered as a
+coverage hole.
+
+**AC-07C.4 and AC-07C.5 are promises that nothing changes**, and the scenarios slice 05 shipped already
+hold them. They are not repeated: a second copy of a promise is a second place for it to drift.
+
+## Wave: DISTILL / [REF] Ports and doubles
+
+| Port | Class | Treatment |
+|---|---|---|
+| `GET /api/latest/update/tasks` | Driving | Real, over `Factory.CreateClient()` |
+| The scheduled refresh (`ITeamUpdater`) | Driving | Real, through the production queue in its own DI scope — the walking skeleton only |
+| `IUpdateStatusStore` and the `ConcurrentDictionary` behind it | Driven internal | Real. Written to directly where the fixture needs a moment the port would otherwise stamp for itself |
+| `IRepository<Team>`, `IRepository<WorkTrackingSystemConnection>` | Driven internal | Real, EF over SQLite |
+| `ILighthouseClock` | Driven external | `FakeLighthouseClock`, pinned. A sort key taken from the wall clock would put rows in an order that happens to be right |
+| `IWorkTrackingConnector` | Driven external | Faked; held open so a refresh is genuinely in flight while the list is read |
+| `IUpdateSubscriptionService`, `IConnectionHealthService`, `ILogService` (frontend) | Driving, from the browser's side | Mocked through `ApiServiceContext`, as every other test in this file does |
+
+Nothing new is added to `docs/architecture/atdd-infrastructure-policy.md`: every mechanism above is
+already recorded there, the clock row having been appended by slice 03.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend.Tests/API/Integration/TaskManager/` — beside slices 01-06, on the harness they all
+share. Precedent: the task list is the driving port this Epic has been observed through since slice 02,
+and `TaskManagerAcceptanceTest` is where it is already stood up. `TaskManagerAcceptanceTest` is **not**
+modified; the clock is pinned through `ConfigureAdditionalServices`, the hook it already provides, the
+same way slice 03 pins it.
+
+Frontend promises go in `TaskManagerIcon.test.tsx` under their own describes, which is where slices 03,
+04, 05 and 06 each put their own half. The **components** that change belong in
+`components/App/Header/TaskManager/` — `ActivitySection`, `ConnectionsSection`,
+`RecentProblemsSection` — rather than inline in `TaskManagerIcon`, whose render body is near the
+cognitive-complexity limit this repository has lost CI cycles to.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Entry point | Exercised by |
+|---|---|
+| Task list on `UpdateController` | All six backend scenarios, over HTTP |
+| Scheduled refresh (`ITeamUpdater` through the production queue) | The walking skeleton |
+| Cancel on `UpdateController` | Four frontend promises, through the popover's own control; the backend half is slice 04's and unchanged |
+| The popover's three sections | Thirteen frontend promises, through `TaskManagerIcon` |
+
+No entry point in this slice is left to a service-level test.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+**None, and that is the whole of it.** Every file this slice touches already exists and already
+compiles: the sort goes inside `UpdateController.GetTasks`, and the rest is rendering in three components
+that shipped in slices 02, 05 and 06. There is no new module for a test to import, so there is nothing to
+stub for an import to succeed. What DELIVER writes is behaviour, not shape.
+
+Removed rather than added, so the suite tells the truth about what is promised:
+
+| Deleted | Why |
+|---|---|
+| The whole `describe("how long it has been going")` block — five tests | D14 withdraws US-03's rendering half, and AC-03.5 with it. Four of the five asserted a rendered duration; the fifth asserted a row survives without one, which is true of every row once no row has one |
+| `says plainly that this is only since the instance started…` | AC-07D.4. The sentence goes and its test goes with it, rather than being inverted into an assertion of absence |
+
+## Wave: DISTILL / [REF] Red gate
+
+Every backend scenario was run with its hold removed, and the classification is per scenario rather than
+a count.
+
+**Five of six failed, each for the right reason** — the route answered rows in the store's own iteration
+order and the assertion compared sequences. Not one failed in setup, and the failure messages name what
+the order is a claim about rather than printing two lists.
+
+**The sixth passes on arrival, and the reason matters more than the pass.**
+`Work_admitted_in_the_very_same_instant_still_settles_into_one_order` cannot fail on this substrate: the
+instance keeps its admitted work in a dictionary, and a dictionary hands back the same sequence every
+time as long as nothing is added or removed. Re-shuffling between two reads is not something this store
+does. Where it does happen is a Redis hash, and that needs a container, which is where slice 03 put the
+half of AC-03.2 it could not observe in process. So this scenario is a **guard rather than a driver** —
+it is what turns a sort leaving equal rows to chance into a failure rather than something noticed in
+production later — and it is left running rather than held back, the same way slice 06 left its
+already-true guard running. The Redis-backed variant is carried into DELIVER below.
+
+Scenarios are held with `[Ignore]` and the frontend promises with `it.skip`, so the hand-off commit is
+green by construction. Unskipping one is the first act of the DELIVER step that implements it.
+
+**What was actually run, and what it said.** `dotnet build Lighthouse.sln` — 0 warnings, 0 errors.
+`dotnet test --filter "TestCategory=slice-07"` — 1 passed, 5 skipped, 0 failed.
+`dotnet test --filter "TestCategory=epic-5511-task-manager"` — 112 passed, 5 skipped, 0 failed, so nothing
+in the new fixture disturbs the six slices already there. `dotnet format analyzers Lighthouse.sln
+--severity info` — zero findings in either new file; the exit code is non-zero for the ~35 pre-existing
+CA1861 hits in generated EF migrations, which are the repository's standing noise. `pnpm test` — 5194
+passed, 13 skipped, 371 files, which is exactly the 5200 of slice 06 less the six deleted tests.
+`pnpm build` and `pnpm biome check` — clean.
+
+## Wave: DISTILL / [REF] Upstream findings
+
+**D15 does not say where a running row with no start moment goes, and the two readings disagree about
+something that matters.** Read literally — *"rows whose moment was never recorded sort last"* — a refresh
+that is genuinely running, admitted by a replica on the older build, drops below three things that are
+only waiting. That contradicts D15's own headline claim, which is that the running row is what an
+operator reads first. Read as *last within its own group*, D15 holds throughout. The second reading is
+what the scenarios assert, and
+`A_refresh_that_is_running_is_read_first_even_though_nobody_recorded_when_it_started` exists to make the
+choice visible rather than buried in a comparison. Blocking the slice over it would have been
+disproportionate — one reading makes D15 self-contradictory — but it is a decision made here rather than
+upstream, and it should be looked at.
+
+**AC-07A.2 has no substrate in this fixture on which it can fail.** See the red gate. The criterion is
+right and the defect is real; it is a Redis defect, and this suite runs in process.
+
+**D18 is a locked decision with a KPI and no acceptance criterion.** `OUT-5511-07-freshness-on-open`
+measures it and US-07A through US-07D do not mention it, so it would have shipped with nothing asserting
+it. It is written as a pending promise labelled D18 rather than an AC, so the gap stays visible.
+
+**Five shipped slice-05 assertions read a connection's state out of the row's text, and D13 moves it
+out.** They are `lists every connection with what is known about it`, `says a connection has not been
+checked rather than calling it healthy`, `shows what the test answered rather than assuming it worked`,
+`leaves the row as the instance last described it when the test fails` and `says a tracker it could not
+reach was not reached, rather than blaming the credential`. They are left alone and green here, because
+what they promise — *which* state is reported — is not what D13 changes. But they are named now so DELIVER
+re-points them at the state's own element rather than discovering them red. There is a trap in doing it
+carelessly: an icon's accessible title is part of its element's text content, so a state icon rendered
+**inside** `connection-health-row-N` would leave all five passing by accident. `draws each connection's
+state instead of spelling it out in the row` asserts the row's text no longer spells the state, which
+forces the icon to be a sibling of the name rather than a child of it, and forces the five to be
+re-pointed honestly.
+
+## Wave: DISTILL / [REF] Carried into DELIVER
+
+1. The sort itself, inside `GetTasks` — running before waiting, oldest admission first within each group,
+   an unrecorded moment last within its group, and a tie broken by something that does not move between
+   reads.
+2. A Redis-backed variant of the tie scenario, beside `TaskManagerMultiReplicaTests`, under
+   `[Category("requires-docker")]`. It is the only place the instability AC-07A.2 names can actually be
+   observed.
+3. The three components: a spinner on the running row and a distinct waiting mark on the queued ones, the
+   duration gone from `ActivitySection` (and with it `formatElapsed`'s only caller here), state icons in
+   `ConnectionsSection` carrying the word as their accessible name, the disclaimer out of
+   `RecentProblemsSection`, and a mark beside each of the three headings.
+4. The client-side memory of *"this one was asked to stop"*, cleared when the row leaves the list and when
+   the instance refuses. It lives in the browser that clicked (OQ-07.1), with the accepted gap recorded as
+   deferred idea L.
+5. Re-reading on open (D18), added to the existing hub subscription rather than replacing it.
+6. Re-pointing the five slice-05 assertions named above.
+7. The live verification of AC-07B.5 against a real connector.
+8. Whether `elapsedMs` should follow its rendering out of the wire contract. D14 leaves this open on
+   purpose and calls it a DELIVER-time judgement, not a requirement.

@@ -215,6 +215,71 @@ const openThePopover = async () => {
 	await user.click(await screen.findByRole("button", { name: /activity/i }));
 };
 
+/**
+ * The three headings a reader scans down, named so a test can point at one. AC-07A.7 is about all three
+ * together — a mark beside one and not the others is worse than none, because the two without look like
+ * they are missing something.
+ */
+const THE_THREE_SECTIONS = [
+	"task-manager-section-activity",
+	"task-manager-section-connections",
+	"task-manager-section-problems",
+];
+
+/**
+ * Everything the popover reads, all answering. The section promises are about the whole box rather than
+ * about one section's contents, and a helper that supplies only one leaves the other two rendering their
+ * "nothing to report" state — which is a different arrangement of the same headings.
+ */
+const renderTheWholePopover = () => {
+	const updateSubscriptionService = createMockUpdateSubscriptionService();
+	updateSubscriptionService.getRunningTasks = vi
+		.fn()
+		.mockResolvedValue([aRunningTeam]);
+
+	const connectionHealthService = createMockConnectionHealthService();
+	connectionHealthService.getHealth = vi.fn().mockResolvedValue([
+		{
+			connectionId: 21,
+			connectionName: "Jira Cloud",
+			workTrackingSystem: "Jira",
+			state: "Healthy",
+		} satisfies IConnectionHealth,
+	]);
+
+	const logService = createMockLogService();
+	logService.getRecentProblems = vi.fn().mockResolvedValue([]);
+
+	render(
+		<MemoryRouter>
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					updateSubscriptionService,
+					connectionHealthService,
+					logService,
+				})}
+			>
+				<TaskManagerIcon />
+			</ApiServiceContext.Provider>
+		</MemoryRouter>,
+	);
+};
+
+/**
+ * The outline of whatever is drawn for a state, read off the rendered geometry. This is the assertion
+ * that answers AC-07C.2 honestly: somebody who cannot tell green from grey can still tell a ring from a
+ * tick, and only a difference in the path itself gives them that. A test comparing colours would pass on
+ * two icons that are the same drawing in two inks, which is the failure the criterion names.
+ */
+const theShapeOfTheIconNamed = (name: string): string => {
+	const icon = screen.getByRole("img", { name });
+	const outline = [...icon.querySelectorAll("path")]
+		.map((path) => path.getAttribute("d"))
+		.join(" ");
+
+	return outline === "" ? `${name} was drawn with no outline at all` : outline;
+};
+
 describe("TaskManagerIcon", () => {
 	beforeEach(() => {
 		mockIsSystemAdmin.mockReturnValue(true);
@@ -462,95 +527,218 @@ describe("TaskManagerIcon", () => {
 	});
 
 	/**
-	 * DISTILL specifications, slice 03 / #5841. US-03: AC-03.5 (a duration, and a row that still reads
-	 * without one) and the browser half of AC-03.4 (the number is the instance's, not this machine's).
+	 * DISTILL specifications, slice 07 / #6011. US-07A: AC-07A.4 (progress shown rather than spelled),
+	 * AC-07A.5 (no row carries a duration), AC-07A.6 (what a waiting row is waiting behind survives),
+	 * AC-07A.7 (an icon beside each heading and nothing to fold a section away) and AC-07A.8 (the
+	 * headings keep the tenant's own words).
 	 *
-	 * The backend half of AC-03.4 — that the number is computed against the instance clock at all — is in
-	 * `Slice03HowLongHasItBeenGoing*`. AC-03.1, AC-03.2 and AC-03.3 are about what the store records and
-	 * have no frontend surface.
+	 * Slice 03's promises about a rendered duration are gone from this file rather than inverted. D14
+	 * withdrew them: the number was not acted on and was wrong the moment it was drawn, so the rows say
+	 * `Running` and `Queued` and nothing about elapsed time. What slice 03 built on the backend stands —
+	 * the moments are what slice 07 sorts on.
+	 *
+	 * AC-07A.1 … AC-07A.3 are the instance's, in `Slice07TheQueueReadsLikeAQueue*`: the browser renders
+	 * the list in the order it arrives, which is the whole point of sorting it on the way out.
 	 */
-	describe("how long it has been going", () => {
-		// AC-03.5 — the difference the slice exists for: a refresh four seconds old and one forty minutes
-		// old are the same row without this.
-		it("says how long a running refresh has been running", async () => {
-			renderIcon([{ ...aRunningTeam, elapsedMs: 12_000 }]);
+	describe("the queue reads like a queue", () => {
+		// AC-07A.4 — what is turning and what is waiting, told apart without reading. The running row gets
+		// the affordance that means "something is happening"; the waiting ones deliberately do not, because
+		// three spinners in a column say three things are under way when one is.
+		it.skip("shows the refresh that is running turning, and the ones waiting waiting", async () => {
+			renderIcon([aRunningTeam, aQueuedPortfolio]);
 
 			await openThePopover();
 
 			expect(
-				await screen.findByTestId("task-manager-row-Team-7"),
-			).toHaveTextContent(/running for 12s/i);
+				await screen.findByRole("progressbar", { name: /running/i }),
+			).toBeInTheDocument();
+			expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+			expect(
+				screen.getByRole("img", { name: /queued|waiting/i }),
+			).toBeInTheDocument();
 		});
 
-		// AC-03.5 — the waiting half. A queue that has been moving and one that is wedged look identical
-		// until the row says how long it has been sitting there.
-		it("says how long a waiting refresh has been waiting, as well as what it waits behind", async () => {
-			renderIcon([{ ...aQueuedPortfolio, elapsedMs: 3 * 60_000 }]);
-
-			await openThePopover();
-
-			const queued = await screen.findByTestId("task-manager-row-Features-3");
-
-			expect(queued).toHaveTextContent(/3m/);
-			expect(queued).toHaveTextContent(/Lagunitas/);
-		});
-
-		// AC-03.5 — mid-rolling-upgrade a replica on the older build admits work without recording
-		// anything. The row loses its duration and nothing else; it must not vanish, say "NaN", or read
-		// as a duration of nothing.
-		it("still lists a refresh whose duration the instance never recorded", async () => {
-			renderIcon([aRunningTeam]);
+		// AC-07A.5 — the instance still measures and still sends the number; the row no longer spends a
+		// reader's attention on it. Asserted against a row that HAS one, because a row with nothing to
+		// render satisfies "renders no duration" whatever the component does with it.
+		it.skip("says a refresh is running without saying for how long", async () => {
+			renderIcon([{ ...aRunningTeam, elapsedMs: 134_000 }]);
 
 			await openThePopover();
 
 			const row = await screen.findByTestId("task-manager-row-Team-7");
 
-			expect(row).toHaveTextContent(/Lagunitas/);
 			expect(row).toHaveTextContent(/running/i);
-			expect(row).not.toHaveTextContent(/NaN|undefined|null|for\s*$/i);
+			expect(row).not.toHaveTextContent(/2m|14s/);
+			expect(row).not.toHaveTextContent(/\d+\s*[smhd]\b/);
 		});
 
-		// AC-03.5 — a mixed list is the real shape of a rolling upgrade, and the row that can answer has
-		// to keep answering while the row that cannot stays quiet.
-		it("gives the rows that have a duration theirs, without inventing one for the row that has none", async () => {
-			renderIcon([
-				{ ...aRunningTeam, elapsedMs: 12_000 },
-				{ ...aQueuedPortfolio, elapsedMs: null },
-			]);
+		// AC-07A.6 — naming what a row is waiting for is a claim about the queue, not a measurement, and
+		// #5877 is a user who read three teams queued behind one portfolio as a hang. It survives D14.
+		it.skip("still says what a waiting refresh is waiting behind", async () => {
+			renderIcon([{ ...aQueuedPortfolio, elapsedMs: 3 * 60_000 }]);
 
 			await openThePopover();
 
-			expect(
-				await screen.findByTestId("task-manager-row-Team-7"),
-			).toHaveTextContent(/12s/);
-			expect(
-				screen.getByTestId("task-manager-row-Features-3"),
-			).not.toHaveTextContent(/\d+\s*[smhd]\b/);
+			const row = await screen.findByTestId("task-manager-row-Features-3");
+
+			expect(row).toHaveTextContent(/queued behind Lagunitas/i);
+			expect(row).not.toHaveTextContent(/\d+\s*[smhd]\b/);
 		});
 
-		/**
-		 * AC-03.4, browser half. The row shows what the instance measured; it does not start a stopwatch
-		 * of its own. A component counting locally is wrong after a reload, wrong for a refresh that began
-		 * before the tab was opened, and wrong by however far this machine's clock has drifted — and those
-		 * are most of the occasions somebody opens this popover.
-		 */
-		it("does not count time on its own, however long the reader leaves the popover open", async () => {
-			vi.useFakeTimers({ shouldAdvanceTime: true });
+		// AC-07A.7 — three sections in a box opened for a glance. An icon beside each heading is what makes
+		// them findable; a control that folds one away puts a click in front of content that is already
+		// short enough to read, and a preference to remember afterwards.
+		it.skip("puts a mark beside each heading, and offers no way to fold a section away", async () => {
+			renderTheWholePopover();
 
-			try {
-				renderIcon([{ ...aRunningTeam, elapsedMs: 12_000 }]);
+			await openThePopover();
 
-				await openThePopover();
-				const row = await screen.findByTestId("task-manager-row-Team-7");
+			for (const section of THE_THREE_SECTIONS) {
+				const heading = await screen.findByTestId(section);
 
-				expect(row).toHaveTextContent(/12s/);
-
-				await vi.advanceTimersByTimeAsync(60 * 60_000);
-
-				expect(row).toHaveTextContent(/12s/);
-			} finally {
-				vi.useRealTimers();
+				expect(heading.querySelector("svg")).not.toBeNull();
+				expect(heading.closest("button")).toBeNull();
 			}
+		});
+
+		// AC-07A.8 — a regression guard rather than a repair. The heading already resolves the tenant's
+		// word, and this story edits the lines it sits on.
+		it.skip("still names the connections section in the reader's own words", async () => {
+			mockGetTerm.mockImplementation((key: string) =>
+				key === "workTrackingSystems" ? "Trackers" : key,
+			);
+
+			renderTheWholePopover();
+
+			await openThePopover();
+
+			expect(await screen.findByText("Trackers")).toBeInTheDocument();
+		});
+
+		// D18 — the only thing that provokes a read today is refresh activity, so a connection added a
+		// minute ago is missing until the page is reloaded. Opening the popover is the moment somebody
+		// wants the answer to be current, and it is the only moment worth spending a read on.
+		it.skip("asks the instance again every time the popover is opened", async () => {
+			const service = renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await screen.findByText(/Lagunitas/);
+			const readsBeforeTheSecondOpen = vi.mocked(service.getRunningTasks).mock
+				.calls.length;
+
+			await userEvent.keyboard("{Escape}");
+			await openThePopover();
+
+			await waitFor(() => {
+				expect(
+					vi.mocked(service.getRunningTasks).mock.calls.length,
+				).toBeGreaterThan(readsBeforeTheSecondOpen);
+			});
+		});
+	});
+
+	/**
+	 * DISTILL specifications, slice 07 / #6011. US-07B: AC-07B.1 (the row says the stop was asked for),
+	 * AC-07B.2 (it leaves when the instance stops reporting the work), AC-07B.3 (the control does not
+	 * re-arm) and AC-07B.4 (a refused stop leaves the row as it was).
+	 *
+	 * The fact being rendered lives in this component and nowhere else (OQ-07.1, settled client-side), so
+	 * these are the whole of the promise rather than the browser half of one. AC-07B.5 is not here and
+	 * cannot be: the gap it is about is the eleven seconds a real connector spends inside a page fetch,
+	 * and a doubled service that resolves immediately has no gap to observe.
+	 */
+	describe("a cancel that was heard", () => {
+		// AC-07B.1 — measured at eleven seconds on the backend log, during which the row is unchanged and
+		// the control reads as dead. Clicking twice is what an operator does next.
+		it.skip("says the stop was asked for while the instance is still working on it", async () => {
+			renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+					/stopping/i,
+				);
+			});
+		});
+
+		// AC-07B.2 — the instance decides what stopped. Removing the row on the click would claim an
+		// outcome nobody agreed to, and the row would come back on the next read when the stop landed too
+		// late — which is worse than never having moved.
+		it.skip("keeps the row until the instance stops reporting the work", async () => {
+			const service = renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+					/stopping/i,
+				);
+			});
+
+			vi.mocked(service.getRunningTasks).mockResolvedValue([]);
+			await userEvent.keyboard("{Escape}");
+			await openThePopover();
+
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("task-manager-row-Team-7"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		// AC-07B.3 — the second click is the thing this story exists to prevent. A control that still
+		// invites one is a control that has not answered.
+		it.skip("does not invite the stop to be asked for a second time", async () => {
+			renderIcon([aRunningTeam]);
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /stop refreshing Lagunitas/i }),
+				).toBeDisabled();
+			});
+		});
+
+		// AC-07B.4 — a removal is refused by design, and the refusal has to stay legible. A row stuck on
+		// "stopping" for something that will never stop teaches the reader the word means nothing.
+		it.skip("leaves the row as it was when the instance refuses to stop it", async () => {
+			renderIcon([aRunningTeam], (svc) => {
+				svc.cancelTask = vi.fn().mockRejectedValue(new Error("refused"));
+			});
+
+			await openThePopover();
+			await userEvent.click(
+				await screen.findByRole("button", {
+					name: /stop refreshing Lagunitas/i,
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+					/running/i,
+				);
+			});
+			expect(
+				screen.getByTestId("task-manager-row-Team-7"),
+			).not.toHaveTextContent(/stopping/i);
 		});
 	});
 
@@ -941,6 +1129,77 @@ describe("TaskManagerIcon", () => {
 
 			expect(container).toBeEmptyDOMElement();
 		});
+
+		/**
+		 * DISTILL specifications, slice 07 / #6011. US-07C: AC-07C.1 (the state is drawn rather than
+		 * spelled), AC-07C.2 (not-checked differs from healthy by more than its colour) and AC-07C.3 (the
+		 * word it replaced stays within reach).
+		 *
+		 * AC-07C.4 and AC-07C.5 promise that the explanation under a broken row, and the Test connection
+		 * and Edit buttons, are unchanged. The scenarios above already hold them and are not repeated here:
+		 * a second copy of a promise is a second place for it to drift.
+		 */
+		describe("state at a glance", () => {
+			// AC-07C.1 — four connections were four sentences to read and compare. The word does not
+			// disappear, it stops taking a line: it moves to the accessible name, asserted below.
+			it.skip("draws each connection's state instead of spelling it out in the row", async () => {
+				renderIconWithConnections([
+					aBrokenCredential,
+					anUntestedConnection,
+					anUnreachableTracker,
+				]);
+
+				await openThePopover();
+
+				expect(
+					await screen.findByRole("img", { name: "Authentication failed" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("img", { name: "Not checked yet" }),
+				).toBeInTheDocument();
+				expect(
+					screen.getByRole("img", { name: "Unreachable" }),
+				).toBeInTheDocument();
+
+				expect(
+					screen.getByTestId("connection-health-row-13"),
+				).not.toHaveTextContent(/not checked/i);
+			});
+
+			// AC-07C.2 — D9 exists because an icon claimed health from an absence of evidence, and an icon
+			// set where not-checked reads as a muted tick would be that bug wearing a redesign. The outline
+			// is what keeps "nobody has asked" apart from "asked, and the answer was yes" for a reader who
+			// gets nothing from the colour.
+			it.skip("tells a connection nobody has checked from a healthy one without relying on colour", async () => {
+				renderIconWithConnections([
+					anUntestedConnection,
+					aHealthyConnectionWithSomethingToSay,
+				]);
+
+				await openThePopover();
+				await screen.findByTestId("connection-health-row-13");
+
+				expect(theShapeOfTheIconNamed("Not checked yet")).not.toEqual(
+					theShapeOfTheIconNamed("Healthy"),
+				);
+			});
+
+			// AC-07C.3 — a distinction drawn in fill and shape is not one a screen reader can make, and a
+			// reader who is unsure what a drawing means has to be able to ask. Both answers are the word the
+			// row used to carry, so nothing is lost by moving it.
+			it.skip("keeps the state word within reach of a screen reader and of a hover", async () => {
+				renderIconWithConnections([anUntestedConnection]);
+
+				await openThePopover();
+				await userEvent.hover(
+					await screen.findByRole("img", { name: "Not checked yet" }),
+				);
+
+				expect(
+					await screen.findByRole("tooltip", { name: /not checked yet/i }),
+				).toBeInTheDocument();
+			});
+		});
 	});
 
 	describe("recent problems", () => {
@@ -990,21 +1249,11 @@ describe("TaskManagerIcon", () => {
 			expect(rows[1]).toHaveTextContent(/drain exceeded/i);
 		});
 
-		// AC-06.5 — the promise that stops this being mistaken for an audit log. Somebody who reads three
-		// entries as "three things have ever gone wrong" draws exactly the wrong conclusion from a restart.
-		// Written out as a literal rather than compared against the constant it came from: blanking that
-		// constant has to turn this red, and a test that reads it from the source cannot.
-		it("says plainly that this is only since the instance started, and is not a complete history", async () => {
-			renderIconWithProblems([aRefreshThatBroke]);
-
-			await openThePopover();
-
-			expect(
-				await screen.findByText(
-					"Only what has gone wrong since this instance started. Not a complete history, and not kept after a restart.",
-				),
-			).toBeInTheDocument();
-		});
+		// AC-07D.4 — the promise that this section is not an audit log used to be pinned here, against the
+		// literal sentence. It is gone rather than inverted: the reader it was written for has used it and
+		// reports a paragraph above four rows as a reason not to read the four rows. A test asserting the
+		// sentence is absent would pin a decision that has now been reversed once, and can be again.
+		// AC-07D.1 is therefore carried by no test at all, deliberately.
 
 		// AC-06.6 — an empty box reads as "this feature is broken". Saying nothing has gone wrong is the
 		// answer, and it is a different answer from saying nothing at all.
