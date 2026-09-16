@@ -360,7 +360,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
+            // Asked rather than demanded, for the reason recorded on the Azure DevOps connector: a missing
+            // option row on a stored connection threw past this method's guard and out of the request.
+            var url = connection.FindWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
             if (!Uri.TryCreate(url, UriKind.Absolute, out _))
             {
                 return ConnectionValidationResult.Failure(

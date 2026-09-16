@@ -200,7 +200,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
+            // Asked rather than demanded: a stored connection carries whatever option rows it has, and a
+            // missing one used to throw straight past this method's own guard and out of the request. The
+            // administrator who pressed Test connection then learned nothing at all (Bug #6010).
+            var url = connection.FindWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url);
             if (!Uri.TryCreate(url, UriKind.Absolute, out _))
             {
                 return ConnectionValidationResult.Failure(

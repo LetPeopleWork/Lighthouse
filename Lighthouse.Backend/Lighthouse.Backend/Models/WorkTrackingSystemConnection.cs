@@ -44,5 +44,15 @@ namespace Lighthouse.Backend.Models
 
             return T.TryParse(workTrackingOption.Value, null, out var result) ? result : null;
         }
+
+        /// <summary>
+        /// The same lookup for callers that have something to say about a missing option. The throwing
+        /// version treats absence as a programming error, which it is on a path that has already been
+        /// through the connection screen — but a connection read back from the database has whatever
+        /// options its row happens to carry, and a validator asked about one of those owes the
+        /// administrator the name of the field rather than a stack trace.
+        /// </summary>
+        public string? FindWorkTrackingSystemConnectionOptionByKey(string key)
+            => Options.SingleOrDefault(option => option.Key == key)?.Value;
     }
 }
