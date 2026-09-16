@@ -6,57 +6,44 @@ import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router";
-import type { IConnectionHealth } from "../../../../services/Api/ConnectionHealthService";
-import {
-	CONNECTION_STATE_DRAWING,
-	CONNECTION_STATE_WORDING,
-	isBroken,
-} from "./connectionHealthWording";
+import type {
+	ConnectionHealthState,
+	IConnectionHealth,
+} from "../../../../services/Api/ConnectionHealthService";
+import { CONNECTION_STATE_WORDING, isBroken } from "./connectionHealthWording";
 
 /**
  * Four connections used to be four sentences to read and compare. Drawn, they are one glance.
  *
- * The three drawings differ in shape and fill, not only in colour, so a reader who gets nothing from
- * green-versus-grey can still tell a ring from a tick. An outlined ring for a connection nobody has
- * asked about is the point rather than the decoration: a muted tick there would let an absence of
- * evidence read as a verdict, which is the whole defect this state was introduced to remove.
- *
+ * The drawings differ in shape and fill, not only in colour, so a reader who gets nothing from
+ * green-versus-grey can still tell a ring from a tick. The outlined ring for a connection nobody has
+ * asked about is the point of the set rather than its decoration: a muted tick there would let an
+ * absence of evidence read as a verdict, which is the whole defect the not-checked state was
+ * introduced to remove.
+ */
+const HOW_EACH_STATE_IS_DRAWN: Record<
+	ConnectionHealthState,
+	{ Drawing: typeof CheckCircleIcon; colour: "success" | "error" | "disabled" }
+> = {
+	Unknown: { Drawing: CircleOutlinedIcon, colour: "disabled" },
+	Healthy: { Drawing: CheckCircleIcon, colour: "success" },
+	Unreachable: { Drawing: ErrorIcon, colour: "error" },
+	AuthenticationFailed: { Drawing: ErrorIcon, colour: "error" },
+};
+
+/**
  * The word the row used to carry is the icon's accessible name and its tooltip, so nothing is lost to
- * a screen reader or to anyone unsure what a drawing means. It is drawn beside the row rather than
- * inside it, because an icon's title counts as part of its parent's text and a state tucked inside the
- * row would still be spelled out there as far as anything reading the row could tell.
+ * a screen reader or to anyone unsure what a drawing means. It is rendered beside the row rather than
+ * inside it, because an icon's title counts as part of its parent's text content and a state tucked
+ * inside the row would still be spelled out there as far as anything reading the row could tell.
  */
 const ConnectionState = ({ connection }: { connection: IConnectionHealth }) => {
 	const wording = CONNECTION_STATE_WORDING[connection.state];
-	const drawing = CONNECTION_STATE_DRAWING[connection.state];
-
-	if (drawing === "confirmed") {
-		return (
-			<Tooltip title={wording}>
-				<CheckCircleIcon
-					fontSize="small"
-					color="success"
-					titleAccess={wording}
-				/>
-			</Tooltip>
-		);
-	}
-
-	if (drawing === "alarm") {
-		return (
-			<Tooltip title={wording}>
-				<ErrorIcon fontSize="small" color="error" titleAccess={wording} />
-			</Tooltip>
-		);
-	}
+	const { Drawing, colour } = HOW_EACH_STATE_IS_DRAWN[connection.state];
 
 	return (
 		<Tooltip title={wording}>
-			<CircleOutlinedIcon
-				fontSize="small"
-				color="disabled"
-				titleAccess={wording}
-			/>
+			<Drawing fontSize="small" color={colour} titleAccess={wording} />
 		</Tooltip>
 	);
 };

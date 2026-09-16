@@ -67,6 +67,21 @@ const forgetWhatTheInstanceNoLongerReports = (
 	return kept.length === asked.size ? asked : new Set(kept);
 };
 
+const alsoRemembering = (
+	asked: ReadonlySet<string>,
+	key: string,
+): ReadonlySet<string> => new Set(asked).add(key);
+
+const noLongerRemembering = (
+	asked: ReadonlySet<string>,
+	key: string,
+): ReadonlySet<string> => {
+	const remaining = new Set(asked);
+	remaining.delete(key);
+
+	return remaining;
+};
+
 const TaskManagerIcon = () => {
 	const { isSystemAdmin } = useRbac();
 	const { updateSubscriptionService, connectionHealthService, logService } =
@@ -113,7 +128,7 @@ const TaskManagerIcon = () => {
 	const cancel = useCallback(
 		async (task: IUpdateTask) => {
 			const key = taskKey(task);
-			setStopAsked((asked) => new Set(asked).add(key));
+			setStopAsked((asked) => alsoRemembering(asked, key));
 
 			try {
 				await updateSubscriptionService.cancelTask(task.updateType, task.id);
@@ -121,11 +136,7 @@ const TaskManagerIcon = () => {
 				// The instance refused the ask or never heard it, so the row must stop saying it is stopping.
 				// A deletion is refused by design, and a row stuck on a word that will never come true is
 				// how the word stops meaning anything.
-				setStopAsked((asked) => {
-					const withoutIt = new Set(asked);
-					withoutIt.delete(key);
-					return withoutIt;
-				});
+				setStopAsked((asked) => noLongerRemembering(asked, key));
 			}
 
 			await refresh();

@@ -17,24 +17,6 @@ export const CONNECTION_STATE_WORDING: Record<ConnectionHealthState, string> = {
 	AuthenticationFailed: "Authentication failed",
 };
 
-/**
- * How each state is drawn. The fill and the shape carry it, not the colour: an icon set where
- * not-checked is a muted tick would let a connection nobody has asked about read as one that answered
- * yes, which is the defect the Unknown state was introduced to remove. A ring is an absence of evidence
- * and looks like one.
- */
-export type ConnectionStateDrawing = "absent" | "confirmed" | "alarm";
-
-export const CONNECTION_STATE_DRAWING: Record<
-	ConnectionHealthState,
-	ConnectionStateDrawing
-> = {
-	Unknown: "absent",
-	Healthy: "confirmed",
-	Unreachable: "alarm",
-	AuthenticationFailed: "alarm",
-};
-
 export const isBroken = (connection: IConnectionHealth): boolean =>
 	connection.state === "AuthenticationFailed" ||
 	connection.state === "Unreachable";
