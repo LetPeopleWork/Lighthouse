@@ -14,9 +14,11 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Net;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -27,6 +29,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private const string SecretFieldKey = "Personal Access Token";
 
         private const string UnreadableValue = "unreadable-stored-value";
+
+        private const string RefusalSentence = "Field 'sprnt' does not exist or you do not have permission to view it.";
+
+        private const string RefusedQuery = "(project = PROJ AND sprnt is not EMPTY) AND issuetype = \"Epic\"";
 
         private static readonly string[] TheOrderOneRefreshGoesIn = ["fetched", "synced", "saved", "forecast asked for"];
 
@@ -550,6 +556,94 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        public void TriggerUpdate_ConnectorRefusedTheQuery_TheReasonNamesThePortfolioTheAnswerAndTheQuery()
+        {
+            var project = SetupPortfolioWhoseQueryIsRefused();
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var summary = ReadUpdateSummary(loggerMock);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary, Does.Contain(project.Name),
+                    "An instance refreshing several portfolios at once writes several of these lines, and a "
+                    + "refusal that names none of them cannot be paired with the portfolio that caused it.");
+                Assert.That(summary, Does.Contain(RefusalSentence),
+                    "What the work tracking system said is the only part of the failure anyone can act on - a "
+                    + "status code on its own says nothing about what to change.");
+                Assert.That(summary, Does.Contain(RefusedQuery),
+                    "Without the query, an operator cannot tell which of the configured filters was refused.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_ConnectorRefusedTheQuery_ThePortfolioAndTheTeamSurfacesSayTheSameThing()
+        {
+            var project = SetupPortfolioWhoseQueryIsRefused();
+            var team = SetupTeamWhoseQueryIsRefused();
+
+            CreateSubject().TriggerUpdate(project.Id);
+            CreateTeamSubject().TriggerUpdate(team.Id);
+
+            var expected = CreateRefusal().Reason;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ReadReason(loggerMock), Is.EqualTo(expected));
+                Assert.That(ReadReason(teamLoggerMock), Is.EqualTo(expected));
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_ConnectorRefusedTheQuery_TheFailureStillPropagatesAndTheRefreshIsUnsuccessful()
+        {
+            var project = SetupPortfolioWhoseQueryIsRefused();
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<WorkTrackingRefusedException>(),
+                    "Swallowing the failure to attach a reason would leave the refresh looking like it merely "
+                    + "returned nothing, and every surface reading the outcome would be told it completed.");
+                Assert.That(recordedRefresh?.Success, Is.False,
+                    "A refresh the work tracking system refused to run is not a refresh that worked.");
+            }
+        }
+
+        private Portfolio SetupPortfolioWhoseQueryIsRefused()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ThrowsAsync(CreateRefusal());
+
+            return project;
+        }
+
+        private Team SetupTeamWhoseQueryIsRefused()
+        {
+            var team = CreateTeam();
+            team.UpdateTime = DateTime.Now.AddDays(-1);
+
+            teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
+            teamRepoMock.Setup(x => x.GetById(team.Id)).Returns(team);
+
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ThrowsAsync(CreateRefusal());
+
+            return team;
+        }
+
+        private static WorkTrackingRefusedException CreateRefusal()
+        {
+            return new WorkTrackingRefusedException(RefusalSentence, RefusedQuery, HttpStatusCode.BadRequest);
+        }
+
         private Portfolio SetupPortfolioWhoseCredentialCannotBeRead()
         {
             var project = CreateProject(DateTime.Now.AddDays(-1));
@@ -619,7 +713,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var reasonStart = summary.IndexOf(marker, StringComparison.Ordinal);
 
             Assert.That(reasonStart, Is.GreaterThanOrEqualTo(0),
-                "A refresh that stopped because a stored credential could not be read has something to explain.");
+                "A refresh that stopped before it finished has something to explain.");
 
             return summary[(reasonStart + marker.Length)..];
         }

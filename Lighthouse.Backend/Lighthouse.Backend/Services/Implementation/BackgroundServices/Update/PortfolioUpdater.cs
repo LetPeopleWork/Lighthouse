@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Diagnostics;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
@@ -138,6 +139,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                             project.WorkTrackingSystemConnection,
                             serviceProvider.GetRequiredService<ICryptoService>()),
                     };
+
+                    throw;
+                }
+                catch (WorkTrackingRefusedException refusal)
+                {
+                    outcome = outcome with { Reason = refusal.Reason };
 
                     throw;
                 }
