@@ -60,6 +60,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string ARefusalCarryingJirasOwnSentence =
             "{\"errorMessages\":[\"" + JirasOwnSentence + "\"],\"errors\":{}}";
 
+        /// <summary>What a proxy standing in front of Jira answers: not JSON at all, so no sentence to pass on.</summary>
+        private const string ARefusalThatIsNotJson =
+            "<html><head><title>502 Bad Gateway</title></head><body><h1>Bad Gateway</h1></body></html>";
+
         private const string OnePageHoldingOneIssue =
             "{\"startAt\":0,\"maxResults\":50,\"total\":1,\"issues\":[{\"key\":\"PROJ-1\",\"fields\":{"
             + "\"summary\":\"An issue\",\"created\":\"2026-08-01T09:00:00.000+0000\","
@@ -137,6 +141,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(verdict.TechnicalDetails, Does.Contain(FieldListPath));
                 Assert.That(verdict.TechnicalDetails, Does.Contain("answered 403 Forbidden"));
                 Assert.That(verdict.TechnicalDetails, Does.Contain(JirasOwnSentence));
+            }
+        }
+
+        /// <summary>
+        /// The field list is asked for without a query, so a refusal here has no query to name. A refusal on
+        /// the search path does, and reports it; that sentence must not follow the answer over to this path,
+        /// where it would trail off after announcing something it cannot then produce.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_FieldListRefusalExplainsNothing_SaysOnlyWhatJiraAnswered()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(
+                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.BadGateway, ARefusalThatIsNotJson));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo(FieldListUnreadable));
+                Assert.That(verdict.TechnicalDetails, Does.EndWith("Jira answered 502 BadGateway."));
+                Assert.That(verdict.TechnicalDetails, Does.Not.Contain("Lighthouse asked"));
             }
         }
 

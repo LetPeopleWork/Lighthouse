@@ -93,6 +93,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             + $"{JsonSerializer.Serialize(AMissingFieldSentence)},{JsonSerializer.Serialize(ASecondMissingFieldSentence)}"
             + "],\"errors\":{}}";
 
+        /// <summary>How much of a refused query Lighthouse repeats back before cutting it short.</summary>
+        private const int TheLongestQueryReported = 500;
+
         private const string CloudSearchPath = "rest/api/3/search/jql";
 
         private const string LegacySearchPath = "rest/api/latest/search";
@@ -500,20 +503,53 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// <summary>
         /// Not every refusal is a complaint about the query. Jira can answer without the errorMessages list,
         /// with something other than a list under that name, or - when a proxy in front of Jira turns the
-        /// request away - with no JSON at all. The user still has to be told something, and once there is no
-        /// sentence to pass on, the status is the whole of what is left to say.
+        /// request away - with no JSON at all. Whatever refused in that last case never read the query, so it
+        /// has nothing to say about it, and a bare status leaves the reader with nothing to act on. The query
+        /// Lighthouse sent is then the whole of what is still known about the failure.
         /// </summary>
         [TestCase(ARefusalWithoutErrorMessages)]
         [TestCase(ARefusalWhereErrorMessagesIsNotAList)]
         [TestCase(ARefusalThatIsNotJson)]
-        public async Task ValidateTeamSettings_RefusalNamesNothingToCorrect_FallsBackToTheStatusJiraAnsweredWith(string refusalBody)
+        public async Task ValidateTeamSettings_RefusalNamesNothingToCorrect_ReportsTheQueryLighthouseSent(string refusalBody)
         {
-            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, refusalBody);
+            var (result, jql) = await TheRefusalOutcomeFor(refusalBody, JiraConnectorTestSetup.ATeamOnJiraCloud());
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Code, Is.EqualTo("query_rejected"));
-                Assert.That(result.TechnicalDetails, Is.EqualTo("Jira answered 400 BadRequest."));
+                Assert.That(jql, Is.Not.Empty, "With no query captured, the expectation below would assert nothing.");
+                Assert.That(result.TechnicalDetails, Is.EqualTo(
+                    $"Jira answered 400 BadRequest without saying why. Lighthouse asked: {jql}"));
+            }
+        }
+
+        /// <summary>
+        /// A sentence from Jira already names what to change. Anything appended to it competes with that for
+        /// the reader's attention while saying nothing Jira has not said better.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_JiraSaidWhatWasWrong_AddsNothingOfItsOwn()
+        {
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, RejectedQueryBody);
+
+            Assert.That(result.TechnicalDetails, Is.EqualTo(JiraRejectionSentence));
+        }
+
+        /// <summary>
+        /// A configuration narrowing on hundreds of projects assembles a query longer than any log line,
+        /// panel row or validation message can show. Repeating all of it buries the status it explains.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_TheRefusedQueryIsEnormous_CutsItToWhatALogLineCanCarry()
+        {
+            var (result, jql) = await TheRefusalOutcomeFor(ARefusalThatIsNotJson, ATeamNarrowingOnHundredsOfProjects());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Has.Length.GreaterThan(TheLongestQueryReported));
+                Assert.That(result.TechnicalDetails, Is.EqualTo(
+                    "Jira answered 400 BadRequest without saying why. Lighthouse asked: "
+                    + jql[..TheLongestQueryReported] + "…"));
             }
         }
 
@@ -922,6 +958,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             return line.Contains(JiraRejectionOpening, StringComparison.Ordinal)
                 && line.Contains(TeamQuery, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// The verdict the settings screen was given, paired with the query that actually reached Jira - read
+        /// back off the request body rather than restated, so an expectation naming the query cannot pass
+        /// against a message that merely repeats some fragment the query happens to share.
+        /// </summary>
+        private static async Task<(ConnectionValidationResult Verdict, string Jql)> TheRefusalOutcomeFor(
+            string refusalBody, Team team)
+        {
+            var queriesSent = new List<string>();
+            var handler = AHandlerWhereSearch(
+                OnDataCenter,
+                request =>
+                {
+                    queriesSent.Add(JqlSentIn(request));
+                    return Respond(HttpStatusCode.BadRequest, refusalBody);
+                });
+            var connector = JiraConnectorTestSetup.AConnectorOver(handler);
+
+            var verdict = await connector.ValidateTeamSettings(team);
+
+            return (verdict, queriesSent.Count == 0 ? string.Empty : queriesSent[0]);
+        }
+
+        private static string JqlSentIn(HttpRequestMessage request)
+        {
+            using var json = JsonDocument.Parse(JiraConnectorTestSetup.BodyOf(request));
+
+            return json.RootElement.GetProperty("jql").GetString() ?? string.Empty;
+        }
+
+        private static Team ATeamNarrowingOnHundredsOfProjects()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.DataRetrievalValue =
+                $"project in ({string.Join(", ", Enumerable.Range(0, 200).Select(index => $"PROJ{index}"))})";
+
+            return team;
         }
 
         private static Task<ConnectionValidationResult> TeamValidationWhereSearchAnswers(

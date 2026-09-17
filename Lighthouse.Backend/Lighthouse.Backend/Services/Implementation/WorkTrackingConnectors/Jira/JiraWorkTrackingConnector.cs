@@ -60,6 +60,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int ReferenceIdsPerQuery = 200;
 
+        private const int LongestReportedQuery = 500;
+
         private const string DeploymentNotKnownYet =
             "Lighthouse has not reached this Jira instance yet, so it does not know which kind of Jira it is.";
 
@@ -1755,7 +1757,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             LogTheRefusal(jqlQuery, rejection);
 
-            return new JiraQueryRejectedException(ExplanationIn(rejection), jqlQuery, rejection.StatusCode);
+            return new JiraQueryRejectedException(ExplanationIn(rejection, jqlQuery), jqlQuery, rejection.StatusCode);
         }
 
         /// <summary>
@@ -1772,22 +1774,41 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 refusal.StatusCode,
                 refusal.ResponseBody);
 
-            return JiraReadException.FieldListRefused(refusal.StatusCode, ExplanationIn(refusal));
+            return JiraReadException.FieldListRefused(refusal.StatusCode, ExplanationIn(refusal, rejectedQuery: null));
         }
 
         /// <summary>
         /// Jira puts the sentence a user can act on - which field it did not recognise, at which character,
         /// which permission the account is short of - in errorMessages. Anything else that comes back through
-        /// here is not Jira explaining itself, so the status is all there is left to report.
+        /// here is not Jira explaining itself but something in front of Jira turning the request away before
+        /// the query was ever read, which is the failure hardest to place and the one a bare status helps
+        /// with least. What is left to report is then what Lighthouse itself knows: the query it sent. The
+        /// field list is asked for without one, so that path has nothing to add and says only the status.
         /// </summary>
-        private static string ExplanationIn(JiraRefusal rejection)
+        private static string ExplanationIn(JiraRefusal rejection, string? rejectedQuery)
         {
             var sentences = ErrorMessagesIn(rejection.ResponseBody);
 
-            return sentences.Count > 0
-                ? string.Join(" ", sentences)
-                : $"Jira answered {(int)rejection.StatusCode} {rejection.StatusCode}.";
+            if (sentences.Count > 0)
+            {
+                return string.Join(" ", sentences);
+            }
+
+            var whatJiraAnswered = $"Jira answered {(int)rejection.StatusCode} {rejection.StatusCode}";
+
+            return string.IsNullOrWhiteSpace(rejectedQuery)
+                ? $"{whatJiraAnswered}."
+                : $"{whatJiraAnswered} without saying why. Lighthouse asked: {ShortEnoughToLog(rejectedQuery)}";
         }
+
+        /// <summary>
+        /// A configuration narrowing on hundreds of projects or releases builds a query longer than a log
+        /// line, a panel row or a validation message can show, and repeating all of it buries the status.
+        /// </summary>
+        private static string ShortEnoughToLog(string query)
+            => query.Length <= LongestReportedQuery
+                ? query
+                : string.Concat(query.AsSpan(0, LongestReportedQuery), "…");
 
         private static List<string> ErrorMessagesIn(string responseBody)
         {
