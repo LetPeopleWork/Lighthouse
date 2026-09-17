@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Forecast;
@@ -340,6 +340,22 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        /// <summary>
+        /// The work the risk is measured against: the same selection the cycle-time percentiles read,
+        /// so a number on the chart and a number in the dialog cannot come to disagree about which
+        /// work counts.
+        /// </summary>
+        private List<int> ClosedCycleTimesFor(Team team, DateTime startDate, DateTime endDate)
+        {
+            // Stryker disable once all: admitting a zero would change no answer - an item of age 1 or more is never
+            // compared against one, and an age below that has no answer at all - so the guard is unkillable here and
+            // still belongs, because dropping it would make this selection differ from the percentiles'.
+            return GetWorkItemsClosedInDateRange(team, startDate, endDate)
+                .Select(i => i.CycleTime(Clock.Zone))
+                .Where(ct => ct > 0)
+                .ToList();
+        }
+
         public IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             // Stryker disable once all: diagnostic log text is not behaviour
@@ -358,12 +374,7 @@ namespace Lighthouse.Backend.Services.Implementation
             // until the next refresh, with nothing on screen saying the number predates the change.
             return GetFromCacheIfExists(team, $"SleRisk_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}", () =>
             {
-                var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
-                // Stryker disable once all: the same selection the cycle-time percentiles read, so the two cannot come to
-                // disagree about which work counts. Admitting a zero would change no answer - an item of age 1 or more is
-                // never compared against one, and an age below that has no answer at all - so the guard is unkillable here
-                // and still belongs, because dropping it would make the two selections differ.
-                var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime(Clock.Zone)).Where(ct => ct > 0).ToList();
+                var cycleTimes = ClosedCycleTimesFor(team, startDate, endDate);
 
                 // Ages are read as of the end of the window the caller asked about, not as of today,
                 // so a question about a week that has passed is answered as things stood then.
@@ -377,6 +388,23 @@ namespace Lighthouse.Backend.Services.Implementation
                     })
                     .ToList();
             }, logger);
+        }
+
+        public IEnumerable<SleRiskZoneDto> GetSleRiskZonesForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            // Stryker disable once all: diagnostic log text is not behaviour
+            logger.LogDebug("Getting SLE Risk zones for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            if (team.ServiceLevelExpectationRange <= 0)
+            {
+                return [];
+            }
+
+            return GetFromCacheIfExists(team, $"SleRiskZones_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}", () =>
+                SleRiskCalculator
+                    .Zones(team.ServiceLevelExpectationRange, ClosedCycleTimesFor(team, startDate, endDate))
+                    .Select(zone => new SleRiskZoneDto(zone.Risk, zone.FromAge))
+                    .ToList(), logger);
         }
 
         public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)

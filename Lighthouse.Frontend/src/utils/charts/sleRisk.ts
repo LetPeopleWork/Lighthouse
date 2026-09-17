@@ -74,7 +74,13 @@ export const sleRiskSortValue = (label: string): number | undefined => {
 	return Number.isNaN(risk) ? undefined : risk;
 };
 
-const sleRiskColorFor = (risk: number | undefined): string | undefined => {
+/**
+ * The colour a risk reads as, shared by the dialog column, the card's count and the chart's
+ * background bands - so a reader who has learned one has learned all three.
+ */
+export const sleRiskColorFor = (
+	risk: number | undefined,
+): string | undefined => {
 	if (risk === undefined) {
 		return undefined;
 	}

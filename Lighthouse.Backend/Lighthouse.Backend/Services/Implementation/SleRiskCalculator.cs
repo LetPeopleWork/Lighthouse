@@ -8,6 +8,12 @@ namespace Lighthouse.Backend.Services.Implementation
     public readonly record struct SleRiskVerdict(int? Risk, int ComparableItems);
 
     /// <summary>
+    /// The first age at which the risk reaches <paramref name="Risk"/>. The chart paints from here up
+    /// to the next zone's age.
+    /// </summary>
+    public readonly record struct SleRiskZone(int Risk, int FromAge);
+
+    /// <summary>
     /// Of every item that was still open at a given age, the share that went on to take longer than
     /// the target. The age is always supplied by the caller, never read from a clock here, because
     /// the display path asks about the end of a chosen window while write-back asks about today.
@@ -54,6 +60,55 @@ namespace Lighthouse.Backend.Services.Implementation
             var risk = (int)Math.Round(100.0 * breaches / comparableItems, MidpointRounding.AwayFromZero);
 
             return new SleRiskVerdict(risk, comparableItems);
+        }
+
+        /// <summary>
+        /// The levels the chart draws a background zone above, calmest first.
+        /// </summary>
+        private static readonly int[] ZoneLevels = [25, 50, 75, 100];
+
+        /// <summary>
+        /// The ages at which the risk first reaches each level, for the chart's background. Empty
+        /// when no target was published, when nothing has finished, or when the history is too thin
+        /// to place even the first boundary.
+        ///
+        /// The risk only rises with age — below the target the numerator is fixed while the
+        /// denominator only shrinks, and above it every remaining item is a breach — so each level is
+        /// crossed once and walking the ages upward finds them all without searching.
+        /// </summary>
+        public static IReadOnlyList<SleRiskZone> Zones(int targetRangeInDays, IReadOnlyList<int> closedCycleTimes)
+        {
+            ArgumentNullException.ThrowIfNull(closedCycleTimes);
+
+            var zones = new List<SleRiskZone>();
+
+            if (targetRangeInDays <= 0 || closedCycleTimes.Count == 0)
+            {
+                return zones;
+            }
+
+            var oldestFinishedItem = closedCycleTimes.Max();
+            var nextLevel = 0;
+
+            for (var age = 1; age <= oldestFinishedItem && nextLevel < ZoneLevels.Length; age++)
+            {
+                var risk = For(age, targetRangeInDays, closedCycleTimes).Risk;
+
+                if (risk is null)
+                {
+                    // Fewer items ran this long than the answer needs, and fewer still will have run
+                    // longer - so this is the last age anything can be said about, not a gap.
+                    break;
+                }
+
+                while (nextLevel < ZoneLevels.Length && risk >= ZoneLevels[nextLevel])
+                {
+                    zones.Add(new SleRiskZone(ZoneLevels[nextLevel], age));
+                    nextLevel++;
+                }
+            }
+
+            return zones;
         }
     }
 }

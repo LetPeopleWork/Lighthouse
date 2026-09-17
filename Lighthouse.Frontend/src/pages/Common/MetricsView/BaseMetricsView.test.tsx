@@ -4452,6 +4452,7 @@ describe("BaseMetricsView component", () => {
 				// What the page reads to know it is looking at a team rather than a portfolio.
 				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
 				getSleRisk,
+				getSleRiskZones: vi.fn().mockResolvedValue([]),
 			};
 
 			renderWithRouter(

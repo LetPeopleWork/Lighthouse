@@ -17,3 +17,14 @@ export const SleRiskSchema = z.object({
 });
 
 export type ISleRisk = z.infer<typeof SleRiskSchema>;
+
+/**
+ * One band of the aging chart's risk background: the first age at which an item's chance of missing
+ * the target reaches `risk`. A band the history could not place is absent rather than guessed.
+ */
+export const SleRiskZoneSchema = z.object({
+	risk: z.number(),
+	fromAge: z.number(),
+});
+
+export type ISleRiskZone = z.infer<typeof SleRiskZoneSchema>;

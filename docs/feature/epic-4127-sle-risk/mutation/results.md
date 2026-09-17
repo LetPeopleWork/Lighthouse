@@ -168,3 +168,54 @@ what colour it is given, and that it stays away at a count of zero.
 Chasing the rest would mean asserting on margins and font weights, which is the implementation
 detail the ledger says not to invent tests for. The number is recorded as it is rather than
 massaged by narrowing the config to the file that scores well.
+
+## Slice 03 / Story #6014 — the risk zones on the aging chart
+
+Run 2026-09-17.
+
+| Stack | Scope | Killed | Survived | Score |
+|---|---|---|---|---|
+| Backend | `SleRiskCalculator.cs` whole, plus both reads and both actions by byte range | 57 | 7 | **89.23%** |
+| Frontend | `useAgingBackground.ts` + `computeSleRiskZoneRects` by line range | 62 | 8 | **84.93%** |
+
+### What the runs found
+
+**The backend's first pass scored 83.08%**, and three survivors were real: nothing asked the zones
+route for a backwards window, nothing asked it for a single-day one, and nothing passed `Zones` a
+null history. A fourth was subtler — `age <= oldestFinishedItem` weakened to `<` survived, because no
+fixture had its top band first reached at exactly the longest cycle time ever recorded. That happens
+whenever the longest finished item took exactly one day more than the target, which is not an exotic
+shape, and the band a reader most needs would simply have been missing.
+
+**The frontend's first pass scored 71.79% on the hook**, and the storage key blanked to `""`
+survived — the ledger's most common survivor, in the one place it would hurt most: the key is the
+migration contract, and renaming it silently forgets every reader's stored choice. The literal is
+now pinned. The `"off"` / `"pace"` / `"risk"` values also went untested, which is the *ordinary* path
+from the day this ships — the old `"true"` had a test and the shapes the hook writes itself did not.
+
+**The geometry's first pass scored 67.65%**, and two survivors were worth the run:
+
+- `Math.abs(chartRight - chartLeft)` weakened to `chartRight + chartLeft` survived because every
+  fixture used a left edge of zero. The chart's left edge is half a column left of the first state
+  and is never zero, so the bands would have been the wrong width on every real chart.
+- The guard against a band starting above the top of the axis survived, because the fixture used a
+  band starting exactly *at* the top — where the height is zero and the next guard catches it. One
+  day higher and an inverted band would have been drawn from the top of the axis back down.
+
+A third gap the run exposed was in the tests rather than the code: nothing exercised a **downward**
+y-scale, which is the only kind a real chart has. `Math.min` and `Math.abs` in the geometry were
+carrying that on trust.
+
+### What survives, and why
+
+**Backend** — all seven are fast-path guards or loop bounds with no observable effect:
+`targetRangeInDays <= 0` weakened to `< 0` still returns nothing, because `For` refuses a
+non-positive target anyway; the `break` on the first unanswerable age can be removed and the walk
+still adds nothing, because `null >= level` is false and monotonicity means no later age answers;
+`nextLevel <= ZoneLevels.Length` and the `&&`/`||` swap only change how many iterations do nothing.
+Each is a cost or a clarity guard rather than a behaviour, and killing them would mean asserting on
+how many times a loop turned.
+
+**Frontend** — the two `[]` dependency arrays (a re-run reads the same value back), the empty-zones
+fast path (the flatMap returns nothing regardless), and the `height === 0` guard, which mirrors the
+pace-band function beside it and is unreachable on any scale a chart actually has.

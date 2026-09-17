@@ -56,7 +56,7 @@ import type {
 } from "../../../models/Metrics/NamedCycleTime";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
-import type { ISleRisk } from "../../../models/Metrics/SleRisk";
+import type { ISleRisk, ISleRiskZone } from "../../../models/Metrics/SleRisk";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -967,6 +967,7 @@ function buildWidgetNodes(ctx: {
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	sleRiskAtRisk: SleRiskAtRiskSummary | undefined;
+	sleRiskZones: ISleRiskZone[];
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -1071,6 +1072,7 @@ function buildWidgetNodes(ctx: {
 				blockedStalenessThresholdDays={ctx.blockedStalenessThresholdDays}
 				perStatePercentileValues={ctx.perStatePercentileValues}
 				workItemAgePercentileValues={ctx.workItemAgePercentilesValues}
+				sleRiskZones={ctx.sleRiskZones}
 				now={ctx.endDate}
 			/>
 		),
@@ -1278,6 +1280,7 @@ export const BaseMetricsView = <
 		previousWorkItemAgePercentilesValues,
 		perStatePercentileValues,
 		sleRiskValues,
+		sleRiskZones,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
 		predictabilityData,
@@ -1735,6 +1738,7 @@ export const BaseMetricsView = <
 		blockedCountHistory,
 		flowEfficiencyInfo,
 		sleRiskAtRisk,
+		sleRiskZones,
 	});
 
 	const widgetFooters = buildWidgetFooters({

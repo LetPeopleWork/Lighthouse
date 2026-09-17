@@ -806,3 +806,124 @@ double count is impossible by construction rather than prevented by a guard no t
   not.
 
 ---
+
+# Wave: DESIGN — slice 03
+
+Run 2026-09-17, application scope, against slice 03 only (ADO Story #6014). DEVOPS stays skipped.
+
+## Wave: DESIGN / [REF] The question slice 01 did not have to answer
+
+The column asks "what is *this item's* risk", and the endpoint answers per item. **Zones are a
+different question**: at which *ages* does the risk cross 25, 50, 75 and 100 percent? Those ages are
+mostly ages no item currently sits at, so nothing in the slice-01 payload can be rearranged into
+them.
+
+| ID | Decision | Verdict |
+|---|---|---|
+| DDD-18 | Where does the age→risk curve come from? | **The backend, as a sub-resource of the same read**: `GET .../metrics/sleRisk/zones`. DDD-11 forbids risk arithmetic in TypeScript and D5 puts the rule in one place; `cumulativeStateTime/items` and `cumulativeStateTime/candidates` are the local idiom for exactly this — a second question about the same population. |
+| DDD-19 | Why not widen the slice-01 payload into an envelope? | Because it would rewrite the JSON shape that fifteen shipped acceptance scenarios read, for no gain the sub-resource does not give. Both actions take the same window and run through the same service and cache, so they cannot answer from different histories. |
+| DDD-20 | What is a zone? | `SleRiskZoneDto(int Risk, int FromAge)` — the first age at which the risk reaches that level. Four of them at most. The chart paints from each `FromAge` up to the next, in `PACE_BAND_COLORS_LOW_TO_HIGH` order (D14). |
+| DDD-21 | Is the curve monotonic, so that "first age" is well defined? | **Yes, and it falls out of the formula.** Below the target the numerator `count(T > R)` is fixed while the denominator `count(T >= a)` only shrinks, so the risk can only rise; above the target every survivor is a breach and it is exactly 1. No search, no interpolation — walk the ages upward and record each crossing once. |
+| DDD-22 | Where does the 100% zone begin? | **At the computed crossing, which is never later than the first age past the target — and may be earlier.** AC-03.3 says its lower edge is the SLE line; the guarantee the arithmetic actually gives is the one that matters to a reader: nothing drawn above the line is left outside the top zone, because every item past `R` has certainly missed. It begins *earlier* than the line when nothing the team finished took the last day or two before the target — there is then no age left at which the odds are anything but certain. Pinning it to `R` instead would draw a boundary the history does not support, which is what the rest of this slice exists to avoid. |
+| DDD-23 | What does the minimum-sample guard do to the zones? | **It removes the top ones first, and that is the awkward direction.** `count(T >= a)` shrinks as the age grows, so the ages where the 75% and 100% boundaries sit are exactly the ages least likely to clear the minimum. A boundary the history cannot support is **not drawn** — a zone edge is a claim about where the odds turn, and D12's own note says boundaries that move day to day are worse than no boundaries. |
+| DDD-24 | What if no boundary can be drawn at all? | The mode still exists and paints nothing, rather than the control refusing to switch. AC-03.4 keeps the mode unavailable only when there is **no target**, which is a different thing from a target with too little history behind it. |
+| DDD-25 | How does the control become tri-state? | `useShowPaceBands` becomes `useAgingBackground` over `"off" \| "pace" \| "risk"`, reading the same `workItemAgingPaceBandsEnabled` key. `"true"` resolves to `"pace"` and `"false"` to `"off"` (AC-03.6), so nobody's chart changes on upgrade, and the stored value is only rewritten when the user picks a mode. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `SleRiskCalculator.Zones` | `Services/Implementation/SleRiskCalculator.cs` | **EXTEND** — one pure function beside `For`, sharing its guard |
+| `SleRiskZoneDto` | `Models/Metrics/SleRiskDto.cs` | **CREATE NEW** — two fields, beside its sibling |
+| `TeamMetricsService.GetSleRiskZonesForTeam` | `Services/Implementation/TeamMetricsService.cs` | **EXTEND** — same population, same cache idiom |
+| `TeamMetricsController` | `API/TeamMetricsController.cs` | **EXTEND** — one action under the existing guard |
+| `useAgingBackground` | `hooks/useShowPaceBands.ts` | **REPLACE** — boolean toggle becomes a tri-state selection with a migration |
+| `computeSleRiskZoneRects` + `SleRiskZoneOverlay` | `components/Common/Charts/WorkItemAgingChart.tsx` | **CREATE NEW** — deliberately parallel to the pace-band pair beside it |
+
+**Reuse**: the zone rectangles are full-width where the pace bands are per-state-column, so the
+geometry cannot be shared — but the palette, the opacity, the overlay shape and the `y`-scale
+handling all are, and the new pair sits next to the old one so a reader meets them together.
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+**Key decisions**: the curve is a second question about the same population and gets a sub-resource
+rather than an envelope (DDD-18, DDD-19); monotonicity makes "the first age at this level" well
+defined without searching (DDD-21); and the guard takes the top zones first, so the chart must be
+able to draw some zones and not others (DDD-23).
+
+**Upstream changes**: none to DISCUSS. AC-03.3's wording is confirmed rather than corrected — see
+DDD-22.
+
+---
+
+# Wave: DISTILL + DELIVER — slice 03
+
+Run 2026-09-17 against ADO Story #6014.
+
+## Wave: DISTILL / [REF] Where each claim is observed
+
+Five acceptance scenarios drive `GET .../metrics/sleRisk/zones` — what the ages are, that they are
+stacked, that a team with no target gets none, that bands the history cannot place are absent, and
+that portfolios are not asked. What the chart *does* with them is a claim about a drawing and lives
+in `WorkItemAgingChart.test.tsx`; driving a chart from an HTTP test would prove nothing about what a
+reader sees.
+
+The guard's falsifiability was measured rather than assumed: removing the break that stops the walk
+at the first unanswerable age turns both `Zones_AgesTooLittleHistoryCanSpeakFor_AreLeftUndrawn` and
+`Bands_the_history_cannot_place_are_left_undrawn` red, at the unit and the acceptance level.
+
+**One AC has no test, deliberately.** AC-03.5 — the dots keep saying what they already said — is
+recorded in the suite as a comment rather than an assertion, because the scatter plot is mocked
+there and a marker's colour is not observable. An assertion against the mock would have passed
+whatever the production code did. It holds by construction instead: the zones are their own `<g>`,
+and nothing in this slice reaches `getMarkerColor` or the marker slot.
+
+## Wave: DELIVER / [REF] What the work turned up
+
+**One shipped selection became shared.** Both reads must divide by the same finished work or the
+chart and the dialog can disagree about which items count, so the selection moved into
+`ClosedCycleTimesFor` and both call it. That is a refactor of code already in production; the
+reviewer checked it preserves the predicate, the window and the `> 0` filter exactly.
+
+**The old control had to go, and five tests with it.** The background is one channel, so an on/off
+button for one mode could not survive a second one arriving. The five tests that drove the icon
+button were re-aimed at the mode control; each keeps the claim its name makes, and the reviewer
+confirmed none became weaker.
+
+**AC-03.3 was confirmed rather than corrected — see DDD-22.** The 100% band begins at the computed
+crossing, which is never later than the first age past the target and is sometimes earlier. A reader
+gets the guarantee that matters: nothing drawn above the SLE line is outside the top band.
+
+## Wave: DELIVER / [REF] Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 errors, 0 warnings |
+| `dotnet test` (connectors excluded) | 7009 passed; 2 environmental — the Defender SQLite lock and the portfolio-delete queue race, both passing alone |
+| `dotnet format analyzers --severity info` | 0 findings in any file this change touches |
+| `pnpm test` / `pnpm build` | 5292 passed, 372 files; build clean |
+| Stryker backend | **89.23%** |
+| Stryker frontend | **84.93%** — `useAgingBackground.ts` 88.24%, the zone geometry 84.21% |
+| Independent review | `nw-software-crafter-reviewer`, approved, no defects |
+
+## Wave: DELIVER / [REF] Finalization checklist
+
+- **Docs prose** — done. `docs/metrics/flow-metrics.md` gains **SLE Risk Zones on the Aging Chart**:
+  the three mutually exclusive modes, why the bands run full width, that missing bands mean missing
+  evidence rather than safety, and that the mode is offered only where there is a target.
+- **Per-feature screenshot** — **owed, and not taken.** This is the first slice that changes what the
+  chart looks like, and the section above describes a picture without showing one. It needs a
+  `@screenshot` E2E against demo data with an SLE and enough history to place bands, which is more
+  than a docs edit; flagged here rather than silently skipped.
+- **Demo data** — **N/A, because** the demo teams already carry an SLE and closed history, so the
+  mode appears on them. Whether they have *enough* history to place all four bands is the open
+  question above, and the screenshot work will answer it.
+- **Lighthouse-Clients CLI/MCP** — **N/A, because** no wrapper is being added. Per ADR-065 §4 a new
+  endpoint 404s opaquely on an old server, so if one is ever added it owes a version gate; none is.
+- **Website marketing surface** — **N/A, because** slice 04 remains.
+- **RBAC** — no change. The new action rides the existing class-level `TeamRead` guard, and the
+  portfolio scenario fails if it ever acquires its own.
+- **Release Notes tag** — the Epic carries it; the child Stories do not, per the maintainer's
+  convention.
+
+---

@@ -36,7 +36,7 @@ import type {
 } from "../../models/Metrics/ProcessBehaviorSnapshot";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
-import type { ISleRisk } from "../../models/Metrics/SleRisk";
+import type { ISleRisk, ISleRiskZone } from "../../models/Metrics/SleRisk";
 import {
 	type IPercentileValue,
 	PercentileValueSchema,
@@ -271,6 +271,12 @@ export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ISleRisk[]>;
+	/** Where the odds turn against an item, for the aging chart's background. Teams only, as above. */
+	getSleRiskZones(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ISleRiskZone[]>;
 	getForecastInputCandidates(teamId: number): Promise<IForecastInputCandidates>;
 	getFeaturesWorkedOnInfo(
 		teamId: number,

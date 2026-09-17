@@ -19,6 +19,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private static readonly int[] SixtyFinishedItems =
             [.. Enumerable.Repeat<int[]>([1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30], 3).SelectMany(x => x)];
 
+        /// <summary>The levels the chart paints a zone above, calmest first.</summary>
+        private static readonly int[] RiskLevels = [25, 50, 75, 100];
+
         [TestCase(2, 32)]
         [TestCase(5, 46)]
         [TestCase(9, 86)]
@@ -174,6 +177,109 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var verdict = SleRiskCalculator.For(5, targetRangeInDays, SixtyFinishedItems);
 
             Assert.That(verdict.Risk, Is.Null);
+        }
+
+        // --- Where the odds turn, for the chart's background zones ---
+
+        [Test]
+        public void Zones_ARealDistribution_NamesTheFirstAgeAtEachLevel()
+        {
+            // Sixty items, target ten days. The share that missed rises with the age asked about, so
+            // each level is reached once and stays reached.
+            var zones = SleRiskCalculator.Zones(10, SixtyFinishedItems);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(zones.Select(zone => zone.Risk), Is.EqualTo(RiskLevels));
+                Assert.That(zones.Select(zone => zone.FromAge), Is.Ordered,
+                    "The risk only rises with age, so the ages it crosses at only rise too.");
+            }
+        }
+
+        [Test]
+        public void Zones_TheTopLevel_LeavesNothingAboveTheTargetOutsideIt()
+        {
+            // Every item past a ten-day target has certainly missed it, so the top zone must already
+            // have begun by eleven days. It may begin earlier - it does here - when nothing the team
+            // finished took the last day or two before the target.
+            var zones = SleRiskCalculator.Zones(10, SixtyFinishedItems);
+
+            Assert.That(zones.Single(zone => zone.Risk == 100).FromAge, Is.LessThanOrEqualTo(11));
+        }
+
+        [Test]
+        public void Zones_AnItemThatFinishedOnTheTargetDay_HoldsTheTopLevelBackToTheDayAfter()
+        {
+            // Twelve items took exactly ten days and twelve took longer. At ten days the odds are
+            // even, so certainty cannot begin until eleven - which is the first age at which every
+            // item that ever got that far had already missed.
+            int[] cycleTimes = [.. Enumerable.Repeat(10, 12), .. Enumerable.Repeat(14, 12)];
+
+            var zones = SleRiskCalculator.Zones(10, cycleTimes);
+
+            Assert.That(zones.Single(zone => zone.Risk == 100).FromAge, Is.EqualTo(11));
+        }
+
+        [Test]
+        public void Zones_ALevelFirstReachedByTheLongestItemEver_IsStillRecorded()
+        {
+            // Twelve items took five days and twelve took six, against a five-day target. Up to five
+            // days the odds are even; at six every survivor has missed. Six is also the longest
+            // anything ever took, so a walk that stopped one age short would lose the two levels a
+            // reader most needs.
+            int[] cycleTimes = [.. Enumerable.Repeat(5, 12), .. Enumerable.Repeat(6, 12)];
+
+            var zones = SleRiskCalculator.Zones(5, cycleTimes);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(zones.Select(zone => zone.Risk), Is.EqualTo(RiskLevels));
+                Assert.That(zones.Single(zone => zone.Risk == 100).FromAge, Is.EqualTo(6));
+            }
+        }
+
+        [Test]
+        public void Zones_NoHistorySupplied_Refuses()
+        {
+            Assert.That(() => SleRiskCalculator.Zones(10, null!), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void Zones_NoTargetPublished_HasNoneAtAll()
+        {
+            Assert.That(SleRiskCalculator.Zones(0, SixtyFinishedItems), Is.Empty);
+        }
+
+        [Test]
+        public void Zones_NothingFinished_HasNoneAtAll()
+        {
+            Assert.That(SleRiskCalculator.Zones(10, []), Is.Empty);
+        }
+
+        [Test]
+        public void Zones_AgesTooLittleHistoryCanSpeakFor_AreLeftUndrawn()
+        {
+            // Twelve items ran two days and only three ran longer, so nothing can be said about an
+            // age above two. A boundary there would be a claim about where the odds turn, made from
+            // three observations.
+            int[] cycleTimes = [.. Enumerable.Repeat(2, 12), 11, 12, 13];
+
+            var zones = SleRiskCalculator.Zones(10, cycleTimes);
+
+            Assert.That(zones.Select(zone => zone.FromAge), Has.All.LessThanOrEqualTo(2),
+                "Above the last age with enough evidence there is nothing to draw.");
+        }
+
+        [Test]
+        public void Zones_ALevelNeverReachedWithinTheEvidence_IsNotInvented()
+        {
+            // Everything finished well inside a thirty-day target, so the risk never leaves its
+            // calmest band while there is still history to say so.
+            int[] cycleTimes = [.. Enumerable.Repeat(1, 40)];
+
+            var zones = SleRiskCalculator.Zones(30, cycleTimes);
+
+            Assert.That(zones, Is.Empty);
         }
 
         [Test]

@@ -20,6 +20,7 @@ import {
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import WorkItemAgingChart, {
 	computePaceBandRects,
+	computeSleRiskZoneRects,
 	PaceBandOverlay,
 	STATE_BAND_HALF_WIDTH,
 } from "./WorkItemAgingChart";
@@ -872,7 +873,9 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			expect(screen.queryByTestId("pace-bands-toggle")).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("aging-background-modes"),
+			).not.toBeInTheDocument();
 
 			rerender(
 				<WorkItemAgingChart
@@ -884,10 +887,13 @@ describe("WorkItemAgingChart component", () => {
 				/>,
 			);
 
-			expect(screen.getByTestId("pace-bands-toggle")).toBeInTheDocument();
+			expect(screen.getByTestId("aging-background-modes")).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Pace percentiles" }),
+			).toBeInTheDocument();
 		});
 
-		it("toggles the pace bands on then off through the top-right icon button", () => {
+		it("turns the pace bands on and off through the background control", () => {
 			render(
 				<WorkItemAgingChart
 					inProgressItems={mockInProgressItems}
@@ -900,14 +906,14 @@ describe("WorkItemAgingChart component", () => {
 
 			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
 
-			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			fireEvent.click(screen.getByRole("button", { name: "Pace percentiles" }));
 			expect(screen.getAllByTestId("pace-band").length).toBeGreaterThan(0);
 
-			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			fireEvent.click(screen.getByRole("button", { name: "Off" }));
 			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
 		});
 
-		it("keeps the work item type chips and percentile chips untouched by the toggle", () => {
+		it("keeps the work item type chips and percentile chips untouched by the choice", () => {
 			render(
 				<WorkItemAgingChart
 					inProgressItems={mockInProgressItems}
@@ -920,14 +926,13 @@ describe("WorkItemAgingChart component", () => {
 
 			const typeChipsBefore = screen.getAllByText(/^(Story|Task)$/).length;
 
-			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			fireEvent.click(screen.getByRole("button", { name: "Pace percentiles" }));
 
 			expect(screen.getAllByText("50%").length).toBeGreaterThan(0);
 			expect(screen.getByText("Service Level Expectation")).toBeInTheDocument();
 			expect(screen.getAllByText(/^(Story|Task)$/).length).toBe(
 				typeChipsBefore,
 			);
-			expect(screen.queryByText("Pace percentiles")).not.toBeInTheDocument();
 		});
 
 		it("spans each state band rect across x in [stateIndex - HALF_WIDTH, stateIndex + HALF_WIDTH]", () => {
@@ -1543,7 +1548,7 @@ describe("WorkItemAgingChart component", () => {
 		it("leaves the pace-band overlay untouched when swapping the reference-line source", () => {
 			renderWithSelector();
 
-			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			fireEvent.click(screen.getByRole("button", { name: "Pace percentiles" }));
 			expect(screen.getAllByTestId("pace-band").length).toBeGreaterThan(0);
 
 			selectSource("Work Item Age");
@@ -1609,7 +1614,7 @@ describe("WorkItemAgingChart component", () => {
 				],
 			});
 
-			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			fireEvent.click(screen.getByRole("button", { name: "Pace percentiles" }));
 			const cycleTimeBandHeights = screen
 				.getAllByTestId("pace-band")
 				.map((band) => band.getAttribute("height"));
@@ -1694,6 +1699,262 @@ describe("WorkItemAgingChart component", () => {
 			expect(
 				screen.queryByTestId("reference-line-95%"),
 			).not.toBeInTheDocument();
+		});
+	});
+
+	// --- Epic #4127 slice 03: where the odds turn against an item ---
+	//
+	// The pace bands say how unusual an item is for the column it is standing in. These say
+	// something the columns cannot: how likely it is, at this height, to miss the target. So they
+	// run the full width of the chart - a band that stopped at a column boundary would be claiming
+	// the risk depends on which state the item is in, and it does not.
+	describe("SLE risk background", () => {
+		const zones = [
+			{ risk: 25, fromAge: 1 },
+			{ risk: 50, fromAge: 6 },
+			{ risk: 75, fromAge: 8 },
+			{ risk: 100, fromAge: 10 },
+		];
+
+		const renderWithZones = (riskZones = zones) =>
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+					sleRiskZones={riskZones}
+				/>,
+			);
+
+		it("offers the risk mode beside the others once there is a target to be at risk of", () => {
+			renderWithZones();
+
+			expect(screen.getByRole("button", { name: /Risk$/ })).toBeInTheDocument();
+		});
+
+		it("does not offer the risk mode to a team that published no target", () => {
+			// No target, no zones, and nothing the mode could paint - so it is unavailable rather
+			// than an empty option a reader can select and be told nothing by.
+			render(
+				<WorkItemAgingChart
+					inProgressItems={mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+				/>,
+			);
+
+			expect(
+				screen.queryByRole("button", { name: /Risk$/ }),
+			).not.toBeInTheDocument();
+		});
+
+		it("paints the zones once the reader switches to them", () => {
+			renderWithZones();
+
+			expect(screen.queryAllByTestId("sle-risk-zone")).toHaveLength(0);
+
+			fireEvent.click(screen.getByRole("button", { name: /Risk$/ }));
+
+			expect(screen.getAllByTestId("sle-risk-zone").length).toBeGreaterThan(0);
+		});
+
+		it("never paints both backgrounds at once", () => {
+			// They are one channel. A chart carrying both would be asking a reader to hold two
+			// meanings for the same colour.
+			renderWithZones();
+
+			fireEvent.click(screen.getByRole("button", { name: "Pace percentiles" }));
+			expect(screen.getAllByTestId("pace-band").length).toBeGreaterThan(0);
+
+			fireEvent.click(screen.getByRole("button", { name: /Risk$/ }));
+
+			expect(screen.getAllByTestId("sle-risk-zone").length).toBeGreaterThan(0);
+			expect(screen.queryAllByTestId("pace-band")).toHaveLength(0);
+		});
+
+		// AC-03.5 - the dots keep saying what they already said - has no test here on purpose. The
+		// scatter plot is mocked in this suite, so a marker's colour is not observable, and an
+		// assertion against the mock would pass whatever the production code did. It holds instead
+		// by construction: the zones are their own <g> behind the plot, and nothing in this slice
+		// reaches getMarkerColor or the marker slot.
+
+		describe("the geometry", () => {
+			const identity = (value: number) => value;
+
+			it("runs each band the full width of the chart", () => {
+				// The chart's left edge is not the origin - it is half a column left of the first
+				// state - so a width taken as "right plus left" would be wrong everywhere but here.
+				const rects = computeSleRiskZoneRects({
+					zones,
+					chartLeft: 40,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects).not.toHaveLength(0);
+				for (const rect of rects) {
+					expect(rect.x).toBe(40);
+					expect(rect.width).toBe(260);
+				}
+			});
+
+			it("stacks each band from its own age up to the next one's", () => {
+				const rects = computeSleRiskZoneRects({
+					zones,
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				// 1..6, 6..8, 8..10, and the top one to the axis.
+				expect(rects.map((rect) => rect.height)).toEqual([5, 2, 2, 30]);
+			});
+
+			it("paints them in the colours the column and the count already use", () => {
+				const rects = computeSleRiskZoneRects({
+					zones,
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects.map((rect) => rect.fill)).toEqual([
+					PACE_BAND_COLORS_LOW_TO_HIGH[1],
+					PACE_BAND_COLORS_LOW_TO_HIGH[2],
+					PACE_BAND_COLORS_LOW_TO_HIGH[3],
+					PACE_BAND_COLORS_LOW_TO_HIGH[4],
+				]);
+			});
+
+			it("draws nothing at all when the history placed no band", () => {
+				const rects = computeSleRiskZoneRects({
+					zones: [],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects).toHaveLength(0);
+			});
+
+			it("stacks them correctly however they arrive", () => {
+				// The order is the backend's to give and not this function's to assume; a band drawn
+				// from the wrong neighbour would overlap the one above it.
+				const rects = computeSleRiskZoneRects({
+					zones: [
+						{ risk: 100, fromAge: 10 },
+						{ risk: 25, fromAge: 1 },
+						{ risk: 75, fromAge: 8 },
+						{ risk: 50, fromAge: 6 },
+					],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects.map((rect) => rect.height)).toEqual([5, 2, 2, 30]);
+			});
+
+			it("reads a scale that runs downward, which is the one the chart has", () => {
+				// On a real y-axis a larger age is a smaller pixel. A band computed as
+				// "upper minus lower" would come out negative and never be drawn.
+				const downward = (value: number) => 400 - value * 10;
+
+				const rects = computeSleRiskZoneRects({
+					zones: [
+						{ risk: 25, fromAge: 1 },
+						{ risk: 50, fromAge: 6 },
+					],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: downward,
+					axisMin: 0,
+					axisMax: 10,
+				});
+
+				expect(rects.map((rect) => rect.height)).toEqual([50, 40]);
+				// The top of each band, not its bottom - a rect is drawn from its smaller pixel.
+				expect(rects.map((rect) => rect.y)).toEqual([340, 300]);
+			});
+
+			it("drops a band the next one starts on top of", () => {
+				// Two boundaries can land on the same age when the history is thin. A band of no
+				// height is not a band, and drawing one would paint over the one beneath it.
+				const rects = computeSleRiskZoneRects({
+					zones: [
+						{ risk: 50, fromAge: 4 },
+						{ risk: 75, fromAge: 4 },
+					],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 20,
+				});
+
+				expect(rects.map((rect) => rect.key)).toEqual(["sle-risk-75"]);
+			});
+
+			it("draws nothing for a band that begins past the top of the axis", () => {
+				// Not merely a band of no height - an inverted one, drawn from the top of the axis
+				// back down to where it should have started.
+				const rects = computeSleRiskZoneRects({
+					zones: [{ risk: 100, fromAge: 41 }],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects).toHaveLength(0);
+			});
+
+			it("starts a band at the bottom of the axis when it begins below it", () => {
+				// An axis that starts above day one - the band still has to reach the floor rather
+				// than float, or the chart would show an unpainted strip meaning nothing.
+				const rects = computeSleRiskZoneRects({
+					zones: [{ risk: 25, fromAge: 1 }],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 5,
+					axisMax: 20,
+				});
+
+				expect(rects[0].y).toBe(5);
+				expect(rects[0].height).toBe(15);
+			});
+
+			it("draws the bands the history did place and invents none above them", () => {
+				// The evidence thins as the age grows, so the top bands are the ones that go
+				// missing. What is left must still be drawn, and nothing may be drawn above it.
+				const rects = computeSleRiskZoneRects({
+					zones: [{ risk: 25, fromAge: 2 }],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects).toHaveLength(1);
+				expect(rects[0].height).toBe(38);
+			});
 		});
 	});
 });

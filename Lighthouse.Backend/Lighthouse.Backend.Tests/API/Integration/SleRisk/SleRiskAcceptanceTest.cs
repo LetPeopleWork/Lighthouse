@@ -219,6 +219,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
 
         protected Uri SleRiskRoute(int teamId) => SleRiskRouteBetween(teamId, WindowStart, WindowEnd);
 
+        protected Uri SleRiskZonesRoute(int teamId) => new(
+            $"/api/latest/teams/{teamId}/metrics/sleRisk/zones"
+            + $"?startDate={WindowStart:yyyy-MM-dd}&endDate={WindowEnd:yyyy-MM-dd}",
+            UriKind.Relative);
+
         protected static Uri SleRiskRouteBetween(int teamId, DateTime startDate, DateTime endDate) => new(
             $"/api/latest/teams/{teamId}/metrics/sleRisk"
             + $"?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}",

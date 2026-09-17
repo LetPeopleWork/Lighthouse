@@ -58,6 +58,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 		getWorkItemAgePercentiles: vi.fn().mockResolvedValue([]),
 		getAgeInStatePercentiles: vi.fn().mockResolvedValue([]),
 		getSleRisk: vi.fn().mockResolvedValue([]),
+		getSleRiskZones: vi.fn().mockResolvedValue([]),
 		getMultiItemForecastPredictabilityScore: vi
 			.fn()
 			.mockResolvedValue({ probability: 0 }),

@@ -244,6 +244,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getWorkItemAgePercentiles: vi.fn(),
 		getAgeInStatePercentiles: vi.fn(),
 		getSleRisk: vi.fn().mockResolvedValue([]),
+		getSleRiskZones: vi.fn().mockResolvedValue([]),
 		getMultiItemForecastPredictabilityScore: vi.fn(),
 		getTotalWorkItemAge: vi.fn(),
 		getThroughputPbc: vi.fn(),
