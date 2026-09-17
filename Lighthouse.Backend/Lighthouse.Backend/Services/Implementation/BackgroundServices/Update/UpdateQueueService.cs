@@ -81,6 +81,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// would take it out of <c>HasActiveWork</c> while it is still talking to a tracker, and things
         /// that wait for the instance to go idle would stop waiting.
         ///
+        /// Whether it has started is asked and acted on in one step, by the store. Asked here, the answer
+        /// could be out of date by the next line: the queue's reader is starting work while this runs.
+        ///
         /// The check the reader already makes on the way in stays as the backstop: this advances the row,
         /// it does not replace the mechanism that actually stops the work.
         /// </summary>
@@ -88,12 +91,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             cancellations.Stop(key);
 
-            if (!statusStore.TryGet(key, out var status) || status?.Status != UpdateProgress.Queued)
-            {
-                return;
-            }
-
-            var cancelled = statusStore.Advance(key, UpdateProgress.Cancelled);
+            var cancelled = statusStore.CancelIfStillWaiting(key);
 
             if (cancelled != null)
             {

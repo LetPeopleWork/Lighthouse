@@ -31,6 +31,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             "end\n" +
             "return tonumber(current)");
 
+        // A cancel that must lose to a start cannot be a read here followed by a write here: the pod running
+        // the queue is starting work while this pod decides, and the key can start in between. Comparison and
+        // write are one round trip, so only one of the two outcomes can happen.
+        internal static readonly LuaScript CancelIfStillWaitingScript = LuaScript.Prepare(
+            "local current = redis.call('HGET', @hashKey, @field)\n" +
+            "if current == false then return 0 end\n" +
+            "if tonumber(current) == tonumber(@queued) then\n" +
+            "    redis.call('HSET', @hashKey, @field, @cancelled)\n" +
+            "    return 1\n" +
+            "end\n" +
+            "return 0");
+
         // Redis has no HSETXX and StackExchange.Redis rejects When.Exists on HashSet (only Always /
         // NotExists are legal), so the "reset only an already-admitted key" guard needs a script.
         internal static readonly LuaScript RequeueIfAdmittedScript = LuaScript.Prepare(
@@ -88,6 +100,28 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 : MomentsFor(key);
 
             return StatusFor(key, resultingOrdinal, moments);
+        }
+
+        public UpdateStatus? CancelIfStillWaiting(UpdateKey key)
+        {
+            var cancelled = (long)database.ScriptEvaluate(
+                CancelIfStillWaitingScript,
+                new
+                {
+                    hashKey = (RedisKey)StatusHashKey,
+                    field = key.ToString(),
+                    queued = (int)UpdateProgress.Queued,
+                    cancelled = (int)UpdateProgress.Cancelled,
+                });
+
+            if (cancelled != 1)
+            {
+                return null;
+            }
+
+            // Its moments are left exactly as they were: it never started, so there is nothing to stamp, and
+            // when it was admitted is still the truthful answer to how long it had been waiting.
+            return StatusFor(key, (int)UpdateProgress.Cancelled, MomentsFor(key));
         }
 
         public void Requeue(UpdateKey key)

@@ -10,6 +10,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private readonly ILighthouseClock clock;
 
+        /// <summary>
+        /// The two ways a key's progress changes have to exclude each other, because one of them only holds
+        /// while the other has not happened: cancelling work that is still waiting means nothing if the queue
+        /// starts it in the middle of the decision. The dictionary is concurrent, but the status it hands back
+        /// is one object shared by every caller, so nothing about it is atomic on its own.
+        /// </summary>
+        private readonly object progressGate = new();
+
         public InProcessUpdateStatusStore(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses, ILighthouseClock clock)
         {
             this.updateStatuses = updateStatuses;
@@ -38,16 +46,39 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return null;
             }
 
-            if ((int)to >= (int)status.Status)
+            lock (progressGate)
             {
-                // Only on the way in, and only once. A refused advance leaves the ordinal where it was, and
-                // stamping again would restart the clock of a run that has been going for some time.
-                if (to == UpdateProgress.InProgress && status.StartedAt is null)
+                if ((int)to >= (int)status.Status)
                 {
-                    status.StartedAt = clock.Now;
+                    // Only on the way in, and only once. A refused advance leaves the ordinal where it was, and
+                    // stamping again would restart the clock of a run that has been going for some time.
+                    if (to == UpdateProgress.InProgress && status.StartedAt is null)
+                    {
+                        status.StartedAt = clock.Now;
+                    }
+
+                    status.Status = to;
+                }
+            }
+
+            return status;
+        }
+
+        public UpdateStatus? CancelIfStillWaiting(UpdateKey key)
+        {
+            if (!updateStatuses.TryGetValue(key, out var status))
+            {
+                return null;
+            }
+
+            lock (progressGate)
+            {
+                if (status.Status != UpdateProgress.Queued)
+                {
+                    return null;
                 }
 
-                status.Status = to;
+                status.Status = UpdateProgress.Cancelled;
             }
 
             return status;

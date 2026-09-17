@@ -113,6 +113,42 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
+        /// <summary>
+        /// The pod that takes the operator's click is usually not the pod running the queue, so the two
+        /// decisions are made on different machines against one hash. Whichever order they arrive in, work
+        /// that has started keeps its row - marked cancelled it would leave HasActiveWork on every pod while
+        /// it is still talking to a tracker.
+        /// </summary>
+        [Test]
+        public async Task CancelIfStillWaiting_AsOnePodStartsWorkAnotherAsksToStopIt_OnlyEverStopsWhatHadNotStarted()
+        {
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var stillWaiting = new UpdateKey(UpdateType.Team, 14);
+            var alreadyStarted = new UpdateKey(UpdateType.Team, 15);
+            var podRunningTheQueue = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+            var podThatTookTheClick = new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance);
+
+            podRunningTheQueue.TryAdmit(stillWaiting, new UpdateStatus { UpdateType = UpdateType.Team, Id = 14, Status = UpdateProgress.Queued });
+            podRunningTheQueue.TryAdmit(alreadyStarted, new UpdateStatus { UpdateType = UpdateType.Team, Id = 15, Status = UpdateProgress.Queued });
+            podRunningTheQueue.Advance(alreadyStarted, UpdateProgress.InProgress);
+
+            var stopped = podThatTookTheClick.CancelIfStillWaiting(stillWaiting);
+            var refused = podThatTookTheClick.CancelIfStillWaiting(alreadyStarted);
+
+            podRunningTheQueue.TryGet(alreadyStarted, out var running);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stopped?.Status, Is.EqualTo(UpdateProgress.Cancelled),
+                    "work still waiting on the shared hash is stopped by whichever pod was asked, not only by the one running the queue");
+                Assert.That(refused, Is.Null);
+                Assert.That(running!.Status, Is.EqualTo(UpdateProgress.InProgress),
+                    "work another pod had already started keeps its row until that pod writes its own outcome");
+            }
+        }
+
         [Test]
         [Category("requires-docker")]
         public async Task HasQueuedWork_WhereTheRecordOfWorkInFlightIsKeptOutsideTheApplication_GivesTheSameAnswerInOneBatchedRead()

@@ -9,6 +9,18 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         UpdateStatus? Advance(UpdateKey key, UpdateProgress to);
 
         /// <summary>
+        /// Marks work cancelled only while it is still waiting to start, and answers null when it had already
+        /// started, was never admitted, or was already past waiting.
+        ///
+        /// Whether work has started is not something a caller can read and then act on: the queue's reader is
+        /// starting work at the same time, and between the reading and the acting it can have started. Marking
+        /// a running refresh cancelled takes it out of <see cref="HasActiveWork"/> while it is still talking to
+        /// a tracker, and everything that waits for this instance to go idle stops waiting - including the gate
+        /// that holds database maintenance off. So the reading and the acting are one step, here.
+        /// </summary>
+        UpdateStatus? CancelIfStillWaiting(UpdateKey key);
+
+        /// <summary>
         /// Resets an already-admitted key back to <see cref="UpdateProgress.Queued"/> so the same key can run
         /// again without ever leaving the store. <see cref="Advance"/> cannot do this - it is deliberately
         /// monotonic - but a coalesced follow-up must keep the key continuously active, otherwise callers

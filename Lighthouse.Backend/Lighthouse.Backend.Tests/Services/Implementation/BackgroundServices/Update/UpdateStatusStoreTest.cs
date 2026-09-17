@@ -143,6 +143,95 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 "Without it the row can only say how long it waited, which is the wrong number once it is running.");
         }
 
+        [Test]
+        public void CancelIfStillWaiting_WorkThatIsStillWaiting_MarksItCancelledWithoutEverStartingIt()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+            var key = new UpdateKey(UpdateType.Team, 11);
+            store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 11, Status = UpdateProgress.Queued });
+
+            var cancelled = store.CancelIfStillWaiting(key);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cancelled?.Status, Is.EqualTo(UpdateProgress.Cancelled));
+                Assert.That(cancelled?.StartedAt, Is.Null,
+                    "Nothing ran, so a start moment here would put a duration on work that only ever waited.");
+            }
+        }
+
+        /// <summary>
+        /// The whole reason this is one step rather than a read and then a write. A refresh that is already
+        /// talking to a tracker has to keep its row until it stops: marked cancelled, it leaves HasActiveWork
+        /// while it is still writing, and whatever was waiting for the instance to go idle stops waiting.
+        /// </summary>
+        [Test]
+        public void CancelIfStillWaiting_WorkTheQueueHasAlreadyStarted_LeavesItRunning()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+            var key = new UpdateKey(UpdateType.Team, 12);
+            store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = 12, Status = UpdateProgress.Queued });
+            store.Advance(key, UpdateProgress.InProgress);
+
+            var cancelled = store.CancelIfStillWaiting(key);
+
+            store.TryGet(key, out var observed);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cancelled, Is.Null, "There was nothing waiting to cancel, so there is nothing to tell anybody about.");
+                Assert.That(observed!.Status, Is.EqualTo(UpdateProgress.InProgress));
+                Assert.That(store.HasActiveWork(), Is.True,
+                    "It is still running, and anything polling for idle has to keep waiting for it.");
+            }
+        }
+
+        [Test]
+        public void Advance_KeyNobodyAdmitted_AnswersNothingAndAdmitsNothing()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+            var key = new UpdateKey(UpdateType.Team, 14);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(store.Advance(key, UpdateProgress.InProgress), Is.Null);
+                Assert.That(store.HasActiveWork(), Is.False,
+                    "An advance on a key another replica already removed must not bring it back as active work nothing will ever finish.");
+            }
+        }
+
+        [Test]
+        public void CancelIfStillWaiting_KeyNobodyAdmitted_AnswersNothing()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+
+            Assert.That(store.CancelIfStillWaiting(new UpdateKey(UpdateType.Team, 13)), Is.Null);
+        }
+
+        /// <summary>
+        /// Starting and cancelling arrive on different threads and are both about to happen. One of them has
+        /// to lose, and which one is not the point - the point is that the pair can never leave a key that is
+        /// cancelled and started at once, which is the state nothing downstream knows how to read.
+        /// </summary>
+        [Test]
+        public void CancelIfStillWaiting_RacingTheQueueStartingTheSameWork_NeverLeavesItBothCancelledAndStarted()
+        {
+            var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
+
+            for (var attempt = 0; attempt < 200; attempt++)
+            {
+                var key = new UpdateKey(UpdateType.Team, attempt);
+                store.TryAdmit(key, new UpdateStatus { UpdateType = UpdateType.Team, Id = attempt, Status = UpdateProgress.Queued });
+
+                var starting = Task.Run(() => store.Advance(key, UpdateProgress.InProgress));
+                var cancelling = Task.Run(() => store.CancelIfStillWaiting(key));
+                Task.WaitAll(starting, cancelling);
+
+                store.TryGet(key, out var observed);
+                Assert.That(observed!.Status == UpdateProgress.Cancelled && observed.StartedAt is not null, Is.False,
+                    $"Attempt {attempt} left the work cancelled and started at the same time.");
+            }
+        }
+
         private static InProcessUpdateStatusStore StoreWithOneKeyQueuedAndOneRunning()
         {
             var store = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
