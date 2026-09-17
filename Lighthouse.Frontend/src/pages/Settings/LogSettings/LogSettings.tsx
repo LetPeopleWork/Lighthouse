@@ -78,10 +78,6 @@ const LogSettings: React.FC = () => {
 		let nextAsk: ReturnType<typeof setTimeout>;
 
 		const askAgain = async () => {
-			if (stopped) {
-				return;
-			}
-
 			if (!document.hidden) {
 				await refreshLogs(LIVE_TAIL_BYTES);
 			}
