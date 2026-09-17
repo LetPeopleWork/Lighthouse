@@ -60,6 +60,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string ARefusalCarryingJirasOwnSentence =
             "{\"errorMessages\":[\"" + JirasOwnSentence + "\"],\"errors\":{}}";
 
+        private const string ANoBrowsableProjectSentence =
+            "No project could be found with key 'PROJ'.";
+
+        /// <summary>
+        /// Jira objecting to one named thing rather than to the request as a whole: the errorMessages list is
+        /// there but empty, and the sentence is under errors instead.
+        /// </summary>
+        private const string ARefusalNamingWhatItRefused =
+            "{\"errorMessages\":[],\"errors\":{\"projectKey\":\"" + ANoBrowsableProjectSentence + "\"}}";
+
+        /// <summary>A refusal where the list is there and holds nothing, so Jira said nothing anywhere.</summary>
+        private const string ARefusalSayingNothingAnywhere = "{\"errorMessages\":[],\"errors\":{}}";
+
         /// <summary>What a proxy standing in front of Jira answers: not JSON at all, so no sentence to pass on.</summary>
         private const string ARefusalThatIsNotJson =
             "<html><head><title>502 Bad Gateway</title></head><body><h1>Bad Gateway</h1></body></html>";
@@ -161,6 +174,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(verdict.TechnicalDetails, Does.EndWith("Jira answered 502 BadGateway."));
                 Assert.That(verdict.TechnicalDetails, Does.Not.Contain("Lighthouse asked"));
             }
+        }
+
+        /// <summary>
+        /// The field list is asked for without a query, so an answer Jira could not find a sentence in leaves
+        /// only the status to report - and reporting an empty explanation instead ends the detail line on a
+        /// full stop with nothing after it, which reads as though something was lost on the way.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_FieldListRefusalCarriesNoSentence_SaysOnlyWhatJiraAnswered()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(
+                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.Forbidden, ARefusalSayingNothingAnywhere));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo(FieldListUnreadable));
+                Assert.That(verdict.TechnicalDetails, Does.EndWith("Jira answered 403 Forbidden."));
+            }
+        }
+
+        /// <summary>
+        /// The same refusal shape the search path handles, reaching the other caller: an account that cannot
+        /// browse the project is told so by Jira under errors, and that sentence is the one thing here that
+        /// says which permission to grant.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_FieldListRefusalNamesWhatItRefused_CarriesThatSentence()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(
+                UnmatchedFieldReference, new StubAnswer(HttpStatusCode.Forbidden, ARefusalNamingWhatItRefused));
+
+            Assert.That(verdict.TechnicalDetails, Does.EndWith(ANoBrowsableProjectSentence));
         }
 
         [Test]

@@ -1799,12 +1799,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => WhatJiraSaidAbout(refusal) ?? $"{WhatJiraAnswered(refusal)}.";
 
         /// <summary>
-        /// Jira puts the sentence a user can act on - which field it did not recognise, at which character,
-        /// which permission the account is short of - in errorMessages, and that sentence is the whole answer
-        /// whenever there is one. Null means nothing came back through here that Jira wrote: either it was
-        /// something in front of Jira turning the request away before the query was ever read, which is the
-        /// failure hardest to place and the one a bare status helps with least, or Jira refused without
-        /// saying why.
+        /// Jira puts the sentence a user can act on in one of two places, and which one depends on what it
+        /// objected to. A complaint about the request as a whole - an unparseable query, a permission the
+        /// account is short of - comes back as sentences in errorMessages. A complaint about one named thing
+        /// - a project, a status or a field that does not exist on the instance - comes back under errors,
+        /// keyed by the name, with errorMessages present and empty. Either one is the whole answer whenever
+        /// there is one. Null means nothing came back through here that Jira wrote: either it was something
+        /// in front of Jira turning the request away before the query was ever read, which is the failure
+        /// hardest to place and the one a bare status helps with least, or Jira refused without saying why.
         /// </summary>
         private static string? WhatJiraSaidAbout(JiraRefusal refusal)
         {
@@ -1812,25 +1814,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 using var json = JsonDocument.Parse(refusal.ResponseBody);
 
-                if (!json.RootElement.TryGetProperty("errorMessages", out var errorMessages)
-                    || errorMessages.ValueKind != JsonValueKind.Array)
+                // A body that parses but is not an object - a bare array, a quoted string, which is what a
+                // gateway in front of Jira can answer with - has no properties to ask after, and asking
+                // anyway throws instead of answering.
+                if (json.RootElement.ValueKind != JsonValueKind.Object)
                 {
                     return null;
                 }
 
-                var sentences = errorMessages
-                    .EnumerateArray()
-                    .Select(message => message.GetString() ?? string.Empty)
-                    .Where(message => !string.IsNullOrWhiteSpace(message))
-                    .ToList();
-
-                return sentences.Count > 0 ? string.Join(" ", sentences) : null;
+                return WhatJiraSaidAboutTheRequest(json.RootElement)
+                    ?? WhatJiraSaidAboutOneNamedThing(json.RootElement);
             }
             catch (JsonException)
             {
                 // Not every refusal comes back as JSON - a proxy in front of Jira can answer with anything.
                 return null;
             }
+        }
+
+        private static string? WhatJiraSaidAboutTheRequest(JsonElement refusal)
+            => refusal.TryGetProperty("errorMessages", out var errorMessages) && errorMessages.ValueKind == JsonValueKind.Array
+                ? EverySentenceIn(errorMessages.EnumerateArray())
+                : null;
+
+        private static string? WhatJiraSaidAboutOneNamedThing(JsonElement refusal)
+            => refusal.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object
+                ? EverySentenceIn(errors.EnumerateObject().Select(named => named.Value))
+                : null;
+
+        /// <summary>
+        /// Jira names one problem per sentence and can name several at once, so dropping all but the first
+        /// would hide work still to do. Anything here that is not a sentence - a nested object, a number -
+        /// is passed over rather than printed as one, because what comes back from here is shown to an
+        /// operator as Jira's own words.
+        /// </summary>
+        private static string? EverySentenceIn(IEnumerable<JsonElement> answers)
+        {
+            var sentences = answers
+                .Where(answer => answer.ValueKind == JsonValueKind.String)
+                .Select(answer => answer.GetString())
+                .Where(sentence => !string.IsNullOrWhiteSpace(sentence))
+                .ToList();
+
+            return sentences.Count > 0 ? string.Join(" ", sentences) : null;
         }
 
         private static string WhatJiraAnswered(JiraRefusal refusal)

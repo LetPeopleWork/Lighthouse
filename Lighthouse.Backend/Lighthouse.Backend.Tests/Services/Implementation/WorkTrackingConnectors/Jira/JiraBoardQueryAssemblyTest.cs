@@ -76,9 +76,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             $"{{\"errorMessages\":[{JsonSerializer.Serialize(RemovedEndpointSentence)}],\"errors\":{{}}}}";
 
         /// <summary>A refusal with no errorMessages list in it at all - nothing here names a field to correct.</summary>
-        private const string ARefusalWithoutErrorMessages = "{\"errors\":{\"jql\":\"unparseable\"}}";
+        private const string ARefusalWithoutErrorMessages = "{\"warningMessages\":[]}";
 
         private const string ARefusalWhereErrorMessagesIsNotAList = "{\"errorMessages\":\"Expecting a field name\"}";
+
+        /// <summary>
+        /// The shape Jira answers with most often when it objects to a named field rather than to the query
+        /// as a whole: the list is there but empty, and everything it has to say is under errors instead.
+        /// </summary>
+        private const string ARefusalWithAnEmptyErrorMessagesList = "{\"errorMessages\":[],\"errors\":{}}";
+
+        private const string ARefusalWhereEveryMessageIsBlank = "{\"errorMessages\":[\"\",\"   \"],\"errors\":{}}";
+
+        /// <summary>
+        /// Valid JSON that is not an object, which a gateway can answer with. There are no properties on it
+        /// to ask after, and asking anyway throws rather than answering.
+        /// </summary>
+        private const string ARefusalThatIsJsonButNotAnObject = "[\"Bad Request\"]";
+
+        private const string AnUnknownProjectSentence =
+            "A value with ID '10042' does not exist for the field 'project'.";
+
+        private static readonly string ARefusalNamingTheFieldItRefused =
+            $"{{\"errorMessages\":[],\"errors\":{{\"project\":{JsonSerializer.Serialize(AnUnknownProjectSentence)}}}}}";
+
+        private static readonly string ARefusalSayingSomethingInBothHalves =
+            $"{{\"errorMessages\":[{JsonSerializer.Serialize(JiraRejectionSentence)}],"
+            + $"\"errors\":{{\"project\":{JsonSerializer.Serialize(AnUnknownProjectSentence)}}}}}";
+
+        /// <summary>
+        /// Something other than the keyed object Jira answers with under errors - which is how an older
+        /// endpoint or a gateway writing its own envelope can fill that name in.
+        /// </summary>
+        private const string ARefusalWhereErrorsIsNotAnObject =
+            "{\"errorMessages\":[],\"errors\":\"Something went wrong\"}";
 
         /// <summary>What a proxy or an application server standing in front of Jira answers: not JSON at all.</summary>
         private const string ARefusalThatIsNotJson =
@@ -502,13 +533,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         /// <summary>
         /// Not every refusal is a complaint about the query. Jira can answer without the errorMessages list,
-        /// with something other than a list under that name, or - when a proxy in front of Jira turns the
-        /// request away - with no JSON at all. Whatever refused in that last case never read the query, so it
+        /// with something other than a list under that name, with the list present but holding nothing or
+        /// nothing but blanks, or - when a proxy in front of Jira turns the request away - with something
+        /// that is not a JSON object at all. Whatever refused in that last case never read the query, so it
         /// has nothing to say about it, and a bare status leaves the reader with nothing to act on. The query
-        /// Lighthouse sent is then the whole of what is still known about the failure.
+        /// Lighthouse sent is then the whole of what is still known about the failure, and reporting an empty
+        /// explanation instead would leave the reader with less than the status alone gave them.
         /// </summary>
         [TestCase(ARefusalWithoutErrorMessages)]
         [TestCase(ARefusalWhereErrorMessagesIsNotAList)]
+        [TestCase(ARefusalWithAnEmptyErrorMessagesList)]
+        [TestCase(ARefusalWhereEveryMessageIsBlank)]
+        [TestCase(ARefusalWhereErrorsIsNotAnObject)]
+        [TestCase(ARefusalThatIsJsonButNotAnObject)]
         [TestCase(ARefusalThatIsNotJson)]
         public async Task ValidateTeamSettings_RefusalNamesNothingToCorrect_ReportsTheQueryLighthouseSent(string refusalBody)
         {
@@ -565,6 +602,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(result.TechnicalDetails, Is.EqualTo(
                 "Field 'foo' does not exist or you do not have permission to view it."
                 + " Field 'bar' does not exist or you do not have permission to view it."));
+        }
+
+        /// <summary>
+        /// When Jira objects to one named field rather than to the query as a whole, it answers with an empty
+        /// errorMessages list and puts the sentence under errors, keyed by the field. Reading only the list
+        /// would report "Jira answered 400 without saying why" about a refusal where Jira said exactly why -
+        /// and a project or a status that does not exist on the instance is the commonest way to get here.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_JiraNamedTheFieldItRefused_ReportsWhatJiraSaidAboutIt()
+        {
+            var result = await TeamValidationWhereSearchAnswers(
+                OnDataCenter, HttpStatusCode.BadRequest, ARefusalNamingTheFieldItRefused);
+
+            Assert.That(result.TechnicalDetails, Is.EqualTo(AnUnknownProjectSentence));
+        }
+
+        /// <summary>
+        /// Jira can fill in both halves at once, and they are not two separate problems: the sentence about
+        /// the request as a whole is the complete one, and the entries keyed by field are the same complaint
+        /// broken up. Leading with the per-field note would hand the reader the narrower half of an answer
+        /// whose wider half was right there.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_JiraSaidSomethingInBothHalves_LeadsWithWhatItSaidAboutTheQuery()
+        {
+            var result = await TeamValidationWhereSearchAnswers(
+                OnDataCenter, HttpStatusCode.BadRequest, ARefusalSayingSomethingInBothHalves);
+
+            Assert.That(result.TechnicalDetails, Is.EqualTo(JiraRejectionSentence));
         }
 
         /// <summary>
