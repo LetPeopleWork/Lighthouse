@@ -9,9 +9,11 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Net;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -22,6 +24,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private const string SecretFieldKey = "Personal Access Token";
 
         private const string UnreadableValue = "unreadable-stored-value";
+
+        private const string RefusalSentence = "Field 'sprnt' does not exist or you do not have permission to view it.";
+
+        private const string RefusedQuery = "project = PROJ AND sprnt is not EMPTY";
+
+        private const string RefusedTeamName = "Payments";
 
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IRepository<Team>> teamRepoMock;
@@ -360,6 +368,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     "Blaming a credential for an outage sends the operator to rotate a key that was never broken.");
                 Assert.That(summary, Does.Not.Contain("credential").IgnoreCase);
             }
+        }
+
+        [Test]
+        public void TriggerUpdate_ConnectorRefusedTheQuery_TheReasonNamesTheTeamTheAnswerAndTheQuery()
+        {
+            var team = SetupTeamWhoseQueryIsRefused();
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            var summary = ReadUpdateSummary();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary, Does.Contain(team.Name),
+                    "An instance refreshing several teams at once writes several of these lines, and a "
+                    + "refusal that names none of them cannot be paired with the team that caused it.");
+                Assert.That(summary, Does.Contain(RefusalSentence),
+                    "What the work tracking system said is the only part of the failure anyone can act on - a "
+                    + "status code on its own says nothing about what to change.");
+                Assert.That(summary, Does.Contain(RefusedQuery),
+                    "Without the query, an operator cannot tell which of the configured filters was refused.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_ConnectorRefusedTheQuery_TheFailureStillPropagatesAndTheRefreshIsUnsuccessful()
+        {
+            var team = SetupTeamWhoseQueryIsRefused();
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<WorkTrackingRefusedException>(),
+                    "Swallowing the failure to attach a reason would leave the refresh looking like it merely "
+                    + "returned nothing, and every surface reading the outcome would be told it completed.");
+                Assert.That(recordedRefresh?.Success, Is.False,
+                    "A refresh the work tracking system refused to run is not a refresh that worked.");
+            }
+        }
+
+        private Team SetupTeamWhoseQueryIsRefused()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            team.Name = RefusedTeamName;
+
+            SetupTeams([team]);
+
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ThrowsAsync(new WorkTrackingRefusedException(RefusalSentence, RefusedQuery, HttpStatusCode.BadRequest));
+
+            return team;
         }
 
         private Team SetupTeamWhoseCredentialCannotBeRead()

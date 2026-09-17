@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private const string UnreadableValue = "unreadable";
 
+        private const string RefusalSentence = "Jira could not parse this query.";
+
         private Mock<ICryptoService> cryptoServiceMock;
 
         [SetUp]
@@ -179,13 +181,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var enormousQuery = new string('x', 4000);
 
             var reason = ReasonProbe.Build(
-                new WorkTrackingRefusedException("Jira could not parse this query.", enormousQuery, HttpStatusCode.BadRequest));
+                new WorkTrackingRefusedException(RefusalSentence, enormousQuery, HttpStatusCode.BadRequest));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(reason, Has.Length.LessThan(1000),
                     "This is one line in a log an operator scrolls through; it has to end somewhere.");
-                Assert.That(reason, Does.Contain("Jira could not parse this query."),
+                Assert.That(reason, Does.Contain(RefusalSentence),
                     "Shortening the query must not cost the sentence that names what was wrong.");
                 Assert.That(reason, Does.EndWith("…"),
                     "A query that simply stops mid-clause reads like the query Lighthouse sent was itself cut short.");
@@ -202,11 +204,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var queryEndingInAstralCharacters = new string('x', 499) + string.Concat(Enumerable.Repeat("🚀", 20));
 
             var reason = ReasonProbe.Build(
-                new WorkTrackingRefusedException("Jira could not parse this query.", queryEndingInAstralCharacters, HttpStatusCode.BadRequest));
+                new WorkTrackingRefusedException(RefusalSentence, queryEndingInAstralCharacters, HttpStatusCode.BadRequest));
 
             Assert.That(Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(reason)), Is.EqualTo(reason),
                 "Written out and read back, the line has to say the same thing - a half character left at the "
                 + "cut comes back as a replacement mark, and everything downstream stores that instead.");
+        }
+
+        /// <summary>
+        /// A query that is exactly as long as a line can carry needs nothing done to it. Cut here, it would
+        /// come back with a trailing mark telling the operator that something was left out when nothing was.
+        /// </summary>
+        [Test]
+        public void ShortEnoughToReport_QueryIsExactlyAsLongAsALineCanCarry_ReportsItWholeAndDoesNotSayItWasCut()
+        {
+            var queryThatExactlyFits = new string('x', 500);
+
+            var refusal = new WorkTrackingRefusedException(RefusalSentence, queryThatExactlyFits, HttpStatusCode.BadRequest);
+
+            Assert.That(refusal.RejectedQuery, Is.EqualTo(queryThatExactlyFits),
+                "Nothing was left out, so nothing may suggest it was - an operator comparing this against the "
+                + "filter they configured has to be able to tell that they are looking at the whole of it.");
+        }
+
+        /// <summary>
+        /// Some characters are written as two halves. A cut that lands between them keeps a half that cannot be
+        /// written as UTF-8 at all, and this text travels onward as JSON - to a log sink, and to the settings
+        /// screen. Keeping the other half instead would push the line past the length everything downstream
+        /// was sized for, so the whole character goes.
+        /// </summary>
+        [Test]
+        public void ShortEnoughToReport_TheCutFallsInsideACharacterWrittenAsTwoHalves_DropsThatWholeCharacter()
+        {
+            var queryWithOneTwoHalfCharacterOnTheCut = new string('x', 499) + "🚀" + new string('y', 600);
+
+            var refusal = new WorkTrackingRefusedException(
+                RefusalSentence, queryWithOneTwoHalfCharacterOnTheCut, HttpStatusCode.BadRequest);
+
+            Assert.That(refusal.RejectedQuery, Is.EqualTo(new string('x', 499) + "…"),
+                "The character straddling the cut is dropped whole: half of it is unwritable, and all of it "
+                + "is one character more than the line was sized to carry.");
+        }
+
+        /// <summary>
+        /// Whether the connector already named the query in its own sentence decides whether anyone composing
+        /// prose around that sentence adds the query underneath.
+        /// </summary>
+        [Test]
+        public void ExplanationNamesTheQuery_TheRefusalCarriesNoQueryAtAll_IsFalse()
+        {
+            var refusal = new WorkTrackingRefusedException(RefusalSentence, string.Empty, HttpStatusCode.BadRequest);
+
+            Assert.That(refusal.ExplanationNamesTheQuery, Is.False,
+                "Every sentence ever written contains the empty string. A refusal carrying no query that "
+                + "reported its explanation already named one would have the query left out everywhere "
+                + "downstream, on the grounds that it was already there.");
         }
 
         private static WorkTrackingSystemConnection CreateConnection(params (string Key, string Value)[] secrets)
