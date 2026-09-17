@@ -42,4 +42,55 @@ describe("readConnectionValidation", () => {
 		expect(readConnectionValidation(null).isValid).toBe(false);
 		expect(readConnectionValidation(undefined).isValid).toBe(false);
 	});
+
+	// Bug #6020. The connectors have long said exactly what was wrong — which field could not be
+	// found, which credential was refused, what Jira answered — and this function dropped every word
+	// of it, leaving the screens with nothing to show but a sentence they had written themselves.
+	it("carries the sentence the connector sent, which is the point of asking it", () => {
+		const refusal = readConnectionValidation({
+			isValid: false,
+			code: "additional_fields_invalid",
+			message: "Some additional fields could not be found: parent",
+			technicalDetails:
+				"Verify field names or references in Jira and update the additional field configuration.",
+			fieldName: "AdditionalFields",
+		});
+
+		expect(refusal).toEqual({
+			isValid: false,
+			code: "additional_fields_invalid",
+			message: "Some additional fields could not be found: parent",
+			technicalDetails:
+				"Verify field names or references in Jira and update the additional field configuration.",
+			fieldName: "AdditionalFields",
+		});
+	});
+
+	it("carries an explanation that came without a hint or a field", () => {
+		expect(
+			readConnectionValidation({
+				isValid: false,
+				code: "connection_failed",
+				message: "Could not reach Jira with the provided URL.",
+				technicalDetails: null,
+				fieldName: null,
+			}),
+		).toEqual({
+			isValid: false,
+			code: "connection_failed",
+			message: "Could not reach Jira with the provided URL.",
+		});
+	});
+
+	// The caller has its own sentence for this case. Handing it an empty string would put a blank
+	// where that sentence belongs, so nothing is better than something empty.
+	it("reads an empty explanation as no explanation, so the caller can fall back", () => {
+		expect(
+			readConnectionValidation({ isValid: false, message: "", code: "" }),
+		).toEqual({ isValid: false });
+	});
+
+	it("leaves the explanation absent when a connector answered a bare verdict", () => {
+		expect(readConnectionValidation(false)).toEqual({ isValid: false });
+	});
 });

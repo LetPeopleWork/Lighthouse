@@ -430,11 +430,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     ex.Message,
                     JiraWorkTrackingOptionNames.Url);
             }
-            catch
+            catch (Exception exception)
             {
+                logger.LogInformation(exception, "Error during Validation of Connection {ConnectionName}", connection.Name);
+
                 return ConnectionValidationResult.Failure(
                     "validation_failed",
-                    "Connection validation failed due to an unexpected error.");
+                    "Connection validation failed due to an unexpected error.",
+                    exception.Message);
             }
         }
 

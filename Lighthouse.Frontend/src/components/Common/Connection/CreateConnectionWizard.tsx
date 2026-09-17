@@ -37,6 +37,10 @@ const POPUP_BLOCKED_COPY =
 
 const CANCELLED_COPY = "OAuth was cancelled. Click Connect to try again.";
 
+/** Said only when the refusal arrived without a word of its own to say. */
+const UNEXPLAINED_REFUSAL_COPY =
+	"Could not validate the connection. Check your settings and try again.";
+
 interface InlineMessage {
 	severity: "error" | "info";
 	text: string;
@@ -375,18 +379,17 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 			if (validation.isValid) {
 				setActiveStep(2);
 			} else {
-				setValidationError(
-					"Could not validate the connection. Check your settings and try again.",
-				);
+				// A refusal that came as a verdict explains itself just as a thrown one does; the
+				// branch below already shows that explanation, and this one used to talk over it.
+				setValidationError(validation.message ?? UNEXPLAINED_REFUSAL_COPY);
+				setValidationTechnicalDetails(validation.technicalDetails ?? null);
 			}
 		} catch (error) {
 			if (error instanceof ApiError && error.code !== 403) {
 				setValidationError(error.message);
 				setValidationTechnicalDetails(error.technicalDetails ?? null);
 			} else {
-				setValidationError(
-					"Could not validate the connection. Check your settings and try again.",
-				);
+				setValidationError(UNEXPLAINED_REFUSAL_COPY);
 			}
 		} finally {
 			setValidating(false);

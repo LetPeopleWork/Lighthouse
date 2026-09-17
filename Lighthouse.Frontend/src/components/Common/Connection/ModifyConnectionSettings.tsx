@@ -53,6 +53,10 @@ const OAUTH_LOCKED_COPY =
 const UNREADABLE_SECRET_COPY =
 	"This secret cannot be read with the current encryption key. Enter it again to store it under the key this instance uses now.";
 
+/** Said only when the refusal arrived without a word of its own to say. */
+const unexplainedRefusalCopy = (workTrackingSystemTerm: string): string =>
+	`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`;
+
 const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
 	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
 
@@ -92,7 +96,7 @@ function resolveValidationErrorMessage(
 	}
 
 	return {
-		message: `Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
+		message: unexplainedRefusalCopy(workTrackingSystemTerm),
 		details: null,
 	};
 }
@@ -434,11 +438,15 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			};
 
 			try {
-				const { isValid } = await validateConnectionSettings(connection);
-				if (!isValid) {
+				const verdict = await validateConnectionSettings(connection);
+				if (!verdict.isValid) {
+					// The connector knows which field it could not find, which credential was refused,
+					// what the work tracking system answered. Saying our own sentence over the top of
+					// that leaves the person with nothing to act on.
 					setValidationErrorMessage(
-						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
+						verdict.message ?? unexplainedRefusalCopy(workTrackingSystemTerm),
 					);
+					setValidationTechnicalDetails(verdict.technicalDetails ?? null);
 					return;
 				}
 			} catch (error) {

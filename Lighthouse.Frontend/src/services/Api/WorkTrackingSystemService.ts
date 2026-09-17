@@ -1,4 +1,5 @@
 import {
+	type IConnectionValidationPayload,
 	type IConnectionValidationResult,
 	readConnectionValidation,
 } from "../../models/WorkTracking/ConnectionValidationResult";
@@ -53,7 +54,7 @@ export class WorkTrackingSystemService
 	): Promise<IConnectionValidationResult> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<
-				boolean | Partial<IConnectionValidationResult>
+				boolean | IConnectionValidationPayload
 			>(
 				"/worktrackingsystemconnections/validate",
 				this.serializeConnectionForApi(workTrackingConnection),

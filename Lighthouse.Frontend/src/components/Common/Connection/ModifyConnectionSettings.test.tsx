@@ -534,6 +534,42 @@ describe("ModifyConnectionSettings", () => {
 			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
 		});
 
+		// Bug #6020. The connector said which field it could not find; this screen used to answer with
+		// a sentence of its own that named nothing, and the reporter spent an evening on it.
+		it("shows the connector's own explanation when the verdict carries one", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockResolvedValue({
+				isValid: false,
+				code: "additional_fields_invalid",
+				message: "Some additional fields could not be found: parent",
+				technicalDetails:
+					"Verify field names or references in Jira and update the additional field configuration.",
+			});
+
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Some additional fields could not be found: parent"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByText(/Verify field names or references in Jira/i),
+				).toBeInTheDocument();
+			});
+
+			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
+		});
+
 		it("shows API error details when validation throws ApiError", async () => {
 			const user = userEvent.setup();
 			defaultProps.validateConnectionSettings.mockRejectedValue(

@@ -587,6 +587,44 @@ describe("CreateConnectionWizard", () => {
 			expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
 		});
 
+		// Bug #6020. A refusal that arrives as a verdict rather than as a thrown error carried its
+		// explanation just as the thrown one does, and the wizard showed its own sentence instead.
+		it("shows the connector's own explanation when the verdict carries one", async () => {
+			const user = userEvent.setup();
+			const validateConnection = vi.fn().mockResolvedValue({
+				isValid: false,
+				code: "authentication_failed",
+				message: "Authentication failed for Azure DevOps.",
+				technicalDetails: "Azure DevOps returned 401 Unauthorized.",
+			});
+			renderWizard({ validateConnection });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Azure DevOps/i }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: /Azure DevOps/i }));
+			await waitFor(() => {
+				expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
+			});
+			await user.type(
+				screen.getByLabelText("Organization URL"),
+				"https://dev.azure.com/org",
+			);
+			await user.type(screen.getByLabelText("Access Token"), "my-token");
+			await user.click(screen.getByRole("button", { name: /Next/i }));
+			await waitFor(() => {
+				expect(
+					screen.getByText("Authentication failed for Azure DevOps."),
+				).toBeInTheDocument();
+				expect(
+					screen.getByText(/Azure DevOps returned 401 Unauthorized\./i),
+				).toBeInTheDocument();
+			});
+			// Still on the Auth step: an explained refusal is still a refusal.
+			expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
+		});
+
 		it("shows detailed backend validation message when validation throws ApiError", async () => {
 			const user = userEvent.setup();
 			const validateConnection = vi

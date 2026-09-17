@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 
@@ -164,6 +165,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(verdict.Code, Is.EqualTo("connection_failed"));
                 Assert.That(verdict.FieldName, Is.EqualTo(JiraWorkTrackingOptionNames.Url));
             }
+        }
+
+        /// <summary>
+        /// Bug #6020. Every other exit from this method names what went wrong. This last catch answered
+        /// "an unexpected error" with nothing beside it and wrote nothing to the log either, so a failure
+        /// landing here left no trace anywhere - which is precisely how it was reported to us.
+        /// </summary>
+        [Test]
+        public async Task ValidateConnection_SomethingUnforeseenGoesWrong_SaysWhatItWasAndWritesItDown()
+        {
+            var logger = new Mock<ILogger<JiraWorkTrackingConnector>>();
+            var connection = JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = UnmatchedFieldReference,
+                Reference = UnmatchedFieldReference,
+            });
+
+            var connector = JiraConnectorTestSetup.AConnectorOver(
+                AHandlerServing(new StubAnswer(HttpStatusCode.OK, "this is not a field list")), logger.Object);
+
+            var verdict = await connector.ValidateConnection(connection);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo("validation_failed"));
+                Assert.That(verdict.TechnicalDetails, Is.Not.Null.And.Not.Empty);
+            }
+
+            logger.Verify(
+                log => log.Log(
+                    It.IsAny<LogLevel>(),
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsNotNull<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
         }
 
         [Test]
