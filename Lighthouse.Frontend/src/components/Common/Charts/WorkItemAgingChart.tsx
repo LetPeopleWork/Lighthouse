@@ -472,7 +472,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
 	const [percentileSource, setPercentileSource] =
 		useState<PercentileSource>("cycleTime");
-	const { background, setBackground } = useAgingBackground();
+	const { background, chooseBackground } = useAgingBackground();
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 
@@ -631,7 +631,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								exclusive
 								onChange={(_event, next) => {
 									if (next !== null) {
-										setBackground(next as AgingBackground);
+										chooseBackground(next as AgingBackground);
 									}
 								}}
 								size="small"

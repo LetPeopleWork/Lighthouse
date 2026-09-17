@@ -15,7 +15,8 @@ export type AgingBackground = "off" | "pace" | "risk";
 
 interface UseAgingBackgroundResult {
 	background: AgingBackground;
-	setBackground: (next: AgingBackground) => void;
+	/** Applies the choice and remembers it, so it becomes the default on every chart. */
+	chooseBackground: (next: AgingBackground) => void;
 }
 
 /**
@@ -32,7 +33,7 @@ const storedBackground = (stored: string | null): AgingBackground | null => {
 };
 
 export const useAgingBackground = (): UseAgingBackgroundResult => {
-	const [background, setBackgroundState] = useState<AgingBackground>("off");
+	const [background, setBackground] = useState<AgingBackground>("off");
 
 	useEffect(() => {
 		let stored: string | null = null;
@@ -45,12 +46,12 @@ export const useAgingBackground = (): UseAgingBackgroundResult => {
 
 		const resolved = storedBackground(stored);
 		if (resolved !== null) {
-			setBackgroundState(resolved);
+			setBackground(resolved);
 		}
 	}, []);
 
-	const setBackground = useCallback((next: AgingBackground): void => {
-		setBackgroundState(next);
+	const chooseBackground = useCallback((next: AgingBackground): void => {
+		setBackground(next);
 		try {
 			localStorage.setItem(AGING_BACKGROUND_STORAGE_KEY, next);
 		} catch {
@@ -58,5 +59,5 @@ export const useAgingBackground = (): UseAgingBackgroundResult => {
 		}
 	}, []);
 
-	return { background, setBackground };
+	return { background, chooseBackground };
 };

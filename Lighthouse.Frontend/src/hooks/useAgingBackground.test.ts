@@ -25,7 +25,7 @@ describe("useAgingBackground", () => {
 	it("keeps a choice across remounts so it becomes the default everywhere", () => {
 		const first = renderHook(() => useAgingBackground());
 		act(() => {
-			first.result.current.setBackground("risk");
+			first.result.current.chooseBackground("risk");
 		});
 		first.unmount();
 
@@ -39,10 +39,10 @@ describe("useAgingBackground", () => {
 		const { result } = renderHook(() => useAgingBackground());
 
 		act(() => {
-			result.current.setBackground("pace");
+			result.current.chooseBackground("pace");
 		});
 		act(() => {
-			result.current.setBackground("risk");
+			result.current.chooseBackground("risk");
 		});
 
 		expect(result.current.background).toBe("risk");
@@ -80,7 +80,7 @@ describe("useAgingBackground", () => {
 			const { result } = renderHook(() => useAgingBackground());
 
 			act(() => {
-				result.current.setBackground("risk");
+				result.current.chooseBackground("risk");
 			});
 
 			expect(result.current.background).toBe("risk");

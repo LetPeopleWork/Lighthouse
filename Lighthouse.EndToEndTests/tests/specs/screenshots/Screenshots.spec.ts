@@ -974,7 +974,7 @@ testWithDemo(
 		await expect(agingWidget.Widget).toBeVisible();
 
 		const agingChart = new WorkItemAgingChart(page, "aging");
-		await agingChart.togglePacePercentiles();
+		await agingChart.showPacePercentiles();
 		await expect.poll(() => agingChart.countPaceBands()).toBeGreaterThan(0);
 
 		await takeElementScreenshot(

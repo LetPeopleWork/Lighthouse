@@ -1,7 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
-const PACE_BANDS_TOGGLE_TEST_ID = "pace-bands-toggle";
+const BACKGROUND_MODES_TEST_ID = "aging-background-modes";
 const PACE_BAND_TEST_ID = "pace-band";
+const SLE_RISK_ZONE_TEST_ID = "sle-risk-zone";
 const AGE_BAND_CELL_TEST_ID = "ageBandColumnContent";
 const AGE_BAND_COLUMN_HEADER = "Work Item Age Band";
 
@@ -19,8 +20,17 @@ export class WorkItemAgingChart {
 		return this.widget;
 	}
 
-	get pacePercentilesToggle(): Locator {
-		return this.widget.getByTestId(PACE_BANDS_TOGGLE_TEST_ID);
+	/**
+	 * The background is one channel, so the chart offers a choice of what to paint there rather
+	 * than a switch per overlay. Only the modes the chart can actually paint are rendered: pace
+	 * percentiles need per-state history, and the risk zones need a published target.
+	 */
+	get backgroundModes(): Locator {
+		return this.widget.getByTestId(BACKGROUND_MODES_TEST_ID);
+	}
+
+	private backgroundMode(name: string | RegExp): Locator {
+		return this.backgroundModes.getByRole("button", { name });
 	}
 
 	get paceBands(): Locator {
@@ -31,8 +41,25 @@ export class WorkItemAgingChart {
 		return this.paceBands.count();
 	}
 
-	async togglePacePercentiles(): Promise<void> {
-		await this.pacePercentilesToggle.click();
+	get sleRiskZones(): Locator {
+		return this.widget.getByTestId(SLE_RISK_ZONE_TEST_ID);
+	}
+
+	async countSleRiskZones(): Promise<number> {
+		return this.sleRiskZones.count();
+	}
+
+	async showPacePercentiles(): Promise<void> {
+		await this.backgroundMode("Pace percentiles").click();
+	}
+
+	async showSleRisk(): Promise<void> {
+		// Matched on the suffix because the term is renameable under Terminology.
+		await this.backgroundMode(/Risk$/).click();
+	}
+
+	async hideBackground(): Promise<void> {
+		await this.backgroundMode("Off").click();
 	}
 
 	/**

@@ -42,10 +42,10 @@ test("flow coach toggles per-state pace bands on and off on the team Work Item A
 
 	await expect.poll(() => agingChart.countPaceBands()).toBe(0);
 
-	await agingChart.togglePacePercentiles();
+	await agingChart.showPacePercentiles();
 	await expect.poll(() => agingChart.countPaceBands()).toBeGreaterThan(0);
 
-	await agingChart.togglePacePercentiles();
+	await agingChart.hideBackground();
 	await expect.poll(() => agingChart.countPaceBands()).toBe(0);
 
 	await expect
