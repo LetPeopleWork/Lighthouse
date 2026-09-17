@@ -19,6 +19,9 @@ const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith d
 const DEMO_TEAM_NAME = "Team Zenith";
 const SLE_PROBABILITY = 85;
 
+/** Zero on both halves is how the dashboard is told a team has published no SLE. */
+const NO_SLE = 0;
+
 /** A previous period was found and compared, rather than the no-baseline placeholder. */
 const MEASURED_TREND_DIRECTIONS = ["up", "down", "flat"];
 
@@ -74,6 +77,11 @@ test("@US-05 a delivery lead is told to define an SLE, then sees the Work Item A
 		"an SLE has to be at least one day, so the second-oldest item must be at least two days old",
 	).toBeGreaterThanOrEqual(1);
 
+	// The demo seeder publishes an SLE, and the first leg below is about the team that
+	// has not. Set the precondition here rather than inheriting it, so a change to the
+	// demo data cannot silently turn that leg into a different test.
+	await configureServiceLevelExpectation(request, teamId, NO_SLE, NO_SLE);
+
 	await page.goto("/");
 	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
 	const metrics = await teamDetail.goToMetrics();
@@ -89,9 +97,8 @@ test("@US-05 a delivery lead is told to define an SLE, then sees the Work Item A
 
 	const widget = new WorkItemAgePercentilesWidget(page);
 
-	// The seeded team has no SLE, so the chip is a prompt rather than a measurement:
-	// red, pointing at the setting it needs. This is deliberately the first thing a
-	// delivery lead sees.
+	// With no SLE, the chip is a prompt rather than a measurement: red, pointing at the
+	// setting it needs. This is deliberately the first thing a delivery lead sees.
 	await expect(widget.rag.chip).toBeVisible();
 	await expect.poll(() => widget.rag.readStatus()).toBe("red");
 	expect(await widget.rag.readLabel()).toBe(ragLabelFor("red"));

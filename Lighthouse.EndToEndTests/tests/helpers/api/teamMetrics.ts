@@ -61,8 +61,8 @@ export async function readInProgressWorkItemAges(
 /**
  * Sets the team's SLE by round-tripping its settings, so every unrelated setting
  * (and the concurrency token) is preserved. The dashboard treats an SLE as absent
- * unless BOTH the probability and the range are above zero, which is how the
- * seeded demo team starts out.
+ * unless BOTH the probability and the range are above zero, so passing zero for
+ * both is how a spec puts a team back to having published no SLE.
  */
 export async function configureServiceLevelExpectation(
 	api: APIRequestContext,
