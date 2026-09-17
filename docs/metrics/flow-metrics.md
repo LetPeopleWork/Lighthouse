@@ -109,6 +109,23 @@ The band names are read off the percentile numbers themselves — with the defau
 
 Sort the column to bring the worst-aging items to the top, filter it to a single band through the grid's own column filter, or export the list to CSV, where the band reads in words. When no state in the workflow has any history at all, the column is not shown — a column reading `No history` on every row says nothing the chart is not already saying by drawing no zones.
 
+## SLE Risk Column
+
+The SLE line tells you which items have **already** missed the target. The **SLE Risk** column tells you which ones are about to, while you can still do something about it. It sits beside the Age Band in the same dialogs — **View Data** in the widget header, or a click on a single bubble — and is shown only for teams that have published an SLE. The header follows whatever you have renamed SLE to under [Terminology Configuration](../settings/configuration.html#terminology-configuration).
+
+The number answers one question: *of every item that was still open at this age, what share went on to take longer than the target?* So an item that has been open 9 days, on a team where six of the seven items that ever reached day 9 ended up past the target, reads `86%`. Both parts come from the work your team finished inside the date range you are looking at, so the column follows the range picker like everything else on the page.
+
+Three consequences worth knowing:
+
+- An item older than the target reads `100%`. That is the arithmetic, not a special rule — every item that ran that long necessarily ran longer than the target.
+- An item older than anything your team has ever finished reads `Beyond history`, uncoloured, and sorts below every answered item. There is nothing left to compare it against, and a number there would read as certainty rather than as silence.
+- An item that finished in exactly the target number of days **met** the target and is not counted as a miss.
+
+Sort the column to bring the items most likely to breach to the top, or export the list to CSV, where the value reads as the percentage you see rather than as a bare number.
+
+{: .note}
+The risk uses the SLE **range** — the number of days — and not the probability half of the pair. The probability is a statement about the team's whole population and is already reported by the widget's status indicator; the risk is a statement about one item, measured against what actually happened.
+
 ## Status Indicator
 
 | Status | Condition |

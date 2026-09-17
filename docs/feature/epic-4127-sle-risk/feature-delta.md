@@ -525,3 +525,105 @@ No collision with `OUT-1` (#5884's pace-band classification): that one takes per
 3. **`BaseMetricsView` wiring has no specification yet.** The fetch and the descriptor construction are slice-01 work with no acceptance test above them; the dialog specifications assume a descriptor arrives. The portfolio-page absence (AC-01.6's frontend half) belongs there too.
 
 ---
+
+# Wave: DEVOPS — skipped
+
+Skipped for this Epic on the user's explicit instruction, 2026-09-17. Recorded rather than left
+silent, because a skipped wave otherwise gets improvised downstream.
+
+What it would have decided, and why nothing is owed here: slice 01 adds one read route inside an
+existing controller, under the guard that controller already carries. No new infrastructure, no new
+dependency, no migration, no persistence, no new outbound call, no new secret, and no change to how
+the app is built, deployed or observed. Slices 02 and 03 are frontend-only. **Slice 04 is not
+covered by this skip** — it writes to a customer's tracker on every update, which is a production
+behaviour with a blast radius, and it should have its own DEVOPS pass when it is unblocked.
+
+# Wave: DELIVER — slice 01
+
+Run 2026-09-17 against ADO Story #6016. All four hand-off items from DISTILL are closed, both red
+markers are gone, and the gates below are the evidence.
+
+## Wave: DELIVER / [REF] The four carried items
+
+1. **The markers came off.** `[Ignore]` on `Slice01SleRiskReadTest` and `describe.skip` on the
+   `SLE Risk column` block are both deleted. Neither `Ignore` nor `describe.skip` survives anywhere
+   under `epic-4127`.
+2. **Rounding chosen: away from zero** (`MidpointRounding.AwayFromZero`). A risk landing exactly
+   between two whole percentages is reported as the worse of the two, because this number exists to
+   decide which items get attention today and rounding half of them down is the wrong direction to
+   be wrong in. Pinned by `Risk_HalfwayBetweenTwoWholePercentages_RoundsToTheWorseOne` (1/8 = 12.5%
+   reads 13, not 12), which is the only value in the suite that distinguishes the two modes.
+3. **Age ≤ 0 answers `null`**, per DESIGN open question 3. `AgeOnDay` returns 0 for an item whose
+   start is missing or still ahead of the day being asked about; there is nothing to say about how
+   long such an item has survived, and a 0 would read as the safest item on the board. Tested at 0
+   and at a negative, so the calculator is total rather than merely lucky.
+4. **`BaseMetricsView` wiring now has its own specifications** — four of them, including AC-01.6's
+   frontend half. The portfolio one asserts that the portfolio metrics service cannot answer the
+   question at all, so it fails the moment `getSleRisk` moves onto the shared interface. That is the
+   one-line change DDD-3 says the scope decision has to survive.
+
+## Wave: DELIVER / [REF] One decision DESIGN did not anticipate
+
+**The cache key carries the target as well as the window.** DDD-9 called
+`SleRisk_{start}_{end}` complete on the grounds that ages are measured as-of the range end, which is
+true and is only half the question: the answer also depends on `ServiceLevelExpectationRange`, and
+nothing invalidates the metrics cache when a team's settings are saved — `InvalidateTeamMetrics` is
+reached by a refresh, a blackout change and the recording handlers, not by a settings write. Every
+other cached metric on this service is a function of stored work alone, so this is the first one for
+which that matters. A coach tightening the target in one click would otherwise have kept reading the
+old odds until the next refresh, with nothing on screen saying the number predated the change.
+
+The key is now `SleRisk_{start}_{end}_{range}`, and
+`Tightening_the_target_changes_the_answer_rather_than_repeating_the_old_one` fails without it.
+
+Found by the independent reviewer pass, not by the author.
+
+## Wave: DELIVER / [REF] Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 errors, 0 warnings from this change |
+| `dotnet test` (connector categories excluded) | 6972 passed, 1 environmental failure — the Defender SQLite file-lock on `ServiceProviderValidationTest`, not a regression |
+| `dotnet format analyzers --severity info` | 0 findings in any file this change touches |
+| `pnpm test` | 5239 passed, 371 files |
+| `pnpm build` | clean, which implies a clean Biome check |
+| Stryker backend | **100%** — see `mutation/results.md` |
+| Stryker frontend | **94.12%** — 2 survivors, one equivalent mutant, documented |
+| Independent review | `nw-software-crafter-reviewer`, rejected on the cache key above; re-reviewed after the fix |
+
+## Wave: DELIVER / [REF] Finalization checklist
+
+No silent N/A — every item gets an answer.
+
+- **Docs prose** — done. `docs/metrics/flow-metrics.md` gains an **SLE Risk Column** section beside
+  the Age Band one: what the number answers, where it comes from, the three consequences a reader
+  will otherwise be surprised by (100% past the target, `Beyond history`, and meeting the target
+  exactly), and a note that the risk consumes the SLE *range* and not its probability.
+- **Per-feature screenshot** — **N/A, because** the sibling section this one sits beside carries
+  none either. A dialog column is reached by a click, through a widget that already has its
+  screenshot, and what it adds is words in a grid rather than a shape on a chart. Slice 03's chart
+  zones will want one; this does not.
+- **Demo data** — **N/A, because** the demo teams already carry an SLE, so the column appears on
+  them with no seeding change. Nothing about the column needs a scenario that does not exist.
+- **Lighthouse-Clients CLI/MCP versioning** — **N/A, because** DISCUSS put both out of scope and
+  DESIGN's correction states the reason precisely: a gate would be owed if a wrapper were added, and
+  none is. No `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is due.
+- **Website marketing surface** — **N/A, because** this is one column inside a dialog, gated on a
+  stability measurement that has not been taken. It is not a headline until the Epic is whole.
+- **Release Notes tag on #6016** — pending the user's call; the tag is the contract with
+  `/release-notes` and is never added silently.
+- **RBAC** — no change. The read rides the existing class-level `TeamRead` guard, and
+  `Someone_who_may_not_see_the_team_may_not_see_what_is_at_risk_on_it` fails if it ever acquires its
+  own.
+
+## Wave: DELIVER / [REF] What slice 02 inherits
+
+- `SleRiskCalculator` is reachable from anywhere and takes the age as an input, so the card chip
+  (D11, ≥ 50%) and slice 04's write-back consume the same rule without a second implementation.
+- The endpoint lists **every** in-flight item, including the ones it cannot answer for. AC-02.6
+  counts a `Beyond history` item as at-risk, and the payload already carries it as `null` rather
+  than omitting the row — no shape change needed.
+- `OUT-4127-risk-stability` is still the gate on slices 02–04, and it is still unmeasured. It wants
+  a real team on a production-restored instance, not this suite.
+
+---
