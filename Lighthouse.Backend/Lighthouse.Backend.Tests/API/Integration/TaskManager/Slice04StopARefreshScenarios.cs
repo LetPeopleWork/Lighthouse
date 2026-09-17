@@ -68,6 +68,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatTeamIsStillOnTheTaskList(running);
         }
 
+        // @driving_port @real-io @AC-04.1 — the cancel is what the instance did; telling the browser is only
+        // how it says so. A hub that cannot be reached must not leave work the operator stopped still queued,
+        // and the operator has to be able to find out from the log that a push was lost.
+        [Test]
+        public async Task A_refresh_cancelled_while_the_browser_cannot_be_reached_is_still_cancelled()
+        {
+            var running = GivenATeamThatIsRefreshedOnSchedule();
+            var waiting = GivenATeamThatIsRefreshedOnSchedule();
+            GivenTheTrackerDoesNotAnswerUntilWeSaySo();
+            GivenTellingTheBrowserFails();
+
+            await WhenARefreshOfThatTeamIsUnderWay(running);
+            await WhenARefreshOfThatTeamIsAlsoAskedFor(waiting);
+            await WhenTheOperatorCancels(waiting);
+
+            await ThenTheTaskListAlreadyDoesNotMention(waiting);
+            ThenTheInstanceSaysWhichWorkItCouldNotTellAnybodyAbout(waiting);
+        }
+
         // @driving_port @real-io @AC-04.2 — a running refresh stops rather than running to completion. The
         // interval is the subject of the probe's measurement; what this pins is that it stops at all.
         [Test]

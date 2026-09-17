@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using NUnit.Framework;
+using System.Globalization;
 using System.Net;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
@@ -68,6 +69,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                     await theTrackerMayAnswer.Task;
                     return [];
                 });
+        }
+
+        /// <summary>
+        /// A hub nobody is listening on, or one whose connection has gone. The cancel has already happened
+        /// by the time anything is pushed, so what this exercises is whether the instance can fail to say so
+        /// without failing to do it.
+        /// </summary>
+        private void GivenTellingTheBrowserFails()
+        {
+            TellingTheBrowserFails = true;
         }
 
         /// <summary>
@@ -187,6 +198,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                     "Work that never started is the one case where stopping it can be absolute. Reaching the "
                     + "tracker at all spends the rate limit an operator cancelled to protect.");
             }
+        }
+
+        /// <summary>
+        /// The row leaves the list because the instance recorded the cancel, not because a message reached
+        /// a browser. Told nothing and told wrongly are the same thing to an operator looking at the list,
+        /// so the log line is the only place the difference exists - and it has to name the work, because a
+        /// push that failed leaves nothing else behind.
+        /// </summary>
+        private void ThenTheInstanceSaysWhichWorkItCouldNotTellAnybodyAbout(SeededTeam team)
+        {
+            Assert.That(CapturedLogs.Warnings.Any(line => line.Contains(team.Id.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+                    && line.Contains(nameof(UpdateType.Team), StringComparison.Ordinal)),
+                Is.True,
+                "A failed push is invisible everywhere else: the work is cancelled either way and the row is "
+                + $"gone either way. Warnings logged: {string.Join(" | ", CapturedLogs.Warnings)}");
         }
 
         private async Task ThenThatRefreshStopsBeforeItHasReadEveryPage(SeededTeam team)

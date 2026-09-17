@@ -51,6 +51,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         protected Mock<IForecastService> ForecastServiceMock = null!;
 
         protected CapturedUpdateNotifications TheBrowserWasTold = null!;
+
+        /// <summary>
+        /// Makes every push to the browser fail, the way a hub whose connection has gone does. Volatile
+        /// because the queue pushes from its own threads, and a scenario sets this from the test's.
+        /// </summary>
+        protected volatile bool TellingTheBrowserFails;
         protected CapturedLogMessages CapturedLogs = null!;
         protected FlushCount WriteBackFlushes = null!;
 
@@ -58,6 +64,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         public void Init()
         {
             RootFactory = new TestWebApplicationFactory<Program>();
+            // NUnit runs every test in a fixture on one instance, so a scenario that broke the push would
+            // otherwise leave it broken for the rest of the class.
+            TellingTheBrowserFails = false;
             TheBrowserWasTold = new CapturedUpdateNotifications();
             CapturedLogs = new CapturedLogMessages();
             WriteBackFlushes = new FlushCount();
@@ -164,13 +173,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             var clientProxy = new Mock<IClientProxy>();
             clientProxy
                 .Setup(proxy => proxy.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
-                .Callback((string _, object[] arguments, CancellationToken _) =>
+                .Returns((string _, object[] arguments, CancellationToken _) =>
                 {
+                    if (TellingTheBrowserFails)
+                    {
+                        return Task.FromException(new InvalidOperationException("The browser cannot be reached."));
+                    }
+
                     if (arguments.Length > 0 && arguments[0] is UpdateStatus status)
                     {
                         TheBrowserWasTold.Record(status);
                     }
+
+                    return Task.CompletedTask;
                 });
 
             var hubContext = new Mock<IHubContext<UpdateNotificationHub>>();
