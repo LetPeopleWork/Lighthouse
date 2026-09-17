@@ -1,7 +1,7 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Epic 5375 slice 01 — the Features view: every Feature the visitor may see, across every Portfolio,
+ * The Features view: every Feature the visitor may see, across every Portfolio,
  * in the order Lighthouse forecasts them, each row saying where it sits.
  */
 export class FeaturesPage {
@@ -48,12 +48,9 @@ export class FeaturesPage {
 		return this.getFeatureRow(featureName).locator('[data-field="dependsOn"]');
 	}
 
-	/** Epic 5375 slice 02 — the sequence itself, which is what "nothing moved" is judged against. */
+	/** The sequence itself, which is what "nothing moved" is judged against. */
 	async getListedFeatureNames(): Promise<string[]> {
-		const cells = await this.featureRows
-			.locator('[data-field="name"]')
-			.allInnerTexts();
-		return cells.map((text) => text.trim());
+		return this.readColumn("name");
 	}
 
 	/** "#" while the tracker owns the order, the manual heading once this instance does. */
@@ -85,9 +82,20 @@ export class FeaturesPage {
 	}
 
 	async getListedPositions(): Promise<number[]> {
-		const cells = await this.featureRows
-			.locator('[data-field="position"]')
-			.allInnerTexts();
-		return cells.map((text) => Number.parseInt(text.trim(), 10));
+		const cells = await this.readColumn("position");
+		return cells.map((text) => Number.parseInt(text, 10));
+	}
+
+	/**
+	 * The grid puts a row into the page before it fills that row's cells in, and reading every cell of
+	 * a column happens in one shot that waits for nothing. Read a column the instant the rows appear
+	 * and it can come back empty — which a test then reads as "the list is empty" rather than "the
+	 * list is not drawn yet". So wait for the column's first cell, then read the column.
+	 */
+	private async readColumn(field: string): Promise<string[]> {
+		const cells = this.featureRows.locator(`[data-field="${field}"]`);
+		await expect(cells.first()).toBeVisible();
+		const texts = await cells.allInnerTexts();
+		return texts.map((text) => text.trim());
 	}
 }
