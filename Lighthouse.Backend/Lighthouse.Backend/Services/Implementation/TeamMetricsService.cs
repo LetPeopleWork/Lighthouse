@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Forecast;
@@ -403,7 +403,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetFromCacheIfExists(team, $"SleRiskZones_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}", () =>
                 SleRiskCalculator
                     .Zones(team.ServiceLevelExpectationRange, ClosedCycleTimesFor(team, startDate, endDate))
-                    .Select(zone => new SleRiskZoneDto(zone.Risk, zone.FromAge))
+                    .Select(zone => new SleRiskZoneDto(zone.Risk, zone.FromAge, zone.ToAge))
                     .ToList(), logger);
         }
 

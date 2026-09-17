@@ -1710,10 +1710,11 @@ describe("WorkItemAgingChart component", () => {
 	// the risk depends on which state the item is in, and it does not.
 	describe("SLE risk background", () => {
 		const zones = [
-			{ risk: 25, fromAge: 1 },
-			{ risk: 50, fromAge: 6 },
-			{ risk: 75, fromAge: 8 },
-			{ risk: 100, fromAge: 10 },
+			{ risk: 25, fromAge: 1, toAge: 6 },
+			{ risk: 50, fromAge: 6, toAge: 8 },
+			{ risk: 75, fromAge: 8, toAge: 10 },
+			// Certainty is the only band with no end: past the target, a miss has already happened.
+			{ risk: 100, fromAge: 10, toAge: null },
 		];
 
 		const renderWithZones = (riskZones = zones) =>
@@ -1854,10 +1855,10 @@ describe("WorkItemAgingChart component", () => {
 				// from the wrong neighbour would overlap the one above it.
 				const rects = computeSleRiskZoneRects({
 					zones: [
-						{ risk: 100, fromAge: 10 },
-						{ risk: 25, fromAge: 1 },
-						{ risk: 75, fromAge: 8 },
-						{ risk: 50, fromAge: 6 },
+						{ risk: 100, fromAge: 10, toAge: null },
+						{ risk: 25, fromAge: 1, toAge: 6 },
+						{ risk: 75, fromAge: 8, toAge: 10 },
+						{ risk: 50, fromAge: 6, toAge: 8 },
 					],
 					chartLeft: 0,
 					chartRight: 300,
@@ -1876,8 +1877,8 @@ describe("WorkItemAgingChart component", () => {
 
 				const rects = computeSleRiskZoneRects({
 					zones: [
-						{ risk: 25, fromAge: 1 },
-						{ risk: 50, fromAge: 6 },
+						{ risk: 25, fromAge: 1, toAge: 6 },
+						{ risk: 50, fromAge: 6, toAge: null },
 					],
 					chartLeft: 0,
 					chartRight: 300,
@@ -1896,8 +1897,8 @@ describe("WorkItemAgingChart component", () => {
 				// height is not a band, and drawing one would paint over the one beneath it.
 				const rects = computeSleRiskZoneRects({
 					zones: [
-						{ risk: 50, fromAge: 4 },
-						{ risk: 75, fromAge: 4 },
+						{ risk: 50, fromAge: 4, toAge: 4 },
+						{ risk: 75, fromAge: 4, toAge: null },
 					],
 					chartLeft: 0,
 					chartRight: 300,
@@ -1913,7 +1914,7 @@ describe("WorkItemAgingChart component", () => {
 				// Not merely a band of no height - an inverted one, drawn from the top of the axis
 				// back down to where it should have started.
 				const rects = computeSleRiskZoneRects({
-					zones: [{ risk: 100, fromAge: 41 }],
+					zones: [{ risk: 100, fromAge: 41, toAge: null }],
 					chartLeft: 0,
 					chartRight: 300,
 					yScale: identity,
@@ -1928,7 +1929,7 @@ describe("WorkItemAgingChart component", () => {
 				// An axis that starts above day one - the band still has to reach the floor rather
 				// than float, or the chart would show an unpainted strip meaning nothing.
 				const rects = computeSleRiskZoneRects({
-					zones: [{ risk: 25, fromAge: 1 }],
+					zones: [{ risk: 25, fromAge: 1, toAge: null }],
 					chartLeft: 0,
 					chartRight: 300,
 					yScale: identity,
@@ -1940,11 +1941,41 @@ describe("WorkItemAgingChart component", () => {
 				expect(rects[0].height).toBe(15);
 			});
 
+			it("leaves the space above a band the evidence could not carry unpainted", () => {
+				// This is what the picture caught. When the higher bands are missing because the
+				// history ran out, painting the calmest one to the top of the axis says "mildly
+				// risky" across every age nothing is known about - and a reader takes green for safe.
+				const rects = computeSleRiskZoneRects({
+					zones: [{ risk: 25, fromAge: 1, toAge: 5 }],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects).toHaveLength(1);
+				expect(rects[0].height).toBe(4);
+			});
+
+			it("runs certainty to the top of the axis, because nothing above it is in doubt", () => {
+				const rects = computeSleRiskZoneRects({
+					zones: [{ risk: 100, fromAge: 10, toAge: null }],
+					chartLeft: 0,
+					chartRight: 300,
+					yScale: identity,
+					axisMin: 0,
+					axisMax: 40,
+				});
+
+				expect(rects[0].height).toBe(30);
+			});
+
 			it("draws the bands the history did place and invents none above them", () => {
 				// The evidence thins as the age grows, so the top bands are the ones that go
 				// missing. What is left must still be drawn, and nothing may be drawn above it.
 				const rects = computeSleRiskZoneRects({
-					zones: [{ risk: 25, fromAge: 2 }],
+					zones: [{ risk: 25, fromAge: 2, toAge: null }],
 					chartLeft: 0,
 					chartRight: 300,
 					yScale: identity,

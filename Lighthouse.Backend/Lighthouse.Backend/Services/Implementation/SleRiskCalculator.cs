@@ -8,10 +8,14 @@ namespace Lighthouse.Backend.Services.Implementation
     public readonly record struct SleRiskVerdict(int? Risk, int ComparableItems);
 
     /// <summary>
-    /// The first age at which the risk reaches <paramref name="Risk"/>. The chart paints from here up
-    /// to the next zone's age.
+    /// The ages over which the risk is at least <paramref name="Risk"/>. A null ToAge means it stays
+    /// so however old an item gets, which is only ever true of certainty - past the target, every
+    /// item that ever ran that long had already missed, whatever the history says.
+    ///
+    /// Every other band ends where the evidence does. Painting one past that would claim the calmest
+    /// answer for ages nothing can be said about, which is the opposite of what a reader needs.
     /// </summary>
-    public readonly record struct SleRiskZone(int Risk, int FromAge);
+    public readonly record struct SleRiskZone(int Risk, int FromAge, int? ToAge);
 
     /// <summary>
     /// Of every item that was still open at a given age, the share that went on to take longer than
@@ -67,6 +71,9 @@ namespace Lighthouse.Backend.Services.Implementation
         /// </summary>
         private static readonly int[] ZoneLevels = [25, 50, 75, 100];
 
+        /// <summary>The level above which no history is needed: past the target, a miss is certain.</summary>
+        private const int CertainRisk = 100;
+
         /// <summary>
         /// The ages at which the risk first reaches each level, for the chart's background. Empty
         /// when no target was published, when nothing has finished, or when the history is too thin
@@ -89,6 +96,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var oldestFinishedItem = closedCycleTimes.Max();
             var nextLevel = 0;
+            var answeredThroughAge = 0;
 
             for (var age = 1; age <= oldestFinishedItem && nextLevel < ZoneLevels.Length; age++)
             {
@@ -101,14 +109,44 @@ namespace Lighthouse.Backend.Services.Implementation
                     break;
                 }
 
+                answeredThroughAge = age;
+
                 while (nextLevel < ZoneLevels.Length && risk >= ZoneLevels[nextLevel])
                 {
-                    zones.Add(new SleRiskZone(ZoneLevels[nextLevel], age));
+                    zones.Add(new SleRiskZone(ZoneLevels[nextLevel], age, null));
                     nextLevel++;
                 }
             }
 
-            return zones;
+            return WithUpperEdges(zones, answeredThroughAge);
+        }
+
+        /// <summary>
+        /// Closes each band at the next one's start. The topmost band is left open only when it is
+        /// certainty, which needs no evidence to hold above it; otherwise it ends at the last age the
+        /// history could answer for, and everything above that is left unpainted because nothing is
+        /// known about it.
+        /// </summary>
+        private static List<SleRiskZone> WithUpperEdges(List<SleRiskZone> zones, int answeredThroughAge)
+        {
+            var closed = new List<SleRiskZone>(zones.Count);
+
+            for (var index = 0; index < zones.Count; index++)
+            {
+                closed.Add(zones[index] with { ToAge = UpperEdgeOf(zones, index, answeredThroughAge) });
+            }
+
+            return closed;
+        }
+
+        private static int? UpperEdgeOf(List<SleRiskZone> zones, int index, int answeredThroughAge)
+        {
+            if (index < zones.Count - 1)
+            {
+                return zones[index + 1].FromAge;
+            }
+
+            return zones[index].Risk >= CertainRisk ? null : answeredThroughAge;
         }
     }
 }

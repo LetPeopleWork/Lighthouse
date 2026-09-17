@@ -603,8 +603,12 @@ No silent N/A — every item gets an answer.
   none either. A dialog column is reached by a click, through a widget that already has its
   screenshot, and what it adds is words in a grid rather than a shape on a chart. Slice 03's chart
   zones will want one; this does not.
-- **Demo data** — **N/A, because** the demo teams already carry an SLE, so the column appears on
-  them with no seeding change. Nothing about the column needs a scenario that does not exist.
+- **Demo data** — ~~N/A, because the demo teams already carry an SLE~~ — **that was wrong, and it was
+  asserted without checking.** `DemoDataFactory.CreateDemoTeam` sets no Service Level Expectation and
+  nothing else seeds one, so `ServiceLevelExpectationRange` is 0 on every demo team: **nothing in this
+  Epic is visible on demo data** until someone publishes a target by hand. Found while taking slice
+  03's screenshot, which could not be taken without discovering it. The same false claim was made in
+  slices 02 and 03 and is corrected there too.
 - **Lighthouse-Clients CLI/MCP versioning** — **N/A, because** DISCUSS put both out of scope and
   DESIGN's correction states the reason precisely: a gate would be owed if a wrapper were added, and
   none is. No `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is due.
@@ -796,8 +800,8 @@ double count is impossible by construction rather than prevented by a guard no t
   same card lists exactly what was counted.
 - **Per-feature screenshot** — **N/A, because** the Flow Overview cards have no per-card screenshot
   on that page, and the line is three words under a number. Slice 03's chart zones will want one.
-- **Demo data** — **N/A, because** the demo teams already carry an SLE and in-flight work, so the
-  line renders on them with no seeding change.
+- **Demo data** — ~~N/A, because the demo teams already carry an SLE~~ — **false, see slice 01's
+  corrected entry.** No demo team publishes a target, so the at-risk count never appears on demo data.
 - **Lighthouse-Clients CLI/MCP** — **N/A, because** no new endpoint and no new payload field; the
   count is computed in the browser from a read slice 01 already shipped.
 - **Website marketing surface** — **N/A, because** the Epic is not whole; slices 03 and 04 remain.
@@ -911,13 +915,13 @@ gets the guarantee that matters: nothing drawn above the SLE line is outside the
 - **Docs prose** — done. `docs/metrics/flow-metrics.md` gains **SLE Risk Zones on the Aging Chart**:
   the three mutually exclusive modes, why the bands run full width, that missing bands mean missing
   evidence rather than safety, and that the mode is offered only where there is a target.
-- **Per-feature screenshot** — **owed, and not taken.** This is the first slice that changes what the
-  chart looks like, and the section above describes a picture without showing one. It needs a
-  `@screenshot` E2E against demo data with an SLE and enough history to place bands, which is more
-  than a docs edit; flagged here rather than silently skipped.
-- **Demo data** — **N/A, because** the demo teams already carry an SLE and closed history, so the
-  mode appears on them. Whether they have *enough* history to place all four bands is the open
-  question above, and the screenshot work will answer it.
+- **Per-feature screenshot** — **taken, and it paid for itself twice over.** See the Epic's closing
+  notes: looking at the picture found a defect in the geometry and a label nobody would have read.
+- **Demo data** — ~~N/A, because the demo teams already carry an SLE~~ — **false, same error.** The
+  screenshot spec publishes one itself (85% @ 7 days) rather than changing the demo defaults, which
+  would make the SLE line, the risk column and the at-risk count appear across every other screenshot
+  and E2E in the suite. Whether the demo *should* ship a target is a product question, raised in the
+  Epic's closing notes and not decided here.
 - **Lighthouse-Clients CLI/MCP** — **N/A, because** no wrapper is being added. Per ADR-065 §4 a new
   endpoint 404s opaquely on an old server, so if one is ever added it owes a version gate; none is.
 - **Website marketing surface** — **N/A, because** slice 04 remains.
@@ -1101,6 +1105,66 @@ closing, because both pin a decision rather than a line:
 - **The skipped-item count in the write-back log** named in slice 04's DEVOPS wave: on a thin
   history a user sees the field populated on some items and empty on others, with nothing in the log
   saying why.
+
+---
+
+# Wave: DELIVER — Epic close-out
+
+Run 2026-09-17, after all four slices were on `main` and green.
+
+## Wave: DELIVER / [REF] The screenshot paid for itself twice
+
+Slice 03's checklist recorded a screenshot as owed. Taking it found two things no test had:
+
+**1. The bands lied about what they did not know.** The geometry painted the last band up to the top
+of the axis. When the higher bands are missing *because the evidence ran out* — which is the normal
+case, since `count(T >= a)` shrinks with age — that painted the calmest colour across every age
+nothing is known about. The docs written one slice earlier promised the opposite, in as many words:
+"An unpainted area above the last band means 'too little finished work ever ran this long to say',
+not 'safe'." The code said "safe".
+
+Nothing caught it because every geometry test supplied a full set of four bands, where the top one
+*is* certainty and running to the axis top is correct. The defect only appears when a band is
+missing, and no test drew a chart with a band missing. A picture did.
+
+The fix gives each band its own upper edge: `SleRiskZoneDto(Risk, FromAge, ToAge)`, where a null
+`ToAge` means "never stops" and is only ever true of the 100% band — past the target a miss has
+already happened, which needs no history behind it. Every other band ends at the last age the
+history could answer for, and above that the chart paints nothing.
+
+**2. The mode was labelled with the wrong word.** D10 says the surface reads `${sle} Risk` through
+`TERMINOLOGY_KEYS.SLE`, which seeds to the abbreviation — the dialog column does exactly that. The
+chart used `SERVICE_LEVEL_EXPECTATION` instead and read **"Service Level Expectation Risk"**, a
+29-character label in a row of short ones, and a different phrase from the column for the same thing.
+Raised by the maintainer looking at the image. Now "SLE Risk" on both.
+
+## Wave: DELIVER / [REF] A correction that runs through three checklists
+
+Slices 01, 02 and 03 each recorded **"Demo data — N/A, because the demo teams already carry an SLE"**.
+That is false. `DemoDataFactory.CreateDemoTeam` sets no Service Level Expectation and nothing else
+seeds one, so `ServiceLevelExpectationRange` is 0 on every demo team and **none of this Epic is
+visible on demo data**. The claim was asserted three times without once being checked, which is
+exactly what the no-silent-N/A rule exists to prevent — an explicit reason is only worth the check
+behind it.
+
+The screenshot spec publishes a target on the demo team itself (85% @ 7 days) rather than changing
+the demo defaults. Changing them would make the SLE line, the risk column and the at-risk count
+appear across every other screenshot and E2E in the suite, which is a blast radius this Epic should
+not spend on its way out.
+
+**Whether the demo should ship a target is a product question and is left open.** The argument for:
+the demo is how people evaluate Lighthouse, and a feature nobody can see does not get evaluated. The
+argument against: it changes what every existing screenshot shows.
+
+## Wave: DELIVER / [REF] What the Epic still owes
+
+- **The human half of slice 01's learning hypothesis.** `OUT-4127-risk-stability` settled the
+  arithmetic — the number is stable enough once guarded. It cannot say whether a coach reading the
+  column recognises the ordering as true of their own team, and that was always the other half. It
+  needs a person and a real team.
+- **The skipped-item count in the write-back log**, from slice 04's DEVOPS wave: on a thin history a
+  user sees the field written on some items and not others, with nothing in the log saying why.
+- **The demo-data decision above.**
 
 ---
 

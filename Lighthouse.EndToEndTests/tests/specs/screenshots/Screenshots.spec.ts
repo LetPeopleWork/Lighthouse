@@ -985,6 +985,36 @@ testWithDemo(
 );
 
 testWithDemo(
+	"Take @screenshot of Work Item Aging chart with SLE risk zones",
+	async ({ testData, page, overviewPage }) => {
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+
+		// The risk is a statement about a published target, so there is nothing to draw until the
+		// team has one. Demo teams ship without.
+		await teamDetailPage.publishServiceLevelExpectation(85, 7);
+
+		const metricsPage = await teamDetailPage.goToMetrics();
+		const flowMetricsWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const agingWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.WorkItemAgingChart,
+			flowMetricsWidgets,
+		);
+		await expect(agingWidget.Widget).toBeVisible();
+
+		const agingChart = new WorkItemAgingChart(page, "aging");
+		await agingChart.showSleRisk();
+		await expect.poll(() => agingChart.countSleRiskZones()).toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			agingWidget.Widget,
+			"features/metrics/aging_sle_risk.png",
+		);
+	},
+);
+
+testWithDemo(
 	"Take @screenshot of Wait States configuration and Flow Efficiency",
 	async ({ page, testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();

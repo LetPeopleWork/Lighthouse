@@ -176,10 +176,12 @@ export const computeSleRiskZoneRects = ({
 		(first, second) => first.fromAge - second.fromAge,
 	);
 
-	return ordered.flatMap((zone, index) => {
+	return ordered.flatMap((zone) => {
 		const lowerValue = Math.max(zone.fromAge, axisMin);
-		const upperValue =
-			index + 1 < ordered.length ? ordered[index + 1].fromAge : axisMax;
+		// A band stops where it says it stops. Only certainty runs to the top of the axis; every
+		// other band ends where the evidence did, and the space above it is left unpainted - nothing
+		// is known there, and the calmest colour would read as "safe" and mean the opposite.
+		const upperValue = zone.toAge ?? axisMax;
 
 		if (upperValue <= lowerValue) {
 			return [];
@@ -504,6 +506,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const serviceLevelExpectationTerm = getTerm(
 		TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION,
 	);
+	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 
 	// A mode is offered only when the chart has something to paint in it. Pace bands need per-state
 	// history; the risk background needs a published target, which is what an empty zone list means.
@@ -518,12 +521,13 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		if (sleRiskZones.length > 0) {
 			modes.push({
 				value: "risk",
-				label: `${serviceLevelExpectationTerm} Risk`,
+				// The abbreviation, not the long form: the control sits in a row of short labels, and
+				// the dialog column heads itself the same way, so a reader meets one phrase twice.
+				label: `${sleTerm} Risk`,
 			});
 		}
 		return modes;
-	}, [perStatePercentileValues, sleRiskZones, serviceLevelExpectationTerm]);
-	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
+	}, [perStatePercentileValues, sleRiskZones, sleTerm]);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 

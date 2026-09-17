@@ -121,11 +121,15 @@ Clicking **View Data** on the same card opens the list behind that number, with 
 
 The chart's background control offers three mutually exclusive choices: **Off**, **Pace percentiles**, and **SLE Risk**. They paint the same background, so only one can be on at a time; whichever you pick is remembered, and a chart that had pace percentiles on before this existed still has them on.
 
-In **SLE Risk** mode the chart paints full-width horizontal bands at the ages where an item's chance of missing the target crosses 25%, 50%, 75% and 100%, in the same colours the risk column uses. The bands run the full width rather than stopping at each state's column, because the risk is end-to-end — it depends on how old an item is and not on which state it is standing in.
+In **SLE Risk** mode the chart paints full-width horizontal bands at the ages where an item's chance of missing the target crosses 25%, 50%, 75% and 100%, in the same colours the risk column uses.
+
+![Work Item Aging Chart with SLE risk zones](../assets/features/metrics/aging_sle_risk.png)
+
+The bands run the full width rather than stopping at each state's column, because the risk is end-to-end — it depends on how old an item is and not on which state it is standing in.
 
 Two things to expect:
 
-- **Bands the history cannot place are not drawn.** The evidence thins as the age grows, so it is usually the highest bands that go missing — the very ones a coach would look at. An unpainted area above the last band means "too little finished work ever ran this long to say", not "safe".
+- **Bands the history cannot place are not drawn, and the band below them does not stretch to cover the gap.** The evidence thins as the age grows, so it is usually the highest bands that go missing — the very ones a coach would look at. An unpainted area above the last band means "too little finished work ever ran this long to say", not "safe". The one exception is the 100% band: past the target a miss has already happened, so that band runs to the top of the chart whatever the history holds.
 - **The mode is offered only to teams that have published an SLE.** Without a target there is nothing to be at risk of, and the option is absent rather than empty.
 
 The SLE line stays where it is. Nothing drawn above it is outside the top band, since every item past the target has certainly missed it.

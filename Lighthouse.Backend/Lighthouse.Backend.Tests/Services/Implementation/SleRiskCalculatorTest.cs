@@ -245,6 +245,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void Zones_EachBand_StopsWhereTheNextOneStarts()
+        {
+            var zones = SleRiskCalculator.Zones(10, SixtyFinishedItems);
+
+            var upperEdges = zones.SkipLast(1).Select(zone => zone.ToAge);
+            var nextStarts = zones.Skip(1).Select(zone => (int?)zone.FromAge);
+
+            Assert.That(upperEdges, Is.EqualTo(nextStarts));
+        }
+
+        [Test]
+        public void Zones_TheCertainBand_NeverStops()
+        {
+            // Past the target, every item that ever ran that long had already missed - and that holds
+            // however old an item gets, whatever the history does or does not contain.
+            var zones = SleRiskCalculator.Zones(10, SixtyFinishedItems);
+
+            Assert.That(zones.Single(zone => zone.Risk == 100).ToAge, Is.Null);
+        }
+
+        [Test]
+        public void Zones_ATopBandThatIsNotCertainty_StopsWhereTheEvidenceDoes()
+        {
+            // Twelve items ran two days and three ran longer, so nothing can be said above two. The
+            // calmest band must end there rather than run on: painting it upward would claim the
+            // mildest answer for every age nothing is known about, which is the opposite of the
+            // truth and exactly what a coach would read it as.
+            // Ten items took five days and four took twenty, against a ten-day target. Four in
+            // fourteen is 29%, so the calmest band opens at day one - and from day six only those
+            // four are left, which is too few to say anything more.
+            int[] cycleTimes = [.. Enumerable.Repeat(5, 10), .. Enumerable.Repeat(20, 4)];
+
+            var zones = SleRiskCalculator.Zones(10, cycleTimes);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(zones, Is.Not.Empty, "A band has to be placed for this to be about it.");
+                Assert.That(zones.Select(zone => zone.Risk), Has.No.Member(100),
+                    "The evidence ran out before certainty was reached.");
+                Assert.That(zones[^1].ToAge, Is.EqualTo(5),
+                    "The last age the history could answer for.");
+            }
+        }
+
+        [Test]
         public void Zones_NoTargetPublished_HasNoneAtAll()
         {
             Assert.That(SleRiskCalculator.Zones(0, SixtyFinishedItems), Is.Empty);
@@ -259,15 +304,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void Zones_AgesTooLittleHistoryCanSpeakFor_AreLeftUndrawn()
         {
-            // Twelve items ran two days and only three ran longer, so nothing can be said about an
-            // age above two. A boundary there would be a claim about where the odds turn, made from
-            // three observations.
-            int[] cycleTimes = [.. Enumerable.Repeat(2, 12), 11, 12, 13];
+            // Ten items took five days and four took twenty. From day six only those four are left,
+            // which is too few to place a boundary on - so no band may begin above day five.
+            int[] cycleTimes = [.. Enumerable.Repeat(5, 10), .. Enumerable.Repeat(20, 4)];
 
             var zones = SleRiskCalculator.Zones(10, cycleTimes);
 
-            Assert.That(zones.Select(zone => zone.FromAge), Has.All.LessThanOrEqualTo(2),
-                "Above the last age with enough evidence there is nothing to draw.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(zones, Is.Not.Empty,
+                    "An empty list would satisfy the claim below without demonstrating it.");
+                Assert.That(zones.Select(zone => zone.FromAge), Has.All.LessThanOrEqualTo(5),
+                    "Above the last age with enough evidence there is nothing to draw.");
+            }
         }
 
         [Test]

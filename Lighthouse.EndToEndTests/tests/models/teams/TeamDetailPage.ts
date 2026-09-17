@@ -141,6 +141,26 @@ export class TeamDetailPage {
 		);
 	}
 
+	/**
+	 * Demo teams ship with no Service Level Expectation, so nothing that depends on a published
+	 * target - the risk column, the at-risk count, the chart's risk background - is visible until a
+	 * test sets one. That is the product's default, not an oversight of the fixture.
+	 */
+	async publishServiceLevelExpectation(
+		probabilityPercent: number,
+		rangeInDays: number,
+	): Promise<void> {
+		await this.page
+			.getByRole("button", { name: "Service Level Expectation" })
+			.click();
+
+		const dialog = this.page.getByRole("dialog");
+		await dialog.getByLabel("Probability (%)").fill(`${probabilityPercent}`);
+		await dialog.getByLabel("Range (in days)").fill(`${rangeInDays}`);
+		await dialog.getByLabel("Range (in days)").press("Enter");
+		await dialog.waitFor({ state: "hidden" });
+	}
+
 	get teamId(): number {
 		const url = new URL(this.page.url());
 		const teamId = url.pathname.split("/").pop() ?? "0";

@@ -18,6 +18,11 @@ namespace Lighthouse.Backend.Models.Metrics
     ///
     /// A band the history cannot place is absent rather than guessed - and because the evidence
     /// thins as the age grows, the bands that go missing are the worst ones.
+    ///
+    /// ToAge is where the band stops. Null means it never does, which is only ever true of certainty:
+    /// past the target every item that ran that long had already missed, whatever the history says.
+    /// Any other band ends where the evidence does, and above it the chart paints nothing - because
+    /// nothing is known there, and the calmest colour would say the opposite.
     /// </summary>
-    public sealed record SleRiskZoneDto(int Risk, int FromAge);
+    public sealed record SleRiskZoneDto(int Risk, int FromAge, int? ToAge);
 }
