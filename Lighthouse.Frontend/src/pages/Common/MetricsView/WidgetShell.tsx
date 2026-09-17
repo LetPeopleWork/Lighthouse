@@ -22,6 +22,7 @@ import WorkItemsDialog, {
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
+import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 
@@ -46,6 +47,8 @@ export type ViewDataPayload = {
 	readonly sle?: number;
 	/** Forwarded to the dialog untouched; the shell never looks inside it. */
 	readonly ageBandColumn?: AgeBandColumnDescriptor;
+	/** Forwarded the same way, and absent whenever the owner published no target. */
+	readonly sleRiskColumn?: SleRiskColumnDescriptor;
 };
 
 export interface WidgetShellProps {
@@ -382,6 +385,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					highlightColumn={viewData.highlightColumn}
 					timeInStateColumn={viewData.timeInStateColumn}
 					ageBandColumn={viewData.ageBandColumn}
+					sleRiskColumn={viewData.sleRiskColumn}
 					sle={viewData.sle}
 				/>
 			)}

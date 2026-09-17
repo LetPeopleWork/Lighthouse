@@ -123,6 +123,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         }
 
         /// <summary>
+        /// The team publishes a different target than the one it started with — one click in the
+        /// settings, and half of every answer this route gives.
+        /// </summary>
+        protected void ChangeTheTargetOf(int teamId, int rangeInDays)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            var team = repository.GetById(teamId)!;
+            team.ServiceLevelExpectationRange = rangeInDays;
+
+            repository.Update(team);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// A finished item that took exactly <paramref name="cycleTimeInDays"/> days, closed inside
         /// the window unless <paramref name="closedDaysBeforeWindowStart"/> puts it outside.
         /// </summary>
@@ -201,9 +217,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             return reference;
         }
 
-        protected Uri SleRiskRoute(int teamId) => new(
+        protected Uri SleRiskRoute(int teamId) => SleRiskRouteBetween(teamId, WindowStart, WindowEnd);
+
+        protected static Uri SleRiskRouteBetween(int teamId, DateTime startDate, DateTime endDate) => new(
             $"/api/latest/teams/{teamId}/metrics/sleRisk"
-            + $"?startDate={WindowStart:yyyy-MM-dd}&endDate={WindowEnd:yyyy-MM-dd}",
+            + $"?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}",
             UriKind.Relative);
     }
 }

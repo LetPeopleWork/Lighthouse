@@ -40,10 +40,12 @@ import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
+	createMockProjectMetricsService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
+import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import { BaseMetricsView, buildWorkItemLookup } from "./BaseMetricsView";
 import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
@@ -613,6 +615,7 @@ vi.mock("./WidgetShell", () => ({
 			};
 			sle?: number;
 			ageBandColumn?: AgeBandColumnDescriptor;
+			sleRiskColumn?: SleRiskColumnDescriptor;
 		};
 		trend?: { direction: string; metricLabel: string };
 	}) => (
@@ -677,6 +680,17 @@ vi.mock("./WidgetShell", () => ({
 						{(viewData.ageBandColumn
 							? viewData.items.map((item) =>
 									viewData.ageBandColumn?.bandFor(item),
+								)
+							: []
+						).join(",")}
+					</span>
+					<span data-testid={`widget-view-data-sle-risk-header-${widgetKey}`}>
+						{viewData.sleRiskColumn?.headerName ?? "none"}
+					</span>
+					<span data-testid={`widget-view-data-sle-risks-${widgetKey}`}>
+						{(viewData.sleRiskColumn
+							? viewData.items.map((item) =>
+									viewData.sleRiskColumn?.labelFor(item),
 								)
 							: []
 						).join(",")}
@@ -4385,6 +4399,148 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("widget-view-data-age-bands-cycleScatter"),
 			).toBeEmptyDOMElement();
+		});
+	});
+
+	// --- Epic #4127 slice 01: the wiring between the endpoint and the dialog's risk column ---
+	//
+	// What the risk means is the backend's promise and what a coach can do with the column is the
+	// dialog's; the claim here is only that the page asks the right question and hands the answer on.
+	describe("SLE Risk column wiring", () => {
+		const inFlight = (id: number, referenceId: string): IWorkItem => ({
+			id,
+			name: `Item ${id}`,
+			state: "In Progress",
+			stateCategory: "Doing",
+			type: "User Story",
+			referenceId,
+			url: `https://example.com/work/${id}`,
+			startedDate: new Date("2026-09-01"),
+			closedDate: new Date("2026-09-01"),
+			cycleTime: 0,
+			workItemAge: 12,
+			parentWorkItemReference: "",
+			isBlocked: false,
+		});
+
+		const renderTeamAnswering = (
+			risks: { referenceId: string; risk: number | null }[],
+		) => {
+			localStorage.setItem(
+				`lighthouse:metrics:team:${mockTeam.id}:category`,
+				"flow-metrics",
+			);
+
+			const service = createMockMetricsService<IWorkItem>();
+			service.getInProgressItems = vi
+				.fn()
+				.mockResolvedValue([
+					inFlight(412, "ZEN-412"),
+					inFlight(455, "ZEN-455"),
+				]);
+			const getSleRisk = vi.fn().mockResolvedValue(risks);
+			const teamService = {
+				...service,
+				// What the page reads to know it is looking at a team rather than a portfolio.
+				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+				getSleRisk,
+			};
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={teamService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["In Progress"]}
+				/>,
+			);
+
+			return getSleRisk;
+		};
+
+		it("gives the aging widget a risk column carrying what the endpoint answered for each item", async () => {
+			renderTeamAnswering([
+				{ referenceId: "ZEN-412", risk: 86 },
+				{ referenceId: "ZEN-455", risk: null },
+			]);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-sle-risk-header-aging"),
+				).toHaveTextContent("SLE Risk");
+			});
+
+			// The second item is listed with no answer rather than left out of the column.
+			expect(
+				screen.getByTestId("widget-view-data-sle-risks-aging"),
+			).toHaveTextContent("86%,Beyond history");
+		});
+
+		it("asks about the window the page is showing", async () => {
+			const getSleRisk = renderTeamAnswering([
+				{ referenceId: "ZEN-412", risk: 86 },
+			]);
+
+			await waitFor(() => {
+				expect(getSleRisk).toHaveBeenCalled();
+			});
+
+			const [teamId, startDate, endDate] = getSleRisk.mock.calls[0];
+			expect(teamId).toBe(mockTeam.id);
+			expect(endDate.getTime() - startDate.getTime()).toBeGreaterThan(0);
+		});
+
+		it("offers no risk column for a team that published no target", async () => {
+			// An empty answer is how a team without a target reads: there is no promise, so nothing
+			// can be at risk of breaking one, and a column of blanks would say otherwise.
+			renderTeamAnswering([]);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-aging"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-view-data-sle-risk-header-aging"),
+			).toHaveTextContent("none");
+			expect(
+				screen.getByTestId("widget-view-data-sle-risks-aging"),
+			).toBeEmptyDOMElement();
+		});
+
+		it("never offers a risk column on a portfolio page", async () => {
+			// A feature can sit in several portfolios, each with its own target and its own history,
+			// so it would have several risks and no way to pick one. The portfolio service therefore
+			// cannot answer the question at all, and this fails the moment the method moves onto the
+			// shared service — the one-line change that scope decision has to survive.
+			expect("getSleRisk" in createMockProjectMetricsService()).toBe(false);
+
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"flow-metrics",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={createMockMetricsService<IFeature>()}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["In Progress"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-aging"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-view-data-sle-risk-header-aging"),
+			).toHaveTextContent("none");
 		});
 	});
 

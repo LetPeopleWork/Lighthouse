@@ -70,6 +70,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
 
         private string GivenAnItemOpenFor(int ageInDays) => SeedInFlightItem(TheTeamUnderTest, ageInDays);
 
+        private void GivenTheTeamNowPromises(int rangeInDays)
+            => ChangeTheTargetOf(TheTeamUnderTest, rangeInDays);
+
         private int GivenAPortfolio()
         {
             using var scope = Factory.Services.CreateScope();
@@ -99,8 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         private async Task WhenTheRiskIsAskedFor(int teamId)
         {
             Client.AsTeamAdmin(teamId);
-            response = await Client.GetAsync(SleRiskRoute(teamId));
-            body = await response.Content.ReadAsStringAsync();
+            await TheAnswerTo(SleRiskRoute(teamId));
         }
 
         private async Task WhenTheRiskIsAskedForAWindowEnding(int teamId, bool tenDaysAgo)
@@ -108,11 +110,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             var end = tenDaysAgo ? WindowEnd.AddDays(-10) : WindowEnd;
 
             Client.AsTeamAdmin(teamId);
-            response = await Client.GetAsync(new Uri(
-                $"/api/latest/teams/{teamId}/metrics/sleRisk"
-                + $"?startDate={WindowStart:yyyy-MM-dd}&endDate={end:yyyy-MM-dd}",
-                UriKind.Relative));
-            body = await response.Content.ReadAsStringAsync();
+            await TheAnswerTo(SleRiskRouteBetween(teamId, WindowStart, end));
+        }
+
+        private async Task WhenTheRiskIsAskedForASingleDay(int teamId)
+        {
+            Client.AsTeamAdmin(teamId);
+            await TheAnswerTo(SleRiskRouteBetween(teamId, WindowEnd, WindowEnd));
+        }
+
+        private async Task WhenTheRiskIsAskedForABackwardsWindow(int teamId)
+        {
+            Client.AsTeamAdmin(teamId);
+            await TheAnswerTo(SleRiskRouteBetween(teamId, WindowEnd, WindowStart));
         }
 
         private async Task WhenSomeoneWithoutAccessToTheTeamAsks(int teamId)
@@ -120,17 +130,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             // A viewer with no grant on this team. Not anonymous — an anonymous refusal would pass
             // even if the route ignored team scope entirely.
             Client.AsViewer();
-            response = await Client.GetAsync(SleRiskRoute(teamId));
-            body = await response.Content.ReadAsStringAsync();
+            await TheAnswerTo(SleRiskRoute(teamId));
         }
 
         private async Task WhenTheRiskIsAskedForThePortfolio(int portfolioId)
         {
             Client.AsPortfolioAdmin(portfolioId);
-            response = await Client.GetAsync(new Uri(
+            await TheAnswerTo(new Uri(
                 $"/api/latest/portfolios/{portfolioId}/metrics/sleRisk"
                 + $"?startDate={WindowStart:yyyy-MM-dd}&endDate={WindowEnd:yyyy-MM-dd}",
                 UriKind.Relative));
+        }
+
+        /// <summary>
+        /// A scenario may ask more than once — that is how anything about remembering an answer gets
+        /// observed at all — so each answer replaces the one before it and disposes of it.
+        /// </summary>
+        private async Task TheAnswerTo(Uri route)
+        {
+            response?.Dispose();
+            response = await Client.GetAsync(route);
             body = await response.Content.ReadAsStringAsync();
         }
 
@@ -173,6 +192,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             Assert.That(document.RootElement.EnumerateArray().Any(), Is.False,
                 "A team that published no target made no promise, so no item of theirs can be at risk "
                 + $"of breaking one. Body: {body}");
+        }
+
+        private void ThenTheQuestionIsRejected()
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                $"A window that ends before it starts describes no period at all. Body: {body}");
         }
 
         private void ThenTheyAreTurnedAway()

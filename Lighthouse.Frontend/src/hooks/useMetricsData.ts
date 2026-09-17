@@ -20,6 +20,7 @@ import type {
 } from "../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../models/Metrics/RunChartData";
+import type { ISleRisk } from "../models/Metrics/SleRisk";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
@@ -63,6 +64,11 @@ export interface MetricsData<T> {
 	 */
 	previousWorkItemAgePercentilesValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
+	/**
+	 * Empty for a portfolio and for a team that published no target — the two cases the risk column
+	 * is meant to be absent in, which is why they are not told apart here.
+	 */
+	sleRiskValues: ISleRisk[];
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	sizePercentileValues: IPercentileValue[];
 	allFeaturesForSizeChart: IFeature[];
@@ -106,6 +112,12 @@ function isProjectMetricsService(
 
 function isTeamMetricsService(service: object): service is ITeamMetricsService {
 	return "getFeaturesWorkedOnInfo" in service;
+}
+
+// The risk is a team question — a feature can sit in several portfolios, each with its own target —
+// so only the team service answers it, and its presence is what says which kind of service this is.
+function providesSleRisk(service: object): service is ITeamMetricsService {
+	return "getSleRisk" in service;
 }
 
 // Owner type is discriminated exactly as BaseMetricsView does it, on `getFeaturesInProgress`.
@@ -153,6 +165,7 @@ export function useMetricsData<
 	const [perStatePercentileValues, setPerStatePercentileValues] = useState<
 		IPerStatePercentileValues[]
 	>([]);
+	const [sleRiskValues, setSleRiskValues] = useState<ISleRisk[]>([]);
 	const [cumulativeStateTime, setCumulativeStateTime] =
 		useState<ICumulativeStateTimeResponse | null>(null);
 	const [sizePercentileValues, setSizePercentileValues] = useState<
@@ -226,6 +239,7 @@ export function useMetricsData<
 	const needsAgeInStatePercentiles = activeFetchKeys.has(
 		"ageInStatePercentiles",
 	);
+	const needsSleRisk = activeFetchKeys.has("sleRisk");
 	const needsCumulativeStateTime = activeFetchKeys.has("cumulativeStateTime");
 	const needsFlowEfficiency = activeFetchKeys.has("flowEfficiency");
 	const needsFeatureSizeData = activeFetchKeys.has("featureSizeData");
@@ -420,6 +434,15 @@ export function useMetricsData<
 				console.error("Error fetching per-state percentiles:", error),
 			);
 	}, [entity, metricsService, startDate, endDate, needsAgeInStatePercentiles]);
+
+	useEffect(() => {
+		if (!needsSleRisk) return;
+		if (!providesSleRisk(metricsService)) return;
+		metricsService
+			.getSleRisk(entity.id, startDate, endDate)
+			.then(setSleRiskValues)
+			.catch((error) => console.error("Error fetching SLE risk:", error));
+	}, [entity, metricsService, startDate, endDate, needsSleRisk]);
 
 	useEffect(() => {
 		if (!needsCumulativeStateTime) return;
@@ -689,6 +712,7 @@ export function useMetricsData<
 		workItemAgePercentilesValues,
 		previousWorkItemAgePercentilesValues,
 		perStatePercentileValues,
+		sleRiskValues,
 		cumulativeStateTime,
 		sizePercentileValues,
 		allFeaturesForSizeChart,

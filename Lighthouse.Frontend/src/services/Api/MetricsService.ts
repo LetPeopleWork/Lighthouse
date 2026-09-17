@@ -36,6 +36,7 @@ import type {
 } from "../../models/Metrics/ProcessBehaviorSnapshot";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
+import type { ISleRisk } from "../../models/Metrics/SleRisk";
 import {
 	type IPercentileValue,
 	PercentileValueSchema,
@@ -260,6 +261,16 @@ function buildPercentilesOverTimeQuery(
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
 	getFeaturesInProgress(teamId: number, asOfDate: Date): Promise<IWorkItem[]>;
+	/**
+	 * Teams only. A feature can sit in several portfolios, each with its own target and its own
+	 * history, so it would have several answers and no way to pick one — which is why this lives on
+	 * the team service rather than on the shared one.
+	 */
+	getSleRisk(
+		teamId: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<ISleRisk[]>;
 	getForecastInputCandidates(teamId: number): Promise<IForecastInputCandidates>;
 	getFeaturesWorkedOnInfo(
 		teamId: number,

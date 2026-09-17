@@ -21,7 +21,10 @@ import {
 	type AgeBandColumnDescriptor,
 	paceBandSortRank,
 } from "../../../utils/charts/paceBands";
-import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
+import {
+	type SleRiskColumnDescriptor,
+	sleRiskSortValue,
+} from "../../../utils/charts/sleRisk";
 import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import {
 	certainColor,
@@ -156,6 +159,58 @@ const ageBandGridColumn = (
 	},
 });
 
+/**
+ * The risk column. It sits beside the band column above for the same reason that one sits outside
+ * the dialog: neither needs anything from it but its descriptor, and a reader who meets both in the
+ * grid is better served by their definitions being neighbours here too.
+ */
+const sleRiskGridColumn = (
+	descriptor: SleRiskColumnDescriptor,
+): DataGridColumn<IWorkItem & GridValidRowModel> => ({
+	field: "sleRisk",
+	headerName: descriptor.headerName,
+	description: descriptor.description,
+	// Wide enough for the beyond-history sentinel, which is far longer than any percentage.
+	width: 130,
+	sortable: true,
+	// The column's value is what a reader sees and therefore what the export carries — a bare 86 in
+	// a file loses what it is 86 of. Ordering reads the number back out of that text, because
+	// sorting the text itself would put "32%" above "86%" and "100%" below both.
+	//
+	// Reversing for a descending click is done here rather than left to the grid, for the same
+	// reason the band column does it: an item nothing can be said about is neither the safest nor
+	// the worst, and it belongs at the bottom whichever way round the column is read.
+	getSortComparator: (direction) => {
+		const worstFirst = direction === "desc" ? -1 : 1;
+
+		return (first, second) => {
+			const firstRisk = sleRiskSortValue(first as string);
+			const secondRisk = sleRiskSortValue(second as string);
+
+			if (firstRisk === undefined || secondRisk === undefined) {
+				return (
+					(firstRisk === undefined ? 1 : 0) - (secondRisk === undefined ? 1 : 0)
+				);
+			}
+
+			return worstFirst * (firstRisk - secondRisk);
+		};
+	},
+	valueGetter: (_, row) => descriptor.labelFor(row),
+	renderCell: ({ value, row }) => (
+		<Typography
+			variant="body2"
+			data-testid="sleRiskColumnContent"
+			{...judgementCell(
+				descriptor.colorForRisk(descriptor.riskFor(row)),
+				"text.secondary",
+			)}
+		>
+			{value as string}
+		</Typography>
+	),
+});
+
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,
 	items,
@@ -165,6 +220,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	timeInStateColumn,
 	sle,
 	ageBandColumn,
+	sleRiskColumn,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
@@ -329,6 +385,10 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			baseColumns.push(ageBandGridColumn(ageBandColumn));
 		}
 
+		if (sleRiskColumn) {
+			baseColumns.push(sleRiskGridColumn(sleRiskColumn));
+		}
+
 		if (timeInStateColumn) {
 			baseColumns.push({
 				field: "timeInState",
@@ -364,6 +424,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		highlightColumn,
 		timeInStateColumn,
 		ageBandColumn,
+		sleRiskColumn,
 	]);
 
 	return (

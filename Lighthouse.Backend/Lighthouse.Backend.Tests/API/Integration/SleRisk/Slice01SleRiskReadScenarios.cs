@@ -18,10 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
     [Category("acceptance")]
     [Category("epic-4127-sle-risk")]
     [Category("slice-01")]
-    [Ignore("Specified before the route exists. DELIVER removes this line as it implements slice 01; "
-        + "until then these would report a 404 as a failure on every build. Verified red for the right "
-        + "reason first: 12 of 14 on the missing route, the other 2 passing only because a route that "
-        + "does not exist refuses everyone.")]
     public partial class Slice01SleRiskReadTest
     {
         // @walking_skeleton @driving_port @real-io @AC-01.1 @AC-01.2
@@ -182,6 +178,76 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             // missed: 100%. Counted to today it would be 20 days old, beyond every finished item, and
             // the answer would be no answer at all.
             ThenTheItemsChanceOfMissingIs(item, 100);
+        }
+
+        // @driving_port @real-io @AC-01.2 — two windows, one team, one request after the other. The
+        // answer is remembered between requests, so a memory that ignores which window was asked about
+        // hands the second caller the first caller's answer — and nothing on screen would say so.
+        [Test]
+        public async Task Two_windows_asked_one_after_the_other_get_their_own_answers()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinished(2, 4, 12, 14);
+            var item = GivenAnItemOpenFor(20);
+
+            await WhenTheRiskIsAskedForAWindowEnding(team, tenDaysAgo: true);
+            ThenTheItemsChanceOfMissingIs(item, 100);
+
+            await WhenTheRiskIsAskedFor(team);
+
+            // As of today the item is 20 days old and nothing finished ever ran that long.
+            ThenTheItemIsBeyondWhatTheHistoryCanAnswer(item);
+        }
+
+        // @driving_port @real-io @AC-01.2 — the target is half the arithmetic, and it is a setting a
+        // coach changes in one click. An answer remembered against the old target is a wrong answer
+        // that looks exactly like a right one.
+        [Test]
+        public async Task Tightening_the_target_changes_the_answer_rather_than_repeating_the_old_one()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinished(4, 8, 12, 16);
+            var item = GivenAnItemOpenFor(3);
+
+            await WhenTheRiskIsAskedFor(team);
+            // Four survivors at age three, two of them past ten days.
+            ThenTheItemsChanceOfMissingIs(item, 50);
+
+            GivenTheTeamNowPromises(6);
+
+            await WhenTheRiskIsAskedFor(team);
+
+            // The same four survivors, but now three of them are past the target.
+            ThenTheItemsChanceOfMissingIs(item, 75);
+        }
+
+        // @driving_port @real-io @error — a window that ends before it starts is not a window, and
+        // answering it with an empty list would read as "nothing is at risk".
+        [Test]
+        public async Task A_window_that_ends_before_it_starts_is_refused()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinished(2, 4, 12, 14);
+            GivenAnItemOpenFor(3);
+
+            await WhenTheRiskIsAskedForABackwardsWindow(team);
+
+            ThenTheQuestionIsRejected();
+        }
+
+        // @driving_port @real-io @AC-01.2 — a single-day window is a question about one day, not a
+        // malformed one. The guard that rejects a backwards range is one character away from
+        // rejecting this too, and nothing else here asks about a window that starts where it ends.
+        [Test]
+        public async Task A_window_of_one_day_is_a_question_like_any_other()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinished(2, 4, 12, 14);
+            GivenAnItemOpenFor(3);
+
+            await WhenTheRiskIsAskedForASingleDay(team);
+
+            ThenTheAnswerArrived();
         }
 
         // @driving_port @real-io @error — the risk names the team's own work, so it is readable by

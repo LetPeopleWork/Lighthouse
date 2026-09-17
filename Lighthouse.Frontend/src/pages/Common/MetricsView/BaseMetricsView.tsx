@@ -56,6 +56,7 @@ import type {
 } from "../../../models/Metrics/NamedCycleTime";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
+import type { ISleRisk } from "../../../models/Metrics/SleRisk";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -67,6 +68,11 @@ import {
 	ageBandColumnHeaderName,
 	buildAgeBandColumnDescriptor,
 } from "../../../utils/charts/paceBands";
+import {
+	buildSleRiskColumnDescriptor,
+	sleRiskColumnDescription,
+	sleRiskColumnHeaderName,
+} from "../../../utils/charts/sleRisk";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
@@ -517,13 +523,16 @@ type ViewDataInputs = {
 	readonly stalenessThresholdDays: number | undefined;
 	readonly blockedStalenessThresholdDays: number | undefined;
 	readonly perStatePercentileValues: IPerStatePercentileValues[];
+	readonly sleRiskValues: ISleRisk[];
 	readonly doingStates: string[];
 	readonly terms: {
+		workItem: string;
 		workItems: string;
 		features: string;
 		cycleTime: string;
 		workItemAge: string;
 		blocked: string;
+		sle: string;
 	};
 };
 
@@ -547,6 +556,13 @@ function buildViewData(
 		doingStates: inputs.doingStates,
 		headerName: ageBandColumnHeaderName(terms.workItemAge),
 		description: ageBandColumnDescription(terms.workItems),
+	});
+	const sleRiskColumn = buildSleRiskColumnDescriptor({
+		riskByReferenceId: new Map(
+			inputs.sleRiskValues.map((entry) => [entry.referenceId, entry.risk]),
+		),
+		headerName: sleRiskColumnHeaderName(terms.sle),
+		description: sleRiskColumnDescription(terms.workItem),
 	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,
@@ -693,6 +709,7 @@ function buildViewData(
 			items: inputs.inProgressItems,
 			highlightColumn: ageHighlight,
 			ageBandColumn,
+			sleRiskColumn,
 		},
 		wipOverTime: {
 			title: `${inputs.title} In Progress`,
@@ -1257,6 +1274,7 @@ export const BaseMetricsView = <
 		workItemAgePercentilesValues,
 		previousWorkItemAgePercentilesValues,
 		perStatePercentileValues,
+		sleRiskValues,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
 		predictabilityData,
@@ -1822,13 +1840,16 @@ export const BaseMetricsView = <
 		stalenessThresholdDays,
 		blockedStalenessThresholdDays,
 		perStatePercentileValues,
+		sleRiskValues,
 		doingStates,
 		terms: {
+			workItem: ragTerms.workItem,
 			workItems: ragTerms.workItems,
 			features: ragTerms.features,
 			cycleTime: ragTerms.cycleTime,
 			workItemAge: ragTerms.workItemAge,
 			blocked: ragTerms.blocked,
+			sle: ragTerms.sle,
 		},
 	});
 

@@ -1483,10 +1483,7 @@ const riskCellTexts = () =>
 const riskColumnHeader = () =>
 	screen.getByRole("columnheader", { name: /SLE Risk/ });
 
-// Specified before the column exists. DELIVER drops the .skip as it implements slice 01; until then
-// these would report a missing column header as a failure on every build. Verified red for the right
-// reason first: 10 of 11 on the absent header, the eleventh passing only because it asserts absence.
-describe.skip("SLE Risk column", () => {
+describe("SLE Risk column", () => {
 	beforeEach(() => {
 		localStorage.clear();
 	});

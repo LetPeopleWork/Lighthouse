@@ -340,6 +340,43 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            // Stryker disable once all: diagnostic log text is not behaviour
+            logger.LogDebug("Getting SLE Risk for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            // A team that published no target has made no promise, so no item of theirs can be at
+            // risk of breaking one. Answering with a list of blanks would say something different.
+            if (team.ServiceLevelExpectationRange <= 0)
+            {
+                return [];
+            }
+
+            // The target is part of the key, not only of the answer. Every other cached metric here
+            // depends on stored work alone, so a settings save does not invalidate this cache — and a
+            // coach who tightens the target in one click would otherwise keep reading the old odds
+            // until the next refresh, with nothing on screen saying the number predates the change.
+            return GetFromCacheIfExists(team, $"SleRisk_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}", () =>
+            {
+                var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
+                // Stryker disable once all: the same selection the cycle-time percentiles read, so the two cannot come to
+                // disagree about which work counts. Admitting a zero would change no answer - an item of age 1 or more is
+                // never compared against one, and an age below that has no answer at all - so the guard is unkillable here
+                // and still belongs, because dropping it would make the two selections differ.
+                var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime(Clock.Zone)).Where(ct => ct > 0).ToList();
+
+                // Ages are read as of the end of the window the caller asked about, not as of today,
+                // so a question about a week that has passed is answered as things stood then.
+                var asOfDay = DateOnly.FromDateTime(endDate);
+
+                return GetWipSnapshotForTeam(team, endDate)
+                    .Select(item => new SleRiskDto(
+                        item.ReferenceId,
+                        SleRiskCalculator.Risk(item.AgeOnDay(Clock.Zone, asOfDay), team.ServiceLevelExpectationRange, cycleTimes)))
+                    .ToList();
+            }, logger);
+        }
+
         public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

@@ -1,6 +1,5 @@
 import type { IWorkItem } from "../../models/WorkItem";
-
-export const __SCAFFOLD__ = true;
+import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
 
 /**
  * What an item is given when nothing the team ever finished ran as long as it already has. There is
@@ -13,12 +12,18 @@ export const SLE_RISK_BEYOND_HISTORY_LABEL = "Beyond history";
  * The column's wording, written once because the chip and the chart zones stand for the same number
  * and a reader who meets it twice must not be told two different things about it.
  */
-export const sleRiskColumnDescription = (workItemsTerm: string): string =>
-	`Of every ${workItemsTerm} still open at this age, the share that went on to miss the target`;
+export const sleRiskColumnDescription = (workItemTerm: string): string =>
+	`Of every ${workItemTerm} still open at this age, the share that went on to miss the target`;
 
 /** The header follows whatever the team calls its target. */
 export const sleRiskColumnHeaderName = (sleTerm: string): string =>
 	`${sleTerm} Risk`;
+
+/**
+ * Where the odds turn against an item, in the palette the aging chart already paints its pace bands
+ * with. Low to high is good to bad in both, so a reader who has learned one has learned the other.
+ */
+const SLE_RISK_THRESHOLDS_LOW_TO_HIGH = [25, 50, 75, 100] as const;
 
 /**
  * Everything the work item dialog needs to draw the risk column, and nothing about where the risk
@@ -41,11 +46,59 @@ export interface SleRiskColumnInputs {
 }
 
 /**
- * Builds the descriptor, or returns nothing when the team published no target — in which case there
- * is no promise for anything to be at risk of breaking and the column would be a row of blanks.
+ * The number behind a rendered label. The column carries `86%` so that the export does too, which
+ * leaves ordering with nothing but the text unless the number is read back out of it.
  */
-export const buildSleRiskColumnDescriptor = (
-	_inputs: SleRiskColumnInputs,
-): SleRiskColumnDescriptor | undefined => {
-	throw new Error("Not yet implemented -- RED scaffold");
+export const sleRiskSortValue = (label: string): number | undefined => {
+	// Naming the sentinel rather than leaving it to the parse below, which happens to reject it only
+	// because the wording starts with a letter. A sentinel reworded to start with a digit would
+	// otherwise be read as a risk, silently, on a column whose whole job is ordering.
+	if (label === SLE_RISK_BEYOND_HISTORY_LABEL) {
+		return undefined;
+	}
+
+	const risk = Number.parseInt(label, 10);
+	return Number.isNaN(risk) ? undefined : risk;
+};
+
+const sleRiskColorFor = (risk: number | undefined): string | undefined => {
+	if (risk === undefined) {
+		return undefined;
+	}
+
+	const rank = SLE_RISK_THRESHOLDS_LOW_TO_HIGH.filter(
+		(threshold) => risk >= threshold,
+	).length;
+
+	return PACE_BAND_COLORS_LOW_TO_HIGH[rank];
+};
+
+/**
+ * Builds the descriptor, or returns nothing when the team published no target — in which case there
+ * is no promise for anything to be at risk of breaking and the column would be a row of blanks. An
+ * empty answer from the backend is exactly that case: it lists every in-flight item otherwise, even
+ * the ones it cannot answer for.
+ */
+export const buildSleRiskColumnDescriptor = ({
+	riskByReferenceId,
+	headerName,
+	description,
+}: SleRiskColumnInputs): SleRiskColumnDescriptor | undefined => {
+	if (riskByReferenceId.size === 0) {
+		return undefined;
+	}
+
+	const riskFor = (workItem: IWorkItem): number | undefined =>
+		riskByReferenceId.get(workItem.referenceId) ?? undefined;
+
+	return {
+		headerName,
+		description,
+		riskFor,
+		labelFor: (workItem) => {
+			const risk = riskFor(workItem);
+			return risk === undefined ? SLE_RISK_BEYOND_HISTORY_LABEL : `${risk}%`;
+		},
+		colorForRisk: sleRiskColorFor,
+	};
 };
