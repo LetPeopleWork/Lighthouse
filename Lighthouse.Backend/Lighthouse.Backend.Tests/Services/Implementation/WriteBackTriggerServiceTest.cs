@@ -881,7 +881,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(plan.Count, Is.EqualTo(2));
+                Assert.That(plan, Has.Count.EqualTo(2));
                 Assert.That(plan.Any(u => u.TargetFieldReference == "Custom.Risk" && u.Value == "86"), Is.True,
                     $"Resolved: [{string.Join(", ", plan.Select(u => $"{u.TargetFieldReference}={u.Value}"))}]");
                 Assert.That(plan.Any(u => u.TargetFieldReference == "Custom.Age" && u.Value == "5"), Is.True,

@@ -582,12 +582,13 @@ get re-applied.
 - **Fix**: after calling `pg_terminate_backend`, poll `pg_stat_activity` until the target pid disappears (up to ~5 s). Applied this wait to both `SubstrateProbeTests.ForciblyTerminateBackendAsync` and `ClusterSubstrateHealthCheck.TerminateBackendAsync`.
 - **Rule going forward**: any code or test that relies on "advisory lock releases when the backend dies" MUST wait for the backend process to actually vanish from `pg_stat_activity` after `pg_terminate_backend` before asserting reclaim. Do not assume `DisposeAsync()` or the `pg_terminate_backend` return is synchronous.
 
-### 2026-07-05 — NUnit2046: `Assert.That(collection.Count, …)` must use `Has.Count.EqualTo(…)`
+### 2026-09-17 (first seen 2026-07-05) — NUnit2046: `Assert.That(collection.Count, …)` must use `Has.Count.EqualTo(…)` (Recurrence: 2)
 
 - **Symptom**: `sonar-gates` failed with `new_violations=1` (INFO) — `external_roslyn:NUnit2046` on `TeamMetricsControllerTest.cs:415`: `Assert.That(actualItems.Count, Is.EqualTo(2))`.
 - **Root cause**: the Roslyn NUnit analyzer prefers `Has.Count.EqualTo()` over raw `.Count` assertions for better failure messages and consistency. A local `dotnet build` was warning-clean — NUnit2046 is INFO severity and only fails the Sonar gate.
 - **Fix**: `Assert.That(actualItems, Has.Count.EqualTo(2))`.
 - **Rule going forward**: Never write `Assert.That(collection.Count, Is.EqualTo(N))` — use `Assert.That(collection, Has.Count.EqualTo(N))`. The pre-commit ledger now greps for this pattern.
+- **Recurrence 2, 2026-09-17, run `35221894363`** (epic-4127 slice 04, `WriteBackTriggerServiceTest.cs:884`). One INFO issue, one CI cycle — and the cheapest miss of the whole Epic, because **the machine-readable rule for it is at the top of this very file** (line 144) and the regex it carries matches the line exactly. The assertion was written inside an `Assert.EnterMultipleScope()` block, where the eye is on the multiple-assert rule and slides past the count. The lesson is not a new rule; it is that the greppable rules are worth nothing unless the grep is actually run. **Before committing any `*Test.cs` you created or touched, run the machine-readable patterns from the top of this file over exactly those files** — not over the repo, which is full of pre-existing hits and teaches you to ignore the output.
 
 ### 2026-06-20 — CA1859 + NUnit2045 in NEW test code slipped past the pre-commit ledger grep to the Sonar gate (slice-04 migration tests)
 - **Symptom**: `sonar-gates` failed with `new_violations=2` (both INFO) after a green backend build/test: `external_roslyn:CA1859` on a private test helper returning `IReadOnlyList<string>` ("change return type to `List<string>` for performance"), and `external_roslyn:NUnit2045` on two adjacent independent `Assert.That` calls.
