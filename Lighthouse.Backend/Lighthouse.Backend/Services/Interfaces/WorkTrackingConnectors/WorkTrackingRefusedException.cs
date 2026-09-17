@@ -18,23 +18,5 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         : HttpRequestException(message, null, statusCode)
     {
         public string RejectedQuery { get; } = rejectedQuery;
-
-        /// <summary>
-        /// What an operator reads on the summary line of the refresh that stopped. The two halves have to
-        /// arrive together: the sentence without the query leaves nobody able to tell which of several
-        /// configured filters produced it, and the query without the sentence says nothing about what was
-        /// wrong with it.
-        /// </summary>
-        public string Reason
-        {
-            get
-            {
-                var refusal = $"The work tracking system refused this refresh: {Message}";
-
-                return string.IsNullOrWhiteSpace(RejectedQuery)
-                    ? refusal
-                    : $"{refusal} The rejected query was: {RejectedQuery}";
-            }
-        }
     }
 }

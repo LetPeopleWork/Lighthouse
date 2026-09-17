@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
             catch (WorkTrackingRefusedException refusal)
             {
-                outcome = outcome with { Reason = refusal.Reason };
+                outcome = outcome with { Reason = BuildRefusalReason(refusal) };
 
                 throw;
             }

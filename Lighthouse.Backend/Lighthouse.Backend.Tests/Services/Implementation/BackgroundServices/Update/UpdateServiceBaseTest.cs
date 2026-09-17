@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -198,6 +199,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public static string Build(UnreadableSecretException exception, WorkTrackingSystemConnection connection, ICryptoService cryptoService)
         {
             return BuildUnreadableSecretReason(exception, connection, cryptoService);
+        }
+
+        public static string Build(WorkTrackingRefusedException refusal)
+        {
+            return BuildRefusalReason(refusal);
         }
 
         protected override RefreshSettings GetRefreshSettings() => new();

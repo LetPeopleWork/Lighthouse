@@ -586,7 +586,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             CreateSubject().TriggerUpdate(project.Id);
             CreateTeamSubject().TriggerUpdate(team.Id);
 
-            var expected = CreateRefusal().Reason;
+            var expected = ReasonProbe.Build(CreateRefusal());
 
             using (Assert.EnterMultipleScope())
             {

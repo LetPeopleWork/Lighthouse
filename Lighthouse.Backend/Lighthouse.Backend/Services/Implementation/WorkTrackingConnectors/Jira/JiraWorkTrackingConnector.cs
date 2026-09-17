@@ -1683,7 +1683,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw RejectedQuery(jqlQuery, new JiraRefusal(response.StatusCode, responseBody));
+                    throw RefusedTheQuery(jqlQuery, new JiraRefusal(response.StatusCode, responseBody));
                 }
 
                 using var jsonResponse = JsonDocument.Parse(responseBody);
@@ -1730,7 +1730,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (rejection is not null)
             {
-                throw RejectedQuery(jqlQuery, rejection);
+                throw RefusedTheQuery(jqlQuery, rejection);
             }
 
             return issues;
@@ -1753,7 +1753,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 (int)rejection.StatusCode,
                 rejection.ResponseBody);
 
-        private JiraQueryRejectedException RejectedQuery(string jqlQuery, JiraRefusal rejection)
+        private JiraQueryRejectedException RefusedTheQuery(string jqlQuery, JiraRefusal rejection)
         {
             LogTheRefusal(jqlQuery, rejection);
 
@@ -1774,32 +1774,61 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 refusal.StatusCode,
                 refusal.ResponseBody);
 
-            return JiraReadException.FieldListRefused(refusal.StatusCode, ExplanationIn(refusal, rejectedQuery: null));
+            return JiraReadException.FieldListRefused(refusal.StatusCode, ExplanationWithNoQueryToName(refusal));
         }
 
         /// <summary>
-        /// Jira puts the sentence a user can act on - which field it did not recognise, at which character,
-        /// which permission the account is short of - in errorMessages. Anything else that comes back through
-        /// here is not Jira explaining itself but something in front of Jira turning the request away before
-        /// the query was ever read, which is the failure hardest to place and the one a bare status helps
-        /// with least. What is left to report is then what Lighthouse itself knows: the query it sent. The
-        /// field list is asked for without one, so that path has nothing to add and says only the status.
+        /// A refusal of a query Lighthouse sent. When Jira does not explain itself, what is left to report is
+        /// the one thing Lighthouse knows and the reader does not: the query it asked with.
         /// </summary>
-        private static string ExplanationIn(JiraRefusal rejection, string? rejectedQuery)
+        private static string ExplanationIn(JiraRefusal rejection, string rejectedQuery)
+            => WhatJiraSaidAbout(rejection)
+                ?? $"{WhatJiraAnswered(rejection)} without saying why. Lighthouse asked: {ShortEnoughToLog(rejectedQuery)}";
+
+        /// <summary>
+        /// A refusal of the field list, which is asked for without a query - so there is nothing to name
+        /// beyond the status, and announcing a query this path cannot then produce would only mislead.
+        /// </summary>
+        private static string ExplanationWithNoQueryToName(JiraRefusal refusal)
+            => WhatJiraSaidAbout(refusal) ?? $"{WhatJiraAnswered(refusal)}.";
+
+        /// <summary>
+        /// Jira puts the sentence a user can act on - which field it did not recognise, at which character,
+        /// which permission the account is short of - in errorMessages, and that sentence is the whole answer
+        /// whenever there is one. Null means nothing came back through here that Jira wrote: either it was
+        /// something in front of Jira turning the request away before the query was ever read, which is the
+        /// failure hardest to place and the one a bare status helps with least, or Jira refused without
+        /// saying why.
+        /// </summary>
+        private static string? WhatJiraSaidAbout(JiraRefusal refusal)
         {
-            var sentences = ErrorMessagesIn(rejection.ResponseBody);
-
-            if (sentences.Count > 0)
+            try
             {
-                return string.Join(" ", sentences);
+                using var json = JsonDocument.Parse(refusal.ResponseBody);
+
+                if (!json.RootElement.TryGetProperty("errorMessages", out var errorMessages)
+                    || errorMessages.ValueKind != JsonValueKind.Array)
+                {
+                    return null;
+                }
+
+                var sentences = errorMessages
+                    .EnumerateArray()
+                    .Select(message => message.GetString() ?? string.Empty)
+                    .Where(message => !string.IsNullOrWhiteSpace(message))
+                    .ToList();
+
+                return sentences.Count > 0 ? string.Join(" ", sentences) : null;
             }
-
-            var whatJiraAnswered = $"Jira answered {(int)rejection.StatusCode} {rejection.StatusCode}";
-
-            return string.IsNullOrWhiteSpace(rejectedQuery)
-                ? $"{whatJiraAnswered}."
-                : $"{whatJiraAnswered} without saying why. Lighthouse asked: {ShortEnoughToLog(rejectedQuery)}";
+            catch (JsonException)
+            {
+                // Not every refusal comes back as JSON - a proxy in front of Jira can answer with anything.
+                return null;
+            }
         }
+
+        private static string WhatJiraAnswered(JiraRefusal refusal)
+            => $"Jira answered {(int)refusal.StatusCode} {refusal.StatusCode}";
 
         /// <summary>
         /// A configuration narrowing on hundreds of projects or releases builds a query longer than a log
@@ -1809,32 +1838,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => query.Length <= LongestReportedQuery
                 ? query
                 : string.Concat(query.AsSpan(0, LongestReportedQuery), "…");
-
-        private static List<string> ErrorMessagesIn(string responseBody)
-        {
-            try
-            {
-                using var json = JsonDocument.Parse(responseBody);
-
-                if (!json.RootElement.TryGetProperty("errorMessages", out var errorMessages)
-                    || errorMessages.ValueKind != JsonValueKind.Array)
-                {
-                    return [];
-                }
-
-                var sentences = errorMessages
-                    .EnumerateArray()
-                    .Select(message => message.GetString() ?? string.Empty)
-                    .Where(message => !string.IsNullOrWhiteSpace(message));
-
-                return [.. sentences];
-            }
-            catch (JsonException)
-            {
-                // Not every refusal comes back as JSON - a proxy in front of Jira can answer with anything.
-                return [];
-            }
-        }
 
         private async Task<Issue> CreateIssueWithCompleteChangelog(
             HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName, CancellationToken cancellationToken)
@@ -1886,8 +1889,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             do
             {
-                // One check per page, which is the granularity AC-04.2 promises: a refresh told to stop
-                // stops after the round trip it is already in, not after the whole result set.
+                // One check per page, so a refresh told to stop stops after the round trip it is already
+                // in rather than after the whole result set, which on a large team is minutes away.
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var url = new StringBuilder("rest/api/3/search/jql?");

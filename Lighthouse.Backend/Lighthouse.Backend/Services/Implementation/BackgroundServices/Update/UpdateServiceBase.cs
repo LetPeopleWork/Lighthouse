@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
@@ -200,6 +201,25 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return $"{subject} on connection '{connection.Name}' cannot be read with the current encryption key{namedKey}, " +
                 "so this refresh stopped before contacting the work tracking system. " +
                 "Enter the credential again to store it under the key this instance uses now.";
+        }
+
+        /// <summary>
+        /// What an operator reads when a refresh stopped because the work tracking system refused to run the
+        /// query it was sent. The two halves have to arrive together: the sentence without the query leaves
+        /// nobody able to tell which of several configured filters produced it, and the query without the
+        /// sentence says nothing about what was wrong with it.
+        ///
+        /// It is composed here rather than on the exception because this is where the summary line an
+        /// operator actually reads is written, and because every updater inherits it - the portfolio and the
+        /// team cannot drift into two phrasings of one failure.
+        /// </summary>
+        protected static string BuildRefusalReason(WorkTrackingRefusedException refusal)
+        {
+            var sentence = $"The work tracking system refused this refresh: {refusal.Message}";
+
+            return string.IsNullOrWhiteSpace(refusal.RejectedQuery)
+                ? sentence
+                : $"{sentence} The rejected query was: {refusal.RejectedQuery}";
         }
 
         /// <summary>
