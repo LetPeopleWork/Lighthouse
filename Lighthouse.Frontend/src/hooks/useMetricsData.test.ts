@@ -1293,7 +1293,10 @@ describe("useMetricsData", () => {
 			const total =
 				countServiceCalls(service) +
 				countServiceCalls(mockBlackoutPeriodService);
-			expect(total).toBe(19);
+			// 20 since Epic #4127 slice 02: the WIP card says how many of its items are at risk,
+			// so the default view now asks for that too. The number went up for a declared reason,
+			// which is the only way it is allowed to move.
+			expect(total).toBe(20);
 		});
 
 		/**

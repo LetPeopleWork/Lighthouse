@@ -109,6 +109,14 @@ The band names are read off the percentile numbers themselves — with the defau
 
 Sort the column to bring the worst-aging items to the top, filter it to a single band through the grid's own column filter, or export the list to CSV, where the band reads in words. When no state in the workflow has any history at all, the column is not shown — a column reading `No history` on every row says nothing the chart is not already saying by drawing no zones.
 
+## At-Risk Count
+
+The **In Progress** card on the Flow Overview says how many of the open items are more likely than not to miss the target: a coloured `3 at risk` line under the count, in the same colours the risk column uses. It appears only for teams that have published an SLE, and only when the number is above zero — a line that is always there stops being read.
+
+"At risk" means a risk of 50% or more: more likely than not to breach. An item that has outlasted everything the team ever finished counts too, since it is not a safe item. An item marked `Not enough history` does not — there is nothing to act on in a number nobody can stand behind.
+
+Clicking **View Data** on the same card opens the list behind that number, with the `SLE Risk` column on every row, so the count and the items it counted are one click apart.
+
 ## SLE Risk Column
 
 The SLE line tells you which items have **already** missed the target. The **SLE Risk** column tells you which ones are about to, while you can still do something about it. It sits beside the Age Band in the same dialogs — **View Data** in the widget header, or a click on a single bubble — and is shown only for teams that have published an SLE. The header follows whatever you have renamed SLE to under [Terminology Configuration](../settings/configuration.html#terminology-configuration).

@@ -242,7 +242,9 @@ const workItemLookupSources: readonly MetricsFetchKey[] = [
  */
 const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// --- flow-overview ---------------------------------------------------------------------
-	wipOverview: ["inProgressItems", "wipOverviewInfo"],
+	// The card says how many of these are at risk, and its View Data dialog lists them with the
+	// risk column - BaseMetricsView.tsx
+	wipOverview: ["inProgressItems", "wipOverviewInfo", "sleRisk"],
 	// trend: computeBlockedTrend(blockedCountHistory) — BaseMetricsView.tsx:1828
 	blockedOverview: ["blockedItems", "blockedCountHistory"],
 	// staleItems is derived from inProgressItems — BaseMetricsView.tsx:1581

@@ -267,15 +267,18 @@ vi.mock("./WipOverviewWidget", () => ({
 		wipCount,
 		systemWipLimit,
 		title,
+		atRisk,
 	}: {
 		wipCount: number;
 		systemWipLimit?: number;
 		title?: string;
+		atRisk?: { count: number; color?: string };
 	}) => (
 		<div data-testid="wip-overview-widget">
 			<div data-testid="wip-overview-count">{wipCount}</div>
 			<div data-testid="wip-overview-limit">{systemWipLimit ?? ""}</div>
 			<div data-testid="wip-overview-title">{title}</div>
+			<div data-testid="wip-at-risk-count">{atRisk?.count ?? "none"}</div>
 		</div>
 	),
 }));
@@ -4424,11 +4427,16 @@ describe("BaseMetricsView component", () => {
 		});
 
 		const renderTeamAnswering = (
-			risks: { referenceId: string; risk: number | null }[],
+			risks: {
+				referenceId: string;
+				risk: number | null;
+				comparableItems?: number;
+			}[],
+			category: "flow-metrics" | "flow-overview" = "flow-metrics",
 		) => {
 			localStorage.setItem(
 				`lighthouse:metrics:team:${mockTeam.id}:category`,
-				"flow-metrics",
+				category,
 			);
 
 			const service = createMockMetricsService<IWorkItem>();
@@ -4508,6 +4516,37 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("widget-view-data-sle-risks-aging"),
 			).toBeEmptyDOMElement();
+		});
+
+		it("counts the at-risk items on the card a coach lands on, and lists the same ones behind it", async () => {
+			// AC-02.4 is the point of this test: the card's number and the list one click behind it
+			// are two readings of one answer, so they are checked together or not at all.
+			renderTeamAnswering(
+				[
+					{ referenceId: "ZEN-412", risk: 86, comparableItems: 30 },
+					{ referenceId: "ZEN-455", risk: 12, comparableItems: 30 },
+				],
+				"flow-overview",
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-sle-risks-wipOverview"),
+				).toHaveTextContent("86%,12%");
+			});
+
+			// One of the two is at or above the line; the other is not.
+			expect(screen.getByTestId("wip-at-risk-count")).toHaveTextContent("1");
+		});
+
+		it("says nothing about risk on the card when the team published no target", async () => {
+			renderTeamAnswering([], "flow-overview");
+
+			await waitFor(() => {
+				expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
+			});
+
+			expect(screen.getByTestId("wip-at-risk-count")).toHaveTextContent("none");
 		});
 
 		it("never offers a risk column on a portfolio page", async () => {

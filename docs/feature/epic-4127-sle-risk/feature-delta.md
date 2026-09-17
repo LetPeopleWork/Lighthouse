@@ -693,3 +693,116 @@ that collects nothing runs nothing. `mutation/results.md` has both.
 - **Slice 04** — nothing to do. The guard produces a null, and null already means no write.
 
 ---
+
+# Wave: DESIGN — slice 02
+
+Run 2026-09-17, application scope, against slice 02 only (ADO Story #6017). DEVOPS stays skipped for
+this Epic; nothing here is infrastructure.
+
+`OUT-4127-risk-stability` has been read and acted on — the minimum-sample guard is in — so the gate
+on this slice is cleared.
+
+## Wave: DESIGN / [REF] The correction this wave exists to catch
+
+**DISCUSS wrote US-02 against a component that no longer ships.** `ItemsInProgress.tsx` — the
+multi-row card whose `Goal: N` chip and fixed-width chip box AC-02.5 is entirely about — has **no
+production caller**. Only its own test imports it; the widget architecture superseded it and left it
+behind. The live surface is `WipOverviewWidget`: one count, one plain `Limit: N` line, no rows, no
+chip, and not itself clickable — View Data in the shell header is what opens the dialog.
+
+So four of US-02's six ACs could not have been satisfied as written, and a DISTILL run that went
+straight at the brief would have specified behaviour against dead code. Decided with the user:
+
+| ID | Decision | Verdict |
+|---|---|---|
+| DDD-12 | Which surface carries the count? | **`WipOverviewWidget`** — the card a coach actually lands on, reading the count of in-flight items. A line beside `Limit: N` rather than a chip in a slot, because the widget has no slot. |
+| DDD-13 | AC-02.5 (two chips, one fixed-width box) | **Dropped, not reinterpreted.** The constraint it protects does not exist on the live widget. Recorded here rather than silently skipped. |
+| DDD-14 | What does AC-02.3 mean now? | The widget's own **View Data** dialog must carry the risk column. Slice 01 wired the column into the aging widget only, and the WIP widget lists the same in-flight items — so without this, AC-02.4 (chip and dialog never disagree) is unsatisfiable by construction. One descriptor, passed to a second payload. |
+| DDD-15 | Where is the count computed? | **In the frontend, off the same answers the column reads.** D5 says the risk is computed once in the backend, and it is — this counts what the backend already said. A second endpoint would be a second chance to disagree. |
+| DDD-16 | Does `Not enough history` count as at-risk? | **No.** AC-02.6 counts `Beyond history` because an item that has outlasted everything the team ever finished is not a safe item — that is a signal. Too little history is the absence of one. Counting unknowns would inflate the number with items nobody can act on, and the guard exists precisely to stop an unknown reading as knowledge. |
+| DDD-17 | What colour? | The same `sleRiskColorFor` the column uses, over the **worst** counted item, so the line and the column cannot speak different colour languages. A `Beyond history` item colours as the top band — being past all history is what makes it count at all. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `sleRiskAtRiskCount` | `utils/charts/sleRisk.ts` | **EXTEND** — one pure function over the answers, returning the count and the colour |
+| `WipOverviewWidget` | `pages/Common/MetricsView/WipOverviewWidget.tsx` | **EXTEND** — one optional prop, one line |
+| `BaseMetricsView` | `pages/Common/MetricsView/BaseMetricsView.tsx` | **EXTEND** — pass the summary to the widget and the descriptor to the `wipOverview` payload |
+
+No backend change. No new endpoint, no new fetch — `sleRiskValues` is already in hand for the column.
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+**Key decisions**: the count lands on the widget that ships rather than the one the brief described
+(DDD-12); the WIP widget's dialog gains the column so the two surfaces can agree (DDD-14); the count
+is derived from the answers already fetched rather than computed again (DDD-15); and the two
+silences are treated differently, because one is evidence and the other is its absence (DDD-16).
+
+**Upstream changes**: AC-02.5 dropped, AC-02.1/02.2/02.3 re-aimed at `WipOverviewWidget`. AC-02.4 and
+AC-02.6 stand as written.
+
+---
+
+# Wave: DISTILL + DELIVER — slice 02
+
+Run 2026-09-17 against ADO Story #6017.
+
+## Wave: DISTILL / [REF] Red gate
+
+Measured before a line of production code: **10 failed, 2 passed of 12.** The two that passed assert
+an absence — no risk line when the count is zero, and none when no target is published — and a line
+that does not exist yet is absent from everything. Recorded so "they were green from the start" is
+never read as "they were verified from the start"; they start carrying weight the moment the line
+lands.
+
+Specifications sit in three places, each where its claim can actually be observed:
+`WipOverviewWidget.test.tsx` for what a reader sees, `sleRisk.test.ts` for the counting rule, and
+`BaseMetricsView.test.tsx` for AC-02.4 — the card's number and the list one click behind it, checked
+in one test because checking them apart is how they come to disagree.
+
+## Wave: DELIVER / [REF] What the wiring turned up
+
+**The fetch key was missing from the category the card lives on.** `wipOverview` is on
+`flow-overview`; `aging`, which slice 01 wired, is on `flow-metrics`. Without adding `sleRisk` to the
+WIP card's declared requirements the fetch never fired on the page the card is on, and the count
+would have been permanently absent — silently, because an absent count is also what a team with no
+target looks like.
+
+**That cost one request on the default view, and the repo makes you say so.** The first-open request
+budget in `useMetricsData.test.ts` asserts an exact number for the default team view; it went 19 → 20
+and the test names what bought it. That guard exists so a fetch cannot slip onto the landing page
+without a declaration, and it worked exactly as intended.
+
+## Wave: DELIVER / [REF] Gates
+
+| Gate | Result |
+|---|---|
+| `pnpm test` | 5273 passed, 372 files |
+| `pnpm build` | clean |
+| Stryker frontend | `sleRisk.ts` **93.42%**, combined 81.03% — see `mutation/results.md` |
+| Independent review | `nw-software-crafter-reviewer`, approved, no blockers |
+| Backend | untouched — no backend code in this slice |
+
+The mutation run earned its keep again: two survivors showed that each filter's first conjunct was
+guarding against an answer the backend cannot emit, which meant an item with both a number and no
+evidence would have been counted twice. One filter with two exclusive arms replaced them, so the
+double count is impossible by construction rather than prevented by a guard no test could reach.
+
+## Wave: DELIVER / [REF] Finalization checklist
+
+- **Docs prose** — done. `docs/metrics/flow-metrics.md` gains an **At-Risk Count** section above the
+  column's, saying what "at risk" means, which of the two silences counts, and that View Data on the
+  same card lists exactly what was counted.
+- **Per-feature screenshot** — **N/A, because** the Flow Overview cards have no per-card screenshot
+  on that page, and the line is three words under a number. Slice 03's chart zones will want one.
+- **Demo data** — **N/A, because** the demo teams already carry an SLE and in-flight work, so the
+  line renders on them with no seeding change.
+- **Lighthouse-Clients CLI/MCP** — **N/A, because** no new endpoint and no new payload field; the
+  count is computed in the browser from a read slice 01 already shipped.
+- **Website marketing surface** — **N/A, because** the Epic is not whole; slices 03 and 04 remain.
+- **RBAC** — no change. The card reads what the team read already allows.
+- **Release Notes tag** — the Epic carries it; per the maintainer's convention the child Stories do
+  not.
+
+---

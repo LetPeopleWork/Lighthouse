@@ -126,3 +126,49 @@ export const buildSleRiskColumnDescriptor = ({
 		colorForRisk: sleRiskColorFor,
 	};
 };
+
+/**
+ * What a coach needs to decide whether the dialog is worth opening: how many in-flight items are
+ * more likely than not to miss the target, and how bad the worst of them is.
+ */
+export interface SleRiskAtRiskSummary {
+	readonly count: number;
+	readonly color?: string;
+}
+
+/**
+ * More likely than not to breach. One explainable line rather than a tunable nobody sets; if it
+ * turns out to be the wrong line, that is evidence for a follow-up and not a knob to ship now.
+ */
+const AT_RISK_FROM = 50;
+
+/**
+ * Counted off the answers the column already reads, never computed a second time — two readings of
+ * one rule is how a chip and the list behind it come to disagree.
+ *
+ * An item beyond all history counts: it has outlasted everything the team ever finished, which is
+ * what a coach means by trouble. An item too little history can speak for does not — the absence of
+ * a signal is not a signal, and putting it here would fill the one number used to decide whether to
+ * act with items nobody can act on.
+ */
+export const sleRiskAtRiskSummary = (
+	answers: readonly ISleRisk[],
+): SleRiskAtRiskSummary => {
+	// One pass with two exclusive arms rather than two filters added together, so no item can be
+	// counted twice however odd the answer it arrives in.
+	const counted = answers.filter((answer) =>
+		answer.risk === null
+			? answer.comparableItems === 0
+			: answer.risk >= AT_RISK_FROM,
+	);
+
+	if (counted.length === 0) {
+		return { count: 0 };
+	}
+
+	// Nothing places an item beyond all history below the top band, so it reads as the worst there
+	// is - which is the same reason it is counted at all.
+	const worst = Math.max(...counted.map((answer) => answer.risk ?? 100));
+
+	return { count: counted.length, color: sleRiskColorFor(worst) };
+};

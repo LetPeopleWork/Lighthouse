@@ -70,6 +70,8 @@ import {
 } from "../../../utils/charts/paceBands";
 import {
 	buildSleRiskColumnDescriptor,
+	type SleRiskAtRiskSummary,
+	sleRiskAtRiskSummary,
 	sleRiskColumnDescription,
 	sleRiskColumnHeaderName,
 } from "../../../utils/charts/sleRisk";
@@ -631,6 +633,7 @@ function buildViewData(
 			title: `${inputs.title} in Progress`,
 			items: inputs.inProgressItems,
 			highlightColumn: ageHighlight,
+			sleRiskColumn,
 			timeInStateColumn: {
 				stalenessThresholdDays: inputs.stalenessThresholdDays,
 				blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
@@ -963,6 +966,7 @@ function buildWidgetNodes(ctx: {
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
+	sleRiskAtRisk: SleRiskAtRiskSummary | undefined;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -972,6 +976,7 @@ function buildWidgetNodes(ctx: {
 					ctx.entity.systemWIPLimit > 0 ? ctx.entity.systemWIPLimit : undefined
 				}
 				title={`${ctx.title} in Progress`}
+				atRisk={ctx.sleRiskAtRisk}
 			/>
 		),
 		blockedOverview: (
@@ -1408,6 +1413,16 @@ export const BaseMetricsView = <
 
 	const displayedPercentileValues = scopedPercentileValues ?? percentileValues;
 
+	// Absent for a team that published no target, exactly as the dialog column is - both read the
+	// same empty answer, so neither can appear without the other.
+	const sleRiskAtRisk = useMemo(
+		() =>
+			sleRiskValues.length > 0
+				? sleRiskAtRiskSummary(sleRiskValues)
+				: undefined,
+		[sleRiskValues],
+	);
+
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
@@ -1719,6 +1734,7 @@ export const BaseMetricsView = <
 		refetchThroughputPbc,
 		blockedCountHistory,
 		flowEfficiencyInfo,
+		sleRiskAtRisk,
 	});
 
 	const widgetFooters = buildWidgetFooters({

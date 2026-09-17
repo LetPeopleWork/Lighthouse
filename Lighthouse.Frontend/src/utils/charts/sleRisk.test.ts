@@ -6,6 +6,7 @@ import {
 	buildSleRiskColumnDescriptor,
 	SLE_RISK_BEYOND_HISTORY_LABEL,
 	SLE_RISK_NOT_ENOUGH_HISTORY_LABEL,
+	sleRiskAtRiskSummary,
 	sleRiskColumnDescription,
 	sleRiskColumnHeaderName,
 	sleRiskSortValue,
@@ -181,5 +182,68 @@ describe("reading the number back out of a rendered label", () => {
 
 	test("has no number for a label that was never a percentage", () => {
 		expect(sleRiskSortValue("")).toBeUndefined();
+	});
+});
+
+// --- Epic #4127 slice 02: how many of the open items are in trouble ---
+describe("counting what is at risk", () => {
+	test("counts the items more likely than not to miss the target", () => {
+		const summary = sleRiskAtRiskSummary([
+			answer("ZEN-1", 86),
+			answer("ZEN-2", 50),
+			answer("ZEN-3", 49),
+			answer("ZEN-4", 12),
+		]);
+
+		// Fifty is the line and sits on the at-risk side of it: more likely than not.
+		expect(summary.count).toBe(2);
+	});
+
+	test("counts an item that has outlasted everything the team ever finished", () => {
+		// It has no number and it is not a safe item - that is the whole reason it has no number.
+		const summary = sleRiskAtRiskSummary([answer("ZEN-5", null, 0)]);
+
+		expect(summary.count).toBe(1);
+	});
+
+	test("does not count an item too little history can speak for", () => {
+		// The absence of a signal is not a signal. Counting it would put items nobody can act on
+		// into the one number a coach uses to decide whether to act.
+		const summary = sleRiskAtRiskSummary([answer("ZEN-6", null, 9)]);
+
+		expect(summary.count).toBe(0);
+	});
+
+	test("takes its colour from the worst item it counted", () => {
+		const summary = sleRiskAtRiskSummary([
+			answer("ZEN-1", 60),
+			answer("ZEN-2", 99),
+		]);
+
+		expect(summary.color).toBe(PACE_BAND_COLORS_LOW_TO_HIGH[3]);
+	});
+
+	test("reads an item beyond all history as the worst band there is", () => {
+		// Nothing the team finished ran this long, so nothing places it below the top band.
+		const summary = sleRiskAtRiskSummary([
+			answer("ZEN-1", 60),
+			answer("ZEN-5", null, 0),
+		]);
+
+		expect(summary.color).toBe(
+			PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1],
+		);
+	});
+
+	test("has no colour to give when it counted nothing", () => {
+		const summary = sleRiskAtRiskSummary([answer("ZEN-3", 12)]);
+
+		expect(summary.count).toBe(0);
+		expect(summary.color).toBeUndefined();
+	});
+
+	test("counts nothing for a team that published no target", () => {
+		// An empty answer is how that arrives, and it is the same shape as having no items.
+		expect(sleRiskAtRiskSummary([]).count).toBe(0);
 	});
 });

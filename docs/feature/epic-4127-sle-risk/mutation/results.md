@@ -123,3 +123,48 @@ Two rescaled scenarios had landed on exactly ten comparable items, which is the 
 boundary. They are about the arithmetic, not the threshold, so they were given one more copy each —
 twelve items, same proportions, same pinned percentages. The threshold has its own two scenarios at
 nine and ten and does not need to borrow theirs.
+
+## Slice 02 / Story #6017 — the at-risk count on the WIP card
+
+Run 2026-09-17. Frontend only; slice 02 adds no backend code.
+
+| File | Killed | Survived | Score |
+|---|---|---|---|
+| `utils/charts/sleRisk.ts` | 71 | 5 | **93.42%** |
+| `pages/Common/MetricsView/WipOverviewWidget.tsx` | 23 | 17 | 57.50% |
+| Combined | 94 | 22 | **81.03%** |
+
+### The run found the counting rule's one real weakness
+
+Two survivors sat on the first conjunct of each filter — `answer.risk === null` and
+`answer.risk !== null`. Replacing either with `true` made an answer with **both** a number and zero
+comparable items fall into both sets and be counted twice. The backend cannot emit that shape, so
+the conjuncts were defending against an impossible payload, which is why no test could reach them.
+
+Rather than write a test for an impossible answer, the two filters became one with two exclusive
+arms:
+
+```ts
+answers.filter((answer) =>
+    answer.risk === null ? answer.comparableItems === 0 : answer.risk >= AT_RISK_FROM,
+)
+```
+
+Double counting is now impossible by construction rather than by a guard nobody could exercise, the
+colour falls out of `answer.risk ?? 100` instead of a second branch, and both mutants are gone.
+
+### The widget's 57.5% is presentation, and is left alone
+
+`WipOverviewWidget.tsx` had never been in a mutation run before this slice. Sixteen of its seventeen
+survivors are pre-existing: `sx` object literals and the strings inside them (`"flex"`, `"center"`,
+`"100%"`), the default `title = "In Progress"` that production never uses, and `hasLimit`'s
+`systemWipLimit != null` conjunct — which is genuinely equivalent, because `undefined > 0` is already
+false, so the null check changes no outcome.
+
+The seventeenth is on this slice's own line, and it is the `sx={{ mt: 0.5, fontWeight: 600 }}` of the
+risk line. Every **behavioural** mutant on the new line was killed: whether it renders, what it says,
+what colour it is given, and that it stays away at a count of zero.
+
+Chasing the rest would mean asserting on margins and font weights, which is the implementation
+detail the ledger says not to invent tests for. The number is recorded as it is rather than
+massaged by narrowing the config to the file that scores well.
