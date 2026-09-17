@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Interfaces/WorkTrackingConnectors/WorkTrackingRefusedException.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraQueryRejectedException.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~TeamUpdaterTest|FullyQualifiedName~UpdateServiceBaseTest|FullyQualifiedName~JiraRefreshRefusalTest|FullyQualifiedName~JiraBoardQueryAssemblyTest|FullyQualifiedName~JiraFieldLookupTest|FullyQualifiedName~JiraIncrementalSyncTest|FullyQualifiedName~JiraIssuesPerRequestTest)&FullyQualifiedName!~IntegrationTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

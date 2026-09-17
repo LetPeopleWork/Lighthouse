@@ -1,0 +1,129 @@
+{
+  "roadmap": {
+    "project_id": "fix-jira-dc-portfolio-refusal",
+    "created_at": "2026-09-17T00:00:00Z",
+    "total_steps": 5
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Make a refused Jira Data Center refresh diagnosable, and stop putting the query where it can be refused for its length",
+      "description": "Bug #6019. A Portfolio refresh against Jira Data Center fails with a log line naming neither the query nor Jira's answer, and the refusal it reports is plausibly a request-line-length 400 that nothing on the path measures and Jira cannot explain.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Carry the tracker's refusal onto the line that names what failed",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A refresh a connector refuses records the refusal as the outcome's reason, so the per-entity summary line names the portfolio, the tracker's sentence and the rejected query together",
+            "The same holds for a team refresh",
+            "A refused refresh still fails: the exception reaches the update queue exactly as before, and the entity is still recorded as unsuccessful",
+            "The updater learns nothing about Jira - the type it catches lives with the other work-tracking port types",
+            "A refusal raised on the refresh path is logged with its query and the tracker's whole answer, pinned by a test that drives the refresh path and not a Validate* method"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingRefusedException.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraQueryRejectedException.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs"
+          ],
+          "implementation_notes": "Root cause A. The refusal exception already carries both Jira's sentence (its Message) and the rejected JQL (JiraQueryRejectedException.RejectedQuery); every one of them is thrown past the surfaces an operator reads. PortfolioUpdater's two catches (OperationCanceledException, UnreadableSecretException) rethrow, so the exception lands in UpdateQueueService.cs:447, which logs the update TYPE and id - never the portfolio, never the query. Meanwhile the connector's Warning names the query and no portfolio, so on an instance refreshing several portfolios at once the two lines cannot be paired.\n\nThe channel that joins them exists: SyncOutcome.Reason, set today only inside catch (UnreadableSecretException) at PortfolioUpdater.cs:132-143 and rendered by UpdateServiceBase.cs:159-163 as '| reason='. Add a sibling catch for a port-level refusal type, set the reason, rethrow - failure semantics must not change.\n\nThe new type goes beside WorkTrackingReadException in Services/Interfaces/WorkTrackingConnectors/ and is INSERTED BETWEEN HttpRequestException and JiraQueryRejectedException. Do not re-parent: JiraQueryRejectedException.cs:11-12 and JiraCouldNotBeAsked (JiraWorkTrackingConnector.cs:2506, caught at :2492 and :2591) both depend on the HttpRequestException ancestry, and losing it turns the delivery-source soft degradation into a hard refresh failure. Grep both short and fully-qualified names across production AND test projects before touching it.\n\nNo test anywhere currently covers refusal logging on the refresh path - every existing rejection test (JiraBoardQueryAssemblyTest.cs:454/486/516) goes through a Validate* method reachable only from PortfoliosController. Drive GetFeaturesForProject with a stubbed HttpMessageHandler (precedent: JiraIssuesPerRequestTest) so the behaviour this whole fix rests on is pinned."
+        },
+        {
+          "id": "01-02",
+          "name": "Ask Data Center for issues over POST, so the query is no longer part of the request line",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "Both Data Center search calls send the JQL in a request body rather than in the URL",
+            "Paging, the fields asked for, the changelog expansion and the page size Jira reports back all behave exactly as before, on both call sites",
+            "A refusal is still read from the response body and still reaches the same refusal type, so step 01-01's reason survives the transport change",
+            "A query long enough to have exceeded the old request-line budget now completes",
+            "The chunk size stays at 200 - the transport no longer bounds it, and halving it would double round trips for a constraint that no longer exists"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs"
+          ],
+          "implementation_notes": "Root cause B, and the reason this is the permanent fix rather than a smaller chunk size: chunking bounds a COUNT, the constraint is a LENGTH, and nothing on the path knows how long the request it is about to make is.\n\nTWO Data Center sites put the JQL in the URL, not one, and both are on the refresh path:\n  - GetIssuesByQueryFromDataCenter:1645-1688 (the full download) - url built at :1660 with jql, startAt, maxResults, expand=changelog\n  - WalkDataCenterSearchOffsets:1899-1936 (the identity sweep) - url built at :1911 with jql, fields, startAt, maxResults\nJira Data Center accepts POST rest/api/latest/search with a JSON body: jql, startAt, maxResults, expand as an ARRAY (['changelog']), fields as an ARRAY. Note the shape difference from the query string, and note that GetIssuesByQueryFromDataCenter names no fields today - it takes Jira's default set, so the POST body must omit 'fields' entirely rather than send an empty array, which would ask for no fields at all. WalkDataCenterSearchOffsets DOES name its fields (SweepFields) and that must be preserved: naming none would make Data Center return every field, which is the whole cost the sweep exists to avoid (see the comment at :1891-1898).\n\nCache the JsonSerializerOptions in a static readonly field if any are needed - CA1869 has a 4x recurrence in this repo and lands in exactly this kind of one-line helper.\n\nThe Cloud path is untouched: it walks by page token against rest/api/3/search/jql and has no such exposure.\n\nThis closes the follow-up that docs/feature/fix-jira-board-team-validation/rca.md:288-293 deferred on 2026-09-11 - ship the log line first, then move DC search to POST. The log line shipped; this is the other half."
+        },
+        {
+          "id": "01-03",
+          "name": "Say what we sent when Jira will not say what was wrong",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-02"
+          ],
+          "criteria": [
+            "A refusal whose body carries no errorMessages reports the query Lighthouse sent alongside the status, instead of the status alone",
+            "A refusal Jira does explain is unchanged - its errorMessages text is still what the operator reads, with nothing appended",
+            "A refusal whose body is not JSON at all is handled the same as one whose JSON carries no errorMessages",
+            "The existing assertion pinning the bare status sentence is updated deliberately, not deleted"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs"
+          ],
+          "implementation_notes": "Root cause C. ExplanationIn:1763-1770 falls back to 'Jira answered 400 BadRequest.' whenever ErrorMessagesIn returns empty, which it does for any body that is not Jira JSON with an errorMessages array (:1772-1795). That is precisely the shape a refusal takes when something in front of Jira's application code refuses the request - so the failure class least able to explain itself is the one Lighthouse says least about.\n\nSay what Lighthouse itself knows: the query it sent. Keep it to that - after 01-02 the request-line-length story is no longer the likely cause, so do not write a sentence about Tomcat or about request size. Keep the query at a length a log line can carry.\n\nJiraBoardQueryAssemblyTest.cs:516 pins Is.EqualTo('Jira answered 400 BadRequest.') exactly and WILL fail. That pin is the accepted-behaviour record this step is deliberately changing - update it, do not delete it.\n\nRefusedFieldList:1747-1756 shares ExplanationIn. Check what the change reads like on that path too; it has no query, so whatever shape is chosen must degrade sensibly when there is nothing to name."
+        },
+        {
+          "id": "01-04",
+          "name": "L1-L6 refactor pass over the delivered change",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-03"
+          ],
+          "criteria": [
+            "Every rendered string is unchanged - this is a refactor, not a behaviour change",
+            "The operator-facing sentence is composed where the summary line is written, not on a port exception type",
+            "Genuine duplication is removed; structurally similar code representing different business concepts is left alone",
+            "Any comment citing an internal document section is replaced by the reason itself"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingRefusedException.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
+          ],
+          "implementation_notes": "Added after 01-03. Step 01-01 had to compose the operator-facing sentence on WorkTrackingRefusedException because UpdateServiceBase.cs was outside that step's file list - which read as a design finding but was an artefact of the boundary. With the whole feature in scope the precedent was three methods away: UpdateServiceBase already had BuildUnreadableSecretReason for the other exception the same two catch blocks handle. BuildRefusalReason joins it there, so the exception carries facts and the base class turns them into prose, and the portfolio and the team still cannot drift.\n\nAlso split ExplanationIn's flag-argument (a nullable query selecting between two sentences, each caller passing a constant) into ExplanationIn and ExplanationWithNoQueryToName over a shared reader of Jira's errorMessages, and renamed the RejectedQuery factory to RefusedTheQuery so it pairs with RefusedFieldList instead of colliding with the property it returns.\n\nThe duplicated status sentence on the field-list path (JiraReadException.FieldListRefused says 'answered 502 BadGateway.' and the explanation then says it again) was found, judged real, and deliberately NOT fixed here: every available fix changes message text and a test pins the exact string, and a test that has to change during a refactor is the signal that it is not a refactor. Tracked as a follow-up."
+        },
+        {
+          "id": "01-05",
+          "name": "Keep one bound on the rejected query and name it once",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-04"
+          ],
+          "criteria": [
+            "The rejected query reported on a refresh summary line is bounded in length, on every path",
+            "The query is named once, not twice, on the path where Jira sent no errorMessages",
+            "The connection-validation surfaces still show exactly what they showed before",
+            "A refusal test exercises a query long enough to be truncated, driven through the refresh path"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/WorkTrackingRefusedException.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTest.cs"
+          ],
+          "implementation_notes": "Added after an independent adversarial review rejected the change. Two layers each decided to name the rejected query and only one bounded it: ExplanationIn put a 500-character-truncated query into the exception's Message, and BuildRefusalReason then appended refusal.RejectedQuery in full. So the summary line this bug exists to make readable was unbounded, and on the no-errorMessages path it printed the query twice.\n\nThe suite could not see it: PortfolioUpdaterTest's shared RefusedQuery constant is 57 characters, so no test ever reached the boundary.\n\nResolved by giving the bound to the port type - RejectedQuery is truncated at construction so any reader gets it bounded, and the single ShortEnoughToReport implementation lives there for the connector to call before the exception exists. UpdateServiceBase appends the query only when the explanation does not already name it, decided by a fact the exception derives rather than by sniffing prose. Copying the bound into UpdateServiceBase was rejected: two copies of one bound drift.\n\nKnown limit worth a follow-up: the derived fact is exact only for a connector that routes its in-sentence copy of the query through ShortEnoughToReport. A future connector truncating its own way would double up again; the honest fix is for the connector to hand the fact over at the throw site, which needs the per-connector exception types opened up."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "note": "Bugfix roadmap derived from rca.md. Scope set by the maintainer on 2026-09-17: root causes A and B, plus the part of C that makes B reportable. Root cause D (a RefreshLog.Reason column across both providers, the failed-row rendering, and carrying the exception message into Recent Problems) is deliberately excluded as a slice rather than a bugfix, and is to be raised as its own work item. The RCA's proposed chunk-size reduction from 200 to 100 is superseded by 01-02: POST removes the bound the reduction was working around."
+  }
+}

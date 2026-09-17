@@ -33,10 +33,20 @@ Scope came from `reports/mutation-report.json`, not the console. The run prints
 pre-filter artefact of Stryker.NET injecting into every file before applying `mutate`, and it looks
 alarming in a perfectly healthy run.
 
-**No `{a..b}` line-range was used.** `docs/ci-learnings.md` records (recurrence 2, still true on
-4.16.0) that the range suffix silently mutes every mutant and reports a vacuous pass. Whole-file
-`mutate` entries are the only trustworthy way to run this, and the scoping is done afterwards by
-grouping the report's mutants against `git diff -U0`.
+**No `{a..b}` range was used, deliberately.** The numbers in that suffix are character offsets into
+the file, not line numbers — so a range written as lines selects the first hundred-odd characters,
+which is the `using` block, where there is nothing to mutate; the run then reports zero and reads as
+a vacuous pass. Offsets do work, and `docs/ci-learnings.md` carries both halves of that story. They
+are avoided here anyway, because an offset shifts on any edit above it and has to be recomputed
+against the bytes of the file every time — a whole-file `mutate` cannot go stale that way. The
+scoping is done afterwards instead, by grouping the report's mutants against `git diff -U0`.
+
+**Run it against a clean tree, or the scoping lies.** Stryker mutates the working copy, while the
+changed-line filter comes from `git diff -U0 <base>..HEAD`. With uncommitted edits in the mutated
+files the report's line numbers and the filter's line set are offset from one another, and the
+result is not an error — it is a plausible-looking score over the wrong lines. It surfaced here as
+survivors reported in `WalkCloudSearchPages`, a method this fix never touched. Commit first, then
+run, then score.
 
 ## What the first run found that the adversarial review did not
 
