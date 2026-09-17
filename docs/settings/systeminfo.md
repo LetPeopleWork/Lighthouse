@@ -31,6 +31,9 @@ You can see when you refreshed, how many items (Work Items or Features) were fet
 We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  
 For this case, you can check the *Logs*.
 
+{: .note}
+If you are here because something looks wrong *right now*, the [Task Manager](taskmanager.html) in the header lists the recent warnings and errors on their own, without the rest of the log around them — and it links back to this page when you need the full picture.
+
 ## Log Level
 Log levels describe the level of detail that should end up in the log. The more "sensitive", the more messages will be added. Following *Log Levels* can be selected:
 

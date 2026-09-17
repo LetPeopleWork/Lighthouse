@@ -27,6 +27,9 @@ You can also delete Work Tracking Systems if they are not needed anymore. To do 
 {: .note}
 You can only delete a Work Tracking System if no team and portfolio is using it. If the connection is still referenced by any team or portfolio, Lighthouse will block the deletion and show an error message. Either remove or reassign those teams and portfolios first, then retry.
 
+## Is this connection still working?
+Lighthouse keeps a health state per connection — healthy, unreachable, or credentials refused — and the [Task Manager](taskmanager.html) in the header is where you see it, together with a **Test connection** button that asks your system right now. Use it after re-entering a token: you do not have to wait for the next refresh to find out whether it worked.
+
 ## Work Tracking System Settings
 There are settings that apply to any configured Work Tracking System setting. These you can find below the available and configured systems. Those settings are *advanced* settings, and in general, you ideally never need to adjust them. However, there are situations where this may be coming in handy.
 
