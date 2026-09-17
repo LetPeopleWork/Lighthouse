@@ -142,5 +142,21 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             return team;
         }
+
+        /// <summary>
+        /// What a request carried besides its url. Data Center's search takes its parameters in a JSON body,
+        /// so a fixture that only looks at the url sees a request that asks for nothing at all.
+        /// </summary>
+        public static string BodyOf(HttpRequestMessage request)
+        {
+            if (request.Content is null)
+            {
+                return string.Empty;
+            }
+
+            using var reader = new StreamReader(request.Content.ReadAsStream());
+
+            return reader.ReadToEnd();
+        }
     }
 }

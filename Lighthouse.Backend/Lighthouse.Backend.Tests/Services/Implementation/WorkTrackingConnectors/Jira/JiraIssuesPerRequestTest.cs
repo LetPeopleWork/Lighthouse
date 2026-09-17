@@ -13,47 +13,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [TestFixture]
     public class JiraIssuesPerRequestTest
     {
+        private static readonly string[] HowAPageSizeIsWritten = ["maxResults=", "\"maxResults\":"];
+
         [Test]
         public async Task GetWorkItemsForTeam_DataCenter_DefaultsToMaxResults1000WhenOptionAbsent()
         {
-            var capturedSearchUrl = await CaptureSearchUrl(deploymentType: "Server", issuesPerRequestOption: null);
+            var pageSizeAskedFor = await ThePageSizeAskedFor(deploymentType: "Server", issuesPerRequestOption: null);
 
-            Assert.That(capturedSearchUrl, Does.Contain("maxResults=1000"));
+            Assert.That(pageSizeAskedFor, Is.EqualTo("1000"));
         }
 
         [Test]
         public async Task GetWorkItemsForTeam_DataCenter_UsesConfiguredIssuesPerRequest()
         {
-            var capturedSearchUrl = await CaptureSearchUrl(deploymentType: "Server", issuesPerRequestOption: "250");
+            var pageSizeAskedFor = await ThePageSizeAskedFor(deploymentType: "Server", issuesPerRequestOption: "250");
 
-            Assert.That(capturedSearchUrl, Does.Contain("maxResults=250"));
+            Assert.That(pageSizeAskedFor, Is.EqualTo("250"));
         }
 
         [Test]
         public async Task GetWorkItemsForTeam_Cloud_UsesConfiguredIssuesPerRequest()
         {
-            var capturedSearchUrl = await CaptureSearchUrl(deploymentType: "Cloud", issuesPerRequestOption: "250");
+            var pageSizeAskedFor = await ThePageSizeAskedFor(deploymentType: "Cloud", issuesPerRequestOption: "250");
 
-            Assert.That(capturedSearchUrl, Does.Contain("maxResults=250"));
+            Assert.That(pageSizeAskedFor, Is.EqualTo("250"));
         }
 
-        private static async Task<string> CaptureSearchUrl(string deploymentType, string? issuesPerRequestOption)
+        /// <summary>
+        /// How large a page the connector asked Jira for, read out of whichever half of the request carried it:
+        /// Cloud asks in the query string, Data Center asks in a json body.
+        /// </summary>
+        private static async Task<string> ThePageSizeAskedFor(string deploymentType, string? issuesPerRequestOption)
         {
-            var capturedSearchUrl = string.Empty;
+            var pageSizeAskedFor = string.Empty;
 
             var handler = CreateRecordingHandler(deploymentType, request =>
             {
-                if (request.RequestUri is null)
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                if (!path.Contains("/search", StringComparison.Ordinal))
                 {
                     return;
                 }
 
-                var path = request.RequestUri.AbsoluteUri;
-                if (path.Contains("/search?jql=", StringComparison.Ordinal)
-                    || path.Contains("/search/jql?", StringComparison.Ordinal))
-                {
-                    capturedSearchUrl = path;
-                }
+                var inTheRequestLine = PageSizeIn(request.RequestUri?.Query ?? string.Empty);
+
+                pageSizeAskedFor = inTheRequestLine.Length > 0
+                    ? inTheRequestLine
+                    : PageSizeIn(JiraConnectorTestSetup.BodyOf(request));
             });
 
             var subject = CreateSubject(handler);
@@ -61,7 +68,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
-            return capturedSearchUrl;
+            return pageSizeAskedFor;
+        }
+
+        private static string PageSizeIn(string requestPart)
+        {
+            foreach (var marker in HowAPageSizeIsWritten)
+            {
+                var namedAt = requestPart.IndexOf(marker, StringComparison.Ordinal);
+
+                if (namedAt < 0)
+                {
+                    continue;
+                }
+
+                var digits = requestPart[(namedAt + marker.Length)..].TakeWhile(char.IsAsciiDigit).ToArray();
+
+                if (digits.Length > 0)
+                {
+                    return new string(digits);
+                }
+            }
+
+            return string.Empty;
         }
 
         private static HttpMessageHandler CreateRecordingHandler(string deploymentType, Action<HttpRequestMessage> record)

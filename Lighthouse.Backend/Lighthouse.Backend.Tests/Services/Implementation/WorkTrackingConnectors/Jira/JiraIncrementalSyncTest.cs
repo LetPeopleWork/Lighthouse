@@ -45,6 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string DataCenterSearchPath = "/rest/api/latest/search";
         private const string SweepFieldList = "key,updated";
         private const string EveryField = "*all";
+        private const string TheChangelogExpansion = "changelog";
         private const string TheSecondPage = "page-2";
 
         private const string OrderingKeyword = "ORDER BY";
@@ -59,6 +60,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheDataCenterSearchPathOnly = [DataCenterSearchPath];
         private static readonly string[] TheTwoKeysAskedFor = ["PROJ-1", "PROJ-3"];
+        private static readonly string[] TheFirstTwoOffsets = ["0", "50"];
+
+        /// <summary>
+        /// The request-line budget Jira Data Center's bundled Tomcat ships with. A search whose query alone is
+        /// longer than this cannot be asked for in a url at all, whatever the rest of the request costs.
+        /// </summary>
+        private const int TomcatsRequestLineBudget = 8192;
 
         [TestCase(Cloud)]
         [TestCase(DataCenter)]
@@ -116,7 +124,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
-            var jql = QueryValue(jira.SearchRequests.Last(), "jql");
+            var jql = jira.SearchRequests.Last().Value("jql");
 
             using (Assert.EnterMultipleScope())
             {
@@ -140,7 +148,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
-            var jql = QueryValue(jira.SearchRequests.Last(), "jql");
+            var jql = jira.SearchRequests.Last().Value("jql");
 
             using (Assert.EnterMultipleScope())
             {
@@ -170,7 +178,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
-            AssertJiraCanParseTheWholeFilter(QueryValue(jira.SearchRequests.Last(), "jql"));
+            AssertJiraCanParseTheWholeFilter(jira.SearchRequests.Last().Value("jql"));
         }
 
         [TestCase("summary ~ \"reorder by priority\"")]
@@ -270,11 +278,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepWorkItemsForTeam_AsksTheVeryQuestionTheWholeQueryAsks()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
-            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql");
+            var fullFetchQuery = jira.SearchRequests.Single().Value("jql");
 
             await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(fullFetchQuery),
                 "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact "
                 + "query the full fetch enumerates deletes whatever the two disagree about.");
         }
@@ -290,9 +298,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList),
+                Assert.That(sweep.Value("fields"), Is.EqualTo(SweepFieldList),
                     "Downloading *all during the sweep would cost exactly what the two-phase fetch exists to save.");
-                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                Assert.That(sweep.Value("expand"), Is.Empty,
                     "The changelog is the single most expensive part of a Jira issue and phase 1 never reads it.");
             }
         }
@@ -383,7 +391,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the team filter would let the cutoff "
                 + "date silently drop an item the sweep just reported as changed.");
         }
@@ -431,9 +439,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems.Count(), Is.EqualTo(1), "positive control: the canned response was not read at all.");
-                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo(EveryField),
+                Assert.That(byKeyRequest.Value("fields"), Is.EqualTo(EveryField),
                     "Phase 2 is the download - narrowing it here would store a work item with holes in it.");
-                Assert.That(byKeyRequest.Query, Does.Contain("expand=changelog"));
+                Assert.That(byKeyRequest.Value("expand"), Is.EqualTo(TheChangelogExpansion));
                 Assert.That(jira.Requests.Any(uri => uri.AbsolutePath.EndsWith("/changelog", StringComparison.Ordinal)), Is.True,
                     "Jira caps the inlined changelog at 30 entries; the 31st only arrives via the paged endpoint.");
             }
@@ -445,11 +453,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
 
             await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor, CancellationToken.None);
-            var byKeyQuery = QueryValue(jira.SearchRequests.Last(), "jql");
+            var byKeyQuery = jira.SearchRequests.Last().Value("jql");
 
             await subject.GetParentFeaturesDetails(CreatePortfolio(team), TheTwoKeysAskedFor, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(byKeyQuery),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(byKeyQuery),
                 "Two callers, one query. A second copy of the key-OR builder drifts the moment either side "
                 + "learns to escape a quote.");
         }
@@ -458,11 +466,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepFeaturesForPortfolio_AsksTheVeryQuestionTheWholeFeatureQueryAsks()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
-            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql");
+            var fullFetchQuery = jira.SearchRequests.Single().Value("jql");
 
             await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(fullFetchQuery),
                 "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact "
                 + "query the whole Feature fetch enumerates deletes whatever the two disagree about.");
         }
@@ -478,9 +486,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList),
+                Assert.That(sweep.Value("fields"), Is.EqualTo(SweepFieldList),
                     "Downloading *all during the sweep would cost exactly what the two-phase fetch exists to save.");
-                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                Assert.That(sweep.Value("expand"), Is.Empty,
                     "The changelog is the single most expensive part of a Jira issue and phase 1 never reads it.");
             }
         }
@@ -557,7 +565,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the cutoff "
                 + "date silently drop a Feature the sweep just reported as changed.");
         }
@@ -614,9 +622,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(features[0].LastChangedRemote, Is.Not.Null,
                     "The download has to stamp what it returns, or the next cycle has nothing to compare against "
                     + "and downloads everything, every time.");
-                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo(EveryField),
+                Assert.That(byKeyRequest.Value("fields"), Is.EqualTo(EveryField),
                     "Phase 2 is the download - narrowing it here would store a Feature with holes in it.");
-                Assert.That(byKeyRequest.Query, Does.Contain("expand=changelog"));
+                Assert.That(byKeyRequest.Value("expand"), Is.EqualTo(TheChangelogExpansion));
                 Assert.That(jira.Requests.Any(uri => uri.AbsolutePath.EndsWith("/changelog", StringComparison.Ordinal)), Is.True,
                     "Jira caps the inlined changelog at 30 entries; the 31st only arrives via the paged endpoint.");
             }
@@ -628,11 +636,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
             await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
-            var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql");
+            var detailQuery = jira.SearchRequests.Last().Value("jql");
 
             await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(detailQuery),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names "
                 + "a different set makes the per-record comparison meaningless for whatever the two disagree about.");
         }
@@ -648,8 +656,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList));
-                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                Assert.That(sweep.Value("fields"), Is.EqualTo(SweepFieldList));
+                Assert.That(sweep.Value("expand"), Is.Empty,
                     "A parent sweep that pulled the changelog would cost more than the detail fetch it exists to avoid.");
             }
         }
@@ -710,10 +718,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
                     "A sweep that stops at the first page under-reports the query, and 'stored minus swept' deletes everything it missed.");
-                Assert.That(sweepRequests.ConvertAll(uri => uri.AbsolutePath).Distinct(), Is.EqualTo(TheDataCenterSearchPathOnly),
+                Assert.That(sweepRequests.ConvertAll(ask => ask.Uri.AbsolutePath).Distinct(), Is.EqualTo(TheDataCenterSearchPathOnly),
                     "Data Center has no rest/api/3/search/jql - the endpoint the Cloud walk uses answers 404 here, "
                     + "so a sweep that reuses it never enumerates anything at all.");
-                Assert.That(sweepRequests.ConvertAll(uri => QueryValue(uri, "startAt")), Does.Contain("1"),
+                Assert.That(sweepRequests.ConvertAll(ask => ask.Value("startAt")), Does.Contain("1"),
                     "Without a page token the only way to reach page two is to ask for the next offset.");
             }
         }
@@ -751,9 +759,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList),
+                Assert.That(sweep.Value("fields"), Is.EqualTo(SweepFieldList),
                     "Data Center returns every field when none is named, which costs exactly what the two-phase fetch exists to save.");
-                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                Assert.That(sweep.Value("expand"), Is.Empty,
                     "The changelog is the single most expensive part of a Jira issue, and on the instance this slice "
                     + "was written for it is decades deep. Phase 1 never reads it.");
             }
@@ -763,11 +771,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepWorkItemsForTeam_OnDataCenter_EnumeratesTheSameQueryTheWholeDownloadEnumerates()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
-            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql").Trim();
+            var fullFetchQuery = jira.SearchRequests.Single().Value("jql").Trim();
 
             await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
-            Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(fullFetchQuery),
+            Assert.That(WithoutOrdering(jira.SearchRequests.Last().Value("jql")), Is.EqualTo(fullFetchQuery),
                 "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact query the "
                 + "full fetch enumerates deletes whatever the two disagree about - and on this instance that is decades of work.");
         }
@@ -779,7 +787,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Does.EndWith(TheDeterministicOrdering),
+            Assert.That(jira.SearchRequests.Last().Value("jql"), Does.EndWith(TheDeterministicOrdering),
                 "Offset paging asks for 'issues 500 to 549 of the current answer'. Someone editing an issue mid-walk "
                 + "reshuffles Jira's default relevance ordering, which can move a record onto a page already read - so "
                 + "it never appears in the sweep, and 'stored minus swept' deletes it. Ordering on the key cannot be "
@@ -795,7 +803,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.SweepWorkItemsForTeam(team, CancellationToken.None);
 
-            var jql = QueryValue(jira.SearchRequests.Last(), "jql");
+            var jql = jira.SearchRequests.Last().Value("jql");
 
             using (Assert.EnterMultipleScope())
             {
@@ -823,7 +831,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
                     + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
                     + "satisfy a looser assertion without a single page ever being walked.");
-                Assert.That(jira.SearchRequests.ToList().ConvertAll(uri => QueryValue(uri, "startAt")), Does.Contain("1"),
+                Assert.That(jira.SearchRequests.ToList().ConvertAll(ask => ask.Value("startAt")), Does.Contain("1"),
                     "The half-walk is the whole point: one page has to have been read before the rejection, or the "
                     + "refusal being asserted is some earlier refusal that never enumerated anything.");
             }
@@ -864,7 +872,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepFeaturesForPortfolio_OnDataCenter_EnumeratesTheSameFeatureQueryTheWholeDownloadEnumerates()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
-            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql").Trim();
+            var fullFetchQuery = jira.SearchRequests.Single().Value("jql").Trim();
 
             await subject.SweepFeaturesForPortfolio(portfolio, CancellationToken.None);
 
@@ -872,9 +880,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(WithoutOrdering(QueryValue(sweep, "jql")), Is.EqualTo(fullFetchQuery),
+                Assert.That(WithoutOrdering(sweep.Value("jql")), Is.EqualTo(fullFetchQuery),
                     "The portfolio half deletes Features the same way, so it enumerates the same query the same way.");
-                Assert.That(sweep.AbsolutePath, Does.EndWith(DataCenterSearchPath),
+                Assert.That(sweep.Uri.AbsolutePath, Does.EndWith(DataCenterSearchPath),
                     "One sweep, reached by both entity types: a portfolio that walked its own way would be a second "
                     + "implementation to keep in step with the first.");
             }
@@ -886,11 +894,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
 
             await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
-            var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql").Trim();
+            var detailQuery = jira.SearchRequests.Last().Value("jql").Trim();
 
             await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor, CancellationToken.None);
 
-            Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(detailQuery),
+            Assert.That(WithoutOrdering(jira.SearchRequests.Last().Value("jql")), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names a "
                 + "different set makes the per-record comparison meaningless for whatever the two disagree about.");
         }
@@ -905,7 +913,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(features, Is.Not.Empty, "positive control: the canned response was not read at all.");
-                Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
+                Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(TheKeyedQuery),
                     "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the "
                     + "cutoff date silently drop a Feature the sweep just reported as changed.");
             }
@@ -921,10 +929,69 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems, Is.Not.Empty, "positive control: the canned response was not read at all.");
-                Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
+                Assert.That(jira.SearchRequests.Last().Value("jql"), Is.EqualTo(TheKeyedQuery),
                     "Phase 2 downloads what moved and nothing else - re-applying the team filter would let the cutoff "
                     + "date silently drop an item the sweep just reported as changed.");
             }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeamByReferenceId_OnDataCenter_AsksForAQueryNoRequestLineCouldCarry()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+            var aWholeChunkOfLongKeys = Enumerable.Range(1, 200)
+                .Select(number => $"LIGHTHOUSEPROJ-{number:D9}")
+                .ToList();
+
+            var workItems = await subject.GetWorkItemsForTeam(team, aWholeChunkOfLongKeys, CancellationToken.None);
+
+            var download = jira.SearchRequests.Last();
+            var whatTheQueryCostsInARequestLine = Uri.EscapeDataString(download.Value("jql")).Length;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whatTheQueryCostsInARequestLine, Is.GreaterThan(TomcatsRequestLineBudget),
+                    "positive control: a query that still fits in a request line proves nothing about one that does not.");
+                Assert.That(download.Uri.OriginalString, Has.Length.LessThan(TomcatsRequestLineBudget),
+                    "A full chunk of keys this long does not fit in a request line, and Data Center's bundled "
+                    + "Tomcat answers a bare 400 to a request line that does not fit.");
+                Assert.That(download.Value("jql"), Does.Contain(aWholeChunkOfLongKeys[^1]),
+                    "The whole chunk still has to reach Jira - a query truncated to fit asks for fewer records "
+                    + "than the sweep reported as moved, and the rest are then stored stale.");
+                Assert.That(workItems.Count(), Is.EqualTo(aWholeChunkOfLongKeys.Count),
+                    "positive control: the answer was read back.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_OnDataCenter_AsksForTheChangelogAndNamesNoFieldAtAll()
+        {
+            var (_, _, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            var download = jira.SearchRequests.Last();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(download.Value("expand"), Is.EqualTo(TheChangelogExpansion),
+                    "The download is the only read that carries the changelog, and every cycle time is computed "
+                    + "from it.");
+                Assert.That(download.Body, Does.Not.Contain("\"fields\""),
+                    "Naming no field is what asks Data Center for its default set. Naming an empty list is a "
+                    + "different ask - Jira answers it with issues that carry no field at all.");
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_OnDataCenter_AsksForTheNextOffsetRatherThanTheSamePageTwice()
+        {
+            var jira = new JiraStub(DataCenter) { DownloadTotal = 60 };
+            var subject = CreateSubject(jira.Handler);
+
+            await subject.GetWorkItemsForTeam(CreateTeam(), CancellationToken.None);
+
+            Assert.That(jira.SearchRequests.ToList().ConvertAll(ask => ask.Value("startAt")), Is.EqualTo(TheFirstTwoOffsets),
+                "Data Center has no page token: an offset that does not move past the page just read asks for "
+                + "the same records forever, and the download never reaches the rest of the query.");
         }
 
         private static Task<(JiraWorkTrackingConnector Subject, Team Team, JiraStub Jira)> AJiraDataCenterThatPagesOneIssueAtATime()
@@ -1000,7 +1067,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// back out on the next request.
         /// </summary>
         private static List<string> TheTokensTheSweepAskedFor(JiraStub jira)
-            => jira.SearchRequests.ToList().ConvertAll(uri => QueryValue(uri, "nextPageToken"));
+            => jira.SearchRequests.ToList().ConvertAll(ask => ask.Value("nextPageToken"));
 
         /// <summary>
         /// What has to hold of every query Lighthouse builds: Jira parses it. An empty bracket pair is the shape
@@ -1023,12 +1090,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private static string QueryValue(Uri uri, string name)
+        /// <summary>
+        /// One search Lighthouse asked Jira for. Cloud puts its parameters in the query string and Data Center
+        /// puts them in a json body, and every assertion in this fixture is about which parameters were asked
+        /// for rather than about which half of the request carried them. A list reads back comma-joined, which
+        /// is the same text the query string would have carried.
+        /// </summary>
+        private sealed record SearchAsk(Uri Uri, string Body)
         {
-            var pairs = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
-            var match = Array.Find(pairs, pair => pair.StartsWith($"{name}=", StringComparison.Ordinal));
+            public string Value(string name)
+            {
+                var fromTheRequestLine = ValueInTheRequestLine(name);
 
-            return match is null ? string.Empty : Uri.UnescapeDataString(match[(name.Length + 1)..]);
+                return fromTheRequestLine.Length > 0 ? fromTheRequestLine : ValueInTheBody(name);
+            }
+
+            private string ValueInTheRequestLine(string name)
+            {
+                var pairs = Uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
+                var match = Array.Find(pairs, pair => pair.StartsWith($"{name}=", StringComparison.Ordinal));
+
+                return match is null ? string.Empty : System.Uri.UnescapeDataString(match[(name.Length + 1)..]);
+            }
+
+            private string ValueInTheBody(string name)
+            {
+                if (Body.Length == 0)
+                {
+                    return string.Empty;
+                }
+
+                using var json = JsonDocument.Parse(Body);
+
+                if (!json.RootElement.TryGetProperty(name, out var value))
+                {
+                    return string.Empty;
+                }
+
+                return value.ValueKind switch
+                {
+                    JsonValueKind.Array => string.Join(",", value.EnumerateArray().Select(entry => entry.GetString())),
+                    JsonValueKind.Number => value.GetInt32().ToString(CultureInfo.InvariantCulture),
+                    _ => value.GetString() ?? string.Empty,
+                };
+            }
         }
 
         private static async Task<string> TheQueryJiraIsAskedFor(string theTeamsOwnQuery)
@@ -1040,7 +1145,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetWorkItemsForTeam(team, CancellationToken.None);
 
-            return QueryValue(jira.SearchRequests.Last(), "jql");
+            return jira.SearchRequests.Last().Value("jql");
         }
 
         private static async Task<WorkItem> TheSingleWorkItemFetchedFrom(string deploymentType, string? updated)
@@ -1063,6 +1168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             private readonly string deploymentType;
             private readonly Queue<string> sweepPages = new();
+            private readonly List<SearchAsk> searchAsks = [];
             private int failSearchesFromRequestNumber = int.MaxValue;
             private int searchCount;
 
@@ -1096,7 +1202,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             /// </summary>
             public List<string> OffsetSweepIssues { get; } = [];
 
-            public IEnumerable<Uri> SearchRequests => Requests.Where(uri => uri.AbsolutePath.Contains("search", StringComparison.Ordinal));
+            /// <summary>How big a result Data Center reports for the whole download, which is what decides
+            /// how many offsets the download walks.</summary>
+            public int DownloadTotal { get; set; } = 1;
+
+            public IEnumerable<SearchAsk> SearchRequests => searchAsks;
 
             public void QueueSweepPage(string issueJson, string? nextPageToken)
             {
@@ -1130,13 +1240,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.Contains("search", StringComparison.Ordinal))
                 {
-                    return RespondToSearch(uri);
+                    var ask = new SearchAsk(uri, JiraConnectorTestSetup.BodyOf(request));
+                    searchAsks.Add(ask);
+
+                    return RespondToSearch(ask);
                 }
 
                 return Ok("{}");
             }
 
-            private HttpResponseMessage RespondToSearch(Uri uri)
+            private HttpResponseMessage RespondToSearch(SearchAsk ask)
             {
                 searchCount++;
 
@@ -1148,39 +1261,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     };
                 }
 
-                if (QueryValue(uri, "fields") == SweepFieldList && !uri.AbsolutePath.Contains(CloudSearchPath, StringComparison.Ordinal))
+                var onCloud = ask.Uri.AbsolutePath.Contains(CloudSearchPath, StringComparison.Ordinal);
+
+                if (ask.Value("fields") == SweepFieldList && !onCloud)
                 {
-                    return Ok(OffsetSweepPage(uri));
+                    return Ok(OffsetSweepPage(ask));
                 }
 
-                if (sweepPages.Count > 0 && QueryValue(uri, "fields") != EveryField)
+                if (sweepPages.Count > 0 && ask.Value("fields") != EveryField)
                 {
                     return Ok(sweepPages.Dequeue());
                 }
 
-                var issues = string.Join(",", KeysAskedFor(uri).Select(IssueJson));
+                var issues = string.Join(",", KeysAskedFor(ask).Select(IssueJson));
 
-                return uri.AbsolutePath.Contains(CloudSearchPath, StringComparison.Ordinal)
+                return onCloud
                     ? Ok($"{{\"issues\":[{issues}]}}")
-                    : Ok($"{{\"startAt\":0,\"maxResults\":50,\"total\":1,\"issues\":[{issues}]}}");
+                    : Ok($"{{\"startAt\":0,\"maxResults\":50,\"total\":{DownloadTotal},\"issues\":[{issues}]}}");
             }
 
             /// <summary>
             /// One page of an offset walk, echoing back the offset and page size that were asked for and the
             /// size of the whole result, the way Data Center's search endpoint answers.
             /// </summary>
-            private string OffsetSweepPage(Uri uri)
+            private string OffsetSweepPage(SearchAsk ask)
             {
-                var startAt = int.TryParse(QueryValue(uri, "startAt"), out var offset) ? offset : 0;
-                var pageSize = int.TryParse(QueryValue(uri, "maxResults"), out var size) && size > 0 ? size : 50;
+                var startAt = int.TryParse(ask.Value("startAt"), out var offset) ? offset : 0;
+                var pageSize = int.TryParse(ask.Value("maxResults"), out var size) && size > 0 ? size : 50;
                 var page = OffsetSweepIssues.Skip(startAt).Take(pageSize);
 
                 return $"{{\"startAt\":{startAt},\"maxResults\":{pageSize},\"total\":{OffsetSweepIssues.Count},\"issues\":[{string.Join(",", page)}]}}";
             }
 
-            private static IEnumerable<string> KeysAskedFor(Uri uri)
+            private static IEnumerable<string> KeysAskedFor(SearchAsk ask)
             {
-                var jql = QueryValue(uri, "jql");
+                var jql = ask.Value("jql");
 
                 if (!jql.StartsWith("key = ", StringComparison.Ordinal))
                 {

@@ -45,6 +45,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         // Phase 1 reads identity and the change stamp and nothing else - the changelog alone is the bulk of an issue.
         private const string SweepFields = "key,updated";
 
+        /// <summary>
+        /// Data Center's search takes the same parameters in a json body as it does in a query string, which is
+        /// the only way to ask it for a query longer than a request line holds. Its bundled Tomcat refuses a
+        /// request line over 8 KB with a bare 400, and nothing on the way to the request knows how long the one
+        /// it is about to make is - a chunk bounds how many keys are asked for, never how many bytes they cost.
+        /// The two differences from the query string: expand and fields are lists rather than comma-joined text.
+        /// </summary>
+        private const string DataCenterSearchPath = "rest/api/latest/search";
+
+        private static readonly string[] TheChangelogAsWell = ["changelog"];
+
         private const int MaxCloudSearchPages = 100;
 
         private const int ReferenceIdsPerQuery = 200;
@@ -610,7 +621,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async Task<PutOutcome> Put(HttpClient client, string issueKey, string payload, int fieldCount, bool silently)
         {
-            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var content = AsJson(payload);
 
             // Mirrors what Azure DevOps has always done (`suppressNotifications: true`): a value Lighthouse
             // recalculated is not news anyone needs mailed. Needs Administer Jira, or Administer Projects
@@ -1648,17 +1659,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var startAt = 0;
             var maxResults = maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
             var isLast = false;
-            var encodedJqlQuery = Uri.EscapeDataString(jqlQuery);
 
             while (!isLast)
             {
-                // Before each page, and the request itself carries the token too. This is the checkpoint
-                // AC-04.2 is measured against: nearly all of a refresh's wall-clock is inside this loop, so
-                // a cancel that only bit between phases would, on the full-fetch path, not bite at all.
+                // Nearly all of a refresh's wall-clock is spent inside this loop, so a cancel that only bit
+                // between phases would, on the full-fetch path, not bite at all.
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var url = $"rest/api/latest/search?jql={encodedJqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
-                var response = await client.GetAsync(url, cancellationToken);
+                // No field is named, which is what asks Data Center for its default set. An empty list is a
+                // different ask, and Jira answers that one with issues that carry no field at all.
+                var payload = JsonSerializer.Serialize(new
+                {
+                    jql = jqlQuery,
+                    startAt,
+                    maxResults,
+                    expand = TheChangelogAsWell,
+                });
+
+                var response = await client.PostAsync(DataCenterSearchPath, AsJson(payload), cancellationToken);
                 var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
@@ -1718,6 +1736,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         /// <summary>What Jira answered when it would not do what was asked: the status alone never says why.</summary>
         private sealed record JiraRefusal(HttpStatusCode StatusCode, string ResponseBody);
+
+        private static StringContent AsJson(string payload) => new(payload, Encoding.UTF8, "application/json");
 
         /// <summary>
         /// The query and the whole answer, at a level a support bundle actually carries. A query Jira refuses
@@ -1899,7 +1919,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static async Task<JiraRefusal?> WalkDataCenterSearchOffsets(
             HttpClient client, string jql, string fields, int pageLimit, Func<JsonElement, Task> onIssue, CancellationToken cancellationToken)
         {
-            var encodedJql = Uri.EscapeDataString(jql);
             var startAt = 0;
             var pageSize = pageLimit;
             var total = int.MaxValue;
@@ -1908,9 +1927,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var url = $"rest/api/latest/search?jql={encodedJql}&fields={Uri.EscapeDataString(fields)}&startAt={startAt}&maxResults={pageSize}";
+                var payload = JsonSerializer.Serialize(new
+                {
+                    jql,
+                    fields = fields.Split(','),
+                    startAt,
+                    maxResults = pageSize,
+                });
 
-                var response = await client.GetAsync(url, cancellationToken);
+                var response = await client.PostAsync(DataCenterSearchPath, AsJson(payload), cancellationToken);
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
@@ -2692,7 +2717,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var payload = JsonSerializer.Serialize(new { description = merged });
-            var write = await client.PutAsync(versionUrl, new StringContent(payload, Encoding.UTF8, "application/json"));
+            var write = await client.PutAsync(versionUrl, AsJson(payload));
 
             return await PublishVerdictFor(write) ?? new DeliveryForecastPublishResult.Published();
         }

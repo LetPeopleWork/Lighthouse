@@ -618,7 +618,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task ValidateTeamSettings_OnDataCenter_StillWalksTheLegacySearchByOffset()
         {
             var requestedUrls = new List<string>();
-            var handler = AHandlerWhereSearch(OnDataCenter, _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
+            var searchBodies = new List<string>();
+            var handler = AHandlerWhereSearch(
+                OnDataCenter,
+                request =>
+                {
+                    searchBodies.Add(JiraConnectorTestSetup.BodyOf(request));
+                    return Respond(HttpStatusCode.OK, OnePageHoldingOneIssue);
+                },
+                requestedUrls);
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
 
             var result = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
@@ -629,7 +637,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(result.IsValid, Is.True);
                 Assert.That(searches, Is.Not.Empty);
-                Assert.That(searches[0], Does.Contain("startAt=0"));
+                Assert.That(searchBodies[0], Does.Contain("\"startAt\":0"),
+                    "The offset walk starts where Data Center numbers its answers from, and it now travels in "
+                    + "the request body rather than in the request line.");
                 Assert.That(UrlsReaching(requestedUrls, CloudSearchPath), Is.Empty);
             }
         }
