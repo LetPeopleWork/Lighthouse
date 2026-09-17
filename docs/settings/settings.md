@@ -35,5 +35,10 @@ What Lighthouse can send about the instance itself — the five fields, what is 
 it and for how long, what is stored on your own server to remember your answer, and how to change
 your mind. Off until somebody agrees to it.
 
+### [Task Manager](taskmanager.html)
+What Lighthouse is refreshing right now, whether every connection to your Work Tracking Systems still
+works, and the last few things that went wrong. Reached from the header rather than this section, and
+shown to System Administrators only. Includes how to stop a refresh that is under way.
+
 ### [System Info](systeminfo.html)
 Access detailed information about your system as well as logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.

@@ -125,6 +125,23 @@ test("Take @screenshot of the system info settings page", async ({
 	await takeElementScreenshot(systemInfoTable, "settings/systeminfo_auth.png");
 });
 
+testWithDemo(
+	"Take @screenshot of the Task Manager",
+	async ({ testData, overviewPage }) => {
+		// The popover is a picture of what this instance has: without the seeded connection it documents
+		// the empty state instead of the feature.
+		expect(testData.teams).not.toHaveLength(0);
+
+		const taskManager = await overviewPage.lightHousePage.openTaskManager();
+
+		await takeElementScreenshot(taskManager, "settings/taskmanager.png");
+	},
+);
+
+// A companion shot of the Activity section with work in it is deliberately absent. Which rows read
+// Running and which read Queued depends on how far the queue has got when the shutter falls, so the
+// image would differ on every regeneration and every docs run would carry a diff nobody asked for.
+
 test("Take @screenshot of the encryption settings page", async ({
 	overviewPage,
 }) => {

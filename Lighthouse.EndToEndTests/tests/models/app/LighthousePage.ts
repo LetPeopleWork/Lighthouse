@@ -139,6 +139,19 @@ export class LighthousePage {
 			.nth(1);
 	}
 
+	/**
+	 * Opens the Task Manager popover in the header and returns it. The icon's accessible name carries the
+	 * state of the connections, so it starts with "Activity" and may name a broken one after that.
+	 */
+	async openTaskManager(): Promise<Locator> {
+		await this.page.getByRole("button", { name: /^Activity/ }).click();
+
+		const popover = this.page.locator(".MuiPopover-paper");
+		await popover.getByTestId("task-manager-section-activity").waitFor();
+
+		return popover;
+	}
+
 	async clearLicense(): Promise<void> {
 		await this.showLicensingInformation();
 
