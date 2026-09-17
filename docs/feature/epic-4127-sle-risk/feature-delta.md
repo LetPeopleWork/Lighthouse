@@ -927,3 +927,180 @@ gets the guarantee that matters: nothing drawn above the SLE line is outside the
   convention.
 
 ---
+
+# Wave: DEVOPS — slice 04
+
+Run 2026-09-17. **This is the slice the Epic-wide DEVOPS skip explicitly did not cover.** Slices 01–03
+add reads inside an existing controller; this one writes into a customer's work tracker on every
+team update, and Lighthouse cannot take those writes back.
+
+## Wave: DEVOPS / [REF] Blast radius
+
+| Question | Answer |
+|---|---|
+| What is written, and where? | One integer per in-flight work item, into a custom field the user names, on the user's own Jira or Azure DevOps instance. |
+| How often? | Every team update — the refresh interval, not a user action. |
+| Who is exposed if it is wrong? | Everyone looking at that board, plus anything built on the field: filters, dashboards, automation rules. A wrong number here is wrong in someone else's system. |
+| Can Lighthouse undo it? | **No.** There is no compensating write and no history of what was there before. This is the whole reason this slice gets its own wave. |
+| Is it on by default? | **No.** It requires a premium licence *and* a write-back mapping the user creates, naming a field. Until both exist, nothing is written. |
+
+## Wave: DEVOPS / [REF] What an operator sees
+
+The path already has its logging and this slice adds no new failure mode to it:
+
+- `WriteBackTriggerService` logs the mapping count at Information before resolving, and swallows a
+  resolution failure at Error with the team named — so a broken mapping cannot cut short the rest of
+  the update (ADR-144).
+- `WriteBackService` logs the start and outcome per connection, warns on a field it could not write,
+  and logs the exception on a failed round.
+- A resolution that produces **no** value is silent by design, and this slice leans on that: an item
+  whose risk the history cannot support is simply absent from the update list. That silence is
+  correct, and it is also indistinguishable from "the mapping is misconfigured" in the logs.
+
+**One gap named rather than fixed here:** there is no per-round count of *how many items were skipped
+for want of evidence*. On a team whose history is thin, a user who configured the mapping would see
+the field populated on a few items and empty on the rest, with nothing in the log saying why. That is
+an observability improvement worth making and it is **not** in this slice — it is recorded so the
+next person does not have to rediscover it from a support question.
+
+## Wave: DEVOPS / [REF] Rollout and rollback
+
+- **Rollout is per user, by configuration.** No flag to flip, no phased release: the feature arrives
+  inert and turns on when someone maps it to a field.
+- **Rollback is deleting the mapping**, which stops future writes immediately. It does **not** clear
+  values already written — that is the customer's to do, and the docs must say so plainly rather than
+  implying the feature is reversible.
+- **No migration, no new infrastructure, no new outbound host.** The writes go over the connection
+  the team already has, with the credentials it already uses.
+
+## Wave: DEVOPS / [REF] The failure modes worth naming
+
+| Failure | Who notices | Handling |
+|---|---|---|
+| The mapped field does not accept an integer | The user, as a warning per item | Existing per-field warning; no change |
+| The credential lacks write permission | The user, as a failed round at Error | Existing; no change |
+| Tracker rate limits a large round | The update, as a failed round | Existing. **Worth knowing:** this slice writes one value per *in-flight* item per update, which is bounded by the team's WIP and is far smaller than the feature write-back already performs |
+| The risk changes every update and floods the item history | Nobody, until someone reads the issue history | **Accepted by decision** (D16), not mitigated. The user chose to enable write-back; `quiet-jira-writeback` D1 already established that this cost is the user's to accept |
+
+## Wave: DEVOPS / [REF] Verdict
+
+**Safe to build, with one condition that belongs in DESIGN**: the value written must come from the
+same rule the screens use, so a number in the tracker can never disagree with the number in
+Lighthouse. That is DDD-26 below, and the guard from slice 01b is what keeps an unstable number out
+of a place Lighthouse cannot reach.
+
+---
+
+# Wave: DESIGN — slice 04
+
+Run 2026-09-17, against slice 04 only (ADO Story #6015), after that slice's own DEVOPS wave.
+
+| ID | Decision | Verdict |
+|---|---|---|
+| DDD-26 | Where does the written value come from? | **`ITeamMetricsService.GetSleRiskForTeam`** — the same call the screens make. D5 put the rule in one place precisely so a number in someone else's tracker cannot disagree with the number on the page, and this is the consumer that makes a disagreement unfixable. The write-back service gains one collaborator; its constructor goes from five parameters to six, still under S107's threshold. |
+| DDD-27 | Which window, given AC-04.5 names *both* the configured history and `clock.Today`? | **Evidence from the team's configured history start, as of today.** `GetThroughputSettings(clock.Today)` supplies the start; the end is today, because the question a tracker field answers is about now. A team using fixed throughput dates has pinned which throughput to *forecast* from, which is a different question from how old its open work is today. One call, one guard, one rule. |
+| DDD-28 | Where does the new enum member go? | **At the end of `WriteBackValueSource`, and nowhere else.** It persists as an `int` — `LighthouseAppContext` maps `ValueSource` as `Property<int>`, so the stored value is the **ordinal**. Inserting `SleRisk` in alphabetical order would silently re-point every existing mapping at a different source, on every customer's database, with no migration and no error. |
+| DDD-29 | What about an item with no answer? | **No write at all**, which falls out of the existing `=> null` convention in `ResolveWorkItemValue`. A closed item, an item with no target, an item beyond all history and an item too thinly evidenced all resolve to null and are simply absent from the round. Slice 01b's guard therefore reaches the tracker for free — the one place an unstable number would be worst. |
+| DDD-30 | Is it safe to read metrics from inside the update? | **Yes, because of where it sits.** `TeamUpdater` resolves write-back *after* `UpdateTeamData`, which has already invalidated the team's metrics cache — so this warms it with post-update data rather than serving pre-update data to the next reader. That is the exact opposite of the 2026-07-24 defect in `docs/ci-learnings.md`, where a handler warmed the cache mid-refresh and fed an unrelated E2E stale percentiles. **If write-back ever moves ahead of the data update, it becomes that bug.** |
+| DDD-31 | Portfolio scope? | **Not offered.** `WriteBackAppliesTo.Team` only, as with the reads — a feature sits in several portfolios, each with its own target, so there is no single value to write. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `WriteBackValueSource` | `Models/WriteBack/WriteBackValueSource.cs` | **EXTEND** — one member, appended |
+| `WriteBackTriggerService` | `Services/Implementation/WriteBackTriggerService.cs` | **EXTEND** — one collaborator, one resolved lookup per team, one `switch` arm |
+| Write-back mapping UI | frontend settings | **EXTEND** — the source appears for `Team` mappings only |
+
+No new endpoint, no migration, no new outbound host, no arithmetic anywhere new.
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+**Key decisions**: the value is the screens' value (DDD-26); the evidence window is the team's
+configured history read as of today (DDD-27); the enum member is appended because the ordinal is
+what is stored (DDD-28); and every no-answer is a no-write, which carries slice 01b's guard into the
+tracker (DDD-29).
+
+**Upstream changes**: none. DISCUSS asked DESIGN to confirm whether the enum persists by name or
+ordinal — it is the ordinal, and DDD-28 records what that forbids.
+
+---
+
+# Wave: DISTILL + DELIVER — slice 04
+
+Run 2026-09-17 against ADO Story #6015. The last slice of the Epic.
+
+## Wave: DISTILL / [REF] What is specified, and where
+
+Eight specifications at the seam that decides what leaves the building — `WriteBackTriggerService` —
+because that is where a value becomes an update in somebody else's tracker. Three more in the
+settings editor, for the scope rule a user meets.
+
+The two that matter most are the ones about **not** writing: an item the history cannot answer for,
+and an item the answer never mentioned at all. Both assert an absent update rather than an empty
+one, because an empty write would clear whatever the customer had in that field.
+
+Falsifiability was measured, not assumed:
+
+- Inverting the mapping predicate turns **five** scenarios red — the ones that expect a value and the
+  one that expects the read never to happen. One substitution, both directions of the guard.
+- Returning `0` where the risk is null turns the no-answer scenario red on its own.
+- Emptying `TEAM_ONLY_SOURCES` turns the two frontend scope specifications red.
+
+## Wave: DELIVER / [REF] Two gaps the review found, both now closed
+
+The independent reviewer approved with no defects and named two coverage gaps. Both were worth
+closing, because both pin a decision rather than a line:
+
+1. **Fixed throughput dates.** DDD-27 says the evidence follows the team's pin while the question
+   stays about today. Nothing tested a team that had pinned one — so nothing would have noticed if
+   the end date started following the pin too, and every written value would have silently become an
+   answer about the past.
+2. **A risk mapping beside another source.** Every scenario had the risk mapping alone. The new one
+   has two mappings in one round and asserts each field gets its own value *and* that the history is
+   walked once, not once per mapping.
+
+## Wave: DELIVER / [REF] Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 errors, 0 warnings |
+| `dotnet test` (connectors excluded) | 7021 passed; 1 environmental — the Defender SQLite lock |
+| `dotnet format analyzers --severity info` | 0 findings in any file this change touches |
+| `pnpm test` / `pnpm build` | 5295 passed, 372 files; build clean |
+| Stryker backend | **100%** |
+| Stryker frontend | 57.89% on the model file, **all eight survivors pre-existing copy**; every addition of this slice killed |
+| Independent review | `nw-software-crafter-reviewer`, approved, no defects |
+
+## Wave: DELIVER / [REF] Finalization checklist
+
+- **Docs prose** — done. `docs/settings/worktrackingsystems.md` gains the row and an `About SLE Risk`
+  section: teams only and why, that no answer means no write rather than a cleared field, which
+  window the evidence comes from, and — in a note — that removing the mapping stops future writes
+  but does not clear what is already in the tracker.
+- **Per-feature screenshot** — **N/A, because** the change is one more option in an existing dropdown
+  on a settings page whose screenshot already shows that dropdown.
+- **Demo data** — **N/A, because** write-back needs a real connection with a real custom field;
+  demo data cannot exercise it and should not pretend to.
+- **Lighthouse-Clients CLI/MCP** — **N/A, because** no new endpoint and no payload change. The enum
+  gains a member, and it is not exposed through any client wrapper.
+- **Website marketing surface** — **owed at the Epic level, not here.** The Epic is now whole, and
+  that is the moment to decide whether it earns a place there. Flagged rather than assumed.
+- **RBAC** — no change. Write-back stays premium-gated by the existing `CanUsePremiumFeatures` check
+  at the top of `ResolveWriteBackForTeam`.
+- **Release Notes tag** — the Epic carries it; the child Stories do not, per the maintainer's
+  convention.
+
+## Wave: DELIVER / [REF] What the Epic still owes
+
+- **The chart screenshot from slice 03.** The public docs describe the risk bands without showing
+  one. It needs a `@screenshot` E2E against demo data with enough history to place bands.
+- **The other half of slice 01's learning hypothesis.** `OUT-4127-risk-stability` answered the
+  arithmetic question — the number is stable enough once guarded. It could not answer whether a coach
+  reading the column recognises the ordering as true of their own team. That needs a person.
+- **The skipped-item count in the write-back log** named in slice 04's DEVOPS wave: on a thin
+  history a user sees the field populated on some items and empty on others, with nothing in the log
+  saying why.
+
+---
+

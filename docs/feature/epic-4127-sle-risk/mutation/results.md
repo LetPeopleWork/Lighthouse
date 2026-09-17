@@ -219,3 +219,29 @@ how many times a loop turned.
 **Frontend** — the two `[]` dependency arrays (a re-run reads the same value back), the empty-zones
 fast path (the flatMap returns nothing regardless), and the `height === 0` guard, which mirrors the
 pace-band function beside it and is unreachable on any scale a chart actually has.
+
+## Slice 04 / Story #6015 — the risk as a write-back value source
+
+Run 2026-09-17.
+
+| Stack | Scope | Killed | Survived | Score |
+|---|---|---|---|---|
+| Backend | `WriteBackTriggerService`'s risk lookup and its resolver arm, by byte range | 22 | 0 | **100.00%** |
+| Frontend | `models/WorkTracking/WriteBackMappingDefinition.ts` | 11 | 8 | 57.89% |
+
+### The backend run found nothing, and that is the honest result
+
+Every mutant on the new code died: dropping the short-circuit, inverting the mapping predicate,
+returning a value for a null risk, changing the window. The two sabotages run before it agree — the
+short-circuit and the no-answer-no-write rule each fail a test when broken.
+
+### The frontend file's 57.89% is entirely pre-existing copy
+
+All eight survivors are strings this slice never touched: the four `DATE_FORMAT_PRESETS` and three
+forecast display names. This mutation run is simply the first ever to point at that file.
+
+This slice's own additions are all killed — the `SleRisk` member, the `TEAM_ONLY_SOURCES` set, and
+the `"SLE Risk"` display name, the last by an editor test that queries the option by its literal
+words. Narrowing the config to hide the pre-existing strings would have produced a prettier number
+and said nothing more, so the number is recorded as it came out.
+

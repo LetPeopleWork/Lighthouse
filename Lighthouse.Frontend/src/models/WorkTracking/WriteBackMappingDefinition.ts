@@ -5,6 +5,9 @@ export enum WriteBackValueSource {
 	ForecastPercentile70 = 3,
 	ForecastPercentile85 = 4,
 	ForecastPercentile95 = 5,
+	// The number is the stored value, not a label: the backend persists the enum's ordinal, so a
+	// member may only ever be appended.
+	SleRisk = 6,
 }
 
 export enum WriteBackAppliesTo {
@@ -33,6 +36,14 @@ export const FORECAST_SOURCES: ReadonlySet<WriteBackValueSource> = new Set([
 	WriteBackValueSource.ForecastPercentile95,
 ]);
 
+/**
+ * A feature sits in several portfolios, each with its own target and its own history, so its
+ * risk has several answers and no way to pick one. The question is only ever asked of a team.
+ */
+export const TEAM_ONLY_SOURCES: ReadonlySet<WriteBackValueSource> = new Set([
+	WriteBackValueSource.SleRisk,
+]);
+
 export const PORTFOLIO_ONLY_SOURCES: ReadonlySet<WriteBackValueSource> =
 	new Set([
 		WriteBackValueSource.FeatureSize,
@@ -58,6 +69,7 @@ export const VALUE_SOURCE_DISPLAY_NAMES: Readonly<
 	[WriteBackValueSource.ForecastPercentile70]: "Forecast (70th Percentile)",
 	[WriteBackValueSource.ForecastPercentile85]: "Forecast (85th Percentile)",
 	[WriteBackValueSource.ForecastPercentile95]: "Forecast (95th Percentile)",
+	[WriteBackValueSource.SleRisk]: "SLE Risk",
 };
 
 export const APPLIES_TO_DISPLAY_NAMES: Readonly<

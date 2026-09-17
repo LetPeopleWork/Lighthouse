@@ -50,6 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
                 new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant),
+                Mock.Of<ITeamMetricsService>(),
                 Mock.Of<ILogger<WriteBackTriggerService>>());
         }
 

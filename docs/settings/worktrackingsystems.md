@@ -77,6 +77,29 @@ For each connection you can configure one or more *Mappings*. Each mapping defin
 | `ForecastPercentile70` | Portfolio | 70th percentile forecast completion date for each feature |
 | `ForecastPercentile85` | Portfolio | 85th percentile forecast completion date for each feature |
 | `ForecastPercentile95` | Portfolio | 95th percentile forecast completion date for each feature |
+| `SLE Risk` | Team | The chance each in-progress work item has of missing the team's SLE, as a whole number (`86`, not `86%`) |
+
+#### About `SLE Risk`
+
+It is written only for teams, because a feature can belong to several portfolios, each with its own
+SLE and its own history — there would be no single number to write.
+
+Three things follow from how the number is worked out, and they are worth knowing before you map it:
+
+- **Only in-progress items get a value.** Finished items are never written to.
+- **An item the history cannot speak for gets no write at all** — the field is left exactly as it
+  was, rather than cleared or set to zero. That covers an item older than anything the team has ever
+  finished, and an item at an age fewer than ten finished items ever reached. See
+  [SLE Risk Column](../metrics/flow-metrics.html#sle-risk-column).
+- **The evidence is the team's configured history, read as of today**, not whatever date range you
+  last had open in the browser.
+
+The value is refreshed on every team update, so the field changes as an item ages. If your tracker
+notifies on field changes, see [Notifications](#notifications) below.
+
+{: .note}
+Removing the mapping stops future writes immediately. It does **not** clear values already written —
+those stay in your work tracking system until you remove them yourself.
 
 ### Adding a Mapping
 1. Open the connection editor from the *Overview* page (🖊️ icon).

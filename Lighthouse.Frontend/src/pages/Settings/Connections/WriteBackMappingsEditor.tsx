@@ -36,6 +36,7 @@ import {
 	FORECAST_SOURCES,
 	type IWriteBackMappingDefinition,
 	PORTFOLIO_ONLY_SOURCES,
+	TEAM_ONLY_SOURCES,
 	VALUE_SOURCE_DISPLAY_NAMES,
 	WriteBackAppliesTo,
 	WriteBackTargetValueType,
@@ -101,10 +102,10 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 	const availableValueSources = useMemo(() => {
 		return Object.values(WriteBackValueSource)
 			.filter((v): v is WriteBackValueSource => typeof v === "number")
-			.filter(
-				(source) =>
-					appliesTo === WriteBackAppliesTo.Portfolio ||
-					!PORTFOLIO_ONLY_SOURCES.has(source),
+			.filter((source) =>
+				appliesTo === WriteBackAppliesTo.Portfolio
+					? !TEAM_ONLY_SOURCES.has(source)
+					: !PORTFOLIO_ONLY_SOURCES.has(source),
 			);
 	}, [appliesTo]);
 
@@ -112,11 +113,13 @@ const MappingEditDialog: React.FC<MappingEditDialogProps> = ({
 		const newAppliesTo = event.target.value as WriteBackAppliesTo;
 		setAppliesTo(newAppliesTo);
 
-		// Reset value source if it's portfolio-only and we switched to Team
-		if (
-			newAppliesTo === WriteBackAppliesTo.Team &&
-			PORTFOLIO_ONLY_SOURCES.has(valueSource)
-		) {
+		// A source the new scope cannot answer would otherwise stay selected and be saved.
+		const stillAvailable =
+			newAppliesTo === WriteBackAppliesTo.Portfolio
+				? !TEAM_ONLY_SOURCES.has(valueSource)
+				: !PORTFOLIO_ONLY_SOURCES.has(valueSource);
+
+		if (!stillAvailable) {
 			setValueSource(WriteBackValueSource.WorkItemAgeCycleTime);
 			setTargetValueType(WriteBackTargetValueType.Date);
 			setDateFormat("");

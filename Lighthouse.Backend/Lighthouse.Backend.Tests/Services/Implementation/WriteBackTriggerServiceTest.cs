@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -18,6 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<ILogger<WriteBackTriggerService>> loggerMock;
+        private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         // Bug #5567 root cause D - the subject's clock, the seeded work items and the expected
         // dates all hang off one fixed instant, so an expectation can no longer agree with the
@@ -33,6 +35,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             loggerMock = new Mock<ILogger<WriteBackTriggerService>>();
+            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
+
+            teamMetricsServiceMock
+                .Setup(s => s.GetSleRiskForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
 
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
             blackoutPeriodServiceMock
@@ -732,6 +739,198 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(errorInvocations[0].Arguments[2]?.ToString(), Does.Contain(expected));
         }
 
+        // --- Epic #4127 slice 04 / Story #6015: the risk reaches the board ---
+        //
+        // The number is written into someone else's tracker, where Lighthouse cannot take it back.
+        // So these pin two things above all: that the value is the one the screens show, and that an
+        // item the history cannot speak for produces no write at all rather than a confident zero.
+
+        [Test]
+        public void ResolveWriteBackForTeam_SleRiskMapping_WritesTheChanceTheScreensShow()
+        {
+            var team = CreateTeamWithTarget();
+            var item = CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4));
+            GivenTheTeamsWorkItems(team, item);
+            GivenTheRiskIs(team, ("WIP-1", 86));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+
+            var plan = CreateSubject().ResolveWriteBackForTeam(team);
+
+            AssertPlanned(plan, updates => updates.Count == 1
+                && updates[0].WorkItemId == "WIP-1"
+                && updates[0].TargetFieldReference == "Custom.Risk"
+                && updates[0].Value == "86");
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_SleRiskMapping_WritesTheBareNumberAndNotAPercentage()
+        {
+            // The field is the customer's to filter and sort on. An "86%" would make it text.
+            var team = CreateTeamWithTarget();
+            var item = CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4));
+            GivenTheTeamsWorkItems(team, item);
+            GivenTheRiskIs(team, ("WIP-1", 86));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+
+            var plan = CreateSubject().ResolveWriteBackForTeam(team);
+
+            Assert.That(plan[0].Value, Does.Not.Contain("%").And.Not.Contain("."));
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_ItemTheHistoryCannotAnswerFor_IsNotWrittenAtAll()
+        {
+            // Not an empty write, which would clear whatever the field held. Absent from the round.
+            var team = CreateTeamWithTarget();
+            var answered = CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4));
+            var unanswered = CreateWorkItem("WIP-2", StateCategories.Doing, team, FixedNowUtc.AddDays(-40));
+            GivenTheTeamsWorkItems(team, answered, unanswered);
+            GivenTheRiskIs(team, ("WIP-1", 86), ("WIP-2", null));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+
+            var plan = CreateSubject().ResolveWriteBackForTeam(team);
+
+            AssertPlanned(plan, updates => updates.Count == 1 && updates[0].WorkItemId == "WIP-1");
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_ItemTheAnswerNeverMentioned_IsNotWrittenAtAll()
+        {
+            // Closed items are among the team's work items and are not in the risk answer, which
+            // lists in-flight work only. A risk on finished work would be a claim about nothing.
+            var team = CreateTeamWithTarget();
+            var closed = CreateWorkItem("DONE-1", StateCategories.Done, team, FixedNowUtc.AddDays(-9), FixedNowUtc.AddDays(-2));
+            GivenTheTeamsWorkItems(team, closed);
+            GivenTheRiskIs(team);
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+
+            var plan = CreateSubject().ResolveWriteBackForTeam(team);
+
+            Assert.That(plan, Is.Empty);
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_SleRisk_AsksAboutTheTeamsOwnHistoryAsOfToday()
+        {
+            // AC-04.5. The window is the team's configured history, and the question is about now -
+            // not whatever range somebody last left a browser tab on.
+            var team = CreateTeamWithTarget();
+            team.ThroughputHistory = 30;
+            var item = CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4));
+            GivenTheTeamsWorkItems(team, item);
+            GivenTheRiskIs(team, ("WIP-1", 50));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+
+            CreateSubject().ResolveWriteBackForTeam(team);
+
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
+                team,
+                It.Is<DateTime>(start => start.Date == FixedNowUtc.Date.AddDays(-29)),
+                It.Is<DateTime>(end => end.Date == FixedNowUtc.Date)), Times.Once);
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_SleRisk_TeamWithFixedThroughputDates_StillAsksAboutToday()
+        {
+            // A team can pin which throughput to forecast from, and that end date can be long past.
+            // The evidence window follows the pin; the question does not - a field on a board is read
+            // now, so an item's age is counted to today rather than to a date somebody froze.
+            var team = CreateTeamWithTarget();
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = FixedNowUtc.AddDays(-90);
+            team.ThroughputHistoryEndDate = FixedNowUtc.AddDays(-60);
+            GivenTheTeamsWorkItems(team, CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4)));
+            GivenTheRiskIs(team, ("WIP-1", 50));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+
+            CreateSubject().ResolveWriteBackForTeam(team);
+
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
+                team,
+                It.Is<DateTime>(start => start.Date == FixedNowUtc.Date.AddDays(-90)),
+                It.Is<DateTime>(end => end.Date == FixedNowUtc.Date)), Times.Once);
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_SleRiskBesideAnotherSource_ResolvesBothAndAsksOnce()
+        {
+            // Two mappings, one round. Each field gets its own value, and the history is walked once
+            // rather than once per mapping.
+            var team = CreateTeamWithTarget();
+            GivenTheTeamsWorkItems(team, CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4)));
+            GivenTheRiskIs(team, ("WIP-1", 86));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
+
+            var plan = CreateSubject().ResolveWriteBackForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(plan.Count, Is.EqualTo(2));
+                Assert.That(plan.Any(u => u.TargetFieldReference == "Custom.Risk" && u.Value == "86"), Is.True,
+                    $"Resolved: [{string.Join(", ", plan.Select(u => $"{u.TargetFieldReference}={u.Value}"))}]");
+                Assert.That(plan.Any(u => u.TargetFieldReference == "Custom.Age" && u.Value == "5"), Is.True,
+                    $"Resolved: [{string.Join(", ", plan.Select(u => $"{u.TargetFieldReference}={u.Value}"))}]");
+            }
+
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
+                It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_NoSleRiskMapping_NeverAsksForTheRiskAtAll()
+        {
+            // The read walks the team's whole closed history. A team that never mapped the field
+            // should not pay for it on every update.
+            var team = CreateTeamWithTarget();
+            GivenTheTeamsWorkItems(team, CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4)));
+
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
+
+            CreateSubject().ResolveWriteBackForTeam(team);
+
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
+                It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Never);
+        }
+
+        private static Team CreateTeamWithTarget()
+        {
+            var team = CreateTeamWithWorkItems();
+            team.ServiceLevelExpectationRange = 10;
+            team.ServiceLevelExpectationProbability = 80;
+            return team;
+        }
+
+        private void GivenTheTeamsWorkItems(Team team, params WorkItem[] workItems)
+        {
+            workItemRepositoryMock
+                .Setup(r => r.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+        }
+
+        private void GivenTheRiskIs(Team team, params (string ReferenceId, int? Risk)[] answers)
+        {
+            teamMetricsServiceMock
+                .Setup(s => s.GetSleRiskForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(answers.Select(a => new SleRiskDto(a.ReferenceId, a.Risk, a.Risk is null ? 0 : 30)).ToList());
+        }
+
         private static void AssertPlanned(
             IReadOnlyList<WriteBackFieldUpdate> plan,
             Func<IReadOnlyList<WriteBackFieldUpdate>, bool> expectation)
@@ -747,6 +946,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
                 new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant),
+                teamMetricsServiceMock.Object,
                 loggerMock.Object);
         }
 

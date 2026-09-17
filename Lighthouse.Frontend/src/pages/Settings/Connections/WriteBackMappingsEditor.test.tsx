@@ -286,6 +286,81 @@ describe("WriteBackMappingsEditor", () => {
 			).not.toBeInTheDocument();
 		});
 
+		// --- Epic #4127 slice 04: the risk is a team question ---
+
+		it("offers the SLE risk to a team, whose target it is", async () => {
+			const user = userEvent.setup();
+			render(
+				<WriteBackMappingsEditor
+					additionalFields={sampleAdditionalFields}
+					mappings={[]}
+					onChange={mockOnChange}
+					workTrackingSystemType="AzureDevOps"
+				/>,
+			);
+
+			await user.click(
+				screen.getByRole("button", { name: /add sync mapping/i }),
+			);
+			await user.click(screen.getByLabelText("Sync Value"));
+
+			expect(
+				screen.getByRole("option", { name: "SLE Risk" }),
+			).toBeInTheDocument();
+		});
+
+		it("does not offer the SLE risk to a portfolio, which has no single target", async () => {
+			// A feature sits in several portfolios, each with its own target and its own history, so
+			// there is no one answer to write.
+			const user = userEvent.setup();
+			render(
+				<WriteBackMappingsEditor
+					additionalFields={sampleAdditionalFields}
+					mappings={[]}
+					onChange={mockOnChange}
+					workTrackingSystemType="AzureDevOps"
+				/>,
+			);
+
+			await user.click(
+				screen.getByRole("button", { name: /add sync mapping/i }),
+			);
+			await user.click(screen.getByLabelText("Applies To"));
+			await user.click(screen.getByRole("option", { name: "Portfolio" }));
+			await user.click(screen.getByLabelText("Sync Value"));
+
+			expect(
+				screen.queryByRole("option", { name: "SLE Risk" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("drops the SLE risk when the mapping is moved to a portfolio", async () => {
+			// Chosen for a team, then re-scoped. Left selected it would be saved against a scope
+			// that can never resolve it, and the field would simply never be written.
+			const user = userEvent.setup();
+			render(
+				<WriteBackMappingsEditor
+					additionalFields={sampleAdditionalFields}
+					mappings={[]}
+					onChange={mockOnChange}
+					workTrackingSystemType="AzureDevOps"
+				/>,
+			);
+
+			await user.click(
+				screen.getByRole("button", { name: /add sync mapping/i }),
+			);
+			await user.click(screen.getByLabelText("Sync Value"));
+			await user.click(screen.getByRole("option", { name: "SLE Risk" }));
+
+			await user.click(screen.getByLabelText("Applies To"));
+			await user.click(screen.getByRole("option", { name: "Portfolio" }));
+
+			expect(screen.getByLabelText("Sync Value")).toHaveTextContent(
+				"Work Item Age/Cycle Time",
+			);
+		});
+
 		it("should show all sources when AppliesTo is Portfolio", async () => {
 			const user = userEvent.setup();
 			render(

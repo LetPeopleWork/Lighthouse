@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -11,6 +11,7 @@ namespace Lighthouse.Backend.Services.Implementation
         IWorkItemRepository workItemRepository,
         IBlackoutPeriodService blackoutPeriodService,
         ILighthouseClock clock,
+        ITeamMetricsService teamMetricsService,
         ILogger<WriteBackTriggerService> logger)
         : IWriteBackTriggerService
     {
@@ -43,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     .GetAllByPredicate(wi => wi.TeamId == team.Id)
                     .ToList();
 
-                return ResolveTeamUpdates(mappings, workItems);
+                return ResolveTeamUpdates(mappings, workItems, RiskByReferenceIdFor(team, mappings));
             }
             // Resolution reads repositories and the blackout calendar, so it can still fail. Swallowing
             // here keeps a broken mapping from cutting short the rest of the update execution, which is
@@ -102,9 +103,33 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
+        /// <summary>
+        /// The chance each in-flight item has of missing the team's target, read from the service
+        /// the screens read - so a number in someone else's tracker cannot disagree with the number
+        /// on the page. Empty unless a mapping actually asks for it: the read walks the team's whole
+        /// closed history, and a team that never mapped the field should not pay for it every update.
+        ///
+        /// The evidence is the team's configured history and the question is about today, because a
+        /// field on a board is read now rather than as of whatever range a browser tab was left on.
+        /// </summary>
+        private Dictionary<string, int?> RiskByReferenceIdFor(Team team, List<WriteBackMappingDefinition> mappings)
+        {
+            if (!mappings.Exists(m => m.ValueSource == WriteBackValueSource.SleRisk))
+            {
+                return [];
+            }
+
+            var history = team.GetThroughputSettings(clock.Today);
+
+            return teamMetricsService
+                .GetSleRiskForTeam(team, history.StartDate, clock.TodayAsUtcMidnight)
+                .ToDictionary(risk => risk.ReferenceId, risk => risk.Risk);
+        }
+
         private List<WriteBackFieldUpdate> ResolveTeamUpdates(
             List<WriteBackMappingDefinition> mappings,
-            List<WorkItem> workItems)
+            List<WorkItem> workItems,
+            Dictionary<string, int?> riskByReferenceId)
         {
             var updates = new List<WriteBackFieldUpdate>();
 
@@ -119,7 +144,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 foreach (var workItem in workItems)
                 {
-                    var value = ResolveWorkItemValue(mapping.ValueSource, workItem);
+                    var value = ResolveWorkItemValue(mapping.ValueSource, workItem, riskByReferenceId);
                     if (value != null)
                     {
                         updates.Add(new WriteBackFieldUpdate
@@ -175,7 +200,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 mapping.Id, mapping.AdditionalFieldDefinitionId);
         }
 
-        private string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem)
+        private string? ResolveWorkItemValue(
+            WriteBackValueSource source,
+            WorkItemBase workItem,
+            Dictionary<string, int?> riskByReferenceId)
         {
             var age = workItem.WorkItemAge(clock.Zone, clock.Today);
             var cycleTime = workItem.CycleTime(clock.Zone);
@@ -184,8 +212,20 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 WriteBackValueSource.WorkItemAgeCycleTime when age > 0 => age.ToString(),
                 WriteBackValueSource.WorkItemAgeCycleTime when cycleTime > 0 => cycleTime.ToString(),
+                // No answer means no write, not an empty one: an item that is finished, whose team
+                // published no target, or that too little finished work can be compared against is
+                // simply absent from the round rather than clearing whatever the field held.
+                WriteBackValueSource.SleRisk => RiskValueFor(workItem, riskByReferenceId),
                 _ => null,
             };
+        }
+
+        private static string? RiskValueFor(WorkItemBase workItem, Dictionary<string, int?> riskByReferenceId)
+        {
+            // The bare number, so the field stays something a board can filter and sort on.
+            return riskByReferenceId.TryGetValue(workItem.ReferenceId, out var risk) && risk.HasValue
+                ? risk.Value.ToString()
+                : null;
         }
 
         private string? ResolveFeatureValue(WriteBackMappingDefinition mapping, Feature feature)
