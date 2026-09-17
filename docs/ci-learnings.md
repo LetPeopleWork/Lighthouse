@@ -382,13 +382,6 @@ get re-applied.
 
 ## Tests
 
-### 2026-09-17 — giving demo data a value an E2E relies on NOT having breaks that E2E
-
-- **Symptom**: `verifysqlite` AND `verifypostgres` both red on `c58620c65`, same single test, all 3 retries: `WorkItemAgePercentilesStatus.spec.ts:96` — `expect.poll(() => widget.rag.readStatus()).toBe("red")`, `Expected: "red" Received: "green"`, after a 60 s poll. 53 passed. Backend, E2E, frontend and **both** `sonar-gates` were green, so it read as an E2E-only problem in a change whose commit body is mostly documentation.
-- **Root cause**: the same commit added `ServiceLevelExpectationProbability = 85` / `ServiceLevelExpectationRange = 7` to `DemoDataFactory.CreateDemoTeam` — deliberately, so the new SLE-risk column, count and chart background would be visible to anyone evaluating Lighthouse on demo data. `WorkItemAgePercentilesStatus.spec.ts` is built on the opposite premise: it walks the RAG chip red → green → red *specifically* so the assertions cannot pass vacuously, and the opening red is the "no SLE configured, go and set one" prompt. Its own comment at line 92 says "The seeded team has no SLE", which the demo-data change silently made false. Nothing cross-checks a spec's premise against the factory it seeds from.
-- **Fix**: not applied here — owned by the Epic #4127 session that made the change. The shape that keeps the test's value is to clear the team's SLE in the spec before the first assertion rather than to drop the red leg, because the red → green → red walk is what stops a drifted locator or a statically-painted chip from passing.
-- **Rule going forward**: before changing `DemoDataFactory`, grep `Lighthouse.EndToEndTests` for specs that assert on the *absence* of the field being added — a seeded default is a shared fixture, and an E2E whose premise is "this team has no X" turns red the moment demo data grows an X. Prefer having the spec establish its own precondition over relying on a factory default it does not own.
-
 ### 2026-09-05 — an E2E pinned to real work-item ids goes red when someone closes those items
 
 - **Symptom**: `verifysqlite` AND `verifypostgres` both red on run `33955949513`, same single test, all 3 retries: `FeatureDependencies.spec.ts:70` — `expect(locator('.MuiDataGrid-row').first()).toBeVisible()` / `element(s) not found`. 49 passed. `sonar-gates` and the frontend job were green, and the commits in the run were comment-and-test-only, so it read as a product regression appearing from nowhere.
