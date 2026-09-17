@@ -1,3 +1,4 @@
+import type { ISleRisk } from "../../models/Metrics/SleRisk";
 import type { IWorkItem } from "../../models/WorkItem";
 import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
 
@@ -7,6 +8,15 @@ import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
  * certainty rather than as silence.
  */
 export const SLE_RISK_BEYOND_HISTORY_LABEL = "Beyond history";
+
+/**
+ * What an item is given when work did run this long and too little of it did. A share of a handful
+ * of items moves by ten points or more when one of them enters or leaves the window, so the number
+ * would swing overnight on exactly the items a coach is being told to look at first. Deliberately
+ * not the label above: saying nothing ran this long, when something did, is a different claim and a
+ * false one.
+ */
+export const SLE_RISK_NOT_ENOUGH_HISTORY_LABEL = "Not enough history";
 
 /**
  * The column's wording, written once because the chip and the chart zones stand for the same number
@@ -34,13 +44,13 @@ export interface SleRiskColumnDescriptor {
 	readonly description: string;
 	/** The percentage for an item, or undefined when its history cannot answer. */
 	readonly riskFor: (workItem: IWorkItem) => number | undefined;
-	/** `86%`, or the beyond-history label. This is the value the column carries, so it is what exports. */
+	/** `86%`, or whichever no-answer label applies. This is the column's value, so it is what exports. */
 	readonly labelFor: (workItem: IWorkItem) => string;
 	readonly colorForRisk: (risk: number | undefined) => string | undefined;
 }
 
 export interface SleRiskColumnInputs {
-	readonly riskByReferenceId: ReadonlyMap<string, number | null>;
+	readonly answers: readonly ISleRisk[];
 	readonly headerName: string;
 	readonly description: string;
 }
@@ -50,10 +60,13 @@ export interface SleRiskColumnInputs {
  * leaves ordering with nothing but the text unless the number is read back out of it.
  */
 export const sleRiskSortValue = (label: string): number | undefined => {
-	// Naming the sentinel rather than leaving it to the parse below, which happens to reject it only
-	// because the wording starts with a letter. A sentinel reworded to start with a digit would
+	// Naming the sentinels rather than leaving them to the parse below, which happens to reject them
+	// only because the wording starts with a letter. One reworded to start with a digit would
 	// otherwise be read as a risk, silently, on a column whose whole job is ordering.
-	if (label === SLE_RISK_BEYOND_HISTORY_LABEL) {
+	if (
+		label === SLE_RISK_BEYOND_HISTORY_LABEL ||
+		label === SLE_RISK_NOT_ENOUGH_HISTORY_LABEL
+	) {
 		return undefined;
 	}
 
@@ -80,24 +93,35 @@ const sleRiskColorFor = (risk: number | undefined): string | undefined => {
  * the ones it cannot answer for.
  */
 export const buildSleRiskColumnDescriptor = ({
-	riskByReferenceId,
+	answers,
 	headerName,
 	description,
 }: SleRiskColumnInputs): SleRiskColumnDescriptor | undefined => {
-	if (riskByReferenceId.size === 0) {
+	if (answers.length === 0) {
 		return undefined;
 	}
 
+	const byReferenceId = new Map(
+		answers.map((answer) => [answer.referenceId, answer]),
+	);
 	const riskFor = (workItem: IWorkItem): number | undefined =>
-		riskByReferenceId.get(workItem.referenceId) ?? undefined;
+		byReferenceId.get(workItem.referenceId)?.risk ?? undefined;
 
 	return {
 		headerName,
 		description,
 		riskFor,
 		labelFor: (workItem) => {
-			const risk = riskFor(workItem);
-			return risk === undefined ? SLE_RISK_BEYOND_HISTORY_LABEL : `${risk}%`;
+			const answer = byReferenceId.get(workItem.referenceId);
+			if (answer?.risk !== undefined && answer.risk !== null) {
+				return `${answer.risk}%`;
+			}
+
+			// An item the answer never mentioned is treated as beyond history rather than as thinly
+			// evidenced, because nothing was measured for it at all.
+			return answer && answer.comparableItems > 0
+				? SLE_RISK_NOT_ENOUGH_HISTORY_LABEL
+				: SLE_RISK_BEYOND_HISTORY_LABEL;
 		},
 		colorForRisk: sleRiskColorFor,
 	};

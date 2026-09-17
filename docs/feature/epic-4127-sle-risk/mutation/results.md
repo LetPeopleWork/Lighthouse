@@ -75,3 +75,51 @@ npx stryker run ../docs/feature/epic-4127-sle-risk/mutation/stryker.6016.fronten
 ```
 
 Re-anchor both byte ranges in the backend config against the current files before trusting a score.
+
+## Slice 01b — the minimum-sample guard
+
+Re-run 2026-09-17 after `OUT-4127-risk-stability` forced the guard in.
+
+| Stack | Mutants tested | Killed | Survived | Score |
+|---|---|---|---|---|
+| Backend | 34 | 34 | 0 | **100.00%** |
+| Frontend | 54 | 49 | 5 | **90.74%** |
+
+### The frontend run found a test that could not fail, and it took two passes to see it
+
+The first run of the guard scored 83.64% with nine survivors, and one of them was not what it looked
+like. `answers.map((answer) => [answer.referenceId, answer])` mutated to `() => undefined` was
+reported **Survived** — and when the same mutation was applied by hand, it threw
+`TypeError: Iterator value undefined is not an entry object` and the suite printed `Tests  no tests`.
+
+The cause was in the test file, not the product: a descriptor was built at `describe` scope, so
+anything that throws while building it kills **collection** rather than a test. A file that never
+collects runs zero tests, and StrykerJS reads zero failures as a survivor. The fix was to move the
+construction inside the tests. This is the same shape as the ledger's warning about an `include:`
+list naming a spec that does not exist — a mutant that stops the tests from running is
+indistinguishable from a mutant nothing covers.
+
+The second real survivor was the ledger's most common one, arriving exactly as it describes:
+blanking `SLE_RISK_NOT_ENOUGH_HISTORY_LABEL` to `""` survived every assertion, because every
+assertion compared a label to the constant it came from. Both sentences are now pinned against their
+literals once.
+
+Two more fell to a test each: `riskFor` on an item the answer never mentioned (the optional chain
+was load-bearing and nothing proved it), and an `answer?.risk` whose optional chain was **not**
+load-bearing — the conjunct before it already short-circuits on a missing answer — which was
+simplified away rather than tested.
+
+### What survives, and why it is left alone
+
+All five remaining survivors are one equivalent mutant: the two sentinel comparisons in
+`sleRiskSortValue`. Removing them leaves `Number.parseInt("Beyond history")` returning `NaN`, which
+the next line already turns into `undefined`. Unkillable as written, and kept deliberately — the
+parse rejects both sentinels only because their wording starts with a letter, and one reworded to
+start with a digit would be read as a risk on a column whose whole job is ordering.
+
+### A fixture note the review raised
+
+Two rescaled scenarios had landed on exactly ten comparable items, which is the guard's own
+boundary. They are about the arithmetic, not the threshold, so they were given one more copy each —
+twelve items, same proportions, same pinned percentages. The threshold has its own two scenarios at
+nine and ten and does not need to borrow theirs.

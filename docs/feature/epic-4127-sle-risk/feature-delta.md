@@ -627,3 +627,69 @@ No silent N/A — every item gets an answer.
   a real team on a production-restored instance, not this suite.
 
 ---
+
+# Wave: DELIVER — slice 01b, the minimum-sample guard
+
+Run 2026-09-17, after `OUT-4127-risk-stability` failed. The measurement is in
+`OUT-4127-risk-stability.md`; this is what it changed.
+
+## Wave: DELIVER / [REF] What the gate decided
+
+**A risk computed from fewer than ten comparable items is not shown.** The displayed value is a
+share of exactly those items, so one entering or leaving the window moves it by up to `100/n` points
+— the brief's own 15-point worry begins at seven, and is arithmetically impossible above twenty. Ten
+holds the overnight move under ten points and keeps most of the column populated; twenty would have
+blanked ages 3 and up on the board the replay ran against. The user chose ten on that trade-off.
+
+The precedent is `ForecastDataSufficiencyPolicy`, which refuses a forecast below five active days
+rather than serving a confident-looking one. `SleRiskCalculator.MinimumComparableItems` is the same
+shape and sits on the calculator, because the calculator *is* the policy — a second type for one
+const would be a type to keep in step.
+
+## Wave: DELIVER / [REF] Decisions this forced
+
+| ID | Decision | Verdict |
+|---|---|---|
+| D17 | Is a guarded item the same as a beyond-history one? | **No, and they must not share a label.** `Beyond history` fires when *nothing* ever ran this long. Saying that when nine items did is a false claim about the team's history, not a softer one. The new label is `Not enough history`. |
+| D18 | How does a surface tell them apart? | **The count comes over the wire.** `SleRiskDto` gains `ComparableItems`: zero means nothing ran this long, below the minimum means too little did. One int, and every surface gets to make its own rule from it rather than guessing from a null. |
+| D19 | What does the calculator return now? | `SleRiskCalculator.For(...) -> SleRiskVerdict(int? Risk, int ComparableItems)`, replacing `Risk(...) -> int?` (DDD-1). One call rather than a second pass for the count, because the survivor boundary is the exact place D8 warns two readings drift apart. |
+| D20 | Does the guard reach write-back? | **Yes, for free.** A guarded item has a null risk, and slice 04's `=> null` convention already means "no write at all". An unstable number is worst where Lighthouse cannot take it back. |
+
+## Wave: DELIVER / [REF] What it cost the existing scenarios
+
+Seven acceptance scenarios seeded histories too thin to earn an answer under the guard — which is
+the measurement's point arriving as a test failure. Each was scaled by repeating its **same
+distribution** several times over (`GivenTheTeamHasFinishedSeveralOfEach`), so every pinned
+percentage is unchanged: the Epic's worked example is still 32/46/86/100, because three copies of
+six-in-twenty is eighteen-in-sixty.
+
+Two new scenarios sit either side of the threshold — nine comparable items is silence, ten is an
+answer — because a threshold no test crosses is a threshold whose direction nobody has checked.
+
+## Wave: DELIVER / [REF] Gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 errors, 0 warnings from this change |
+| `dotnet test` (connectors excluded) | 6997 passed; 2 environmental — the Defender SQLite lock, and one admitted-work ordering test that passes alone in 2s after failing at 10s under load |
+| `pnpm test` / `pnpm build` | 5259 passed, 372 files; build clean |
+| Stryker backend | **100%** |
+| Stryker frontend | **90.74%** — 5 survivors, all one equivalent mutant |
+| Independent review | `nw-software-crafter-reviewer`, approved with no defects; its one observation (two fixtures sitting on the guard's own boundary) was acted on |
+
+The frontend mutation run earned its keep twice. It caught the ledger's most common survivor — a
+label pinned only against the constant it came from — and it caught a test file that could not fail,
+because a descriptor built at `describe` scope turns any throw into a collection error, and a file
+that collects nothing runs nothing. `mutation/results.md` has both.
+
+## Wave: DELIVER / [REF] What slices 02–04 now owe
+
+- **Slice 02** — AC-02.6 says `Beyond history` counts as at-risk. `Not enough history` is a separate
+  question and the answers need not match: an item nothing can be said about is not evidence of
+  trouble the way an item past all history is.
+- **Slice 03** — the zone boundaries are the ages where risk crosses 25/50/75%. Those are computed
+  from the same thinning tail, so a boundary whose evidence is below the minimum must not be drawn.
+  D12's own note already says zones that move day to day are worse than no zones.
+- **Slice 04** — nothing to do. The guard produces a null, and null already means no write.
+
+---

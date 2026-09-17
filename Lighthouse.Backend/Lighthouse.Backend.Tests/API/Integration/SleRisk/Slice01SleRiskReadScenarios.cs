@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task A_team_with_a_target_is_told_each_open_item_s_chance_of_missing_it()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30);
             var item = GivenAnItemOpenFor(5);
 
             await WhenTheRiskIsAskedFor(team);
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task The_longer_an_item_stays_open_the_worse_its_chances_get(int age, int expected)
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30);
             var item = GivenAnItemOpenFor(age);
 
             await WhenTheRiskIsAskedFor(team);
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task An_item_already_past_the_target_is_certain_to_have_missed_it()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(2, 4, 6, 8, 12, 16, 40);
+            GivenTheTeamHasFinishedSeveralOfEach(6, 2, 4, 6, 8, 12, 16, 40);
             var item = GivenAnItemOpenFor(14);
 
             await WhenTheRiskIsAskedFor(team);
@@ -81,6 +81,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             await WhenTheRiskIsAskedFor(team);
 
             ThenTheItemIsBeyondWhatTheHistoryCanAnswer(item);
+        }
+
+        // @driving_port @real-io @error — nine items ran this long, and nine is not enough to divide
+        // by: one more or one fewer moves the answer eleven points overnight, on the item a coach is
+        // being told to look at first. The measurement behind the number is
+        // docs/feature/epic-4127-sle-risk/OUT-4127-risk-stability.md.
+        [Test]
+        public async Task An_item_too_little_finished_work_can_be_compared_against_is_given_no_answer()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinishedSeveralOfEach(9, 20);
+            GivenTheTeamHasFinishedSeveralOfEach(30, 1);
+            var item = GivenAnItemOpenFor(20);
+
+            await WhenTheRiskIsAskedFor(team);
+
+            ThenTooLittleRanThatLongToSay(item, comparableItems: 9);
+        }
+
+        // @driving_port @real-io — one more item over the same line, and the answer arrives. Written
+        // beside the scenario above because a threshold nobody crosses in a test is a threshold
+        // nobody has checked the direction of.
+        [Test]
+        public async Task One_more_comparable_item_is_enough_to_be_told_the_answer()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinishedSeveralOfEach(10, 20);
+            GivenTheTeamHasFinishedSeveralOfEach(30, 1);
+            var item = GivenAnItemOpenFor(20);
+
+            await WhenTheRiskIsAskedFor(team);
+
+            ThenTheItemsChanceOfMissingIs(item, 100);
         }
 
         // @driving_port @real-io @error @AC-01.5 — a team that never published a target has not made
@@ -118,7 +151,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             var team = GivenATeamThatPromisesTenDays();
             // Three finished: one at exactly the target, two past it. If the one at exactly ten counts
             // as a miss the answer is 100%; it does not, so it is two in three.
-            GivenTheTeamHasFinished(10, 12, 14);
+            GivenTheTeamHasFinishedSeveralOfEach(4, 10, 12, 14);
             var item = GivenAnItemOpenFor(3);
 
             await WhenTheRiskIsAskedFor(team);
@@ -135,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             var team = GivenATeamThatPromisesSixDays();
             // Survivors at age 5 are {5, 7}, of which {7} missed: one in two. Dropping the item that
             // took exactly five from the survivors would make it one in one.
-            GivenTheTeamHasFinished(3, 5, 7);
+            GivenTheTeamHasFinishedSeveralOfEach(6, 3, 5, 7);
             var item = GivenAnItemOpenFor(5);
 
             await WhenTheRiskIsAskedFor(team);
@@ -150,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task Only_work_finished_inside_the_chosen_window_counts_as_evidence()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(2, 4, 12, 14);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 2, 4, 12, 14);
             GivenTheTeamAlsoFinishedLongAgo(30, 40, 50);
             var item = GivenAnItemOpenFor(2);
 
@@ -169,7 +202,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task A_window_that_ended_in_the_past_is_answered_as_of_that_day()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(2, 4, 12, 14);
+            GivenTheTeamHasFinishedSeveralOfEach(5, 2, 4, 12, 14);
             var item = GivenAnItemOpenFor(20);
 
             await WhenTheRiskIsAskedForAWindowEnding(team, tenDaysAgo: true);
@@ -187,7 +220,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task Two_windows_asked_one_after_the_other_get_their_own_answers()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(2, 4, 12, 14);
+            GivenTheTeamHasFinishedSeveralOfEach(5, 2, 4, 12, 14);
             var item = GivenAnItemOpenFor(20);
 
             await WhenTheRiskIsAskedForAWindowEnding(team, tenDaysAgo: true);
@@ -206,7 +239,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         public async Task Tightening_the_target_changes_the_answer_rather_than_repeating_the_old_one()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(4, 8, 12, 16);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 4, 8, 12, 16);
             var item = GivenAnItemOpenFor(3);
 
             await WhenTheRiskIsAskedFor(team);

@@ -119,6 +119,7 @@ Three consequences worth knowing:
 
 - An item older than the target reads `100%`. That is the arithmetic, not a special rule — every item that ran that long necessarily ran longer than the target.
 - An item older than anything your team has ever finished reads `Beyond history`, uncoloured, and sorts below every answered item. There is nothing left to compare it against, and a number there would read as certainty rather than as silence.
+- An item that **fewer than ten** finished items can be compared against reads `Not enough history`, also uncoloured. A share of a handful of items moves by ten points or more the moment one of them enters or leaves your selected range, so the number would change overnight on exactly the items you are being told to look at first. Widening the date range is usually what brings these items an answer, because it brings more finished work into the comparison.
 - An item that finished in exactly the target number of days **met** the target and is not counted as a miss.
 
 Sort the column to bring the items most likely to breach to the top, or export the list to CSV, where the value reads as the percentage you see rather than as a bare number.

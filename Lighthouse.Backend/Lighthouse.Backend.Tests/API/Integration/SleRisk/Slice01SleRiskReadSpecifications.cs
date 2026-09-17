@@ -57,6 +57,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             => SeedFinishedItems(TheTeamUnderTest, cycleTimesInDays);
 
         /// <summary>
+        /// The same distribution several times over. A scenario about the arithmetic needs enough
+        /// finished work at the age it asks about for the answer to be given at all — the shape of
+        /// the distribution is what it is pinning, and the copies are what let it be shown.
+        /// </summary>
+        private void GivenTheTeamHasFinishedSeveralOfEach(int copies, params int[] cycleTimesInDays)
+        {
+            for (var copy = 0; copy < copies; copy++)
+            {
+                SeedFinishedItems(TheTeamUnderTest, cycleTimesInDays);
+            }
+        }
+
+        /// <summary>
         /// Finished, but closed before the window the scenario asks about — so it exists, and is
         /// still not evidence.
         /// </summary>
@@ -181,6 +194,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
                 Assert.That(risk.ValueKind, Is.EqualTo(JsonValueKind.Null),
                     "Nothing finished ran this long, so there is nothing to divide by. A number here — "
                     + $"100 most of all — would read as certainty rather than as silence. Body: {body}");
+                Assert.That(entry.GetProperty("comparableItems").GetInt32(), Is.Zero,
+                    $"Nothing ran this long at all, which is not the same as too little having. Body: {body}");
+            }
+        }
+
+        /// <summary>
+        /// A different silence from the one above: work did run this long, and not enough of it for
+        /// a share of it to mean anything. The count is what tells a reader which silence they got.
+        /// </summary>
+        private void ThenTooLittleRanThatLongToSay(string referenceId, int comparableItems)
+        {
+            var entry = TheEntryFor(referenceId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entry.GetProperty("risk").ValueKind, Is.EqualTo(JsonValueKind.Null),
+                    "A hundred percent off nine observations reads as certainty and is not one. "
+                    + $"Body: {body}");
+                Assert.That(entry.GetProperty("comparableItems").GetInt32(), Is.EqualTo(comparableItems),
+                    "Work did run this long - saying nothing ran this long would be a different claim, "
+                    + $"and a false one. Body: {body}");
             }
         }
 

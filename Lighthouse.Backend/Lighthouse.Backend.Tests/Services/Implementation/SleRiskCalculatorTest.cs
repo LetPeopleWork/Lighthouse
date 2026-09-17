@@ -3,139 +3,192 @@ using Lighthouse.Backend.Services.Implementation;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     /// <summary>
-    /// The arithmetic on its own. The acceptance scenarios in API/Integration/SleRisk/ pin what a
-    /// caller of the endpoint sees; these pin the two things those scenarios deliberately left open —
-    /// which way a half-percent rounds, and what an unusable age answers — plus the identities the
-    /// formula rests on, which are cheaper to state here than to seed a database for.
+    /// The arithmetic on its own, and the rule about when it is worth showing. The acceptance
+    /// scenarios in API/Integration/SleRisk/ pin what a caller of the endpoint sees; these pin the
+    /// two things those scenarios deliberately left open — which way a half-percent rounds, and what
+    /// an unusable age answers — plus the boundaries the formula rests on, which are cheaper to state
+    /// here than to seed a database for.
     /// </summary>
     public class SleRiskCalculatorTest
     {
         /// <summary>
-        /// The worked distribution from the Epic: twenty finished items, six of which took longer
-        /// than ten days.
+        /// The worked distribution from the Epic, three times over. The proportions are the Epic's
+        /// own — six in twenty ran past ten days — and tripling them is what puts enough finished
+        /// work at each age for the answer to be shown at all.
         /// </summary>
-        private static readonly int[] TwentyFinishedItems =
-            [1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30];
+        private static readonly int[] SixtyFinishedItems =
+            [.. Enumerable.Repeat<int[]>([1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30], 3).SelectMany(x => x)];
 
         [TestCase(2, 32)]
         [TestCase(5, 46)]
         [TestCase(9, 86)]
         [TestCase(10, 100)]
-        public void Risk_ItemStillOpen_IsTheShareOfSurvivorsThatWentOnToMiss(int ageInDays, int expected)
+        public void For_ItemStillOpen_IsTheShareOfComparableItemsThatWentOnToMiss(int ageInDays, int expected)
         {
-            var risk = SleRiskCalculator.Risk(ageInDays, 10, TwentyFinishedItems);
+            var verdict = SleRiskCalculator.For(ageInDays, 10, SixtyFinishedItems);
 
-            Assert.That(risk, Is.EqualTo(expected));
+            Assert.That(verdict.Risk, Is.EqualTo(expected));
         }
 
         [Test]
-        public void Risk_ItemOlderThanTheTarget_IsCertainWithoutASpecialCase()
+        public void For_ItemOlderThanTheTarget_IsCertainWithoutASpecialCase()
         {
             // Everything that ran this long necessarily ran longer than ten days, so the numerator
             // and the denominator are the same set. No clamp and no rule — it is the division.
-            var risk = SleRiskCalculator.Risk(14, 10, TwentyFinishedItems);
+            var verdict = SleRiskCalculator.For(11, 10, SixtyFinishedItems);
 
-            Assert.That(risk, Is.EqualTo(100));
+            Assert.That(verdict.Risk, Is.EqualTo(100));
         }
 
         [Test]
-        public void Risk_HalfwayBetweenTwoWholePercentages_RoundsToTheWorseOne()
+        public void For_HalfwayBetweenTwoWholePercentages_RoundsToTheWorseOne()
         {
-            // One of eight is 12.5%. Rounding to even would report 12 and understate the item.
-            int[] cycleTimes = [5, 5, 5, 5, 5, 5, 5, 12];
+            // One of sixteen is 6.25%, and one of eight would be 12.5% — the halfway case. Sixteen
+            // items are used because eight is below the minimum, so the rounding rule has to be
+            // shown at a size the answer is allowed to be given at.
+            int[] cycleTimes = [.. Enumerable.Repeat(5, 14), 12, 12];
 
-            var risk = SleRiskCalculator.Risk(5, 10, cycleTimes);
+            var verdict = SleRiskCalculator.For(5, 10, cycleTimes);
 
-            Assert.That(risk, Is.EqualTo(13));
+            // 2/16 = 12.5%, which rounds up rather than to the even 12.
+            Assert.That(verdict.Risk, Is.EqualTo(13));
         }
 
         [Test]
-        public void Risk_ItemThatFinishedOnTheTargetDay_IsNotCountedAsAMiss()
+        public void For_ItemThatFinishedOnTheTargetDay_IsNotCountedAsAMiss()
         {
-            // Three survivors at age three; only the two past ten days missed.
-            int[] cycleTimes = [10, 12, 14];
+            // Twelve comparable items; only the eight past ten days missed. Counting the four that
+            // took exactly ten would make it twelve in twelve.
+            int[] cycleTimes = [.. Enumerable.Repeat(10, 4), .. Enumerable.Repeat(12, 4), .. Enumerable.Repeat(14, 4)];
 
-            var risk = SleRiskCalculator.Risk(3, 10, cycleTimes);
+            var verdict = SleRiskCalculator.For(3, 10, cycleTimes);
 
-            Assert.That(risk, Is.EqualTo(67));
+            Assert.That(verdict.Risk, Is.EqualTo(67));
         }
 
         [Test]
-        public void Risk_FinishedItemThatTookExactlyAsLongAsAnItemPastTheTarget_IsOneOfTheMisses()
+        public void For_FinishedItemThatTookExactlyAsLongAsAnItemPastTheTarget_IsOneOfTheMisses()
         {
-            // Past the target, every survivor is a miss — including the one that took exactly as long
-            // as the open item has. Counting only the ones that outlasted it would report 50% on an
-            // item that cannot still make the target, which is the one answer that must never be soft.
-            int[] cycleTimes = [12, 15];
+            // Past the target, every comparable item is a miss — including the ones that took exactly
+            // as long as the open item has. Counting only the ones that outlasted it would report 50%
+            // on an item that cannot still make the target, the one answer that must never be soft.
+            int[] cycleTimes = [.. Enumerable.Repeat(12, 5), .. Enumerable.Repeat(15, 5)];
 
-            var risk = SleRiskCalculator.Risk(12, 10, cycleTimes);
+            var verdict = SleRiskCalculator.For(12, 10, cycleTimes);
 
-            Assert.That(risk, Is.EqualTo(100));
+            Assert.That(verdict.Risk, Is.EqualTo(100));
         }
 
         [Test]
-        public void Risk_FinishedItemAsOldAsTheOpenOne_IsStillOneOfItsSurvivors()
+        public void For_FinishedItemAsOldAsTheOpenOne_IsStillOneOfItsComparableItems()
         {
-            // At age five the survivors are {5, 7}. Dropping the one that took exactly five would
-            // leave only the item that missed, and the answer would read 100 instead of 50.
-            int[] cycleTimes = [3, 5, 7];
+            // At age five the comparable items are the fives and the sevens. Dropping the ones that
+            // took exactly five would leave only items that missed, and the answer would read 100.
+            int[] cycleTimes = [.. Enumerable.Repeat(3, 4), .. Enumerable.Repeat(5, 5), .. Enumerable.Repeat(7, 5)];
 
-            var risk = SleRiskCalculator.Risk(5, 6, cycleTimes);
+            var verdict = SleRiskCalculator.For(5, 6, cycleTimes);
 
-            Assert.That(risk, Is.EqualTo(50));
+            Assert.That(verdict.Risk, Is.EqualTo(50));
         }
 
+        // --- When the history is not worth dividing by ---
+
         [Test]
-        public void Risk_NothingFinishedEverRanThisLong_HasNoAnswer()
+        public void For_NothingFinishedEverRanThisLong_HasNoAnswerAndNothingToCompareAgainst()
         {
             int[] cycleTimes = [2, 3, 4, 5, 6];
 
-            var risk = SleRiskCalculator.Risk(20, 30, cycleTimes);
+            var verdict = SleRiskCalculator.For(20, 30, cycleTimes);
 
-            Assert.That(risk, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Risk, Is.Null);
+                Assert.That(verdict.ComparableItems, Is.Zero,
+                    "Nothing ran this long, which is a different silence from too little having run this long.");
+            }
         }
 
         [Test]
-        public void Risk_NothingFinishedAtAll_HasNoAnswer()
+        public void For_TooLittleFinishedWorkRanThisLong_HasNoAnswerButSaysHowLittle()
         {
-            var risk = SleRiskCalculator.Risk(4, 10, []);
+            // Nine items did run this long, and nine is not enough to divide by: one more or one
+            // fewer would move the answer by eleven points overnight, on the item a coach is being
+            // told to look at first.
+            int[] cycleTimes = [.. Enumerable.Repeat(20, 9), .. Enumerable.Repeat(1, 50)];
 
-            Assert.That(risk, Is.Null);
+            var verdict = SleRiskCalculator.For(20, 10, cycleTimes);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Risk, Is.Null,
+                    "A hundred percent off nine observations reads as certainty and is not one.");
+                Assert.That(verdict.ComparableItems, Is.EqualTo(9));
+            }
+        }
+
+        [Test]
+        public void For_ExactlyTheMinimumComparableItems_IsAnswered()
+        {
+            // The boundary itself. One fewer is silence, so this is the first age a reader is told
+            // anything about at all.
+            int[] cycleTimes = [.. Enumerable.Repeat(20, SleRiskCalculator.MinimumComparableItems), .. Enumerable.Repeat(1, 50)];
+
+            var verdict = SleRiskCalculator.For(20, 10, cycleTimes);
+
+            Assert.That(verdict.Risk, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void For_OneShortOfTheMinimum_IsNotAnswered()
+        {
+            int[] cycleTimes = [.. Enumerable.Repeat(20, SleRiskCalculator.MinimumComparableItems - 1), .. Enumerable.Repeat(1, 50)];
+
+            var verdict = SleRiskCalculator.For(20, 10, cycleTimes);
+
+            Assert.That(verdict.Risk, Is.Null);
+        }
+
+        [Test]
+        public void For_NothingFinishedAtAll_HasNoAnswer()
+        {
+            var verdict = SleRiskCalculator.For(4, 10, []);
+
+            Assert.That(verdict.Risk, Is.Null);
         }
 
         [TestCase(0)]
         [TestCase(-3)]
-        public void Risk_AgeThatCannotBeRead_HasNoAnswer(int ageInDays)
+        public void For_AgeThatCannotBeRead_HasNoAnswer(int ageInDays)
         {
             // An item whose start is missing or still in the future. Nothing can be said about how
             // long it has survived, and a zero here would read as the safest item on the board.
-            var risk = SleRiskCalculator.Risk(ageInDays, 10, TwentyFinishedItems);
+            var verdict = SleRiskCalculator.For(ageInDays, 10, SixtyFinishedItems);
 
-            Assert.That(risk, Is.Null);
+            Assert.That(verdict.Risk, Is.Null);
         }
 
         [TestCase(0)]
         [TestCase(-1)]
-        public void Risk_NoTargetPublished_HasNoAnswer(int targetRangeInDays)
+        public void For_NoTargetPublished_HasNoAnswer(int targetRangeInDays)
         {
-            var risk = SleRiskCalculator.Risk(5, targetRangeInDays, TwentyFinishedItems);
+            var verdict = SleRiskCalculator.For(5, targetRangeInDays, SixtyFinishedItems);
 
-            Assert.That(risk, Is.Null);
+            Assert.That(verdict.Risk, Is.Null);
         }
 
         [Test]
-        public void Risk_NoHistorySupplied_Refuses()
+        public void For_NoHistorySupplied_Refuses()
         {
-            Assert.That(() => SleRiskCalculator.Risk(5, 10, null!), Throws.ArgumentNullException);
+            Assert.That(() => SleRiskCalculator.For(5, 10, null!), Throws.ArgumentNullException);
         }
 
         [Test]
-        public void Risk_NoHistorySupplied_RefusesEvenWhenThereIsNoTargetToCompareAgainst()
+        public void For_NoHistorySupplied_RefusesEvenWhenThereIsNoTargetToCompareAgainst()
         {
             // A caller who supplies nothing to divide by has made a mistake, and finding that out
             // must not depend on what else they passed. Without the guard this reads as an ordinary
             // "no answer" and the mistake travels on.
-            Assert.That(() => SleRiskCalculator.Risk(5, 0, null!), Throws.ArgumentNullException);
+            Assert.That(() => SleRiskCalculator.For(5, 0, null!), Throws.ArgumentNullException);
         }
     }
 }

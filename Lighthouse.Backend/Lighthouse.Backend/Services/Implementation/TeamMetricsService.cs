@@ -370,9 +370,11 @@ namespace Lighthouse.Backend.Services.Implementation
                 var asOfDay = DateOnly.FromDateTime(endDate);
 
                 return GetWipSnapshotForTeam(team, endDate)
-                    .Select(item => new SleRiskDto(
-                        item.ReferenceId,
-                        SleRiskCalculator.Risk(item.AgeOnDay(Clock.Zone, asOfDay), team.ServiceLevelExpectationRange, cycleTimes)))
+                    .Select(item =>
+                    {
+                        var verdict = SleRiskCalculator.For(item.AgeOnDay(Clock.Zone, asOfDay), team.ServiceLevelExpectationRange, cycleTimes);
+                        return new SleRiskDto(item.ReferenceId, verdict.Risk, verdict.ComparableItems);
+                    })
                     .ToList();
             }, logger);
         }

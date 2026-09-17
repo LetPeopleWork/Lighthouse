@@ -558,9 +558,7 @@ function buildViewData(
 		description: ageBandColumnDescription(terms.workItems),
 	});
 	const sleRiskColumn = buildSleRiskColumnDescriptor({
-		riskByReferenceId: new Map(
-			inputs.sleRiskValues.map((entry) => [entry.referenceId, entry.risk]),
-		),
+		answers: inputs.sleRiskValues,
 		headerName: sleRiskColumnHeaderName(terms.sle),
 		description: sleRiskColumnDescription(terms.workItem),
 	});

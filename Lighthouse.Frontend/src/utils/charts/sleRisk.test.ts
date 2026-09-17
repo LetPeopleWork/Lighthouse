@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
+import type { ISleRisk } from "../../models/Metrics/SleRisk";
 import type { IWorkItem } from "../../models/WorkItem";
 import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
 import {
 	buildSleRiskColumnDescriptor,
 	SLE_RISK_BEYOND_HISTORY_LABEL,
+	SLE_RISK_NOT_ENOUGH_HISTORY_LABEL,
 	sleRiskColumnDescription,
 	sleRiskColumnHeaderName,
 	sleRiskSortValue,
@@ -25,9 +27,16 @@ const zenithItem = (referenceId: string): IWorkItem => ({
 	isBlocked: false,
 });
 
-const descriptorFor = (risks: [string, number | null][]) =>
+/** An answered item, or one of the two silences: `null` with evidence, or `null` with none. */
+const answer = (
+	referenceId: string,
+	risk: number | null,
+	comparableItems = risk === null ? 0 : 30,
+): ISleRisk => ({ referenceId, risk, comparableItems });
+
+const descriptorFor = (answers: ISleRisk[]) =>
 	buildSleRiskColumnDescriptor({
-		riskByReferenceId: new Map(risks),
+		answers,
 		headerName: "SLE Risk",
 		description: "how likely this one is to miss",
 	});
@@ -46,6 +55,18 @@ describe("the risk column's wording", () => {
 	});
 });
 
+describe("what the two silences are called", () => {
+	// Pinned against the words themselves. Every other assertion here compares a label to the
+	// constant it came from, which holds just as well when the constant is blank.
+	test("an item nothing ran as long as", () => {
+		expect(SLE_RISK_BEYOND_HISTORY_LABEL).toBe("Beyond history");
+	});
+
+	test("an item too little ran as long as", () => {
+		expect(SLE_RISK_NOT_ENOUGH_HISTORY_LABEL).toBe("Not enough history");
+	});
+});
+
 describe("building the risk column", () => {
 	test("offers nothing at all when no item was answered for", () => {
 		// A team with no published target is the only way this arrives empty, and there is then no
@@ -54,15 +75,15 @@ describe("building the risk column", () => {
 	});
 
 	test("carries the percentage as the column's value, so the export reads as the column does", () => {
-		const descriptor = descriptorFor([["ZEN-412", 86]]);
+		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
 
 		expect(descriptor?.labelFor(zenithItem("ZEN-412"))).toBe("86%");
 	});
 
 	test("says beyond history for an item the history cannot answer for", () => {
 		const descriptor = descriptorFor([
-			["ZEN-412", 86],
-			["ZEN-455", null],
+			answer("ZEN-412", 86),
+			answer("ZEN-455", null),
 		]);
 
 		expect(descriptor?.labelFor(zenithItem("ZEN-455"))).toBe(
@@ -71,25 +92,58 @@ describe("building the risk column", () => {
 		expect(descriptor?.riskFor(zenithItem("ZEN-455"))).toBeUndefined();
 	});
 
+	test("tells a thinly-evidenced item apart from one nothing can be compared against", () => {
+		// Both have no number, and they are not the same thing. Saying nothing ran this long, when
+		// nine items did, is a false claim about the team's history rather than a softer one.
+		const descriptor = descriptorFor([
+			answer("ZEN-455", null, 0),
+			answer("ZEN-470", null, 9),
+		]);
+
+		expect(descriptor?.labelFor(zenithItem("ZEN-455"))).toBe(
+			SLE_RISK_BEYOND_HISTORY_LABEL,
+		);
+		expect(descriptor?.labelFor(zenithItem("ZEN-470"))).toBe(
+			SLE_RISK_NOT_ENOUGH_HISTORY_LABEL,
+		);
+	});
+
+	test("leaves a thinly-evidenced item out of the ordering as well", () => {
+		// It has no number, so it cannot be placed among the ones that do.
+		const descriptor = descriptorFor([answer("ZEN-470", null, 9)]);
+
+		expect(descriptor?.riskFor(zenithItem("ZEN-470"))).toBeUndefined();
+		expect(sleRiskSortValue(SLE_RISK_NOT_ENOUGH_HISTORY_LABEL)).toBeUndefined();
+	});
+
 	test("says the same about an item the answer never mentioned", () => {
 		// An item the endpoint did not list — it entered the board after the answer was computed.
 		// Inventing a risk for it would be worse than admitting there is none.
-		const descriptor = descriptorFor([["ZEN-412", 86]]);
+		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
 
 		expect(descriptor?.labelFor(zenithItem("ZEN-999"))).toBe(
 			SLE_RISK_BEYOND_HISTORY_LABEL,
 		);
 	});
 
+	test("has no risk to order by for an item the answer never mentioned", () => {
+		// The lookup misses, and a miss must read as "no answer" rather than throw on the way to
+		// drawing the column.
+		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
+
+		expect(descriptor?.riskFor(zenithItem("ZEN-999"))).toBeUndefined();
+	});
+
 	test("keeps the risk itself available for ordering, not only its spelling", () => {
-		const descriptor = descriptorFor([["ZEN-412", 86]]);
+		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
 
 		expect(descriptor?.riskFor(zenithItem("ZEN-412"))).toBe(86);
 	});
 });
 
 describe("painting the risk", () => {
-	const descriptor = descriptorFor([["ZEN-412", 86]]);
+	const paintedBy = (risk: number) =>
+		descriptorFor([answer("ZEN-412", 86)])?.colorForRisk(risk);
 
 	test.each([
 		[0, 0],
@@ -104,15 +158,15 @@ describe("painting the risk", () => {
 	])(
 		"paints %i in the same colour the chart paints its band %i",
 		(risk, band) => {
-			expect(descriptor?.colorForRisk(risk)).toBe(
-				PACE_BAND_COLORS_LOW_TO_HIGH[band],
-			);
+			expect(paintedBy(risk)).toBe(PACE_BAND_COLORS_LOW_TO_HIGH[band]);
 		},
 	);
 
 	test("leaves an item with no answer unpainted", () => {
 		// Not the calmest colour. An absence of evidence must not be dressed as good news.
-		expect(descriptor?.colorForRisk(undefined)).toBeUndefined();
+		expect(
+			descriptorFor([answer("ZEN-412", 86)])?.colorForRisk(undefined),
+		).toBeUndefined();
 	});
 });
 

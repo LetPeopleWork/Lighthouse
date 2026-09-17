@@ -1,6 +1,13 @@
 namespace Lighthouse.Backend.Services.Implementation
 {
     /// <summary>
+    /// What the history can say about one open item, and how much history it had to say it with.
+    /// A null risk is the only way "no answer" is expressed; the count says which kind of no-answer
+    /// it is, so a surface can tell "nothing ever ran this long" from "too little did".
+    /// </summary>
+    public readonly record struct SleRiskVerdict(int? Risk, int ComparableItems);
+
+    /// <summary>
     /// Of every item that was still open at a given age, the share that went on to take longer than
     /// the target. The age is always supplied by the caller, never read from a clock here, because
     /// the display path asks about the end of a chosen window while write-back asks about today.
@@ -8,25 +15,35 @@ namespace Lighthouse.Backend.Services.Implementation
     public static class SleRiskCalculator
     {
         /// <summary>
-        /// Returns a whole percentage, or null when the question cannot be answered: no target was
-        /// published, the age is unusable, or nothing that ever finished ran as long as the item
-        /// already has. Null is not zero and not a hundred — there is no evidence either way, and a
-        /// number would read as if there were.
+        /// How many finished items must have run at least as long as the open one before their
+        /// verdict is worth showing. The displayed value is a share of exactly these, so one item
+        /// entering or leaving the window moves it by up to 100/count percentage points: ten holds
+        /// that under ten points, and below ten a number would swing overnight on precisely the
+        /// items a coach is being told to prioritise. Measured, not guessed —
+        /// docs/feature/epic-4127-sle-risk/OUT-4127-risk-stability.md.
         /// </summary>
-        public static int? Risk(int ageInDays, int targetRangeInDays, IReadOnlyList<int> closedCycleTimes)
+        public const int MinimumComparableItems = 10;
+
+        /// <summary>
+        /// Returns a whole percentage, or no answer at all when the question cannot honestly be
+        /// answered: no target was published, the age is unusable, or too little of what the team
+        /// finished ever ran as long as this item already has. Never zero and never a hundred in
+        /// those cases — a number would read as knowledge.
+        /// </summary>
+        public static SleRiskVerdict For(int ageInDays, int targetRangeInDays, IReadOnlyList<int> closedCycleTimes)
         {
             ArgumentNullException.ThrowIfNull(closedCycleTimes);
 
             if (targetRangeInDays <= 0 || ageInDays <= 0)
             {
-                return null;
+                return new SleRiskVerdict(null, 0);
             }
 
-            var survivors = closedCycleTimes.Count(cycleTime => cycleTime >= ageInDays);
+            var comparableItems = closedCycleTimes.Count(cycleTime => cycleTime >= ageInDays);
 
-            if (survivors == 0)
+            if (comparableItems < MinimumComparableItems)
             {
-                return null;
+                return new SleRiskVerdict(null, comparableItems);
             }
 
             var breaches = closedCycleTimes.Count(cycleTime => cycleTime > targetRangeInDays && cycleTime >= ageInDays);
@@ -34,7 +51,9 @@ namespace Lighthouse.Backend.Services.Implementation
             // Away from zero rather than to even, so a risk that sits exactly between two whole
             // percentages is reported as the worse of the two. The alternative rounds half of those
             // items down, and this number exists to decide which ones get attention today.
-            return (int)Math.Round(100.0 * breaches / survivors, MidpointRounding.AwayFromZero);
+            var risk = (int)Math.Round(100.0 * breaches / comparableItems, MidpointRounding.AwayFromZero);
+
+            return new SleRiskVerdict(risk, comparableItems);
         }
     }
 }
