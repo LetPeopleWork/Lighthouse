@@ -34,6 +34,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private const string RefusedQuery = "(project = PROJ AND sprnt is not EMPTY) AND issuetype = \"Epic\"";
 
+        /// <summary>
+        /// What a portfolio narrowing on hundreds of projects actually sends. The summary line exists to be
+        /// read, and a query of this size pasted into it whole is the thing that makes it unreadable.
+        /// </summary>
+        private static readonly string EnormousRefusedQuery =
+            $"project in ({string.Join(", ", Enumerable.Range(1, 200).Select(number => $"PROJECT{number}"))}) AND issuetype = \"Epic\"";
+
         private static readonly string[] TheOrderOneRefreshGoesIn = ["fetched", "synced", "saved", "forecast asked for"];
 
         private Mock<IRepository<Portfolio>> projectRepoMock;
@@ -612,14 +619,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        public void TriggerUpdate_RefusedQueryIsLongerThanALogLine_TheReasonStaysShortEnoughToRead()
+        {
+            var project = SetupPortfolioWhoseQueryIsRefused(
+                new WorkTrackingRefusedException(RefusalSentence, EnormousRefusedQuery, HttpStatusCode.BadRequest));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var reason = ReadReason(loggerMock);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(EnormousRefusedQuery, Has.Length.GreaterThan(1000),
+                    "With a query this side of the cut, everything below would hold whatever the code did.");
+                Assert.That(reason, Does.Not.Contain(EnormousRefusedQuery),
+                    "A query several kilobytes long pasted in whole buries the sentence that says what to change.");
+                Assert.That(reason, Has.Length.LessThan(1000),
+                    "This is one line in a log an operator scrolls through; it has to end somewhere.");
+                Assert.That(reason, Does.Contain(RefusalSentence),
+                    "Shortening the query must not cost the sentence that names what was wrong.");
+                Assert.That(reason, Does.Contain("project in (PROJECT1,"),
+                    "Enough of the query has to survive to tell which of the configured filters was refused.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_RefusalAlreadyNamesTheQuery_TheReasonDoesNotNameItASecondTime()
+        {
+            var project = SetupPortfolioWhoseQueryIsRefused(new WorkTrackingRefusedException(
+                $"The work tracking system answered 400 BadRequest without saying why. Lighthouse asked: {RefusedQuery}",
+                RefusedQuery,
+                HttpStatusCode.BadRequest));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var reason = ReadReason(loggerMock);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reason, Does.Contain(RefusedQuery),
+                    "Without the query, an operator cannot tell which of the configured filters was refused.");
+                Assert.That(HowOftenItNames(RefusedQuery, reason), Is.EqualTo(1),
+                    "A connector with nothing but a status code to report names the query in its own sentence. "
+                    + "Printed again underneath, one line carries the same query twice.");
+            }
+        }
+
+        private static int HowOftenItNames(string query, string reason)
+        {
+            var found = 0;
+
+            for (var at = reason.IndexOf(query, StringComparison.Ordinal); at >= 0;
+                at = reason.IndexOf(query, at + query.Length, StringComparison.Ordinal))
+            {
+                found++;
+            }
+
+            return found;
+        }
+
         private Portfolio SetupPortfolioWhoseQueryIsRefused()
+        {
+            return SetupPortfolioWhoseQueryIsRefused(CreateRefusal());
+        }
+
+        private Portfolio SetupPortfolioWhoseQueryIsRefused(WorkTrackingRefusedException refusal)
         {
             var project = CreateProject(DateTime.Now.AddDays(-1));
             SetupProjects(project);
 
             workItemServiceMock
                 .Setup(x => x.UpdateFeaturesForPortfolio(project))
-                .ThrowsAsync(CreateRefusal());
+                .ThrowsAsync(refusal);
 
             return project;
         }

@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -9,6 +9,8 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Net;
+using System.Text;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -165,6 +167,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     "Enter the credential again to store it under the key this instance uses now."),
                     "The sentence has to survive whole: it is the only place the operator is told what happened and what to do about it.");
             }
+        }
+
+        /// <summary>
+        /// Every connector reaches this one composer, so the cut has to hold here rather than in whichever of
+        /// them happened to think of it.
+        /// </summary>
+        [Test]
+        public void BuildRefusalReason_QueryLongerThanALogLine_CutsItAndSaysItWasCut()
+        {
+            var enormousQuery = new string('x', 4000);
+
+            var reason = ReasonProbe.Build(
+                new WorkTrackingRefusedException("Jira could not parse this query.", enormousQuery, HttpStatusCode.BadRequest));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reason, Has.Length.LessThan(1000),
+                    "This is one line in a log an operator scrolls through; it has to end somewhere.");
+                Assert.That(reason, Does.Contain("Jira could not parse this query."),
+                    "Shortening the query must not cost the sentence that names what was wrong.");
+                Assert.That(reason, Does.EndWith("…"),
+                    "A query that simply stops mid-clause reads like the query Lighthouse sent was itself cut short.");
+            }
+        }
+
+        /// <summary>
+        /// A query split between the two halves of a surrogate pair leaves a character that cannot be written
+        /// as UTF-8 at all, and this text reaches log sinks and the browser as JSON.
+        /// </summary>
+        [Test]
+        public void BuildRefusalReason_CutLandsInsideACharacterBuiltFromTwoHalves_LeavesNoHalfBehind()
+        {
+            var queryEndingInAstralCharacters = new string('x', 499) + string.Concat(Enumerable.Repeat("🚀", 20));
+
+            var reason = ReasonProbe.Build(
+                new WorkTrackingRefusedException("Jira could not parse this query.", queryEndingInAstralCharacters, HttpStatusCode.BadRequest));
+
+            Assert.That(Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(reason)), Is.EqualTo(reason),
+                "Written out and read back, the line has to say the same thing - a half character left at the "
+                + "cut comes back as a replacement mark, and everything downstream stores that instead.");
         }
 
         private static WorkTrackingSystemConnection CreateConnection(params (string Key, string Value)[] secrets)

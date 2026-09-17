@@ -60,8 +60,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int ReferenceIdsPerQuery = 200;
 
-        private const int LongestReportedQuery = 500;
-
         private const string DeploymentNotKnownYet =
             "Lighthouse has not reached this Jira instance yet, so it does not know which kind of Jira it is.";
 
@@ -1782,8 +1780,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// the one thing Lighthouse knows and the reader does not: the query it asked with.
         /// </summary>
         private static string ExplanationIn(JiraRefusal rejection, string rejectedQuery)
-            => WhatJiraSaidAbout(rejection)
-                ?? $"{WhatJiraAnswered(rejection)} without saying why. Lighthouse asked: {ShortEnoughToLog(rejectedQuery)}";
+        {
+            if (WhatJiraSaidAbout(rejection) is { } jirasOwnSentence)
+            {
+                return jirasOwnSentence;
+            }
+
+            var query = WorkTrackingRefusedException.ShortEnoughToReport(rejectedQuery);
+
+            return $"{WhatJiraAnswered(rejection)} without saying why. Lighthouse asked: {query}";
+        }
 
         /// <summary>
         /// A refusal of the field list, which is asked for without a query - so there is nothing to name
@@ -1829,15 +1835,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string WhatJiraAnswered(JiraRefusal refusal)
             => $"Jira answered {(int)refusal.StatusCode} {refusal.StatusCode}";
-
-        /// <summary>
-        /// A configuration narrowing on hundreds of projects or releases builds a query longer than a log
-        /// line, a panel row or a validation message can show, and repeating all of it buries the status.
-        /// </summary>
-        private static string ShortEnoughToLog(string query)
-            => query.Length <= LongestReportedQuery
-                ? query
-                : string.Concat(query.AsSpan(0, LongestReportedQuery), "…");
 
         private async Task<Issue> CreateIssueWithCompleteChangelog(
             HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName, CancellationToken cancellationToken)

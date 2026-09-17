@@ -212,12 +212,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// It is composed here rather than on the exception because this is where the summary line an
         /// operator actually reads is written, and because every updater inherits it - the portfolio and the
         /// team cannot drift into two phrasings of one failure.
+        ///
+        /// A connector with nothing but a status code to go on has already named the query inside its own
+        /// sentence, and there is nothing to gain from printing it again underneath.
         /// </summary>
         protected static string BuildRefusalReason(WorkTrackingRefusedException refusal)
         {
             var sentence = $"The work tracking system refused this refresh: {refusal.Message}";
 
-            return string.IsNullOrWhiteSpace(refusal.RejectedQuery)
+            return string.IsNullOrWhiteSpace(refusal.RejectedQuery) || refusal.ExplanationNamesTheQuery
                 ? sentence
                 : $"{sentence} The rejected query was: {refusal.RejectedQuery}";
         }

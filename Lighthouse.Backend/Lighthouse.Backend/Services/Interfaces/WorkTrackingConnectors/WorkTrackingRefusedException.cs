@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 
 namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
 {
@@ -14,9 +14,56 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
     /// It is an <see cref="HttpRequestException"/> because callers along the sync path answer "the system
     /// could not be asked" by catching exactly that, and a refusal has always reached them that way.
     /// </summary>
-    public class WorkTrackingRefusedException(string message, string rejectedQuery, HttpStatusCode statusCode)
-        : HttpRequestException(message, null, statusCode)
+    public class WorkTrackingRefusedException : HttpRequestException
     {
-        public string RejectedQuery { get; } = rejectedQuery;
+        /// <summary>
+        /// Long enough to recognise a query by, short enough that a log line, a panel row and a validation
+        /// message can all still carry the sentence next to it.
+        /// </summary>
+        private const int LongestReportedQuery = 500;
+
+        public WorkTrackingRefusedException(string message, string rejectedQuery, HttpStatusCode statusCode)
+            : base(message, null, statusCode)
+        {
+            RejectedQuery = ShortEnoughToReport(rejectedQuery);
+
+            ExplanationNamesTheQuery = RejectedQuery.Length > 0
+                && Message.Contains(RejectedQuery, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// The query, already cut to what any surface can print. It is bounded here rather than by each
+        /// caller because a second bound kept somewhere else drifts from this one, and then no reader can
+        /// tell which screen obeys which.
+        /// </summary>
+        public string RejectedQuery { get; }
+
+        /// <summary>
+        /// A connector left with nothing but a status code has only the query to report, so it names the
+        /// query inside its own sentence. Anyone composing prose around that sentence has to know, or one
+        /// line ends up carrying the same query twice.
+        /// </summary>
+        public bool ExplanationNamesTheQuery { get; }
+
+        /// <summary>
+        /// A configuration narrowing on hundreds of projects or releases builds a query longer than a log
+        /// line, a panel row or a validation message can show, and repeating all of it buries the status.
+        /// Connectors call this before the exception exists, so their own sentence keeps to the same bound.
+        /// </summary>
+        public static string ShortEnoughToReport(string query)
+        {
+            if (query.Length <= LongestReportedQuery)
+            {
+                return query;
+            }
+
+            // Cutting between the two halves of one character leaves a half that cannot be written as UTF-8
+            // at all, and this text travels onward as JSON - to a log sink, and to the settings screen.
+            var cut = char.IsHighSurrogate(query[LongestReportedQuery - 1])
+                ? LongestReportedQuery - 1
+                : LongestReportedQuery;
+
+            return string.Concat(query.AsSpan(0, cut), "…");
+        }
     }
 }
