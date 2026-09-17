@@ -33,7 +33,7 @@ describe("readConnectionValidation", () => {
 			advisoryCode: "history_requires_itil",
 		};
 
-		expect(readConnectionValidation(payloadFromAnOlderBackend)).toEqual({
+		expect(readConnectionValidation(payloadFromAnOlderBackend)).toStrictEqual({
 			isValid: true,
 		});
 	});
@@ -56,7 +56,7 @@ describe("readConnectionValidation", () => {
 			fieldName: "AdditionalFields",
 		});
 
-		expect(refusal).toEqual({
+		expect(refusal).toStrictEqual({
 			isValid: false,
 			code: "additional_fields_invalid",
 			message: "Some additional fields could not be found: parent",
@@ -75,7 +75,7 @@ describe("readConnectionValidation", () => {
 				technicalDetails: null,
 				fieldName: null,
 			}),
-		).toEqual({
+		).toStrictEqual({
 			isValid: false,
 			code: "connection_failed",
 			message: "Could not reach Jira with the provided URL.",
@@ -87,10 +87,10 @@ describe("readConnectionValidation", () => {
 	it("reads an empty explanation as no explanation, so the caller can fall back", () => {
 		expect(
 			readConnectionValidation({ isValid: false, message: "", code: "" }),
-		).toEqual({ isValid: false });
+		).toStrictEqual({ isValid: false });
 	});
 
 	it("leaves the explanation absent when a connector answered a bare verdict", () => {
-		expect(readConnectionValidation(false)).toEqual({ isValid: false });
+		expect(readConnectionValidation(false)).toStrictEqual({ isValid: false });
 	});
 });

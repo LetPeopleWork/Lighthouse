@@ -177,6 +177,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result, Is.EqualTo(wholeFile));
         }
 
+        /// <summary>
+        /// The tail and the file being exactly the same size is the boundary the whole-file branch owns.
+        /// Handing it to the seek instead would ask to read the byte before the start of the file.
+        /// </summary>
+        [Test]
+        public void GetLogs_TailExactlyTheLengthOfTheFile_ReturnsTheWholeFile()
+        {
+            var wholeFile = "first line\nsecond line\n";
+            var subject = ASubjectWhoseNewestLogHolds(wholeFile);
+
+            var result = subject.GetLogs(tailBytes: wholeFile.Length);
+
+            Assert.That(result, Is.EqualTo(wholeFile));
+        }
+
+        /// <summary>
+        /// A tail can begin on the newline that ended the line before it, which is not the same as
+        /// beginning on a line: that newline is the tail end of a line already read, and leaving it in
+        /// puts a blank line at the top of what the operator is shown.
+        /// </summary>
+        [Test]
+        public void GetLogs_TailBeginsOnTheNewlineEndingTheLineBefore_DropsIt()
+        {
+            var subject = ASubjectWhoseNewestLogHolds("first line\nsecond line\nthird line\n");
+
+            var result = subject.GetLogs(tailBytes: "\nthird line\n".Length);
+
+            Assert.That(result, Is.EqualTo("third line\n"));
+        }
+
         [Test]
         public void GetLogs_NoTailAsked_StillReturnsTheWholeFile()
         {
@@ -218,6 +248,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(result, Is.EqualTo("Logs not Found"));
         }
+
+        [Test]
+        public void LogPath_AFileSinkIsConfigured_IsTheFolderItWritesTo()
+        {
+            var subject = CreateSubject(SetupConfiguration("Warning", "./logs/log-.txt"));
+
+            Assert.That(subject.LogPath, Does.EndWith("logs"));
+        }
+
+        /// <summary>
+        /// Nothing is writing a log file, so there is no folder to name. Answering the empty string would
+        /// have callers looking for logs in the working directory.
+        /// </summary>
+        [Test]
+        public void LogPath_NothingIsWritingALogFile_IsNull()
+        {
+            var subject = CreateSubject(AConfigurationWithoutAFileSink());
+
+            Assert.That(subject.LogPath, Is.Null);
+        }
+
+        [Test]
+        public void LogPath_TheFileSinkNamesNoPath_IsNull()
+        {
+            var subject = CreateSubject(AFileSinkWithoutAPath());
+
+            Assert.That(subject.LogPath, Is.Null);
+        }
+
+        [Test]
+        public void GetLogs_NothingIsWritingALogFile_ReturnsLogsNotFound()
+        {
+            var subject = CreateSubject(AConfigurationWithoutAFileSink());
+
+            Assert.That(subject.GetLogs(), Is.EqualTo("Logs not Found"));
+        }
+
+        private static IConfiguration AConfigurationWithoutAFileSink()
+            => TestConfiguration.SetupTestConfiguration(new Dictionary<string, string?>
+            {
+                { "Serilog:MinimumLevel:Default", "Warning" },
+                { "Serilog:WriteTo:0:Name", "Console" },
+            });
+
+        private static IConfiguration AFileSinkWithoutAPath()
+            => TestConfiguration.SetupTestConfiguration(new Dictionary<string, string?>
+            {
+                { "Serilog:MinimumLevel:Default", "Warning" },
+                { "Serilog:WriteTo:0:Name", "File" },
+            });
 
         private SerilogLogConfiguration CreateSubject(IConfiguration config)
         {

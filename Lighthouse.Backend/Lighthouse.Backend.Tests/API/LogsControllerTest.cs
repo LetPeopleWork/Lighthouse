@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -116,6 +117,28 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(supportedLogLevels, Is.EquivalentTo(expectedLogLevels));
             }
             ;
+        }
+
+        [Test]
+        public void GetRecentProblems_AnswersWhatTheReportHolds()
+        {
+            var problems = new List<RecentProblem>
+            {
+                new(DateTimeOffset.UtcNow, "Error", "PortfolioUpdater", "Something went wrong", "HttpRequestException"),
+            };
+            recentProblemsMock.Setup(x => x.MostRecentFirst()).Returns(problems);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetRecentProblems();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var okResult = response.Result as OkObjectResult;
+                Assert.That(okResult.Value, Is.EqualTo(problems));
+            }
         }
 
         [Test]

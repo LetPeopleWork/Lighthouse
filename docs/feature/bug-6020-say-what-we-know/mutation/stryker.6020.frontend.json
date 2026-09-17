@@ -1,0 +1,50 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6020.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "//": "Scoped to the lines this fix changed. The four files it touches are long-lived ones whose untouched parts carry their own pre-existing gaps; mutating those would score this fix on code it never went near.",
+  "mutate": [
+    "src/models/WorkTracking/ConnectionValidationResult.ts",
+    "src/pages/Settings/LogSettings/LighthouseLogViewer.tsx:14-14",
+    "src/pages/Settings/LogSettings/LogSettings.tsx:18-27",
+    "src/pages/Settings/LogSettings/LogSettings.tsx:32-42",
+    "src/pages/Settings/LogSettings/LogSettings.tsx:70-101",
+    "src/pages/Settings/LogSettings/LogSettings.tsx:133-149",
+    "src/services/Api/LogService.ts:65-73",
+    "src/components/Common/Connection/ModifyConnectionSettings.tsx:56-59",
+    "src/components/Common/Connection/ModifyConnectionSettings.tsx:99-99",
+    "src/components/Common/Connection/ModifyConnectionSettings.tsx:441-449",
+    "src/components/Common/Connection/CreateConnectionWizard.tsx:40-43",
+    "src/components/Common/Connection/CreateConnectionWizard.tsx:382-386"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6020-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6020"
+}
