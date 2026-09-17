@@ -93,6 +93,12 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoTeam.WorkItemTypes, Contains.Item("Bug"));
 
                 Assert.That(demoTeam.BlockedRuleSetJson, Does.Contain("workitem.tags"));
+
+                // A published target, so the demo shows everything that depends on one: the SLE
+                // line, the risk column, the at-risk count and the chart's risk background. Without
+                // it a whole feature is invisible to anyone evaluating Lighthouse (Epic #4127).
+                Assert.That(demoTeam.ServiceLevelExpectationProbability, Is.EqualTo(85));
+                Assert.That(demoTeam.ServiceLevelExpectationRange, Is.EqualTo(7));
                 Assert.That(demoTeam.BlockedRuleSetJson, Does.Contain("Blocked"));
                 Assert.That(demoTeam.BlockedStalenessThresholdDays, Is.EqualTo(5));
 

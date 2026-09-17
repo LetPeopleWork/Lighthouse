@@ -988,11 +988,6 @@ testWithDemo(
 	"Take @screenshot of Work Item Aging chart with SLE risk zones",
 	async ({ testData, page, overviewPage }) => {
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
-
-		// The risk is a statement about a published target, so there is nothing to draw until the
-		// team has one. Demo teams ship without.
-		await teamDetailPage.publishServiceLevelExpectation(85, 7);
-
 		const metricsPage = await teamDetailPage.goToMetrics();
 		const flowMetricsWidgets = await metricsPage.switchCategory(
 			MetricsCategories.FlowMetrics,
@@ -1010,6 +1005,37 @@ testWithDemo(
 		await takeElementScreenshot(
 			agingWidget.Widget,
 			"features/metrics/aging_sle_risk.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of the work item dialog with the SLE risk column",
+	async ({ testData, page, overviewPage }) => {
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const flowMetricsWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const agingWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.WorkItemAgingChart,
+			flowMetricsWidgets,
+		);
+		await expect(agingWidget.Widget).toBeVisible();
+
+		await agingWidget.openDialog();
+
+		const agingChart = new WorkItemAgingChart(page, "aging");
+		await expect.poll(() => agingChart.countSleRiskCells()).toBeGreaterThan(0);
+
+		// Worst first, which is how a coach reads it and what the column exists for.
+		await agingChart.sortBySleRisk();
+		await agingChart.sortBySleRisk();
+
+		await takeElementScreenshot(
+			page.getByRole("dialog"),
+			"features/metrics/sle_risk_column.png",
 		);
 	},
 );

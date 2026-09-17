@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         // @driving_port @real-io @error — nine items ran this long, and nine is not enough to divide
         // by: one more or one fewer moves the answer eleven points overnight, on the item a coach is
         // being told to look at first. The measurement behind the number is
-        // docs/feature/epic-4127-sle-risk/OUT-4127-risk-stability.md.
+        // docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md.
         [Test]
         public async Task An_item_too_little_finished_work_can_be_compared_against_is_given_no_answer()
         {

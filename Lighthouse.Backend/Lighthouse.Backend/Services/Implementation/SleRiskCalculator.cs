@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation
+﻿namespace Lighthouse.Backend.Services.Implementation
 {
     /// <summary>
     /// What the history can say about one open item, and how much history it had to say it with.
@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Services.Implementation
         /// entering or leaving the window moves it by up to 100/count percentage points: ten holds
         /// that under ten points, and below ten a number would swing overnight on precisely the
         /// items a coach is being told to prioritise. Measured, not guessed —
-        /// docs/feature/epic-4127-sle-risk/OUT-4127-risk-stability.md.
+        /// docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md.
         /// </summary>
         public const int MinimumComparableItems = 10;
 

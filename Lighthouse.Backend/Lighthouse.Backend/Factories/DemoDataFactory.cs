@@ -49,6 +49,11 @@ namespace Lighthouse.Backend.Factories
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 CycleTimeDefinitions = CreateDemoCycleTimeDefinitions(),
+                // A published target, so the demo shows everything that depends on one: the SLE
+                // line, the risk column, the at-risk count and the chart's risk background. Without
+                // it a whole feature is invisible to anyone evaluating Lighthouse.
+                ServiceLevelExpectationProbability = 85,
+                ServiceLevelExpectationRange = 7,
                 DataRetrievalValue = ParseCsv(name)
             };
 

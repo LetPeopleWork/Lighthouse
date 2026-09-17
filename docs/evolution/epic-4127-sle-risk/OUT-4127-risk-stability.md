@@ -105,7 +105,7 @@ total confidence on a single observation.
 
 ## Reproducing it
 
-`docs/feature/epic-4127-sle-risk/mutation/` is for mutation runs; this measurement's script was a
+This measurement's script was a
 throwaway against a copy of the dev database. To retake it on better data, point it at a restored
 instance and re-run the two steps above: the bound needs nothing, and the replay needs only
 `(ClosedDate, cycle time)` pairs for the team's finished work.

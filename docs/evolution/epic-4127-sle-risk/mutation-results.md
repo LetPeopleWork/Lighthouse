@@ -61,20 +61,14 @@ risk, silently, on a column whose whole job is ordering.
 
 ### Running it again
 
-```pwsh
-# Backend (ARM64 machine — Stryker forces TargetPlatform=X64 and finds 0 tests otherwise)
-pwsh -NoProfile -File docs/feature/epic-4127-sle-risk/mutation/run-backend-x64.ps1 `
-  -Config docs/feature/epic-4127-sle-risk/mutation/stryker.6016.backend.json
+The per-slice Stryker configs lived in the feature workspace and went with it. That is deliberate:
+the backend ones scope by **byte offset** and the frontend ones by line range, so both are stale the
+moment anything above them is edited, and a stale config silently mutates the wrong code and reports
+a meaningless score. Rebuild them from scratch against the current files.
 
-# Frontend — the vitest config must be copied to Lighthouse.Frontend/ first and named bare there,
-# because `vitest.configFile` resolves against the working directory and `vitest/config` resolves
-# upward from the config file's own directory.
-cp docs/feature/epic-4127-sle-risk/mutation/vitest.stryker.6016.ts Lighthouse.Frontend/
-cd Lighthouse.Frontend
-npx stryker run ../docs/feature/epic-4127-sle-risk/mutation/stryker.6016.frontend.json
-```
-
-Re-anchor both byte ranges in the backend config against the current files before trusting a score.
+`run-backend-x64.ps1` is kept here because it is not feature-specific: on a Windows ARM64 machine
+Stryker hands VSTest `TargetPlatform=X64` and an arm64 host then discovers no tests at all, reporting
+"Number of tests found: 0" and blaming the NUnit adapter. Running the whole chain as x64 fixes it.
 
 ## Slice 01b — the minimum-sample guard
 

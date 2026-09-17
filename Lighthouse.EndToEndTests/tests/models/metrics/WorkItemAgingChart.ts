@@ -4,6 +4,7 @@ const BACKGROUND_MODES_TEST_ID = "aging-background-modes";
 const PACE_BAND_TEST_ID = "pace-band";
 const SLE_RISK_ZONE_TEST_ID = "sle-risk-zone";
 const AGE_BAND_CELL_TEST_ID = "ageBandColumnContent";
+const SLE_RISK_CELL_TEST_ID = "sleRiskColumnContent";
 const AGE_BAND_COLUMN_HEADER = "Work Item Age Band";
 
 export class WorkItemAgingChart {
@@ -104,6 +105,34 @@ export class WorkItemAgingChart {
 
 	async readAgeBands(): Promise<string[]> {
 		return this.ageBandCells.allInnerTexts();
+	}
+
+	/**
+	 * The risk cells in the widget's View Data dialog. Scoped to the dialog, which renders in a
+	 * portal at the end of the document rather than inside the widget.
+	 */
+	get sleRiskCells(): Locator {
+		return this.page.getByRole("dialog").getByTestId(SLE_RISK_CELL_TEST_ID);
+	}
+
+	async countSleRiskCells(): Promise<number> {
+		return this.sleRiskCells.count();
+	}
+
+	/**
+	 * Matched on the word alone rather than anchored: the grid folds its sort and column-menu
+	 * affordances into the header's accessible name, so it reads "SLE Risk Sort SLE Risk column
+	 * menu". Unanchored is also what survives the term being renamed under Terminology, and nothing
+	 * else in this dialog carries the word.
+	 */
+	get sleRiskColumnHeader(): Locator {
+		return this.page
+			.getByRole("dialog")
+			.getByRole("columnheader", { name: /Risk/ });
+	}
+
+	async sortBySleRisk(): Promise<void> {
+		await this.sleRiskColumnHeader.click();
 	}
 
 	get ageBandColumnHeader(): Locator {

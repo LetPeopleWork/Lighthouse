@@ -138,6 +138,8 @@ The SLE line stays where it is. Nothing drawn above it is outside the top band, 
 
 The SLE line tells you which items have **already** missed the target. The **SLE Risk** column tells you which ones are about to, while you can still do something about it. It sits beside the Age Band in the same dialogs — **View Data** in the widget header, or a click on a single bubble — and is shown only for teams that have published an SLE. The header follows whatever you have renamed SLE to under [Terminology Configuration](../settings/configuration.html#terminology-configuration).
 
+![The SLE Risk column in the work item dialog](../assets/features/metrics/sle_risk_column.png)
+
 The number answers one question: *of every item that was still open at this age, what share went on to take longer than the target?* So an item that has been open 9 days, on a team where six of the seven items that ever reached day 9 ended up past the target, reads `86%`. Both parts come from the work your team finished inside the date range you are looking at, so the column follows the range picker like everything else on the page.
 
 Three consequences worth knowing:
