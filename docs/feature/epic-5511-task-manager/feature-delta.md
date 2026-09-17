@@ -5492,3 +5492,116 @@ measures, and what it measures is no longer the thing in question.
 `A_refresh_cancelled_while_it_waits_leaves_the_list_without_waiting_its_turn` reads the list with the
 refresh ahead still gated, and failed against the old code with the maintainer's own symptom —
 `"status":"Queued","waitingBehind":"Team …"` after the cancel was accepted.
+
+---
+
+# Wave: DELIVER — the wrap-up gates on the cancel fix, and what they found
+
+Run on 2026-09-17 against `1a0ef9c41`. The fix had been pushed without its independent review or its
+mutation gate, which is the discipline rather than an optional extra — this is what they found.
+
+## Wave: DELIVER / [DEC] Reading whether work has started, then acting on it, is not one decision
+
+The subscriber asked the store whether the key was still `Queued` and then advanced it to `Cancelled`
+in a second call. Between the two, the queue's reader can start that very key — it runs on another
+thread, and under Redis on another pod. The cancel then lands on work that is **running**, which is
+precisely what the fix's own comment promises it will never do: a running refresh marked terminal
+leaves `HasActiveWork` while it is still talking to a tracker, and `DatabaseMaintenanceGate` is one of
+the things that stops waiting when it does. That gate holds database maintenance off while work is in
+flight, so the consequence is the DELETE-versus-queue family `docs/ci-learnings.md` records, reached
+from a new direction.
+
+The window is a few instructions wide and nothing was observed hitting it. It is fixed because the
+consequence is unbounded, not because it is likely.
+
+**The reading and the acting are now one step, owned by the store**: `IUpdateStatusStore` grows
+`CancelIfStillWaiting`, which answers `null` when the work had already started, was never admitted, or
+was already past waiting. In process it is a compare-and-set under a gate that `Advance` now shares —
+the dictionary is concurrent, but the `UpdateStatus` it hands out is one object every caller mutates,
+so nothing about it was atomic. Under Redis it is one Lua round trip beside the two that already guard
+this hash, so the pod that took the operator's click and the pod running the queue cannot both win.
+
+`Advance` is unchanged in meaning and stays monotonic. Nothing else advances a key to `Cancelled` from
+outside the run itself.
+
+## Wave: DELIVER / [REF] What the review got right, and the part of it that was wrong
+
+The reviewer flagged the same lines and read the symptom wrong: it reported that listeners would be
+told `InProgress`, because `Advance` returns the status "regardless of whether the advance succeeded".
+`Advance` returns the *post*-state, and `Cancelled` outranks `InProgress`, so the advance is accepted
+and the push says `Cancelled`. The push is not the defect. The defect is that the advance happens at
+all on work that has started, and the remedy it proposed — checking the returned status reads
+`Cancelled` — would have held in exactly the race it was meant to close.
+
+Worth keeping because it is the failure mode of a review at this altitude: the right line, the wrong
+mechanism, and a remedy that would have left a green test over the hole.
+
+## Wave: DELIVER / [REF] What now holds it
+
+- `CancelIfStillWaiting_WorkTheQueueHasAlreadyStarted_LeavesItRunning` — the promise itself, at the
+  store: a stop that arrives after the start leaves the row running and answers nothing to tell.
+- `CancelIfStillWaiting_RacingTheQueueStartingTheSameWork_NeverLeavesItBothCancelledAndStarted` — a
+  start and a stop dispatched at once, 200 times. It asserts the one state nothing downstream can read:
+  cancelled and started at the same time. It cannot fail spuriously; it can only fail when the two stop
+  excluding each other.
+- `CancelIfStillWaiting_AsOnePodStartsWorkAnotherAsksToStopIt_OnlyEverStopsWhatHadNotStarted` — the same
+  pair across two `RedisUpdateStatusStore` instances against a real Redis, because the multi-pod case is
+  the one the Lua script exists for. Container category, so it runs where Docker does.
+
+**Not frozen**: `CancelIfStillWaitingScript` is not in `RedisUpdateStatusScriptFreezeTest`. That test
+holds two scripts to the text they shipped with so a later change has to re-argue the guarantee; a
+freeze written in the same commit as the script only asserts a copy of itself. It earns its place the
+next time this script has a reason to change.
+
+## Wave: DELIVER / [REF] Gates
+
+| Gate | Result |
+| --- | --- |
+| `dotnet build` | succeeded, 0 errors |
+| `dotnet test` (connector categories excluded) | 6942 passed, 24 skipped, 1 environmental failure |
+| Mutation — changed region | no survivors, nothing uncovered (`mutation/results.md`, section 6011 wrap-up) |
+| Biome + `tsc --noEmit` (E2E project) | clean |
+
+The one failure is `ServiceContainer_BuildsWithoutScopeViolations_WhenValidateScopesIsEnforced`, on an
+`IOException` deleting its own `DiValidation_*.db` in teardown because the handle is still held. Same
+signature this Epic has recorded twice before, and the file-lock family `docs/ci-learnings.md` carries.
+
+**A test leaked state between scenarios and the suite caught it, which is worth writing down.** NUnit
+runs every test in a fixture on one instance, so `TellingTheBrowserFails` — set by the new scenario —
+stayed set for the rest of the class and made a later scenario fail on a push that never arrived. It is
+reset in `Init` beside the other per-test state. Any flag added to this harness has to be.
+
+---
+
+# Wave: DELIVER — the public docs, carried since slice 05, are written
+
+`docs/settings/taskmanager.md`, linked from the System Settings index. Written against the source rather
+than against these notes, which changed three claims on the way:
+
+- **Recent problems is not "the last handful".** It holds everything logged at Warning or worse since
+  startup, capped at 200 by `RecentProblems:Capacity` and reset by a restart — and the popover renders all
+  of them. The docs say so, and say that the log level set under System Info applies first: at *Error*,
+  warnings never reach the list at all.
+- **A cancelled removal is refused without a message the operator sees.** The API answers 400 with a
+  reason; the row simply carries on. The page says that rather than promising an explanation.
+- **The badge's ordinary colour is the brand green, not blue.** `primary` in this theme is `#30574e`.
+
+## Wave: DELIVER / [DEC] One screenshot, and why the second was dropped
+
+`docs/assets/settings/taskmanager.png` comes from a new `@screenshot` test and
+`LighthousePage.openTaskManager()` — a page object, because the popover has no test id of its own and a
+raw selector in a spec is the thing that rots.
+
+A companion shot of the Activity section with work in it was written and then deleted. *Update All* is
+premium-gated and the E2E instance is unlicensed, and driving refreshes through the API instead gives a
+different mix of `Running` and `Queued` rows every run. A docs image that produces a diff on every
+regeneration trains everyone to ignore diffs in `docs/assets`, which is worse than the section being
+described in prose — which it is, row state by row state.
+
+**The screenshot was taken on the second start of the instance, not the first.** A first start runs the
+migrations, and their two dozen `PRAGMA foreign_keys` warnings are real, are exactly what an operator
+sees on a brand-new instance, and fill the popover so completely that nothing else in it is visible. The
+image documents the steady state.
+
+**The maintainer's own dev database was moved aside and restored**, not deleted: it holds the connections
+the live checks on this Epic are run against.

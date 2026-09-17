@@ -915,3 +915,67 @@ running the gate before the push rather than after.
   below it handles a cancelled claim identically, so removing the guard changes nothing observable. It
   stays because it is the safety net for a provider that does not honour the token, which is a property
   no test here can exhibit.
+
+## 6011 — A cancelled refresh leaves the list without waiting its turn (the wrap-up gate)
+
+Run 2026-09-17. The fix (`1a0ef9c41`) had been pushed without this gate, so the first pass measures the
+code **as pushed** and the second measures it after the review and this gate had both been acted on.
+Config: `stryker.6011.cancel.backend.json`, then `stryker.6011.cancel-store.backend.json`.
+
+| Pass | Files mutated | Score | Tested | Killed | Survived | Timeout | Wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 — as pushed | `UpdateQueueService.cs` | 59.49 % | 149 | 75 | 55 | 19 | 29 m |
+| 2 — after the fix | `UpdateQueueService.cs` + `InProcessUpdateStatusStore.cs` | 65.00 % | 174 | 99 | 57 | 18 | 34 m |
+
+**The whole-file number is not the gate here, and pass 1 is the reason to say so plainly.** 55 of its 56
+survivors are in the 500 lines of `UpdateQueueService` this change never touched — the queue reader, the
+write-back round, the terminal-status paths — all of it shipped across slices 02, 04 and 07 with its own
+gates. The row that answers *is this change tested* is the changed region: lines 57 and 72–121 as pushed,
+the subscriber and the push helper.
+
+### What pass 1 found, which was the point of running it
+
+`logger.LogWarning` inside `TellListenersWithoutFailingTheCancel`'s catch was **NoCoverage** — no test
+ever makes the push to the browser fail, so nothing exercised the swallow-and-log the whole method exists
+to provide. The independent review had guessed at the same gap from the other end; the gate is what
+turned a guess into a fact.
+
+Closed by `A_refresh_cancelled_while_the_browser_cannot_be_reached_is_still_cancelled`: the hub throws,
+and the scenario asserts both halves — the row leaves the list anyway, and the log names *which* work
+nobody could be told about. That log line is the only place a lost push exists: the work is cancelled
+either way and the row is gone either way, so an operator has nothing else to read.
+
+**In pass 2 the changed region has no survivors and nothing uncovered.** Every mutant in the subscriber,
+the guard and the push helper dies.
+
+### `InProcessUpdateStatusStore.cs` — the file carrying the fix
+
+The race the review surfaced moved the decision into this file, so it is mutated in its own right.
+
+| File | tested | killed | survived | timeout | no coverage |
+| --- | --- | --- | --- | --- | --- |
+| `InProcessUpdateStatusStore.cs` (pass 2) | 27 | 24 | 1 | 1 | 1 |
+
+- **Covered after pass 2, and not re-measured.** The `return null` for a key nobody admitted, inside
+  `Advance`, was **NoCoverage** — a pre-existing gap, and the sibling of a promise `CancelIfStillWaiting`
+  was tested for from the start. `Advance_KeyNobodyAdmitted_AnswersNothingAndAdmitsNothing` now exercises
+  it: an advance on a key another replica already removed must not bring it back as active work nothing
+  will ever finish. The line is covered; whether the block-removal mutant *dies* is reasoned, not
+  measured — delete that `return null` and the next statement dereferences a null `status`, so the test
+  throws. **Two attempts to re-run this file's pass were killed by the machine's low-memory guard**, at
+  concurrency 4 and again at 2, both after coverage capture had settled on the same 27 mutants. Finishing
+  it is one command: `run-backend-x64.ps1 -Config stryker.6011.cancel-store.backend.json`, on a machine
+  with more headroom than 4 GB free. The config is left at concurrency 2 for that reason.
+- **Survivor judged, not killed**: `(int)to >= (int)status.Status` mutated to `>`, in the monotonic
+  guard. Equivalent as the code stands — the only behaviour behind it that is not a write of the same
+  value is the start stamp, and reaching `Advance(InProgress)` while the key already reads `InProgress`
+  with no start moment cannot happen: `TryAdmit` and `Requeue` both leave the key `Queued`. A test for it
+  would have to fabricate a state the store cannot be in.
+
+### Not mutated, and why
+
+`RedisUpdateStatusStore.cs` carries the same fix as a Lua script. Its tests need a real Redis and live in
+the container category, which this gate's filter excludes — mutating it here would report a file with no
+covering tests and say nothing true about it. The script's behaviour is pinned by
+`CancelIfStillWaiting_AsOnePodStartsWorkAnotherAsksToStopIt_OnlyEverStopsWhatHadNotStarted`, which runs
+where Docker does.

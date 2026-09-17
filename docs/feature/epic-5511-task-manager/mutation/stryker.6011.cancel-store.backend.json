@@ -1,0 +1,27 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/BackgroundServices/Update/InProcessUpdateStatusStore.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~TaskManager|FullyQualifiedName~UpdateController|FullyQualifiedName~BackgroundServices.Update|FullyQualifiedName~GracefulShutdown|FullyQualifiedName~QuietWriteBack)&FullyQualifiedName!~MultiReplica&FullyQualifiedName!~ContainerTests",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 2,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
