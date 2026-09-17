@@ -121,6 +121,59 @@ describe("LogSettings", () => {
 		expect(mockGetLogs).toHaveBeenCalled();
 	});
 
+	// Bug #6020. Following the log means asking again every few seconds. Asking for the whole file
+	// each time is what makes that unaffordable on an instance logging at Debug, so a follower asks
+	// for the end of it.
+	it("asks only for the end of the log while it is following", async () => {
+		render(
+			<MockApiServiceProvider>
+				<LogSettings />
+			</MockApiServiceProvider>,
+		);
+
+		await waitFor(() => {
+			expect(mockGetLogs).toHaveBeenCalled();
+		});
+		mockGetLogs.mockClear();
+
+		fireEvent.click(screen.getByRole("switch", { name: /Live/i }));
+
+		await waitFor(() => {
+			expect(mockGetLogs).toHaveBeenCalledWith(expect.any(Number));
+		});
+	});
+
+	it("stops asking once it is no longer following", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+
+		try {
+			render(
+				<MockApiServiceProvider>
+					<LogSettings />
+				</MockApiServiceProvider>,
+			);
+
+			await waitFor(() => {
+				expect(mockGetLogs).toHaveBeenCalled();
+			});
+
+			const live = screen.getByRole("switch", { name: /Live/i });
+			fireEvent.click(live);
+			await waitFor(() => {
+				expect(mockGetLogs).toHaveBeenCalledWith(expect.any(Number));
+			});
+
+			fireEvent.click(live);
+			mockGetLogs.mockClear();
+
+			await vi.advanceTimersByTimeAsync(30_000);
+
+			expect(mockGetLogs).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("downloads logs when download button is clicked", async () => {
 		render(
 			<MockApiServiceProvider>

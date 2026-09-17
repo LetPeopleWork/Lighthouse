@@ -19,7 +19,12 @@ export interface ILogService {
 	getSupportedLogLevels(): Promise<string[]>;
 	getLogLevel(): Promise<string>;
 	setLogLevel(logLevel: string): Promise<void>;
-	getLogs(): Promise<string>;
+	/**
+	 * The whole log, or — given a tail — roughly that many bytes from the end of it. A follower asks
+	 * for the tail: the instance re-reads the file on every ask, and at Debug level it is far too
+	 * large to re-send every few seconds.
+	 */
+	getLogs(tailBytes?: number): Promise<string>;
 	downloadLogs(): Promise<void>;
 }
 
@@ -57,9 +62,11 @@ export class LogService extends BaseApiService implements ILogService {
 		});
 	}
 
-	async getLogs(): Promise<string> {
+	async getLogs(tailBytes?: number): Promise<string> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<string>("/logs");
+			const response = await this.apiService.get<string>(
+				tailBytes === undefined ? "/logs" : `/logs?tailBytes=${tailBytes}`,
+			);
 
 			return response.data;
 		});

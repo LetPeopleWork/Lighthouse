@@ -138,6 +138,71 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result, Is.EqualTo(logFileContent));
         }
 
+        // Bug #6020. Reading the whole file is what a Download is for. Following the log means asking
+        // again every few seconds, and a Debug-level instance writes a file far too large to re-send
+        // each time - so the caller can ask for the end of it instead.
+        [Test]
+        public void GetLogs_TailAsked_ReturnsOnlyTheEndOfTheFile()
+        {
+            var subject = ASubjectWhoseNewestLogHolds("first line\nsecond line\nthird line\n");
+
+            var result = subject.GetLogs(tailBytes: "third line\n".Length);
+
+            Assert.That(result, Is.EqualTo("third line\n"));
+        }
+
+        /// <summary>
+        /// The end of a file is not the start of a line, and a byte offset can also land inside a
+        /// multi-byte character. Both are cured the same way: begin after the first newline that the
+        /// read picked up, so whatever fragment preceded it never reaches the reader.
+        /// </summary>
+        [Test]
+        public void GetLogs_TailLandsInsideALine_BeginsAtTheNextWholeLine()
+        {
+            var subject = ASubjectWhoseNewestLogHolds("first line\nsecond line\nthird line\n");
+
+            var result = subject.GetLogs(tailBytes: "cond line\nthird line\n".Length);
+
+            Assert.That(result, Is.EqualTo("third line\n"));
+        }
+
+        [Test]
+        public void GetLogs_TailBiggerThanTheFile_ReturnsTheWholeFile()
+        {
+            var wholeFile = "first line\nsecond line\n";
+            var subject = ASubjectWhoseNewestLogHolds(wholeFile);
+
+            var result = subject.GetLogs(tailBytes: 4096);
+
+            Assert.That(result, Is.EqualTo(wholeFile));
+        }
+
+        [Test]
+        public void GetLogs_NoTailAsked_StillReturnsTheWholeFile()
+        {
+            var wholeFile = "first line\nsecond line\n";
+            var subject = ASubjectWhoseNewestLogHolds(wholeFile);
+
+            var result = subject.GetLogs();
+
+            Assert.That(result, Is.EqualTo(wholeFile));
+        }
+
+        private SerilogLogConfiguration ASubjectWhoseNewestLogHolds(string content)
+        {
+            var config = SetupConfiguration("Warning", "./logs/log-.txt");
+
+            fileSystemMock
+                .Setup(fs => fs.GetFiles(It.IsAny<string>(), "*.txt"))
+                .Returns(["log-20240721.txt"]);
+
+            fileSystemMock
+                .Setup(fs => fs.OpenFile(It.IsAny<string>(), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                .Returns(() => new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content)));
+
+            return CreateSubject(config);
+        }
+
         [Test]
         public void GetLogs_FileOperationException_ReturnsLogsNotFound()
         {

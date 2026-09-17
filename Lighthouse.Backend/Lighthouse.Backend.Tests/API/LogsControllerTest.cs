@@ -146,6 +146,49 @@ And a hundred percent reason to remember the name (Mike!)
             ;
         }
 
+        // Bug #6020. Following the log means asking again every few seconds, so the caller can ask for
+        // the end of the file rather than all of it.
+        [Test]
+        public void GetLogs_TailAsked_AsksTheLogConfigurationForThatTail()
+        {
+            logConfigurationMock.Setup(x => x.GetLogs(It.IsAny<int?>())).Returns("the tail");
+
+            var subject = CreateSubject();
+
+            subject.GetLogs(tailBytes: 4096);
+
+            logConfigurationMock.Verify(x => x.GetLogs(4096));
+        }
+
+        /// <summary>
+        /// The size of the read is chosen by whoever calls the endpoint, so it is bounded here rather
+        /// than taken at face value: an administrator account is still an account, and a number arriving
+        /// from a browser is still input.
+        /// </summary>
+        [Test]
+        public void GetLogs_AnUnreasonableTailAsked_BoundsItBeforeReadingAnything()
+        {
+            logConfigurationMock.Setup(x => x.GetLogs(It.IsAny<int?>())).Returns("the tail");
+
+            var subject = CreateSubject();
+
+            subject.GetLogs(tailBytes: int.MaxValue);
+
+            logConfigurationMock.Verify(x => x.GetLogs(It.Is<int?>(tail => tail <= 1024 * 1024)));
+        }
+
+        [Test]
+        public void GetLogs_ANonsenseTailAsked_ReadsSomethingRatherThanNothing()
+        {
+            logConfigurationMock.Setup(x => x.GetLogs(It.IsAny<int?>())).Returns("the tail");
+
+            var subject = CreateSubject();
+
+            subject.GetLogs(tailBytes: -1);
+
+            logConfigurationMock.Verify(x => x.GetLogs(It.Is<int?>(tail => tail >= 1)));
+        }
+
         [Test]
         public void DownloadAllLogs_ReturnsFileContentResult()
         {

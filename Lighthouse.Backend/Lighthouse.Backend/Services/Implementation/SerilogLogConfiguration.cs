@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public string? LogPath => string.IsNullOrEmpty(logFolderPath) ? null : logFolderPath;
 
-        public string GetLogs()
+        public string GetLogs(int? tailBytes = null)
         {
             if (string.IsNullOrEmpty(logFolderPath))
             {
@@ -62,16 +62,43 @@ namespace Lighthouse.Backend.Services.Implementation
                     .OrderByDescending(fi => fi.LastWriteTime)
                     .First();
 
-                using (var stream = fileSystem.OpenFile(newestFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (var reader = new StreamReader(stream))
+                using var stream = fileSystem.OpenFile(newestFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                if (tailBytes is null || stream.Length <= tailBytes.Value)
                 {
-                    return reader.ReadToEnd();
+                    using var whole = new StreamReader(stream);
+                    return whole.ReadToEnd();
                 }
+
+                // Reading the byte before the tail is what tells a tail that already begins on a line
+                // of its own from one that begins half-way through a line. Without it, a tail that
+                // happened to land exactly on a line start would have that whole line trimmed off it.
+                var startOfTail = stream.Length - tailBytes.Value;
+                stream.Seek(startOfTail - 1, SeekOrigin.Begin);
+                var landedOnALineBoundary = stream.ReadByte() == '\n';
+
+                using var reader = new StreamReader(stream);
+                var tail = reader.ReadToEnd();
+
+                return landedOnALineBoundary ? tail : FromTheFirstWholeLineIn(tail);
             }
             catch (Exception)
             {
                 return LogsNotFoundMessage;
             }
+        }
+
+        /// <summary>
+        /// A byte offset from the end of the file lands wherever it lands: part-way through a line, and
+        /// possibly part-way through a multi-byte character. Everything before the first newline is that
+        /// fragment, so dropping it cures both at once. A tail holding no newline at all is one enormous
+        /// line, and half of it is still better than none.
+        /// </summary>
+        private static string FromTheFirstWholeLineIn(string tail)
+        {
+            var firstLineBreak = tail.IndexOf('\n');
+
+            return firstLineBreak < 0 ? tail : tail[(firstLineBreak + 1)..];
         }
 
         public void SetLogLevel(string level)

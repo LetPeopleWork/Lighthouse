@@ -11,6 +11,7 @@ const LighthouseLogViewer: React.FC<LogViewerProps> = ({ data }) => {
 			caseInsensitive
 			enableHotKeys
 			enableSearch
+			follow
 			height={"800"}
 			extraLines={1}
 			selectableLines

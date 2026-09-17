@@ -72,12 +72,28 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        /// <summary>
+        /// The whole newest log file, or — when a tail is asked for — roughly that many bytes from the
+        /// end of it. The tail is what makes following the log affordable: the file is re-read in full
+        /// on every ask, and a Debug-level instance writes one far too large to re-send every few
+        /// seconds. Download still takes the whole thing.
+        /// </summary>
         [HttpGet]
-        public ActionResult<string> GetLogs()
+        public ActionResult<string> GetLogs([FromQuery] int? tailBytes = null)
         {
-            var logs = logConfiguration.GetLogs();
+            var logs = logConfiguration.GetLogs(BoundedTail(tailBytes));
             return Ok(logs);
         }
+
+        /// <summary>
+        /// How much of the end of the log one ask may read. An administrator account is still an
+        /// account and a number off a query string is still input, so the size of the read is decided
+        /// here rather than by the caller.
+        /// </summary>
+        private const int MaxTailBytes = 1024 * 1024;
+
+        private static int? BoundedTail(int? tailBytes)
+            => tailBytes is null ? null : Math.Clamp(tailBytes.Value, 1, MaxTailBytes);
 
         [HttpGet("download")]
         public IActionResult DownloadLogs()
