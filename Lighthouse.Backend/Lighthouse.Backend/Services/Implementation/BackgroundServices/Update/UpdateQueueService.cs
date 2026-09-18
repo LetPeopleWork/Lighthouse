@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
+﻿namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
     using Lighthouse.Backend.Services.Interfaces.Update;
@@ -18,6 +18,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly ConcurrentDictionary<UpdateKey, Func<IServiceProvider, Task>> pendingReruns = new();
         private readonly ConcurrentDictionary<UpdateKey, HeldUpdate> heldUpdates = new();
+
+        /// <summary>
+        /// Registering a hold and sweeping the register for holds to let go are one step each, taken here.
+        /// Updates run in more than one flow at a time, and both steps read the register and then act on
+        /// what they read: taken apart, two of them can each decide they are replacing nothing, and the
+        /// hold one of them drops takes its place in a refresh round with it. Everything under this lock is
+        /// in-memory and returns straight away, so no flow waits here for long.
+        /// </summary>
+        private readonly Lock holdBookkeeping = new();
         private readonly AsyncLocal<WriteBackRound?> roundBeingHandedOver = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly WriteBackRoundContext roundContext;
@@ -299,12 +308,28 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         public void HoldUntilQueuedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
         {
-            heldUpdates[heldFor] = new HeldUpdate(waitingOn, onQueuedWorkCleared, RoundForNewWork());
+            var displaced = TakeOverTheHoldFor(heldFor, waitingOn, onQueuedWorkCleared);
+
+            // The hold that was replaced is gone from the register without ever being let go, so the place
+            // it was keeping in its refresh round has to go back now. A round still counting work that no
+            // longer exists never finishes, and everything it had resolved is never written.
+            displaced?.Round.Leave();
 
             // The work being waited on can finish between the caller looking at it and this line. Releases
             // only ever fire when something leaves the queue, so nothing would come along afterwards to let
             // this one out - check once more now that it is actually held.
             ReleaseClearedHolds();
+        }
+
+        private HeldUpdate? TakeOverTheHoldFor(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
+        {
+            lock (holdBookkeeping)
+            {
+                var displaced = heldUpdates.GetValueOrDefault(heldFor);
+                heldUpdates[heldFor] = new HeldUpdate(waitingOn, onQueuedWorkCleared, RoundForNewWork());
+
+                return displaced;
+            }
         }
 
         public bool IsHeld(UpdateKey heldFor)
@@ -314,19 +339,37 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private void ReleaseClearedHolds()
         {
-            foreach (var heldFor in heldUpdates.Keys)
+            // Letting a hold go runs a callback that reads from the database, which is far too long to keep
+            // every other flow out of the register for. Which holds are this sweep's to let go is settled
+            // under the lock; letting them go happens out here.
+            foreach (var released in TakeHoldsWhoseWaitHasCleared())
             {
-                if (!heldUpdates.TryGetValue(heldFor, out var held) || statusStore.HasQueuedWork(held.WaitingOn))
-                {
-                    continue;
-                }
+                ReleaseIntoItsRound(released);
+            }
+        }
 
-                if (heldUpdates.TryRemove(heldFor, out var released))
+        private List<HeldUpdate> TakeHoldsWhoseWaitHasCleared()
+        {
+            var cleared = new List<HeldUpdate>();
+
+            lock (holdBookkeeping)
+            {
+                foreach (var heldFor in heldUpdates.Keys)
                 {
-                    logger.LogInformation("Releasing the held update for {UpdateType} with ID {Id}; the work it waited for has left the queue.", heldFor.UpdateType, heldFor.Id);
-                    ReleaseIntoItsRound(released);
+                    if (!heldUpdates.TryGetValue(heldFor, out var held) || statusStore.HasQueuedWork(held.WaitingOn))
+                    {
+                        continue;
+                    }
+
+                    if (heldUpdates.TryRemove(heldFor, out var released))
+                    {
+                        logger.LogInformation("Releasing the held update for {UpdateType} with ID {Id}; the work it waited for has left the queue.", heldFor.UpdateType, heldFor.Id);
+                        cleared.Add(released);
+                    }
                 }
             }
+
+            return cleared;
         }
 
         /// <summary>

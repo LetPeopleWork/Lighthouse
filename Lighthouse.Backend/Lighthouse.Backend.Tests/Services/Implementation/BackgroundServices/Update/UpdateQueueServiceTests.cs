@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation;
+﻿using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
@@ -897,6 +897,76 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public void HoldUntilQueuedWorkClears_ASecondHoldTakesOverTheSameKey_LeavesTheRoundTheDisplacedHoldKept()
+        {
+            // A hold keeps a place in its refresh round open for the work it is waiting to let go. A second
+            // hold for the same key takes the register entry over, and the one it replaced is gone without
+            // ever being released - so its place has to be handed back as it goes. Left counted, the round
+            // waits forever for work that no longer exists, and everything it resolved is silently never
+            // written to the work tracking system.
+            var roundContext = new WriteBackRoundContext();
+            var round = new WriteBackRound();
+            roundContext.Current = round;
+
+            var subject = CreateSubject(roundContext);
+
+            var heldKey = new UpdateKey(UpdateType.Forecasts, 71);
+            var waitedOn = new UpdateKey(UpdateType.Team, 72);
+            RecordQueueStatus(waitedOn, UpdateProgress.Queued);
+
+            var displacedWasReleased = false;
+            subject.HoldUntilQueuedWorkClears(heldKey, [waitedOn], () => displacedWasReleased = true);
+
+            RecordQueueStatus(waitedOn, UpdateProgress.Completed);
+            subject.HoldUntilQueuedWorkClears(heldKey, [waitedOn], () => { });
+
+            var wasTheLastOneOut = round.Leave();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wasTheLastOneOut, Is.True,
+                    "A displaced hold keeps a place in the round that nothing will ever give back, so the round never finishes and never writes what it collected.");
+                Assert.That(displacedWasReleased, Is.False,
+                    "The displaced hold is gone from the register, so its callback must not run - the hold that took its place speaks for the key now.");
+            }
+        }
+
+        [Test]
+        public async Task HoldUntilQueuedWorkClears_TwoLanesReleaseOneSatisfiedHold_ReleasesItExactlyOnce()
+        {
+            // Once updates run in more than one lane, two executions can park a hold on the same key at the
+            // same moment, and two more can sweep for releases at the same moment. Whatever the order comes
+            // out as, the register must end up holding one entry per key, the work waiting behind it must be
+            // let go exactly once, and every place taken in the refresh round must come back - including the
+            // place taken by the hold that lost the race to register.
+            var roundContext = new WriteBackRoundContext();
+            var round = new WriteBackRound();
+            roundContext.Current = round;
+
+            var subject = CreateSubject(roundContext);
+
+            var heldKey = new UpdateKey(UpdateType.Forecasts, 73);
+            var waitedOn = new UpdateKey(UpdateType.Team, 74);
+            RecordQueueStatus(waitedOn, UpdateProgress.Queued);
+
+            var timesReleased = 0;
+            await InTwoLanesAtOnce(_ => subject.HoldUntilQueuedWorkClears(heldKey, [waitedOn], () => Interlocked.Increment(ref timesReleased)));
+
+            RecordQueueStatus(waitedOn, UpdateProgress.Completed);
+            await InTwoLanesAtOnce(lane => subject.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Team, 75 + lane), [waitedOn], () => { }));
+
+            var wasTheLastOneOut = round.Leave();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(timesReleased, Is.EqualTo(1),
+                    "Two lanes sweeping the same satisfied hold must let the work behind it go once; twice asks the work tracking system for the same refresh all over again.");
+                Assert.That(wasTheLastOneOut, Is.True,
+                    "Every place taken in the round has to come back, the one taken by the hold that lost the race to register included - a round still counting work that no longer exists never finishes and never writes what it collected.");
+            }
+        }
+
+        [Test]
         public async Task EnqueueUpdate_TheUpdateFails_StillLetsGoOfTheWorkHeldBehindIt()
         {
             // Epic #5511 slice 01 / AC-01.4. A refresh that throws now reaches the queue as a failure
@@ -1039,6 +1109,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Forecasts, 69), [waitedOn], onQueuedWorkCleared);
 
             updateStatuses.TryRemove(waitedOn, out _);
+        }
+
+        private void RecordQueueStatus(UpdateKey key, UpdateProgress progress)
+        {
+            updateStatuses[key] = new UpdateStatus { UpdateType = key.UpdateType, Id = key.Id, Status = progress };
+        }
+
+        /// <summary>
+        /// Runs the same piece of work on two threads released together, so that what the two of them do to
+        /// the queue service's bookkeeping genuinely overlaps rather than merely being written that way.
+        /// </summary>
+        private static async Task InTwoLanesAtOnce(Action<int> lane)
+        {
+            using var bothLanesReady = new Barrier(2);
+
+            await Task.WhenAll(
+                Task.Run(() => { bothLanesReady.SignalAndWait(); lane(0); }),
+                Task.Run(() => { bothLanesReady.SignalAndWait(); lane(1); }));
         }
 
         private static Mock<IUpdateCompletionNotifier> NotifierAnnouncing(UpdateKey updateKey, TaskCompletionSource published)
