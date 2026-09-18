@@ -1,0 +1,121 @@
+schema_version: 1
+feature_id: story-5877-update-queue-lanes
+updated: 2026-09-18
+note: >
+  ADO User Story #5877, Related to Epic #5511. A field report via Janée McConnell on behalf of a user
+  running 26.8.14.1 standalone (Tauri, macOS, SQLite) against Jira Data Center: the instance "keeps
+  getting hung updating team metrics", recovering only on restart. The logs showed a Portfolio refresh
+  running 77.7 minutes before failing on a DNS error, its coalesced follow-up immediately retaking the
+  lane, and every Team refresh from 06:11 until a 09:49 restart logging "already queued or being
+  processed" — 3h38m with zero team updates. After the restart the same three teams completed in 23s,
+  31s and 26s. Nothing was deadlocked; everything was queued behind one refresh that would not finish.
+
+  The report proposed three items. A (chunk the Jira parent-Feature fetch) shipped on 2026-09-14 as
+  690a208f9. C's visibility half — see what is running, for how long, in queue order, with a stop
+  control — shipped as epic-5511 slices 02, 03, 04 and 07. What DISCUSS scoped on 2026-09-18 is B (per
+  update-type lanes) plus C's outstanding half (a total wall-time bound).
+
+  Two facts from the 2026-09-18 code reading shape everything. First, WriteBackRound has Interlocked
+  Join/Leave but unsynchronised Stage/TakeStaged/TakeSummary, and a Portfolio refresh and the Forecast
+  it triggers already share one round — so the single lane is currently the only thing making that
+  safe, and round safety is a precondition rather than a hardening. Second, epic-5511's slice-04 probe
+  measured that a cancellation token reaches inside a connector call at one page round-trip of
+  granularity, which was not known when #5877 was written: the bound can act rather than only log.
+
+  The orphaned-feature cleanup finding in the report (PortfolioUpdater runs CleanUpOrphanedFeatures in
+  a finally, so it also runs after a failed refresh) is deliberately NOT in this journey. It is a
+  potential data-loss path with a different root cause and is split to its own Bug.
+  See docs/feature/story-5877-update-queue-lanes/.
+
+journeys:
+
+  - name: keep-working-while-one-thing-is-slow
+    goal: >
+      Platform Operator distinguishes "one portfolio is slow" from "Lighthouse is dead", without
+      restarting the instance and without watching it to find out.
+    persona: "platform-operator (both flavours: the self-hoster on SQLite standalone, and the SaaS
+      operator on Tenant Zero)"
+
+    emotional_arc:
+      start: Suspicious - "the team charts have not moved since this morning. The app is up, the page
+        loads, and nothing tells me anything is wrong."
+      middle: Located - "the task list shows a portfolio refresh that has been going 40 minutes, and
+        the teams running beside it. It is one portfolio, not the instance."
+      end: Unattended - "and if that portfolio never finishes, it ends itself and the history says
+        which bound it passed. I do not have to be the thing that notices."
+
+    steps:
+      - step: Notice
+        action: Look at the header activity icon, from any page
+        output: Work is running. Several rows can read Running at once, because each update type has
+          its own lane - a portfolio refresh in flight no longer means nothing else can start.
+      - step: Locate
+        action: Read a queued row
+        output: What is holding that row's OWN lane, by name. Not whatever happened to be running -
+          the read model previously took the first InProgress row it found, which is correct only
+          while exactly one thing can ever run.
+      - step: Believe the rest is current
+        action: Open a Team's metrics
+        output: A recent last-updated moment, because the Team's lane was never blocked by the
+          Portfolio's.
+      - step: Walk away
+        action: Nothing
+        output: A run that passes the configured wall-time bound ends itself through the same path an
+          operator's Cancel drives, frees its lane, and reaches the same visible terminal state.
+      - step: Read what happened
+        action: Settings, System Info, refresh history
+        output: The run, its duration, and a reason naming the bound it passed - distinguishable from
+          a cancel an operator actually pressed.
+
+    error_paths:
+      - situation: A refresh is genuinely long rather than stuck
+        recovery: The bound is configurable, with a default chosen from the RefreshLog duration
+          distribution the product already stores rather than guessed - it must clear both the
+          reported 77.7-minute run and epic-5687's 468-second pre-optimisation measurement. An
+          operator whose tracker is legitimately slower raises it.
+      - situation: A run is ended by the bound and its follow-up is already queued
+        recovery: The bound is per run, not per key. The follow-up starts a fresh clock. Inheriting
+          the elapsed time would kill every follow-up of a long refresh the instant it started, which
+          would make the reported symptom worse rather than better.
+      - situation: The bound fires and the refresh does not stop
+        recovery: Asserted as a number - one page round-trip, the granularity the slice-04 probe
+          measured - rather than as an intention. If it does not hold, the bound is a log line and not
+          a lever, and the slice has failed its own hypothesis rather than quietly shipping a promise
+          the mechanism cannot keep.
+      - situation: A deletion is in flight when the bound would fire
+        recovery: Deletes are exempt. They are already uncancellable, and a half-done delete tells the
+          caller waiting on it that an entity has gone while its row is still in the database.
+      - situation: Two lanes save to SQLite at the same time
+        recovery: WAL is on with busy_timeout at 10 000 ms, so writers serialise at the file rather
+          than failing. That is a ceiling and not a guarantee, and the reporting user is on SQLite -
+          checked against a real two-lane save early enough to change the design, not assumed.
+      - situation: A portfolio refresh and the forecast it triggers stage write-back concurrently
+        recovery: They share one WriteBackRound whose staging is a plain Dictionary. Round safety
+          lands as a precursor commit BEFORE the second consumer exists. The guard is behavioural -
+          the staged set after two concurrent stagings equals the union - not "a lock exists".
+
+    shared_artifacts:
+      - artifact: the lane an update runs in
+        source: its UpdateType. Five members - Team, Features, Forecasts, PortfolioDelete, TeamDelete -
+          with each delete sharing its entity type's lane. Never a per-entity or per-connection
+          partition, which would let two refreshes hit one tracker at once.
+      - artifact: what is holding a queued row's lane
+        source: the running row in that row's own lane, resolved on the read path. Previously the
+          first InProgress row in the whole store, which is arbitrary once more than one can run.
+      - artifact: the write-back round
+        source: unchanged - the queue opens one when work starts and work an execution asks for joins
+          the round that asked. What changes is that the round must now tolerate two executions
+          touching it at once.
+      - artifact: the cancellation token that ends an over-running run
+        source: the same AdmittedCancellations source an operator's Cancel uses, read inside the
+          connector through UpdateCancellationContext. No second mechanism.
+      - artifact: the wall-time bound
+        source: instance configuration, with a default derived from RefreshLog durations. Absent or
+          unreadable falls back to the default, never to "no bound" and never to zero.
+      - artifact: the reason a run ended
+        source: the RefreshLog row already written in the updater's finally block, extended to name
+          the bound. The operator reads it where they already read refresh outcomes, not in the log
+          file - the habit epic-5511 slice 06 exists to break.
+      - artifact: the words on every row and label
+        source: the tenant's configured Terminology for team and portfolio, as the task list already
+          uses.

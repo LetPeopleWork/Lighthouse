@@ -51,6 +51,7 @@ feature_context:
   - story-5876-behaviour-settings
   - story-5914-metrics-time-horizon-presets
   - epic-5874-relicense-source-available
+  - story-5877-update-queue-lanes
   - parent-from-issue-links
 
 jobs:
@@ -7007,3 +7008,135 @@ jobs:
         this is not a missing feature, it is the product's core number being a placeholder. Current
         satisfaction: 0 - there is no workaround short of re-recording the hierarchy in a field. Gap: 5,
         the highest in this feature, and the reason the config-admin job above is worth the work.
+
+  - id: job-operator-keep-teams-moving-while-a-portfolio-refreshes
+    title: Keep every other entity refreshing while one of them is slow
+    persona: platform-operator
+    feature_context: story-5877-update-queue-lanes
+    created: 2026-09-18
+    note: >
+      NEW in story-5877-update-queue-lanes (ADO #5877), from a field report via Janée McConnell on
+      behalf of a user running 26.8.14.1 standalone against Jira Data Center. Verified in code during
+      DISCUSS on 2026-09-18: UpdateQueueService holds one Channel.CreateUnbounded<Func<Task>>() drained
+      by a single await-foreach loop that awaits each task to completion, and is registered as a
+      singleton — so Teams, Portfolios, Forecasts and both delete operations all queue behind each
+      other. The same reading turned up the reason it cannot simply be parallelised: WriteBackRound has
+      Interlocked Join/Leave but unsynchronised Stage/TakeStaged/TakeSummary, and a Portfolio refresh
+      and the Forecast it triggers already share one round. The single lane is currently the only thing
+      making that safe.
+    job_story: >
+      When one entity's refresh is slow, stuck, or waiting on a tracker that has stopped answering,
+      I want every other entity to go on refreshing as usual,
+      so I can tell "one portfolio is slow" from "Lighthouse is dead" without restarting the instance
+      and taking everything else down with it.
+    dimensions:
+      functional: >
+        Each update type runs in its own lane, so a Portfolio refresh in flight does not stop a Team
+        refresh starting. Within a type work stays serial, deliberately, so the tracker is never asked
+        for more at once than it is asked for today. A queued row names what is holding its own lane
+        rather than whatever happens to be running.
+      emotional: >
+        Move from "the charts have not moved for three hours and my only idea is to restart it" to "one
+        portfolio is taking a while; everything else is current".
+      social: >
+        Answer a team's "is our data stale?" with "no — one portfolio's sync is slow, yours ran eight
+        minutes ago", instead of a restart and an apology.
+    forces:
+      push: >
+        The reported instance logged a Portfolio refresh running 77.7 minutes before failing on a DNS
+        error, its coalesced follow-up immediately retaking the lane, and every Team refresh from 06:11
+        until a 09:49 restart logging "already queued or being processed" — 3h38m with zero team
+        updates. After the restart the same three teams completed in 23s, 31s and 26s. Nothing was
+        deadlocked; everything was queued behind one refresh that would not finish.
+      pull: >
+        The queue already owns the lifecycle of every admitted key, the cross-replica execution lock is
+        already per-key rather than global, and each update already runs in its own DI scope with its
+        own write-back collector. The structure needed for lanes is mostly already there.
+      anxiety: >
+        "Will parallel refreshes hit my tracker harder?" (No — per-type lanes keep per-tracker
+        concurrency at one; that is why the shape is lanes and not N generic consumers.)
+        "Will concurrent refreshes corrupt a write-back?" (This is the real trap. A Portfolio refresh
+        and its Forecast share one WriteBackRound whose staging is a plain Dictionary. Round safety
+        lands before the second consumer exists, not after.)
+        "Will two writers fight over SQLite?" (WAL is on with a 10 s busy_timeout — a ceiling, not a
+        guarantee, and the reporting user is on SQLite. Checked against a real two-lane save rather
+        than assumed.)
+      habit: >
+        Operators today restart the container, and have learned to tolerate what that costs. They must
+        learn they no longer need to — which is why the task list showing several rows running at once
+        is part of the change and not a side effect of it.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance 5 — an instance that appears dead is the most expensive failure the product has, and
+        this one reached a user through support with logs. Current satisfaction 0 — there is no partial
+        answer: the lane is single by construction and no setting mitigates it. The workaround offered
+        to the affected user (lower Issues Per Request, widen the Portfolio interval) shrinks the
+        blocking window and does not remove it. Gap 5, the widest in the operational-visibility family.
+
+  - id: job-operator-bound-a-refresh-that-will-not-end
+    title: Have Lighthouse end a run that has stopped making progress, and say so
+    persona: platform-operator
+    feature_context: story-5877-update-queue-lanes
+    created: 2026-09-18
+    note: >
+      NEW in story-5877-update-queue-lanes (ADO #5877), item C of the report. Its visibility half — see
+      what is running, for how long, in queue order, with a stop control — shipped as epic-5511 slices
+      02, 03, 04 and 07, exactly as that Epic's reconciliation predicted. What is left is the bound
+      itself. The shape changed between the report and this wave: #5511's slice-04 probe measured on
+      2026-09-14 that a cancellation token does reach inside a connector call, at one page round-trip
+      of granularity. So the bound can act through the operator-cancel path rather than only writing a
+      log line, which is what the report proposed when that was not yet known.
+    job_story: >
+      When a refresh has run far past anything it has ever legitimately taken,
+      I want Lighthouse to end it on its own and record which bound it passed,
+      so an instance cannot be lost to a single run that nobody happened to be watching.
+    dimensions:
+      functional: >
+        A configurable total wall-time bound per run — not per key, so a coalesced follow-up starts a
+        fresh clock. Passing it drives the same cancellation path an operator's Cancel drives; the run
+        reaches a visible terminal state and the refresh history names the bound as the reason,
+        distinguishably from an operator-initiated cancel. Deletes are exempt, because they are already
+        uncancellable and a half-done delete tells its caller an entity has gone while its row is still
+        there.
+      emotional: >
+        Move from "something is wrong and I do not know what or since when" to a recorded event with a
+        duration and a cause.
+      social: >
+        Take the finding to the Jira administrator as "our refresh passes an hour against your instance"
+        rather than as "Lighthouse seems to hang sometimes".
+    forces:
+      push: >
+        The consumer loop awaits each task inside a bare try/catch that logs "Error processing update
+        task" and names no UpdateKey. Nothing bounds total wall-time — the per-request timeout is 100 s,
+        but a refresh is hundreds of sequential requests — so a run that never returns holds its lane
+        until the process restarts, and the log does not say which run it was.
+      pull: >
+        Everything needed already exists: per-key cancellation sources, a measured reach inside the
+        connector, terminal states the browser already renders, and a RefreshLog row already written in
+        the updater's finally block.
+      anxiety: >
+        "Will it kill a legitimate long refresh?" (The default is chosen from the RefreshLog duration
+        distribution the product already stores, and must clear both the reported 77.7-minute run and
+        epic-5687's 468-second pre-optimisation measurement — and it is configurable.)
+        "Will the history say I cancelled something I did not?" (Named as an acceptance criterion: an
+        operator who pressed nothing must not read a record saying they did.)
+        "Will it actually stop?" (Asserted as a number — one page round-trip, the granularity the probe
+        measured — rather than as an intention. If it does not, the bound is a log line and the slice
+        has failed its own hypothesis.)
+      habit: >
+        The current habit is to notice hours later and restart. Replacing it needs the record to be
+        somewhere the operator already looks, which is why the refresh history carries it rather than
+        the log file.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 — a genuine gap, but ranked below the lane structure deliberately: with lanes in
+        place a stuck run costs one entity's freshness rather than the whole instance, so the bound is a
+        tidy-up rather than a rescue. Current satisfaction 1 rather than 0 because since epic-5511 an
+        operator can see the run and stop it by hand; what is missing is that it happens without
+        somebody watching. Gap 2.
