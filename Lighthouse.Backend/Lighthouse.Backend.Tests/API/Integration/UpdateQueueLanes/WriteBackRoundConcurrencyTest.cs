@@ -31,8 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
     [Category("slice-01")]
     public class WriteBackRoundConcurrencyTest
     {
-        private const string Pending = "pending — DELIVER unskips this as the precursor commit is built";
-
         private const string AFieldEveryUpdateWrites = "customfield_10001";
 
         /// <summary>
@@ -42,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         private const int UpdatesFromEachExecution = 500;
 
         [Test]
-        [Ignore(Pending)]
         public async Task Everything_two_executions_stage_at_once_is_still_there_to_be_written()
         {
             var round = new WriteBackRound();
@@ -62,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         }
 
         [Test]
-        [Ignore(Pending)]
         public void The_round_hands_over_what_it_is_holding_to_exactly_one_caller()
         {
             var round = new WriteBackRound();
@@ -85,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         }
 
         [Test]
-        [Ignore(Pending)]
         public void Only_one_execution_gets_to_speak_for_the_round()
         {
             var round = new WriteBackRound();
@@ -107,7 +102,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         }
 
         [Test]
-        [Ignore(Pending)]
         public void Staging_into_a_round_that_has_already_been_written_is_refused_rather_than_swallowed()
         {
             var round = new WriteBackRound();
