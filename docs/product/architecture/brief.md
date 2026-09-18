@@ -7678,3 +7678,221 @@ Moq, Vitest + React Testing Library, Playwright. No new library of any kind — 
 Only a Jira Cloud instance is available (user, 2026-09-18). The Data Center behaviour of
 `rest/api/latest/issueLinkType` is **unverified**, and Data Center is where the reported configuration
 lives. Recorded as owed in the slice 01 brief rather than closed.
+
+---
+
+## Application Architecture — story-5877-update-queue-lanes
+
+Feature: story-5877-update-queue-lanes (ADO User Story #5877, related to Epic #5511)
+Wave: DESIGN
+Date: 2026-09-18
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Scope: Application / components
+Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
+
+**The single-lane property documented above stops being true.** The `epic-5511-task-manager` section
+and the ADR-027 diagrams earlier in this file describe `UpdateQueueService` as a single-reader channel.
+That was accurate when each was written and is historical from here; those sections are not edited in
+place. The update queue now has **three** lanes, each a channel with one reader.
+
+---
+
+### Architectural Pattern
+
+**Ports-and-adapters, unchanged.** No new style, no new port, no new adapter, no new technology. The
+change is structural inside one component: one channel becomes three, one shared mutable object gains
+a lock, one read-path projection is corrected, and one run-scoped deadline is armed on a token that
+already exists.
+
+---
+
+### Key invariants introduced
+
+- **A lane is a total function of `UpdateType`, evaluated at enqueue time.** Team and `TeamDelete` in
+  the Team lane; `Features` and `PortfolioDelete` in the Portfolio lane; `Forecasts` in the Forecast
+  lane. One reader per lane, so "within a type, work stays serial" is structural rather than a filter.
+  A sixth update type cannot land nowhere: the mapping's totality is a test.
+- **Per-replica lanes sit underneath the cluster contract and weaken none of it.** ADR-076's INV-1
+  (monotonic advance) and INV-4 (one active lifecycle per `UpdateKey`) are enforced by the status store
+  and the per-key execution lock, not by the reader count. Lanes narrow that ADR's recorded **Gap 2** —
+  a blocking advisory lock stalling every unrelated update behind it — from the whole replica to one
+  lane. **Gap 1** is untouched and still open.
+- **`WriteBackRound` is a bounded-change component.** One lock over its contents; `Join`/`Leave`/
+  `HasFinished` keep their `Interlocked`/`Volatile` implementations. `TakeStaged` and `TakeSummary`
+  are atomic take-and-clear, so a second caller legitimately receives nothing. ADR-144 §3's
+  last-stage-wins *within* one execution is preserved exactly. Staging into a round after leaving it
+  is refused loudly rather than dropped quietly.
+- **A hold that displaces an earlier hold for the same key leaves the displaced round.** A round
+  nobody leaves never finishes and silently drops everything it staged. Hold bookkeeping runs under
+  one lock, because the mechanism was written against a single reader.
+- **`WaitingBehind` names the holder of the asking row's own lane**, and is absent when that lane is
+  free. Resolved on the read path in `UpdateController`; no status-store change, and
+  `UpdateTaskResponse` keeps its shape.
+- **The wall-time bound is armed in the process that runs the work.** A per-run
+  `CancellationTokenSource` with a delay, linked with the per-key operator source, through the injected
+  `TimeProvider`. It cannot miss — unlike a watchdog reading `StartedAt`, which ADR-182 defines as
+  best-effort and legitimately absent. The clock starts after the execution lock is taken and the
+  status advances to `InProgress`, so neither queue wait nor another replica's lock wait counts.
+- **Deletes are never bounded**, decided in the one function that decides a run's bound.
+- **The reason a run ended is derived from which cancellation source fired**, operator taking
+  precedence — never from a flag written at stop time, because two stops can land in the same instant.
+  It reaches the refresh history as a persisted token and the log as a warning; the existing cancel
+  line is information-level and reads as an operator action.
+- **The single-container product is unchanged.** With no Redis the in-process adapters answer
+  everything; lanes are a per-replica structure and need no coordination. The one new pressure is at
+  most three concurrent `SaveChanges` where there was one, which on SQLite leans on WAL and a 10 s
+  `busy_timeout` — a ceiling, probed rather than assumed.
+
+---
+
+### System Context and Capabilities
+
+No new capability and no new actor. This removes a failure mode from a shipped one:
+
+1. One slow entity no longer stops every other entity refreshing.
+2. A queued row says what is holding *its* lane, by name.
+3. No single run can hold a lane indefinitely; one that passes the bound ends itself through the path
+   an operator's Cancel already drives.
+4. The refresh history distinguishes a run an operator stopped from a run the instance stopped.
+
+C4 System Context, Container and update-pipeline Component diagrams live in
+`docs/feature/story-5877-update-queue-lanes/feature-delta.md`.
+
+---
+
+### Component Decomposition
+
+Full table in the feature delta. Structural summary:
+
+| Kind | Components |
+|---|---|
+| NEW (backend) | `UpdateLanes`, `UpdateLane` + its mapping, `QueuedUpdate`, `IUpdateRunDeadlines` + `UpdateRunDeadline` |
+| EXTEND (backend) | `UpdateQueueService`, `WriteBackRound`, `UpdateController`, `AdmittedWorkOrdering` (comment only), `IAppSettingService` / `AppSettingService` / `AppSettingKeys`, `AppSettingsController`, `RefreshLog` + both migration projects, `TeamUpdater` / `PortfolioUpdater` / `ForecastUpdater`, `SyncOutcome` |
+| EXTEND (frontend) | `RefreshLog.ts`, `RefreshHistorySection.tsx`, `SystemSettingsTab.tsx` + one numeric updater, `SettingsService.ts`, `ActivitySection.tsx` (comment only) |
+| DELETE | Nothing |
+
+**Out of scope and untouched**: the orphaned-feature cleanup `finally` at `PortfolioUpdater.cs:176`.
+It is its own Bug.
+
+---
+
+### Driving Ports
+
+| Method | Route | Guard | Change |
+|---|---|---|---|
+| GET | `/api/latest/update/tasks` | SystemAdmin | Shape unchanged; `WaitingBehind` semantics corrected |
+| POST | `/api/latest/update/tasks/{updateType}/{id}/cancel` | SystemAdmin | Unchanged |
+| GET | `/api/latest/appsettings/UpdateRunLimit` | SystemAdmin | **NEW** — the bound, in whole minutes |
+| PUT | `/api/latest/appsettings/UpdateRunLimit` | SystemAdmin | **NEW** — same controller, same guard as every other setting write |
+| GET | `/api/latest/systeminfo/refreshlog` | SystemAdmin | Route unchanged; the entity is returned raw, so the reason column is exposed automatically |
+| SignalR | `updateNotificationHub` | connection-level | Unchanged — a bound-ended run publishes the same `Cancelled` terminal status |
+
+No RBAC gate is added, removed or moved. No CLI or MCP contract changes.
+
+---
+
+### Driven Ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Update status store | `InProcessUpdateStatusStore` / `RedisUpdateStatusStore` | UNCHANGED — no new member, both Lua scripts still frozen |
+| Update execution lock | in-process / Postgres advisory | UNCHANGED — still per key |
+| Completion / cancellation notification | in-process / Redis | UNCHANGED |
+| Work tracking system | `IWorkTrackingConnector` | UNCHANGED — the bound rides the token the paging methods already take |
+| App settings | `LighthouseAppContext` | EXTEND — one unseeded key |
+| Refresh log | `LighthouseAppContext` | EXTEND — one nullable reason column, expand-only, both providers |
+| Clock / timer | `TimeProvider` | REUSE — the deadline's delay; `FakeTimeProvider` in tests |
+
+---
+
+### Technology Stack
+
+No new technology, dependency or licence. `System.Threading.Channels` (already the queue's primitive),
+.NET's `TimeProvider`, EF Core, ASP.NET Core .NET 10, NUnit 4.6 + Moq +
+`Microsoft.Extensions.TimeProvider.Testing`, ArchUnitNET, React 18 + TypeScript + MUI, Vitest + RTL.
+Rejected additions, named so the absence is a decision: a background timer service for the bound, a
+distributed scheduler, a concurrent-collection dependency, and any cache in front of `AppSettings`.
+
+---
+
+### Reuse Analysis
+
+Full table in the feature delta. Zero unjustified `CREATE NEW`. The four genuinely new backend units
+and why extending was rejected:
+
+| New unit | Rejected extension | Why |
+|---|---|---|
+| `UpdateLanes` | Leave the channels inline in `UpdateQueueService` | Three channels, three reader tasks and a three-way drain inside a 649-line class makes the drain untestable without SignalR, the status store, the execution lock and both notifiers. |
+| `UpdateLane` + mapping | A `switch` at each use site | Three use sites — write, drain, read-model grouping — and three places for the delete grouping to drift. One total function, one exhaustiveness test. |
+| `QueuedUpdate` | Keep `Func<Task>` and close over the key | A closure cannot be read by the reader's backstop, which is the thing that currently logs a failure naming nothing. |
+| `IUpdateRunDeadlines` | Arm the delay inline in the run method | The decision half — the delete exemption, the clamp, the fallback — is a pure function of `(UpdateType, stored string)` where six acceptance criteria are asserted. Inline, it is only reachable by running a queue. |
+
+Two candidate homes for the bound were rejected on facts rather than taste: `RefreshSettings`, because
+`ForecastUpdater.GetRefreshSettings()` throws and so could not cover the Forecast lane; and
+`OptionalFeature`, which is boolean-only and carries no value.
+
+---
+
+### Quality Attribute Strategies
+
+**Availability of the whole instance** is the driving attribute, and it is why the lane is the unit.
+The verifiable claim: with a Portfolio refresh held open — not merely slow — a Team refresh reaches
+`InProgress`, and two `RefreshLog` rows on Tenant Zero have overlapping run intervals.
+
+**Integrity of write-back under concurrency** is the second, and it is why round safety is a precursor
+commit rather than a hardening. The verifiable claim: the set the round hands to the writer after two
+concurrent stagings equals the union of what both staged.
+
+**Truthfulness** is the third, twice. A queued row must not name a holder it is not waiting for, and a
+history must not tell an operator they stopped something they did not.
+
+**Testability**: every decision that carries an acceptance criterion is a pure function — the lane
+mapping, the bound's clamp, the lane-holder resolution — so it is asserted without a queue, a clock or
+a database. The deadline itself is armed through `TimeProvider`, so the bound is tested by advancing a
+fake clock rather than by waiting.
+
+**Hot-path cost** is paid once per stage (one lock on a dictionary upsert) and once per run (one
+uncached settings read). Both were weighed against a data race on the path that writes to a customer's
+work tracking system.
+
+---
+
+### Deployment Architecture
+
+No infrastructure change, no chart change, no new service. One additive, nullable, expand-only EF
+migration generated with the existing `CreateMigration` script across all supported providers. The
+one operational note is that `RefreshLog` retention is per `(EntityId, Type)` at 30 runs by default,
+which bounds how far back a 30-day duration claim can look.
+
+---
+
+### ADR References (this feature)
+
+- [ADR-195](./adr-195-update-queue-is-three-lanes-one-channel-each.md): the update queue is three
+  lanes, one channel and one reader each, keyed by update type
+- [ADR-196](./adr-196-write-back-round-concurrency-contract.md): a write-back round is a
+  bounded-change component with one lock, and every take is atomic
+- [ADR-197](./adr-197-update-run-wall-time-bound-is-an-in-process-deadline.md): the wall-time bound is
+  an in-process deadline on the run's own token, defaulting to 180 minutes
+
+Cross-referenced and unchanged: ADR-076 (per-key lock, monotonic store), ADR-144 (the write-back
+staging seam — its Context's claim that no refresh round object exists is now out of date), ADR-181
+(activity is a read through the store), ADR-182 (best-effort moments), ADR-183 (ambient cancellation
+token).
+
+---
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Every `UpdateType` maps to exactly one lane; deletes map to their entity type's lane | NUnit over `Enum.GetValues<UpdateType>()` |
+| `IUpdateQueueService` keeps `EnqueueUpdate`, `EnqueueAndAwaitAsync` and `DrainAsync` verbatim | Existing reflection signature freeze, extended |
+| Only `UpdateQueueService` writes `WriteBackRoundContext.Current` | Source scanner, mirroring the one that already guards `UpdateCancellationContext` — the context has claimed a single writer in its doc comment and never had a guard |
+| Nothing outside `WriteBackRound` reaches its state | ArchUnitNET |
+| `UpdateLanes` depends on no repository, no `DbContext` and no connector | ArchUnitNET |
+| The bound's decision function performs no I/O | ArchUnitNET — it takes the stored string, not the settings service |
+| The new `RefreshLog` column is additive and nullable | Existing `ExpandOnlyMigrationGuard` |
+| Both new app-settings routes carry the guard | Integration test enumerating them |
+
+Feature delta: `docs/feature/story-5877-update-queue-lanes/feature-delta.md`.
