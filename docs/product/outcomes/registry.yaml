@@ -45,3 +45,93 @@ outcomes:
   artifact: Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.ts
   related: []
   superseded_by: null
+
+- id: OUT-3
+  kind: specification
+  summary: Decides which of an instance's three refresh lanes a piece of queued work runs in, from what
+    kind of work it is and nothing else, so that work of one kind never waits on work of another and a
+    removal never outruns a refresh of the same entity.
+  feature: story-5877-update-queue-lanes
+  inputs:
+  - shape: the kind of work being queued, from the closed set of refresh and removal kinds the instance
+      knows about
+  output:
+    shape: exactly one of the instance's lanes, total over every kind of work including ones added
+      later, with a removal answering the same lane as a refresh of the entity it removes
+  keywords:
+  - update-lane
+  - queue-routing
+  - head-of-line-blocking
+  - total-function
+  - refresh
+  artifact: Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateLanes.cs
+  related: []
+  superseded_by: null
+
+- id: OUT-4
+  kind: invariant
+  summary: A refresh round survives being touched by more than one execution at once - everything staged
+    is still there to be written, the round is handed over to exactly one caller and speaks for itself
+    exactly once, and staging into a round that has already been written is refused rather than lost.
+  feature: story-5877-update-queue-lanes
+  inputs:
+  - shape: any interleaving of stagings, reports, takes and departures from the executions belonging to
+      one round
+  output:
+    shape: the union of everything staged, handed to one caller once, with one summary line and no
+      silent loss
+  keywords:
+  - write-back-round
+  - concurrency
+  - staging
+  - union
+  - idempotent-take
+  artifact: Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackRound.cs
+  related:
+  - OUT-3
+  superseded_by: null
+
+- id: OUT-5
+  kind: specification
+  summary: Decides how long a single refresh may run before the instance stops it, from what kind of work
+    it is and whatever the operator left in the setting, never answering no time at all and never
+    bounding a removal.
+  feature: story-5877-update-queue-lanes
+  inputs:
+  - shape: the kind of work about to run, and the instance-wide run limit as it is stored - which may be
+      absent, empty, not a number, zero, negative, or outside what the instance will honour
+  output:
+    shape: how long that run may take, in whole minutes, falling back to the shipped default for
+      anything unusable and to no bound at all for a removal
+  keywords:
+  - run-limit
+  - wall-time-bound
+  - deadline
+  - fallback
+  - clamp
+  artifact: Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateRunDeadline.cs
+  related:
+  - OUT-3
+  superseded_by: null
+
+- id: OUT-6
+  kind: specification
+  summary: Answers what a queued piece of work is waiting for, naming the work holding that row's own
+    lane and nobody at all when its lane is free, so a reader is never told about a dependency the
+    instance invented.
+  feature: story-5877-update-queue-lanes
+  inputs:
+  - shape: everything the instance has admitted, each with its kind, its entity and whether it is running
+      or waiting
+  output:
+    shape: for each waiting row, the name of the running work in its own lane, or nothing when that lane
+      is free - stable across repeated reads of the same state
+  keywords:
+  - waiting-behind
+  - lane-holder
+  - task-list
+  - read-model
+  artifact: Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs
+  related:
+  - OUT-3
+  superseded_by: null
