@@ -48,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // being true. Three teams sat behind one portfolio refresh for 3h38m and the operator read the
         // instance as dead.
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_refresh_runs_while_a_portfolio_refresh_is_held_open()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -66,7 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // would double what one tracker is asked for, which is the opposite of what the on-premise
         // instance that reported this needs.
         [Test]
-        [Ignore(Pending)]
         public async Task A_second_portfolio_refresh_waits_while_the_first_one_is_held_open()
         {
             var running = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -122,7 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // followed by an act. Two lines means the operator reads one refresh as two; none means the
         // round dropped everything it had resolved to write, silently.
         [Test]
-        [Ignore(Pending)]
         public async Task A_portfolio_and_the_forecast_it_triggers_still_report_their_round_once_between_them()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -132,11 +129,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
             ThenTheRoundSaidItsPieceExactlyOnce(portfolio);
         }
 
+        // @driving_port @real-io — the ordering guarantee the lanes removed without declaring it. Forecast
+        // coalescing was built when a Team refresh and a Portfolio refresh could not run at once, so
+        // whichever asked second always found the forecast still sitting in the queue and stood down. With
+        // a lane each they overlap, and the operator watches one delivery date settle and then move. The
+        // promise is pinned here, where the concurrency now lives, rather than only in the epic whose suite
+        // happened to catch it.
+        [Test]
+        public async Task A_portfolio_refresh_and_a_team_refresh_in_different_lanes_still_produce_one_forecast()
+        {
+            var team = GivenATeamThatIsRefreshedOnSchedule();
+            var portfolio = GivenAPortfolioDeliveredBy(team);
+            GivenTheTrackerHoldsOnlyThePortfolioRefreshOpenUntilWeSaySo();
+
+            await WhenARefreshOfThatPortfolioIsUnderWay(portfolio);
+            await WhenARefreshOfThatTeamRunsToTheEndBesideIt(team);
+
+            await ThenThatPortfolioIsForecastExactlyOnce(portfolio);
+        }
+
         // @driving_port @real-io @AC-01.6 — an operator stopping one runaway refresh must not stop the
         // instance. Cancel was already per key; what is new is that there is now something in another
         // lane for it to fail to hit.
         [Test]
-        [Ignore(Pending)]
         public async Task Stopping_a_portfolio_refresh_leaves_the_team_refresh_beside_it_running()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -155,7 +170,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // running leaves work in flight against a database the host is about to take away, and leaves
         // the key admitted in a store another replica can see.
         [Test]
-        [Ignore(Pending)]
         public async Task Shutting_down_waits_for_the_work_in_every_lane()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();

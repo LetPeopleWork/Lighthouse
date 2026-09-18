@@ -23,15 +23,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly IUpdateQueueService queueService = updateQueueService;
 
         /// <summary>
-        /// During a bulk refresh every team that finishes asks for a forecast, and the first one to finish
-        /// would produce a date that the teams finishing after it immediately invalidate - the operator sees
-        /// a delivery date settle and then move. Waiting until no team of this portfolio is still queued
-        /// leaves the last team to finish as the one that forecasts. A team that is already running is not
-        /// waited for: a team announces its refresh while its own work is still marked running, so counting
-        /// that would make every request wait on the very refresh that asked for it and nothing would ever
-        /// be forecast. The wait is a hand-over rather than a skip: the forecast a team asked for is the one
-        /// its write is owed, so dropping it would lose that write until the next periodic refresh, and the
-        /// last team of a bulk refresh may well be one that failed and therefore never asks at all.
+        /// During a bulk refresh every refresh that finishes asks for a forecast, and the first one to
+        /// finish would produce a date that the ones finishing after it immediately invalidate - the
+        /// operator sees a delivery date settle and then move. Waiting until every refresh that feeds this
+        /// portfolio has finished leaves the last of them as the one that forecasts.
+        ///
+        /// Both callers ask from inside a refresh whose own key is in that set, and that is what makes the
+        /// outcome one forecast rather than a race: the first to ask holds, and because its own run has not
+        /// ended the hold cannot have cleared by the time anybody else asks, so every later asker finds the
+        /// forecast already promised and stands down. A run leaves the store before the sweep that lets
+        /// holds go, so a hold naming the asker is not waiting on itself forever.
+        ///
+        /// The wait is a hand-over rather than a skip: the forecast a refresh asked for is the one its
+        /// write is owed, so dropping it would lose that write until the next periodic refresh, and the
+        /// last refresh of a bulk run may well be one that failed and therefore never asks at all.
         /// </summary>
         public override void TriggerUpdate(int id)
         {
@@ -40,11 +45,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            var teamsStillWaiting = TeamsOfThePortfolioWaitingToRefresh(id);
+            var refreshesStillGoing = TheRefreshesThisForecastWaitsFor(id);
 
-            if (teamsStillWaiting.Count > 0)
+            if (refreshesStillGoing.Count > 0)
             {
-                HoldTheForecastUntil(id, teamsStillWaiting);
+                HoldTheForecastUntil(id, refreshesStillGoing);
                 return;
             }
 
@@ -64,11 +69,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
-        /// The forecast a waiting request owes, now that the teams it waited for have left the queue.
+        /// The forecast a waiting request owes, now that the refreshes it waited for have finished.
         /// Unlike a fresh request it never stands down: a forecast someone asked for by hand can have
         /// joined the queue in the meantime, and standing down here would leave the refresh round this
         /// request keeps a place in waiting for a run that never comes - so the write that round collected
-        /// would never reach the work tracking system. Anything still queued that this run would collide
+        /// would never reach the work tracking system. Anything still going that this run would collide
         /// with is waited for instead, which passes the place on rather than giving it up.
         /// </summary>
         private void RunTheWaitingForecast(int portfolioId)
@@ -86,16 +91,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private void HoldTheForecastUntil(int portfolioId, IReadOnlyCollection<UpdateKey> waitingOn)
         {
-            queueService.HoldUntilQueuedWorkClears(
+            queueService.HoldUntilNamedWorkClears(
                 ForecastKeyFor(portfolioId), waitingOn, () => RunTheWaitingForecast(portfolioId));
         }
 
         private List<UpdateKey> WorkTheWaitingForecastWouldCollideWith(int portfolioId)
         {
             var forecastKey = ForecastKeyFor(portfolioId);
-            var stillToClear = TeamsOfThePortfolioWaitingToRefresh(portfolioId);
+            var stillToClear = TheRefreshesThisForecastWaitsFor(portfolioId);
 
-            if (updateStatusStore.HasQueuedWork([forecastKey]))
+            // A forecast somebody asked for by hand can be running at this moment, and a second one would
+            // re-run the unseeded simulation over the same data and move the date that one is about to show.
+            if (updateStatusStore.HasActiveWork([forecastKey]))
             {
                 stillToClear.Add(forecastKey);
             }
@@ -117,7 +124,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return queueService.IsHeld(forecastKey) || updateStatusStore.HasQueuedWork([forecastKey]);
         }
 
-        private List<UpdateKey> TeamsOfThePortfolioWaitingToRefresh(int portfolioId)
+        /// <summary>
+        /// Everything whose result this forecast reads: the teams delivering the portfolio, and the
+        /// portfolio's own Features refresh. The Features refresh is what fetches the features being
+        /// forecast, so a forecast that runs while it is mid-fetch is forecasting over half a feature set.
+        ///
+        /// Work that has started counts as well as work still waiting, because any of these can be running
+        /// in another lane at the very moment this is asked, and until its run has ended its writes are not
+        /// in.
+        /// </summary>
+        private List<UpdateKey> TheRefreshesThisForecastWaitsFor(int portfolioId)
         {
             using var scope = scopeFactory.CreateScope();
             var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId);
@@ -127,11 +143,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return [];
             }
 
-            var teamKeys = portfolio.Teams
+            var feedingThisForecast = portfolio.Teams
                 .Select(team => new UpdateKey(UpdateType.Team, team.Id))
+                .Append(new UpdateKey(UpdateType.Features, portfolioId))
                 .ToList();
 
-            return updateStatusStore.HasQueuedWork(teamKeys) ? teamKeys : [];
+            return updateStatusStore.HasActiveWork(feedingThisForecast) ? feedingThisForecast : [];
         }
 
         private static UpdateKey ForecastKeyFor(int portfolioId)

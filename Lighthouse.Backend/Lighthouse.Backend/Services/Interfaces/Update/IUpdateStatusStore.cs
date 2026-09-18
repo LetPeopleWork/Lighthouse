@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         ///
         /// Whether work has started is not something a caller can read and then act on: the queue's reader is
         /// starting work at the same time, and between the reading and the acting it can have started. Marking
-        /// a running refresh cancelled takes it out of <see cref="HasActiveWork"/> while it is still talking to
+        /// a running refresh cancelled takes it out of <see cref="HasActiveWork()"/> while it is still talking to
         /// a tracker, and everything that waits for this instance to go idle stops waiting - including the gate
         /// that holds database maintenance off. So the reading and the acting are one step, here.
         /// </summary>
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         void Remove(UpdateKey key);
 
         /// <summary>
-        /// Everything currently admitted, whichever replica admitted it. <see cref="HasActiveWork"/> answers
+        /// Everything currently admitted, whichever replica admitted it. <see cref="HasActiveWork()"/> answers
         /// whether anything is happening; this answers what. Terminal work is not listed, because it is removed
         /// from the store as its run ends - what comes back is work an operator can still do something about.
         /// </summary>
@@ -43,11 +43,25 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         bool HasActiveWork();
 
         /// <summary>
+        /// The same question as <see cref="HasActiveWork()"/> - is any of this admitted and not yet
+        /// finished, whether it is waiting to start or already running - asked only about the keys the
+        /// caller names. The fleet-wide answer is true whenever anything anywhere is busy, which would
+        /// park a caller behind updates that have nothing to do with it.
+        ///
+        /// This is what a caller asks when it needs to know whether the work feeding it has settled.
+        /// </summary>
+        bool HasActiveWork(IReadOnlyCollection<UpdateKey> keys);
+
+        /// <summary>
         /// Answers whether any of the given keys is admitted but has not started running yet. Work that is
-        /// already running deliberately does not count: a caller reacting to its own update would otherwise
-        /// find its own key still running and wait for itself forever. Scoped to the keys the caller names,
-        /// because <see cref="HasActiveWork"/> is true whenever anything anywhere is busy and would park a
-        /// caller behind updates that have nothing to do with it.
+        /// already running deliberately does not count.
+        ///
+        /// That exclusion is right for "is one of these already owed" - work that has not started has read
+        /// nothing yet, so it will see whatever the caller just wrote, and asking for a second run of it
+        /// would only move a result the first one is about to show. It is wrong for "has the work feeding
+        /// me finished", because work in another lane can be running at the same moment as the caller and
+        /// its writes are not in yet. That question takes
+        /// <see cref="HasActiveWork(IReadOnlyCollection{UpdateKey})"/> instead.
         /// </summary>
         bool HasQueuedWork(IReadOnlyCollection<UpdateKey> keys);
     }

@@ -4,11 +4,10 @@
     using Lighthouse.Backend.Services.Interfaces.Update;
     using Microsoft.AspNetCore.SignalR;
     using System.Collections.Concurrent;
-    using System.Threading.Channels;
 
     public class UpdateQueueService : IUpdateQueueService, IDisposable
     {
-        private readonly Channel<Func<Task>> queue = Channel.CreateUnbounded<Func<Task>>();
+        private readonly UpdateLanes lanes;
         private readonly ILogger<UpdateQueueService> logger;
         private readonly IHubContext<UpdateNotificationHub> hubContext;
         private readonly IUpdateStatusStore statusStore;
@@ -40,7 +39,6 @@
         /// </summary>
         private readonly AdmittedCancellations cancellations = new();
         private readonly DatabaseMaintenanceGate maintenanceGate;
-        private readonly Task processingTask;
 
         public UpdateQueueService(
             ILogger<UpdateQueueService> logger,
@@ -67,7 +65,10 @@
             // Subscribed here rather than on demand because the ask arrives from whichever replica took the
             // operator's click, which is usually not this one.
             cancellationSubscription = cancellationNotifier.Subscribe(StopItAndSaySoIfItHasNotStarted);
-            processingTask = StartProcessingQueue();
+
+            // Constructed here rather than injected because this is what owns their lifetime: it closes
+            // them on shutdown and is the only thing that puts work in them.
+            lanes = new UpdateLanes(logger);
         }
 
         private void ReleaseAwaiter(UpdateKey updateKey)
@@ -137,11 +138,9 @@
 
         public async Task DrainAsync(CancellationToken cancellationToken = default)
         {
-            queue.Writer.TryComplete();
-
             try
             {
-                await processingTask.WaitAsync(cancellationToken);
+                await lanes.DrainAsync(cancellationToken);
             }
             catch (OperationCanceledException ex)
             {
@@ -181,7 +180,7 @@
 
             var round = RoundForNewWork();
 
-            if (!queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, updateTask, updateStatus, round)))
+            if (!lanes.WriteTo(updateKey, () => RunUpdateAsync(updateKey, updateTask, updateStatus, round)))
             {
                 AbandonUnqueuedWork(updateKey, round);
             }
@@ -226,7 +225,7 @@
 
             var round = RoundForNewWork();
 
-            if (!queue.Writer.TryWrite(() => RunAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, round)))
+            if (!lanes.WriteTo(updateKey, () => RunAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, round)))
             {
                 AbandonUnqueuedWork(updateKey, round);
                 awaiters.TryRemove(updateKey, out _);
@@ -306,9 +305,9 @@
             return runningRound;
         }
 
-        public void HoldUntilQueuedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
+        public void HoldUntilNamedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onNamedWorkCleared)
         {
-            var displaced = TakeOverTheHoldFor(heldFor, waitingOn, onQueuedWorkCleared);
+            var displaced = TakeOverTheHoldFor(heldFor, waitingOn, onNamedWorkCleared);
 
             // The hold that was replaced is gone from the register without ever being let go, so the place
             // it was keeping in its refresh round has to go back now. A round still counting work that no
@@ -316,17 +315,17 @@
             displaced?.Round.Leave();
 
             // The work being waited on can finish between the caller looking at it and this line. Releases
-            // only ever fire when something leaves the queue, so nothing would come along afterwards to let
-            // this one out - check once more now that it is actually held.
+            // only ever fire as a run ends, so nothing would come along afterwards to let this one out -
+            // check once more now that it is actually held.
             ReleaseClearedHolds();
         }
 
-        private HeldUpdate? TakeOverTheHoldFor(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
+        private HeldUpdate? TakeOverTheHoldFor(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onNamedWorkCleared)
         {
             lock (holdBookkeeping)
             {
                 var displaced = heldUpdates.GetValueOrDefault(heldFor);
-                heldUpdates[heldFor] = new HeldUpdate(waitingOn, onQueuedWorkCleared, RoundForNewWork());
+                heldUpdates[heldFor] = new HeldUpdate(waitingOn, onNamedWorkCleared, RoundForNewWork());
 
                 return displaced;
             }
@@ -356,14 +355,17 @@
             {
                 foreach (var heldFor in heldUpdates.Keys)
                 {
-                    if (!heldUpdates.TryGetValue(heldFor, out var held) || statusStore.HasQueuedWork(held.WaitingOn))
+                    if (!heldUpdates.TryGetValue(heldFor, out var held) || statusStore.HasActiveWork(held.WaitingOn))
                     {
                         continue;
                     }
 
                     if (heldUpdates.TryRemove(heldFor, out var released))
                     {
-                        logger.LogInformation("Releasing the held update for {UpdateType} with ID {Id}; the work it waited for has left the queue.", heldFor.UpdateType, heldFor.Id);
+                        // Debug rather than information: a hold is now taken on every portfolio refresh, so
+                        // at information this would put a line about the queue's own bookkeeping into the
+                        // log of every routine refresh, between the two lines that say what was actually done.
+                        logger.LogDebug("Releasing the held update for {UpdateType} with ID {Id}; the work it waited for has finished.", heldFor.UpdateType, heldFor.Id);
                         cleared.Add(released);
                     }
                 }
@@ -562,7 +564,7 @@
 
             var round = RoundForNewWork();
 
-            if (queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, rerun, updateStatus, round)))
+            if (lanes.WriteTo(updateKey, () => RunUpdateAsync(updateKey, rerun, updateStatus, round)))
             {
                 logger.LogInformation("Running the coalesced follow-up update for {UpdateType} with ID {Id}.", updateKey.UpdateType, updateKey.Id);
                 return true;
@@ -642,28 +644,6 @@
             }
         }
 
-        private Task StartProcessingQueue()
-        {
-            // The loop below is the queue itself, not an update: it has to outlive every token any update
-            // carries, or cancelling one refresh would stop the instance processing any others.
-            return Task.Run(async () =>
-            {
-                // The reader outlives any one update, so it takes no update's token. It ends when the
-                // channel completes, which is what shutdown does.
-                await foreach (var updateTask in queue.Reader.ReadAllAsync(CancellationToken.None))
-                {
-                    try
-                    {
-                        await updateTask();
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Error processing update task");
-                    }
-                }
-            }, CancellationToken.None);
-        }
-
         private async Task NotifyListeners(UpdateKey updateKey, UpdateStatus status)
         {
             // Telling the browser how a run ended is not part of the run. A cancelled update still owes its
@@ -686,6 +666,7 @@
                 completionSubscription.Dispose();
                 cancellationSubscription.Dispose();
                 cancellations.Dispose();
+                lanes.Dispose();
             }
         }
     }

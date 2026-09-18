@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Data;
+﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
@@ -444,20 +444,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         /// </summary>
         private async Task RunUpdate(Action<IServiceProvider> trigger)
         {
-            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-
             trigger(Factory.Services);
 
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            while (statusStore.HasActiveWork())
-            {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
-                }
+            var settled = await TheUpdateQueueSettling.SettlesWithin(Factory.Services, TimeSpan.FromSeconds(30));
 
-                await Task.Delay(20);
-            }
+            Assert.That(settled, Is.True, "The update queue did not settle within 30s - the refresh never completed.");
         }
 
         // --- Observation ---

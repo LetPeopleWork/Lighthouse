@@ -1,4 +1,4 @@
-using Lighthouse.Backend.API.DTO;
+﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
@@ -307,8 +307,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// </summary>
         private async Task RunUpdate(Action<IServiceProvider> trigger)
         {
-            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-
             // Host startup and fixture seeding log through the same sink; the line budget is a promise
             // about one update, so counting starts here. The same applies to what the tracker was asked
             // for and to the signals raised (Epic #5687 slice 02, where scenarios chain two refreshes).
@@ -319,16 +317,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
             trigger(Factory.Services);
 
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            while (statusStore.HasActiveWork())
-            {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue did not go idle within 30s — the refresh never completed.");
-                }
+            var settled = await TheUpdateQueueSettling.SettlesWithin(Factory.Services, TimeSpan.FromSeconds(30));
 
-                await Task.Delay(20);
-            }
+            Assert.That(settled, Is.True, "The update queue did not settle within 30s — the refresh never completed.");
         }
 
         // --- Observation ---

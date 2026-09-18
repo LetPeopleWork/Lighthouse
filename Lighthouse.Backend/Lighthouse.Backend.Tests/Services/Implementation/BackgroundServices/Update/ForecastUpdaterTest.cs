@@ -277,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
 
             updateStatusStoreMock
-                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
+                .Setup(x => x.HasActiveWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
                 .Returns(true);
 
             var subject = CreateSubject();
@@ -295,7 +295,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
 
             updateStatusStoreMock
-                .Setup(x => x.HasQueuedWork(It.IsAny<IReadOnlyCollection<UpdateKey>>()))
+                .Setup(x => x.HasActiveWork(It.IsAny<IReadOnlyCollection<UpdateKey>>()))
                 .Returns(false);
 
             var subject = CreateSubject();
@@ -320,44 +320,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         // A team announces that it finished refreshing from inside its own update run, so at the moment the
-        // forecast is asked for, that team's key still reads as running. It only ever goes back to queued
-        // after the run has ended, and then only when another refresh for it was folded into the first.
+        // forecast is asked for, that team's key still reads as running. The forecast waits for that run to
+        // end: with a lane each, the team's writes are not in until it does, and a forecast taken before
+        // them shows a date computed from data the refresh was in the middle of replacing.
         [Test]
-        public void Update_ShouldForecast_WhenTheTeamThatAskedForItIsStillRunningItsOwnRefresh()
+        public async Task Update_ShouldWaitForTheTeamThatAskedForIt_AndForecastOnceItsOwnRefreshHasEnded()
         {
             var team = new Team { Name = "Refreshing Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
 
-            RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+            using var updateQueue = CreateRealUpdateQueue();
 
-            var subject = CreateSubject(inProcessUpdateStatusStore);
+            var theTeamHasFinished = new TaskCompletionSource();
+            updateQueue.EnqueueUpdate(UpdateType.Team, team.Id, _ => theTeamHasFinished.Task);
 
+            var subject = CreateSubject(inProcessUpdateStatusStore, updateQueue);
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Never);
+
+            theTeamHasFinished.SetResult();
+
+            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once));
         }
 
         [Test]
-        public void Update_ShouldForecast_WhenTheQueuedWorkBelongsToTeamsThatDoNotWorkOnThePortfolio()
+        public async Task Update_ShouldForecast_WhenTheQueuedWorkBelongsToTeamsThatDoNotWorkOnThePortfolio()
         {
             var team = new Team { Name = "Refreshing Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
 
-            RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+            using var updateQueue = CreateRealUpdateQueue();
+
+            var theTeamHasFinished = new TaskCompletionSource();
+            updateQueue.EnqueueUpdate(UpdateType.Team, team.Id, _ => theTeamHasFinished.Task);
             RecordUpdate(UpdateType.Team, TeamOutsideThePortfolioId, UpdateProgress.Queued);
             RecordUpdate(UpdateType.Features, PortfolioRefreshedElsewhereId, UpdateProgress.Queued);
 
-            var subject = CreateSubject(inProcessUpdateStatusStore);
-
+            var subject = CreateSubject(inProcessUpdateStatusStore, updateQueue);
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+            theTeamHasFinished.SetResult();
+
+            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once));
         }
 
         [Test]
-        public void Update_ShouldForecastBothPortfolios_WhenTheSameTeamWorksOnTwoOfThem()
+        public async Task Update_ShouldForecastBothPortfolios_WhenTheSameTeamWorksOnTwoOfThem()
         {
             var team = new Team { Name = "Shared Team", Id = 42 };
             var firstPortfolio = CreatePortfolioWorkedOnBy(team);
@@ -365,15 +376,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             portfolioRepositoryMock.Setup(x => x.GetById(firstPortfolio.Id)).Returns(firstPortfolio);
             portfolioRepositoryMock.Setup(x => x.GetById(secondPortfolio.Id)).Returns(secondPortfolio);
 
-            RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+            using var updateQueue = CreateRealUpdateQueue();
 
-            var subject = CreateSubject(inProcessUpdateStatusStore);
+            var theTeamHasFinished = new TaskCompletionSource();
+            updateQueue.EnqueueUpdate(UpdateType.Team, team.Id, _ => theTeamHasFinished.Task);
 
+            var subject = CreateSubject(inProcessUpdateStatusStore, updateQueue);
             subject.TriggerUpdate(firstPortfolio.Id);
             subject.TriggerUpdate(secondPortfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(firstPortfolio), Times.Once);
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(secondPortfolio), Times.Once);
+            theTeamHasFinished.SetResult();
+
+            await WaitUntilVerified(() =>
+            {
+                forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(firstPortfolio), Times.Once);
+                forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(secondPortfolio), Times.Once);
+            });
         }
 
         [Test]
@@ -425,7 +443,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
 
             updateStatusStoreMock
-                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
+                .Setup(x => x.HasActiveWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
                 .Returns(true);
 
             var subject = CreateSubject();

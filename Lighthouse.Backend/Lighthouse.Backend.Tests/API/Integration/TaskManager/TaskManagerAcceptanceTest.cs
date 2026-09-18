@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Data;
+﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
@@ -216,17 +216,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// Waits until the queue reports nothing active, bounded so a wedged fixture fails rather than
         /// hangs. Teardown needs it: a refresh still running while the database beneath it is deleted is
         /// what it exists to prevent.
+        ///
+        /// Work a refresh is holding back is deliberately not in the store, so the store alone reads idle
+        /// while a forecast is still owed - and a portfolio refresh now holds one every time. A forecast
+        /// let go after this returns runs against a host that is being disposed and a database that is
+        /// being deleted, and it is recorded as though whichever test runs next had asked for it. So the
+        /// holding pen is asked too, and idle has to hold still rather than be read once, because there is
+        /// a moment where released work has left the pen and has not yet been admitted.
         /// </summary>
-        protected async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
+        protected Task<bool> TheQueueGoesIdle()
+            => TheUpdateQueueSettling.SettlesWithin(Factory.Services, PatienceForTheQueueToSettle);
 
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-        }
+        protected static TimeSpan PatienceForTheQueueToSettle => TimeSpan.FromSeconds(30);
 
         protected int SeedConnection(WorkTrackingSystems system = WorkTrackingSystems.Jira)
         {
@@ -313,8 +314,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// </summary>
         protected async Task RunUpdate(Action<IServiceProvider> trigger)
         {
-            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-
             // Host startup and fixture seeding push and log through the same seams; every promise here is
             // about one refresh, so observation starts at the trigger.
             TheBrowserWasTold.Clear();
@@ -323,17 +322,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
             trigger(Factory.Services);
 
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            while (statusStore.HasActiveWork())
-            {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue did not go idle within 30s — the refresh never finished. "
-                        + $"The browser was told: {TheBrowserWasTold.Describe()}");
-                }
+            var settled = await TheQueueGoesIdle();
 
-                await Task.Delay(20);
-            }
+            Assert.That(settled, Is.True,
+                "The update queue did not settle within 30s — the refresh never finished. "
+                + $"The browser was told: {TheBrowserWasTold.Describe()}");
 
             // The terminal push is raised after the key leaves the store, so an idle queue is not yet
             // proof the browser has been told. Give the push the moment it needs to land.

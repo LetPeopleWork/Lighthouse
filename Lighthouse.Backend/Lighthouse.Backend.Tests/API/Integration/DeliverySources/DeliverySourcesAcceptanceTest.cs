@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -273,20 +273,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// </summary>
         protected async Task ThePortfolioRefreshRuns(int portfolioId)
         {
-            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-
             Factory.Services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolioId);
 
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            while (statusStore.HasActiveWork())
-            {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
-                }
+            var settled = await TheUpdateQueueSettling.SettlesWithin(Factory.Services, TimeSpan.FromSeconds(30));
 
-                await Task.Delay(20);
-            }
+            Assert.That(settled, Is.True, "The update queue did not settle within 30s - the refresh never completed.");
         }
 
         protected void TheInstanceIsNotLicensedForPremium()

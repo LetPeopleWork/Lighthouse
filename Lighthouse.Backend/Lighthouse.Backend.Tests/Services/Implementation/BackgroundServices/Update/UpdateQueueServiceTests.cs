@@ -869,7 +869,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void HoldUntilQueuedWorkClears_ReleasedWorkQueuesNothing_GivesTheRoundItsPlaceBack()
+        public void HoldUntilNamedWorkClears_ReleasedWorkQueuesNothing_GivesTheRoundItsPlaceBack()
         {
             // A hold keeps a place in its refresh round for the work it is waiting to let go, and hands
             // that place over when it releases. If the released work then queues nothing after all -
@@ -885,7 +885,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var forecastKey = new UpdateKey(UpdateType.Forecasts, 61);
             updateStatuses[forecastKey] = new UpdateStatus { UpdateType = forecastKey.UpdateType, Id = forecastKey.Id, Status = UpdateProgress.InProgress };
 
-            subject.HoldUntilQueuedWorkClears(
+            subject.HoldUntilNamedWorkClears(
                 forecastKey,
                 [new UpdateKey(UpdateType.Team, 62)],
                 () => subject.EnqueueUpdate(forecastKey.UpdateType, forecastKey.Id, _ => Task.CompletedTask));
@@ -897,7 +897,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void HoldUntilQueuedWorkClears_ASecondHoldTakesOverTheSameKey_LeavesTheRoundTheDisplacedHoldKept()
+        public void HoldUntilNamedWorkClears_ASecondHoldTakesOverTheSameKey_LeavesTheRoundTheDisplacedHoldKept()
         {
             // A hold keeps a place in its refresh round open for the work it is waiting to let go. A second
             // hold for the same key takes the register entry over, and the one it replaced is gone without
@@ -915,10 +915,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             RecordQueueStatus(waitedOn, UpdateProgress.Queued);
 
             var displacedWasReleased = false;
-            subject.HoldUntilQueuedWorkClears(heldKey, [waitedOn], () => displacedWasReleased = true);
+            subject.HoldUntilNamedWorkClears(heldKey, [waitedOn], () => displacedWasReleased = true);
 
             RecordQueueStatus(waitedOn, UpdateProgress.Completed);
-            subject.HoldUntilQueuedWorkClears(heldKey, [waitedOn], () => { });
+            subject.HoldUntilNamedWorkClears(heldKey, [waitedOn], () => { });
 
             var wasTheLastOneOut = round.Leave();
 
@@ -932,7 +932,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public async Task HoldUntilQueuedWorkClears_TwoLanesReleaseOneSatisfiedHold_ReleasesItExactlyOnce()
+        public async Task HoldUntilNamedWorkClears_TwoLanesReleaseOneSatisfiedHold_ReleasesItExactlyOnce()
         {
             // Once updates run in more than one lane, two executions can park a hold on the same key at the
             // same moment, and two more can sweep for releases at the same moment. Whatever the order comes
@@ -950,10 +950,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             RecordQueueStatus(waitedOn, UpdateProgress.Queued);
 
             var timesReleased = 0;
-            await InTwoLanesAtOnce(_ => subject.HoldUntilQueuedWorkClears(heldKey, [waitedOn], () => Interlocked.Increment(ref timesReleased)));
+            await InTwoLanesAtOnce(_ => subject.HoldUntilNamedWorkClears(heldKey, [waitedOn], () => Interlocked.Increment(ref timesReleased)));
 
             RecordQueueStatus(waitedOn, UpdateProgress.Completed);
-            await InTwoLanesAtOnce(lane => subject.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Team, 75 + lane), [waitedOn], () => { }));
+            await InTwoLanesAtOnce(lane => subject.HoldUntilNamedWorkClears(new UpdateKey(UpdateType.Team, 75 + lane), [waitedOn], () => { }));
 
             var wasTheLastOneOut = round.Leave();
 
@@ -1101,12 +1101,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         /// Parks a hold that the next release sweep will let go: it waits on a key that is queued while the
         /// hold is taken and gone again by the time this returns.
         /// </summary>
-        private void HoldThatIsReadyToBeReleased(UpdateQueueService subject, Action onQueuedWorkCleared)
+        private void HoldThatIsReadyToBeReleased(UpdateQueueService subject, Action onNamedWorkCleared)
         {
             var waitedOn = new UpdateKey(UpdateType.Team, 68);
             updateStatuses[waitedOn] = new UpdateStatus { UpdateType = waitedOn.UpdateType, Id = waitedOn.Id, Status = UpdateProgress.Queued };
 
-            subject.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Forecasts, 69), [waitedOn], onQueuedWorkCleared);
+            subject.HoldUntilNamedWorkClears(new UpdateKey(UpdateType.Forecasts, 69), [waitedOn], onNamedWorkCleared);
 
             updateStatuses.TryRemove(waitedOn, out _);
         }

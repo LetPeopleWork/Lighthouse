@@ -1,6 +1,9 @@
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using NUnit.Framework;
 using System.Text.Json;
 
@@ -58,6 +61,73 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
             => AdmitDirectly(new UpdateKey(UpdateType.Team, team.Id));
 
         /// <summary>
+        /// A portfolio whose one feature is delivered by that team, which is what puts the team in the set
+        /// of refreshes a forecast for this portfolio waits for, and what makes the team's refresh ask for
+        /// one when it ends.
+        /// </summary>
+        private SeededPortfolio GivenAPortfolioDeliveredBy(SeededTeam team)
+        {
+            var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
+
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var feature = new Feature
+            {
+                Name = $"Feature {Guid.NewGuid():N}",
+                ReferenceId = "FTR-1",
+                Type = "Epic",
+                State = "In Progress",
+                StateCategory = StateCategories.Doing,
+                Order = "1",
+            };
+
+            feature.Portfolios.Add(sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolio.Id)!);
+            feature.FeatureWork.Add(new FeatureWork(sp.GetRequiredService<IRepository<Team>>().GetById(team.Id)!, 3, 3, feature));
+
+            var features = sp.GetRequiredService<IRepository<Feature>>();
+            features.Add(feature);
+            features.Save().GetAwaiter().GetResult();
+
+            return portfolio;
+        }
+
+        /// <summary>
+        /// Only the portfolio's half of the tracker is held. The overlap this scenario needs is a team
+        /// refresh that starts, finishes and asks for its forecast while the portfolio refresh feeding the
+        /// same forecast is still fetching — which is unreachable while one gate holds both halves.
+        /// </summary>
+        private void GivenTheTrackerHoldsOnlyThePortfolioRefreshOpenUntilWeSaySo()
+        {
+            var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            thePortfolioRefreshMayFinish = gate;
+
+            ConnectorMock
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+
+            ConnectorMock
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Returns(async () =>
+                {
+                    await gate.Task;
+                    return [];
+                });
+        }
+
+        private TaskCompletionSource? thePortfolioRefreshMayFinish;
+
+        /// <summary>
+        /// Runs before the harness tears the host down. A scenario that failed before releasing the gate
+        /// would otherwise leave a portfolio refresh fetching against a database about to be deleted.
+        /// </summary>
+        [TearDown]
+        public void LetThePortfolioRefreshFinish()
+        {
+            thePortfolioRefreshMayFinish?.TrySetResult();
+        }
+
+        /// <summary>
         /// A removal asked for the way the delete path asks for one — through the queue, as its own
         /// update type. The work itself is inert: what is under test is which lane the removal lands
         /// in, and that is decided from the update type at the moment it is admitted.
@@ -89,6 +159,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
 
         private Task WhenThatPortfolioRefreshRunsToTheEnd(SeededPortfolio portfolio)
             => ThePortfolioRefreshRuns(portfolio.Id);
+
+        /// <summary>
+        /// Started and run out, in its own lane, while the portfolio refresh beside it is still fetching.
+        /// Waited for through the browser push rather than the store, because the store drops the key as
+        /// the run ends and the forecast the team asks for is asked for inside that run.
+        /// </summary>
+        private async Task WhenARefreshOfThatTeamRunsToTheEndBesideIt(SeededTeam team)
+        {
+            Factory.Services.GetRequiredService<ITeamUpdater>().TriggerUpdate(team.Id);
+
+            var finished = await TheBrowserIsToldItReached(KeyOf(team), UpdateProgress.Completed);
+
+            Assert.That(finished, Is.True,
+                "The team refresh has to have finished while the portfolio refresh is still going, or the two "
+                + $"never overlapped and the scenario has nothing to observe. The browser was told: {TheBrowserWasTold.Describe()}");
+        }
 
         // --- Then ---
 
@@ -184,6 +270,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
                 + "they can both be in it at once. Two lines is one refresh read as two; none is a round that "
                 + "finished without anybody speaking for it, which is also how everything it staged gets "
                 + $"dropped without a word. Lines seen: {string.Join(" | ", lines)}");
+        }
+
+        /// <summary>
+        /// Counted on the production seam rather than on a double: a forecast execution writes one refresh
+        /// history row about itself, so this counts runs that actually happened and cannot be satisfied by
+        /// something that was never called. The gate is released first and the queue is given until it
+        /// settles, because a second forecast that has not run yet is the failure this is looking for.
+        /// </summary>
+        private async Task ThenThatPortfolioIsForecastExactlyOnce(SeededPortfolio portfolio)
+        {
+            LetThePortfolioRefreshFinish();
+            await TheQueueGoesIdle();
+
+            var history = await TheRefreshHistory();
+            var forecasts = history
+                .Where(row => Text(row, "type") == nameof(RefreshType.Forecast) && Number(row, "entityId") == portfolio.Id)
+                .ToList();
+
+            Assert.That(forecasts, Has.Count.EqualTo(1),
+                "The simulation is not seeded, so a second forecast of the same portfolio moves the delivery date "
+                + "the first one just showed, and the operator has no way to tell which one to believe. None at all "
+                + "means the refresh that asked for one was dropped, and the portfolio keeps the date it had until "
+                + $"the next periodic refresh. Rows recorded: {Describe(history)}");
         }
 
         private async Task ThenThatPortfolioRefreshStops(SeededPortfolio portfolio)
