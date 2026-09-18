@@ -1590,3 +1590,116 @@ them at DELIVER.
 patterns grepped over the seven new files: no hits. `TestCategory=story-5877-update-queue-lanes`: 2
 passed, 29 skipped, 0 failed, stable over three consecutive runs. `Architecture` plus
 `epic-5511-task-manager`: 275 passed, 0 failed.
+
+---
+
+## Wave: DESIGN / [REF] Amendment — forecast coalescing under lanes
+
+**Raised**: 2026-09-18, during DELIVER of step 01-04, by a red test in a different epic.
+**ADR**: [ADR-198](../../product/architecture/adr-198-a-forecast-waits-for-every-refresh-that-feeds-it.md).
+**Amends**: the Component Decomposition and Reuse Analysis rows above, and the `out_of_scope` entry
+*"Any change to `IUpdateStatusStore` or either of its adapters"* in `deliver/roadmap.json`. The DESIGN
+and DISTILL sections above are left as written; this section is where the change is recorded.
+
+### What went red, and why it is a decision rather than a fix
+
+`UpdateLanes` is built and green on its own eight scenarios. It reds two scenarios in
+`API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs` —
+`A_portfolio_refresh_overlapping_a_team_refresh_settles_on_one_delivery_date` and
+`Refreshing_everything_announces_a_new_delivery_date_once_for_each_portfolio` — because
+`UpdateForecastsForPortfolio` runs **twice** for one portfolio in one round, and the simulation is
+unseeded, so the second run moves the delivery date the first one just showed.
+
+The cause is intrinsic to the lanes, not to how they were written. Forecast de-duplication rests on
+`IUpdateStatusStore.HasQueuedWork`, which counts `Queued` only, and both the port and `ForecastUpdater`
+document that exclusion as deliberate. Under one lane the reasoning was complete: a Team refresh and a
+Portfolio refresh could never run at the same time, so whichever asked second always found the forecast
+still `Queued` and stood down. With a lane each, the Portfolio's ask finds the team `InProgress` rather
+than `Queued`, does not wait for it, and starts the forecast; the Team's ask then finds nothing to dedupe
+against and starts a second one.
+
+By the *existing documented rule* that second forecast is arguably right — the comment says a running
+forecast does not count because it read its data before this request existed, and under lanes that is
+literally true. So the defect is not the second forecast. **It is that the first forecast started before
+its inputs had settled.** Folding `Forecasts` into the Portfolio lane does not fix it and is already
+rejected in ADR-195, on a separate and still-valid ground.
+
+### The decision
+
+**A forecast waits for every refresh that feeds it — the teams of the portfolio *and* the portfolio's own
+Features refresh — counting work that is running as well as work that is queued. The dedup question
+("is a forecast for this portfolio already owed") keeps `Queued`-only, unchanged.**
+
+Nobody excludes themselves from the wait, deliberately. Both run paths remove a key from the store
+*before* they sweep for holds (`RunUpdateAsync` `:507` then `:521`; `RunAwaitableUpdateAsync` `:616` then
+`:618`), so a hold naming the asker releases when the asker's own run ends — a bounded wait, not a
+forever one. Not excluding the asker is what buys the guarantee: **every in-execution asker is itself a
+member of the set it waits on**, so no hold can have cleared while another asker is still asking, so the
+first asker holds and every later one finds `IsHeld` and stands down. One forecast per overlapping group,
+structurally, with no race to win.
+
+Full context, the four rejected alternatives (fold the lane, widen the dedup instead, coalesce on round
+identity, an ambient current-key context) and the consequences are in ADR-198.
+
+### Component delta
+
+Against the Component Decomposition table above.
+
+| Kind | Component | Change |
+|---|---|---|
+| **EXTEND (backend)** | `IUpdateStatusStore` | **One new member**, an overload of the predicate it already answers fleet-wide: `bool HasActiveWork(IReadOnlyCollection<UpdateKey> keys)` — admitted and not yet terminal, over the named keys. `HasQueuedWork` keeps its name, its meaning and its narrower question. Supersedes this port's **REUSE AS-IS** row. |
+| **EXTEND (backend)** | `InProcessUpdateStatusStore` | The `keys.Any(TryGetValue …)` shape of `HasQueuedWork`, status test widened to `is Queued or InProgress`. |
+| **EXTEND (backend)** | `RedisUpdateStatusStore` | The same single batched `HashGet(StatusHashKey, fields)` as `HasQueuedWork`, including its empty-`keys` guard, same widened test. **No Lua script changes** — ADR-182's freeze holds by construction, and `RedisUpdateStatusScriptFreezeTest` is untouched. |
+| **EXTEND (backend)** | `ForecastUpdater` | The wait set becomes `{teams of P} ∪ {Features_P}` and is tested with the new scoped predicate; the released-hold collision re-check likewise, plus the forecast key when it is *active* rather than merely queued. `AForecastForThisPortfolioIsAlreadyOwed` unchanged. |
+| **EXTEND (backend)** | `UpdateQueueService` + `IUpdateQueueService` | `TakeHoldsWhoseWaitHasCleared` asks the same question the hold was registered with, so it uses the scoped `HasActiveWork`. `HoldUntilQueuedWorkClears` is renamed **`HoldUntilNamedWorkClears`**: leaving `Queued` in the name would be a signature contradicting the code. Not a frozen member — `ScalabilitySubstrateSeamArchUnitTest` freezes `EnqueueUpdate`, `EnqueueAndAwaitAsync` and `DrainAsync` only. **No new constructor parameter**; the constructor stays at 7 and Sonar S107 caps it there. |
+| **NEW (test)** | `Tests/Architecture/ForecastTriggerCallSiteArchUnitTest.cs` | Source scanner in the shape of `UpdateCancellationContextWriterArchUnitTest`: the only production files calling `TriggerUpdate` on an `IForecastUpdater` are `PortfolioUpdater.cs` and `TeamDataRefreshedForecastTriggerHandler.cs`, plus `ForecastUpdater.cs` itself, whose `base.TriggerUpdate` is the admission call rather than a request. A third caller fails the build rather than silently breaking the invariant. An ArchUnitNET dependency rule cannot express it — `ForecastController` and both rank handlers legitimately depend on `IForecastUpdater` for `TriggerImmediateUpdate`. |
+| **REUSE AS-IS** | `WriteBackRound`, `WriteBackRoundContext`, `WriteBackCollector`, `UpdateLanes`, `UpdateLane` + mapping, `UpdateController`, `AdmittedWorkOrdering`, `IUpdateExecutionLock` | Untouched. The round arithmetic is unchanged: a hold joins the round in the enqueue's place and `ReleaseIntoItsRound` hands that place on. |
+| **DELETE** | — | Nothing. |
+
+**Contract shapes**, extending the table above:
+
+| Component | Shape | Declared universe | Assertion mechanism |
+|---|---|---|---|
+| `IUpdateStatusStore.HasActiveWork(keys)` | **pure query** — reads the ordinal, writes nothing | none | Both adapters answered against a real Redis container in `UpdateStatusStoreContainerTests`, every state combination compared |
+| `ForecastUpdater`'s wait set | **pure function** of `(portfolio, store answer)` | none | Unit tests over the four in-execution shapes; the invariant pinned by the call-site scanner |
+| The hold register | bounded-change | `heldUpdates` and the rounds its entries hold, unchanged from 01-02 | Release asserted against a key that is `InProgress` (must not release) and against the same key once finished (must release) |
+
+### What step 01-04b must do
+
+`deliver/roadmap.json` gains step **01-04b**, depending on `01-04`. It must leave the tree fully green:
+01-04's five scenarios **and** epic 5792's two. Its criteria and implementation notes carry the detail;
+the shape of the work is:
+
+1. Add the scoped `HasActiveWork` overload to `IUpdateStatusStore` and both adapters, amending
+   `HasQueuedWork`'s doc comment to say — in plain language, without citing this document — where its
+   `Queued`-only exclusion stops being sufficient.
+2. Widen `ForecastUpdater`'s wait set to include the portfolio's own Features key and to count running
+   work; leave the dedup alone; widen the collision re-check.
+3. Move the hold's release predicate with it, and rename `HoldUntilQueuedWorkClears`.
+4. Rewrite `ForecastUpdaterTest.Update_ShouldForecast_WhenTheTeamThatAskedForItIsStillRunningItsOwnRefresh`
+   to state the new truth — a team that asks while still running is waited for, and the forecast runs
+   exactly once its run ends — and repair the two sibling tests that record a team as `InProgress` as
+   scaffolding rather than as their subject.
+5. Add the acceptance scenario that defends the promise **where it is now at risk**:
+   `A_portfolio_refresh_and_a_team_refresh_in_different_lanes_still_produce_one_forecast` in
+   `API/Integration/UpdateQueueLanes/Slice01TeamsKeepMovingScenarios.cs`. Today "one forecast per round
+   per portfolio" is pinned only by epic 5792's suite, which is not where the lanes are.
+6. Add the call-site scanner that keeps the invariant true as the code grows.
+7. Fix `TaskManagerAcceptanceTest.TheQueueGoesIdle` (`:220`), which waits on `store.HasActiveWork()` alone.
+   A held forecast is not in the store, so from this step onwards the queue reads idle while a forecast is
+   still owed — every portfolio refresh now holds one where before it admitted one — and the teardown
+   deletes the database underneath it. That does not fail the test that caused it; it fails the *next*
+   one, recorded as though that test had asked for the forecast. The epic-5792 harness already met this
+   and solved it (`WaitUntilTheQueueStaysIdle`: active-or-held, over consecutive idle readings); the fix
+   belongs in the base harness, where "idle" is defined and which eight suites inherit.
+
+### Not done, and why
+
+- **`AbandonUnqueuedWork` still removes a key without sweeping for holds.** A hold whose wait names work
+  abandoned at shutdown therefore never releases. Pre-existing, shutdown-only, and harmless: the process
+  is going away, released work could not be enqueued into a closed lane anyway, and `DrainAsync` never
+  waited for a held forecast. Recorded so its absence is not read as an oversight.
+- **No filtering member on the store.** Nothing needs *which* keys are still active; `Count > 0` is the
+  only question asked, and a boolean is one round trip where a filter invites a per-key one.
+- **KPI and slice-02 go/no-go unchanged.** This amendment changes nothing about the reported starvation,
+  the wall-time bound, or what slice 01 is measured on.
