@@ -31,6 +31,7 @@ primary_jobs:
   - job-lead-annotate-what-happened-to-a-delivery  # epic-5698-deliveries-as-durable-records (2026-08-21, #5639): dated, attributed notes on a Delivery
   - job-lead-reach-the-metrics-window-i-mean-in-one-click  # story-5914-metrics-time-horizon-presets (2026-09-08, #5914): named metrics windows in one click, no date arithmetic
   - job-lead-compare-this-period-against-the-one-before  # story-5914-metrics-time-horizon-presets (2026-09-08, #5914): step the same-length window back a period and re-read the same widgets
+  - job-lead-size-features-from-real-children-not-a-default  # parent-from-issue-links (2026-09-18): features sized by their real children, not the Portfolio default, when the hierarchy lives in issue links
 
 goals:
   - Identify which workflow state(s) consume the most of the team's collective time over a

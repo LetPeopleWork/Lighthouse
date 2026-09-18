@@ -7574,3 +7574,107 @@ user could otherwise catch the feature lying about.
 
 ADR: `adr-189-metrics-window-hook-and-revision-keyed-debounce.md`.
 Feature delta: `docs/feature/story-5914-metrics-time-horizon-presets/feature-delta.md`.
+
+---
+
+## Application Architecture — parent-from-issue-links (DESIGN delta)
+
+Feature: `parent-from-issue-links` — ADO Epic #6028, "Parentage from Jira Issue Links"
+Wave: DESIGN
+Date: 2026-09-18
+Architect: Morgan (Solution Architect), interaction mode PROPOSE
+Paradigm: unchanged — OOP (C# backend), functional-leaning React
+
+### Architectural Pattern
+
+Ports-and-adapters, extended. No new style, no new container, no new bounded context. The feature adds
+one member to an existing driven port and one tracker-neutral selector beside an existing one.
+
+### Key invariants introduced
+
+- **A connector declares what it can resolve; the core never infers it.** `GetParentLinkTypeNames` returns
+  the instance's issue link type names for Jira and an empty list everywhere else. No consuming site
+  branches on connector type. (ADR-193 §1, applying ADR-071's pattern.)
+- **Parent-source selection contains no tracker knowledge.** `ParentSourceSelector` answers "field value or
+  link type" without knowing which tracker asked. Jira's `issuelinks` walking stays in `IssueExtensions`.
+- **A parent is 0..1, so ambiguity is a refusal.** Two or more candidate keys yield no parent and one
+  warning naming them. There is no tie-break rule, and its absence is deliberate: a wrongly chosen parent
+  corrupts a Feature's size while looking like correct data.
+- **Direction is never configured.** The parent is the counterpart at the other end of a matching link,
+  whichever end the item sits on.
+- **Existing instances cannot change meaning.** Field lookup precedes link-type lookup, so a real field
+  whose name collides with a link type keeps resolving as a field.
+
+### Component Decomposition
+
+| Component | File | Change Type | Change Summary |
+|---|---|---|---|
+| `IWorkTrackingConnector` | `Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs` | EXTEND | Add `Task<IReadOnlyList<string>> GetParentLinkTypeNames(WorkTrackingSystemConnection connection)`, defaulted empty. No `CancellationToken` — it does not page (ADR-183). |
+| `JiraWorkTrackingConnector` | `.../Jira/JiraWorkTrackingConnector.cs` | EXTEND | Implement the port against `rest/api/latest/issueLinkType`; widen reference resolution so a link-type match is not reported missing (`:1058`, `:408`); route `CreateWorkItemFromJiraIssue:1570` through `ParentSourceSelector`; emit the aggregated ambiguity warning as a sibling of `ReportLinksThatMeantNothingHere:1222`. |
+| Azure DevOps / ServiceNow / Linear / CSV connectors | `.../AzureDevOps/`, `.../ServiceNow/`, `.../Linear/`, `.../Csv/` | EXTEND | Inherit the empty default. Zero code written per connector. |
+| `IssueExtensions` | `.../Jira/IssueExtensions.cs` | EXTEND | Counterpart-key walker beside `ExtractDependencyReferences`, reusing `IssueLinksOf` and `KeyOf`. The only new read is the outward end, which `KeyOf(link, end)` already parameterises. |
+| `ParentSourceSelector` | `Services/Implementation/WorkItems/ParentSourceSelector.cs` | CREATE NEW | The feature's one new selector. Justified against `DependencySourceSelector` in ADR-193 §2 — same shape, different knowledge (0..n skip-the-bad vs 0..1 refuse-the-ambiguous). |
+| `ParentResolution` | `Models/ParentResolution.cs` | CREATE NEW | Three-case result — none, one, ambiguous-with-candidates. A `string?` would express two of three and push the third back to the call site. |
+| `RefreshLog` | `Models/RefreshLog.cs` | EXTEND | One additive column, `AmbiguousParentCount`, appended below `Cancelled` per the file's stated append-only rule. Generated with the `CreateMigration` script across all providers. |
+| `SyncOutcome` | `Models/SyncOutcome.cs` | EXTEND | One more member so the count reaches the updaters the way `RecordsScanned` does. |
+| `TeamUpdater` / `PortfolioUpdater` | `.../BackgroundServices/Update/` | EXTEND | Carry the count into the `RefreshLog` row (`TeamUpdater.cs:98`, `PortfolioUpdater.cs:161`). |
+| Refresh-log model + Team page refresh summary | `Lighthouse.Frontend/src/...` | EXTEND | One optional scalar; render when non-zero in the instance's configurable term, silent at zero. |
+
+### Driving Ports
+
+None added. The feature rides the existing Additional Fields editor, the existing `ValidateConnection`
+route, the existing Parent Override Field dropdown on Team and Portfolio settings, and the refresh-log
+payload the Team page already fetches.
+
+### Driven Ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Work tracking read port | `JiraWorkTrackingConnector` | One new port member; four connectors inherit empty |
+| Jira REST — link types | `rest/api/latest/issueLinkType` | **New call**, once per connection per refresh, only when a reference failed to resolve as a field |
+| Jira REST — field list, issue search | existing calls | Unchanged. `*all` already carries `issuelinks`, so the fetch request count does not move |
+| Persistence | `LighthouseDbContext` | One additive expand-only column on `RefreshLog` |
+
+### Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `IssueExtensions.ExtractDependencyReferences` | `.../Jira/IssueExtensions.cs:61` | Walks `issuelinks`, matches a type name, collects counterpart keys | EXTEND | Same payload and helpers; the only new read is the outward end, already parameterised |
+| `IWorkTrackingConnector.GetPredefinedAdditionalFields` | `.../IWorkTrackingConnector.cs` | "What can this connector contribute that others cannot" | EXTEND (sibling member) | ADR-071 set the shape and the defaulting rule; a second mechanism would give one question two answers |
+| `GetCustomFieldMappings` / `GetMissingAdditionalFields` | `.../JiraWorkTrackingConnector.cs:1449`, `:1058` | Resolving a `Reference`, reporting what did not resolve | EXTEND | The miss path already yields an empty entry without throwing; this adds one fallback on it, not a parallel resolver |
+| `ReportLinksThatMeantNothingHere` | `.../JiraWorkTrackingConnector.cs:1222` | One aggregated warning per refresh naming what was seen | EXTEND pattern, CREATE sibling method | Opposite question — nothing matched vs too much matched — with different guards and different messages |
+| `RefreshLog` | `Models/RefreshLog.cs` | Per-refresh scalar facts | EXTEND | `Mode`, `RecordsScanned`, `RecordsFetched`, `Cancelled` are the precedents |
+| `DependencySourceSelector` | `.../Dependencies/DependencySourceSelector.cs` | "Which source does this owner read from?" | **CREATE NEW** (`ParentSourceSelector`) | The one CREATE NEW. Different business concept, per `CLAUDE.md`'s DRY-is-about-knowledge rule: 0..n Portfolio-only skip-the-bad vs 0..1 Team-and-Portfolio refuse-the-ambiguous. Full argument in ADR-193 §2 |
+| `WorkItemBase.ParentReferenceId` | `Models/WorkItemBase.cs` | Where a parent is stored | EXTEND (no change) | Only the source of the value moves; one writer per connector stays one writer |
+
+### Technology Stack
+
+No change. .NET 10 / ASP.NET Core, EF Core across the four providers, React 18 + TypeScript, NUnit 4.6 +
+Moq, Vitest + React Testing Library, Playwright. No new library of any kind — the link-type list rides the
+`FieldNames` lifetime that already exists.
+
+### ADR References (this feature)
+
+- **ADR-193** — parent source is a declared connector capability, selected outside the connector, and
+  refuses ambiguity rather than guessing. Covers the port member, the selector split, inferred direction,
+  the three-case result, the no-persisted-kind decision, and the warning surface.
+- **ADR-071** — the connector-capability port pattern this feature applies for the second time. Unchanged.
+- **ADR-157** — the adjacent decision for dependency references. Unchanged, and deliberately not shared.
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Capability declared, never inferred | NUnit: port returns link types for Jira, empty for the other four; no consuming site branches on connector type |
+| Selector stays tracker-neutral | ArchUnitNET: `ParentSourceSelector` has no `using` of any connector namespace |
+| Ambiguity never yields a parent | NUnit: two distinct candidates ⇒ empty `ParentReferenceId` and exactly one contribution to `AmbiguousParentCount` |
+| Both link directions resolve | NUnit over both wire shapes, plus the slice 02 spike against a live instance before any code |
+| No extra fetch request | NUnit: request count unchanged against the pre-change baseline |
+| Existing instances unaffected | NUnit: a real field whose name equals a link type name still resolves as a field |
+| Log budget respected | Logger-capturing test: one warning per refresh regardless of item count |
+
+### Known unverified
+
+Only a Jira Cloud instance is available (user, 2026-09-18). The Data Center behaviour of
+`rest/api/latest/issueLinkType` is **unverified**, and Data Center is where the reported configuration
+lives. Recorded as owed in the slice 01 brief rather than closed.

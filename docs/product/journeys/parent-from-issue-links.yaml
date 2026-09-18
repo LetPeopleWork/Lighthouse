@@ -1,0 +1,234 @@
+schema_version: 1
+feature_id: parent-from-issue-links
+updated: 2026-09-18
+note: >
+  No ADO Epic yet — this journey is the DISCUSS wave run on 2026-09-18 to decide whether one should
+  exist. Origin: Steve relaying a Jira Data Center instance whose portfolio-level items have no direct
+  children and no link to a level above. That instance records its hierarchy as issue links ("caused by",
+  "results in"), which Lighthouse does not read, so every feature shows the no-children warning and is
+  sized by the portfolio default.
+
+  Grounded in a code reality check taken before any decision below (JiraWorkTrackingConnector.cs,
+  IssueExtensions.cs, AzureDevOpsWorkTrackingConnector.cs, LinearWorkTrackingConnector.cs,
+  CsvWorkTrackingConnector.cs, AdditionalFieldDefinition.cs, IWorkItemQueryOwner.cs,
+  DependencySourceSelector.cs, WarningsIndicator.test.tsx). Full inventory in
+  docs/feature/parent-from-issue-links/feature-delta.md.
+
+  Three load-bearing finds the opening question did not carry.
+
+  (1) JIRA APPEARS TO SERVE EVERY LINK FROM BOTH ENDS. IssueExtensions.cs:53-57 states it as the reason
+  the dependency reader deliberately takes one end only — "taking both would record every dependency in
+  the instance a second time". If that holds here, an item returned by a team query already carries the
+  link a portfolio-level item created, and supporting both link directions needs one pass rather than a
+  second fetch and a child-to-parent index.
+
+  It is evidence, not proof, and the distinction is load-bearing enough to keep: the comment was written
+  about the dependency reader, where one end is ignored on purpose, and not to answer this question.
+  Slice 02 opens with a spike that settles it. Found AFTER the direction decision had been taken on the
+  opposite assumption, and recorded rather than quietly folded in — the decision stands either way, the
+  estimate does not.
+
+  (2) THE OVERRIDE FAILS SILENTLY TODAY, it does not merely fail. Point the existing Parent Override
+  Field at issuelinks and GetFieldValue's array branch (IssueExtensions.cs:22-47) hands each link object
+  to GetObjectDisplayValue, which finds neither "value" nor "name" on it and returns raw JSON. The work
+  item gets a JSON blob as its parent key, matches nothing, and reads exactly like an instance with no
+  hierarchy at all.
+
+  (3) A PARENT IS 0..1 AND THAT IS THE WHOLE DIFFERENCE from the dependency field override this feature
+  otherwise copies. epic-4365's D15 splits a 0..n list and skips a bad entry beside the good ones. There
+  is no "beside" for a parent: two candidates is a refusal, not a partial answer, because a silently
+  wrong parent moves a work item into a feature it does not belong to and corrupts that feature's size
+  while looking exactly like correct data.
+
+journeys:
+
+  - name: read-the-hierarchy-from-the-links-we-already-maintain
+    goal: >
+      A configuration administrator on an instance whose hierarchy lives in issue links can name that
+      link once per team and once per portfolio, in the same form they already use to name fields — and
+      the delivery lead reading the portfolio afterwards sees features sized by their real children
+      instead of by one number typed into settings.
+    persona: "config-admin (primary: registers the link type, selects it, reads the refusals);
+      delivery-lead-rte (reads the consequence — real feature sizes, real forecasts — and never opens
+      the setting); product-owner (same consequence at feature grain: the no-children warning leaves the
+      rows that have children)"
+    jobs:
+      - job-config-admin-name-the-link-our-hierarchy-lives-in
+      - job-lead-size-features-from-real-children-not-a-default
+
+    emotional_arc:
+      start: >
+        Written off — "every feature in the portfolio carries the same warning and the same default size,
+        so the warning tells me nothing and the forecast is arithmetic over a number I typed myself. The
+        hierarchy exists, in the tracker, in a link the tool does not read. There is one setting that
+        looks like it should help and it produces nothing I can interpret."
+      middle: >
+        Recognised — "I typed our link type where I type field names, and it validated. I picked it in
+        the same dropdown I have used before. I did not have to tell it which end of the link the parent
+        is on, and the two items it refused to parent told me exactly which candidates confused it."
+      end: >
+        Trusted — "features are sized by the work items our teams actually broke them into. When
+        something is not parented, it says so and says what it saw. I can quote a date in a review and
+        point at what it is made of."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How much configuration surface does this add?
+        decision: >
+          None. The administrator still opens team or portfolio settings and picks an Additional Field in
+          the Parent Override Field dropdown (user, 2026-09-18: "for the user it should still be an
+          override field. Lighthouse should simply handle the parenting for those link types
+          implicitly").
+
+          A separate parent-source control with an explicit direction sub-setting was offered and
+          rejected: it makes a rare configuration cost every administrator a more complicated form, and
+          it asks for a fact Lighthouse can work out for itself (D3).
+      - id: D2
+        question: Where does the administrator name the link type?
+        decision: >
+          In AdditionalFieldDefinition.Reference, which is free text and already resolved by lookup. It
+          gains a second place to look: a reference matching no field on the instance is matched against
+          the instance's issue link types, on the type's name, inward and outward labels.
+
+          Field lookup runs first and wins on collision, so nothing an existing instance has configured
+          can change meaning under it. The only obstacle today is that an unmatched reference is reported
+          as a missing field and blocks connection validation
+          (GetMissingAdditionalFields:1058-1066, ValidateConnection:408-416). Removing that is the whole
+          of slice 01.
+      - id: D3
+        question: Which end of the link is the parent?
+        decision: >
+          Inferred, never configured. For the named link type, take the counterpart key of every matching
+          link on this item — the outwardIssue where this item holds the inward end, the inwardIssue
+          where it holds the outward end. Whichever end the item sits on, the parent is the other.
+
+          This rests on find (1) above. An instance where the work item names its feature and one where
+          the feature names its work items are the same instance to this code, which is why the customer
+          does not have to tell us which they have before it can be built.
+
+          REVISION, recorded rather than folded in: the direction decision was taken on 2026-09-18 with
+          reverse support estimated as "two passes and a child-to-parent index, materially bigger". The
+          comment at IssueExtensions.cs:53-57, read afterwards, indicates one pass covers both.
+
+          That comment is evidence and not proof - it was written about the dependency reader, where one
+          end is ignored on purpose, and not to answer this question. Slice 02 opens with a spike that
+          settles it: fetch team-level items whose only link points at a portfolio-level item outside the
+          query, and see whether issuelinks comes back on them. The decision does not change either way;
+          its cost does, and only downward if the spike agrees.
+      - id: D4
+        question: What happens when more than one link matches?
+        decision: >
+          No parent, plus a warning naming the item and every candidate key. Never a first-one-wins, never
+          a nearest-match. Zero matches means no parent and no warning — an item outside the hierarchy is
+          not a fault. Duplicate links to the same key collapse to one; that is a tidy tracker, not an
+          ambiguity.
+
+          The reason refusing beats guessing: a wrong parent moves a work item into a feature it does not
+          belong to, corrupts that feature's size and every forecast drawn from it, and is
+          indistinguishable from correct data. A refusal is visible. A guess is not.
+
+          The most likely real misconfiguration is D7's: the same link type set on both the portfolio and
+          the team, so a feature sees one match per child. The refusal is what says so.
+      - id: D5
+        question: What does a premium licence gate?
+        decision: >
+          Nothing. Parent-child linkage is what gives a feature a size and a forecast a basis, so gating
+          it would mean "your features cannot be sized unless you pay" — the product refusing to read the
+          customer's data rather than withholding a capability. Same reasoning epic-4365's D9 applied to
+          the dependency field override.
+      - id: D6
+        question: Which connectors?
+        decision: >
+          Jira only, Data Center and Cloud. The setting stays on IWorkItemQueryOwner where it already
+          lives and the resolution rule sits where both grains reach it, but no other connector learns to
+          read link types here.
+
+          What the other four do is asserted rather than assumed. Azure DevOps, ServiceNow, Linear and
+          CSV resolve references against their own field lists, so a Jira link type already fails their
+          validation — correct behaviour arrived at by accident, and an accident nobody tests is a
+          regression waiting for the next person to touch field resolution. DependencySourceSelector's
+          header names this exact failure from experience: a setting "told to one of three, and the other
+          two accepted the setting and ignored it, which reads from the outside exactly like a field
+          everyone left empty".
+
+          Azure DevOps is the obvious second (it has the equivalent shape at
+          AzureDevOpsWorkTrackingConnector.cs:1241) and is deliberately out: nobody has asked, and it
+          doubles the connector and acceptance surface to serve a hypothetical.
+      - id: D7
+        question: What is the scope of one setting?
+        decision: >
+          One per team and one per portfolio, unchanged from the shipped shape. They name different links
+          — work item to feature, and feature to the level above — and were always separate settings.
+          Multiple overrides per team stays out (Benjamin to Steve, 2026-09-18): it brings a precedence
+          problem that D4 exists specifically to refuse.
+      - id: D8
+        question: Can a parent be declared inside Lighthouse?
+        decision: >
+          No. Inherited unchanged from epic-4365's D4 — the hierarchy is read from the tracker, always.
+          Nothing here writes a link, and to change a parent you change it in the tracker.
+      - id: D9
+        question: How does the administrator check what was read?
+        decision: >
+          The resolved key becomes the Additional Field's value on the work item, where an unresolved
+          reference stores an empty string today (PopulateAdditionalFieldValues:1595-1604). The cheapest
+          possible answer to the stated anxiety — "if I point it at the wrong link, does it quietly go
+          wrong?" — at the cost of one assignment.
+      - id: D10
+        question: What words does it use?
+        decision: >
+          The instance's own configurable terms, resolved through getTerm as everywhere else. A
+          customer's link type name is a literal value from their tracker and is quoted exactly as they
+          typed it, capitalisation included.
+
+    shared_artifacts:
+      - name: the parent reference
+        source_of_truth: >
+          WorkItemBase.ParentReferenceId, written by exactly one place per connector — for Jira,
+          CreateWorkItemFromJiraIssue (:1543-1577), which serves both grains because
+          CreateWorkItemsFromIssues (:285) and CreateFeaturesFromIssues (:1174) both call it. This
+          feature changes where that one method reads from, and adds no second writer.
+      - name: the link-type name
+        source_of_truth: >
+          AdditionalFieldDefinition.Reference on the connection, resolved at fetch time against the
+          instance's field list first and its issue link types second (D2). Never cached as a second
+          copy — the lookup is the only place that knows which of the two a reference turned out to be.
+      - name: whether a feature is sized by the default
+        source_of_truth: >
+          Feature.IsUsingDefaultFeatureSize, owned by WorkItemService.ExtrapolateNotBrokenDownFeatures.
+          Read here as the before/after measure; never written by this feature. It changes because the
+          children arrive, not because anything sets it.
+
+    error_paths:
+      - trigger: The reference matches neither a field nor a link type
+        recovery: >
+          Connection validation fails with the existing message naming the reference, and lists the link
+          type names the instance does define — so a mistyped name is corrected from the error text
+          rather than by guessing. The escape hatch must not become a way for typos to pass.
+      - trigger: The issue link type endpoint is unreachable, or the credential may not read it
+        recovery: >
+          A distinct failure naming the endpoint and the permission. It must never present as "field not
+          found", which sends an administrator to look at the wrong configuration. This is also the one
+          unproven pre-requisite of the feature and the first slice's hypothesis.
+      - trigger: An item carries more than one link of the named type
+        recovery: >
+          No parent, and a warning naming the item and every candidate key (D4). The refresh still
+          succeeds and every other item in the fetch parents normally.
+      - trigger: An item carries no link of the named type
+        recovery: >
+          No parent and no warning — identical to an empty override field today. An item genuinely
+          outside the hierarchy is not a fault, and warning on it would teach the reader to stop reading
+          the column that exists to be read.
+      - trigger: The named link is removed in the tracker
+        recovery: >
+          The next refresh reads what the tracker now says and the parent goes with it. Nothing is
+          preserved across a refresh, because the hierarchy always comes from the tracker (D8).
+      - trigger: The same link type is set on both the team and the portfolio
+        recovery: >
+          Every feature with children sees one match per child and is refused by D4, naming them. The
+          refusal is the diagnosis: it says the portfolio is pointed at the link that carries the level
+          below it rather than the level above.
+      - trigger: The setting is saved against a connector that cannot honour it
+        recovery: >
+          Validation refuses the reference on Azure DevOps, ServiceNow, Linear and CSV. Linear and CSV
+          additionally never consult the Parent Override Field at all — a gap that predates this feature
+          and is documented rather than patched, so it is not rediscovered from an empty feature list.

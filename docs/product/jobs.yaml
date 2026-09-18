@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-16
+updated: 2026-09-18
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -51,6 +51,7 @@ feature_context:
   - story-5876-behaviour-settings
   - story-5914-metrics-time-horizon-presets
   - epic-5874-relicense-source-available
+  - parent-from-issue-links
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6892,3 +6893,117 @@ jobs:
         Do not re-score on delivery alone. The gate is whether the number proved stable on real
         teams — if it did not, satisfaction has not moved and the remaining slices should not have
         been built.
+
+  - id: job-config-admin-name-the-link-our-hierarchy-lives-in
+    title: Name the link our hierarchy actually lives in
+    persona: config-admin
+    feature_context: parent-from-issue-links
+    created: 2026-09-18
+    note: >
+      Raised by Steve on 2026-09-18 from a Jira Data Center instance whose Portfolio-level items have no
+      direct children and no link to a level above: the hierarchy is recorded as issue links ("caused
+      by", "results in"). The existing Parent Override Field reads a field's VALUE and treats it as a key
+      (JiraWorkTrackingConnector.cs:1570), so pointing it at issuelinks yields raw JSON as a parent key
+      - silently, because GetFieldValue's array branch falls through to obj.ToString()
+      (IssueExtensions.cs:22-47).
+
+      Two things the code reality check settled that the first answer to Steve did not. Direction does
+      not need to be configured: Jira writes a link once and serves it from both ends, which
+      IssueExtensions.cs:53-57 already states as the reason dependencies deliberately read one end only.
+      And cardinality is where this genuinely differs from the dependency field override - a dependency
+      list is 0..n and skips a bad entry beside the good ones (epic-4365 D15), but a parent is 0..1, so
+      two candidates is a refusal rather than a partial answer.
+    job_story: >
+      When our teams record the link between a work item and the feature it belongs to as an issue link
+      rather than a parent field, I want to tell Lighthouse which link that is, in the same place I
+      already name fields, so the hierarchy we already maintain becomes the hierarchy Lighthouse reads.
+    dimensions:
+      functional: >
+        Register a link type as an Additional Field and select it in the Parent Override Field dropdown
+        that already exists, once per Team and once per Portfolio. Direction and ambiguity are
+        Lighthouse's problem, not the admin's.
+      emotional: >
+        Move from "this product cannot read how we work, so it is not for us" to setting one dropdown
+        they have set before.
+      social: >
+        Avoid being the admin who has to tell their teams to re-record a hierarchy they already maintain,
+        to suit a tool.
+    forces:
+      push: >
+        Without it the instance gets nothing - not a degraded view, an empty one. Every feature shows the
+        no-children warning and is sized by the Portfolio default, so every forecast restates one number
+        somebody typed into settings. The cause is invisible: the tracker holds the hierarchy, in a place
+        the connector does not look.
+      pull: >
+        One name typed into a form they have already filled in, and no new concept - the link type is
+        named exactly the way a field is named.
+      anxiety: >
+        "If I point it at the wrong link, does the hierarchy quietly go wrong?" Mitigated twice: an item
+        with more than one candidate takes no parent and names the candidates, and the key that was
+        resolved is stored where they can read it without opening the tracker.
+      habit: >
+        Config admins already register fields on a connection and already set a parent override. This is
+        the same two actions with a different value in the box.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 rather than 5 because it is conditional on how a given instance is configured -
+        for the instances it applies to it is worth 5, and for the rest nothing. The same shape
+        epic-4365's field-override job was scored on, and for the same reason. Current satisfaction: 0 -
+        such an instance sees the no-children warning on every feature with no explanation, and the one
+        setting that looks like it should help produces a JSON blob as a parent key. Gap: 4.
+
+  - id: job-lead-size-features-from-real-children-not-a-default
+    title: Size features from their real children, not from a default
+    persona: delivery-lead-rte
+    feature_context: parent-from-issue-links
+    created: 2026-09-18
+    note: >
+      The consequence half of the job above, and the reason it is worth doing. The visible symptom is
+      Feature.IsUsingDefaultFeatureSize (WarningsIndicator: "no children found"), set by
+      WorkItemService.ExtrapolateNotBrokenDownFeatures for any feature with no child work items. On an
+      instance whose hierarchy Lighthouse cannot see, that is EVERY feature, so the flag stops
+      distinguishing anything.
+
+      Distinct from job-forecaster-know-how-much-of-the-size-is-guessed (epic-size-and-count-over-time),
+      which is about READING how much of a total is a guess. This one is about the total not being a
+      guess in the first place. The two meet at the same flag from opposite sides.
+    job_story: >
+      When every feature in my portfolio is sized by the default because Lighthouse cannot see its
+      children, I want the children it already has to count, so the forecast rests on our breakdown
+      instead of on one number typed into portfolio settings.
+    dimensions:
+      functional: >
+        Features acquire their real child work items, so size, remaining work and the forecast drawn from
+        them come from the breakdown that exists in the tracker.
+      emotional: >
+        Stop quoting a date that is arithmetic over an assumption, and start quoting one that is
+        arithmetic over the team's own breakdown.
+      social: >
+        Defend a forecast in a stakeholder review by pointing at the work items behind it, rather than at
+        a default size and an apology.
+    forces:
+      push: >
+        Every feature carries the same warning, so the warning carries no information. The forecast still
+        produces a date, which is worse than producing nothing - it looks like a measurement.
+      pull: >
+        The breakdown already exists and is already maintained. Nothing has to be re-recorded; something
+        has to be read.
+      anxiety: >
+        "Will the sizes change under me once it starts reading?" Yes, and sharply, on the first refresh
+        after it is configured - which is the point, but it should not arrive unannounced. The
+        no-children warning disappearing is the visible signal that the numbers moved and why.
+      habit: >
+        Leads currently discount Lighthouse's feature-level dates on such an instance and go to the
+        tracker for the breakdown. The change is not having to.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 - feature size is an input to every portfolio forecast, so on an affected instance
+        this is not a missing feature, it is the product's core number being a placeholder. Current
+        satisfaction: 0 - there is no workaround short of re-recording the hierarchy in a field. Gap: 5,
+        the highest in this feature, and the reason the config-admin job above is worth the work.
