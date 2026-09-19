@@ -37,6 +37,32 @@ Use the **View Data** button to open the full list of in-progress items that cur
 | 🟡 Observe | WIP is below the limit (capacity is available). |
 | 🟢 Sustain | WIP exactly matches the System WIP Limit. |
 
+# SLE Risk
+
+|--------------|-------------------------|
+| **Applies to** | Teams only |
+| **Flow Metric** | Work Item Age |
+| **Affected by Filtering** | No — always today |
+
+This widget shows how many of the items in progress are at risk of missing your SLE. An item counts as at risk when your team's own history says it is **70% or more likely** to take longer than the target — see the [SLE Risk column](flow-metrics.html#sle-risk-column) for where that number comes from.
+
+The 70% is fixed and is the same for every team, so you can learn it once. What is *not* fixed is how much of your board being at risk is acceptable, and that is where the status comes from: **it is derived from the target you already published.** Promising 85% is accepting that 15% will miss; promising 70% is accepting 30%. You never set that allowance separately, because you have already set it.
+
+Teams only. The risk is measured against one team's target, and a portfolio has none.
+
+Use the **View Data** button to see every item in progress with its risk — not only the ones at risk. The items just under the line are the ones worth looking at before they cross it.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No SLE is configured, *or* the share of in-progress items at risk has reached the share your SLE allows. |
+| 🟡 Observe | At least one item is at risk, but fewer than the share your SLE allows. |
+| 🟢 Sustain | Nothing is at risk — or nothing is in progress. |
+
+{: .note}
+On a small board, Observe is hard to reach. With six items in progress and an 85% SLE, a single item at risk is already 16.7% against a 15% allowance, so it reads Act — Observe needs seven or more items. That is intended: on a short board one item in trouble *is* a large share of your work.
+
 # Blocked Overview
 
 |--------------|-------------------------|

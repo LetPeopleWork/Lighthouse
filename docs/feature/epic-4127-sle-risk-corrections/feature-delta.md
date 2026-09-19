@@ -4800,3 +4800,95 @@ one is the one that does the work.
 watch-out is explicit, and it is there because round 1 asserted *"the demo teams already carry an
 SLE"* in three separate checklists while it was false. An assertion about seeded data is not evidence
 about seeded data.
+
+---
+
+## Wave: DELIVER (slice 04) / [REF] What shipped
+
+**Four commits**, one fewer than DDD-45's shape because the threshold and the rule are both changes
+to arithmetic nobody can see until the widget exists.
+
+| # | Commit | Gate |
+|---|---|---|
+| 1 | `feat(sle-risk): at risk means seventy percent or worse` | 371 files / 5331 tests |
+| 2 | `feat(sle-risk): a status for how much of the board is at risk` | 5341 tests |
+| 3 | `feat(sle-risk): the at-risk count becomes a widget of its own` | 372 files / 5347 tests |
+| 4 | `refactor(metrics): the WIP count stops carrying two meanings` | 5342 tests, `pnpm build` clean |
+
+**Mutation: 75.00% → 100.00%, 61 of 61.** Full record in `mutation/results-slice04.md`.
+
+## Wave: DELIVER (slice 04) / [REF] The partition fired, exactly as designed
+
+DESIGN predicted it and DISTILL wrote it down as a step rather than a surprise. On the first run
+after the `sleRisk` payload existed:
+
+```
+AssertionError: Put each of these in exactly one of the two lists at the top of this block: …
+Whichever you choose, write the reason in the call-site table in the feature's DESIGN record.
+expected [ 'sleRisk' ] to deeply equal []
+```
+
+One test, red, naming the key, both options and the second place the decision has to be recorded —
+**before any test of this slice existed**. The instrument was built one slice earlier and its first
+live exercise found the thing it was built for on the first attempt.
+
+**Two other inventory tests caught the widget too**, and neither was designed for this: the
+flow-overview composition list and the render-surface fixture in `BaseMetricsView.test.tsx`. Both
+are exhaustive lists of what a category renders, both went red, and both needed a person to say which
+answer was the right one. Recorded because it is the same shape of instrument working for free.
+
+**And a correction this wave owes its own DISTILL.** That wave said the new payload would become
+"row 16" of slice 03's call-site sweep. It does not. The sweep has one row per **render site**, and a
+new payload adds no render site — it is a fifth thing rendered by the site already in row 1. The
+table stays at fifteen rows; what changed is row 1's count of payloads carrying a descriptor, four to
+five. The brief now says so.
+
+## Wave: DELIVER (slice 04) / [REF] The demo-data check, which was an obligation rather than a test
+
+The brief was firm: *"Verify the widget on demo data rather than asserting it"*, because round 1
+asserted *"the demo teams already carry an SLE"* in three checklists while it was false. So a
+throwaway instance was started, the demo scenario loaded, and the answers read off the live route.
+
+**What is actually there**, 2026-09-19:
+
+| | |
+|---|---|
+| Team Zenith's target | **85% @ 7 days** — the assertion round 1 made is true now, and is now checked |
+| Items in flight with a risk | **4** |
+| Their risks | 55, 48, 41, 39 |
+| At risk at the new line (≥ 70) | **0** |
+| What the widget reads | **0, Sustain** |
+
+Three things follow, and none of them could have been got from the code.
+
+**1 — the threshold change moves the demo board from Act to Sustain.** At the old line of 50 the 55%
+item counted; one of four is 25%, which is at or above the 15% an 85% target allows, so the board
+read **Act**. It now reads Sustain. That is the change working as intended — 55% is not a coach's
+emergency — but it is a visible difference in the demo data anyone evaluating the product will see,
+and it should not be discovered by surprise.
+
+**2 — Observe is unreachable on this team, and now that is an observation rather than a claim.** With
+four items in flight and a 15% allowance, a single at-risk item is 25% and lands on Act. The story
+recorded *"Observe is unreachable at low WIP … Confirmed as intended"* without recording which team's
+WIP it was confirmed against; the answer, for the demo data at least, is any board of six or fewer.
+The maintainer confirmed the consequence during DISCUSS and it stands. It is simply no longer
+unattributed arithmetic.
+
+**3 — the widget's zero is the common case on a healthy board, which is the point.** A count that is
+usually zero is one a coach reads when it is not.
+
+## Wave: DELIVER (slice 04) / [REF] Changed Assumptions (back-propagation)
+
+**1 — DESIGN said four `atRisk` tests would be deleted; there were five.** A miscount, not a
+misjudgement — the fifth asserted the limit and the risk line side by side. The count, the limit and
+the title all remain covered by the tests that survive, so the file loses five tests and no coverage.
+
+**2 — two tests in the metrics view asserted the at-risk count through the *WIP* widget's mock**, and
+DESIGN did not name them. They still assert the same count for the same reason; it now arrives at a
+different widget. One of them also got a name that says what it is about rather than what it used to
+be about.
+
+**3 — the widget's mutation score is meaningless whole-file and had to be scoped.** 8 of 22 mutants
+killed, with 13 of the 14 survivors being MUI `sx` literals. That is a known dominant equivalent
+class in this frontend, and the standing rule is not to write tests for margins. Scoped to the two
+lines that decide what the widget renders: 7 of 7.

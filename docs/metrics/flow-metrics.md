@@ -111,11 +111,11 @@ Sort the column to bring the worst-aging items to the top, filter it to a single
 
 ## At-Risk Count
 
-The **In Progress** card on the Flow Overview says how many of the open items are more likely than not to miss the target: a coloured `3 at risk` line under the count, in the same colours the risk column uses. It appears only for teams that have published an SLE, and only when the number is above zero — a line that is always there stops being read.
+How many of your in-progress items are at risk of missing the target has a widget of its own on the Flow Overview — **[SLE Risk](flow-overview.html#sle-risk)** — with a status derived from the SLE you already published.
 
-"At risk" means a risk of 50% or more: more likely than not to breach. An item that has outlasted everything the team ever finished counts too, since it is not a safe item. An item marked `Not enough history` does not — there is nothing to act on in a number nobody can stand behind.
+"At risk" means a risk of **70% or more**. An item that has already outlasted the target counts too: it reads 100%, because the miss has happened. Every item in progress carries a number, so nothing is left out of the count for want of history.
 
-Clicking **View Data** on the same card opens the list behind that number, with the `SLE Risk` column on every row, so the count and the items it counted are one click apart.
+Clicking **View Data** on that widget opens every item in progress with its risk — not only the ones at risk — with the `SLE Risk` column on every row, so the count and the work behind it are one click apart.
 
 ## SLE Risk Column
 

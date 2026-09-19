@@ -1,0 +1,23 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.stryker.sleRiskSlice04.ts",
+    "related": false
+  },
+  "mutate": [
+    "src/pages/Common/MetricsView/ragRules.ts:181-227",
+    "src/pages/Common/MetricsView/SleRiskWidget.tsx:23-23",
+    "src/pages/Common/MetricsView/SleRiskWidget.tsx:45-51",
+    "src/utils/charts/sleRisk.ts:187-209"
+  ],
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "reporters": ["html", "json", "progress"],
+  "jsonReporter": { "fileName": "stryker-sle-risk-slice04.json" },
+  "tempDirName": ".stryker-tmp-sle-risk-slice04",
+  "thresholds": { "high": 80, "low": 70, "break": 0 }
+}
