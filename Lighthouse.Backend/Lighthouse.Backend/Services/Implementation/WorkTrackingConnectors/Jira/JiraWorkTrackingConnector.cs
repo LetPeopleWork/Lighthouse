@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string BoardsEndpoint = "rest/agile/latest/board";
 
+        private const string IssueLinkTypeEndpoint = "rest/api/latest/issueLinkType";
+
         private const string AllFields = "*all";
 
         private const string OrderByKeyword = "ORDER BY";
@@ -409,7 +411,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var missingFields = resolution.ReferencesThatResolvedToNothing();
                 if (missingFields.Count > 0)
                 {
-                    return TheVerdictOnReferencesThatResolvedToNothing(missingFields, resolution.LinkTypeNames);
+                    return TheVerdictOnReferencesThatResolvedToNothing(missingFields, resolution);
                 }
 
                 return ConnectionValidationResult.Success();
@@ -1053,17 +1055,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// A reference that resolved to nothing has two very different causes that look identical from here,
-        /// and each needs the administrator somewhere else. A misspelling is corrected by reading the
-        /// instance's real link type names off this message. A credential Jira will not show link types to is
-        /// not corrected in the field configuration at all - and Jira reports that by answering the link type
-        /// list with 200 and nothing in it rather than by refusing, so an empty list must never be printed as
-        /// "this instance defines none", which blames the administrator for somebody else's problem.
+        /// A reference that resolved to nothing has three very different causes, and each needs the
+        /// administrator somewhere else. A misspelling is corrected by reading the instance's real link type
+        /// names off this message. A credential Jira will not show link types to is not corrected in the field
+        /// configuration at all - and Jira reports that by answering the link type list with 200 and nothing in
+        /// it rather than by refusing, so an empty list must never be printed as "this instance defines none",
+        /// which blames the administrator for somebody else's problem. A list Jira turned down outright is the
+        /// one case where nothing was established either way, so saying the reference could not be found would
+        /// send someone to correct a configuration that may well be right.
         /// </summary>
         private static ConnectionValidationResult TheVerdictOnReferencesThatResolvedToNothing(
-            List<string> missingFields, List<string> linkTypeNames)
+            List<string> missingFields, AdditionalFieldResolution resolution)
         {
             var references = string.Join(", ", missingFields);
+
+            if (resolution.LinkTypeEndpointRefusedWith is { } refusal)
+            {
+                return ConnectionValidationResult.Failure(
+                    "issue_link_types_unreadable",
+                    $"Jira refused {IssueLinkTypeEndpoint} with {(int)refusal} ({refusal}), so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
+                    "Give the credential in use permission to read issue link types, or check whether a proxy in front of Jira is turning that endpoint down. Nothing about the additional field configuration is known to be wrong.",
+                    JiraWorkTrackingOptionNames.ApiToken);
+            }
+
+            var linkTypeNames = resolution.LinkTypeNames;
 
             if (linkTypeNames.Count == 0)
             {
@@ -1636,9 +1651,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
 
-            var linkTypes = await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
+            var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
 
-            return new AdditionalFieldResolution(customFieldReferences, linkTypes.ConvertAll(linkType => linkType.Name));
+            return new AdditionalFieldResolution(
+                customFieldReferences,
+                listing.LinkTypes.ConvertAll(linkType => linkType.Name),
+                listing.RefusedWith);
         }
 
         /// <summary>
@@ -1648,7 +1666,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// anybody. Only what the field list left unresolved is looked for here, which is also what keeps an
         /// instance with nothing unresolved from paying for a second call.
         /// </summary>
-        private async Task<List<JiraIssueLinkType>> ResolveWhatTheFieldListMissedAgainstLinkTypes(
+        private async Task<IssueLinkTypeListing> ResolveWhatTheFieldListMissedAgainstLinkTypes(
             HttpClient jiraClient, Dictionary<string, string> customFieldReferences)
         {
             var unresolvedReferences = customFieldReferences
@@ -1658,10 +1676,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (unresolvedReferences.Count == 0)
             {
-                return [];
+                return IssueLinkTypeListing.NeverAsked;
             }
 
-            var linkTypes = await GetIssueLinkTypes(jiraClient);
+            var listing = await GetIssueLinkTypes(jiraClient);
+            var linkTypes = listing.LinkTypes;
 
             foreach (var reference in unresolvedReferences)
             {
@@ -1678,30 +1697,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
             }
 
-            return linkTypes;
+            return listing;
         }
 
-        private async Task<List<JiraIssueLinkType>> GetIssueLinkTypes(HttpClient jiraClient)
+        private async Task<IssueLinkTypeListing> GetIssueLinkTypes(HttpClient jiraClient)
         {
-            const string url = "rest/api/latest/issueLinkType";
             const string linkTypesProperty = "issueLinkTypes";
             const string inwardProperty = "inward";
             const string outwardProperty = "outward";
 
-            var response = await jiraClient.GetAsync(url);
+            var response = await jiraClient.GetAsync(IssueLinkTypeEndpoint);
             var responseBody = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                // A refusal here leaves the reference unresolved, which is what it already was a moment ago,
-                // so validation still reports it by name rather than turning an unreadable list into a
-                // failure of its own.
+                // Reading work items carries on with the reference unresolved, which is what it already was a
+                // moment ago. Only validating a connection has anything to say about the refusal itself, so it
+                // is carried back rather than thrown.
                 logger.LogInformation(
                     "Jira refused the issue link type list with {StatusCode}. Body: {Body}",
                     response.StatusCode,
                     responseBody);
 
-                return [];
+                return new IssueLinkTypeListing([], response.StatusCode);
             }
 
             using var jsonResponse = JsonDocument.Parse(responseBody);
@@ -1709,7 +1727,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             if (!jsonResponse.RootElement.TryGetProperty(linkTypesProperty, out var linkTypesElement)
                 || linkTypesElement.ValueKind != JsonValueKind.Array)
             {
-                return [];
+                return IssueLinkTypeListing.NeverAsked;
             }
 
             var linkTypes = new List<JiraIssueLinkType>();
@@ -1726,7 +1744,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
             }
 
-            return linkTypes;
+            return new IssueLinkTypeListing(linkTypes, null);
         }
 
         private static string LabelOf(JsonElement linkType, string labelProperty)
@@ -1749,12 +1767,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// What the instance answered when asked for its link types, and the status it turned the question
+        /// down with if it did. An instance that simply defines none and one that would not say are both an
+        /// empty list, and only the status tells them apart.
+        /// </summary>
+        private sealed record IssueLinkTypeListing(List<JiraIssueLinkType> LinkTypes, HttpStatusCode? RefusedWith)
+        {
+            public static IssueLinkTypeListing NeverAsked => new([], null);
+        }
+
+        /// <summary>
         /// What each Additional Field reference resolved to, alongside the link type names the instance
         /// offered while resolving them. The second half is empty both when the instance listed none and when
         /// nothing was left for the link types to answer, which is why only a resolution carrying an
         /// unresolved reference may read anything into it.
         /// </summary>
-        private sealed record AdditionalFieldResolution(Dictionary<string, string> References, List<string> LinkTypeNames)
+        private sealed record AdditionalFieldResolution(
+            Dictionary<string, string> References,
+            List<string> LinkTypeNames,
+            HttpStatusCode? LinkTypeEndpointRefusedWith)
         {
             public List<string> ReferencesThatResolvedToNothing()
                 => References

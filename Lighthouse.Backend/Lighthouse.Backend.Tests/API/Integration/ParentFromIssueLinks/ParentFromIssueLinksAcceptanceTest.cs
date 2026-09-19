@@ -29,9 +29,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private const string ServerInfoEndpoint = "rest/api/2/serverInfo";
 
-        private const string FieldListEndpoint = "rest/api/latest/field";
+        protected const string FieldListEndpoint = "rest/api/latest/field";
 
-        private const string MyselfEndpoint = "rest/api/2/myself";
+        /// <summary>The one call that actually establishes who Lighthouse is signed in to Jira as.</summary>
+        protected const string CredentialCheckEndpoint = "rest/api/2/myself";
 
         private const string SearchEndpoint = "/search";
 
@@ -41,12 +42,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private readonly List<string> requestedPaths = [];
 
+        private HttpStatusCode credentialCheckStatus = HttpStatusCode.OK;
+
+        private HttpStatusCode linkTypeListStatus = HttpStatusCode.OK;
+
         [SetUp]
         public void ForgetTheInstanceTheLastScenarioDescribed()
         {
             definedFields.Clear();
             definedLinkTypes.Clear();
             requestedPaths.Clear();
+            credentialCheckStatus = HttpStatusCode.OK;
+            linkTypeListStatus = HttpStatusCode.OK;
         }
 
         protected void TheInstanceDefinesTheCustomField(string name)
@@ -62,6 +69,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// tell those two apart, and neither can Lighthouse.
         /// </summary>
         protected void TheLinkTypeListComesBackEmpty() => definedLinkTypes.Clear();
+
+        /// <summary>
+        /// Jira turning the link type list down outright, which is a different animal from answering it
+        /// empty: nobody has to guess what happened, Jira said so.
+        /// </summary>
+        protected void TheIssueLinkTypeEndpointAnswers(HttpStatusCode status) => linkTypeListStatus = status;
+
+        protected void TheCredentialIsRefused() => credentialCheckStatus = HttpStatusCode.Unauthorized;
+
+        /// <summary>
+        /// Where a request to that endpoint first appears in the sequence Lighthouse issued, or -1 when it
+        /// never issued one, so a scenario can say which of two calls came first.
+        /// </summary>
+        protected int WhenTheFirstRequestReached(string endpoint)
+            => requestedPaths.FindIndex(requested => requested.Contains(endpoint, StringComparison.Ordinal));
 
         /// <summary>
         /// One Additional Field per reference, named and referenced the same way, which is how an
@@ -111,17 +133,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private HttpResponseMessage AnAnswerTo(string path)
         {
-            var body = path switch
+            var (status, body) = path switch
             {
-                _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal) => "{\"deploymentType\":\"Cloud\"}",
-                _ when path.EndsWith(MyselfEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
-                _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal) => TheFieldsItDefines(),
-                _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal) => TheLinkTypesItDefines(),
-                _ when path.Contains(SearchEndpoint, StringComparison.Ordinal) => "{\"issues\":[],\"isLast\":true}",
-                _ => "{}",
+                _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal)
+                    => (HttpStatusCode.OK, "{\"deploymentType\":\"Cloud\"}"),
+                _ when path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal)
+                    => (credentialCheckStatus, "{\"accountId\":\"someone\"}"),
+                _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)
+                    => (HttpStatusCode.OK, TheFieldsItDefines()),
+                _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal)
+                    => (linkTypeListStatus, TheLinkTypesItDefines()),
+                _ when path.Contains(SearchEndpoint, StringComparison.Ordinal)
+                    => (HttpStatusCode.OK, "{\"issues\":[],\"isLast\":true}"),
+                _ => (HttpStatusCode.OK, "{}"),
             };
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
+            return new HttpResponseMessage(status)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
             };

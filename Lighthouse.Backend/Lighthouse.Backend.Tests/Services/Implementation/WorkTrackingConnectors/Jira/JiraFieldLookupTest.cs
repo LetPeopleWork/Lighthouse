@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string MyselfPath = "rest/api/2/myself";
 
+        private const string IssueLinkTypePath = "rest/api/latest/issueLinkType";
+
         private const string SearchPath = "/search";
 
         private const string TheAdditionalFieldsInput = "Additional Fields";
@@ -54,6 +56,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string CloudFieldList =
             "[{\"id\":\"summary\",\"key\":\"summary\",\"name\":\"Summary\",\"custom\":false,\"schema\":{\"type\":\"string\"}},"
             + "{\"id\":\"customfield_10100\",\"key\":\"customfield_10100\",\"name\":\"Story Points\",\"custom\":true,\"schema\":{\"type\":\"number\"}}]";
+
+        /// <summary>
+        /// A reference the field list does not resolve is looked for among the link types next, so an
+        /// instance answering that endpoint with nothing lands on the verdict for a list Lighthouse could not
+        /// read rather than on the one for a reference the instance genuinely does not carry. Every test here
+        /// is about the second, so the instance has to define at least one link type - and none of them named
+        /// <see cref="UnmatchedFieldReference"/>.
+        /// </summary>
+        private const string TheLinkTypesItDefines =
+            "{\"issueLinkTypes\":[{\"id\":\"10000\",\"name\":\"Blocks\",\"inward\":\"is blocked by\",\"outward\":\"blocks\"}]}";
 
         private const string JirasOwnSentence = "You do not have permission to view fields.";
 
@@ -95,6 +107,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(verdict.Code, Is.EqualTo("additional_fields_invalid"));
                 Assert.That(verdict.Message, Does.Contain(UnmatchedFieldReference));
+                Assert.That(verdict.FieldName, Is.EqualTo(TheAdditionalFieldsInput),
+                    "A reference nothing on this instance carries is corrected where it was typed, which is the one thing that separates this verdict from the ones about a list Lighthouse could not read.");
             }
         }
 
@@ -107,6 +121,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(verdict.Code, Is.EqualTo("additional_fields_invalid"));
                 Assert.That(verdict.Message, Does.Contain(UnmatchedFieldReference));
+                Assert.That(verdict.FieldName, Is.EqualTo(TheAdditionalFieldsInput),
+                    "A reference nothing on this instance carries is corrected where it was typed, which is the one thing that separates this verdict from the ones about a list Lighthouse could not read.");
             }
         }
 
@@ -386,6 +402,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     => new StubAnswer(HttpStatusCode.OK, $"{{\"deploymentType\":\"{OnDataCenter}\"}}"),
                 _ when path.EndsWith(FieldListPath, StringComparison.Ordinal) => fieldList,
                 _ when path.EndsWith(MyselfPath, StringComparison.Ordinal) => myself,
+                _ when path.EndsWith(IssueLinkTypePath, StringComparison.Ordinal)
+                    => new StubAnswer(HttpStatusCode.OK, TheLinkTypesItDefines),
                 _ when path.Contains(SearchPath, StringComparison.Ordinal)
                     => new StubAnswer(HttpStatusCode.OK, OnePageHoldingOneIssue),
                 _ => new StubAnswer(HttpStatusCode.OK, "{}"),

@@ -1,3 +1,4 @@
+using System.Net;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
@@ -235,6 +236,66 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     $"The likely cause is a credential Jira will not show link types to, and an administrator sent to the field configuration instead spends the afternoon fixing something that was never wrong. Jira said: {whenTheListComesBackEmpty.Message}");
                 Assert.That(whenTheListComesBackEmpty.TechnicalDetails, Is.Not.EqualTo(whenTheInstanceListsItsTypes.TechnicalDetails),
                     "The advice that fixes a typo is the wrong advice for a credential, so the two cannot carry the same next step.");
+            }
+        }
+
+        [Test]
+        public async Task A_credential_Jira_refuses_is_answered_before_any_reference_is_judged()
+        {
+            TheCredentialIsRefused();
+
+            var verdict = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo("authentication_failed"),
+                    $"A credential Jira will not accept is the thing to fix, and it is the thing the administrator has to read. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message, Does.Not.Contain(ATypoForALinkType),
+                    $"Nothing downstream of the credential check can be trusted to have seen this instance's real fields, so naming a reference as missing here accuses the administrator of a mistake nobody has established. Jira said: {verdict.Message}");
+                Assert.That(WhenTheFirstRequestReached(FieldListEndpoint), Is.Negative,
+                    "A refused credential ends validation, so nothing goes on to ask what this instance defines.");
+            }
+        }
+
+        /// <summary>
+        /// The credential check is the only call that establishes who Lighthouse is signed in as, and an
+        /// empty link type list is meaningless before it has run - Jira answers an unaccepted credential
+        /// with 200 and nothing in it. Reordering the two would silently turn "your credential is wrong"
+        /// into "you invented a link type", which is why the order is pinned here rather than described.
+        /// </summary>
+        [Test]
+        public async Task The_credential_is_checked_before_the_instance_is_asked_what_it_defines()
+        {
+            await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            var theCredentialCheck = WhenTheFirstRequestReached(CredentialCheckEndpoint);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theCredentialCheck, Is.Not.Negative,
+                    "Validating a connection has to establish who it is signed in as at all.");
+                Assert.That(theCredentialCheck, Is.LessThan(WhenTheFirstRequestReached(FieldListEndpoint)),
+                    "A field list read before the credential is established cannot be told apart from one an unaccepted credential was shown.");
+                Assert.That(theCredentialCheck, Is.LessThan(WhenTheFirstRequestReached(IssueLinkTypeEndpoint)),
+                    "An empty link type list only means this instance defines none once the credential behind it is known to be accepted.");
+            }
+        }
+
+        [Test]
+        public async Task The_link_type_endpoint_refusing_is_not_a_reference_that_could_not_be_found()
+        {
+            TheIssueLinkTypeEndpointAnswers(HttpStatusCode.Forbidden);
+
+            var verdict = await TheVerdictOnAConnectionAskingFor(ALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False,
+                    "A reference that could not be checked at all is not a reference that checked out.");
+                Assert.That(verdict.Message, Does.Contain(IssueLinkTypeEndpoint),
+                    $"Jira refusing one endpoint is something an administrator can act on, and only naming it says which one. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message, Does.Not.Contain("could not be found"),
+                    $"This instance does define the reference; the list saying so was refused. Reporting it as not found sends the administrator to correct a configuration that is already right. Jira said: {verdict.Message}");
             }
         }
     }
