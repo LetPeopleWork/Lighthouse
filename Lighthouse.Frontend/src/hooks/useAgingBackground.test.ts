@@ -67,6 +67,25 @@ describe("useAgingBackground", () => {
 		},
 	);
 
+	it("still draws a chart when the browser refuses to say what was stored", () => {
+		// The read side of the same private-window case as below. Without the guard the throw
+		// escapes the effect and takes the whole chart with it, which is a worse outcome than
+		// forgetting a preference.
+		const getItem = vi
+			.spyOn(Storage.prototype, "getItem")
+			.mockImplementation(() => {
+				throw new Error("site data is blocked");
+			});
+
+		try {
+			const { result } = renderHook(() => useAgingBackground());
+
+			expect(result.current.background).toBe("off");
+		} finally {
+			getItem.mockRestore();
+		}
+	});
+
 	it("still applies a choice the browser refuses to remember", () => {
 		// A private window, or site data blocked. The chart must still change when asked; it just
 		// will not outlive the tab.

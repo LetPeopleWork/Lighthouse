@@ -66,10 +66,12 @@ See `feature-delta.md` → *User stories* → US-R2-01, AC-01.1 through AC-01.9.
 **Commit order is a human discipline here, and CI cannot see it.** A push fires one CI run at the tip, so an out-of-order push ships a bundle calling a deleted route to `main` with a green build and no signal. Before pushing:
 
 ```bash
-git log origin/main..HEAD --oneline   # expect, oldest last: docs / backend / frontend / E2E
+git log origin/main..HEAD --reverse --format="%h %s"   # oldest FIRST: E2E, frontend, backend, docs
 ```
 
-Push all four as one push, or in ascending order. Never commit 3 before commit 2.
+Use `--reverse`. A plain `git log` prints newest first, and reading that listing as chronological inverts the whole order — an adversarial reviewer did exactly that here and filed the correct order as a blocker.
+
+Push all four as one push, or in ascending order. Never land the backend deletion before the frontend one.
 
 **The dogfood browsers need one sentence.** Anyone holding the SLE Risk background mode sees the aging chart's background as **Off** after this deploys, silently. That is AC-01.2 behaving exactly as specified, and it is precisely the shape of thing reported as a regression by someone who did not read the slice. Put this in the dogfood note:
 
