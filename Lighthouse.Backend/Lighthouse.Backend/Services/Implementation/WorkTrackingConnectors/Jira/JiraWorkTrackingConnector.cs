@@ -1637,24 +1637,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return;
             }
 
-            var linkTypeNames = await GetIssueLinkTypeNames(jiraClient);
+            var linkTypes = await GetIssueLinkTypes(jiraClient);
 
             foreach (var reference in unresolvedReferences)
             {
-                var linkTypeName = linkTypeNames.Find(
-                    name => string.Equals(name, reference, StringComparison.OrdinalIgnoreCase));
+                // Each type is asked once, whole, rather than each of its labels in turn. A stock Jira
+                // instance ships a type reading "relates to" in both directions, and counting labels would
+                // make that one type look like two candidates and go unresolved on a correct configuration.
+                // Two genuinely different types answering is a tie that stays undecided: choosing either
+                // would quietly read the wrong links.
+                var answeringTypes = linkTypes.FindAll(linkType => linkType.AnswersTo(reference));
 
-                if (linkTypeName is not null)
+                if (answeringTypes.Count == 1)
                 {
-                    customFieldReferences[reference] = linkTypeName;
+                    customFieldReferences[reference] = answeringTypes[0].Name;
                 }
             }
         }
 
-        private async Task<List<string>> GetIssueLinkTypeNames(HttpClient jiraClient)
+        private async Task<List<JiraIssueLinkType>> GetIssueLinkTypes(HttpClient jiraClient)
         {
             const string url = "rest/api/latest/issueLinkType";
             const string linkTypesProperty = "issueLinkTypes";
+            const string inwardProperty = "inward";
+            const string outwardProperty = "outward";
 
             var response = await jiraClient.GetAsync(url);
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -1674,24 +1680,46 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             using var jsonResponse = JsonDocument.Parse(responseBody);
 
-            if (!jsonResponse.RootElement.TryGetProperty(linkTypesProperty, out var linkTypes)
-                || linkTypes.ValueKind != JsonValueKind.Array)
+            if (!jsonResponse.RootElement.TryGetProperty(linkTypesProperty, out var linkTypesElement)
+                || linkTypesElement.ValueKind != JsonValueKind.Array)
             {
                 return [];
             }
 
-            var names = new List<string>();
+            var linkTypes = new List<JiraIssueLinkType>();
 
-            foreach (var linkType in linkTypes.EnumerateArray())
+            foreach (var linkType in linkTypesElement.EnumerateArray())
             {
                 if (linkType.TryGetProperty(JiraFieldNames.NamePropertyName, out var name)
                     && name.GetString() is { Length: > 0 } linkTypeName)
                 {
-                    names.Add(linkTypeName);
+                    linkTypes.Add(new JiraIssueLinkType(
+                        linkTypeName,
+                        LabelOf(linkType, inwardProperty),
+                        LabelOf(linkType, outwardProperty)));
                 }
             }
 
-            return names;
+            return linkTypes;
+        }
+
+        private static string LabelOf(JsonElement linkType, string labelProperty)
+            => linkType.TryGetProperty(labelProperty, out var label)
+                ? label.GetString() ?? string.Empty
+                : string.Empty;
+
+        /// <summary>
+        /// A link type shows an administrator three phrases - its name, and what a link reads as in each
+        /// direction - and each of the three can be renamed on its own, so any of them is what someone
+        /// might type where a field name goes.
+        /// </summary>
+        private sealed record JiraIssueLinkType(string Name, string Inward, string Outward)
+        {
+            public bool AnswersTo(string reference)
+                => Reads(Name, reference) || Reads(Inward, reference) || Reads(Outward, reference);
+
+            private static bool Reads(string label, string reference)
+                => label.Length > 0 && string.Equals(label, reference, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, CancellationToken cancellationToken, int? maxResultsOverride = null)
