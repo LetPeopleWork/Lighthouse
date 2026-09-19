@@ -3196,3 +3196,1405 @@ excluded by the standard filter and throws rather than skips without a credentia
 field that feeds it, re-added with its consumer in one commit; the dialog width and the
 `sle_risk_column.png` re-take, once rather than twice. **To slice 04**: the at-risk threshold and
 DESIGN's Open question 1, which lands on the one volatile age this slice deliberately leaves computed.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Prior Wave Consultation
+
+| Artifact | Read |
+|---|---|
+| `docs/feature/epic-4127-sle-risk-corrections/slices/slice-03-column-visible.md` | ✓ |
+| This delta, DESIGN slice 02 — the reversal section, its compensating-control table, DDD-15 … DDD-30 | ✓ |
+| This delta, DESIGN slice 01 — the house style for these sections | ✓ |
+| This delta, DISCUSS — US-R2-03, the story map, `OUT-4127-R2-column-reachable` and `-no-silent-omission` | ✓ |
+| `docs/product/architecture/brief.md` — the slice 02 section at L8130-8289 (paged; the file is 8289 lines) | ✓ |
+| `docs/product/architecture/adr-188-pace-band-ladder-shared-by-chart-geometry-and-dialog-value.md` | ✓ — the twin, and its *Architectural Enforcement* table already records the sibling failure this slice must answer |
+| `docs/ci-learnings.md` — the preflight block (L151-254) in full | ✓ |
+| Code: `WorkItemsDialog.tsx`, `BaseMetricsView.tsx` (`buildViewData`, L541-880), `WidgetShell.tsx`, `WorkItemAgingChart.tsx`, `utils/charts/sleRisk.ts`, `models/Metrics/SleRisk.ts` | ✓ |
+| Code: `DataGridBase.tsx` + `ColumnOrderDialog` + `usePersistedGridState`, `useAgingBackground.ts`, `EnlargeableChart.tsx` | ✓ |
+| Code: all 16 production `<WorkItemsDialog` render sites (the sweep below) | ✓ |
+| Backend: `SleRiskCalculator.cs`, `SleRiskDto.cs`, `TeamMetricsService.GetSleRiskForTeam` | ✓ |
+| E2E: `tests/models/metrics/WorkItemsDialog.ts`, `tests/models/metrics/WorkItemAgingChart.ts`, `MetricsPage.ts`, `Screenshots.spec.ts` L987-1016 | ✓ |
+| `docs/product/architecture/adr-198-*.md` | ⊘ not found — 197 is the highest shipped number, and 198 is claimed by this slice |
+| DEVOPS artifacts for this slice | ⊘ none, and **one is now arguably owed** — see DDD-39. The slice was planned frontend-only and is not |
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Three upstream corrections
+
+Stated before the decisions, because two of them change what the slice contains and one changes what
+its acceptance criterion can honestly claim.
+
+**C-6 — the slice brief's line numbers are stale, and so is its count of the problem.** The brief cites
+`WorkItemsDialog.tsx:431` and `WorkItemAgingChart.tsx:909`. At HEAD they are `WorkItemsDialog.tsx:432`
+and `WorkItemAgingChart.tsx:775` — slice 01 deleted 134 lines from the chart. More importantly the
+brief describes the defect as *one* dialog missing the column. It is **three**. `buildViewData`
+(`BaseMetricsView.tsx:631-880`) hands the same array, `inputs.inProgressItems`, to four payloads —
+`wipOverview`, `totalWorkItemAge`, `workItemAgePercentiles` and `aging` — and attaches
+`sleRiskColumn` to two of them. The two that go without are not a different population, a different
+day or a different team. They are the same list with a column missing, and nothing said so.
+
+**C-7 — the defect is not "a call site forgot a prop", and the fix the brief names would leave the
+generator of the defect intact.** Thirteen of the sixteen call sites never had a decision to make: they
+are handed a population by something else and could not show a risk if they wanted to. The decision
+exists in exactly two places — the payload table in `buildViewData`, and the aging chart's own dialog —
+and in the first of those it is *repeated four times*. A rule repeated four times in one function is
+where the fourth copy goes missing. DDD-31 and DDD-32 are about deleting the repetition rather than
+about remembering to complete it.
+
+**C-8 — `pages/Teams/Detail/ItemsInProgress.tsx` is dead.** It renders a `WorkItemsDialog` at `:181`
+and is imported by nothing in production; `ItemsInProgress` appears in three files across 821 scanned,
+and two of them are tests. The sweep found it because the sweep enumerates rather than samples. It is
+recorded and left alone — see DDD-48.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] The call-site sweep
+
+Sixteen production render sites. `WorkItemsDialog.tsx:215` is the component's own declaration and is
+not one. This table is `OUT-4127-R2-no-silent-omission`'s evidence: sixteen enumerated, sixteen
+accounted for.
+
+| # | Call site | Population it lists | Risk column | Why that is right |
+|---|---|---|---|---|
+| 1 | `pages/Common/MetricsView/WidgetShell.tsx:380` | whichever `ViewDataPayload` its widget owns | **forwarded** | One call site, twenty-odd payloads. The decision is upstream in `buildViewData`, which is where rows 1a-1d below actually live |
+| 1a | `buildViewData` → `wipOverview` | `inputs.inProgressItems` | **yes** (today) | In flight today. Correct already |
+| 1b | `buildViewData` → `aging` | `inputs.inProgressItems` | **yes** (today) | In flight today. Correct already |
+| 1c | `buildViewData` → `totalWorkItemAge` | `inputs.inProgressItems` | **MISSING → added** | Same array, same day, same team. There is no account under which this one should differ from `wipOverview` |
+| 1d | `buildViewData` → `workItemAgePercentiles` | `inputs.inProgressItems` | **MISSING → added** | As above |
+| 1e | `buildViewData` → `blockedOverview`, `staleOverview` | `blockedItems` / `staleItems` | no, deliberate | Both are in flight, so a risk exists — but both are *subsets selected by a different judgement*, and a column answering a third question on a two-question list is how a reader learns to distrust all three. Raised as Open question 2 rather than decided by default |
+| 1f | `buildViewData` → `percentiles`, `cycleScatter`, `throughput` | closed items | no | A finished item has no chance of missing its target; it either did or did not. After slice 02 it is absent from the answer set and every cell would be empty |
+| 1g | `buildViewData` → `wipOverTime`, `totalWorkItemAgeOverTime`, `stacked`, `workDistribution` | a past day's WIP, or a mix of open and closed | no | The risk is an as-of-**today** statement. Putting it against a list built for another day, or against a mixed list, would be a number that is right about a different question |
+| 1h | `buildViewData` → `featuresWorkedOnOverview`, `featureSize` | Features | no | A Feature belongs to several Portfolios, each with its own history and target, so there is no single answer to show. DISCUSS out-of-scope item 1, unchanged since round 1 D4 |
+| 1i | `buildViewData` → `estimationVsCycleTime`, `throughputPbc` and the remaining PBC entries | closed items | no | As 1f |
+| 2 | `components/Common/Charts/WorkItemAgingChart.tsx:775` | the items under one clicked bubble — a subset of today's in-flight snapshot | **MISSING → added** | The one chart whose population is today's WIP. This is the miss #6035 was written about |
+| 3 | `components/Common/Charts/BarRunChart.tsx:149` | the items behind one bar of a run chart | no | A past day's count. As 1g |
+| 4 | `components/Common/Charts/LineRunChart.tsx:197` | as above | no | As 1g |
+| 5 | `components/Common/Charts/BlockedItemsOverTimeChart.tsx:127` | items blocked on the clicked day | no | A past day, and a blocked-selection list. As 1g and 1e together |
+| 6 | `components/Common/Charts/TotalWorkItemAgeRunChart.tsx:168` | the items contributing to one day's total age | no | As 1g |
+| 7 | `components/Common/Charts/ProcessBehaviourChart.tsx:562` | the items behind one PBC point | no | As 1g |
+| 8 | `components/Common/Charts/CycleTimeScatterPlotChart.tsx:554` | closed items | no | As 1f |
+| 9 | `components/Common/Charts/EstimationVsCycleTimeChart.tsx:286` | closed items with estimates | no | As 1f |
+| 10 | `components/Common/Charts/FeatureSizeScatterPlotChart.tsx:790` | Features | no | As 1h |
+| 11 | `components/Common/Charts/WorkDistributionChart.tsx:348` | open and closed together | no | As 1g |
+| 12 | `pages/Common/MetricsView/BaseMetricsView.tsx:1942` | the items contributing to one state's cumulative time | no | Selected by time spent in a state over a chosen range, not by being in flight now. A mixed population by construction |
+| 13 | `pages/Teams/Detail/TeamFeatureList.tsx:149` | one Feature's child items, across teams | no | Several teams, several targets, one list. As 1h |
+| 14 | `pages/Portfolios/Detail/PortfolioFeatureList.tsx:146` | as above | no | As 1h |
+| 15 | `pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:856` | as above | no | As 1h |
+| 16 | `pages/Teams/Detail/ItemsInProgress.tsx:181` | **unreachable** | n/a | Dead code. Imported by its own test and nothing else (DDD-48) |
+
+**Sixteen enumerated, sixteen accounted for, three missing columns found where the brief expected
+one.** The learning hypothesis is answered in its own terms: the class of miss was invisible by
+construction, and the sweep found two more of it than the bug report did.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Design decisions
+
+**DDD-31 — the optional `sleRiskColumn` prop stays optional, and that is the right shape; what goes is
+the *repetition* of the decision.** Three alternatives were weighed and two are rejected on evidence
+from the sweep above.
+
+- **Make the prop required** — `sleRiskColumn: SleRiskColumnDescriptor | NoRiskToShow`, so no call
+  site can compile without saying something. The compiler enforces it and the next author cannot
+  forget. **Rejected**: thirteen of sixteen call sites would write a ceremonial "nothing here", the
+  same argument applies with equal force to `ageBandColumn`, `timeInStateColumn`, `sle` and
+  `highlightColumn` — none of which is being made required — and an asymmetry that exists because one
+  column had a bug is a worse rule than no rule. It also buys nothing where the bug actually was: all
+  four of the missing payloads are written in one function by one author in one sitting, and a required
+  prop is satisfied by typing `undefined` four times.
+- **Let the dialog fetch or derive its own risk** — a `useSleRisk()` inside `WorkItemsDialog`.
+  **Rejected outright**: the dialog is rendered on the Portfolio detail page, the Team feature list and
+  the delivery grid, none of which has a team context or a `/metrics/sleRisk` fetch, and it is rendered
+  sixteen times. It also destroys the property ADR-188 and slice 02's Reuse Analysis both defend — the
+  dialog knows nothing about cycle times and takes finished answers.
+- **Keep the prop and delete the repetition** — **chosen.** The decision exists in two places, not
+  sixteen. In `buildViewData` it is made once for all four in-flight payloads (DDD-32); in the aging
+  chart it is made once and the compiler insists on it (DDD-33). A structural test enumerates the rest
+  (DDD-34).
+
+Recorded in **ADR-198**, because a future author can propose either rejected option without ever
+opening ADR-192, ADR-194 or ADR-188 — none of which is about this dialog's prop surface — and because
+the brief's own note that this dialog *"will gain more"* columns means the question recurs by design.
+
+**DDD-32 — `buildViewData` grows one named base object for "what is in flight today", and three
+payloads gain the risk column as a consequence rather than as four separate acts of memory.** The four
+payloads already pass the identical `items` and, in three cases, the identical `highlightColumn`. They
+become spreads of one `inFlight` literal carrying `items`, `highlightColumn` and `sleRiskColumn`;
+`wipOverview` adds its `timeInStateColumn`, `aging` adds its `ageBandColumn`, each keeps its own
+`title`. No new function, no new file, no new abstraction — one object literal, four spreads, four
+fewer duplicated lines. **You cannot write the population without the risk**, because they are the same
+three characters apart. This is a refactor and ships as one (`refactor(metrics): …`), separate from the
+feature commits, per the repo's convention.
+
+*What this does not claim.* It is a convention, not a type. An author can still hand-write
+`items: inputs.inProgressItems` in a fifth payload. DDD-34 is what catches that, and the reason a test
+can catch it here — where ADR-188 recorded that no instrument existed for its own sibling problem — is
+stated there.
+
+**DDD-33 — `WorkItemAgingChartProps.sleRiskValues` is required, not optional, and the chart builds the
+descriptor the way it already builds the band one.** The chart has exactly one caller
+(`BaseMetricsView.tsx:1065`), so a required prop costs one line and turns the whole class of miss into
+a build failure at that call site forever. The chart already holds `sleTerm` and `workItemTerm`, and
+already calls `buildAgeBandColumnDescriptor` in a `useMemo` at `:409` from raw inputs — so
+`buildSleRiskColumnDescriptor` beside it is the shape the file already has, not a new one. Raw
+`ISleRisk[]` crosses the prop boundary rather than a built descriptor, for the same reason: symmetry
+with the sibling, and the chart is where the terminology lives.
+
+An empty array is the correct value for a team with no published target, and
+`buildSleRiskColumnDescriptor` already returns `undefined` for it — so "required prop" and "no column
+when there is no target" are not in tension.
+
+**DDD-34 — the omission is enforced by a test that partitions `buildViewData`'s keys exhaustively, and
+the partition is the sweep table written as code.** `buildViewData` is a pure function returning a
+finite `Record<string, ViewDataPayload | undefined>`. The test names two sets of keys — those that must
+carry a risk descriptor and those that must deliberately not — and asserts three things:
+
+1. every key in the first set has a defined `sleRiskColumn` for a non-empty answer set;
+2. every key in the second set has none;
+3. **the union of the two sets is exactly `Object.keys(buildViewData(…))`.**
+
+The third assertion is the one that does the work. A payload key nobody has written yet fails the test
+**because the test does not know about it**, not because the test guessed its semantics — so the author
+is made to put it in one list or the other, which is the decision that went missing four times.
+
+*This replaces a weaker first draft and the correction is worth recording.* The first version keyed the
+predicate on referential identity of `inputs.inProgressItems`. Peer review pointed out that this is the
+same mechanism the ADR rejects as Option D, and that the rejection's stated grounds — *"a test that is
+wrong is loud, and a wrapper that is wrong is not"* — are false for the one bypass that matters: an
+author writing `items: [...inputs.inProgressItems]` defeats an identity check in a test exactly as
+silently as in a wrapper. The finding is correct and the design is changed rather than defended. The
+partition depends on no property of the items at all, so it cannot be spoofed by how they were built.
+
+The enabling change is one word: `buildViewData` becomes exported. The alternative — walking the
+rendered `widget-view-data-{key}` testids — is rejected because it would require every widget rendered
+in every category to see every payload, which is a slower test that proves less.
+
+**Why this instrument exists here when ADR-188 recorded none.** ADR-188's enforcement table says, of
+its own sibling problem: *"Not enforced by a test — the agreement property compares outputs, so a
+correct re-implementation passes it… The shared type and code review are the whole mechanism here."*
+That is right for its question, which is *"did you call the shared function"* — a question about a
+program's text, which the program cannot ask about itself. This question is *"does this finite record's
+key set match a stated partition"*, which it can. Same family of worry, different instrument, because
+the shape of the guarded thing is different.
+
+**DDD-35 — `maxWidth` goes from `md` to `xl`, and the arithmetic says both what that fixes and what it
+does not.** Stated because "widen it" reads as if it solved everything, and it does not.
+
+MUI's `Dialog` takes its width from `theme.breakpoints.values[maxWidth]`, bounded by the viewport less
+its 64px of margin. At the 1280px the KPI names:
+
+| | paper | usable (less `DialogContent`'s 24px each side) |
+|---|---|---|
+| `md` (900) | 900 | 852 |
+| `lg` (1200) | 1200 | 1152 |
+| `xl` (1536) | **1216** (viewport-bound) | **1168** |
+
+The two aging dialogs do not carry the same columns, and the difference is worth stating because it
+turns out not to matter. The **bubble-click** dialog (`WorkItemAgingChart.tsx:775-795`) passes a
+`timeInStateColumn`; the **aging widget's View Data** payload (`BaseMetricsView.tsx:708-714`) does not.
+In render order, with `Name` at its 200px floor:
+
+| | ID | Name | Type | State | Age | Age Band | **SLE Risk** | Time in State | total |
+|---|---|---|---|---|---|---|---|---|---|
+| bubble click | 120 | 200 | 120 | 150 | 200 | 130 | **920→1050** | 200 | 1250 |
+| widget View Data | 120 | 200 | 120 | 150 | 200 | 130 | **920→1050** | — | 1050 |
+
+**920 is the number that decides this, and it is the same on both.** So:
+
+- at 852 the visible row ends 62px into the Age Band column, so **the risk column is entirely
+  off-screen** — it does not begin until 920. That is the reported defect, exactly;
+- at 1168 the risk column spans 920→1050 with 118px to spare. **`xl` satisfies AC-03.1 at 1280px, and
+  it does so because `Name` flexes down to its floor and because Time in State — not SLE Risk — is the
+  column that spills.**
+
+`lg` would also clear it at 1280. `xl` is chosen for the screen above: at 1920 the paper is 1536, the
+usable width 1488, and the whole row including Time in State fits with no horizontal scrollbar at all.
+`lg` would leave one there forever on a wide monitor for the sake of 336px it has no use for.
+
+**The margin is one column wide, and peer review was right to ask for the number.** At 1280 the risk
+column ends at 1050 against 1168 of usable width, so 118px of headroom. The next fixed column added to
+this dialog *to the left of the risk column* — a 130px one, which is what the last two were — pushes it
+to 1050→1180 and off the edge again. So `xl` buys exactly one more column at 1280px, and the Enlarge
+toggle is what the dialog has after that. This is recorded rather than discovered by the author of the
+ninth column: it is an enforcement row, and it is why the toggle is in this slice rather than deferred
+as a nicety.
+
+**DDD-36 — an Enlarge toggle, and its state is per viewer and remembered.** The house has three
+precedents and they do not agree, so the question is which one this is:
+
+| Precedent | Remembers? | What it holds |
+|---|---|---|
+| `useAgingBackground` | yes, `localStorage` | which of two things the chart paints behind its dots |
+| `DataGridBase` / `usePersistedGridState`, under `lighthouse:datagrid:work-items-dialog:state` | yes, `localStorage` | **this dialog's** column order, widths and visibility |
+| `EnlargeableChart` | no, `useState(false)` | a momentary closer look at one chart |
+
+The distinguishing question is whether the control expresses *how the viewer wants to work* or *what
+they want to look at right now*. Column widths and dialog size are the first; enlarging a chart to read
+one dot is the second. The brief's own framing — a dialog that has gained four columns and will gain
+more — is a statement about how the reader works. **Remembered**, and the precedent that governs is
+`DataGridBase`'s, which already remembers this same dialog's layout for this same viewer.
+
+**The house trap applies too, and it is the naming one.** `AGING_BACKGROUND_STORAGE_KEY` is
+`workItemAgingPaceBandsEnabled` — a key named for a feature that no longer exists, carrying a comment
+recording that it can never be renamed without silently resetting every chart, and a poisoned value
+(`"risk"`) that must never be reused. So: the key is named for the **state**, not for the slice that
+introduced it, and it takes the newer namespaced form —
+`lighthouse:workItemsDialog:enlarged`, one key for the dialog as a whole rather than one per call site.
+One key, because a binary working preference that has to be re-set on each of sixteen surfaces is the
+problem the toggle exists to remove.
+
+Read with a lazy `useState` initialiser rather than `useAgingBackground`'s mount `useEffect`. Both are
+house patterns; the effect form repaints a chart a frame late, which is invisible, and would resize a
+dialog a frame late, which is not. `DataGridBase`'s `useState<GridColumnVisibilityModel>(() => …)` is
+the closer precedent and the one followed. Both the read and the write are wrapped, because a browser
+with site data blocked still gets a dialog.
+
+The affordance reuses `EnlargeableChart`'s idiom rather than its code: `OpenInFullIcon` /
+`CloseFullscreenIcon`, a `Tooltip`, and an `aria-label` on the **button** — never on the icon, because
+MUI strips `data-testid` from icons in production builds. Labels `Enlarge` and `Restore size`; the verb
+is the house's own and it sidesteps the Maximise/Maximize spelling question, which this repository has
+never had to answer. `fullScreen` on the `Dialog` is the mechanism; MUI ignores `maxWidth` while it is
+set, which is the behaviour wanted.
+
+**DDD-37 — the Close button gains an accessible name, and the E2E page object moves off `.first()` in
+the same commit.** `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts:11` closes this
+dialog with `page.getByRole("button").first()`. The close `IconButton`
+(`WorkItemsDialog.tsx:435`) carries no `aria-label`, so that positional locator is the only way it is
+reachable — and **adding any button ahead of it in the title bar silently retargets every spec that
+closes this dialog**. This is the ledger's 2026-09-17 entry (*"a green component suite is no
+protection… the POMs live in a separate project that neither `tsc -b` nor `pnpm test` compiles"*),
+filed against this very feature's round-1 slice 03, arriving a second time by a different route: the
+rule as written is about *changing* a name, and here nothing is changed.
+
+So the close button gets `aria-label="Close"` and the page object gets
+`this.dialog.getByRole("button", { name: "Close" })` — **scoped to the dialog**, because Playwright's
+`name` is a case-insensitive substring match and `FeatureSizeScatterPlotChart.tsx:685` renders a
+`ToggleButton` labelled `Closed Date` on the page behind this dialog. Same commit, or the slice ships
+red E2E on both verify jobs.
+
+**DDD-38 — a returning viewer's persisted grid layout can still push the column right, and AC-03.1 is
+stated against a default layout rather than pretending otherwise.** `DataGridBase` restores
+`columnOrder` from `lighthouse:datagrid:work-items-dialog:state` and appends any column the stored
+order does not name (`DataGridBase.tsx:218-221`). A viewer who has opened this dialog before has a
+stored order from before the risk column existed, so the column arrives **last** — to the right of Time
+in State, at 1250, off the edge again at 1280.
+
+Three things follow and all three are decisions rather than omissions. The stored key is **not**
+changed and not split per call site: renaming it would reset every viewer's column widths and
+visibility to fix a one-time ordering, which is the `workItemAgingPaceBandsEnabled` mistake made
+deliberately. The toolbar's existing **Reset layout** action already restores the default order, and is
+the answer for a viewer who wants one. And the acceptance criterion says *"with no stored grid layout"*
+— which is what the Playwright run has, and what a new reader has — rather than claiming something the
+mechanism cannot deliver. Recorded in the brief's Architectural Enforcement table so it is not
+rediscovered as a bug.
+
+**DDD-39 — the evidence-depth disclosure lands in this slice, and it makes this slice a backend
+change.** Slice 02's compensating-control table assigns it here *"with an AC, not deferred to
+'later'"*, and DDD-22 removed `comparableItems` on the explicit condition that slice 03 re-adds it with
+its consumer. The case for moving it was weighed and rejected:
+
+- **For moving it**: the subject is different. #6035's job is *the column is on screen from every entry
+  point*; what the number rests on is #6037's subject continued. And it converts a ≤1-day frontend
+  slice into a full-stack one.
+- **Against, and decisive**: cost is not a refutation. Nothing found in this wave weakens slice 02's
+  reasoning — the reasoning is that the guard's deletion is paid for by disclosure, and a control that
+  moves to a story invented because the design got inconvenient is the evaporation the brief warned
+  about. The deletion and its replacement should not be separated by a release boundary, and slices 02
+  and 03 are on the same side of one. The cost is also smaller than it looks: the count is already
+  computed inside `SleRiskCalculator.For` as the denominator, the route does not change, the cache key
+  does not change, no constructor moves and so `Program.cs` and the full Integration suite stay out
+  exactly as DDD-27 arranged.
+
+**The consequence is reported rather than absorbed: this slice is not frontend-only, and DEVOPS was
+skipped on the assumption that it was.** Nothing in the change reaches infrastructure, a migration, a
+pipeline or a gate, so no DEVOPS artifact is actually owed — but the assumption that licensed the skip
+is now false and is corrected here rather than left standing. The estimate moves with it (DDD-49).
+
+**DDD-40 — the disclosure is a sentence about the team's history, not about how the number was derived,
+and that is what lets it be one non-nullable integer.** Three cases reach a cell, and a naive "how many
+items was this computed over" cannot tell two of them apart:
+
+| Case | Risk | `n(a) = count(T ≥ a)` | What a derivation-shaped disclosure would have to say |
+|---|---|---|---|
+| Past the target (`a > R`) | 100, definitional | any value, often 0 | "computed over nothing" — false; this answer owes no evidence |
+| Inside the target, nothing ever ran this long | 0 | 0 | "computed over nothing" — true, and it is the retired `Beyond history` case |
+| Inside the target, with history | computed | ≥ 1 | "computed over n" |
+
+`(Risk = 100, n = 3)` is ambiguous between row 1 and row 3, and no extra field resolves it without
+re-adding a nullable or a sentinel — the two things slices 02 spent its whole length removing. So the
+disclosure states a fact that is **true in all three rows**: *how many items the team finished were
+still open at this age*. It makes no claim about the derivation, so it cannot be wrong about one.
+
+Three arms, all terminology-driven. **Amended after DISTILL** — this decision was written with two,
+and the singular is a third case neither covered: the `n ≥ 1` arm renders *"1 Work Items … were still
+open"*, wrong in both the noun and the verb. A team with a thin history at a given age is the exact
+case this disclosure exists for, so the singular is not a rare path worth rounding off.
+
+- `n ≥ 2` — *"{n} {Work Items} the team finished were still open at this age."*
+- `n = 1` — *"1 {Work Item} the team finished was still open at this age."*
+- `n = 0` — *"No {Work Item} the team finished was ever still open this long."*
+
+The rejected alternative was a rephrase that cannot be wrong in either number — *"Finished work still
+open at this age: {n}"*. It reads as a label rather than a sentence, and the whole argument above is
+that the disclosure states a **fact about the history**. A label states a quantity and leaves the
+reader to supply the fact. One branch is the cheaper price.
+
+The second arm is the information the deleted `Beyond history` sentinel carried, returned **as evidence
+beside the answer instead of as a substitute for it**. That is precisely the compensating control slice
+02 described, and it is worth noticing that the design lands there by arithmetic rather than by
+intention.
+
+A row the answer set does not mention renders `""` and gets no disclosure — it makes no claim, so there
+is nothing to disclose.
+
+**DDD-41 — the field is `FinishedItemsStillOpenAtThisAge`, not `ComparableItems`.** DDD-22 said slice
+03 re-adds it *"named for what it then means"*. It is the sentence in DDD-40's first arm, and a DTO
+field is read far more often than it is typed. Two names rejected: **`ComparableItems`** — the guard's
+own word, and reusing it invites the next reader to look for the guard; **`EvidenceDepth`** — needs its
+doc comment to mean anything, which is a weaker name than one that does not.
+
+Zod gains `finishedItemsStillOpenAtThisAge: z.number()`. No `.nullable()`, no `.optional()`: it is not
+a backend `T?`, and the ledger's Zod rule turns on that.
+
+**DDD-42 — a second pure function on the calculator, not a second return value.** `SleRiskCalculator`
+gains `public static int FinishedItemsStillOpenAtThisAge(int ageInDays, IReadOnlyList<int> closedCycleTimes)`.
+`For` keeps its three-argument signature and its `int` return untouched.
+
+The alternative — making `For` return a pair — would reintroduce `SleRiskVerdict` under a new name one
+slice after DDD-20 deleted it, and would re-open a decision that was argued at length and closed. The
+two questions are genuinely different and their signatures prove it: the count **takes no target**,
+because *"how many finished items were still open this long"* has nothing to do with the promise, and
+it has **no certainty short-circuit**, because past the target the count is still a true fact about the
+history even though the risk stops depending on it.
+
+*Cost, recorded.* One more `Count()` pass per in-flight item over the closed cycle times — the method
+already makes two inside `For`, so the read goes from 2·N·M to 3·N·M comparisons for N closed items and
+M in flight, both in the tens to low hundreds, behind a cache entry that is already keyed on everything
+that moves it. Named so it is a measured trade rather than an unnoticed one.
+
+**DDD-43 — the disclosure is a cell tooltip, and the three alternatives fail on this slice's own
+terms.**
+
+- **A suffix in the cell** — `86% (of 4)`. Rejected twice over. The cell's text is the column's value,
+  so it is what the export carries and what `sleRiskSortValue` parses; and the column is 130px wide
+  precisely because *"the header, rather than any cell, sets the column's width"*. A suffix makes the
+  cell the widest thing in the column and forces it wider — in the slice whose entire purpose is
+  getting that column on screen.
+- **A separate column** — costs another 100px-plus in the dialog this slice is widening because it is
+  already too narrow. Self-defeating for the same reason.
+- **A visual weight cue** — a lighter or italic rendering for a thin-evidence cell. Rejected on slice
+  01's argument: this cell already carries one meaning in its colour, and a second visual channel that
+  a reader must learn is how the zones ladder failed.
+- **A cell tooltip** — **chosen.** Zero width, zero change to the exported value, zero change to the
+  sort. It also layers correctly: the **header** tooltip (slice 02's `sleRiskColumnDescription`) says
+  what the number is and that a thin history reads as a cliff; the **cell** tooltip says what this
+  row's number rests on. General above, particular below.
+
+The count also goes into the cell's accessible name, so the disclosure is not hover-only for a reader
+using assistive technology — and the name is **value first, then disclosure**: *"86%. 4 Work Items the
+team finished were still open at this age."* **Amended after DISTILL**, which caught that this decision
+originally said only that the count "also goes into the accessible name". An `aria-label` *replaces* a
+cell's accessible name rather than adding to it, so a label carrying the sentence alone would take the
+`86%` away from the reader it was written to help — the exact opposite of the claim being made here.
+The test asserts both halves in one body, so no diff can satisfy one and drop the other. The cell keeps `data-testid="sleRiskColumnContent"` unchanged — the E2E
+page object counts on it, and nothing here renames it.
+
+**DDD-44 — one new ADR (198) and one more dated amendment to ADR-192; the split follows DDD-2 and
+DDD-24 rather than inventing a third rule.** The register's own test is whether a future author could
+propose the rejected option without ever opening the existing ADR.
+
+- **ADR-198 — written.** *A shared dialog's optional columns are attached by the payload that owns the
+  population, not decided per call site.* Nobody reaching for "should this prop be required" opens an
+  ADR about the SLE Risk conditional or about a pace-band ladder. The constraint outlives this feature
+  by the brief's own admission that the dialog will gain more columns, and ADR-188 — its nearest
+  neighbour — settles where a *rule* lives, not how a *column* is attached.
+- **ADR-192 — amended, third dated note.** §4's DTO shape gains a field. Same function, same route,
+  same DTO: DDD-24's reasoning applies unchanged, and splitting one contract across two entries costs a
+  reader a hop for no constraint they would otherwise miss.
+- **ADR-194 — untouched.** Nothing here reaches the ladder question.
+
+**DDD-45 — eight commits, and the expand/contract runs the other way round from DDD-28.** Slice 02
+narrowed the payload, so the consumer had to move first. This slice **widens** it, and a `z.object`
+ignores keys it does not know — so an old bundle against a new backend is simply unaware of the new
+field, and the safe order is producer first.
+
+| # | Commit | Contents | Green after it |
+|---|---|---|---|
+| 1 | `fix(sle-risk): the work item dialog stops hiding its own columns` | `maxWidth="md"` → `"xl"`; `WorkItemsDialog.test.tsx` | `pnpm test`, `pnpm build` |
+| 2 | `feat(work-items-dialog): an enlarge toggle for a dialog that keeps gaining columns` | the toggle, `useEnlargedWorkItemsDialog`, `aria-label="Close"`, **and the E2E page object's move off `.first()`** | `pnpm test`, `pnpm build`; the touched Playwright spec run locally |
+| 3 | `refactor(metrics): what is in flight today is one payload, not four` | the `inFlight` base in `buildViewData`, its export, the enumerating test; `totalWorkItemAge` and `workItemAgePercentiles` gain the column as a consequence | `pnpm test`, `pnpm build` |
+| 4 | `fix(sle-risk): a bubble click shows the risk column the widget shows` | `WorkItemAgingChartProps.sleRiskValues` required, the descriptor `useMemo`, the dialog prop, the one call site in `BaseMetricsView` | `pnpm test`, `pnpm build` |
+| 5 | `feat(sle-risk): the risk carries how much finished work it rests on` | backend: `FinishedItemsStillOpenAtThisAge`, the DTO's third field, `GetSleRiskForTeam`, backend tests | `dotnet build` zero warnings; `dotnet test` with the connector categories excluded. The shipped frontend ignores the new key |
+| 6 | `feat(sle-risk): a risk cell says what it rests on` | frontend: the Zod field, the descriptor's accessor, the cell tooltip and accessible name, Vitest | `pnpm test`, `pnpm build` |
+| 7 | `test(sle-risk): the risk column is reachable from both entry points` | the two Playwright assertions at 1280px, the page-object additions, and the `sle_risk_column.png` re-take | Playwright, run locally against a live instance |
+| 8 | `docs(sle-risk): the risk column says what it rests on` | `flow-metrics.md`, ADR-198, ADR-192's third amendment, `brief.md`, this delta, the slice brief's call-site table | Docs gates only — `ci.yml`'s `paths:` filter excludes `docs/**` |
+
+**Why none of these merges.** 1 and 2 are a fix and a feature and the convention separates them; 3 is a
+refactor and the convention separates that too. 5 and 6 cannot merge without either the frontend
+requiring a field the backend has not shipped, or a backend field with no consumer for the length of a
+commit. 7 is last because the screenshot must be taken once, after every visual change in the round —
+which is what DISCUSS deferred slice 02's re-take for.
+
+**DDD-46 — the screenshot, with all three traps pre-applied.** One re-take of
+`docs/assets/features/metrics/sle_risk_column.png`, in commit 7, by the existing `@screenshot` block at
+`Screenshots.spec.ts:987-1016`. No new asset and no renamed one, so the website's jsDelivr hot-links to
+`@main` are unaffected.
+
+- The run needs a **premium licence**, whose fixture is gitignored and therefore absent from every
+  worktree. Import it from the main checkout first.
+- **`rm` the PNG before the run.** The comparison keeps the old file when the pixel diff is under 0.5%,
+  and a kept old file is a silent no-op that looks like a pass.
+- **Exclude `@auth`.** A DB wipe reds the premium tests, and the PNGs already removed are then lost.
+- The dialog is captured in its **default** state, not enlarged: the screenshot documents what a reader
+  gets on opening it, and the Enlarge affordance is visible in the title bar either way.
+
+**DDD-47 — contract shapes, continuing DDD-30 so slice 04 inherits a frame rather than a guess.**
+
+| Component | Shape | Universe | How the crafter asserts it |
+|---|---|---|---|
+| `SleRiskCalculator.FinishedItemsStillOpenAtThisAge` | pure-function, return-only | its two arguments | Static, no clock, no repository, no target. Unit tests over boundaries; no I/O to reach |
+| `buildViewData` | pure-function, return-only | its `ViewDataInputs` | Already pure and already builds no component. Exported in commit 3 and called directly by the enumerating test |
+| `utils/charts/sleRisk.ts` descriptor + disclosure accessor | pure-function, return-only | its arguments | No fetch, no storage, no `Date.now()`. Vitest |
+| `useEnlargedWorkItemsDialog` | bounded-change | exactly one `localStorage` key, `lighthouse:workItemsDialog:enlarged` | Vitest with a real `localStorage`, as `DataGridBase.test.tsx` already does; plus a test that a throwing storage still renders the dialog |
+| `WorkItemsDialog` | render-only | its props | Takes finished answers; learns nothing about cycle times, targets or teams. The prop types are the assertion |
+
+**Earned Trust for this slice.** No adapter is introduced, so a `probe()` would be ceremony. Two
+substrates can lie and both are exercised rather than assumed. **`localStorage`** lies by throwing — a
+browser with site data blocked, or a quota that is full — and both the read and the write are wrapped,
+with a test that asserts the dialog still opens when the storage throws. **The persisted grid layout**
+lies by being stale: it is a stored order that predates a column and is right about every column it
+names, which is why the new one lands last (DDD-38). The trust there is earned by naming the limit in
+the acceptance criterion instead of by a test that quietly runs with an empty `localStorage` and
+reports a guarantee the mechanism does not give.
+
+**DDD-48 — `ItemsInProgress.tsx` is dead, is recorded, and is not deleted here.** It renders a
+`WorkItemsDialog` and is reachable only from its own test. Deleting 198 lines of component plus its
+test is a clean win and it is **not this slice's**: #6035 is about a column being on screen, the
+deletion would double the diff's surface for a reader reviewing a width change, and a dead component is
+not a defect anyone is experiencing. Recorded in the sweep table and raised as Open question 3 so that
+it is owned rather than noticed twice.
+
+**DDD-49 — the estimate moves from ≤1 day to about 1.5, and that is reported.** Slice 02's assignment
+adds a backend round-trip, its tests and a second mutation surface to a slice DISCUSS sized as
+frontend-only. The alternative was to hold the estimate by dropping the assignment, which is the one
+outcome slice 02 wrote its compensating-control table to prevent.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Component Decomposition
+
+**EXTEND — frontend**
+
+| Component | File | Change |
+|---|---|---|
+| `WorkItemsDialog`'s `<Dialog>` | `components/Common/WorkItemsDialog/WorkItemsDialog.tsx:432` | `maxWidth="md"` → `"xl"`; `fullScreen` bound to the enlarge state |
+| `WorkItemsDialog`'s `<DialogTitle>` | same, `:433-441` | Enlarge / Restore size `IconButton` beside Close; `aria-label="Close"` added to the existing one |
+| `sleRiskGridColumn`'s `renderCell` | same, `:196-212` | The cell gains a `Tooltip` and an accessible name carrying the disclosure. `data-testid`, width, sort and value all unchanged |
+| `buildViewData` | `pages/Common/MetricsView/BaseMetricsView.tsx:541-880` | Exported; one `inFlight` base literal; `totalWorkItemAge` and `workItemAgePercentiles` gain the risk column through it |
+| `<WorkItemAgingChart>` call site | same, `:1065` | Passes `sleRiskValues` |
+| `WorkItemAgingChartProps` | `components/Common/Charts/WorkItemAgingChart.tsx:324-334` | `sleRiskValues: ISleRisk[]` — **required** |
+| `WorkItemAgingChart` body | same, `:409-418` and `:775-795` | A `sleRiskColumn` `useMemo` beside the band one; the prop on its own dialog |
+| `SleRiskColumnDescriptor` | `utils/charts/sleRisk.ts:31-41` | One accessor for the disclosure sentence |
+| `buildSleRiskColumnDescriptor` | same, `:87-113` | Reads the new field; the two-arm sentence |
+| `SleRiskSchema` | `models/Metrics/SleRisk.ts` | `finishedItemsStillOpenAtThisAge: z.number()` |
+
+**EXTEND — backend**
+
+| Component | File | Change |
+|---|---|---|
+| `SleRiskCalculator` | `Services/Implementation/SleRiskCalculator.cs` | **New** `FinishedItemsStillOpenAtThisAge(int, IReadOnlyList<int>)`. `For` untouched |
+| `SleRiskDto` | `Models/Metrics/SleRiskDto.cs` | `(string ReferenceId, int Risk, int FinishedItemsStillOpenAtThisAge)`; the doc comment gains the third field's sentence. **Not a persisted model** — verified, not assumed: the type appears in six places across the backend (`TeamMetricsService`, `TeamMetricsController`, `ITeamMetricsService`, its own file and one test), in no `DbSet`, no `LighthouseAppContext` mapping and no `Migrations/` path, so the ledger's *"a new property on a persisted model needs a migration"* rule does not reach it |
+| `TeamMetricsService.GetSleRiskForTeam` | `Services/Implementation/TeamMetricsService.cs:359-396` | One more call in the projection at `:393`. Window, cache key, filters and guard all unchanged |
+
+**CREATE**
+
+| Component | File | Why not an extension |
+|---|---|---|
+| `useEnlargedWorkItemsDialog` | `hooks/useEnlargedWorkItemsDialog.ts` | The only new file. `useAgingBackground` holds a different key with a different legacy-value translation, and a shared "remember a boolean" hook would be an abstraction over two callers — which is the one ADR-018 refuses. Fifteen lines, one key, one wrapped read and one wrapped write |
+
+**EXTEND — tests, docs and E2E**
+
+`WorkItemsDialog.test.tsx`, `BaseMetricsView.test.tsx`, `WorkItemAgingChart.test.tsx`, `sleRisk.test.ts`;
+`SleRiskCalculatorTest.cs`, `Slice01SleRiskReadScenarios.cs` / `…Specifications.cs`,
+`SleRiskAcceptanceTest.cs`; `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts` and
+`WorkItemAgingChart.ts`, `Screenshots.spec.ts`; `docs/metrics/flow-metrics.md`, `brief.md`, ADR-192,
+ADR-198, this delta, `slices/slice-03-column-visible.md`.
+
+**DELETED**: nothing.
+
+**`Program.cs`, `Migrations/` and every RBAC surface are untouched, and this was checked rather than
+hoped.** No constructor signature moves — `SleRiskCalculator` is static, `TeamMetricsService` gains no
+dependency — so no registration moves and the full backend Integration suite, with its live-connector
+flake exposure, stays out of this slice's CI runs, exactly as DDD-27 arranged for slice 02.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Driving ports
+
+| Port | Route / surface | Guard | Change |
+|---|---|---|---|
+| GET | `/api/{version}/teams/{teamId}/metrics/sleRisk` | class-level `[RbacGuard(TeamRead)]` | **Same path, same guard, same parameters (none).** The response body gains one integer per entry. Additive: an older bundle's Zod object ignores keys it does not declare |
+| UI | Work item dialog | — | Wider by default; an Enlarge toggle; the risk cell gains a tooltip and an accessible name. No column added, removed, renamed or resized |
+| UI | Work Item Aging chart, bubble click | — | The dialog it opens now carries the risk column |
+| UI | Total `{Work Item} Age` and `{Work Item} Age Percentiles` View Data | — | Both gain the risk column, because both list what is in flight today |
+
+No RBAC grant, role or policy change. No premium gate added or removed. No CLI or MCP wrapper exists
+for this route, so no `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is owed — and the standing caveat
+survives: the moment one is added it must be version-gated.
+
+## Wave: DESIGN (slice 03) / [REF] Driven ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Work item / transition store | `LighthouseAppContext` | UNCHANGED. No schema, no migration, no EF work |
+| Metrics cache | `GetFromCacheIfExists` / `MetricsCache` | UNCHANGED, key included. The new field is a function of the same four inputs the key already names |
+| Instance clock | `ILighthouseClock` | UNCHANGED |
+| Work tracking system | `IWorkTrackingConnector` | UNCHANGED. The write-back reads `dto.Risk` and is not touched; `RiskByReferenceIdFor` keeps its `Dictionary<string, int>` |
+| Browser local storage | `localStorage` | **One new key**, `lighthouse:workItemsDialog:enlarged`. Reads and writes wrapped; a throwing storage degrades to a dialog that does not remember |
+
+**External integrations**: the tracker write-back is the only one and this slice does not change what is
+written. The standing recommendation is unchanged and repeated because it is the feature's highest-risk
+boundary: **the write-back field mapping to Jira / Azure DevOps / Linear / ServiceNow is covered by the
+existing connector integration categories**, and no new consumer-driven contract is introduced or
+removed here.
+
+## Wave: DESIGN (slice 03) / [REF] Technology choices
+
+Nothing added, upgraded or removed from either lockfile; no licence question arises because no
+dependency moves. `OpenInFullIcon` and `CloseFullscreenIcon` are already in `@mui/icons-material`, which
+is already a direct dependency and is already the source of every icon in this dialog. Named so the
+absence is a decision: **no feature flag, no migration, no deprecation shim and no redirect** — nothing
+in this feature has been released (`v26.9.9.9` is still the newest tag), so there is nobody to be gentle
+with.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Reuse Analysis
+
+Hard gate. One component is created; every other line is EXTEND or REUSE, and the question for each is
+why it is not being replaced and what frame the crafter works inside.
+
+| Component | File | Overlap | Decision | Contract shape · universe · assertion | Justification |
+|---|---|---|---|---|---|
+| `WorkItemsDialog` + its optional descriptor props | `WorkItemsDialog.tsx` | Is the surface | **EXTEND** | render-only · its props · the prop types, plus Vitest | ADR-188's twin, defended again in DDD-31. Thirteen of sixteen callers have nothing to show; a required prop would make them all say so for the sake of one that had a bug |
+| `buildViewData` | `BaseMetricsView.tsx:541` | Owns the payload table | **EXTEND**, plus export | pure-function · its inputs · the enumerating test of DDD-34 | The decision for the widget path lives here already. Moving it anywhere else would put a second place to forget |
+| `WidgetShell` / `ViewDataPayload` | `WidgetShell.tsx:42-52, 379-391` | Forwards everything | **REUSE, untouched** | render-only · its payload · existing tests | It already forwards `sleRiskColumn` and already documents itself as never looking inside. Nothing about the shell is wrong |
+| `buildSleRiskColumnDescriptor` | `utils/charts/sleRisk.ts:87` | Builds the column | **EXTEND** | pure-function · its arguments · `sleRisk.test.ts` | One factory, two consumers after this slice. A second builder in the chart is the defect this feature exists to remove, one level up |
+| `buildAgeBandColumnDescriptor`'s `useMemo` in the chart | `WorkItemAgingChart.tsx:409-418` | The identical problem, already solved | **COPY the shape, not the code** | — | The chart already builds one descriptor from raw inputs and the terms it holds. The risk one sits beside it; extracting a shared "build both descriptors" helper would couple two columns that have nothing to do with each other |
+| `SleRiskCalculator.For` | `SleRiskCalculator.cs` | Is the rule | **KEEP, untouched** | pure-function · its three arguments · unit tests, no reachable I/O | DDD-42. Adding a return value would undo DDD-20 one slice after it was argued |
+| `TeamMetricsService.GetSleRiskForTeam`'s window, key and filters | `TeamMetricsService.cs:359-396` | The read | **REUSE, untouched** | bounded-change · one cache entry · the live-cache service test from slice 02 | Slice 02 settled every part of this and the new field depends on no input the key does not already carry |
+| `DataGridBase` + `usePersistedGridState` | `DataGrid/DataGridBase.tsx`, `DataGrid/hooks` | Remembers this dialog's layout per viewer | **REUSE, untouched** | bounded-change · one `localStorage` key per grid · `DataGridBase.test.tsx` | The precedent that governs DDD-36, and the mechanism behind DDD-38's limit. Changing its key to force the new column left would reset every viewer's widths to fix a one-time ordering |
+| `EnlargeableChart` | `Charts/EnlargeableChart.tsx` | "Make this bigger" | **COPY the idiom, not the code** | — | It wraps content in a `Modal`; wrapping a `Dialog` in a `Modal` is absurd. What is reused is the house's verb (*Enlarge*), its icon, its tooltip-plus-`aria-label` pairing and its habit of putting the test id on the button rather than the icon |
+| `useAgingBackground` | `hooks/useAgingBackground.ts` | Remembers a per-viewer display choice | **COPY the idiom, not the code** | — | Different key, different legacy-value translation, different type. A shared "remember a boolean" hook over two callers is the abstraction ADR-018 refuses. What is reused is the wrapped read/write and the lesson about the key's name |
+| `sleRiskColorFor`, `PACE_BAND_COLORS_LOW_TO_HIGH`, `sleRiskSortValue`, `AT_RISK_FROM` | `sleRisk.ts`, `paceBands.ts` | Colour, order, threshold | **KEEP, untouched** | pure-function · a number or a string · `sleRisk.test.ts` | Nothing here changes what a risk *is*. The disclosure sits beside the value and never inside it, which is exactly why the sort and the export need no change |
+| `WriteBackTriggerService` and its `Dictionary<string, int>` | `WriteBackTriggerService.cs` | The write path | **KEEP, untouched** | plan-value · returns `List<WriteBackFieldUpdate>` · existing tests | It reads `dto.Risk` and the disclosure is not written to anyone's board. A third DTO field it ignores costs it nothing |
+| `Screenshots.spec.ts`'s SLE Risk block and its page object | `Screenshots.spec.ts:987`, `models/metrics/WorkItemAgingChart.ts` | Produces the asset | **REUSE**, re-run | — | The block already opens the dialog, polls the cells and sorts worst-first. Only the PNG changes |
+| `models/metrics/WorkItemsDialog.ts`'s `close()` | E2E page object | Closes the dialog | **EXTEND**, necessarily | — | DDD-37. Its `.first()` is a positional locator that the new button silently retargets, and the ledger's rule as written would not have caught it because nothing is being renamed |
+| `pages/Teams/Detail/ItemsInProgress.tsx` | frontend | A dead `WorkItemsDialog` call site | **KEEP, untouched** | — | DDD-48. Dead, recorded, and not this slice's to delete |
+| ADR-188, ADR-194, `OUT-4127-risk-stability.md`, `docs/evolution/2026-09-17-epic-4127-sle-risk.md` | register and archive | — | **KEEP, untouched** | — | Different subjects, and a record rewritten to match the present stops being a record |
+
+**One component created — `useEnlargedWorkItemsDialog`, justified above. Zero unjustified keeps.**
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Quality attributes (ISO 25010)
+
+**Usability** is the driving attribute, which is unusual for this feature and is the point: slices 01
+and 02 were about *correctness* of a number nobody could see. *Operability* is the verifiable claim —
+the column is on screen at 1280px from both entry points with no horizontal scrolling and no stored
+grid layout (AC-03.1, AC-03.2), and DDD-35 carries the arithmetic rather than an assurance.
+*Learnability*: the disclosure layers general above particular — the header says what the number is, the
+cell says what this row's rests on — instead of asking a reader to hold two meanings in one channel,
+which is the mistake ADR-194 was written about. *Accessibility*: the disclosure is in the cell's
+accessible name and not only in a hover, and both new controls carry `aria-label`s on the button rather
+than on an icon MUI strips.
+
+**Functional suitability** — *correctness* is inherited, not re-argued: nothing here changes what a
+risk is. The one new claim is *completeness*, and it is the sweep's: every surface listing what is in
+flight today shows the risk, and every surface that does not is named with its reason. That is a
+finite, checked claim rather than a feeling, and DDD-34 keeps it true after the authors of this slice
+have moved on.
+
+**Maintainability** — *modifiability* improves measurably: the decision "does this list carry a risk"
+existed in four places in one function and now exists in one. *Testability*: `buildViewData` becomes
+directly callable, so an invariant over its whole output is a unit test rather than a rendering
+exercise. *Analysability*: the sweep table is the map a future author needs and did not have.
+
+**Performance efficiency** — one additional `Count()` pass per in-flight item (DDD-42), on a read that
+is cached on every input that moves it. `maxWidth="xl"` renders more columns in the viewport at once;
+the grid is virtualised by row, not by column, so this is a layout change and not a data one.
+
+**Reliability** — *fault tolerance* on the one new substrate: a `localStorage` that throws leaves a
+dialog that works and does not remember. *Maturity*: no new dependency, no new endpoint, no new
+persistence on the server.
+
+**Security** — nothing reaches authentication, authorisation, a premium gate or a tenant boundary. The
+new DTO field is derived from work already visible to any principal that can read the route, under the
+`[RbacGuard(TeamRead)]` that already governs it. `localStorage` holds one boolean about a dialog's size.
+
+**Portability, Compatibility** — the payload change is additive and old bundles ignore it; the route,
+its shape and its guard are unchanged; no lockfile moves.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] C4 — Container
+
+```mermaid
+C4Container
+  title Container diagram - SLE Risk after slice 03 (epic-4127-sle-risk-corrections)
+
+  Person(coach, "Flow coach", "Runs the standup and the flow review")
+  System_Ext(tracker, "Work tracking system", "Jira / Azure DevOps / Linear / ServiceNow")
+
+  Container_Boundary(lighthouse, "Lighthouse") {
+    Container(spa, "React SPA", "React 18 + TypeScript", "Metrics view, work item dialog, aging chart")
+    Container(api, "Backend", "ASP.NET Core .NET 10", "TeamMetricsController, TeamMetricsService, SleRiskCalculator")
+    ContainerDb(store, "Lighthouse store", "SQLite / PostgreSQL / MySQL / SQL Server", "Work items, state transitions, team settings")
+    ContainerDb(browser, "Browser local storage", "Web Storage API", "Grid layout per dialog, and whether the dialog opens enlarged")
+  }
+
+  Rel(coach, spa, "Reads one risk per in-flight item, and what it rests on, from")
+  Rel(spa, api, "Asks for the risk", "GET /teams/{id}/metrics/sleRisk")
+  Rel(api, store, "Reads the configured history, the target and today's in-flight snapshot from")
+  Rel(spa, browser, "Remembers the dialog's size and column layout in")
+  Rel(api, tracker, "Writes the risk into the mapped field of", "write-back, premium")
+```
+
+**What the diagram is for.** One edge is new and it is the only architectural fact in this slice: the
+SPA now keeps a piece of the reader's working state in the browser. Everything else — the route, its
+guard, the store, the write-back — is unchanged. The response body widens by one integer, which is not
+a topology change and is not drawn as one.
+
+## Wave: DESIGN (slice 03) / [REF] C4 — Component (the two dialog paths)
+
+Drawn at L3 because this slice's whole subject is a structure the container diagram cannot show: two
+paths to one dialog, and a decision that used to be repeated on one of them.
+
+```mermaid
+C4Component
+  title Component diagram - how the work item dialog learns about the SLE Risk column
+
+  Container_Boundary(spa, "React SPA") {
+    Component(view, "BaseMetricsView", "React", "Owns the metrics page and its fetched data")
+    Component(build, "buildViewData", "pure function", "One payload per widget key; one `inFlight` base for the four that list today's WIP")
+    Component(shell, "WidgetShell", "React", "Renders one widget and its View Data dialog; never looks inside the payload")
+    Component(chart, "WorkItemAgingChart", "React", "Plots today's in-flight items; renders its own dialog on a bubble click")
+    Component(desc, "utils/charts/sleRisk", "pure module", "Builds the descriptor: label, colour, sort value, disclosure sentence")
+    Component(dialog, "WorkItemsDialog", "React", "Draws whichever optional columns its props carry; knows nothing of cycle times")
+    Component(grid, "DataGridBase", "React", "Sorting, export, and the per-viewer column layout")
+  }
+
+  Rel(view, build, "Hands the fetched items and terms to")
+  Rel(build, desc, "Asks for one descriptor, attached to every in-flight payload")
+  Rel(build, shell, "Supplies one payload per widget to")
+  Rel(shell, dialog, "Forwards every column descriptor to")
+  Rel(view, chart, "Passes today's in-flight items and their risks to")
+  Rel(chart, desc, "Asks for its own descriptor from")
+  Rel(chart, dialog, "Renders its own bubble-click instance of")
+  Rel(dialog, grid, "Draws its columns through")
+```
+
+**What the diagram is for.** It shows the two arrows into `WorkItemsDialog` and makes plain that only
+one of them used to carry the risk. It also shows why the fix is not symmetric: the upper path has one
+render site and many payloads, so the decision belongs in `buildViewData`; the lower path has one
+payload and one render site, so the decision belongs in a required prop.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Architectural Enforcement (this slice)
+
+| Rule | Mechanism |
+|---|---|
+| A payload listing what is in flight today carries the risk column, and every other payload deliberately does not | **A Vitest test partitioning `buildViewData`'s key set**: two named lists, each asserted, and their union asserted equal to `Object.keys(buildViewData(…))`. A payload key not in either list fails because the test does not know about it. No property of the items is inspected, so nothing about how they were built can spoof it |
+| The dialog has one column of headroom left at 1280px | The arithmetic in DDD-35, carried here so the author of a ninth fixed column meets it: the risk column ends at 1050 against 1168 usable, and one more 130px column to its left puts it off the edge. The Enlarge toggle is the answer past that point, not another `maxWidth` |
+| Adding a field to `SleRiskDto` cannot silently miss a construction site | The positional record. Two sites construct it — `TeamMetricsService.cs:393` and `WriteBackTriggerServiceTest.cs:914` — and a third positional parameter is a compile error at both under `TreatWarningsAsErrors` |
+| No migration is owed for the new field | `SleRiskDto` is a response record, not a persisted model: no `DbSet`, no context mapping, no `Migrations/` path in the commit set. Verified by enumerating its six references, not assumed from its folder |
+| The aging chart's own dialog cannot be built without the risks | The prop type. `sleRiskValues` is required on `WorkItemAgingChartProps`, so the one call site is a compile error until it passes them |
+| Every `WorkItemsDialog` call site is accounted for | The sweep table above — sixteen enumerated, sixteen answered, with the reason written for each "no". A review gate read by a person, and `OUT-4127-R2-no-silent-omission`'s evidence |
+| The column is on screen at 1280px from both entry points | Playwright at a 1280-wide viewport, once through the widget header's View Data and once through a bubble click, asserting the risk column header is in the viewport with no horizontal scroll. Poll for the cells to render **before** bounding anything, or the assertion passes on the loading frame |
+| Widening the dialog changes no column | `WorkItemsDialog.test.tsx` over the existing column set; the `width` and `field` of every column are untouched in the diff |
+| The enlarge state survives a reopen, and a throwing storage does not break the dialog | Vitest with a real `localStorage` (as `DataGridBase.test.tsx` does) and a second case with a storage stubbed to throw. The two cases are separated: the stub replaces the whole API and must not be live while the grid's own persisted-state tests run, which share the `lighthouse:` prefix |
+| Closing the dialog still works from every spec that closes it | The page object moves to `this.dialog.getByRole("button", { name: "Close" })` in the same commit as the new button. Scoped to the dialog, because Playwright's `name` is a substring match and `Closed Date` is on the page behind it |
+| The disclosure never changes the column's value | The cell's `valueGetter` is untouched. `sleRiskSortValue` and the CSV export read the same string they read today, and `sleRisk.test.ts`'s existing rows pin it |
+| The disclosure is true in all three cases | Unit tests over `FinishedItemsStillOpenAtThisAge` at `a > R`, at `a ≤ R` with an empty comparable set, and at `a ≤ R` with history — the three rows of DDD-40's table, each asserting the count rather than the risk |
+| Every entry carries a count | The type. `int FinishedItemsStillOpenAtThisAge` on the wire, `z.number()` in the schema, neither nullable nor optional |
+| A returning viewer's stored layout is a known limit, not a silent failure | Stated in the acceptance criterion (*"with no stored grid layout"*) and answered in-product by the grid toolbar's existing Reset layout action. Not asserted, because the mechanism does not provide it |
+| No member is orphaned and no prop is declared unused | `dotnet build` under `TreatWarningsAsErrors` plus the mandatory `dotnet format analyzers … --severity info --verify-no-changes --no-restore` immediately before `git push`; Biome via `prebuild` and a warning-free `pnpm build` (typescript:S6767) |
+| `Program.cs`, `Migrations/` and RBAC untouched | The commit set reaches none of them; no constructor moves, which is why the full Integration suite stays out |
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] CI-learnings pre-application
+
+Consulted `docs/ci-learnings.md` in full. The rules that bear on what this slice writes, pre-applied
+rather than rediscovered:
+
+- **Changing or deleting a `data-testid` or accessible name means grepping `Lighthouse.EndToEndTests/`
+  in the same edit** — and this slice found the rule's blind spot. Nothing here is renamed; a button is
+  *added*, and `WorkItemsDialog.ts:11`'s `getByRole("button").first()` breaks anyway. DDD-37. The
+  ledger's own 2026-09-17 entry for this rule was filed against this feature's round-1 slice 03, cost
+  two 120s Playwright timeouts × 3 retries on both verify jobs, and was invisible to 99 green Vitest
+  tests over the same component.
+- **MUI strips `data-testid` from icons in production builds.** The enlarge affordance carries its
+  `aria-label` and any test id on the `IconButton`, never on `OpenInFullIcon` — which is exactly what
+  `EnlargeableChart` already does.
+- **`getByRole({ name })` and `getByText` are case-insensitive substring matches by default.** Hence
+  scoping the Close locator to the dialog: `FeatureSizeScatterPlotChart.tsx:685` renders a
+  `Closed Date` toggle on the page behind it. And hence checking that "Enlarge" and "Restore size"
+  collide with nothing else in the dialog — they do not.
+- **RTL name matchers are unanchored**; where a Vitest assertion needs the whole name, use
+  `toHaveAccessibleName` rather than a `name:` regex.
+- **typescript:S6754 — `useState` must destructure into `[thing, setThing]`, with any wrapper given its
+  own verb.** Filed 2026-09-17 against *this feature's round-1 slice 03*, on `useAgingBackground`, for
+  exactly the shape `useEnlargedWorkItemsDialog` is about to take. `[isEnlarged, setIsEnlarged]` with a
+  `toggleEnlarged` wrapper. MINOR severity, invisible to `pnpm build`, `pnpm test` and Biome, and one
+  MINOR issue fails the gate.
+- **typescript:S6767 — a prop declared and never drawn with.** `sleRiskValues` is added to
+  `WorkItemAgingChartProps` and must be used in the same commit, not plumbed ahead of its consumer.
+- **Prefer `globalThis` over `window` (S7764)**; pass single-argument pure functions directly (S7770).
+- **Zod `.nullable()` is for a backend `T?`.** `finishedItemsStillOpenAtThisAge` is not one, so the
+  correct end state is a bare `z.number()` — neither `.nullable()` nor `.optional()`.
+- **CA1861 — no inline `new[] {…}` in a repeatedly-called assertion.** The new
+  `FinishedItemsStillOpenAtThisAge` unit tests hand cycle-time arrays to a method in exactly that
+  position; hoist to `private static readonly`. Ten recorded recurrences, and the pre-commit hook has
+  been observed not to block it three times.
+- **CA1859 / NUnit1028** — any new non-public test helper takes its concrete type, and any
+  `TestCaseSource` provider is `private static`, which then arms CA1859 on the same edit.
+- **NUnit2045** — two independent `Assert.That` calls in one method, including inside a private helper,
+  need `Assert.EnterMultipleScope()`.
+- **S1144 is a deletion's failure and this slice deletes nothing**, which is worth stating so nobody
+  goes looking for it. The characteristic failure here is the opposite: an added member with no caller
+  yet, which is why DDD-45 refuses to split commits 5 and 6 any further.
+- **`Program.cs` is on `path-classifier.sh`'s whitelist and forces every live-connector suite.** Not
+  reached — verified, not assumed.
+- **Never commit a Playwright spec or page object you have not run against a live Lighthouse**, and
+  **after writing an assertion whose failure you have not seen, sabotage the production code and re-run
+  it**. Both apply to commit 7, which is the only commit that touches E2E.
+- **A POM getter returning `0` for "not rendered yet" makes a one-sided assertion vacuous.** The
+  1280px assertion must poll for the risk cells to exist before it bounds anything about position.
+- **Stryker excludes the acceptance suite and the run must be backgrounded** — the per-job cap kills a
+  foreground run. Per-feature mutation, ≥80%, recorded under
+  `docs/feature/epic-4127-sle-risk-corrections/mutation/`. Note this slice mutates **both** stacks for
+  the first time in the round.
+- **`@screenshot` traps** — premium licence fixture (gitignored), `rm` the PNG first, exclude `@auth`.
+  DDD-46.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Decisions table
+
+| ID | Decision | Rationale in one line |
+|---|---|---|
+| DDD-31 | The optional prop stays; the repetition of the decision goes (ADR-198) | Thirteen of sixteen callers legitimately have nothing to show, and all four misses sit within seventy lines of one function |
+| DDD-32 | One `inFlight` base literal in `buildViewData`; three payloads gain the column through it | You cannot write the population without the risk when they are three characters apart |
+| DDD-33 | `WorkItemAgingChartProps.sleRiskValues` is required | One caller, one line, and the class of miss becomes a build failure forever |
+| DDD-34 | An exhaustive partition of `buildViewData`'s key set, inspecting no item | A key in neither list fails because the test does not know about it; keying on the items would be Option D in a test's clothes |
+| DDD-35 | `maxWidth` `md` → `xl`, with the arithmetic | `xl` clears the risk column at 1280 and clears the whole row at 1920; `lg` would leave a scrollbar forever |
+| DDD-36 | Enlarge toggle, per viewer, remembered, key named for the state | Layout is remembered in this house; a peek is not — and `workItemAgingPaceBandsEnabled` is why the key is not named for the slice |
+| DDD-37 | Close gains an accessible name; the page object leaves `.first()` in the same commit | Adding a button silently retargets a positional locator, which the ledger's rule as written does not cover |
+| DDD-38 | A stored grid layout still puts the new column last, and the AC says so | Renaming the storage key to fix a one-time ordering would reset every viewer's widths |
+| DDD-39 | The disclosure lands here, and this slice is therefore not frontend-only | Cost is not a refutation, and a control moved to a new story is the evaporation slice 02 wrote its table to prevent |
+| DDD-40 | The disclosure states a fact about the history, not about the derivation | It is the only form that is true in all three cases without a nullable or a sentinel |
+| DDD-41 | `FinishedItemsStillOpenAtThisAge` | The guard's word invites a reader to look for the guard; `EvidenceDepth` needs its doc comment to mean anything |
+| DDD-42 | A second pure function, not a second return value | Undoing DDD-20 one slice after it was argued, to carry a count that needs no target, is the wrong trade |
+| DDD-43 | A cell tooltip plus the accessible name | A suffix or a column would widen the column this slice exists to get on screen |
+| DDD-44 | ADR-198 written; ADR-192 amended a third time | The prop surface is a subject nobody reaches through ADR-192; the DTO is not |
+| DDD-45 | Eight commits, producer first this time | A widening payload is ignored by an old bundle; a narrowing one is not, which is why DDD-28 ran the other way |
+| DDD-46 | One screenshot re-take, in the last code commit, three traps pre-applied | The comparison keeps the old PNG under a 0.5% diff, which is a silent pass |
+| DDD-47 | Contract shapes stated; Earned Trust spent on `localStorage` and on the stored layout | Both substrates lie, one by throwing and one by being stale about a column it predates |
+| DDD-48 | `ItemsInProgress.tsx` is dead, recorded, not deleted | A dead component is not a defect anyone is experiencing, and the deletion would double a width change's review surface |
+| DDD-49 | The estimate moves to ≈1.5 days | Reported, because the alternative was to hold it by dropping slice 02's compensating control |
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Peer review disposition
+
+`nw-solution-architect-reviewer`, iteration 1, 2026-09-19. **Conditionally approved — 0 critical,
+3 high.** The reviewer independently re-derived the width arithmetic and confirmed it, re-walked the
+sixteen-row sweep and found no misclassified site and no duplicate, and confirmed against
+`BaseMetricsView.tsx:631-714` that `wipOverview` and `aging` carry the descriptor while
+`totalWorkItemAge` and `workItemAgePercentiles` do not.
+
+| # | Finding | Severity | Disposition |
+|---|---|---|---|
+| 1 | **DDD-34's test keyed on referential identity of `inputs.inProgressItems` — which is the mechanism ADR-198 rejects as Option D.** The stated ground for the asymmetry (*"a test that is wrong is loud, and a wrapper that is wrong is not"*) is false for the bypass that matters: `items: [...inputs.inProgressItems]` defeats an identity check in a test as silently as in a wrapper | high | **Accepted, design changed.** This is a real hole and the finding is correct. DDD-34 is rewritten as an **exhaustive partition of the key set** that inspects no property of the items at all, with the third assertion — union equals `Object.keys(...)` — doing the work. It is strictly stronger: it catches a hand-written payload, a spread one, and one whose items come from somewhere new. ADR-198's move 3, its Option D rejection, its *"what this does not claim"* paragraph, its enforcement row and its Consequences are all amended to match, and the brief's invariant with them |
+| 2 | The DTO change's DEVOPS implications are asserted rather than verified — no migration, no version gate | high | **Accepted, verified and written down.** `SleRiskDto` was enumerated: six references across the backend, none in a `DbSet`, a context mapping or a `Migrations/` path, so the ledger's persisted-model rule does not reach it. Two new enforcement rows record the check and a second property found while making it — the record is **positional**, so a third field is a compile error at both construction sites (`TeamMetricsService.cs:393`, `WriteBackTriggerServiceTest.cs:914`) rather than a silent default. On the version gate: the caveat the reviewer asks for is already the one in the ports table, and it stands unchanged |
+| 3 | The E2E page object still uses `getByRole("button").first()`; the locator must move in the same commit as the Enlarge toggle | high | **Already specified — no change, and the disposition is worth stating.** DDD-37 argues it, DDD-45 puts it in commit 2, and both enforcement tables carry it. The reviewer's evidence is that the code has not changed, which is true and is what a DESIGN wave looks like: no code has been written. Recorded rather than silently dismissed, because a reviewer reading the code instead of the plan is exactly how this rule gets re-derived at DELIVER |
+| 4 | The width arithmetic does not say how much headroom is left, so a ninth column would rediscover the defect | medium | **Accepted, fixed.** DDD-35 gains the number: 118px, which is **one 130px column**. Carried into both enforcement tables, and it strengthens the toggle's case — past that point Enlarge is the answer rather than a wider `maxWidth` |
+| 5 | ADR-198's Option A rejection asserts the four payloads were *"written by one author in one sitting"*, a timeline not checked | low | **Accepted, rephrased.** Replaced with the claim the evidence supports — all four sit within seventy lines of one function — and the sentence now leans on move 3 forcing the decision at the same place rather than on an unverified history |
+| 6 | The `localStorage` tests may interact with `DataGridBase`'s, which share the `lighthouse:` prefix | low | **Accepted, fixed.** The enforcement row now requires the throwing-storage stub to be separated from the grid's persisted-state cases |
+| 7 | Q4 — does the write-back path deserialize `SleRiskDto` and could a widening field break it? | — | **Answered, no change owed.** There is no deserialization: `WriteBackTriggerService` consumes `SleRiskDto` as an in-process C# object from `ITeamMetricsService`, never over the wire. The only wire consumer is the frontend Zod schema, which is what DDD-45's commit order is built around |
+
+No finding required a change to the sweep, to the component decomposition, to the commit order or to
+the ADR's decision. Finding 1 changed an enforcement mechanism and is the reason this wave's output is
+stronger than the one it reviewed.
+
+---
+
+## Wave: DESIGN (slice 03) / [REF] Open questions
+
+1. **`blockedOverview` and `staleOverview` list in-flight items and get no risk column, and that is a
+   judgement rather than a derivation.** Both populations are in flight today, so a risk exists for
+   every row and the descriptor is already in scope at that point in `buildViewData` — adding it costs
+   one spread. The case against is that both lists are *selected by a different judgement* (blocked;
+   stale), and a column answering a third question beside a two-question list is how a reader learns to
+   distrust all three. The case for is that a coach triaging blocked work is exactly the reader who
+   wants to know which of them will breach. **Not decided here** and not decided silently: it needs a
+   coach looking at the two lists, which is a dogfood question rather than a design one. If the answer
+   is yes, it is one line each and lands wherever the answer arrives.
+
+2. **The at-risk count on the In Progress card still counts a number the disclosure can now qualify.**
+   `sleRiskAtRiskSummary` counts `risk >= AT_RISK_FROM` and cannot see how much history each answer
+   rests on. Slice 04 moves the threshold to 70 and gives the count a widget of its own. Slice 02's
+   Open question 1 already asks slice 04 to decide what a count does at the one volatile age; this adds
+   a second input to that decision — whether a count should include an item whose share rests on a
+   single finished item. Raised for slice 04's DESIGN, not decided here.
+
+3. **`pages/Teams/Detail/ItemsInProgress.tsx` is dead and needs an owner.** 198 lines plus a test file,
+   reachable only from that test, rendering a `WorkItemsDialog` nobody can open. Deleting it is a clean
+   win and belongs in its own commit on its own story, not inside a width change. Needs an ADO item;
+   flagged so it is owned rather than found a third time.
+
+4. **This slice is not frontend-only and DEVOPS was skipped on the assumption that it was** (DDD-39).
+   Nothing in the change reaches infrastructure, a migration, a pipeline, a gate or a secret, so no
+   DEVOPS artifact is actually owed and the skip stands. Recorded because the *reason* it stands is now
+   different from the reason it was granted, and a stale justification is how the next skip gets made
+   without checking.
+
+## Wave: DISTILL (slice 03) / [REF] Prior Wave Consultation
+
+| Artifact | Read |
+|---|---|
+| This delta, DESIGN slice 03 — C-6…C-8, the sixteen-row call-site sweep, DDD-31…DDD-49, Component Decomposition, Driving/Driven ports, Reuse Analysis, Architectural Enforcement, CI-learnings, Decisions, Peer review disposition, Open questions 1-4 | ✓ |
+| `docs/product/architecture/adr-198-shared-dialog-optional-columns-attached-by-the-payload-that-owns-the-population.md` | ✓ in full — the three moves, all four rejected options, the Consequences and the enforcement table |
+| `slices/slice-03-column-visible.md` | ✓ — and its line numbers are stale and its count of the defect is 1 where the code says 3. Neither is re-derived below; DESIGN's C-6 corrected both and this wave writes against the corrected version |
+| This delta, DISTILL slice 02 — the acceptance inventory's shape, the five Q sections, the test-layer inventory's four-part split, the byte-identical table | ✓, and followed as house style |
+| This delta, DISCUSS — US-R2-03 and its Elevator Pitch, the story map, `OUT-4127-R2-column-reachable`, `OUT-4127-R2-no-silent-omission` | ✓ |
+| Code: `BaseMetricsView.tsx` (`ViewDataInputs` L509-539, `buildViewData` L541-787), `WorkItemsDialog.tsx` (the risk column L180-212, the dialog L432-441), `WorkItemAgingChart.tsx` (props L324-334, the band `useMemo` L409-418, its own dialog L775-795, the bubble's marker button L254-261), `DataGridBase.tsx`, `utils/charts/sleRisk.ts`, `models/Metrics/SleRisk.ts`, `hooks/useAgingBackground.ts` | ✓ |
+| Backend: `SleRiskCalculator.cs`, `SleRiskDto.cs`, `TeamMetricsService.GetSleRiskForTeam` | ✓ |
+| Tests: `sleRisk.test.ts` (230L, all five `describe`s), `WorkItemsDialog.test.tsx` (the SLE Risk block L1440-1652), `WorkItemAgingChart.test.tsx`, `BaseMetricsView.test.tsx` (the `buildWorkItemLookup` block L6684-6772, which is the placement precedent), `SleRiskCalculatorTest.cs` | ✓ |
+| E2E: `models/metrics/WorkItemsDialog.ts`, `models/metrics/WorkItemAgingChart.ts`, `models/metrics/MetricsPage.ts`, `specs/screenshots/Screenshots.spec.ts:987-1016`, `specs/flow/TimeInStateAndStaleness.spec.ts:130-152` | ✓ |
+| `docs/ci-learnings.md` | ✓ via DESIGN's pre-application section, re-applied below |
+| DEVOPS section for slice 03 | ⊘ none, and none is owed — DDD-39 and Open question 4 already correct the reason the skip stands |
+| `docs/architecture/atdd-infrastructure-policy.md` | ⊘ not found, not bootstrapped — unchanged reasoning from slices 01 and 02 |
+| `slices/slice-03-column-visible.md` § acceptance criteria | ⊘ **not found, and it was promised.** DISCUSS says *"Full ACs at `slices/slice-03-column-visible.md`"*; that file carries a Goal, an IN-scope list and Watch-outs, and no numbered criteria. DESIGN cites `AC-03.1` and `AC-03.2` as if they existed. They are written down for the first time below |
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Wave-decision reconciliation
+
+**Zero outstanding contradictions between DISCUSS, DESIGN and DEVOPS. Gate passed.**
+
+DESIGN corrected three upstream claims at source (C-6 the stale line numbers and the count of one where the code says three; C-7 the defect is a repeated decision rather than a forgotten prop; C-8 a dead call site) and none is re-litigated here. The one decision DISCUSS made that DESIGN reversed — that this slice is frontend-only — was reversed **by DISCUSS's own instrument**: slice 02's compensating-control table assigns the disclosure here, and DDD-39 reports the consequence rather than absorbing it. That is a correction, not a contradiction, and Open question 4 already records that the DEVOPS skip now stands for a different reason than the one it was granted for.
+
+Open questions 1 and 2 are not gates on this wave — 1 is a dogfood question about two lists this slice deliberately does not touch, 2 is slice 04's. **Open question 3 is answered against DESIGN by the maintainer**: `ItemsInProgress.tsx` is deleted in this slice rather than backlogged (finding 8). No test is written for it, and two are deleted with it.
+
+**Eight findings this wave raises against its own upstream are in *Changed Assumptions* below.** Two of them change what DELIVER writes, and one of them — the deletion — is a maintainer decision that reverses DESIGN.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] The acceptance criteria, written down
+
+DESIGN cites `AC-03.1` and `AC-03.2`; the brief carries neither. These are the criteria the tests below are written against, derived from the brief's IN-scope list and DESIGN's decisions. They are stated here because a test written against a criterion nobody wrote down is a test whose subject can be argued after it fails.
+
+| AC | Criterion |
+|---|---|
+| AC-03.1 | At a 1280px-wide viewport, for a viewer **with no stored grid layout**, the SLE Risk column is on screen when the work item dialog opens from the widget header's View Data, with no horizontal scrolling |
+| AC-03.2 | The same, from a click on a bubble on the Work Item Aging chart |
+| AC-03.3 | Every list of what the team has in flight today carries the risk column, and every other list deliberately does not — with no list unaccounted for |
+| AC-03.4 | A coach can enlarge the dialog, and it opens the way they left it next time |
+| AC-03.5 | A risk cell says how much finished work the number rests on, without changing what the cell shows, exports or sorts by |
+| AC-03.6 | The disclosure is true for an item past its target, for an item with history, and for an item nothing the team finished ever ran as long as |
+| AC-03.7 | Every `WorkItemsDialog` render site is accounted for, with the reason written for each deliberate omission — and the one site nobody can reach is deleted rather than footnoted again |
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] What this wave does not do, and why
+
+| Normally owed | Here | Why |
+|---|---|---|
+| Walking skeleton | **None new.** `A_team_with_a_target_is_told_each_open_item_s_chance_of_missing_it` holds that role for the Epic | No new path is wired. The route is the same route with one more integer in its body, and the two dialog paths both already render |
+| RED scaffolds | **One file is created and it is not scaffolded** — `hooks/useEnlargedWorkItemsDialog.ts` | A fifteen-line hook whose test is written in the same commit. A stub that raises would exist for the length of one commit and tell nobody anything the failing test does not |
+| Property-based tests | **None**, on either stack | FsCheck is not a dependency of `Lighthouse.Backend.Tests` and fast-check is not one of the frontend's, and DESIGN's technology section says nothing moves in either lockfile. The one function with an unbounded input domain — `FinishedItemsStillOpenAtThisAge` — is a `Count` over a list against one integer, and its three interesting regions are enumerable in three lines |
+| Tier-B state-machine acceptance | **None.** | The one thing that transitions is a boolean in `localStorage` with two states and one event. A state machine over it would have more machinery than subject |
+| Driven-adapter coverage | **One row, and it is the browser's `localStorage`** | No server-side adapter is introduced or changed. The cache, the store and the connectors are untouched. The one substrate that can lie is exercised in Q4's third paragraph |
+| A new backend acceptance *pair* | **None.** The one new scenario joins the Epic's existing pair | See *Changed Assumptions* finding 3: DELIVER folded slice 02's scenarios into `Slice01SleRiskReadTest` rather than founding the pair slice 02's DISTILL specified. That is now the house shape for this Epic and slice 03 follows it rather than founding a third |
+| Infrastructure-policy file | **Not bootstrapped**, same as slices 01 and 02 | Unchanged reasoning |
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Acceptance test inventory
+
+Seven criteria. **All seven carry at least one executable test that fails against the tree as it stands.** AC-03.7 additionally carries a review gate — the sweep table — and that half is not automatable and is not claimed to be.
+
+| AC | Test | File | Layer | Commit | Contract shape |
+|---|---|---|---|---|---|
+| AC-03.1 | `the risk column is on screen when the dialog opens` | `SleRiskColumnReachable.spec.ts` | E2E, 1280px | 7 | `bounded-change` |
+| AC-03.1 | `opens wide enough for the columns it now carries` | `WorkItemsDialog.test.tsx` | Vitest — a canary, not the evidence (Q4) | 1 | `pure-function` |
+| AC-03.2 | `the risk column is on screen when a bubble opens the dialog` | `SleRiskColumnReachable.spec.ts` | E2E, 1280px | 7 | `bounded-change` |
+| AC-03.2 | `shows the risk on the items behind a bubble` | `WorkItemAgingChart.test.tsx` | Vitest | 4 | `pure-function` |
+| AC-03.2 | `shows no risk column for a team that published no target` | `WorkItemAgingChart.test.tsx` | Vitest | 4 | `pure-function` |
+| AC-03.3 | `every list of what is in flight today carries the risk` | `BaseMetricsView.test.tsx` | Vitest, parameterised over the payload keys | 3 | `pure-function` |
+| AC-03.3 | `no other list carries it` | same | Vitest, parameterised | 3 | `pure-function` |
+| AC-03.3 | `every list is in one of the two lists above` — **the one that does the work** | same | Vitest | 3 | `unbounded-preservation` |
+| AC-03.3 | `no list is claimed that no longer exists` | same | Vitest | 3 | `unbounded-preservation` |
+| AC-03.3 | `a team with no published target gets the column nowhere` | same | Vitest — makes the first assertion discriminate | 3 | `pure-function` |
+| AC-03.4 | `remembers a coach's choice of size across a reopen` | `WorkItemsDialog.test.tsx` | Vitest, real `localStorage` | 2 | `bounded-change` |
+| AC-03.4 | `opens anyway when the browser will not remember anything` | same, storage stubbed to throw | Vitest | 2 | `unbounded-preservation` |
+| AC-03.4 | `names its close control, so nothing has to find it by position` | same | Vitest — the durable guard behind Q4's first trap | 2 | `pure-function` |
+| AC-03.5 | `counts the finished work that ran at least this long, in the team's own word for it` | `sleRisk.test.ts` | Vitest | 6 | `pure-function` |
+| AC-03.5 | `tells a reader what the number rests on without putting it in the cell` | `WorkItemsDialog.test.tsx` | Vitest | 6 | `bounded-change` |
+| AC-03.5 | `carries no name of its own for a row that makes no claim` | same | Vitest | 6 | `pure-function` |
+| AC-03.5 | `offers nothing to disclose for a row the answer never mentioned` | `sleRisk.test.ts` | Vitest | 6 | `pure-function` |
+| AC-03.6 | `FinishedItemsStillOpenAtThisAge_WorkTheTeamFinishedThatRanAtLeastThisLong_IsCounted` | `SleRiskCalculatorTest.cs` | unit | 5 | `pure-function` |
+| AC-03.6 | `FinishedItemsStillOpenAtThisAge_NothingTheTeamFinishedEverRanThisLong_IsZero` | same | unit | 5 | `pure-function` |
+| AC-03.6 | `FinishedItemsStillOpenAtThisAge_ItemPastTheTarget_StillCountsTheHistory` — **the discriminating one** | same | unit | 5 | `pure-function` |
+| AC-03.6 | `FinishedItemsStillOpenAtThisAge_WorkThatFinishedOnExactlyThisDay_IsCounted` | same | unit | 5 | `pure-function` |
+| AC-03.6 | `says a thin history said nothing rather than saying nothing` | `sleRisk.test.ts` | Vitest | 6 | `pure-function` |
+| AC-03.6 | `says the same about a certain item as about a safe one` — **the trap** | `sleRisk.test.ts` | Vitest | 6 | `unbounded-preservation` |
+| AC-03.6 | `The_risk_carries_how_much_finished_work_it_rests_on` | the Epic's acceptance pair | backend acceptance | 5 | `bounded-change` |
+| AC-03.7 | the sweep, fifteen rows after the deletion | this delta, DESIGN slice 03 | **review gate, read by a person** | 9 | — |
+| — | `arrives after the columns a saved arrangement already names` | `WorkItemsDialog.test.tsx` | Vitest — the limit AC-03.1 does not claim | 1 | `bounded-change` |
+
+**On tags in the source.** As in slice 02: the tests carry behaviour names and no `AC-03.x` markers. An AC number resolves to a section of a document that gets archived. The mapping lives in this table, where it can be maintained.
+
+**Completeness audit.** Fourteen of the fifteen mechanical checks pass; the one that does not is *every failure mode in the environment matrix has a named sad path*, because no DEVOPS environment matrix exists for this slice. The failure modes that do exist — a throwing `localStorage`, a stale stored column order, a team with no published target, a row the answer set never mentions — each carry a named test above. Verdict **COMPLETE**. One `SPECIFICATION_AMBIGUITY` was routed upstream and is finding 1 below.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Q1 — the exhaustive key-set partition, which is this slice's most important artefact
+
+It is the artefact because it is the only instrument in the slice that outlives the slice. The width is a constant, the three missing columns are three edits, the disclosure is a field — all of them are done once. The partition is what makes the fourth omission fail instead of shipping.
+
+### Where it lives
+
+`Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx`, as a new top-level `describe("which lists carry the risk column")` beside the existing `describe("buildWorkItemLookup")` at `:6684`.
+
+Not a new file, and the precedent decides it rather than taste: `buildWorkItemLookup` is already an exported pure helper living in `BaseMetricsView.tsx` and already tested in `BaseMetricsView.test.tsx` under its own `describe`, importing it by name at `:49`. `buildViewData` is the same shape and gets the same placement. A sibling `buildViewData.test.ts` would be the first file in this directory to test a symbol that lives in another one.
+
+### The two lists
+
+```ts
+const LISTS_WHAT_IS_IN_FLIGHT_TODAY = [
+	"wipOverview",
+	"totalWorkItemAge",
+	"workItemAgePercentiles",
+	"aging",
+] as const;
+
+const DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY = [
+	"blockedOverview", "staleOverview", "featuresWorkedOnOverview", "percentiles",
+	"throughput", "cycleScatter", "workDistribution", "wipOverTime",
+	"totalWorkItemAgeOverTime", "stacked", "estimationVsCycleTime", "featureSize",
+	"throughputPbc", "wipPbc", "totalWorkItemAgePbc", "cycleTimePbc", "featureSizePbc",
+	"arrivals", "arrivalsPbc", "totalThroughput", "totalArrivals",
+] as const;
+```
+
+Four and twenty-one, against the twenty-five keys `buildViewData` returns at HEAD. The names say what the lists mean rather than what the test does with them — `EXPECTED_TO_HAVE_COLUMN` would tell a future author the rule is about a column, and the rule is about a population.
+
+### The four assertions
+
+1. **`every list of what is in flight today carries the risk`** — `it.each(LISTS_WHAT_IS_IN_FLIGHT_TODAY)`, asserting the payload is defined and its `sleRiskColumn` is defined, for inputs carrying a non-empty `sleRiskValues`. Two of the four fail against HEAD, which is this assertion's whole job.
+2. **`no other list carries it`** — `it.each(DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY)`, asserting `built[key]?.sleRiskColumn` is `undefined`. Optional chaining rather than a non-null assertion, because `featuresWorkedOnOverview` is legitimately `undefined` when the inputs carry no Features in progress, and a test that crashed on that would be reporting a fixture choice as a defect.
+3. **`every list is in one of the two lists above`** — the third assertion, which is the one that does the work:
+
+   ```ts
+   const unaccountedFor = Object.keys(built).filter(
+   	(key) => !inFlight.includes(key) && !notInFlight.includes(key),
+   );
+
+   expect(
+   	unaccountedFor,
+   	"Put each of these in exactly one of the two lists at the top of this block: the first is for lists of what the team has in flight today, which carry the risk column; the second is for every other list, which deliberately does not. Whichever you choose, write the reason in the call-site table in the feature's DESIGN record.",
+   ).toEqual([]);
+   ```
+
+   The message is the artefact's user interface. It names the decision, names both options, and names the second place the decision has to be recorded — because a new payload that is silently added to the second list and never written into the sweep passes the test and defeats AC-03.7. Vitest's second argument to `expect` prints ahead of the diff, so the author sees the instruction and then sees which keys triggered it.
+4. **`no list is claimed that no longer exists`** — the reverse direction, its own test so the two failure modes are distinguishable:
+
+   ```ts
+   const named = [...inFlight, ...notInFlight].filter((key) => !(key in built));
+   expect(named, "These payloads were renamed or removed. Update the list that still names them.").toEqual([]);
+   ```
+
+   ADR-198's Consequences already accept this cost — *"a payload renamed rather than added fails the test, correctly but noisily"*. Separating it from assertion 3 is what makes the noise legible: a rename fires this test, a new payload fires the other, and the author is never left reading a diff of twenty-five strings to work out which happened.
+
+A fifth test, **`a team with no published target gets the column nowhere`**, calls `buildViewData` with `sleRiskValues: []` and asserts no payload at all carries a descriptor. It exists because assertion 1 would be satisfied by a descriptor that is unconditionally defined, and `buildSleRiskColumnDescriptor` returning `undefined` for an empty answer set is the behaviour that keeps a team without a target from getting a column of blanks. Without this test, assertion 1 does not discriminate between "attached correctly" and "attached always".
+
+### What the partition must not do, and this is the load-bearing part
+
+**It inspects no item.** No `toBe` against `inputs.inProgressItems`, no `Object.is`, no reference comparison, no length check, no `payload.items[0]`. The predicate is over key names and nothing else.
+
+DESIGN's first draft keyed it on referential identity of the in-flight array, and peer review's finding 1 is correct: `items: [...inputs.inProgressItems]` defeats an identity check in a test exactly as silently as in the wrapper ADR-198 rejects as Option D. A reviewer rejecting a DELIVER diff on this point needs no argument beyond the ADR's own Option D rejection — the mechanism is rejected in both places or in neither.
+
+The consequence is what makes the instrument strong: because it depends on no property of the items, it catches a hand-written payload, a spread one, a filtered one, and one whose items arrive from somewhere that does not exist yet. The only thing it cannot catch is a seventeenth call site outside `buildViewData` and outside the aging chart — which ADR-198 names, in writing, as weaker than a test and leaves to the sweep.
+
+### The enabling change
+
+`buildViewData` becomes exported. One word, one existing precedent in the same file, and the export exists for the test — which ADR-198's Consequences already record as a cost accepted rather than a shape improved.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Q2 — the three missing columns, and why they are not one test
+
+**Two tests, not three and not one.** The three misses do not share a driving surface, and the boundary between them is exactly the boundary ADR-198's moves 1 and 2 are split along.
+
+**`totalWorkItemAge` and `workItemAgePercentiles` need no test of their own.** They are two keys in a record built by a pure function, and Q1's first assertion is already a parameterised test over those keys — `it.each` over a four-element list, two elements of which fail against HEAD. Writing `shows the risk on the total age list` and `shows the risk on the age percentiles list` as two named tests would be two bodies differing by one string, with the four-key list then maintained in two places: once in the partition and once in the test names. The moment a fifth in-flight payload arrives, the partition's list is updated and the named tests are not, and the new payload is covered by the weaker of the two instruments. Parameterising over the list that the partition already maintains is what keeps them from diverging.
+
+**The aging chart's bubble-click dialog needs its own test, and it could not be folded in.** It is not a `buildViewData` payload. It is a required prop on a different component, which renders its own `WorkItemsDialog` at `WorkItemAgingChart.tsx:775` from `selectedItems` — a subset chosen by a click, assembled inside the component, never passing through `buildViewData` at all. `buildViewData` cannot observe it and the partition cannot reach it.
+
+So, in `WorkItemAgingChart.test.tsx`:
+
+- **`shows the risk on the items behind a bubble`** — render the chart with in-flight items and a matching `sleRiskValues`, click a bubble by its accessible name, assert the dialog carries the `SLE Risk` column header and one `sleRiskColumnContent` cell per listed item. The bubble is reached by `getByRole("button", { name: /^View \d+ .* aged \d+ days/ })`: every marker button carries that label at `:258`, and only the ones with stale items carry a `data-testid`, so a test id would silently depend on the fixture producing staleness.
+- **`shows no risk column for a team that published no target`** — the same render with `sleRiskValues={[]}`, asserting no header and no cells. This is the arm that proves the required prop and the descriptor factory agree: DDD-33's *"required prop"* and *"no column when there is no target"* are only not in tension if the empty array reaches `buildSleRiskColumnDescriptor` and comes back `undefined`. Without this test, a crafter satisfying the required prop by building a descriptor unconditionally would ship a column of blanks to every team without a target and nothing would notice.
+
+**Why not one test over all three.** A single test covering all three would have to render `BaseMetricsView` whole, drive a widget's View Data and drive a bubble click, and assert the column in both dialogs. It is slower, it fails for a dozen reasons that are not this slice's, and it proves *less*: it would exercise the four in-flight payloads that happen to be rendered in the category on screen and say nothing about the twenty-one that are not. The partition covers twenty-five payloads by inspecting a record; the rendering test would cover perhaps four by rendering a page.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Q3 — the disclosure's content, at the boundary
+
+The field is one non-nullable integer and the sentence is about the **history**, not about the derivation (DDD-40). Three cases reach a cell, and the third is a trap because it is the one where the count was never consulted.
+
+### The backend: the count is a fact about history and takes no target
+
+Four tests on `SleRiskCalculator.FinishedItemsStillOpenAtThisAge` in `SleRiskCalculatorTest.cs`, using the existing `SixtyFinishedItems` array at `:16` rather than a new one:
+
+| Test | What it pins |
+|---|---|
+| `FinishedItemsStillOpenAtThisAge_WorkTheTeamFinishedThatRanAtLeastThisLong_IsCounted` | age 9 against `SixtyFinishedItems` returns the count of cycle times `>= 9` — the ordinary case, and the number the sentence quotes |
+| `FinishedItemsStillOpenAtThisAge_WorkThatFinishedOnExactlyThisDay_IsCounted` | the `>=` boundary. An item that finished on exactly this day was still open at this age, and counting it is what makes the count agree with `For`'s own comparable set |
+| `FinishedItemsStillOpenAtThisAge_NothingTheTeamFinishedEverRanThisLong_IsZero` | a history whose longest item is shorter than the age returns 0, which is the second arm's input |
+| `FinishedItemsStillOpenAtThisAge_ItemPastTheTarget_StillCountsTheHistory` | **the discriminating one.** The method takes no target, so there is no certainty short-circuit to reach. An age past every plausible target still returns the true count. This is the test that reds if somebody later "aligns" the method with `For` by adding the `ageInDays > targetRangeInDays` clause — which would silently zero the count for exactly the rows DDD-40's first table row is about |
+
+The signature carries this by itself — `FinishedItemsStillOpenAtThisAge(int ageInDays, IReadOnlyList<int> closedCycleTimes)` has nowhere to put a target — and the fourth test is what stops the signature from growing one.
+
+Pre-applied build rules: the arrays are `private static readonly` already and no new inline `new[] {…}` appears in an assertion position (CA1861); any method with two independent `Assert.That` calls uses `Assert.EnterMultipleScope()` (NUnit2056/2045); the return is an `int`, so NUnit2046's `Has.Count.EqualTo` does not apply here and is not cargo-culted in — it applies to any helper this slice adds that returns a collection, and this slice adds none. **S1144 is a deletion's failure and this slice deletes nothing**; the shape to watch is the opposite, an added member with no caller yet, which is why commits 5 and 6 are not split further.
+
+### The frontend: one pure sentence, three inputs, no risk
+
+A new exported pure function beside `sleRiskColumnDescription`:
+
+```ts
+sleRiskEvidenceDisclosure(finishedItemsStillOpenAtThisAge: number, workItemTerm: string, workItemsTerm: string): string
+```
+
+It takes **no risk**. That is the design, not an omission, and it is what makes the trap untriggerable rather than merely untriggered.
+
+Tests in `sleRisk.test.ts`, new `describe("what a risk rests on")`:
+
+| Test | Case |
+|---|---|
+| `counts the finished work that ran at least this long, in the team's own word for it` | `n = 4` reads *"4 Work Items the team finished were still open at this age."*, and with a renamed term *"4 Tickets …"* — the terminology is configurable and the sentence renders the team's word, never ours |
+| `speaks of one finished item in the singular` | `n = 1`. **See finding 1 below — DDD-40 specifies two arms and this is a third case neither covers.** As written, the first arm renders *"1 Work Items … were still open"* |
+| `says a thin history said nothing rather than saying nothing` | `n = 0` reads *"No Work Item the team finished was ever still open this long."* This is the information the deleted `Beyond history` sentinel carried, returned as evidence beside the answer instead of as a substitute for it |
+| **`says the same about a certain item as about a safe one`** | **the trap.** See below |
+
+### The trap, and the shape of the assertion that catches it
+
+An item past its target reads 100 because the certainty rule short-circuits — the count was **never consulted**. Its count may well be 0, because nothing the team finished ever ran that long. So the cell shows `100%` and discloses *"No Work Item the team finished was ever still open this long"*, and a reader must not be able to conclude that the 100 came from that emptiness.
+
+The obvious test — assert the sentence contains none of "computed", "based on", "of", "rests on" — is the wrong instrument. It is a negative assertion over an open set of words, it goes stale the moment the wording is edited, and it passes for a sentence that implies the derivation without using any of the four words.
+
+The assertion that discriminates is a positive one about **invariance**:
+
+```
+the disclosure for a row reading 100% with nothing to compare against
+    is byte-identical to
+the disclosure for a row reading 0% with nothing to compare against
+```
+
+Written at the descriptor level, over two answers that differ only in their risk and share `finishedItemsStillOpenAtThisAge: 0`. It fails the instant anyone adds a risk-aware branch to the sentence, which is the only way the implication can get in. And it is provable by construction at the function level too, because `sleRiskEvidenceDisclosure` has no risk parameter — so the test documents a property the signature already guarantees, which is exactly what makes it cheap to keep and loud when the signature changes.
+
+The backend half of the same trap is `FinishedItemsStillOpenAtThisAge_ItemPastTheTarget_StillCountsTheHistory`: the number itself must stay a true statement about the history in the row where the risk stopped depending on it.
+
+### The accessor, and the row that makes no claim
+
+`SleRiskColumnDescriptor` gains `disclosureFor: (workItem: IWorkItem) => string | undefined`. A row the answer set never mentions renders `""` in the cell and gets **no** disclosure — it makes no claim, so there is nothing to disclose (DDD-40's last paragraph). One test, `offers nothing to disclose for a row the answer never mentioned`, asserting `undefined`.
+
+### At the cell
+
+Two tests in `WorkItemsDialog.test.tsx`, under the existing `describe("SLE Risk column")`:
+
+| Test | Assertion |
+|---|---|
+| `tells a reader what the number rests on without putting it in the cell` | the cell's **accessible name** carries the value and the sentence; the cell's **text content** is still exactly `86%`. Both halves in one test, because separating them lets a diff satisfy one and break the other |
+| `carries no name of its own for a row that makes no claim` | the unanswered cell's accessible name is `""` — no `aria-label` is added to a cell that discloses nothing |
+
+Assertions use **`toHaveAccessibleName`**, not `getByRole(…, { name: /…/ })`. RTL name matchers are unanchored substring matches, and the sentence is a long string whose whole point is its wording — an unanchored match would pass for a truncated or a differently-worded sentence.
+
+**The accessible name must carry both the value and the sentence, and DESIGN does not say so** — see finding 2. An `aria-label` on the cell *replaces* the accessible name rather than adding to it, so `aria-label={disclosure}` alone would take `86%` away from a reader using assistive technology in the act of telling them more.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Q4 — the two E2E traps the ledger's rule does not cover
+
+### Trap one: adding a sibling silently retargets a positional locator
+
+`Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts:11` closes this dialog with `this.page.getByRole("button").first()`. The close `IconButton` at `WorkItemsDialog.tsx:435` carries no `aria-label`, so position is the only way it is reachable. Adding **any** button ahead of it in the title bar retargets every spec that closes this dialog — and the ledger's rule is phrased around *renaming* a locator, so nothing here trips it. Nothing is renamed. A button is added.
+
+**What is tested, in three places, and only one of them is E2E.**
+
+1. **The page object moves in the same commit as the toggle** (commit 2). `close()` becomes `this.dialog.getByRole("button", { name: "Close" })` — scoped to the dialog, because Playwright's `name` is a case-insensitive substring match and `FeatureSizeScatterPlotChart.tsx:685` renders a `Closed Date` toggle on the page behind this dialog. An unscoped `getByRole("button", { name: "Close" })` would be ambiguous on exactly the surfaces where this dialog is most used.
+2. **A Vitest test is the durable instrument**, and it is the one that matters: `names its close control, so nothing has to find it by position` asserts the close control has accessible name `Close` and the enlarge control has its own distinct one. It runs in three seconds in `pnpm test`, on every push, forever. If a future edit drops the `aria-label`, this reds locally instead of costing two 120s Playwright timeouts × 3 retries on both verify jobs — which is what the ledger's 2026-09-17 entry, filed against this feature's own round-1 slice 03, actually cost. The POM change is the fix; this test is what stops the fix from rotting.
+3. **Every spec that closes this dialog is run locally before commit 2 is made.** `TimeInStateAndStaleness.spec.ts:130` is one of them. This is an obligation on DELIVER rather than a test, and it is stated because the POM project is compiled by neither `tsc -b` nor `pnpm test` — a green component suite is no protection, and nothing local will tell you the locator is wrong except running it.
+
+### Trap two: a returning viewer's stored order puts a new column last
+
+`DataGridBase` restores `columnOrder` from `lighthouse:datagrid:work-items-dialog:state` and appends any column the stored order does not name (`DataGridBase.tsx:218-221`). A viewer who has opened this dialog before has an order from before the risk column existed, so the column arrives **last** — right of Time in State, at x≈1250 against 1168px of usable width at 1280. Off the edge again, and no amount of widening fixes it, because the cause is the stored order and not the width.
+
+**What is tested.**
+
+- The **visibility** half is already covered and DESIGN does not mention it: `WorkItemsDialog.test.tsx:1549`, *"stays visible for a coach whose saved column arrangement predates it"*, seeds a stored `columnOrder` naming five columns and asserts the risk header is in the document. That test stays and is not edited.
+- The **ordering** half is added beside it: `arrives after the columns a saved arrangement already names` — the same stored order, asserting the risk header's index is greater than the index of every column the stored order names. It is the test a future reader needs in order not to "fix" the ordering by renaming the storage key, which would reset every viewer's widths and visibility to correct a one-time placement. That is the `workItemAgingPaceBandsEnabled` mistake, made deliberately.
+
+**What the AC can claim.** At a 1280px viewport, for a viewer **with no stored grid layout**, the SLE Risk column header is within the dialog's visible width with no horizontal scrolling, from the widget header's View Data (AC-03.1) and from a bubble click (AC-03.2). That is what a fresh Playwright context has and what a new reader has.
+
+**What the AC cannot claim, and says so rather than implying otherwise.** Nothing about a returning viewer. The mechanism does not provide it. The in-product answer is the grid toolbar's existing **Reset layout** action; the test answer is that there is none. The E2E spec must not clear `localStorage` as a quiet setup step and then report a guarantee — a fresh context starts empty by construction, and the AC's *"with no stored grid layout"* is what makes running in one honest rather than merely convenient.
+
+### The E2E spec
+
+One new spec, `Lighthouse.EndToEndTests/tests/specs/flow/SleRiskColumnReachable.spec.ts`, two `test.step`s, following the naming of `WorkItemAgePercentilesStatus.spec.ts` beside it. The suite is a thin sanity check here: one walking skeleton per entry point, no matrix.
+
+- **`page.setViewportSize({ width: 1280, height: 900 })` first.** There is no `setViewportSize` anywhere in the suite today — see finding 5. Without it the test asserts about the runner's default viewport, which is not the screen the criterion is stated against.
+- **Poll before bounding.** `await expect.poll(() => agingChart.countSleRiskCells()).toBeGreaterThan(0)` before any assertion about position. A POM getter returning `0` for "not rendered yet" makes a one-sided position assertion vacuous — it passes on the loading frame.
+- **The assertions**: the risk column header's bounding box is inside the grid's visible width, and the virtual scroller's `scrollWidth` is not greater than its `clientWidth`. Two claims, because a header can be within the box while the row still scrolls.
+- **Step 2 closes the dialog through the new `Close` locator before clicking a bubble**, which exercises trap one on the way past.
+- **The bubble**: a new `openDialogFromBubble()` on `WorkItemAgingChart.ts` using `getByRole("button", { name: /^View \d+ .* aged \d+ days/ }).first()`. Not `openDialogFromStaleBubble()` — that one depends on the demo data containing a stale item, which is a second thing that can fail and has nothing to do with this criterion.
+- **Sabotage it before committing.** Revert `maxWidth` to `md` locally and confirm the position assertion reds. An assertion whose failure has not been seen is not an assertion, and a position assertion against a virtualised grid is the shape most likely to pass for the wrong reason.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Q5 — the screenshot re-take
+
+**One re-take, in commit 7, after every visual change in the round.** `docs/assets/features/metrics/sle_risk_column.png`, by the existing `@screenshot` block at `Screenshots.spec.ts:987-1016`. No new asset and no renamed one, so the website's jsDelivr hot-links to `@main` are unaffected. The block's code does not change; only the PNG does.
+
+Four traps, pre-applied rather than rediscovered:
+
+1. **The run needs a premium licence and the fixture is gitignored** — `valid_not_expired_license.json` is absent from every worktree. Import it from the main checkout before the run, or two Licensing tests red and the premium screenshots never execute.
+2. **`rm` the PNG before the run.** The comparison keeps the old file when the pixel diff is under 0.5%, and a kept old file is a silent no-op that reads as a pass. This slice adds a button to the title bar and widens the paper by 316px, so the diff will almost certainly clear the threshold — which is a reason to expect the trap not to bite, not a reason to skip the `rm`.
+3. **Exclude `@auth`.** A DB wipe reds the premium tests, and the PNGs already removed are then lost with nothing to restore them from.
+4. **Capture the dialog in its default state, not enlarged.** The asset documents what a reader gets on opening it; the Enlarge affordance is visible in the title bar either way.
+
+The block already opens the dialog, polls `countSleRiskCells()` and sorts worst-first, so nothing about its sequence changes. It generates the asset rather than comparing against it, which is why a changed cell text cannot red it — and is why the asset has been deliberately stale since slice 02.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Test-layer inventory
+
+### Deleted outright
+
+| File | Tests leaving the suite | Why |
+|---|---|---|
+| `pages/Teams/Detail/ItemsInProgress.tsx` (198 lines) | — | Dead. It renders a `WorkItemsDialog` at `:181` and nothing in production imports it. Verified by enumeration rather than sampled: the only `ItemsInProgress` occurrences anywhere in `src/` outside the component and its own test are `mockItemsInProgressData` at `BaseMetricsView.test.tsx:721` and `:827`, a same-named local variable holding a `RunChartData` fixture with no relation to it |
+| `pages/Teams/Detail/ItemsInProgress.test.tsx` (102 lines) | **2** — `renders nothing when no entries provided` and `renders entries and opens dialog on click` | Its only subject goes. The file mocks `WorkItemsDialog` and the terminology hook and asserts the props the component hands the dialog, so none of it survives the deletion |
+
+**The suite loses exactly two tests.** Recorded so a reviewer reading a smaller total treats the change as expected rather than as something to investigate — which is the failure mode a deletion inside a slice that adds twenty-four tests invites.
+
+**Why it rides this slice rather than an item of its own.** The slice's deliverable is the sweep of every `WorkItemsDialog` call site, and a dead call site is one the sweep has to reason about and dismiss *every single time* it is redone. Round 1 found it, nobody acted, and DESIGN found it again — which is how an inventory grows a permanent footnote. It is deleted here, and the sweep drops from sixteen rows to fifteen.
+
+**What a deletion would normally owe and does not owe here.** Stated rather than skipped, because a silent skip is how the next deletion skips it wrongly.
+
+- **No `Lighthouse.EndToEndTests/` grep is owed.** Nothing in the E2E project reaches this component. The single textual match is `WorkItemsInProgressOverTime` at `models/metrics/MetricsPage.ts:619`, a widget-name constant that shares a substring and nothing else.
+- **No `data-testid` leaves the shipped bundle.** The component carries none. The only test id in either file is `mock-dialog`, declared inside the test's own `vi.mock` factory, so it never existed in production.
+- **No accessible name leaves the shipped bundle**, for the same reason: the component is unreachable, so nothing it labelled was ever on a screen.
+
+**The one check that is owed, and it is the characteristic Sonar failure of any deletion.** A helper, constant, type or import used only by the deleted component becomes unused the moment it goes, and a warning-free `pnpm build` turns that into a failure rather than a note. Slice 01 hit exactly this class — an unused `private static readonly` field that `TreatWarningsAsErrors` made a build error — so it is live here. The inventory, checked rather than assumed:
+
+| Symbol | Verdict |
+|---|---|
+| `InProgressEntry`, exported from the component at `:8` | **Goes with the file.** Exported, but referenced only at `:16` inside its own module — zero consumers anywhere else in `src/` |
+| `HighlightColumnDefinition`, imported by the test at `:36` | **Survives.** Two other consumers, `WorkItemsDialog.tsx` and `WidgetShell.tsx` |
+| `TERMINOLOGY_KEYS.WORK_ITEM_AGE`, `useTerminology`, MUI `Chip` | **Survive.** Each has many consumers |
+
+So the two files go together and orphan nothing — but the check is what establishes that, and Biome plus a warning-free `pnpm build` are what confirm it in the commit. The deletion is **its own commit**, which is also what keeps this check reviewable: a deletion folded into a feature commit is a deletion whose orphan surface nobody can see in the diff.
+
+**It does not perturb the key-set partition.** `ItemsInProgress` is not a `buildViewData` payload and never was — it renders its own `WorkItemsDialog` directly from an `entries` prop that its (nonexistent) caller would supply, so it contributes no key to the record the partition inspects. `Object.keys(buildViewData(...))` is the same twenty-five keys before and after, and neither of the two lists in Q1 changes by a name.
+
+### Added
+
+| Test | File | Commit |
+|---|---|---|
+| `opens wide enough for the columns it now carries` | `WorkItemsDialog.test.tsx` | 1 |
+| `arrives after the columns a saved arrangement already names` | same | 1 |
+| `names its close control, so nothing has to find it by position` | same | 2 |
+| `remembers a coach's choice of size across a reopen` | same, new `describe`, real `localStorage` | 2 |
+| `opens anyway when the browser will not remember anything` | same, storage stubbed to throw | 2 |
+| `every list of what is in flight today carries the risk`, `no other list carries it`, `every list is in one of the two lists above`, `no list is claimed that no longer exists`, `a team with no published target gets the column nowhere` | `BaseMetricsView.test.tsx`, new top-level `describe("which lists carry the risk column")` | 3 |
+| `shows the risk on the items behind a bubble`, `shows no risk column for a team that published no target` | `WorkItemAgingChart.test.tsx` | 4 |
+| four `FinishedItemsStillOpenAtThisAge_*` tests | `SleRiskCalculatorTest.cs` | 5 |
+| `The_risk_carries_how_much_finished_work_it_rests_on` | the Epic's acceptance pair (see *Placement*) | 5 |
+| `describe("what a risk rests on")` — four tests | `sleRisk.test.ts` | 6 |
+| `offers nothing to disclose for a row the answer never mentioned` | same, under `describe("building the risk column")` | 6 |
+| `tells a reader what the number rests on without putting it in the cell`, `carries no name of its own for a row that makes no claim` | `WorkItemsDialog.test.tsx` | 6 |
+| `SleRiskColumnReachable.spec.ts` — two steps | E2E | 7 |
+| the `sle_risk_column.png` re-take | `Screenshots.spec.ts` — code unchanged, asset regenerated | 7 |
+
+### Edited
+
+| Test or helper | File | Change |
+|---|---|---|
+| `sleRiskColumn` fixture at `:1456` | `WorkItemsDialog.test.tsx` | gains `disclosureFor`. **Mechanical and compiler-forced** — the descriptor type widens, so every construction site must supply it |
+| `answer()` helper at `:29`, `descriptorFor()` at `:34` | `sleRisk.test.ts` | `answer` gains the third field with a default, so the twenty-odd existing two-argument call sites do not move. A signature change that touched them would put the colour regression net into the diff, which Q-below forbids |
+| every `<WorkItemAgingChart>` render | `WorkItemAgingChart.test.tsx` | gains `sleRiskValues={[]}`. Required prop (DDD-33), so this is a compile error until done. `[]` changes no existing expectation, because the descriptor factory returns `undefined` for it — which the new `shows no risk column` test is what proves |
+| `<WorkItemAgingChart>` assertions and any mock of it | `BaseMetricsView.test.tsx` | same required prop, same reason |
+| `getSleRisk` mock shape | `MockApiServiceProvider.ts`, `useMetricsData.test.ts` | the answers gain the third field. Re-check `typescript:S4144` on the two `createMockTeamMetricsService` bodies afterwards, as slice 02 had to |
+| `close()` | `models/metrics/WorkItemsDialog.ts` | `.first()` → `this.dialog.getByRole("button", { name: "Close" })`. **Same commit as the toggle** (commit 2), or the slice ships red E2E on both verify jobs |
+| new `openDialogFromBubble()` | `models/metrics/WorkItemAgingChart.ts` | `sleRiskColumnHeader` and `countSleRiskCells` already exist and are reused unchanged |
+| `SleRiskDto` construction at `:914` | `WriteBackTriggerServiceTest.cs` | a third positional argument. A **compile error** at both construction sites rather than a silent default — which is the positional record's enforcement, not a chore |
+
+### Must stay byte-identical — and the reviewer checks this against the diff
+
+| File or block | Why it is the assertion |
+|---|---|
+| `sleRisk.test.ts` — `describe("painting the risk")` (`:126-154`) and `describe("reading the number back out of a rendered label")` (`:155-168`) | **The regression net around the column's colouring and labelling, and it scored 100% on mutation in slice 02.** The disclosure sits beside the value and never inside it: `labelFor`, `sleRiskColorFor` and `sleRiskSortValue` take no new argument and return no new thing. A diff that reaches these two blocks is a diff that changed the value, which is the one thing this slice must not do |
+| `WorkItemsDialog.test.tsx` — `describe("ordering and carrying out the list")` (`:1593`→) | The sort comparator and the CSV export read the cell's **text**; the disclosure is in the accessible name. If these move, the disclosure leaked into the value and DDD-43's whole case for a tooltip collapses |
+| `WorkItemsDialog.test.tsx:1549` — `stays visible for a coach whose saved column arrangement predates it` | Already covers DDD-38's visibility half. The new ordering test sits **beside** it, never instead of it |
+| Every `data-testid` in the dialog — `sleRiskColumnContent`, `ageBandColumnContent`, `additionalColumnContent`, `time-in-state-stale` | Four E2E page objects count on them and nothing here renames one. Any rename means grepping `Lighthouse.EndToEndTests/` in the same edit |
+| Every column's `width` and `field` in `WorkItemsDialog.tsx`, `width: 130` on the risk column in particular | DDD-35's arithmetic — the risk column spanning 920→1050 against 1168 usable, with 118px of headroom — is stated against these numbers. A changed width invalidates the headroom claim and AC-03.1 with it |
+| `SleRiskCalculator.For` and every existing `For_*` test | DDD-42. `For` keeps its three arguments and its `int`. A diff touching `For` is a diff that undid DDD-20 one slice after it was argued |
+| `Screenshots.spec.ts:987-1016` | Re-run, not rewritten |
+| `paceBands.ts` and `paceBands.test.ts` | The palette the net is about |
+| `useAgingBackground.ts` and its `AGING_BACKGROUND_STORAGE_KEY` | A different key with a different legacy-value translation. The new hook copies the idiom, never the code, and never the key |
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Changed Assumptions (back-propagation)
+
+Eight. Two change what DELIVER writes and are not deferrable; one reverses a DESIGN decision on the maintainer's instruction.
+
+**1 — DDD-40 specifies two arms and there are three cases. `n = 1` renders "1 Work Items … were still open".** The first arm is *"{n} {Work Items} the team finished were still open at this age"*, and it is wrong in the singular — both in the noun and in the verb. This is a specification gap rather than an implementation detail, because the fix is a wording decision: either a third arm (*"1 {Work Item} the team finished was still open at this age"*), or a rephrase that cannot be wrong in either number (*"Finished work still open at this age: {n}"* — which reads as a label rather than a sentence and loses DDD-40's whole argument about stating a fact about the history). **Recommendation: the third arm.** It costs one branch, keeps the sentence a sentence, and the singular is not rare — a team with a thin history at a given age is the exact case the disclosure exists for. The `speaks of one finished item in the singular` test is written against the third arm and will red until it exists.
+
+**2 — DDD-43 says the count "also goes into the cell's accessible name" without saying the name must carry the value too.** An `aria-label` on the cell *replaces* its accessible name; it does not add to it. So `aria-label={disclosure}` alone takes `86%` away from a reader using assistive technology in the very act of telling them more — the opposite of the accessibility claim in the Quality attributes section. The accessible name must be value-then-disclosure, and the test asserts both halves in one body so a diff cannot satisfy one and break the other.
+
+**3 — slice 02's DISTILL specified a new `Slice02SleRiskOneNumberScenarios.cs` / `…Specifications.cs` pair, and DELIVER folded eighteen scenarios into `Slice01SleRiskReadTest` instead** — still carrying `[Category("slice-01")]`. The code is fine and the shipped shape is arguably better (one acceptance pair for the Epic, which is what `SleRiskAcceptanceTest`'s own comment proposes), but the record is now wrong and a reader following it would found a third pair. **Slice 03 follows the shipped shape**: its one backend acceptance scenario joins `Slice01SleRiskReadScenarios.cs` / `…Specifications.cs`. Whether the class and its category are renamed to drop `Slice01` is a tidy, and it is not this slice's.
+
+**4 — DESIGN's sweep does not name four of the twenty-five payload keys.** `arrivals`, `arrivalsPbc`, `totalThroughput` and `totalArrivals` appear in no row. Row 1i covers *"`estimationVsCycleTime`, `throughputPbc` and the remaining PBC entries"*, which reaches `arrivalsPbc` at a stretch and reaches neither `arrivals` nor `totalArrivals` nor `totalThroughput`, none of which is a PBC. All four list a started-on-a-past-day or a closed population and belong in the deliberately-without list for row 1g's and row 1f's reasons respectively — but the sweep is `OUT-4127-R2-no-silent-omission`'s evidence and it currently accounts for twenty-one of twenty-five. **The sweep table gains four rows in the docs commit.** Worth noticing on its own terms: the partition test caught a gap in the sweep at authoring time, before a line of it was written, which is the instrument doing exactly what ADR-198's move 3 claims for it.
+
+**5 — the E2E suite contains no `setViewportSize` anywhere.** AC-03.1 and AC-03.2 are stated at 1280px and the suite has never pinned a viewport, so the new spec is the first. Not an error upstream, but a spec that omits it asserts about the CI runner's default window and would read as green on any machine wide enough.
+
+**6 — DDD-38's visibility half is already covered by an existing test** at `WorkItemsDialog.test.tsx:1549`, which DESIGN does not mention. The new test adds the *ordering* claim, and a reviewer expecting one new test where DESIGN implies the mechanism is untested should find two tests covering two different halves.
+
+**7 — the slice brief promises ACs it does not carry.** DISCUSS says *"Full ACs at `slices/slice-03-column-visible.md`"* and DESIGN cites `AC-03.1` and `AC-03.2`; neither exists in that file. The seven criteria above are written down here for the first time. **The slice brief gains them in the docs commit**, or the next reader re-derives them and gets a different set.
+
+**8 — DDD-48 and Open question 3 are overridden by the maintainer: `ItemsInProgress.tsx` is deleted in this slice, not backlogged.** DESIGN argued for recording it and leaving it — *"a dead component is not a defect anyone is experiencing, and the deletion would double a width change's review surface"* — and raised it as needing an ADO item. The maintainer's decision reverses both halves: it rides this slice, with no item of its own. The argument that carries it is the one DESIGN did not weigh — the slice's deliverable is the sweep, a dead call site is a row the sweep must dismiss on every future pass, and round 1 already found it once without acting. The review-surface objection is answered by the deletion being its own commit rather than by deferral. **The sweep table becomes fifteen rows in the docs commit**, and DDD-48 and Open question 3 are amended to record the reversal rather than left standing against the shipped tree.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Test placement, environment and pre-requisites
+
+**Placement follows precedent throughout; one new E2E spec, no new project, no new fixture base, no new backend test pair.**
+
+- The partition goes in `BaseMetricsView.test.tsx` beside `describe("buildWorkItemLookup")`, which is this file's own precedent for an exported pure helper.
+- The disclosure's sentence and accessor go in `sleRisk.test.ts` beside the wording tests they extend.
+- The hook's two tests go in `WorkItemsDialog.test.tsx` under their own `describe` rather than in a `useEnlargedWorkItemsDialog.test.ts` — the hook has one consumer and the behaviour under test is *the dialog opens the way it was left*, which is a claim about the dialog.
+- **The two `localStorage` cases are separated**, and the enforcement table already requires it: the throwing-storage stub replaces the whole API and must not be live while `DataGridBase`'s persisted-state cases run, which share the `lighthouse:` prefix. `DataGridBase.test.tsx` clears storage in `beforeEach`; the new `describe` restores the real API in `afterEach`.
+- The backend unit tests join `SleRiskCalculatorTest.cs`; the one acceptance scenario joins the Epic's existing pair (finding 3).
+- `SleRiskColumnReachable.spec.ts` joins `tests/specs/flow/`.
+
+**The deletion is a ninth commit and it goes first among the frontend ones.** `refactor(teams): delete a work item list nobody can open` — both files in one commit, ahead of DDD-45's current commit 3, so the `inFlight` refactor and the partition test land against a tree with fifteen call sites rather than sixteen. Its own commit for two reasons: the house convention separates a refactor from a fix and from a feature, and an orphan check is only reviewable in a diff that contains nothing but the deletion. DDD-45's numbering shifts by one from that point on; the order and the reasoning behind every other boundary are unchanged.
+
+**Environment: `local-dev` and `ci-build` for everything that runs by default, plus the two verify jobs for the E2E spec.** No new credential, variable or configuration key. No connector category is invoked. `Program.cs` is not reached — verified, not assumed — so `path-classifier.sh` does not force the live-connector suites and the standard filter still excludes them. The `@screenshot` run is manual, local, and needs the premium licence fixture imported first.
+
+**Build rules pre-applied to everything specified above.** Backend: `Assert.EnterMultipleScope()` rather than `Assert.Multiple` (NUnit2056/2045); `TestCaseSource` providers `private static` (NUnit1028), which arms CA1859 on the same edit; cycle-time arrays hoisted to `private static readonly`, never inline `new[] {…}` in a repeatedly-called assertion position (CA1861); `Has.Count.EqualTo` on any collection assertion (NUnit2046) — none of the new assertions is one, and the rule is named so its absence is a decision. S1144 is a deletion's failure and this slice deletes nothing; the shape to watch is an added member with no caller yet, which is why commits 5 and 6 are not split. Frontend: `toHaveAccessibleName` rather than an unanchored `name:` regex; `[isEnlarged, setIsEnlarged]` with a separately-named wrapper verb (S6754, filed against this feature's own round-1 slice 03); no prop declared before its consumer (S6767); `globalThis` over `window` (S7764); Zod `z.number()` with neither `.nullable()` nor `.optional()`, because the field is not a backend `T?`.
+
+**Pre-requisites owed by DELIVER before the first push**: the eight-commit order of DDD-45 unchanged, producer before consumer; `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` before `git push`; `pnpm build` warning-free; `dotnet test` with the four connector categories excluded; and every Playwright spec or page object touched in commits 2 and 7 run locally against a live instance before it is committed.
+
+---
+
+## Wave: DISTILL (slice 03) / [REF] Handoff to DELIVER
+
+**Twenty-four new tests — eleven Vitest in the dialog and the descriptor, five Vitest in the partition, two Vitest in the aging chart, four backend unit, one backend acceptance, one E2E spec of two steps. Two tests deleted, with 300 lines of dead component and its test. Seven helpers, fixtures and mocks retargeted, five of them by the compiler. And one regression net that must come through the diff untouched.**
+
+**RED is per-commit, never across a boundary.** Every commit in DDD-45 builds and runs green at its own boundary. The new tests are RED against the tree as it stands immediately before their own commit's production edit and green after it. Concretely: the partition's first assertion fails on `totalWorkItemAge` and `workItemAgePercentiles` before commit 3 and passes after it; the aging chart's two tests fail before commit 4; the four calculator tests fail to compile before commit 5, which is RED for the right reason at that layer because the method does not exist; the disclosure's tests fail before commit 6.
+
+**The test that would have caught the reported defect** is `shows the risk on the items behind a bubble`. **The test that would have caught the two nobody reported** is the partition's third assertion — and it is the one that keeps catching, because a payload nobody has written yet fails it for not being classified rather than for being wrong.
+
+**Four things a reviewer must not accept.**
+
+1. **A partition that inspects an item.** Any `toBe` against `inputs.inProgressItems`, any reference comparison, any `items.length` check. It is Option D wearing a test's clothes, ADR-198 rejects it in both places, and `items: [...inputs.inProgressItems]` defeats it silently.
+2. **A disclosure sentence that takes a risk.** The signature having no risk parameter is what makes the certainty case untriggerable rather than merely untriggered.
+3. **An `aria-label` on the risk cell that carries only the sentence.** It replaces the accessible name and takes the number away from the reader it was meant to help.
+4. **The POM's `close()` moving in a later commit than the Enlarge button.** One commit, or two verify jobs go red for a reason that looks like a dozen unrelated specs breaking at once.
+
+**Carried forward to slice 04**: the disclosure now qualifies a number the In Progress card's at-risk count cannot see, which is DESIGN's Open question 2 and a second input to the threshold decision slice 04 already owns. **Nothing goes to the backlog** — the one item DESIGN raised for it, `ItemsInProgress.tsx`, is deleted here instead (finding 8).
+
+---
+
+---
+
+## Wave: DELIVER (slice 03) / [REF] What shipped
+
+**Nine commits.** The eight DDD-45 planned, plus the `ItemsInProgress.tsx` deletion the maintainer
+moved into this slice, which runs first so the sweep it shortens is already shorter when the sweep
+is written.
+
+| # | Commit | Gate it cleared |
+|---|---|---|
+| 0 | `refactor(teams): delete a component nobody can open` | `pnpm build` clean |
+| 1 | `fix(sle-risk): the work item dialog stops hiding its own columns` | full suite 371 files / 5291 tests |
+| 2 | `feat(work-items-dialog): an enlarge toggle for a dialog that keeps gaining columns` | same, plus `TimeInStateAndStaleness.spec.ts` 3/3 against a live instance |
+| 3 | `refactor(metrics): what is in flight today is one payload, not four` | 5319 tests |
+| 4 | `fix(sle-risk): a bubble click shows the risk column the widget shows` | 5321 tests |
+| 5 | `feat(sle-risk): the risk carries how much finished work it rests on` | `dotnet build` 0 errors; backend suite **7050** passed |
+| 6 | `feat(sle-risk): a risk cell says what it rests on` | 5328 tests |
+| 7 | `test(sle-risk): the risk column is reachable from both entry points` | Playwright green, and **red at `maxWidth="md"`** |
+| 8 | docs | docs-only; `ci.yml` excludes `docs/**` |
+
+**Mutation: frontend 96.25%, backend 84.21%, both above the 80% gate.** `sleRisk.ts` finished at
+100%. Full record, including the three gaps mutation found and the four equivalent survivors, in
+`mutation/results-slice03.md`.
+
+## Wave: DELIVER (slice 03) / [REF] Changed Assumptions (back-propagation)
+
+**Six things the plan got wrong or did not know. Four are corrections to this delta; two are
+corrections to a test that was already written.**
+
+**1 — DESIGN's sixteen-row sweep named 21 of 25 payload keys.** `arrivals`, `arrivalsPbc`,
+`totalThroughput` and `totalArrivals` appear in no row of it. DISTILL caught this while writing the
+partition and it is recorded there; noted again here because of *when* it was caught — before a line
+of the partition existed. The instrument found a hole in the inventory it was built to enforce.
+
+**2 — the E2E assertion DISTILL specified cannot be written, and the reason is measurable.** DISTILL
+asked for *"the virtual scroller's `scrollWidth` is not greater than its `clientWidth`"* beside the
+bounding-box check. That assertion fails against a dialog in which nothing is cut off: at 1280px the
+widget's dialog has seven columns summing to exactly 1166, its row element measures 1166 and its
+content element measures 1166 — all equal to `clientWidth` — while `scrollWidth` reports 1189. No
+column accounts for the 23px, the grid reserves no scrollbar gutter, and it is internal to MUI-X.
+Replaced with a bounding-box assertion on the risk column's **header and a cell**, which is the
+subject the criterion is about. In the ledger.
+
+**3 — and the bubble dialog genuinely overflows, which no criterion forbids.** Measured: it carries
+eight columns to 1250px against 1166 visible, because it adds a Time in State column the widget's
+own dialog does not have. The risk column ends at 1050 and is comfortably on screen — AC-03.2 holds
+— and Time in State is the part cut off. Stated rather than quietly dropped: **nothing in this slice
+promises every column fits at 1280px**, and the enlarge toggle is the answer for the ones that do
+not. A reviewer who reads the spec and expects a no-overflow assertion should find this paragraph.
+
+**4 — `getByRole` cannot reach a chart marker, so the bubble locator is an attribute selector.**
+DISTILL specified `getByRole("button", { name: /^View \d+ .* aged \d+ days/ })`. Every marker is a
+real `<button>` carrying exactly that `aria-label`, and the lookup still matches nothing: the markers
+sit inside the chart's `<foreignObject>` and MUI-X hides the SVG surface from the accessibility tree,
+which `getByRole` skips by design. Measured before concluding — 13 buttons by role in that widget,
+none of them a marker; five markers by a CSS lookup. In the ledger.
+
+**5 — the trap test was vacuous, and mutation found it rather than review.** `says the same about a
+certain item as about a safe one` compares two disclosures against each other, which two `undefined`s
+satisfy — so emptying `disclosureFor` survived. DISTILL chose invariance over a banned-word list for
+good reasons and the reasoning stands; what it needed was an anchor. One positive assertion was
+added beside it. The adversarial review of the same commits returned zero findings, correctly: this
+is a hole in a test's strength, not in the code's shape.
+
+**6 — the slice brief had lost its `## OUT of scope` heading.** Its three out-of-scope bullets sat
+directly under *"Also in scope: delete `ItemsInProgress.tsx`"* and therefore read as **in** scope —
+an inversion introduced when that section was inserted. Restored, along with the seven acceptance
+criteria DISCUSS promised the brief carried and DESIGN cited as if it did.
+
+**The DEVOPS-skip record, corrected rather than left standing.** The skip was licensed on "slices
+02-04 are frontend-only". Slice 03 re-adds a DTO field, so that premise is false. The skip itself
+still holds — nothing here reaches infrastructure, a migration, a pipeline, a gate or a secret — but
+it now holds for a different reason than the one it was granted for, and a stale justification is how
+the next skip gets made without checking. DDD-39 and DISTILL's Open question 4 already said this; it
+is repeated here because this is the wave that proved it by shipping backend code.

@@ -382,6 +382,41 @@ get re-applied.
 
 ## Tests
 
+### 2026-09-19 — a StrykerJS run can fail three different ways and exit 0 every time, having tested nothing
+
+- **Symptom**: three consecutive frontend mutation runs reported success to the shell and produced no score. Causes, in order: `Cannot find TestRunner plugin "vitest"` (the config needs an explicit `"plugins": ["@stryker-mutator/vitest-runner"]`); `Vitest failed to find test files related to mutated files` (`vitest.related` defaults on and cannot reconcile with a narrowed `include` — set `"related": false`); and `No tests were found` (the scratch vitest config named a setup file that does not exist — the real one is `./setupTests.ts`, not `src/tests/testSetup.ts`).
+- **Root cause**: StrykerJS throws a `ConfigError`, resets the sandbox, and still exits 0. A background job or CI step reading the exit code records a passing mutation gate over zero mutants.
+- **Fix**: run `pnpm exec vitest run --config <the stryker vitest config>` standalone **before** the first Stryker invocation and confirm it prints a test count.
+- **Rule going forward**: never trust a Stryker exit code as evidence a run happened — read the score line, and prove the harness is live with a standalone vitest run first. Same family as the three existing config traps (Stryker.NET's ignored `{a..b}` spans, StrykerJS's comma-separated span, the missing `test-case-filter`): the config matches nothing and the output still looks fine. This one is worse, because there is no misleading number to notice — only a green exit.
+
+### 2026-09-19 — a chart's markers are invisible to `getByRole`, because MUI-X hides the SVG from the accessibility tree
+
+- **Symptom**: a new Playwright spec timed out on `widget.getByRole("button", { name: /^View \d+ .* aged \d+ days/ }).first().click()`, waiting for a locator that matched nothing — while the aging chart demonstrably rendered four marker buttons, each a real `<button type="button">` carrying exactly that `aria-label`.
+- **Root cause**: each marker is an HTML button inside the chart's `<foreignObject>`, and MUI-X marks the chart's SVG surface as hidden from the accessibility tree. `getByRole` skips hidden elements by design, so no accessible-name spelling can ever match. Measured rather than guessed: in that widget `getByRole("button")` returns 13 elements and **none** is a marker, while `locator('button[aria-label^="View "]')` returns all five.
+- **Fix**: locate markers by attribute, scoped to the element only they live in — `this.Widget.locator('foreignObject button[aria-label^="View "]')` (`MetricsPage.ts` `agingBubbles`). The `foreignObject` ancestry is what excludes the widget's own "View Data" button, which shares the label prefix.
+- **Rule going forward**: inside any MUI-X chart, reach interactive elements by `data-testid` or by an attribute selector — never by role or accessible name, however correctly the element is labelled. This is the one place in this suite where the house preference for role-based locators is wrong, so write the reason at the locator. A role lookup that returns zero here is the expected result, not a mis-spelled name to keep re-guessing.
+
+### 2026-09-19 — the DataGrid scroller reports phantom horizontal overflow, so it cannot gate a "fits on screen" assertion
+
+- **Symptom**: an assertion that the work item dialog's grid does not scroll horizontally (`scrollWidth - clientWidth <= 1`) failed with 23px of overflow on a dialog where every column demonstrably fits.
+- **Root cause**: not the columns. With seven columns at a 1280px viewport the headers sum to exactly 1166, the row element measures 1166 and the `virtualScrollerContent` measures 1166 — all equal to `clientWidth` — while `scrollWidth` reports 1189 and the element really does scroll 23px. No column accounts for it, `--DataGrid-scrollbarSize` is `0px` and `--DataGrid-hasScrollY` is `0`. It is internal to the grid.
+- **Fix**: assert on the bounding box of the column you care about — its header **and** one of its cells — against the scroller's own box, rather than on the container's scroll metrics (`SleRiskColumnReachable.spec.ts`).
+- **Rule going forward**: never gate "this column is on screen" on a MUI DataGrid's `scrollWidth`. It over-reports by tens of pixels with no column behind the difference, and it also under-serves the opposite case — a dialog can legitimately carry more columns than fit (the work item dialog's bubble variant overflows 84px by design, and has an Enlarge control for exactly that) while the column under test sits well inside the edge. Measure the subject, not the container.
+
+### 2026-09-19 — an invariance assertion is satisfied by two of anything, including two absent values
+
+- **Symptom**: a test asserting that two disclosures are byte-identical passed against a mutant that emptied the function producing them. Stryker killed 62 of 64 mutants in the file and the two survivors were the whole body of `disclosureFor` (`{}`) and its `answer === undefined` check (`true`) — both of which make every disclosure `undefined`, and `undefined === undefined` satisfies the comparison.
+- **Root cause**: the test compared two outputs **against each other** rather than against anything real. That shape is the right instrument for the property it was chosen for — it catches any risk-aware branch entering the sentence, which a list of banned words cannot — but it anchors nothing.
+- **Fix**: add one positive assertion pinning a real expected value from the real factory (`hands a row's own count to the sentence`), and keep the invariance test beside it. Both survivors die.
+- **Rule going forward**: any assertion of the form `expect(f(a)).toBe(f(b))` needs a sibling that pins `f(a)` to a literal. Without one the pair is vacuously true whenever `f` returns a constant — which is precisely what a mutation operator does to it. The same applies to "these two screens agree" cross-checks: assert the agreement *and* assert one side against an expectation.
+
+### 2026-09-19 — a null guard in front of a LINQ call is an equivalent mutant, and this is the third time (Recurrence: 3)
+
+- **Symptom**: `ArgumentNullException.ThrowIfNull(closedCycleTimes)` in `SleRiskCalculator.For` survives being deleted. First seen in Epic #4127 round 1 and recorded in its evolution archive; seen again in round 2 slice 02, and a third time in slice 03 — where the *new* method `FinishedItemsStillOpenAtThisAge` reproduced it exactly, because it has the same shape.
+- **Root cause**: `Enumerable.Count` performs its own null check and throws the same exception type one line later, so no test can distinguish the guard's presence from its absence.
+- **Fix**: none. Keep the guard — it fails fast and states the precondition at the boundary — and record it as equivalent in the slice's mutation results rather than chasing the score.
+- **Rule going forward**: a `ThrowIfNull` immediately preceding a LINQ call over that same argument will always survive mutation. Do not add a test for it, do not delete the guard to raise a score, and categorise it as equivalent in `results.md` on the first run rather than re-deriving it next time.
+
 ### 2026-09-19 — letting refreshes run concurrently wiped feature→team ownership, and only the demo-data E2E could see it
 
 - **Symptom**: `verifysqlite` AND `verifypostgres` red on run `35430764225`, both on the same claim: `MultiTeamForecast.spec.ts:37` and `DeliveryJointLikelihood.spec.ts:116` expect `"Cannot forecast"` for a feature/delivery whose contributing team has closed nothing, and got dates (`"10/1/2026…"`, `"All Features by 11/18/2026: 0%"`). Every other job green, including the full backend suite and 31 new acceptance tests for the very change that caused it.

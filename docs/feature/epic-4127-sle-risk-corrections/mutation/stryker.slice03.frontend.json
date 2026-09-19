@@ -1,0 +1,21 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.stryker.sleRiskSlice03.ts",
+    "related": false
+  },
+  "mutate": [
+    "src/utils/charts/sleRisk.ts",
+    "src/hooks/useEnlargedWorkItemsDialog.ts"
+  ],
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "reporters": ["html", "json", "progress"],
+  "jsonReporter": { "fileName": "stryker-sle-risk-slice03.json" },
+  "tempDirName": ".stryker-tmp-sle-risk-slice03",
+  "thresholds": { "high": 80, "low": 70, "break": 0 }
+}

@@ -134,9 +134,13 @@ Four consequences worth knowing:
 - **A thin history reads as a cliff rather than a curve.** If nothing your team finished ever ran as long as an item has, and the item is still inside its target, it reads `0%` — there is nothing to build a gradient from, so it stays at zero right up to the target and reads `100%` the day after. A team with little finished work will see that shape rather than a smooth rise.
 - **Where your team has finished little at a given age, the number moves sharply.** It is a share of the items that got that far, so when only a handful did, one finishing or ageing out shifts it by a lot. This bites hardest at the target day itself, and hardest of all for teams that usually hit their target — few of their items ever reach it. The number is shown anyway, because a coach can weigh a share of four items but cannot act on a blank.
 
+**Hover a risk to see how much finished work it rests on** — *"4 Work Items the team finished were still open at this age."* That is what tells a share of four apart from a share of forty, which otherwise read identically. It is a fact about your history rather than an explanation of the number: an item past its target reads `100%` without the history being consulted at all, and it will still tell you truthfully that nothing your team finished ever ran that long.
+
 Items that have since closed are not in the column at all, so a past date range shows gaps where those rows are. A closed item has no risk of missing anything.
 
-Sort the column to bring the items most likely to breach to the top, or export the list to CSV, where the value reads as the percentage you see rather than as a bare number.
+Sort the column to bring the items most likely to breach to the top, or export the list to CSV, where the value reads as the percentage you see rather than as a bare number. The hovered sentence stays out of both: it is not part of the column's value, so it neither changes the sort order nor appears in the exported file.
+
+The dialog opens wide enough to show the column without scrolling sideways, and the **Enlarge** control in its title bar takes it full screen for the columns that still do not fit. Lighthouse remembers that choice, so the dialog opens the way you left it.
 
 {: .note}
 The risk uses the SLE **range** — the number of days — and not the probability half of the pair. The probability is a statement about the team's whole population and is already reported by the widget's status indicator; the risk is a statement about one item, measured against what actually happened.

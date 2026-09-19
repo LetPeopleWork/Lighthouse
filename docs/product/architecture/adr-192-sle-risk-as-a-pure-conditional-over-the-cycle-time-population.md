@@ -30,6 +30,24 @@ here, by section:
 | §4 | *"An item that took exactly `R` days is not a breach"* | Unchanged, and load-bearing. An item whose **age** equals `R` is still computed rather than forced to 100: it can close today and meet the promise |
 | §5, §6 | No premium gate, no RBAC change, no client wrapper; the frontend descriptor holds no arithmetic | Unchanged. The route keeps its path and its class-level guard; it loses its query parameters, which it had stopped reading |
 
+**Amended 2026-09-19 (third amendment)** — `epic-4127-sle-risk-corrections` slice 03, ADO Story #6035.
+**The DTO gains a third field, and the arithmetic gains a second function.** Same route, same service
+method, same shape of answer — so this belongs here rather than in an ADR of its own, by the same
+reasoning the second amendment used.
+
+| Section | What it says | What now holds |
+|---|---|---|
+| §1 | One function, `Risk(ageInDays, targetRangeInDays, closedCycleTimes)` | A second, `FinishedItemsStillOpenAtThisAge(ageInDays, closedCycleTimes)`. It takes **no target** and has no certainty short-circuit, and both absences are the design. An item past its target is told it is certain to miss without the history being consulted; the count beside that answer must still describe the history rather than report the nothing the derivation used |
+| §4 | `SleRiskDto(string ReferenceId, int Risk)` | `SleRiskDto(string ReferenceId, int Risk, int FinishedItemsStillOpenAtThisAge)`. Non-nullable, like `Risk`, and for the same reason: it is a fact about the team's history that is true beside every answer the risk can give. A field meaning *"how many items this was computed over"* could not be — it would have to say "none" both for an item past its target and for a team whose history really holds nothing that ran that long, and those are different situations |
+| §4 | The payload widens | The frontend's `z.object` ignores keys it does not know, so the backend ships first and an old bundle is simply unaware of the field. The second amendment narrowed the payload and had to run the other way round |
+
+**Why the field is named for the history and not for the derivation.** The name is the whole of the
+decision. `ComparableItems` — the name the first version used and the second amendment removed — is
+the guard's own word and invites a reader to look for a guard that no longer exists; it also states a
+relationship to the arithmetic, which is exactly the claim that cannot be made truthfully in all
+three cases. What the number says instead is a plain fact about work that finished, and a sentence
+built on it is true whether or not the risk beside it was derived from anything.
+
 **The reversal this amendment owes an argument for, and the argument.**
 `docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md` measured the displayed value's overnight
 volatility — bounded exactly at `100/n(a)` points, and observed at 25 points on 602 real closed items —

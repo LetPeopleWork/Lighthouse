@@ -8287,3 +8287,190 @@ the four-commit order and the open questions live in
 diagram is drawn: at that level nothing about this change is visible.
 
 Feature delta: `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`.
+
+---
+
+## Application Architecture — epic-4127-sle-risk-corrections (slice 03)
+
+**ADO User Story #6035 — "Show the SLE Risk column without horizontal scrolling".** DESIGN wave,
+2026-09-19, interaction mode PROPOSE. Slices 01 and 02 are shipped; this is the third of four.
+
+### The one hard problem
+
+The reported defect is that a `maxWidth="md"` dialog pushes the SLE Risk column off the right edge, and
+that one entry point — a bubble click on the Work Item Aging chart — never renders the column at all.
+The width is arithmetic. **The missing column is a design, and the design is what makes the class of
+miss invisible.**
+
+`WorkItemsDialog` is the product's one work-item list and had sixteen production render sites at
+DESIGN, fifteen as shipped — one of the sixteen was reachable only from its own test and was deleted. Every
+optional column reaches it as an optional prop; a caller that omits one is observed by nothing — not the
+compiler, not Biome, not a test. Enumerating them all found the reported miss and **two more nobody
+had reported**: `buildViewData` (`pages/Common/MetricsView/BaseMetricsView.tsx`) hands the identical
+array, `inputs.inProgressItems`, to four widget payloads and attaches the risk descriptor to two of
+them. `totalWorkItemAge` and `workItemAgePercentiles` list the same items, same team, same day, without
+the column.
+
+So the sweep is the deliverable rather than the fix, and the shape change is the sweep's consequence.
+
+### Key invariants introduced
+
+- **A payload that lists today's in-flight work carries the risk column, and cannot be written
+  without it.** In `buildViewData` the four in-flight payloads become spreads of one `inFlight` base
+  literal carrying the items, the age highlight and the descriptor. The population and its column are
+  three characters apart.
+- **The aging chart's own dialog cannot be constructed without the risks.**
+  `WorkItemAgingChartProps.sleRiskValues` is required, not optional. The chart has one caller, so a
+  required prop costs one line and makes the whole class of miss a compile error there forever.
+- **The invariant is a partition, not a memory.** `buildViewData` is exported and a Vitest test names
+  two sets of payload keys — those that carry a risk descriptor and those that deliberately do not —
+  asserts each, and asserts that their union is exactly the record's key set. A payload key nobody has
+  written yet fails the test *because the test does not know about it*, which forces the author to take
+  a position rather than inherit one. It inspects no property of the items, so nothing about how they
+  were built can spoof it. This is the instrument ADR-188 recorded as unavailable for its own sibling
+  problem — available here because the question is *does this finite key set match a stated partition*,
+  which a program can answer about itself, rather than *did you call the shared function*, which it
+  cannot.
+- **Every risk cell says what it rests on, and the sentence is about the history rather than the
+  derivation.** `SleRiskDto` gains `int FinishedItemsStillOpenAtThisAge`, and the cell's tooltip and
+  accessible name read *"{n} {Work Items} the team finished were still open at this age"*, or for
+  `n = 0` *"No {Work Item} the team finished was ever still open this long."* This is slice 02's
+  compensating control for deleting the minimum-sample guard, paid here as it was assigned.
+- **The disclosure never touches the column's value.** It is a tooltip and an accessible name. The
+  cell's text, the CSV export and `sleRiskSortValue`'s input are unchanged, which is why a suffix and a
+  second column were both rejected.
+- **The dialog's size is a remembered working preference; its content is not.** One `localStorage` key,
+  `lighthouse:workItemsDialog:enlarged`, named for the state rather than for the slice that introduced
+  it — the lesson `workItemAgingPaceBandsEnabled` records and can never itself apply.
+
+### Width, stated as arithmetic rather than as an assurance
+
+MUI's `Dialog` takes its width from `theme.breakpoints.values[maxWidth]`, bounded by the viewport less
+64px of margin. At 1280px: `md` gives 852px usable inside `DialogContent`, `xl` gives 1168.
+
+The bubble-click dialog is the widest instance — ID 120, Name 200 at its flex floor, Type 120, State
+150, `{Work Item Age}` 200, `{Work Item Age} Band` 130, `{SLE} Risk` 130, Time in State 200 — 1250 in
+total, with the risk column spanning 920→1050. The aging widget's own View Data list carries no
+time-in-state column and so totals 1050, with the risk column in the same place. **920 is the number
+that matters, and it is the same on both.**
+
+So `md` puts the column entirely off-screen — the reported defect, exactly — and `xl` clears it with
+118px to spare, **because `Name` flexes to its floor and because Time in State, not SLE Risk, is the
+column that spills.** `xl` rather than `lg` because at 1920 the whole row fits with no horizontal
+scrollbar at all, which `lg` would leave in place permanently for the sake of 336px it has no use for.
+The Enlarge toggle is what reaches the last column on a small screen, and it is the half of the width
+fix that keeps paying as the dialog gains more.
+
+**One limit is stated rather than papered over.** `DataGridBase` restores a per-viewer column order from
+`lighthouse:datagrid:work-items-dialog:state` and appends any column the stored order does not name, so
+a returning viewer gets the risk column *last* — right of Time in State, off the edge again at 1280.
+The storage key is deliberately not renamed to force it left: that would reset every viewer's widths
+and visibility to fix a one-time ordering. The acceptance criterion says *"with no stored grid layout"*,
+which is what a new reader and the Playwright run both have, and the grid toolbar's existing **Reset
+layout** action is the in-product answer for everyone else.
+
+### Component Decomposition
+
+| Kind | Components |
+|---|---|
+| EXTEND (frontend) | `WorkItemsDialog`'s `<Dialog>` (`maxWidth`, `fullScreen`) and `<DialogTitle>` (an Enlarge toggle, `aria-label="Close"` on the existing button); `sleRiskGridColumn`'s `renderCell` (tooltip + accessible name only); `buildViewData` (exported, one `inFlight` base, two payloads gain the column); the `<WorkItemAgingChart>` call site; `WorkItemAgingChartProps` + its descriptor `useMemo` + its own dialog; `SleRiskColumnDescriptor` and its factory; `SleRiskSchema` |
+| EXTEND (backend) | `SleRiskCalculator` gains `FinishedItemsStillOpenAtThisAge(int, IReadOnlyList<int>)`; `SleRiskDto` gains a third positional field; `TeamMetricsService.GetSleRiskForTeam` gains one call in its projection |
+| CREATE | `hooks/useEnlargedWorkItemsDialog.ts` — the only new file. Fifteen lines, one key, one wrapped read and one wrapped write. Not folded into `useAgingBackground`, which holds a different key with a different legacy-value translation; a shared "remember a boolean" hook over two callers is the abstraction ADR-018 refuses |
+| DELETE | Nothing |
+
+`SleRiskCalculator.For` is untouched: the count takes no target and has no certainty short-circuit, so
+it is a different question with a different signature rather than a second return value that would undo
+slice 02's DDD-20 one slice after it was argued. `WriteBackTriggerService` is untouched — it reads
+`dto.Risk`, and a third field it ignores costs it nothing.
+
+`Program.cs`, `Migrations/` and every RBAC surface are untouched and this was checked rather than hoped:
+`SleRiskCalculator` is static and `TeamMetricsService` gains no dependency, so no constructor signature
+moves, no registration moves, and the full backend Integration suite with its live-connector flake
+exposure stays out of this slice's CI runs.
+
+### Driving and driven ports
+
+| Port | Change |
+|---|---|
+| `GET /api/{version}/teams/{teamId}/metrics/sleRisk` | Same path, same class-level `[RbacGuard(TeamRead)]`, same parameters (none). **The body gains one integer per entry.** Additive: an older bundle's Zod object ignores keys it does not declare, which is why the commit order runs producer-first — the opposite of slice 02, which narrowed the payload |
+| Work item dialog (UI) | Wider by default; an Enlarge toggle; the risk cell gains a tooltip and an accessible name. No column added, removed, renamed or resized |
+| Aging chart bubble click (UI) | The dialog it opens now carries the risk column |
+| Total `{Work Item} Age` and `{Work Item} Age Percentiles` View Data (UI) | Both gain the risk column, because both list what is in flight today |
+| Metrics cache | UNCHANGED, key included — the new field is a function of the same four inputs the key already names |
+| Instance clock, work item store, `IWorkTrackingConnector` | UNCHANGED |
+| Browser local storage | **One new key**, `lighthouse:workItemsDialog:enlarged`. Reads and writes wrapped; a throwing storage degrades to a dialog that works and does not remember |
+
+No RBAC change, no premium gate change, no migration. No CLI or MCP wrapper exists for this route, so no
+`FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is owed — and the standing caveat survives: the moment one is
+added it must be version-gated.
+
+**External integration**: the tracker write-back is the only one and this slice does not change what is
+written. It remains the feature's highest-risk boundary and remains covered by the existing connector
+integration categories; no consumer-driven contract is added or removed here.
+
+### The scope this slice inherited, and what it costs
+
+Slice 02 deleted `MinimumComparableItems` and named its compensating control: *"the number is always
+shown; what it rests on is said alongside it"*, with a per-cell disclosure of evidence depth assigned to
+slice 03 **with an AC, not deferred to "later"**. The case for moving it was weighed — the subject is
+#6037's rather than #6035's, and it converts a frontend slice into a full-stack one — and rejected.
+Cost is not a refutation, nothing found in this wave weakens slice 02's reasoning, and a control moved
+to a story invented because the design got inconvenient is the evaporation that table was written to
+prevent. The deletion and its replacement stay on the same side of a release boundary.
+
+**The consequence is reported rather than absorbed**: this slice is not frontend-only, and DEVOPS was
+skipped on the assumption that it was. Nothing in the change reaches infrastructure, a migration, a
+pipeline, a gate or a secret, so no DEVOPS artifact is actually owed and the skip stands — but the
+reason it stands is now different from the reason it was granted. The estimate moves from ≤1 day to
+about 1.5, which is the honest price of the assignment and is cheaper than the alternative.
+
+### Architectural Enforcement (this slice)
+
+| Rule | Mechanism |
+|---|---|
+| A payload listing today's in-flight work carries the risk column, and every other payload deliberately does not | Vitest partitioning `buildViewData`'s key set into two named lists and asserting their union equals `Object.keys(buildViewData(…))`. A key in neither list fails the test; no property of the items is inspected |
+| The dialog has one column of headroom at 1280px | Recorded arithmetic, so the author of a ninth fixed column meets the limit rather than discovering it: the risk column ends at 1050 against 1168 usable, and one more 130px column to its left puts it off the edge. Past that point the Enlarge toggle is the answer, not a wider `maxWidth` |
+| No migration is owed for the new DTO field | `SleRiskDto` is a response record with no `DbSet`, no context mapping and no `Migrations/` path — verified by enumerating its six backend references. Its positional shape also makes a missed construction site a compile error rather than a silent default |
+| The aging chart's dialog cannot be built without the risks | The prop type. `sleRiskValues` is required; the one call site is a compile error until it passes them |
+| Every `WorkItemsDialog` render site is accounted for | The fifteen-row sweep table in the slice brief, with the reason written for each deliberate "no". `OUT-4127-R2-no-silent-omission`'s evidence, read by a person |
+| The column is on screen at 1280px from both entry points | Playwright at a 1280-wide viewport, once through the widget header's View Data and once through a bubble click. Poll for the cells to render **before** bounding position, or the assertion passes on the loading frame |
+| Widening the dialog changes no column | Every column's `field` and `width` untouched in the diff; the existing dialog suite over the column set |
+| The enlarge state survives a reopen and a throwing storage does not break the dialog | Vitest with a real `localStorage`, and a second case with a storage stubbed to throw |
+| Closing the dialog still works from every spec that closes it | The E2E page object moves off `getByRole("button").first()` to a dialog-scoped `{ name: "Close" }` **in the same commit as the new button**. Scoped, because Playwright's `name` is a substring match and a `Closed Date` toggle sits on the page behind it |
+| The disclosure never changes the column's value | The `valueGetter` is untouched; the export and the sort read the same string they read today |
+| The disclosure is true in all three cases | Unit tests over `FinishedItemsStillOpenAtThisAge` past the target, inside it with an empty comparable set, and inside it with history — each asserting the count, not the risk |
+| Every entry carries a count | The type. `int` on the wire, `z.number()` in the schema, neither nullable nor optional |
+| A returning viewer's stored layout is a known limit | Stated in the acceptance criterion and answered in-product by the grid toolbar's Reset layout action. Not asserted, because the mechanism does not provide it |
+| `Program.cs`, `Migrations/`, RBAC untouched | The commit set reaches none of them; no constructor moves |
+
+### ADR References (this feature)
+
+- [ADR-198](./adr-198-shared-dialog-optional-columns-attached-by-the-payload-that-owns-the-population.md):
+  **new.** A shared dialog's optional columns are attached by the payload that owns the population,
+  never decided per call site. Written rather than folded into ADR-192 because a future author can
+  propose "make the prop required" or "let the dialog fetch its own risk" without ever opening an ADR
+  about the SLE Risk conditional — and because this dialog will gain more columns, so the question
+  recurs by design.
+- [ADR-192](./adr-192-sle-risk-as-a-pure-conditional-over-the-cycle-time-population.md): **amended a
+  third time, 2026-09-19.** §4's DTO shape gains `FinishedItemsStillOpenAtThisAge`. Same function, same
+  route, same DTO, so the instrument is an amendment — the reasoning slice 02's DDD-24 established,
+  applied unchanged.
+- [ADR-188](./adr-188-pace-band-ladder-shared-by-chart-geometry-and-dialog-value.md): untouched, and
+  quoted. Its enforcement note that its own "did you call the shared function" invariant has no
+  available instrument here is the reason ADR-198 explains why *its* instrument is different, rather
+  than treating the absence as a precedent.
+- [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md): untouched.
+
+Cross-referenced and unchanged: ADR-018 (not reached — nothing new is shared), ADR-065, ADR-100.
+
+### C4
+
+Container and Component diagrams, the call-site sweep, the full decision set
+(DDD-31 … DDD-49), the Reuse Analysis with contract shapes, the eight-commit order and the open
+questions live in `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`, *DESIGN — slice 03*.
+The Component (L3) diagram is the one that carries this slice: it shows the two arrows into
+`WorkItemsDialog` and why the fix is asymmetric — one path has one render site and many payloads, the
+other has one payload and one render site. No System Context diagram is drawn: at that level nothing
+about this change is visible.
+
+Feature delta: `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`.
