@@ -1277,3 +1277,49 @@ environment's item counts and throughput, and a link does not.
 **Do not repoint the four Epics** `LGHTHSDMO-7..10`. `JiraDependencyDogfoodTest` pins their `Blocks`
 links, and two of them read empty there on purpose. They are ambiguous under this feature's rule (7 and 9
 each have two counterparts), which is fine to read and fatal to edit.
+
+---
+
+## Wave: DELIVER / [WHY] Accepted risk — a registered link type is offered wherever a field is
+
+**Decision: accept, do not build a guard** (user, 2026-09-19). Revisit only if it is actually hit.
+
+`AdditionalFieldDefinition` records no kind. The field-versus-link-type distinction exists for the
+duration of one resolution call inside the Jira connector and is then erased into a string, so nothing
+downstream can tell a registered link type from a real field.
+
+Four surfaces consequently offer one as if it were a field — all of them reading
+`connection.AdditionalFieldDefinitions` directly:
+
+| Surface | Site |
+|---|---|
+| Write-back targets | `WriteBackService.GetChangedFields:173` |
+| Forecast filter rules | `ForecastFilterRuleService.GetSchema:19` |
+| Delivery rules | `DeliveryRuleService.GetRuleSchema:30` |
+| Blocked-item rules | `BlockedItemService.GetSchema:88` |
+
+Write-back is the sharp one. It finds the definition by reference (`:185`), requires a stored value
+(`:190`), and queues a write when the value differs — so an update aimed at a link-type reference becomes
+a real Jira write using a link type name where a field id belongs. Today the stored value is `""`. Once a
+parent key is stored there, a write-back rule pointed at it would be attempting to overwrite a parent.
+
+**This feature opened it, and saying otherwise would be wrong.** Before slice 01 a link-type reference
+failed connection validation and could not be saved at all.
+
+**Why accepting is reasonable.** Every one of these surfaces is configured deliberately by an
+administrator who just typed that reference in themselves, and none of them does anything on its own.
+Nobody writes a cycle time to the field they configured as their parent link. The cost of guarding it is
+a persisted kind discriminator plus an expand-only migration plus changes to three services no slice
+currently touches — real work, to prevent a mistake nobody has made.
+
+**What would change the answer**: someone actually selecting a link type in one of these four pickers.
+The write-back case is the one that would do visible damage, because it writes to the tracker rather than
+only misreading it.
+
+**If it is ever built**, the shape is a kind discriminator on `AdditionalFieldDefinition`, set during
+validation, with the four surfaces filtering on it. That reads like a contradiction of DDD-5 ("no
+persisted kind; lookup per fetch") and is not one: DDD-5 was protecting against a stored *name-to-type
+mapping* going stale when an administrator renames a link type, and a reference that named a link type
+still names one after a rename — it simply stops matching, which the unresolved path already handles.
+Resolving on demand instead would put a Jira round-trip into four UI paths and break them whenever Jira
+is unreachable.
