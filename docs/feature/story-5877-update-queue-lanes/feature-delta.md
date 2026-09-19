@@ -1121,7 +1121,7 @@ assigns these four claims to a component test rather than to an acceptance scena
 | AC-01.5 | scenario 5 (once, together) + tests 9–11 (union, single take, single summary) | Split deliberately; the port shows one half and the component shows the other. |
 | AC-01.6 | scenario 6 | |
 | AC-01.7 | scenario 7 | |
-| AC-01.8 | **dogfood check, not a test** | Tenant Zero, real connections: two `RefreshLog` rows whose run intervals overlap, one Team and one Portfolio. Recorded here rather than left to look like coverage. |
+| AC-01.8 | `TwoLanesAgainstARealTrackerTest` (DELIVER 01-07) | Two `RefreshLog` rows whose run intervals overlap, one Team and one Portfolio, against a real Azure DevOps connection. Excluded from the ordinary suite and throws rather than skips without its credential, so it can never pass by not running. |
 | AC-02.1 | scenarios 15, 31 | |
 | AC-02.2 | scenarios 16, 17 | Both directions: the bound must be named, and an operator's own stop must not be. |
 | AC-02.3 | scenario 18 | |
@@ -1703,3 +1703,59 @@ the shape of the work is:
   only question asked, and a boolean is one round trip where a filter invites a per-key one.
 - **KPI and slice-02 go/no-go unchanged.** This amendment changes nothing about the reported starvation,
   the wall-time bound, or what slice 01 is measured on.
+
+## Wave: DELIVER / [REF] Slice 01 close-out
+
+Written at step 01-07, 2026-09-19. Slice 01 is code-complete: steps 01-01 … 01-07 are in, the eight
+slice-01 scenarios are un-skipped and green, and slice 02's seventeen remain `[Ignore]`d.
+
+### AC-01.8 became a test rather than an observation
+
+DISTILL recorded AC-01.8 as a dogfood check so that a green suite could never be mistaken for having
+covered it, and that reasoning still holds: doubles prove the lanes exist, and only real connections
+prove they survive a real connector, a real database and a real write-back round. What changed is that
+this repository already had a shape for exactly that. `LinearDependencyDogfoodTest` asserts against a
+real workspace, sits in an excluded category, and throws rather than skips when its credential is
+missing — so it can never pass by not running.
+
+`TwoLanesAgainstARealTrackerTest` copies that shape. It drives a Team refresh and a Portfolio refresh
+against the real Azure DevOps test project at the same time and asserts that the two `RefreshLog`
+rows' `[ExecutedAt − DurationMs, ExecutedAt]` intervals overlap. Azure DevOps rather than Linear,
+because the Linear key is shared with CI and repeated local runs rate-limit the next CI build; its
+credential is `AzureDevOpsLighthouseIntegrationTestToken`, which the existing Azure DevOps fixtures
+already read. It carries `Integration` plus its own `UpdateQueueLanesLive`, and the non-connector
+filter in `CLAUDE.md` excludes both, so an ordinary `dotnet test` cannot reach the network through it.
+
+First run: 2026-09-19, green, 11 s wall time. That is the mechanism proved once against a real
+tracker. It is not the seven-day cadence KPI-1 asks for, which is the next section.
+
+### KPI-1 is maintainer work, and this is the cadence it needs
+
+The measurement KPI-1 wants is the assertion the live test already makes, so what is left is a
+cadence rather than a mechanism — and taking the samples means running an instance for a week, which
+is the maintainer's to do and is named as such here rather than left to read as crafter work that was
+skipped.
+
+The sample has to be taken **while both rows of a pair are still retained**.
+`RefreshLogService.LogRefreshAsync` trims on every write and keeps the newest `RefreshLog:RetentionRuns`
+rows per `(EntityId, Type)`, seeded at 30. At the shipped 180-minute staleness threshold that is
+roughly 3.75 days of history per entity, and less for anyone who shortened the interval; the window is
+per entity, so a busy entity's history is shorter than a quiet one's. Sample once a day for seven
+days against the instance's actual refresh interval rather than an assumed one — at least as often as
+`30 × interval` if that interval has been shortened. Read retrospectively a week later, the fact has
+already been deleted.
+
+### Slice 01's learning hypothesis, and the slice-02 go/no-go
+
+Slice 01 exists to answer whether head-of-line blocking is the whole of "hung". If lanes are in and a
+Team refresh still stalls behind a held-open Portfolio refresh, the cause is elsewhere — the per-key
+execution lock, the SQLite write path, or the connector's own HTTP connection limit — and that failure
+is worth more than the success, because the remaining candidates are all narrower. If it holds, slice
+02 changes from a rescue to a tidy-up and may legitimately be dropped rather than deferred.
+
+What is answered: the lanes do what they were built to do under a real connector, once, in a
+controlled run. What is not: whether the reported symptom stops on an instance carrying real load for
+a week. That needs the dogfood window above, so the slice-02 verdict is the maintainer's call and is
+deliberately left open here rather than recorded as an answer nobody produced. Write it into this
+section when the window closes; it is the input to slice 02's go/no-go, and nothing downstream should
+have to re-derive it.

@@ -86,9 +86,8 @@ const describeState = (task: IUpdateTask, activity: RowActivity): string => {
 };
 
 /**
- * Something turning means something is happening, and there is only ever one of those: the queue runs a
- * single piece of work at a time. Three spinners in a column would say three things are under way when
- * one is, so what is waiting gets a mark that means waiting instead.
+ * Something turning means that row is under way, and several rows can be at once. What is waiting gets
+ * a different mark, so a reader can tell at a glance which rows are moving and which are not.
  *
  * Drawn rather than spelled out, and the word is still in the row beside it — the drawing is what a
  * reader takes in without reading, not a replacement for what it says.

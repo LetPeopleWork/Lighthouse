@@ -25,11 +25,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
     /// this file carries is its observable half — a round says its piece once however many executions
     /// were in it.
     ///
-    /// AC-01.8 is a production-data criterion on Tenant Zero: two <c>RefreshLog</c> rows whose run
-    /// intervals overlap, one Team and one Portfolio, against real work-tracking connections. Doubles
-    /// prove the lanes exist; only real connections prove they survive a real connector, a real
-    /// database and a real write-back round. It is a dogfood check, not a test, and it is recorded as
-    /// one in the feature delta rather than left to look like coverage.
+    /// AC-01.8 wants two <c>RefreshLog</c> rows whose run intervals overlap, one Team and one
+    /// Portfolio, against a real work-tracking connection - because doubles prove the lanes exist and
+    /// only real connections prove they survive a real connector, a real database and a real
+    /// write-back round. That lives in <c>TwoLanesAgainstARealTrackerTest</c>, which needs a
+    /// credential, throws rather than skips without one, and is excluded from the ordinary suite.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
