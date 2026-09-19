@@ -215,18 +215,15 @@ namespace Lighthouse.Backend.API
                 teamMetricsService.GetWorkItemAgePercentilesForTeam(team, endDate));
         }
 
+        /// <summary>
+        /// No date parameters, deliberately. The risk is a claim about today over the team's own
+        /// configured history, so a range the caller supplied could only be accepted and ignored -
+        /// and a query parameter a server takes and disregards is a lie with a 200 on it.
+        /// </summary>
         [HttpGet("sleRisk")]
-        public ActionResult<IEnumerable<SleRiskDto>> GetSleRiskForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<SleRiskDto>> GetSleRiskForTeam(int teamId)
         {
-            if (startDate.Date > endDate.Date)
-            {
-                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
-            }
-
-            // Stryker disable once all: diagnostic log text is not behaviour
-            LogDateBoundaries("sleRisk", teamId, startDate, endDate);
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                teamMetricsService.GetSleRiskForTeam(team, startDate, endDate));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, teamMetricsService.GetSleRiskForTeam);
         }
 
         [HttpGet("ageInStatePercentiles")]

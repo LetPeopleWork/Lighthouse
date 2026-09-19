@@ -2,10 +2,12 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Moq;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -59,6 +61,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
                 {
                     services.RemoveAll<ILighthouseClock>();
                     services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
+
+                    // The read itself carries no licence check, and deliberately so. Write-back does,
+                    // and a scenario that compares the two surfaces against each other has to be able
+                    // to reach both — otherwise it silently compares the screens against nothing.
+                    var license = new Mock<ILicenseService>();
+                    license.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+                    services.RemoveAll<ILicenseService>();
+                    services.AddSingleton(license.Object);
                 });
             });
 
@@ -133,6 +143,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
 
             var team = repository.GetById(teamId)!;
             team.ServiceLevelExpectationRange = rangeInDays;
+
+            repository.Update(team);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// The team counts throughput over a different stretch of time — the other setting the answer
+        /// depends on, and one that moves without the target moving.
+        /// </summary>
+        protected void ChangeTheHistoryOf(int teamId, int historyInDays)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            var team = repository.GetById(teamId)!;
+            team.ThroughputHistory = historyInDays;
 
             repository.Update(team);
             repository.Save().GetAwaiter().GetResult();
@@ -217,11 +243,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             return reference;
         }
 
-        protected Uri SleRiskRoute(int teamId) => SleRiskRouteBetween(teamId, WindowStart, WindowEnd);
-
-        protected static Uri SleRiskRouteBetween(int teamId, DateTime startDate, DateTime endDate) => new(
-            $"/api/latest/teams/{teamId}/metrics/sleRisk"
-            + $"?startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}",
+        /// <summary>
+        /// No dates. The route takes none, because the window is the team's own configured history
+        /// and the question is about today — neither of which a caller gets to choose.
+        /// </summary>
+        protected static Uri SleRiskRoute(int teamId) => new(
+            $"/api/latest/teams/{teamId}/metrics/sleRisk",
             UriKind.Relative);
     }
 }

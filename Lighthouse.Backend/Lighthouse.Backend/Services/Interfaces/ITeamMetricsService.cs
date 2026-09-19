@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team, DateTime startDate, DateTime endDate);
+        IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team);
 
         CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null);
 

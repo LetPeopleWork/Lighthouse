@@ -1,7 +1,10 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -86,6 +89,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         private void GivenTheTeamNowPromises(int rangeInDays)
             => ChangeTheTargetOf(TheTeamUnderTest, rangeInDays);
 
+        /// <summary>
+        /// The team widens how far back it counts throughput. The evidence window is the other half
+        /// of what the answer depends on, and it moves independently of the target.
+        /// </summary>
+        private void GivenTheTeamNowLooksBackFurther()
+            => ChangeTheHistoryOf(TheTeamUnderTest, 365);
+
         private int GivenAPortfolio()
         {
             using var scope = Factory.Services.CreateScope();
@@ -159,24 +169,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             }
         }
 
-        private async Task WhenTheRiskIsAskedForAWindowEnding(int teamId, bool tenDaysAgo)
-        {
-            var end = tenDaysAgo ? WindowEnd.AddDays(-10) : WindowEnd;
-
-            Client.AsTeamAdmin(teamId);
-            await TheAnswerTo(SleRiskRouteBetween(teamId, WindowStart, end));
-        }
-
-        private async Task WhenTheRiskIsAskedForASingleDay(int teamId)
+        /// <summary>
+        /// The route binds no dates, so anything sent is ignored by the framework rather than by a
+        /// line of ours. A bundle built before this slice still sends them, and must still be right.
+        /// </summary>
+        private async Task WhenTheRiskIsAskedForWithAStrayRange(int teamId)
         {
             Client.AsTeamAdmin(teamId);
-            await TheAnswerTo(SleRiskRouteBetween(teamId, WindowEnd, WindowEnd));
-        }
-
-        private async Task WhenTheRiskIsAskedForABackwardsWindow(int teamId)
-        {
-            Client.AsTeamAdmin(teamId);
-            await TheAnswerTo(SleRiskRouteBetween(teamId, WindowEnd, WindowStart));
+            await TheAnswerTo(new Uri(
+                $"/api/latest/teams/{teamId}/metrics/sleRisk"
+                + $"?startDate={WindowStart:yyyy-MM-dd}&endDate={WindowEnd:yyyy-MM-dd}",
+                UriKind.Relative));
         }
 
         private async Task WhenSomeoneWithoutAccessToTheTeamAsks(int teamId)
@@ -224,38 +227,44 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             }
         }
 
-        private void ThenTheItemIsBeyondWhatTheHistoryCanAnswer(string referenceId)
-        {
-            var entry = TheEntryFor(referenceId);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(entry.TryGetProperty("risk", out var risk), Is.True,
-                    $"The item is listed even when it cannot be answered for. Got: {body}");
-                Assert.That(risk.ValueKind, Is.EqualTo(JsonValueKind.Null),
-                    "Nothing finished ran this long, so there is nothing to divide by. A number here — "
-                    + $"100 most of all — would read as certainty rather than as silence. Body: {body}");
-                Assert.That(entry.GetProperty("comparableItems").GetInt32(), Is.Zero,
-                    $"Nothing ran this long at all, which is not the same as too little having. Body: {body}");
-            }
-        }
-
         /// <summary>
-        /// A different silence from the one above: work did run this long, and not enough of it for
-        /// a share of it to mean anything. The count is what tells a reader which silence they got.
+        /// Drives the write-back's resolution beside the read, in one scope on one day, and compares
+        /// the two against each other rather than each against an expectation. An expectation both
+        /// could satisfy while disagreeing is exactly what let 27% and 18 ship together.
         /// </summary>
-        private void ThenTooLittleRanThatLongToSay(string referenceId, int comparableItems)
+        private void ThenTheBoardWouldBeWrittenTheSameNumbersTheScreensShow(int teamId, params string[] referenceIds)
         {
-            var entry = TheEntryFor(referenceId);
+            ThenTheAnswerArrived();
+
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var team = sp.GetRequiredService<IRepository<Team>>().GetById(teamId)!;
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
+            {
+                ValueSource = WriteBackValueSource.SleRisk,
+                AppliesTo = WriteBackAppliesTo.Team,
+                AdditionalFieldDefinition = new AdditionalFieldDefinition { Reference = "Custom.Risk", DisplayName = "Risk" },
+            });
+
+            var plan = sp.GetRequiredService<IWriteBackTriggerService>().ResolveWriteBackForTeam(team);
+            var written = plan
+                .Where(update => update.TargetFieldReference == "Custom.Risk")
+                .ToDictionary(update => update.WorkItemId, update => update.Value);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(entry.GetProperty("risk").ValueKind, Is.EqualTo(JsonValueKind.Null),
-                    "A hundred percent off nine observations reads as certainty and is not one. "
-                    + $"Body: {body}");
-                Assert.That(entry.GetProperty("comparableItems").GetInt32(), Is.EqualTo(comparableItems),
-                    "Work did run this long - saying nothing ran this long would be a different claim, "
-                    + $"and a false one. Body: {body}");
+                foreach (var referenceId in referenceIds)
+                {
+                    var onScreen = TheEntryFor(referenceId).GetProperty("risk").GetInt32();
+
+                    Assert.That(written.ContainsKey(referenceId), Is.True,
+                        $"The screens answered for {referenceId} and the board was told nothing. "
+                        + $"Written: [{string.Join(", ", written.Select(w => $"{w.Key}={w.Value}"))}]");
+                    Assert.That(written[referenceId], Is.EqualTo(onScreen.ToString(CultureInfo.InvariantCulture)),
+                        $"{referenceId} reads {onScreen} on the screens. A coach who sees one number in "
+                        + "Lighthouse and another on their board has to decide which to believe.");
+                }
             }
         }
 
@@ -267,12 +276,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             Assert.That(document.RootElement.EnumerateArray().Any(), Is.False,
                 "A team that published no target made no promise, so no item of theirs can be at risk "
                 + $"of breaking one. Body: {body}");
-        }
-
-        private void ThenTheQuestionIsRejected()
-        {
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
-                $"A window that ends before it starts describes no period at all. Body: {body}");
         }
 
         private void ThenTheyAreTurnedAway()

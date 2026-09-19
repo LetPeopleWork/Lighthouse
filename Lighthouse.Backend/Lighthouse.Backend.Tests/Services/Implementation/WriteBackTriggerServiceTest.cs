@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
 
             teamMetricsServiceMock
-                .Setup(s => s.GetSleRiskForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Setup(s => s.GetSleRiskForTeam(It.IsAny<Team>()))
                 .Returns([]);
 
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
@@ -782,14 +782,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ResolveWriteBackForTeam_ItemTheHistoryCannotAnswerFor_IsNotWrittenAtAll()
+        public void ResolveWriteBackForTeam_InFlightItemTheAnswerOmitted_IsNotWrittenAtAll()
         {
-            // Not an empty write, which would clear whatever the field held. Absent from the round.
+            // Every item the answer lists now carries a number, so the only way to have no value is
+            // to be absent from it - an item that started today and has no age yet, for instance.
+            //
+            // Absent from the round rather than written empty. There is no way to say "no answer" in
+            // a tracker field, so an empty write would clear whatever a coach was filtering on and
+            // say something louder and less true than leaving it alone.
             var team = CreateTeamWithTarget();
             var answered = CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4));
-            var unanswered = CreateWorkItem("WIP-2", StateCategories.Doing, team, FixedNowUtc.AddDays(-40));
-            GivenTheTeamsWorkItems(team, answered, unanswered);
-            GivenTheRiskIs(team, ("WIP-1", 86), ("WIP-2", null));
+            var omitted = CreateWorkItem("WIP-2", StateCategories.Doing, team, FixedNowUtc);
+            GivenTheTeamsWorkItems(team, answered, omitted);
+            GivenTheRiskIs(team, ("WIP-1", 86));
 
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
@@ -818,33 +823,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ResolveWriteBackForTeam_SleRisk_AsksAboutTheTeamsOwnHistoryAsOfToday()
+        public void ResolveWriteBackForTeam_SleRisk_AsksForTheTeamAndChoosesNoWindowOfItsOwn()
         {
-            // AC-04.5. The window is the team's configured history, and the question is about now -
-            // not whatever range somebody last left a browser tab on.
-            var team = CreateTeamWithTarget();
-            team.ThroughputHistory = 30;
-            var item = CreateWorkItem("WIP-1", StateCategories.Doing, team, FixedNowUtc.AddDays(-4));
-            GivenTheTeamsWorkItems(team, item);
-            GivenTheRiskIs(team, ("WIP-1", 50));
-
-            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
-                CreateMapping(WriteBackValueSource.SleRisk, WriteBackAppliesTo.Team, "Custom.Risk"));
-
-            CreateSubject().ResolveWriteBackForTeam(team);
-
-            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
-                team,
-                It.Is<DateTime>(start => start.Date == FixedNowUtc.Date.AddDays(-29)),
-                It.Is<DateTime>(end => end.Date == FixedNowUtc.Date)), Times.Once);
-        }
-
-        [Test]
-        public void ResolveWriteBackForTeam_SleRisk_TeamWithFixedThroughputDates_StillAsksAboutToday()
-        {
-            // A team can pin which throughput to forecast from, and that end date can be long past.
-            // The evidence window follows the pin; the question does not - a field on a board is read
-            // now, so an item's age is counted to today rather than to a date somebody froze.
+            // Write-back used to pick the window: the team's configured start, paired with today as
+            // the end. That ran the evidence past the end date a team on fixed throughput dates had
+            // configured, and left the screens - which passed the browser's range - computing a
+            // different number from the same service for the same item on the same day.
+            //
+            // Nothing here supplies a window any more, and the signature is what makes that true.
+            // Whether the window the service derives is the right one is settled where both callers
+            // can be compared against each other, in the acceptance scenarios.
             var team = CreateTeamWithTarget();
             team.UseFixedDatesForThroughput = true;
             team.ThroughputHistoryStartDate = FixedNowUtc.AddDays(-90);
@@ -857,10 +845,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             CreateSubject().ResolveWriteBackForTeam(team);
 
-            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
-                team,
-                It.Is<DateTime>(start => start.Date == FixedNowUtc.Date.AddDays(-90)),
-                It.Is<DateTime>(end => end.Date == FixedNowUtc.Date)), Times.Once);
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(team), Times.Once);
         }
 
         [Test]
@@ -888,8 +873,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     $"Resolved: [{string.Join(", ", plan.Select(u => $"{u.TargetFieldReference}={u.Value}"))}]");
             }
 
-            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
-                It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Once);
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(It.IsAny<Team>()), Times.Once);
         }
 
         [Test]
@@ -905,8 +889,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             CreateSubject().ResolveWriteBackForTeam(team);
 
-            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(
-                It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()), Times.Never);
+            teamMetricsServiceMock.Verify(s => s.GetSleRiskForTeam(It.IsAny<Team>()), Times.Never);
         }
 
         private static Team CreateTeamWithTarget()
@@ -924,11 +907,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns(workItems.AsQueryable());
         }
 
-        private void GivenTheRiskIs(Team team, params (string ReferenceId, int? Risk)[] answers)
+        private void GivenTheRiskIs(Team team, params (string ReferenceId, int Risk)[] answers)
         {
             teamMetricsServiceMock
-                .Setup(s => s.GetSleRiskForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(answers.Select(a => new SleRiskDto(a.ReferenceId, a.Risk, a.Risk is null ? 0 : 30)).ToList());
+                .Setup(s => s.GetSleRiskForTeam(team))
+                .Returns(answers.Select(a => new SleRiskDto(a.ReferenceId, a.Risk)).ToList());
         }
 
         private static void AssertPlanned(

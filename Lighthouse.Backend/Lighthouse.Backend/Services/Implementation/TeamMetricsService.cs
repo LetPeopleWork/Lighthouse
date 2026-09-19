@@ -356,10 +356,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
-        public IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team, DateTime startDate, DateTime endDate)
+        public IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team)
         {
             // Stryker disable once all: diagnostic log text is not behaviour
-            logger.LogDebug("Getting SLE Risk for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+            logger.LogDebug("Getting SLE Risk for Team {TeamName}", team.Name);
 
             // A team that published no target has made no promise, so no item of theirs can be at
             // risk of breaking one. Answering with a list of blanks would say something different.
@@ -368,24 +368,29 @@ namespace Lighthouse.Backend.Services.Implementation
                 return [];
             }
 
-            // The target is part of the key, not only of the answer. Every other cached metric here
-            // depends on stored work alone, so a settings save does not invalidate this cache — and a
-            // coach who tightens the target in one click would otherwise keep reading the old odds
-            // until the next refresh, with nothing on screen saying the number predates the change.
-            return GetFromCacheIfExists(team, $"SleRisk_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}", () =>
+            // The window is derived here rather than accepted as a parameter. Two callers that must
+            // agree about it, and a signature that lets them disagree, is what produced a dialog
+            // reading 27% against a board field reading 18 for the same item on the same day.
+            var history = team.GetThroughputSettings(Clock.Today);
+            var asOfDay = Clock.Today;
+
+            // Every input the answer depends on appears in the key. The target is the one round one
+            // had to learn; the as-of day is the one that hides, because on a rolling history the
+            // dates already move with the calendar and a key without it is accidentally correct. A
+            // team on fixed throughput dates has a constant window and ages that still advance every
+            // midnight, so it would be served yesterday's risks until the entry expired.
+            var cacheKey = $"SleRisk_{history.StartDate:yyyy-MM-dd}_{history.EndDate:yyyy-MM-dd}_{asOfDay:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}";
+
+            return GetFromCacheIfExists(team, cacheKey, () =>
             {
-                var cycleTimes = ClosedCycleTimesFor(team, startDate, endDate);
+                var cycleTimes = ClosedCycleTimesFor(team, history.StartDate, history.EndDate);
 
-                // Ages are read as of the end of the window the caller asked about, not as of today,
-                // so a question about a week that has passed is answered as things stood then.
-                var asOfDay = DateOnly.FromDateTime(endDate);
-
-                return GetWipSnapshotForTeam(team, endDate)
-                    .Select(item =>
-                    {
-                        var verdict = SleRiskCalculator.For(item.AgeOnDay(Clock.Zone, asOfDay), team.ServiceLevelExpectationRange, cycleTimes);
-                        return new SleRiskDto(item.ReferenceId, verdict.Risk, verdict.ComparableItems);
-                    })
+                return GetWipSnapshotForTeam(team, Clock.TodayAsUtcMidnight)
+                    .Select(item => new { item.ReferenceId, Age = item.AgeOnDay(Clock.Zone, asOfDay) })
+                    // An item that has not started as of today has no age to ask about, and is left
+                    // out rather than given a number - the same filter the age-percentile read uses.
+                    .Where(item => item.Age > 0)
+                    .Select(item => new SleRiskDto(item.ReferenceId, SleRiskCalculator.For(item.Age, team.ServiceLevelExpectationRange, cycleTimes)))
                     .ToList();
             }, logger);
         }

@@ -68,11 +68,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 100);
         }
 
-        // @driving_port @real-io @error @AC-01.4 — nothing ever ran this long, so there is nothing to
-        // divide by. Saying "certain to miss" here would dress an absence of evidence as certainty,
-        // and the reader cannot tell the two apart once it is a number.
+        // @driving_port @real-io — nothing the team finished ever ran this long, and the item is
+        // still inside its target. A share of an empty set is undefined, so zero is a choice: the
+        // item can still meet the target, and a hundred would say it cannot.
         [Test]
-        public async Task An_item_older_than_anything_ever_finished_is_given_no_answer()
+        public async Task An_item_no_finished_work_can_be_compared_against_is_given_zero()
         {
             var team = GivenATeamThatPromisesThirtyDays();
             GivenTheTeamHasFinished(2, 3, 4, 5, 6);
@@ -80,40 +80,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
 
             await WhenTheRiskIsAskedFor(team);
 
-            ThenTheItemIsBeyondWhatTheHistoryCanAnswer(item);
+            ThenTheItemsChanceOfMissingIs(item, 0);
         }
 
-        // @driving_port @real-io @error — nine items ran this long, and nine is not enough to divide
-        // by: one more or one fewer moves the answer eleven points overnight, on the item a coach is
-        // being told to look at first. The measurement behind the number is
-        // docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md.
+        // @driving_port @real-io — nine comparable items is a small denominator and the answer moves
+        // sharply when one arrives or leaves. It is still the team's own history, and a number a
+        // reader can weigh beats a silence on the day an item is due. The volatility is real, measured
+        // and accepted rather than hidden: docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md.
         [Test]
-        public async Task An_item_too_little_finished_work_can_be_compared_against_is_given_no_answer()
+        public async Task An_item_only_a_little_finished_work_can_speak_for_is_still_given_a_number()
         {
-            var team = GivenATeamThatPromisesTenDays();
+            var team = GivenATeamThatPromisesThirtyDays();
             GivenTheTeamHasFinishedSeveralOfEach(9, 20);
-            GivenTheTeamHasFinishedSeveralOfEach(30, 1);
+            GivenTheTeamHasFinishedSeveralOfEach(50, 1);
             var item = GivenAnItemOpenFor(20);
 
             await WhenTheRiskIsAskedFor(team);
 
-            ThenTooLittleRanThatLongToSay(item, comparableItems: 9);
-        }
-
-        // @driving_port @real-io — one more item over the same line, and the answer arrives. Written
-        // beside the scenario above because a threshold nobody crosses in a test is a threshold
-        // nobody has checked the direction of.
-        [Test]
-        public async Task One_more_comparable_item_is_enough_to_be_told_the_answer()
-        {
-            var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinishedSeveralOfEach(10, 20);
-            GivenTheTeamHasFinishedSeveralOfEach(30, 1);
-            var item = GivenAnItemOpenFor(20);
-
-            await WhenTheRiskIsAskedFor(team);
-
-            ThenTheItemsChanceOfMissingIs(item, 100);
+            ThenTheItemsChanceOfMissingIs(item, 0);
         }
 
         // @driving_port @real-io @error @AC-01.5 — a team that never published a target has not made
@@ -130,17 +114,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenNothingIsSaidAboutAnyItem();
         }
 
-        // @driving_port @real-io @error @AC-01.2 — a team with a target but nothing finished has the
-        // same problem as the beyond-history case and gets the same answer.
+        // @driving_port @real-io — a team with a target and no finished work at all. The item is
+        // inside its target and there is nothing to divide by, which is the same shape as the
+        // no-comparable-work case and gets the same answer.
         [Test]
-        public async Task A_team_that_has_finished_nothing_yet_is_given_no_answer()
+        public async Task A_team_that_has_finished_nothing_yet_is_given_zero()
         {
             var team = GivenATeamThatPromisesTenDays();
             var item = GivenAnItemOpenFor(4);
 
             await WhenTheRiskIsAskedFor(team);
 
-            ThenTheItemIsBeyondWhatTheHistoryCanAnswer(item);
+            ThenTheItemsChanceOfMissingIs(item, 0);
         }
 
         // @driving_port @real-io @AC-01.11 — an item that took exactly the target MET it. Getting this
@@ -194,45 +179,45 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 50);
         }
 
-        // @driving_port @real-io @AC-01.2 — asking about a week that has already passed asks how things
-        // stood THEN. An item's age is counted to the end of the window, not to today, the same way
-        // every other number on the metrics page is read. Nothing else here would notice if it were
-        // not: every other scenario asks about a window that ends today, where the two coincide.
+        // @driving_port @real-io — the scenario this whole slice exists for. A dialog reading 27%
+        // against a board field reading 18, for the same item on the same day, is what a coach
+        // actually saw. Both paths are driven here in one run so the two numbers can be compared
+        // against each other rather than each against an expectation.
         [Test]
-        public async Task A_window_that_ended_in_the_past_is_answered_as_of_that_day()
+        public async Task The_screens_and_the_board_are_told_the_same_number_for_the_same_item()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinishedSeveralOfEach(5, 2, 4, 12, 14);
-            var item = GivenAnItemOpenFor(20);
-
-            await WhenTheRiskIsAskedForAWindowEnding(team, tenDaysAgo: true);
-
-            // As of ten days ago the item was 10 days old, so its survivors are {12, 14} and both
-            // missed: 100%. Counted to today it would be 20 days old, beyond every finished item, and
-            // the answer would be no answer at all.
-            ThenTheItemsChanceOfMissingIs(item, 100);
-        }
-
-        // @driving_port @real-io @AC-01.2 — two windows, one team, one request after the other. The
-        // answer is remembered between requests, so a memory that ignores which window was asked about
-        // hands the second caller the first caller's answer — and nothing on screen would say so.
-        [Test]
-        public async Task Two_windows_asked_one_after_the_other_get_their_own_answers()
-        {
-            var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinishedSeveralOfEach(5, 2, 4, 12, 14);
-            var item = GivenAnItemOpenFor(20);
-
-            await WhenTheRiskIsAskedForAWindowEnding(team, tenDaysAgo: true);
-            ThenTheItemsChanceOfMissingIs(item, 100);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 4, 8, 12, 16);
+            // Items either side of the target, so a single coincidence cannot carry the assertion.
+            var young = GivenAnItemOpenFor(3);
+            var older = GivenAnItemOpenFor(9);
+            var past = GivenAnItemOpenFor(14);
 
             await WhenTheRiskIsAskedFor(team);
 
-            // As of today the item is 20 days old and nothing finished ever ran that long.
-            ThenTheItemIsBeyondWhatTheHistoryCanAnswer(item);
+            ThenTheBoardWouldBeWrittenTheSameNumbersTheScreensShow(team, young, older, past);
         }
 
-        // @driving_port @real-io @AC-01.2 — the target is half the arithmetic, and it is a setting a
+        // @driving_port @real-io — the date range is a control for looking at past metrics. The risk
+        // is a claim about now, so a number that moved when a range widened would be a function of a
+        // UI control rather than of the work. The route takes no dates at all, and stray ones sent by
+        // an older bundle are ignored rather than honoured.
+        [Test]
+        public async Task A_range_the_caller_sends_anyway_changes_nothing()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinishedSeveralOfEach(3, 4, 8, 12, 16);
+            var item = GivenAnItemOpenFor(3);
+
+            await WhenTheRiskIsAskedFor(team);
+            ThenTheItemsChanceOfMissingIs(item, 50);
+
+            await WhenTheRiskIsAskedForWithAStrayRange(team);
+
+            ThenTheItemsChanceOfMissingIs(item, 50);
+        }
+
+        // @driving_port @real-io — the target is half the arithmetic, and it is a setting a
         // coach changes in one click. An answer remembered against the old target is a wrong answer
         // that looks exactly like a right one.
         [Test]
@@ -254,33 +239,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 75);
         }
 
-        // @driving_port @real-io @error — a window that ends before it starts is not a window, and
-        // answering it with an empty list would read as "nothing is at risk".
+        // @driving_port @real-io — the evidence window is the other half of the key, and widening it
+        // admits older work that changes the answer. A key carrying only the target would serve the
+        // narrower window's answer here and look entirely correct doing it.
         [Test]
-        public async Task A_window_that_ends_before_it_starts_is_refused()
+        public async Task Widening_the_history_admits_older_work_rather_than_repeating_the_old_answer()
         {
             var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(2, 4, 12, 14);
-            GivenAnItemOpenFor(3);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 4, 8, 12, 16);
+            GivenTheTeamAlsoFinishedLongAgo(40, 40, 40);
+            var item = GivenAnItemOpenFor(3);
 
-            await WhenTheRiskIsAskedForABackwardsWindow(team);
+            await WhenTheRiskIsAskedFor(team);
+            ThenTheItemsChanceOfMissingIs(item, 50);
 
-            ThenTheQuestionIsRejected();
-        }
+            GivenTheTeamNowLooksBackFurther();
 
-        // @driving_port @real-io @AC-01.2 — a single-day window is a question about one day, not a
-        // malformed one. The guard that rejects a backwards range is one character away from
-        // rejecting this too, and nothing else here asks about a window that starts where it ends.
-        [Test]
-        public async Task A_window_of_one_day_is_a_question_like_any_other()
-        {
-            var team = GivenATeamThatPromisesTenDays();
-            GivenTheTeamHasFinished(2, 4, 12, 14);
-            GivenAnItemOpenFor(3);
+            await WhenTheRiskIsAskedFor(team);
 
-            await WhenTheRiskIsAskedForASingleDay(team);
-
-            ThenTheAnswerArrived();
+            // Twelve items inside the narrow window, six of them past ten days. Widening admits three
+            // more, all of which missed: nine in fifteen.
+            ThenTheItemsChanceOfMissingIs(item, 60);
         }
 
         // @driving_port @real-io @error — the risk names the team's own work, so it is readable by

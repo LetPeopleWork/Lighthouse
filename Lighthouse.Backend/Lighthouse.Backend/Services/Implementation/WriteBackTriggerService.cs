@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using System.Globalization;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -109,27 +110,27 @@ namespace Lighthouse.Backend.Services.Implementation
         /// on the page. Empty unless a mapping actually asks for it: the read walks the team's whole
         /// closed history, and a team that never mapped the field should not pay for it every update.
         ///
-        /// The evidence is the team's configured history and the question is about today, because a
-        /// field on a board is read now rather than as of whatever range a browser tab was left on.
+        /// The window is no longer chosen here. This used to hand the service a start date from the
+        /// team's configured history and an end date of today, which ran the evidence window past the
+        /// end date a team on fixed throughput dates had configured - and left the screens, which
+        /// passed the browser's range, computing a different number from the same service.
         /// </summary>
-        private Dictionary<string, int?> RiskByReferenceIdFor(Team team, List<WriteBackMappingDefinition> mappings)
+        private Dictionary<string, int> RiskByReferenceIdFor(Team team, List<WriteBackMappingDefinition> mappings)
         {
             if (!mappings.Exists(m => m.ValueSource == WriteBackValueSource.SleRisk))
             {
                 return [];
             }
 
-            var history = team.GetThroughputSettings(clock.Today);
-
             return teamMetricsService
-                .GetSleRiskForTeam(team, history.StartDate, clock.TodayAsUtcMidnight)
+                .GetSleRiskForTeam(team)
                 .ToDictionary(risk => risk.ReferenceId, risk => risk.Risk);
         }
 
         private List<WriteBackFieldUpdate> ResolveTeamUpdates(
             List<WriteBackMappingDefinition> mappings,
             List<WorkItem> workItems,
-            Dictionary<string, int?> riskByReferenceId)
+            Dictionary<string, int> riskByReferenceId)
         {
             var updates = new List<WriteBackFieldUpdate>();
 
@@ -203,7 +204,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private string? ResolveWorkItemValue(
             WriteBackValueSource source,
             WorkItemBase workItem,
-            Dictionary<string, int?> riskByReferenceId)
+            Dictionary<string, int> riskByReferenceId)
         {
             var age = workItem.WorkItemAge(clock.Zone, clock.Today);
             var cycleTime = workItem.CycleTime(clock.Zone);
@@ -220,11 +221,14 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        private static string? RiskValueFor(WorkItemBase workItem, Dictionary<string, int?> riskByReferenceId)
+        private static string? RiskValueFor(WorkItemBase workItem, Dictionary<string, int> riskByReferenceId)
         {
-            // The bare number, so the field stays something a board can filter and sort on.
-            return riskByReferenceId.TryGetValue(workItem.ReferenceId, out var risk) && risk.HasValue
-                ? risk.Value.ToString()
+            // The bare number, so the field stays something a board can filter and sort on. An item
+            // the read did not mention gets no write at all rather than a blank - on a board there is
+            // no way to say "no answer", and clearing a field a coach filters on says something
+            // louder and less true than leaving it.
+            return riskByReferenceId.TryGetValue(workItem.ReferenceId, out var risk)
+                ? risk.ToString(CultureInfo.InvariantCulture)
                 : null;
         }
 
