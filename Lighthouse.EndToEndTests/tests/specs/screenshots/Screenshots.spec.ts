@@ -551,6 +551,39 @@ testWithDemo(
 	},
 );
 
+// Scenario 11 ("It's Not Always What It Seems") seeds Team Gravity, whose whole characterisation is
+// old work in progress — which makes it the one demo board where the At Risk widget has something to
+// say. Scenario 0's team has four items in flight and none of them at risk, so it renders a zero:
+// truthful, and a poor picture of what the widget is for.
+const testWithOldItems = testWithDemoData(11);
+
+testWithOldItems(
+	"Take @screenshot of the SLE risk widget",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetail.goToMetrics();
+
+		const overviewWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowOverview,
+		);
+		const atRisk = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.SleRisk,
+			overviewWidgets,
+		);
+		await expect(atRisk.Widget).toBeVisible();
+
+		// The count renders once the risks have arrived, and an em-dash until then — which is also
+		// what a team with no target shows, so waiting on a digit is what tells the two apart.
+		await expect(atRisk.Widget.getByTestId("sle-risk-count")).toHaveText(/\d/);
+
+		await takeElementScreenshot(
+			atRisk.Widget,
+			"features/metrics/sleRiskWidget.png",
+		);
+	},
+);
+
 // Scenario 1 ("Too Much WIP" = Team Voyager) carries several blocked items, so the demo
 // blocked-history backfill produces a Blocked Items Over Time chart with a real trend to
 // screenshot and drill into.

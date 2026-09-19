@@ -46,6 +46,8 @@ Use the **View Data** button to open the full list of in-progress items that cur
 
 This widget shows how many of the items in progress are at risk of missing your SLE. An item counts as at risk when your team's own history says it is **70% or more likely** to take longer than the target — see the [SLE Risk column](flow-metrics.html#sle-risk-column) for where that number comes from.
 
+![SLE Risk](../assets/features/metrics/sleRiskWidget.png)
+
 The 70% is fixed and is the same for every team, so you can learn it once. What is *not* fixed is how much of your board being at risk is acceptable, and that is where the status comes from: **it is derived from the target you already published.** Promising 85% is accepting that 15% will miss; promising 70% is accepting 30%. You never set that allowance separately, because you have already set it.
 
 Teams only. The risk is measured against one team's target, and a portfolio has none.
