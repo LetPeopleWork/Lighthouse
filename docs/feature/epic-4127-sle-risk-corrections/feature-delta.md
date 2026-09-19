@@ -4598,3 +4598,80 @@ still holds — nothing here reaches infrastructure, a migration, a pipeline, a 
 it now holds for a different reason than the one it was granted for, and a stale justification is how
 the next skip gets made without checking. DDD-39 and DISTILL's Open question 4 already said this; it
 is repeated here because this is the wave that proved it by shipping backend code.
+
+---
+
+## Wave: DESIGN (slice 04) / [REF] Prior Wave Consultation
+
+| Artifact | Read |
+|---|---|
+| This delta — DISCUSS D18-D29, and **D29 in particular**: the Epic's Release Notes copy is rewritten once, here | ✓ |
+| This delta — DESIGN and DELIVER for slices 01-03, including the call-site sweep and the key-set partition | ✓ |
+| `slices/slice-04-risk-widget.md` | ✓, and its *Open question for DESIGN* is **closed rather than answered here** — the maintainer confirmed it during DISCUSS and the brief now says so |
+| ADR-192 (all three amendments), ADR-194, ADR-198 | ✓ |
+| Code: `WipOverviewWidget.tsx`, `ragRules.ts`, `widgetInfoMetadata.ts`, `categoryMetadata.ts`, `BaseMetricsView.tsx` (`buildViewData`, `buildWidgetNodes`, the `sleRiskAtRisk` memo), `WidgetShell.tsx`, `utils/charts/sleRisk.ts` | ✓ |
+| `docs/metrics/flow-overview.md`, `docs/metrics/flow-metrics.md` | ✓ |
+| DEVOPS | ⊘ skipped by the maintainer. Nothing here reaches infrastructure, a migration, a pipeline, a gate or a secret — **and unlike slice 03, this slice really is frontend-only**, so the original premise holds again |
+
+---
+
+## Wave: DESIGN (slice 04) / [REF] Decisions
+
+**DDD-50 — the widget key is `sleRisk`, and choosing it is choosing the View Data payload.** `BaseMetricsView` renders each widget with `viewData={widgetViewData[w.widgetKey]}`, so the payload key *is* the widget key. A `sleRisk` widget therefore requires a `sleRisk` entry in `buildViewData`, and there is no way to add the widget without adding the payload.
+
+**That payload will fail slice 03's partition test on its first run, and that is the point.** `every list is in one of the two lists above` will report `sleRisk` as unaccounted for, with a message naming both options and the second place the decision has to be recorded. It is the fifth list of what the team has in flight today, so it belongs in `LISTS_WHAT_IS_IN_FLIGHT_TODAY` and in the slice-03 call-site table — which is exactly the sequence ADR-198 predicted. The instrument's first live exercise is one slice after it was built.
+
+**DDD-51 — the payload is a spread of `inFlight`, not a copy of `wipOverview`.** The brief says *"the existing dialog config is reusable"*, and the reusable thing is the `inFlight` base slice 03 introduced rather than the `wipOverview` literal. `sleRisk: inFlight` gives the same items, the same age highlight and the same risk descriptor in three characters. Copying `wipOverview` would also bring its `timeInStateColumn`, which this widget has no reason to show.
+
+The title is the one thing that differs, and it is left alone: `inFlight`'s title is `${inputs.title} in Progress`, which is what this list is. A widget-specific title would be a second name for the same population.
+
+**DDD-52 — `AT_RISK_FROM` moves from 50 to 70, and the function loses nothing else.** The brief calls for *"At risk = 70% or more. Fixed and explainable."* `sleRiskAtRiskSummary` already computes exactly one threshold and returns a count plus the worst colour; it needs one constant changed and its comment rewritten. The comment currently argues for 50 as *"more likely than not to breach"* — an argument for a different number, which must go with the number.
+
+**The colour half of the summary survives the widget.** The subtitle it was written for is being removed, but the widget's own count renders in the same palette for the same reason: a reader who has learned the colour on the dialog column has learned it here.
+
+**DDD-53 — `computeSleRiskRag` joins `ragRules.ts`, and its argument list is the whole of its design.**
+
+```
+computeSleRiskRag(
+    atRiskCount: number,
+    wipCount: number,
+    sle: IPercentileValue | null,
+    terms: RagTerms,
+): RagResult
+```
+
+Four rules in order, from the story:
+
+1. no SLE → **red**, consistent with `computeWipOverviewRag` and `computeBlockedOverviewRag` both surfacing missing configuration as red rather than as absence
+2. `wipCount === 0` → **green**, which is also what stops the division below
+3. `atRiskCount / wipCount >= (100 - sle.percentile) / 100` → **red**
+4. `atRiskCount >= 1` → **amber**
+5. otherwise → **green**
+
+Rule 2 is listed second rather than first because a team with no SLE and no WIP should still be told to configure the SLE — the missing configuration outlives the empty board.
+
+**The ratio is compared raw and never rounded.** The brief is explicit and the reason is arithmetic: a 14.6% share rounds to 15 and flips red against a 15% allowance on a display artifact. Both sides are kept as fractions — `atRiskCount / wipCount` against `(100 - percentile) / 100` — so no intermediate ever becomes a percentage.
+
+**DDD-54 — the two numbers must never appear in the same tooltip, and the split follows what each number is.** The 70 is a product constant: it is the same for every team, it is explainable once, and it belongs in the info icon — the `description`, the `statusGuidance` and the Learn More page. The allowance is a fact about *this* team derived from *their* SLE percentile: 85% allows 15%, 70% allows 30%. It belongs in the RAG `tipText`, computed live.
+
+A reader who meets both in one tooltip has two percentages and no way to tell which is the rule and which is their team. `statusGuidance` therefore carries no figures at all, which is also the house style of every existing entry in `widgetInfoMetadata.ts`.
+
+**DDD-55 — removing `atRisk` from `WipOverviewWidget` is a revert, and reverts nothing that shipped.** The prop, its `hasRisk` guard, its `wip-overview-at-risk` test id and the four tests naming it all go. #6017 introduced them and was never released, so this is a deletion rather than a behaviour change — the same situation as slices 01 and 02, and the same freedom.
+
+The deletion's characteristic failure applies: `SleRiskAtRiskSummary` is imported by `WipOverviewWidget.tsx` and by nothing else once the prop goes, so the import must go with it or Biome fails the build. `ctx.sleRiskAtRisk` stops feeding `wipOverview` and starts feeding the new widget; the memo itself is unchanged.
+
+**DDD-56 — the widget's trend policy is `none`.** Every other entry in `trendPolicies` is a deliberate choice and this one is too. A previous-period arrow on an at-risk count would compare today's count against a count from a window whose ages are all as-of that window's end — and the risk is a claim about *now*, which is the whole of ADR-192's second amendment. `wipOverview` carries `snapshot-compare` because a WIP count is a snapshot that means the same thing on any day; an at-risk count is not.
+
+**DDD-57 — placement: immediately after `wipOverview` in `flow-overview`.** The widget exists because one number was doing two jobs; putting its replacement anywhere but next to the number it was split from would hide the relationship. `small`, like its neighbours, and no `ownerFilter` — but see the open question below.
+
+**DDD-58 — the Epic's Release Notes copy is rewritten here, once, for the whole round (D29).** Epic #4127's ADO description still promises risk zones behind the aging chart and an at-risk chip on the WIP card. Slice 01 deleted the first and this slice deletes the second, so the description now describes a product that will never exist. The rewrite covers the round rather than this slice, and per the ADO rules a Release-Notes-tagged edit is confirmed with the maintainer before it is made.
+
+---
+
+## Wave: DESIGN (slice 04) / [REF] Open questions
+
+1. **Does the portfolio surface get this widget?** The brief's OUT-of-scope list says *"Any portfolio surface. Unchanged from round 1 D4."*, which settles it — but `flow-overview` is a shared category and a widget added there without an `ownerFilter` appears on both. **So the placement needs `ownerFilter: "team-only"` to honour the brief**, and this is recorded as a decision rather than an omission because the default is the wrong answer here and nothing would have said so. The SLE is a team setting; a portfolio has no target for an item to be at risk against.
+
+2. **Answered against the code: the SLE and the WIP count are both already in scope, and only the at-risk count is not.** `computeSleRiskRag` needs three numbers. The RAG-statuses builder is already handed `sle: serviceLevelExpectation` and `currentWip: inProgressItems.length`, and `ctx.serviceLevelExpectation` is already in `buildWidgetNodes`' parameter type and passed to two widgets. What is *not* threaded there is `sleRiskAtRisk`, which today goes to `buildWidgetNodes` alone. **So the only plumbing this slice owes is the at-risk count reaching the RAG builder** — one field, and worth naming now so DELIVER does not discover it as a surprise and reach for a second `sleRiskAtRiskSummary` call to avoid it. Counting the same thing twice is how a count and the list behind it come to disagree, which is the mistake `sleRiskAtRiskSummary`'s own comment already warns about.
+
+3. **Demo data.** The brief's watch-out stands and is not negotiable: *"Verify the widget on demo data rather than asserting it."* Round 1 asserted "the demo teams already carry an SLE" in three checklists and it was false. DELIVER opens an instance and looks.

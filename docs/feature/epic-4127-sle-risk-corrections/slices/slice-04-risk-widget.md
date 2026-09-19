@@ -29,9 +29,19 @@ The at-risk count becomes a widget with a status of its own, so the WIP count st
 - **View data** — every in-progress item with its risk, not only the at-risk ones. Same item set as the WIP card, so the existing dialog config is reusable.
 - **The Epic's Release Notes copy**, rewritten once here for the whole round (D29): Epic #4127's description still promises risk zones and an at-risk chip, both removed before release.
 
-## Open question for DESIGN
+## Open question for DESIGN — CLOSED
 
-The ADO description records **"Observe is unreachable at low WIP"** as an accepted consequence — with a 15% allowance, one at-risk item out of six is 16.7% and reads Act; Observe needs a WIP of seven or more — and marks it *"Confirmed as intended"*. **Who confirmed it, and against which team's WIP, is not recorded.** DESIGN should either attach the confirmation or re-open the rule. This is the round's one requirements gap and it is deliberate: inventing the answer here would launder a missing decision into a specified one.
+**Resolved during DISCUSS, 2026-09-19. The maintainer is the confirmer, directly.**
+
+The question was who had confirmed *"Observe is unreachable at low WIP"* as intended, and against
+which team's WIP — the ADO description asserted the confirmation without attributing it. Benjamin
+Huser-Berta confirmed it in as many words and declined to re-open the rule. With a 15% allowance one
+at-risk item out of six is 16.7% and lands on Act; Observe needs a WIP of seven or more. **That is
+accepted, not a gap to close.** This slice implements the rule as the story states it.
+
+Recorded here rather than left as an open question, because a question that is answered elsewhere and
+still reads as open is one the next reader asks again. The resolution is also in the feature delta's
+DISCUSS section.
 
 ## OUT of scope
 
