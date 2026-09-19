@@ -1,6 +1,6 @@
 # Slice 02 — A parent read from a matching link, whichever end it is on
 
-**Feature**: parent-from-issue-links · **ADO**: pending · **Story**: US-02 · **Estimate**: ~5h
+**Feature**: parent-from-issue-links · **ADO**: #6030 · **Story**: US-02 · **Estimate**: ~5h
 **Reference class**: `IssueExtensions.ExtractDependencyReferences` (`:61-80`) — the same `issuelinks`
 payload, walked the same way, matching a type name instead of the `BlockedByLinkName` const. The parser
 this slice needs has a working sibling to copy.

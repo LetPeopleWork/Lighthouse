@@ -1236,3 +1236,44 @@ it would need the sibling slices retro-tagged, and it should be argued once rath
 > The feature may ship with only the first half. It may **not** be reported to the customer, or closed on
 > the board as answering their question, until the second half has run. `OUT-PFIL-hierarchy-recovered`
 > stays open as the marker.
+
+---
+
+## Wave: DELIVER / [REF] Live Jira fixtures
+
+Added 2026-09-19 at the user's request: fixtures prove the parser, and only a real instance proves the
+shape is what Jira sends. The precedent is `JiraDependencyDogfoodTest`, which does this for the sibling
+feature reading the same `issuelinks` payload, and whose own header states the reason.
+
+**Instance**: `letpeoplework.atlassian.net`, project `LGHTHSDMO`, link type `Cloners`
+(`inward: "is cloned by"`, `outward: "clones"`). Cloud only — no Data Center instance exists, which is
+why AC-1.4's and AC-2.6's Data Center halves stay owed.
+
+Three of these items were already seeded and are named for this feature. One link was added to complete
+the set; every other link on the instance was left as it was.
+
+| Issue | Payload carries | Native parent | Expected result |
+|---|---|---|---|
+| `LGHTHSDMO-24` "Story 14" | one `inwardIssue` → 1716 | **`LGHTHSDMO-3`** | parent `LGHTHSDMO-1716` — and the override beats a populated parent field rather than only filling an empty one |
+| `LGHTHSDMO-1725` "Item with linked parent - Closed" | one `outwardIssue` → 1716 | none | parent `LGHTHSDMO-1716` |
+| `LGHTHSDMO-1726` "Item with linked parent - To Do" | one `outwardIssue` → 1716 | none | parent `LGHTHSDMO-1716` |
+| `LGHTHSDMO-1716` "Item with linked parent - In Progress" | two `inwardIssue` + one `outwardIssue` | none | **no parent**, ambiguity warning naming 24, 1725 and 1726 |
+
+An issue's link entry names the *other* end, so an entry carrying `inwardIssue` means this issue is the
+outward side. Both single-candidate directions are therefore covered, which is what makes the
+direction-inference claim testable rather than asserted.
+
+**What only this can settle**: link id `10012` appears on both `1716` and `1725`, from opposite ends,
+with the same id — one link served twice, which is the assumption the whole direction inference rests on.
+No fixture can settle it, because a fixture is written by the same assumption it would be testing. The
+sharper form is to query a child *without* its parent in the result set and confirm the link still
+arrives.
+
+**The one link added** (2026-09-19): `Cloners`, outward side `LGHTHSDMO-24`, inward side
+`LGHTHSDMO-1716`, link id `10146`. Reversible — `DELETE rest/api/latest/issueLink/10146` restores the
+instance. It was added rather than a new issue created because a new issue would shift the demo
+environment's item counts and throughput, and a link does not.
+
+**Do not repoint the four Epics** `LGHTHSDMO-7..10`. `JiraDependencyDogfoodTest` pins their `Blocks`
+links, and two of them read empty there on purpose. They are ambiguous under this feature's rule (7 and 9
+each have two counterparts), which is fine to read and fatal to edit.

@@ -1,6 +1,6 @@
 # Slice 01 — A link type name survives connection validation
 
-**Feature**: parent-from-issue-links · **ADO**: pending · **Story**: US-01 · **Estimate**: ~3h
+**Feature**: parent-from-issue-links · **ADO**: #6029 · **Story**: US-01 · **Estimate**: ~3h
 **Reference class**: `GetCustomFieldMappings` / `GetMissingAdditionalFields` — the lookup that resolves an
 Additional Field's `Reference` against `rest/api/latest/field` already exists and already handles
 "no match" without throwing. This slice adds a second place to look and one validation branch.
@@ -168,7 +168,26 @@ silently downgraded. Data Center coverage comes from fixtures shaped to the docu
 proves the parser and not the endpoint. A verification pass on a real Data Center instance remains owed
 before the reported customer's case can be called answered.
 
-## SPIKE RESULT — 2026-09-18, Jira Cloud (letpeoplework.atlassian.net)
+## SUPERSEDED — first spike attempt, 2026-09-18, Jira Cloud (letpeoplework.atlassian.net)
+
+> **Read the 2026-09-19 result above instead. This section's verdict is wrong and is kept only for the
+> two findings underneath it that the later run did not overturn.**
+>
+> Every call recorded here was anonymous: both tokens tried that day 401'd on `/myself`, so "P1 is NOT
+> closed" was a statement about expired credentials, not about the endpoint. The 2026-09-19 run reached
+> the endpoint under three working credential classes and closed P1 on Cloud.
+>
+> What survives, because the later run confirmed rather than contradicted it:
+>
+> - **An unaccepted credential is answered anonymously, not refused** — `200` and an empty list, and
+>   `/field` answers anonymously too, so "trust the empty list when the field call succeeded" proves
+>   nothing. This is why an empty list needs its own error sentence. Shipped in step 01-03.
+> - **The validation path is safe only because of an ordering nobody wrote down** — `/myself` runs before
+>   the additional-field verdict, so an empty list is trustworthy there. Step 01-04 pins it with a test.
+> - **The refresh path has no such probe, and that is still open.** `GetCustomFieldReferences` runs every
+>   refresh with no authentication check, so a token expiring mid-life empties the link-type list and
+>   parents silently stop being set. This section called it "a DESIGN question this slice is too small to
+>   hold". DESIGN did not answer it. It is carried into the slice-02 boundary, unclosed.
 
 Run before any code, as the brief requires. **The hypothesis is not cleanly confirmed, and the reason is
 more interesting than a pass would have been.**

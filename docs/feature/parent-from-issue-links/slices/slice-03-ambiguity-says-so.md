@@ -1,6 +1,6 @@
 # Slice 03 — Ambiguity refuses, and names the candidates
 
-**Feature**: parent-from-issue-links · **ADO**: pending · **Story**: US-03 · **Estimate**: ~3h
+**Feature**: parent-from-issue-links · **ADO**: #6031 · **Story**: US-03 · **Estimate**: ~3h
 **Reference class**: `ReportLinksThatMeantNothingHere` (`JiraWorkTrackingConnector.cs:1222-1254`) — the
 existing pattern for "nothing matched, and here is what we did see", built for dependencies. This slice
 is its mirror: too much matched, and here is what.

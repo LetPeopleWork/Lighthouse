@@ -1,0 +1,518 @@
+{
+  "roadmap": {
+    "project_id": "parent-from-issue-links",
+    "created_at": "2026-09-19T00:00:00Z",
+    "goal": "Establish parentage from a Jira instance's own issue links, named where a field name is named, inferred in direction, refused when ambiguous, and bounded to the trackers that mean it.",
+    "total_steps": 21,
+    "source": "docs/feature/parent-from-issue-links/feature-delta.md (DISCUSS + DESIGN + DISTILL) and slices/*.md",
+    "paradigm": "OOP backend (.NET 10, NUnit 4.6 + Moq + WebApplicationFactory); React 18 + TypeScript frontend (Vitest + RTL). No Hypothesis/PBT mandate emitted: that mandate is a Python pilot and this corpus has declined it twice on the record (feature-delta.md DISTILL Structural Review Response, F4). Tests are NUnit specification classes, matching Slice05FetchFingerprintSpecifications.cs.",
+    "standing_constraints": [
+      "No code comment written for this feature may cite a section id (D3, DDD-1, AC-2.6, ADR-193). Say the reason in plain language or write nothing. The one exception is a narrow #pragma warning disable, where an ADO item number is fine.",
+      "Test files land WITH the code that makes them pass, never ahead of it. ParentSourceSelector, ParentResolution and GetParentLinkTypeNames do not exist; a spec class referencing them reds the whole test project and every other feature's dotnet test with it.",
+      "Jira Data Center is not testable before release (user, accepted). No step requires a DC instance. AC-1.4's DC half and AC-2.6's customer-value half are a post-release verification run, tracked by OUT-PFIL-hierarchy-recovered staying open.",
+      "Quality gates per CLAUDE.md before each slice-boundary push: dotnet build zero warnings, dotnet test green with the live-connector categories excluded, pnpm test / pnpm build / Biome clean for the frontend slice, no new SonarQube issues."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "A link type name survives connection validation",
+      "description": "US-01. An Additional Field whose Reference names a Jira issue link type stops being reported as a missing field, so an administrator can register it before wiring it to anything. Field lookup keeps precedence, and the failure texts distinguish a typo, an instance that defines nothing, and an endpoint that would not answer. Slice brief: slices/slice-01-name-a-link-type-where-a-field-goes.md. P1 is confirmed on Cloud by the 2026-09-19 spike recorded there.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "An unresolved reference gets a second place to look",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs",
+          "scenario_name": "a link type name validates",
+          "criteria": [
+            "An Additional Field whose reference names an issue link type validates successfully and is absent from the missing-field list",
+            "A reference that resolves as a real field still resolves as a field, on an instance defining that name as both a field and a link type",
+            "No request reaches the issue link type endpoint when every reference resolved as a field",
+            "The link type list is read once per connection per refresh, on the lifetime the field list already uses"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/ParentFromIssueLinksAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs"
+          ],
+          "dependencies": [],
+          "implementation_notes": "Seam confirmed on main: GetCustomFieldMappings (:1449) always adds an entry, empty string for a miss (:1480); GetMissingAdditionalFields (:1058) turns an empty entry into the failure; GetCustomFieldReferences (:1606) is the one caller that carries Additional Field references, shared by validation AND every refresh. The fallback belongs on that miss path, not in a parallel resolver. The list rides the FieldNames cache lifetime. Keep the lookup private to the Jira connector for now: promoting it to IWorkTrackingConnector is slice 04's deliverable and doing it here forces all five connectors early. Endpoint is rest/api/latest/issueLinkType; the payload is an object keyed issueLinkTypes, not a bare array and not the values+isLast envelope the field and search endpoints use, so there is no paging. Verbatim payload in the slice brief. This step also creates the shared harness: seeding plus a stubbed Jira handler that answers /serverInfo, /field, /issueLinkType and /search, and counts outbound requests. JiraWireFormat.ACloudResponseTo (TrackerWireFormats.cs:14) routes only serverInfo, field and search today and falls through to {} for anything else, so the harness must supply the link-type body itself."
+        },
+        {
+          "id": "01-02",
+          "name": "Three labels, any case, one type",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs",
+          "scenario_name": "any of the three labels identifies the same type",
+          "criteria": [
+            "A reference matching a type's name, its inward label or its outward label resolves to that one type",
+            "Matching ignores case on all three labels",
+            "A type whose inward and outward labels are identical is reached by one route and yields exactly one type",
+            "A reference matching two different link types resolves to neither and is reported unresolved"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "implementation_notes": "The Relates shape is why this is its own step and not a parametrized tail on 01-01. The live instance defines Relates with inward and outward both reading 'relates to' (spike payload in the slice brief), so a label match reaches one type by two routes. If the matcher returns a collection and the caller counts it, an unambiguous type looks ambiguous and slice 03's refusal fires on correct configuration. Deduplicate by type identity, not by label. Two genuinely distinct types answering one reference is a real ambiguity and must stay unresolved rather than pick one - GetIdForCustomFieldByProperty (:1501) already faces the same multiple-match question on the field side and is worth reading for the shape, not for its tie-break, which does not transfer. The case-does-not-matter outline and the which-label outline stay separate scenarios: they fail for different reasons."
+        },
+        {
+          "id": "01-03",
+          "name": "A typo, and an instance that defines nothing, read differently",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs",
+          "scenario_name": "the failure names the link types the instance does define",
+          "criteria": [
+            "A reference matching neither a field nor a link type still fails validation, naming the reference",
+            "That failure also names every link type the instance defines, so a mistyped name can be corrected from the error text",
+            "An empty link type list produces its own sentence, which does not read as the administrator having invented a link type",
+            "The empty-list sentence points at the credential, not at the Additional Fields configuration"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "implementation_notes": "The empty-list sentence exists because of a spike finding, not a hypothetical: Jira answers an unaccepted credential, and a request with no Authorization header at all, with 200 and {\"issueLinkTypes\":[]}. /field answers anonymously too, with a reduced list, so 'trust the empty list when the field call succeeded' proves nothing. Rolling the empty case into 'no link type named X, this instance defines: nothing' blames the administrator for somebody else's authentication failure. Two distinct messages, and the empty one names the credential. The existing wording to sit beside is ReportLinksThatMeantNothingHere (:1250), the same instinct at refresh grain: say what was looked for and what was seen. Do not reuse that method - its guards and its question are the opposite ones."
+        },
+        {
+          "id": "01-04",
+          "name": "Authentication is checked before the field list is judged",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs",
+          "scenario_name": "the link-type endpoint refusing is not \"field not found\"",
+          "criteria": [
+            "A connection whose credential is refused reports authentication_failed and never reaches the additional-field verdict",
+            "A test fails if the authentication check and the additional-field check are ever reordered",
+            "A link type endpoint answering 403 fails validation naming that endpoint, and does not say the field could not be found",
+            "A genuinely unreachable Jira still reports connection_failed against the URL input"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "implementation_notes": "Confirmed on main: ValidateConnection calls rest/api/2/myself at :389 and returns authentication_failed at :401 before GetMissingAdditionalFields at :408, and /myself does answer 401 to both a bogus credential and an anonymous one. That ordering is what makes an empty link type list trustworthy on the validation path, and nothing in the file says so. Pin it with an assertion on the observed call sequence against the stub, not with a comment, so a reorder reds a test rather than silently turning 'your credential is wrong' into 'you invented a link type'. Azure DevOps has the same ordering at :220 before :222; this test pins Jira's only. KNOWN EXPOSURE, carried not closed: the refresh path has no such pre-check. GetCustomFieldReferences runs every refresh with no authentication probe, so a token that expires mid-life makes link-type resolution return empty and parents stop being set, silently, on exactly the instances whose hierarchy depends on them. The 2026-09-18 spike raised it and called it a DESIGN question this slice is too small to hold; DESIGN did not answer it. Record it in the slice brief and raise it at slice boundary rather than improvising a probe here."
+        },
+        {
+          "id": "01-05",
+          "name": "The link types come from a real Jira, not from a payload we wrote",
+          "agent": "nw-software-crafter",
+          "step_type": "integration",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs",
+          "scenario_name": "",
+          "criteria": [
+            "The live demo instance's issue link types are read through the same code path validation uses, and the list is not empty",
+            "A reference naming a link type the live instance really defines validates successfully",
+            "A reference naming nothing on the live instance still fails, and the failure names the link types that instance does define",
+            "The fixture ignores itself rather than failing when the credential environment variable is absent"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "implementation_notes": "Categories [Category(\"Integration\")] and [Category(\"JiraIntegration\")] so the default filtered run excludes it and CI runs it: ci_backend.yml, ci_verifysqlite.yml and ci_verifypostgres.yml all export JiraLighthouseIntegrationTestToken. Model the fixture on JiraDependencyDogfoodTest in the same directory - same connection construction, same username default atlassian.pushchair@huser-berta.com, same env var. This is the test that would have caught the spike's real finding: Jira answers an unaccepted credential anonymously with 200 and an empty list rather than refusing, so a credential problem looks exactly like an instance that defines no link types. Live link types on the instance as of 2026-09-19: Blocks, Cloners, Duplicate, Polaris work item link, Relates. Assert against a type that exists rather than pinning the whole list, which a Jira administrator can change without telling us."
+        },
+        {
+          "id": "01-06",
+          "name": "The slice is refactored as a whole, not five local tidies",
+          "agent": "nw-software-crafter",
+          "step_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceScenarios.cs",
+          "scenario_name": "",
+          "criteria": [
+            "Behaviour is unchanged and the suite count does not move",
+            "Knowledge encoded twice is encoded once",
+            "Test scenarios and step definitions follow the corpus Scenarios/Specifications split"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "implementation_notes": "Added after the fact to record what happened. L1-L6 pass over the whole slice. Collapsed AdditionalFieldResolution's restatement of IssueLinkTypeListing, removed a duplicated encoding of 'a reference resolved to nothing', narrowed the verdict method's parameters so the caller no longer passes a value derivable from another it also passes, and split the scenarios out of the file named Specifications to match Dependencies/BehaviourSettings/FasterUpdates. Reported two things worth more than the refactor: the link-type lookup is uncached on the work-item read path and inverts from harmless to permanent once slice 02 ships, and the polymorphic dictionary slot has a second call site at PopulateAdditionalFieldValues on the hot path."
+        },
+        {
+          "id": "01-07",
+          "name": "The surviving mutants are closed",
+          "agent": "nw-software-crafter",
+          "step_type": "hardening",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceScenarios.cs",
+          "scenario_name": "",
+          "criteria": [
+            "A reply Jira answered 200 with but Lighthouse cannot parse gets its own verdict and never accuses the credential",
+            "The refusal verdict's code, the refusal status in its text, and FieldName on both credential-suspecting branches are all asserted",
+            "The label-length and name-length guards each have a fixture that kills their removal"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice01LinkTypeReferenceSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/ParentFromIssueLinksAcceptanceTest.cs"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "implementation_notes": "Stryker was skipped for this connector by user decision - the live JiraIntegration tests would be dragged into every mutant run. A manual mutation analysis stood in; see docs/feature/parent-from-issue-links/mutation/README.md for the operators, the kills and the two lessons. The behavioural defect was wider than first described: only a JSON object missing issueLinkTypes reached the credential message, while a bare array and a non-JSON body both threw into ValidateConnection's catch-all and produced a generic validation_failed naming nothing. A bare array is the most plausible Data Center divergence. All three now route to issue_link_types_not_understood."
+        },
+        {
+          "id": "01-08",
+          "name": "The dogfood asks the instance what it defines instead of assuming",
+          "agent": "nw-software-crafter",
+          "step_type": "hardening",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs",
+          "scenario_name": "",
+          "criteria": [
+            "No link type name is compiled into the live test",
+            "The test still distinguishes a working credential from Jira's anonymous empty answer",
+            "It reds only when the code is wrong or the credential stopped working"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraLinkTypeDogfoodTest.cs"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "implementation_notes": "Closes the one MAJOR finding from the adversarial review. The reviewer's own remedy was declined as worse than the problem - it proposed three hardcoded names in place of one. The test now reads the instance's list out of the verdict it just received and uses one of those names as its reference, which is self-calibrating. It works because the empty-list branch and both unreadable branches emit messages without the sentence carrying the list, so a non-empty parse proves the verdict is the listing one and the list is non-empty at once."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "A parent read from a matching link, whichever end it is on",
+      "description": "US-02, and the value of the feature. For the configured link type the counterpart issue key on the other end of the link becomes the parent - inwardIssue where this item holds the outward end, outwardIssue where it holds the inward end - at Team grain and Portfolio grain through the one shared method. Slice brief: slices/slice-02-parent-from-a-matching-link.md. The pre-slice spike settling the both-ends claim on a live Cloud instance runs before 02-02.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A fixture that can build a link of any type, on either end",
+          "agent": "nw-software-crafter",
+          "step_type": "infrastructure",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats.cs",
+          "scenario_name": "",
+          "criteria": [
+            "A specification class outside TestHelpers can build a link whose type name, inward label, outward label, end and counterpart key are all chosen by the caller",
+            "An issue fixture can carry an issue type other than Epic",
+            "Every existing caller of the dependency link builders keeps its current payload byte for byte"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats.cs"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "implementation_notes": "Enabling step with no Gherkin scenario of its own; it unblocks every slice 02 and slice 03 scenario and is a listed slice 02 deliverable in the delta's Where the Tests Live. Verified on main, and DISTILL had this right: Link (TrackerWireFormats.cs:79) is private, and :81 hardcodes type.name to \"Blocks\" and type.outward to \"blocks\" - only the inward label is a parameter. BlocksLink (:77) is the sole outward-end builder and hardcodes the inward name \"is blocked by\". TheFieldsOf (:59) hardcodes issuetype.name to \"Epic\", which suits a Portfolio fixture and not the Team-grain items slices 02 and 03 need. So no existing helper can express a \"Caused by\" / \"results in\" link at all. Additive only: keep BlockedByLink, InwardLink and BlocksLink and express them through the new builder, so the dependency suites that depend on their exact bytes do not move. Its own step because it is a test helper with its own callers - a mid-slice surprise otherwise."
+        },
+        {
+          "id": "02-02",
+          "name": "Counterpart keys of the links that match",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs",
+          "scenario_name": "the child holds the inward end",
+          "criteria": [
+            "An item holding the inward end of one matching link yields the outward counterpart key",
+            "An item holding the outward end of one matching link yields the inward counterpart key",
+            "Matching is case-insensitive across the type's name, its inward label and its outward label",
+            "An item with no link of the configured type yields nothing, and an unparseable link is skipped rather than throwing",
+            "The result distinguishes none, exactly one, and two or more with their candidate keys"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensionsParentLinkTest.cs"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "PRE-SLICE SPIKE FIRST, 30 minutes, before this step's code: on the live Cloud instance link a portfolio-level item down to two team-level items, then fetch only the team-level items with a query excluding the parent, and record in the slice brief whether issuelinks comes back on the children. The whole slice is sized on that answer; if it comes back empty the reverse direction needs a child-to-parent index and the slice roughly doubles. Re-estimate before writing code, do not absorb it. The reuse claim needs one correction against the code: IssueLinksOf and KeyOf(link, end) do generalise as the delta says, but InwardNameOf (IssueExtensions.cs:113) reads only type.inward - it is hardcoded to the const \"inward\". Matching name, inward and outward means generalising the type-label read as well, not only the issue-end read. ParentResolution is a readonly record struct and a real three-case result: a nullable string expresses two of the three, so the ambiguous case would have to be recovered by re-walking the links at the call site. Its candidate list carries distinct keys - duplicate links to one key collapse before anything counts them. Sibling to copy for house style: JiraDependencyLinkTest.cs, beside ExtractDependencyReferences (:61)."
+        },
+        {
+          "id": "02-03",
+          "name": "The selector decides where the parent came from",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs",
+          "scenario_name": "the child holds the outward end",
+          "criteria": [
+            "A Team whose parent override names a link type takes each item's parent from its matching link",
+            "A Team whose parent override names a real field keeps taking the parent from that field's value",
+            "A Team with no parent override set behaves exactly as it does today",
+            "An item with no matching link gets no parent and raises no warning"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/ParentSourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/ParentSourceSelectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "implementation_notes": "ParentSourceSelector is the feature's one new type and is argued from a project rule, not convenience: it looks like DependencySourceSelector and encodes different knowledge - dependencies are 0..n, Portfolio-only, skip-the-bad-entry; a parent is 0..1, on both grains, refuse-the-ambiguous. Generalising now yields a selector whose every method needs a cardinality flag. Read DependencySourceSelector's header before writing this one; it records what happened the last time a rule like this was written inside a tracker. Call site is CreateWorkItemFromJiraIssue:1570-1575, which is private STATIC and reached from CreateWorkItemsFromIssues:285 for a Team and CreateFeaturesFromIssues:1174 for a Portfolio - so whether the override resolved to a field or to a link type has to arrive as an argument alongside the customFieldReferences dictionary already passed in, not be fetched from inside. Do not let the static method reach for connector state. PopulateAdditionalFieldValues:1599 indexes customFields[fieldDef.Reference] with a plain indexer, so whatever slice 01 put in that dictionary for a link-type reference must still be present or this throws."
+        },
+        {
+          "id": "02-04",
+          "name": "The same mechanism at Portfolio grain, and the key is visible",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs",
+          "scenario_name": "the same mechanism at Portfolio grain",
+          "criteria": [
+            "A Portfolio whose parent override names a link type gives each Feature the counterpart key as its parent",
+            "The Portfolio path and the Team path are served by the same resolution, proven by test rather than asserted by design",
+            "The resolved key is readable as the override Additional Field's value on the stored record, without opening the tracker",
+            "An item with no matching link stores an empty value there and does not acquire a Data Center parent-link fallback instead"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "implementation_notes": "Both grains come free from the shared call site and are asserted anyway, because the test is what keeps them shared. Portfolio grain differs in one place worth watching: CreateFeaturesFromIssues:1168 reads the Data Center parent-link field name only when ParentOverrideAdditionalFieldDefinitionId has no value, and the Team path does the same at :279 for the Epic Link field. A link-type override must not re-enable that fallback, and TrySetParentForJiraDataCenter:1580 writes whenever ParentReferenceId is still empty - so a refused or absent parent leaves that door open. Assert that an item with no matching link does not silently acquire an Epic Link parent instead. Storing the resolved key is one assignment into workItem.AdditionalFieldValues after PopulateAdditionalFieldValues has run; that slot holds an empty string for any unresolved reference today, so nothing is displaced. It is the cheapest answer to 'if I point it at the wrong thing, does it quietly go wrong'."
+        },
+        {
+          "id": "02-05",
+          "name": "No extra request, and Features stop being sized by the default",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs",
+          "scenario_name": "reading links costs no extra request",
+          "criteria": [
+            "The number of issue-search requests per refresh is unchanged from the baseline recorded before this feature",
+            "The link type list costs at most one request per connection per refresh, counted and named separately",
+            "A Portfolio of Features whose children link to them by the configured type has no Feature left sized by the Portfolio default",
+            "Each such Feature's child count equals the number of items linked to it"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/ParentFromIssueLinksAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "implementation_notes": "Record the baseline from a run on the code as it stood before 02-03 landed and assert against that number, not against a constant somebody typed. issuelinks already arrives on every fetch because the search asks for *all (JiraWorkTrackingConnector.cs:41, used :1721), so the claim is that nothing new is asked for, not that nothing is read. DEFERRED, and the roadmap says so rather than the crafter discovering it: this step meets the fixture half of AC-2.6 only. The customer-value half - before and after counts of IsUsingDefaultFeatureSize on a real Jira Data Center Portfolio - needs an instance nobody has and is a post-release verification run. The feature may ship on the fixture half; it may not be reported to the customer as answering their question until the other half has run. Record it in the slice brief as owed, and note that meeting a criterion written to reject synthetic-only proof with fixtures is a knowing exception, not a pass."
+        },
+        {
+          "id": "02-06",
+          "name": "A parent read from the links a real Jira actually serves",
+          "agent": "nw-software-crafter",
+          "step_type": "integration",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDogfoodTest.cs",
+          "scenario_name": "",
+          "criteria": [
+            "An item whose link entry carries an inwardIssue takes the counterpart as its parent, read from the live instance",
+            "An item whose link entry carries an outwardIssue takes the counterpart as its parent, read from the live instance",
+            "The resolved parent overrides a populated native parent field, not merely an empty one",
+            "A child fetched without its parent in the query still carries the link, which is the claim no fixture can settle",
+            "The fixture ignores itself rather than failing when the credential environment variable is absent"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraParentLinkDogfoodTest.cs"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "implementation_notes": "The live fixture map is recorded in feature-delta.md under 'Wave: DELIVER / [REF] Live Jira fixtures' - read it, do not rediscover it. Link type Cloners on project LGHTHSDMO. LGHTHSDMO-24 carries one inwardIssue to 1716 AND has native parent LGHTHSDMO-3, so it proves both the outward-side direction and that the override beats a populated parent field. LGHTHSDMO-1725 and -1726 each carry one outwardIssue to 1716. LGHTHSDMO-1716 has three counterparts and must resolve to no parent. The decisive criterion is the fourth: query a child with its parent EXCLUDED from the JQL and confirm issuelinks still arrives - that is the assumption the direction inference rests on and a fixture written by that assumption cannot test it. DO NOT repoint the Blocks links on LGHTHSDMO-7..10; JiraDependencyDogfoodTest pins them and two read empty there deliberately."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Ambiguity refuses, and names the candidates",
+      "description": "US-03. Two or more distinct counterpart keys of the configured type on one item means no parent, one aggregated warning naming the item and every candidate, and a count on a surface an administrator already reads. A silently wrong parent moves an item into a Feature it does not belong to and looks exactly like correct data; refusing is visible, guessing is not. Slice brief: slices/slice-03-ambiguity-says-so.md, including the pre-registered 5 percent gate.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Two candidates means none, and the batch survives it",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+          "scenario_name": "two distinct candidates yield no parent",
+          "criteria": [
+            "An item with two or more distinct counterpart keys of the configured type gets no parent",
+            "Two links to the same key are one candidate, and that item gets its parent with nothing raised",
+            "Every other item in the same fetch is parented normally and the refresh reports success",
+            "No tie-break exists: no first-wins, no nearest, no most-recently-linked"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/ParentSourceSelector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/ParentSourceSelectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "implementation_notes": "The refusal behaviour is already slice 02's end state - an item with two candidates took no parent there either - so what this step adds is that the ambiguous case is distinguishable from the empty one rather than collapsing into it. That is why the resolution carries three cases and not a nullable string. Distinctness is by counterpart key: a tracker that records the same relationship twice is tidy in a different way, not ambiguous. MEASUREMENT OWED before this slice closes, and it is a pre-registered gate rather than a judgement: on the instance slice 02 ran against, count how many fetched items carry two or more candidates of the configured type, and record the number and the denominator in the slice brief. At or above 5 percent, refusing is the workflow rather than the exception and the feature goes back to DESIGN to narrow the match beyond the type name. Stated in advance so the result cannot be argued into agreement afterwards."
+        },
+        {
+          "id": "03-02",
+          "name": "One warning per refresh, naming the item and every candidate",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+          "scenario_name": "the warning names the item and every candidate",
+          "criteria": [
+            "One warning is logged for a refresh with ambiguous items, never one per item",
+            "It names each ambiguous item and every candidate key for it, not a count",
+            "A refresh with no ambiguous item logs nothing",
+            "The warning is raised on a Team refresh and on a Portfolio refresh alike"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "implementation_notes": "Aggregation shape to copy: ReportLinksThatMeantNothingHere (:1222), one line for a whole refresh under the two-Information-lines-per-entity budget. Copy the shape, write a sibling - that one answers 'nothing matched, here is what we saw' and this one answers 'too much matched', their guards differ, and one method with two guards and two messages is worse than two methods. Two facts from the code the design did not carry. First, ReportLinksThatMeantNothingHere is called only from GetFeaturesForProject:303, the Portfolio path; there is no aggregation site on the Team path at all, and every slice 03 scenario refreshes a Team. CreateWorkItemsFromIssues:269 is where the Team-side call has to go. Second, CreateWorkItemFromJiraIssue:1543 is static and returns a WorkItemBase, so it cannot log and cannot report a count - the candidates have to reach the two callers, which are instance methods and can. Dropping static is the known ripple for exactly this and has been done in this file before. Name the items and the keys in plain language; no section id in the message or in any comment."
+        },
+        {
+          "id": "03-03",
+          "name": "The count reaches the refresh log",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs",
+          "scenario_name": "the count reaches a surface that is not the log",
+          "criteria": [
+            "A refresh with three ambiguous items records an ambiguous parent count of three on its refresh log row, and logs one warning",
+            "A refresh with none records zero",
+            "Both Team and Portfolio refresh rows carry the count",
+            "Existing refresh log rows and every other recorded column are unchanged, on SQLite and on PostgreSQL"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshLog.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "implementation_notes": "MIGRATION MECHANICS, in order: dotnet build the backend FIRST - the migration projects reference the backend by HintPath, so an unbuilt backend makes dotnet ef report PendingModelChanges and copying DLLs into bin does not help - then run Lighthouse.Backend/Create-Migration.ps1 -MigrationName <name>, which generates the SQLite and PostgreSQL migrations together. Never dotnet ef migrations add directly. One additive column appended below Cancelled; expand-only, per the file's own header, and RefreshType's header says the same about member order. SyncOutcome is a sealed positional record and its own comment records the precedent: Reason was added as an init member rather than a fourth positional parameter so every existing construction site keeps reading as what it always was. Follow that. THE GAP THIS STEP HAS TO CLOSE, and the design does not name it: there is no route from the connector to SyncOutcome. IWorkTrackingConnector.GetWorkItemsForTeam returns IEnumerable<WorkItem>, and WorkItemService builds the outcome from a record count at :287 and :305 - the number has nowhere to travel. Two routes already exist in this codebase: widen what the connector hands back, or use the ambient scoped context the queue already sets, which Slice04CancellationReachProbe proves is readable inside a connector call without any port signature changing. Choose one deliberately and record which in the slice brief."
+        },
+        {
+          "id": "03-04",
+          "name": "An administrator reads the count without opening the log file",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx",
+          "scenario_name": "the count reaches a surface that is not the log",
+          "criteria": [
+            "A refresh row with a non-zero ambiguous parent count renders it, in the instance's configurable term for work items",
+            "A refresh row with a zero or absent count renders nothing about it",
+            "A payload from a backend that does not send the field renders without error",
+            "Existing refresh history rendering and filtering are unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "implementation_notes": "CORRECTION TO THE DESIGN, confirmed by reading the frontend: the refresh-log payload is not fetched by the Team page. Its only consumer is SystemInfoService.getRefreshLogs, read by pages/Settings/SystemInfo/RefreshHistorySection.tsx, and the backend serves it from SystemInfoController.GetRefreshLog. That is still an existing surface an administrator reads, so the criterion holds - but the open question the design deferred was phrased as 'which component on the Team page renders the count', and no such component exists. The frontend RefreshLog model is deliberately a subset of the entity: it carries neither mode nor recordsScanned nor recordsFetched today, so one optional scalar follows the existing shape rather than breaking it. Optional so an older backend cannot break a newer UI. Silent at zero: a line on every refresh teaches the reader to stop reading the line. Use the configurable term through getTerm, never the literal word."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "The trackers that cannot honour this say so",
+      "description": "US-04. Reading parent link types becomes a declared connector capability rather than an accident guarded by tests - Jira answers with its instance's types, every other connector answers empty - and the docs say which trackers honour the Parent Override Field at all. Slice brief: slices/slice-04-trackers-that-cannot-say-so.md. Its hypothesis is partly disproven by the code before a test is written; see 04-02.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Reading link types becomes a capability a connector declares",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice04ConnectorBoundarySpecifications.cs",
+          "scenario_name": "the capability is declared empty",
+          "criteria": [
+            "Asked for its parent link types, an Azure DevOps, ServiceNow, Linear or CSV connection answers empty",
+            "Asked the same, a Jira connection answers with the link types its instance defines",
+            "A Jira connection whose instance defines no link types answers empty without failing",
+            "No connector other than Jira gains any behaviour of its own"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice04ConnectorBoundarySpecifications.cs"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "implementation_notes": "This promotes the lookup slice 01 kept private to the Jira connector onto the port. Precedent to follow exactly: GetPredefinedAdditionalFields and SupportsIncrementalSync, the same 'what can this connector do' question, the second of them per-connection rather than per-connector because Jira Cloud and Jira Data Center are one class that does not answer the same way - which is this method's situation too. One correction to the design's wording, because it changes what the step costs: the interface carries NO default implementations. Every member is abstract and each connector writes its own one-liner - AzureDevOps:72, Csv:33, Linear:45 all read => []. There is nothing to inherit; this is four one-line additions plus Jira's real one, and the four are what the scenarios assert. No CancellationToken on the new method: it does not loop pages, and the interface's own header says a token it could not honour would teach the next reader the parameter is decorative. Adding a member reds any strict Mock<IWorkTrackingConnector> setup - sweep the acceptance harnesses that build one before pushing."
+        },
+        {
+          "id": "04-02",
+          "name": "What the other four actually do with a link-type reference",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice04ConnectorBoundarySpecifications.cs",
+          "scenario_name": "a link-type reference is refused",
+          "criteria": [
+            "An Azure DevOps connection carrying an Additional Field that names a Jira link type fails validation, naming the reference",
+            "The behaviour of each of the other three connectors given the same reference is asserted as it actually is, not as it was assumed to be",
+            "No connector silently changes behaviour as a side effect of the capability method landing",
+            "Any connector that accepts the reference without reading it is recorded in the slice brief as a named gap, with the decision taken about it"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice04ConnectorBoundarySpecifications.cs",
+            "docs/feature/parent-from-issue-links/slices/slice-04-trackers-that-cannot-say-so.md"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "implementation_notes": "THE SLICE HYPOTHESIS IS ALREADY PART-DISPROVEN, by reading the code rather than by running the tests, and the brief says what to do about that: if a connector accepts an unresolved reference instead of refusing it, this slice is a fix and not an assertion, and it is bigger than three hours. Only two connectors validate Additional Fields at all. Azure DevOps does, at :222 with the additional_fields_invalid verdict at :226, and Jira does at :408. ServiceNow's ValidateConnection (:221) probes the root table, Linear's (:230) runs a viewer query, and CSV's (:125) checks required options - none of the three ever looks at connection.AdditionalFieldDefinitions, so a link-type reference is accepted and silently ignored on all three. That is precisely the failure this feature exists to remove, and it is a pre-existing hole rather than one this feature opens. Do NOT improvise a fix for three connectors inside this step. Write the Azure DevOps assertion, write the other three to assert the behaviour that exists, record the gap in the brief, and raise it at the slice boundary as a scope decision - a new item, or a docs statement, or a return to DESIGN. Deciding it silently here is the one wrong answer."
+        },
+        {
+          "id": "04-03",
+          "name": "The docs answer \"can I use this on my connection?\"",
+          "agent": "nw-software-crafter",
+          "test_file": "",
+          "scenario_name": "",
+          "criteria": [
+            "Both the team and the portfolio edit pages state which trackers honour the Parent Override Field",
+            "They state that Linear and CSV do not honour it, as a pre-existing gap rather than a new one",
+            "They explain naming a link type where a field name goes, with a worked example of each link direction",
+            "Prose uses the instance's configurable terms throughout, and quotes a tracker's own link type names as the values they are"
+          ],
+          "files_to_modify": [
+            "docs/teams/edit.md",
+            "docs/portfolios/edit.md"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "implementation_notes": "Most of this slice's effort, and the artifact its dogfood moment reads. Configurable terms means the seeded defaults from TerminologySeeder - Feature, Work Item, Team, Portfolio - never Epic, Initiative or Story, which name a heading a Jira or Linear reader never sees. A customer's link type name is the exception: a literal value from their tracker, quoted exactly as they typed it, capitalisation included. Both directions need a worked example because direction is inferred and never configured, so a reader has to see that an instance where the work item names its feature and an instance where the feature names its work items are the same instance as far as this setting is concerned. Whatever 04-02 decided about ServiceNow, Linear and CSV lands here in a sentence a reader can act on. Screenshots and the release-notes entry are feature-finalization items, not this step's."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "nw-acceptance-designer-reviewer (2026-09-19): approved, zero blockers — all 23 Gherkin scenarios and all 20 ACs traceable to steps, dependencies a clean DAG, test-file paths matching the DISTILL placement table",
+    "notes": "16 steps over the four slices, in the order the DISCUSS prioritisation fixed: 01 first and alone because it could have ended the feature; 02 is the value; 03 follows 02 immediately because until it ships 02's failure mode is a silently wrong parent; 04 last because it protects behaviour that is already correct. Decomposition ratio 16 steps over about 20 production files = 0.8; no validation-only steps; the four connector one-liners are batched into a single step rather than one step each. Three disagreements between the design and the code were found while planning and are carried into the steps that meet them rather than left to surface mid-slice: the aggregation site on the Team path does not exist (03-02), the ambiguity count has no route from the connector to SyncOutcome (03-03), and three of the four non-Jira connectors do not validate Additional Fields at all, so AC-4.1 is not an assertion for them (04-02). Deferred by user decision and not planned: anything needing a Jira Data Center instance - AC-1.4's Data Center half and AC-2.6's customer-value half, both owed as a post-release verification run. Carried but unclosed: the refresh path has no authentication probe, so an expired token silently empties the link-type list and parents stop being set (01-04)."
+  }
+}

@@ -1,6 +1,6 @@
 # Slice 04 — The trackers that cannot honour this say so
 
-**Feature**: parent-from-issue-links · **ADO**: pending · **Story**: US-04 · **Estimate**: ~3h
+**Feature**: parent-from-issue-links · **ADO**: #6032 · **Story**: US-04 · **Estimate**: ~3h
 **Reference class**: `DependencySourceSelector`'s header comment — the one place in the codebase that
 states this failure mode outright, having already been bitten by it: a rule written inside a tracker "was
 told to one of three, and the other two accepted the setting and ignored it, which reads from the outside
