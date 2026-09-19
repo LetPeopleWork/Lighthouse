@@ -250,6 +250,51 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         }
 
         /// <summary>
+        /// The same two round trips, measured on the instance that actually shows them: one that does not
+        /// define the field Lighthouse registers on every Jira connection for itself. Lighthouse resolves
+        /// that field's reference without asking anybody, so nothing an administrator typed is missing -
+        /// and yet the reference is unresolved, which is the one thing that sends a refresh looking at
+        /// link types.
+        /// </summary>
+        [Test]
+        public async Task A_Team_that_named_nothing_pays_for_neither_call_on_an_instance_missing_the_field_Lighthouse_registers_itself()
+        {
+            TheIssueHasJirasOwnParent(TheChild, TheParentJiraItselfNames);
+
+            var asEveryTeamRefreshedBeforeThisFeature = await WhatOneTeamRefreshAsksForWithTheBoxLeftEmpty();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(asEveryTeamRefreshedBeforeThisFeature.LinkTypeReads, Is.Zero,
+                    "Whether an instance happens to define a field Lighthouse registered for itself is not something the Team chose, and it must not decide whether that Team pays a round trip on every cycle for a feature it never turned on.");
+                Assert.That(asEveryTeamRefreshedBeforeThisFeature.CredentialChecks, Is.Zero,
+                    "The probe stops the refresh when the token has expired, so charging it here means a dead credential breaks refreshes on instances that never touched this feature - a failure with no connection to anything anyone configured.");
+            }
+        }
+
+        /// <summary>
+        /// The same instance, with the box filled in. What an administrator typed is still worth asking
+        /// about, and an unresolved reference of Lighthouse's own sitting beside it must not be read as a
+        /// reason to stop asking.
+        /// </summary>
+        [Test]
+        public async Task A_link_type_an_administrator_named_still_resolves_where_that_field_does_not_exist_either()
+        {
+            TheParentOverrideNames(ALinkTypeTheInstanceDefines.Name);
+            TheIssueHasOneLinkWhoseOutwardIssueIs(TheChild, ALinkTypeTheInstanceDefines, TheParent);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheChild), Is.EqualTo(TheParent),
+                    "Sparing the Team that configured nothing must not also spare the one that configured something, which would turn a saved round trip into a feature that silently stops working on most instances.");
+                Assert.That(HowOftenTheInstanceWasAskedForItsLinkTypes(), Is.EqualTo(1),
+                    "One reference nobody typed cannot be what decides whether the reference somebody did type gets looked up.");
+            }
+        }
+
+        /// <summary>
         /// The Portfolio's copy of the guard that stops a refresh falling back to the field the tracker
         /// hangs parents on. The guard is written out once per grain, so the Team's copy being pinned says
         /// nothing about this one - and a Feature filed under the wrong level above it reads exactly like a

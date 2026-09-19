@@ -431,7 +431,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 connectionsWhoseCredentialWasAccepted[connection.Id] = true;
 
-                var resolution = await ResolveTheAdditionalFieldReferences(connection);
+                var resolution = await ResolveTheAdditionalFieldReferences(connection, LinkTypesMayAnswer.EveryReferenceLeftUnresolved);
                 var referencesThatResolvedToNothing = ReferencesThatResolvedToNothing(resolution.References);
                 if (referencesThatResolvedToNothing.Count > 0)
                 {
@@ -1730,14 +1730,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         private async Task<Dictionary<string, ResolvedReference>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
-            => (await ResolveTheAdditionalFieldReferences(connection)).References;
+            => (await ResolveTheAdditionalFieldReferences(connection, LinkTypesMayAnswer.WhatAnAdministratorTyped)).References;
 
         /// <summary>
         /// Reading work items only needs what each reference resolved to. Validating a connection also has to
         /// say what the instance offered, so the link types read along the way are carried back out rather
         /// than asked for a second time.
         /// </summary>
-        private async Task<AdditionalFieldResolution> ResolveTheAdditionalFieldReferences(WorkTrackingSystemConnection connection)
+        private async Task<AdditionalFieldResolution> ResolveTheAdditionalFieldReferences(
+            WorkTrackingSystemConnection connection, LinkTypesMayAnswer mayAnswer)
         {
             var client = await GetJiraRestClientAsync(connection);
             var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
@@ -1755,7 +1756,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     : ResolvedReference.AField(fieldId);
             }
 
-            var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(connection, client, customFieldReferences);
+            var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(connection, client, customFieldReferences, mayAnswer);
 
             return new AdditionalFieldResolution(customFieldReferences, listing);
         }
@@ -1768,9 +1769,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// instance with nothing unresolved from paying for a second call.
         /// </summary>
         private async Task<IssueLinkTypeListing> ResolveWhatTheFieldListMissedAgainstLinkTypes(
-            WorkTrackingSystemConnection connection, HttpClient jiraClient, Dictionary<string, ResolvedReference> customFieldReferences)
+            WorkTrackingSystemConnection connection, HttpClient jiraClient,
+            Dictionary<string, ResolvedReference> customFieldReferences, LinkTypesMayAnswer mayAnswer)
         {
             var referencesThatResolvedToNothing = ReferencesThatResolvedToNothing(customFieldReferences);
+
+            if (mayAnswer == LinkTypesMayAnswer.WhatAnAdministratorTyped)
+            {
+                referencesThatResolvedToNothing.RemoveAll(reference => NobodyTypedTheReference(connection, reference));
+            }
 
             if (referencesThatResolvedToNothing.Count == 0)
             {
@@ -1949,6 +1956,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .Where(reference => reference.Value.ResolvedToNothing)
                 .Select(reference => reference.Key)
                 .ToList();
+
+        /// <summary>
+        /// A reference nobody filled in anywhere. Lighthouse registers a field of its own on every Jira
+        /// connection and works out that field's reference for itself, so an issue link type can never be
+        /// what such a reference meant.
+        /// </summary>
+        private static bool NobodyTypedTheReference(WorkTrackingSystemConnection connection, string reference)
+            => !connection.AdditionalFieldDefinitions.Exists(
+                definition => !definition.IsPredefined && definition.Reference == reference);
+
+        /// <summary>
+        /// Which unresolved references are worth asking an instance for its issue link types about.
+        /// Looking one up costs a round trip and, before it, a probe that stops the refresh outright when
+        /// the token has expired - so a refresh asks only about references somebody typed, or a Team that
+        /// configured nothing pays both on every cycle, and a dead credential breaks refreshes on
+        /// instances that never touched any of this. An administrator pressing Validate is asking about
+        /// every reference on the connection and is waiting for the answer, so that one call asks about
+        /// all of them.
+        /// </summary>
+        private enum LinkTypesMayAnswer
+        {
+            WhatAnAdministratorTyped,
+            EveryReferenceLeftUnresolved,
+        }
 
         /// <summary>
         /// A link type shows an administrator three phrases - its name, and what a link reads as in each
