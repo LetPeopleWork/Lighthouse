@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private HttpStatusCode linkTypeListStatus = HttpStatusCode.OK;
 
+        private string? theLinkTypeListAsAnswered;
+
         [SetUp]
         public void ForgetTheInstanceTheLastScenarioDescribed()
         {
@@ -54,6 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             requestedPaths.Clear();
             credentialCheckStatus = HttpStatusCode.OK;
             linkTypeListStatus = HttpStatusCode.OK;
+            theLinkTypeListAsAnswered = null;
         }
 
         protected void TheInstanceDefinesTheCustomField(string name)
@@ -61,6 +64,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         protected void TheInstanceDefinesTheLinkType(string name, string inward, string outward)
             => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), name, inward, outward));
+
+        /// <summary>
+        /// Each of a link type's three labels is renamed on its own, and Jira writes a label nobody filled
+        /// in by leaving the property out rather than by sending an empty one.
+        /// </summary>
+        protected void TheInstanceDefinesALinkTypeCarryingNoDirectionalLabels(string name)
+            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), name, null, null));
+
+        protected void TheInstanceDefinesALinkTypeCarryingNoName(string inward, string outward)
+            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), null, inward, outward));
+
+        protected void TheInstanceDefinesALinkTypeNamedTheEmptyString(string inward, string outward)
+            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), string.Empty, inward, outward));
 
         /// <summary>
         /// Jira answers a credential it does not accept - and a request carrying no credential at all - with
@@ -75,6 +91,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// empty: nobody has to guess what happened, Jira said so.
         /// </summary>
         protected void TheIssueLinkTypeEndpointAnswers(HttpStatusCode status) => linkTypeListStatus = status;
+
+        /// <summary>
+        /// Jira answering 200 with something other than the envelope Lighthouse parses. No Data Center
+        /// instance was available to record the real shape from, and the field list already differs between
+        /// the two deployments, so a scenario has to be able to put an unrecognised body on the wire.
+        /// </summary>
+        protected void TheLinkTypeListComesBackAs(string body) => theLinkTypeListAsAnswered = body;
 
         protected void TheCredentialIsRefused() => credentialCheckStatus = HttpStatusCode.Unauthorized;
 
@@ -142,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)
                     => (HttpStatusCode.OK, TheFieldsItDefines()),
                 _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal)
-                    => (linkTypeListStatus, TheLinkTypesItDefines()),
+                    => (linkTypeListStatus, theLinkTypeListAsAnswered ?? TheLinkTypesItDefines()),
                 _ when path.Contains(SearchEndpoint, StringComparison.Ordinal)
                     => (HttpStatusCode.OK, "{\"issues\":[],\"isLast\":true}"),
                 _ => (HttpStatusCode.OK, "{}"),
@@ -172,15 +195,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private string TheLinkTypesItDefines()
         {
             var linkTypes = definedLinkTypes.Select(linkType =>
-                "{\"id\":\"" + linkType.Id + "\",\"name\":\"" + linkType.Name + "\",\"inward\":\"" + linkType.Inward
-                + "\",\"outward\":\"" + linkType.Outward
-                + "\",\"self\":\"https://jira.example.invalid/rest/api/2/issueLinkType/" + linkType.Id + "\"}");
+                "{\"id\":\"" + linkType.Id + "\""
+                + Written("name", linkType.Name)
+                + Written("inward", linkType.Inward)
+                + Written("outward", linkType.Outward)
+                + ",\"self\":\"https://jira.example.invalid/rest/api/2/issueLinkType/" + linkType.Id + "\"}");
 
             return "{\"issueLinkTypes\":[" + string.Join(",", linkTypes) + "]}";
         }
 
+        private static string Written(string property, string? value)
+            => value is null ? string.Empty : ",\"" + property + "\":\"" + value + "\"";
+
         private sealed record JiraField(string Id, string Name);
 
-        private sealed record JiraLinkType(string Id, string Name, string Inward, string Outward);
+        private sealed record JiraLinkType(string Id, string? Name, string? Inward, string? Outward);
     }
 }

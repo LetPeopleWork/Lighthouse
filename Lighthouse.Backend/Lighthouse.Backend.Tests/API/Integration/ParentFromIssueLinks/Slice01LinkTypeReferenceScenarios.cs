@@ -1,4 +1,5 @@
 using System.Net;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
@@ -262,6 +263,91 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     $"Jira refusing one endpoint is something an administrator can act on, and only naming it says which one. Jira said: {verdict.Message}");
                 Assert.That(verdict.Message, Does.Not.Contain("could not be found"),
                     $"This instance does define the reference; the list saying so was refused. Reporting it as not found sends the administrator to correct a configuration that is already right. Jira said: {verdict.Message}");
+            }
+        }
+
+        [Test]
+        public async Task The_refused_endpoint_is_reported_under_its_own_code_and_says_what_it_refused_with()
+        {
+            TheIssueLinkTypeEndpointAnswers(HttpStatusCode.Forbidden);
+
+            var verdict = await TheVerdictOnAConnectionAskingFor(ALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Code, Is.EqualTo("issue_link_types_unreadable"),
+                    $"An endpoint Jira turned down is its own outcome, and the code is what anything reading this verdict programmatically has to tell it apart by. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message, Does.Contain("403"),
+                    $"A 401, a 403 and a 502 send the administrator to three different places, and only the status says which one arrived. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message, Does.Contain(nameof(HttpStatusCode.Forbidden)),
+                    $"A number alone is something to go and look up; the name it carries is readable on sight. Jira said: {verdict.Message}");
+            }
+        }
+
+        [Test]
+        public async Task The_two_verdicts_that_suspect_the_credential_highlight_the_credential()
+        {
+            TheIssueLinkTypeEndpointAnswers(HttpStatusCode.Forbidden);
+            var whenTheEndpointWasRefused = await TheVerdictOnAConnectionAskingFor(ALinkType);
+
+            TheIssueLinkTypeEndpointAnswers(HttpStatusCode.OK);
+            TheLinkTypeListComesBackEmpty();
+            var whenTheListCameBackEmpty = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whenTheEndpointWasRefused.FieldName, Is.EqualTo(JiraWorkTrackingOptionNames.ApiToken),
+                    "The message sends someone to the credential, and the input the form highlights has to be the one the message names or they read past each other.");
+                Assert.That(whenTheListCameBackEmpty.FieldName, Is.EqualTo(JiraWorkTrackingOptionNames.ApiToken),
+                    "An empty list points at the credential too, so the same input has to light up - pointing at the Additional Fields box would contradict the sentence above it.");
+            }
+        }
+
+        [TestCase(AnEnvelopeThatDoesNotCarryTheList)]
+        [TestCase(ABareArrayOfLinkTypes)]
+        [TestCase(AnAnswerThatIsNotJsonAtAll)]
+        public async Task A_reply_Lighthouse_cannot_read_is_not_a_credential_it_cannot_use(string answered)
+        {
+            TheLinkTypeListComesBackAs(answered);
+
+            var verdict = await TheVerdictOnAConnectionAskingFor(ALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False,
+                    "A reference the link type list was going to answer for has not been checked when the list could not be read.");
+                Assert.That(verdict.Code, Is.EqualTo("issue_link_types_not_understood"),
+                    $"A reply in a shape Lighthouse cannot read is neither a refusal nor an empty list, and reusing either code hides the one cause that needs a different remedy from both. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message, Does.Contain(IssueLinkTypeEndpoint),
+                    $"Naming the endpoint is what lets someone go and look at what it actually answers on their deployment. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message + verdict.TechnicalDetails, Does.Not.Contain("credential").IgnoreCase,
+                    $"Nothing here established anything about the credential, and an administrator told otherwise spends the afternoon revoking and reissuing a token that was never the problem. Jira said: {verdict.Message}");
+                Assert.That(verdict.FieldName, Is.Not.EqualTo(JiraWorkTrackingOptionNames.ApiToken),
+                    "The highlighted input is where the form sends someone to fix this, and the token is not what is broken.");
+            }
+        }
+
+        [Test]
+        public async Task A_type_with_no_name_and_a_type_with_no_labels_are_not_types_a_blank_reference_reaches()
+        {
+            TheInstanceDefinesALinkTypeCarryingNoDirectionalLabels(ATypeCarryingNoDirectionalLabels);
+            TheInstanceDefinesALinkTypeCarryingNoName("is duplicated by", "duplicates");
+            TheInstanceDefinesALinkTypeNamedTheEmptyString("is blocked by", "blocks");
+            TheInstanceDefinesTheLinkType(ATypeDefinedAfterTheOnesMissingTheirNames, "is cloned by", "clones");
+
+            var theReferenceNamingARealType = await TheVerdictOnAConnectionAskingFor(ALinkType);
+            var theReferenceNamingNothing = await TheVerdictOnAConnectionAskingFor(AReferenceTypedAsNothingAtAll);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theReferenceNamingARealType.IsValid, Is.True,
+                    $"Entries this instance left incomplete must not stop a reference naming a complete one from resolving. Jira said: {theReferenceNamingARealType.Message}");
+                Assert.That(theReferenceNamingNothing.IsValid, Is.False,
+                    $"A link type with nothing written in either direction carries two empty labels, and an empty reference must not be read as matching them - that resolves a box the administrator never filled in. Jira said: {theReferenceNamingNothing.Message}");
+                Assert.That(theReferenceNamingNothing.Message, Does.Not.Contain(", ,"),
+                    $"A type that arrived with no name would appear in the list of names to correct a typo to as a gap between two commas, offering something nobody can type. Jira said: {theReferenceNamingNothing.Message}");
+                Assert.That(theReferenceNamingNothing.Message, Does.Contain(ATypeDefinedAfterTheOnesMissingTheirNames),
+                    $"Skipping an unusable entry must not stop the list at it - the types defined after one are still types the administrator can see in Jira. Jira said: {theReferenceNamingNothing.Message}");
             }
         }
     }

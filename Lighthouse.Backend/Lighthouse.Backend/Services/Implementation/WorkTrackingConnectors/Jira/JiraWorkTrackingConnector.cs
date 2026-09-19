@@ -1061,14 +1061,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// A reference that resolved to nothing has three very different causes, and each needs the
+        /// A reference that resolved to nothing has four very different causes, and each needs the
         /// administrator somewhere else. A misspelling is corrected by reading the instance's real link type
         /// names off this message. A credential Jira will not show link types to is not corrected in the field
         /// configuration at all - and Jira reports that by answering the link type list with 200 and nothing in
         /// it rather than by refusing, so an empty list must never be printed as "this instance defines none",
-        /// which blames the administrator for somebody else's problem. A list Jira turned down outright is the
-        /// one case where nothing was established either way, so saying the reference could not be found would
-        /// send someone to correct a configuration that may well be right.
+        /// which blames the administrator for somebody else's problem. A list Jira turned down outright is a
+        /// case where nothing was established either way, so saying the reference could not be found would
+        /// send someone to correct a configuration that may well be right. So is a reply that arrived without
+        /// a refusal in a shape this code cannot read, and that one must be said in its own words: reading it
+        /// as an empty list sends someone to revoke and reissue a token that was never the problem.
         /// </summary>
         private static ConnectionValidationResult TheVerdictOnReferencesThatResolvedToNothing(
             List<string> referencesThatResolvedToNothing, IssueLinkTypeListing linkTypes)
@@ -1082,6 +1084,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     $"Jira refused {IssueLinkTypeEndpoint} with {(int)refusal} ({refusal}), so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
                     "Give the credential in use permission to read issue link types, or check whether a proxy in front of Jira is turning that endpoint down. Nothing about the additional field configuration is known to be wrong.",
                     JiraWorkTrackingOptionNames.ApiToken);
+            }
+
+            if (linkTypes.WasNotUnderstood)
+            {
+                return ConnectionValidationResult.Failure(
+                    "issue_link_types_not_understood",
+                    $"Jira answered {IssueLinkTypeEndpoint} without refusing, but the reply was not in a form Lighthouse could read, so a reference naming an issue link type could not be checked at all. The references waiting on it are: {references}.",
+                    "Lighthouse reads that endpoint as an object carrying an issueLinkTypes array, and this instance answered something else. Nothing about the additional field configuration or the sign-in is known to be wrong. Reporting what this endpoint answers on this deployment is what gets it read.");
             }
 
             var names = linkTypes.Names;
@@ -1714,42 +1724,70 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     response.StatusCode,
                     responseBody);
 
-                return new IssueLinkTypeListing([], response.StatusCode);
+                return IssueLinkTypeListing.Refused(response.StatusCode);
             }
 
-            using var jsonResponse = JsonDocument.Parse(responseBody);
+            var linkTypes = TheLinkTypesIn(responseBody);
 
-            return new IssueLinkTypeListing(TheLinkTypesIn(jsonResponse.RootElement), null);
+            if (linkTypes is null)
+            {
+                logger.LogInformation(
+                    "Jira answered the issue link type list with {StatusCode}, in a shape Lighthouse could not read. Body: {Body}",
+                    response.StatusCode,
+                    responseBody);
+
+                return IssueLinkTypeListing.NotUnderstood;
+            }
+
+            return IssueLinkTypeListing.Of(linkTypes);
         }
 
         /// <summary>
-        /// An answer carrying nothing recognisable reads the same as an instance that defines no link types.
-        /// Both leave every reference where it already was - unresolved - and the verdict on an unresolved
-        /// reference is reached from the status Jira answered with, not from the shape of the body.
+        /// Nothing, rather than an empty list, when the reply is not the envelope this endpoint is expected to
+        /// answer with. The two must not be confused: an empty list is read as an instance whose credential was
+        /// shown nothing, and saying that about a reply nobody could parse sends an administrator to revoke a
+        /// working token. Jira Data Center's answer here has never been seen - no instance was available to
+        /// record it from - and its field list already differs from Cloud's, so an unrecognised body is the
+        /// likeliest way this ever meets that deployment.
         /// </summary>
-        private static List<JiraIssueLinkType> TheLinkTypesIn(JsonElement answer)
+        private static List<JiraIssueLinkType>? TheLinkTypesIn(string responseBody)
         {
-            var linkTypes = new List<JiraIssueLinkType>();
+            JsonDocument answer;
 
-            if (!answer.TryGetProperty(LinkTypesProperty, out var linkTypesElement)
-                || linkTypesElement.ValueKind != JsonValueKind.Array)
+            try
             {
+                answer = JsonDocument.Parse(responseBody);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+
+            using (answer)
+            {
+                if (answer.RootElement.ValueKind != JsonValueKind.Object
+                    || !answer.RootElement.TryGetProperty(LinkTypesProperty, out var linkTypesElement)
+                    || linkTypesElement.ValueKind != JsonValueKind.Array)
+                {
+                    return null;
+                }
+
+                var linkTypes = new List<JiraIssueLinkType>();
+
+                foreach (var linkType in linkTypesElement.EnumerateArray())
+                {
+                    if (linkType.TryGetProperty(JiraFieldNames.NamePropertyName, out var name)
+                        && name.GetString() is { Length: > 0 } linkTypeName)
+                    {
+                        linkTypes.Add(new JiraIssueLinkType(
+                            linkTypeName,
+                            LabelOf(linkType, InwardLabelProperty),
+                            LabelOf(linkType, OutwardLabelProperty)));
+                    }
+                }
+
                 return linkTypes;
             }
-
-            foreach (var linkType in linkTypesElement.EnumerateArray())
-            {
-                if (linkType.TryGetProperty(JiraFieldNames.NamePropertyName, out var name)
-                    && name.GetString() is { Length: > 0 } linkTypeName)
-                {
-                    linkTypes.Add(new JiraIssueLinkType(
-                        linkTypeName,
-                        LabelOf(linkType, InwardLabelProperty),
-                        LabelOf(linkType, OutwardLabelProperty)));
-                }
-            }
-
-            return linkTypes;
         }
 
         private static string LabelOf(JsonElement linkType, string labelProperty)
@@ -1778,13 +1816,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// What the instance answered when asked for its link types, and the status it turned the question
-        /// down with if it did. An instance that simply defines none and one that would not say are both an
-        /// empty list, and only the status tells them apart.
+        /// What the instance answered when asked for its link types. Four things reach this as an empty list -
+        /// an instance that defines none, one that would not show them to this caller, one that refused the
+        /// question, and one whose reply could not be read - and each sends the administrator somewhere else,
+        /// so which of them happened is carried alongside rather than guessed at from the list being empty.
         /// </summary>
-        private sealed record IssueLinkTypeListing(List<JiraIssueLinkType> Types, HttpStatusCode? RefusedWith)
+        private sealed record IssueLinkTypeListing(
+            List<JiraIssueLinkType> Types, HttpStatusCode? RefusedWith, bool WasNotUnderstood)
         {
-            public static IssueLinkTypeListing NeverAsked => new([], null);
+            public static IssueLinkTypeListing NeverAsked => new([], null, false);
+
+            public static IssueLinkTypeListing NotUnderstood => new([], null, true);
+
+            public static IssueLinkTypeListing Refused(HttpStatusCode status) => new([], status, false);
+
+            public static IssueLinkTypeListing Of(List<JiraIssueLinkType> types) => new(types, null, false);
 
             public List<string> Names => Types.ConvertAll(linkType => linkType.Name);
         }
