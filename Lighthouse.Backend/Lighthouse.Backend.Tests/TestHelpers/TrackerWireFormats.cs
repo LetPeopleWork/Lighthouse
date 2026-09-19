@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     /// <summary>
@@ -7,7 +9,29 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public static class JiraWireFormat
     {
+        /// <summary>
+        /// The endpoints a Jira connector reaches for. A fixture naming them for itself is what lets it
+        /// notice one of them changing; reading them off the connector would make every such test agree
+        /// with whatever the connector now asks for.
+        /// </summary>
+        public const string ServerInfoEndpoint = "rest/api/2/serverInfo";
+
+        /// <summary>The one call that actually establishes who Lighthouse is signed in to Jira as.</summary>
+        public const string CredentialCheckEndpoint = "rest/api/2/myself";
+
+        public const string FieldListEndpoint = "rest/api/latest/field";
+
+        public const string IssueLinkTypeEndpoint = "rest/api/latest/issueLinkType";
+
+        public const string SearchEndpoint = "/search";
+
+        /// <summary>What the deployment probe answers on a Cloud instance.</summary>
+        public const string ACloudDeployment = "{\"deploymentType\":\"Cloud\"}";
+
         private const string EpicIssueType = "Epic";
+
+        /// <summary>The id this gives the first custom field an instance is described as defining.</summary>
+        public const int TheFirstCustomFieldId = 10100;
 
         /// <summary>
         /// The routing a Cloud connector walks before it ever reaches a search: it asks which deployment
@@ -17,42 +41,107 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             var path = request.RequestUri?.AbsolutePath ?? string.Empty;
 
-            if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
+            if (path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal))
             {
-                return "{\"deploymentType\":\"Cloud\"}";
+                return ACloudDeployment;
             }
 
-            if (path.EndsWith("rest/api/latest/field", StringComparison.Ordinal))
+            if (path.EndsWith(FieldListEndpoint, StringComparison.Ordinal))
             {
-                return "[]";
+                return TheFieldListDefining([]);
             }
 
-            if (path.Contains("/search", StringComparison.Ordinal))
+            if (path.Contains(SearchEndpoint, StringComparison.Ordinal))
             {
-                return "{\"issues\":[" + string.Join(",", issues) + "],\"isLast\":true}";
+                return OnePageOf(issues);
             }
 
             return "{}";
         }
 
+        /// <summary>
+        /// A search answered in full, with nothing left to page for. Every fixture describing an instance
+        /// hands its issues back this way, so the envelope the connector reads is written once.
+        /// </summary>
+        public static string OnePageOf(IEnumerable<string> issues)
+            => "{\"issues\":[" + string.Join(",", issues) + "],\"isLast\":true}";
+
+        /// <summary>
+        /// The custom fields an instance defines, as Jira Cloud writes them - every field carrying a "key"
+        /// as well as an id. Ids are handed out in order from <see cref="TheFirstCustomFieldId"/>, so a
+        /// fixture that has to name one can work out which it will be.
+        /// </summary>
+        public static string TheFieldListDefining(IEnumerable<string> fieldNames)
+        {
+            var fields = fieldNames.Select((name, index) =>
+            {
+                var id = TheCustomFieldIdAt(index);
+
+                return "{\"id\":\"" + id + "\",\"key\":\"" + id + "\",\"name\":\"" + name
+                    + "\",\"custom\":true,\"schema\":{\"type\":\"string\"}}";
+            });
+
+            return "[" + string.Join(",", fields) + "]";
+        }
+
+        public static string TheCustomFieldIdAt(int index)
+            => "customfield_" + (TheFirstCustomFieldId + index).ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// The link-type list as a live Cloud instance answered it: an object keyed issueLinkTypes, not a
+        /// bare array and not the values-plus-isLast envelope the field and search endpoints use, and with
+        /// no paging to carry.
+        /// </summary>
+        public static string TheLinkTypeListDefining(IEnumerable<string> linkTypeDefinitions)
+            => "{\"issueLinkTypes\":[" + string.Join(",", linkTypeDefinitions) + "]}";
+
+        /// <summary>
+        /// One entry of that list. Each of a link type's three labels is renamed on its own, and Jira
+        /// writes a label nobody filled in by leaving the property out rather than by sending an empty
+        /// one - which is why a label may be handed over as null here.
+        /// </summary>
+        public static string ALinkTypeDefinition(int index, string? name, string? inward, string? outward)
+        {
+            var id = (10000 + index).ToString(CultureInfo.InvariantCulture);
+
+            return "{\"id\":\"" + id + "\""
+                + Written("name", name)
+                + Written("inward", inward)
+                + Written("outward", outward)
+                + ",\"self\":\"https://jira.example.invalid/rest/api/2/issueLinkType/" + id + "\"}";
+        }
+
+        public static string ALinkTypeDefinition(int index, JiraLinkType linkType)
+            => ALinkTypeDefinition(index, linkType.Name, linkType.Inward, linkType.Outward);
+
+        private static string Written(string property, string? value)
+            => value is null ? string.Empty : ",\"" + property + "\":\"" + value + "\"";
+
         public static string AnEpic(string key, params string[] links) => AnEpicNamed(key, $"{key} summary", links);
 
         public static string AnEpicNamed(string key, string summary, params string[] links)
-            => AnIssue(key, TheFieldsOf(summary, EpicIssueType, links), changelogEntries: null);
+            => AnIssue(key, TheFieldsOf(summary, EpicIssueType, string.Empty, links), changelogEntries: null);
 
         /// <summary>
         /// An issue at whatever grain the caller needs. Only a Portfolio is made of Epics; a Team's items
         /// carry whichever type the instance calls them, and a fixture fixed at Epic cannot say so.
         /// </summary>
         public static string AnIssueOfType(string key, string issueType, params string[] links)
-            => AnIssue(key, TheFieldsOf($"{key} summary", issueType, links), changelogEntries: null);
+            => AnIssue(key, TheFieldsOf($"{key} summary", issueType, string.Empty, links), changelogEntries: null);
+
+        /// <summary>
+        /// An issue carrying whatever else the instance puts on it - a custom field value, a parent Jira
+        /// names for itself - written as the leading-comma JSON fragment it appears as inside "fields".
+        /// </summary>
+        public static string AnIssueCarrying(string key, string issueType, string furtherFields, params string[] links)
+            => AnIssue(key, TheFieldsOf($"{key} summary", issueType, furtherFields, links), changelogEntries: null);
 
         /// <summary>
         /// An issue whose history is long enough that the connector will not trust the copy that came with
         /// the search result, and re-reads it on the issue's own changelog endpoint. The threshold is thirty.
         /// </summary>
         public static string AnIssueWithAChangelogOf(string key, int entries, params string[] links)
-            => AnIssue(key, TheFieldsOf($"{key} summary", EpicIssueType, links), entries);
+            => AnIssue(key, TheFieldsOf($"{key} summary", EpicIssueType, string.Empty, links), entries);
 
         private static string AnIssue(string key, string fields, int? changelogEntries)
         {
@@ -63,14 +152,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return "{\"key\": \"" + key + "\", \"fields\": " + fields + changelog + "}";
         }
 
-        private static string TheFieldsOf(string summary, string issueType, string[] links)
+        private static string TheFieldsOf(string summary, string issueType, string furtherFields, string[] links)
             => "{\"summary\": \"" + summary + "\""
                 + ", \"issuetype\": {\"name\": \"" + issueType + "\"}"
                 + ", \"status\": {\"name\": \"In Progress\"}"
                 + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
                 + ", \"updated\": \"2026-01-02T00:00:00.000+0000\""
                 + ", \"labels\": []"
-                + ", \"issuelinks\": [" + string.Join(",", links) + "]}";
+                + ", \"issuelinks\": [" + string.Join(",", links) + "]"
+                + furtherFields + "}";
 
         /// <summary>One page of that re-read. The connector keeps asking until a page says it is the last.</summary>
         public static string AChangelogPage(int entries, bool isLast)

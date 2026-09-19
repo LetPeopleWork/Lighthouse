@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Linq.Expressions;
 using System.Net;
 using System.Text;
@@ -15,11 +14,17 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 {
     /// <summary>
-    /// Step definitions for the second slice. The door pressed here is a Team refresh rather than
-    /// connection validation, and a refresh has to be handed issues - which the validation harness beside
-    /// this one deliberately cannot do, because a scenario about a verdict has nothing to say about what
-    /// the instance holds. So the transport is described again here, serving the same endpoints plus the
-    /// search a refresh actually reads.
+    /// Step definitions for the second slice. The door pressed here is a Team or a Portfolio refresh
+    /// rather than connection validation.
+    ///
+    /// That is why this harness stands beside the validation one rather than deriving from it. The two
+    /// press different doors and describe different things about an instance - a verdict scenario has
+    /// nothing to say about which issues the instance holds, and a refresh scenario has nothing to say
+    /// about what an administrator is told - so one harness would be two harnesses with a shared base
+    /// class in front of them. What must not be written twice is the instance itself, and it is not: the
+    /// bodies both put on the wire come from JiraWireFormat, so a field list, a link-type list, a search
+    /// page or an issue has one description between them and a scenario cannot drift onto a Jira the
+    /// other harness would not recognise.
     ///
     /// The one thing faked is the transport to Jira. Everything between the refresh and it is production
     /// code: the real connector resolves the real reference over the real field and link-type payloads and
@@ -61,23 +66,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private const string ACustomField = "Story Points";
 
-        /// <summary>The id the field list below hands the first custom field a scenario defines.</summary>
-        private const string TheIdThatFieldCarries = "customfield_10100";
+        /// <summary>What this instance calls the items a Team delivers, which is the Team's only work item type.</summary>
+        private const string TheTypeThisInstanceCallsItsWorkItems = "Story";
+
+        /// <summary>The id the shared field list hands the first custom field a scenario defines.</summary>
+        private static readonly string TheIdThatFieldCarries = JiraWireFormat.TheCustomFieldIdAt(0);
 
         private const string AParentTypedIntoThatField = "EPIC-3";
 
         /// <summary>Any row number will do; it only has to be the one the Team's setting points at.</summary>
         private const int TheAdditionalFieldTheOverridePointsAt = 4711;
 
-        private const string ServerInfoEndpoint = "rest/api/2/serverInfo";
+        private const string ServerInfoEndpoint = JiraWireFormat.ServerInfoEndpoint;
 
-        private const string CredentialCheckEndpoint = "rest/api/2/myself";
+        private const string CredentialCheckEndpoint = JiraWireFormat.CredentialCheckEndpoint;
 
-        private const string FieldListEndpoint = "rest/api/latest/field";
+        private const string FieldListEndpoint = JiraWireFormat.FieldListEndpoint;
 
-        private const string IssueLinkTypeEndpoint = "rest/api/latest/issueLinkType";
+        private const string IssueLinkTypeEndpoint = JiraWireFormat.IssueLinkTypeEndpoint;
 
-        private const string SearchEndpoint = "/search";
+        private const string SearchEndpoint = JiraWireFormat.SearchEndpoint;
 
         private static readonly JiraLinkType ALinkTypeTheInstanceDefines = new("Caused by", "was caused by", "causes");
 
@@ -169,10 +177,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private void TheInstanceDefinesTheCustomField(string name) => customFieldsTheInstanceDefines.Add(name);
 
         /// <summary>
-        /// The field Lighthouse reads on every Jira refresh whether or not anybody configured anything. It
-        /// has to be described for a cost measurement to mean what it says: what sends a refresh looking at
-        /// link types is a reference the field list could not resolve, and on an instance missing this one
-        /// that describes a Team nobody ever touched.
+        /// The field Lighthouse registers on every Jira connection for itself, defined here as most
+        /// instances define it. A refresh goes looking at link types over a reference the field list could
+        /// not resolve, and this is the one reference present whether or not anybody configured anything -
+        /// so a cost measured on an instance defining it and one measured on an instance missing it are two
+        /// different measurements, and both are taken.
         /// </summary>
         private void TheInstanceDefinesTheFieldEveryRefreshAlreadyReads()
             => TheInstanceDefinesTheCustomField(JiraFieldNames.FlaggedName);
@@ -525,15 +534,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 "A refresh that stopped part way leaves an instance whose hierarchy simply stops moving, and nobody watches a connection that has never reported anything wrong - the log is the only place that turns it into something to act on.");
 
         private static string AnIssue(string key, string furtherFields, params string[] links)
-            => "{\"key\": \"" + key + "\", \"fields\": {"
-                + "\"summary\": \"" + key + " summary\""
-                + ", \"issuetype\": {\"name\": \"Story\"}"
-                + ", \"status\": {\"name\": \"In Progress\"}"
-                + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
-                + ", \"updated\": \"2026-01-02T00:00:00.000+0000\""
-                + ", \"labels\": []"
-                + ", \"issuelinks\": [" + string.Join(",", links) + "]"
-                + furtherFields + "}}";
+            => JiraWireFormat.AnIssueCarrying(key, TheTypeThisInstanceCallsItsWorkItems, furtherFields, links);
 
         private HttpMessageHandler AJiraAnsweringForThatInstance()
         {
@@ -565,9 +566,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             var body = path switch
             {
-                _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal) => "{\"deploymentType\":\"Cloud\"}",
+                _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal) => JiraWireFormat.ACloudDeployment,
                 _ when path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
-                _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal) => TheFieldsItDefines(),
+                _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)
+                    => JiraWireFormat.TheFieldListDefining(customFieldsTheInstanceDefines),
                 _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal) => TheLinkTypesItDefines(),
                 _ when path.Contains(SearchEndpoint, StringComparison.Ordinal) => TheIssuesItServes(query),
                 _ => "{}",
@@ -592,43 +594,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             return OnePageOf(issuesTheInstanceServes);
         }
 
-        private static string OnePageOf(List<string> issues)
-            => "{\"issues\":[" + string.Join(",", issues) + "],\"isLast\":true}";
-
-        /// <summary>The field list as Jira Cloud writes it - every field carrying a "key" as well as an id.</summary>
-        private string TheFieldsItDefines()
-        {
-            var fields = customFieldsTheInstanceDefines.Select((name, index) =>
-            {
-                var id = "customfield_" + (10100 + index).ToString(CultureInfo.InvariantCulture);
-
-                return "{\"id\":\"" + id + "\",\"key\":\"" + id + "\",\"name\":\"" + name
-                    + "\",\"custom\":true,\"schema\":{\"type\":\"string\"}}";
-            });
-
-            return "[" + string.Join(",", fields) + "]";
-        }
+        private static string OnePageOf(List<string> issues) => JiraWireFormat.OnePageOf(issues);
 
         /// <summary>
-        /// The link-type list as a live Cloud instance answered it: an object keyed issueLinkTypes. A caller
-        /// whose credential is not accepted is answered as a stranger would be - 200, and nothing in it -
-        /// rather than refused, which is the whole reason an empty list cannot be read on its own.
+        /// The link types this instance defines. A caller whose credential is not accepted is answered as a
+        /// stranger would be - 200, and nothing in it - rather than refused, which is the whole reason an
+        /// empty list cannot be read on its own.
         /// </summary>
         private string TheLinkTypesItDefines()
-        {
-            if (!theCredentialIsStillAccepted)
-            {
-                return "{\"issueLinkTypes\":[]}";
-            }
-
-            var linkTypes = linkTypesTheInstanceDefines.Select((linkType, index) =>
-                "{\"id\":\"" + (10000 + index).ToString(CultureInfo.InvariantCulture) + "\""
-                + ",\"name\":\"" + linkType.Name + "\""
-                + ",\"inward\":\"" + linkType.Inward + "\""
-                + ",\"outward\":\"" + linkType.Outward + "\"}");
-
-            return "{\"issueLinkTypes\":[" + string.Join(",", linkTypes) + "]}";
-        }
+            => JiraWireFormat.TheLinkTypeListDefining(theCredentialIsStillAccepted
+                ? linkTypesTheInstanceDefines.Select((linkType, index) => JiraWireFormat.ALinkTypeDefinition(index, linkType))
+                : []);
 
         /// <summary>
         /// What one refresh asked the instance for, by endpoint. The link-type read and the credential

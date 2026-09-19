@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Models;
@@ -25,20 +24,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// </summary>
     public abstract class ParentFromIssueLinksAcceptanceTest
     {
-        protected const string IssueLinkTypeEndpoint = "rest/api/latest/issueLinkType";
+        protected const string IssueLinkTypeEndpoint = JiraWireFormat.IssueLinkTypeEndpoint;
 
-        private const string ServerInfoEndpoint = "rest/api/2/serverInfo";
+        private const string ServerInfoEndpoint = JiraWireFormat.ServerInfoEndpoint;
 
-        protected const string FieldListEndpoint = "rest/api/latest/field";
+        protected const string FieldListEndpoint = JiraWireFormat.FieldListEndpoint;
 
-        /// <summary>The one call that actually establishes who Lighthouse is signed in to Jira as.</summary>
-        protected const string CredentialCheckEndpoint = "rest/api/2/myself";
+        protected const string CredentialCheckEndpoint = JiraWireFormat.CredentialCheckEndpoint;
 
-        private const string SearchEndpoint = "/search";
+        private const string SearchEndpoint = JiraWireFormat.SearchEndpoint;
 
-        private readonly List<JiraField> definedFields = [];
+        private readonly List<string> definedFields = [];
 
-        private readonly List<JiraLinkType> definedLinkTypes = [];
+        private readonly List<ALinkTypeAsTheInstanceDefinesIt> definedLinkTypes = [];
 
         private readonly List<string> requestedPaths = [];
 
@@ -59,24 +57,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             theLinkTypeListAsAnswered = null;
         }
 
-        protected void TheInstanceDefinesTheCustomField(string name)
-            => definedFields.Add(new JiraField("customfield_" + Digits(10100 + definedFields.Count), name));
+        protected void TheInstanceDefinesTheCustomField(string name) => definedFields.Add(name);
 
         protected void TheInstanceDefinesTheLinkType(string name, string inward, string outward)
-            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), name, inward, outward));
+            => definedLinkTypes.Add(new ALinkTypeAsTheInstanceDefinesIt(name, inward, outward));
 
         /// <summary>
         /// Each of a link type's three labels is renamed on its own, and Jira writes a label nobody filled
         /// in by leaving the property out rather than by sending an empty one.
         /// </summary>
         protected void TheInstanceDefinesALinkTypeCarryingNoDirectionalLabels(string name)
-            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), name, null, null));
+            => definedLinkTypes.Add(new ALinkTypeAsTheInstanceDefinesIt(name, null, null));
 
         protected void TheInstanceDefinesALinkTypeCarryingNoName(string inward, string outward)
-            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), null, inward, outward));
+            => definedLinkTypes.Add(new ALinkTypeAsTheInstanceDefinesIt(null, inward, outward));
 
         protected void TheInstanceDefinesALinkTypeNamedTheEmptyString(string inward, string outward)
-            => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), string.Empty, inward, outward));
+            => definedLinkTypes.Add(new ALinkTypeAsTheInstanceDefinesIt(string.Empty, inward, outward));
 
         /// <summary>
         /// Jira answers a credential it does not accept - and a request carrying no credential at all - with
@@ -133,8 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         protected int RequestsReaching(string endpoint)
             => requestedPaths.Count(requested => requested.Contains(endpoint, StringComparison.Ordinal));
 
-        private static string Digits(int value) => value.ToString(CultureInfo.InvariantCulture);
-
         private HttpMessageHandler AJiraAnsweringForThatInstance()
         {
             var mock = new Mock<HttpMessageHandler>();
@@ -159,15 +154,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             var (status, body) = path switch
             {
                 _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal)
-                    => (HttpStatusCode.OK, "{\"deploymentType\":\"Cloud\"}"),
+                    => (HttpStatusCode.OK, JiraWireFormat.ACloudDeployment),
                 _ when path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal)
                     => (credentialCheckStatus, "{\"accountId\":\"someone\"}"),
                 _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)
-                    => (HttpStatusCode.OK, TheFieldsItDefines()),
+                    => (HttpStatusCode.OK, JiraWireFormat.TheFieldListDefining(definedFields)),
                 _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal)
                     => (linkTypeListStatus, theLinkTypeListAsAnswered ?? TheLinkTypesItDefines()),
                 _ when path.Contains(SearchEndpoint, StringComparison.Ordinal)
-                    => (HttpStatusCode.OK, "{\"issues\":[],\"isLast\":true}"),
+                    => (HttpStatusCode.OK, JiraWireFormat.OnePageOf([])),
                 _ => (HttpStatusCode.OK, "{}"),
             };
 
@@ -177,38 +172,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             };
         }
 
-        /// <summary>The field list as Jira Cloud writes it - every field carrying a "key" as well as an id.</summary>
-        private string TheFieldsItDefines()
-        {
-            var fields = definedFields.Select(field =>
-                "{\"id\":\"" + field.Id + "\",\"key\":\"" + field.Id + "\",\"name\":\"" + field.Name
-                + "\",\"custom\":true,\"schema\":{\"type\":\"string\"}}");
-
-            return "[" + string.Join(",", fields) + "]";
-        }
+        private string TheLinkTypesItDefines()
+            => JiraWireFormat.TheLinkTypeListDefining(definedLinkTypes.Select(
+                (linkType, index) => JiraWireFormat.ALinkTypeDefinition(index, linkType.Name, linkType.Inward, linkType.Outward)));
 
         /// <summary>
-        /// The link-type list as a live Cloud instance answered it: an object keyed issueLinkTypes, not a
-        /// bare array and not the values-plus-isLast envelope the field and search endpoints use, and with
-        /// no paging to carry.
+        /// A link type as one of these scenarios describes it. Any of the three labels may be absent,
+        /// because Jira writes a label nobody filled in by leaving the property out altogether - which the
+        /// shared <see cref="JiraLinkType"/> cannot express, since the fixtures that build link entries
+        /// from one always have all three.
         /// </summary>
-        private string TheLinkTypesItDefines()
-        {
-            var linkTypes = definedLinkTypes.Select(linkType =>
-                "{\"id\":\"" + linkType.Id + "\""
-                + Written("name", linkType.Name)
-                + Written("inward", linkType.Inward)
-                + Written("outward", linkType.Outward)
-                + ",\"self\":\"https://jira.example.invalid/rest/api/2/issueLinkType/" + linkType.Id + "\"}");
-
-            return "{\"issueLinkTypes\":[" + string.Join(",", linkTypes) + "]}";
-        }
-
-        private static string Written(string property, string? value)
-            => value is null ? string.Empty : ",\"" + property + "\":\"" + value + "\"";
-
-        private sealed record JiraField(string Id, string Name);
-
-        private sealed record JiraLinkType(string Id, string? Name, string? Inward, string? Outward);
+        private sealed record ALinkTypeAsTheInstanceDefinesIt(string? Name, string? Inward, string? Outward);
     }
 }

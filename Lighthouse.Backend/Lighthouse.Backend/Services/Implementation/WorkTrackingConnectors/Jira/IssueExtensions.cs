@@ -199,13 +199,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string GetObjectDisplayValue(JsonElement obj)
         {
-            if (obj.TryGetProperty("value", out var valueProp)){
+            if (obj.TryGetProperty("value", out var valueProp))
+            {
                 return valueProp.ToString();
             }
 
-            if (obj.TryGetProperty("name", out var nameProp)){
+            if (obj.TryGetProperty("name", out var nameProp))
+            {
                 return nameProp.ToString();
-                
             }
 
             return obj.ToString();

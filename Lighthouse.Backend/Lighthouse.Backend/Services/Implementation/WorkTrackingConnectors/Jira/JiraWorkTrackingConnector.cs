@@ -298,9 +298,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
-            var epicLinkFieldName = ParentSourceSelector.ReadsTheTrackersOwnParent(team)
-                ? FieldNames[team.WorkTrackingSystemConnectionId][JiraFieldNames.EpicLinkFieldName]
-                : string.Empty;
+            var epicLinkFieldName = TheFieldTheInstanceHangsParentsOn(team, JiraFieldNames.EpicLinkFieldName);
 
             var workItems = new List<WorkItem>();
 
@@ -308,7 +306,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var workItemBase = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
 
-                TrySetParentForJiraDataCenter(workItemBase, issue, epicLinkFieldName);
+                TrySetParentFromTheFieldTheInstanceHangsItOn(workItemBase, issue, epicLinkFieldName);
 
                 workItems.Add(new WorkItem(workItemBase, team));
             }
@@ -1230,14 +1228,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var features = new List<Feature>();
 
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
-            var portfolioLinkFieldName = ParentSourceSelector.ReadsTheTrackersOwnParent(portfolio)
-                ? FieldNames[portfolio.WorkTrackingSystemConnectionId][JiraFieldNames.ParentLinkFieldName]
-                : string.Empty;
+            var portfolioLinkFieldName = TheFieldTheInstanceHangsParentsOn(portfolio, JiraFieldNames.ParentLinkFieldName);
 
             foreach (var issue in issues)
             {
                 var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
-                TrySetParentForJiraDataCenter(workItem, issue, portfolioLinkFieldName);
+                TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, portfolioLinkFieldName);
 
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
@@ -1653,7 +1649,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ? ParentSource.ALinkTypeTheOverrideNames
                 : ParentSource.AFieldTheOverrideNames;
 
-            var fromTheMatchingLinks = source == ParentSource.ALinkTypeTheOverrideNames
+            var fromTheMatchingLinks = theOverride.NamesALinkType
                 ? issue.Fields.ResolveParentFromLinks(theOverride.LinkTypeName)
                 : default;
 
@@ -1701,11 +1697,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 : ResolvedReference.Nothing;
         }
 
-        private static void TrySetParentForJiraDataCenter(WorkItemBase workItemBase, Issue issue, string linkFieldName)
+        /// <summary>
+        /// The resolved key of the field this instance keeps an item's parent in, or nothing at all while
+        /// something is named in Parent Override Field. A Team and a Portfolio keep their parents in
+        /// different fields and obey the same rule about them: naming something in that box declares it
+        /// authoritative, so the tracker's own field stops being read rather than filling in behind it.
+        /// </summary>
+        private static string TheFieldTheInstanceHangsParentsOn(IWorkItemQueryOwner owner, string parentFieldName)
+            => ParentSourceSelector.ReadsTheTrackersOwnParent(owner)
+                ? FieldNames[owner.WorkTrackingSystemConnectionId][parentFieldName]
+                : string.Empty;
+
+        /// <summary>
+        /// The parent an instance keeps in a field of its own, read only where nothing has supplied one
+        /// already. Jira Cloud names a parent directly and defines no such field, which is the usual reason
+        /// there is no field name to read - but not the only one, because a Team or a Portfolio that names
+        /// something in Parent Override Field is also handed nothing here, having declared that field not
+        /// to be where its hierarchy lives. Either way there is nothing to read and whatever is already
+        /// there stands.
+        ///
+        /// Which deployment this is never enters into it: the field is looked up by name against the
+        /// ordinary field list, so an instance of either kind that defines one under that name is read the
+        /// same way.
+        /// </summary>
+        private static void TrySetParentFromTheFieldTheInstanceHangsItOn(WorkItemBase workItemBase, Issue issue, string linkFieldName)
         {
             if (!string.IsNullOrEmpty(workItemBase.ParentReferenceId) || string.IsNullOrEmpty(linkFieldName))
             {
-                // Parent already set or no link field (= we are on Jira Cloud) - do not overwrite!
                 return;
             }
 
@@ -1747,14 +1765,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
 
-            var customFieldReferences = new Dictionary<string, ResolvedReference>(fieldIds.Count);
-
-            foreach (var (reference, fieldId) in fieldIds)
-            {
-                customFieldReferences[reference] = string.IsNullOrEmpty(fieldId)
+            var customFieldReferences = fieldIds.ToDictionary(
+                resolved => resolved.Key,
+                resolved => string.IsNullOrEmpty(resolved.Value)
                     ? ResolvedReference.Nothing
-                    : ResolvedReference.AField(fieldId);
-            }
+                    : ResolvedReference.AField(resolved.Value));
 
             var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(connection, client, customFieldReferences, mayAnswer);
 
