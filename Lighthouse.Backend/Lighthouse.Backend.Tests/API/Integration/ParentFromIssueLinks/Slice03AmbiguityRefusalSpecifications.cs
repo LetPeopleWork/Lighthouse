@@ -1,8 +1,21 @@
 using System.Net;
 using System.Text;
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -42,6 +55,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private const string TheOtherCandidateOfTheOtherAmbiguousItem = "EPIC-5";
 
+        /// <summary>A third one, so that what a refresh reports about them is a count and not a yes or no.</summary>
+        private const string AThirdAmbiguousItem = "PROJ-10";
+
+        private const string ACandidateOfTheThirdAmbiguousItem = "EPIC-3";
+
+        private const string TheOtherCandidateOfTheThirdAmbiguousItem = "EPIC-6";
+
         /// <summary>
         /// Neither of the keys the ambiguous item points at, so a parent that leaked across from it cannot
         /// be mistaken for the one this item's own single link names.
@@ -72,12 +92,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private string whatTheParentOverrideNames = string.Empty;
 
+        private TestWebApplicationFactory<Program>? theHostTheRefreshRanIn;
+
+        private WebApplicationFactory<Program>? theRunningLighthouse;
+
         [SetUp]
         public void ForgetTheInstanceTheLastScenarioDescribed()
         {
             issuesTheInstanceServes.Clear();
             whatTheRefreshWroteToTheLog = new Mock<ILogger<JiraWorkTrackingConnector>>();
             whatTheParentOverrideNames = string.Empty;
+        }
+
+        [TearDown]
+        public void StopTheLighthouseThisScenarioStarted()
+        {
+            if (theRunningLighthouse is not null)
+            {
+                using (var scope = theRunningLighthouse.Services.CreateScope())
+                {
+                    scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                }
+
+                theRunningLighthouse.Dispose();
+                theRunningLighthouse = null;
+            }
+
+            theHostTheRefreshRanIn?.Dispose();
+            theHostTheRefreshRanIn = null;
         }
 
         /// <summary>
@@ -135,6 +177,146 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
 
             return await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// The same instance, read by the whole running application rather than by a connector a fixture
+        /// holds: the scheduled refresh, the work item service, the updater and the refresh log, all
+        /// production code over a real database. Only the transport to Jira is faked, exactly as above -
+        /// so a number that arrives in refresh history got there from links the connector really read,
+        /// and not from a fixture that put it there.
+        ///
+        /// Returns the id of the Team whose row the scenario then reads.
+        /// </summary>
+        private async Task<int> TheTeamIsRefreshedByTheRunningApplication()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(team);
+
+            var services = TheRunningLighthouse();
+            SeedIntoStorage(services, team);
+
+            await TheRefreshRuns(services, provider => provider.GetRequiredService<ITeamUpdater>().TriggerUpdate(team.Id));
+
+            return team.Id;
+        }
+
+        /// <summary>
+        /// The other door onto the same refresh path. An administrator who runs Portfolios and not Teams
+        /// reads the same refresh history, so the count has to reach their rows too.
+        /// </summary>
+        private async Task<int> ThePortfolioIsRefreshedByTheRunningApplication()
+        {
+            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(portfolio);
+
+            var services = TheRunningLighthouse();
+            SeedIntoStorage(services, portfolio);
+
+            await TheRefreshRuns(services, provider => provider.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolio.Id));
+
+            return portfolio.Id;
+        }
+
+        /// <summary>
+        /// What the most recent refresh of this entity recorded. A Portfolio refresh asks for a forecast,
+        /// which writes a row of its own, so the row is looked up by what it refreshed and not by being
+        /// the only one there.
+        /// </summary>
+        private RefreshLog TheRowTheRefreshRecorded(RefreshType type, int entityId)
+        {
+            using var scope = theRunningLighthouse!.Services.CreateScope();
+
+            var recorded = scope.ServiceProvider.GetRequiredService<IRefreshLogService>()
+                .GetRefreshLogs()
+                .Where(row => row.Type == type && row.EntityId == entityId)
+                .OrderByDescending(row => row.Id)
+                .FirstOrDefault();
+
+            Assert.That(recorded, Is.Not.Null, $"The refresh of {type} {entityId} recorded nothing at all.");
+
+            return recorded!;
+        }
+
+        /// <summary>
+        /// The whole application over its own database, with the real Jira connector handed to it in
+        /// place of the one the factory would build. The forecast is faked because Monte Carlo is not
+        /// deterministic and nothing here is about a forecast; the licence is granted because a refresh
+        /// nobody is licensed for reads no links at all.
+        /// </summary>
+        private IServiceProvider TheRunningLighthouse()
+        {
+            if (theRunningLighthouse is not null)
+            {
+                return theRunningLighthouse.Services;
+            }
+
+            theHostTheRefreshRanIn = new TestWebApplicationFactory<Program>();
+
+            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactory
+                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(JiraConnectorTestSetup.AConnectorOver(
+                    AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object));
+
+            var licensed = new Mock<ILicenseService>();
+            licensed.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
+
+            theRunningLighthouse = theHostTheRefreshRanIn.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IWorkTrackingConnectorFactory>();
+                services.AddScoped(_ => connectorFactory.Object);
+
+                services.RemoveAll<ILicenseService>();
+                services.AddScoped(_ => licensed.Object);
+
+                services.RemoveAll<IForecastService>();
+                services.AddScoped(_ => Mock.Of<IForecastService>());
+            }));
+
+            using var setupScope = theRunningLighthouse.Services.CreateScope();
+            var database = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            database.Database.EnsureDeleted();
+            database.Database.EnsureCreated();
+
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
+
+            return theRunningLighthouse.Services;
+        }
+
+        private static void SeedIntoStorage<TEntity>(IServiceProvider services, TEntity entity)
+            where TEntity : class, IEntity
+        {
+            using var scope = services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<TEntity>>();
+
+            repository.Add(entity);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Triggers one refresh and waits for the update queue to go idle. Admission is synchronous, so
+        /// the work is already active by the time the polling below starts.
+        /// </summary>
+        private static async Task TheRefreshRuns(IServiceProvider services, Action<IServiceProvider> trigger)
+        {
+            var statusStore = services.GetRequiredService<IUpdateStatusStore>();
+
+            trigger(services);
+
+            var deadline = DateTime.UtcNow.AddSeconds(60);
+            while (statusStore.HasActiveWork())
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
+                }
+
+                await Task.Delay(20);
+            }
         }
 
         private void WhatTheAdministratorTypedIntoTheOverrideIsSetOn(IWorkItemQueryOwner owner)

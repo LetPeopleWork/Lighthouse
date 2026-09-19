@@ -6,6 +6,17 @@ namespace Lighthouse.Backend.Models
         /// <summary>Why this update fetched the way it did, or null when there is nothing to name. An <c>init</c> member rather than a fourth positional parameter, so every existing construction site keeps reading as what it always was.</summary>
         public string? Reason { get; init; }
 
+        /// <summary>
+        /// How many of the records this update read carried links naming more than one issue to hang them
+        /// under, so no parent could be taken from them. An <c>init</c> member for the same reason
+        /// <see cref="Reason"/> is one.
+        ///
+        /// A cheap update only reads the records that moved, so its count is how many of THOSE nobody
+        /// could place - not how many the whole query holds. An untidy record that sat still is silent
+        /// until the next whole-query update reads it again.
+        /// </summary>
+        public int RecordsWhoseLinksNamedMoreThanOneParent { get; init; }
+
         /// <summary>The one reason worth naming today: the operator changed something the query asks the tracker for.</summary>
         public const string ConfigurationChanged = "configuration-changed";
 

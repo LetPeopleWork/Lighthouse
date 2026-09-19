@@ -284,7 +284,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFetch(
                 actualWorkItems,
                 [.. actualWorkItems.Select(workItem => workItem.ReferenceId)],
-                SyncOutcome.FullSync(recordsFromTracker.Count));
+                SyncOutcome.FullSync(recordsFromTracker.Count) with
+                {
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(actualWorkItems),
+                });
         }
 
         /// <summary>The download: full payloads for the records whose stamp moved, and for nothing else.</summary>
@@ -302,8 +305,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFetch(
                 downloaded,
                 [.. sweptOnce.Select(record => record.ReferenceId)],
-                SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count));
+                SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count) with
+                {
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(downloaded),
+                });
         }
+
+        /// <summary>
+        /// How many of the records this fetch read could not be hung under anything, because their links
+        /// named more than one candidate. The connector is what reads the links and says so; counting is
+        /// all that happens here, which is why the connector needs to know nothing about the update
+        /// pipeline it is being run by.
+        /// </summary>
+        private static int CountTheRecordsNobodyCouldPlace<TRecord>(List<TRecord> records) where TRecord : WorkItemBase
+            => records.Count(record => record.LinksNamedMoreThanOneParent);
 
         // Compared per item against the stored stamp. No global watermark, so clock skew and
         // server-time drift stay out of the design. A record nobody stored yet has always moved.
@@ -841,7 +856,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFeatureFetch(
                 recordsFromTracker,
                 recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
-                SyncOutcome.FullSync(recordsFromTracker.Count));
+                SyncOutcome.FullSync(recordsFromTracker.Count) with
+                {
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(recordsFromTracker),
+                });
         }
 
         /// <summary>
@@ -925,7 +943,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return new RemoteFeatureFetch(
                 downloaded,
                 sweptOnce.ConvertAll(record => record.ReferenceId),
-                SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count));
+                SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count) with
+                {
+                    RecordsWhoseLinksNamedMoreThanOneParent = CountTheRecordsNobodyCouldPlace(downloaded),
+                });
         }
 
         /// <summary>

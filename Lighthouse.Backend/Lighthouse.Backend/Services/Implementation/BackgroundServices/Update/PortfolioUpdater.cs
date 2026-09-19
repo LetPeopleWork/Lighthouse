@@ -163,7 +163,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         DurationMs = stopwatch.ElapsedMilliseconds,
                         ExecutedAt = DateTime.UtcNow,
                         Success = success,
-                        Cancelled = cancelled
+                        Cancelled = cancelled,
+                        RecordsWhoseLinksNamedMoreThanOneParent = outcome.RecordsWhoseLinksNamedMoreThanOneParent
                     });
 
                     ReportUpdateSummary(serviceProvider, project.Name, outcome, stopwatch.ElapsedMilliseconds, success);

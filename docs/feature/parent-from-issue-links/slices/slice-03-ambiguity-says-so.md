@@ -58,6 +58,34 @@ finished apart from slice 04's boundary.
 
 AC-3.1 through AC-3.5 in `feature-delta.md`.
 
+## How the count reaches the refresh log (decided during delivery)
+
+The surface AC-3.5 asks for is the refresh log row, which is written by `TeamUpdater` /
+`PortfolioUpdater` from the `SyncOutcome` that `WorkItemService` returns. The connector is what reads the
+links and knows the answer, so the count has to travel from the adapter to the update pipeline. Two
+routes were open:
+
+1. **Widen what the connector hands back.** Taken.
+2. **Read an ambient scoped context** from inside the connector call, the way the cancellation token
+   already reaches it. **Rejected.** ADR-183 considered exactly this shape under "Ambient only, connector
+   port untouched" and turned it down — not on reach, which it concedes, but on layering: it leaves a
+   driven adapter depending on update-pipeline state with nothing in the code saying so, and makes the
+   adapter untestable except by arranging an ambient. Re-adopting it here would contradict an accepted
+   decision.
+
+Route 1 costs no port signature change. `WorkItemBase` already carries a connector-populated,
+non-persisted, read-downstream member — `SyncedTransitions` — and the marker follows that precedent:
+`LinksNamedMoreThanOneParent`, set where the resolution is already computed, counted by `WorkItemService`
+into `SyncOutcome.RecordsWhoseLinksNamedMoreThanOneParent`, and written to the row by both updaters.
+`IWorkTrackingConnector` keeps every signature it had.
+
+**What the number means, and where it means something narrower.** On a whole-query refresh it is how
+many of the records the query holds could not be placed. On a cheap (delta) refresh only the records
+whose stamp moved are read at all, so it is how many of *those* could not be placed — an untidy record
+that sat still is silent until the next whole-query refresh reads it again. This is the same trade
+`ReportLinksThatMeantNothingHere` already makes, and the same one the delta epic accepted for its own
+counts; it is recorded on `SyncOutcome` in prose rather than papered over.
+
 ## Dependencies
 
 Slice 02 — the resolver has to exist before a second match means anything.

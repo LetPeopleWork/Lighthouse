@@ -1668,8 +1668,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);
 
-            return new AnItemAndWhatItsLinksOffered(
-                workItem, SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences));
+            var fromTheMatchingLinks = SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
+            workItem.LinksNamedMoreThanOneParent = fromTheMatchingLinks.IsAmbiguous;
+
+            return new AnItemAndWhatItsLinksOffered(workItem, fromTheMatchingLinks);
         }
 
         /// <summary>

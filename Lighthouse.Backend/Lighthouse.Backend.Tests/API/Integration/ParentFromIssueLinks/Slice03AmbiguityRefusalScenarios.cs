@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
@@ -141,6 +142,79 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     TheOneWarningNaming(TheAmbiguousItem),
                     Does.Contain(OneCandidate).And.Contain(TheOtherCandidate),
                     "An administrator who reaches this through a Portfolio has the same links to go and fix, and needs to be told which they are in the same words.");
+            }
+        }
+
+        /// <summary>
+        /// A warning scrolls off. Refresh history does not, and it is where somebody goes to ask whether
+        /// a tracker is in good order - so the number of records this refresh could not place has to be
+        /// recorded on the row, not only said once into the log and lost.
+        /// </summary>
+        [Test]
+        public async Task The_refresh_records_how_many_records_it_could_not_place()
+        {
+            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
+            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
+            TheIssueHasLinksOfTheNamedTypeTo(TheOtherAmbiguousItem, ACandidateOfTheOtherAmbiguousItem, TheOtherCandidateOfTheOtherAmbiguousItem);
+            TheIssueHasLinksOfTheNamedTypeTo(AThirdAmbiguousItem, ACandidateOfTheThirdAmbiguousItem, TheOtherCandidateOfTheThirdAmbiguousItem);
+
+            var teamId = await TheTeamIsRefreshedByTheRunningApplication();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheRowTheRefreshRecorded(RefreshType.Team, teamId).RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(3),
+                    "Three records came back with no parent and no way to choose one, and a row that says none of them did tells somebody looking at refresh history that this tracker is in better order than it is.");
+                Assert.That(TheOneWarningTheRefreshWrote(), Does.Contain(TheAmbiguousItem),
+                    "Recording the number does not replace saying which records they were - a count nobody can act on sends the reader back to the log, and the log has to still be one line.");
+            }
+        }
+
+        /// <summary>
+        /// The number has to mean something when it is zero as well. A row that reports a count only when
+        /// there is one to report leaves every quiet refresh looking the same as one nobody has read yet.
+        /// </summary>
+        [Test]
+        public async Task A_refresh_with_nothing_it_could_not_place_records_none()
+        {
+            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
+            TheIssueHasLinksOfTheNamedTypeTo(TheItemWithOneCandidate, TheParentTheItemWithOneCandidateTakes);
+
+            var teamId = await TheTeamIsRefreshedByTheRunningApplication();
+
+            var recorded = TheRowTheRefreshRecorded(RefreshType.Team, teamId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.RecordsWhoseLinksNamedMoreThanOneParent, Is.Zero,
+                    "Every link on this refresh named exactly one issue, so a tracker in good order has to read as one.");
+                Assert.That(recorded.Success, Is.True,
+                    "positive control: a refresh that failed would record nothing it could not place either, and the zero above would mean nothing.");
+                NothingWasWrittenToTheLogAsAWarning();
+            }
+        }
+
+        /// <summary>
+        /// Portfolio refresh history is a page of its own, read by people who never open a Team. The
+        /// count reaching only one of the two rows is the same as it reaching neither, for them.
+        /// </summary>
+        [Test]
+        public async Task A_portfolio_refresh_records_the_count_on_its_own_row()
+        {
+            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
+            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
+            TheIssueHasLinksOfTheNamedTypeTo(TheOtherAmbiguousItem, ACandidateOfTheOtherAmbiguousItem, TheOtherCandidateOfTheOtherAmbiguousItem);
+            TheIssueHasLinksOfTheNamedTypeTo(AThirdAmbiguousItem, ACandidateOfTheThirdAmbiguousItem, TheOtherCandidateOfTheThirdAmbiguousItem);
+
+            var portfolioId = await ThePortfolioIsRefreshedByTheRunningApplication();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheRowTheRefreshRecorded(RefreshType.Portfolio, portfolioId).RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(3),
+                    "The same three records are unplaceable whichever door the refresh came through, and an administrator who only runs Portfolios reads only this row.");
+                Assert.That(
+                    TheOneWarningNaming(TheAmbiguousItem),
+                    Does.Contain(TheOtherAmbiguousItem).And.Contain(AThirdAmbiguousItem),
+                    "Three records nobody could place still cost one line, and that line still has to name all three or the count above sends somebody hunting for records it does not identify.");
             }
         }
     }

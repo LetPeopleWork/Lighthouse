@@ -42,5 +42,13 @@ namespace Lighthouse.Backend.Models
         /// expand-only, so a column cannot be renamed or dropped.
         /// </summary>
         public bool Cancelled { get; set; }
+
+        /// <summary>
+        /// How many records this refresh read whose links named more than one issue to hang them under.
+        /// Each of those kept whatever parent it already had, which on screen is indistinguishable from a
+        /// record nobody ever linked - so without a number here, refresh history shows a tracker that
+        /// needs tidying and one that does not as exactly the same thing.
+        /// </summary>
+        public int RecordsWhoseLinksNamedMoreThanOneParent { get; set; }
     }
 }

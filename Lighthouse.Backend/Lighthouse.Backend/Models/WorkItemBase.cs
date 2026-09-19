@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.Models
         {
             Update(workItemBase);
             SyncedTransitions = workItemBase.SyncedTransitions;
+            LinksNamedMoreThanOneParent = workItemBase.LinksNamedMoreThanOneParent;
         }
 
         public int Id { get; set; }
@@ -44,9 +45,10 @@ namespace Lighthouse.Backend.Models
         public DateTime? CurrentStateEnteredAt { get; set; }
 
         /// <summary>
-        /// When the work tracking system says this record last changed (Epic #5687, D6). Null means never
-        /// swept, which resolves the next update to a full fetch (D8). Compared per item against the
-        /// sweep's stamp - there is no global watermark (D12).
+        /// When the work tracking system says this record last changed. Null means nothing has ever been
+        /// read for it, so the next update has nothing to compare and downloads everything again. Each
+        /// record is compared against its own stamp rather than against one watermark for the whole
+        /// query, which keeps clock skew between Lighthouse and the tracker out of the decision.
         /// </summary>
         public DateTime? LastChangedRemote { get; set; }
 
@@ -54,6 +56,16 @@ namespace Lighthouse.Backend.Models
 
         [NotMapped]
         public IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = [];
+
+        /// <summary>
+        /// Whether the links on this record named more than one issue to hang it under, so no parent
+        /// could be taken from them and the record kept whatever it already had. Not stored, because it
+        /// is not a fact about the record - it is a fact about the reading that just happened, and only
+        /// that reading can tell a record nobody could place apart from one nobody ever linked. The
+        /// refresh counts these on its way past so it can report how many there were.
+        /// </summary>
+        [NotMapped]
+        public bool LinksNamedMoreThanOneParent { get; set; }
 
         /// <param name="zone">
         /// Bug #5567: both ends are stored instants, so both reduce to a day in the instance zone -
@@ -104,8 +116,8 @@ namespace Lighthouse.Backend.Models
         /// How old was this item on the given day?
         /// </summary>
         /// <remarks>
-        /// Deliberately NOT the same function as the <see cref="WorkItemAge"/> property above
-        /// (DESIGN D13): <see cref="WorkItemAge"/> is today-anchored and guarded on
+        /// Deliberately NOT the same function as the <see cref="WorkItemAge"/> property above.
+        /// <see cref="WorkItemAge"/> is anchored on today and guarded on
         /// <see cref="StateCategories.Doing"/> because work-tracking write-back consumes it.
         /// AgeOnDay carries no state guard — its callers establish the population via
         /// WasItemProgressOnDay before projecting. Do not refactor one into the other; they encode
@@ -113,8 +125,8 @@ namespace Lighthouse.Backend.Models
         /// back into Jira/ADO.
         ///
         /// The arithmetic mirrors BaseMetricsService.GenerateTotalWorkItemAgeByDay, which is the
-        /// already-trusted definition of "age on a day" and drives the over-time chart. Slice 03
-        /// asserts parity against it so a second definition cannot drift into existence.
+        /// already-trusted definition of "age on a day" and drives the over-time chart. Parity with
+        /// it is asserted, so a second definition cannot drift into existence.
         /// </remarks>
         public int AgeOnDay(TimeZoneInfo zone, DateOnly day)
         {
