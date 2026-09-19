@@ -78,5 +78,70 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     "A refresh that gave up part way leaves a hierarchy that simply stops moving, and the item that could not be placed still has to come back so that what is already stored for it is not lost.");
             }
         }
+
+        /// <summary>
+        /// An item that was refused looks on screen exactly like one nobody ever linked, so unless the
+        /// refresh says which item it was and what it pointed at, the person who has to go and remove one of
+        /// those links cannot find either the item or the links.
+        /// </summary>
+        [Test]
+        public async Task The_warning_names_the_item_and_every_candidate()
+        {
+            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
+            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
+
+            await TheTeamIsRefreshed();
+
+            Assert.That(
+                TheOneWarningTheRefreshWrote(),
+                Does.Contain(TheAmbiguousItem).And.Contain(OneCandidate).And.Contain(TheOtherCandidate),
+                "Naming the item without its candidates sends somebody to open it in the tracker and read the links back for themselves, and naming a number instead of either tells them only that there is work to do somewhere.");
+        }
+
+        /// <summary>
+        /// A bulk edit that went wrong produces these by the hundred, and a line per item buries the rest of
+        /// the refresh under them. One line that grows is readable; a hundred lines that repeat are not.
+        /// </summary>
+        [Test]
+        public async Task Several_items_nobody_could_place_share_one_warning()
+        {
+            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
+            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
+            TheIssueHasLinksOfTheNamedTypeTo(TheOtherAmbiguousItem, ACandidateOfTheOtherAmbiguousItem, TheOtherCandidateOfTheOtherAmbiguousItem);
+
+            await TheTeamIsRefreshed();
+
+            Assert.That(
+                TheOneWarningTheRefreshWrote(),
+                Does.Contain(TheAmbiguousItem)
+                    .And.Contain(TheOtherAmbiguousItem)
+                    .And.Contain(ACandidateOfTheOtherAmbiguousItem)
+                    .And.Contain(TheOtherCandidateOfTheOtherAmbiguousItem),
+                "One line for the whole refresh only helps if it is the whole refresh - a line that reports the first item and drops the rest is worse than several lines, because it looks complete.");
+        }
+
+        /// <summary>
+        /// A Portfolio reads its own records and hangs them under their own parents, so the same links can
+        /// leave it with the same unanswerable question. An administrator who runs Portfolios and not Teams
+        /// would otherwise be shown nothing at all.
+        /// </summary>
+        [Test]
+        public async Task A_portfolio_refresh_reports_it_the_same_way()
+        {
+            TheParentOverrideNames(TheLinkTypeTheOverrideNames.Name);
+            TheIssueHasLinksOfTheNamedTypeTo(TheAmbiguousItem, OneCandidate, TheOtherCandidate);
+
+            var refreshed = await ThePortfolioIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheAmbiguousItem), Is.Empty,
+                    "Whichever door the refresh came through, the links say two things and the item hangs under one, so there is still nothing to choose between them.");
+                Assert.That(
+                    TheOneWarningNaming(TheAmbiguousItem),
+                    Does.Contain(OneCandidate).And.Contain(TheOtherCandidate),
+                    "An administrator who reaches this through a Portfolio has the same links to go and fix, and needs to be told which they are in the same words.");
+            }
+        }
     }
 }
