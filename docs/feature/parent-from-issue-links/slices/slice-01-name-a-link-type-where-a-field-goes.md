@@ -70,6 +70,75 @@ into the parser, or the permission problem surfaces before anything is built on 
 
 Record the answer here before writing the first test.
 
+### Spike result — 2026-09-19, Jira Cloud (`letpeoplework.atlassian.net`)
+
+**P1 is confirmed. `rest/api/latest/issueLinkType` is reachable, and the feature is not re-shaped.**
+
+Three credential classes were tried against the endpoint, each alongside `rest/api/latest/field` as the
+control. All three read the link types:
+
+| Credential | Route | `issueLinkType` | `field` |
+|---|---|---|---|
+| Admin API token (`atlassian.pushchair@…`) | `https://letpeoplework.atlassian.net` direct | 200, 5 types | 200, 26178 B |
+| Restricted identity (`benjamin@letpeople.work`) | direct | 200, **same 5 types** | 200, 26178 B |
+| Scoped token | `api.atlassian.com/ex/jira/<cloudId>` gateway | 200, same 5 types | 200, 26178 B |
+
+Risk 1 — "the link-type endpoint needs a permission the field endpoint does not" — **did not hold**. The
+restricted identity, which lacks Delete Issues and is confined to `SPIKEPRM`, reads the full link-type
+list. Risk 2, a payload disagreement, does not arise on Cloud: `latest` resolves to v2 (every `self` is
+`rest/api/2/issueLinkType/<id>`), and the gateway route returns a byte-identical body apart from the
+`self` host.
+
+Payload, verbatim, from the direct route:
+
+```json
+{
+  "issueLinkTypes": [
+    { "id": "10000", "name": "Blocks", "inward": "is blocked by", "outward": "blocks",
+      "self": "https://letpeoplework.atlassian.net/rest/api/2/issueLinkType/10000" },
+    { "id": "10001", "name": "Cloners", "inward": "is cloned by", "outward": "clones",
+      "self": "https://letpeoplework.atlassian.net/rest/api/2/issueLinkType/10001" },
+    { "id": "10002", "name": "Duplicate", "inward": "is duplicated by", "outward": "duplicates",
+      "self": "https://letpeoplework.atlassian.net/rest/api/2/issueLinkType/10002" },
+    { "id": "10006", "name": "Polaris work item link", "inward": "is implemented by", "outward": "implements",
+      "self": "https://letpeoplework.atlassian.net/rest/api/2/issueLinkType/10006" },
+    { "id": "10003", "name": "Relates", "inward": "relates to", "outward": "relates to",
+      "self": "https://letpeoplework.atlassian.net/rest/api/2/issueLinkType/10003" }
+  ]
+}
+```
+
+Three things the parser has to take from that shape:
+
+1. The array is under the `issueLinkTypes` key. It is not a bare array, and it is not the `values` +
+   `isLast` page envelope the field-and-search endpoints use, so there is no paging to carry.
+2. `name`, `inward` and `outward` are all present on every entry, which is what the three-way
+   case-insensitive match assumes.
+3. `Relates` has `inward` equal to `outward` ("relates to"). A match on a label can therefore hit the
+   same type through two routes, and the matcher must yield one type, not two — otherwise slice 03's
+   ambiguity refusal fires on a single unambiguous type.
+
+**New finding, not anticipated by the brief: a credential Jira does not accept is answered anonymously,
+not refused.** With a bogus token, or with no `Authorization` header at all, `issueLinkType` returns
+`200` and `{"issueLinkTypes":[]}`, and `field` returns a reduced 5964-byte list rather than an error.
+The planned failure taxonomy above — "unreachable, 401, 403" — does not describe this. The empty list
+is the failure.
+
+This is bounded, and it does not change the slice: `ValidateConnection` calls `rest/api/2/myself`
+first (`:389`), and `myself` *does* answer `401` to both the bogus and the anonymous credential, so a
+bad credential is turned away before any link-type lookup happens. The consequence is confined to the
+error text this slice owns. When the list comes back empty, "no link type named X — this instance
+defines: <nothing>" reads as though the administrator invented a link type, when the likelier cause is
+that nothing authenticated. An empty list deserves its own sentence, distinct from "nothing matched".
+
+**Not covered: Data Center.** No DC instance is available, per the Changed Assumptions below. Every
+number here is Cloud. The DC payload shape stays unverified until P3 lands, and slice 02's AC-2.6 is
+where that bites.
+
+**Dogfood correction.** This instance has no "Caused by"/"Results in" pair — Steve's customer's scheme
+is not replicated here. The same-day demo has to register one of the five types above; `Blocks` is the
+closest analogue, being a directional pair with distinct inward and outward labels.
+
 ## Effort
 
 ~3h including the spike. One resolution path, one validation branch, one error message.
