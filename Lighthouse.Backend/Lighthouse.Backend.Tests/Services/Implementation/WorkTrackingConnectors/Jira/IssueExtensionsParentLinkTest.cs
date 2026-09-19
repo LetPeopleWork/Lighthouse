@@ -97,6 +97,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(resolution.Candidates, Is.Empty);
         }
 
+        /// <summary>
+        /// A type that defines only its name leaves the two end phrases empty, and an empty string is
+        /// not a phrase anybody typed. Were it treated as one, a blank or missing field name would
+        /// silently resolve a parent from whatever links an issue happens to carry.
+        /// </summary>
+        [Test]
+        public void DoesNotMatchAPhraseTheLinkTypeLeavesUndefined()
+        {
+            var fields = FieldsOfAnIssueWith(
+                """{"type": {"name": "Cloners"}, "outwardIssue": {"key": "PROJ-1716"}}""");
+
+            var resolution = fields.ResolveParentFromLinks(string.Empty);
+
+            Assert.That(resolution.Candidates, Is.Empty);
+        }
+
         [Test]
         public void NamesBothCandidatesWhenTwoDifferentIssuesAreLinkedByTheConfiguredType()
         {
