@@ -199,5 +199,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     "A flat walk would satisfy the ordering while testing nothing.");
             }
         }
+
+        // --- What the risk rests on, which is a different question from what the risk is ---
+
+        [Test]
+        public void FinishedItemsStillOpenAtThisAge_WorkTheTeamFinishedThatRanAtLeastThisLong_IsCounted()
+        {
+            // Of the twenty distinct durations, repeated three times: nine, eleven, thirteen, fifteen,
+            // eighteen and twenty-two are nine days or more, plus thirty. Seven each of three.
+            var stillOpen = SleRiskCalculator.FinishedItemsStillOpenAtThisAge(9, SixtyFinishedItems);
+
+            Assert.That(stillOpen, Is.EqualTo(21));
+        }
+
+        [Test]
+        public void FinishedItemsStillOpenAtThisAge_NothingTheTeamFinishedEverRanThisLong_IsZero()
+        {
+            var stillOpen = SleRiskCalculator.FinishedItemsStillOpenAtThisAge(40, SixtyFinishedItems);
+
+            Assert.That(stillOpen, Is.Zero,
+                "Nothing the team finished ran forty days, and saying so is the point of the number.");
+        }
+
+        [Test]
+        public void FinishedItemsStillOpenAtThisAge_ItemPastTheTarget_StillCountsTheHistory()
+        {
+            // The discriminating one. This method takes no target, so there is no certainty rule for
+            // it to short-circuit on, and an age far past any plausible target still describes the
+            // history rather than reporting nothing. It reds if somebody later "aligns" this method
+            // with the risk by adding the past-the-target clause — which would zero the count for
+            // exactly the items whose risk was decided without consulting the history at all.
+            var stillOpen = SleRiskCalculator.FinishedItemsStillOpenAtThisAge(11, SixtyFinishedItems);
+
+            Assert.That(stillOpen, Is.EqualTo(18),
+                "Eleven days or more: eleven, thirteen, fifteen, eighteen, twenty-two and thirty, three times each.");
+        }
+
+        [Test]
+        public void FinishedItemsStillOpenAtThisAge_WorkThatFinishedOnExactlyThisDay_IsCounted()
+        {
+            // At least as long, not longer. An item that took exactly six days was still open when
+            // the sixth day began, so it is one of the items an answer at six days rests on — and it
+            // is counted here for the same reason the risk counts it as comparable.
+            var stillOpen = SleRiskCalculator.FinishedItemsStillOpenAtThisAge(6, WorkThatFinishedOnTheTargetDay);
+
+            Assert.That(stillOpen, Is.EqualTo(10),
+                "Five items finished on exactly the sixth day and five on the seventh.");
+        }
     }
 }

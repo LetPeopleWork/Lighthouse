@@ -63,5 +63,24 @@
             // items down, and this number exists to decide which ones get attention today.
             return (int)Math.Round(100.0 * breaches / comparableItems, MidpointRounding.AwayFromZero);
         }
+
+        /// <summary>
+        /// How much of the team's finished work was still open at <paramref name="ageInDays"/>. This is
+        /// a fact about the history, not about how any risk was derived, which is what lets one number
+        /// be true beside every answer <see cref="For"/> can give.
+        ///
+        /// It deliberately takes no target and has no certainty short-circuit. An item past its target
+        /// is told it is certain to miss without the history being consulted, and the count beside that
+        /// answer must still describe the history rather than report a zero that reads as "no evidence".
+        /// </summary>
+        public static int FinishedItemsStillOpenAtThisAge(int ageInDays, IReadOnlyList<int> closedCycleTimes)
+        {
+            ArgumentNullException.ThrowIfNull(closedCycleTimes);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ageInDays);
+
+            // At least as long, not longer: an item that finished on exactly this day was still open
+            // when the day began, and it is one of the items the answer was computed over.
+            return closedCycleTimes.Count(cycleTime => cycleTime >= ageInDays);
+        }
     }
 }

@@ -237,6 +237,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         }
 
         /// <summary>
+        /// How much finished work the item's answer sits beside. Asserted separately from the risk on
+        /// purpose: the two are true for different reasons, and a scenario that checked them together
+        /// would not say which one had moved.
+        /// </summary>
+        private void ThenTheItemsAnswerRestsOn(string referenceId, int expectedCount)
+        {
+            var entry = TheEntryFor(referenceId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entry.TryGetProperty("finishedItemsStillOpenAtThisAge", out var stillOpen), Is.True,
+                    $"Every entry says what its answer rests on. Got: {body}");
+                Assert.That(stillOpen.GetInt32(), Is.EqualTo(expectedCount),
+                    $"{referenceId} should rest on {expectedCount} finished items. Body: {body}");
+            }
+        }
+
+        /// <summary>
         /// Drives the write-back's resolution beside the read, in one scope on one day, and compares
         /// the two against each other rather than each against an expectation. An expectation both
         /// could satisfy while disagreeing is exactly what let 27% and 18 ship together.

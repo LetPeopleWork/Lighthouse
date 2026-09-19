@@ -37,6 +37,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 46);
         }
 
+        // @driving_port @real-io — slice 03. A share over two finished items and a share over forty
+        // read identically, and the first moves fifty points when one more item closes. The count
+        // beside the number is what tells them apart.
+        //
+        // Both items are asked in one scenario because the pair is the point. The younger one's
+        // answer was computed from thirty-nine finished items, so the count and the derivation agree.
+        // The older one is past the target and was told it is certain to miss without the history
+        // being consulted at all — and its count still describes the history rather than reporting
+        // the nothing the derivation used. A field meaning "how many items this was computed over"
+        // could not be true for both.
+        [Test]
+        [Category("slice-03")]
+        public async Task The_risk_carries_how_much_finished_work_it_rests_on()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinishedSeveralOfEach(3, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30);
+            var young = GivenAnItemOpenFor(5);
+            var past = GivenAnItemOpenFor(14);
+
+            await WhenTheRiskIsAskedFor(team);
+
+            ThenTheItemsChanceOfMissingIs(young, 46);
+            // Thirteen of the twenty ran five days or more, three times over.
+            ThenTheItemsAnswerRestsOn(young, 39);
+
+            ThenTheItemsChanceOfMissingIs(past, 100);
+            // Four of the twenty ran fourteen days or more, three times over — and none of them was
+            // consulted to reach the hundred above.
+            ThenTheItemsAnswerRestsOn(past, 12);
+        }
+
         // @driving_port @real-io @AC-01.2 — the same distribution read at three more ages. Written as
         // one scenario per age rather than a loop so a failure names the age it failed at.
         [TestCase(2, 32)]

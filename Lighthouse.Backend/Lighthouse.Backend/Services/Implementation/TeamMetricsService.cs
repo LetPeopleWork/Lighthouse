@@ -390,7 +390,10 @@ namespace Lighthouse.Backend.Services.Implementation
                     // An item that has not started as of today has no age to ask about, and is left
                     // out rather than given a number - the same filter the age-percentile read uses.
                     .Where(item => item.Age > 0)
-                    .Select(item => new SleRiskDto(item.ReferenceId, SleRiskCalculator.For(item.Age, team.ServiceLevelExpectationRange, cycleTimes)))
+                    .Select(item => new SleRiskDto(
+                        item.ReferenceId,
+                        SleRiskCalculator.For(item.Age, team.ServiceLevelExpectationRange, cycleTimes),
+                        SleRiskCalculator.FinishedItemsStillOpenAtThisAge(item.Age, cycleTimes)))
                     .ToList();
             }, logger);
         }
