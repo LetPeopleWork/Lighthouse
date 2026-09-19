@@ -205,7 +205,7 @@ const RefreshHistorySection: React.FC = () => {
 		// records that moved - so the label says "Fetched" rather than promising a total for the
 		// whole instance. Shown only when it happened: a line reading zero on every healthy entity
 		// teaches the reader to skip the panel.
-		const recordsWithMoreThanOneParent = filtered.reduce(
+		const recordsWhoseLinksNamedMoreThanOneParent = filtered.reduce(
 			(sum, l) => sum + (l.recordsWhoseLinksNamedMoreThanOneParent ?? 0),
 			0,
 		);
@@ -216,11 +216,11 @@ const RefreshHistorySection: React.FC = () => {
 			...(cancelledCount > 0
 				? [{ label: "Cancelled", value: cancelledCount }]
 				: []),
-			...(recordsWithMoreThanOneParent > 0
+			...(recordsWhoseLinksNamedMoreThanOneParent > 0
 				? [
 						{
 							label: `${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} Fetched With More Than One Parent`,
-							value: recordsWithMoreThanOneParent,
+							value: recordsWhoseLinksNamedMoreThanOneParent,
 						},
 					]
 				: []),
