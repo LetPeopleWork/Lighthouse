@@ -7896,3 +7896,217 @@ token).
 | Both new app-settings routes carry the guard | Integration test enumerating them |
 
 Feature delta: `docs/feature/story-5877-update-queue-lanes/feature-delta.md`.
+
+---
+
+## Application Architecture — epic-4127-sle-risk-corrections (slice 01)
+
+Feature: `epic-4127-sle-risk-corrections` — ADO Epic #4127, "Show SLE Probability for In Progress
+Items", round 2, slice 01 (ADO User Story #6034)
+Wave: DESIGN
+Date: 2026-09-19
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Scope: Application / components
+Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
+
+**This is the first `## Application Architecture` section for Epic #4127.** Round 1 (shipped
+2026-09-17, archived at `docs/evolution/2026-09-17-epic-4127-sle-risk.md`) produced
+[ADR-192](./adr-192-sle-risk-as-a-pure-conditional-over-the-cycle-time-population.md) and no brief
+section, so this is written as an **as-built of what the Epic leaves standing**, not as a delta against
+a predecessor that was never written.
+
+### Architectural Pattern
+
+Ports-and-adapters, unchanged. No new style, no new container, no new port, no new adapter, no new
+technology, no new component of any kind. The slice is a deletion: one driving port, one DTO, one port
+member, one service method, one cache key and the larger half of one pure type stop existing.
+
+---
+
+### The decision that carries the slice
+
+**SLE Risk is reported as a number attached to an item. No surface renders it as a geometry over the
+age axis.** ADR-192 planned four surfaces for one number; three of them show it per item — a column in
+the work item dialog, an at-risk line on the In Progress card, and a field written into the user's own
+tracker. The fourth showed it per age, as a ladder of full-width bands behind the Work Item Aging
+chart's dots, and that one is removed before any release carries it (`v26.9.9.9` is still the newest
+tag).
+
+The constraint carried forward is not the deletion; it is its premise. A threshold ladder over an
+empirical conditional cannot paint the region below its lowest threshold — `ZoneLevels` starts at 25 —
+and the same chart already spends an unpainted region on "too little finished work ever ran this long
+to say". One absence, two meanings. Above the last placeable band the absence returns for the opposite
+reason, because `count(T ≥ a)` falls as the age rises and the ladder ends where the history ends. And
+`risk(1)` is the team's overall breach rate, so a team holding an 85%-on-time promise breaches about
+15% of the time — below the first level — and gets a chart that stays blank until the conditional
+climbs past 25. The background is brightest exactly where it is least needed. Full argument, with the
+four alternatives, in [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md).
+
+---
+
+### Key invariants introduced
+
+- **The aging chart's background carries one vocabulary.** A painted region is a pace band; an
+  unpainted region is a state with no pace history. One meaning per colour, one meaning per gap —
+  which is the condition for a reader using the background at all.
+- **The background control is a function of what the chart can paint, and the SLE is no longer one of
+  its inputs.** Off always; Pace percentiles when per-state cycle-time history exists. The control is
+  not rendered when that leaves one option, because one option is not a choice. A published SLE now
+  has no bearing on this control whatsoever.
+- **The SLE reference line is the only deadline the chart asserts.** Untouched by this slice; with the
+  ladder gone it cannot be contradicted by a band claiming a different crossing.
+- **A retired stored preference resolves to Off through a branch that names it.** `useAgingBackground`
+  narrows `AgingBackground` to `"off" | "pace"` while its *reader* still understands three strings:
+  the legacy `"true"` still means Pace, and `"risk"` is answered explicitly rather than falling through
+  the unrecognised-value default. The key keeps its name and its string values — no migration, in
+  either direction.
+- **`sleRiskColorFor` is untouched, and that is a finding rather than an omission.** The report that
+  its calmest colour was unreachable was true *in zone mode only*: the ladder emitted no band below 25.
+  The dialog column and the at-risk line reach that colour and are correct. Deleting the palette
+  mapping with the ladder would have silently decoloured two surfaces this round exists to improve.
+- **`SleRiskCalculator.For` is untouched.** It is the rule ADR-192 decided, and shrinking the type back
+  to it is what lets slice 02 (#6037) make the value past the target a certainty without rewriting a
+  ladder built on `For`'s nulls.
+
+---
+
+### Component Decomposition
+
+| Kind | Components |
+|---|---|
+| DELETE (backend) | `SleRiskZone`, `SleRiskCalculator.Zones` / `WithUpperEdges` / `UpperEdgeOf` / `ZoneLevels` / `CertainRisk`, `SleRiskZoneDto`, `ITeamMetricsService.GetSleRiskZonesForTeam` + its `TeamMetricsService` implementation and cache entry, the `TeamMetricsController` action, `Slice03SleRiskZonesScenarios.cs` in full, `SleRiskAcceptanceTest.SleRiskZonesRoute`, the twelve `Zones_*` tests in `SleRiskCalculatorTest.cs` |
+| DELETE (frontend) | `computeSleRiskZoneRects`, `SleRiskZoneGeometryConfig`, `SleRiskZoneOverlay` and the `sle-risk-zone` test id, the `sleRiskZones` prop and its render branch, the `risk` entry in `backgroundModes`, `SleRiskZoneSchema` / `ISleRiskZone`, `getSleRiskZones` on both service layers, the `useMetricsData` state and fetch, two `categoryMetadata` entries, the `BaseMetricsView` plumbing, three test mocks |
+| DELETE (E2E / docs) | `WorkItemAgingChart` POM's `SLE_RISK_ZONE_TEST_ID` / `sleRiskZones` / `countSleRiskZones` / `showSleRisk`, the zone `@screenshot` block, `flow-metrics.md`'s *SLE Risk Zones on the Aging Chart* section, `docs/assets/features/metrics/aging_sle_risk.png` |
+| EXTEND | `useAgingBackground` (+ its Vitest), `WorkItemAgingChart.tsx` (two now-unused imports removed), ADR-192 (dated amendment note) |
+| CREATE | ADR-194. Nothing in code |
+
+Full file-and-line table, with the reasoning per component, in the feature delta.
+
+**Two imports leave `WorkItemAgingChart.tsx` and neither module goes with them.**
+`computeSleRiskZoneRects` was the file's only reader of `sleRiskColorFor` and its only reader of
+`PACE_BAND_COLORS_LOW_TO_HIGH`. Both modules stay — the first serves the dialog and the card, the second
+backs `paceBandColorForRank`. Recorded because the last import of a shared helper leaving a file is the
+moment a deletion takes the helper too.
+
+---
+
+### Driving Ports
+
+| Method | Route | Guard | Change |
+|---|---|---|---|
+| GET | `/api/{version}/teams/{teamId}/metrics/sleRisk/zones` | class-level `[RbacGuard(TeamRead)]` | **DELETED** |
+| GET | `/api/{version}/teams/{teamId}/metrics/sleRisk` | same | UNCHANGED — slice 02 changes its window and cache key |
+| UI | Aging chart background control | — | Three modes → two, and none for a team with no per-state history |
+| UI | Work item dialog SLE Risk column; In Progress at-risk line | — | UNCHANGED |
+
+No RBAC grant, role or policy changes: removing an action from a class-guarded controller removes a
+guarded route and nothing else. No CLI or MCP contract changes — `lighthouse-clients` has never carried
+a wrapper for any SLE-risk route, so no `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry exists to remove.
+
+### Driven Ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Work item / transition store | `LighthouseAppContext` | UNCHANGED — no schema change, no EF migration |
+| Metrics cache | `GetFromCacheIfExists` | One key stops being written; no mechanism change |
+| Browser preference store | `localStorage`, one key | Name and string values UNCHANGED; one retired value read explicitly |
+| Work tracking system | `IWorkTrackingConnector` | UNCHANGED — the write-back field is slice 02's |
+
+**External integrations introduced: none. No contract tests recommended** at the platform-architect
+handoff — the slice removes a first-party route and touches no third-party API.
+
+---
+
+### Technology Stack
+
+Nothing added, upgraded or removed from either lockfile; no licence question arises. Named so their
+absence reads as a decision: **no deprecation shim, no feature flag, no redirect from the removed route,
+and no `localStorage` migration.** All four are the right answer to the same fact — nothing was ever
+released, so there is nobody to be gentle with.
+
+---
+
+### Reuse Analysis
+
+Full table in the feature delta: for a deletion the gate is inverted, and every surviving line that
+touches the removed feature is justified as KEPT, because the failure mode of a deletion slice is taking
+a neighbour with it. Sixteen KEPT rows, four EXTEND, one CREATE (ADR-194), zero components created in
+code. The four that would have been easiest to delete by accident:
+
+| Kept | Why it must not go |
+|---|---|
+| `utils/charts/sleRisk.ts` in full | The dialog column and the at-risk line still colour a risk through it, rank-0 included. The unreachable-colour report was a property of the ladder, not of the palette |
+| `SleRiskCalculator.For`, `SleRiskVerdict`, `MinimumComparableItems` | The surviving route's only arithmetic. The minimum-sample guard is slice 02's to delete, with its own argument against a measured finding |
+| The `"true"` → Pace translation and the storage key's name | Renaming the key silently resets every chart that has one stored; reverting to booleans would be a second migration in the opposite direction, to a state indistinguishable from today for every user |
+| `docs/settings/worktrackingsystems.md` and all three evolution archives | Verified to contain no zone content, or to be true records of things that happened. A record rewritten to match the present stops being a record |
+
+---
+
+### Quality Attribute Strategies
+
+**Functional suitability** is the only attribute that moves, and it moves because the chart's background
+regains a single meaning. The verifiable claim is the regression net: the dialog column and the In
+Progress at-risk line render identically before and after — if either changes, the defect was in the
+palette and the ladder deserved a repair instead.
+
+**Maintainability** improves by subtraction, stated rather than implied: one route, one port member, one
+service method, one DTO, one cache key, one pure type's larger half, one React overlay, one Zod schema,
+one fetch key, one fetch effect, one POM triple and one screenshot test stop existing — and the coupling
+between the ladder and `For`'s null return, which is what would otherwise force slice 02 to rewrite code
+this slice deletes, goes with them.
+
+**Reliability**: no new failure mode. The one intermediate state that could produce a user-visible error
+is designed out by the commit order rather than avoided by discipline — the E2E spec is deleted first,
+then the consumer, then the producer, so every commit boundary is green in every stack without reference
+to when anything is pushed.
+
+**Security**: no change. No route added, no guard added, moved or relaxed.
+
+**Performance**: one fewer HTTP round trip and one fewer cache entry on the Flow Metrics view for teams
+with a published SLE. Real, and not the reason for the change.
+
+**Observability**: nothing to instrument and nothing promised; the product has no phone-home telemetry
+and this slice does not change that.
+
+---
+
+### Deployment Architecture
+
+No infrastructure change, no chart change, no EF migration, no new service, no client version gate. The
+slice ships with the next backend image and frontend bundle.
+
+---
+
+### ADR References (this feature)
+
+- [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md): SLE Risk is reported
+  as a number per item, never as a background ladder on the aging chart
+- [ADR-192](./adr-192-sle-risk-as-a-pure-conditional-over-the-cycle-time-population.md): amended
+  2026-09-19 with a dated Status note correcting its four-surfaces sentence to three. Its Decision, its
+  Alternatives and its *Architectural Enforcement* table are untouched — in particular the
+  `Beyond history is null, never 0, 100` row, which slice 02 (#6037) reverses with its own argument
+
+Cross-referenced and unchanged: ADR-020 and ADR-188 (the pace-band background, now the only one the
+chart draws), ADR-065 (the endpoint template this deletion follows in reverse), ADR-100 (SLE anchored to
+the default cycle-time definition).
+
+---
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| No zone geometry exists in either stack or in the E2E project | A widened, anchored symbol grep, read by a person before the first push rather than wired into CI. The DISCUSS-era pattern was case-sensitive and missed both `getSleRiskZones` and the `Zones_*` unit tests; the anchored form matches the test-method convention and not prose or string literals. Full pattern in ADR-194 |
+| The zones route is gone and its sibling is not | Acceptance test asserting 404 on `sleRisk/zones` **and** 200 on `sleRisk`, same team, same run. The removed path is a sub-path of a surviving route, so those are two claims |
+| The background control offers two modes, and none when there is nothing to paint | Vitest over the option list, both cases |
+| A retired stored preference paints nothing and raises nothing | Vitest seeding `risk`, asserted separately from the unrecognised-value case so neither test covers for the other |
+| The one legacy preference translation survives | The pre-existing `"true"` → Pace test, unmodified |
+| A risk is coloured identically wherever it still appears | The pre-existing `WorkItemsDialog` and In Progress suites, unmodified by the deletion's commits |
+| No private member and no import is orphaned by the deletion | `dotnet build` under `TreatWarningsAsErrors` plus the mandatory `dotnet format analyzers … --severity info` pre-push run (S1144 / S2325 are a deletion's characteristic Sonar failure); Biome via `prebuild` on the frontend |
+| No schema, migration or provider file is touched | The commit set reaches no `Migrations/` path |
+
+C4 Container diagram — the SLE-risk surfaces after the removal, with the deleted edge marked — lives in
+`docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`. No System Context diagram is drawn: at
+that level nothing about this change is visible, and a diagram that says nothing is worse than none.
+
+Feature delta: `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`.

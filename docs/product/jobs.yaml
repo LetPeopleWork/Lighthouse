@@ -6840,8 +6840,9 @@ jobs:
       functional: >
         Read, per in-flight item, the probability that it will exceed the SLE's day range — computed
         from what actually happened to the completed items that got this far, not from the declared
-        target. Sort by it in the work item dialog, count it on the team page, read it as zones on
-        the aging chart, and optionally carry it into the work tracking system.
+        target. Sort by it in the work item dialog, read its status on the team page, and optionally
+        carry it into the work tracking system. (Amended 2026-09-19: "read it as zones on the aging
+        chart" was removed with the zones themselves — ADO #6034, epic-4127-sle-risk-corrections.)
       emotional: >
         Move from "I can see the SLE line, but it only tells me who has already missed" to "three
         items are past fifty-fifty and I know which" — the difference between an explanation and an
@@ -6894,6 +6895,12 @@ jobs:
         Do not re-score on delivery alone. The gate is whether the number proved stable on real
         teams — if it did not, satisfaction has not moved and the remaining slices should not have
         been built.
+      status_2026_09_19: >
+        Not re-scored. Round 1 shipped all four surfaces and using them found that two of them
+        answer with numbers that disagree, one painted a ladder that could not be read, and one was
+        invisible without scrolling. epic-4127-sle-risk-corrections (ADO #6034, #6035, #6036, #6037)
+        is the correction round; the score waits for it, and then still waits for a coach to say the
+        ordering matches their own team.
 
   - id: job-config-admin-name-the-link-our-hierarchy-lives-in
     title: Name the link our hierarchy actually lives in

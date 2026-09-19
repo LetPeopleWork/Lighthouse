@@ -2,6 +2,18 @@
 
 **Status**: Accepted (2026-09-16 — Morgan, DESIGN wave, interaction mode PROPOSE). No code implements it yet; `epic-4127-sle-risk` slice 01 (ADO Story #6016) is the first commit that will.
 
+**Amended 2026-09-19** — `epic-4127-sle-risk-corrections` slice 01, ADO Story #6034. The Context below
+says four surfaces will show the number; there are three. The chart background zones are removed before
+any release carries them: a threshold ladder cannot paint the region below its lowest threshold, and an
+unpainted region on that chart already means "too little finished work ever ran this long to say", so a
+calm age and an unknowable one were drawn identically. `SleRiskCalculator.Zones`, the
+`teams/{id}/metrics/sleRisk/zones` route and the chart's third background mode are deleted. The three
+per-item surfaces — the dialog column, the In Progress card's at-risk line, and the field written into
+the user's own tracker — are unaffected, as is `SleRiskCalculator.For`, which is what this ADR is
+actually about. The reasoning is in
+[ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md); every decision below
+stands as written.
+
 **Feature**: `epic-4127-sle-risk` — ADO Epic #4127, "Show SLE Probability for In Progress Items"
 
 **Decider**: Morgan (Solution Architect)

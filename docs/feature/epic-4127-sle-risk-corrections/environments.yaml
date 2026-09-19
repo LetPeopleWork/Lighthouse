@@ -1,0 +1,168 @@
+# Environment inventory — epic-4127-sle-risk-corrections, slice 01 (ADO User Story #6034)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+#
+# Slice 01 DELETES never-released code. It introduces no environment, no credential, no environment
+# variable, no configuration key, no chart value, no EF migration, no HistoricalSchemaPatch entry and
+# no dependency. Everything below already exists; the file records which of them the slice touches and
+# why, rather than padding the list out with environments this feature never reaches.
+#
+# One axis below is NOT ceremony and DISTILL must parametrize over it:
+#   stored-preference — the browser's `workItemAgingPaceBandsEnabled` key has three inputs that must be
+#   asserted separately, because the retired value and the unrecognised value both resolve to Off and a
+#   single test covering both would pass while the retired branch was deleted. See D22, DDD-5, DDD-6
+#   and ADR-194's enforcement table, all of which say this in different words.
+
+target_environments:
+  - name: local-dev
+    description: >
+      Developer workstation. Backend via Lighthouse.Backend/Start-DevServer.ps1 (never a bare
+      `dotnet run` — that keeps the dev key ring inside the project directory, where `git clean -xfd`
+      and worktrees destroy it); frontend via the Vite dev server. The dogfood instance is where the
+      SLE Risk background mode was actually used and where the three defect reports came from.
+    platform: [linux, macos, windows, wsl]
+    preconditions:
+      - ".NET 10 SDK, Node.js 24 + pnpm via corepack"
+      - "A team with per-state cycle-time history, so the background control renders at all (AC-01.1)"
+      - "A team WITHOUT per-state history, so the no-control case is reachable (AC-01.1b)"
+
+  - name: ci-build
+    description: >
+      GitHub Actions ubuntu-latest, the existing commit-stage jobs — ci_backend.yml (dotnet build with
+      TreatWarningsAsErrors, dotnet test, SonarCloud scan), ci_frontend.yml (pnpm test, tsc -b, vite
+      build, Biome via prebuild), ci_e2e.yml (pnpm run build — compiles the Playwright project only).
+      No new workflow and no new job.
+    platform: [linux]
+    preconditions:
+      - "Existing ci.yml path filter already matches this slice's three code commits"
+      - "The docs commit matches NO ci.yml path — docs/** is not in the filter; only pages.yml fires"
+    note: >
+      ci_e2e.yml is the gate that catches a Playwright POM method deleted out from under a spec. It is
+      a TypeScript compile, not a browser run.
+
+  - name: ci-verify-sqlite
+    description: >
+      GitHub Actions, ci_verifysqlite.yml — packages the app, boots it on SQLite, uploads a CI licence,
+      then runs `pnpm run test`. This is one of the two places the Playwright suite actually executes.
+    platform: [linux]
+    preconditions:
+      - "Packaged linux-x64 build from ci_packageapp"
+      - "CI licence minted by Scripts/generate_license.py"
+    note: >
+      `pnpm run test` is `playwright test --grep-invert` over the tags @screenshot, @auth, @rbac and
+      @proxyauth. The @screenshot block this slice deletes therefore never runs in CI, in either
+      verify workflow.
+
+  - name: ci-verify-postgres
+    description: "The same suite against Postgres (ci_verifypostgres.yml). Identical preconditions."
+    platform: [linux]
+    preconditions:
+      - "Packaged linux-x64 build from ci_packageapp"
+      - "Postgres service container"
+    note: "No provider-visible behaviour changes — nothing this slice deletes touched the database."
+
+  - name: customer-self-hosted
+    description: >
+      End-user deployment: Docker image, the Helm chart (replicaCount 1, Kubernetes-default
+      RollingUpdate, liveness + readiness probes already present), or a signed standalone build.
+      Nothing to install, migrate or configure — the removal ships inside the artifact that already
+      ships, and the same artifact carries both the SPA bundle and the API.
+    platform: [linux, windows, macos, docker, kubernetes]
+    preconditions: []
+    observability_note: >
+      Telemetry (which in this codebase means the OpenTelemetry -> Prometheus exporter and nothing
+      else) is disabled by default in both appsettings.json and chart/values.yaml. The deleted route's
+      http_route label value and its LogDebug endpoint label have therefore never been recorded
+      anywhere: the route was never in a tagged release, and the log line sits below Serilog's default
+      Information minimum. No dashboard, alert rule, recording rule or route allowlist exists in this
+      repository or its chart. Nothing is owed at deploy time.
+
+coexistence_matrix:
+  - tool: existing-playwright-POM-callers
+    must_not_break: true
+    rationale: >
+      showPacePercentiles, hideBackground and countPaceBands live in the same POM class as the four
+      deleted members. They resolve by role + accessible name ("Pace percentiles", "Off"), not by
+      index, so a three-option control becoming two cannot shift them. The deleted members have
+      exactly two call sites, both inside the Screenshots.spec.ts block deleted in the same commit.
+  - tool: existing-screenshot-suite
+    must_not_break: true
+    rationale: >
+      sle_risk_column.png and its test sit immediately after the deleted block and are OUT of scope —
+      slice 03 re-takes that shot at the new dialog width. Do not re-run @screenshot for this slice:
+      the run needs the gitignored premium licence fixture, and a regeneration keeps the OLD PNG when
+      the pixel diff is under 0.5%.
+  - tool: existing-SonarCloud-quality-gate
+    must_not_break: true
+    rationale: >
+      A deletion's characteristic Sonar failure is S1144 / S2325 on a private member whose last caller
+      went, plus typescript:S6767 on a prop declared but never drawn and typescript:S4144 on the two
+      mock-service factories that converge as the same line leaves both. All pre-applied in DESIGN.
+      The mandatory `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes
+      --no-restore` run belongs before `git push`, not before commit and not after.
+  - tool: existing-Stryker-config
+    must_not_break: true
+    rationale: >
+      per-feature mutation testing, >=80% kill rate. For a deletion the run covers the SURVIVING
+      utils/charts/sleRisk.ts and WorkItemAgingChart.tsx — a deletion cannot raise a kill rate. Two
+      shipped traps: Stryker.NET must skip the acceptance suite, and StrykerJS has left @ts-nocheck
+      behind before. DDD-6 pre-records one accepted equivalent mutant on the retired "risk" branch.
+  - tool: existing-local-git-hooks
+    must_not_break: true
+    rationale: >
+      .githooks/pre-commit runs gitleaks over the staged diff; .githooks/pre-push runs the SonarQube
+      CLI secrets scan. Neither can be tripped by a deletion. core.hooksPath is set by
+      Scripts/setup-git-hooks.sh and is already pointed at .githooks in this checkout.
+  - tool: existing-jekyll-docs-build
+    must_not_break: true
+    rationale: >
+      pages.yml is the only workflow triggering on docs/**. Its Gemfile pins jekyll 4.3.4 and
+      just-the-docs 0.10.1 with no html-proofer and no link-checking plugin, so a dangling image could
+      not fail it in any case — and the image embed at flow-metrics.md:127 is deleted in the same
+      commit as the PNG it points at.
+  - tool: surviving-sleRisk-route-and-colour-helper
+    must_not_break: true
+    rationale: >
+      GET /metrics/sleRisk, SleRiskDto, SleRiskSchema, SleRiskCalculator.For and all of
+      utils/charts/sleRisk.ts stay. sleRiskColorFor's rank-0 colour is reachable and correct in the
+      dialog column and the In Progress at-risk line; it was unreachable in zone mode only. The
+      unmodified WorkItemsDialog and In Progress suites ARE the assertion (AC-01.5).
+
+platform_coverage:
+  Browsers: ["Chromium (Playwright default)", "the evergreen set the SPA already targets"]
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  Windows: [Windows Server 2022, Windows 11]
+  macOS: [13.x, 14.x, "arm64 standalone"]
+  Docker: ["existing image — unchanged"]
+  Kubernetes: ["existing Helm chart — unchanged, not version-bumped"]
+  WSL: [WSL2]
+  CI: ["GitHub Actions ubuntu-latest (existing ci.yml — no new workflow, no new job)"]
+  Database:
+    note: >
+      N/A, because nothing this slice deletes touched the database. No schema change, no migration, no
+      HistoricalSchemaPatch column, no provider-visible behaviour. The SQLite and Postgres verify
+      workflows both run for topology reasons, not because the two could differ here.
+
+deployment_assumptions:
+  - "Nothing is installed, migrated or configured. The removal ships inside the artifact that already ships."
+  - >
+    Rollback is the ordinary artifact rollback — re-pin the previous image tag, `helm rollback`, or
+    re-install the previous standalone. One artifact carries both the SPA bundle and the API, so the
+    rollback is atomic with respect to this change and there is no order to get wrong.
+  - >
+    A mixed-version fleet is harmless. replicaCount is 1 with Kubernetes' default RollingUpdate, so a
+    two-pod overlap exists for a few seconds; the zones were a cache-backed projection over stored
+    rows and were never persisted, so an old replica recomputes the same answer and a new one 404s.
+  - >
+    A rollback finds a browser's stored "risk" preference intact and resumes painting the ladder. That
+    is deliberate and it is the correct rollback semantic — the user returns to the state they left.
+    Rewriting the value on read would have made the rollback lossy. The population is developer and
+    dogfood browsers only, because the mode was never in a release (v26.9.9.9 predates every SLE-risk
+    commit).
+  - >
+    Nothing is owed at deploy time, and each absence is a decision: no localStorage migration, no
+    feature flag, no route redirect or 410, no deprecation window, no release note about a withdrawn
+    feature, no cache invalidation, no warm-up, no runbook entry, no on-call briefing.
+  - >
+    One dogfood note, not an operational task: a browser sitting on the SLE Risk mode shows Off after
+    this deploys, with no message. That is AC-01.2 working as specified, and it is exactly the shape of
+    thing reported as a regression by someone who did not read the slice.

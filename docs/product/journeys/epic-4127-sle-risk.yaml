@@ -4,6 +4,15 @@ created: 2026-09-16
 research_depth: lightweight
 ado: Epic #4127 "Show SLE Probability for In Progress Items" (tags Community; Productboard)
 
+amended: 2026-09-19
+amendment_note: >
+  Round 2 (docs/feature/epic-4127-sle-risk-corrections/) corrects what round 1 shipped, before any
+  of it was released. D12 and D13 are superseded: the aging chart's SLE Risk background mode is
+  removed and the control returns to Off / Pace percentiles. The decisions are kept below, marked,
+  rather than deleted — a journey that quietly loses the reasoning it once held cannot be read
+  against the code that was written from it. Round 2's own decisions are D18 onward and live in that
+  workspace's feature-delta.md.
+
 note: >
   One persona acts (flow-coach) across four surfaces, so this journey is a single narrative with
   four reading moments rather than four journeys. The Epic arrived as a high-level description with
@@ -106,6 +115,15 @@ journeys:
           read as certainty. It IS counted as at-risk for the card chip, because an item older than
           everything ever completed is not a safe item.
       - id: D12
+        status: "superseded 2026-09-19 by round 2 (ADO #6034)"
+        superseded_because: >
+          The premise underneath it did not hold: a risk ladder has no legible geometry on a real
+          history. Its lowest band is emitted at risk >= 25, so the whole calm region below that is
+          never painted — and an unpainted area already means "too little finished work ever ran this
+          long to say" on the same chart. The calm and the unknowable were drawn identically. On a
+          thin history nothing was drawn at all. The mutual-exclusivity reasoning below was correct
+          and is unaffected; the control simply has two modes again. The storage key keeps its string
+          values rather than reverting to a boolean.
         question: How does the aging chart show this without becoming unreadable?
         decision: >
           As a THIRD MODE of the existing background control (Off / Pace percentiles / SLE Risk), not
@@ -116,6 +134,11 @@ journeys:
           depends only on a dot's height, making it full-width horizontal zones. The existing boolean
           localStorage key migrates to tri-state so no user's chart changes on upgrade.
       - id: D13
+        status: "moot 2026-09-19 by round 2 (ADO #6034)"
+        superseded_because: >
+          With the zones gone the SLE reference line is once again the only deadline the chart
+          asserts, which is the outcome this decision existed to protect. The line itself is
+          untouched.
         question: Do the risk zones duplicate the SLE reference line already on the chart?
         decision: >
           No — the line IS the top zone's labelled lower edge. The 100% zone begins exactly at R days,
@@ -174,6 +197,7 @@ journeys:
         shared_artifacts: []
 
       - id: step-read-the-gradient
+        status: "removed 2026-09-19 by round 2 (ADO #6034) — see D12"
         action: >
           Flow coach switches the aging chart's background control from "Pace percentiles" to
           "SLE Risk".
@@ -222,10 +246,14 @@ journeys:
         leaving the window can move a displayed risk sharply. This is the feature's load-bearing risk,
         not an edge case — it is slice 01's learning hypothesis and OUT-4127-risk-stability gates
         slices 02, 03 and 04 on it.
-      - Chart zone boundaries collapsing onto one another on a thin history: the zones must degrade
-        legibly rather than paint zero-height bands.
+      - Chart zone boundaries collapsing onto one another on a thin history — REMOVED 2026-09-19
+        with the zones themselves (D12). It was not an edge case in the end: on a thin history the
+        chart drew no bands at all, in a mode the user had explicitly selected, with nothing saying
+        why.
       - Upgrade with an existing pace-band preference: "true" resolves to Pace percentiles and "false"
-        to Off, so no user's chart changes appearance (D12).
+        to Off, so no user's chart changes appearance (D12). STILL HOLDS after round 2 — that
+        translation is the one migration the removal must not break. A preference of "risk", which
+        only dev and dogfood browsers can be holding, resolves to Off.
 
     success_signal:
       - A flow coach intervenes on an item that had not yet breached, on the strength of the number —
