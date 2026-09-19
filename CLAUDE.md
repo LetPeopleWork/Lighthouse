@@ -108,7 +108,7 @@ A change is **not done** until every gate below passes locally. CI enforces them
   actually changing a connector:**
 
   ```
-  dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=UpdateQueueLanesLive"
+  dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"
   ```
 
   Those tests talk to **real** Jira, Linear, Azure DevOps and ServiceNow instances over the network.

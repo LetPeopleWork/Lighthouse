@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using System.Globalization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             (typeof(RedisUpdateStatusStore), multiplexer => new RedisUpdateStatusStore(multiplexer, Clocks.SystemUtc, NullLogger<RedisUpdateStatusStore>.Instance)),
         ];
 
-        private static readonly (string Description, UpdateKey[] Keys)[] NamedKeyLookups =
+        private static readonly (string Description, UpdateKey[] Keys)[] QueuedLookups =
         [
             ("a caller waiting on nothing", []),
             ("only a key nobody admitted", [KeyNobodyAdmitted]),
@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 store.Advance(KeyAlreadyRunning, UpdateProgress.InProgress);
             }
 
-            var disagreements = NamedKeyLookups
+            var disagreements = QueuedLookups
                 .Where(lookup => stores.Select(store => store.HasQueuedWork(lookup.Keys)).Distinct().Count() > 1)
                 .Select(lookup => lookup.Description)
                 .ToArray();
@@ -192,54 +192,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     "one named key still waiting to start is enough to report queued work, so the agreement above is not agreement on a blanket no");
                 Assert.That(CallsFor(commandStats, "hmget"), Is.EqualTo(1),
                     "the named keys are read in a single batched request, so the cost stays one round trip however many teams a portfolio has");
-                Assert.That(wholeHashReads, Is.Zero,
-                    "reading the whole hash would make a question about a handful of named keys cost as much as every update the entire installation is running");
-            }
-        }
-
-        [Test]
-        [Category("requires-docker")]
-        public async Task HasActiveWork_ForNamedKeysWhereTheRecordIsKeptOutsideTheApplication_GivesTheSameAnswerInOneBatchedRead()
-        {
-            await using var redis = await RedisContainerFixture.StartFreshAsync();
-            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
-
-            var stores = StoresComparedAgainstEachOther.Select(entry => entry.Build(multiplexer)).ToArray();
-            var acrossPods = stores.OfType<RedisUpdateStatusStore>().Single();
-
-            foreach (var store in stores)
-            {
-                store.TryAdmit(KeyWaitingToStart, new UpdateStatus { UpdateType = UpdateType.Team, Id = 21, Status = UpdateProgress.Queued });
-                store.TryAdmit(KeyAlreadyRunning, new UpdateStatus { UpdateType = UpdateType.Team, Id = 22, Status = UpdateProgress.Queued });
-                store.Advance(KeyAlreadyRunning, UpdateProgress.InProgress);
-            }
-
-            var disagreements = NamedKeyLookups
-                .Where(lookup => stores.Select(store => store.HasActiveWork(lookup.Keys)).Distinct().Count() > 1)
-                .Select(lookup => lookup.Description)
-                .ToArray();
-
-            var probeOptions = ConfigurationOptions.Parse(redis.GetConnectionString());
-            probeOptions.AllowAdmin = true;
-            await using var probe = await ConnectionMultiplexer.ConnectAsync(probeOptions);
-
-            var server = probe.GetServer(probe.GetEndPoints()[0]);
-            server.Execute("CONFIG", "RESETSTAT");
-
-            var answeredActive = acrossPods.HasActiveWork([KeyAlreadyRunning]);
-
-            var commandStats = server.InfoRaw("commandstats") ?? string.Empty;
-            var wholeHashReads = CallsFor(commandStats, "hgetall") + CallsFor(commandStats, "hvals") + CallsFor(commandStats, "hkeys");
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(disagreements, Is.Empty,
-                    "a deployment that keeps the record of work in flight outside the application must decide identically to one that keeps it in memory, otherwise a forecast waits for its inputs on one deployment and runs over half-updated data on the other. Disagreed on: " +
-                    string.Join(" | ", disagreements));
-                Assert.That(answeredActive, Is.True,
-                    "a key that has already started running is what separates this from the queued-only question, so an answer of false here would make the agreement above agreement on the wrong predicate");
-                Assert.That(CallsFor(commandStats, "hmget"), Is.EqualTo(1),
-                    "the named keys are read in one batched request, so a forecast asking what it waits for costs one round trip however many teams deliver the portfolio");
                 Assert.That(wholeHashReads, Is.Zero,
                     "reading the whole hash would make a question about a handful of named keys cost as much as every update the entire installation is running");
             }

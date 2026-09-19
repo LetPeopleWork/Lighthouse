@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         {
             WhatWasHeldBehind = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            Factory.Services.GetRequiredService<IUpdateQueueService>().HoldUntilNamedWorkClears(
+            Factory.Services.GetRequiredService<IUpdateQueueService>().HoldUntilQueuedWorkClears(
                 new UpdateKey(UpdateType.Forecasts, team.Id),
                 [new UpdateKey(UpdateType.Team, team.Id)],
                 () => WhatWasHeldBehind.TrySetResult());

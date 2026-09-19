@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
-        /// Reads the whole hash, which is the same shape <see cref="HasActiveWork()"/> already scans. Each field
+        /// Reads the whole hash, which is the same shape <see cref="HasActiveWork"/> already scans. Each field
         /// is the key's own <c>Type_Id</c> rendering and each value the ordinal, so the entity a row belongs to
         /// has to be reconstructed from the field name - the value alone says only how far it got. A field that
         /// does not parse is skipped rather than thrown on: one unreadable entry written by a future version
@@ -224,20 +224,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return database.HashValues(StatusHashKey)
                 .Select(value => (UpdateProgress)(int)(long)value)
                 .Any(progress => progress is UpdateProgress.Queued or UpdateProgress.InProgress);
-        }
-
-        public bool HasActiveWork(IReadOnlyCollection<UpdateKey> keys)
-        {
-            if (keys.Count == 0)
-            {
-                // Redis rejects a field-less HMGET outright, and a caller waiting on nothing is never held back anyway.
-                return false;
-            }
-
-            var fields = keys.Select(key => (RedisValue)key.ToString()).ToArray();
-
-            return database.HashGet(StatusHashKey, fields)
-                .Any(value => !value.IsNull && (UpdateProgress)(int)(long)value is UpdateProgress.Queued or UpdateProgress.InProgress);
         }
 
         public bool HasQueuedWork(IReadOnlyCollection<UpdateKey> keys)

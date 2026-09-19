@@ -46,17 +46,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 }
 
                 var lines = File.ReadAllLines(file);
-
-                // A file can only write the context if it names the type somewhere - to declare a field,
-                // take it as a parameter, or resolve it. The assignment line itself says only
-                // "something.Current = ...", so the type name has to be looked for across the file rather
-                // than on the line: looking for it on the line matches nothing at all, including the one
-                // real writer.
-                if (!lines.Any(line => line.Contains(ContextTypeName, StringComparison.Ordinal)))
-                {
-                    continue;
-                }
-
                 for (var line = 0; line < lines.Length; line++)
                 {
                     if (WritesTheContext(lines[line]))
@@ -79,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static bool WritesTheContext(string line)
         {
             var assignment = line.IndexOf(".Current", StringComparison.Ordinal);
-            if (assignment < 0)
+            if (assignment < 0 || !line.Contains(ContextTypeName, StringComparison.Ordinal))
             {
                 return false;
             }

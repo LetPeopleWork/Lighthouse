@@ -344,27 +344,6 @@ describe("TaskManagerIcon", () => {
 		expect(queued).toHaveTextContent(/portfolio/i);
 	});
 
-	// Work of each kind waits only for its own kind, so two refreshes can be under way at the same time
-	// and the list has to read that way at a glance. The mark is per row, and waiting has its own.
-	it("draws a mark of its own on every row that is under way, and a different one on a row that is waiting", async () => {
-		const aRunningPortfolio: IUpdateTask = {
-			updateType: "Features",
-			id: 11,
-			name: "Q1 Platform",
-			status: "InProgress",
-		};
-
-		renderIcon([aRunningTeam, aRunningPortfolio, aQueuedPortfolio]);
-
-		await openThePopover();
-		await screen.findByTestId("task-manager-row-Team-7");
-
-		expect(
-			screen.getAllByRole("progressbar", { name: "Running" }),
-		).toHaveLength(2);
-		expect(screen.getByTitle("Queued")).toBeInTheDocument();
-	});
-
 	// The naming half of deferred item G. #5877 is a user who read three teams queued behind one
 	// portfolio as a hang; a row that says only "queued" is what let that happen.
 	it("says what a waiting refresh is waiting behind", async () => {

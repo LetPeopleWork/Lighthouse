@@ -11,12 +11,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     public static class AdmittedWorkOrdering
     {
         /// <summary>
-        /// Running first, then longest-waiting first, because that is the one its own queue reaches next.
-        ///
-        /// One list, but the work underneath it is queued by kind - team, portfolio and forecast work each
-        /// wait only for their own kind. So a row's place in this list is a reading order and not a count
-        /// of what stands in front of it, and what a waiting row is actually waiting for is the name shown
-        /// beside it.
+        /// Running first, because that is what everything else is waiting for. Then longest-waiting first,
+        /// because that is the one the queue reaches next.
         ///
         /// A row whose moment nobody recorded goes to the end of its own group rather than the end of the
         /// list. Sending it to the very end would drop a refresh that is genuinely under way below work
