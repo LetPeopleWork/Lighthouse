@@ -3,27 +3,16 @@ import type { IWorkItem } from "../../models/WorkItem";
 import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
 
 /**
- * What an item is given when nothing the team ever finished ran as long as it already has. There is
- * nothing to divide by, so there is no answer — and a number here, 100 most of all, would read as
- * certainty rather than as silence.
- */
-export const SLE_RISK_BEYOND_HISTORY_LABEL = "Beyond history";
-
-/**
- * What an item is given when work did run this long and too little of it did. A share of a handful
- * of items moves by ten points or more when one of them enters or leaves the window, so the number
- * would swing overnight on exactly the items a coach is being told to look at first. Deliberately
- * not the label above: saying nothing ran this long, when something did, is a different claim and a
- * false one.
- */
-export const SLE_RISK_NOT_ENOUGH_HISTORY_LABEL = "Not enough history";
-
-/**
- * The column's wording, written once because the chip and the chart zones stand for the same number
- * and a reader who meets it twice must not be told two different things about it.
+ * The column's wording, written once because the count on the card stands for the same number and a
+ * reader who meets it twice must not be told two different things about it.
+ *
+ * It names the evidence on purpose. The number is a share of the team's own finished work, over the
+ * history the team configured - not over whatever range the reader happens to have on screen. Where
+ * that history holds little at a given age the answer moves sharply, so the wording says what it
+ * rests on rather than leaving a reader to assume a smooth curve.
  */
 export const sleRiskColumnDescription = (workItemTerm: string): string =>
-	`Of every ${workItemTerm} still open at this age, the share that went on to miss the target`;
+	`Of every ${workItemTerm} still open at this age across the team's configured history, the share that went on to miss the target`;
 
 /** The header follows whatever the team calls its target. */
 export const sleRiskColumnHeaderName = (sleTerm: string): string =>
@@ -58,18 +47,11 @@ export interface SleRiskColumnInputs {
 /**
  * The number behind a rendered label. The column carries `86%` so that the export does too, which
  * leaves ordering with nothing but the text unless the number is read back out of it.
+ *
+ * An empty label parses to nothing and sorts to the bottom in both directions, which is where a row
+ * the answer set never mentioned belongs - it makes no claim, so it should not displace one.
  */
 export const sleRiskSortValue = (label: string): number | undefined => {
-	// Naming the sentinels rather than leaving them to the parse below, which happens to reject them
-	// only because the wording starts with a letter. One reworded to start with a digit would
-	// otherwise be read as a risk, silently, on a column whose whole job is ordering.
-	if (
-		label === SLE_RISK_BEYOND_HISTORY_LABEL ||
-		label === SLE_RISK_NOT_ENOUGH_HISTORY_LABEL
-	) {
-		return undefined;
-	}
-
 	const risk = Number.parseInt(label, 10);
 	return Number.isNaN(risk) ? undefined : risk;
 };
@@ -118,16 +100,12 @@ export const buildSleRiskColumnDescriptor = ({
 		description,
 		riskFor,
 		labelFor: (workItem) => {
-			const answer = byReferenceId.get(workItem.referenceId);
-			if (answer?.risk !== undefined && answer.risk !== null) {
-				return `${answer.risk}%`;
-			}
+			const risk = riskFor(workItem);
 
-			// An item the answer never mentioned is treated as beyond history rather than as thinly
-			// evidenced, because nothing was measured for it at all.
-			return answer && answer.comparableItems > 0
-				? SLE_RISK_NOT_ENOUGH_HISTORY_LABEL
-				: SLE_RISK_BEYOND_HISTORY_LABEL;
+			// Compared against undefined rather than tested for truthiness. A risk of zero is a real
+			// answer - the item is inside its target and the team's history holds nothing that ran this
+			// long - and a truthiness check would blank exactly those cells while type-checking.
+			return risk === undefined ? "" : `${risk}%`;
 		},
 		colorForRisk: sleRiskColorFor,
 	};
@@ -150,31 +128,24 @@ const AT_RISK_FROM = 50;
 
 /**
  * Counted off the answers the column already reads, never computed a second time — two readings of
- * one rule is how a chip and the list behind it come to disagree.
+ * one rule is how a count and the list behind it come to disagree.
  *
- * An item beyond all history counts: it has outlasted everything the team ever finished, which is
- * what a coach means by trouble. An item too little history can speak for does not — the absence of
- * a signal is not a signal, and putting it here would fill the one number used to decide whether to
- * act with items nobody can act on.
+ * Every in-flight item now carries a number, so there is one rule and no arm for an absent answer.
+ * An item the team's history cannot speak for is not missing from this count; it is in it, with the
+ * number its history supports.
  */
 export const sleRiskAtRiskSummary = (
 	answers: readonly ISleRisk[],
 ): SleRiskAtRiskSummary => {
-	// One pass with two exclusive arms rather than two filters added together, so no item can be
-	// counted twice however odd the answer it arrives in.
-	const counted = answers.filter((answer) =>
-		answer.risk === null
-			? answer.comparableItems === 0
-			: answer.risk >= AT_RISK_FROM,
+	const counted = answers.filter(
+		(answer) => answer.risk !== null && answer.risk >= AT_RISK_FROM,
 	);
 
 	if (counted.length === 0) {
 		return { count: 0 };
 	}
 
-	// Nothing places an item beyond all history below the top band, so it reads as the worst there
-	// is - which is the same reason it is counted at all.
-	const worst = Math.max(...counted.map((answer) => answer.risk ?? 100));
+	const worst = Math.max(...counted.map((answer) => answer.risk ?? 0));
 
 	return { count: counted.length, color: sleRiskColorFor(worst) };
 };

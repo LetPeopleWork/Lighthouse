@@ -4430,7 +4430,6 @@ describe("BaseMetricsView component", () => {
 			risks: {
 				referenceId: string;
 				risk: number | null;
-				comparableItems?: number;
 			}[],
 			category: "flow-metrics" | "flow-overview" = "flow-metrics",
 		) => {
@@ -4470,7 +4469,7 @@ describe("BaseMetricsView component", () => {
 		it("gives the aging widget a risk column carrying what the endpoint answered for each item", async () => {
 			renderTeamAnswering([
 				{ referenceId: "ZEN-412", risk: 86 },
-				{ referenceId: "ZEN-455", risk: null },
+				{ referenceId: "ZEN-455", risk: 0 },
 			]);
 
 			await waitFor(() => {
@@ -4479,10 +4478,12 @@ describe("BaseMetricsView component", () => {
 				).toHaveTextContent("SLE Risk");
 			});
 
-			// The second item is listed with no answer rather than left out of the column.
+			// Both items carry a number. Zero is an answer - the item is inside its target on a
+			// history holding nothing that ran this long - and it must render as one rather than
+			// falling through whatever branch handles a row with no claim.
 			expect(
 				screen.getByTestId("widget-view-data-sle-risks-aging"),
-			).toHaveTextContent("86%,Beyond history");
+			).toHaveTextContent("86%,0%");
 		});
 
 		it("asks about the window the page is showing", async () => {
@@ -4523,8 +4524,8 @@ describe("BaseMetricsView component", () => {
 			// are two readings of one answer, so they are checked together or not at all.
 			renderTeamAnswering(
 				[
-					{ referenceId: "ZEN-412", risk: 86, comparableItems: 30 },
-					{ referenceId: "ZEN-455", risk: 12, comparableItems: 30 },
+					{ referenceId: "ZEN-412", risk: 86 },
+					{ referenceId: "ZEN-455", risk: 12 },
 				],
 				"flow-overview",
 			);

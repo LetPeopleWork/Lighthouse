@@ -4,8 +4,6 @@ import type { IWorkItem } from "../../models/WorkItem";
 import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
 import {
 	buildSleRiskColumnDescriptor,
-	SLE_RISK_BEYOND_HISTORY_LABEL,
-	SLE_RISK_NOT_ENOUGH_HISTORY_LABEL,
 	sleRiskAtRiskSummary,
 	sleRiskColumnDescription,
 	sleRiskColumnHeaderName,
@@ -28,12 +26,10 @@ const zenithItem = (referenceId: string): IWorkItem => ({
 	isBlocked: false,
 });
 
-/** An answered item, or one of the two silences: `null` with evidence, or `null` with none. */
-const answer = (
-	referenceId: string,
-	risk: number | null,
-	comparableItems = risk === null ? 0 : 30,
-): ISleRisk => ({ referenceId, risk, comparableItems });
+const answer = (referenceId: string, risk: number | null): ISleRisk => ({
+	referenceId,
+	risk,
+});
 
 const descriptorFor = (answers: ISleRisk[]) =>
 	buildSleRiskColumnDescriptor({
@@ -51,20 +47,17 @@ describe("the risk column's wording", () => {
 
 	test("says what the number is a share of, in the team's own word for one piece of work", () => {
 		expect(sleRiskColumnDescription("Ticket")).toBe(
-			"Of every Ticket still open at this age, the share that went on to miss the target",
+			"Of every Ticket still open at this age across the team's configured history, the share that went on to miss the target",
 		);
 	});
-});
 
-describe("what the two silences are called", () => {
-	// Pinned against the words themselves. Every other assertion here compares a label to the
-	// constant it came from, which holds just as well when the constant is blank.
-	test("an item nothing ran as long as", () => {
-		expect(SLE_RISK_BEYOND_HISTORY_LABEL).toBe("Beyond history");
-	});
-
-	test("an item too little ran as long as", () => {
-		expect(SLE_RISK_NOT_ENOUGH_HISTORY_LABEL).toBe("Not enough history");
+	test("names the evidence, so nobody reads the number as following the range picker", () => {
+		// The wording is the whole of the disclosure. The evidence is the team's configured history
+		// and the answer is about today, so a reader who moves the range and sees nothing change has
+		// been told why before they file it as a bug.
+		expect(sleRiskColumnDescription("Work Item")).toContain(
+			"the team's configured history",
+		);
 	});
 });
 
@@ -81,50 +74,38 @@ describe("building the risk column", () => {
 		expect(descriptor?.labelFor(zenithItem("ZEN-412"))).toBe("86%");
 	});
 
-	test("says beyond history for an item the history cannot answer for", () => {
-		const descriptor = descriptorFor([
-			answer("ZEN-412", 86),
-			answer("ZEN-455", null),
-		]);
+	test("renders a risk of zero as a number, not as a blank", () => {
+		// Zero is a real answer: the item is inside its target and the team has finished nothing that
+		// ran this long. It is also falsy, so a label written as a truthiness check type-checks and
+		// silently blanks every cell on a thin history - which is the whole population this slice
+		// stopped hiding behind a sentinel.
+		const descriptor = descriptorFor([answer("ZEN-412", 0)]);
 
-		expect(descriptor?.labelFor(zenithItem("ZEN-455"))).toBe(
-			SLE_RISK_BEYOND_HISTORY_LABEL,
-		);
-		expect(descriptor?.riskFor(zenithItem("ZEN-455"))).toBeUndefined();
+		expect(descriptor?.labelFor(zenithItem("ZEN-412"))).toBe("0%");
+		expect(descriptor?.riskFor(zenithItem("ZEN-412"))).toBe(0);
 	});
 
-	test("tells a thinly-evidenced item apart from one nothing can be compared against", () => {
-		// Both have no number, and they are not the same thing. Saying nothing ran this long, when
-		// nine items did, is a false claim about the team's history rather than a softer one.
-		const descriptor = descriptorFor([
-			answer("ZEN-455", null, 0),
-			answer("ZEN-470", null, 9),
-		]);
-
-		expect(descriptor?.labelFor(zenithItem("ZEN-455"))).toBe(
-			SLE_RISK_BEYOND_HISTORY_LABEL,
-		);
-		expect(descriptor?.labelFor(zenithItem("ZEN-470"))).toBe(
-			SLE_RISK_NOT_ENOUGH_HISTORY_LABEL,
-		);
-	});
-
-	test("leaves a thinly-evidenced item out of the ordering as well", () => {
-		// It has no number, so it cannot be placed among the ones that do.
-		const descriptor = descriptorFor([answer("ZEN-470", null, 9)]);
-
-		expect(descriptor?.riskFor(zenithItem("ZEN-470"))).toBeUndefined();
-		expect(sleRiskSortValue(SLE_RISK_NOT_ENOUGH_HISTORY_LABEL)).toBeUndefined();
-	});
-
-	test("says the same about an item the answer never mentioned", () => {
-		// An item the endpoint did not list — it entered the board after the answer was computed.
-		// Inventing a risk for it would be worse than admitting there is none.
+	test("says nothing at all about an item the answer never mentioned", () => {
+		// An item the endpoint did not list - it entered the board after the answer was computed, or
+		// it is no longer in flight. Inventing a risk for it would be worse than an empty cell.
 		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
 
-		expect(descriptor?.labelFor(zenithItem("ZEN-999"))).toBe(
-			SLE_RISK_BEYOND_HISTORY_LABEL,
-		);
+		expect(descriptor?.labelFor(zenithItem("ZEN-999"))).toBe("");
+	});
+
+	test("leaves an unmentioned item out of the ordering as well", () => {
+		// An empty label parses to nothing and sorts to the bottom in both directions, which is where
+		// a row making no claim belongs.
+		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
+
+		expect(descriptor?.riskFor(zenithItem("ZEN-999"))).toBeUndefined();
+		expect(sleRiskSortValue("")).toBeUndefined();
+	});
+
+	test("orders a zero below every answered item rather than alongside the unmentioned ones", () => {
+		// The distinction the empty string has to keep: no claim sorts nowhere, a claim of zero sorts
+		// at the bottom of the claims.
+		expect(sleRiskSortValue("0%")).toBe(0);
 	});
 
 	test("has no risk to order by for an item the answer never mentioned", () => {
@@ -176,16 +157,15 @@ describe("reading the number back out of a rendered label", () => {
 		expect(sleRiskSortValue("86%")).toBe(86);
 	});
 
-	test("has no number for the beyond-history label", () => {
-		expect(sleRiskSortValue(SLE_RISK_BEYOND_HISTORY_LABEL)).toBeUndefined();
+	test("has no number for the empty label an unmentioned row renders", () => {
+		expect(sleRiskSortValue("")).toBeUndefined();
 	});
 
 	test("has no number for a label that was never a percentage", () => {
-		expect(sleRiskSortValue("")).toBeUndefined();
+		expect(sleRiskSortValue("not a number")).toBeUndefined();
 	});
 });
 
-// --- Epic #4127 slice 02: how many of the open items are in trouble ---
 describe("counting what is at risk", () => {
 	test("counts the items more likely than not to miss the target", () => {
 		const summary = sleRiskAtRiskSummary([
@@ -199,17 +179,18 @@ describe("counting what is at risk", () => {
 		expect(summary.count).toBe(2);
 	});
 
-	test("counts an item that has outlasted everything the team ever finished", () => {
-		// It has no number and it is not a safe item - that is the whole reason it has no number.
-		const summary = sleRiskAtRiskSummary([answer("ZEN-5", null, 0)]);
+	test("counts an item that has already outlasted its target", () => {
+		// Past the target every item that ever ran this long had already missed, so the number is
+		// 100 by definition rather than by evidence - and it is the clearest trouble on the board.
+		const summary = sleRiskAtRiskSummary([answer("ZEN-5", 100)]);
 
 		expect(summary.count).toBe(1);
 	});
 
-	test("does not count an item too little history can speak for", () => {
-		// The absence of a signal is not a signal. Counting it would put items nobody can act on
-		// into the one number a coach uses to decide whether to act.
-		const summary = sleRiskAtRiskSummary([answer("ZEN-6", null, 9)]);
+	test("does not count an item whose history gives it a zero", () => {
+		// A thin history now answers 0 rather than staying silent. Zero is below the threshold and
+		// must be treated as the number it is, not as a missing one.
+		const summary = sleRiskAtRiskSummary([answer("ZEN-6", 0)]);
 
 		expect(summary.count).toBe(0);
 	});
@@ -223,11 +204,11 @@ describe("counting what is at risk", () => {
 		expect(summary.color).toBe(PACE_BAND_COLORS_LOW_TO_HIGH[3]);
 	});
 
-	test("reads an item beyond all history as the worst band there is", () => {
-		// Nothing the team finished ran this long, so nothing places it below the top band.
+	test("reads an item past its target as the worst band there is", () => {
+		// Certainty is the top of the ladder, and an item already past the target is there.
 		const summary = sleRiskAtRiskSummary([
 			answer("ZEN-1", 60),
-			answer("ZEN-5", null, 0),
+			answer("ZEN-5", 100),
 		]);
 
 		expect(summary.color).toBe(

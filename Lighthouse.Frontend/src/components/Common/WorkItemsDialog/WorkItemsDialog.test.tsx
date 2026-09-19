@@ -5,10 +5,7 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
-import {
-	SLE_RISK_BEYOND_HISTORY_LABEL,
-	type SleRiskColumnDescriptor,
-} from "../../../utils/charts/sleRisk";
+import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import {
 	certainColor,
 	confidentColor,
@@ -1463,7 +1460,7 @@ const sleRiskColumn: SleRiskColumnDescriptor = {
 	riskFor: (item) => riskByReference[item.referenceId],
 	labelFor: (item) => {
 		const risk = riskByReference[item.referenceId];
-		return risk === undefined ? SLE_RISK_BEYOND_HISTORY_LABEL : `${risk}%`;
+		return risk === undefined ? "" : `${risk}%`;
 	},
 	colorForRisk: (risk) => {
 		if (risk === undefined) return undefined;
@@ -1501,14 +1498,15 @@ describe("SLE Risk column", () => {
 			expect(riskCellTexts()).toContain("86%");
 		});
 
-		test("says beyond history rather than a number for an item nothing can be compared against", () => {
+		test("leaves the cell empty for an item the answer never mentioned", () => {
 			render(
 				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
 			);
 
-			// Not "0%", and not blank. An item older than everything the team ever finished has no
-			// answer, and a number here would read as one.
-			expect(riskCellTexts()).toContain(SLE_RISK_BEYOND_HISTORY_LABEL);
+			// Every in-flight item now carries a number, so the only rows without one are rows the
+			// answer set never mentioned - an item that has closed, or one not in flight today. An
+			// empty cell is the honest rendering of a row that makes no claim.
+			expect(riskCellTexts()).toContain("");
 		});
 
 		test("paints the worst risks in the same colour the chart paints its worst zone", () => {
@@ -1530,9 +1528,7 @@ describe("SLE Risk column", () => {
 
 			const unanswered = screen
 				.getAllByTestId("sleRiskColumnContent")
-				.find((cell) =>
-					cell.textContent?.includes(SLE_RISK_BEYOND_HISTORY_LABEL),
-				);
+				.find((cell) => cell.textContent?.trim() === "");
 
 			for (const riskColor of Object.values(riskColors)) {
 				expect(unanswered).not.toHaveStyle(`color: ${riskColor}`);
@@ -1613,7 +1609,7 @@ describe("SLE Risk column", () => {
 				"74%",
 				"46%",
 				"32%",
-				SLE_RISK_BEYOND_HISTORY_LABEL,
+				"",
 			]);
 		});
 
@@ -1627,9 +1623,7 @@ describe("SLE Risk column", () => {
 			await user.click(riskColumnHeader());
 
 			const worstFirst = riskCellTexts();
-			expect(worstFirst[worstFirst.length - 1]).toBe(
-				SLE_RISK_BEYOND_HISTORY_LABEL,
-			);
+			expect(worstFirst[worstFirst.length - 1]).toBe("");
 		});
 
 		test("carries the percentage into the export, not the number behind it", () => {

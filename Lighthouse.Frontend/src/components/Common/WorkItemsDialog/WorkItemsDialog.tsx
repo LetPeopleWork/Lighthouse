@@ -170,7 +170,8 @@ const sleRiskGridColumn = (
 	field: "sleRisk",
 	headerName: descriptor.headerName,
 	description: descriptor.description,
-	// Wide enough for the beyond-history sentinel, which is far longer than any percentage.
+	// Wide enough that the header, rather than any cell, sets the column's width - every value here
+	// is a short percentage.
 	width: 130,
 	sortable: true,
 	// The column's value is what a reader sees and therefore what the export carries — a bare 86 in
