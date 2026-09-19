@@ -19,12 +19,15 @@ describe("SleRiskWidget", () => {
 		expect(count()).toHaveTextContent("0");
 	});
 
-	it("shows no number at all for a team that published no target", () => {
+	it("shows a dash rather than a number for a team that published no target", () => {
 		// A zero would read as good news. There is nothing to measure until a target exists, and
 		// the widget's status is what explains why.
+		//
+		// The dash is asserted rather than just the absence of a zero: an empty cell would also
+		// satisfy "not a zero", and an empty cell is a widget that looks broken.
 		render(<SleRiskWidget />);
 
-		expect(count()).not.toHaveTextContent("0");
+		expect(count()).toHaveTextContent("—");
 	});
 
 	it("takes the colour of the worst item it counted", () => {

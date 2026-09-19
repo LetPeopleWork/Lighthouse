@@ -248,17 +248,26 @@ describe("ragRules", () => {
 			expect(result.tipText).toContain("Define a SLE in settings");
 		});
 
-		it("is green with nothing in progress, and never divides", () => {
+		it("is green with nothing in progress, and says so rather than dividing", () => {
 			const result = computeSleRiskRag(0, 0, sleAt85, terms);
 
 			expect(result.ragStatus).toBe("green");
-			expect(result.tipText).not.toContain("NaN");
+			// An empty board and a board with nothing at risk are both green and are not the same
+			// thing, so the tip has to tell them apart. Removing the guard entirely also lands on
+			// green — zero divided by zero compares false against everything — so the status alone
+			// cannot say whether the guard is still there.
+			expect(result.tipText).toBe(
+				"No Work Items in progress, so none are at risk.",
+			);
 		});
 
-		it("is green when nothing is at risk", () => {
+		it("is green when nothing is at risk, and says that instead", () => {
 			const result = computeSleRiskRag(0, 9, sleAt85, terms);
 
 			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toBe(
+				"No Work Items are at risk of missing the SLE.",
+			);
 		});
 
 		it("is amber when something is at risk but the share is within the allowance", () => {
@@ -273,6 +282,9 @@ describe("ragRules", () => {
 			const result = computeSleRiskRag(3, 20, sleAt85, terms);
 
 			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toBe(
+				"3 of 20 Work Items are at risk, at or above the 15% this SLE allows. Focus on them before starting new work.",
+			);
 		});
 
 		// The one test here that is about the absence of a bug rather than the presence of a rule.
