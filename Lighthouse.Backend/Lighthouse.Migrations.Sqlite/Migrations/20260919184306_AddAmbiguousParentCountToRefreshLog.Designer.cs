@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lighthouse.Backend.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    [Migration("20260919184306_Add-Ambiguous-Parent-Count-To-Refresh-Log")]
+    [Migration("20260919184306_AddAmbiguousParentCountToRefreshLog")]
     partial class AddAmbiguousParentCountToRefreshLog
     {
         /// <inheritdoc />

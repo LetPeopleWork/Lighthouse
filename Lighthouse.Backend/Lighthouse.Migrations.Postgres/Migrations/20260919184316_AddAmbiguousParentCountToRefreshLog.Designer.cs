@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lighthouse.Migrations.Postgres.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    [Migration("20260919184316_Add-Ambiguous-Parent-Count-To-Refresh-Log")]
+    [Migration("20260919184316_AddAmbiguousParentCountToRefreshLog")]
     partial class AddAmbiguousParentCountToRefreshLog
     {
         /// <inheritdoc />
