@@ -11,7 +11,9 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import RefreshHistoryChart from "../../../components/Common/Charts/RefreshHistoryChart";
 import type { RefreshLog } from "../../../models/SystemInfo/RefreshLog";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
 
 interface EntityOption {
@@ -28,6 +30,7 @@ const RefreshHistorySection: React.FC = () => {
 	const [logs, setLogs] = useState<RefreshLog[]>([]);
 	const [selectedKey, setSelectedKey] = useState<string>(ALL_KEY);
 	const { systemInfoService } = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
 
 	useEffect(() => {
 		const fetchLogs = async () => {
@@ -198,11 +201,28 @@ const RefreshHistorySection: React.FC = () => {
 					).toLocaleString()
 				: null;
 
+		// Counted over what each refresh actually downloaded, which on a cheap refresh is only the
+		// records that moved - so the label says "Fetched" rather than promising a total for the
+		// whole instance. Shown only when it happened: a line reading zero on every healthy entity
+		// teaches the reader to skip the panel.
+		const recordsWithMoreThanOneParent = filtered.reduce(
+			(sum, l) => sum + (l.recordsWhoseLinksNamedMoreThanOneParent ?? 0),
+			0,
+		);
+
 		const stats: { label: string; value: string | number }[] = [
 			{ label: "Total Runs", value: runs },
 			{ label: "Success Rate", value: `${successRate}%` },
 			...(cancelledCount > 0
 				? [{ label: "Cancelled", value: cancelledCount }]
+				: []),
+			...(recordsWithMoreThanOneParent > 0
+				? [
+						{
+							label: `${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} Fetched With More Than One Parent`,
+							value: recordsWithMoreThanOneParent,
+						},
+					]
 				: []),
 			{ label: "Avg Items", value: avgItems },
 			{ label: "Avg Duration", value: `${avgDuration.toFixed(2)} s` },

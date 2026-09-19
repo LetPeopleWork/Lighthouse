@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RefreshLog } from "../../../models/SystemInfo/RefreshLog";
@@ -10,6 +10,12 @@ vi.mock("@mui/x-charts", async () => {
 		BarChart: vi.fn(() => <div data-testid="mock-bar-chart" />),
 	};
 });
+
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => (key === "workItems" ? "Tickets" : key),
+	}),
+}));
 
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ISystemInfoService } from "../../../services/Api/SystemInfoService";
@@ -69,6 +75,24 @@ const mockLogs: RefreshLog[] = [
 		cancelled: false,
 	},
 ];
+
+const selectTeamAlpha = async () => {
+	await waitFor(() => {
+		expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
+	});
+
+	await userEvent.click(screen.getByRole("combobox"));
+
+	await waitFor(() => {
+		expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
+	});
+
+	await userEvent.click(screen.getByText("Team: Team Alpha"));
+
+	await waitFor(() => {
+		expect(screen.getByText("Total Runs")).toBeInTheDocument();
+	});
+};
 
 describe("RefreshHistorySection", () => {
 	it("shows empty state message when no logs available", async () => {
@@ -133,21 +157,7 @@ describe("RefreshHistorySection", () => {
 			</MockProvider>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByRole("combobox"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByText("Team: Team Alpha"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Total Runs")).toBeInTheDocument();
-		});
+		await selectTeamAlpha();
 
 		expect(screen.getByText("Success Rate")).toBeInTheDocument();
 		expect(screen.getByText("Avg Duration")).toBeInTheDocument();
@@ -175,21 +185,7 @@ describe("RefreshHistorySection", () => {
 			</MockProvider>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByRole("combobox"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByText("Team: Team Alpha"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Total Runs")).toBeInTheDocument();
-		});
+		await selectTeamAlpha();
 
 		// Two refreshes ran and both worked; the third was stopped by an operator. Counting that as a
 		// failure reports the connection as broken to whoever stopped it.
@@ -206,21 +202,7 @@ describe("RefreshHistorySection", () => {
 			</MockProvider>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByRole("combobox"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByText("Team: Team Alpha"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Total Runs")).toBeInTheDocument();
-		});
+		await selectTeamAlpha();
 
 		// A row reading "Cancelled: 0" on every healthy entity is noise that teaches people to skip the
 		// panel, which is where the number that does matter lives.
@@ -259,24 +241,62 @@ describe("RefreshHistorySection", () => {
 			</MockProvider>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByText("All (Aggregate)")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByRole("combobox"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Team: Team Alpha")).toBeInTheDocument();
-		});
-
-		await userEvent.click(screen.getByText("Team: Team Alpha"));
-
-		await waitFor(() => {
-			expect(screen.getByText("Total Runs")).toBeInTheDocument();
-		});
+		await selectTeamAlpha();
 
 		// Nothing was left to finish, so there is no rate to report. Dividing anyway puts NaN% on the
 		// screen, which reads as a bug in Lighthouse rather than as an operator stopping every run.
 		expect(screen.getByText("0%")).toBeInTheDocument();
+	});
+
+	it("counts the records whose links named more than one parent, using this instance's word for them", async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 2 },
+			{ ...mockLogs[1], recordsWhoseLinksNamedMoreThanOneParent: 3 },
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectTeamAlpha();
+
+		const label = screen.getByText("Tickets Fetched With More Than One Parent");
+		const statBox = label.parentElement as HTMLElement;
+		expect(within(statBox).getByText("5")).toBeInTheDocument();
+		expect(screen.queryByText(/work items/i)).not.toBeInTheDocument();
+	});
+
+	it("says nothing about parents when every refresh could place everything it fetched", async () => {
+		mockGetRefreshLogs.mockResolvedValue([
+			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 0 },
+			{ ...mockLogs[1], recordsWhoseLinksNamedMoreThanOneParent: 0 },
+		]);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectTeamAlpha();
+
+		expect(screen.queryByText(/more than one parent/i)).not.toBeInTheDocument();
+	});
+
+	it("renders a refresh from a backend too old to send the count at all", async () => {
+		mockGetRefreshLogs.mockResolvedValue(mockLogs);
+
+		render(
+			<MockProvider>
+				<RefreshHistorySection />
+			</MockProvider>,
+		);
+
+		await selectTeamAlpha();
+
+		expect(screen.getByText("Total Runs")).toBeInTheDocument();
+		expect(screen.queryByText(/more than one parent/i)).not.toBeInTheDocument();
 	});
 });
