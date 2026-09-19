@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private IWorkItemStateTransitionRepository stateTransitionRepository = Mock.Of<IWorkItemStateTransitionRepository>();
         private IFeatureStateTransitionRepository featureStateTransitionRepository = Mock.Of<IFeatureStateTransitionRepository>();
         private IDomainEventDispatcher domainEventDispatcher = Mock.Of<IDomainEventDispatcher>();
+        private IRepository<OptionalFeature> optionalFeatureRepository = Mock.Of<IRepository<OptionalFeature>>();
 
         /// <summary>
         /// The connector the service is to talk to. Wrapping it in a factory is what every call site did by
@@ -108,6 +109,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return this;
         }
 
+        /// <summary>
+        /// Where the switches an operator can turn on are read from. Left unset, no switch is on, which is
+        /// what every fixture that does not mention one assumes.
+        /// </summary>
+        public WorkItemServiceTestBuilder WithOptionalFeatureRepository(IRepository<OptionalFeature> repository)
+        {
+            optionalFeatureRepository = repository;
+            return this;
+        }
+
         public WorkItemService Build()
             => new(
                 Mock.Of<ILogger<WorkItemService>>(),
@@ -123,7 +134,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
                 NoOpenBlockedSpells(),
                 FeatureOrderingTestHelper.FollowingTheTracker(),
-                Mock.Of<IRepository<OptionalFeature>>(),
+                optionalFeatureRepository,
                 new DependencyReconciler(),
                 // The real one: it only reads what the refresh already holds and writes a log line, so a
                 // fixture that faked it would be hiding the one thing it does.

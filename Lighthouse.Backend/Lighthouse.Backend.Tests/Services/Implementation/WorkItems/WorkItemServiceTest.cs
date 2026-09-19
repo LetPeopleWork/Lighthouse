@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
         private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepositoryMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+        private Mock<IRepository<OptionalFeature>> optionalFeatureRepositoryMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
@@ -45,6 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
             featureStateTransitionRepositoryMock = new Mock<IFeatureStateTransitionRepository>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+            optionalFeatureRepositoryMock = new Mock<IRepository<OptionalFeature>>();
 
             featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
                 .Returns(new List<FeatureStateTransition>().AsQueryable());
@@ -989,6 +991,103 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 + "it deletes every Work Item the team has - and their blocked spells do not come back.");
         }
 
+        /// <summary>
+        /// A cheap refresh downloads only the records whose remote stamp moved, and it is the refresh an
+        /// instance runs by default - so the count it reports has to be taken from that download. Reporting
+        /// none would tell every operator on the cheap path that their tracker is in perfect order.
+        ///
+        /// The mode is asserted beside the count because without it this fixture could quietly fall back to
+        /// the whole-query path and keep passing there, leaving the cheap path unread.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_CheaperRefresh_CountsWhatItDownloadedAndCouldNotPlace()
+        {
+            const string theRecordThatMoved = "ITEM-1";
+            const string theRecordThatSatStill = "ITEM-2";
+            var whenEveryStoredRecordLastChanged = new DateTime(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc);
+            var whenTheRecordThatMovedChanged = whenEveryStoredRecordLastChanged.AddDays(30);
+
+            var team = CreateTeam();
+            team.FetchFingerprint = FetchFingerprint.For(team);
+
+            AddStampedWorkItemForTeam(team, theRecordThatMoved, whenEveryStoredRecordLastChanged);
+            AddStampedWorkItemForTeam(team, theRecordThatSatStill, whenEveryStoredRecordLastChanged);
+
+            TheOperatorAskedForTheCheaperRefresh();
+            TheTrackerCanBeScanned();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.SweepWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new RemoteRecordStamp(theRecordThatMoved, whenTheRecordThatMovedChanged),
+                    new RemoteRecordStamp(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([ADownloadThatNobodyCouldPlace(theRecordThatMoved, whenTheRecordThatMovedChanged)]);
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Delta),
+                    "positive control: one stored record moved and the other did not, so this refresh has to be the cheap one - "
+                    + "on the whole-query path the count below is already covered and proves nothing.");
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(1),
+                    "The one record this refresh downloaded came back with links naming two parents, and a row that says none "
+                    + "sends whoever reads refresh history looking for a tracker problem that is right in front of them.");
+            }
+        }
+
+        /// <summary>
+        /// The portfolio half of the same thing, through its own door. Its refresh history is a page of its
+        /// own, read by people who never open a Team, so a count that reaches only the Team row reaches
+        /// nobody for them.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_CheaperRefresh_CountsWhatItDownloadedAndCouldNotPlace()
+        {
+            const string theRecordThatMoved = "FTR-1";
+            const string theRecordThatSatStill = "FTR-2";
+            var whenEveryStoredRecordLastChanged = new DateTime(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc);
+            var whenTheRecordThatMovedChanged = whenEveryStoredRecordLastChanged.AddDays(30);
+
+            var portfolio = CreatePortfolio();
+            portfolio.FetchFingerprint = FetchFingerprint.For(portfolio);
+            portfolio.UpdateFeatures([
+                AStampedFeature(theRecordThatMoved, whenEveryStoredRecordLastChanged),
+                AStampedFeature(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+
+            TheOperatorAskedForTheCheaperRefresh();
+            TheTrackerCanBeScanned();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.SweepFeaturesForPortfolio(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new RemoteRecordStamp(theRecordThatMoved, whenTheRecordThatMovedChanged),
+                    new RemoteRecordStamp(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([ADownloadedFeatureNobodyCouldPlace(theRecordThatMoved, whenTheRecordThatMovedChanged)]);
+
+            var subject = CreateSubject();
+
+            var outcome = await subject.UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Delta),
+                    "positive control: the whole-query path answers with no records at all here, so without this the count "
+                    + "below would read as a tracker in good order rather than as a fetch that never happened.");
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(1),
+                    "The one Feature this refresh downloaded came back with links naming two parents, and an administrator "
+                    + "who only ever opens Portfolios reads this row and no other.");
+            }
+        }
+
         [Test]
         public void UpdateFeaturesForPortfolio_TrackerCouldNotBeAsked_KeepsTheFeaturesThePortfolioHolds()
         {
@@ -1407,6 +1506,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItems.Add(workItem);
         }
 
+        /// <summary>
+        /// A stored record the tracker has already given a change stamp for. Without one on every stored
+        /// record there is nothing to compare against, and the refresh falls back to downloading the whole
+        /// query.
+        /// </summary>
+        private void AddStampedWorkItemForTeam(Team team, string referenceId, DateTime lastChangedRemote)
+        {
+            workItems.Add(new WorkItem
+            {
+                Id = idCounter++,
+                ReferenceId = referenceId,
+                State = "To Do",
+                StateCategory = StateCategories.ToDo,
+                Team = team,
+                TeamId = team.Id,
+                LastChangedRemote = lastChangedRemote,
+            });
+        }
+
+        private Feature AStampedFeature(string referenceId, DateTime lastChangedRemote)
+            => new()
+            {
+                Id = idCounter++,
+                ReferenceId = referenceId,
+                LastChangedRemote = lastChangedRemote,
+            };
+
+        /// <summary>
+        /// What a connector hands back for a record whose links named more than one issue to hang it
+        /// under: the record itself, plus the connector saying it could not be placed.
+        /// </summary>
+        private static WorkItem ADownloadThatNobodyCouldPlace(string referenceId, DateTime lastChangedRemote)
+            => new()
+            {
+                ReferenceId = referenceId,
+                State = "To Do",
+                StateCategory = StateCategories.ToDo,
+                LastChangedRemote = lastChangedRemote,
+                LinksNamedMoreThanOneParent = true,
+            };
+
+        private static Feature ADownloadedFeatureNobodyCouldPlace(string referenceId, DateTime lastChangedRemote)
+            => new()
+            {
+                ReferenceId = referenceId,
+                LastChangedRemote = lastChangedRemote,
+                LinksNamedMoreThanOneParent = true,
+            };
+
+        private void TheOperatorAskedForTheCheaperRefresh()
+            => optionalFeatureRepositoryMock
+                .Setup(repository => repository.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>()))
+                .Returns(new OptionalFeature { Id = idCounter++, Key = OptionalFeatureKeys.DeltaSyncKey, Enabled = true });
+
+        private void TheTrackerCanBeScanned()
+            => workTrackingConnectorMock
+                .Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>()))
+                .Returns(true);
+
         private Team CreateTeam()
         {
             var team = new Team { Name = "Team", Id = idCounter++ };
@@ -1478,6 +1636,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .WithStateTransitionRepository(stateTransitionRepositoryMock.Object)
                 .WithFeatureStateTransitionRepository(featureStateTransitionRepositoryMock.Object)
                 .WithDomainEventDispatcher(domainEventDispatcherMock.Object)
+                .WithOptionalFeatureRepository(optionalFeatureRepositoryMock.Object)
                 .Build();
         }
     }
