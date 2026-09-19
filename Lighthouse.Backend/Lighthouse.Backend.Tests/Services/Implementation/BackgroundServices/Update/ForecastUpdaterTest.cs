@@ -453,6 +453,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
         }
 
+        /// <summary>
+        /// Either half on its own is enough to stand down, and they are different states: a forecast can
+        /// be parked behind refreshes without ever having been queued, and it can be sitting in the queue
+        /// without anything holding it. Asserted apart because a scenario that sets both cannot tell an
+        /// "or" from an "and" - which is how the refresh that asked for the forecast ends up asking for a
+        /// second one over the same data.
+        /// </summary>
+        [TestCase(true, false, TestName = "Update_ShouldNotAskForASecondForecast_WhenOneIsParkedWaitingForRefreshes")]
+        [TestCase(false, true, TestName = "Update_ShouldNotAskForASecondForecast_WhenOneIsAlreadySittingInTheQueue")]
+        public void Update_ShouldStandDown_WhenAForecastForThePortfolioIsAlreadyOwed(bool parked, bool queued)
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            var forecastKey = new UpdateKey(UpdateType.Forecasts, portfolio.Id);
+
+            Mock.Get(UpdateQueueService).Setup(x => x.IsHeld(forecastKey)).Returns(parked);
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(forecastKey))))
+                .Returns(queued);
+
+            var subject = CreateSubject();
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(forecastServiceMock.Invocations, Is.Empty,
+                "A second forecast runs the unseeded simulation again over the same data and moves the "
+                + "delivery date the first one is about to show.");
+        }
+
         [Test]
         public void TriggerImmediateUpdate_ShouldForecast_WhenAForecastForThePortfolioIsAlreadyOwed()
         {

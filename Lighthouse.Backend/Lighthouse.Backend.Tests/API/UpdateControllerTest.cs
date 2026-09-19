@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Collections.Concurrent;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API
@@ -180,6 +182,92 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         /// <summary>
+        /// How long a row has been in the state it is in is measured on the instance, because a reader's
+        /// clock is wrong by whatever their machine is wrong by.
+        /// </summary>
+        [Test]
+        public void GetTasks_WorkHasBeenRunningForAWhile_SaysHowLongOnTheInstanceClock()
+        {
+            var startedAt = new DateTimeOffset(2026, 9, 19, 8, 0, 0, TimeSpan.Zero);
+            var running = Work(UpdateType.Team, 1, UpdateProgress.InProgress);
+            running.StartedAt = startedAt;
+            updateStatuses[new UpdateKey(UpdateType.Team, 1)] = running;
+
+            var tasks = TasksFrom(CreateSubject(new FakeLighthouseClock(startedAt.AddMinutes(3))));
+
+            Assert.That(tasks.Single().ElapsedMs, Is.EqualTo(180_000));
+        }
+
+        /// <summary>
+        /// The moment is written by whichever replica handled the transition and read by whichever answers
+        /// the call, and their clocks do not agree to the millisecond. Something that started fractionally
+        /// in the future has just started - a negative duration would be shown to an operator as one.
+        /// </summary>
+        [Test]
+        public void GetTasks_WorkStartedFractionallyInTheFuture_SaysItHasJustStarted()
+        {
+            var now = new DateTimeOffset(2026, 9, 19, 8, 0, 0, TimeSpan.Zero);
+            var running = Work(UpdateType.Team, 1, UpdateProgress.InProgress);
+            running.StartedAt = now.AddSeconds(2);
+            updateStatuses[new UpdateKey(UpdateType.Team, 1)] = running;
+
+            var tasks = TasksFrom(CreateSubject(new FakeLighthouseClock(now)));
+
+            Assert.That(tasks.Single().ElapsedMs, Is.Zero);
+        }
+
+        /// <summary>
+        /// Nothing recorded when this row entered its state, so there is no honest number. Any stand-in is
+        /// a duration a reader would believe.
+        /// </summary>
+        [Test]
+        public void GetTasks_NobodyRecordedWhenTheWorkBegan_SaysNothingAboutHowLong()
+        {
+            updateStatuses[new UpdateKey(UpdateType.Team, 1)] = Work(UpdateType.Team, 1, UpdateProgress.InProgress);
+
+            var tasks = TasksFrom(CreateSubject());
+
+            Assert.That(tasks.Single().ElapsedMs, Is.Null);
+        }
+
+        /// <summary>
+        /// A delete is not a refresh. Stopping one half-way would tell the caller waiting on it that the
+        /// entity had gone while its row is still in the database.
+        /// </summary>
+        [TestCase(UpdateType.TeamDelete)]
+        [TestCase(UpdateType.PortfolioDelete)]
+        public async Task CancelTask_ARemoval_IsRefusedAndNothingIsStopped(UpdateType removal)
+        {
+            var queueServiceMock = new Mock<IUpdateQueueService>();
+
+            var result = await CreateSubject(queueServiceMock.Object).CancelTask(removal, 1);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+                queueServiceMock.Verify(queue => queue.CancelAsync(It.IsAny<UpdateKey>()), Times.Never);
+            }
+        }
+
+        /// <summary>
+        /// The row an operator clicked was drawn before they clicked it, so "it finished while you were
+        /// reading" is the ordinary case rather than an error.
+        /// </summary>
+        [Test]
+        public async Task CancelTask_ARefresh_IsPassedOnWhateverStateTheWorkIsIn()
+        {
+            var queueServiceMock = new Mock<IUpdateQueueService>();
+
+            var result = await CreateSubject(queueServiceMock.Object).CancelTask(UpdateType.Team, 7);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<NoContentResult>());
+                queueServiceMock.Verify(queue => queue.CancelAsync(new UpdateKey(UpdateType.Team, 7)), Times.Once);
+            }
+        }
+
+        /// <summary>
         /// Enough reads that an answer picked arbitrarily out of the running work has to show itself.
         /// </summary>
         private const int ReadsThatMakeAnArbitraryAnswerShowItself = 20;
@@ -213,11 +301,26 @@ namespace Lighthouse.Backend.Tests.API
         /// </summary>
         private UpdateController CreateSubject()
         {
+            return CreateSubject(Clocks.SystemUtc, Mock.Of<IUpdateQueueService>());
+        }
+
+        private UpdateController CreateSubject(FakeLighthouseClock clock)
+        {
+            return CreateSubject(clock, Mock.Of<IUpdateQueueService>());
+        }
+
+        private UpdateController CreateSubject(IUpdateQueueService updateQueueService)
+        {
+            return CreateSubject(Clocks.SystemUtc, updateQueueService);
+        }
+
+        private UpdateController CreateSubject(ILighthouseClock clock, IUpdateQueueService updateQueueService)
+        {
             return new UpdateController(
-                new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc),
+                new InProcessUpdateStatusStore(updateStatuses, clock),
                 new UpdateTaskNaming(Mock.Of<IRepository<Team>>(), Mock.Of<IPortfolioRepository>()),
-                Clocks.SystemUtc,
-                Mock.Of<IUpdateQueueService>());
+                clock,
+                updateQueueService);
         }
     }
 }

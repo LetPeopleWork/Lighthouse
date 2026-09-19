@@ -13,9 +13,9 @@
     ],
     "thresholds": { "high": 80, "low": 70, "break": 0 },
     "coverage-analysis": "perTestInIsolation",
-    "test-case-filter": "(FullyQualifiedName~UpdateQueue|FullyQualifiedName~UpdateLane|FullyQualifiedName~UpdateController|FullyQualifiedName~TaskManager|FullyQualifiedName~ForecastUpdater|FullyQualifiedName~WriteBack|FullyQualifiedName~DeliverySources|FullyQualifiedName~FasterUpdates)&FullyQualifiedName!~TwoLanesAgainstARealTracker&FullyQualifiedName!~Containers",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.BackgroundServices.Update|FullyQualifiedName~UpdateControllerTest|FullyQualifiedName~WriteBackCollectorTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers",
     "reporters": ["progress", "json", "cleartext"],
-    "concurrency": 4,
+    "concurrency": 8,
     "additional-timeout": 30000,
     "verbosity": "info"
   }
