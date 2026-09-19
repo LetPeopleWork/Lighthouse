@@ -175,16 +175,25 @@ describe("reading the number back out of a rendered label", () => {
 });
 
 describe("counting what is at risk", () => {
-	test("counts the items more likely than not to miss the target", () => {
+	test("counts the items seventy percent or worse", () => {
 		const summary = sleRiskAtRiskSummary([
 			answer("ZEN-1", 86),
-			answer("ZEN-2", 50),
-			answer("ZEN-3", 49),
+			answer("ZEN-2", 70),
+			answer("ZEN-3", 69),
 			answer("ZEN-4", 12),
 		]);
 
-		// Fifty is the line and sits on the at-risk side of it: more likely than not.
+		// Seventy is the line and sits on the at-risk side of it. Sixty-nine is chosen over a round
+		// number so the test fails if the comparison is ever written as strictly greater.
 		expect(summary.count).toBe(2);
+	});
+
+	test("leaves an item that is merely more likely than not out of the count", () => {
+		// The line used to be fifty, which counted anything past a coin flip. On a healthy board that
+		// is most of the work in progress, and a count that is never small is one nobody reads.
+		const summary = sleRiskAtRiskSummary([answer("ZEN-7", 55)]);
+
+		expect(summary.count).toBe(0);
 	});
 
 	test("counts an item that has already outlasted its target", () => {
@@ -205,7 +214,7 @@ describe("counting what is at risk", () => {
 
 	test("takes its colour from the worst item it counted", () => {
 		const summary = sleRiskAtRiskSummary([
-			answer("ZEN-1", 60),
+			answer("ZEN-1", 75),
 			answer("ZEN-2", 99),
 		]);
 
@@ -215,7 +224,7 @@ describe("counting what is at risk", () => {
 	test("reads an item past its target as the worst band there is", () => {
 		// Certainty is the top of the ladder, and an item already past the target is there.
 		const summary = sleRiskAtRiskSummary([
-			answer("ZEN-1", 60),
+			answer("ZEN-1", 75),
 			answer("ZEN-5", 100),
 		]);
 

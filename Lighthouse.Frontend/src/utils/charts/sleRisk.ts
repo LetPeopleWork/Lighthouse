@@ -175,10 +175,16 @@ export interface SleRiskAtRiskSummary {
 }
 
 /**
- * More likely than not to breach. One explainable line rather than a tunable nobody sets; if it
- * turns out to be the wrong line, that is evidence for a follow-up and not a knob to ship now.
+ * Where an item counts as at risk. One fixed, explainable line rather than a tunable nobody sets:
+ * a coach can be told "seventy percent or worse" once and carry it between teams, which a
+ * per-team setting would not allow.
+ *
+ * Seventy rather than fifty. Fifty reads as "more likely than not", which is a statement about a
+ * coin rather than about work worth acting on — on a healthy board it counts items that are merely
+ * unremarkable, and a count that is never small is one nobody reads. If it turns out to be the
+ * wrong line, that is evidence for a follow-up and not a knob to ship now.
  */
-const AT_RISK_FROM = 50;
+const AT_RISK_FROM = 70;
 
 /**
  * Counted off the answers the column already reads, never computed a second time — two readings of
