@@ -56,18 +56,25 @@ namespace Lighthouse.Backend.API
                 .Where(work => work.Status is UpdateProgress.Queued or UpdateProgress.InProgress)
                 .ToList();
 
-            // The queue runs one thing at a time, so whatever is running is what everything queued is
-            // waiting for. That is the whole claim this field makes - not a position, not an estimate.
-            var holdingTheLane = admitted.FirstOrDefault(work => work.Status == UpdateProgress.InProgress);
-            var laneHolderName = holdingTheLane is null ? null : naming.NameOf(holdingTheLane);
+            var inTheOrderTheQueueWillReachThem = AdmittedWorkOrdering.InTheOrderTheQueueWillReachThem(admitted);
 
-            var tasks = AdmittedWorkOrdering.InTheOrderTheQueueWillReachThem(admitted)
+            // Team, portfolio and forecast work each wait for their own kind, so there is one thing
+            // running per kind rather than one for the instance. Read out of the sorted list rather than
+            // the store's own order: a second replica can be running work of the same kind, and picking
+            // out of an unordered read would answer the same question differently from one glance to the
+            // next.
+            var holdingEachLane = inTheOrderTheQueueWillReachThem
+                .Where(work => work.Status == UpdateProgress.InProgress)
+                .GroupBy(work => UpdateLaneMapping.LaneOf(work.UpdateType))
+                .ToDictionary(lane => lane.Key, lane => naming.NameOf(lane.First()));
+
+            var tasks = inTheOrderTheQueueWillReachThem
                 .Select(work => new UpdateTaskResponse(
                     work.UpdateType,
                     work.Id,
                     naming.NameOf(work),
                     work.Status,
-                    work.Status == UpdateProgress.Queued ? laneHolderName : null,
+                    WhatItIsWaitingFor(work, holdingEachLane),
                     ElapsedOn(work)))
                 .ToList();
 
@@ -98,6 +105,21 @@ namespace Lighthouse.Backend.API
 
             await updateQueueService.CancelAsync(new UpdateKey(updateType, id));
             return NoContent();
+        }
+
+        /// <summary>
+        /// What a waiting row is waiting for: whatever is running in its own lane, and nothing at all when
+        /// that lane is free. Naming an unrelated refresh instead would put a dependency in front of an
+        /// operator that does not exist, and they have no way to tell it from a real one.
+        /// </summary>
+        private static string? WhatItIsWaitingFor(UpdateStatus work, Dictionary<UpdateLane, string> holdingEachLane)
+        {
+            if (work.Status != UpdateProgress.Queued)
+            {
+                return null;
+            }
+
+            return holdingEachLane.TryGetValue(UpdateLaneMapping.LaneOf(work.UpdateType), out var holder) ? holder : null;
         }
 
         /// <summary>

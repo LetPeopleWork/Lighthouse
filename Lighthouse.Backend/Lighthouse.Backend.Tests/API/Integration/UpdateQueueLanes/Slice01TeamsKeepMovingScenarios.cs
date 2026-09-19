@@ -8,11 +8,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
     /// and the System-Administrator-guarded task list on <c>UpdateController</c> read over HTTP.
     /// US-01, AC-01.1 … AC-01.8.
     ///
-    /// Every scenario here is <c>[Ignore]</c>d. There is no walking skeleton for this story — every
-    /// mechanism on the path already runs in production — so there is nothing that could be green
-    /// before the lanes exist, and the suite is green at hand-off because none of these runs. DELIVER
-    /// unskips them one at a time.
-    ///
     /// Two things these scenarios are deliberately built to resist:
     ///
     /// The portfolio refresh is <em>held open</em> rather than made slow. Starvation is the failure
@@ -42,8 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
     [Category("slice-01")]
     public partial class Slice01TeamsKeepMovingTest
     {
-        private const string Pending = "pending — DELIVER unskips this as slice 01 is built";
-
         // @driving_port @real-io @AC-01.1 — the reported complaint, stated as the thing that must stop
         // being true. Three teams sat behind one portfolio refresh for 3h38m and the operator read the
         // instance as dead.
@@ -82,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // unchanged and say nothing about this. Asserted over repeated reads because the answer is
         // picked out of a concurrent store.
         [Test]
-        [Ignore(Pending)]
         public async Task A_queued_team_names_the_team_holding_its_own_lane_and_never_the_running_portfolio()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -101,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // tells an operator something false rather than something arbitrary: a row whose own lane is
         // free is not waiting for anything, and naming the portfolio would invent a dependency.
         [Test]
-        [Ignore(Pending)]
         public async Task A_queued_team_whose_own_lane_is_free_is_waiting_behind_nothing()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -186,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
         // run beside a refresh of the same team is two things writing one entity at once; a removal
         // that waited behind an unrelated portfolio would be the reported bug wearing a different hat.
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_removal_waits_behind_the_team_refresh_and_not_behind_a_portfolio_refresh()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
