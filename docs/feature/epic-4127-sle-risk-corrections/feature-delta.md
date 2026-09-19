@@ -4675,3 +4675,128 @@ The deletion's characteristic failure applies: `SleRiskAtRiskSummary` is importe
 2. **Answered against the code: the SLE and the WIP count are both already in scope, and only the at-risk count is not.** `computeSleRiskRag` needs three numbers. The RAG-statuses builder is already handed `sle: serviceLevelExpectation` and `currentWip: inProgressItems.length`, and `ctx.serviceLevelExpectation` is already in `buildWidgetNodes`' parameter type and passed to two widgets. What is *not* threaded there is `sleRiskAtRisk`, which today goes to `buildWidgetNodes` alone. **So the only plumbing this slice owes is the at-risk count reaching the RAG builder** — one field, and worth naming now so DELIVER does not discover it as a surprise and reach for a second `sleRiskAtRiskSummary` call to avoid it. Counting the same thing twice is how a count and the list behind it come to disagree, which is the mistake `sleRiskAtRiskSummary`'s own comment already warns about.
 
 3. **Demo data.** The brief's watch-out stands and is not negotiable: *"Verify the widget on demo data rather than asserting it."* Round 1 asserted "the demo teams already carry an SLE" in three checklists and it was false. DELIVER opens an instance and looks.
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] Wave-decision reconciliation
+
+**Zero outstanding contradictions. Gate passed.**
+
+DESIGN closed the brief's one open question rather than answering it — the maintainer had already
+confirmed it during DISCUSS — and answered its own two against the code. Nothing is left for this
+wave to improvise.
+
+DEVOPS is skipped, and for this slice the original premise actually holds: it is frontend-only.
+Slice 03 was not, which is why that skip had to be re-justified; this one needs no re-justification.
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] Acceptance criteria
+
+| AC | Criterion |
+|---|---|
+| AC-04.1 | A coach sees how much of the team's in-flight work is at risk as a number of its own, with its own status, rather than as a line under the WIP count |
+| AC-04.2 | The status is Act when the share at risk reaches the allowance the team's own target implies, Observe when anything at all is at risk, and Sustain otherwise |
+| AC-04.3 | A team that has published no target is told to publish one, rather than shown a status about nothing |
+| AC-04.4 | A team with nothing in progress reads Sustain, and no division happens |
+| AC-04.5 | The status does not flip on a rounding artifact — a share that is under the allowance stays under it however it would be displayed |
+| AC-04.6 | The rule's fixed threshold and the team's derived allowance are each readable, and never in the same place |
+| AC-04.7 | View Data lists every in-flight item with its risk, not only the ones at risk |
+| AC-04.8 | The widget is a team surface, and does not appear on a portfolio |
+| AC-04.9 | The WIP count carries no at-risk line any more |
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] The one test that is already written
+
+**`every list is in one of the two lists above`, in `BaseMetricsView.test.tsx`.** It is slice 03's,
+it currently passes, and adding the `sleRisk` payload will red it before a single test of this slice
+exists. Its failure message names both lists and the call-site table.
+
+This is worth stating as an acceptance step rather than as a surprise, because the natural reaction
+to a red test one has not written is to make it green as quickly as possible. **The correct response
+is to classify the payload, not to add the key to whichever list makes the message stop** — and the
+classification is already decided: it is the fifth list of what the team has in flight today, it
+carries the risk column, and it goes in `LISTS_WHAT_IS_IN_FLIGHT_TODAY` and in the slice-03 sweep
+table as row 16.
+
+If a future author instead files it under the second list, the test goes green and nothing else
+catches it — which ADR-198 states in writing as the limit of the instrument. The sweep table is the
+compensating control, and it only works if it is actually updated.
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] Acceptance test inventory
+
+| AC | Test | File | Layer | Shape |
+|---|---|---|---|---|
+| AC-04.2 | `is act when the share at risk reaches the team's allowance` | `ragRules.test.ts` | unit | `pure-function` |
+| AC-04.2 | `is observe when anything at all is at risk but the share is under the allowance` | same | unit | `pure-function` |
+| AC-04.2 | `is sustain when nothing is at risk` | same | unit | `pure-function` |
+| AC-04.3 | `tells a team with no target to publish one` | same | unit | `pure-function` |
+| AC-04.4 | `is sustain with nothing in progress, and never divides` | same | unit | `pure-function` |
+| AC-04.5 | **`does not act on a share that only rounds up to the allowance`** — the discriminating one | same | unit | `bounded-change` |
+| AC-04.2 | `a tighter target allows less` — two teams, same board, different verdict | same | unit | `pure-function` |
+| AC-04.1 | `shows the count of work at risk` | `SleRiskWidget.test.tsx` | Vitest | `render-only` |
+| AC-04.6 | `names the team's own allowance in its status tip` | same | Vitest | `pure-function` |
+| AC-04.6 | `keeps the rule's threshold out of the status tip` — the other half of the split | same | Vitest | `bounded-change` |
+| AC-04.7 | `lists every item in flight, not only the ones at risk` | `BaseMetricsView.test.tsx` | Vitest | `pure-function` |
+| AC-04.8 | `is a team widget` | `categoryMetadata.test.ts` if one exists, else `BaseMetricsView.test.tsx` | Vitest | `pure-function` |
+| AC-04.9 | the four `atRisk` tests in `WipOverviewWidget.test.tsx` are **deleted** | — | — | — |
+| — | slice 03's partition, unchanged, classifying the new payload | `BaseMetricsView.test.tsx` | Vitest | `unbounded-preservation` |
+
+**The suite's net change is four tests deleted and twelve added.** Recorded so a reviewer reading
+`WipOverviewWidget.test.tsx` shrink treats it as expected.
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] The rounding test, which is the one that earns its place
+
+Every other RAG test here states a rule. This one states the *absence* of a bug that the obvious
+implementation has, and it is the reason DESIGN insisted both sides of the comparison stay fractions.
+
+**The case**: a team on 85% — a 15% allowance — with 41 items in progress and 6 at risk. The share is
+`6 / 41 = 14.63%`, which is **under** the allowance and must read Observe. An implementation that
+rounds the share to a whole percentage before comparing gets `15`, finds `15 >= 15`, and reads Act.
+
+The numbers are chosen so the two implementations disagree, which is the only thing that makes the
+test worth writing. `40` items would give `15%` exactly and both implementations would agree; `50`
+would give `12%` and both would agree. A test written on either would pass against the bug.
+
+**It is asserted on the status, not on an internal.** The rounding is not a step anything can observe
+— it is a way of writing the comparison — so the test says what a coach sees.
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] The tooltip split, tested as two halves that cannot both be satisfied by accident
+
+DESIGN's rule is that the fixed 70 and the derived allowance never share a tooltip. Two assertions,
+deliberately opposite in direction:
+
+- **the status tip names the allowance** — for a team on 85%, the tip contains `15%`
+- **the status tip does not name the threshold** — the same tip does not contain `70`
+
+The second is a negative assertion, which DISTILL generally avoids, and it is defensible here for a
+reason that did not apply to slice 03's disclosure: the set is not open. There is exactly one number
+that must not appear and it is a constant. This is not "the sentence must avoid implying something";
+it is "this figure belongs in the other tooltip".
+
+**The trap to avoid**: asserting the info description contains `70%` and stopping there. That passes
+while the status tip also contains it, which is precisely the failure. Both halves, and the negative
+one is the one that does the work.
+
+---
+
+## Wave: DISTILL (slice 04) / [REF] What this wave does not do, and why
+
+| Normally owed | Here | Why |
+|---|---|---|
+| A new E2E spec | **None** | No new path is wired. The widget renders in a category that is already driven end to end, and `SleRiskColumnReachable.spec.ts` already proves the dialog this widget's View Data opens. A spec asserting a card shows a number is a slower unit test |
+| A backend test | **None** | Nothing backend changes. The risk and its evidence count already ship |
+| Property-based tests | **None** | `computeSleRiskRag` has two integer inputs and a percentile, and its interesting region is one inequality. The boundary cases are enumerable and are enumerated above |
+| A walking skeleton | **None new** | The Epic's holds |
+
+**What IS owed and is not a test: opening the demo instance and looking at the widget.** The brief's
+watch-out is explicit, and it is there because round 1 asserted *"the demo teams already carry an
+SLE"* in three separate checklists while it was false. An assertion about seeded data is not evidence
+about seeded data.
