@@ -235,6 +235,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 "Eleven days or more: eleven, thirteen, fifteen, eighteen, twenty-two and thirty, three times each.");
         }
 
+        [TestCase(0)]
+        [TestCase(-3)]
+        public void FinishedItemsStillOpenAtThisAge_AgeThatCannotBeRead_Refuses(int ageInDays)
+        {
+            // The same refusal the risk itself makes, and it needs its own test because it is a
+            // separate guard on a separate method. Without it, an age of zero quietly counts every
+            // item the team ever finished and the cell claims a depth of evidence that describes
+            // nothing.
+            Assert.That(() => SleRiskCalculator.FinishedItemsStillOpenAtThisAge(ageInDays, SixtyFinishedItems),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
         [Test]
         public void FinishedItemsStillOpenAtThisAge_WorkThatFinishedOnExactlyThisDay_IsCounted()
         {

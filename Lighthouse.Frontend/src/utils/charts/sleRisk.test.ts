@@ -261,6 +261,17 @@ describe("what a risk rests on", () => {
 		);
 	});
 
+	// The invariance test below compares two disclosures against each other, which is satisfied by
+	// two of anything — including two undefineds. This is what stops it being vacuous: the real
+	// descriptor hands back the real sentence for a row the answers do mention.
+	test("hands a row's own count to the sentence", () => {
+		const descriptor = descriptorFor([answer("ZEN-412", 86, 4)]);
+
+		expect(descriptor?.disclosureFor(zenithItem("ZEN-412"))).toBe(
+			"4 Work Items the team finished were still open at this age.",
+		);
+	});
+
 	// The trap. An item past its target reads 100% because being past the target settles it — the
 	// history was never consulted — and its count is often zero, because nothing the team finished
 	// ever ran that long. So the cell shows 100% beside "no finished work ran this long", and a

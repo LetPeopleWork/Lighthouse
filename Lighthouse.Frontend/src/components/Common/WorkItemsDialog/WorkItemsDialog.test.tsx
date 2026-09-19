@@ -1764,6 +1764,22 @@ describe("the room the dialog opens with", () => {
 		).toBeInTheDocument();
 	});
 
+	// Pinned by name, not just by behaviour. Every other test here writes and reads the choice
+	// through the same hook, so they would all pass against any key at all — and renaming this one
+	// is precisely the change that silently forgets every coach's choice. There is already a key in
+	// this codebase carrying the name of a feature that no longer exists, for exactly that reason.
+	test("remembers the size under a key named for the size", () => {
+		render(
+			<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Enlarge" }));
+
+		expect(localStorage.getItem("lighthouse:workItemsDialog:enlarged")).toBe(
+			"true",
+		);
+	});
+
 	test("opens anyway when the browser will not remember anything", () => {
 		const blocked = vi.spyOn(Storage.prototype, "getItem");
 		blocked.mockImplementation(() => {
