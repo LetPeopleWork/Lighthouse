@@ -248,9 +248,9 @@ describe("RefreshHistorySection", () => {
 		expect(screen.getByText("0%")).toBeInTheDocument();
 	});
 
-	it("counts the records whose links named more than one parent, using this instance's word for them", async () => {
+	it("reports the worst single refresh, not the window total, using this instance's word for the records", async () => {
 		mockGetRefreshLogs.mockResolvedValue([
-			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 2 },
+			{ ...mockLogs[0], recordsWhoseLinksNamedMoreThanOneParent: 5 },
 			{ ...mockLogs[1], recordsWhoseLinksNamedMoreThanOneParent: 3 },
 		]);
 
@@ -262,9 +262,18 @@ describe("RefreshHistorySection", () => {
 
 		await selectTeamAlpha();
 
-		const label = screen.getByText("Tickets Fetched With More Than One Parent");
+		const label = screen.getByText(
+			"Max Tickets Fetched With Links Naming More Than One Parent",
+		);
 		const statBox = label.parentElement as HTMLElement;
+
+		// Two refreshes of the same entity found 5 and 3. Almost certainly the same handful of untidy
+		// tickets read twice, so 8 would be a made-up number; an average of 4 is smaller than a refresh
+		// actually reported and shrinks further with every refresh that downloads nothing. 5 is the
+		// worst any single refresh saw, which is the number worth chasing.
 		expect(within(statBox).getByText("5")).toBeInTheDocument();
+		expect(within(statBox).queryByText("8")).not.toBeInTheDocument();
+		expect(within(statBox).queryByText("4")).not.toBeInTheDocument();
 		expect(screen.queryByText(/work items/i)).not.toBeInTheDocument();
 	});
 

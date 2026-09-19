@@ -201,14 +201,21 @@ const RefreshHistorySection: React.FC = () => {
 					).toLocaleString()
 				: null;
 
-		// Counted over what each refresh actually downloaded, which on a cheap refresh is only the
-		// records that moved - so the label says "Fetched" rather than promising a total for the
-		// whole instance. Shown only when it happened: a line reading zero on every healthy entity
-		// teaches the reader to skip the panel.
-		const recordsWhoseLinksNamedMoreThanOneParent = filtered.reduce(
-			(sum, l) => sum + (l.recordsWhoseLinksNamedMoreThanOneParent ?? 0),
-			0,
-		);
+		// The worst single refresh in the window, not a total across it. Every refresh re-reads the same
+		// untidy records, so adding the counts up renders one messy ticket as fifty. Averaging is worse
+		// still: a cheap refresh only counts what it downloaded, so one refresh finding five among forty
+		// that downloaded nothing averages to nearly zero and the panel hides a real problem. Even the
+		// largest count covers only what that one refresh downloaded, which is why the label says
+		// "Fetched". Shown only when it happened: a line reading zero on every healthy entity teaches
+		// the reader to skip the panel.
+		const mostRecordsOneRefreshCouldNotPlace =
+			runs > 0
+				? Math.max(
+						...filtered.map(
+							(l) => l.recordsWhoseLinksNamedMoreThanOneParent ?? 0,
+						),
+					)
+				: 0;
 
 		const stats: { label: string; value: string | number }[] = [
 			{ label: "Total Runs", value: runs },
@@ -216,11 +223,11 @@ const RefreshHistorySection: React.FC = () => {
 			...(cancelledCount > 0
 				? [{ label: "Cancelled", value: cancelledCount }]
 				: []),
-			...(recordsWhoseLinksNamedMoreThanOneParent > 0
+			...(mostRecordsOneRefreshCouldNotPlace > 0
 				? [
 						{
-							label: `${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} Fetched With More Than One Parent`,
-							value: recordsWhoseLinksNamedMoreThanOneParent,
+							label: `Max ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} Fetched With Links Naming More Than One Parent`,
+							value: mostRecordsOneRefreshCouldNotPlace,
 						},
 					]
 				: []),
