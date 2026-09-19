@@ -99,3 +99,99 @@ predefined exclusion and written-back key.
 **Structural note, not a mutant:** `ParentResolution.IsAmbiguous` has no production consumer — only tests
 read it. It is written ahead of slice 03, which needs it for the ambiguity warning. If slice 03 ends up
 not using it, it should go rather than stay as a public member nothing calls.
+
+*(Settled in slice 03: `IsAmbiguous` now has two production consumers — the warning's filter and the
+per-record marker the count is taken from. It stays.)*
+
+---
+
+## Slice 03 — Stryker.NET not run, and StrykerJS not run either
+
+**Stryker.NET**: same objection as slices 01 and 02, now with a third live fixture in the covering set.
+Every mutant would drag real HTTP against `letpeoplework.atlassian.net`, whose credential CI shares.
+Manual analysis again.
+
+**StrykerJS**: slice 03 is the feature's first frontend change, and the slice-01 note said the decision
+should be re-taken here rather than inherited. Re-taken, and the answer is still no — for different
+reasons, which is why it is written out rather than pointed at:
+
+- The frontend diff is about fifteen lines in one component: one optional field on a model, one
+  `Math.max` over a filtered list, one conditional stat, one `getTerm` call. The mutation space is small
+  enough to enumerate by hand and be sure the enumeration is complete.
+- A StrykerJS run is over the whole frontend, not this component, so the cost is unrelated to the size
+  of what changed.
+- This corpus has been bitten before: a previous StrykerJS run left `@ts-nocheck` in 661 files.
+
+This is a deviation from Definition of Done item 5 on both stacks, recorded rather than skipped.
+
+### Backend — killed by existing tests
+
+| Mutation | Killed by |
+|---|---|
+| `LinksNamedMoreThanOneParent = IsAmbiguous` → `IsResolved`, or the assignment deleted | the two count scenarios — the row reads 0 where 3 is asserted |
+| The propagation line in `WorkItemBase`'s protected copy constructor deleted | **measured**: both count scenarios fail. This is the seam between `CreateWorkItemFromJiraIssue` and `new WorkItem(base, team)`, the classic place coverage is zero, and it is covered |
+| `Where(… IsAmbiguous)` negated or removed in the aggregated warning | `The_warning_names_the_item_and_every_candidate` |
+| The `Count == 0` early return removed | the no-ambiguity scenario's `NothingWasWrittenToTheLogAsAWarning` — a warning appears on a clean refresh |
+| The warning call moved inside the per-issue loop | `TheOneWarningTheRefreshWrote` — one warning per refresh, not one per record |
+| `string.Join(", ", Candidates)` → first candidate only | the scenario naming both `EPIC-1` and `EPIC-4` |
+| `CountTheRecordsNobodyCouldPlace` counting every record rather than the marked ones | the count scenarios (3 asserted, item total returned) |
+| Either updater's `RecordsWhoseLinksNamedMoreThanOneParent = outcome.…` line deleted | **measured** during 03-03's RED: team and portfolio count scenarios, `Expected: 3 / But was: 0` |
+| The `with { … }` dropped from either **whole-query** `SyncOutcome` site | the team and portfolio count scenarios |
+
+### Backend — one survivor, measured and then closed
+
+**Both delta `SyncOutcome` sites.** Replacing `CountTheRecordsNobodyCouldPlace(downloaded)` with a
+literal `0` at `FetchOnlyWhatMoved` and `FetchOnlyTheFeaturesThatMoved`, rebuilding, and running 500
+tests matching `ParentFromIssueLinks|WorkItemService|Updater|Delta|Sync` gave **0 failed, 500 passed**.
+The mutant lived.
+
+Worth closing rather than recording, because the cheap refresh is the **default** in production: the
+unpinned path was the one most instances actually run, while the two pinned sites were the ones they
+run least.
+
+Closed in `f0fa9104d` by two service-level tests in `WorkItemServiceTest.cs`, one per driving port
+(`UpdateWorkItemsForTeam` / `UpdateFeaturesForPortfolio` are separate entry points, so one test could
+not reach both without faking one). Each asserts `Mode == SyncMode.Delta` beside the count as a positive
+control — without it the portfolio test would pass on the whole-query branch, where the fixture's
+default answer is an empty list and a count of zero looks the same as a fetch that never happened.
+Re-applying the mutation fails both on the count assertion only, with the `Mode` control still green.
+
+Reaching the delta path at all needed `WorkItemServiceTestBuilder` to stop hardcoding
+`Mock.Of<IRepository<OptionalFeature>>()`. No fixture could opt into the cheaper refresh before, which
+is its own small finding about what that builder could express.
+
+### Frontend — hand analysis
+
+| Mutation | Killed by |
+|---|---|
+| `Math.max(…)` → `reduce` sum, or → average | the 5-and-3 scenario: sum renders 8, average 4, max 5, and 8 and 4 are asserted absent |
+| The `runs > 0` guard removed | an empty window spreads into `Math.max()` → `-Infinity`, which renders the row |
+| `> 0` → `>= 0` on the conditional | the silent-at-zero scenario |
+| `getTerm(WORK_ITEMS)` → the literal `"Work Items"` | the scenario that renames the term to `Tickets` and asserts `/work items/i` appears nowhere |
+
+**One frontend survivor, and it is near-equivalent rather than a gap.** Removing `?? 0` lets
+`undefined` reach `Math.max`, which yields `NaN`; `NaN > 0` is false, so the row hides — exactly what
+the old-backend scenario already expects to see. That scenario therefore passes with the guard gone,
+and so do the other two, whose fixtures all carry the field.
+
+It is only near-equivalent because a *mixed* window would behave differently: `Math.max(5, undefined)`
+is `NaN`, so one row missing the field would hide a count of 5 that ought to show. That cannot arise
+from one backend — the column is non-nullable with a default of 0, so a given backend either sends it
+on every row or on none — which is why this is recorded rather than closed. It would stop being
+near-equivalent the moment anything served a partial payload.
+
+The honest reading of the original enumeration: this entry was first written into the table as
+"killed by the old-backend scenario", which is what it looks like until you work out what `NaN` does
+to the comparison. Checked, not assumed.
+
+### Two things that outlast this slice
+
+**A count and a warning taken from the same fact can still disagree.** A Portfolio's parent sweep runs
+through the same `CreateFeaturesFromIssues`, so an ambiguous parent Feature is named in the warning —
+but that half of the refresh deliberately stays out of `SyncOutcome`, so it is never counted. No mutant
+finds this: both sides are behaving exactly as written. It took reading the call graph.
+
+**A mutation that cannot be reached by any fixture is not the same as one that is killed.** The delta
+sites looked covered — `WorkItemService` is a heavily tested class and the count's own scenarios are
+green — but nothing could opt into the cheap path, so the coverage stopped at the branch. The kill has
+to be demonstrated, not inferred from the neighbourhood.
