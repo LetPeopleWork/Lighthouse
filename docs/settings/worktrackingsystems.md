@@ -87,12 +87,13 @@ SLE and its own history — there would be no single number to write.
 Three things follow from how the number is worked out, and they are worth knowing before you map it:
 
 - **Only in-progress items get a value.** Finished items are never written to.
-- **An item the history cannot speak for gets no write at all** — the field is left exactly as it
-  was, rather than cleared or set to zero. That covers an item older than anything the team has ever
-  finished, and an item at an age fewer than ten finished items ever reached. See
-  [SLE Risk Column](../metrics/flow-metrics.html#sle-risk-column).
+- **An item that gets no value gets no write at all** — the field is left exactly as it was, rather
+  than cleared or set to zero. There is no way to write "no answer" into a tracker field, and
+  clearing one you filter on would say something louder and less true than leaving it alone. In
+  practice this covers a finished item and an item that has not started yet.
 - **The evidence is the team's configured history, read as of today**, not whatever date range you
-  last had open in the browser.
+  last had open in the browser — and the screens now read it the same way, so the field and the
+  column agree. See [SLE Risk Column](../metrics/flow-metrics.html#sle-risk-column).
 
 The value is refreshed on every team update, so the field changes as an item ages. If your tracker
 notifies on field changes, see [Notifications](#notifications) below.

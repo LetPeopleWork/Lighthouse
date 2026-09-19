@@ -123,14 +123,18 @@ The SLE line tells you which items have **already** missed the target. The **SLE
 
 ![The SLE Risk column in the work item dialog](../assets/features/metrics/sle_risk_column.png)
 
-The number answers one question: *of every item that was still open at this age, what share went on to take longer than the target?* So an item that has been open 9 days, on a team where six of the seven items that ever reached day 9 ended up past the target, reads `86%`. Both parts come from the work your team finished inside the date range you are looking at, so the column follows the range picker like everything else on the page.
+The number answers one question: *of every item that was still open at this age, what share went on to take longer than the target?* So an item that has been open 9 days, on a team where six of the seven items that ever reached day 9 ended up past the target, reads `86%`.
 
-Three consequences worth knowing:
+**The column does not follow the date range picker.** The evidence is the throughput history your team has configured, and the question is about today — so the number stays put when you widen or narrow the range. That is deliberate: the range picker is for looking at past metrics, and a risk that changed when you moved it would be telling you about a control rather than about your work. It is also what lets the same number be written into your work tracking system, where there is no date range at all.
 
-- An item older than the target reads `100%`. That is the arithmetic, not a special rule — every item that ran that long necessarily ran longer than the target.
-- An item older than anything your team has ever finished reads `Beyond history`, uncoloured, and sorts below every answered item. There is nothing left to compare it against, and a number there would read as certainty rather than as silence.
-- An item that **fewer than ten** finished items can be compared against reads `Not enough history`, also uncoloured. A share of a handful of items moves by ten points or more the moment one of them enters or leaves your selected range, so the number would change overnight on exactly the items you are being told to look at first. Widening the date range is usually what brings these items an answer, because it brings more finished work into the comparison.
-- An item that finished in exactly the target number of days **met** the target and is not counted as a miss.
+Four consequences worth knowing:
+
+- An item older than the target reads `100%`. Past the target a miss has already happened, so this needs no history to be true — it is the one answer that holds even for a team that has finished nothing.
+- An item that finished in exactly the target number of days **met** the target and is not counted as a miss. An item sitting *on* its target day is still asked of the history, because it can close today and meet it.
+- **A thin history reads as a cliff rather than a curve.** If nothing your team finished ever ran as long as an item has, and the item is still inside its target, it reads `0%` — there is nothing to build a gradient from, so it stays at zero right up to the target and reads `100%` the day after. A team with little finished work will see that shape rather than a smooth rise.
+- **Where your team has finished little at a given age, the number moves sharply.** It is a share of the items that got that far, so when only a handful did, one finishing or ageing out shifts it by a lot. This bites hardest at the target day itself, and hardest of all for teams that usually hit their target — few of their items ever reach it. The number is shown anyway, because a coach can weigh a share of four items but cannot act on a blank.
+
+Items that have since closed are not in the column at all, so a past date range shows gaps where those rows are. A closed item has no risk of missing anything.
 
 Sort the column to bring the items most likely to breach to the top, or export the list to CSV, where the value reads as the percentage you see rather than as a bare number.
 

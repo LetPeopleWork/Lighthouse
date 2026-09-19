@@ -8110,3 +8110,180 @@ C4 Container diagram — the SLE-risk surfaces after the removal, with the delet
 that level nothing about this change is visible, and a diagram that says nothing is worse than none.
 
 Feature delta: `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`.
+
+---
+
+## Application Architecture — epic-4127-sle-risk-corrections (slice 02)
+
+Feature: `epic-4127-sle-risk-corrections` — ADO Epic #4127, "Show SLE Probability for In Progress
+Items", round 2, slice 02 (ADO User Story #6037)
+Wave: DESIGN
+Date: 2026-09-19
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Scope: Application / components
+Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
+
+Slice 01 removed a surface. This slice changes what the surviving number *is*: one risk per item, over
+the team's own configured history, always a number, and the same number in Lighthouse and on the user's
+board.
+
+### Architectural Pattern
+
+Ports-and-adapters, unchanged. No new style, container, port, adapter, technology or component. One
+driving port loses two query parameters, one port member loses two arguments, one DTO loses a field and
+a nullability, and one pure function loses a guard and gains a certainty rule.
+
+---
+
+### The decision that carries the slice
+
+**A window neither caller can choose.** Before this slice `ITeamMetricsService.GetSleRiskForTeam(Team,
+DateTime, DateTime)` let the dialog pass the browser's date range and the write-back pass the team's
+configured history. ADR-192 §1 designed that deliberately — *"two callers with identical semantics and
+different windows"* — and it produced exactly the divergence a coach reported: 27% on the page against
+18 on the board, for the same item on the same day.
+
+The fix is not to make the two callers agree. It is to take the choice away: `GetSleRiskForTeam(Team
+team)`, with the service deriving `team.GetThroughputSettings(Clock.Today)` itself. A disagreement that
+cannot be expressed cannot recur, and no test is needed to say so — the signature says it.
+
+The same move settles three further questions at once. The route stops accepting dates it no longer
+reads. The cache key stops being a function of a caller's range and becomes a function of the four
+inputs the answer actually depends on. And the display path lands on the write-back's instance-day
+anchor rather than on a range end, which is what makes AC-02.1's "same integer" claim structural rather
+than coincidental.
+
+---
+
+### Key invariants introduced
+
+- **One risk per in-flight item, and the type says so.** `SleRiskDto(string ReferenceId, int Risk)`;
+  `SleRiskSchema.risk` is `z.number()` with no `.nullable()`. The two remaining not-applicable cases are
+  expressed as absence: a team with no published target returns an empty collection, and an item not in
+  flight today is simply not in it. After this slice an omitted entry *means* not in progress, which is
+  precisely the ambiguity ADR-192 §4 chose `null` to avoid and that no longer exists.
+- **Risk is monotonically non-decreasing in age, by construction.** Below the target the numerator
+  `count(T > R)` does not depend on the age and the denominator `count(T ≥ a)` is non-increasing; above
+  it the answer is a flat 100. Free from the arithmetic, and newly assertable — before this slice the
+  minimum-sample guard could put a `null` in the middle of the walk.
+- **Past the target is certainty; on the target is evidence.** `age > R` returns 100 before any counting,
+  because an item already open longer than the target cannot finish inside it whatever the history
+  holds. `age == R` stays computed: an item at four days against a four-day target can still close today
+  and meet "four days or less".
+- **Every input the answer depends on appears in the cache key.**
+  `SleRisk_{historyStart}_{historyEnd}_{asOfDay}_{target}`. Nothing invalidates this cache when a team's
+  settings are saved — `InvalidateTeamMetrics` is reached from the metrics refresh and the blackout and
+  recording handlers, not from a settings write — so the key is not an optimisation, it is the
+  correctness mechanism.
+- **The evidence window and the as-of day are two different things.** They were conflated behind one
+  `endDate`. The closed population comes from the configured throughput window; the in-flight snapshot
+  and every age come from today. On a rolling history the two coincide; on a team using fixed throughput
+  dates they do not, and the write-back already had that wrong.
+
+---
+
+### Component Decomposition
+
+| Kind | Components |
+|---|---|
+| EXTEND (backend) | `SleRiskCalculator.For` (certainty check first, zero-comparables branch, returns `int`, argument guards), `SleRiskDto`, `ITeamMetricsService.GetSleRiskForTeam`, `TeamMetricsService.GetSleRiskForTeam` + its cache key, `TeamMetricsController`'s action, `WriteBackTriggerService`'s risk dictionary and three doc comments |
+| DELETE (backend) | `SleRiskCalculator.MinimumComparableItems`, `SleRiskVerdict`, `SleRiskDto.ComparableItems`, the route's `startDate`/`endDate` parameters and their 400 guard, two read scenarios and the `ThenTooLittleRanThatLongToSay` specification helper |
+| EXTEND (frontend) | `sleRisk.ts` (`sleRiskColumnDescription`, `sleRiskSortValue`, `labelFor`, `sleRiskAtRiskSummary`), `SleRiskSchema`, `getSleRisk` on both service layers, `useMetricsData`, one comment in `WorkItemsDialog.tsx` |
+| DELETE (frontend) | `SLE_RISK_BEYOND_HISTORY_LABEL`, `SLE_RISK_NOT_ENOUGH_HISTORY_LABEL`, `comparableItems` |
+| CREATE | Nothing. No new component, file or abstraction |
+
+`Program.cs` is untouched and this was checked rather than hoped: no constructor signature moves, so no
+registration does, and the full backend Integration suite — with the live-connector flake exposure it
+carries — stays out of this slice's CI runs.
+
+---
+
+### Driving and driven ports
+
+| Port | Change |
+|---|---|
+| `GET /api/{version}/teams/{teamId}/metrics/sleRisk` | Same path, same class-level `[RbacGuard(TeamRead)]`, no premium gate. **Query parameters and their 400 guard removed.** Tolerant in the safe direction: an older bundle still sending them gets the right answer, because ASP.NET Core ignores unbound query parameters |
+| Work item dialog SLE Risk column (UI) | Always a percentage, or an empty cell for a row the answer does not mention. Geometry untouched — dialog width is slice 03's |
+| In Progress card at-risk line (UI) | Counts a number rather than a number-or-sentinel. Threshold unchanged at 50; moving it to 70 is slice 04's |
+| Write-back value source `SLE Risk` | Same mapping, same premium gate. The value now equals the displayed one |
+| Metrics cache (`GetFromCacheIfExists`) | One key's composition changes. No mechanism change |
+| Instance clock (`ILighthouseClock`) | Unchanged, read by one more path. `Clock.Today` is the instance day and `TodayAsUtcMidnight` derives from it through `InstanceCalendar`, so the screens and the write-back share an anchor by construction |
+| Work item store | Unchanged. No schema, no migration, no EF work of any kind |
+
+No RBAC change. No CLI or MCP wrapper exists for this route, so no `FEATURE_REQUIRES_SERVER_NEWER_THAN`
+entry is owed — and the standing caveat survives: the moment one is added it must be version-gated.
+
+---
+
+### The measured finding this slice reverses, and on what grounds
+
+`docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md` measured the displayed risk's overnight
+volatility and concluded *"something must gate it"*. This slice deletes the gate
+(`MinimumComparableItems = 10`). That is a reversal of a measured finding and it is argued in the
+register rather than left to a diff — see ADR-192's second amendment.
+
+**The argument is not that the certainty rule absorbed the volatility.** It did not. With
+`risk(a) = count(T > R) / count(T ≥ a)`, the denominator at the target age is
+`n(R) ≥ (1 − p) × N` for a team with attainment `p` over `N` finished items — so the better a team keeps
+its promise, the thinner the evidence at the age that decides its column. Both volatile rows in the
+measurement's replay sit at exactly that age, which the new rule keeps computed. The volatility is real,
+reachable and worst for the best-performing teams.
+
+The guard goes for two reasons that are about the guard:
+
+1. **A tracker field has no sentinel.** A suppressed risk emits no write, so the mapped field keeps
+   whatever was last written — an old number in a field a coach filters on, with nothing marking it
+   stale. The guard was built for a column that can say "not enough history"; on someone else's board it
+   guarantees something worse than a volatile number.
+2. **It blanks the answer on the day it is most needed** — the first age to fall below ten survivors is
+   the target age itself, for a team that is meeting its SLE.
+
+The compensating control is **disclosure rather than suppression**: the column description says what the
+share is over, the metrics documentation carries the resulting cliff (0% up to the target, 100% the day
+after, on a history with nothing to build a gradient from), and a per-item disclosure of the evidence
+depth is assigned to slice 03 with its own acceptance criterion. `SleRiskDto.ComparableItems` is removed
+now and returns only with that consumer.
+
+---
+
+### ADR References (this feature)
+
+- [ADR-192](./adr-192-sle-risk-as-a-pure-conditional-over-the-cycle-time-population.md): **amended a
+  second time, 2026-09-19.** §1's caller-supplied window, §3's cache-key completeness claim and §4's
+  nullable `Risk` are corrected by a dated section table; the *Architectural Enforcement* row
+  `Beyond history is null, never 0, 100 or an omitted entry` is **rewritten**, not annotated, because it
+  named a test this slice deletes. No new ADR is written: unlike slice 01's ladder, this is the same
+  subject as ADR-192 — the same function, route and DTO — and splitting one contract across two entries
+  costs a reader a hop for no constraint they would otherwise miss.
+- [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md): untouched. Nothing
+  here reaches the ladder question it settles.
+
+Cross-referenced and unchanged: ADR-065 (the endpoint template), ADR-188 (the descriptor twin), ADR-100
+(the SLE anchored to the default cycle-time definition), ADR-018 (still not asked to share anything —
+the age filter idiom is copied, not extracted, because the two reads differ elsewhere).
+
+---
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Neither caller can choose a window | The port signature. `GetSleRiskForTeam(Team team)` takes no dates — compiler-enforced, not tested |
+| Every listed item carries a number | The type. `int Risk` on the wire, `z.number()` in the schema |
+| The dialog's number and the written-back number are the same integer | One backend test driving the controller action and `WriteBackTriggerService` for one team on one day, asserting equality per `ReferenceId` |
+| The number does not move with the date range | The route binds no dates; an acceptance test with and without stray query parameters gets the same body |
+| A settings change is visible on the next read | Service test against a **live** cache. Nothing invalidates it on a settings save, so a mocked cache would assert nothing |
+| A fixed-dates team's risk advances at midnight | Service test with a fake clock over two instance days and `UseFixedDatesForThroughput` |
+| Past the target is 100; exactly on the target is computed | Two unit tests at `R` and `R + 1`, each carrying the arithmetic that would change if the comparison flipped |
+| A comparable set of zero inside the target reads 0 | Unit test. A named branch, never a division that happens to work out |
+| Risk never decreases as an item ages | Property-style test walking the age from 1 past `R` |
+| No sentinel string survives | An anchored grep over both stacks, the E2E project and `docs/`, excluding `docs/evolution/` — a review gate read by a person before the first push. The evolution archives keep their copies and must |
+| No member is orphaned | `dotnet build` under `TreatWarningsAsErrors` plus the mandatory `dotnet format analyzers … --severity info` pre-push run. S1144 / S2325 are a deletion's characteristic Sonar failure, and this slice deletes a public const, a record struct and a specification helper with one caller |
+| `Program.cs`, `Migrations/` untouched | The commit set reaches neither |
+
+C4 Container diagram, the full decision set (DDD-15 … DDD-30), the Reuse Analysis with contract shapes,
+the four-commit order and the open questions live in
+`docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`, *DESIGN — slice 02*. No System Context
+diagram is drawn: at that level nothing about this change is visible.
+
+Feature delta: `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`.

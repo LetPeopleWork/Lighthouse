@@ -14,6 +14,72 @@ actually about. The reasoning is in
 [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md); every decision below
 stands as written.
 
+**Amended 2026-09-19 (second amendment)** — `epic-4127-sle-risk-corrections` slice 02, ADO Story #6037.
+**The risk is now total, is read over the team's configured history rather than over a window a caller
+chooses, and is `100` past the target.** The *Architectural Enforcement* row that read *"Beyond history
+is `null`, never `0`, `100` or an omitted entry"* is **rewritten below rather than annotated** — it
+named a test that no longer exists, and a broken pointer left in place out of respect for immutability
+is a worse record than a corrected one. The prose of the Decision is left as written and corrected
+here, by section:
+
+| Section | What it says | What now holds |
+|---|---|---|
+| §1 | `Risk(ageInDays, targetRangeInDays, closedCycleTimes) -> int?`, and *"the age is an input, never computed inside — which keeps the as-of-date convention the caller's business"* | The calculator returns `int`. The as-of-date convention is no longer any caller's business: `GetSleRiskForTeam(Team team)` takes no dates and derives the window from `team.GetThroughputSettings(Clock.Today)`. Two callers that had to agree about a window can no longer express a disagreement |
+| §3 | *"Ages are already as-of the range's end rather than today … so the answer is a function of `(team, startDate, endDate)` alone and the cache key `SleRisk_{startDate}_{endDate}` is complete"* | Ages are as of **today**, on the same instance-day anchor the write-back uses. The evidence window and the as-of day are separated, because a team using fixed throughput dates has an evidence window that does not end today. The key is `SleRisk_{historyStart}_{historyEnd}_{asOfDay}_{target}` — four inputs, four components |
+| §4 | `SleRiskDto(string ReferenceId, int? Risk)` and *"`null` is the beyond-history case … an omitted entry would be indistinguishable from an item that is not in progress"* | `SleRiskDto(string ReferenceId, int Risk)`. `ComparableItems` is removed with the two silences it existed to distinguish. An omitted entry now **means** not in progress today, which is the only remaining not-applicable case besides a team with no target, for which the collection is still empty |
+| §4 | *"An item that took exactly `R` days is not a breach"* | Unchanged, and load-bearing. An item whose **age** equals `R` is still computed rather than forced to 100: it can close today and meet the promise |
+| §5, §6 | No premium gate, no RBAC change, no client wrapper; the frontend descriptor holds no arithmetic | Unchanged. The route keeps its path and its class-level guard; it loses its query parameters, which it had stopped reading |
+
+**The reversal this amendment owes an argument for, and the argument.**
+`docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md` measured the displayed value's overnight
+volatility — bounded exactly at `100/n(a)` points, and observed at 25 points on 602 real closed items —
+and concluded that *something must gate it*. A minimum-sample guard was the gate, and this amendment
+deletes it. The reversal is recorded here rather than left to a diff, and it does **not** rest on the
+claim that the certainty rule absorbed the volatile region. That claim is false, and the measurement
+itself contains the counterexample.
+
+Write `risk(a) = B / n(a)` with `B = count(T > R)` and `n(a) = count(T ≥ a)`. Below the target `B` does
+not depend on `a`, so the risk has one moving part: the denominator. And
+
+```
+n(R) = B + count(T = R) ≥ B = (1 − p) × N
+```
+
+for a team with attainment `p` over `N` finished items in the window. **The better a team keeps its
+promise, the thinner the evidence at the target age.** A team holding 85% on a month of twenty finished
+items has `n(R) ≈ 3`, where one item's arrival or departure moves the answer by 33 points — and `a = R`
+is computed, not certain. Both volatile rows in the measurement's replay sit at exactly that age: the
+90-day / 3-day-target row (median `n(3) = 6`, worst move 25 points) and the 30-day / 2-day-target row.
+The certainty rule owns the region *above* the volatile one, not the volatile one itself. The shape the
+slice brief nominated as the refuting case — a long target over a short-tailed distribution — is not
+merely possible; it is the case where `n(a) = 0` at and below the target, which the new rule answers
+with `0`.
+
+**The guard is deleted anyway, for two reasons that are about the guard rather than about the
+volatility.**
+
+1. **A tracker field has no sentinel.** A suppressed risk produces no `WriteBackFieldUpdate`, so the
+   mapped field keeps whatever was last written — yesterday's number, or last month's, in a field a
+   coach filters on, with nothing marking it stale. The guard was designed for a column that can render
+   the words "not enough history"; applied to someone else's board it guarantees the one failure worse
+   than a volatile number, which is a confident, wrong, old one. This decision's own §1 exists so the
+   two surfaces cannot disagree, and it cannot keep a mechanism that makes one of them silently lag.
+2. **The guard blanks the answer on the day it is most needed.** A threshold of ten suppresses every
+   age where `n(a) < 10`, and the arithmetic above puts the first such age at `a = R` for a team that
+   is meeting its SLE — the day the item is due, for the teams performing best.
+
+**What this costs, accepted knowingly.** The displayed number is *more* volatile at the target age than
+before, and a thin history now reads as a cliff — 0% up to the target, 100% the day after — because
+there is nothing to build a gradient from. `0` for an empty comparable set is a convention chosen to
+keep the function total, not a derivation; the empirical conditional is undefined there. The
+compensating control is **disclosure rather than suppression**: the column's description says what the
+share is over, the metrics documentation carries the cliff, and a per-item disclosure of the evidence
+depth is assigned to slice 03 (#6035) with its own acceptance criterion. If that disclosure is what
+re-earns a `ComparableItems` field, it returns then, with its consumer.
+
+Full argument, the commit order and the enforcement mechanisms:
+`docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`, *DESIGN — slice 02*.
+
 **Feature**: `epic-4127-sle-risk` — ADO Epic #4127, "Show SLE Probability for In Progress Items"
 
 **Decider**: Morgan (Solution Architect)
@@ -134,9 +200,14 @@ Would enable a risk-over-time trend and give write-back a change-trigger.
 |---|---|
 | The risk arithmetic exists once, in `SleRiskCalculator`, and nowhere in TypeScript | No `sleRisk`-shaped arithmetic outside that type; the frontend descriptor is built from the endpoint response. Code review; `sleRisk.ts` contains no counting |
 | The evidence set is the expression `GetCycleTimePercentilesForTeam` evaluates | Service test asserting the closed population behind a risk equals the population behind the cycle-time percentiles for the same window |
-| The in-flight population is `GetWipSnapshotForTeam`, not a second selection | Service test asserting the returned entries equal the `/metrics/wip` set for the same `endDate` |
+| The in-flight population is `GetWipSnapshotForTeam`, not a second selection | Service test asserting the returned entries equal the `/metrics/wip` set for **today**. *(Amended 2026-09-19 by slice 02: the snapshot is taken as of the instance day, not as of a caller's range end, because the question is about items in flight now.)* |
 | An item that took exactly `R` days is not a breach; an item as old as a finished one counts it among its survivors | `Slice01SleRiskReadScenarios` — one scenario per boundary, each with the arithmetic that would change if it flipped |
-| Beyond history is `null`, never `0`, `100` or an omitted entry | `Slice01SleRiskReadScenarios.An_item_older_than_anything_ever_finished_is_given_no_answer` |
+| **Every listed item carries a number.** The only not-applicable cases are a team with no published target (empty collection) and an item not in flight today (absent entry) | The type, not a test: `SleRiskDto.Risk` is `int` and `SleRiskSchema.risk` is `z.number()` with no `.nullable()`. *(Rewritten 2026-09-19 by slice 02. The row this replaces read "Beyond history is `null`, never `0`, `100` or an omitted entry" and named a scenario slice 02 deletes.)* |
+| Past the target is `100`; exactly on the target is computed from the history | Two `For_*` unit tests at `R` and `R + 1`, each carrying the arithmetic that would change if the comparison flipped |
+| A comparable set of zero at or below the target reads `0` | `For_*` unit test with an empty comparable set below the target. A named branch, never a division that happens to work out |
+| The risk never decreases as an item ages | Property-style test walking the age from 1 past `R` over a fixed population. Free from the arithmetic — the numerator does not move below the target — and unassertable before slice 02, because the guard could put a `null` in the middle of the walk |
+| Neither caller can choose the window the answer is computed over | The port signature: `GetSleRiskForTeam(Team team)` takes no dates. A compiler-enforced rule, not a test |
+| A settings change is visible on the next read | Service test against a **live** cache — read, change the target, read again, assert the answer moved. Nothing invalidates this cache on a settings save, so the key is the whole mechanism and a mocked cache would assert nothing |
 | No portfolio route exists | `Slice01SleRiskReadScenarios.Portfolios_are_not_asked_this_question_at_all` asserts 404 |
 | No premium gate on the read | The controller action carries no `ILicenseService` call; RBAC scenario asserts a team-scoped read succeeds for a reader with the grant |
 | The column's exported value is the label, not the ratio | Vitest asserting the cell carries `86%` and never a bare `86` |

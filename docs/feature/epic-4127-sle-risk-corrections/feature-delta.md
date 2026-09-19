@@ -239,6 +239,22 @@ Slice 02's screenshot re-take is deferred to slice 03, because #6037 changes the
 
 ---
 
+## Wave: DISCUSS / [REF] DEVOPS is skipped for slices 02, 03 and 04
+
+**Maintainer decision, 2026-09-19, in as many words: "skip devops, think we won't need that."** Recorded rather than left implicit, because the project rule is that a wave is skipped only on an explicit instruction and never by a request that merely names a later wave.
+
+It is the right call on the evidence slice 01 produced. DEVOPS ran in full for slice 01 and its four substantive findings were all about **removing** a public route: whether a Prometheus series or dashboard was keyed on it, whether an intermediate commit could go red, whether a CI job would fail on a deleted asset, and what a rollback would find. None of those questions exists for the three remaining slices — they add no route, delete none, touch no chart or asset, and change no deployment surface. Slice 02 changes what an existing endpoint computes and how its cache is keyed; 03 and 04 are frontend-only.
+
+**What DEVOPS would still have owned, and where it goes instead:**
+
+- **The cache re-key's operational effect** (slice 02) — a settings save must invalidate. That is an architectural contract, so DESIGN owns it and DISTILL tests it.
+- **The `@screenshot` re-take** (slice 03) — already a DELIVER step with its own watch-outs in the slice brief.
+- **Demo-data verification** (slice 04) — already a DoD item, and one round 1 got wrong three times by asserting rather than looking.
+
+If a later slice turns out to add a route, a migration, or a chart change, DEVOPS comes back for that slice. This is a decision about three known slices, not a standing exemption.
+
+---
+
 ## Wave: DISCUSS / [REF] Walking-skeleton strategy
 
 **Not applicable — strategy N/A, brownfield.** Four surfaces already ship end to end; every slice in this round modifies or deletes an existing path. There is nothing to prove a skeleton through. *(Explicit rather than silent: the project rule forbids an implicit skip.)*
@@ -1792,3 +1808,1391 @@ half is green today and must stay green; if it ever reds, the deletion took the 
 
 Nothing else in this slice is RED at any point, which is the property DDD-4's commit order was chosen
 for: deleting a test never reds a test, and every commit boundary builds and runs.
+
+---
+---
+
+# DESIGN — slice 02 (ADO User Story #6037)
+
+Wave: DESIGN · Date: 2026-09-19 · Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Scope: Application / components. Slice 02 only (`slices/slice-02-one-number.md`, AC-02.1 … AC-02.9).
+
+## Wave: DESIGN (slice 02) / [REF] Prior Wave Consultation
+
+| Source | Read | What it settled, and what it left open |
+|---|---|---|
+| `slices/slice-02-one-number.md` | in full | Four interlocking changes, nine ACs, the ADR amendment outline explicitly offered as *"a sketch … to either complete or refute"* |
+| DISCUSS D18-D29 above | in full | D24 hands the ADR-192 *Architectural Enforcement* reversal to this slice; D25 hands `worktrackingsystems.md` here |
+| DESIGN/DEVOPS/DISTILL slice 01 above | in full | House shape: decisions argued both ways, a commit order that is monotonic without relying on push discipline, a Reuse Analysis that justifies every keep |
+| `docs/product/architecture/adr-192-…md` | in full | §1 signature, §3 window and cache-key completeness claim, §4 `null` contract and the two-field DTO, and the enforcement row this slice rewrites |
+| `docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md` | in full | The measurement. Its verdict — *"something must gate it"* — is what this slice reverses, and its two replay tables are what refute the reversal as the brief sketched it |
+| Code | `SleRiskCalculator.cs`, `TeamMetricsService.GetSleRiskForTeam`, `WriteBackTriggerService.cs:106-127/203-229`, `TeamMetricsController.cs:218-230`, `BaseMetricsService.GetFromCacheIfExists`/`InvalidateMetrics`, `Team.GetThroughputSettings`, `LighthouseClock`, `sleRisk.ts`, `SleRisk.ts`, `WorkItemsDialog.tsx:162-205` | Four things the brief did not know, recorded under *Four upstream corrections* below |
+| `docs/ci-learnings.md` | in full | Pre-applied below |
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Four upstream corrections
+
+**C-1 — the two paths already share a service method; only the arguments differ.** The brief reads as
+though display and write-back are two computations. They are one:
+`WriteBackTriggerService.RiskByReferenceIdFor` calls `teamMetricsService.GetSleRiskForTeam(team,
+history.StartDate, clock.TodayAsUtcMidnight)` and the controller calls the same method with the
+browser's range. ADR-192 §1 designed it that way deliberately — *"two callers with identical semantics
+and different windows"*. **The window being a parameter is the entire defect**, which is why the fix in
+DDD-15 is to take it away from both callers rather than to make them agree.
+
+**C-2 — the cache key already carries the target.** `TeamMetricsService.cs:375` reads
+`SleRisk_{startDate}_{endDate}_{team.ServiceLevelExpectationRange}`. Round 1's omission was found and
+fixed before slice 01 shipped; the brief's watch-out describes a state the code has already left. The
+watch-out is still live in a different shape, and DDD-18 is about that shape — which is worse, because
+it is invisible on a rolling history and only bites a team using fixed throughput dates.
+
+**C-3 — nothing invalidates this cache when a team's settings are saved.** Verified:
+`InvalidateTeamMetrics` is reached from `UpdateTeamMetrics`, `BlackoutConfigurationChangedMetricsInvalidationHandler`
+and the two recording handlers. A team settings save is not among them. So the key is not an
+optimisation of correctness — it *is* the correctness mechanism for AC-02.7, and the entry otherwise
+lives for `refreshRateInMinutes`.
+
+**C-4 — the doc comment at `WriteBackTriggerService.cs:106` does not promise the opposite; it promises
+agreement, and the promise was false.** Its words are *"read from the service the screens read — so a
+number in someone else's tracker cannot disagree with the number on the page."* That sentence is the
+bug report, written in the source, a slice early. After DDD-15 it becomes true, and its second
+paragraph (the one explaining *which* window) stops belonging to this caller, because this caller no
+longer chooses one.
+
+**C-5 — the slice brief's doc line numbers are stale by seventeen lines.** It points at
+`flow-metrics.md` L148-149 for the two sentinel bullets; slice 01 deleted the *SLE Risk Zones* section
+above them and they now sit at L131-132. The sentence that actually needs the most work is L126 —
+*"Both parts come from the work your team finished inside the date range you are looking at, so the
+column follows the range picker like everything else on the page"* — which the brief does not name at
+all and which this slice makes false.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] The reversal, and whether it survives its refuting case
+
+This is the wave's real work. The brief supplied an outline and asked for it to be completed **or
+refuted**. It is refuted. The decision it was written to support survives, on two other grounds, with a
+compensating control. Nothing here is smuggled.
+
+**In one line, for a reader who stops here.** The certainty rule absorbs the volatility at ages
+*strictly greater* than the target. Both volatile rows the measurement actually recorded sit *at* the
+target, where the rule does not apply and where AC-02.4 requires the number to stay computed. The
+outline's claim is therefore false as stated, and everything below is why the guard goes anyway.
+
+### The arithmetic, stated once
+
+`risk(a) = B / n(a)` where `B = count(T > R)` and `n(a) = count(T ≥ a)`, over the cycle times `T` of
+the work finished in the window, for an item of age `a` against a target range `R`.
+
+Two properties fall straight out and neither is currently written down anywhere:
+
+- **`B` does not depend on `a`, for every `a ≤ R`.** If `T > R` and `R ≥ a` then `T ≥ a`, so the
+  numerator's second clause is free below the target. The risk therefore has *one* moving part below
+  the target: the denominator.
+- **Risk is monotonically non-decreasing in age, by construction.** `n(a)` is non-increasing, `B` is
+  constant, and past the target the answer is 100, which is ≥ everything below it. This is a free
+  invariant worth asserting (see the enforcement table) — it was unprovable before, because the old
+  guard could put a `null` in the middle of the walk.
+
+### What the outline claims, and why it is wrong
+
+The outline's load-bearing sentence is: *"Below the target, `n(a)` is at its largest, because `n(a)` is
+monotonically non-increasing in `a` and `n(1)` is the whole closed population; the number there is
+stable by construction."*
+
+The premise is true and the conclusion does not follow. `n(a) ≤ n(1)` says nothing about how large
+`n(R)` is. And `n(R)` is small **by construction, for exactly the teams that are meeting their SLE**:
+
+```
+n(R) = count(T ≥ R) = B + count(T = R) ≥ B = (1 − p) × N
+```
+
+where `p` is the team's actual attainment and `N` the finished count in the window. A team holding an
+85% promise and keeping it has `B ≈ 0.15N`. On a 30-day window at twenty finished items that is
+`n(R) ≈ 3`, and the exact bound the measurement established puts one item's arrival or departure at
+**33 points overnight** — on the target age itself.
+
+This is the same arithmetic as D18's corrected finding, one slice later and pointed the other way: the
+better a team's attainment, the thinner the evidence at the age that decides its column.
+
+### The measurement already recorded the counterexample — twice
+
+`OUT-4127-risk-stability`'s two volatile replay rows both sit at `a = R`, which AC-02.4 keeps
+**computed**:
+
+| Replay row | Age | Target | median `n(a)` | worst overnight move | still computed after this slice? |
+|---|---|---|---|---|---|
+| 90-day window, 3-day target | 3 | 3 | 6 | **25 pts**, 6 days over 15 | **Yes** — `3 > 3` is false |
+| 30-day window, 2-day target | 2 | 2 | 10 | 9 pts p95, 8 days over 15 | **Yes** — `2 > 2` is false |
+| 90-day window, 2-day target | 3, 5 | 2 | 6, 3 | — | No — the certainty rule answers 100 |
+
+So the certainty rule does **not** own the volatile region. It owns the region *above* it. The worst
+number the measurement ever observed — 25 points overnight, on 602 real closed items, on the easiest
+board in the repository — survives this slice unchanged, at the target age.
+
+And the shape the outline nominated as its own refutation (*"a long target over a short-tailed
+distribution"*) is not merely possible: it is the case **change 4 governs**. When `R` sits above
+everything the team has ever finished, `n(a) = 0` for ages at and below the target, and change 4
+answers that with `0`. The outline names the refuting shape and then hands it to the change least able
+to speak about it.
+
+### So why delete the guard anyway
+
+Two reasons, neither of which the outline uses, and both of which are about the guard rather than about
+the volatility.
+
+**1. On a board there is no sentinel to write, so suppression produces staleness, not silence.**
+`RiskValueFor` returns `null` for a guarded item, `ResolveWorkItemValue` returns `null`, and no
+`WriteBackFieldUpdate` is emitted — the field is left *exactly as it was*. This is documented behaviour
+(`worktrackingsystems.md:90-93`) and it is correct for a finished item. For a guarded in-flight item it
+is not silence: it is **yesterday's number, or last month's, sitting in a field a coach filters on,
+with nothing marking it stale**. The guard was designed for a column that can render the words "not
+enough history". Applied to the write-back it guarantees the one failure mode worse than a volatile
+number — a confident, wrong, *old* one. A slice whose entire purpose is that the two surfaces agree
+cannot keep a mechanism that makes one of them silently lag.
+
+**2. The guard blanks the column on the day the coach needs it most.** `MinimumComparableItems = 10`
+suppresses every age with `n(a) < 10`. The section above shows that for a team meeting an 85% SLE on a
+month's window, the first age to fall below ten is `a = R` — the day the item is due. The guard buys
+its stability by removing the answer at the single most decision-relevant age, and it does so most
+aggressively for the best-performing teams. That is not a conservative default; it is an inverted one.
+
+The measurement's verdict — *"something must gate it"* — is honoured. What is rejected is that the gate
+should be **suppression**, and the specific instrument, which the measurement itself was already
+unhappy with (*"`Beyond history` is not that gate"*).
+
+### The compensating control, and who owns it
+
+**The guard returns as disclosure, not as suppression.** The number is always shown; what it rests on
+is said alongside it, so a reader can discount a share of four items without the product deciding on
+their behalf that they may not see it.
+
+| Control | Slice | Form |
+|---|---|---|
+| The column's description says the number is a share of the team's finished work at that age, and that a thin history reads as a cliff rather than a curve | **02** | One string in `sleRisk.ts` — already plumbed as the header tooltip, zero new plumbing |
+| `docs/metrics/flow-metrics.md` carries the cliff consequence: 0% up to the target and 100% the day after, on a history with nothing to build a gradient from | **02** | Prose |
+| A per-cell disclosure of the evidence depth ("a share of 4 finished items") | **03** | Slice 03 owns the dialog, its width and the screenshot re-take. It is assigned, with an AC, not deferred to "later" |
+| The at-risk count must not flip a member overnight on the target age | **04** | Open question 1 below, with an option that costs nothing |
+
+`SleRiskDto.comparableItems` is **removed in slice 02** and re-added in slice 03 if and only if slice 03
+builds the cell disclosure that consumes it (DDD-22). A field kept for a consumer one slice away is
+speculative generality wearing a plan; AC-02.9 exists to catch exactly that.
+
+### Verdict
+
+**The ADR-192 amendment is written, and it does not say what the outline said.** It records the
+volatility as reachable, quantified, worst for the best teams, and **accepted** — with the two reasons
+above and the disclosure control — rather than claiming the certainty rule absorbed it. A reversal that
+rested on the outline's argument would have been refuted by the register's own measurement the first
+time anyone checked.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Design decisions
+
+**DDD-15 — `GetSleRiskForTeam` takes no dates. The window stops being a parameter and becomes a
+derivation.** The new port member is `IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team)`; the service
+reads `team.GetThroughputSettings(Clock.Today)` itself.
+
+*The alternative considered first was the obvious one*: keep the signature and have both callers pass
+the configured history. It is one line shorter and it is wrong, because it leaves the defect
+*representable*. Two callers that must agree about a window, and a signature that lets them disagree,
+is the arrangement that produced 27% in the dialog against 18 on the board. Removing the parameter
+makes the disagreement impossible to express rather than merely currently absent — the same reasoning
+the project applies to a driving port that "only reads" not exposing a write method. ADR-192 §1's
+*"the age is an input, never computed inside — which keeps the as-of-date convention the caller's
+business"* is the sentence this reverses, and it is reversed knowingly: the as-of-date convention is
+no longer any caller's business, because there is only one right answer to it.
+
+`SleRiskCalculator.For` keeps taking the age as an argument. It is a pure function and must stay one;
+what moves is the *service's* freedom to be told a window, not the calculator's ignorance of clocks.
+
+**DDD-16 — the evidence window and the as-of day are two different things and are separated.** They are
+conflated today: `endDate` selects the closed population, selects the in-flight snapshot, *and* dates
+the ages. After this slice:
+
+| Input | Source | Why |
+|---|---|---|
+| Closed cycle times | `ClosedCycleTimesFor(team, settings.StartDate, settings.EndDate)` | The throughput history is the product's word for "the evidence", everywhere else too |
+| In-flight population | `GetWipSnapshotForTeam(team, Clock.TodayAsUtcMidnight)` | The question is about items in flight *now* |
+| Age | `item.AgeOnDay(Clock.Zone, Clock.Today)`, filtered to `> 0` | A claim about now, on the write-back's anchor |
+
+For a team on a rolling history `settings.EndDate` **is** today and the distinction is invisible. For a
+team using `UseFixedDatesForThroughput` it is not, and today's write-back gets it wrong in a way nobody
+has noticed: it passes `history.StartDate, clock.TodayAsUtcMidnight`, which runs the *evidence* window
+past the fixed end date the team configured. Separating the two fixes that as a by-product and is the
+reason this decision exists rather than being folded into DDD-15.
+
+**Consequence, and it is a real one.** With ages as of today, an item that was in flight at the end of
+a *past* window and has since closed is not in the answer at all. Its cell is empty. That is the
+correct reading — the risk is a claim about now, and a closed item has none (AC-02.8) — but it means a
+coach parked on last month's range sees a column with gaps. This is new behaviour, it is intended, and
+it goes in `flow-metrics.md`.
+
+**DDD-17 — the route keeps its path and loses its query parameters, and the `startDate > endDate` 400
+guard goes with them.** `GET /api/{version}/teams/{teamId}/metrics/sleRisk`, no query string.
+
+*Argued against*: there is an in-repo precedent for the other choice. `GetWorkItemAgePercentilesForTeam`
+(`TeamMetricsController.cs:205-216`) takes both dates, validates them, and passes only `endDate` to the
+service. Keeping the parameters would leave every caller and every client compiling and would cost one
+line.
+
+*Argued for, and this is the call*: that precedent is a wart being copied, not a pattern being
+followed, and here the parameter **is the bug**. A query parameter the server accepts and ignores is a
+documented lie with a 200 on it; the next reader to wire a date picker to this route would be right to
+expect it to work. Removing it is also tolerant in the safe direction — ASP.NET Core ignores query
+parameters an action does not bind, so an older bundle still sending `?startDate&endDate` gets the
+right answer. There is no CLI or MCP wrapper for this route (ADR-192 §5, re-verified for slice 01), so
+no `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is owed. The 400 guard is deleted because it guards
+inputs that no longer exist, and the acceptance scenario asserting it is deleted in the same commit.
+
+**DDD-18 — the cache key is `SleRisk_{historyStart}_{historyEnd}_{asOfDay}_{target}`, and the as-of day
+is the part that is easy to miss.** The invariant stated plainly: **every input the answer depends on
+appears in the key.** There are four.
+
+The trap is not the target — round 1 already fixed that (C-2). It is `asOfDay`. On a rolling history
+the start and end dates already move with the calendar, so a key without the as-of day is *accidentally*
+correct. On a team with `UseFixedDatesForThroughput` the window is constant, the key would be constant,
+and the ages would still advance every midnight — the entry would serve yesterday's risks until it
+expired on `refreshRateInMinutes`. The same class of error as round 1's, one level further in, and it
+only bites a setting most teams do not use, which is what makes it worth writing down rather than
+discovering.
+
+Nothing invalidates this cache on a settings save (C-3), so the key is the whole mechanism for AC-02.7
+and its test must exercise a live cache rather than a mock.
+
+**DDD-19 — the certainty check goes first, and 100 is a named constant, not a literal.**
+
+```
+if (ageInDays > targetRangeInDays) return CertainRisk;   // before any counting
+```
+
+Ahead of the counting because it needs no population: an item that has already been open longer than
+the target cannot finish within the target, whatever the history does or does not contain. That is a
+definitional truth, not an empirical one, and it is the only one of the four changes that owes no
+evidence. `private const int CertainRisk = 100;` returns to `SleRiskCalculator` — slice 01 deleted it
+with the zone ladder and its component table recorded it as *"slice 02's to reintroduce where `For` can
+reach it"*.
+
+Strictly greater, never `>=`: an item at four days against a four-day target can still close today and
+meet "four days or less" (AC-02.4). This is the boundary the whole refutation section turns on, and it
+already has a named `For_*` test.
+
+**DDD-20 — `MinimumComparableItems` and `SleRiskVerdict` are deleted together, and `For` returns
+`int`.** The verdict struct exists only to carry `ComparableItems` alongside the risk; with the count
+gone from the DTO (DDD-22) it carries nothing. The signature becomes
+
+```
+SleRiskCalculator.For(int ageInDays, int targetRangeInDays, IReadOnlyList<int> closedCycleTimes) -> int
+```
+
+with `ArgumentNullException.ThrowIfNull(closedCycleTimes)` kept and
+`ArgumentOutOfRangeException.ThrowIfNegativeOrZero` added for both integers — no explicit parameter
+names, which the ledger's S3236 entry forbids on a helper that infers them. The preconditions are
+established at the single call site by two lines that are already there or nearly: the service returns
+early when the team has no target, and it filters ages to `> 0` exactly as
+`GetWorkItemAgePercentilesForTeam` does.
+
+The `0/0 ⇒ 0` case (change 4) is implemented as a guard on `comparableItems == 0`, **not** as a
+division that happens to work out. It cannot be the latter — `0/0` is not `0` — and writing it as a
+named branch is what lets the source say why.
+
+**DDD-21 — totality is expressed in the type, not asserted by a test. `SleRiskDto(string ReferenceId,
+int Risk)`.** AC-02.6 says every in-flight item on a team with a target carries a number. A test can
+check that on the cases it thought of; a non-nullable `int` makes the alternative unrepresentable
+across the whole wire. The three remaining "not applicable" cases are all expressed as **absence from
+the collection**, which is now unambiguous:
+
+| Case | Shape |
+|---|---|
+| The team published no target | The collection is empty (unchanged, `TeamMetricsService.cs:366-369`) |
+| The item is closed, or was not in flight today | Not in the in-flight snapshot, so not in the collection |
+| The item had not started as of today (`age ≤ 0`) | Filtered at the service, as the age-percentile read already filters |
+
+ADR-192 §4 argued for `null` on the grounds that *"an omitted entry would be indistinguishable from an
+item that is not in progress"*. After this slice that is no longer a defect but the definition: an
+omitted entry **means** not in progress. Zod drops `.nullable()` in the same move — the ledger's rule
+is to use `.nullable()` for backend `T?` fields, and this one stops being `T?`.
+
+*Cost, recorded*: this contradicts AC-02.8's literal wording (*"the risk is null"*) while honouring its
+intent (*"no answer, no write-back"*). Flagged to DISTILL rather than quietly reinterpreted — see Open
+question 3.
+
+**DDD-22 — `comparableItems` is removed from the DTO, the zod schema and the descriptor, and AC-02.9 is
+answered "removed".** Its only two consumers are `labelFor`'s choice between the two sentinels and
+`sleRiskAtRiskSummary`'s null arm, and both retire in this slice. Keeping it for the slice-03 cell
+disclosure would be a field with no consumer for the length of a slice, which is the artefact AC-02.9
+was written to catch. Slice 03 re-adds it with its consumer, in the same commit, named for what it then
+means.
+
+**DDD-23 — the ADR-192 amendment rewrites the enforcement row and dates the prose corrections, and the
+two instruments are deliberately different.** Slice 01's DDD-1 established dated notes over edits, on
+the register's immutability convention. That convention is about the *record of a decision*. An
+*Architectural Enforcement* row is not a record; it is a pointer to the test that holds a rule up, and
+after this slice the row `Beyond history is null, never 0, 100 or an omitted entry` points at
+`Slice01SleRiskReadScenarios.An_item_older_than_anything_ever_finished_is_given_no_answer`, a test that
+will not exist. A broken pointer left in place out of respect for immutability is a worse record than a
+corrected one. **Prose gets dated notes; the enforcement table gets rewritten.**
+
+**DDD-24 — no new ADR is written for this slice, and that is a departure from slice 01's DDD-2 with a
+reason.** DDD-2 created ADR-194 because the zones decision was a *different subject* — a geometry
+versus a number — that a future author could propose without ever opening ADR-192. This slice changes
+ADR-192's own subject: the same function, the same route, the same DTO. Splitting one function's
+contract across two ADRs costs a reader a second hop for no constraint they would otherwise miss.
+
+**DDD-25 — the frontend loses both sentinels; `labelFor` returns a percentage or the empty string, and
+the empty string now means one thing.** `SLE_RISK_BEYOND_HISTORY_LABEL` and
+`SLE_RISK_NOT_ENOUGH_HISTORY_LABEL` are deleted. `sleRiskSortValue` loses its two named early returns
+and keeps its `Number.parseInt` / `NaN` arm, which still has a real case: a row the answer set does not
+mention parses to `undefined` and sorts to the bottom in both directions, which is where an item with
+no claim belongs. `WorkItemsDialog.tsx:173`'s comment — *"Wide enough for the beyond-history sentinel"*
+— is corrected in this slice because it names a thing that stops existing; the `width: 130` it explains
+is **not** touched, because dialog geometry is slice 03's.
+
+**DDD-26 — `sleRiskAtRiskSummary` loses its null arm and keeps its threshold.** The filter becomes
+`answer.risk >= AT_RISK_FROM` and the `Math.max(... ?? 100)` fallback goes with it. `AT_RISK_FROM`
+stays at 50; moving it to 70 is slice 04's, and changing a threshold in the slice that changes the
+numbers underneath it would make both unreadable in one diff.
+
+**DDD-27 — `Program.cs` is not touched, and this was checked rather than hoped.** The slice reaches
+`SleRiskCalculator`, `SleRiskDto`, `ITeamMetricsService`, `TeamMetricsService`, `TeamMetricsController`
+and `WriteBackTriggerService`. No constructor signature changes — `WriteBackTriggerService` already
+holds both `clock` and `teamMetricsService` and continues to use both — so no registration moves. The
+full backend Integration suite, and the live-connector flake exposure that comes with it, stays out of
+this slice's CI runs.
+
+**DDD-28 — four commits, consumer before producer, with one deliberate expand/contract step.** The
+payload loses a field and a nullability; a frontend that requires either against a backend that has
+stopped sending it is a runtime parse failure on the metrics page, which is precisely the class of
+mid-slice breakage slice 01's DDD-4 refused to rely on push discipline to avoid.
+
+| # | Commit | Contents | Green after it |
+|---|---|---|---|
+| 1 | `refactor(sle-risk): the risk column stops speaking in sentinels` | Frontend, tolerant: both sentinel constants, `comparableItems` out of `SleRiskSchema` and the descriptor, `labelFor` → percentage or `""`, `sleRiskSortValue`'s sentinel arms, `sleRiskAtRiskSummary`'s null arm, the dialog comment. **`risk` keeps `.nullable()` and the client keeps sending the dates.** | `pnpm test`, `pnpm build` (Biome via `prebuild`). Against the old backend a thin-history item renders an empty cell instead of a sentinel — degraded, never broken |
+| 2 | `fix(sle-risk): one window, one anchor, one number` | Backend in full: the calculator, `SleRiskDto`, the port member, the service method + key, the controller action's parameters and its 400 guard, `WriteBackTriggerService`'s dictionary and comments, and every backend test | `dotnet build` zero warnings; `dotnet test` with the connector categories excluded. Zod's surviving `.nullable()` accepts a non-null number; the client's unbound query parameters are ignored |
+| 3 | `refactor(sle-risk): the risk is always a number` | Frontend contraction: `risk: z.number()`, `getSleRisk(teamId)` drops its date arguments, `useMetricsData` drops them from the call and the dependency array, `MockApiServiceProvider` follows | `pnpm test`, `pnpm build` |
+| 4 | `docs(sle-risk): the risk is one number over the team's own history` | `flow-metrics.md`, `worktrackingsystems.md`, the ADR-192 amendment, the `brief.md` section, this delta, the slice brief | Docs gates only — `ci.yml`'s `paths:` filter excludes `docs/**` |
+
+**Why not backend-first.** Same answer as slice 01, one layer down: both orders cost the same number of
+commits, and only one of them can leave a shipped bundle unable to parse a payload. Take the order
+where the intermediate state is cosmetic.
+
+**Why 1 and 3 are not one commit.** They cannot be, in that order, without the frontend rejecting the
+old backend's `null` between commits. Merging them means moving the whole frontend after the backend,
+which puts the parse failure on the other side of commit 2 instead of removing it. The expand/contract
+is the cost of a contract narrowing, and three commits is what it costs.
+
+**DDD-29 — the docs changes, with the line numbers re-derived.** The slice brief's references predate
+slice 01's deletion (C-5).
+
+| File | Line today | Change |
+|---|---|---|
+| `flow-metrics.md` | 126 | *"Both parts come from the work your team finished inside the date range you are looking at, so the column follows the range picker"* — reversed. The evidence is the team's configured history and the answer is about today; the range picker does not move it. **Not named in the slice brief and the most wrong sentence in the file** |
+| `flow-metrics.md` | 131-132 | Both sentinel bullets deleted |
+| `flow-metrics.md` | new | The cliff: a history with nothing to build a gradient from reads 0% up to the target and 100% the day after. And: on a past date range, items that have since closed show an empty cell (DDD-16) |
+| `flow-metrics.md` | 130 | Kept and sharpened — *"an item older than the target reads 100%"* is now a rule rather than a by-product of the arithmetic |
+| `worktrackingsystems.md` | 90-93 | The *"an item at an age fewer than ten finished items ever reached"* clause goes (D25 routed this here). What remains gets no write: a finished item, and a team with no published target |
+| `worktrackingsystems.md` | 94-95 | *"The evidence is the team's configured history, read as of today"* — already true of write-back, now true of the screens too, and the sentence should say so |
+
+Terminology: every sentence written uses the `TerminologySeeder.cs` defaults — `SLE`, `Work Item`,
+`Feature`. No heading says Epic, Initiative or Story.
+
+**DDD-30 — contract shapes, stated so slice 03 and slice 04 inherit a frame rather than a guess.**
+
+| Component | Shape | Universe | How the crafter asserts it |
+|---|---|---|---|
+| `SleRiskCalculator.For` | pure-function, return-only | its three arguments | Static class, no injected dependency, no clock, no repository. Unit tests over boundaries; a mutation run that cannot reach I/O because there is none |
+| `TeamMetricsService.GetSleRiskForTeam` | bounded-change | exactly one cache entry, under the key DDD-18 names | Service test with a live cache asserting the key's four components each move the answer |
+| `WriteBackTriggerService.ResolveTeamUpdates` | plan-value — already | returns `List<WriteBackFieldUpdate>`; writes nothing | Unchanged by this slice, and worth naming: the write-back path already has the shape that keeps "resolve" from touching a tracker |
+| `utils/charts/sleRisk.ts` | pure-function, return-only | its arguments | No fetch, no storage, no `Date.now()`. Vitest |
+
+**Earned Trust for this slice.** No adapter is introduced, so a `probe()` would be ceremony. The
+substrate that can lie here is the **metrics cache**, and it lies by being right for the wrong reason:
+a key that omits an input is correct until the day that input changes alone. The trust is earned by two
+tests that exercise the lie rather than the happy path — a target changed between two reads against a
+live cache (AC-02.7), and a fixed-dates team read across a simulated day boundary (DDD-18). Both fail
+today against a key that looks complete.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Component Decomposition
+
+**EXTEND — backend**
+
+| Component | File | Change |
+|---|---|---|
+| `SleRiskCalculator.For` | `Services/Implementation/SleRiskCalculator.cs` | Certainty check first; `comparableItems == 0` returns 0; returns `int`; argument guards |
+| `SleRiskVerdict`, `MinimumComparableItems` | same | **DELETED.** Both in the same commit as their last reader — S1144 is a deletion's characteristic failure |
+| `CertainRisk` | same | **RE-ADDED** as `private const int` = 100 |
+| `SleRiskDto` | `Models/Metrics/SleRiskDto.cs` | `(string ReferenceId, int Risk)`. Doc comment rewritten: it currently explains the two silences |
+| `ITeamMetricsService.GetSleRiskForTeam` | `Services/Interfaces/ITeamMetricsService.cs` | `(Team team)`. No signature-freeze test pins this interface; Moq adapts |
+| `TeamMetricsService.GetSleRiskForTeam` | `Services/Implementation/TeamMetricsService.cs:359-391` | Window derived, evidence and as-of day separated, age filter, new cache key |
+| `TeamMetricsController.GetSleRiskForTeam` | `API/TeamMetricsController.cs:218-230` | Query parameters, 400 guard and `LogDateBoundaries` call removed |
+| `WriteBackTriggerService.RiskByReferenceIdFor` | `Services/Implementation/WriteBackTriggerService.cs:106-127` | Loses `history`; dictionary becomes `Dictionary<string, int>`; the doc comment's window paragraph moves to the service, where the window is now decided |
+| `ResolveWorkItemValue`, `ResolveTeamUpdates`, `RiskValueFor` | same, `:129-229` | Dictionary type; the comment at `:215-217` names a retired case and is corrected |
+
+**EXTEND — frontend**
+
+| Component | File | Change |
+|---|---|---|
+| `SLE_RISK_BEYOND_HISTORY_LABEL`, `SLE_RISK_NOT_ENOUGH_HISTORY_LABEL` | `utils/charts/sleRisk.ts:10,19` | **DELETED** |
+| `sleRiskColumnDescription` | same, `:25` | Gains *"across the team's configured history"* and the thin-history caveat |
+| `sleRiskSortValue` | same, `:62` | Sentinel arms out; `NaN` arm and its comment retargeted at the unmentioned row |
+| `labelFor` in `buildSleRiskColumnDescriptor` | same, `:120-134` | Percentage, or `""` for a row the answer does not mention |
+| `sleRiskAtRiskSummary` | same, `:172-192` | Null arm out; threshold untouched |
+| `SleRiskSchema` | `models/Metrics/SleRisk.ts` | `comparableItems` out; `risk` loses `.nullable()` in commit 3 |
+| `getSleRisk` | `services/Api/TeamMetricsService.ts:43-54`, `services/Api/MetricsService.ts:269-273` | Drops both date arguments |
+| `useMetricsData` | `hooks/useMetricsData.ts:442-445` | Call and dependency array |
+| `sleRiskGridColumn` | `components/Common/WorkItemsDialog/WorkItemsDialog.tsx:173` | Comment only. `width: 130` is slice 03's |
+| Mocks | `tests/MockApiServiceProvider.ts:246`, `hooks/useMetricsData.test.ts` | Signature follows. Re-check the two `createMockTeamMetricsService` bodies against S4144 after the edit |
+
+**EXTEND — tests and docs**
+
+`SleRiskCalculatorTest.cs` (the `For_*` half), `Slice01SleRiskReadScenarios.cs`,
+`Slice01SleRiskReadSpecifications.cs`, `SleRiskAcceptanceTest.cs`, `sleRisk.test.ts`,
+`WorkItemsDialog.test.tsx`, `BaseMetricsView.test.tsx`, write-back tests; `flow-metrics.md`,
+`worktrackingsystems.md`, ADR-192, `brief.md`.
+
+**DELETED outright**: the acceptance scenario asserting `startDate > endDate ⇒ 400` on this route
+(DDD-17), `Slice01SleRiskReadScenarios.An_item_older_than_anything_ever_finished_is_given_no_answer`
+and `…_too_little_finished_work_can_be_compared_against_…`, and the
+`ThenTooLittleRanThatLongToSay(item, comparableItems:)` specification helper — which has exactly one
+caller and must go in the same commit as it does, or it is an S1144 on a deletion commit.
+
+**CREATE**: nothing. No new component, no new file, no new abstraction.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Driving ports
+
+| Method | Route | Guard | Change |
+|---|---|---|---|
+| GET | `/api/{version}/teams/{teamId}/metrics/sleRisk` | class-level `[RbacGuard(TeamRead)]` | **Query parameters removed.** Same path, same guard, no premium gate. Older clients sending the parameters are unaffected — unbound query parameters are ignored |
+| UI | Work item dialog SLE Risk column | — | Always a percentage or an empty cell; new description; geometry untouched |
+| UI | In Progress card at-risk line | — | Counts a number rather than a number-or-sentinel; threshold unchanged |
+| Write-back value source `SLE Risk` | — | premium, unchanged | Same mapping, same field. The value now equals the displayed one. No write for a finished item or a team with no target |
+
+No RBAC grant, role or policy change. No CLI or MCP port added or removed; no
+`FEATURE_REQUIRES_SERVER_NEWER_THAN` entry owed. The standing caveat survives: the moment a client
+wrapper is added for this route it must be version-gated.
+
+## Wave: DESIGN (slice 02) / [REF] Driven ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Work item / transition store | `LighthouseAppContext` | UNCHANGED. No schema change, no migration, no EF work of any kind |
+| Metrics cache | `GetFromCacheIfExists` / `MetricsCache` | One key's composition changes. No mechanism change. Nothing invalidates it on a settings save, which is why the key is the mechanism (C-3) |
+| Instance clock | `ILighthouseClock` | UNCHANGED, and now read by one more path. `Clock.Today` is the instance day, `TodayAsUtcMidnight` its UTC anchor via `InstanceCalendar` |
+| Work tracking system | `IWorkTrackingConnector` | UNCHANGED shape. The value written changes |
+
+**External integrations**: the tracker write-back is the only one, and it is pre-existing. The standing
+recommendation is unchanged and repeated here because this slice changes what is written: **the
+write-back field mapping to Jira / Azure DevOps / Linear / ServiceNow is the highest-risk boundary in
+this feature, and the existing connector integration categories are what cover it.** No new
+consumer-driven contract is introduced by this slice; none is removed.
+
+## Wave: DESIGN (slice 02) / [REF] Technology choices
+
+Nothing added, upgraded or removed from either lockfile. No licence question arises because no
+dependency moves. Named so the absence is a decision: **no feature flag, no migration, no deprecation
+shim and no redirect** — nothing in this feature has been released (`v26.9.9.9` is still the newest
+tag), so there is nobody to be gentle with, and the write-back field's previous values will be
+overwritten on the next update round rather than migrated.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Reuse Analysis
+
+Hard gate. Every component this slice touches is EXTEND or DELETE; the question for each is why it is
+not being replaced, and what frame the crafter works inside.
+
+| Component | File | Overlap | Decision | Contract shape · universe · assertion | Justification |
+|---|---|---|---|---|---|
+| `SleRiskCalculator` | `Services/Implementation/SleRiskCalculator.cs` | Is the rule | **EXTEND** | pure-function · its three arguments · unit tests + no reachable I/O | ADR-192's whole point is one definition in one place. Both callers reach it; a second calculator is the defect this feature exists to remove |
+| `Team.GetThroughputSettings` | `Models/Team.cs:33-48` | Already computes the configured window, UTC-anchored, fixed-dates aware | **REUSE, untouched** | pure-function · `today` + the team's own fields · pinned by `TeamTest` and `InstanceDayAnchorEntityTest` | Computing the window in the metrics service would fork the definition of "the team's history" away from forecasting. It already handles the two cases and the zone boundary |
+| `ILighthouseClock` | `Services/…/LighthouseClock.cs` | The as-of day and its UTC anchor | **REUSE, untouched** | bounded-change (reads a `TimeProvider`) · none · `FakeLighthouseClock` in tests | The UTC-anchor work already settled this. `Clock.Today` is the instance day and `TodayAsUtcMidnight` derives from it through `InstanceCalendar`, so display and write-back land on one anchor by construction rather than by two agreeing conventions |
+| `ClosedCycleTimesFor` | `TeamMetricsService.cs:348-357` | The evidence selection | **REUSE, untouched** | pure-ish read · the team's closed items in the window · the ADR-192 enforcement row asserting it equals the cycle-time percentiles' population | ADR-192 §3 requires the risk and the percentiles to read the same work. Only the dates handed to it change |
+| `GetWipSnapshotForTeam` | `BaseMetricsService` | The in-flight population | **REUSE**, new argument | read · the team's snapshot on a day · the existing enforcement row asserting it equals `/metrics/wip` | ADR-192 §3's choice. It is asked about today instead of about a range end |
+| `GetFromCacheIfExists` | `BaseMetricsService.cs:929-947` | Caching | **REUSE, untouched** | bounded-change · one entry · a live-cache service test | The mechanism is right; the key was incomplete. Changing the mechanism to fix a key would be a much larger blast radius for no gain |
+| `GetWorkItemAgePercentilesForTeam`'s `Where(age => age > 0)` | `TeamMetricsService.cs:337` | Same age filter, same reason | **COPY the idiom, not the code** | — | The two reads have the same exclusion (*"the item had not started on that day"*) but different inclusion rules elsewhere; extracting a shared helper is what ADR-018 refuses. One line, twice, with the reason written once |
+| `sleRiskColorFor`, `PACE_BAND_COLORS_LOW_TO_HIGH` | `utils/charts/sleRisk.ts`, `paceBands.ts` | Colours a risk | **KEEP, untouched** | pure-function · a number · `sleRisk.test.ts` rows `[0,0]` and `[24,0]` | Slice 01 defended these and the defence still holds. Rank 0 becomes *more* reachable after this slice, not less: a thin history now reads 0 rather than a sentinel |
+| `SleRiskColumnDescriptor` / the dialog's optional prop | `sleRisk.ts`, `WorkItemsDialog.tsx` | The plumbing | **KEEP, untouched** | pure-function · a work item · Vitest | ADR-188's twin. The dialog stays ignorant of cycle times; only what the descriptor returns changes |
+| `sleRiskSortValue`'s `NaN` arm | `sleRisk.ts:62-79` | Ordering | **KEEP**, retargeted | pure-function · a string · Vitest, including the existing `""` case | It still has a case — a row the answer does not mention. Only the two named-sentinel early returns go |
+| `AT_RISK_FROM = 50` | `sleRisk.ts` | The at-risk rule | **KEEP** | — | Slice 04's to move. Changing a threshold in the slice that changes the numbers under it makes both unreadable |
+| `WriteBackFieldUpdate` / the resolve-then-write split | `WriteBackTriggerService.cs` | The write path | **KEEP, untouched** | plan-value · returns data, writes nothing · existing tests | Already the shape the project wants. Only the dictionary's value type changes |
+| `SleRiskDto.ComparableItems` | `Models/Metrics/SleRiskDto.cs` | Told the two silences apart | **DELETE** | — | Both silences retire; the field's only two consumers retire with them. Re-added by slice 03 with its consumer, or never (DDD-22, AC-02.9) |
+| `MinimumComparableItems`, `SleRiskVerdict` | `SleRiskCalculator.cs` | The guard | **DELETE** | — | Argued in full above. Not on the outline's grounds |
+| `OUT-4127-risk-stability.md` | `docs/evolution/…` | The measurement being reversed | **KEEP, untouched** | — | It is a true account of what was measured, and this slice's argument *depends* on its numbers. A record rewritten to match the present stops being a record |
+| `docs/evolution/2026-09-17-epic-4127-sle-risk.md` | `docs/evolution/` | Describes the guard as shipped | **KEEP, untouched** | — | Same reason (D28) |
+| ADR-194 | `docs/product/architecture/` | Slice 01's | **KEEP, untouched** | — | Different subject. Nothing here touches the ladder question it settles |
+| `sle_risk_column.png` and its `@screenshot` test | `docs/assets/`, `Screenshots.spec.ts` | Shows the column | **KEEP for now** | — | The cell contents change, and so does the dialog width in slice 03. One re-take, at slice 03, not two |
+
+**Zero components created. Zero unjustified keeps.**
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Quality attributes (ISO 25010)
+
+**Functional suitability** is the driving attribute and the one the slice exists for. *Correctness*:
+one item has one risk, and the two surfaces that show it cannot diverge because neither chooses the
+window. The verifiable claim is AC-02.1 — the same integer in the dialog and on the board, same item,
+same day — and AC-02.2, which is the same claim stated as an invariance.
+
+**Reliability / maturity** moves in a direction worth naming out loud: the displayed number becomes
+**more volatile**, not less, at the target age, and that is accepted with its argument above rather
+than hidden. The compensating control is disclosure, and its slice owners are named.
+
+**Maintainability / modifiability** improves structurally. A window that cannot be passed cannot be
+passed differently by two callers; a non-nullable `int` cannot carry a silence; a cache key that names
+its four inputs cannot omit one without the code saying so. Each replaces a test with a type or a
+signature.
+
+**Performance efficiency** is neutral to slightly better. The read no longer re-fetches on every date-
+picker move — the frontend stops sending the range and stops depending on it — and the cache entry now
+keys on inputs that change daily rather than per keystroke. The closed-population scan is the same
+work over a window the team configured rather than one the browser chose, which for a default 30-day
+picker against a 30-day history is identical.
+
+**Security** unchanged: same class-level `[RbacGuard(TeamRead)]`, no premium gate on the read, the
+premium boundary stays where it is — on write-back.
+
+**Portability** unchanged: no schema, no migration, no provider-specific behaviour. Nothing here
+touches `Migrations/`.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] C4 — Container
+
+One container diagram. No System Context is drawn, for the same reason as slice 01: at that level
+nothing about this change is visible.
+
+```mermaid
+C4Container
+  title Container diagram - SLE Risk after slice 02 (epic-4127-sle-risk-corrections)
+
+  Person(coach, "Flow coach", "Runs the standup and the flow review")
+  System_Ext(tracker, "Work tracking system", "Jira / Azure DevOps / Linear / ServiceNow")
+
+  Container_Boundary(lighthouse, "Lighthouse") {
+    Container(spa, "React SPA", "React 18 + TypeScript", "Metrics view, work item dialog, In Progress card")
+    Container(api, "Backend", "ASP.NET Core .NET 10", "TeamMetricsController, TeamMetricsService, SleRiskCalculator.For, WriteBackTriggerService")
+    ContainerDb(store, "Lighthouse store", "SQLite / PostgreSQL / MySQL / SQL Server", "Work items, state transitions, team settings")
+  }
+
+  Rel(coach, spa, "Reads one risk per in-flight item from")
+  Rel(spa, api, "Asks for the risk, and no longer says over what window", "GET /teams/{id}/metrics/sleRisk")
+  Rel(api, store, "Reads the team's configured history, its target and today's in-flight snapshot from")
+  Rel(api, tracker, "Writes the same integer into the mapped field of", "write-back, premium")
+  Rel(coach, tracker, "Filters their own board on the written-back value")
+```
+
+**What the diagram is for.** Two edges leave the backend carrying the same number, and before this
+slice they carried two. Nothing about the container topology changes; what changes is that the SPA's
+request no longer contains the parameter that made the two disagree.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Architectural Enforcement (this slice)
+
+| Rule | Mechanism |
+|---|---|
+| Neither caller can choose a window | The port signature. `GetSleRiskForTeam(Team team)` takes no dates — a compiler-enforced version of the rule, not a test |
+| The dialog's number and the written-back number are the same integer | Backend test driving the controller action and `WriteBackTriggerService` for one team on one day and asserting equality per `ReferenceId` (AC-02.1). One run, both paths, no shared mock of the thing under test |
+| The number does not move with the date range | The route binds no dates. An acceptance test requesting it with and without stray query parameters gets the same body (AC-02.2) |
+| A settings change is visible on the next read | Service test against a **live** cache: read, change `ServiceLevelExpectationRange`, read again, assert the answer moved (AC-02.7). Nothing invalidates this cache on a settings save, so a mock cache would assert nothing |
+| A fixed-dates team's risk advances at midnight | Service test with `FakeLighthouseClock` over two instance days and `UseFixedDatesForThroughput = true`, asserting the cached entry does not survive the day change (DDD-18) |
+| Past the target is 100; exactly on the target is computed | Two `For_*` unit tests at `R` and `R+1`, each with the arithmetic that would change if the comparison flipped. The `R` case is the one the whole guard argument turns on |
+| A 0/0 inside the target is 0 | `For_*` unit test with an empty comparable set below the target |
+| The risk never decreases as an item ages | Property-style test over a fixed population walking `a` from 1 past `R`. Free from the arithmetic, unassertable before this slice because the guard could put a `null` mid-walk |
+| Every listed item carries a number | The type. `SleRiskDto.Risk` is `int`; `SleRiskSchema.risk` is `z.number()` with no `.nullable()` |
+| No sentinel string survives anywhere | `grep -rniE "SLE_RISK_(BEYOND|NOT_ENOUGH)|Beyond history|Not enough history|MinimumComparableItems|comparableItems"` over `Lighthouse.Backend`, `Lighthouse.Frontend/src`, `Lighthouse.EndToEndTests` and `docs/` returns nothing outside `docs/evolution/` — a review gate read by a person before the first push. The evolution archives keep their copies and must |
+| No member is orphaned by the deletion | `dotnet build` under `TreatWarningsAsErrors`, plus the mandatory `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` immediately before `git push`. S1144 / S2325 fire on `ThenTooLittleRanThatLongToSay` and on anything left behind by `SleRiskVerdict` |
+| No unused import or prop survives on the frontend | Biome via `prebuild`; `pnpm build` warning-free |
+| `Program.cs` is untouched | The commit set reaches no registration. A review gate, and the absence of the full Integration suite in the run is the evidence |
+| No schema or migration is touched | The commit set reaches no `Migrations/` path |
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] CI-learnings pre-application
+
+Consulted `docs/ci-learnings.md` in full. The rules that bear on what this slice writes:
+
+- **The mandatory pre-push run** — `dotnet format analyzers … --severity info --verify-no-changes
+  --no-restore`, before `git push`, not before commit. Five recorded recurrences, all at the end of a
+  long green stretch, which is what a four-commit slice looks like.
+- **S1144 / S2325 are a deletion's characteristic Sonar failure.** This slice deletes a public const, a
+  record struct, two acceptance scenarios and a specification helper. The helper
+  (`ThenTooLittleRanThatLongToSay`) has exactly one caller and must go in the same commit as it does —
+  enumerated in the component table so the grouping is not left to memory.
+- **CA1859** — any new non-public method returning `.ToList()` must declare `List<T>`, not an
+  interface. `ClosedCycleTimesFor` already does; anything extracted from `GetSleRiskForTeam` must.
+- **S3236** — no explicit parameter name on a guard helper that infers it. Applies to both new
+  `ArgumentOutOfRangeException.ThrowIfNegativeOrZero` calls.
+- **CA1861** — no inline `new[] {…}` in a repeatedly-called assertion. This slice's tests hand cycle-time
+  arrays to `For` in exactly that position; hoist to `private static readonly`.
+- **Zod `.nullable()` vs `.optional()`** — the ledger's rule is `.nullable()` for a backend `T?`. `risk`
+  stops being `T?`, so the correct end state is neither.
+- **typescript:S4144 — two mock-service factories with byte-identical bodies.**
+  `createMockTeamMetricsService` exists in `tests/MockApiServiceProvider.ts:236` and
+  `hooks/useMetricsData.test.ts:49`, and this slice edits the same `getSleRisk` line in each, moving
+  them closer together. Re-check the two bodies after commit 3.
+- **typescript:S6767** — a prop declared and never drawn with. Nothing is removed from
+  `WorkItemsDialogProps` here, but `SleRiskColumnInputs` loses nothing and gains nothing; verify.
+- **Never commit a Playwright spec you have not run.** No E2E spec changes in this slice; the
+  `sle_risk_column.png` `@screenshot` block is slice 03's. If a cell's rendered text changes under an
+  existing spec's locator, run it.
+- **Stryker excludes the acceptance suite**, and the run must be backgrounded — the per-job cap kills a
+  foreground run. Per-feature mutation, ≥80%, recorded under
+  `docs/feature/epic-4127-sle-risk-corrections/mutation/`.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Decisions table
+
+| ID | Decision | Rationale in one line |
+|---|---|---|
+| DDD-15 | `GetSleRiskForTeam(Team team)` — the window stops being a parameter | A signature that lets two callers disagree is the defect; delete the disagreement, not the symptom |
+| DDD-16 | Evidence window and as-of day are separated | They are conflated today, and the fixed-dates team is where that already goes wrong |
+| DDD-17 | The route drops its query parameters and its 400 guard | A parameter the server ignores is a lie with a 200 on it; removal is tolerant in the safe direction |
+| DDD-18 | Cache key = history start + history end + as-of day + target | Every input the answer depends on appears in the key; the as-of day is the one a rolling history hides |
+| DDD-19 | Certainty check first, `CertainRisk` named | Past the target needs no population; strictly greater, because an item on its target day can still meet it |
+| DDD-20 | `MinimumComparableItems` and `SleRiskVerdict` deleted; `For` returns `int` | Argued in full; not on the outline's grounds |
+| DDD-21 | `SleRiskDto(string, int)` — totality in the type | A test checks the cases it thought of; a non-nullable int checks the wire |
+| DDD-22 | `comparableItems` removed, AC-02.9 answered "removed" | A field kept for a consumer one slice away is the artefact the AC exists to catch |
+| DDD-23 | The enforcement row is rewritten; the prose gets dated notes | A row is a pointer to a test, and this one would point at a deleted test |
+| DDD-24 | No new ADR | Same subject as ADR-192, unlike slice 01's ladder |
+| DDD-25 | Both sentinels deleted; `""` now means "not in flight today" | The sort's `NaN` arm keeps a real case and its comment is retargeted |
+| DDD-26 | `sleRiskAtRiskSummary` loses its null arm; threshold untouched | Moving a threshold in the slice that moves the numbers makes both unreadable |
+| DDD-27 | `Program.cs` untouched, verified | No constructor moves, so the full Integration suite stays out |
+| DDD-28 | Four commits: frontend tolerant → backend → frontend contract → docs | Only one order cannot leave a bundle unable to parse a payload |
+| DDD-29 | Docs line numbers re-derived; L126 is the sentence the brief missed | The brief's references predate slice 01's deletion |
+| DDD-30 | Contract shapes stated; Earned Trust spent on the cache key | The substrate that lies here is a key that is right for the wrong reason |
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Peer review disposition
+
+`nw-solution-architect-reviewer`, iteration 1, 2026-09-19. **Conditionally approved — 0 critical,
+1 high.** The reviewer independently re-derived the seven claims this DESIGN stakes its argument on and
+confirmed all seven against the code and the measurement: the numerator's independence from the age
+below the target, the two volatile replay rows sitting at `a = R` where the certainty rule does not
+reach them, the cache key already carrying the target (C-2), the absence of any settings-save
+invalidation path (C-3), that no constructor moves and so `Program.cs` stays out (DDD-27), that the
+four-commit order parses in both directions at every boundary (DDD-28), and that `comparableItems` has
+exactly two consumers and both retire here (DDD-22).
+
+| # | Finding | Severity | Disposition |
+|---|---|---|---|
+| 1 | AC-02.8's literal *"the risk is null"* against DDD-21's absence-from-collection. Behaviour is identical and the design flags it, but the acceptance criteria are not yet aligned, which leaves DISTILL a choice it might make silently | high | **Accepted, fixed.** Open question 3 is rewritten from a flag into a gate: the two options are stated in full, one is recommended with its reason, and the sentence *"there is no third option in which both the AC's wording and the non-nullable type survive"* closes the seam a silent reinterpretation would slip through |
+| 2 | The reversal section's argument is correct but a reader who does not reach the arithmetic could carry away the outline's framing | medium | **Accepted, fixed.** The section now opens with the refutation in one line — the certainty rule absorbs ages *strictly greater* than the target, and both measured volatile rows sit *at* it — before any derivation |
+
+No finding required a change to a decision, to the component decomposition, to the commit order or to
+the ADR-192 amendment. The reviewer recorded no bias finding and no completeness gap.
+
+---
+
+## Wave: DESIGN (slice 02) / [REF] Open questions
+
+1. **Slice 04 inherits the one volatile age, and its threshold rule lands on it.** The at-risk count
+   (≥ 70% in #6036) will include or exclude an item at `a = R` on a number that the measurement
+   observed moving 25 points overnight. The count is what a coach acts on, so the flip is visible as
+   "an item appeared in the chip and nothing happened". **An option that costs nothing**: treat an item
+   whose age has *reached* the target as at-risk by definition for the purposes of the count, leaving
+   the displayed number computed (AC-02.4 is about the number, not about the count). That removes the
+   only volatile age from the only surface where volatility changes a decision. Raised for slice 04's
+   DESIGN, not decided here — #6036 has no ACs yet.
+
+2. **The 0/0 ⇒ 0 convention is a product choice, not arithmetic, and should be recorded as one.** The
+   empirical conditional is undefined on an empty set; `0` is chosen to keep the function total. It is
+   the least-wrong total answer — the item is inside its target and can still meet it, so `100` would
+   be false — but it reads as "no chance of breach" for an item that has already outlasted everything
+   the team ever finished. The slice ships it because the alternative is the silence being removed.
+   Flagged so the next reader does not mistake it for a derivation.
+
+3. **AC-02.8's wording versus DDD-21.** The AC says a closed item's risk *"is null"*; the design
+   expresses it as absence from the collection. The intent — no answer, no write-back — is unchanged
+   and the observable behaviour is unchanged for the write-back. Raised rather than reinterpreted
+   quietly, and it is a **gate on DISTILL, not a flag**: exactly one of two things must happen before
+   the ACs are handed to DELIVER.
+
+   - **(a) Restate AC-02.8 against absence — recommended.** *"Given a closed item, or an item not in
+     flight today, then it is absent from the response and no write-back occurs; given a team with no
+     published target, the response is empty and no write-back occurs."* This is what the design
+     implements, it is what the write-back already does, and it is what makes AC-02.6's totality
+     enforceable by the compiler rather than by a test.
+   - **(b) Overrule DDD-21.** `SleRiskDto.Risk` stays `int?` and `SleRiskSchema.risk` keeps
+     `.nullable()`. The AC's literal wording holds and AC-02.6's totality goes back to being a claim
+     tests have to keep making. Commit 3 in DDD-28 disappears and the frontend keeps a null branch in
+     `labelFor`, `sleRiskSortValue` and `sleRiskAtRiskSummary` for a value the backend will never send.
+
+   There is no third option in which both the AC's wording and the non-nullable type survive.
+
+4. **A coach on a past date range now sees empty cells** for items that were in flight then and have
+   since closed (DDD-16). Correct, intended, documented — and exactly the kind of thing that gets
+   reported as a regression by someone who never saw the code. Flagged in the same spirit as slice 01's
+   AC-01.1b.
+
+5. **`brief.md`'s neighbouring section still describes a reverted update queue**
+   (`## Application Architecture — story-5877-update-queue-lanes`, L7684-7898, reverted by
+   `f216ef558`). Unchanged from slice 01's open question 3; still not this slice's to fix, and this
+   slice's section lands two below it.
+
+---
+---
+
+# DISTILL — slice 02 (ADO User Story #6037)
+
+Wave: DISTILL · Date: 2026-09-19 · Acceptance designer: Quinn
+Scope: Slice 02 only (`slices/slice-02-one-number.md`, AC-02.1 … AC-02.9). No test file is written by
+this wave; DISTILL specifies and DELIVER executes.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Prior Wave Consultation
+
+| Artifact | Read |
+|---|---|
+| `slices/slice-02-one-number.md` | ✓ in full, including AC-02.8 as restated at DESIGN's gate |
+| `feature-delta.md` DESIGN slice 02 — C-1…C-5, the reversal section, DDD-15…DDD-30, Component Decomposition, Driving/Driven ports, Architectural Enforcement, CI-learnings, Decisions, Peer review, Open questions 1-5 | ✓ |
+| `feature-delta.md` DISTILL slice 01 (house style) | ✓ |
+| `docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md` | ✓ via DESIGN's two replay tables, which quote it |
+| `SleRiskCalculator.cs`, `TeamMetricsService.GetSleRiskForTeam`, `TeamMetricsController` (`sleRisk`), `WriteBackTriggerService.cs:106-229`, `SleRiskDto.cs`, `Team.GetThroughputSettings`, `FakeLighthouseClock` | ✓ |
+| `SleRiskAcceptanceTest.cs`, `Slice01SleRiskReadScenarios.cs`, `Slice01SleRiskReadSpecifications.cs`, `SleRiskCalculatorTest.cs`, `WriteBackTriggerServiceTest.cs` | ✓ |
+| `utils/charts/sleRisk.ts` + `sleRisk.test.ts`, `models/Metrics/SleRisk.ts`, `useMetricsData.ts`, `services/Api/TeamMetricsService.ts`, `WorkItemsDialog.test.tsx` | ✓ |
+| `JiraWriteBackTest.cs`, `AzureDevOpsWriteBackTest.cs`, `ViewerEmbedTestHost.cs` (premium-licence precedent) | ✓ |
+| `Lighthouse.EndToEndTests/tests/models/metrics/WorkItemAgingChart.ts`, `specs/screenshots/Screenshots.spec.ts:987-1015` | ✓ |
+| `docs/ci-learnings.md` | ✓ via DESIGN's pre-application section, re-applied below |
+| `docs/feature/epic-4127-sle-risk-corrections/{discuss,design,devops}/` as separate directories | ⊘ not found — **by layout, not by omission.** All waves live in this one `feature-delta.md` |
+| DEVOPS section for slice 02 | ⊘ **deliberately skipped by the maintainer**, with the reason recorded in the delta. Not a gap, and not treated as one |
+| `docs/architecture/atdd-infrastructure-policy.md` | ⊘ not found, and not bootstrapped — same reasoning as slice 01 |
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Wave-decision reconciliation
+
+**Zero outstanding contradictions. Gate passed.**
+
+Five contradictions were found and **corrected at source** before this wave: DESIGN's C-1…C-5 (the two
+paths already share a method; the cache key already carries the target; nothing invalidates on a
+settings save; the doc comment promises agreement rather than the opposite; the doc line numbers are
+stale by seventeen lines), and AC-02.8's wording, restated against **absence** rather than `null` under
+Open question 3 option (a). None is re-litigated here.
+
+The one contradiction this wave inherits as a live choice is Open question 3, and DESIGN framed it as a
+gate on DISTILL rather than a flag. **It is answered (a).** AC-02.8 as it now stands in the slice brief
+— *"absent from the response and no write-back occurs"* — is the wording the scenarios below are
+written against, and `SleRiskDto.Risk` is non-nullable. The consequence for the test layer is Q4 below:
+most of AC-02.6 stops being testable because it stops being falsifiable, and that is the point of
+choosing (a).
+
+Open questions 1, 2, 4 and 5 are **not** gates on DISTILL. 1 is slice 04's, 2 is a recorded product
+choice that AC-02.5 already pins, 4 is documented new behaviour that gets a scenario rather than a
+warning, and 5 is somebody else's section of `brief.md`.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] What this wave does not do, and why
+
+| Normally owed | Here | Why |
+|---|---|---|
+| Walking skeleton | **None new.** `A_team_with_a_target_is_told_each_open_item_s_chance_of_missing_it` already holds that role for the Epic and survives this slice unchanged in its arithmetic | A skeleton proves a new path end to end. This slice changes what a shipped path computes; there is no new wiring for a skeleton to prove. The existing one keeps its `@walking_skeleton` tag and its 46% |
+| RED scaffolds | **None.** | Nothing new is created — DESIGN's component table says *"CREATE: nothing"*. Every module the new tests import already exists, so a scaffold would stub a file that is already there. The new tests fail against today's tree because the behaviour is wrong, which is RED for the right reason without a stub |
+| Property-based tests (FsCheck) | **None**, and the one invariant that would justify one is written as a deterministic walk instead — Q5 | FsCheck is not a dependency of `Lighthouse.Backend.Tests`. Adding a package to a slice whose design says *"nothing added, upgraded or removed from either lockfile"* costs more than the invariant is worth, and the invariant's proof has no dependence on the population's shape, so one fixed population discriminates as well as a generator |
+| Tier-B state-machine acceptance | **None.** | There is no state machine. One pure function, one cached read, one resolve. Nothing transitions |
+| Driven-adapter coverage table | **One row, and it is the metrics cache** — see Q3 | No adapter is introduced or removed. The cache is the only driven port whose behaviour changes, and its coverage is the whole of Q3 |
+| New Playwright spec | **None.** See Q2's second half | The E2E suite is a thin sanity check here and the one existing block survives untouched |
+| Infrastructure-policy file | **Not bootstrapped**, same as slice 01 | Unchanged reasoning; still a project-level item for the maintainer rather than something to smuggle into a slice that creates nothing |
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Acceptance test inventory
+
+Nine acceptance criteria. **Seven carry at least one executable test that would fail today; one is
+enforced by the type system and needs a test only for the part the type cannot reach (Q4); one is a
+review gate answered by a deletion (AC-02.9).**
+
+| AC | Test | Layer | Commit | Contract shape |
+|---|---|---|---|---|
+| AC-02.1 | `The_dialog_and_the_board_are_told_the_same_number_for_the_same_item_on_the_same_day` | backend acceptance, in-process | 2 | `pure-function` |
+| AC-02.1 | `The_number_a_coach_filters_on_in_their_own_tracker_is_the_number_Lighthouse_shows` — `[Category("JiraIntegration")]` | real connector, real Jira | 2 | `bounded-change` |
+| AC-02.2 | `The_answer_does_not_move_when_the_question_carries_a_date_range` | backend acceptance | 2 | `unbounded-preservation` |
+| AC-02.2 | `asks for the risk without telling the backend which days are on screen` — `useMetricsData.test.ts` | Vitest | 3 | `unbounded-preservation` |
+| AC-02.3 | `An_item_past_the_target_is_certain_even_when_nothing_ever_ran_that_long` | backend acceptance | 2 | `pure-function` |
+| AC-02.3 | `For_ItemPastTheTargetWithNothingToCompareAgainst_IsStillCertain` | unit | 2 | `pure-function` |
+| AC-02.4 | `An_item_exactly_on_its_target_day_is_still_given_the_history_s_answer` | backend acceptance | 2 | `pure-function` |
+| AC-02.4 | `For_ItemExactlyOnItsTarget_IsComputedRatherThanAssumedCertain` | unit — **the discriminating one** | 2 | `pure-function` |
+| AC-02.5 | `An_item_inside_its_target_that_nothing_can_be_compared_against_reads_as_no_chance_yet` | backend acceptance | 2 | `pure-function` |
+| AC-02.5 | `For_NothingToCompareAgainstInsideTheTarget_ReadsAsNoChanceYet` | unit | 2 | `pure-function` |
+| AC-02.6 | `Every_item_in_flight_today_is_given_a_number_however_thin_the_history` | backend acceptance | 2 | `unbounded-preservation` |
+| AC-02.6 | `reads an item the answer never mentioned as nothing at all` — `sleRisk.test.ts` | Vitest | 1 | `pure-function` |
+| AC-02.6 | the rest — **the type, not a test.** Q4 | — | 2, 3 | — |
+| AC-02.7 | `Tightening_the_target_changes_the_answer_rather_than_repeating_the_old_one` — existing, adapted | backend acceptance, live cache | 2 | `bounded-change` |
+| AC-02.7 | `Looking_further_back_admits_older_work_rather_than_repeating_the_old_answer` | backend acceptance, live cache | 2 | `bounded-change` |
+| AC-02.7 | `A_team_with_pinned_history_dates_is_told_a_day_older_answer_after_midnight` | backend acceptance, live cache | 2 | `bounded-change` |
+| AC-02.8 | `A_closed_item_is_left_out_of_the_answer_rather_than_listed_without_one` | backend acceptance | 2 | `unbounded-preservation` |
+| AC-02.8 | `An_item_that_has_not_started_today_is_left_out_of_the_answer` | backend acceptance | 2 | `unbounded-preservation` |
+| AC-02.8 | `A_team_that_never_published_a_target_is_told_nothing_rather_than_zero` — existing, unchanged | backend acceptance | 2 | `unbounded-preservation` |
+| AC-02.8 | `ResolveWriteBackForTeam_ItemTheAnswerNeverMentioned_IsNotWrittenAtAll` — existing, unchanged, and now the **only** surviving no-write mechanism | unit | 2 | `bounded-change` |
+| AC-02.9 | — | **review gate, answered "removed" by DDD-22.** The compiler and Biome enforce it | — | — |
+| — | `A_fixed_history_team_reads_its_evidence_from_the_dates_it_pinned` | backend acceptance | 2 | `pure-function` |
+| — | `A_risk_never_falls_as_an_item_gets_older` — Q5 | unit | 2 | `pure-function` |
+
+**On tags in the source.** Slice 01's scenario comments carry `@AC-01.4`-style markers. The new
+scenarios carry the behaviour tags (`@driving_port`, `@real-io`, `@error`) and **not** the AC numbers:
+an AC number resolves to a section of a document that gets archived, and a reader six months from now
+cannot open it. The AC mapping lives in the table above, where it can be maintained. The existing
+markers in `Slice01SleRiskReadScenarios.cs` are left alone — retiring them is a separate tidy, not
+this slice's.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Q1 — AC-02.4, and the three places the new rules are observable
+
+This is the sharpest boundary in the slice and DESIGN proved it is where the volatility lives. It is
+also the place where a test can most easily look like it pins something and pin nothing.
+
+### The four regions, and which two discriminate
+
+For an item of age `a`, a target `R`, and `n = count(T >= a)` over the finished cycle times:
+
+| Region | Answer after this slice | Would a `>` → `>=` flip change it? | Would swapping the two guards change it? |
+|---|---|---|---|
+| `a = R`, `n > 0` | computed from the history | **Yes** — it would read 100 | no |
+| `a > R`, `n > 0` | 100 | no | no |
+| `a > R`, `n = 0` | 100 | no | **Yes** — it would read 0 |
+| `a <= R`, `n = 0` | 0 | no | no |
+
+Two of the four rows are load-bearing and two are not. Row 2 is not a defect in the tests — it is an
+**equivalent mutant**: at any age strictly above the target, every comparable item necessarily ran
+longer than the target (`T >= a > R`), so the arithmetic already returns 100 and the certainty rule
+short-circuits to the same number. A mutation run will report the certainty check as surviving on that
+row and the survivor is genuine. Recorded here so nobody spends an afternoon writing a test that
+cannot exist.
+
+### The existing test that looks like it covers row 1 and does not
+
+`SleRiskCalculatorTest.For_ItemStillOpen_IsTheShareOfComparableItemsThatWentOnToMiss` carries
+`[TestCase(10, 100)]` against a target of 10 — an age exactly on the target, expecting 100. It reads
+like the boundary test and it is not one: `SixtyFinishedItems` contains no item that took exactly ten
+days, so `count(T >= 10)` and `count(T > 10)` are the same set and the arithmetic returns 100 on its
+own. **Flip the comparison to `>=` and this test still passes.** The same is true of its acceptance
+twin, `The_longer_an_item_stays_open_the_worse_its_chances_get` at `[TestCase(10, 100)]`.
+
+Both survive this slice untouched and neither is the AC-02.4 test.
+
+### The test that does discriminate
+
+```
+For_ItemExactlyOnItsTarget_IsComputedRatherThanAssumedCertain
+
+    population: four items at 3 days, five at 6, five at 7
+    target:     6
+    age:        6
+
+    comparable = count(T >= 6) = 10      breaches = count(T > 6) = 5      answer = 50
+```
+
+Under `>=` the answer is 100. Under `>` it is 50. **The population must contain finished work at
+exactly the target that did not miss it** — that is the entire seeding constraint, and a population
+without it produces a test that passes either way. Its acceptance twin,
+`An_item_exactly_on_its_target_day_is_still_given_the_history_s_answer`, seeds the same distribution
+through the endpoint and expects the same 50.
+
+The comment in the source says the reason and not the rule: an item at six days against a six-day
+target can still close today and meet *six days or less*, so the history is still the best thing
+anyone has to say about it.
+
+### The `R + 1` side, and why it needs a different population
+
+The brief asks for both sides of the boundary pinned. `a = R + 1` cannot be made to discriminate a
+`>` / `>=` flip — at any age above the target the arithmetic and the rule agree, as row 2 shows. What
+`a = R + 1` **can** discriminate is the guard ordering, and only when the history is empty at that age:
+
+```
+For_ItemPastTheTargetWithNothingToCompareAgainst_IsStillCertain
+
+    population: four items at 3 days, five at 6       (nothing at 7 or above)
+    target:     6
+    age:        7
+
+    comparable = 0    ->   the certainty rule answers 100
+```
+
+If the `0/0` guard were placed first, this reads **0** — an item that has already outlasted its target
+and everything the team ever finished, reported as no chance of missing. That is the worst inversion
+available in this function, and this is the only test that catches it. The population must contain
+**nothing at or above `R + 1`**, which is the mirror of the constraint above and just as easy to get
+wrong.
+
+Its acceptance twin is `An_item_past_the_target_is_certain_even_when_nothing_ever_ran_that_long`,
+which is the direct replacement for the deleted
+`An_item_older_than_anything_ever_finished_is_given_no_answer` — the same seeded situation, the
+opposite expectation. DESIGN's deletion list names the old test; this is what stands where it stood.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Q2 — AC-02.1, and how far it closes automatically
+
+The observed defect is 27% in the dialog against 18 on the board for the same item on the same day.
+It is covered at two layers, and they cover different things.
+
+### The in-process test, which is the one that catches the defect
+
+```
+The_dialog_and_the_board_are_told_the_same_number_for_the_same_item_on_the_same_day
+
+    GivenATeamThatPromisesTenDays()
+    GivenTheTeamHasFinishedSeveralOfEach(3, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30)
+    GivenTheTeamWritesTheRiskBackToItsBoard()
+    GivenSeveralItemsOpenFor(2, 5, 9, 14)
+
+    WhenTheDialogAndTheBoardAreBothAskedInTheSameBreath(team)
+
+    ThenEveryItemIsGivenOneNumberByBoth()
+```
+
+One host, one seeded team, one pinned day, one run. The `When` issues the HTTP GET through the
+controller **and** calls `IWriteBackTriggerService.ResolveWriteBackForTeam(team)` out of the same
+DI scope. The `Then` joins the two by `ReferenceId` and asserts the integers are equal — and asserts
+the two sets of reference ids are the same set, because two empty collections agree trivially and that
+is the failure this test is most exposed to.
+
+Four items rather than one, at ages spanning both sides of the target, because the defect was a
+**window** disagreement: with one item and one age the two paths can coincide by luck.
+
+This test fails against today's tree for the right reason — the two calls pass different windows, so a
+long-open item gets a different denominator on each side — and it runs in the default `dotnet test`.
+It is the discriminating test for AC-02.1. After DDD-15 it cannot fail for that reason again, because
+the signature stops carrying the window; it survives as the assertion that nothing reintroduced one.
+
+### The connector test, which proves the agreement survives a real write
+
+```
+The_number_a_coach_filters_on_in_their_own_tracker_is_the_number_Lighthouse_shows
+    [Category("JiraIntegration")] [Category("Integration")]
+```
+
+Modelled on `JiraWriteBackTest`: a scratch Story created in `[OneTimeSetUp]` against `LGHTHSDMO` and
+hard-deleted in `[OneTimeTearDown]`, **not** the fixed demo items — reusing `LGHTHSDMO-1`/`-16` is what
+made this fixture collide with the integration fixtures that read them, and the comment at
+`JiraWriteBackTest.cs:35-44` records the fix. The scratch issue's key becomes the `ReferenceId` of a
+seeded in-flight item; the risk is computed through the display path; `ResolveWriteBackForTeam`
+produces the plan; `JiraWorkTrackingConnector.WriteFieldsToWorkItems` writes it to the numeric `Age`
+field; the read-back polls at **30 attempts × 500 ms** because Jira's JQL index is eventually
+consistent, and the assertion is that the integer read back out of Jira equals the integer the HTTP
+response carried.
+
+**A second item in the same run writes `0`**, from a team whose history has nothing comparable inside
+its target. This is the one genuinely new shape on the wire: before this slice a thin-history item
+produced `null` and therefore no write at all, and after it the field receives a literal zero. Zero is
+the one integer a field-type coercion or a board filter can quietly turn into blank, and nothing in
+the existing connector tests writes it — they write `42` and `15`.
+
+### One connector, not two
+
+**Jira only.** The defect is upstream of every connector: `RiskValueFor` produces `risk.ToString()` on
+an `int`, identically for Jira, Azure DevOps, Linear and ServiceNow, and the two windows that
+disagreed were chosen in `TeamMetricsService` before any connector was reached. A second fixture
+against Azure DevOps would run the same computation, hand the same string to a different writer, and
+prove the writer — which `AzureDevOpsWriteBackTest.WriteNumericValue_*` already proves, for a value
+whose shape this slice does not change. It would double the credential dependency and the flake
+surface for a claim the second run cannot falsify independently.
+
+The two connectors do differ in ways that would matter if this were a connector change: Jira addresses
+fields by opaque id (`customfield_10206`), Azure DevOps by named reference path (`Custom.Age`), so a
+parameterised cross-connector test could not share the field identifier; and their read-back
+consistency models are different enough that copying `ReadBackMaxAttempts` from one to the other would
+be copying a constant without its reason. Neither difference is reachable from this slice.
+
+**The one thing that could hide on the other side**, and it is narrow: whether Azure DevOps'
+`Custom.Age` round-trips a literal `0` as `0` rather than as blank. The cheapest honest cover for that
+is **one `[TestCase("0")]` added to the existing `AzureDevOpsWriteBackTest` numeric-value family** — a
+connector test, in the connector's own fixture, where it belongs and where it costs nothing. Specified
+as a follow-up rather than as an AC-02.1 test, because it is a claim about Azure DevOps and not about
+this slice.
+
+### What a green default run does not mean — say this out loud
+
+`dotnet test` with the project's standard filter **excludes** `JiraIntegration`, `AdoIntegration`,
+`LinearIntegration`, `ServiceNowIntegration` and `Integration`. These fixtures do not skip when a
+credential is missing; they throw. **A green default run is not evidence that AC-02.1's connector half
+passed, and must never be read as one.** It is evidence that the in-process half passed, which is the
+half that catches the defect. The connector half runs when somebody invokes the category
+deliberately, and the Jira API key is shared with CI, so an ad-hoc local run can rate-limit the next
+CI build.
+
+### AC-02.2's two halves, and neither of them is manual
+
+The brief asked what can only be verified by hand. **On AC-02.1, nothing** — the loop closes. On
+AC-02.2 the claim splits and neither half needs a human either:
+
+- **The server ignores dates it no longer binds.** `The_answer_does_not_move_when_the_question_carries_a_date_range`
+  asks the route twice in one run, once bare and once with a stray `?startDate=&endDate=` a year wide,
+  and asserts the two bodies are identical strings. The date literals are inlined in the step rather
+  than built from a helper, for the reason slice 01 gave about the zones path: a helper that composes
+  the thing under test is the thing being tested. `SleRiskRouteBetween` is deleted, so there is no
+  helper left to reach for by accident.
+- **The browser stops asking about the range at all.** After commit 3 `useMetricsData` drops
+  `startDate`/`endDate` from the `getSleRisk` call and from the effect's dependency array, so a range
+  change does not re-issue the fetch. `asks for the risk without telling the backend which days are on
+  screen` renders the hook, changes the range, and asserts `getSleRisk` was called once with the team
+  id alone. That is the whole of the coach's experience — the number does not move because nothing
+  re-fetches — and it is a Vitest claim, not a browser one.
+
+**No new Playwright spec.** Driving a real browser to move a date picker and read a cell would be the
+most expensive available form of the cheapest available claim, and the E2E suite here is a thin sanity
+check. The existing `@screenshot` block is untouched and stays green: its only assertion is that at
+least one risk cell renders, and every in-flight item still renders one.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Q3 — AC-02.7 against a live cache
+
+DESIGN established that **nothing invalidates this cache when a team's settings are saved** — a team
+save is not among the paths that reach `InvalidateTeamMetrics`. The key is therefore not an
+optimisation of correctness; it is the correctness mechanism. A test that does not exercise a real
+cache asserts nothing at all.
+
+### What must not be written
+
+- **A test that asserts the key string.** It pins the implementation's spelling and passes even if the
+  cache is never consulted, or consulted with a different key than the one asserted. It is the shape
+  that looks like the strongest possible test of a cache key and is the weakest.
+- **A service test over a hand-constructed `TeamMetricsService` with a fresh or mocked cache.** Two
+  reads against a cache that starts empty each time agree whatever the key contains.
+- **Two reads in two `[Test]` methods.** `SleRiskAcceptanceTest` builds a fresh
+  `WebApplicationFactory` per `[SetUp]`, so the cache is new per test and the second read is a cold
+  read. The mutation and both reads must be in **one** test method.
+
+### What must be written — one test per key component
+
+The key is `SleRisk_{historyStart}_{historyEnd}_{asOfDay}_{target}`. Four inputs, three tests: the two
+history dates move together and one test moves both.
+
+| Component | Test | Shape |
+|---|---|---|
+| target | `Tightening_the_target_changes_the_answer_rather_than_repeating_the_old_one` — **exists**, survives with its route stripped of dates | read → `GivenTheTeamNowPromises(6)` → read → 50 becomes 75 |
+| history start + end | `Looking_further_back_admits_older_work_rather_than_repeating_the_old_answer` — **new** | seed work closed 60 days ago; read on a 30-day history → read after `GivenTheTeamNowLooksBack(90)`. The older work enters the population and the answer moves |
+| as-of day | `A_team_with_pinned_history_dates_is_told_a_day_older_answer_after_midnight` — **new** | `GivenTheTeamPinsItsHistoryTo(90 days ago, 60 days ago)`; read; `GivenTheInstanceReachesTomorrow()`; read. The item is one day older and its answer moves |
+
+The third is DDD-18's trap and the only one that can catch it. It **cannot** be written against a team
+on a rolling history: there the start and end dates advance with the calendar, so a key without the
+as-of day is accidentally correct and the test passes against the broken key. `UseFixedDatesForThroughput`
+is what holds the window still while the ages advance, and it is a setting most teams do not use —
+which is exactly why the failure would otherwise be found by a customer rather than by CI.
+
+All three go through the HTTP route against the real DI container, so `GetFromCacheIfExists` is the
+production `MetricsCache` and the entry written by the first read is the entry the second read either
+hits or misses. That is the only arrangement in which the assertion means what it says.
+
+### The one thing this cannot cover
+
+A cache entry expiring on `refreshRateInMinutes` is a time-based eviction the fixture's pinned clock
+does not drive, and no test here asserts it. It does not need one: the entry expiring early is
+harmless, and the entry expiring late is precisely what the three tests above make safe.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Q4 — AC-02.6, and what the compiler already enforces
+
+After DDD-21, most of AC-02.6 stops being a claim tests have to keep making. Writing tests for the
+part the type system guarantees is the characteristic waste of a totality change, so the split is
+stated explicitly.
+
+### Enforced for free — write no test
+
+| Claim | Mechanism |
+|---|---|
+| The backend never sends a null risk | `SleRiskDto(string ReferenceId, int Risk)`. A null is unrepresentable. An acceptance assertion that `risk` is not null is an assertion about `int` |
+| The frontend never receives a null risk | `SleRiskSchema.risk = z.number()` with no `.nullable()`. A test that the schema rejects `null` tests zod |
+| `SLE_RISK_BEYOND_HISTORY_LABEL` and `SLE_RISK_NOT_ENOUGH_HISTORY_LABEL` no longer appear | Deleting an exported const makes every reference a TypeScript compile error. `pnpm build` (`tsc -b`) is the gate. A test asserting the constants are gone cannot even be written — it would not compile |
+| `comparableItems` no longer appears | Same, plus Biome on the unused import |
+| `sleRiskSortValue` no longer special-cases a sentinel | The two early returns reference deleted constants; the compiler removes the option of leaving them |
+| `sleRiskAtRiskSummary` no longer has a null arm | `answer.risk === null` is a comparison the narrowed type rejects |
+
+The repository-wide grep DESIGN put in its enforcement table (`SLE_RISK_(BEYOND|NOT_ENOUGH)`,
+`MinimumComparableItems`, `comparableItems`, returning nothing outside `docs/evolution/`) stays as a
+**human review gate before the first push**. It is not a test and is not claimed as one; it catches the
+residue the compiler cannot see — prose in `docs/`, a string in an E2E locator, a comment.
+
+### Not enforced — needs a test
+
+| Claim | Test | Why the type is silent |
+|---|---|---|
+| Every item in flight today appears in the collection | `Every_item_in_flight_today_is_given_a_number_however_thin_the_history` — one team, a deliberately thin history, four items at ages spanning both sides of the target; assert four entries and four numbers | The type stops the *field* being null. It says nothing about the *collection* omitting an item. After DDD-21 an omission is how "no answer" is expressed, so an over-eager filter is now silent where it used to produce a visible null |
+| `labelFor` returns `""` for a row the answer never mentions | `reads an item the answer never mentioned as nothing at all` — `sleRisk.test.ts`, **retargeted** from the existing beyond-history test | `labelFor` returns `string` before and after. Nothing in the type says which string, and `""` is the new meaning of the empty cell |
+| An empty label still sorts to the bottom in both directions | `has no number for a label that was never a percentage` — **exists, byte-identical** | It is now the only remaining case for the `NaN` arm, which is what DDD-25 retargets |
+| A thin history reads as a percentage rather than as blank | `reads a thin history as no chance yet rather than as silence` — `sleRisk.test.ts`, new: `risk: 0` renders `"0%"` | `0` is falsy. A `labelFor` written as a truthiness check on the risk compiles, type-checks, and turns every thin-history cell blank — the exact regression AC-02.6 exists to prevent, reachable only because `0` became a possible value in this slice |
+
+That last row is the one worth the most. It is the single most likely way to implement DDD-21 and get
+a green compile with the feature broken.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Q5 — the monotonicity invariant
+
+**It earns one test, and its value should be stated accurately rather than oversold.**
+
+The invariant: for a fixed population and a fixed target, risk is non-decreasing in age. Below the
+target the numerator `count(T > R)` does not depend on the age at all — if `T > R` and `R >= a` then
+`T >= a`, so the second clause is free — and the denominator `count(T >= a)` is non-increasing. Above
+the target the answer is a flat 100, which is at least everything below it. The `0/0 ⇒ 0` case does not
+break it: `count(T >= a) = 0` with `a <= R` forces `count(T > R) = 0` as well, so the value just below
+was already 0.
+
+It was unassertable before this slice because the guard could put a `null` in the middle of the walk.
+
+### The shape
+
+```
+A_risk_never_falls_as_an_item_gets_older
+
+    walk a from 1 to R + 2 over one fixed population, asserting risk(a) >= risk(a - 1)
+```
+
+Deterministic, not generated. Two `private static readonly` populations hoisted out of the walk
+(CA1861 — the ledger forbids an inline `new[] {…}` in a repeatedly-called assertion position, and this
+is exactly that position): one with a long tail and one that stops short of the target, so the second
+exercises the `0/0` floor and the jump to 100 in the same walk. If the populations are supplied by a
+`[TestCaseSource]`, the provider is `private static` — NUnit1028.
+
+**The population must make the sequence actually move.** A flat walk passes vacuously and would pass
+against almost any implementation. The test should assert, alongside the invariant, that the first and
+last values differ — one line that turns a vacuous pass into a failure.
+
+### What it catches, honestly
+
+Its unique catch is a future reordering of the two guards, and the `a > R, n = 0` test in Q1 already
+catches that directly at the one age where it bites. It does **not** catch a `>` → `>=` flip: `>=`
+would set `risk(R) = 100`, which is still greater than `risk(R - 1)`.
+
+So its value is not coverage of a case the enumerated tests miss. It is a **forward tripwire**: it
+ranges over every age rather than the four the enumerated tests pick, and it fails on any future
+change that introduces a dip anywhere — a clamp, a smoothing, a second guard, a "don't alarm people"
+special case. It is one cheap test against a class of change nobody has proposed yet, and the class is
+one a reader of the column would immediately call a bug. That is worth a test and is not worth
+claiming more for.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Test-layer inventory
+
+### Deleted outright
+
+| Test | File | Why |
+|---|---|---|
+| `An_item_older_than_anything_ever_finished_is_given_no_answer` | `Slice01SleRiskReadScenarios.cs` | Its expectation reverses. **Replaced** by `An_item_past_the_target_is_certain_even_when_nothing_ever_ran_that_long` |
+| `An_item_too_little_finished_work_can_be_compared_against_is_given_no_answer` | same | The guard it pins is deleted |
+| `One_more_comparable_item_is_enough_to_be_told_the_answer` | same | **Not in DESIGN's deletion list.** It is the guard's threshold-direction test and has no meaning once there is no threshold |
+| `A_window_that_ends_before_it_starts_is_refused` | same | The 400 guard goes with the query parameters (DDD-17) |
+| `A_window_of_one_day_is_a_question_like_any_other` | same | Its subject is the guard above |
+| `A_window_that_ended_in_the_past_is_answered_as_of_that_day` | same | Its claim is **reversed** by DDD-16 — the answer is now always about today. Not in DESIGN's list |
+| `Two_windows_asked_one_after_the_other_get_their_own_answers` | same | There is one window. Not in DESIGN's list |
+| `ThenTooLittleRanThatLongToSay(item, comparableItems:)` | `Slice01SleRiskReadSpecifications.cs` | One caller, and it goes. Same commit, or S1144 |
+| `ThenTheItemIsBeyondWhatTheHistoryCanAnswer` | same | Both callers go. Same commit, or S1144 |
+| `SleRiskRouteBetween` and its three `When` steps (`…AWindowEnding`, `…ASingleDay`, `…ABackwardsWindow`) | `SleRiskAcceptanceTest.cs`, `Slice01SleRiskReadSpecifications.cs` | Their callers all go. `SleRiskRoute` survives and loses its query string |
+| `For_TooLittleFinishedWorkRanThisLong_HasNoAnswerButSaysHowLittle`, `For_ExactlyTheMinimumComparableItems_IsAnswered`, `For_OneShortOfTheMinimum_IsNotAnswered` | `SleRiskCalculatorTest.cs` | The guard |
+| `ResolveWriteBackForTeam_SleRisk_AsksAboutTheTeamsOwnHistoryAsOfToday` | `WriteBackTriggerServiceTest.cs:821` | It verifies the dates passed to `GetSleRiskForTeam`. There are none |
+| `ResolveWriteBackForTeam_SleRisk_TeamWithFixedThroughputDates_StillAsksAboutToday` | same, `:843` | Same, and worse — see the finding below |
+| `ResolveWriteBackForTeam_ItemTheHistoryCannotAnswerFor_IsNotWrittenAtAll` | same, `:785` | It seeds `("WIP-2", null)`, which a non-nullable `Risk` makes unrepresentable |
+| `describe("what the two silences are called")` (2 tests) | `sleRisk.test.ts:59-69` | The constants |
+| `says beyond history for an item the history cannot answer for`, `tells a thinly-evidenced item apart…`, `leaves a thinly-evidenced item out of the ordering as well` | `sleRisk.test.ts:84-118` | All three construct a `null` risk |
+| `has no number for the beyond-history label` | `sleRisk.test.ts:179` | The constant |
+| `counts an item that has outlasted everything the team ever finished`, `does not count an item too little history can speak for`, `reads an item beyond all history as the worst band there is` | `sleRisk.test.ts:202-236` | The null arm of `sleRiskAtRiskSummary` |
+
+### Edited — meaning changes
+
+| Test | File | Change |
+|---|---|---|
+| `A_team_that_has_finished_nothing_yet_is_given_no_answer` | `Slice01SleRiskReadScenarios.cs` | Age 4, target 10, nothing finished → **0**, not silence. Renamed to say so |
+| `Only_work_finished_inside_the_chosen_window_counts_as_evidence` | same | "chosen" becomes "configured". The seeding survives: the ancient work sits 210 days back and the default 30-day history excludes it, as the old 180-day route window did |
+| `Tightening_the_target_…`, `A_team_with_a_target_is_told_each_open_item_s_chance_…`, `The_longer_an_item_stays_open_…`, `An_item_already_past_the_target_…`, `An_item_that_finished_on_the_target_day_…`, `An_item_as_old_as_a_finished_one_…`, `Someone_who_may_not_see_the_team_…`, `Portfolios_are_not_asked_…`, `The_chart_background_can_no_longer_be_asked_for_…` | same | **Arithmetic unchanged** — every one of them seeds work closed 20 days back, inside the default 30-day history, so moving from the 180-day route window to the configured history does not move a single expected number. Only the route helper changes under them |
+| `For_ItemOlderThanTheTarget_IsCertainWithoutASpecialCase` | `SleRiskCalculatorTest.cs:34` | **The name becomes false.** It is a special case now. Renamed, and its comment — *"No clamp and no rule — it is the division"* — rewritten to say the opposite |
+| `For_NothingFinishedEverRanThisLong_HasNoAnswerAndNothingToCompareAgainst` | same, `:97` | Becomes the `0/0` test or the certainty test depending on the age it picks. Split into the two named in Q1 |
+| `For_NothingFinishedAtAll_HasNoAnswer` | same, `:152` | Becomes 0 below the target |
+| `For_AgeThatCannotBeRead_HasNoAnswer`, `For_NoTargetPublished_HasNoAnswer` | same, `:161`, `:172` | DDD-20 adds `ThrowIfNegativeOrZero`, so these become **throws**, not silences. Renamed, and the guard helper takes no explicit parameter name (S3236) |
+| `GivenTheRiskIs` helper | `WriteBackTriggerServiceTest.cs:930` | `SleRiskDto(a.ReferenceId, a.Risk)`; the `a.Risk is null ? 0 : 30` argument goes; the tuple's risk type narrows to `int` |
+| mock setup at `:41` | same | `GetSleRiskForTeam(It.IsAny<Team>())` |
+| `answer` helper | `sleRisk.test.ts:31-36` | `(referenceId, risk: number) => ({ referenceId, risk })`. Every call site passing two numeric arguments is unchanged |
+| `says the same about an item the answer never mentioned` | `sleRisk.test.ts:120` | Expects `""`. Renamed to say what the empty cell means |
+| `getSleRisk` mocks | `MockApiServiceProvider.ts:246`, `useMetricsData.test.ts:49`, `BaseMetricsView.test.tsx` | Signature drops both dates. Re-check `typescript:S4144` on the two `createMockTeamMetricsService` bodies afterwards |
+
+### Added
+
+| Test | File | Commit |
+|---|---|---|
+| Eleven backend acceptance scenarios (inventory table above) | **new pair** `Slice02SleRiskOneNumberScenarios.cs` + `Slice02SleRiskOneNumberSpecifications.cs`, partial class `Slice02SleRiskOneNumberTest : SleRiskAcceptanceTest` | 2 |
+| `For_ItemExactlyOnItsTarget_IsComputedRatherThanAssumedCertain`, `For_ItemPastTheTargetWithNothingToCompareAgainst_IsStillCertain`, `For_NothingToCompareAgainstInsideTheTarget_ReadsAsNoChanceYet`, `A_risk_never_falls_as_an_item_gets_older` | `SleRiskCalculatorTest.cs` | 2 |
+| `The_number_a_coach_filters_on_in_their_own_tracker_is_the_number_Lighthouse_shows` | **new** `…/WorkTrackingConnectors/Jira/JiraSleRiskWriteBackTest.cs`, `[Category("JiraIntegration")]` | 2 |
+| `reads an item the answer never mentioned as nothing at all`, `reads a thin history as no chance yet rather than as silence`, the at-risk summary's zero case | `sleRisk.test.ts` | 1 |
+| `asks for the risk without telling the backend which days are on screen` | `useMetricsData.test.ts` | 3 |
+
+### Must stay untouched — and the reviewer checks this against the diff
+
+| File or block | Why it is the assertion |
+|---|---|
+| `sleRisk.test.ts` — `describe("painting the risk")`, lines 145-172 | **The colour regression net, and it survives byte-identical.** Every call in it is `descriptorFor([answer("ZEN-412", 86)])` — two arguments, a numeric risk — so the helper's narrowing does not reach it, and `colorForRisk(undefined)` keeps a real case because `riskFor` still returns `undefined` for a row the answer never mentioned. This answers the brief's question directly: **this slice's changes to `labelFor` and `sleRiskSortValue` do not touch it** |
+| `sleRisk.test.ts` — `recovers the risk from the percentage the column carries` and `has no number for a label that was never a percentage` | Byte-identical, and the second is now the only surviving case for the arm DDD-25 retargets |
+| `utils/charts/paceBands.ts` + `paceBands.test.ts` | The palette the net is about |
+| `WorkItemsDialog.test.tsx` | Verified: it supplies its own `labelFor` and `colorForRisk` at `:1459` and references neither sentinel constant. **Nothing in this slice reaches it.** Its `width: 130` and the comment above it are slice 03's |
+| `Lighthouse.EndToEndTests/.../WorkItemAgingChart.ts` and `Screenshots.spec.ts:987-1015` | Verified: the block's only assertion is `countSleRiskCells() > 0`, and every in-flight item still renders a cell. It generates `sle_risk_column.png` rather than comparing against it, so changed cell text cannot red it. **The asset goes stale on purpose** until slice 03's single re-take |
+| `SixtyFinishedItems` (`SleRiskCalculatorTest.cs:19`) | Read by the surviving `For_*` tests |
+| `For_HalfwayBetweenTwoWholePercentages_RoundsToTheWorseOne` | Sixteen items, age 5, target 10 — above the old minimum and unaffected by its removal. The rounding rule is untouched |
+
+### A correction to slice 01's inventory
+
+Slice 01's DISTILL recorded `utils/charts/sleRisk.test.ts` as *"whole file byte-identical"*. That was
+true for slice 01 and is **not** the durable claim. The regression net is the
+`describe("painting the risk")` block and the two surviving sort cases; the rest of the file is
+ordinary coverage of things this slice changes. A reviewer holding slice 01's wording would block a
+correct diff.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Harness additions the scenarios need
+
+`SleRiskAcceptanceTest` is the Epic-wide harness and says so — *"slices 02-04 inherit it rather than
+standing up a host each"*. Five additions, each named for the scenario that needs it. All land in
+commit 2.
+
+| Addition | Needed by | Note |
+|---|---|---|
+| The `FakeLighthouseClock` kept in a `protected` field | the midnight test | `SetInstant` already exists (Bug #5567's work). `Init` builds the fake and drops the reference; keeping it is the whole change |
+| `ILicenseService` faked to premium in `Init` | AC-02.1's in-process test | `ResolveWriteBackForTeam` returns early without it. Precedent: `ViewerEmbedTestHost.cs:523-526` |
+| `SeedFinishedItemClosedDaysAgo(teamId, cycleTime, daysAgo)` | the history-window test | Today's `SeedFinishedItem` hard-codes "20 days back" and offers only "before `WindowStart`". The test needs work closed 60 days ago — outside a 30-day history, inside a 90-day one |
+| `ChangeTheHistoryOf(teamId, days)` and `PinTheHistoryOf(teamId, start, end)` | the history-window and midnight tests | Mirrors the existing `ChangeTheTargetOf` |
+| `SeedWriteBackMappingFor(teamId, field)` | AC-02.1's in-process test | A `WriteBackMappingDefinition` with `AppliesTo = Team`, `ValueSource = SleRisk` and a resolved `AdditionalFieldDefinition` |
+
+**Two traps in the harness, named so they are not discovered.**
+
+`WindowStart` and `WindowEnd` are derived from the static `Today`, not from the clock. Advancing the
+clock does **not** move them, so every seeded date stays where it was put and an item seeded at age `a`
+becomes age `a + 1` — which is exactly what the midnight test wants, and exactly what would silently
+break a rolling-history test written the same way. The midnight test pins its history dates explicitly
+for that reason, not only for DDD-18's.
+
+`SleRiskRoute` keeps its name and loses its query string. The one scenario that still needs a query
+string inlines it, as slice 01's zones step inlined its path: a helper that composes the thing under
+test is not a helper.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Changed Assumptions (back-propagation)
+
+Six findings against DESIGN. **None changes a decision, the commit order, or an acceptance criterion.**
+Three would have left a claim uncovered or a test pinning the old behaviour.
+
+**1 — `WriteBackTriggerServiceTest.ResolveWriteBackForTeam_SleRisk_TeamWithFixedThroughputDates_StillAsksAboutToday`
+currently pins the bug DDD-16 fixes, and deleting it drops the claim.** At `:860-863` it asserts the
+write-back passes `start = today − 90` and `end = today` for a team whose pinned window is
+`today − 90 … today − 60`. That is DDD-16's by-product defect written as an expectation: *"it runs the
+evidence window past the fixed end date the team configured"*. The test must go — after DDD-15 there
+are no dates to verify — but the claim underneath it must be **re-homed**, not dropped. That is
+`A_fixed_history_team_reads_its_evidence_from_the_dates_it_pinned`, which belongs in the acceptance
+pair because `TeamMetricsService` is now where the window is decided. It is in the inventory above and
+is not in DESIGN's component table.
+
+**2 — three acceptance scenarios die that DESIGN's deletion list does not name.**
+`One_more_comparable_item_is_enough_to_be_told_the_answer` (the guard's threshold-direction test),
+`A_window_that_ended_in_the_past_is_answered_as_of_that_day` (its claim is reversed by DDD-16, not
+merely unreachable), and `Two_windows_asked_one_after_the_other_get_their_own_answers`. DESIGN names
+two scenarios and one helper. The real count is five scenarios and three helpers, and two of the
+helpers (`ThenTheItemIsBeyondWhatTheHistoryCanAnswer`, `SleRiskRouteBetween` with its three `When`
+steps) are S1144 on a deletion commit if they lag their callers — the same shape the ledger records as
+a deletion's characteristic Sonar failure and that slice 01 hit twice.
+
+**3 — the `a = R` boundary is not covered by the test that looks like it covers it.**
+`For_ItemStillOpen_…[TestCase(10, 100)]` and `The_longer_an_item_stays_open_…[TestCase(10, 100)]` both
+sit exactly on the target and both pass under `>=`, because `SixtyFinishedItems` contains no item that
+took exactly ten days. DESIGN's enforcement row says *"two `For_*` unit tests at `R` and `R+1`, each
+with the arithmetic that would change if the comparison flipped"* and adds *"the `R` case … already has
+a named `For_*` test"*. **It does not.** Full argument and the populations that do discriminate are in
+Q1.
+
+**4 — `R + 1` cannot discriminate the comparison, only the guard ordering.** DESIGN's enforcement row
+asks for arithmetic at `R + 1` that would change if the comparison flipped. There is none: at any age
+above the target every comparable item necessarily ran longer than the target, so the arithmetic
+already returns 100. The `R + 1` test's real subject is the ordering of the certainty rule against the
+`0/0` guard, and it only has a subject when the history is empty at that age. Row 2 of Q1's table is an
+equivalent mutant and a mutation run will report it as a survivor.
+
+**5 — `0` is falsy, and that is the most likely way to break AC-02.6 with a green compile.** A
+`labelFor` written as a truthiness check on the risk type-checks perfectly and blanks every
+thin-history cell — the exact outcome this slice exists to remove. Reachable only because `0` became a
+possible value here. It gets its own Vitest test; DESIGN's enforcement table does not mention it.
+
+**6 — the AC-02.1 loop closes automatically, including the tracker half.** The slice brief and the
+first framing of this wave both assumed the board half needed a human. `JiraWriteBackTest` and
+`AzureDevOpsWriteBackTest` already create and delete scratch issues, write a numeric custom field and
+poll it back. The loop is specifiable end to end (Q2). What is **not** automatic is that anyone runs
+it: the category is excluded from the default filter and throws rather than skips without a credential.
+
+*Additionally, and not a correction*: the existing connector tests write `42` and `15`. Nothing writes
+`0`, and `0` is the value this slice newly makes possible on the wire. Covered on Jira inside AC-02.1's
+connector test; the Azure DevOps twin is specified as a one-line follow-up in its own fixture.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Test placement, environment and pre-requisites
+
+**Placement follows precedent; one new partial pair, no new project or fixture base.**
+`Slice02SleRiskOneNumberScenarios.cs` holds the `[Test]` methods written as sentences,
+`Slice02SleRiskOneNumberSpecifications.cs` holds the `Given`/`When`/`Then` steps, both in
+`Lighthouse.Backend.Tests/API/Integration/SleRisk/`, both inheriting the existing
+`SleRiskAcceptanceTest`. Categories follow slice 01's: `acceptance`, `epic-4127-sle-risk`, `slice-02`.
+The connector test joins the Jira connector's own directory because it is a Jira fixture with a Jira
+credential and a Jira teardown. Vitest changes stay beside the modules they cover.
+
+**Environment: `local-dev` and `ci-build`, plus one deliberately-invoked connector category.** The
+acceptance pair needs the pinned clock and EF InMemory the shared fixture already provides. No new
+environment, credential, variable or configuration key for anything that runs by default. The Jira
+test needs `JiraLighthouseIntegrationTestToken` and `JiraLighthouseIntegrationTestUsername`, both of
+which already exist for the fixtures beside it, and it runs only when `JiraIntegration` is invoked on
+purpose. `ci-verify-sqlite` and `ci-verify-postgres` run the Playwright suite, which this slice does
+not change.
+
+**Build rules pre-applied to everything specified above** — `Has.Count.EqualTo`, never `.Count`
+directly (NUnit2046); `using (Assert.EnterMultipleScope())`, never `Assert.Multiple(() => …)`
+(NUnit2056); `TestCaseSource` providers `private static` (NUnit1028); `Is.Zero`/`Is.Default` rather
+than `Is.EqualTo(0)` (NUnit4002); non-public members returning `.ToList()` declare `List<T>` (CA1859);
+no inline `new[] {…}` in a repeatedly-called assertion position, so every cycle-time array handed to
+`For` is hoisted to `private static readonly` (CA1861); no explicit parameter name on a guard helper
+that infers it (S3236); and every deletion carries its now-orphaned private members in the **same**
+commit (S1144/S2325). RTL matchers use `toHaveAccessibleName` rather than an unanchored `name:` regex.
+
+**Pre-requisites owed by DELIVER before the first push**: the four-commit order of DDD-28 unchanged;
+`dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` **before
+`git push`**, which is where findings 1 and 2 above surface as S1144 if a helper lags its callers;
+`pnpm build` warning-free; and `dotnet test` with the four connector categories excluded.
+
+---
+
+## Wave: DISTILL (slice 02) / [REF] Handoff to DELIVER
+
+**Eleven new backend acceptance scenarios, four new unit tests, one new connector test, three new
+Vitest tests. Seven acceptance scenarios, three write-back unit tests, three calculator unit tests and
+eight Vitest tests deleted. Eight tests retargeted or renamed, plus the helper and mock signatures
+under them. And one regression net that must come through the diff untouched.**
+
+**RED is per-commit, never across a boundary.** Every commit in DDD-28 builds and runs green at its
+own boundary, so no test is left failing over a push. The new tests are RED against the tree as it
+stands immediately before their own commit's production edit and green after it, which is the same
+property slice 01's commit order was chosen for. Concretely: the three new Vitest tests are RED against
+the frontend as it stands before commit 1 and green after it; the backend additions are RED against
+the tree before commit 2 and green after it.
+
+**The test that would have caught the reported defect** is
+`The_dialog_and_the_board_are_told_the_same_number_for_the_same_item_on_the_same_day`. It fails today
+because the two callers pass different windows, and after DDD-15 it cannot fail for that reason again,
+because the signature stops carrying one. It runs in the default `dotnet test`.
+
+**Two things a reviewer must not accept.** A cache test that constructs its own `TeamMetricsService`
+or asserts the key string — it proves nothing, and the key is the entire mechanism (Q3). And a green
+default `dotnet test` read as evidence that AC-02.1's connector half passed — that category is
+excluded by the standard filter and throws rather than skips without a credential (Q2).
+
+**Carried forward to slice 03**: the per-cell disclosure of evidence depth and the `comparableItems`
+field that feeds it, re-added with its consumer in one commit; the dialog width and the
+`sle_risk_column.png` re-take, once rather than twice. **To slice 04**: the at-risk threshold and
+DESIGN's Open question 1, which lands on the one volatile age this slice deliberately leaves computed.
