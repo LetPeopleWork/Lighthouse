@@ -1,8 +1,11 @@
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -44,6 +47,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private const string TheFieldDataCenterHangsParentsOn = "Epic Link";
 
         private const string TheParentDataCenterWouldHaveNamed = "EPIC-4";
+
+        /// <summary>
+        /// The field Jira Data Center hangs a Feature's parent on. It is a different field from the one the
+        /// Team scenarios read, and the guard that stops a refresh falling back to it is written out once per
+        /// grain rather than shared.
+        /// </summary>
+        private const string TheFieldDataCenterHangsFeatureParentsOn = "Parent Link";
+
+        private const string TheFeatureWithNothingMatching = "EPIC-8";
+
+        private const string TheLevelAboveDataCenterWouldHaveNamed = "INIT-4";
 
         private const string ACustomField = "Story Points";
 
@@ -88,6 +102,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// <summary>Every path the stub was asked for, in the order it was asked, across a whole scenario.</summary>
         private readonly List<string> whatTheRefreshesAskedFor = [];
 
+        /// <summary>
+        /// Which issues a given query finds, for the scenarios describing two grains at once. A Portfolio's
+        /// Features and a Team's Work Items are two different answers to two different queries, and the
+        /// query is the only thing in the request that tells them apart. A scenario that says nothing here
+        /// gets the whole instance back for every query, which is what every scenario written before this
+        /// one expects.
+        /// </summary>
+        private readonly Dictionary<string, List<string>> whatEachQueryFinds = [];
+
+        private readonly List<WorkItem> whatStorageHoldsForTheWorkItems = [];
+
+        private readonly List<Feature> whatStorageHoldsForTheFeatures = [];
+
         private Mock<ILogger<JiraWorkTrackingConnector>> whatTheRefreshWroteToTheLog = new();
 
         private string? whatTheParentOverrideNames;
@@ -101,6 +128,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private Team? theTeamEveryRefreshFetches;
 
+        private Team? theTeamDeliveringTheWork;
+
+        private Portfolio? thePortfolioBeingSized;
+
         [SetUp]
         public void ForgetTheInstanceTheLastScenarioDescribed()
         {
@@ -111,10 +142,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             linkTypesTheInstanceDefines.Add(AnotherLinkTypeTheInstanceDefines);
             linkTypesTheInstanceDefines.Add(ALinkTypeAPortfolioNames);
             whatTheRefreshesAskedFor.Clear();
+            whatEachQueryFinds.Clear();
+            whatStorageHoldsForTheWorkItems.Clear();
+            whatStorageHoldsForTheFeatures.Clear();
             whatTheRefreshWroteToTheLog = new Mock<ILogger<JiraWorkTrackingConnector>>();
             whatTheParentOverrideNames = null;
             theCredentialIsStillAccepted = true;
             theTeamEveryRefreshFetches = null;
+            theTeamDeliveringTheWork = null;
+            thePortfolioBeingSized = null;
         }
 
         /// <summary>
@@ -131,6 +167,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private void TheParentOverrideNames(string reference) => whatTheParentOverrideNames = reference;
 
         private void TheInstanceDefinesTheCustomField(string name) => customFieldsTheInstanceDefines.Add(name);
+
+        /// <summary>
+        /// The field Lighthouse reads on every Jira refresh whether or not anybody configured anything. It
+        /// has to be described for a cost measurement to mean what it says: what sends a refresh looking at
+        /// link types is a reference the field list could not resolve, and on an instance missing this one
+        /// that describes a Team nobody ever touched.
+        /// </summary>
+        private void TheInstanceDefinesTheFieldEveryRefreshAlreadyReads()
+            => TheInstanceDefinesTheCustomField(JiraFieldNames.FlaggedName);
 
         private void TheIssueHasOneLinkWhoseOutwardIssueIs(string key, JiraLinkType linkType, string counterpartKey)
             => issuesTheInstanceServes.Add(AnIssue(key, string.Empty, linkType.LinkWhoseOutwardIssueIs(counterpartKey)));
@@ -235,6 +280,181 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             }
         }
 
+        private Task<RequestTally> WhatOneTeamRefreshAsksForWith(string reference) => WhatOneTeamRefreshCosts(reference);
+
+        /// <summary>A refresh of a Team nobody has configured, which is what every Team did before this feature.</summary>
+        private Task<RequestTally> WhatOneTeamRefreshAsksForWithTheBoxLeftEmpty() => WhatOneTeamRefreshCosts(null);
+
+        /// <summary>
+        /// One Team refresh, counted on its own. The Team is built again so that the setting is the only
+        /// thing that differs between two measurements taken in the same scenario.
+        /// </summary>
+        private async Task<RequestTally> WhatOneTeamRefreshCosts(string? reference)
+        {
+            whatTheParentOverrideNames = reference;
+            theTeamEveryRefreshFetches = null;
+
+            var alreadyAsked = whatTheRefreshesAskedFor.Count;
+            await TheTeamIsRefreshed();
+
+            return TallyOf(whatTheRefreshesAskedFor.Skip(alreadyAsked));
+        }
+
+        private static RequestTally TallyOf(IEnumerable<string> paths)
+        {
+            var asked = paths.ToList();
+
+            return new RequestTally(
+                asked.Count(path => path.Contains(SearchEndpoint, StringComparison.Ordinal)),
+                asked.Count(path => path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal)),
+                asked.Count(path => path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal)));
+        }
+
+        // --- A Portfolio whose Features are sized by the Work Items that link to them ---
+
+        private const string TheQueryThatFindsTheTeamsWorkItems = "project = CHILDWORK";
+
+        private const string TheQueryThatFindsThePortfoliosFeatures = "project = FEATUREWORK";
+
+        /// <summary>
+        /// The Portfolio's Features and how many Work Items link to each. Three different counts, because
+        /// a child count read off the wrong Feature comes out right by accident whenever they all match.
+        /// </summary>
+        private static readonly (string Feature, int Children)[] TheFeaturesAndHowManyItemsLinkToEach =
+            [("FEAT-1", 1), ("FEAT-2", 2), ("FEAT-3", 3)];
+
+        private void APortfolioOfFeaturesWhoseChildrenLinkToThemBy(JiraLinkType linkType)
+        {
+            var features = new List<string>();
+            var children = new List<string>();
+
+            foreach (var (feature, childCount) in TheFeaturesAndHowManyItemsLinkToEach)
+            {
+                features.Add(AnIssue(feature, string.Empty));
+
+                for (var child = 1; child <= childCount; child++)
+                {
+                    children.Add(AnIssue($"{feature}-{child}", string.Empty, linkType.LinkWhoseOutwardIssueIs(feature)));
+                }
+            }
+
+            whatEachQueryFinds[TheQueryThatFindsThePortfoliosFeatures] = features;
+            whatEachQueryFinds[TheQueryThatFindsTheTeamsWorkItems] = children;
+        }
+
+        /// <summary>
+        /// The administrator fills the box in, on both grains, between two refreshes - which is the only
+        /// way to see the before and the after of one instance.
+        /// </summary>
+        private void TheAdministratorNamesTheLinkTypeOnBothGrains(JiraLinkType linkType)
+        {
+            whatTheParentOverrideNames = linkType.Name;
+            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(TheTeamDeliveringTheWork());
+            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(ThePortfolioBeingSized());
+        }
+
+        /// <summary>
+        /// One cycle of each grain, in the order the update runs them. What is left under a Feature is the
+        /// sum of its Teams' open work, so the Portfolio can only be sized once the Team has stored some.
+        /// </summary>
+        private async Task TheTeamAndThePortfolioAreRefreshed()
+        {
+            await TheUpdateAsOneRefreshRunsIt().UpdateWorkItemsForTeam(TheTeamDeliveringTheWork());
+            await TheUpdateAsOneRefreshRunsIt().UpdateFeaturesForPortfolio(ThePortfolioBeingSized());
+        }
+
+        /// <summary>
+        /// The real remaining-work pass over the real Jira connector, with lists standing in for the
+        /// database. A connector per call, because a refresh builds one and whatever it remembered about
+        /// the instance may not outlive it.
+        /// </summary>
+        private WorkItemService TheUpdateAsOneRefreshRunsIt()
+            => new WorkItemServiceTestBuilder()
+                .WithConnector(JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object))
+                .WithFeatureRepository(StorageForTheFeatures())
+                .WithWorkItemRepository(StorageForTheWorkItems())
+                .WithTeamRepository(TheOnlyTeamOnTheInstance())
+                .Build();
+
+        private Team TheTeamDeliveringTheWork()
+        {
+            if (theTeamDeliveringTheWork is null)
+            {
+                theTeamDeliveringTheWork = JiraConnectorTestSetup.ATeamOnJiraCloud();
+                theTeamDeliveringTheWork.DataRetrievalValue = TheQueryThatFindsTheTeamsWorkItems;
+            }
+
+            return theTeamDeliveringTheWork;
+        }
+
+        private Portfolio ThePortfolioBeingSized()
+        {
+            if (thePortfolioBeingSized is null)
+            {
+                thePortfolioBeingSized = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+                thePortfolioBeingSized.DataRetrievalValue = TheQueryThatFindsThePortfoliosFeatures;
+            }
+
+            return thePortfolioBeingSized;
+        }
+
+        private IWorkItemRepository StorageForTheWorkItems()
+        {
+            var storage = new Mock<IWorkItemRepository>();
+
+            storage
+                .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns((Expression<Func<WorkItem, bool>> matches)
+                    => whatStorageHoldsForTheWorkItems.Where(matches.Compile()).AsQueryable());
+
+            storage
+                .Setup(repository => repository.Add(It.IsAny<WorkItem>()))
+                .Callback((WorkItem item) => whatStorageHoldsForTheWorkItems.Add(item));
+
+            return storage.Object;
+        }
+
+        private IRepository<Feature> StorageForTheFeatures()
+        {
+            var storage = new Mock<IRepository<Feature>>();
+
+            storage
+                .Setup(repository => repository.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
+                .Returns((Func<Feature, bool> matches) => whatStorageHoldsForTheFeatures.Find(feature => matches(feature)));
+
+            storage
+                .Setup(repository => repository.Add(It.IsAny<Feature>()))
+                .Callback((Feature feature) => whatStorageHoldsForTheFeatures.Add(feature));
+
+            return storage.Object;
+        }
+
+        /// <summary>
+        /// The one Team on the instance. While the Features have no children of their own, the Portfolio's
+        /// default size is split across whoever this answers with, and an instance with nobody on it makes
+        /// the before-state read as an empty Portfolio rather than as an unsized one.
+        /// </summary>
+        private IRepository<Team> TheOnlyTeamOnTheInstance()
+        {
+            var storage = new Mock<IRepository<Team>>();
+            storage.Setup(repository => repository.GetAll()).Returns(() => new List<Team> { TheTeamDeliveringTheWork() });
+
+            return storage.Object;
+        }
+
+        private List<string> WhichFeaturesAreSizedByThePortfolioDefault()
+            => ThePortfolioBeingSized().Features
+                .FindAll(feature => feature.IsUsingDefaultFeatureSize)
+                .ConvertAll(feature => feature.ReferenceId);
+
+        private Dictionary<string, int> HowManyChildrenEachFeatureEndedUpWith()
+            => ThePortfolioBeingSized().Features.ToDictionary(
+                feature => feature.ReferenceId,
+                feature => feature.FeatureWork.Sum(work => work.TotalWorkItems));
+
+        private static Dictionary<string, int> HowManyItemsLinkToEachFeature()
+            => TheFeaturesAndHowManyItemsLinkToEach.ToDictionary(pair => pair.Feature, pair => pair.Children);
+
         private void WhatTheAdministratorTypedIntoTheOverrideIsSetOn(IWorkItemQueryOwner owner)
         {
             if (whatTheParentOverrideNames is null)
@@ -324,12 +544,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
                 .Returns<HttpRequestMessage, CancellationToken>(
-                    (request, _) => Task.FromResult(AnAnswerTo(request.RequestUri?.AbsolutePath ?? string.Empty)));
+                    (request, _) => Task.FromResult(AnAnswerTo(
+                        request.RequestUri?.AbsolutePath ?? string.Empty,
+                        Uri.UnescapeDataString(request.RequestUri?.Query ?? string.Empty))));
 
             return mock.Object;
         }
 
-        private HttpResponseMessage AnAnswerTo(string path)
+        private HttpResponseMessage AnAnswerTo(string path, string query)
         {
             whatTheRefreshesAskedFor.Add(path);
 
@@ -347,7 +569,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 _ when path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
                 _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal) => TheFieldsItDefines(),
                 _ when path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal) => TheLinkTypesItDefines(),
-                _ when path.Contains(SearchEndpoint, StringComparison.Ordinal) => TheIssuesItServes(),
+                _ when path.Contains(SearchEndpoint, StringComparison.Ordinal) => TheIssuesItServes(query),
                 _ => "{}",
             };
 
@@ -357,8 +579,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             };
         }
 
-        private string TheIssuesItServes()
-            => "{\"issues\":[" + string.Join(",", issuesTheInstanceServes) + "],\"isLast\":true}";
+        private string TheIssuesItServes(string query)
+        {
+            foreach (var (whatTheQueryAsksFor, issues) in whatEachQueryFinds)
+            {
+                if (query.Contains(whatTheQueryAsksFor, StringComparison.Ordinal))
+                {
+                    return OnePageOf(issues);
+                }
+            }
+
+            return OnePageOf(issuesTheInstanceServes);
+        }
+
+        private static string OnePageOf(List<string> issues)
+            => "{\"issues\":[" + string.Join(",", issues) + "],\"isLast\":true}";
 
         /// <summary>The field list as Jira Cloud writes it - every field carrying a "key" as well as an id.</summary>
         private string TheFieldsItDefines()
@@ -394,5 +629,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             return "{\"issueLinkTypes\":[" + string.Join(",", linkTypes) + "]}";
         }
+
+        /// <summary>
+        /// What one refresh asked the instance for, by endpoint. The link-type read and the credential
+        /// probe are counted apart from the search deliberately: they are the two round trips this feature
+        /// genuinely adds, and folding them into the search count is how an extra request stops being
+        /// visible to the scenario that was written to see it.
+        /// </summary>
+        private readonly record struct RequestTally(int Searches, int LinkTypeReads, int CredentialChecks);
     }
 }
