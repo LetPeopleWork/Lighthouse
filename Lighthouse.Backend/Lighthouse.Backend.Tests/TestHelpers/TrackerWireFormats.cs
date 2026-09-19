@@ -7,6 +7,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public static class JiraWireFormat
     {
+        private const string EpicIssueType = "Epic";
+
         /// <summary>
         /// The routing a Cloud connector walks before it ever reaches a search: it asks which deployment
         /// it is talking to, then for the field definitions, and only then for the issues.
@@ -36,14 +38,21 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static string AnEpic(string key, params string[] links) => AnEpicNamed(key, $"{key} summary", links);
 
         public static string AnEpicNamed(string key, string summary, params string[] links)
-            => AnIssue(key, TheFieldsOf(summary, links), changelogEntries: null);
+            => AnIssue(key, TheFieldsOf(summary, EpicIssueType, links), changelogEntries: null);
+
+        /// <summary>
+        /// An issue at whatever grain the caller needs. Only a Portfolio is made of Epics; a Team's items
+        /// carry whichever type the instance calls them, and a fixture fixed at Epic cannot say so.
+        /// </summary>
+        public static string AnIssueOfType(string key, string issueType, params string[] links)
+            => AnIssue(key, TheFieldsOf($"{key} summary", issueType, links), changelogEntries: null);
 
         /// <summary>
         /// An issue whose history is long enough that the connector will not trust the copy that came with
         /// the search result, and re-reads it on the issue's own changelog endpoint. The threshold is thirty.
         /// </summary>
         public static string AnIssueWithAChangelogOf(string key, int entries, params string[] links)
-            => AnIssue(key, TheFieldsOf($"{key} summary", links), entries);
+            => AnIssue(key, TheFieldsOf($"{key} summary", EpicIssueType, links), entries);
 
         private static string AnIssue(string key, string fields, int? changelogEntries)
         {
@@ -54,9 +63,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return "{\"key\": \"" + key + "\", \"fields\": " + fields + changelog + "}";
         }
 
-        private static string TheFieldsOf(string summary, string[] links)
+        private static string TheFieldsOf(string summary, string issueType, string[] links)
             => "{\"summary\": \"" + summary + "\""
-                + ", \"issuetype\": {\"name\": \"Epic\"}"
+                + ", \"issuetype\": {\"name\": \"" + issueType + "\"}"
                 + ", \"status\": {\"name\": \"In Progress\"}"
                 + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
                 + ", \"updated\": \"2026-01-02T00:00:00.000+0000\""
@@ -71,15 +80,35 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static string BlockedByLink(string key) => InwardLink("is blocked by", key);
 
         /// <summary>This issue is waiting on <paramref name="key"/>, under a link named something else.</summary>
-        public static string InwardLink(string inwardName, string key) => Link("inwardIssue", inwardName, key);
+        public static string InwardLink(string inwardName, string key)
+            => JiraLinkType.Blocks(inwardName).LinkWhoseInwardIssueIs(key);
 
         /// <summary>The far end of somebody else's dependency: this issue blocks <paramref name="key"/>.</summary>
-        public static string BlocksLink(string key) => Link("outwardIssue", "is blocked by", key);
+        public static string BlocksLink(string key)
+            => JiraLinkType.Blocks("is blocked by").LinkWhoseOutwardIssueIs(key);
+    }
 
-        private static string Link(string end, string inwardName, string key)
+    /// <summary>
+    /// A link type as Jira defines it: the name an administrator sees, plus the label the link wears from
+    /// each end. Jira writes a link once and serves it from both ends, handing each issue a pointer to the
+    /// other one - so an entry naming an inwardIssue sits on the issue holding the outward end, and a
+    /// fixture that only ever builds one of the two shapes tests half of what an instance can send.
+    /// </summary>
+    public sealed record JiraLinkType(string Name, string Inward, string Outward)
+    {
+        /// <summary>The Blocks type as Jira ships it, save for an inward label an administrator may have renamed.</summary>
+        public static JiraLinkType Blocks(string inwardName) => new("Blocks", inwardName, "blocks");
+
+        /// <summary>An entry on the issue holding the outward end, pointing at <paramref name="counterpartKey"/>.</summary>
+        public string LinkWhoseInwardIssueIs(string counterpartKey) => LinkTo("inwardIssue", counterpartKey);
+
+        /// <summary>An entry on the issue holding the inward end, pointing at <paramref name="counterpartKey"/>.</summary>
+        public string LinkWhoseOutwardIssueIs(string counterpartKey) => LinkTo("outwardIssue", counterpartKey);
+
+        private string LinkTo(string end, string counterpartKey)
         {
-            var type = "{\"name\": \"Blocks\", \"inward\": \"" + inwardName + "\", \"outward\": \"blocks\"}";
-            var issue = "{\"key\": \"" + key + "\", \"fields\": {\"summary\": \"Something\"}}";
+            var type = "{\"name\": \"" + Name + "\", \"inward\": \"" + Inward + "\", \"outward\": \"" + Outward + "\"}";
+            var issue = "{\"key\": \"" + counterpartKey + "\", \"fields\": {\"summary\": \"Something\"}}";
 
             return "{\"type\": " + type + ", \"" + end + "\": " + issue + "}";
         }
