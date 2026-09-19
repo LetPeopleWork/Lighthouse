@@ -201,18 +201,39 @@ const sleRiskGridColumn = (
 		};
 	},
 	valueGetter: (_, row) => descriptor.labelFor(row),
-	renderCell: ({ value, row }) => (
-		<Typography
-			variant="body2"
-			data-testid="sleRiskColumnContent"
-			{...judgementCell(
-				descriptor.colorForRisk(descriptor.riskFor(row)),
-				"text.secondary",
-			)}
-		>
-			{value as string}
-		</Typography>
-	),
+	renderCell: ({ value, row }) => {
+		const disclosure = descriptor.disclosureFor(row);
+		const cell = (
+			<Typography
+				variant="body2"
+				data-testid="sleRiskColumnContent"
+				// An aria-label REPLACES the accessible name rather than adding to it, so the value has
+				// to be repeated here. A label carrying only the sentence would take the percentage
+				// away from the reader it was written to help.
+				aria-label={
+					disclosure === undefined
+						? undefined
+						: `${value as string}. ${disclosure}`
+				}
+				{...judgementCell(
+					descriptor.colorForRisk(descriptor.riskFor(row)),
+					"text.secondary",
+				)}
+			>
+				{value as string}
+			</Typography>
+		);
+
+		// The sentence goes in a tooltip rather than in the cell: the cell's text is the column's
+		// value, which is what sorts and what the export carries, and the column is only as wide as
+		// its header on purpose. A row the answers never mentioned gets no tooltip, because it makes
+		// no claim and so has nothing to disclose.
+		return disclosure === undefined ? (
+			cell
+		) : (
+			<Tooltip title={disclosure}>{cell}</Tooltip>
+		);
+	},
 });
 
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({

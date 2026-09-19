@@ -565,6 +565,8 @@ export function buildViewData(
 		answers: inputs.sleRiskValues,
 		headerName: sleRiskColumnHeaderName(terms.sle),
 		description: sleRiskColumnDescription(terms.workItem),
+		workItemTerm: terms.workItem,
+		workItemsTerm: terms.workItems,
 	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,

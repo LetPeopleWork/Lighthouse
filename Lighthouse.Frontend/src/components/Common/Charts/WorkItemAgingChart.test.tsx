@@ -2181,8 +2181,16 @@ describe("the risk beside the dot the coach clicked", () => {
 		render(
 			<WorkItemAgingChart
 				sleRiskValues={[
-					{ referenceId: "ZEN-412", risk: 86 },
-					{ referenceId: "ZEN-419", risk: 12 },
+					{
+						referenceId: "ZEN-412",
+						risk: 86,
+						finishedItemsStillOpenAtThisAge: 7,
+					},
+					{
+						referenceId: "ZEN-419",
+						risk: 12,
+						finishedItemsStillOpenAtThisAge: 7,
+					},
 				]}
 				inProgressItems={inFlight}
 				percentileValues={cycleTimePercentiles}

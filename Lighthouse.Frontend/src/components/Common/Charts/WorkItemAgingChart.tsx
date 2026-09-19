@@ -437,8 +437,10 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				answers: sleRiskValues,
 				headerName: sleRiskColumnHeaderName(sleTerm),
 				description: sleRiskColumnDescription(workItemTerm),
+				workItemTerm,
+				workItemsTerm,
 			}),
-		[sleRiskValues, sleTerm, workItemTerm],
+		[sleRiskValues, sleTerm, workItemTerm, workItemsTerm],
 	);
 
 	const meaningfulWorkItemAgePercentiles = useMemo(

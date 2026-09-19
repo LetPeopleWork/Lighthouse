@@ -1470,6 +1470,17 @@ const sleRiskColumn: SleRiskColumnDescriptor = {
 		if (risk >= 25) return riskColors.moderate;
 		return riskColors.low;
 	},
+	// ZEN-455 is the row the answers never mentioned, so it discloses nothing. ZEN-604 reads 100%
+	// against an empty history, which is the pair the cell has to render without implying one caused
+	// the other.
+	disclosureFor: (item) => {
+		if (riskByReference[item.referenceId] === undefined) {
+			return undefined;
+		}
+		return item.referenceId === "ZEN-604"
+			? "No Work Item the team finished was ever still open this long."
+			: "4 Work Items the team finished were still open at this age.";
+	},
 };
 
 const riskCellTexts = () =>
@@ -1597,6 +1608,39 @@ describe("SLE Risk column", () => {
 			);
 
 			expect(riskIndex).toBeGreaterThan(alreadyNamed.length - 1);
+		});
+
+		// Both halves in one body on purpose. Split across two tests, a diff can satisfy one and
+		// break the other — and the failure mode being guarded against is exactly that: an
+		// aria-label REPLACES a cell's accessible name, so a label carrying only the sentence takes
+		// the percentage away from the reader it was written to help.
+		test("tells a reader what the number rests on without putting it in the cell", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			const cell = screen
+				.getAllByTestId("sleRiskColumnContent")
+				.find((candidate) => candidate.textContent?.trim() === "86%");
+
+			// toHaveAccessibleName rather than a name matcher, which matches unanchored substrings —
+			// and the whole point of this sentence is its wording.
+			expect(cell).toHaveAccessibleName(
+				"86%. 4 Work Items the team finished were still open at this age.",
+			);
+			expect(cell).toHaveTextContent(/^86%$/);
+		});
+
+		test("carries no name of its own for a row that makes no claim", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			const unanswered = screen
+				.getAllByTestId("sleRiskColumnContent")
+				.find((candidate) => candidate.textContent?.trim() === "");
+
+			expect(unanswered).toHaveAccessibleName("");
 		});
 
 		test("sits beside the band it belongs with when both are offered", () => {

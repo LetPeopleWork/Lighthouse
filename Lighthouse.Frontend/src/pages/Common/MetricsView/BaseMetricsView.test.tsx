@@ -6828,7 +6828,11 @@ describe("which lists carry the risk column", () => {
 	});
 
 	const viewDataWith = (
-		sleRiskValues: { referenceId: string; risk: number }[],
+		sleRiskValues: {
+			referenceId: string;
+			risk: number;
+			finishedItemsStillOpenAtThisAge: number;
+		}[],
 	) =>
 		buildViewData({
 			title: "Work Items",
@@ -6864,8 +6868,8 @@ describe("which lists carry the risk column", () => {
 
 	const builtWithRisk = () =>
 		viewDataWith([
-			{ referenceId: "ZEN-1", risk: 86 },
-			{ referenceId: "ZEN-2", risk: 12 },
+			{ referenceId: "ZEN-1", risk: 86, finishedItemsStillOpenAtThisAge: 7 },
+			{ referenceId: "ZEN-2", risk: 12, finishedItemsStillOpenAtThisAge: 7 },
 		]);
 
 	it.each(LISTS_WHAT_IS_IN_FLIGHT_TODAY)(

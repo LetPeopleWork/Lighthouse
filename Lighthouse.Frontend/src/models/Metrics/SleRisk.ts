@@ -8,6 +8,12 @@ import { z } from "zod";
 export const SleRiskSchema = z.object({
 	referenceId: z.string(),
 	risk: z.number(),
+	/**
+	 * How much of the team's finished work was still open at this item's age. It qualifies the risk
+	 * without explaining it: a share over two finished items and one over forty read identically
+	 * otherwise, and the first moves by fifty points when one more item closes.
+	 */
+	finishedItemsStillOpenAtThisAge: z.number(),
 });
 
 export type ISleRisk = z.infer<typeof SleRiskSchema>;

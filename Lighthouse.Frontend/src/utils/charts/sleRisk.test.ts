@@ -7,6 +7,7 @@ import {
 	sleRiskAtRiskSummary,
 	sleRiskColumnDescription,
 	sleRiskColumnHeaderName,
+	sleRiskEvidenceDisclosure,
 	sleRiskSortValue,
 } from "./sleRisk";
 
@@ -26,9 +27,14 @@ const zenithItem = (referenceId: string): IWorkItem => ({
 	isBlocked: false,
 });
 
-const answer = (referenceId: string, risk: number): ISleRisk => ({
+const answer = (
+	referenceId: string,
+	risk: number,
+	finishedItemsStillOpenAtThisAge = 4,
+): ISleRisk => ({
 	referenceId,
 	risk,
+	finishedItemsStillOpenAtThisAge,
 });
 
 const descriptorFor = (answers: ISleRisk[]) =>
@@ -36,6 +42,8 @@ const descriptorFor = (answers: ISleRisk[]) =>
 		answers,
 		headerName: "SLE Risk",
 		description: "how likely this one is to miss",
+		workItemTerm: "Work Item",
+		workItemsTerm: "Work Items",
 	});
 
 describe("the risk column's wording", () => {
@@ -226,5 +234,54 @@ describe("counting what is at risk", () => {
 	test("counts nothing for a team that published no target", () => {
 		// An empty answer is how that arrives, and it is the same shape as having no items.
 		expect(sleRiskAtRiskSummary([]).count).toBe(0);
+	});
+});
+
+describe("what a risk rests on", () => {
+	test("counts the finished work that ran at least this long, in the team's own word for it", () => {
+		expect(sleRiskEvidenceDisclosure(4, "Work Item", "Work Items")).toBe(
+			"4 Work Items the team finished were still open at this age.",
+		);
+		expect(sleRiskEvidenceDisclosure(4, "Ticket", "Tickets")).toBe(
+			"4 Tickets the team finished were still open at this age.",
+		);
+	});
+
+	test("speaks of one finished item in the singular", () => {
+		expect(sleRiskEvidenceDisclosure(1, "Work Item", "Work Items")).toBe(
+			"1 Work Item the team finished was still open at this age.",
+		);
+	});
+
+	test("says a thin history said nothing rather than saying nothing", () => {
+		// This is what the withdrawn "beyond history" sentinel used to carry, returned as evidence
+		// beside the answer instead of as a substitute for it.
+		expect(sleRiskEvidenceDisclosure(0, "Work Item", "Work Items")).toBe(
+			"No Work Item the team finished was ever still open this long.",
+		);
+	});
+
+	// The trap. An item past its target reads 100% because being past the target settles it — the
+	// history was never consulted — and its count is often zero, because nothing the team finished
+	// ever ran that long. So the cell shows 100% beside "no finished work ran this long", and a
+	// reader must not be able to conclude the first followed from the second.
+	//
+	// Asserted as invariance rather than by banning words like "computed" or "based on". A negative
+	// assertion over an open set of words goes stale the moment the wording is edited, and passes
+	// for a sentence that implies the derivation without using any of them. This one fails the
+	// instant a risk-aware branch appears, which is the only way the implication can get in.
+	test("says the same about a certain item as about a safe one", () => {
+		const certain = descriptorFor([answer("ZEN-412", 100, 0)]);
+		const safe = descriptorFor([answer("ZEN-412", 0, 0)]);
+
+		expect(certain?.disclosureFor(zenithItem("ZEN-412"))).toBe(
+			safe?.disclosureFor(zenithItem("ZEN-412")),
+		);
+	});
+
+	test("offers nothing to disclose for a row the answer never mentioned", () => {
+		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
+
+		expect(descriptor?.disclosureFor(zenithItem("ZEN-999"))).toBeUndefined();
 	});
 });

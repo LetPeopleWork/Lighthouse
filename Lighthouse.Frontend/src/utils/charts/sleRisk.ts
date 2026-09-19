@@ -19,6 +19,36 @@ export const sleRiskColumnHeaderName = (sleTerm: string): string =>
 	`${sleTerm} Risk`;
 
 /**
+ * What an item's number rests on, as a sentence about the team's history.
+ *
+ * It takes no risk, and that is the design rather than an omission. An item past its target reads
+ * 100 because being past the target settles it — the history was never consulted — and that item's
+ * count is often zero, because nothing the team finished ever ran that long. A sentence that could
+ * see the risk could be written to explain it, and would then be telling a reader that the 100 came
+ * from the emptiness. Having no risk to branch on makes that impossible rather than merely absent.
+ *
+ * So it states a fact that is true beside every answer: how much finished work was still open at
+ * this age. It makes no claim about the derivation, so it cannot be wrong about one.
+ */
+export const sleRiskEvidenceDisclosure = (
+	finishedItemsStillOpenAtThisAge: number,
+	workItemTerm: string,
+	workItemsTerm: string,
+): string => {
+	if (finishedItemsStillOpenAtThisAge === 0) {
+		return `No ${workItemTerm} the team finished was ever still open this long.`;
+	}
+
+	// A team whose history is thin at a given age is the case this sentence exists for, so the
+	// singular is not a rare path — it is the one a reader most needs to see.
+	if (finishedItemsStillOpenAtThisAge === 1) {
+		return `1 ${workItemTerm} the team finished was still open at this age.`;
+	}
+
+	return `${finishedItemsStillOpenAtThisAge} ${workItemsTerm} the team finished were still open at this age.`;
+};
+
+/**
  * Where the odds turn against an item, in the palette the aging chart already paints its pace bands
  * with. Low to high is good to bad in both, so a reader who has learned one has learned the other.
  */
@@ -36,12 +66,19 @@ export interface SleRiskColumnDescriptor {
 	/** `86%`, or whichever no-answer label applies. This is the column's value, so it is what exports. */
 	readonly labelFor: (workItem: IWorkItem) => string;
 	readonly colorForRisk: (risk: number | undefined) => string | undefined;
+	/**
+	 * What this row's number rests on, or nothing for a row the answers never mentioned — such a row
+	 * makes no claim, so it has nothing to disclose.
+	 */
+	readonly disclosureFor: (workItem: IWorkItem) => string | undefined;
 }
 
 export interface SleRiskColumnInputs {
 	readonly answers: readonly ISleRisk[];
 	readonly headerName: string;
 	readonly description: string;
+	readonly workItemTerm: string;
+	readonly workItemsTerm: string;
 }
 
 /**
@@ -88,6 +125,8 @@ export const buildSleRiskColumnDescriptor = ({
 	answers,
 	headerName,
 	description,
+	workItemTerm,
+	workItemsTerm,
 }: SleRiskColumnInputs): SleRiskColumnDescriptor | undefined => {
 	if (answers.length === 0) {
 		return undefined;
@@ -112,6 +151,17 @@ export const buildSleRiskColumnDescriptor = ({
 			return risk === undefined ? "" : `${risk}%`;
 		},
 		colorForRisk: sleRiskColorFor,
+		disclosureFor: (workItem) => {
+			const answer = byReferenceId.get(workItem.referenceId);
+
+			return answer === undefined
+				? undefined
+				: sleRiskEvidenceDisclosure(
+						answer.finishedItemsStillOpenAtThisAge,
+						workItemTerm,
+						workItemsTerm,
+					);
+		},
 	};
 };
 
