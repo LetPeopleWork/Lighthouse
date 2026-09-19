@@ -1698,4 +1698,60 @@ describe("the room the dialog opens with", () => {
 
 		expect(screen.getByRole("dialog")).toHaveClass("MuiDialog-paperWidthXl");
 	});
+
+	test("remembers a coach's choice of size across a reopen", async () => {
+		const user = userEvent.setup();
+		const { unmount } = render(
+			<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Enlarge" }));
+		expect(
+			screen.getByRole("button", { name: "Restore size" }),
+		).toBeInTheDocument();
+
+		unmount();
+		render(
+			<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Restore size" }),
+		).toBeInTheDocument();
+	});
+
+	test("opens anyway when the browser will not remember anything", () => {
+		const blocked = vi.spyOn(Storage.prototype, "getItem");
+		blocked.mockImplementation(() => {
+			throw new Error("The operation is insecure.");
+		});
+
+		try {
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			expect(screen.getByRole("dialog")).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Enlarge" }),
+			).toBeInTheDocument();
+		} finally {
+			blocked.mockRestore();
+		}
+	});
+
+	// The end-to-end page object used to close this dialog with the first button on the page, which
+	// only worked while there was exactly one. Adding the enlarge control ahead of it would have
+	// retargeted every spec that closes the dialog, and nothing in a local run would have said so —
+	// the page objects compile in a separate project. The names are the fix; this is what keeps them.
+	test("names its close control, so nothing has to find it by position", () => {
+		render(
+			<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+		);
+
+		expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Enlarge" })).not.toBe(
+			screen.getByRole("button", { name: "Close" }),
+		);
+	});
 });

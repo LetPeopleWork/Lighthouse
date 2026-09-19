@@ -8,8 +8,14 @@ export class WorkItemsDialog {
 	}
 
 	async close(): Promise<void> {
-		const closeButton = this.page.getByRole("button").first();
-		await closeButton.click();
+		// Scoped to the dialog on purpose: the accessible-name match is a case-insensitive
+		// substring, and the feature size scatter plot behind this dialog renders a "Closed Date"
+		// toggle that an unscoped lookup would find as well.
+		await this.dialog.getByRole("button", { name: "Close" }).click();
+	}
+
+	get enlargeButton(): Locator {
+		return this.dialog.getByRole("button", { name: "Enlarge" });
 	}
 
 	get dialog(): Locator {

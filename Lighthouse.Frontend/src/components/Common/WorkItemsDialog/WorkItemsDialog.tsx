@@ -1,5 +1,7 @@
 import BlockIcon from "@mui/icons-material/Block";
 import CloseIcon from "@mui/icons-material/Close";
+import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
+import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import {
 	Box,
 	Chip,
@@ -13,6 +15,7 @@ import {
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import { useCallback, useMemo } from "react";
+import { useEnlargedWorkItemsDialog } from "../../../hooks/useEnlargedWorkItemsDialog";
 import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -224,6 +227,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	sleRiskColumn,
 }) => {
 	const { getTerm } = useTerminology();
+	const { enlarged, toggleEnlarged } = useEnlargedWorkItemsDialog();
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
@@ -429,15 +433,31 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	]);
 
 	return (
-		<Dialog open={open} onClose={onClose} fullWidth maxWidth="xl">
+		<Dialog
+			open={open}
+			onClose={onClose}
+			fullWidth
+			maxWidth="xl"
+			fullScreen={enlarged}
+		>
 			<DialogTitle sx={{ backgroundColor: "background.paper" }}>
 				{title}
 				<IconButton
 					onClick={onClose}
+					aria-label="Close"
 					sx={{ position: "absolute", right: 8, top: 8 }}
 				>
 					<CloseIcon />
 				</IconButton>
+				<Tooltip title={enlarged ? "Restore size" : "Enlarge"}>
+					<IconButton
+						onClick={toggleEnlarged}
+						aria-label={enlarged ? "Restore size" : "Enlarge"}
+						sx={{ position: "absolute", right: 48, top: 8 }}
+					>
+						{enlarged ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
+					</IconButton>
+				</Tooltip>
 			</DialogTitle>
 			<DialogContent sx={{ backgroundColor: "background.paper" }}>
 				{items.length > 0 ? (
