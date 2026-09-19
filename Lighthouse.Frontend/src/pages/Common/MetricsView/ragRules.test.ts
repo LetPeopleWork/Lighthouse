@@ -13,6 +13,7 @@ import {
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
+	computeSleRiskRag,
 	computeStaleOverviewRag,
 	computeStartedVsClosedRag,
 	computeThroughputRag,
@@ -225,6 +226,94 @@ describe("ragRules", () => {
 			const result = computePredictabilityScoreRag(1, terms);
 			expect(result?.ragStatus).toBe("green");
 			expect(result?.tipText).toContain("above 60%");
+		});
+	});
+
+	describe("computeSleRiskRag", () => {
+		const sleAt85 = { percentile: 85, value: 4 };
+		const sleAt70 = { percentile: 70, value: 10 };
+
+		it("tells a team with no target to publish one", () => {
+			const result = computeSleRiskRag(0, 9, null, terms);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define a SLE in settings");
+		});
+
+		it("asks for the target even when nothing is in progress", () => {
+			// The missing setting outlives today's board, so it is checked first.
+			const result = computeSleRiskRag(0, 0, null, terms);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("Define a SLE in settings");
+		});
+
+		it("is green with nothing in progress, and never divides", () => {
+			const result = computeSleRiskRag(0, 0, sleAt85, terms);
+
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).not.toContain("NaN");
+		});
+
+		it("is green when nothing is at risk", () => {
+			const result = computeSleRiskRag(0, 9, sleAt85, terms);
+
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("is amber when something is at risk but the share is within the allowance", () => {
+			// One of twenty is 5%, under the 15% a team promising 85% has accepted.
+			const result = computeSleRiskRag(1, 20, sleAt85, terms);
+
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("is red when the share reaches the allowance the target implies", () => {
+			// Three of twenty is exactly 15%. At the line, not merely past it.
+			const result = computeSleRiskRag(3, 20, sleAt85, terms);
+
+			expect(result.ragStatus).toBe("red");
+		});
+
+		// The one test here that is about the absence of a bug rather than the presence of a rule.
+		// Six of forty-one is 14.63%, which is under a 15% allowance and must read amber. An
+		// implementation that rounds the share to a whole percentage before comparing gets 15,
+		// finds 15 >= 15, and reads red.
+		//
+		// The numbers are chosen so the two implementations disagree: forty items would give
+		// exactly 15% and fifty would give 12%, and a test written on either passes against the bug.
+		it("does not act on a share that only rounds up to the allowance", () => {
+			const result = computeSleRiskRag(6, 41, sleAt85, terms);
+
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("lets a looser target absorb what a tighter one cannot", () => {
+			// The same board read by two teams. Three of twenty is 15%: at the line for a team
+			// promising 85%, comfortably inside the 30% a team promising 70% has accepted.
+			expect(computeSleRiskRag(3, 20, sleAt85, terms).ragStatus).toBe("red");
+			expect(computeSleRiskRag(3, 20, sleAt70, terms).ragStatus).toBe("amber");
+		});
+
+		it("names the team's own allowance in its status tip", () => {
+			expect(computeSleRiskRag(1, 20, sleAt85, terms).tipText).toContain("15%");
+			expect(computeSleRiskRag(1, 20, sleAt70, terms).tipText).toContain("30%");
+		});
+
+		// The other half of the split, and the half that does the work: the fixed threshold belongs
+		// to the info icon, and a reader who meets both numbers in one tooltip has two percentages
+		// and no way to tell which is the rule and which is their team.
+		//
+		// Only the 85% team is asked. A team promising 30% has a 70% allowance, so "70%" would
+		// appear in its tip legitimately and the assertion could not tell the two meanings apart.
+		it("keeps the rule's own threshold out of the status tip", () => {
+			for (const result of [
+				computeSleRiskRag(1, 20, sleAt85, terms),
+				computeSleRiskRag(6, 20, sleAt85, terms),
+				computeSleRiskRag(0, 20, sleAt85, terms),
+			]) {
+				expect(result.tipText).not.toContain("70%");
+			}
 		});
 	});
 

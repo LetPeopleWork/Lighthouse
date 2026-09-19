@@ -171,6 +171,61 @@ function calculateSLEStats(
 	return { totalItems, percentageWithinSLE };
 }
 
+/**
+ * How much of the board is at risk, judged against the allowance the team's own target implies.
+ *
+ * The allowance is derived rather than configured separately: a team promising 85% has accepted
+ * that 15% will miss, and a team promising 70% has accepted 30%. Asking them to set a second
+ * number would let the two disagree, and there is only one promise.
+ */
+export function computeSleRiskRag(
+	atRiskCount: number,
+	wipCount: number,
+	sle: { percentile: number; value: number } | null,
+	terms: RagTerms,
+): RagResult {
+	// Checked before the empty board, because a team with neither a target nor any work in progress
+	// still needs the target. The missing setting outlives today's board.
+	if (!sle) {
+		return {
+			ragStatus: "red",
+			tipText: `Define a ${terms.sle} in settings to see which ${terms.workItems} are at risk of missing it.`,
+		};
+	}
+
+	const allowedShare = (100 - sle.percentile) / 100;
+	const allowedPercentText = `${100 - sle.percentile}%`;
+
+	if (wipCount === 0) {
+		return {
+			ragStatus: "green",
+			tipText: `No ${terms.workItems} in progress, so none are at risk.`,
+		};
+	}
+
+	// Both sides stay fractions. Rounding the share to a whole percentage first would let 14.6%
+	// read as 15 and trip a 15% allowance — the status would flip on how the number is written
+	// rather than on the work.
+	if (atRiskCount / wipCount >= allowedShare) {
+		return {
+			ragStatus: "red",
+			tipText: `${atRiskCount} of ${wipCount} ${terms.workItems} are at risk, at or above the ${allowedPercentText} this ${terms.sle} allows. Focus on them before starting new work.`,
+		};
+	}
+
+	if (atRiskCount >= 1) {
+		return {
+			ragStatus: "amber",
+			tipText: `${atRiskCount} of ${wipCount} ${terms.workItems} are at risk, within the ${allowedPercentText} this ${terms.sle} allows. Keep an eye on them.`,
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: `No ${terms.workItems} are at risk of missing the ${terms.sle}.`,
+	};
+}
+
 export function computeCycleTimePercentilesRag(
 	sle: { percentile: number; value: number } | null,
 	cycleTimes: ReadonlyArray<number>,
