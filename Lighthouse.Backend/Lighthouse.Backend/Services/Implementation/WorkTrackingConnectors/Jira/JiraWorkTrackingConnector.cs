@@ -1612,7 +1612,86 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
 
+            await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
+
             return customFieldReferences;
+        }
+
+        /// <summary>
+        /// An administrator can name an issue link type in the box that takes a field name. The field list
+        /// is asked first and keeps precedence, so an instance defining both a field and a link type of one
+        /// name behaves exactly as it did before and nothing already configured changes meaning underneath
+        /// anybody. Only what the field list left unresolved is looked for here, which is also what keeps an
+        /// instance with nothing unresolved from paying for a second call.
+        /// </summary>
+        private async Task ResolveWhatTheFieldListMissedAgainstLinkTypes(
+            HttpClient jiraClient, Dictionary<string, string> customFieldReferences)
+        {
+            var unresolvedReferences = customFieldReferences
+                .Where(reference => string.IsNullOrEmpty(reference.Value))
+                .Select(reference => reference.Key)
+                .ToList();
+
+            if (unresolvedReferences.Count == 0)
+            {
+                return;
+            }
+
+            var linkTypeNames = await GetIssueLinkTypeNames(jiraClient);
+
+            foreach (var reference in unresolvedReferences)
+            {
+                var linkTypeName = linkTypeNames.Find(
+                    name => string.Equals(name, reference, StringComparison.OrdinalIgnoreCase));
+
+                if (linkTypeName is not null)
+                {
+                    customFieldReferences[reference] = linkTypeName;
+                }
+            }
+        }
+
+        private async Task<List<string>> GetIssueLinkTypeNames(HttpClient jiraClient)
+        {
+            const string url = "rest/api/latest/issueLinkType";
+            const string linkTypesProperty = "issueLinkTypes";
+
+            var response = await jiraClient.GetAsync(url);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // A refusal here leaves the reference unresolved, which is what it already was a moment ago,
+                // so validation still reports it by name rather than turning an unreadable list into a
+                // failure of its own.
+                logger.LogInformation(
+                    "Jira refused the issue link type list with {StatusCode}. Body: {Body}",
+                    response.StatusCode,
+                    responseBody);
+
+                return [];
+            }
+
+            using var jsonResponse = JsonDocument.Parse(responseBody);
+
+            if (!jsonResponse.RootElement.TryGetProperty(linkTypesProperty, out var linkTypes)
+                || linkTypes.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var names = new List<string>();
+
+            foreach (var linkType in linkTypes.EnumerateArray())
+            {
+                if (linkType.TryGetProperty(JiraFieldNames.NamePropertyName, out var name)
+                    && name.GetString() is { Length: > 0 } linkTypeName)
+                {
+                    names.Add(linkTypeName);
+                }
+            }
+
+            return names;
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, CancellationToken cancellationToken, int? maxResultsOverride = null)
