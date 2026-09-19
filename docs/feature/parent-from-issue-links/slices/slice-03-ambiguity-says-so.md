@@ -54,6 +54,44 @@ honestly have.
 **Confirms, if it succeeds**: D4's refusal is a safety net rather than a workflow, and the feature is
 finished apart from slice 04's boundary.
 
+### Measurement result — 2026-09-19, `letpeoplework.atlassian.net`, project `LGHTHSDMO`
+
+Read-only, over every issue the project holds, matching the link type the way the resolver does — on
+the type's name, inward label or outward label, case-insensitively.
+
+| | |
+|---|---|
+| Issues fetched (denominator) | **4843** |
+| Carrying at least one candidate of the configured type (`Cloners`) | 4 |
+| Carrying 2+ distinct candidates — ambiguous | **1** (`LGHTHSDMO-1716`) |
+| Share of fetched issues | **0.02%** |
+
+**The gate passes as written: 0.02% is far below 5%, so the feature does not go back to DESIGN.**
+
+**And the measurement cannot bear the weight the hypothesis puts on it. That has to be said plainly
+rather than banked.** The one ambiguous issue is the fixture this feature seeded, so the numerator is
+our own. Widening to every link type the instance defines, to get away from a type we chose ourselves:
+
+| Link type | Issues carrying it | Ambiguous | Share of carriers | Share of fetched |
+|---|---|---|---|---|
+| `Cloners` | 4 | 1 | 25.0% | 0.02% |
+| `Blocks` | 4 | 2 | 50.0% | 0.04% |
+
+Eight issues out of 4843 carry any link at all. The denominator the gate is written against —
+*fetched* items — is therefore dominated by issues that could not be ambiguous under any link type,
+and it would keep passing on this instance no matter how ambiguously the links that do exist were
+used. Among items that actually carry the type, 1 in 4 and 2 in 4 are ambiguous; on n=4 that number
+means nothing either, but it is the number the hypothesis is actually about.
+
+(The two ambiguous `Blocks` carriers are `LGHTHSDMO-7` and `LGHTHSDMO-9`, which the delta already
+records as having two counterparts each — an independent cross-check that the counting matches what
+was read by hand.)
+
+**So: the pre-registered gate is satisfied, and it is unfalsifiable on this instance.** A demo project
+with essentially no link usage cannot tell a safety net from a workflow. The real reading needs an
+instance where someone links issues as a matter of habit — the same one
+`OUT-PFIL-hierarchy-recovered` is already waiting on. Recorded there rather than closed here.
+
 ## Acceptance criteria
 
 AC-3.1 through AC-3.5 in `feature-delta.md`.
@@ -85,6 +123,16 @@ whose stamp moved are read at all, so it is how many of *those* could not be pla
 that sat still is silent until the next whole-query refresh reads it again. This is the same trade
 `ReportLinksThatMeantNothingHere` already makes, and the same one the delta epic accepted for its own
 counts; it is recorded on `SyncOutcome` in prose rather than papered over.
+
+**A Portfolio's parent sweep warns but does not count.** `CreateFeaturesFromIssues` runs for both halves
+of a Portfolio refresh — the Features the Portfolio owns, and the parent Features those hang under — and
+the warning fires from inside it either way. The parent half, however, deliberately stays out of
+`SyncOutcome`, so that its download never disturbs the counts the summary line reports for the Feature
+half. The consequence is that a Portfolio refresh can log a warning naming three records while refresh
+history reports zero for that run. This predates this slice and was not introduced by it; changing it
+means changing what every count on `SyncOutcome` measures, which is a wider decision than a count of
+unplaceable records justifies. Recorded here rather than fixed, so the next reader of a zero that
+contradicts a warning knows which of the two to believe: the warning.
 
 ## Dependencies
 

@@ -14,6 +14,10 @@ namespace Lighthouse.Backend.Models
         /// A cheap update only reads the records that moved, so its count is how many of THOSE nobody
         /// could place - not how many the whole query holds. An untidy record that sat still is silent
         /// until the next whole-query update reads it again.
+        ///
+        /// A portfolio update counts only its own records: the separate sweep over the records it hangs
+        /// those under stays outside this outcome altogether, so an untidy one found there is named in
+        /// the log and never counted here.
         /// </summary>
         public int RecordsWhoseLinksNamedMoreThanOneParent { get; init; }
 
