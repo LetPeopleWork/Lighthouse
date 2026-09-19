@@ -76,6 +76,27 @@ estimate assumes D3 holds; if the spike below says otherwise, re-estimate before
 and look at whether `issuelinks` comes back on the children. Everything in this slice is sized on the
 answer.
 
+### Spike result — 2026-09-19, Jira Cloud (`letpeoplework.atlassian.net`)
+
+**The both-ends claim holds. The slice keeps its ~5h estimate; no child-to-parent index is needed.**
+
+`GET rest/api/latest/search/jql` with `fields=*all` and `jql=key in (LGHTHSDMO-1725, LGHTHSDMO-24)` —
+deliberately excluding `LGHTHSDMO-1716`, which is the parent both of them link to. Confirmed absent from
+the result set. Both children came back carrying their link anyway, one from each end:
+
+| Issue | `issuelinks` | Entry |
+|---|---|---|
+| `LGHTHSDMO-1725` | present, 1 | `Cloners`, carries `outwardIssue` → `LGHTHSDMO-1716` |
+| `LGHTHSDMO-24` | present, 1 | `Cloners`, carries `inwardIssue` → `LGHTHSDMO-1716` |
+
+So an item fetched without its counterpart still carries the link, from whichever end it sits on. That is
+the assumption direction inference rests on, and it is now measured rather than reasoned from a comment
+written about the dependency reader.
+
+Both shapes appear in one fetch, which also means the parser meets both directions on real data rather
+than only in fixtures. What this does **not** settle is Data Center — the instance is Cloud, no Data
+Center instance exists, and that half stays owed to a post-release verification run.
+
 ## Dogfood moment
 
 Same day: point the replicated Team at the registered link type, refresh, open the Portfolio. The

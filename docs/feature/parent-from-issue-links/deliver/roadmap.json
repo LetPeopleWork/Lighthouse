@@ -3,7 +3,7 @@
     "project_id": "parent-from-issue-links",
     "created_at": "2026-09-19T00:00:00Z",
     "goal": "Establish parentage from a Jira instance's own issue links, named where a field name is named, inferred in direction, refused when ambiguous, and bounded to the trackers that mean it.",
-    "total_steps": 21,
+    "total_steps": 22,
     "source": "docs/feature/parent-from-issue-links/feature-delta.md (DISCUSS + DESIGN + DISTILL) and slices/*.md",
     "paradigm": "OOP backend (.NET 10, NUnit 4.6 + Moq + WebApplicationFactory); React 18 + TypeScript frontend (Vitest + RTL). No Hypothesis/PBT mandate emitted: that mandate is a Python pilot and this corpus has declined it twice on the record (feature-delta.md DISTILL Structural Review Response, F4). Tests are NUnit specification classes, matching Slice05FetchFingerprintSpecifications.cs.",
     "standing_constraints": [
@@ -296,7 +296,8 @@
             "The number of issue-search requests per refresh is unchanged from the baseline recorded before this feature",
             "The link type list costs at most one request per connection per refresh, counted and named separately",
             "A Portfolio of Features whose children link to them by the configured type has no Feature left sized by the Portfolio default",
-            "Each such Feature's child count equals the number of items linked to it"
+            "Each such Feature's child count equals the number of items linked to it",
+            "The Portfolio copy of the no-override guard is pinned by test, not only by construction - it is duplicated at the Team and Portfolio call sites and only the Team copy is currently held"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/ParentFromIssueLinksAcceptanceTest.cs",
@@ -305,7 +306,7 @@
           "dependencies": [
             "02-04"
           ],
-          "implementation_notes": "Record the baseline from a run on the code as it stood before 02-03 landed and assert against that number, not against a constant somebody typed. issuelinks already arrives on every fetch because the search asks for *all (JiraWorkTrackingConnector.cs:41, used :1721), so the claim is that nothing new is asked for, not that nothing is read. DEFERRED, and the roadmap says so rather than the crafter discovering it: this step meets the fixture half of AC-2.6 only. The customer-value half - before and after counts of IsUsingDefaultFeatureSize on a real Jira Data Center Portfolio - needs an instance nobody has and is a post-release verification run. The feature may ship on the fixture half; it may not be reported to the customer as answering their question until the other half has run. Record it in the slice brief as owed, and note that meeting a criterion written to reject synthetic-only proof with fixtures is a knowing exception, not a pass."
+          "implementation_notes": "Record the baseline from a run on the code as it stood before 02-03 landed and assert against that number, not against a constant somebody typed. issuelinks already arrives on every fetch because the search asks for *all (JiraWorkTrackingConnector.cs:41, used :1721), so the claim is that nothing new is asked for, not that nothing is read. DEFERRED, and the roadmap says so rather than the crafter discovering it: this step meets the fixture half of AC-2.6 only. The customer-value half - before and after counts of IsUsingDefaultFeatureSize on a real Jira Data Center Portfolio - needs an instance nobody has and is a post-release verification run. The feature may ship on the fixture half; it may not be reported to the customer as answering their question until the other half has run. Record it in the slice brief as owed, and note that meeting a criterion written to reject synthetic-only proof with fixtures is a knowing exception, not a pass. ADDED AFTER 02-04: that step proved the trackers-own-parent guard is load-bearing - removing it lets an item whose links matched nothing acquire a parent from the Epic Link field, which is the wrong-parent-that-looks-right this feature exists to prevent. The guard is duplicated, Team at :288 for Epic Link and Portfolio at :1218 for Parent Link, and 02-04 pinned only the Team copy. Pin the Portfolio one too. Also note the hazard is NOT Data-Center-only: SetStoredFieldKeys resolves Epic Link and Parent Link by name off the ordinary field list with no deployment check, so a Cloud instance defining a field called Epic Link arms the same door, and TrySetParentForJiraDataCenter's own comment inferring Cloud from the absence of that field is therefore wrong."
         },
         {
           "id": "02-06",
@@ -328,6 +329,30 @@
             "02-05"
           ],
           "implementation_notes": "The live fixture map is recorded in feature-delta.md under 'Wave: DELIVER / [REF] Live Jira fixtures' - read it, do not rediscover it. Link type Cloners on project LGHTHSDMO. LGHTHSDMO-24 carries one inwardIssue to 1716 AND has native parent LGHTHSDMO-3, so it proves both the outward-side direction and that the override beats a populated parent field. LGHTHSDMO-1725 and -1726 each carry one outwardIssue to 1716. LGHTHSDMO-1716 has three counterparts and must resolve to no parent. The decisive criterion is the fourth: query a child with its parent EXCLUDED from the JQL and confirm issuelinks still arrives - that is the assumption the direction inference rests on and a fixture written by that assumption cannot test it. DO NOT repoint the Blocks links on LGHTHSDMO-7..10; JiraDependencyDogfoodTest pins them and two read empty there deliberately."
+        },
+        {
+          "id": "02-07",
+          "name": "An expired token stops clearing the hierarchy it cannot read",
+          "agent": "nw-software-crafter",
+          "step_type": "behaviour",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkScenarios.cs",
+          "scenario_name": "",
+          "criteria": [
+            "A refresh whose credential is no longer accepted does not resolve references against an empty link-type list, and does not clear parents that were previously set",
+            "That refresh says why, somewhere an operator can find it",
+            "A refresh whose credential is fine behaves exactly as it does today",
+            "The link type list is read at most once per connection per refresh, however many references need it and however many items are fetched",
+            "A link type renamed between refreshes is picked up on the next refresh - nothing cached outlives a refresh"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice02ParentFromLinkSpecifications.cs"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "implementation_notes": "Two user decisions taken 2026-09-19 after slice 01 surfaced them; added to the plan after the fact. PROBE: Jira answers an unaccepted credential anonymously with 200 and an empty link-type list rather than refusing, and /field answers anonymously too, so an empty list cannot be told from a dead credential. ValidateConnection is safe only because /myself runs first, which slice 01 pinned. The refresh path had no such check, so an expiring token silently unparented every item on instances whose hierarchy depends on links. The probe makes the empty list interpretable; the consequence - do not believe it, do not clear parents, log why - is the orchestrator's inference from that decision and is part of the spec. CACHE: DESIGN's DDD-7 said the list rides the FieldNames cache lifetime. False on two counts, both checked: FieldNames is a process-wide static written once and never invalidated, and GetCustomFieldMappings is itself uncached per fetch. Slice 01 proved one call serves many references WITHIN one ResolveTheAdditionalFieldReferences; a refresh calls that repeatedly, so the saving has to span calls. Per connection per refresh, nothing outliving a refresh, or a renamed link type goes stale. Neither change touches the issue search endpoint, so AC-2.7 is unaffected; 02-05 counts both separately."
         }
       ]
     },
