@@ -7,11 +7,23 @@ ado: Epic #4127 "Show SLE Probability for In Progress Items" (tags Community; Pr
 amended: 2026-09-19
 amendment_note: >
   Round 2 (docs/feature/epic-4127-sle-risk-corrections/) corrects what round 1 shipped, before any
-  of it was released. D12 and D13 are superseded: the aging chart's SLE Risk background mode is
-  removed and the control returns to Off / Pace percentiles. The decisions are kept below, marked,
-  rather than deleted — a journey that quietly loses the reasoning it once held cannot be read
-  against the code that was written from it. Round 2's own decisions are D18 onward and live in that
-  workspace's feature-delta.md.
+  of it was released. The decisions are kept below, marked, rather than deleted — a journey that
+  quietly loses the reasoning it once held cannot be read against the code that was written from it.
+  Round 2's own decisions are D18 onward and live in that workspace's feature-delta.md.
+
+  All four slices are now shipped, and between them they reversed five things this journey asserted:
+
+  1. Slice 01 (#6034) — D12 and D13 superseded. The aging chart's SLE Risk background mode is gone
+     and the control returns to Off / Pace percentiles. step-read-the-gradient is marked removed.
+  2. Slice 02 (#6037) — D6 and D9 superseded. "Beyond history" no longer exists: every in-flight
+     item carries a number, and there is no minimum-sample guard. The risk does NOT follow the range
+     picker — it is read over the team's configured history and is always as of today, which is what
+     lets the same number reach the screens and the tracker.
+  3. Slice 03 (#6035) — the dialog opens wide enough to show the column and remembers an enlarged
+     size; the column is reachable from a bubble click, which it had never been; and each risk cell
+     discloses how much finished work it rests on.
+  4. Slice 04 (#6036) — the card chip is replaced by a widget with a status of its own, and "at
+     risk" means 70% or more rather than 50%.
 
 note: >
   One persona acts (flow-coach) across four surfaces, so this journey is a single narrative with
@@ -159,31 +171,56 @@ journeys:
     steps:
 
       - id: step-land-on-the-team-page
+        amended: "2026-09-19 by round 2 (ADO #6036) — a widget, not a chip, and the line is 70"
         action: >
           Flow coach opens /teams/{teamId} at the start of a standup on a team that has published an
           SLE.
         expected_output: >
-          The Items In Progress card shows, on each row, a chip counting that row's items at 50% risk
-          or higher — "3 at risk" — coloured by severity. No chip when the count is zero, and no chip
-          at all when no SLE is set, in which case the card renders exactly as today.
+          An "At Risk" widget on Flow Overview counts the in-flight items at 70% risk or higher,
+          coloured by the worst of them, beside the In Progress count it used to be a subtitle of.
+          It carries a status of its own: Act once the share at risk reaches what the team's own SLE
+          percentile allows (85% allows 15%), Observe while anything is at risk below that, Sustain
+          otherwise. A team with no SLE sees a dash and is told to publish one — not a zero, which
+          would read as good news. Teams only; a portfolio has no target to be at risk against.
+        superseded_text: >
+          ROUND 1: The Items In Progress card shows, on each row, a chip counting that row's items at
+          50% risk or higher — "3 at risk" — coloured by severity. No chip when the count is zero,
+          and no chip at all when no SLE is set. Replaced because one card cannot carry two meanings
+          and a subtitle cannot have a status.
         emotional_state: Alerted — "there is something to talk about this morning, and I know that
           before I have opened anything"
         shared_artifacts:
           - ServiceLevelExpectationRange (existing, team settings, editable via SleQuickSetting)
-          - per-item risk (new; computed once in the backend domain per D5, never recomputed per surface)
+          - ServiceLevelExpectationProbability (existing — round 2 derives the allowance from it
+            rather than asking for a second number)
+          - per-item risk (computed once in the backend domain per D5, never recomputed per surface)
 
       - id: step-open-the-list
-        action: Flow coach clicks the row to open the work item dialog, and sorts by the risk column.
+        amended: "2026-09-19 by round 2 (ADO #6037, #6035) — no sentinel, no range dependence, and the
+          column is now reachable and readable"
+        action: >
+          Flow coach opens the work item dialog — from the widget's View Data or by clicking a bubble
+          on the aging chart — and sorts by the risk column.
         expected_output: >
-          The dialog lists in-flight items with an "SLE Risk" column reading an integer percentage per
-          row, next to the "Work Item Age Band" column story-5884 already added. Sorting is numeric,
-          not lexical; "Beyond history" ranks off-scale and lands last in the worst-first direction.
-          The chip's count and the number of rows at or above 50% always agree — they read the same
-          computed value for the same range.
+          The dialog opens wide enough that the "SLE Risk" column is on screen without scrolling
+          sideways, and offers an Enlarge control for the columns that still do not fit, remembering
+          that choice. It lists in-flight items with an integer percentage per row, beside the "Work
+          Item Age Band" column story-5884 added. Every listed item has a number: there is no
+          off-scale sentinel to rank, because there is no case the arithmetic refuses. Sorting is
+          numeric, not lexical, and a row the answer set never mentions sorts last in both
+          directions. Hovering a cell says how much finished work the number rests on. The widget's
+          count and the number of rows at or above 70% always agree — they read the same computed
+          value.
+        superseded_text: >
+          ROUND 1: "Beyond history" ranks off-scale and lands last in the worst-first direction, and
+          the chip's count agrees with the rows at or above 50% for the same range. Both halves are
+          gone — the sentinel with slice 02, the range dependence with it, the chip with slice 04.
         emotional_state: Focused — "these three, in this order"
         shared_artifacts:
-          - selected date range (existing; the risk follows the range picker like every other value on
-            the page, per D6)
+          - the team's configured throughput history and today's date — NOT the range picker. Round 1
+            had the risk follow the picker like every other value on the page (D6); round 2 reversed
+            it, because a risk that moved when a reader widened a range would be reporting on a
+            control rather than on the work, and because the tracker has no range at all
 
       - id: step-understand-why
         action: >
@@ -225,7 +262,9 @@ journeys:
           people watching the dashboard"
         shared_artifacts:
           - WriteBackValueSource.SleRisk (new; team-scoped only per D4)
-          - the team's configured history window and clock.Today (not the UI range — D6)
+          - the team's configured history window and clock.Today (not the UI range). Round 1 named D6
+            here while D6 said the opposite for the screens; round 2 made the screens match, so the
+            write-back and the display now read the same window because there is only one
 
     error_paths_summary:
       - No SLE set on the owner: nothing is computed and nothing is rendered anywhere — no column, no
@@ -233,9 +272,12 @@ journeys:
         for teams that have made a promise (D3).
       - Portfolio scope: identical to the no-SLE case. The dialog, card and chart are shared
         components that render on portfolio pages, and they must there behave exactly as today (D4).
-      - Item older than every closed item in the window: denominator is zero, so there is no evidence
-        to divide by. Renders "Beyond history" rather than a fabricated 100%, and counts as at-risk
-        (D9).
+      - Item older than every closed item in the window — SUPERSEDED 2026-09-19 by round 2 (#6037).
+        Round 1 rendered "Beyond history" rather than a fabricated 100% and counted it as at-risk
+        (D9). There is now no sentinel: an item still inside its target whose history holds nothing
+        that ran as long reads 0, and the cell discloses that nothing the team finished ever ran this
+        long. The cost is honest and written down — a thin history reads as a cliff, zero up to the
+        target and a hundred the day after, with nothing in between to grade it.
       - Item already past the SLE range: reads 100% as the arithmetic result, not as a special case —
         every item in the denominator set necessarily exceeds R (D8). This is the Epic's scenario 3,
         subsumed.
@@ -260,6 +302,9 @@ journeys:
         the whole point, and the thing OUT-4127-early-warning measures retrospectively.
       - The displayed risk is stable enough on real teams that it is read as fact rather than noise
         (OUT-4127-risk-stability). This gates everything built on top of it.
-      - Zero reports of a card chip disagreeing with the dialog column, or of a written-back tracker
-        value disagreeing with the Lighthouse display for the same team and day
+      - Zero reports of the At Risk widget disagreeing with the dialog column, or of a written-back
+        tracker value disagreeing with the Lighthouse display for the same team and day
         (OUT-4127-no-support-contradiction) — the cross-system agreement D5 exists to guarantee.
+        Round 2 found this had already failed once: a dialog read 27% against a board field reading
+        18 for the same item on the same day, because the two callers derived their own windows. One
+        window and one anchor, derived in one place, is slice 02's fix.
