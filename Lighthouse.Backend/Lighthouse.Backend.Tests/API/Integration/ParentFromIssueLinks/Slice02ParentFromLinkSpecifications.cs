@@ -30,7 +30,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private const string TheParent = "EPIC-1";
 
+        /// <summary>The issue the Team scenarios call a parent, seen again as the record a Portfolio refreshes.</summary>
+        private const string TheFeature = TheParent;
+
+        private const string TheLevelAboveTheFeature = "INIT-9";
+
         private const string TheParentJiraItselfNames = "EPIC-2";
+
+        /// <summary>
+        /// The field Jira Data Center hangs an item's parent on, and which a refresh reads when nothing
+        /// was named in Parent Override Field.
+        /// </summary>
+        private const string TheFieldDataCenterHangsParentsOn = "Epic Link";
+
+        private const string TheParentDataCenterWouldHaveNamed = "EPIC-4";
 
         private const string ACustomField = "Story Points";
 
@@ -57,6 +70,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// <summary>A live instance ships this one reading the same phrase in both directions.</summary>
         private static readonly JiraLinkType AnotherLinkTypeTheInstanceDefines = new("Relates", "relates to", "relates to");
 
+        /// <summary>
+        /// A third type, because the link carrying a Feature to the level above it is not the link carrying
+        /// a Work Item to its Feature, and each grain names its own.
+        /// </summary>
+        private static readonly JiraLinkType ALinkTypeAPortfolioNames = new("Belongs to", "belongs to", "owns");
+
         private readonly List<string> issuesTheInstanceServes = [];
 
         private readonly List<string> customFieldsTheInstanceDefines = [];
@@ -75,6 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             linkTypesTheInstanceDefines.Clear();
             linkTypesTheInstanceDefines.Add(ALinkTypeTheInstanceDefines);
             linkTypesTheInstanceDefines.Add(AnotherLinkTypeTheInstanceDefines);
+            linkTypesTheInstanceDefines.Add(ALinkTypeAPortfolioNames);
             whatTheRefreshWroteToTheLog = new Mock<ILogger<JiraWorkTrackingConnector>>();
             whatTheParentOverrideNames = null;
         }
@@ -100,33 +120,82 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         private void TheIssueHasJirasOwnParent(string key, string parentKey)
             => issuesTheInstanceServes.Add(AnIssue(key, $", \"parent\": {{\"key\": \"{parentKey}\"}}"));
 
+        /// <summary>
+        /// An issue whose links say nothing about a parent while the field a Data Center refresh would
+        /// otherwise have read names one.
+        /// </summary>
+        private void TheIssueNamesAParentInTheDataCenterFieldAndHasNoMatchingLink(string key, string parentKey)
+            => issuesTheInstanceServes.Add(AnIssue(
+                key,
+                $", \"{TheIdThatFieldCarries}\": \"{parentKey}\"",
+                AnotherLinkTypeTheInstanceDefines.LinkWhoseOutwardIssueIs(parentKey)));
+
         private async Task<List<WorkItem>> TheTeamIsRefreshed()
         {
             var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
-
-            if (whatTheParentOverrideNames is not null)
-            {
-                team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
-                {
-                    Id = TheAdditionalFieldTheOverridePointsAt,
-                    DisplayName = whatTheParentOverrideNames,
-                    Reference = whatTheParentOverrideNames,
-                });
-
-                team.ParentOverrideAdditionalFieldDefinitionId = TheAdditionalFieldTheOverridePointsAt;
-            }
+            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(team);
 
             var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
 
             return [.. await connector.GetWorkItemsForTeam(team, CancellationToken.None)];
         }
 
-        private static string TheParentOf(List<WorkItem> refreshed, string key)
+        private async Task<List<Feature>> ThePortfolioIsRefreshed()
         {
-            var item = refreshed.Find(refreshedItem => refreshedItem.ReferenceId == key);
+            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(portfolio);
 
-            return item is null ? $"<{key} did not come back from the refresh at all>" : item.ParentReferenceId;
+            var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
+
+            return await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
         }
+
+        private void WhatTheAdministratorTypedIntoTheOverrideIsSetOn(IWorkItemQueryOwner owner)
+        {
+            if (whatTheParentOverrideNames is null)
+            {
+                return;
+            }
+
+            owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = TheAdditionalFieldTheOverridePointsAt,
+                DisplayName = whatTheParentOverrideNames,
+                Reference = whatTheParentOverrideNames,
+            });
+
+            owner.ParentOverrideAdditionalFieldDefinitionId = TheAdditionalFieldTheOverridePointsAt;
+        }
+
+        private static string TheParentOf<TRecord>(List<TRecord> refreshed, string key)
+            where TRecord : WorkItemBase
+        {
+            var item = TheRecordFor(refreshed, key);
+
+            return item is null ? DidNotComeBack(key) : item.ParentReferenceId;
+        }
+
+        /// <summary>What an administrator reads in the Additional Field they named, on the stored record.</summary>
+        private static string TheAdditionalFieldValueForTheOverrideOf<TRecord>(List<TRecord> refreshed, string key)
+            where TRecord : WorkItemBase
+        {
+            var item = TheRecordFor(refreshed, key);
+
+            if (item is null)
+            {
+                return DidNotComeBack(key);
+            }
+
+            return item.AdditionalFieldValues.TryGetValue(TheAdditionalFieldTheOverridePointsAt, out var value)
+                ? value ?? string.Empty
+                : $"<{key} carries no value at all for the Additional Field the override names>";
+        }
+
+        private static TRecord? TheRecordFor<TRecord>(List<TRecord> refreshed, string key)
+            where TRecord : WorkItemBase
+            => refreshed.Find(refreshedItem => refreshedItem.ReferenceId == key);
+
+        private static string DidNotComeBack(string key) => $"<{key} did not come back from the refresh at all>";
 
         private void NothingWasWrittenToTheLogAsAWarning()
             => whatTheRefreshWroteToTheLog.Verify(

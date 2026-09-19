@@ -64,6 +64,62 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             }
         }
 
+        /// <summary>
+        /// A Portfolio names the link carrying a Feature to the level above it, which is a different link
+        /// from the one a Team names. Both grains are served from the same place in the connector, and this
+        /// is what keeps them there: separate them again and one of the two stops reading links.
+        /// </summary>
+        [Test]
+        public async Task The_same_mechanism_at_Portfolio_grain()
+        {
+            TheParentOverrideNames(ALinkTypeAPortfolioNames.Name);
+            TheIssueHasOneLinkWhoseInwardIssueIs(TheFeature, ALinkTypeAPortfolioNames, TheLevelAboveTheFeature);
+
+            var refreshed = await ThePortfolioIsRefreshed();
+
+            Assert.That(TheParentOf(refreshed, TheFeature), Is.EqualTo(TheLevelAboveTheFeature),
+                "A Portfolio whose Features never acquire a parent draws every forecast above them from nothing, and an administrator who set the same box on both grains has no way to tell which of the two ignored it.");
+        }
+
+        /// <summary>
+        /// What the override resolved to is written into the Additional Field that named it, so the answer to
+        /// "did it point at the right thing?" is on the screen rather than in the tracker.
+        /// </summary>
+        [Test]
+        public async Task The_resolved_key_is_visible_without_opening_the_tracker()
+        {
+            TheParentOverrideNames(ALinkTypeTheInstanceDefines.Name);
+            TheIssueHasOneLinkWhoseInwardIssueIs(TheChild, ALinkTypeTheInstanceDefines, TheParent);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            Assert.That(TheAdditionalFieldValueForTheOverrideOf(refreshed, TheChild), Is.EqualTo(TheParent),
+                "An administrator who typed a link type into a box that has always taken a field name has nothing to check their guess against until the key it found is shown back to them.");
+        }
+
+        /// <summary>
+        /// An item the links said nothing about must stay unparented rather than pick up the parent the
+        /// tracker hangs on its own field. That field is the very thing the override was set to stop reading,
+        /// and a parent taken from it would look exactly like one the links produced.
+        /// </summary>
+        [Test]
+        public async Task An_item_with_no_matching_link_does_not_fall_back_to_the_field_the_override_replaced()
+        {
+            TheInstanceDefinesTheCustomField(TheFieldDataCenterHangsParentsOn);
+            TheParentOverrideNames(ALinkTypeTheInstanceDefines.Name);
+            TheIssueNamesAParentInTheDataCenterFieldAndHasNoMatchingLink(TheChildWithNothingMatching, TheParentDataCenterWouldHaveNamed);
+
+            var refreshed = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(refreshed, TheChildWithNothingMatching), Is.Empty,
+                    "Filing this item under the parent the tracker's own field names would be a wrong parent that looks right, which is the one failure this setting exists to prevent.");
+                Assert.That(TheAdditionalFieldValueForTheOverrideOf(refreshed, TheChildWithNothingMatching), Is.Empty,
+                    "Showing a key the refresh did not act on would send an administrator looking for a parent that was never stored.");
+            }
+        }
+
         [Test]
         public async Task A_reference_naming_a_real_field_still_reads_that_field()
         {
