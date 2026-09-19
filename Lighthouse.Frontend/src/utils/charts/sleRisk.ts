@@ -63,6 +63,10 @@ export const sleRiskSortValue = (label: string): number | undefined => {
 export const sleRiskColorFor = (
 	risk: number | undefined,
 ): string | undefined => {
+	// Compared against undefined rather than tested for truthiness, for the same reason the column's
+	// label is: a risk of zero is a real answer, and a truthiness check would leave it uncoloured
+	// while type-checking. The rank below happens to handle zero correctly either way, which is what
+	// makes the wrong version here survive review.
 	if (risk === undefined) {
 		return undefined;
 	}

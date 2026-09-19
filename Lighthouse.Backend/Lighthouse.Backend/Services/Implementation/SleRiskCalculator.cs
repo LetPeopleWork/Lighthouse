@@ -51,7 +51,12 @@
                 return 0;
             }
 
-            var breaches = closedCycleTimes.Count(cycleTime => cycleTime > targetRangeInDays && cycleTime >= ageInDays);
+            // Only one clause, and the missing one is worth explaining. Every breach is necessarily
+            // comparable: the certainty rule above means the age is at most the target by the time
+            // we get here, so an item that ran longer than the target also ran at least as long as
+            // the item being asked about. Testing for it again would read as a second condition
+            // where there is only one.
+            var breaches = closedCycleTimes.Count(cycleTime => cycleTime > targetRangeInDays);
 
             // Away from zero rather than to even, so a risk that sits exactly between two whole
             // percentages is reported as the worse of the two. The alternative rounds half of those

@@ -96,6 +96,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         private void GivenTheTeamNowLooksBackFurther()
             => ChangeTheHistoryOf(TheTeamUnderTest, 365);
 
+        /// <summary>
+        /// The team stops rolling its evidence window with the calendar and pins it. Everything it
+        /// has finished stays inside; what changes is that the window no longer moves overnight.
+        /// </summary>
+        private void GivenTheTeamPinsItsHistory()
+            => PinTheHistoryOf(TheTeamUnderTest, startDaysAgo: 90, endDaysAgo: 0);
+
+        private void GivenADayHasPassed() => AdvanceTheInstanceToTomorrow();
+
         private int GivenAPortfolio()
         {
             using var scope = Factory.Services.CreateScope();

@@ -36,6 +36,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
+        private FakeLighthouseClock fakeClock = null!;
+
         protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
         protected HttpClient Client { get; private set; } = null!;
@@ -59,8 +61,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             {
                 builder.ConfigureServices(services =>
                 {
+                    fakeClock = new FakeLighthouseClock(Today);
                     services.RemoveAll<ILighthouseClock>();
-                    services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
+                    services.AddSingleton<ILighthouseClock>(fakeClock);
 
                     // The read itself carries no licence check, and deliberately so. Write-back does,
                     // and a scenario that compares the two surfaces against each other has to be able
@@ -147,6 +150,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             repository.Update(team);
             repository.Save().GetAwaiter().GetResult();
         }
+
+        /// <summary>
+        /// The team pins which stretch of finished work it counts, rather than rolling with the
+        /// calendar. The window then stays put while the days keep passing — which is the only
+        /// arrangement in which an answer dated to today can be told apart from one dated to the
+        /// end of the evidence.
+        /// </summary>
+        protected void PinTheHistoryOf(int teamId, int startDaysAgo, int endDaysAgo)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            var team = repository.GetById(teamId)!;
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = Today.UtcDateTime.Date.AddDays(-startDaysAgo);
+            team.ThroughputHistoryEndDate = Today.UtcDateTime.Date.AddDays(-endDaysAgo);
+
+            repository.Update(team);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>The instance believes a day has passed. Nothing in the database moves.</summary>
+        protected void AdvanceTheInstanceToTomorrow()
+            => fakeClock.SetInstant(Today.AddDays(1));
 
         /// <summary>
         /// The team counts throughput over a different stretch of time — the other setting the answer

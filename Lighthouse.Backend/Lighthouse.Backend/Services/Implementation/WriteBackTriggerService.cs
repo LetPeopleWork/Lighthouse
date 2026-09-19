@@ -213,9 +213,9 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 WriteBackValueSource.WorkItemAgeCycleTime when age > 0 => age.ToString(),
                 WriteBackValueSource.WorkItemAgeCycleTime when cycleTime > 0 => cycleTime.ToString(),
-                // No answer means no write, not an empty one: an item that is finished, whose team
-                // published no target, or that too little finished work can be compared against is
-                // simply absent from the round rather than clearing whatever the field held.
+                // No answer means no write, not an empty one. Every in-flight item now carries a
+                // number, so the only items absent from the round are a finished one, one that has
+                // not started yet, and every item of a team that published no target at all.
                 WriteBackValueSource.SleRisk => RiskValueFor(workItem, riskByReferenceId),
                 _ => null,
             };

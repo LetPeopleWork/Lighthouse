@@ -239,6 +239,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 75);
         }
 
+        // @driving_port @real-io — the answer is remembered between requests, and the day it was
+        // computed for is part of what it depends on. This is the one case that can say so: a team
+        // whose evidence window is pinned has a window that does not move overnight, while the ages
+        // still advance. On a rolling history the window's own dates move with the calendar, so a
+        // key that forgot the day would be correct by accident and this test would pass against it.
+        [Test]
+        public async Task An_item_is_a_day_older_tomorrow_even_though_the_evidence_has_not_moved()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            // Four items finished in five days and four ran past the target. Both ages below are
+            // inside the target, so what moves the answer is the evidence the age admits - not the
+            // certainty rule, which would mask the thing this scenario is about.
+            GivenTheTeamHasFinishedSeveralOfEach(4, 5);
+            GivenTheTeamHasFinishedSeveralOfEach(3, 11);
+            GivenTheTeamHasFinished(20);
+            GivenTheTeamPinsItsHistory();
+            var item = GivenAnItemOpenFor(5);
+
+            await WhenTheRiskIsAskedFor(team);
+            // At five days all eight are comparable and four of them missed.
+            ThenTheItemsChanceOfMissingIs(item, 50);
+
+            GivenADayHasPassed();
+
+            await WhenTheRiskIsAskedFor(team);
+
+            // At six days the four quick ones are no longer comparable, and every item left missed.
+            // Serving yesterday's entry would still report fifty, with nothing saying it was stale.
+            ThenTheItemsChanceOfMissingIs(item, 100);
+        }
+
         // @driving_port @real-io — the evidence window is the other half of the key, and widening it
         // admits older work that changes the answer. A key carrying only the target would serve the
         // narrower window's answer here and look entirely correct doing it.
