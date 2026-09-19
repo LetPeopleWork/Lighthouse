@@ -25,7 +25,6 @@ import {
 	useAgingBackground,
 } from "../../../hooks/useAgingBackground";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
-import type { ISleRiskZone } from "../../../models/Metrics/SleRisk";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -39,7 +38,6 @@ import {
 	ageBandColumnDescription,
 	ageBandColumnHeaderName,
 	buildAgeBandColumnDescriptor,
-	PACE_BAND_COLORS_LOW_TO_HIGH,
 	paceBandColorForRank,
 	resolvePaceBandLadders,
 } from "../../../utils/charts/paceBands";
@@ -50,7 +48,6 @@ import {
 	renderMarkerButton,
 	renderMarkerCircle,
 } from "../../../utils/charts/scatterMarkerUtils";
-import { sleRiskColorFor } from "../../../utils/charts/sleRisk";
 import { getWorkItemName } from "../../../utils/featureName";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { getColorMapForKeys } from "../../../utils/theme/colors";
@@ -138,113 +135,6 @@ export const computePaceBandRects = ({
 			];
 		});
 	});
-};
-
-interface SleRiskZoneGeometryConfig {
-	zones: readonly ISleRiskZone[];
-	chartLeft: number;
-	chartRight: number;
-	yScale: (value: number) => number;
-	axisMin: number;
-	axisMax: number;
-}
-
-/**
- * Turns the ages where the odds turn into full-width horizontal bands. Full width because the risk
- * is end-to-end: it depends on how old an item is and not on which column it is standing in, so a
- * band that stopped at a state boundary would be claiming something the number does not say.
- *
- * Bands the history could not place are simply absent from `zones`, and what is left below the
- * lowest of them is the calmest colour - the chart draws no band for "not enough evidence", because
- * an unpainted background is already what a reader sees when nothing is known.
- */
-export const computeSleRiskZoneRects = ({
-	zones,
-	chartLeft,
-	chartRight,
-	yScale,
-	axisMin,
-	axisMax,
-}: SleRiskZoneGeometryConfig): IPaceBandRect[] => {
-	if (zones.length === 0) {
-		return [];
-	}
-
-	const x = Math.min(chartLeft, chartRight);
-	const width = Math.abs(chartRight - chartLeft);
-	const ordered = [...zones].sort(
-		(first, second) => first.fromAge - second.fromAge,
-	);
-
-	return ordered.flatMap((zone) => {
-		const lowerValue = Math.max(zone.fromAge, axisMin);
-		// A band stops where it says it stops. Only certainty runs to the top of the axis; every
-		// other band ends where the evidence did, and the space above it is left unpainted - nothing
-		// is known there, and the calmest colour would read as "safe" and mean the opposite.
-		const upperValue = zone.toAge ?? axisMax;
-
-		if (upperValue <= lowerValue) {
-			return [];
-		}
-
-		const lowerPixel = yScale(lowerValue);
-		const upperPixel = yScale(Math.min(upperValue, axisMax));
-		const height = Math.abs(upperPixel - lowerPixel);
-
-		if (height === 0) {
-			return [];
-		}
-
-		return [
-			{
-				key: `sle-risk-${zone.risk}`,
-				x,
-				y: Math.min(lowerPixel, upperPixel),
-				width,
-				height,
-				fill: sleRiskColorFor(zone.risk) ?? PACE_BAND_COLORS_LOW_TO_HIGH[0],
-			},
-		];
-	});
-};
-
-export const SleRiskZoneOverlay: React.FC<{
-	zones: readonly ISleRiskZone[];
-	doingStates: string[];
-}> = ({ zones, doingStates }) => {
-	const xScale = useXScale("stateAxis") as (value: number) => number;
-	const yScale = useYScale("ageAxis") as unknown as {
-		(value: number): number;
-		domain: () => [number, number];
-	};
-
-	const [axisMin, axisMax] = yScale.domain();
-
-	const rects = computeSleRiskZoneRects({
-		zones,
-		chartLeft: xScale(-STATE_BAND_HALF_WIDTH),
-		chartRight: xScale(doingStates.length - 1 + STATE_BAND_HALF_WIDTH),
-		yScale,
-		axisMin,
-		axisMax,
-	});
-
-	return (
-		<g>
-			{rects.map((rect) => (
-				<rect
-					key={rect.key}
-					data-testid="sle-risk-zone"
-					x={rect.x}
-					y={rect.y}
-					width={rect.width}
-					height={rect.height}
-					fill={rect.fill}
-					fillOpacity={0.28}
-				/>
-			))}
-		</g>
-	);
 };
 
 export const PaceBandOverlay: React.FC<{
@@ -441,11 +331,6 @@ interface WorkItemAgingChartProps {
 	now?: Date;
 	perStatePercentileValues?: IPerStatePercentileValues[];
 	workItemAgePercentileValues?: IPercentileValue[];
-	/**
-	 * Where the odds turn against an item, for the risk background. Empty when the team published no
-	 * target, which is what makes that mode unavailable rather than merely empty.
-	 */
-	sleRiskZones?: readonly ISleRiskZone[];
 }
 
 // One array each, shared by every render that was handed no percentiles. A `[]` written into the
@@ -453,7 +338,6 @@ interface WorkItemAgingChartProps {
 // a memo, an effect — would treat "still nothing" as "something changed" and redo its work forever.
 const NO_PER_STATE_PERCENTILES: IPerStatePercentileValues[] = [];
 const NO_PERCENTILES: IPercentileValue[] = [];
-const NO_RISK_ZONES: readonly ISleRiskZone[] = [];
 
 const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	inProgressItems,
@@ -465,7 +349,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	now: providedNow,
 	perStatePercentileValues = NO_PER_STATE_PERCENTILES,
 	workItemAgePercentileValues = NO_PERCENTILES,
-	sleRiskZones = NO_RISK_ZONES,
 }) => {
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
@@ -508,9 +391,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	);
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 
-	// A mode is offered only when the chart has something to paint in it. Pace bands need per-state
-	// history; the risk background needs a published target, which is what an empty zone list means.
-	// With nothing but "off" left there is no choice to present, so no control is drawn at all.
+	// A mode is offered only when the chart has something to paint in it, and pace bands need
+	// per-state history. With nothing but "off" left there is no choice to present, so no control
+	// is drawn at all.
 	const backgroundModes = useMemo(() => {
 		const modes: { value: AgingBackground; label: string }[] = [
 			{ value: "off", label: "Off" },
@@ -518,16 +401,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		if (perStatePercentileValues.length > 0) {
 			modes.push({ value: "pace", label: "Pace percentiles" });
 		}
-		if (sleRiskZones.length > 0) {
-			modes.push({
-				value: "risk",
-				// The abbreviation, not the long form: the control sits in a row of short labels, and
-				// the dialog column heads itself the same way, so a reader meets one phrase twice.
-				label: `${sleTerm} Risk`,
-			});
-		}
 		return modes;
-	}, [perStatePercentileValues, sleRiskZones, sleTerm]);
+	}, [perStatePercentileValues]);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
@@ -843,12 +718,6 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							))}
 							<ChartsXAxis axisId="stateAxis" />
 							<ChartsYAxis axisId="ageAxis" />
-							{background === "risk" && sleRiskZones.length > 0 && (
-								<SleRiskZoneOverlay
-									zones={sleRiskZones}
-									doingStates={doingStates}
-								/>
-							)}
 							{background === "pace" && (
 								<PaceBandOverlay
 									perStatePercentileValues={perStatePercentileValues}

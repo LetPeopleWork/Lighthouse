@@ -1,11 +1,6 @@
 import type { IForecastInputCandidates } from "../../models/Forecasts/ForecastInputCandidates";
 import type { IFeaturesWorkedOnInfo } from "../../models/Metrics/InfoWidgetData";
-import {
-	type ISleRisk,
-	type ISleRiskZone,
-	SleRiskSchema,
-	SleRiskZoneSchema,
-} from "../../models/Metrics/SleRisk";
+import { type ISleRisk, SleRiskSchema } from "../../models/Metrics/SleRisk";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
 import { BaseMetricsService, type ITeamMetricsService } from "./MetricsService";
@@ -56,20 +51,6 @@ export class TeamMetricsService
 			);
 
 			return BaseMetricsService.parse(SleRiskSchema.array(), response.data);
-		});
-	}
-
-	async getSleRiskZones(
-		teamId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<ISleRiskZone[]> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<ISleRiskZone[]>(
-				`/teams/${teamId}/metrics/sleRisk/zones?${this.getDateFormatString(startDate, endDate)}`,
-			);
-
-			return BaseMetricsService.parse(SleRiskZoneSchema.array(), response.data);
 		});
 	}
 

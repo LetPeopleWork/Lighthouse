@@ -190,7 +190,6 @@ const metricsFetchKeys = [
 	"workItemAgePercentiles",
 	"ageInStatePercentiles",
 	"sleRisk",
-	"sleRiskZones",
 	"cumulativeStateTime",
 	"flowEfficiency",
 	"featureSizeData",
@@ -281,10 +280,8 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 		"cycleTimePercentiles",
 		"ageInStatePercentiles",
 		"workItemAgePercentiles",
-		// The View Data dialog behind this widget carries the risk column, and the chart can paint
-		// the ages where the odds turn as its background — BaseMetricsView.tsx
+		// The View Data dialog behind this widget carries the risk column — BaseMetricsView.tsx
 		"sleRisk",
-		"sleRiskZones",
 	],
 	throughput: ["throughput"],
 	wipOverTime: ["wipOverTime"],

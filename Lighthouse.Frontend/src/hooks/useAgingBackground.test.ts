@@ -25,14 +25,14 @@ describe("useAgingBackground", () => {
 	it("keeps a choice across remounts so it becomes the default everywhere", () => {
 		const first = renderHook(() => useAgingBackground());
 		act(() => {
-			first.result.current.chooseBackground("risk");
+			first.result.current.chooseBackground("pace");
 		});
 		first.unmount();
 
 		const second = renderHook(() => useAgingBackground());
 
-		expect(second.result.current.background).toBe("risk");
-		expect(localStorage.getItem(AGING_BACKGROUND_STORAGE_KEY)).toBe("risk");
+		expect(second.result.current.background).toBe("pace");
+		expect(localStorage.getItem(AGING_BACKGROUND_STORAGE_KEY)).toBe("pace");
 	});
 
 	it("switches from one background to the other without leaving both on", () => {
@@ -42,10 +42,10 @@ describe("useAgingBackground", () => {
 			result.current.chooseBackground("pace");
 		});
 		act(() => {
-			result.current.chooseBackground("risk");
+			result.current.chooseBackground("off");
 		});
 
-		expect(result.current.background).toBe("risk");
+		expect(result.current.background).toBe("off");
 	});
 
 	it("names the key the stored preference has always lived under", () => {
@@ -55,7 +55,7 @@ describe("useAgingBackground", () => {
 		expect(AGING_BACKGROUND_STORAGE_KEY).toBe("workItemAgingPaceBandsEnabled");
 	});
 
-	it.each(["off", "pace", "risk"] as const)(
+	it.each(["off", "pace"] as const)(
 		"restores %s, the shape it writes itself",
 		(mode) => {
 			// The ordinary path from the day this ships: what the hook stored is what it reads back.
@@ -80,16 +80,16 @@ describe("useAgingBackground", () => {
 			const { result } = renderHook(() => useAgingBackground());
 
 			act(() => {
-				result.current.chooseBackground("risk");
+				result.current.chooseBackground("pace");
 			});
 
-			expect(result.current.background).toBe("risk");
+			expect(result.current.background).toBe("pace");
 		} finally {
 			setItem.mockRestore();
 		}
 	});
 
-	// --- What was stored before the control had three options ---
+	// --- What earlier versions of this control wrote ---
 
 	it("reads a chart that had pace bands on as still having them on", () => {
 		// The value this key held when it was a boolean. A reader who upgrades must not find their
@@ -107,6 +107,24 @@ describe("useAgingBackground", () => {
 		const { result } = renderHook(() => useAgingBackground());
 
 		expect(result.current.background).toBe("off");
+	});
+
+	it("paints nothing for a chart left on a background that no longer exists", () => {
+		// A background that painted where an item's odds of missing its target crossed fixed
+		// thresholds. It was withdrawn before release, so only a developer's browser can hold it.
+		//
+		// This reads the same as the unrecognised-value case below today, and deliberately so: both
+		// paint nothing. Keeping the two apart is a guard for later. If someone gives a new mode
+		// this same word, a browser still holding it would silently opt in - and this test, not the
+		// one below, is what would go red and say so.
+		localStorage.setItem(AGING_BACKGROUND_STORAGE_KEY, "risk");
+
+		const { result } = renderHook(() => useAgingBackground());
+
+		expect(result.current.background).toBe("off");
+		// Left where it was rather than rewritten, so rolling back to a build that still has the
+		// mode returns the reader to the chart they left.
+		expect(localStorage.getItem(AGING_BACKGROUND_STORAGE_KEY)).toBe("risk");
 	});
 
 	it("ignores a stored value it cannot make sense of", () => {

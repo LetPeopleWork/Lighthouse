@@ -20,7 +20,7 @@ import type {
 } from "../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../models/Metrics/RunChartData";
-import type { ISleRisk, ISleRiskZone } from "../models/Metrics/SleRisk";
+import type { ISleRisk } from "../models/Metrics/SleRisk";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
@@ -69,8 +69,6 @@ export interface MetricsData<T> {
 	 * is meant to be absent in, which is why they are not told apart here.
 	 */
 	sleRiskValues: ISleRisk[];
-	/** Where the odds turn, for the aging chart. Empty for a portfolio and for a team with no target. */
-	sleRiskZones: ISleRiskZone[];
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	sizePercentileValues: IPercentileValue[];
 	allFeaturesForSizeChart: IFeature[];
@@ -168,7 +166,6 @@ export function useMetricsData<
 		IPerStatePercentileValues[]
 	>([]);
 	const [sleRiskValues, setSleRiskValues] = useState<ISleRisk[]>([]);
-	const [sleRiskZones, setSleRiskZones] = useState<ISleRiskZone[]>([]);
 	const [cumulativeStateTime, setCumulativeStateTime] =
 		useState<ICumulativeStateTimeResponse | null>(null);
 	const [sizePercentileValues, setSizePercentileValues] = useState<
@@ -243,7 +240,6 @@ export function useMetricsData<
 		"ageInStatePercentiles",
 	);
 	const needsSleRisk = activeFetchKeys.has("sleRisk");
-	const needsSleRiskZones = activeFetchKeys.has("sleRiskZones");
 	const needsCumulativeStateTime = activeFetchKeys.has("cumulativeStateTime");
 	const needsFlowEfficiency = activeFetchKeys.has("flowEfficiency");
 	const needsFeatureSizeData = activeFetchKeys.has("featureSizeData");
@@ -447,15 +443,6 @@ export function useMetricsData<
 			.then(setSleRiskValues)
 			.catch((error) => console.error("Error fetching SLE risk:", error));
 	}, [entity, metricsService, startDate, endDate, needsSleRisk]);
-
-	useEffect(() => {
-		if (!needsSleRiskZones) return;
-		if (!providesSleRisk(metricsService)) return;
-		metricsService
-			.getSleRiskZones(entity.id, startDate, endDate)
-			.then(setSleRiskZones)
-			.catch((error) => console.error("Error fetching SLE risk zones:", error));
-	}, [entity, metricsService, startDate, endDate, needsSleRiskZones]);
 
 	useEffect(() => {
 		if (!needsCumulativeStateTime) return;
@@ -726,7 +713,6 @@ export function useMetricsData<
 		previousWorkItemAgePercentilesValues,
 		perStatePercentileValues,
 		sleRiskValues,
-		sleRiskZones,
 		cumulativeStateTime,
 		sizePercentileValues,
 		allFeaturesForSizeChart,

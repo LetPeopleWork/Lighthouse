@@ -17,20 +17,3 @@ export const SleRiskSchema = z.object({
 });
 
 export type ISleRisk = z.infer<typeof SleRiskSchema>;
-
-/**
- * One band of the aging chart's risk background: the ages over which an item's chance of missing the
- * target is at least `risk`. A band the history could not place is absent rather than guessed.
- */
-export const SleRiskZoneSchema = z.object({
-	risk: z.number(),
-	fromAge: z.number(),
-	/**
-	 * Where the band stops. `null` means it never does, which is only ever true of certainty: past
-	 * the target every item that ran that long had already missed, whatever the history says. Any
-	 * other band ends where the evidence does, and nothing is painted above it.
-	 */
-	toAge: z.number().nullable(),
-});
-
-export type ISleRiskZone = z.infer<typeof SleRiskZoneSchema>;
