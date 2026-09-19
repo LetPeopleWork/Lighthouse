@@ -76,15 +76,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private static readonly JiraLinkType ALinkTypeAPortfolioNames = new("Belongs to", "belongs to", "owns");
 
+        /// <summary>What an administrator renames a link type to between two refreshes.</summary>
+        private const string TheNameALinkTypeIsRenamedTo = "Caused by (renamed)";
+
         private readonly List<string> issuesTheInstanceServes = [];
 
         private readonly List<string> customFieldsTheInstanceDefines = [];
 
         private readonly List<JiraLinkType> linkTypesTheInstanceDefines = [];
 
+        /// <summary>Every path the stub was asked for, in the order it was asked, across a whole scenario.</summary>
+        private readonly List<string> whatTheRefreshesAskedFor = [];
+
         private Mock<ILogger<JiraWorkTrackingConnector>> whatTheRefreshWroteToTheLog = new();
 
         private string? whatTheParentOverrideNames;
+
+        private bool theCredentialIsStillAccepted = true;
+
+        /// <summary>
+        /// The one Team every refresh in a scenario fetches. A scenario refreshing twice is describing the
+        /// same Team seen on two cycles, so it has to keep its connection id - the connector holds resolved
+        /// field names against it - while getting a connector of its own each time, the way a refresh does.
+        /// </summary>
+        private Team? theTeamEveryRefreshFetches;
 
         [SetUp]
         public void ForgetTheInstanceTheLastScenarioDescribed()
@@ -95,9 +110,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             linkTypesTheInstanceDefines.Add(ALinkTypeTheInstanceDefines);
             linkTypesTheInstanceDefines.Add(AnotherLinkTypeTheInstanceDefines);
             linkTypesTheInstanceDefines.Add(ALinkTypeAPortfolioNames);
+            whatTheRefreshesAskedFor.Clear();
             whatTheRefreshWroteToTheLog = new Mock<ILogger<JiraWorkTrackingConnector>>();
             whatTheParentOverrideNames = null;
+            theCredentialIsStillAccepted = true;
+            theTeamEveryRefreshFetches = null;
         }
+
+        /// <summary>
+        /// The token this connection signs in with has stopped being accepted. Jira does not refuse the
+        /// questions a refresh asks when that happens - it answers them as it would answer a stranger, and
+        /// a stranger is shown no link types at all.
+        /// </summary>
+        private void TheCredentialIsNoLongerAccepted() => theCredentialIsStillAccepted = false;
 
         /// <summary>
         /// What an administrator typed into Parent Override Field. One Additional Field named and
@@ -132,22 +157,82 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private async Task<List<WorkItem>> TheTeamIsRefreshed()
         {
-            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
-            WhatTheAdministratorTypedIntoTheOverrideIsSetOn(team);
+            if (theTeamEveryRefreshFetches is null)
+            {
+                theTeamEveryRefreshFetches = JiraConnectorTestSetup.ATeamOnJiraCloud();
+                WhatTheAdministratorTypedIntoTheOverrideIsSetOn(theTeamEveryRefreshFetches);
+            }
 
             var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
 
-            return [.. await connector.GetWorkItemsForTeam(team, CancellationToken.None)];
+            return [.. await connector.GetWorkItemsForTeam(theTeamEveryRefreshFetches, CancellationToken.None)];
+        }
+
+        /// <summary>
+        /// The refresh, run for whatever it refuses with rather than for what it returns. A scenario about
+        /// the reason an operator is given has to read the refusal without also being the scenario that
+        /// pins there being one.
+        /// </summary>
+        private async Task<JiraReadException?> WhatTheRefreshRefusedWith()
+        {
+            try
+            {
+                await TheTeamIsRefreshed();
+
+                return null;
+            }
+            catch (JiraReadException refusal)
+            {
+                return refusal;
+            }
         }
 
         private async Task<List<Feature>> ThePortfolioIsRefreshed()
         {
+            var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
+
+            return await connector.GetFeaturesForProject(APortfolioCarryingTheOverride(), CancellationToken.None);
+        }
+
+        /// <summary>
+        /// One refresh of a Portfolio as the update actually runs it: the Features the query returns, and
+        /// then the Features those hang under, which are fetched separately because they are not in the
+        /// query. Two fetches, one connector - the same connector a refresh builds once and uses throughout.
+        /// </summary>
+        private async Task ThePortfolioAndTheFeaturesAboveItAreRefreshed()
+        {
+            var portfolio = APortfolioCarryingTheOverride();
+            var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
+
+            await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+            await connector.GetParentFeaturesDetails(portfolio, [TheLevelAboveTheFeature], CancellationToken.None);
+        }
+
+        private Portfolio APortfolioCarryingTheOverride()
+        {
             var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
             WhatTheAdministratorTypedIntoTheOverrideIsSetOn(portfolio);
 
-            var connector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
+            return portfolio;
+        }
 
-            return await connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+        private int HowOftenTheInstanceWasAskedForItsLinkTypes()
+            => whatTheRefreshesAskedFor.FindAll(path => path.EndsWith(IssueLinkTypeEndpoint, StringComparison.Ordinal)).Count;
+
+        /// <summary>
+        /// An administrator renames a link type in one place and every issue carrying one reads the new name
+        /// at once, so the entries already described are rewritten alongside the list the instance answers
+        /// with.
+        /// </summary>
+        private void TheInstanceRenamesTheLinkType(JiraLinkType linkType, string newName)
+        {
+            linkTypesTheInstanceDefines[linkTypesTheInstanceDefines.IndexOf(linkType)] = linkType with { Name = newName };
+
+            for (var index = 0; index < issuesTheInstanceServes.Count; index++)
+            {
+                issuesTheInstanceServes[index] = issuesTheInstanceServes[index].Replace(
+                    $"\"name\": \"{linkType.Name}\"", $"\"name\": \"{newName}\"", StringComparison.Ordinal);
+            }
         }
 
         private void WhatTheAdministratorTypedIntoTheOverrideIsSetOn(IWorkItemQueryOwner owner)
@@ -208,6 +293,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 Times.Never,
                 "An item whose links say nothing about a parent is the ordinary case, not a misconfiguration, and a warning on every such item buries the ones that mean something.");
 
+        private void TheRefreshWarnedTheOperatorAboutIt()
+            => whatTheRefreshWroteToTheLog.Verify(
+                log => log.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce,
+                "A refresh that stopped part way leaves an instance whose hierarchy simply stops moving, and nobody watches a connection that has never reported anything wrong - the log is the only place that turns it into something to act on.");
+
         private static string AnIssue(string key, string furtherFields, params string[] links)
             => "{\"key\": \"" + key + "\", \"fields\": {"
                 + "\"summary\": \"" + key + " summary\""
@@ -235,6 +331,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private HttpResponseMessage AnAnswerTo(string path)
         {
+            whatTheRefreshesAskedFor.Add(path);
+
+            if (!theCredentialIsStillAccepted && path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                {
+                    Content = new StringContent("{\"errorMessages\":[\"Client must be authenticated\"]}", Encoding.UTF8, "application/json"),
+                };
+            }
+
             var body = path switch
             {
                 _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal) => "{\"deploymentType\":\"Cloud\"}",
@@ -268,9 +374,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             return "[" + string.Join(",", fields) + "]";
         }
 
-        /// <summary>The link-type list as a live Cloud instance answered it: an object keyed issueLinkTypes.</summary>
+        /// <summary>
+        /// The link-type list as a live Cloud instance answered it: an object keyed issueLinkTypes. A caller
+        /// whose credential is not accepted is answered as a stranger would be - 200, and nothing in it -
+        /// rather than refused, which is the whole reason an empty list cannot be read on its own.
+        /// </summary>
         private string TheLinkTypesItDefines()
         {
+            if (!theCredentialIsStillAccepted)
+            {
+                return "{\"issueLinkTypes\":[]}";
+            }
+
             var linkTypes = linkTypesTheInstanceDefines.Select((linkType, index) =>
                 "{\"id\":\"" + (10000 + index).ToString(CultureInfo.InvariantCulture) + "\""
                 + ",\"name\":\"" + linkType.Name + "\""

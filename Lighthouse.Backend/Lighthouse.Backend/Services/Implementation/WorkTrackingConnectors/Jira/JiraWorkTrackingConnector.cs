@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string IssueLinkTypeEndpoint = "rest/api/latest/issueLinkType";
 
+        private const string CredentialCheckEndpoint = "rest/api/2/myself";
+
         private const string LinkTypesProperty = "issueLinkTypes";
 
         private const string InwardLabelProperty = "inward";
@@ -87,6 +89,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly ConcurrentDictionary<string, HttpClient> ClientCache = new();
         private static readonly ConcurrentDictionary<string, JiraDeployment> DeploymentCache = new();
         private static readonly ConcurrentDictionary<string, string> CloudIdCache = new();
+
+        /// <summary>
+        /// What this connection answered about its issue link types, and whether the credential behind that
+        /// answer was accepted. Both are kept for as long as this connector lives, which is one refresh -
+        /// it is built per scope and a refresh is a scope - and neither may outlive that: an administrator
+        /// who renames a link type to make the override match it has no way to know something remembered
+        /// the old name, and no way to clear it.
+        /// </summary>
+        private readonly ConcurrentDictionary<int, IssueLinkTypeListing> linkTypesReadThisRefresh = new();
+
+        private readonly ConcurrentDictionary<int, bool> connectionsWhoseCredentialWasAccepted = new();
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
@@ -397,7 +410,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 var client = await GetJiraRestClientAsync(connection);
-                var response = await client.GetAsync("rest/api/2/myself");
+                var response = await client.GetAsync(CredentialCheckEndpoint);
                 if (!response.IsSuccessStatusCode)
                 {
                     var responseBody = await response.Content.ReadAsStringAsync();
@@ -415,6 +428,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}.",
                         JiraWorkTrackingOptionNames.ApiToken);
                 }
+
+                connectionsWhoseCredentialWasAccepted[connection.Id] = true;
 
                 var resolution = await ResolveTheAdditionalFieldReferences(connection);
                 var referencesThatResolvedToNothing = ReferencesThatResolvedToNothing(resolution.References);
@@ -1740,7 +1755,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     : ResolvedReference.AField(fieldId);
             }
 
-            var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
+            var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(connection, client, customFieldReferences);
 
             return new AdditionalFieldResolution(customFieldReferences, listing);
         }
@@ -1753,7 +1768,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// instance with nothing unresolved from paying for a second call.
         /// </summary>
         private async Task<IssueLinkTypeListing> ResolveWhatTheFieldListMissedAgainstLinkTypes(
-            HttpClient jiraClient, Dictionary<string, ResolvedReference> customFieldReferences)
+            WorkTrackingSystemConnection connection, HttpClient jiraClient, Dictionary<string, ResolvedReference> customFieldReferences)
         {
             var referencesThatResolvedToNothing = ReferencesThatResolvedToNothing(customFieldReferences);
 
@@ -1762,7 +1777,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return IssueLinkTypeListing.NeverAsked;
             }
 
-            var listing = await GetIssueLinkTypes(jiraClient);
+            await RefuseUnlessTheCredentialIsStillAccepted(connection, jiraClient);
+
+            var listing = await TheIssueLinkTypesOf(connection, jiraClient);
 
             // Each type is asked once, whole, rather than each of its labels in turn. A stock Jira instance
             // ships a type reading "relates to" in both directions, and counting labels would make that one
@@ -1778,6 +1795,65 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     customFieldReferences[reference] = ResolvedReference.ALinkType(answeringTypes[0].Name);
                 }
             }
+
+            return listing;
+        }
+
+        /// <summary>
+        /// Stops the refresh when Jira has stopped accepting the credential it signs in with. It does not
+        /// say so by refusing - it answers as it would answer a stranger, and a stranger is shown no issue
+        /// link types - so an empty list would resolve every reference to nothing, every record would come
+        /// back with no parent, and a record handed back overwrites the parent already stored for it. The
+        /// hierarchy would be emptied by an expired token, and what was left would look exactly like
+        /// correct data. Handing back nothing at all leaves the last good answer standing.
+        /// </summary>
+        private async Task RefuseUnlessTheCredentialIsStillAccepted(WorkTrackingSystemConnection connection, HttpClient jiraClient)
+        {
+            if (connectionsWhoseCredentialWasAccepted.ContainsKey(connection.Id))
+            {
+                return;
+            }
+
+            var response = await jiraClient.GetAsync(CredentialCheckEndpoint);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning(
+                    "Jira no longer accepts the credential for connection {ConnectionName} - {Endpoint} answered {StatusCode}. "
+                    + "This refresh was stopped, because an issue link type list read without being signed in comes back empty "
+                    + "and would have cleared every parent it could not see.",
+                    connection.Name,
+                    CredentialCheckEndpoint,
+                    (int)response.StatusCode);
+
+                throw new JiraReadException(ConnectionValidationResult.Failure(
+                    "credential_no_longer_accepted",
+                    $"Jira no longer accepts the credential this connection signs in with, so the refresh was stopped "
+                    + $"before it could read anything that depends on it. Jira answered {(int)response.StatusCode} "
+                    + $"({response.StatusCode}). Nothing Lighthouse already holds was changed. Update the API token on "
+                    + "this connection to start refreshing again.",
+                    $"GET {CredentialCheckEndpoint} answered {(int)response.StatusCode} {response.StatusCode}.",
+                    JiraWorkTrackingOptionNames.ApiToken));
+            }
+
+            connectionsWhoseCredentialWasAccepted[connection.Id] = true;
+        }
+
+        /// <summary>
+        /// What this instance calls its issue link types, read once however many fetches the refresh goes
+        /// on to make. A connection using this feature has a reference the field list cannot resolve by
+        /// definition, so without this every fetch of every cycle pays a round trip for an answer that
+        /// changes about once a year.
+        /// </summary>
+        private async Task<IssueLinkTypeListing> TheIssueLinkTypesOf(WorkTrackingSystemConnection connection, HttpClient jiraClient)
+        {
+            if (linkTypesReadThisRefresh.TryGetValue(connection.Id, out var alreadyRead))
+            {
+                return alreadyRead;
+            }
+
+            var listing = await GetIssueLinkTypes(jiraClient);
+            linkTypesReadThisRefresh[connection.Id] = listing;
 
             return listing;
         }

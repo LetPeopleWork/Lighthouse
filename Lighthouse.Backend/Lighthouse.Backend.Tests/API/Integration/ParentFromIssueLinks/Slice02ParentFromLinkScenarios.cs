@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
@@ -142,6 +143,82 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             Assert.That(TheParentOf(refreshed, TheChild), Is.EqualTo(TheParentJiraItselfNames),
                 "Most Teams have never touched this setting, and a refresh must go on reading the parent Jira reports for them.");
+        }
+
+        /// <summary>
+        /// A token stops being accepted at some point in its life, and Jira does not refuse the caller when
+        /// it does - it answers as it would answer a stranger, and a stranger is shown no link types. So an
+        /// empty list means "this instance defines none" and "whoever asked is not signed in" equally well,
+        /// and only asking who is signed in tells the two apart.
+        /// </summary>
+        [Test]
+        public void A_credential_Jira_no_longer_accepts_stops_the_refresh_rather_than_emptying_it()
+        {
+            TheParentOverrideNames(ALinkTypeTheInstanceDefines.Name);
+            TheIssueHasOneLinkWhoseOutwardIssueIs(TheChild, ALinkTypeTheInstanceDefines, TheParent);
+            TheCredentialIsNoLongerAccepted();
+
+            Assert.That(async () => await TheTeamIsRefreshed(), Throws.InstanceOf<JiraReadException>(),
+                "A refresh that carries on hands every item back with no parent, and an item handed back overwrites the parent already stored for it - so an expired token empties the hierarchy it could not read, and what is left looks exactly like correct data.");
+        }
+
+        [Test]
+        public async Task The_refresh_that_stopped_says_the_credential_is_why()
+        {
+            TheParentOverrideNames(ALinkTypeTheInstanceDefines.Name);
+            TheIssueHasOneLinkWhoseOutwardIssueIs(TheChild, ALinkTypeTheInstanceDefines, TheParent);
+            TheCredentialIsNoLongerAccepted();
+
+            var refusal = await WhatTheRefreshRefusedWith();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.Message, Does.Contain("credential").IgnoreCase,
+                    $"An administrator sent to look at the link type configuration spends the afternoon correcting something that was never wrong. Lighthouse said: {refusal?.Message}");
+                TheRefreshWarnedTheOperatorAboutIt();
+            }
+        }
+
+        /// <summary>
+        /// The list changes about once a year and a refresh reads it on every fetch it makes. A correctly
+        /// configured connection using this feature has a reference the field list cannot resolve by
+        /// definition, so without this every Team and every Portfolio pays that round trip on every cycle,
+        /// forever.
+        /// </summary>
+        [Test]
+        public async Task One_refresh_asks_what_link_types_exist_once_however_many_fetches_it_makes()
+        {
+            TheParentOverrideNames(ALinkTypeAPortfolioNames.Name);
+            TheIssueHasOneLinkWhoseInwardIssueIs(TheFeature, ALinkTypeAPortfolioNames, TheLevelAboveTheFeature);
+
+            await ThePortfolioAndTheFeaturesAboveItAreRefreshed();
+
+            Assert.That(HowOftenTheInstanceWasAskedForItsLinkTypes(), Is.EqualTo(1),
+                "Two fetches of one refresh read the same list, and asking twice for an answer that changes about once a year is a round trip spent on every cycle of every connection using this feature.");
+        }
+
+        /// <summary>
+        /// The other half of that saving: nothing remembered may outlive the refresh that remembered it.
+        /// An administrator who renames a link type to make the override match it has no way to know a
+        /// cache is what stopped it taking effect, and no way to clear one.
+        /// </summary>
+        [Test]
+        public async Task A_link_type_renamed_between_refreshes_is_read_under_its_new_name_on_the_next_one()
+        {
+            TheParentOverrideNames(TheNameALinkTypeIsRenamedTo);
+            TheIssueHasOneLinkWhoseOutwardIssueIs(TheChild, ALinkTypeTheInstanceDefines, TheParent);
+
+            var beforeTheRename = await TheTeamIsRefreshed();
+            TheInstanceRenamesTheLinkType(ALinkTypeTheInstanceDefines, TheNameALinkTypeIsRenamedTo);
+            var afterTheRename = await TheTeamIsRefreshed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheParentOf(beforeTheRename, TheChild), Is.Empty,
+                    "No link type carried that name yet, so a parent appearing here would mean the override matched something nobody named.");
+                Assert.That(TheParentOf(afterTheRename, TheChild), Is.EqualTo(TheParent),
+                    "The instance now defines exactly what the override names, and a refresh still reading the previous cycle's list leaves the administrator staring at a setting that is right and does nothing.");
+            }
         }
     }
 }
