@@ -1,0 +1,22 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/BackgroundServices/Update/UpdateLanes.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateLane.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+      "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+      "**/Services/Implementation/WriteBackRound.cs",
+      "**/API/UpdateController.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~UpdateQueue|FullyQualifiedName~UpdateLane|FullyQualifiedName~UpdateController|FullyQualifiedName~TaskManager|FullyQualifiedName~ForecastUpdater|FullyQualifiedName~WriteBack|FullyQualifiedName~DeliverySources|FullyQualifiedName~FasterUpdates)&FullyQualifiedName!~TwoLanesAgainstARealTracker&FullyQualifiedName!~Containers",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

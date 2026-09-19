@@ -76,8 +76,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.UpdateQueueLanes
                 Assert.That(portfolioRun, Is.Not.Null, "The portfolio refresh recorded nothing, so there is nothing to compare.");
             }
 
-            var team = WhenItRan(teamRun!);
-            var portfolio = WhenItRan(portfolioRun!);
+            // Two refreshes that both failed still record two rows, and those rows still overlap. The
+            // overlap would then be two errors happening at once rather than two refreshes running at
+            // once, which is not what this fixture claims.
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(teamRun.Success, Is.True, "The team refresh failed, so its run says nothing about lanes.");
+                Assert.That(portfolioRun.Success, Is.True, "The portfolio refresh failed, so its run says nothing about lanes.");
+                Assert.That(teamRun.ItemCount, Is.GreaterThan(0),
+                    "The team refresh read nothing from the project. A refresh that fetched no work can finish before "
+                    + "it has really started, which would make the overlap a measurement of two no-ops.");
+            }
+
+            var team = WhenItRan(teamRun);
+            var portfolio = WhenItRan(portfolioRun);
 
             using (Assert.EnterMultipleScope())
             {
