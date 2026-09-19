@@ -136,15 +136,19 @@ journeys:
             to this widget)
 
     error_paths_summary:
-      - Fresh team / no snapshots: every over-time chart renders the forward-only empty state
+      - >-
+        Fresh team / no snapshots: every over-time chart renders the forward-only empty state
         "builds forward from today — no snapshots recorded yet" (D6); no crash, no broken axis.
-      - Narrowed range with nothing recorded inside it (slice-03b, D10): the widget reads "no data
+      - >-
+        Narrowed range with nothing recorded inside it (slice-03b, D10): the widget reads "no data
         recorded in the selected range" — NOT the forward-only copy, which would be a lie on an owner
         that does have snapshots. Distinguished in the widget from the range it asked for, not from a
         response envelope (ADR-108 rejects envelopes) and not from a second unfiltered request.
-      - Same-day double refresh: the recording handler is idempotent per (team, metric, horizon, day) —
+      - >-
+        Same-day double refresh: the recording handler is idempotent per (team, metric, horizon, day) —
         latest-write-wins — so at most one row per day; no duplicate points.
-      - Handler failure on the refresh path: recording is resilient and does not break the refresh (recall
+      - >-
+        Handler failure on the refresh path: recording is resilient and does not break the refresh (recall
         the domain-event dispatcher swallows handler errors — do not rely on it surfacing; make recording
         observable).
       - Stable process: flat UNPL/Average/LNPL lines are the honest reading of a stable process, not a bug.
@@ -156,5 +160,6 @@ journeys:
         week over week or rebuilding a spreadsheet.
       - Exactly one snapshot row per (team, metric, horizon, calendar day) under repeated same-day refresh
         (backend integration assertion — measurable today).
-      - Forward-only timing caveat: charts are empty at launch and become useful only as snapshots accrue
+      - >-
+        Forward-only timing caveat: charts are empty at launch and become useful only as snapshots accrue
         (order of weeks); qualitative KPIs measured via dogfood + interviews until Epic 5015 telemetry.

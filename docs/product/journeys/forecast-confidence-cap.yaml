@@ -49,8 +49,9 @@ journeys:
           applies only to likelihoods computed from remaining work plus a target date.
 
     surfaces:
-      - portfolio-delivery: DeliverySection chip + DeliveriesChips overview + per-feature
-        likelihood (FeatureLikelihoodDto) — the reporter's "most important" surface.
+      - portfolio-delivery: >-
+          DeliverySection chip + DeliveriesChips overview + per-feature
+          likelihood (FeatureLikelihoodDto) — the reporter's "most important" surface.
       - manual-forecast: ForecastLikelihood headline.
 
     out_of_scope:

@@ -47,8 +47,9 @@ journeys:
           same-origin absolute URL. Refreshed manually, separately.
 
     surfaces:
-      - website-lighthouse-page: website/src/pages/Lighthouse.tsx and components/LighthouseSection.tsx
-        — the marketed screenshots switch from bundled imports to GitHub-hosted URLs.
+      - website-lighthouse-page: >-
+          website/src/pages/Lighthouse.tsx and components/LighthouseSection.tsx
+          — the marketed screenshots switch from bundled imports to GitHub-hosted URLs.
       - lighthouse-screenshot-suite: Lighthouse.EndToEndTests @screenshot tests writing docs/assets/**.
       - finalization-gate: CLAUDE.md DELIVER mandate + nw-finalize checklist.
 
@@ -67,4 +68,3 @@ journeys:
       website: >
         PRIMARY surface — the feature's main deliverable is the website change (bundled imports →
         GitHub-hosted URLs), coordinated with Lighthouse-side canonical-asset generation. Spans both repos.
-</content>

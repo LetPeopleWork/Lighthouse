@@ -171,39 +171,50 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - Basic auth blocked on a PROSPECT's hardened instance: no longer the headline risk for THIS
+      - >-
+        Basic auth blocked on a PROSPECT's hardened instance: no longer the headline risk for THIS
         epic (D3 — verified working on our target on-prem instance), but still real for other
         customers. Mitigation is documentation, not code: US-05 states plainly that v1 is basic auth
         so such a prospect learns before installing, and OAuth is the named successor (D3a).
-      - Permissions failure reported as a connection failure: forbidden (US-01 AC4). An admin who
+      - >-
+        Permissions failure reported as a connection failure: forbidden (US-01 AC4). An admin who
         cannot tell "wrong host" from "insufficient rights" cannot self-serve, which defeats D11.
         SPIKE Q1 must confirm 401 and 403 are actually distinguishable; if not, the AC drops from
         three messages to two rather than guessing.
-      - Agile Development 2.0 plugin absent on the customer's instance: assumed to be the NORMAL case
+      - >-
+        Agile Development 2.0 plugin absent on the customer's instance: assumed to be the NORMAL case
         — which is why ITSM is the default (D4), not merely a supported alternative. D4's configurable
         table keeps Agile 2.0 shops working; asking a customer to activate a plugin as a prerequisite
         for basic team metrics is explicitly out of scope.
-      - ITSM state values are numeric choices: showing a coach "3" instead of "In Progress" in the
+      - >-
+        ITSM state values are numeric choices: showing a coach "3" instead of "In Progress" in the
         state-mapping UI makes the mapping unusable even though the sync technically works.
-      - No native "started" timestamp on the chosen table: cycle time then depends on transition
+      - >-
+        No native "started" timestamp on the chosen table: cycle time then depends on transition
         history, which INVERTS the slice order (slice 04 becomes a prerequisite of slice 02). SPIKE
         Q4 exists to find this before the slices are committed; if it fires, re-plan rather than patch.
-      - No usable hierarchy: US-03 is CANCELLED loudly, not silently deferred — the docs state the
+      - >-
+        No usable hierarchy: US-03 is CANCELLED loudly, not silently deferred — the docs state the
         team-only limitation (US-03 AC5).
-      - Transition history readable only with an elevated role, or only after the customer configures
+      - >-
+        Transition history readable only with an elevated role, or only after the customer configures
         Metric Definitions on their own instance: US-04 is cancelled; slice 02's honest downgrade
         already covers the user experience, so the cost of this "no" is small by design.
-      - Minimum role set turns out to be effectively `admin`: a headline adoption risk that may sink
+      - >-
+        Minimum role set turns out to be effectively `admin`: a headline adoption risk that may sink
         the market thesis on its own. Recorded in the SPIKE report, not discovered at slice 05.
-      - Rate limit tripped during a refresh: must fail visibly rather than silently truncating the
+      - >-
+        Rate limit tripped during a refresh: must fail visibly rather than silently truncating the
         item set — a silently short sync would produce quietly wrong metrics, which is worse than an error.
 
     success_signal:
       - A ServiceNow admin connects and sees a Throughput chart within 15 minutes, using only the
         documented minimum roles.
-      - Zero silent no-ops: each of the 8 IWorkTrackingConnector methods either works or reports a
+      - >-
+        Zero silent no-ops: each of the 8 IWorkTrackingConnector methods either works or reports a
         user-visible unsupported state.
       - ≥3 ServiceNow users/prospects give structured feedback within 30 days, and a go/narrow/stop
         verdict is recorded on ADO 5513.
-      - Honest-limit caveat: a "narrow" or "stop" verdict is a SUCCESSFUL outcome for this epic. The
+      - >-
+        Honest-limit caveat: a "narrow" or "stop" verdict is a SUCCESSFUL outcome for this epic. The
         epic buys knowledge; only an unrecorded verdict is a failure.

@@ -262,7 +262,8 @@ journeys:
 
     design_decisions_resolved:
       - id: Q9
-        question: "Update all" — specifically for teams and portfolios user has write access?
+        question: >-
+          "Update all" — specifically for teams and portfolios user has write access?
         decision: >
           The "Update all" / bulk-refresh action on the overview is only shown on teams and portfolios
           where the current user has write (Admin) access. Viewers do not see the button at all.

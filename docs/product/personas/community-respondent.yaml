@@ -36,17 +36,23 @@ frustrations:
 
 mental_model:
   - A survey is a web page I open, answer, and submit — not something that lives inside the app
-  - "Anonymous" means no login, no account, and nothing that ties my answers to me personally
+  - >-
+    "Anonymous" means no login, no account, and nothing that ties my answers to me personally
   - If I want a trial I should have to ASK — a human can then decide; I do not expect instant access
   - An in-app pop-up is a NUDGE — a short message with a link — not the survey itself
   - Premium customers are paying; they should never be bothered with a community feedback ask
 
 vocabulary:
-  - "the survey" — the standalone web page with the questions (lives on the website, stable link)
-  - "the pop-up" / "the nudge" — the small in-app dialog inside Lighthouse that links out to the survey
-  - "Community" — the free tier; the opposite of "Premium" (the licensed, paid tier)
-  - "trial" — a time-limited premium license I have to request, not one that is granted automatically
-  - "anonymous" — no PII stored; the only personal datum is an email I VOLUNTEER for a trial
+  - >-
+    "the survey" — the standalone web page with the questions (lives on the website, stable link)
+  - >-
+    "the pop-up" / "the nudge" — the small in-app dialog inside Lighthouse that links out to the survey
+  - >-
+    "Community" — the free tier; the opposite of "Premium" (the licensed, paid tier)
+  - >-
+    "trial" — a time-limited premium license I have to request, not one that is granted automatically
+  - >-
+    "anonymous" — no PII stored; the only personal datum is an email I VOLUNTEER for a trial
 
 related_personas:
   - flow-coach (often the same human, but doing flow work INSIDE the tool — different job)

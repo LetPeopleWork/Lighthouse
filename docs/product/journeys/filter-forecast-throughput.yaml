@@ -128,7 +128,8 @@ journeys:
 
       - id: step-open-throughput-chart-raw
         action: Forecaster opens the Team's Metrics view and looks at the Throughput Run Chart
-        expected_output: Chart shows the team's TOTAL throughput (today's behaviour). A new "Show: Raw / Filtered" toggle is visible in the chart header; chip is absent in this Raw view.
+        expected_output: >-
+          Chart shows the team's TOTAL throughput (today's behaviour). A new "Show: Raw / Filtered" toggle is visible in the chart header; chip is absent in this Raw view.
         emotional_state: relieved — "the team's total-work story is preserved by default"
         shared_artifacts:
           - team.throughputDataset — single source: GET /api/teams/{teamId}/metrics (item-granular or extended for ?view= per DESIGN)
@@ -150,7 +151,8 @@ journeys:
 
       - id: step-backtest-with-toggle-on
         action: Forecaster opens Backtest, picks a historical window, sees toggle defaulted ON, submits
-        expected_output: Backtest computes against historical FILTERED throughput; result DTO includes filterApplied: true; chip rendered on the backtest result view
+        expected_output: >-
+          Backtest computes against historical FILTERED throughput; result DTO includes filterApplied: true; chip rendered on the backtest result view
         emotional_state: confident — "the backtest validates the forecast I actually consume"
         shared_artifacts:
           - backtest.applyFilterOverride — per-run form state
@@ -180,7 +182,8 @@ journeys:
 
       - id: err-invalid-rule-key
         trigger: User submits a rule with an unknown field key (e.g. via API directly with `additionalField.999999` referring to a non-existent additional field)
-        recovery: PUT /api/teams/{teamId} returns 400 with `{"field": "forecastFilterRuleSet", "error": "Unknown field key: additionalField.999999"}`; rule set is NOT persisted; existing rule set remains intact
+        recovery: >-
+          PUT /api/teams/{teamId} returns 400 with `{"field": "forecastFilterRuleSet", "error": "Unknown field key: additionalField.999999"}`; rule set is NOT persisted; existing rule set remains intact
         owner: backend forecast filter rule service + API validation
 
       - id: err-premium-tenant-no-filter-config

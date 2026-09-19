@@ -42,10 +42,14 @@ mental_model:
   - A drift problem is best fixed with a gate at the moment of change (finalization), not a periodic clean-up
 
 vocabulary:
-  - "canonical asset" — the `docs/assets/**` PNG produced by an `@screenshot` E2E test, single source of truth
-  - "hotlink" — referencing a remote image by URL rather than bundling a local copy
-  - "finalization gate" — a checklist step at `nw-finalize` that must be answered before close-out
-  - "drift" — public imagery silently falling out of sync with the shipped UI
+  - >-
+    "canonical asset" — the `docs/assets/**` PNG produced by an `@screenshot` E2E test, single source of truth
+  - >-
+    "hotlink" — referencing a remote image by URL rather than bundling a local copy
+  - >-
+    "finalization gate" — a checklist step at `nw-finalize` that must be answered before close-out
+  - >-
+    "drift" — public imagery silently falling out of sync with the shipped UI
 
 related_personas:
   - forecasting-prospect (the downstream beneficiary — the website visitor who must see current screenshots)
@@ -53,4 +57,3 @@ related_personas:
 not_this_persona:
   - An end user of the Lighthouse product (uses the in-tool product personas)
   - A website visitor / prospect (that is forecasting-prospect — the consumer of what this persona maintains)
-</content>

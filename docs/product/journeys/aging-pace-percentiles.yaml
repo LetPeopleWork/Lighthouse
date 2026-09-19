@@ -22,7 +22,8 @@ journeys:
       in-flight items are pacing slower than most historically-completed items in the
       same workflow state, then uses that signal to name the specific bottleneck step
       in the next standup or flow review.
-    persona: flow-coach (also: delivery-forecaster as secondary, for forecast-honesty
+    persona: >-
+      flow-coach (also: delivery-forecaster as secondary, for forecast-honesty
       conversations)
 
     emotional_arc:
@@ -122,17 +123,21 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - State with zero completed-item samples in window: no per-state bands rendered for
+      - >-
+        State with zero completed-item samples in window: no per-state bands rendered for
         that state; existing full-width CT bands still render so the chart is never empty
         of guidance. Tooltip on a dot in that state reads "no historical data for <state>".
-      - State with <10 completed-item samples: bands render normally; legend chip tooltip
+      - >-
+        State with <10 completed-item samples: bands render normally; legend chip tooltip
         warns about low sample sizes for the affected states; per-band hover tooltip shows
         the actual N.
-      - First weeks post-sibling-slice-01-ship: transitions data only covers items
+      - >-
+        First weeks post-sibling-slice-01-ship: transitions data only covers items
         completed after sibling's deploy, so most states will have low or zero samples for
         a few weeks. Expected and tolerated; OUT-aging-pace-bands-rendered KPI gives 6
         weeks of accumulation before measurement.
-      - Bimodal distribution: percentile math is still defined; bands render at the
+      - >-
+        Bimodal distribution: percentile math is still defined; bands render at the
         mathematical percentile values. No special visual handling (out of scope, D5).
 
     success_signal:

@@ -38,16 +38,22 @@ frustrations:
 
 mental_model:
   - Work flows through named states (In Progress → Review → Test → Done); each state has an implicit "normal" duration
-  - "Stuck" means an item is in a state much longer than that team's normal — the threshold is team-specific
-  - "Stale" is a useful warning signal, similar to "blocked", that demands a conversation
+  - >-
+    "Stuck" means an item is in a state much longer than that team's normal — the threshold is team-specific
+  - >-
+    "Stale" is a useful warning signal, similar to "blocked", that demands a conversation
   - Some coaches read a table faster than a chart; for them the pace band IS the sort key, and total age is the misleading one  # story-5884-work-item-age-bands (2026-09-05, #5884): evidenced by ValueFlow, which drops the aging chart's colouring and shows a table of the bands instead
   - The SLE is a promise with a deadline, not a statistic — "are we about to break it on this item" is a different question from "is this item unusual", and only the first one is worth interrupting a standup for  # epic-4127-sle-risk (2026-09-16, #4127)
 
 vocabulary:
-  - "stuck" — item sitting in a state longer than expected (term flow coaches use; staleness is the Lighthouse-internal term that drives the UI)
-  - "stale" — same idea, more formal
-  - "in state X" — the named workflow state, not the Lighthouse StateCategory enum
-  - "ageing" — well-known term from Daniel Vacanti / ActionableAgile; refers to time work has been in progress overall, related-but-different from time-in-current-state
+  - >-
+    "stuck" — item sitting in a state longer than expected (term flow coaches use; staleness is the Lighthouse-internal term that drives the UI)
+  - >-
+    "stale" — same idea, more formal
+  - >-
+    "in state X" — the named workflow state, not the Lighthouse StateCategory enum
+  - >-
+    "ageing" — well-known term from Daniel Vacanti / ActionableAgile; refers to time work has been in progress overall, related-but-different from time-in-current-state
 
 related_personas:
   - team-admin (often the same person; admins the team's staleness threshold)

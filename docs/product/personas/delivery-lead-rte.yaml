@@ -61,14 +61,19 @@ mental_model:
     consuming the team's calendar even though they haven't shipped yet)
 
 vocabulary:
-  - "constraint" — the workflow state with the highest cumulative time-tax (Goldratt / Theory
+  - >-
+    "constraint" — the workflow state with the highest cumulative time-tax (Goldratt / Theory
     of Constraints)
-  - "time tax" — informal term for cumulative time-per-state across a window
-  - "improvement debt" — the gap between the current constraint and where the team could be
+  - >-
+    "time tax" — informal term for cumulative time-per-state across a window
+  - >-
+    "improvement debt" — the gap between the current constraint and where the team could be
     if the constraint were addressed
-  - "retro view" or "leadership view" — the bar chart, as distinct from "standup view"
+  - >-
+    "retro view" or "leadership view" — the bar chart, as distinct from "standup view"
     (per-item triage) or "forecast view" (Monte Carlo)
-  - "in-flight time" / "ongoing time" — the time-in-current-state for items that have not
+  - >-
+    "in-flight time" / "ongoing time" — the time-in-current-state for items that have not
     yet completed; user-stated requirement that this be included in the bar
 
 related_personas:

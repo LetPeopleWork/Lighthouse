@@ -215,8 +215,9 @@ journeys:
         source: DeliveryWithLikelihoodDto.CompletionDates <- the SAME joint histogram (D7)
       - variable: row NN%
         source: FeatureLikelihoodDto.LikelihoodPercentage <- feature.GetLikelhoodForDate — UNCHANGED (marginal)
-      - variable: "Cannot forecast" + team names
-        source: TeamsWithoutForecast (ADR-112) — UNCHANGED (D2)
+      - variable: >-
+          "Cannot forecast" + team names
+          source: TeamsWithoutForecast (ADR-112) — UNCHANGED (D2)
       - variable: "Not enough data"
         source: DeliveryWithLikelihoodDto.HasSufficientData — rule changes (D6)
       - variable: recorded trend points
@@ -230,13 +231,16 @@ journeys:
       - The snapshot recorder writes the new percentile dates from the day of release; no backfill.
 
     surfaces:
-      - portfolio-delivery-header: likelihood badge + 70/85/95 chips via
-        `GET /api/latest/deliveries/portfolio/{portfolioId}` -> `DeliveryWithLikelihoodDto`.
-      - portfolio-delivery-breakdown: per-feature Likelihood column via `FeatureLikelihoodDto` —
-        values unchanged, framing relabelled.
+      - portfolio-delivery-header: >-
+          likelihood badge + 70/85/95 chips via
+          `GET /api/latest/deliveries/portfolio/{portfolioId}` -> `DeliveryWithLikelihoodDto`.
+      - portfolio-delivery-breakdown: >-
+          per-feature Likelihood column via `FeatureLikelihoodDto` —
+          values unchanged, framing relabelled.
       - delivery-trend: recorded percentile snapshots feeding the over-time delivery charts (D8).
-      - docs: `docs/concepts/howlighthouseforecasts.md` extended one level up to deliveries; live on
-        letpeople.work via jsDelivr the moment it merges.
+      - docs: >-
+          `docs/concepts/howlighthouseforecasts.md` extended one level up to deliveries; live on
+          letpeople.work via jsDelivr the moment it merges.
       - release-notes: lead item written as positioning, plus a separate sufficiency bullet.
 
     out_of_scope:

@@ -22,7 +22,8 @@ journeys:
     emotional_arc:
       start: Unreliable - "I shared 70% on Friday; Monday it is 55% and nothing changed. The weekend
         hit the forecast twice and now I look like I cannot forecast."
-      middle: Relieved - "Lighthouse treats the configured weekend as predictable non-working time:
+      middle: >-
+        Relieved - "Lighthouse treats the configured weekend as predictable non-working time:
         the percentile date stepped over it and the number held."
       end: Confident - "The dates I present count working days and never land on a day nothing ships;
         stakeholders stop discounting Lighthouse dates."
@@ -64,8 +65,9 @@ journeys:
     surfaces:
       - manual-when: WhenForecastDto percentile dates (US-01).
       - manual-by-date: ForecastController likelihood + how-many by a target date (US-02).
-      - feature-delivery: HowManyForecast.TargetDate, Delivery expected dates,
-        DeliveryWithLikelihoodDto, Feature.GetLikelhoodForDate (US-03).
+      - feature-delivery: >-
+          HowManyForecast.TargetDate, Delivery expected dates,
+          DeliveryWithLikelihoodDto, Feature.GetLikelhoodForDate (US-03).
       - write-back: WriteBackTriggerService forecast date written to Jira/ADO (US-04).
 
     out_of_scope:

@@ -78,7 +78,8 @@ journeys:
       - step: Provision the Tenant Zero namespace and install the existing chart into it via ArgoCD.
         output: LPW's Lighthouse runs in an isolated namespace, rendered by the shipped chart at its default embedded shape; `kubectl get pods -n tenant-lpw` shows Running/Ready.
       - step: Route the tenant at its subdomain with wildcard DNS + automatic TLS.
-        output: `https://lpw.lighthouse.letpeople.work` serves LPW's instance with a valid cert; no per-tenant DNS record was created by hand.
+        output: >-
+          `https://lpw.lighthouse.letpeople.work` serves LPW's instance with a valid cert; no per-tenant DNS record was created by hand.
       - step: Source the tenant's secrets (DB creds, OIDC, license) from the managed secret store.
         output: The tenant's secrets are injected from the store; the GitOps repo contains a secret REFERENCE, never a plaintext secret.
     error_paths:

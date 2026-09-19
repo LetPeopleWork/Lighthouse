@@ -101,8 +101,9 @@ journeys:
       - step: Use the full config reference to tune values-enterprise.yaml.
         output: Every documented option maps to a real chart value with an inline comment; the reader
           configures OIDC, Postgres, replicas, MCP, frontend.mode without guessing.
-      - step: Run the demo walkthrough: install -> auth -> MCP -> scaling.
-        output: A scripted, reproducible demo proves the headline capabilities end to end; usable
+      - step: >-
+          Run the demo walkthrough: install -> auth -> MCP -> scaling.
+          output: A scripted, reproducible demo proves the headline capabilities end to end; usable
           verbatim as a pitch.
     error_paths:
       - trigger: The docs drift from the shipped chart (a value renamed, a default changed).
@@ -132,7 +133,8 @@ journeys:
       - step: Package the chart and bump Chart.yaml version.
         output: A versioned .tgz; the chart version is an explicit, single-source artifact.
       - step: Update the Helm repo index and push to the GitHub Pages branch alongside the README.
-        output: `helm repo update` then `helm search repo` shows the new version to any external user;
+        output: >-
+          `helm repo update` then `helm search repo` shows the new version to any external user;
           the published README matches the shipped chart.
     error_paths:
       - trigger: The chart version is not bumped before publish.

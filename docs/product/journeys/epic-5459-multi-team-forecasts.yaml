@@ -87,12 +87,15 @@ journeys:
           the union of day keys is not. DESIGN decides memoisation vs. leaving it.
 
     surfaces:
-      - portfolio-detail: feature forecast columns (p50/p70/p85/p95) via
-        `GET /api/latest/portfolios/{id}` -> `FeatureDto.Forecasts`.
-      - portfolio-delivery: delivery + per-feature likelihood via
-        `GET /api/latest/deliveries/portfolio/{portfolioId}` -> `FeatureLikelihoodDto`.
+      - portfolio-detail: >-
+          feature forecast columns (p50/p70/p85/p95) via
+          `GET /api/latest/portfolios/{id}` -> `FeatureDto.Forecasts`.
+      - portfolio-delivery: >-
+          delivery + per-feature likelihood via
+          `GET /api/latest/deliveries/portfolio/{portfolioId}` -> `FeatureLikelihoodDto`.
       - delivery-trend: recorded percentile snapshots feeding the over-time delivery chart (D5).
-      - mcp-cli: `lighthouse_delivery_list` / `lighthouse_portfolio_get` surface the same DTO fields.
+      - mcp-cli: >-
+          `lighthouse_delivery_list` / `lighthouse_portfolio_get` surface the same DTO fields.
 
     out_of_scope:
       - Rewriting the Monte Carlo to a per-trial max (D1 — deferred, not rejected).

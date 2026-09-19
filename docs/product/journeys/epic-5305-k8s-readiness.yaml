@@ -142,7 +142,8 @@ journeys:
     jobs: [job-operator-observe-in-cluster]
     stories: ["#5312"]
     emotional_arc:
-      start: Blind - "Lighthouse is a black box: no /metrics, unstructured text logs I can't query."
+      start: >-
+        Blind - "Lighthouse is a black box: no /metrics, unstructured text logs I can't query."
       middle: Instrumenting - "I scrape /metrics, parse JSON logs by field, see traces."
       end: Visible - "Lighthouse sits on my dashboards like any first-class service."
     steps:
@@ -163,7 +164,8 @@ journeys:
     jobs: [job-mcp-caller-own-identity]
     stories: ["#5307"]
     emotional_arc:
-      start: Uneasy - "the mcp-http container is a confused deputy: one baked LIGHTHOUSE_API_KEY, so
+      start: >-
+        Uneasy - "the mcp-http container is a confused deputy: one baked LIGHTHOUSE_API_KEY, so
         every caller acts as that owner/scope with no per-user audit, and an unauth'd /mcp is an open hole."
       middle: Adopting - "I move to MCP OAuth pass-through (preferred) — each caller brings their own
         token; or the interim X-Api-Key pass-through reusing Lighthouse's owner-resolved/scoped keys."

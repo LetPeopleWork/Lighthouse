@@ -180,31 +180,39 @@ journeys:
             and the sorted row order; not narrowed by an active filter)
 
     error_paths_summary:
-      - State with no percentile column of its own, preceded by a state that has one: the
+      - >-
+        State with no percentile column of its own, preceded by a state that has one: the
         preceding state's percentiles are CARRIED FORWARD, matching the chart, which paints
         that column with the preceding state's zones. The row and the dot agree.
-      - State that precedes every state having percentiles (e.g. a first Analysis state no
+      - >-
+        State that precedes every state having percentiles (e.g. a first Analysis state no
         completed item has ever exited): nothing to carry forward, so the cell reads
         "No history", muted and unpainted. The chart draws no zone under those dots either.
-      - Item whose state is absent from doingStates: same "No history" sentinel. Cannot occur
+      - >-
+        Item whose state is absent from doingStates: same "No history" sentinel. Cannot occur
         in the dot-click dialog, where grouping drops such items; possible in the View Data
         dialog, which lists inProgressItems unfiltered.
-      - Team with no completed history at all, so no state has a non-empty percentile list:
+      - >-
+        Team with no completed history at all, so no state has a non-empty percentile list:
         the band column is not rendered and the dialog is otherwise unchanged. A column
         reading "No history" on every row would be noise.
-      - Zero in-progress items: the dialog shows its existing "No items to display" message;
+      - >-
+        Zero in-progress items: the dialog shows its existing "No items to display" message;
         no columns render and the question does not arise. Unchanged.
-      - Age exactly equal to a percentile value: falls in the band BELOW that boundary,
+      - >-
+        Age exactly equal to a percentile value: falls in the band BELOW that boundary,
         because the chart's bands are half-open on the low side. The single most likely place
         for the dialog and the chart to silently disagree.
-      - Column order persisted under "work-items-dialog" from before this feature shipped:
+      - >-
+        Column order persisted under "work-items-dialog" from before this feature shipped:
         must not hide the new column. Affects every existing user, so it is an explicit
         acceptance criterion rather than an implementation detail.
 
     success_signal:
       - Flow coach leaves the dialog with a named shortlist of items AND the state each one is
         slow in, without having hovered a single dot.
-      - Paul Brown records an explicit verdict on ADO #5884 as to whether the separate
+      - >-
+        Paul Brown records an explicit verdict on ADO #5884 as to whether the separate
         flipside table view is still wanted (OUT-5884-table-view-verdict). That verdict is the
         point of the whole feature: it was chosen over the table view on the bet that it would
         make the table view unnecessary.

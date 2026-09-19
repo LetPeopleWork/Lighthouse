@@ -89,18 +89,22 @@ journeys:
           - settings.cycleTimeDefinitions (persisted on WorkTrackingSystemOptionsOwner, Team or Portfolio)
 
     error_paths_summary:
-      - End-before-start (D4): a definition whose end state is not strictly after its start state in
+      - >-
+        End-before-start (D4): a definition whose end state is not strictly after its start state in
         AllStates is rejected at save time with an inline message; nothing is persisted. Ordering
         correctness is the user's responsibility; the tool validates end-after-start and presents
         workflow order but does not auto-correct.
-      - A boundary state referenced by a SAVED definition is later removed or renamed from the
+      - >-
+        A boundary state referenced by a SAVED definition is later removed or renamed from the
         team/portfolio config (D5): the definition becomes INVALID - surfaced with a warning in the
         config list and DISABLED in the chart selectors - never a silent break or a crash. The admin
         edits the definition to pick a valid state, or deletes it.
-      - Concurrent edit by another admin: handled by the existing settings concurrency mechanism
+      - >-
+        Concurrent edit by another admin: handled by the existing settings concurrency mechanism
         (job-config-edit-no-silent-lost-update, epic-5121) - CycleTimeDefinitions inherits it for
         free as a field on the tokened config aggregate. No new concurrency surface.
-      - No premium license: the Cycle Times config is gated off (premium feature, D8); the Default
+      - >-
+        No premium license: the Cycle Times config is gated off (premium feature, D8); the Default
         cycle time and existing scatterplot are unaffected.
 
     success_signal:
@@ -270,14 +274,18 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - Few items (D9): switching to a definition that few closed items crossed still plots those items
+      - >-
+        Few items (D9): switching to a definition that few closed items crossed still plots those items
         and shows the item count and the 50/70/85/95 percentile lines, exactly like the default cycle
         time - there is no threshold and no special low-sample state.
-      - Invalid definition from state removal/rename (D5): the definition appears DISABLED in the
+      - >-
+        Invalid definition from state removal/rename (D5): the definition appears DISABLED in the
         selector with a warning; the chart stays on the last valid selection; no crash.
-      - No named definitions yet: the selector shows only "Default" (and a hint pointing admins to the
+      - >-
+        No named definitions yet: the selector shows only "Default" (and a hint pointing admins to the
         Cycle Times config) - the chart works fully without any named cycle time.
-      - Non-premium viewer: the cycle-time selector and the cumulative scope switch are gated off; the
+      - >-
+        Non-premium viewer: the cycle-time selector and the cumulative scope switch are gated off; the
         Default scatterplot and the unscoped cumulative chart are unaffected.
 
     success_signal:
@@ -308,7 +316,8 @@ journeys:
     emotional_arc:
       start: Complacent-then-uneasy - "Overview says P85 is 12 days and the widget is green. But we
         keep landing late. The chart that shows why is on another tab, so I mostly don't look."
-      middle: Confirmed - "one selector on the widget I already read: Concept to Cash P85 is 47 days,
+      middle: >-
+        Confirmed - "one selector on the widget I already read: Concept to Cash P85 is 47 days,
         and the RAG honestly says it has no SLE target rather than flashing a fake red."
       end: Decisive - "the number, the items behind it, and whether it's improving - all on the page I
         land on and the page leadership sees."
@@ -449,12 +458,15 @@ journeys:
             segment or named and default trends collide)
 
     error_paths_summary:
-      - Named selection + SLE-anchored RAG (D11): RAG is neutral with an explaining tip, never a false
+      - >-
+        Named selection + SLE-anchored RAG (D11): RAG is neutral with an explaining tip, never a false
         red from a default-anchored SLE. The Default selection's RAG is untouched.
-      - Invalid definition from state removal/rename (D5): the selection self-resets to Default and the
+      - >-
+        Invalid definition from state removal/rename (D5): the selection self-resets to Default and the
         definition is not selectable - the same mechanism CumulativeStateTimeScopeControl already ships.
       - No named definitions, or no premium: no selector renders; the widget behaves exactly as today.
-      - Named trend vs default trend cache collision (D12): a real hazard, not hypothetical - the Info
+      - >-
+        Named trend vs default trend cache collision (D12): a real hazard, not hypothetical - the Info
         cache key has no definition segment today and MUST gain one.
       - Few items (D9): unchanged - plots and shows percentiles like the default cycle time.
 

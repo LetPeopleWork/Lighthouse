@@ -10,7 +10,8 @@ journeys:
       the current work-in-progress is — the 50/70/85/95 of live WIP age — then optionally lays
       that same distribution over the Work Item Aging chart in place of the cycle-time lines to
       see which dots have drifted past the bulk of the current work.
-    persona: flow-coach (secondary: delivery-forecaster, for forecast-honesty conversations)
+    persona: >-
+      flow-coach (secondary: delivery-forecaster, for forecast-honesty conversations)
     job: job-flow-coach-gauge-wip-age-spread
 
     emotional_arc:
@@ -30,7 +31,8 @@ journeys:
       - Work Item Age percentiles answer "how old is my work RIGHT NOW" (snapshot of live WIP).
       - These are different populations; the aging chart can benchmark its dots against either,
         but only one set of lines at a time so the meaning stays unambiguous.
-      - "Aging healthily" = most WIP clusters in a tight low band; "piling up" = the spread is
+      - >-
+        "Aging healthily" = most WIP clusters in a tight low band; "piling up" = the spread is
         wide or the upper percentiles are climbing.
 
     happy_path:

@@ -60,7 +60,8 @@ frustrations:
   - Enabling Jira write-back spams every watcher on every sync, so the only way to stop the
     complaints is to switch a Premium feature off entirely — and the ADO connector has
     behaved correctly all along, which makes it feel like an oversight rather than a limit
-  - A Connection can be silently under-permissioned: Lighthouse reports a successful
+  - >-
+    A Connection can be silently under-permissioned: Lighthouse reports a successful
     write-back while Jira quietly ignores the suppression request and mails everyone anyway
 
 mental_model:
@@ -77,18 +78,25 @@ mental_model:
     should say so on the page where I configure it — not fail invisibly
 
 vocabulary:
-  - "stale edit" — an edit made against a version of the config that someone else has since
+  - >-
+    "stale edit" — an edit made against a version of the config that someone else has since
     changed
-  - "lost update" — the silent loss of the first writer's change when the second writer saves
+  - >-
+    "lost update" — the silent loss of the first writer's change when the second writer saves
     over it (the bug this persona fears)
-  - "conflict" / "409" — the explicit "someone else changed this, reload and retry" response
-  - "config aggregate" — Team, Portfolio, WorkTrackingSystemConnection, RBAC
+  - >-
+    "conflict" / "409" — the explicit "someone else changed this, reload and retry" response
+  - >-
+    "config aggregate" — Team, Portfolio, WorkTrackingSystemConnection, RBAC
     (UserProfile/RbacGroupMapping/ApiKey), Delivery — the human-edited roots that get tokens
-  - "sync entity" — WorkItem, Feature, FeatureWork, WorkItemStateTransition — high-churn,
+  - >-
+    "sync entity" — WorkItem, Feature, FeatureWork, WorkItemStateTransition — high-churn,
     machine-written, deliberately NOT tokened
-  - "write-back" — Lighthouse pushing a value it computed (forecast percentile, feature size,
+  - >-
+    "write-back" — Lighthouse pushing a value it computed (forecast percentile, feature size,
     work-item age) back into a field on the work-tracking system
-  - "noise" / "quiet" — whether a write-back emails the issue's watchers. "Quiet" means NO
+  - >-
+    "noise" / "quiet" — whether a write-back emails the issue's watchers. "Quiet" means NO
     watcher email; it does NOT mean invisible — the change is always recorded in issue history
     and always fires webhooks, on every Jira deployment
 

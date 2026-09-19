@@ -37,21 +37,30 @@ frustrations:
   - They do not want to hand over an email before seeing that the assessment is worth anything
 
 mental_model:
-  - "Maturity" has two separate axes — what you measure (cycle time, throughput, WIP, item age, flow health)
+  - >-
+    "Maturity" has two separate axes — what you measure (cycle time, throughput, WIP, item age, flow health)
     and how you forecast (gut estimate vs deterministic date vs Monte Carlo probability)
   - A credible score must be anchored in a named body of work (Kanban flow metrics, Vacanti / ProKanban
     probabilistic forecasting) — otherwise it is just an opinion
   - One memorable number (0-100) plus a named band is shareable; a wall of sub-metrics is not
-  - "Where do we stand and what is the next step" matters more than a perfect diagnosis
+  - >-
+    "Where do we stand and what is the next step" matters more than a perfect diagnosis
 
 vocabulary:
-  - "forecasting readiness" — how prepared the team is to make probabilistic delivery predictions
-  - "flying blind" — managing delivery with no metrics and gut-feel dates (lowest band)
-  - "output-focused" — counting things done rather than measuring flow (low band)
-  - "flow-aware" — actively watching flow metrics, starting to forecast (sweet-spot band)
-  - "probabilistic" — running Monte Carlo / percentile forecasts and steering by them (top band)
-  - "Monte Carlo" — probabilistic forecasting by simulation, the ProKanban / Vacanti school
-  - "WIP" — work in progress; limiting it is a flow-maturity signal
+  - >-
+    "forecasting readiness" — how prepared the team is to make probabilistic delivery predictions
+  - >-
+    "flying blind" — managing delivery with no metrics and gut-feel dates (lowest band)
+  - >-
+    "output-focused" — counting things done rather than measuring flow (low band)
+  - >-
+    "flow-aware" — actively watching flow metrics, starting to forecast (sweet-spot band)
+  - >-
+    "probabilistic" — running Monte Carlo / percentile forecasts and steering by them (top band)
+  - >-
+    "Monte Carlo" — probabilistic forecasting by simulation, the ProKanban / Vacanti school
+  - >-
+    "WIP" — work in progress; limiting it is a flow-maturity signal
 
 related_personas:
   - flow-coach (the SAME role once they adopt Lighthouse — in-tool flow diagnosis; this persona is the pre-adoption, top-of-funnel version)

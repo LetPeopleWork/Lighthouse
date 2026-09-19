@@ -9,7 +9,8 @@ journeys:
       Flow coach opens the Flow Overview before a standup, scans the row of widgets for status
       chips, drills into the one number that surprises them, and — when reviewing a past period —
       trusts that the Work-Item-Age readouts describe that period rather than today.
-    persona: flow-coach (secondary: delivery-lead-rte, who reads the same board to judge whether the period got better or worse)
+    persona: >-
+      flow-coach (secondary: delivery-lead-rte, who reads the same board to judge whether the period got better or worse)
     job: job-flow-coach-read-every-widget-the-same-way
     supporting_jobs:
       - job-flow-coach-drill-into-throughput-and-arrivals
@@ -35,7 +36,8 @@ journeys:
       - Every number backed by a set of items should be able to show me that set.
       - A date-range selector filters everything on the page. If a metric ignores it, the
         product is lying quietly.
-      - "Work Item Age" means "how old was this work on the day I am looking at" — of which
+      - >-
+        "Work Item Age" means "how old was this work on the day I am looking at" — of which
         "right now" is the today case, not a separate concept.
 
     happy_path:

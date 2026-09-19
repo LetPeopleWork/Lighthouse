@@ -49,10 +49,14 @@ mental_model:
   - The throughput CHART (what we got done) and the forecast THROUGHPUT (what we'll deliver against this backlog) can legitimately be different numbers, and both have value
 
 vocabulary:
-  - "feature throughput" — closed items that map to a feature/epic, distinct from "ad-hoc throughput"
-  - "noise" — bug-fixes, maintenance, orphan items in the closed history that aren't features
-  - "honest forecast" — a forecast whose throughput sample matches the kind of work the backlog represents
-  - "filter" — exclusion of certain work-item types or orphan items from the forecast-throughput sample
+  - >-
+    "feature throughput" — closed items that map to a feature/epic, distinct from "ad-hoc throughput"
+  - >-
+    "noise" — bug-fixes, maintenance, orphan items in the closed history that aren't features
+  - >-
+    "honest forecast" — a forecast whose throughput sample matches the kind of work the backlog represents
+  - >-
+    "filter" — exclusion of certain work-item types or orphan items from the forecast-throughput sample
 
 related_personas:
   - team-admin (often the same person; admins the team's filter settings)

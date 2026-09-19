@@ -308,32 +308,38 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - Empty filter (no items match): chart renders an "empty state" message
+      - >-
+        Empty filter (no items match): chart renders an "empty state" message
         ("No items match the current filter for the selected window — adjust
         filters to see time distribution"). Same convention as existing
         WorkDistributionChart and aging chart when no items match.
-      - All items skipped a state (no transitions through state X): state X gets
+      - >-
+        All items skipped a state (no transitions through state X): state X gets
         zero-height bar; bar still rendered as a labeled placeholder so the user
         sees which states are part of the workflow definition. Avoids the
         "missing state" confusion ("did the chart drop a state?" vs "no time
         spent there").
-      - State removed from the workflow during the window: state appears as a
+      - >-
+        State removed from the workflow during the window: state appears as a
         bar with the time accumulated WHILE it was active; tooltip notes
         "state removed from workflow on YYYY-MM-DD". Surfaces workflow changes
         as part of the evidence rather than silently hiding them.
-      - Single item (whether the ambient filter narrows to one, or the US-05
+      - >-
+        Single item (whether the ambient filter narrows to one, or the US-05
         picker selects one): chart renders that one item's per-state durations as
         the bars; mean and total are equal; the display unit adapts to the small
         magnitude (D16). This is now a FIRST-CLASS deep-dive path (the absorbed-B2
         distribution lens, D15), reached deliberately via the picker — not only an
         edge case. The RAG status still reflects the whole in-scope set, not the
         single item (D18), so it is not misread as "this item is red".
-      - Zero transitions data accumulated (sibling slice 01 just shipped, or a
+      - >-
+        Zero transitions data accumulated (sibling slice 01 just shipped, or a
         team has only been using Lighthouse for a few days): the endpoint
         returns an empty array; the widget renders the same "empty state"
         message as the empty-filter case plus a tooltip linking to "data
         accumulates forward only — wait for transitions to populate."
-      - In-flight item with `currentStateEnteredAt = null` (first-observation,
+      - >-
+        In-flight item with `currentStateEnteredAt = null` (first-observation,
         per sibling D-handling): item contributes 0 to the ongoing segment for
         any state until next sync establishes a baseline. Same forward-only
         constraint sibling already documented.
@@ -349,7 +355,8 @@ journeys:
         spreadsheets or guesses; ≥30% of team/portfolio detail page sessions
         include a view of the Cumulative Time per State widget within 6 weeks
         of release (OUT-cumulative-state-time-adoption).
-      - The item picker (US-05) is actually used for deep-dives: ≥15% of
+      - >-
+        The item picker (US-05) is actually used for deep-dives: ≥15% of
         chart-viewing sessions exercise it within 8 weeks — validating the
         B2-absorption bet that the per-item/subset distribution lens was the
         real need, not the dropped chronology lens

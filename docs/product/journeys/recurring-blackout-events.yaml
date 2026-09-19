@@ -86,41 +86,54 @@ journeys:
           the same global rule set; no per-team scoping in v1 (explicit out-of-scope).
 
     surfaces:
-      - settings-recurring-rules: recurring rules are managed in the unified "Blackout Periods &
-        Recurring Rules" System-settings section (BlackoutSettings.tsx, VF-2 merge) - one merged
-        grid with create/edit/delete for both one-off periods and recurring rules (US-01, US-02, US-04).
-      - recurrence-expansion: rule -> concrete non-working days feeding the unified IsBlackoutDay /
-        GetBlackoutDayIndices evaluation (US-03).
-      - forecasting-and-charts: the shipped #4974 day<->date shift, historical-throughput stripping,
-        and chart blackout overlays consume recurring-rule days with no per-surface change (US-03).
+      - settings-recurring-rules: >-
+          recurring rules are managed in the unified "Blackout Periods &
+          Recurring Rules" System-settings section (BlackoutSettings.tsx, VF-2 merge) - one merged
+          grid with create/edit/delete for both one-off periods and recurring rules (US-01, US-02, US-04).
+      - recurrence-expansion: >-
+          rule -> concrete non-working days feeding the unified IsBlackoutDay /
+          GetBlackoutDayIndices evaluation (US-03).
+      - forecasting-and-charts: >-
+          the shipped #4974 day<->date shift, historical-throughput stripping,
+          and chart blackout overlays consume recurring-rule days with no per-surface change (US-03).
 
     happy_path:
-      - step: Admin opens System settings and sees a "Recurring Blackout Rules" section next to the
-        existing one-off "Blackout Periods" table.
-      - step: Admin clicks "Add Recurring Rule", selects Sat + Sun, leaves interval at "every 1
-        week", sets start = today, leaves end empty (forever), saves.
-      - step: The rule appears in the recurring-rules list with a human-readable summary
-        ("Every Sat, Sun - weekly - from 2026-06-06 - no end").
-      - step: A "When" forecast for a team now steps its percentile dates over the upcoming weekend
-        and never lands on a Saturday/Sunday (the shipped #4974 shift consuming the recurring days).
-      - step: Admin adds a second rule "every 4 weeks, Fri, start 2026-06-12, end 2026-12-31" for the
-        off-site; those Fridays are now non-working days too.
+      - step: >-
+          Admin opens System settings and sees a "Recurring Blackout Rules" section next to the
+          existing one-off "Blackout Periods" table.
+      - step: >-
+          Admin clicks "Add Recurring Rule", selects Sat + Sun, leaves interval at "every 1
+          week", sets start = today, leaves end empty (forever), saves.
+      - step: >-
+          The rule appears in the recurring-rules list with a human-readable summary
+          ("Every Sat, Sun - weekly - from 2026-06-06 - no end").
+      - step: >-
+          A "When" forecast for a team now steps its percentile dates over the upcoming weekend
+          and never lands on a Saturday/Sunday (the shipped #4974 shift consuming the recurring days).
+      - step: >-
+          Admin adds a second rule "every 4 weeks, Fri, start 2026-06-12, end 2026-12-31" for the
+          off-site; those Fridays are now non-working days too.
 
     error_paths:
-      - no-weekday-selected: saving a recurring rule with zero weekdays selected is rejected with a
-        clear message ("Select at least one weekday for the rule to repeat on").
-      - interval-below-one: an interval < 1 week is rejected ("Repeat interval must be at least 1
-        week").
-      - start-after-end: a concrete end date earlier than the start date is rejected ("End date must
-        be on or after the start date") - mirrors the one-off ValidateDateRange message.
-      - premium-or-admin-missing: a non-premium or non-SystemAdmin caller cannot create/edit/delete
-        (premium UI disabled with LicenseTooltip; backend 403 via the guards) - GET still works.
+      - no-weekday-selected: >-
+          saving a recurring rule with zero weekdays selected is rejected with a
+          clear message ("Select at least one weekday for the rule to repeat on").
+      - interval-below-one: >-
+          an interval < 1 week is rejected ("Repeat interval must be at least 1
+          week").
+      - start-after-end: >-
+          a concrete end date earlier than the start date is rejected ("End date must
+          be on or after the start date") - mirrors the one-off ValidateDateRange message.
+      - premium-or-admin-missing: >-
+          a non-premium or non-SystemAdmin caller cannot create/edit/delete
+          (premium UI disabled with LicenseTooltip; backend 403 via the guards) - GET still works.
 
     out_of_scope:
       - Monthly / nth-weekday-of-month / broader RRULE recurrence (D3) - v1 is weekdays + every-X-weeks only.
       - Per-team / per-portfolio scoping of recurring rules (D6 - global, like one-off periods).
       - Timezone handling / holiday-calendar import / public-holiday presets.
-      - Any change to the Monte Carlo simulation or the shipped #4974 day<->date shift logic itself
+      - >-
+        Any change to the Monte Carlo simulation or the shipped #4974 day<->date shift logic itself
         (recurring rules only add days to the existing blackout-day set the shift already consumes).
       - New forecasting charts or blackout visualisations beyond the existing overlays.
 

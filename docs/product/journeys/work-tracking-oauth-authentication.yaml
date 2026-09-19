@@ -57,7 +57,8 @@ journeys:
         location: Lighthouse → Connection settings
         artifact: synced work items
         shared_artifact_source: Jira / ADO REST API; auth header Bearer {accessToken}
-        output: connection card shows "Last synced: just now"; team views populate
+        output: >-
+          connection card shows "Last synced: just now"; team views populate
         emotional_state: confident
 
     error_paths:

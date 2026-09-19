@@ -33,7 +33,8 @@ journeys:
       middle: Reassured — "there's the marker — Target moved 1 Jun → 15 Jun — right where the line
         stepped up; and the When? target line steps with it, so the forecast was tracking the old
         date until the replan."
-      end: Confident — "I can say plainly: the team held steady, the rise is the replan. The chart
+      end: >-
+        Confident — "I can say plainly: the team held steady, the rise is the replan. The chart
         shows it; no caveat speech, no spreadsheet."
 
     design_decisions_resolved:
@@ -135,15 +136,20 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - Pre-migration / all-null target history: the When? view falls back to the single flat target
+      - >-
+        Pre-migration / all-null target history: the When? view falls back to the single flat target
         reference line and the How Likely? view shows no change dots — no crash, no gap.
-      - No target change across the recorded window: no markers, stepped line is one flat level equal
+      - >-
+        No target change across the recorded window: no markers, stepped line is one flat level equal
         to the current target — not misread as a defect.
-      - Same-day target edit-and-revert: invisible by design (daily cadence, D3) — captured only at
+      - >-
+        Same-day target edit-and-revert: invisible by design (daily cadence, D3) — captured only at
         the next daily run; an accepted limitation.
-      - Non-premium instance: the over-time charts (and therefore the new annotations) do not render —
+      - >-
+        Non-premium instance: the over-time charts (and therefore the new annotations) do not render —
         inherits the existing canUsePremiumFeatures gate, unchanged.
-      - Burnup / fever: out of scope. The burnup is untouched (no delivery-date marker) and the fever
+      - >-
+        Burnup / fever: out of scope. The burnup is untouched (no delivery-date marker) and the fever
         chart gets no annotation (no clean time axis) — the honesty story is carried entirely by the
         two predictability views.
 
@@ -155,6 +161,7 @@ journeys:
       - In dogfood/interview review of a replanned delivery, the forecaster names the replan from the
         chart in ≥2 of 3 reviews rather than misreading the jump as progress (KPI-3; cross-instance
         behavioural telemetry blocked on Epic 5015, measured via dogfood + interviews until then).
-      - Forward-only caveat: the markers/stepped line only become meaningful once a delivery has
+      - >-
+        Forward-only caveat: the markers/stepped line only become meaningful once a delivery has
         accrued snapshots across at least one target change, so KPI-3's window starts at a delivery's
         first recorded replan, not at launch.

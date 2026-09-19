@@ -111,7 +111,8 @@ journeys:
       - The frame loads but the SPA misbehaves — routing, partitioned storage, navigation (R2).
         Framing works; the wrapper needs conditions attached, and those conditions belong in the
         verdict.
-      - A domain unknown at manifest-build time cannot be declared (slice 02's hypothesis). Forge
+      - >-
+        A domain unknown at manifest-build time cannot be declared (slice 02's hypothesis). Forge
         declares egress and framing STATICALLY, so a user-entered URL needs a wildcard — which
         Atlassian discourages and marketplace review rejects. Survivable: D3 degrades to a small
         allow-list or a single hardcoded demo instance, and the constraint becomes a finding ("a
@@ -143,6 +144,7 @@ journeys:
       - Zero files changed in the Lighthouse repository across the entire epic (K4). If this goes
         non-zero the epic has quietly stopped being a lightweight wrapper, and D1/D7 need
         re-deciding rather than amending.
-      - Honest-limit caveat: a shrug is a SUCCESSFUL outcome. If prospects who asked "is there a
+      - >-
+        Honest-limit caveat: a shrug is a SUCCESSFUL outcome. If prospects who asked "is there a
         Jira app?" see one and the conversation does not change, the honest reading is that the
         question was a checkbox — and the epic has saved the cost of a marketplace-grade app.

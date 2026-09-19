@@ -76,15 +76,18 @@ journeys:
           numeric likelihood DTO values are otherwise unchanged.
 
     surfaces:
-      - manual-forecast: ManualForecaster When + How-Many headline (ForecastLikelihood) — the
-        reporter's primary surface.
-      - portfolio-delivery: DeliverySection delivery chip + per-feature likelihood column +
-        DeliveriesChips overview chip.
+      - manual-forecast: >-
+          ManualForecaster When + How-Many headline (ForecastLikelihood) — the
+          reporter's primary surface.
+      - portfolio-delivery: >-
+          DeliverySection delivery chip + per-feature likelihood column +
+          DeliveriesChips overview chip.
 
     out_of_scope:
       - Per-team configurable threshold (D5 — fixed 5; revisit on demand).
       - Changing the Monte Carlo computation or the percentile date math.
-      - The >95% confidence cap itself (sibling forecast-confidence-cap / ADO #5126 — this composes
+      - >-
+        The >95% confidence cap itself (sibling forecast-confidence-cap / ADO #5126 — this composes
         with it; suppression takes precedence over both the number and the cap).
       - Non-forecast metrics that also read throughput (cycle time, aging, run charts) — the guard is
         forecast-only.

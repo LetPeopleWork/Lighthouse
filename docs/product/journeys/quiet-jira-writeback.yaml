@@ -73,7 +73,8 @@ journeys:
         error_paths:
           - Probe times out or errors -> status degrades to "unknown"; saving the connection still
             works; Lighthouse makes no claim of quiet.
-          - Credential lacks the permission -> status says write-backs WILL email watchers, names the
+          - >-
+            Credential lacks the permission -> status says write-backs WILL email watchers, names the
             permission. This is the case that matters most: if Jira silently ignores an
             under-permissioned notifyUsers=false (unresolved in Atlassian's docs — SPIKE-00 settles
             it), this status line is the ONLY signal anywhere that suppression is not working.

@@ -51,7 +51,8 @@ journeys:
     emotional_arc:
       start: Blind — "I can see the SLE line on the chart, but it only tells me who has already
         missed. By then the conversation is an explanation, not an intervention."
-      middle: Oriented — "three items are past fifty-fifty, and the number says why: of everything
+      middle: >-
+        Oriented — "three items are past fifty-fifty, and the number says why: of everything
         that was still open on day nine, six in seven went on to miss."
       end: In time — "we talked about the right two items this morning, and it was still possible to
         do something about them."
@@ -267,32 +268,40 @@ journeys:
             write-back and the display now read the same window because there is only one
 
     error_paths_summary:
-      - No SLE set on the owner: nothing is computed and nothing is rendered anywhere — no column, no
+      - >-
+        No SLE set on the owner: nothing is computed and nothing is rendered anywhere — no column, no
         chip, no chart mode, no write. Expected and common; this is deliberately an advanced feature
         for teams that have made a promise (D3).
-      - Portfolio scope: identical to the no-SLE case. The dialog, card and chart are shared
+      - >-
+        Portfolio scope: identical to the no-SLE case. The dialog, card and chart are shared
         components that render on portfolio pages, and they must there behave exactly as today (D4).
-      - Item older than every closed item in the window — SUPERSEDED 2026-09-19 by round 2 (#6037).
+      - >-
+        Item older than every closed item in the window — SUPERSEDED 2026-09-19 by round 2 (#6037).
         Round 1 rendered "Beyond history" rather than a fabricated 100% and counted it as at-risk
         (D9). There is now no sentinel: an item still inside its target whose history holds nothing
         that ran as long reads 0, and the cell discloses that nothing the team finished ever ran this
         long. The cost is honest and written down — a thin history reads as a cliff, zero up to the
         target and a hundred the day after, with nothing in between to grade it.
-      - Item already past the SLE range: reads 100% as the arithmetic result, not as a special case —
+      - >-
+        Item already past the SLE range: reads 100% as the arithmetic result, not as a special case —
         every item in the denominator set necessarily exceeds R (D8). This is the Epic's scenario 3,
         subsumed.
-      - Item at an age exactly equal to a closed item's cycle time: counted in the denominator. An
+      - >-
+        Item at an age exactly equal to a closed item's cycle time: counted in the denominator. An
         item that took exactly R days met the SLE and is NOT counted as a breach. The single most
         likely place for an off-by-one to hide (D8).
-      - Thin history: the denominator shrinks fast as the age grows, so one closed item entering or
+      - >-
+        Thin history: the denominator shrinks fast as the age grows, so one closed item entering or
         leaving the window can move a displayed risk sharply. This is the feature's load-bearing risk,
         not an edge case — it is slice 01's learning hypothesis and OUT-4127-risk-stability gates
         slices 02, 03 and 04 on it.
-      - Chart zone boundaries collapsing onto one another on a thin history — REMOVED 2026-09-19
+      - >-
+        Chart zone boundaries collapsing onto one another on a thin history — REMOVED 2026-09-19
         with the zones themselves (D12). It was not an edge case in the end: on a thin history the
         chart drew no bands at all, in a mode the user had explicitly selected, with nothing saying
         why.
-      - Upgrade with an existing pace-band preference: "true" resolves to Pace percentiles and "false"
+      - >-
+        Upgrade with an existing pace-band preference: "true" resolves to Pace percentiles and "false"
         to Off, so no user's chart changes appearance (D12). STILL HOLDS after round 2 — that
         translation is the one migration the removal must not break. A preference of "risk", which
         only dev and dogfood browsers can be holding, resolves to Off.
@@ -302,7 +311,8 @@ journeys:
         the whole point, and the thing OUT-4127-early-warning measures retrospectively.
       - The displayed risk is stable enough on real teams that it is read as fact rather than noise
         (OUT-4127-risk-stability). This gates everything built on top of it.
-      - Zero reports of the At Risk widget disagreeing with the dialog column, or of a written-back
+      - >-
+        Zero reports of the At Risk widget disagreeing with the dialog column, or of a written-back
         tracker value disagreeing with the Lighthouse display for the same team and day
         (OUT-4127-no-support-contradiction) — the cross-system agreement D5 exists to guarantee.
         Round 2 found this had already failed once: a dialog read 27% against a board field reading

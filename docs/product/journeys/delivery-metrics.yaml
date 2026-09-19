@@ -227,24 +227,31 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - Delivery with no items or no snapshots recorded yet: every chart, the burnup included, renders
+      - >-
+        Delivery with no items or no snapshots recorded yet: every chart, the burnup included, renders
         the forward-only empty state "builds forward from today — no snapshots recorded yet" (D6) in
         the tone of existing Lighthouse empty charts; no crash. This is the universal launch state since
         the store is forward-recorded with no backfill.
-      - Non-premium instance: the over-time charts do not render at all — they inherit the existing
+      - >-
+        Non-premium instance: the over-time charts do not render at all — they inherit the existing
         delivery surface's canUsePremiumFeatures gate (D4), same as the rest of the delivery feature.
-      - Sparse snapshots (recording just started): the burnup / forecast band / likelihood line is short
+      - >-
+        Sparse snapshots (recording just started): the burnup / forecast band / likelihood line is short
         and annotated "builds forward from {first snapshot date}"; not misread as a defect.
-      - Item re-opened (leaves Done): handled naturally — each day records the then-current count, so a
+      - >-
+        Item re-opened (leaves Done): handled naturally — each day records the then-current count, so a
         re-open simply lowers the next recorded doneWork; no reconstruction logic to get wrong.
-      - Early-stage delivery (features not broken down): once the Slice-2 forward recorder has accrued
+      - >-
+        Early-stage delivery (features not broken down): once the Slice-2 forward recorder has accrued
         data, the inferred-estimate line uses estimated feature size (US-01b) and annotates the
         estimated portion, so the delivery doesn't read artificially small; before that the actual-item
         backlog line shows with an honest "estimated total builds forward from today" note.
-      - Duplicate snapshot risk (PortfolioForecastsUpdated handled twice in a day): the recording handler
+      - >-
+        Duplicate snapshot risk (PortfolioForecastsUpdated handled twice in a day): the recording handler
         is idempotent on (deliveryId, recordedAt) — not a =true sentinel — so a same-day re-handle overwrites
         today's row in place; at most one row per delivery per day.
-      - Delivery deleted: its DeliveryMetricSnapshot rows are removed by the FK ON DELETE CASCADE
+      - >-
+        Delivery deleted: its DeliveryMetricSnapshot rows are removed by the FK ON DELETE CASCADE
         (DeliveriesController.DeleteDelivery); no orphaned snapshot rows, and no DeliveryDeleted event is
         introduced — the cascade suffices.
 
@@ -258,10 +265,12 @@ journeys:
         (KPI 3).
       - The snapshot recording handler (reacting to PortfolioForecastsUpdated) captures a daily
         forward-only snapshot per active delivery with zero duplicates (KPI 4 guardrail).
-      - Measurement caveat: cross-instance behavioral telemetry is blocked on Epic 5015 (opt-in
+      - >-
+        Measurement caveat: cross-instance behavioral telemetry is blocked on Epic 5015 (opt-in
         telemetry, no timeline); KPIs 1-3 are measured via dogfood + user interviews until 5015,
         KPI 4 via backend integration assertions today.
-      - Forward-only timing caveat: because the store is forward-recorded with no backfill, the charts
+      - >-
+        Forward-only timing caveat: because the store is forward-recorded with no backfill, the charts
         are empty at launch and only become useful as snapshots accrue, so KPIs 1-3 (chart consultation,
         spreadsheet-workaround reduction, scope-cut citations) can only be measured after enough forward
         history accrues per delivery (on the order of weeks) — the 8-week window starts from when a

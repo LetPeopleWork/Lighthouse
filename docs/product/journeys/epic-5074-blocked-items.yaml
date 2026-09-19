@@ -87,7 +87,8 @@ journeys:
           - settings.blockedRuleSet (new WorkItemRuleSet — replaces BlockedStates + BlockedTags)
           - ruleSchema (existing — fields + operators, served via the schema endpoint)
         failure_modes:
-          - Migration produced no conditions because the team had empty BlockedStates and BlockedTags —
+          - >-
+            Migration produced no conditions because the team had empty BlockedStates and BlockedTags —
             the builder renders empty (valid: nothing was blocked before, nothing is now).
 
       - id: step-add-blocked-condition
@@ -124,17 +125,21 @@ journeys:
             the tokened config aggregate.
 
     error_paths_summary:
-      - Empty rule set (no conditions): nothing is blocked — the default for a team that never configured
+      - >-
+        Empty rule set (no conditions): nothing is blocked — the default for a team that never configured
         blocked states/tags. Not an error.
-      - A migrated value that is neither a current state nor a current tag (workflow changed since it was
+      - >-
+        A migrated value that is neither a current state nor a current tag (workflow changed since it was
         set): the condition is kept and simply matches nothing — identical tolerance to today's
         IsItemInList, which also silently matches nothing for a stale entry.
-      - Rule set exceeds MaxRules (20): rejected by the existing schema validation with the same message
+      - >-
+        Rule set exceeds MaxRules (20): rejected by the existing schema validation with the same message
         the delivery-rule and forecast-filter builders already show.
       - Concurrent edit: existing settings concurrency (epic-5121) surfaces a conflict; no new surface.
 
     integration_validation:
-      - The SAME blockedRuleSet drives IsBlocked everywhere (per-item badge, overview Blocked widget,
+      - >-
+        The SAME blockedRuleSet drives IsBlocked everywhere (per-item badge, overview Blocked widget,
         history capture in journey 2). A divergent second evaluation path would mean two definitions of
         "blocked" — forbidden. There is ONE evaluation: RuleEvaluator<WorkItem> over blockedRuleSet.
 
@@ -216,7 +221,8 @@ journeys:
           - blockedSince (new — enter-blocked timestamp from WorkItemBlockedTransition)
           - settings.blockedRuleSet (defines which items are blocked at all)
         failure_modes:
-          - No capture history yet (first sync after release): all blocked items show "—" until the next
+          - >-
+            No capture history yet (first sync after release): all blocked items show "—" until the next
             sync — the same first-observation behaviour as the time-in-state badge.
 
       - id: step-read-blocked-over-time-trend
@@ -249,7 +255,8 @@ journeys:
           - settings.blockedStalenessThresholdDays (new — distinct from StalenessThresholdDays)
           - blockedSince (new — drives the blocked-duration that crosses the threshold)
         failure_modes:
-          - Threshold set to 0: blocked->stale is disabled; only time-in-state staleness applies. Not an
+          - >-
+            Threshold set to 0: blocked->stale is disabled; only time-in-state staleness applies. Not an
             error — it is the opt-out.
 
       # --- Enhancement batch (2026-07-07): three widget/chart enrichments on the shipped foundation ---
@@ -271,7 +278,8 @@ journeys:
           - blockedCountHistory (existing — BlockedCountSnapshot series; the trend reads the prior-period boundary value)
           - currentFilter (existing — the selected date range defines "the period")
         failure_modes:
-          - No snapshot at or before the previous-period boundary (forward-only history just began):
+          - >-
+            No snapshot at or before the previous-period boundary (forward-only history just began):
             indicator renders "—" with a "no prior-period baseline yet" tooltip. Not an error.
 
       - id: step-read-blocked-health-rag
@@ -289,9 +297,11 @@ journeys:
           - blockedSince (existing from slice-02 — drives max blocked age)
           - settings.blockedStalenessThresholdDays (existing from slice-04 — the RAG calibration line)
         failure_modes:
-          - blockedStalenessThresholdDays = 0: RAG disabled, widget renders neutral (no colour). The
+          - >-
+            blockedStalenessThresholdDays = 0: RAG disabled, widget renders neutral (no colour). The
             opt-out, matching blocked->stale.
-          - A blocked item still establishing its baseline (blockedSince "—"): excluded from the max-age
+          - >-
+            A blocked item still establishing its baseline (blockedSince "—"): excluded from the max-age
             computation until a baseline exists, same tolerance as the per-item badge.
 
       - id: step-drill-into-blocked-trend-point
@@ -310,20 +320,26 @@ journeys:
           - blockedMembershipAtDate (new — reconstructed item set at date T from WorkItemBlockedTransition intervals; read-only, not persisted)
           - blockedSince (existing — the same WorkItemBlockedTransition capture that reconstruction reads)
         failure_modes:
-          - Clicked date precedes transition-capture start: dialog shows the reconstructable set and a
+          - >-
+            Clicked date precedes transition-capture start: dialog shows the reconstructable set and a
             note that membership is complete only from the capture-start date.
-          - No items were blocked at the clicked date: dialog opens empty with a "no items blocked on
+          - >-
+            No items were blocked at the clicked date: dialog opens empty with a "no items blocked on
             this date" message, not an error.
 
     error_paths_summary:
-      - First-observation blocked items (no prior enter timestamp): per-item badge shows "—" and the
+      - >-
+        First-observation blocked items (no prior enter timestamp): per-item badge shows "—" and the
         item does not yet count toward blocked-staleness until a baseline exists.
-      - Sync-cadence resolution: the per-item duration tooltip states "Approximate — based on sync
+      - >-
+        Sync-cadence resolution: the per-item duration tooltip states "Approximate — based on sync
         cadence", matching the time-in-state badge, so users never read it as second-precise.
-      - An item unblocked and re-blocked between two syncs (spell shorter than the cadence): captured as a
+      - >-
+        An item unblocked and re-blocked between two syncs (spell shorter than the cadence): captured as a
         single spell at sync resolution — a known limitation of L1, surfaced in the tooltip.
       - Blocked-over-time chart with no snapshots: forward-only empty state, never a misleading zero.
-      - Both staleness sources fire on one item: the item is stale once, with both reasons listed, so the
+      - >-
+        Both staleness sources fire on one item: the item is stale once, with both reasons listed, so the
         coach sees it is stale because of blocked duration AND time-in-state, not double-counted.
 
     integration_validation:
@@ -332,7 +348,8 @@ journeys:
         re-derives from the one definition — there is no second source of "blocked".
 
     success_signal:
-      - Quietly-blocked items stop rotting unnoticed: the per-item duration surfaces them in the next flow
+      - >-
+        Quietly-blocked items stop rotting unnoticed: the per-item duration surfaces them in the next flow
         review, and the over-time trend tells the team whether their clear-rate is improving.
 
   # --- Portfolio parity (2026-07-19, ADO Story #5524, feature portfolio-blocked-history) ---
@@ -407,7 +424,8 @@ journeys:
           - featureBlockedSince (new — enter-blocked timestamp for Features, own keyspace per D10)
           - settings.blockedStalenessThresholdDays (existing — already present on Portfolio, previously inert)
         failure_modes:
-          - No capture history yet (first refresh after release): all blocked features show "—", the same
+          - >-
+            No capture history yet (first refresh after release): all blocked features show "—", the same
             first-observation behaviour as the team badge.
           - blockedStalenessThresholdDays = 0: RAG neutral and blocked->stale disabled — the opt-out.
 
@@ -427,7 +445,8 @@ journeys:
           - featureBlockedSince (new — the spells the historic read consults)
           - currentFilter (existing — the selected date range)
         failure_modes:
-          - Range precedes capture start: falls back to the live rule with the same forward-only honesty
+          - >-
+            Range precedes capture start: falls back to the live rule with the same forward-only honesty
             caveat teams already carry. Not fabricated retroactively.
 
       - id: step-drill-into-portfolio-blocked-trend-point
@@ -446,23 +465,27 @@ journeys:
           - blockedMembershipAtDate (existing — extended to Features)
           - blockedCountSnapshot (existing — the reconciliation cross-check)
         failure_modes:
-          - Reconstruction diverges from the snapshot: the guard logs it rather than silently reconciling.
+          - >-
+            Reconstruction diverges from the snapshot: the guard logs it rather than silently reconciling.
             Divergence is the only cross-check the design has on capture correctness — surfacing it is the
             point, not a defect in the guard.
 
     error_paths_summary:
-      - Id collision between a Feature and a WorkItem (D10): before the fix, a demo instance can report a
+      - >-
+        Id collision between a Feature and a WorkItem (D10): before the fix, a demo instance can report a
         team work item as blocked on a past range it was never blocked in. This corrupts Story #5508's
         shipped behaviour and is fixed first.
       - Pre-capture portfolio ranges: forward-only fallback to the live rule, never retroactive fabrication.
-      - Demo instances between the collision fix and the demo re-backfill: the portfolio trend renders but
+      - >-
+        Demo instances between the collision fix and the demo re-backfill: the portfolio trend renders but
         bars drill into an empty dialog. Honest and time-boxed — an empty dialog beats a phantom item.
 
     integration_validation:
       - The SAME blockedRuleSet drives blocked at both scopes. Portfolio capture must consume
         IBlockedItemService, never re-derive the rule match — a second evaluation path would mean two
         definitions of blocked, which the blockedRuleSet integration_risk forbids.
-      - Team and Portfolio must agree: the same blocked-spell shape asserted through both controllers over
+      - >-
+        Team and Portfolio must agree: the same blocked-spell shape asserted through both controllers over
         the same past range must produce the same answer. Divergence is a failing test, not a nuance.
 
     success_signal:

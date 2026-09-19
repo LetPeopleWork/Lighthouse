@@ -76,17 +76,21 @@ journeys:
           - settings.waitStates (persisted on WorkTrackingSystemOptionsOwner)
 
     error_paths_summary:
-      - A state typed that is NOT a Doing-state (nor a mapping name): accepted into the list but
+      - >-
+        A state typed that is NOT a Doing-state (nor a mapping name): accepted into the list but
         ignored by the efficiency computation (only states inside GetRawStatesForCategory(WaitStates)
         contribute to the denominator). The autocomplete only offers Doing-states and mapping names,
         so this is an edge case, not the happy path.
-      - A mapping name marked as a wait state: resolves through GetRawStatesForCategory so ALL its
+      - >-
+        A mapping name marked as a wait state: resolves through GetRawStatesForCategory so ALL its
         underlying raw states count as wait time — the user marks the whole mapping in one click,
         without enumerating its raw states.
-      - No wait states defined (toggle off / empty list): not an error — it is the default. The
+      - >-
+        No wait states defined (toggle off / empty list): not an error — it is the default. The
         downstream efficiency surfaces show an explicit "not configured" state rather than a
         misleading 100%.
-      - Concurrent edit by another admin: handled by the existing settings concurrency mechanism
+      - >-
+        Concurrent edit by another admin: handled by the existing settings concurrency mechanism
         (job-config-edit-no-silent-lost-update, epic-5121) — WaitStates inherits it for free as a
         field on the tokened config aggregate. No new concurrency surface.
 
@@ -239,16 +243,21 @@ journeys:
         shared_artifacts: []
 
     error_paths_summary:
-      - No wait states configured (D3): overview tile shows "not configured" with a pointer to the
+      - >-
+        No wait states configured (D3): overview tile shows "not configured" with a pointer to the
         config; the chart number is suppressed; no bars highlighted. NEVER a misleading 100%.
-      - Zero total Doing-time in scope (D4): efficiency surfaces show "no data in scope" — distinct
+      - >-
+        Zero total Doing-time in scope (D4): efficiency surfaces show "no data in scope" — distinct
         in wording from "not configured" — and never divide by zero.
-      - A configured wait state is not currently a Doing-state (e.g. workflow changed): that state
+      - >-
+        A configured wait state is not currently a Doing-state (e.g. workflow changed): that state
         contributes nothing to the denominator (only Doing-time counts) and is not highlighted; the
         efficiency number stays well-defined.
-      - All Doing-time is in wait states (efficiency 0%): renders 0% with the "act" RAG — a valid,
+      - >-
+        All Doing-time is in wait states (efficiency 0%): renders 0% with the "act" RAG — a valid,
         if alarming, reading, not an error.
-      - Picker narrows to items with zero Doing-time (D4 at selection scope): the per-selection
+      - >-
+        Picker narrows to items with zero Doing-time (D4 at selection scope): the per-selection
         number shows "no data in scope" while the aggregate tile/RAG stay on the whole set.
 
     success_signal:

@@ -234,23 +234,31 @@ journeys:
           - summarised day rows (client-side projection, D13)
 
     error_paths_summary:
-      - Delivery with no snapshots at all: the card shows the same forward-only empty state as the other
+      - >-
+        Delivery with no snapshots at all: the card shows the same forward-only empty state as the other
         three charts ("builds forward from today — no snapshots recorded yet"); no crash.
-      - History recorded before this feature (4-field featureBreakdown entries): the count line renders in
+      - >-
+        History recorded before this feature (4-field featureBreakdown entries): the count line renders in
         full (D3) and no bars render for those days. This is the normal state at launch, not a defect.
-      - Missing totalItems or isUsingDefaultSize on an entry: the segment is skipped / rendered solid
+      - >-
+        Missing totalItems or isUsingDefaultSize on an entry: the segment is skipped / rendered solid
         respectively. A null flag is never read as "estimated".
-      - Epic with 0 total items on a day: absent from featureBreakdown entirely (existing
+      - >-
+        Epic with 0 total items on a day: absent from featureBreakdown entirely (existing
         CalculateFeatureBreakdown filter), so it is not counted and has no segment — stated in the chart's
         help text rather than silently wrong (D3).
       - Epic leaves the delivery: segments stop at the leave day, legend entry stays (D7).
-      - Two deliveries expanded at once: hatch pattern ids and legend selections are per chart instance;
+      - >-
+        Two deliveries expanded at once: hatch pattern ids and legend selections are per chart instance;
         neither leaks across cards.
-      - Non-premium instance: the whole Metrics tab is already behind the delivery surface's premium gate;
+      - >-
+        Non-premium instance: the whole Metrics tab is already behind the delivery surface's premium gate;
         the new chart never renders (D11).
-      - CLI/MCP against a caller without portfolio read access: the endpoint returns 403 and the client
+      - >-
+        CLI/MCP against a caller without portfolio read access: the endpoint returns 403 and the client
         surfaces the standard error category — the guard is server-side, not re-implemented in the client.
-      - CLI/MCP against an older server: metrics-history exists (shipped with Epic 3993) but carries no
+      - >-
+        CLI/MCP against an older server: metrics-history exists (shipped with Epic 3993) but carries no
         per-epic size; the port reports size as unknown rather than failing (D12/D13).
       - Delivery deleted: snapshot rows cascade-delete as today; no new cleanup path.
 
@@ -266,6 +274,7 @@ journeys:
         charts (KPI 5).
       - The summarised MCP tool result for that same delivery stays within roughly 2k tokens without the
         detail opt-in (KPI 6); a miss sends the backend range/projection parameter ahead of the port.
-      - Measurement caveat: unchanged from Epic 3993 — cross-instance behavioural telemetry is blocked on
+      - >-
+        Measurement caveat: unchanged from Epic 3993 — cross-instance behavioural telemetry is blocked on
         Epic 5015 (opt-in telemetry, no timeline), so KPIs 1-2 are dogfood + Chris interviews until then;
         KPIs 3-6 are assertable or measurable in CI today.

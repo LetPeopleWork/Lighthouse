@@ -140,12 +140,15 @@ journeys:
           - "Offline / website unreachable when clicking through -> the browser shows its own error; the nudge has done its job (delivered the link); no Lighthouse-side failure state needed, but the click should still count as 'shown/acted'."
 
     error_paths_summary:
-      - Premium user mistakenly evaluated as non-premium: hard defect; the gate must fail closed.
+      - >-
+        Premium user mistakenly evaluated as non-premium: hard defect; the gate must fail closed.
         Guardrail KPI 'bothered-premium count' MUST be 0; any nonzero value is a release blocker.
-      - Clock/timezone edge on install age: eligibility uses UTC-stable, monotonic-safe comparison;
+      - >-
+        Clock/timezone edge on install age: eligibility uses UTC-stable, monotonic-safe comparison;
         a backwards clock jump must never make a not-yet-eligible instance suddenly eligible early.
       - lastShownAt not persisted: nudge re-nags; treated as a correctness bug, not cosmetic.
-      - Backend unreachable when the FE asks "should I show?": fail closed (do not show) — never
+      - >-
+        Backend unreachable when the FE asks "should I show?": fail closed (do not show) — never
         guess YES, because guessing YES risks both nagging and surveying a premium user.
 
     success_signal:
