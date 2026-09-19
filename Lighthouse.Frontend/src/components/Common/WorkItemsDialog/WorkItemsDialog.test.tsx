@@ -1567,6 +1567,38 @@ describe("SLE Risk column", () => {
 			expect(riskColumnHeader()).toBeInTheDocument();
 		});
 
+		// A column a stored arrangement does not name is appended after the ones it does, so a coach
+		// who opened this dialog before the column existed gets it on the far right. Widening the
+		// dialog does not move it, because the cause is the stored order rather than the room.
+		// Written down so a later reader does not "fix" the placement by renaming the storage key,
+		// which would reset every coach's widths and hidden columns to correct a one-time position.
+		test("arrives after the columns a saved arrangement already names", () => {
+			const alreadyNamed = [
+				"referenceId",
+				"name",
+				"type",
+				"state",
+				"additionalColumn",
+			];
+			localStorage.setItem(
+				"lighthouse:datagrid:work-items-dialog:state",
+				JSON.stringify({ columnOrder: alreadyNamed }),
+			);
+
+			render(
+				<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+			);
+
+			const headerNames = screen
+				.getAllByRole("columnheader")
+				.map((header) => header.textContent?.trim() ?? "");
+			const riskIndex = headerNames.findIndex((name) =>
+				name.startsWith("SLE Risk"),
+			);
+
+			expect(riskIndex).toBeGreaterThan(alreadyNamed.length - 1);
+		});
+
 		test("sits beside the band it belongs with when both are offered", () => {
 			render(
 				<WorkItemsDialog
@@ -1648,5 +1680,22 @@ describe("SLE Risk column", () => {
 
 			expect(riskColumnHeader()).toHaveAttribute("aria-sort", "none");
 		});
+	});
+});
+
+describe("the room the dialog opens with", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	// jsdom lays nothing out, so this cannot measure whether a column is on screen — the Playwright
+	// spec at a 1280px viewport is the evidence for that. What this catches is the width being
+	// narrowed back, which is the change that would silently undo it.
+	test("opens wide enough for the columns it now carries", () => {
+		render(
+			<WorkItemsDialog {...agingDialogProps} sleRiskColumn={sleRiskColumn} />,
+		);
+
+		expect(screen.getByRole("dialog")).toHaveClass("MuiDialog-paperWidthXl");
 	});
 });

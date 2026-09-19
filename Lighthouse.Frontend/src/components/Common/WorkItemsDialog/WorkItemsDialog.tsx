@@ -429,7 +429,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	]);
 
 	return (
-		<Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+		<Dialog open={open} onClose={onClose} fullWidth maxWidth="xl">
 			<DialogTitle sx={{ backgroundColor: "background.paper" }}>
 				{title}
 				<IconButton
