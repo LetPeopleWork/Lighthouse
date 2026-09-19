@@ -306,11 +306,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var issue in issues)
             {
                 var itemAndItsLinks = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
+                var workItem = itemAndItsLinks.Item;
 
-                TrySetParentFromTheFieldTheInstanceHangsItOn(itemAndItsLinks.Item, issue, epicLinkFieldName);
+                TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, epicLinkFieldName);
 
                 itemsAndTheirLinks.Add(itemAndItsLinks);
-                workItems.Add(new WorkItem(itemAndItsLinks.Item, team));
+                workItems.Add(new WorkItem(workItem, team));
             }
 
             ReportTheRecordsWhoseLinksNamedMoreThanOneParent(team, itemsAndTheirLinks);
@@ -1338,12 +1339,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private void ReportTheRecordsWhoseLinksNamedMoreThanOneParent(
             IWorkItemQueryOwner owner, List<AnItemAndWhatItsLinksOffered> itemsAndTheirLinks)
         {
-            var whatNobodyCouldPlace = itemsAndTheirLinks
+            var recordsAndWhatTheyAreLinkedTo = itemsAndTheirLinks
                 .Where(itemAndItsLinks => itemAndItsLinks.FromTheMatchingLinks.IsAmbiguous)
                 .Select(itemAndItsLinks => $"{itemAndItsLinks.Item.ReferenceId} (linked to {string.Join(", ", itemAndItsLinks.FromTheMatchingLinks.Candidates)})")
                 .ToList();
 
-            if (whatNobodyCouldPlace.Count == 0)
+            if (recordsAndWhatTheyAreLinkedTo.Count == 0)
             {
                 return;
             }
@@ -1353,7 +1354,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 + "thing, so Lighthouse left each of these where it was rather than pick one and move work somewhere it may "
                 + "not belong. Each needs its links narrowed down to one: {RecordsAndWhatTheyAreLinkedTo}",
                 owner.Name,
-                string.Join("; ", whatNobodyCouldPlace));
+                string.Join("; ", recordsAndWhatTheyAreLinkedTo));
         }
 
         private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
@@ -1675,10 +1676,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// One record as Lighthouse read it, together with what its links said about a parent. The second is
-        /// not readable off the first: a record left where it was because its links named several issues
-        /// looks exactly like one whose links named nothing, and only whoever is reading the whole refresh
-        /// can tell somebody which of the two they are looking at.
+        /// One record as Lighthouse read it, together with the issues its links named as a parent. The
+        /// record itself remembers only that there was more than one of them, which is all the count in
+        /// refresh history needs; the keys stay here because the warning has to name them, and whoever has
+        /// to go and remove the surplus links cannot find them from a number.
         /// </summary>
         private readonly record struct AnItemAndWhatItsLinksOffered(WorkItemBase Item, ParentResolution FromTheMatchingLinks);
 
@@ -3273,9 +3274,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// A Release that is not there is told apart from every other refusal because the two send an
         /// administrator to fix completely different things - one to look at what happened to the Release,
         /// the other to look at a permission. Every other rejection is a refusal carrying Jira's own words,
-        /// which already name what to fix in the reader's vocabulary. Slice 00 measured the refusal as a
-        /// 400 rather than the 403 the API documents, so keying on either one alone would miss half of
-        /// them.
+        /// which already name what to fix in the reader's vocabulary. Jira was measured answering this
+        /// refusal with a 400 rather than the 403 its API documents, so keying on either one alone would
+        /// miss half of them.
         ///
         /// A server that failed rather than refused is deliberately not a verdict at all: it is thrown, so
         /// the caller treats it the way it treats a source it could not reach - as an attempt that told us
