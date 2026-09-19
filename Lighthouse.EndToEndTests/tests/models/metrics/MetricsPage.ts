@@ -146,6 +146,30 @@ export class MetricsWidget {
 		return new WorkItemsDialog(this.page);
 	}
 
+	/**
+	 * Any bubble on the aging chart. Deliberately not the stale-bubble locator above: only bubbles
+	 * holding a stale item carry a test id, so a spec using that one silently depends on the demo
+	 * data producing staleness — a second thing that can fail, unrelated to what is being asserted.
+	 *
+	 * Reached by its aria-label rather than by its role, which is the one place in this suite where
+	 * that is the right way round. Each marker is an HTML button inside the chart's foreignObject,
+	 * and the chart hides its whole SVG surface from the accessibility tree — so getByRole finds
+	 * none of them however the name is written, while a CSS lookup finds all of them. Matching on
+	 * the label's own prefix keeps it stable against markers being added or reordered; the widget's
+	 * own "View Data" button carries a matching prefix and is excluded by the foreignObject, which
+	 * only the chart's markers sit inside.
+	 */
+	get agingBubbles(): Locator {
+		return this.Widget.locator('foreignObject button[aria-label^="View "]');
+	}
+
+	async openDialogFromBubble(): Promise<WorkItemsDialog> {
+		await this.agingBubbles.first().click();
+		const dialog = new WorkItemsDialog(this.page);
+		await dialog.dialog.waitFor({ state: "visible" });
+		return dialog;
+	}
+
 	// The blocked-over-time chart is a MUI-X BarChart; each column snapshot is a
 	// <rect class="MuiBarChart-element">. The rightmost bar is the most recent
 	// (today) snapshot.
