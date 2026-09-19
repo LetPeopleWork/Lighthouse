@@ -1,7 +1,9 @@
 import AutorenewIcon from "@mui/icons-material/Autorenew";
+import CloseIcon from "@mui/icons-material/Close";
 import HubIcon from "@mui/icons-material/Hub";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
@@ -70,8 +72,30 @@ const TaskManagerIcon = () => {
 				onClose={() => setAnchor(null)}
 				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
 				transformOrigin={{ vertical: "top", horizontal: "right" }}
-				slotProps={{ paper: { sx: { p: 2, minWidth: 320 } } }}
+				// A popover is already bounded to the window's height and scrolls. Its width is not bounded
+				// by anything but its widest line, and one refused Jira query is several hundred unbroken
+				// characters - enough to push the box, and everything in it, off the side of the screen.
+				slotProps={{ paper: { sx: { p: 2, minWidth: 320, maxWidth: 520 } } }}
 			>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "flex-end",
+						mt: -1.5,
+						mr: -1.5,
+					}}
+				>
+					{/* Clicking beside the box is the only way out MUI gives away for free, and it is the
+					    first thing to go when the box fills the screen. */}
+					<IconButton
+						aria-label="Close"
+						size="small"
+						onClick={() => setAnchor(null)}
+					>
+						<CloseIcon fontSize="small" />
+					</IconButton>
+				</Box>
+
 				<SectionHeading
 					testId="task-manager-section-activity"
 					icon={<AutorenewIcon fontSize="small" color="action" />}

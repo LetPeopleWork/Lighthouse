@@ -13,6 +13,14 @@ import SectionHeading from "./SectionHeading";
  */
 const THE_FULL_LOG = "/settings?tab=system-info";
 
+/**
+ * A misconfigured connector does not go wrong once - it goes wrong on every refresh, and the instance
+ * remembers hundreds of them. Rendering all of them turns a box opened for a glance into a wall the
+ * reader has to scroll. The newest handful is the glance; the rest are in the log, which is where
+ * somebody who wants all of them was always going to go.
+ */
+const THE_NEWEST_FEW = 5;
+
 interface RecentProblemsSectionProps {
 	/**
 	 * What the instance said has gone wrong, in the order it gave them - newest first. `null` means it
@@ -46,12 +54,22 @@ const RecentProblemsSection = ({ problems }: RecentProblemsSectionProps) => {
 					Nothing has gone wrong since this instance started.
 				</Typography>
 			) : (
-				problems.map((problem) => (
+				problems.slice(0, THE_NEWEST_FEW).map((problem) => (
 					<Typography
 						key={`${problem.recordedAt}-${problem.level}-${problem.source}-${problem.message}`}
 						data-testid="recent-problem-row"
 						variant="body2"
-						sx={{ py: 0.5 }}
+						// A refused Jira query arrives as the whole JQL plus the whole JSON body on one
+						// unbroken line. Left to run it makes the box wider than the screen, so it is clamped
+						// to two lines here and stays whole to a hover and to a screen reader.
+						title={problem.message}
+						sx={{
+							py: 0.5,
+							display: "-webkit-box",
+							WebkitBoxOrient: "vertical",
+							WebkitLineClamp: 2,
+							overflow: "hidden",
+						}}
 					>
 						<LocalDateTimeDisplay utcDate={problem.recordedAt} showTime /> —{" "}
 						{problem.level} — {problem.message}

@@ -1533,5 +1533,101 @@ describe("TaskManagerIcon", () => {
 				screen.queryByText(/nothing has gone wrong/i),
 			).not.toBeInTheDocument();
 		});
+
+		// A connector that is misconfigured does not go wrong once. It goes wrong on every refresh, and the
+		// instance remembers hundreds of them - so a section that renders all of them grows a popover taller
+		// than the screen, with no way left to close it. The newest few are the glance this section is for;
+		// the rest are in the log, which is where an operator who wants them goes anyway.
+		it("shows only the newest few problems, however many the instance is holding", async () => {
+			renderIconWithProblems(
+				Array.from({ length: 40 }, (_, index) => ({
+					...somethingThatOnlyWarned,
+					message: `Problem number ${index}`,
+				})),
+			);
+
+			await openThePopover();
+
+			const rows = await screen.findAllByTestId("recent-problem-row");
+			expect(rows).toHaveLength(5);
+
+			// The newest ones, not the oldest: the instance answers newest-first, so the cut comes off the end.
+			expect(rows[0]).toHaveTextContent("Problem number 0");
+			expect(rows[4]).toHaveTextContent("Problem number 4");
+			expect(screen.queryByText(/Problem number 5\b/)).not.toBeInTheDocument();
+		});
+
+		// An instance holding fewer than the cap shows all of them; a section that padded or truncated a
+		// short list would be inventing a limit the reader never hit.
+		it("shows every problem when there are only a few", async () => {
+			renderIconWithProblems([aRefreshThatBroke, somethingThatOnlyWarned]);
+
+			await openThePopover();
+
+			expect(await screen.findAllByTestId("recent-problem-row")).toHaveLength(
+				2,
+			);
+		});
+
+		// A Jira rejection arrives as the whole query plus the whole JSON body - several hundred characters
+		// on one line. Rendered unbroken it stretches the popover past the width of the window, which is a
+		// worse failure than the height one because nothing on the right of it can be reached at all. The
+		// row is clamped, and the full text stays available to a hover and to a screen reader.
+		it("keeps a very long message from stretching the box, without losing it", async () => {
+			const theWholeJiraRejection =
+				'Jira refused the query "(project = LGHTHSDMO AND status CHANGED AFTER ) AND (issuetype = "Story")" with 400. Jira answered: "{"errorMessages":["Error in the JQL Query: Expecting either a value, list or function but got \')\'."],"errors":{}}"';
+
+			renderIconWithProblems([
+				{ ...somethingThatOnlyWarned, message: theWholeJiraRejection },
+			]);
+
+			await openThePopover();
+
+			const row = await screen.findByTestId("recent-problem-row");
+
+			expect(row).toHaveAttribute("title", theWholeJiraRejection);
+			expect(window.getComputedStyle(row).overflow).toBe("hidden");
+		});
+	});
+
+	/**
+	 * The box is opened for a glance and has to stay one. Everything below is about the popover itself
+	 * rather than about any section in it: what it does when the instance has more to say than fits.
+	 */
+	describe("the box stays a box", () => {
+		// Clicking the backdrop is the only way MUI gives this away for free, and it stops being reachable
+		// the moment the box fills the window - which is exactly the state a reader most wants out of.
+		it("offers a way to close it", async () => {
+			renderTheWholePopover();
+
+			await openThePopover();
+
+			const user = userEvent.setup();
+			await user.click(await screen.findByRole("button", { name: /close/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.queryByTestId("task-manager-section-activity"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		// Height is already in hand: a popover is bounded to the window and scrolls. Width is not - the
+		// box is as wide as its widest line, and one Jira rejection is several hundred unbroken characters,
+		// which pushes everything to the right of it off the screen entirely. A width of its own is what
+		// stops that, and it has to be a width rather than a share of the window, which is the thing that
+		// was already true when the box went off the side.
+		it("keeps a width of its own, so one long line cannot push it off the screen", async () => {
+			renderTheWholePopover();
+
+			await openThePopover();
+
+			await screen.findByTestId("task-manager-section-activity");
+			const paper = document.querySelector(".MuiPopover-paper");
+
+			expect(window.getComputedStyle(paper as HTMLElement).maxWidth).toMatch(
+				/^\d+px$/,
+			);
+		});
 	});
 });
