@@ -382,6 +382,14 @@ get re-applied.
 
 ## Tests
 
+### 2026-09-19 — letting refreshes run concurrently wiped feature→team ownership, and only the demo-data E2E could see it
+
+- **Symptom**: `verifysqlite` AND `verifypostgres` red on run `35430764225`, both on the same claim: `MultiTeamForecast.spec.ts:37` and `DeliveryJointLikelihood.spec.ts:116` expect `"Cannot forecast"` for a feature/delivery whose contributing team has closed nothing, and got dates (`"10/1/2026…"`, `"All Features by 11/18/2026: 0%"`). Every other job green, including the full backend suite and 31 new acceptance tests for the very change that caused it.
+- **Root cause**: story #5877 gave team, portfolio and forecast work a queue each. `WorkItemService.RefreshRemainingWork` (`WorkItemService.cs:577`) rebuilds each feature's team work from the work items present *at the moment the portfolio refresh runs* — `ClearFeatureWork()` then one row per team that currently has items. That was safe only because a portfolio refresh could never overlap the team refreshes that write those items. With a lane each it reads a half-written snapshot: on demo scenario 12 the teams went from holding 10/0/10/4/4 features to 12/0/0/0/0. The forecast then ran over the one surviving team, which is what the specs caught.
+- **Fix**: reverted the slice (`f216ef558`, backing out `86d796171..7a4a09089`); the ownership question is a design fork, not a patch.
+- **Rule going forward**: before letting two kinds of refresh run at the same time, find every pass that **rebuilds** state from a whole-table read — `Clear…()` followed by a re-add from a repository query is the signature — because concurrency turns "the data is all there" into an assumption that no longer holds. An acceptance harness that fakes the connector returns empty item lists, so it has nothing for a concurrent pass to lose and stays green; only demo-data E2E exercises the real path.
+- **Corollary**: `/api/latest/update/status` counts admitted work only. Work the queue is *holding back* is not admitted, so the instance reports idle while it still owes a forecast, and `waitForBackgroundUpdates` in the E2E helper returns early. Any change that parks work must add it to that count, or every demo-driven spec starts asserting against pre-refresh data.
+
 ### 2026-09-05 — an E2E pinned to real work-item ids goes red when someone closes those items
 
 - **Symptom**: `verifysqlite` AND `verifypostgres` both red on run `33955949513`, same single test, all 3 retries: `FeatureDependencies.spec.ts:70` — `expect(locator('.MuiDataGrid-row').first()).toBeVisible()` / `element(s) not found`. 49 passed. `sonar-gates` and the frontend job were green, and the commits in the run were comment-and-test-only, so it read as a product regression appearing from nowhere.
