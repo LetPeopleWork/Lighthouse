@@ -538,7 +538,9 @@ type ViewDataInputs = {
 	};
 };
 
-function buildViewData(
+// Exported for the test that enumerates every payload it returns and requires each to be classified
+// as a list of what is in flight today or deliberately not one. Nothing else imports it.
+export function buildViewData(
 	inputs: ViewDataInputs,
 ): Record<string, ViewDataPayload | undefined> {
 	const { terms } = inputs;
@@ -628,12 +630,20 @@ function buildViewData(
 		};
 	})();
 
+	// Every list of what the team has in flight today, and nothing else, carries the risk column —
+	// the number answers "will this item breach", which only means something for an item still
+	// running. Sharing one base is what stops the next such list from being added without it, which
+	// is how two of these four went a release without one.
+	const inFlight = {
+		title: `${inputs.title} in Progress`,
+		items: inputs.inProgressItems,
+		highlightColumn: ageHighlight,
+		sleRiskColumn,
+	};
+
 	return {
 		wipOverview: {
-			title: `${inputs.title} in Progress`,
-			items: inputs.inProgressItems,
-			highlightColumn: ageHighlight,
-			sleRiskColumn,
+			...inFlight,
 			timeInStateColumn: {
 				stalenessThresholdDays: inputs.stalenessThresholdDays,
 				blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
@@ -679,16 +689,8 @@ function buildViewData(
 					highlightColumn: cycleTimeHighlight,
 					sle: inputs.serviceLevelExpectation?.value,
 				},
-		totalWorkItemAge: {
-			title: `${inputs.title} in Progress`,
-			items: inputs.inProgressItems,
-			highlightColumn: ageHighlight,
-		},
-		workItemAgePercentiles: {
-			title: `${inputs.title} in Progress`,
-			items: inputs.inProgressItems,
-			highlightColumn: ageHighlight,
-		},
+		totalWorkItemAge: inFlight,
+		workItemAgePercentiles: inFlight,
 		throughput: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
@@ -706,11 +708,9 @@ function buildViewData(
 			highlightColumn: ageCycleHighlight,
 		},
 		aging: {
+			...inFlight,
 			title: `${terms.workItems} in Progress`,
-			items: inputs.inProgressItems,
-			highlightColumn: ageHighlight,
 			ageBandColumn,
-			sleRiskColumn,
 		},
 		wipOverTime: {
 			title: `${inputs.title} In Progress`,

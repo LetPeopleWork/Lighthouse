@@ -46,7 +46,11 @@ import {
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
-import { BaseMetricsView, buildWorkItemLookup } from "./BaseMetricsView";
+import {
+	BaseMetricsView,
+	buildViewData,
+	buildWorkItemLookup,
+} from "./BaseMetricsView";
 import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
 // Mock the components used in BaseMetricsView
@@ -6768,5 +6772,149 @@ describe("buildWorkItemLookup", () => {
 
 		expect(lookup.get(44)).toBe(throughputOnly);
 		expect(lookup.get(45)).toBe(wipOnly);
+	});
+});
+
+// The risk column is attached per payload, and a payload added without one is invisible: nothing
+// fails, the list simply renders without the column. Two of the four lists of in-flight work went
+// a release that way. So every payload the builder returns has to be classified here, and a new
+// one that is in neither list fails until somebody decides which it is.
+describe("which lists carry the risk column", () => {
+	const LISTS_WHAT_IS_IN_FLIGHT_TODAY = [
+		"wipOverview",
+		"totalWorkItemAge",
+		"workItemAgePercentiles",
+		"aging",
+	];
+
+	const DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY = [
+		"blockedOverview",
+		"staleOverview",
+		"featuresWorkedOnOverview",
+		"percentiles",
+		"throughput",
+		"cycleScatter",
+		"workDistribution",
+		"wipOverTime",
+		"totalWorkItemAgeOverTime",
+		"stacked",
+		"estimationVsCycleTime",
+		"featureSize",
+		"throughputPbc",
+		"wipPbc",
+		"totalWorkItemAgePbc",
+		"cycleTimePbc",
+		"featureSizePbc",
+		"arrivals",
+		"arrivalsPbc",
+		"totalThroughput",
+		"totalArrivals",
+	];
+
+	const inFlightItem = (id: number, referenceId: string): IWorkItem => ({
+		id,
+		name: `Item ${id}`,
+		referenceId,
+		url: null,
+		state: "In Progress",
+		stateCategory: "Doing" as StateCategory,
+		type: "User Story",
+		startedDate: new Date("2026-09-01"),
+		closedDate: new Date("2026-09-01"),
+		cycleTime: 0,
+		workItemAge: 6,
+		parentWorkItemReference: "",
+		isBlocked: false,
+	});
+
+	const viewDataWith = (
+		sleRiskValues: { referenceId: string; risk: number }[],
+	) =>
+		buildViewData({
+			title: "Work Items",
+			inProgressItems: [inFlightItem(1, "ZEN-1"), inFlightItem(2, "ZEN-2")],
+			blockedItems: [],
+			staleItems: [],
+			featuresInProgress: undefined,
+			cycleTimeData: [],
+			throughputData: null,
+			wipOverTimeData: null,
+			allFeaturesForSizeChart: [],
+			serviceLevelExpectation: null,
+			percentilesScopeDefinitionId: null,
+			namedCycleTimeDefinitions: [],
+			estimationVsCycleTimeData: null,
+			arrivalsData: null,
+			workItemLookup: new Map(),
+			stalenessThresholdDays: undefined,
+			blockedStalenessThresholdDays: undefined,
+			perStatePercentileValues: [],
+			sleRiskValues,
+			doingStates: ["In Progress"],
+			terms: {
+				workItem: "Work Item",
+				workItems: "Work Items",
+				features: "Features",
+				cycleTime: "Cycle Time",
+				workItemAge: "Work Item Age",
+				blocked: "Blocked",
+				sle: "SLE",
+			},
+		});
+
+	const builtWithRisk = () =>
+		viewDataWith([
+			{ referenceId: "ZEN-1", risk: 86 },
+			{ referenceId: "ZEN-2", risk: 12 },
+		]);
+
+	it.each(LISTS_WHAT_IS_IN_FLIGHT_TODAY)(
+		"every list of what is in flight today carries the risk: %s",
+		(key) => {
+			expect(builtWithRisk()[key]?.sleRiskColumn).toBeDefined();
+		},
+	);
+
+	it.each(DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY)(
+		"no other list carries it: %s",
+		(key) => {
+			expect(builtWithRisk()[key]?.sleRiskColumn).toBeUndefined();
+		},
+	);
+
+	it("every list is in one of the two lists above", () => {
+		const unaccountedFor = Object.keys(builtWithRisk()).filter(
+			(key) =>
+				!LISTS_WHAT_IS_IN_FLIGHT_TODAY.includes(key) &&
+				!DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY.includes(key),
+		);
+
+		expect(
+			unaccountedFor,
+			"Put each of these in exactly one of the two lists at the top of this block: the first is for lists of what the team has in flight today, which carry the risk column; the second is for every other list, which deliberately does not. Whichever you choose, write the reason in the call-site table in the feature's DESIGN record.",
+		).toEqual([]);
+	});
+
+	it("no list is claimed that no longer exists", () => {
+		const built = builtWithRisk();
+		const named = [
+			...LISTS_WHAT_IS_IN_FLIGHT_TODAY,
+			...DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY,
+		].filter((key) => !(key in built));
+
+		expect(
+			named,
+			"These payloads were renamed or removed. Update the list that still names them.",
+		).toEqual([]);
+	});
+
+	// Without this, the first assertion would be satisfied by a descriptor that is always built,
+	// and a team that has published no target would get a column of blanks on four lists.
+	it("a team with no published target gets the column nowhere", () => {
+		const built = viewDataWith([]);
+
+		for (const key of Object.keys(built)) {
+			expect(built[key]?.sleRiskColumn).toBeUndefined();
+		}
 	});
 });
