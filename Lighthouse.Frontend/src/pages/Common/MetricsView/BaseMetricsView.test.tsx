@@ -6477,6 +6477,7 @@ describe("BaseMetricsView component", () => {
 					"blockedOverview",
 					"percentiles",
 					"predictabilityScore",
+					"sleRisk",
 					"staleOverview",
 					"totalArrivals",
 					"totalThroughput",
@@ -6487,6 +6488,7 @@ describe("BaseMetricsView component", () => {
 				viewData: [
 					"blockedOverview",
 					"percentiles",
+					"sleRisk",
 					"staleOverview",
 					"totalArrivals",
 					"totalThroughput",
@@ -6785,6 +6787,7 @@ describe("which lists carry the risk column", () => {
 		"totalWorkItemAge",
 		"workItemAgePercentiles",
 		"aging",
+		"sleRisk",
 	];
 
 	const DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY = [

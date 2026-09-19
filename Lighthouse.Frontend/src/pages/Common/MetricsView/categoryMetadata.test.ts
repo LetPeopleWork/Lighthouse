@@ -172,6 +172,7 @@ describe("categoryMetadata", () => {
 			const widgets = getWidgetsForCategory("flow-overview", "team");
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"wipOverview",
+				"sleRisk",
 				"blockedOverview",
 				"staleOverview",
 				"featuresWorkedOnOverview",

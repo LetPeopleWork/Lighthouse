@@ -113,6 +113,7 @@ import {
 	computePbcRag,
 	computePredictabilityScoreRag,
 	computeSimplifiedCfdRag,
+	computeSleRiskRag,
 	computeStaleOverviewRag,
 	computeStartedVsClosedRag,
 	computeThroughputRag,
@@ -125,6 +126,7 @@ import {
 	computeWorkItemAgePercentilesRag,
 	type RagTerms,
 } from "./ragRules";
+import SleRiskWidget from "./SleRiskWidget";
 import StaleOverviewWidget from "./StaleOverviewWidget";
 import ThroughputRunChartCard from "./ThroughputRunChartCard";
 import TotalArrivalsWidget from "./TotalArrivalsWidget";
@@ -257,6 +259,8 @@ type RagInputs = {
 	readonly closedTotal: number;
 	readonly totalWorkItemAge: number | null;
 	readonly currentWip: number;
+	/** How much of `currentWip` the risk answers put at seventy percent or worse. */
+	readonly atRiskCount: number;
 	readonly sleDays: number | undefined;
 	readonly throughputValues: ReadonlyArray<number>;
 	readonly blackoutDayIndices: ReadonlyArray<number>;
@@ -340,6 +344,12 @@ function buildWidgetFooters(
 		blockedOverview: computeBlockedOverviewRag(
 			inputs.blockedCount,
 			inputs.hasBlockedConfig,
+			inputs.terms,
+		),
+		sleRisk: computeSleRiskRag(
+			inputs.atRiskCount,
+			inputs.currentWip,
+			inputs.sle,
 			inputs.terms,
 		),
 		blockedCountHistory: computeBlockedMaxAgeRag(
@@ -693,6 +703,10 @@ export function buildViewData(
 				},
 		totalWorkItemAge: inFlight,
 		workItemAgePercentiles: inFlight,
+		// Every item in flight with its risk, not only the ones at risk — a coach opening this is
+		// asking what is behind the number, and the items just under the line are the ones worth
+		// seeing before they cross it.
+		sleRisk: inFlight,
 		throughput: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
@@ -982,6 +996,7 @@ function buildWidgetNodes(ctx: {
 				atRisk={ctx.sleRiskAtRisk}
 			/>
 		),
+		sleRisk: <SleRiskWidget atRisk={ctx.sleRiskAtRisk} />,
 		blockedOverview: (
 			<BlockedOverviewWidget
 				blockedCount={ctx.blockedItems.length}
@@ -1763,6 +1778,9 @@ export const BaseMetricsView = <
 		closedTotal: throughputData?.total ?? 0,
 		totalWorkItemAge,
 		currentWip: inProgressItems.length,
+		// Read off the same summary the widget renders, never counted a second time here. Two
+		// readings of one rule is how a count and the list behind it come to disagree.
+		atRiskCount: sleRiskAtRisk?.count ?? 0,
 		sleDays:
 			entity.serviceLevelExpectationRange > 0
 				? entity.serviceLevelExpectationRange

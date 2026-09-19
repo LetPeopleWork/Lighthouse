@@ -49,6 +49,13 @@ const categories: readonly CategoryDefinition[] = [
 const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	"flow-overview": [
 		{ widgetKey: "wipOverview", size: "small" },
+		// Beside the WIP count it was split out of. It was a subtitle on that card, and putting its
+		// replacement anywhere else would hide what the two numbers have to do with each other.
+		//
+		// Team-only: the risk is measured against a team's published target, and a portfolio has no
+		// target for an item to be at risk of missing. Without this the widget would appear on both,
+		// because the category is shared.
+		{ widgetKey: "sleRisk", size: "small", ownerFilter: "team-only" },
 		{ widgetKey: "blockedOverview", size: "small" },
 		{ widgetKey: "staleOverview", size: "small" },
 		{
@@ -127,6 +134,10 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	featureSize: "none",
 	aging: "none",
 	blockedOverview: "previous-period",
+	// The risk is a claim about today, read against a window that ends today. A previous-period
+	// arrow would compare it with a count whose ages were all as-of some other day, which is a
+	// different question wearing the same shape.
+	sleRisk: "none",
 	staleOverview: "none",
 	flowEfficiency: "none",
 	throughputPbc: "none",
@@ -245,6 +256,7 @@ const widgetFetchRequirements: Record<string, readonly MetricsFetchKey[]> = {
 	// The card says how many of these are at risk, and its View Data dialog lists them with the
 	// risk column - BaseMetricsView.tsx
 	wipOverview: ["inProgressItems", "wipOverviewInfo", "sleRisk"],
+	sleRisk: ["inProgressItems", "sleRisk"],
 	// trend: computeBlockedTrend(blockedCountHistory) — BaseMetricsView.tsx:1828
 	blockedOverview: ["blockedItems", "blockedCountHistory"],
 	// staleItems is derived from inProgressItems — BaseMetricsView.tsx:1581

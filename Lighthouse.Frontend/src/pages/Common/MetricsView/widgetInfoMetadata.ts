@@ -31,6 +31,17 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No System WIP Limit is configured, or current WIP exceeds the limit.",
 		},
 	},
+	sleRisk: {
+		description:
+			"How many items in progress are at risk of missing the SLE. An item counts as at risk when the team's own history says it is 70% or more likely to take longer than the target.",
+		learnMoreUrl: `${FLOW_METRICS}#sle-risk-column`,
+		statusGuidance: {
+			sustain: "No items are at risk of missing the target.",
+			observe:
+				"Some items are at risk, but fewer than the share the SLE already allows for.",
+			act: "No SLE is configured, or the share at risk has reached what the SLE allows.",
+		},
+	},
 	blockedOverview: {
 		description:
 			"Number of items currently blocked. The goal is always zero blocked items.",

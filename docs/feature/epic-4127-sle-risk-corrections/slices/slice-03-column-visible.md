@@ -64,7 +64,7 @@ something for an item still running, against one team's published target.
 
 | # | Call site | What it lists | Risk column | Why |
 |---|---|---|---|---|
-| 1 | `MetricsView/WidgetShell.tsx:380` | whichever payload the widget was built from | **yes, when the payload carries one** | The one site that renders every `buildViewData` payload. It forwards `viewData.sleRiskColumn`, so the decision is the payload's rather than this site's — which is the whole of ADR-198, and what the key-set partition test enforces. Four of the twenty-five payloads carry a descriptor |
+| 1 | `MetricsView/WidgetShell.tsx:380` | whichever payload the widget was built from | **yes, when the payload carries one** | The one site that renders every `buildViewData` payload. It forwards `viewData.sleRiskColumn`, so the decision is the payload's rather than this site's — which is the whole of ADR-198, and what the key-set partition test enforces. **Five of the twenty-six payloads carry a descriptor** — four when this table was written, plus `sleRisk`, added by slice 04 |
 | 2 | `Charts/WorkItemAgingChart.tsx:801` | the items behind one bubble | **yes** | In flight today, on one team, at one age. Assembled inside the chart from a click, so no payload can reach it — this slice's fix, and the defect that was reported |
 | 3 | `MetricsView/BaseMetricsView.tsx:1947` | items that contributed days to one state | no | A history question — how long work sat in a state — not a list of what is in flight. Its own highlight column is "Days Contributed" |
 | 4 | `Charts/CycleTimeScatterPlotChart.tsx:554` | closed items | no | They finished. There is nothing left to be at risk of |
@@ -91,6 +91,16 @@ acted on, because widening the rule is a decision about what the number means, n
 `buildViewData` and outside the aging chart. The partition test governs the payloads and the
 required prop governs the chart; a brand-new component rendering the dialog itself is caught by
 nothing but this table being redone. ADR-198 says so in writing.
+
+**The partition's first live exercise, one slice later.** Slice 04 adds a `sleRisk` payload, and the
+test red on its first run naming the key, both lists and this table — before any test of that slice
+existed. It is classified as a list of what is in flight today, which is why row 1's count moved from
+four payloads to five.
+
+**And a correction this table owes itself**: slice 04's own DISTILL said the new payload would become
+"row 16" here. It does not. This table has one row per **render site**, and a new payload adds no
+render site — it is a fifth thing rendered by the site already in row 1. Fifteen rows is still the
+whole of it.
 
 ## Dependencies
 
