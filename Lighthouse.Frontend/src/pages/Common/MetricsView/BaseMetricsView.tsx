@@ -993,7 +993,6 @@ function buildWidgetNodes(ctx: {
 					ctx.entity.systemWIPLimit > 0 ? ctx.entity.systemWIPLimit : undefined
 				}
 				title={`${ctx.title} in Progress`}
-				atRisk={ctx.sleRiskAtRisk}
 			/>
 		),
 		sleRisk: <SleRiskWidget atRisk={ctx.sleRiskAtRisk} />,

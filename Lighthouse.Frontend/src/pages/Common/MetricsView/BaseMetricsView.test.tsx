@@ -271,18 +271,23 @@ vi.mock("./WipOverviewWidget", () => ({
 		wipCount,
 		systemWipLimit,
 		title,
-		atRisk,
 	}: {
 		wipCount: number;
 		systemWipLimit?: number;
 		title?: string;
-		atRisk?: { count: number; color?: string };
 	}) => (
 		<div data-testid="wip-overview-widget">
 			<div data-testid="wip-overview-count">{wipCount}</div>
 			<div data-testid="wip-overview-limit">{systemWipLimit ?? ""}</div>
 			<div data-testid="wip-overview-title">{title}</div>
-			<div data-testid="wip-at-risk-count">{atRisk?.count ?? "none"}</div>
+		</div>
+	),
+}));
+
+vi.mock("./SleRiskWidget", () => ({
+	default: ({ atRisk }: { atRisk?: { count: number; color?: string } }) => (
+		<div data-testid="sle-risk-widget">
+			<div data-testid="sle-risk-at-risk-count">{atRisk?.count ?? "none"}</div>
 		</div>
 	),
 }));
@@ -4542,17 +4547,21 @@ describe("BaseMetricsView component", () => {
 			});
 
 			// One of the two is at or above the line; the other is not.
-			expect(screen.getByTestId("wip-at-risk-count")).toHaveTextContent("1");
+			expect(screen.getByTestId("sle-risk-at-risk-count")).toHaveTextContent(
+				"1",
+			);
 		});
 
-		it("says nothing about risk on the card when the team published no target", async () => {
+		it("has no count to show when the team published no target", async () => {
 			renderTeamAnswering([], "flow-overview");
 
 			await waitFor(() => {
-				expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
+				expect(screen.getByTestId("sle-risk-widget")).toBeInTheDocument();
 			});
 
-			expect(screen.getByTestId("wip-at-risk-count")).toHaveTextContent("none");
+			expect(screen.getByTestId("sle-risk-at-risk-count")).toHaveTextContent(
+				"none",
+			);
 		});
 
 		it("never offers a risk column on a portfolio page", async () => {
