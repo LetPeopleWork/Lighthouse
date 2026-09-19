@@ -4486,7 +4486,10 @@ describe("BaseMetricsView component", () => {
 			).toHaveTextContent("86%,0%");
 		});
 
-		it("asks about the window the page is showing", async () => {
+		it("asks about the team and nothing else", async () => {
+			// The evidence is the team's configured history and the question is about today, so
+			// there is no window to pass. This used to send the page's range, which is how the
+			// dialog and the board came to report different numbers for the same item.
 			const getSleRisk = renderTeamAnswering([
 				{ referenceId: "ZEN-412", risk: 86 },
 			]);
@@ -4495,9 +4498,7 @@ describe("BaseMetricsView component", () => {
 				expect(getSleRisk).toHaveBeenCalled();
 			});
 
-			const [teamId, startDate, endDate] = getSleRisk.mock.calls[0];
-			expect(teamId).toBe(mockTeam.id);
-			expect(endDate.getTime() - startDate.getTime()).toBeGreaterThan(0);
+			expect(getSleRisk.mock.calls[0]).toEqual([mockTeam.id]);
 		});
 
 		it("offers no risk column for a team that published no target", async () => {

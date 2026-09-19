@@ -7,7 +7,7 @@ import { z } from "zod";
  */
 export const SleRiskSchema = z.object({
 	referenceId: z.string(),
-	risk: z.number().nullable(),
+	risk: z.number(),
 });
 
 export type ISleRisk = z.infer<typeof SleRiskSchema>;

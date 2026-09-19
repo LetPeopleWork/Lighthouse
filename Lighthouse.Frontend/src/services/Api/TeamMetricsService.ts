@@ -40,14 +40,10 @@ export class TeamMetricsService
 		});
 	}
 
-	async getSleRisk(
-		teamId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<ISleRisk[]> {
+	async getSleRisk(teamId: number): Promise<ISleRisk[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ISleRisk[]>(
-				`/teams/${teamId}/metrics/sleRisk?${this.getDateFormatString(startDate, endDate)}`,
+				`/teams/${teamId}/metrics/sleRisk`,
 			);
 
 			return BaseMetricsService.parse(SleRiskSchema.array(), response.data);

@@ -137,15 +137,13 @@ const AT_RISK_FROM = 50;
 export const sleRiskAtRiskSummary = (
 	answers: readonly ISleRisk[],
 ): SleRiskAtRiskSummary => {
-	const counted = answers.filter(
-		(answer) => answer.risk !== null && answer.risk >= AT_RISK_FROM,
-	);
+	const counted = answers.filter((answer) => answer.risk >= AT_RISK_FROM);
 
 	if (counted.length === 0) {
 		return { count: 0 };
 	}
 
-	const worst = Math.max(...counted.map((answer) => answer.risk ?? 0));
+	const worst = Math.max(...counted.map((answer) => answer.risk));
 
 	return { count: counted.length, color: sleRiskColorFor(worst) };
 };

@@ -206,6 +206,46 @@ describe("useMetricsData", () => {
 		mockBlackoutPeriodService.getAll.mockResolvedValue([]);
 	});
 
+	describe("The risk does not follow the date range", () => {
+		it("asks for the risk once and does not ask again when the range moves", async () => {
+			// The range picker is for looking at past metrics. The risk is a claim about now over
+			// the team's own configured history, so a refetch would spend a round trip to receive
+			// the same number - and would tell the next reader of this hook that the range feeds it.
+			// Putting the dates back in this effect's dependency list is the one-line way to undo it.
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			const { rerender } = renderHook(
+				({ from, to }) => useMetricsData(entity, service, from, to),
+				{ initialProps: { from: startDate, to: endDate } },
+			);
+
+			await waitFor(() => {
+				expect(service.getSleRisk).toHaveBeenCalledTimes(1);
+			});
+
+			const widerStart = new Date(startDate);
+			widerStart.setDate(widerStart.getDate() - 60);
+			rerender({ from: widerStart, to: endDate });
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(2);
+			});
+			expect(service.getSleRisk).toHaveBeenCalledTimes(1);
+		});
+
+		it("asks for the team alone, with no window to disagree about", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() => useMetricsData(entity, service, startDate, endDate));
+
+			await waitFor(() => {
+				expect(service.getSleRisk).toHaveBeenCalledWith(entity.id);
+			});
+		});
+	});
+
 	describe("Baseline fetch orchestration", () => {
 		it("should call all core metrics service methods on mount", async () => {
 			const entity = createMockEntity();

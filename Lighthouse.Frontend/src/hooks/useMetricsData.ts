@@ -435,14 +435,17 @@ export function useMetricsData<
 			);
 	}, [entity, metricsService, startDate, endDate, needsAgeInStatePercentiles]);
 
+	// No dates in the dependency list, because none are passed. The risk is a claim about today
+	// over the team's own configured history, so moving the range picker must not refetch it - and
+	// listing the dates here would do exactly that, quietly, on every change.
 	useEffect(() => {
 		if (!needsSleRisk) return;
 		if (!providesSleRisk(metricsService)) return;
 		metricsService
-			.getSleRisk(entity.id, startDate, endDate)
+			.getSleRisk(entity.id)
 			.then(setSleRiskValues)
 			.catch((error) => console.error("Error fetching SLE risk:", error));
-	}, [entity, metricsService, startDate, endDate, needsSleRisk]);
+	}, [entity, metricsService, needsSleRisk]);
 
 	useEffect(() => {
 		if (!needsCumulativeStateTime) return;

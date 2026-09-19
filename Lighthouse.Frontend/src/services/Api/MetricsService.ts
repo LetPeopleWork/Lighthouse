@@ -265,12 +265,11 @@ export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
 	 * Teams only. A feature can sit in several portfolios, each with its own target and its own
 	 * history, so it would have several answers and no way to pick one — which is why this lives on
 	 * the team service rather than on the shared one.
+	 *
+	 * No dates. The evidence is the team's configured history and the question is about today, so
+	 * there is no window for a caller to choose and nothing for the range picker to move.
 	 */
-	getSleRisk(
-		teamId: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<ISleRisk[]>;
+	getSleRisk(teamId: number): Promise<ISleRisk[]>;
 	getForecastInputCandidates(teamId: number): Promise<IForecastInputCandidates>;
 	getFeaturesWorkedOnInfo(
 		teamId: number,

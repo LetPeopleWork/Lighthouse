@@ -26,7 +26,7 @@ const zenithItem = (referenceId: string): IWorkItem => ({
 	isBlocked: false,
 });
 
-const answer = (referenceId: string, risk: number | null): ISleRisk => ({
+const answer = (referenceId: string, risk: number): ISleRisk => ({
 	referenceId,
 	risk,
 });
