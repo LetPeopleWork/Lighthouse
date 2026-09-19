@@ -390,23 +390,6 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public IEnumerable<SleRiskZoneDto> GetSleRiskZonesForTeam(Team team, DateTime startDate, DateTime endDate)
-        {
-            // Stryker disable once all: diagnostic log text is not behaviour
-            logger.LogDebug("Getting SLE Risk zones for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
-
-            if (team.ServiceLevelExpectationRange <= 0)
-            {
-                return [];
-            }
-
-            return GetFromCacheIfExists(team, $"SleRiskZones_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{team.ServiceLevelExpectationRange}", () =>
-                SleRiskCalculator
-                    .Zones(team.ServiceLevelExpectationRange, ClosedCycleTimesFor(team, startDate, endDate))
-                    .Select(zone => new SleRiskZoneDto(zone.Risk, zone.FromAge, zone.ToAge))
-                    .ToList(), logger);
-        }
-
         public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

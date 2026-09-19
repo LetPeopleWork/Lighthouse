@@ -118,6 +118,47 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             await TheAnswerTo(SleRiskRoute(teamId));
         }
 
+        /// <summary>
+        /// Asks for the chart background first, then for the per-item risk, as the same caller.
+        ///
+        /// Signing in as a team admin is what makes the first answer mean anything. A caller with no
+        /// grant on this team is also told 404 rather than 403, so a 404 from an anonymous client
+        /// would be indistinguishable from "you may not look" and would pass whether the route
+        /// existed or not.
+        /// </summary>
+        private async Task WhenBothTheBackgroundAndThePerItemRiskAreAskedFor(int teamId)
+        {
+            Client.AsTeamAdmin(teamId);
+
+            var zones = new Uri(
+                $"/api/latest/teams/{teamId}/metrics/sleRisk/zones"
+                + $"?startDate={WindowStart:yyyy-MM-dd}&endDate={WindowEnd:yyyy-MM-dd}",
+                UriKind.Relative);
+
+            await TheAnswerTo(zones);
+            zonesResponse = response;
+
+            await TheAnswerTo(SleRiskRoute(teamId));
+        }
+
+        private HttpResponseMessage? zonesResponse;
+
+        private void ThenTheBackgroundIsGoneAndThePerItemRiskIsNot()
+        {
+            Assert.That(zonesResponse, Is.Not.Null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(zonesResponse!.StatusCode, Is.EqualTo(HttpStatusCode.NotFound),
+                    "The chart background that painted where the odds turn was withdrawn, so there is "
+                    + "nothing left to ask for.");
+
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    "The per-item risk is what survives, and a deletion that took it with them would "
+                    + $"be a far worse outcome than the one being fixed. Body: {body}");
+            }
+        }
+
         private async Task WhenTheRiskIsAskedForAWindowEnding(int teamId, bool tenDaysAgo)
         {
             var end = tenDaysAgo ? WindowEnd.AddDays(-10) : WindowEnd;

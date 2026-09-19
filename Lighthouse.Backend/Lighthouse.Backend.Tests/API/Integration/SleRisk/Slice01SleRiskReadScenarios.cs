@@ -298,6 +298,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheyAreTurnedAway();
         }
 
+        // @driving_port @real-io — the chart background that painted where the odds turn is gone, and
+        // the per-item risk it was built beside is not. Asking for both in one run is the point: a
+        // test that only checked the 404 would pass just as well if the whole feature had been torn
+        // out, which is the failure this deletion is most exposed to.
+        [Test]
+        public async Task The_chart_background_can_no_longer_be_asked_for_and_the_item_risk_still_can()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinished(2, 4, 12);
+            GivenAnItemOpenFor(3);
+
+            await WhenBothTheBackgroundAndThePerItemRiskAreAskedFor(team);
+
+            ThenTheBackgroundIsGoneAndThePerItemRiskIsNot();
+        }
+
         // @driving_port @error @AC-01.6 — portfolios are deliberately out of this Epic: a feature can
         // sit in several, each with its own target and its own history, so one feature would have
         // several answers and no way to choose. The route not existing is how that decision is kept.

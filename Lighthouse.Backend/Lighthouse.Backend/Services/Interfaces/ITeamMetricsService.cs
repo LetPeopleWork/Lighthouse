@@ -68,8 +68,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<SleRiskDto> GetSleRiskForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        IEnumerable<SleRiskZoneDto> GetSleRiskZonesForTeam(Team team, DateTime startDate, DateTime endDate);
-
         CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null);
 
         CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForTeam(Team team, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);

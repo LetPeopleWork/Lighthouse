@@ -11,18 +11,4 @@ namespace Lighthouse.Backend.Models.Metrics
     /// to be worth trusting. A reader deserves to be told those apart.
     /// </summary>
     public sealed record SleRiskDto(string ReferenceId, int? Risk, int ComparableItems);
-
-    /// <summary>
-    /// One band of the aging chart's risk background: the first age at which an item's chance of
-    /// missing the target reaches Risk. The band runs from there up to the next one.
-    ///
-    /// A band the history cannot place is absent rather than guessed - and because the evidence
-    /// thins as the age grows, the bands that go missing are the worst ones.
-    ///
-    /// ToAge is where the band stops. Null means it never does, which is only ever true of certainty:
-    /// past the target every item that ran that long had already missed, whatever the history says.
-    /// Any other band ends where the evidence does, and above it the chart paints nothing - because
-    /// nothing is known there, and the calmest colour would say the opposite.
-    /// </summary>
-    public sealed record SleRiskZoneDto(int Risk, int FromAge, int? ToAge);
 }

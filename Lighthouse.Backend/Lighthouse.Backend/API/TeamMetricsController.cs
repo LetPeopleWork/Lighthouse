@@ -229,20 +229,6 @@ namespace Lighthouse.Backend.API
                 teamMetricsService.GetSleRiskForTeam(team, startDate, endDate));
         }
 
-        [HttpGet("sleRisk/zones")]
-        public ActionResult<IEnumerable<SleRiskZoneDto>> GetSleRiskZonesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
-        {
-            if (startDate.Date > endDate.Date)
-            {
-                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
-            }
-
-            // Stryker disable once all: diagnostic log text is not behaviour
-            LogDateBoundaries("sleRiskZones", teamId, startDate, endDate);
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                teamMetricsService.GetSleRiskZonesForTeam(team, startDate, endDate));
-        }
-
         [HttpGet("ageInStatePercentiles")]
         public ActionResult<IEnumerable<AgeInStatePercentilesDto>> GetAgeInStatePercentilesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
