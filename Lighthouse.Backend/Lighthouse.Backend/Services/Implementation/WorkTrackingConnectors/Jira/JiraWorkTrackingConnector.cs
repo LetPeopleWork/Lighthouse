@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
@@ -284,7 +285,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
-            var epicLinkFieldName = !team.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[team.WorkTrackingSystemConnectionId][JiraFieldNames.EpicLinkFieldName] : string.Empty;
+            var epicLinkFieldName = ParentSourceSelector.ReadsTheTrackersOwnParent(team)
+                ? FieldNames[team.WorkTrackingSystemConnectionId][JiraFieldNames.EpicLinkFieldName]
+                : string.Empty;
 
             var workItems = new List<WorkItem>();
 
@@ -1212,7 +1215,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var features = new List<Feature>();
 
             var customFieldReferences = await GetCustomFieldReferences(portfolio.WorkTrackingSystemConnection);
-            var portfolioLinkFieldName = !portfolio.ParentOverrideAdditionalFieldDefinitionId.HasValue
+            var portfolioLinkFieldName = ParentSourceSelector.ReadsTheTrackersOwnParent(portfolio)
                 ? FieldNames[portfolio.WorkTrackingSystemConnectionId][JiraFieldNames.ParentLinkFieldName]
                 : string.Empty;
 
@@ -1587,7 +1590,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return string.Empty;
         }
 
-        private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, string> customFieldReferences)
+        private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
         {
             var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
             var url = $"{baseAddress.TrimEnd('/')}/browse/{issue.Key}";
@@ -1614,14 +1617,53 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);
 
-            var parentReference = workItem.GetAdditionalFieldValue(workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId);
+            SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
+
+            return workItem;
+        }
+
+        /// <summary>
+        /// The parent whatever is named in Parent Override Field points at, when it points at anything.
+        /// A reference that yielded nothing leaves standing the parent Jira reported for itself.
+        /// </summary>
+        private static void SetTheParentTheOverrideNames(
+            Issue issue,
+            IWorkItemQueryOwner workItemQueryOwner,
+            WorkItemBase workItem,
+            Dictionary<string, ResolvedReference> customFieldReferences)
+        {
+            var theOverride = WhatTheParentOverrideResolvedTo(workItemQueryOwner, customFieldReferences);
+
+            var source = theOverride.NamesALinkType
+                ? ParentSource.ALinkTypeTheOverrideNames
+                : ParentSource.AFieldTheOverrideNames;
+
+            var fromTheMatchingLinks = source == ParentSource.ALinkTypeTheOverrideNames
+                ? issue.Fields.ResolveParentFromLinks(theOverride.LinkTypeName)
+                : default;
+
+            var parentReference = ParentSourceSelector.TheParentOf(workItemQueryOwner, workItem, source, fromTheMatchingLinks);
 
             if (!string.IsNullOrEmpty(parentReference))
             {
                 workItem.ParentReferenceId = parentReference;
             }
+        }
 
-            return workItem;
+        /// <summary>
+        /// What the Additional Field named in Parent Override Field turned out to be on this instance.
+        /// Reading an issue is static and fetches nothing, so the resolution it needs travels in with the
+        /// references it is already handed.
+        /// </summary>
+        private static ResolvedReference WhatTheParentOverrideResolvedTo(
+            IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
+        {
+            var named = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == workItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId);
+
+            return named is not null && customFieldReferences.TryGetValue(named.Reference, out var resolved)
+                ? resolved
+                : ResolvedReference.Nothing;
         }
 
         private static void TrySetParentForJiraDataCenter(WorkItemBase workItemBase, Issue issue, string linkFieldName)
@@ -1639,18 +1681,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private static void PopulateAdditionalFieldValues(Issue issue, WorkItemBase workItem, List<AdditionalFieldDefinition> additionalFieldDefs, Dictionary<string, string> customFields)
+        private static void PopulateAdditionalFieldValues(Issue issue, WorkItemBase workItem, List<AdditionalFieldDefinition> additionalFieldDefs, Dictionary<string, ResolvedReference> customFields)
         {
             foreach (var fieldDef in additionalFieldDefs)
             {
-                var customFieldId = customFields[fieldDef.Reference];
+                var resolved = customFields[fieldDef.Reference];
 
-                var value = issue.Fields.GetFieldValue(customFieldId);
+                // A reference naming a link type names no field, so there is no value on the issue to
+                // carry - what it says is read off the issue's links instead.
+                var value = resolved.NamesALinkType ? string.Empty : issue.Fields.GetFieldValue(resolved.FieldId);
                 workItem.AdditionalFieldValues[fieldDef.Id] = value;
             }
         }
 
-        private async Task<Dictionary<string, string>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
+        private async Task<Dictionary<string, ResolvedReference>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
             => (await ResolveTheAdditionalFieldReferences(connection)).References;
 
         /// <summary>
@@ -1663,9 +1707,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var client = await GetJiraRestClientAsync(connection);
             var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
 
-            var customFieldReferences = await GetCustomFieldMappings(client,
+            var fieldIds = await GetCustomFieldMappings(client,
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
+
+            var customFieldReferences = new Dictionary<string, ResolvedReference>(fieldIds.Count);
+
+            foreach (var (reference, fieldId) in fieldIds)
+            {
+                customFieldReferences[reference] = string.IsNullOrEmpty(fieldId)
+                    ? ResolvedReference.Nothing
+                    : ResolvedReference.AField(fieldId);
+            }
 
             var listing = await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
 
@@ -1680,7 +1733,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// instance with nothing unresolved from paying for a second call.
         /// </summary>
         private async Task<IssueLinkTypeListing> ResolveWhatTheFieldListMissedAgainstLinkTypes(
-            HttpClient jiraClient, Dictionary<string, string> customFieldReferences)
+            HttpClient jiraClient, Dictionary<string, ResolvedReference> customFieldReferences)
         {
             var referencesThatResolvedToNothing = ReferencesThatResolvedToNothing(customFieldReferences);
 
@@ -1702,7 +1755,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (answeringTypes.Count == 1)
                 {
-                    customFieldReferences[reference] = answeringTypes[0].Name;
+                    customFieldReferences[reference] = ResolvedReference.ALinkType(answeringTypes[0].Name);
                 }
             }
 
@@ -1795,9 +1848,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ? label.GetString() ?? string.Empty
                 : string.Empty;
 
-        private static List<string> ReferencesThatResolvedToNothing(Dictionary<string, string> references)
+        private static List<string> ReferencesThatResolvedToNothing(Dictionary<string, ResolvedReference> references)
             => references
-                .Where(reference => string.IsNullOrEmpty(reference.Value))
+                .Where(reference => reference.Value.ResolvedToNothing)
                 .Select(reference => reference.Key)
                 .ToList();
 
@@ -1842,8 +1895,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// resolved to nothing may read anything into it.
         /// </summary>
         private sealed record AdditionalFieldResolution(
-            Dictionary<string, string> References,
+            Dictionary<string, ResolvedReference> References,
             IssueLinkTypeListing LinkTypes);
+
+        /// <summary>
+        /// What one Additional Field reference turned out to name on this instance. The box takes a field
+        /// name and an administrator may type a link type into it instead, and the two are read in
+        /// entirely different places - so which of them arrived is carried here rather than left to be
+        /// guessed from a bare string that looks the same either way.
+        /// </summary>
+        private readonly record struct ResolvedReference(string FieldId, string LinkTypeName)
+        {
+            public static ResolvedReference Nothing => new(string.Empty, string.Empty);
+
+            public static ResolvedReference AField(string fieldId) => new(fieldId, string.Empty);
+
+            public static ResolvedReference ALinkType(string linkTypeName) => new(string.Empty, linkTypeName);
+
+            public bool NamesALinkType => LinkTypeName.Length > 0;
+
+            public bool ResolvedToNothing => FieldId.Length == 0 && LinkTypeName.Length == 0;
+        }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, CancellationToken cancellationToken, int? maxResultsOverride = null)
         {
