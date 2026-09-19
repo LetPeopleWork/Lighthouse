@@ -41,6 +41,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private const string ALabelTwoTypesAnswerTo = "duplicates";
 
+        /// <summary>A near miss for <see cref="ALinkType"/> - a name no instance carries, spelled the way a typo arrives.</summary>
+        private const string ATypoForALinkType = "Csued by";
+
         [SetUp]
         public void DescribeTheInstanceEveryScenarioStartsFrom()
         {
@@ -168,6 +171,70 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                     "Two different link types answering to one label leaves it genuinely undecided, and picking one of them would silently read the wrong links.");
                 Assert.That(verdict.Message, Does.Contain(ALabelTwoTypesAnswerTo),
                     $"The administrator has to be told which reference went nowhere. Jira said: {verdict.Message}");
+            }
+        }
+
+        [Test]
+        public async Task A_name_that_is_neither_a_field_nor_a_link_type_still_fails()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False,
+                    "A reference matching neither a field nor a link type resolves to nothing, and a connection resting on it cannot be called valid.");
+                Assert.That(verdict.Code, Is.EqualTo("additional_fields_invalid"),
+                    "Giving the reference a second place to look must not change how a reference that finds neither place is reported.");
+                Assert.That(verdict.Message, Does.Contain(ATypoForALinkType),
+                    $"The administrator has to be told which reference went nowhere. Jira said: {verdict.Message}");
+            }
+        }
+
+        [Test]
+        public async Task The_failure_names_the_link_types_the_instance_does_define()
+        {
+            var verdict = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Message, Does.Contain(ALinkType),
+                    $"Someone who mistyped a link type name has to be able to correct the spelling from the error text, which means reading the real names in it. Jira said: {verdict.Message}");
+                Assert.That(verdict.Message, Does.Contain(AnotherLinkType),
+                    $"Listing only some of the types would leave an administrator concluding a type they can see in Jira is not there. Jira said: {verdict.Message}");
+            }
+        }
+
+        [Test]
+        public async Task An_empty_link_type_list_does_not_read_as_a_name_nobody_defined()
+        {
+            var whenTheInstanceListsItsTypes = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            TheLinkTypeListComesBackEmpty();
+            var whenTheListComesBackEmpty = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whenTheListComesBackEmpty.Message, Does.Contain(ATypoForALinkType),
+                    $"The reference still went nowhere and still has to be named. Jira said: {whenTheListComesBackEmpty.Message}");
+                Assert.That(whenTheListComesBackEmpty.Message, Is.Not.EqualTo(whenTheInstanceListsItsTypes.Message),
+                    "An empty list is not a short list. Reporting it the same way tells an administrator their Jira defines no link types, which is what an unaccepted credential looks like from here.");
+            }
+        }
+
+        [Test]
+        public async Task An_empty_link_type_list_points_at_the_credential_not_at_the_configuration()
+        {
+            var whenTheInstanceListsItsTypes = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            TheLinkTypeListComesBackEmpty();
+            var whenTheListComesBackEmpty = await TheVerdictOnAConnectionAskingFor(ATypoForALinkType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whenTheListComesBackEmpty.Message, Does.Contain("credential").IgnoreCase,
+                    $"The likely cause is a credential Jira will not show link types to, and an administrator sent to the field configuration instead spends the afternoon fixing something that was never wrong. Jira said: {whenTheListComesBackEmpty.Message}");
+                Assert.That(whenTheListComesBackEmpty.TechnicalDetails, Is.Not.EqualTo(whenTheInstanceListsItsTypes.TechnicalDetails),
+                    "The advice that fixes a typo is the wrong advice for a credential, so the two cannot carry the same next step.");
             }
         }
     }

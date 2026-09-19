@@ -405,14 +405,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         JiraWorkTrackingOptionNames.ApiToken);
                 }
 
-                var missingFields = await GetMissingAdditionalFields(connection);
+                var resolution = await ResolveTheAdditionalFieldReferences(connection);
+                var missingFields = resolution.ReferencesThatResolvedToNothing();
                 if (missingFields.Count > 0)
                 {
-                    return ConnectionValidationResult.Failure(
-                        "additional_fields_invalid",
-                        $"Some additional fields could not be found: {string.Join(", ", missingFields)}",
-                        "Verify field names or references in Jira and update the additional field configuration.",
-                        JiraReadException.AdditionalFieldsFieldName);
+                    return TheVerdictOnReferencesThatResolvedToNothing(missingFields, resolution.LinkTypeNames);
                 }
 
                 return ConnectionValidationResult.Success();
@@ -1055,14 +1052,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return boards;
         }
 
-        private async Task<List<string>> GetMissingAdditionalFields(WorkTrackingSystemConnection connection)
+        /// <summary>
+        /// A reference that resolved to nothing has two very different causes that look identical from here,
+        /// and each needs the administrator somewhere else. A misspelling is corrected by reading the
+        /// instance's real link type names off this message. A credential Jira will not show link types to is
+        /// not corrected in the field configuration at all - and Jira reports that by answering the link type
+        /// list with 200 and nothing in it rather than by refusing, so an empty list must never be printed as
+        /// "this instance defines none", which blames the administrator for somebody else's problem.
+        /// </summary>
+        private static ConnectionValidationResult TheVerdictOnReferencesThatResolvedToNothing(
+            List<string> missingFields, List<string> linkTypeNames)
         {
-            var customFieldReferences = await GetCustomFieldReferences(connection);
+            var references = string.Join(", ", missingFields);
 
-            return customFieldReferences
-                .Where(cf => string.IsNullOrEmpty(cf.Value))
-                .Select(cf => cf.Key)
-                .ToList();
+            if (linkTypeNames.Count == 0)
+            {
+                return ConnectionValidationResult.Failure(
+                    "additional_fields_invalid",
+                    $"Some additional fields could not be found: {references}. Jira listed no issue link types at all, which usually means the credential in use is not allowed to read them rather than that this Jira defines none, so a reference naming an issue link type could not be checked.",
+                    "Jira answers a credential it does not accept with an empty issue link type list instead of an error. Check that the credential is still valid and may read issue link types before changing anything about the additional fields.",
+                    JiraWorkTrackingOptionNames.ApiToken);
+            }
+
+            return ConnectionValidationResult.Failure(
+                "additional_fields_invalid",
+                $"Some additional fields could not be found: {references}. This Jira defines no field and no issue link type of that name. The issue link types it does define are: {string.Join(", ", linkTypeNames)}.",
+                "Verify field names or references in Jira and update the additional field configuration.",
+                JiraReadException.AdditionalFieldsFieldName);
         }
 
         public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
@@ -1604,6 +1620,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         private async Task<Dictionary<string, string>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
+            => (await ResolveTheAdditionalFieldReferences(connection)).References;
+
+        /// <summary>
+        /// Reading work items only needs what each reference resolved to. Validating a connection also has to
+        /// say what the instance offered, so the link types read along the way are carried back out rather
+        /// than asked for a second time.
+        /// </summary>
+        private async Task<AdditionalFieldResolution> ResolveTheAdditionalFieldReferences(WorkTrackingSystemConnection connection)
         {
             var client = await GetJiraRestClientAsync(connection);
             var additionalFieldDefinitions = connection.AdditionalFieldDefinitions;
@@ -1612,9 +1636,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 additionalFieldDefinitions.Select(x => x.Reference));
 
-            await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
+            var linkTypes = await ResolveWhatTheFieldListMissedAgainstLinkTypes(client, customFieldReferences);
 
-            return customFieldReferences;
+            return new AdditionalFieldResolution(customFieldReferences, linkTypes.ConvertAll(linkType => linkType.Name));
         }
 
         /// <summary>
@@ -1624,7 +1648,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// anybody. Only what the field list left unresolved is looked for here, which is also what keeps an
         /// instance with nothing unresolved from paying for a second call.
         /// </summary>
-        private async Task ResolveWhatTheFieldListMissedAgainstLinkTypes(
+        private async Task<List<JiraIssueLinkType>> ResolveWhatTheFieldListMissedAgainstLinkTypes(
             HttpClient jiraClient, Dictionary<string, string> customFieldReferences)
         {
             var unresolvedReferences = customFieldReferences
@@ -1634,7 +1658,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (unresolvedReferences.Count == 0)
             {
-                return;
+                return [];
             }
 
             var linkTypes = await GetIssueLinkTypes(jiraClient);
@@ -1653,6 +1677,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     customFieldReferences[reference] = answeringTypes[0].Name;
                 }
             }
+
+            return linkTypes;
         }
 
         private async Task<List<JiraIssueLinkType>> GetIssueLinkTypes(HttpClient jiraClient)
@@ -1720,6 +1746,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             private static bool Reads(string label, string reference)
                 => label.Length > 0 && string.Equals(label, reference, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// What each Additional Field reference resolved to, alongside the link type names the instance
+        /// offered while resolving them. The second half is empty both when the instance listed none and when
+        /// nothing was left for the link types to answer, which is why only a resolution carrying an
+        /// unresolved reference may read anything into it.
+        /// </summary>
+        private sealed record AdditionalFieldResolution(Dictionary<string, string> References, List<string> LinkTypeNames)
+        {
+            public List<string> ReferencesThatResolvedToNothing()
+                => References
+                    .Where(reference => string.IsNullOrEmpty(reference.Value))
+                    .Select(reference => reference.Key)
+                    .ToList();
         }
 
         private async Task<IEnumerable<Issue>> GetIssuesByQuery(IWorkItemQueryOwner workItemQueryOwner, string jqlQuery, CancellationToken cancellationToken, int? maxResultsOverride = null)

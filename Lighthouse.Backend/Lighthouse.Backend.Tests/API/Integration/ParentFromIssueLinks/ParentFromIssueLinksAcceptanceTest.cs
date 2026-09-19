@@ -56,6 +56,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             => definedLinkTypes.Add(new JiraLinkType(Digits(10000 + definedLinkTypes.Count), name, inward, outward));
 
         /// <summary>
+        /// Jira answers a credential it does not accept - and a request carrying no credential at all - with
+        /// 200 and an empty list rather than with a refusal, so an instance that truly defines no link types
+        /// and one that will not show them to this caller put the same bytes on the wire. A scenario cannot
+        /// tell those two apart, and neither can Lighthouse.
+        /// </summary>
+        protected void TheLinkTypeListComesBackEmpty() => definedLinkTypes.Clear();
+
+        /// <summary>
         /// One Additional Field per reference, named and referenced the same way, which is how an
         /// administrator who types a link type name into that box leaves it.
         /// </summary>
