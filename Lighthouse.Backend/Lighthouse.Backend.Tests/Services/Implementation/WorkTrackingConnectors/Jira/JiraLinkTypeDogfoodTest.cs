@@ -33,20 +33,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string UsernameEnvironmentVariable = "JiraLighthouseIntegrationTestUsername";
         private const string DefaultUsername = "atlassian.pushchair@huser-berta.com";
 
-        /// <summary>
-        /// One type, not the whole list. An administrator can add or rename a link type on this instance
-        /// without telling anyone here, so a test pinning the exact set would go red for a reason that is
-        /// not a regression. That any link type at all comes back is the load-bearing part; naming one is
-        /// what stops "comes back" from being satisfied by noise.
-        /// </summary>
-        private const string ALinkTypeTheInstanceDefines = "Blocks";
-
         private const string AReferenceTheInstanceCannotResolve = "Neither A Field Nor A Link Type";
+
+        /// <summary>
+        /// The sentence the connector ends its verdict with when it did read a link type list and the
+        /// reference matched none of it. Finding it is how these tests tell that case apart from the one
+        /// where Jira returned nothing: both are reported under the same code, because both are a reference
+        /// that could not be resolved, and only the empty one means the credential has stopped working.
+        /// </summary>
+        private const string TheSentenceCarryingTheInstancesOwnList = "The issue link types it does define are: ";
 
         private string? apiToken;
 
-        [SetUp]
-        public void ReadTheCredential()
+        private ConnectionValidationResult verdictOnAReferenceNamingNothing = null!;
+
+        /// <summary>
+        /// Read off the instance's own answer rather than written down here. An administrator can rename or
+        /// remove any link type on this Jira without telling anyone on this side, so a test naming one would
+        /// go red for an administrative change rather than for a code regression - and a test that cries wolf
+        /// gets excluded from CI, after which it proves nothing at all.
+        /// </summary>
+        private string[] linkTypesThisInstanceDefines = [];
+
+        [OneTimeSetUp]
+        public async Task AskTheInstanceWhichLinkTypesItDefines()
         {
             apiToken = Environment.GetEnvironmentVariable(TokenEnvironmentVariable);
 
@@ -54,37 +64,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.Ignore($"{TokenEnvironmentVariable} is not set - there is no instance to ask.");
             }
+
+            verdictOnAReferenceNamingNothing = await TheVerdictOnAConnectionAskingFor(AReferenceTheInstanceCannotResolve);
+            linkTypesThisInstanceDefines = TheLinkTypeNamesCarriedBy(verdictOnAReferenceNamingNothing.Message);
+        }
+
+        [Test]
+        public void ValidateConnection_AReferenceNamingNothing_FailsAndNamesTheLinkTypesThisInstanceDefines()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdictOnAReferenceNamingNothing.IsValid, Is.False,
+                    "Nothing on this instance carries that name, so the connection cannot be reported as usable.");
+                Assert.That(verdictOnAReferenceNamingNothing.Code, Is.EqualTo("additional_fields_invalid"),
+                    "The reference was checked and found wanting. A verdict saying the link types could not be read "
+                    + "would mean the check never happened.");
+                Assert.That(verdictOnAReferenceNamingNothing.Message, Does.Contain(AReferenceTheInstanceCannotResolve),
+                    "An administrator fixes this by reading which of their references is the bad one.");
+                Assert.That(linkTypesThisInstanceDefines, Is.Not.Empty,
+                    "The list this instance really returned has to reach the administrator, and its being non-empty "
+                    + "is the only thing separating a working credential from one Jira answered anonymously with "
+                    + $"200 and no link types at all. Jira said: {verdictOnAReferenceNamingNothing.Message}");
+            }
         }
 
         [Test]
         public async Task ValidateConnection_AReferenceNamingALinkTypeTheInstanceReallyDefines_Validates()
         {
-            var verdict = await TheVerdictOnAConnectionAskingFor(ALinkTypeTheInstanceDefines);
+            Assume.That(linkTypesThisInstanceDefines, Is.Not.Empty,
+                "This instance named no link type to ask about, which the other test reports as the failure it is.");
+
+            var aLinkTypeTheInstanceDefines = linkTypesThisInstanceDefines[0];
+
+            var verdict = await TheVerdictOnAConnectionAskingFor(aLinkTypeTheInstanceDefines);
 
             Assert.That(verdict.IsValid, Is.True,
-                $"'{ALinkTypeTheInstanceDefines}' is a link type this Jira defines, so an Additional Field naming it "
-                + $"must validate. Jira said: {verdict.Message}");
+                $"'{aLinkTypeTheInstanceDefines}' is a link type this Jira has just said it defines, so an Additional "
+                + $"Field naming it must validate. Jira said: {verdict.Message}");
         }
 
-        [Test]
-        public async Task ValidateConnection_AReferenceNamingNothing_FailsAndNamesTheLinkTypesThisInstanceDefines()
+        private static string[] TheLinkTypeNamesCarriedBy(string message)
         {
-            var verdict = await TheVerdictOnAConnectionAskingFor(AReferenceTheInstanceCannotResolve);
+            var listStart = message.IndexOf(TheSentenceCarryingTheInstancesOwnList, StringComparison.Ordinal);
 
-            using (Assert.EnterMultipleScope())
+            if (listStart < 0)
             {
-                Assert.That(verdict.IsValid, Is.False,
-                    "Nothing on this instance carries that name, so the connection cannot be reported as usable.");
-                Assert.That(verdict.Code, Is.EqualTo("additional_fields_invalid"),
-                    "The reference was checked and found wanting. A verdict saying the link types could not be read "
-                    + "would mean the check never happened.");
-                Assert.That(verdict.Message, Does.Contain(AReferenceTheInstanceCannotResolve),
-                    "An administrator fixes this by reading which of their references is the bad one.");
-                Assert.That(verdict.Message, Does.Contain(ALinkTypeTheInstanceDefines),
-                    "The list this instance really returned has to reach the administrator, and its being non-empty "
-                    + "is the only thing separating a working credential from one Jira answered anonymously with "
-                    + "200 and no link types at all.");
+                return [];
             }
+
+            var list = message[(listStart + TheSentenceCarryingTheInstancesOwnList.Length)..].TrimEnd('.');
+
+            return list.Split(", ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         }
 
         private async Task<ConnectionValidationResult> TheVerdictOnAConnectionAskingFor(string reference)
