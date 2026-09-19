@@ -967,6 +967,7 @@ function buildWidgetNodes(ctx: {
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	sleRiskAtRisk: SleRiskAtRiskSummary | undefined;
+	sleRiskValues: ISleRisk[];
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -1064,6 +1065,7 @@ function buildWidgetNodes(ctx: {
 			// every day since the range ended.
 			<WorkItemAgingChart
 				inProgressItems={ctx.inProgressItems}
+				sleRiskValues={ctx.sleRiskValues}
 				percentileValues={ctx.percentileValues}
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
 				doingStates={ctx.doingStates}
@@ -1735,6 +1737,7 @@ export const BaseMetricsView = <
 		blockedCountHistory,
 		flowEfficiencyInfo,
 		sleRiskAtRisk,
+		sleRiskValues,
 	});
 
 	const widgetFooters = buildWidgetFooters({

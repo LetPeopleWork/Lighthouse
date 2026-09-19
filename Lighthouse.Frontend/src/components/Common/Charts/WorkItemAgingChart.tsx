@@ -25,6 +25,7 @@ import {
 	useAgingBackground,
 } from "../../../hooks/useAgingBackground";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
+import type { ISleRisk } from "../../../models/Metrics/SleRisk";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -48,6 +49,11 @@ import {
 	renderMarkerButton,
 	renderMarkerCircle,
 } from "../../../utils/charts/scatterMarkerUtils";
+import {
+	buildSleRiskColumnDescriptor,
+	sleRiskColumnDescription,
+	sleRiskColumnHeaderName,
+} from "../../../utils/charts/sleRisk";
 import { getWorkItemName } from "../../../utils/featureName";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { getColorMapForKeys } from "../../../utils/theme/colors";
@@ -323,6 +329,13 @@ type PercentileSource = "cycleTime" | "workItemAge";
 
 interface WorkItemAgingChartProps {
 	inProgressItems: IWorkItem[];
+	/**
+	 * Every in-flight item's chance of missing the target, so the dialog a bubble opens shows the
+	 * same risk column the widget's own View Data does. Required rather than optional: an optional
+	 * prop is one a new call site forgets, and forgetting it is exactly how this dialog went a
+	 * release without the column. An empty array is the honest value for a team with no target.
+	 */
+	sleRiskValues: ISleRisk[];
 	percentileValues: IPercentileValue[];
 	serviceLevelExpectation?: IPercentileValue | null;
 	doingStates: string[];
@@ -341,6 +354,7 @@ const NO_PERCENTILES: IPercentileValue[] = [];
 
 const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	inProgressItems,
+	sleRiskValues,
 	percentileValues,
 	serviceLevelExpectation = null,
 	doingStates,
@@ -415,6 +429,16 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				description: ageBandColumnDescription(workItemsTerm),
 			}),
 		[perStatePercentileValues, doingStates, workItemAgeTerm, workItemsTerm],
+	);
+
+	const sleRiskColumn = useMemo(
+		() =>
+			buildSleRiskColumnDescriptor({
+				answers: sleRiskValues,
+				headerName: sleRiskColumnHeaderName(sleTerm),
+				description: sleRiskColumnDescription(workItemTerm),
+			}),
+		[sleRiskValues, sleTerm, workItemTerm],
 	);
 
 	const meaningfulWorkItemAgePercentiles = useMemo(
@@ -787,6 +811,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 					valueGetter: (item) => item.workItemAge,
 				}}
 				ageBandColumn={ageBandColumn}
+				sleRiskColumn={sleRiskColumn}
 				timeInStateColumn={{
 					now,
 					stalenessThresholdDays,

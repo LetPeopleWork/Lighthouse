@@ -12,6 +12,7 @@ import {
 	PACE_BAND_COLORS_LOW_TO_HIGH,
 	resolvePaceBandLadders,
 } from "../../../utils/charts/paceBands";
+import type { SleRiskColumnDescriptor } from "../../../utils/charts/sleRisk";
 import {
 	confidentColor,
 	errorColor,
@@ -272,6 +273,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders correctly with in-progress items", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -287,6 +289,7 @@ describe("WorkItemAgingChart component", () => {
 	it("displays correct chart title", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -300,6 +303,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders fallback message when there are no items", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={[]}
 				percentileValues={mockPercentileValues}
 				doingStates={["To Do", "In Progress", "Review"]}
@@ -316,6 +320,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders percentile chips with correct labels", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -335,6 +340,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders service level expectation chip when provided", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -348,6 +354,7 @@ describe("WorkItemAgingChart component", () => {
 	it("does not render service level expectation chip when not provided", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={null}
@@ -363,6 +370,7 @@ describe("WorkItemAgingChart component", () => {
 	it("toggles percentile visibility when chip is clicked", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -388,6 +396,7 @@ describe("WorkItemAgingChart component", () => {
 	it("toggles service level expectation visibility when chip is clicked", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -403,6 +412,7 @@ describe("WorkItemAgingChart component", () => {
 	it("groups items correctly by state and age", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -417,6 +427,7 @@ describe("WorkItemAgingChart component", () => {
 	it("handles empty percentile values array", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={[]}
 				serviceLevelExpectation={null}
@@ -435,6 +446,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders chart components correctly", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -452,6 +464,7 @@ describe("WorkItemAgingChart component", () => {
 	it("renders reference lines for visible percentiles", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={null}
@@ -474,6 +487,7 @@ describe("WorkItemAgingChart component", () => {
 
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={itemsWithMissingState}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -502,6 +516,7 @@ describe("WorkItemAgingChart component", () => {
 
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={itemsWithNonDoingStates}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -526,6 +541,7 @@ describe("WorkItemAgingChart component", () => {
 
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={itemWithSpecificAge}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -540,6 +556,7 @@ describe("WorkItemAgingChart component", () => {
 		it("renders blocked items with red color", () => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockBlockedItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -587,6 +604,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={typeItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -609,6 +627,7 @@ describe("WorkItemAgingChart component", () => {
 		it("groups blocked and regular items correctly", () => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockBlockedItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -637,6 +656,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mixedBlockedItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -650,6 +670,7 @@ describe("WorkItemAgingChart component", () => {
 		it("renders fallback message when blocked items array is empty", () => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={[]}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -686,6 +707,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={itemsWithDifferentCasing}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -709,6 +731,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={items}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -731,6 +754,7 @@ describe("WorkItemAgingChart component", () => {
 		): string | undefined => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={items}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -774,6 +798,7 @@ describe("WorkItemAgingChart component", () => {
 
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -802,6 +827,7 @@ describe("WorkItemAgingChart component", () => {
 	it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={mockInProgressItems}
 				percentileValues={mockPercentileValues}
 				serviceLevelExpectation={mockSLE}
@@ -850,6 +876,7 @@ describe("WorkItemAgingChart component", () => {
 		it("renders no pace-band rects by default even when perStatePercentileValues is provided", () => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -865,6 +892,7 @@ describe("WorkItemAgingChart component", () => {
 		it("shows the pace-bands toggle only when band data is available", () => {
 			const { rerender } = render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -878,6 +906,7 @@ describe("WorkItemAgingChart component", () => {
 
 			rerender(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -895,6 +924,7 @@ describe("WorkItemAgingChart component", () => {
 		it("turns the pace bands on and off through the background control", () => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -915,6 +945,7 @@ describe("WorkItemAgingChart component", () => {
 		it("keeps the work item type chips and percentile chips untouched by the choice", () => {
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -1403,6 +1434,7 @@ describe("WorkItemAgingChart component", () => {
 		) =>
 			render(
 				<WorkItemAgingChart
+					sleRiskValues={[]}
 					inProgressItems={overrides?.inProgressItems ?? mockInProgressItems}
 					percentileValues={mockPercentileValues}
 					serviceLevelExpectation={mockSLE}
@@ -1781,6 +1813,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("hands the dialog behind a dot the same band column the list dialog gets", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1794,6 +1827,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("reads a dot's items against the state that dot belongs to", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1808,6 +1842,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("gives every item behind one dot the same band, because one dot is one state at one age", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1832,6 +1867,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={[inAnalysis]}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1847,6 +1883,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("offers no band column at all when the team has no finished history", () => {
 		render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1860,6 +1897,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("re-reads the bands when the team or the date range behind them changes", () => {
 		const { rerender } = render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1885,6 +1923,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 		rerender(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1900,6 +1939,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 	it("plots exactly the same dots it plotted before the band existed", () => {
 		const { rerender } = render(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -1911,6 +1951,7 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 
 		rerender(
 			<WorkItemAgingChart
+				sleRiskValues={[]}
 				inProgressItems={zenithItems}
 				percentileValues={cycleTimePercentiles}
 				doingStates={zenithDoingStates}
@@ -2075,4 +2116,99 @@ describe("the dialog's band and the chart's zone name the same thing", () => {
 			}
 		},
 	);
+});
+
+// The bubble-click dialog is not a payload the metrics view builds — the chart assembles it from
+// the items behind one dot — so the partition test over those payloads cannot reach it. This is
+// the only instrument that can, and the miss it covers is the one a coach actually reported.
+//
+// Asserted through the dialog's props rather than its rendering, which is the idiom the band
+// column beside it already uses: this file mocks WorkItemsDialog, and the dialog's own suite is
+// where what it does with a descriptor is tested.
+describe("the risk beside the dot the coach clicked", () => {
+	const cycleTimePercentiles: IPercentileValue[] = [
+		{ percentile: 50, value: 3 },
+		{ percentile: 85, value: 7 },
+		{ percentile: 95, value: 12 },
+	];
+
+	const inFlight: IWorkItem[] = [
+		{
+			id: 412,
+			referenceId: "ZEN-412",
+			name: "Sign-off flow",
+			url: "https://example.com/work/412",
+			cycleTime: 0,
+			startedDate: new Date(2026, 7, 10),
+			closedDate: new Date(2026, 7, 10),
+			workItemAge: 19,
+			type: "Story",
+			state: "Review",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: false,
+		},
+		{
+			id: 419,
+			referenceId: "ZEN-419",
+			name: "Contract wording",
+			url: "https://example.com/work/419",
+			cycleTime: 0,
+			startedDate: new Date(2026, 7, 10),
+			closedDate: new Date(2026, 7, 10),
+			workItemAge: 19,
+			type: "Story",
+			state: "Review",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: false,
+		},
+	];
+
+	const lastDialogProps = () => {
+		const calls = (WorkItemsDialog as unknown as Mock).mock.calls;
+		return calls[calls.length - 1]?.[0] as {
+			sleRiskColumn?: SleRiskColumnDescriptor;
+		};
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		localStorage.clear();
+	});
+
+	it("shows the risk on the items behind a bubble", () => {
+		render(
+			<WorkItemAgingChart
+				sleRiskValues={[
+					{ referenceId: "ZEN-412", risk: 86 },
+					{ referenceId: "ZEN-419", risk: 12 },
+				]}
+				inProgressItems={inFlight}
+				percentileValues={cycleTimePercentiles}
+				doingStates={["Analysis", "In Progress", "Review"]}
+			/>,
+		);
+
+		const sleRiskColumn = lastDialogProps().sleRiskColumn;
+
+		expect(sleRiskColumn?.headerName).toMatch(/Risk$/);
+		expect(sleRiskColumn?.labelFor(inFlight[0])).toBe("86%");
+		expect(sleRiskColumn?.labelFor(inFlight[1])).toBe("12%");
+	});
+
+	// Without this, the required prop could be satisfied by a descriptor built unconditionally, and
+	// every team that has published no target would get a column of blanks here.
+	it("shows no risk column for a team that published no target", () => {
+		render(
+			<WorkItemAgingChart
+				sleRiskValues={[]}
+				inProgressItems={inFlight}
+				percentileValues={cycleTimePercentiles}
+				doingStates={["Analysis", "In Progress", "Review"]}
+			/>,
+		);
+
+		expect(lastDialogProps().sleRiskColumn).toBeUndefined();
+	});
 });
