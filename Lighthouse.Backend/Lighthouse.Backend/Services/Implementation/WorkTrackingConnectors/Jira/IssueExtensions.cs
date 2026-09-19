@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Lighthouse.Backend.Models;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -16,6 +17,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private const string IssueLinkInwardName = "inward";
 
         private const string IssueLinkInwardIssue = "inwardIssue";
+
+        private const string IssueLinkOutwardName = "outward";
+
+        private const string IssueLinkOutwardIssue = "outwardIssue";
 
 
         public static string GetFieldValue(this JsonElement fields, string fieldKey)
@@ -80,6 +85,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// The issue this one hangs under, read from its links of one configured type.
+        ///
+        /// Jira writes a link once and offers it from both ends, handing each issue a pointer to the
+        /// other one - so an entry naming an outwardIssue sits on the issue holding the inward end, and
+        /// the other way round. Whichever end this issue is on, the parent is the one the entry names,
+        /// which is why an instance where a Work Item names its Feature and one where a Feature names its
+        /// Work Items are read the same way, and why nobody is asked to configure a direction.
+        ///
+        /// Two links to the same issue are one parent; two links to different issues are not a parent to
+        /// choose between, so both are reported and neither is taken.
+        /// </summary>
+        public static ParentResolution ResolveParentFromLinks(this JsonElement fields, string linkTypeReference)
+        {
+            var counterparts = IssueLinksOf(fields)
+                .Where(link => LinkTypeAnswersTo(link, linkTypeReference))
+                .Select(CounterpartKeyOf)
+                .Where(key => key.Length > 0)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            return ParentResolution.From(counterparts);
+        }
+
+        /// <summary>
         /// What this issue's inward links are called on this instance. Only the inward ones: an outward
         /// link is the far end of somebody else's dependency, so naming those would send an
         /// administrator looking at the wrong half of their configuration.
@@ -115,19 +144,42 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return links.EnumerateArray().Where(link => link.ValueKind == JsonValueKind.Object);
         }
 
-        private static string InwardNameOf(JsonElement link)
+        private static string InwardNameOf(JsonElement link) => LabelOf(link, IssueLinkInwardName);
+
+        /// <summary>
+        /// A link type shows an administrator three phrases - its name, and what a link reads as from
+        /// each end - and any of the three is what someone might have typed where a field name goes. A
+        /// type whose two ends read alike is still one type, so a link is judged once rather than once
+        /// per phrase.
+        /// </summary>
+        private static bool LinkTypeAnswersTo(JsonElement link, string reference)
+            => Reads(LabelOf(link, JiraFieldNames.NamePropertyName), reference)
+                || Reads(LabelOf(link, IssueLinkInwardName), reference)
+                || Reads(LabelOf(link, IssueLinkOutwardName), reference);
+
+        private static bool Reads(string label, string reference)
+            => label.Length > 0 && label.Equals(reference, StringComparison.OrdinalIgnoreCase);
+
+        private static string CounterpartKeyOf(JsonElement link)
+        {
+            var outwardEnd = KeyOf(link, IssueLinkOutwardIssue);
+
+            return outwardEnd.Length > 0 ? outwardEnd : KeyOf(link, IssueLinkInwardIssue);
+        }
+
+        private static string LabelOf(JsonElement link, string labelProperty)
         {
             if (!link.TryGetProperty(IssueLinkType, out var type) || type.ValueKind != JsonValueKind.Object)
             {
                 return string.Empty;
             }
 
-            if (!type.TryGetProperty(IssueLinkInwardName, out var inward) || inward.ValueKind != JsonValueKind.String)
+            if (!type.TryGetProperty(labelProperty, out var label) || label.ValueKind != JsonValueKind.String)
             {
                 return string.Empty;
             }
 
-            return inward.GetString() ?? string.Empty;
+            return label.GetString() ?? string.Empty;
         }
 
         private static string KeyOf(JsonElement link, string end)
