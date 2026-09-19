@@ -3,6 +3,22 @@
 Taken 2026-09-17. **Verdict: the risk is not stable enough to be shown unguarded, and the fix is the
 one slice 01's brief already named.** Slices 02, 03 and 04 should not start until it is in.
 
+> **Amended 2026-09-19 — the measurement stands; the prescription was tried and reversed.**
+>
+> Everything measured below is still true and none of it is disputed: the bound is real, the
+> 25-point overnight swing on 602 real closed items happened, and a share over a thin tail does move
+> sharply. What changed is the answer. The minimum-sample guard recommended in *What to do about it*
+> shipped, ran, and was removed by round 2 (`docs/feature/epic-4127-sle-risk-corrections/`, ADO
+> #6037), because withholding the number turned out to cost more than the instability did.
+>
+> **The instability is now disclosed rather than used to withhold an answer.** Every in-flight item
+> carries a number, and each risk cell says how much finished work it rests on — so a reader can see
+> that a 100% resting on two items is not the same claim as a 100% resting on forty, which is the
+> thing the guard was protecting them from being unable to tell.
+>
+> The sections below are unedited except where marked. *Consequence for the gated slices* describes
+> surfaces that no longer exist and is corrected at the end.
+
 ## What was asked
 
 Slice 01 ships alone because of one worry, in its own words: the denominator `count(T >= a)` shrinks
@@ -73,6 +89,8 @@ is single digits, not fewer.
 
 ## What to do about it
 
+**— SUPERSEDED 2026-09-19. This is what was done, and then undone. See the amendment at the top.**
+
 **Add a minimum-sample guard to the read, and let slices 02–04 build on the guarded number.**
 
 The precedent is in the repo and is exactly this shape: `ForecastDataSufficiencyPolicy` refuses a
@@ -90,7 +108,10 @@ What is decided by the data: **something must gate it**, and `Beyond history` is
 fires only at `n(a) = 0`, which is one item short of the `n(a) = 1` case that reports 0% or 100% with
 total confidence on a single observation.
 
-## Consequence for the gated slices
+## Consequence for the gated slices — SUPERSEDED 2026-09-19
+
+**Written 2026-09-17 against surfaces that round 2 removed. Kept for the reasoning; see below for
+what actually happened to each.**
 
 - **Slice 02 (at-risk count chip)** — counts items at ≥ 50%. A guarded item has no percentage, so the
   chip needs a rule for it. AC-02.6 already says `Beyond history` counts as at-risk; the same
@@ -102,6 +123,21 @@ total confidence on a single observation.
 - **Slice 04 (write-back)** — writes the integer into someone else's tracker, where Lighthouse cannot
   take it back. A guarded item must produce **no write**, following the existing `=> null`
   convention, exactly as `Beyond history` does.
+
+### What happened instead
+
+- **The chip** became a widget with a status of its own, and the line moved from 50% to 70%. There is
+  no guarded item to write a rule for, because there are no guarded items.
+- **The chart zones** were deleted outright — and this measurement is part of why. The paragraph
+  above is right that the instability hurts the zones most; round 2's conclusion was that a ladder
+  whose geometry moves overnight, in a mode a reader explicitly chose, should not exist rather than
+  be stabilised. The chart's SLE reference line already answered the question the zones answered.
+- **The write-back** needed no change. It still writes no value for an item with no answer; what
+  changed is that "no answer" now means only *closed* or *no target published*, never *too little
+  evidence*.
+
+The one thing this measurement asked for that round 2 did deliver, in a different shape: a reader can
+now see the depth of evidence behind any number, in the cell, in words.
 
 ## Reproducing it
 
