@@ -291,3 +291,78 @@ adapter boundary, and it is the right trade**: a test that killed them would be 
 else's markup, going red on their release rather than on our defect. Everything in that file which is a
 *decision* — the task translation, the axis formats, the tint rule, the theme choice, the height rule —
 is extracted and tested directly, which is why the file's own score understates its coverage.
+
+---
+
+# Mutation testing — Epic 6033 slice 04, round two (after live review)
+
+Run 2026-09-20 against `main` @ `c981726d5`. Gate is 80 % on each stack touched. **Frontend only.**
+
+| stack | score | tested | killed | survived | timeout | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS) | **82.69 %** | 311 | 258 | 53 | 0 | 0 | 3 m 28 s |
+
+| file | score | survived |
+| --- | --- | --- |
+| `timelineMarkers.ts` | 100 % | 0 |
+| `deliveryTimelineModel.ts` | 98.41 % | 1 |
+| `ganttShapes.ts` | 97.27 % | 3 |
+| `DeliveryTimelineTab.tsx` | 83.64 % | 9 |
+| `TimelineLegend.tsx` | 63.16 % | 7 |
+| `DeliveryGanttChart.tsx` | 50.00 % | 16 |
+| `TimelineBarContent.tsx` | 37.04 % | 17 |
+
+## Four runs, and what each one was actually worth
+
+**76.32 %** after the live-review fixes · **81.50 %** after two extractions · **82.69 %** after
+deleting unreachable code. (An intermediate 71.86 % is not in that sequence — it was measured
+mid-refactor and is noted below only because of what it revealed.)
+
+The score is the least interesting part. What the runs found:
+
+- **A dead branch.** The column-width helper handled year columns; nothing can reach it, because
+  only the finest row of the axis is marked and the finest row is a month at coarsest. Five mutants
+  with no coverage were the only signal. Deleted rather than tested — a test over unreachable code
+  is a test that cannot fail.
+- **Two dead exports.** `isTargetDay` and `isSameLocalDay` lost their production callers when the
+  markers moved to containment. `isSameLocalDay` had none at all; `isTargetDay` was kept alive
+  purely by its own tests, which is the worst way for dead code to look healthy. What they were
+  protecting moved to `targetCalendarDate` along with the tests.
+- **Two formatters never once invoked.** The weekly and monthly axis formatters were only checked
+  for *being* functions. A broken one would have gone unnoticed until someone opened a long
+  Delivery — and "the format is printed verbatim" is already the defect that reached a screenshot
+  once in this slice.
+- **The column-count boundary**, where `<=` and `<` are one character apart and the difference is a
+  column of overflow.
+- **The legend's two swatches** were never asserted to differ. A legend whose entries look alike
+  explains nothing.
+- **The details dialog** was never closed, so nothing caught a dialog that cannot be dismissed or
+  that forgets its selection and refuses to reopen on the same bar.
+
+## What the 71.86 % run revealed, which the number did not
+
+Splitting the pure logic out of the chart component *lowered* the aggregate, because it concentrated
+the untestable JSX in one file rather than diluting it. The right response was not to undo the split
+— the split is what let arithmetic be tested without stubbing a canvas — but to notice **why** the
+remaining file scored 21 %: everything a bar decides was inside a closure reachable only through a
+library that does not render here. `TimelineBarContent` came out of that, and the chart went from
+21 % to 50 % without a single test written for the score's sake.
+
+## The fifty-three left alive
+
+| group | count | why it is accepted |
+| --- | --- | --- |
+| `sx` style literals — widths, spacing, `display: flex`, `overflow: hidden`, colour keywords | ~40 | Styling. No behavioural assertion distinguishes them, and pinning them turns the suite into a brake on visual change. The rendered result belongs to the screenshot test. |
+| `useMemo` / `useCallback` dependency arrays and wrappers | 8 | Equivalent by construction: memoisation changes how often a value is recomputed, never what it is. |
+| Exact pixel arithmetic in `chartHeight` | 3 | The two rules that matter are pinned — one row per bar, never fewer than one row. The constants are not, because pinning them asserts a magic number and breaks on any spacing change. |
+| The dialog's closed-state fallbacks (`: ""`, `: []`) | 2 | Reachable only while the dialog is shut, when nothing reads either value. |
+
+`TimelineBarContent.tsx` reads 37 % and is the clearest case of a score understating its coverage:
+seventeen of its mutants are the `sx` block, and every decision the component makes — clickable or
+inert, what the hover promises, what happens to a bar the chart asks for and we do not have — is
+asserted directly. That is what the file was extracted for.
+
+`DeliveryGanttChart.tsx` at 50 % is the adapter boundary's standing cost, unchanged in kind from
+round one: what is left there is props handed to a component whose output is deliberately asserted
+nowhere. A test that killed those would be a test of somebody else's markup, going red on their
+release rather than on our defect.
