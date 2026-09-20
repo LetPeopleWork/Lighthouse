@@ -1,0 +1,40 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6047-slice-03.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/models/WorkTracking/WriteBackMappingDefinition.ts:38-68",
+    "src/models/WorkTracking/WriteBackMappingDefinition.ts:77-101",
+    "src/services/Api/WorkTrackingSystemService.ts:182-215"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6047-slice-03-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6047-slice-03"
+}

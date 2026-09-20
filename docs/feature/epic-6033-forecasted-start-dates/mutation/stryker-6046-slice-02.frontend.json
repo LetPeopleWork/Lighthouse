@@ -1,0 +1,45 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6046-slice-02.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/models/Feature.ts:75-92",
+    "src/models/Feature.ts:116-117",
+    "src/models/Feature.ts:133-138",
+    "src/models/Feature.ts:155-156",
+    "src/models/Feature.ts:254-266",
+    "src/components/Common/FeatureListDataGrid/ForecastedStartCell.tsx",
+    "src/components/Common/FeatureListDataGrid/columns.tsx:51-52",
+    "src/components/Common/FeatureListDataGrid/columns.tsx:76-88"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6046-slice-02-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6046-slice-02"
+}

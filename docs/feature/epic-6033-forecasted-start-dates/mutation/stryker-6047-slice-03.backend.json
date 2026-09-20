@@ -1,0 +1,30 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/WriteBackTriggerService.cs",
+      "**/API/Helpers/WriteBackMappingValidator.cs",
+      "**/Models/WriteBack/WriteBackValueSources.cs",
+      "**/Models/WriteBack/WriteBackValueSource.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~WriteBackTriggerServiceTest|FullyQualifiedName~WriteBackMappingValidatorTest|FullyQualifiedName~WriteBackValueSourceOrdinalTest|FullyQualifiedName~WriteBackCollectorTest|FullyQualifiedName~WriteBackServiceTest|FullyQualifiedName~WriteBackSuppressionWarningTest|FullyQualifiedName~BlackoutForecastShiftWriteBackTest|FullyQualifiedName~WriteBackMappingDefinitionTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 60000,
+    "verbosity": "info"
+  }
+}
