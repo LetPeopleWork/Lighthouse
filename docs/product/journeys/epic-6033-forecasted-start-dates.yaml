@@ -1,0 +1,215 @@
+schema_version: 1
+feature_id: epic-6033-forecasted-start-dates
+updated: 2026-09-20
+note: >
+  ADO Epic #6033, from Chris Graves (Focusrite) on the public idea board. The Epic description's central
+  mechanism is superseded: it proposes deriving a Feature's forecasted start from the preceding Feature's
+  forecasted completion date, and the product owner rejected that in-thread on 2026-09-19 — the Monte
+  Carlo run already names the row it works on the day it works it, so the start day is recorded rather
+  than derived. Grounded in a pre-DISCUSS code reality check. SimulatedRun.WorkOneDayOf holds the row in
+  `worked` on every delivered item and records only the day it finished; Feature WIP already bounds the
+  draw range over ready rows, so pull-day recording is defined at every WIP and every dependency shape.
+  Three facts shape the design: Feature.Forecast aggregates Feature.Forecasts unconditionally, so a start
+  distribution in that collection would silently corrupt the completion forecast; the earliest of several
+  teams has to be taken inside a trial rather than from separately computed percentiles, so the start is
+  recorded at Feature grain where completion is recorded per row; and WriteBackValueSource persists
+  ordinals, so start sources append after SleRisk and nowhere else. A Feature already in a Doing state
+  reports its observed StartedDate at read time and the simulation is not changed for it. The known
+  residual is written down rather than absorbed: the run does not know which Features are in flight, so a
+  not-started Feature sitting above in-flight work forecasts a start that is too early. MUI X Gantt is
+  Premium-licence-only and is not owned, so the timeline is evaluated before it is bought. Five carpaccio
+  slices, the fourth opening with a timeboxed build-versus-buy evaluation, the fifth severable; see
+  docs/feature/epic-6033-forecasted-start-dates/.
+
+journeys:
+
+  - name: say-when-a-feature-starts
+    goal: >
+      A delivery lead stops counting backwards off the completion dates above a Feature to work out when
+      it will be picked up, because the forecast already says so.
+    persona: "delivery-lead-rte (secondary: product-owner, who reads the same column at Feature grain)"
+
+    emotional_arc:
+      start: Resigned — "they want to know when we get to it. I can tell them when the three above it
+        finish, and then we can both do the arithmetic and both be wrong."
+      middle: Surprised — "it is just there, in the row, next to the completion date. And there are four
+        of them, so I can say how confident I am rather than picking a number and hoping."
+      end: Settled — "that is not my estimate any more. It came out of how work has actually flowed
+        here, and it moves on its own when the board is re-ordered."
+
+    steps:
+      - step: Ask when a Feature will be picked up
+        action: Open a Portfolio and read the Feature table
+        output: A Forecasted Start column beside the completion forecast, carrying P50/P70/P85/P95 for
+          work not yet begun, in the same presentation the completion column already uses.
+      - step: Notice one that has already begun
+        action: Read the same column on a Feature in a Doing state
+        output: One date, the day it actually started, visibly marked as observed rather than forecast.
+          No percentile, because there is nothing left to be uncertain about.
+      - step: Re-order the board and look again
+        action: Move a Feature up, wait for the next refresh
+        output: The start dates below it move. Nothing was re-entered.
+
+    error_paths:
+      - situation: The team has no measured throughput, so there is nothing to forecast from
+        recovery: No start forecast, and the Feature appears in the existing "teams without forecast"
+          treatment exactly as it does for completion today. One rule, not two — the rows only exist for
+          teams with measured delivery, and that is the same code deciding both.
+      - situation: The Feature is Done
+        recovery: The same empty state the completion column already uses. No new empty state is
+          invented for a case that already has one.
+      - situation: The Feature has not started but sits below work that is in flight
+        recovery: >
+          **Intended, and not corrected.** The run builds its rows in board order and works the top
+          Feature-WIP of them, so it forecasts the board it was given rather than guessing at the one
+          being worked, and the start reads too early. A team working out of order, or an order nobody
+          has updated, is the team's own signal about its process; laundering it would hide the thing
+          worth seeing. The docs say so plainly, because an oddness nobody documented arrives as a bug
+          report.
+
+    shared_artifacts:
+      - artifact: the day a Feature was first pulled, in one simulated run
+        source: SimulatedRun.WorkOneDayOf — the same `worked` variable the completion recording already
+          uses, one branch earlier. Never derived from another Feature's completion date.
+      - artifact: a Feature's start across several teams
+        source: >
+          the earliest of its rows within a single run. Stored, not derived. Deriving it from the
+          per-team marginals would need 1 - the product of (1 - Fi), the mirror of what
+          JointCompletionDistribution.Combine does for completion — and both assume the teams are
+          independent, which is exactly what dependency-aware forecasting exists to model away. Inside
+          the run it assumes nothing.
+      - artifact: each contributing team's own start, per Feature
+        source: >
+          the same recording at row grain, stored alongside the Feature-level value. It surfaces on the
+          timeline as sub-lanes and nowhere else; the table shows one forecast at four percentiles, like
+          completion. The API carries it either way, so where it surfaces stays a UI decision.
+      - artifact: the observed start date of a Feature already in flight
+        source: WorkItemBase.StartedDate, read at API time when StateCategory is Doing. The forecast is
+          still computed and stored; it is simply not what the response carries.
+
+  - name: let-the-plan-draw-itself
+    goal: >
+      An administrator stops maintaining a roadmap of typed dates, because both ends of every bar arrive
+      from the forecast.
+    persona: "config-admin (the beneficiary is whoever reads the Plan)"
+
+    emotional_arc:
+      start: Weary — "half this plan populates itself already. The other half is me, every quarter, and
+        everyone knows the dates are stale before the meeting ends."
+      middle: Recognition — "the start percentiles are in the same list as the completion ones. Same
+        screen, same field picker, nothing new to learn."
+      end: Trusting, slowly — "the bar moved on its own this week, and it moved because throughput did.
+        That took a couple of cycles to believe."
+
+    steps:
+      - step: Find the new value sources
+        action: Settings → Work Tracking Systems → Write-Back
+        output: Forecasted Start 50/70/85/95 in the same value list as the completion percentiles,
+          behind the premium gate that list already has.
+      - step: Map one to a field
+        action: Pick a start percentile and a date field, save
+        output: A mapping, validated the same way a completion mapping is.
+      - step: Let a refresh run
+        action: Wait for the next refresh
+        output: The date in the work tracking system field. A Plan bar with both ends populated.
+
+    error_paths:
+      - situation: The Feature has already started
+        recovery: The observed start date is written, not a forecast, so the Plan bar begins where work
+          actually began rather than where it was once expected to.
+      - situation: The Feature is Done, or has no start forecast
+        recovery: Nothing is written — not an empty string, not an epoch date. The same refusal
+          ResolveForecastValue already makes for completion.
+      - situation: An administrator maps a start percentile and a completion percentile that disagree
+        recovery: Not prevented. Nothing in the mapping screen constrains the pairing today and this
+          feature does not add a constraint; whether it is reachable by accident is a question slice 03
+          answers rather than assumes.
+
+    shared_artifacts:
+      - artifact: the ordinal of every WriteBackValueSource member
+        source: the enum's declaration order, persisted as an int on every mapping row on every
+          database. New members append after the last one; a regression test asserts every pre-existing
+          ordinal, so the next person to add a source is stopped by a red test rather than by having
+          read a comment.
+
+  - name: see-a-delivery-as-a-timeline
+    goal: >
+      A delivery lead sees the shape of a Delivery against time instead of assembling it from a column
+      of dates.
+    persona: "delivery-lead-rte"
+
+    emotional_arc:
+      start: Straining — "there are eleven Features here and I am holding their order, their overlaps
+        and the target date in my head at the same time."
+      middle: Relief, then unease — "I can see it. And I can see it does not fit."
+      end: Equipped — "at 70 it fits and at 95 it does not, and I can show somebody that rather than
+        arguing about one number."
+
+    steps:
+      - step: Open the timeline
+        action: Portfolio → Delivery → Timeline
+        output: One bar per Feature in board order, spanning forecasted start to forecasted completion,
+          with the Delivery's target date marked on the axis.
+      - step: Change how confident you want to be
+        action: Switch the percentile from 70 to 85 or 95
+        output: Every bar's start and end move together. A bar is always one scenario, never a P70 start
+          welded to a P85 finish.
+      - step: Ask why one sits late
+        action: Look for what it waits on
+        output: A connection to the Feature it waits for, where the density allows. Severable — the
+          timeline is whole without it.
+      - step: Ask which team is the late one
+        action: Expand a Feature several teams contribute to
+        output: One sub-lane per team beneath its summary bar, each spanning that team's start to that
+          team's completion at the selected percentile. Severable, and timeline-only — the table never
+          splits a Feature by team.
+
+    error_paths:
+      - situation: A Feature in the Delivery has no forecast
+        recovery: Listed with no bar and a stated reason, rather than omitted. A Delivery where none can
+          be forecast says so rather than rendering an empty axis.
+      - situation: Bars abut with no gap between sequential Features on one team
+        recovery: >
+          **Not an error, and recorded so it is not later "fixed".** Within one day a team works
+          its drawn items one after another and the ready set is re-evaluated per item, so at Feature
+          WIP 1 the next Feature starts the same day the previous one finishes. The one-day gap exists
+          only across teams, where it is deliberate.
+      - situation: The dependency connections become unreadable at real Delivery density
+        recovery: Degrade to a per-bar indicator rather than a thicket. The threshold comes from
+          counting the dependencies on the largest real Delivery, not from a guess — and if most real
+          Deliveries cross it, the indicator is the feature and the lines were decoration.
+      - situation: The instance has no premium licence
+        recovery: The tab is gated with the notice the Delivery surface already uses.
+      - situation: A Feature's summary bar and its per-team sub-lanes do not line up
+        recovery: >
+          Legitimate, and the presentation has to earn it. The Feature-level value is taken inside the
+          trial; each sub-lane is that team's own distribution, so the Feature-level P85 is not required
+          to equal the earliest sub-lane's P85, and on a dependent pair it will not. Two bars that do not
+          align is what gets screenshotted into a support thread — if it cannot be made to read as
+          correct, the sub-lanes do not ship. That is why they are severable.
+
+    shared_artifacts:
+      - artifact: the order the bars are drawn in
+        source: WorkItemBase.Order — the board's own order, maintained by manual sorting, and also the
+          order the simulation itself works the rows in. One order, not a second one invented for the
+          picture.
+      - artifact: the selected percentile
+        source: >
+          one control on the timeline, applied to both ends of every bar. Deliberately not two
+          controls — a bar assembled from two different confidence levels describes no scenario.
+
+accepted_risks:
+  - risk: >
+      A single start percentile and a single completion percentile render in Jira Plans as one solid bar,
+      which reads as a commitment and hides the distribution the numbers came from.
+    raised_by: Chris Graves, on the idea board, as an open design risk
+    verdict: >
+      Accepted, explicitly, by the product owner and the requester in the same thread on 2026-09-19.
+      "Of course you are right that then we have what looks like a fixed plan based on probabilities,
+      but I trust that people using the tool can deal with this." — "ooo perfect! Yes, you said the
+      forbidden word but that will be the result."
+    consequences: >
+      Two things follow from accepting it rather than ignoring it. The table carries four percentiles
+      rather than one, and the timeline's percentile is switchable rather than fixed. Neither removes
+      the risk; both keep the distribution one click away from anyone who wants it. Recorded here so the
+      argument is not re-made in DESIGN.

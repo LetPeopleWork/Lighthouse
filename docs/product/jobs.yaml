@@ -7147,3 +7147,179 @@ jobs:
         tidy-up rather than a rescue. Current satisfaction 1 rather than 0 because since epic-5511 an
         operator can see the run and stop it by hand; what is missing is that it happens without
         somebody watching. Gap 2.
+
+  - id: job-lead-say-when-a-feature-starts-not-only-when-it-ends
+    title: Answer "when will you get to mine?" from measured flow, not from counting backwards
+    persona: delivery-lead-rte
+    feature_context: epic-6033-forecasted-start-dates
+    created: 2026-09-20
+    note: >
+      NEW in epic-6033-forecasted-start-dates (ADO #6033), from Chris Graves (Focusrite) on the public
+      idea board. The Epic description proposes deriving a Feature's start from the preceding Feature's
+      forecasted completion date; that derivation was rejected by the product owner in-thread on
+      2026-09-19 and is recorded as D1. The simulation already names the row it works on the day it
+      works it (SimulatedRun.WorkOneDayOf) — the number is computed ten thousand times per forecast and
+      discarded. This job is about keeping it.
+    job_story: >
+      When I am asked when a Feature further down the order will be picked up,
+      I want an answer that comes from how work actually flows through this system rather than from me
+      counting backwards off the one above it,
+      so the answer moves on its own as throughput and order change.
+    dimensions:
+      functional: >
+        Four dated start percentiles per Feature, at the same confidence levels the completion forecast
+        already carries, projected over the same working days and blackout days. A Feature already in
+        flight reports the day it actually started instead, because a forecast of something that has
+        demonstrably happened is noise.
+      emotional: >
+        Move from "I will have to work that out" to having already answered it — the start date is
+        simply in the same row as the completion date, and it was there before anyone asked.
+      social: >
+        Say "given how work has actually flowed here, it starts around mid-October" rather than "we
+        think November", and be able to show where the number came from when challenged.
+    forces:
+      push: >
+        The only honest answer available today is the completion date of everything above it in the
+        order, assembled by hand. It is tedious, it is wrong whenever Feature WIP is greater than one,
+        and it goes stale the moment the board is re-ordered.
+      pull: >
+        Everything needed is already in the run. Feature WIP already bounds which Features a team works
+        at once (SimulatedRun:90-95), dependencies already gate readiness (TrialState.ReadyToBeWorkedOn,
+        shipped by Epic 5792), and the recording machinery is a per-worker lock-free array summed once
+        (TrialCompletions). A second array is the whole change inside the loop.
+      anxiety: >
+        "Will ten thousand runs get slower?" (Asserted as a number rather than an intention — AC-1.8
+        measures the same forecast before and after and allows 110%.)
+        "Will it disturb the completion forecast?" (The one number where a silent error is least
+        acceptable. Start forecasts are kept out of Feature.Forecasts entirely, because
+        AggregatedWhenForecast folds that collection in unconditionally — D3.)
+        "Will it be optimistic?" (Yes, in one identified case, and it is written down rather than
+        discovered later: the run does not know which Features are in flight, so a not-started Feature
+        sitting above in-flight work forecasts a start that is too early — D6.)
+      habit: >
+        The habit is to answer with a completion date and let the asker infer the rest. Replacing it
+        needs the start date to sit in the column they already read, which is why the table lands before
+        the timeline and before the write-back.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance 4 — it is the question every stakeholder actually asks, and the product has never
+        answered it. Below 5 because a completion date is a partial substitute for the top of the order,
+        where most conversations happen. Current satisfaction 0 — there is no start date anywhere in the
+        product, at any grain. Gap 4.
+
+  - id: job-lead-see-a-delivery-as-a-timeline
+    title: See a Delivery's shape against time instead of assembling it from a column of dates
+    persona: delivery-lead-rte
+    feature_context: epic-6033-forecasted-start-dates
+    created: 2026-09-20
+    note: >
+      NEW in epic-6033-forecasted-start-dates. Named by the product owner as the thing start dates
+      unlock: "This essentially would allow you to build a Gantt chart dynamically from the forecast.
+      This even works if you have a Feature WIP > 3." Depends on the start date existing at all, which
+      is why it is the fourth slice and not the first. MUI X Gantt is Premium-licence-only and is not
+      owned, so the build is evaluated against a purchase before it is written (D11).
+    job_story: >
+      When I am planning a Delivery spanning several Features,
+      I want to see them laid out against time with their real sequencing,
+      so I can see which ones overlap and which ones wait, instead of reading a column of dates and
+      holding the shape in my head.
+    dimensions:
+      functional: >
+        One bar per Feature on a date axis, in board order, spanning forecasted start to forecasted
+        completion, with a percentile selector that moves both ends of every bar together so a bar is
+        always one internally consistent scenario. The Delivery's target date marked on the axis.
+      emotional: >
+        Move from holding a sequence in working memory to seeing it. A Delivery that does not fit is
+        obvious in a picture and invisible in a table.
+      social: >
+        Show a stakeholder a plan that re-draws itself, and be able to change the confidence level in
+        front of them rather than defending a single number.
+    forces:
+      push: >
+        A Delivery today is a grid of Features and a set of metric charts. The sequencing between the
+        Features — what waits, what overlaps, what slides past the target date — exists only in the
+        reader's head, and only for as long as they hold it there.
+      pull: >
+        The Delivery already has tabs (DeliveryMetricsTab.tsx), board order is already maintained
+        (WorkItemBase.Order, Epic 5375), dependencies are already fetched, and the target date is
+        already known. Once the start date exists, the timeline is rendering rather than modelling.
+      anxiety: >
+        "Does a solid bar read as a commitment?" (Yes, and it is accepted rather than mitigated — the
+        product owner and the requester both said so explicitly, recorded as D13. The percentile stays
+        switchable so the distribution is one click away, which is the most that can be done without
+        refusing to draw the picture at all.)
+        "Can we even build it?" (Unknown, and it is the Epic's only open pre-requisite. A two-hour
+        evaluation against the installed chart library runs before any production code, and produces a
+        costed recommendation rather than an opinion.)
+      habit: >
+        Roadmaps are drawn by hand today, in whatever tool is nearest, and then maintained until people
+        stop. A timeline that draws itself replaces the drawing, not the planning.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 — the product owner called it the game changer and it is the visible payoff of the
+        whole Epic. Current satisfaction 1 rather than 0 because the Feature grid and the target date do
+        carry the raw material; what is missing is seeing it laid out. Gap 3, narrower than the start
+        date itself because this is presentation of a number rather than a number that does not exist.
+
+  - id: job-admin-let-the-plan-draw-itself
+    title: Stop maintaining a roadmap of typed dates by hand
+    persona: config-admin
+    feature_context: epic-6033-forecasted-start-dates
+    created: 2026-09-20
+    note: >
+      NEW in epic-6033-forecasted-start-dates. This is the requester's literal ask — "Sync forecasted
+      start dates to Jira", motivated by Jira Plans, which needs both ends of a bar in fields. The other
+      end already ships: Epic 5565 writes completion percentiles through the write-back mapping. The
+      mechanism is an append to an ordinal-persisted enum plus a resolver branch, so the cost is in
+      being sure the number is right, not in writing it — which is why this is the third slice and not
+      the first.
+    job_story: >
+      When our roadmap lives in Jira Plans and every bar on it is a date somebody typed,
+      I want Lighthouse to fill both ends of the bar from the forecast,
+      so the plan re-draws itself from measured flow instead of ageing the moment it is published.
+    dimensions:
+      functional: >
+        Four forecasted-start value sources in the write-back mapping screen, beside the four completion
+        percentiles already there, writing to a date field on the same schedule and in the same format.
+        A Feature that has started writes the day it started, so the Plan bar begins where work began.
+      emotional: >
+        Stop being the person who owns a spreadsheet of dates that everyone knows is out of date and
+        nobody wants to be the one to say so.
+      social: >
+        The requester's own framing: move the organisation from "when do we think this will happen?" to
+        "given what we currently know about how work flows through this system, when might this happen?"
+    forces:
+      push: >
+        A Plan populated by hand is stale on publication and silently wrong thereafter. The team that
+        maintains it knows this and maintains it anyway, because the alternative is no plan.
+      pull: >
+        WriteBackValueSource is append-only and documented as such in place; ResolveForecastValue already
+        does percentile, working-day projection over blackout days, and format. Both Jira and Azure
+        DevOps get this by existing, because the resolver is connector-agnostic.
+      anxiety: >
+        "Will a wrong date land in my Jira instance?" (The reason this ships third. A wrong date in our
+        own column costs a re-run; the same date in a customer's Plan costs whatever was decided from
+        it. Slices 01 and 02 exist to find it first.)
+        "Will adding sources re-point my existing mappings?" (The enum persists ordinals. New members
+        are appended after the last one, and a regression test asserts every pre-existing ordinal so the
+        next person to add a source is stopped by a red test rather than by having read a comment.)
+      habit: >
+        The habit is a quarterly re-planning session where dates are re-typed. What replaces it is not a
+        new ritual but the absence of one, which takes a cycle or two of watching the dates move on
+        their own before anyone trusts it.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        Importance 3 — a real and named customer need, ranked below the other two deliberately: it is
+        the delivery mechanism for a number rather than the number itself, and it reaches only instances
+        that both hold a premium licence and use Jira Plans. Current satisfaction 2 — half the bar
+        already arrives automatically via Epic 5565, so a Plan today is half-maintained rather than
+        wholly manual. Gap 1, the narrowest here, and the cheapest to close.
