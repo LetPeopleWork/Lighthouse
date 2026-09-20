@@ -8,6 +8,10 @@ export enum WriteBackValueSource {
 	// The number is the stored value, not a label: the backend persists the enum's ordinal, so a
 	// member may only ever be appended.
 	SleRisk = 6,
+	ForecastedStartPercentile50 = 7,
+	ForecastedStartPercentile70 = 8,
+	ForecastedStartPercentile85 = 9,
+	ForecastedStartPercentile95 = 10,
 }
 
 export enum WriteBackAppliesTo {
@@ -29,11 +33,17 @@ export interface IWriteBackMappingDefinition {
 	dateFormat?: string | null;
 }
 
+// Both ends of a Feature are written the same way - as a date, or as text in a format the admin
+// chooses - so membership here is what puts those two controls on screen.
 export const FORECAST_SOURCES: ReadonlySet<WriteBackValueSource> = new Set([
 	WriteBackValueSource.ForecastPercentile50,
 	WriteBackValueSource.ForecastPercentile70,
 	WriteBackValueSource.ForecastPercentile85,
 	WriteBackValueSource.ForecastPercentile95,
+	WriteBackValueSource.ForecastedStartPercentile50,
+	WriteBackValueSource.ForecastedStartPercentile70,
+	WriteBackValueSource.ForecastedStartPercentile85,
+	WriteBackValueSource.ForecastedStartPercentile95,
 ]);
 
 /**
@@ -51,6 +61,10 @@ export const PORTFOLIO_ONLY_SOURCES: ReadonlySet<WriteBackValueSource> =
 		WriteBackValueSource.ForecastPercentile70,
 		WriteBackValueSource.ForecastPercentile85,
 		WriteBackValueSource.ForecastPercentile95,
+		WriteBackValueSource.ForecastedStartPercentile50,
+		WriteBackValueSource.ForecastedStartPercentile70,
+		WriteBackValueSource.ForecastedStartPercentile85,
+		WriteBackValueSource.ForecastedStartPercentile95,
 	]);
 
 export const DATE_FORMAT_PRESETS: readonly string[] = [
@@ -65,11 +79,25 @@ export const VALUE_SOURCE_DISPLAY_NAMES: Readonly<
 > = {
 	[WriteBackValueSource.WorkItemAgeCycleTime]: "Work Item Age/Cycle Time",
 	[WriteBackValueSource.FeatureSize]: "Feature Size",
-	[WriteBackValueSource.ForecastPercentile50]: "Forecast (50th Percentile)",
-	[WriteBackValueSource.ForecastPercentile70]: "Forecast (70th Percentile)",
-	[WriteBackValueSource.ForecastPercentile85]: "Forecast (85th Percentile)",
-	[WriteBackValueSource.ForecastPercentile95]: "Forecast (95th Percentile)",
+	// Named for the end each one means. "Forecast" alone was unambiguous while it was the only forecast
+	// on the list; with a start percentile beside it, it stopped saying which date the admin was picking.
+	[WriteBackValueSource.ForecastPercentile50]:
+		"Forecasted Completion (50th Percentile)",
+	[WriteBackValueSource.ForecastPercentile70]:
+		"Forecasted Completion (70th Percentile)",
+	[WriteBackValueSource.ForecastPercentile85]:
+		"Forecasted Completion (85th Percentile)",
+	[WriteBackValueSource.ForecastPercentile95]:
+		"Forecasted Completion (95th Percentile)",
 	[WriteBackValueSource.SleRisk]: "SLE Risk",
+	[WriteBackValueSource.ForecastedStartPercentile50]:
+		"Forecasted Start (50th Percentile)",
+	[WriteBackValueSource.ForecastedStartPercentile70]:
+		"Forecasted Start (70th Percentile)",
+	[WriteBackValueSource.ForecastedStartPercentile85]:
+		"Forecasted Start (85th Percentile)",
+	[WriteBackValueSource.ForecastedStartPercentile95]:
+		"Forecasted Start (95th Percentile)",
 };
 
 export const APPLIES_TO_DISPLAY_NAMES: Readonly<

@@ -13,7 +13,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
-    public class WriteBackTriggerServiceTest
+    public partial class WriteBackTriggerServiceTest
     {
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;

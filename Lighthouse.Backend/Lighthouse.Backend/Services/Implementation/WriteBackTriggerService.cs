@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -16,13 +17,26 @@ namespace Lighthouse.Backend.Services.Implementation
         ILogger<WriteBackTriggerService> logger)
         : IWriteBackTriggerService
     {
-        private static readonly HashSet<WriteBackValueSource> ForecastSources =
+        private static readonly HashSet<WriteBackValueSource> CompletionSources =
         [
             WriteBackValueSource.ForecastPercentile50,
             WriteBackValueSource.ForecastPercentile70,
             WriteBackValueSource.ForecastPercentile85,
             WriteBackValueSource.ForecastPercentile95,
         ];
+
+        private static readonly HashSet<WriteBackValueSource> StartSources =
+        [
+            WriteBackValueSource.ForecastedStartPercentile50,
+            WriteBackValueSource.ForecastedStartPercentile70,
+            WriteBackValueSource.ForecastedStartPercentile85,
+            WriteBackValueSource.ForecastedStartPercentile95,
+        ];
+
+        // Both ends of a Feature are answers the simulation produced, so both belong to the pass that
+        // runs after a forecast rather than the one that runs after a sync.
+        private static readonly HashSet<WriteBackValueSource> ForecastSources =
+            [.. CompletionSources, .. StartSources];
 
         public IReadOnlyList<WriteBackFieldUpdate> ResolveWriteBackForTeam(Team team)
         {
@@ -234,7 +248,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private string? ResolveFeatureValue(WriteBackMappingDefinition mapping, Feature feature)
         {
-            if (ForecastSources.Contains(mapping.ValueSource))
+            if (StartSources.Contains(mapping.ValueSource))
+            {
+                return ResolveStartValue(mapping, feature);
+            }
+
+            if (CompletionSources.Contains(mapping.ValueSource))
             {
                 return ResolveForecastValue(mapping, feature);
             }
@@ -258,35 +277,67 @@ namespace Lighthouse.Backend.Services.Implementation
                 return null;
             }
 
-            var forecast = feature.Forecast;
+            return ProjectFromToday(mapping, feature.Forecast, GetPercentileFromSource(mapping.ValueSource));
+        }
 
-            var percentile = GetPercentileFromSource(mapping.ValueSource);
-            var daysToCompletion = forecast.GetProbability(percentile);
-
-            if (daysToCompletion < 0)
+        /// <summary>
+        /// When work on the Feature begins. Which of the two answers that is - the day it actually began,
+        /// or the day the simulation expects it to - is the Feature's decision, not this service's. The
+        /// table shows the same verdict from the same place, so a roadmap bar cannot end up starting on a
+        /// forecast while the screen beside it shows the real day.
+        /// </summary>
+        private string? ResolveStartValue(WriteBackMappingDefinition mapping, Feature feature)
+        {
+            if (feature.StateCategory == StateCategories.Done)
             {
                 return null;
             }
 
-            var forecastWindowStart = clock.TodayAsUtcMidnight;
+            var start = feature.WhenWorkBegins;
+
+            return start.Source switch
+            {
+                StartDateSource.Observed when start.ObservedDate is { } dayWorkBegan => Format(mapping, dayWorkBegan),
+                StartDateSource.Forecast when start.Forecast is { } forecast
+                    => ProjectFromToday(mapping, forecast, GetPercentileFromSource(mapping.ValueSource)),
+
+                // Nothing can be said. Writing anything here would fill the field with today's date, in
+                // the same shape a real answer arrives in.
+                _ => null,
+            };
+        }
+
+        private string? ProjectFromToday(WriteBackMappingDefinition mapping, ForecastBase forecast, int percentile)
+        {
+            var daysAway = forecast.GetProbability(percentile);
+
+            if (daysAway < 0)
+            {
+                return null;
+            }
+
+            var windowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                forecastWindowStart, forecastWindowStart.AddDays(daysToCompletion));
+                windowStart, windowStart.AddDays(daysAway));
 
-            var forecastDate = blackoutPeriods.ProjectWorkingDays(forecastWindowStart, daysToCompletion);
+            return Format(mapping, blackoutPeriods.ProjectWorkingDays(windowStart, daysAway));
+        }
 
+        private static string Format(WriteBackMappingDefinition mapping, DateTime date)
+        {
             return mapping.TargetValueType == WriteBackTargetValueType.FormattedText && !string.IsNullOrEmpty(mapping.DateFormat)
-                ? forecastDate.ToString(mapping.DateFormat)
-                : forecastDate.ToString("yyyy-MM-dd");
+                ? date.ToString(mapping.DateFormat)
+                : date.ToString("yyyy-MM-dd");
         }
 
         private static int GetPercentileFromSource(WriteBackValueSource source)
         {
             return source switch
             {
-                WriteBackValueSource.ForecastPercentile50 => 50,
-                WriteBackValueSource.ForecastPercentile70 => 70,
-                WriteBackValueSource.ForecastPercentile85 => 85,
-                WriteBackValueSource.ForecastPercentile95 => 95,
+                WriteBackValueSource.ForecastPercentile50 or WriteBackValueSource.ForecastedStartPercentile50 => 50,
+                WriteBackValueSource.ForecastPercentile70 or WriteBackValueSource.ForecastedStartPercentile70 => 70,
+                WriteBackValueSource.ForecastPercentile85 or WriteBackValueSource.ForecastedStartPercentile85 => 85,
+                WriteBackValueSource.ForecastPercentile95 or WriteBackValueSource.ForecastedStartPercentile95 => 95,
                 _ => throw new ArgumentOutOfRangeException(nameof(source), source, "Not a forecast source"),
             };
         }

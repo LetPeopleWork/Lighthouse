@@ -281,7 +281,7 @@ describe("WriteBackMappingsEditor", () => {
 			).not.toBeInTheDocument();
 			expect(
 				screen.queryByRole("option", {
-					name: "Forecast (85th Percentile)",
+					name: "Forecasted Completion (85th Percentile)",
 				}),
 			).not.toBeInTheDocument();
 		});
@@ -397,8 +397,74 @@ describe("WriteBackMappingsEditor", () => {
 			).toBeInTheDocument();
 			expect(
 				screen.getByRole("option", {
-					name: "Forecast (85th Percentile)",
+					name: "Forecasted Completion (85th Percentile)",
 				}),
+			).toBeInTheDocument();
+		});
+
+		// Both ends of a Feature, so a roadmap bar can get each of its dates from measured flow instead
+		// of from somebody keeping them by hand.
+		it("offers a portfolio the start of a Feature as well as its completion", async () => {
+			const user = userEvent.setup();
+			render(
+				<WriteBackMappingsEditor
+					additionalFields={sampleAdditionalFields}
+					mappings={[]}
+					onChange={mockOnChange}
+					workTrackingSystemType="AzureDevOps"
+				/>,
+			);
+
+			await user.click(
+				screen.getByRole("button", { name: /add sync mapping/i }),
+			);
+
+			await user.click(screen.getByLabelText("Applies To"));
+			await user.click(
+				await screen.findByRole("option", { name: "Portfolio" }),
+			);
+
+			await user.click(screen.getByLabelText("Sync Value"));
+
+			for (const percentile of [50, 70, 85, 95]) {
+				expect(
+					screen.getByRole("option", {
+						name: `Forecasted Start (${percentile}th Percentile)`,
+					}),
+				).toBeInTheDocument();
+			}
+		});
+
+		// A Feature sits in several portfolios and is worked by several teams, so "when does it start"
+		// has no answer a single team can give - the same reason its completion percentiles are not
+		// offered here either.
+		it("does not offer a Feature's start to a team", async () => {
+			const user = userEvent.setup();
+			render(
+				<WriteBackMappingsEditor
+					additionalFields={sampleAdditionalFields}
+					mappings={[]}
+					onChange={mockOnChange}
+					workTrackingSystemType="AzureDevOps"
+				/>,
+			);
+
+			await user.click(
+				screen.getByRole("button", { name: /add sync mapping/i }),
+			);
+
+			await user.click(screen.getByLabelText("Sync Value"));
+
+			expect(
+				screen.queryByRole("option", {
+					name: "Forecasted Start (85th Percentile)",
+				}),
+			).not.toBeInTheDocument();
+
+			// The scope really is Team, so the absence above means the filter ran rather than the
+			// dropdown never opening.
+			expect(
+				screen.getByRole("option", { name: "Work Item Age/Cycle Time" }),
 			).toBeInTheDocument();
 		});
 	});
@@ -438,7 +504,7 @@ describe("WriteBackMappingsEditor", () => {
 			await user.click(valueSourceSelect);
 			await user.click(
 				await screen.findByRole("option", {
-					name: "Forecast (85th Percentile)",
+					name: "Forecasted Completion (85th Percentile)",
 				}),
 			);
 
@@ -505,7 +571,7 @@ describe("WriteBackMappingsEditor", () => {
 			await user.click(valueSourceSelect);
 			await user.click(
 				await screen.findByRole("option", {
-					name: "Forecast (85th Percentile)",
+					name: "Forecasted Completion (85th Percentile)",
 				}),
 			);
 
@@ -670,7 +736,7 @@ describe("WriteBackMappingsEditor", () => {
 
 			expect(screen.getByText("Forecast Date")).toBeInTheDocument();
 			expect(
-				screen.getByText("Forecast (85th Percentile)"),
+				screen.getByText("Forecasted Completion (85th Percentile)"),
 			).toBeInTheDocument();
 			expect(screen.getByText("Portfolio")).toBeInTheDocument();
 			expect(screen.getByText(/yyyy-MM-dd/)).toBeInTheDocument();

@@ -18,5 +18,16 @@ namespace Lighthouse.Backend.Models.WriteBack
         // persists ValueSource as an int - so inserting a member anywhere above would silently
         // re-point every existing write-back mapping at a different source, on every database.
         SleRisk,
+
+        // The other end of the bar: when work on a Feature is expected to begin, so a roadmap can get
+        // both of its dates from measured flow instead of from somebody maintaining them by hand.
+        // Appended after SleRisk for the reason above, and these four must stay last in their turn.
+        ForecastedStartPercentile50,
+
+        ForecastedStartPercentile70,
+
+        ForecastedStartPercentile85,
+
+        ForecastedStartPercentile95,
     }
 }
