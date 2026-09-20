@@ -30,6 +30,7 @@ vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
 type GanttProps = {
 	bars: TimelineBar[];
 	targetDate?: Date;
+	today?: Date;
 	onBarSelected?: (featureId: number) => void;
 };
 
@@ -233,6 +234,23 @@ describe("DeliveryTimelineTab", () => {
 		renderTab([feature()]);
 
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	});
+
+	it("marks the same day on the chart as the legend names", async () => {
+		renderTab([feature()]);
+
+		// Two readings of the clock would let the legend say one day while the chart shades
+		// another, and nothing else would notice. One reading, handed to both.
+		const chartsDay = ganttProps.current?.today;
+		expect(chartsDay).toBeInstanceOf(Date);
+		expect(screen.getByTestId("timeline-legend")).toHaveTextContent(
+			(chartsDay as Date).toLocaleDateString(),
+		);
+
+		// And it stays put across a re-render, or a tab left open would drift.
+		await userEvent.click(screen.getByRole("button", { name: "95%" }));
+
+		expect(ganttProps.current?.today).toBe(chartsDay);
 	});
 
 	it("hands the Delivery's target date through to the chart", () => {
