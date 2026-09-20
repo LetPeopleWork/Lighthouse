@@ -3,6 +3,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import {
+	createForecastedStartColumn,
 	createForecastsColumn,
 	createNameColumn,
 	createParentColumn,
@@ -115,6 +116,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				),
 			},
 			createParentColumn(parentMap),
+			createForecastedStartColumn(),
 			createForecastsColumn(),
 			createStateColumn(),
 		],

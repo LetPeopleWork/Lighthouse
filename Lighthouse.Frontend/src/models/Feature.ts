@@ -20,6 +20,11 @@ export interface IFeature extends IWorkItem {
 	totalWork: { [key: number]: number };
 	projects: IEntityReference[];
 	forecasts: IWhenForecast[];
+	// When work on this Feature begins, and where that answer came from. Optional for the same reason
+	// every other additive field here is: a fixture built before it existed is still a fixture, and an
+	// older instance must not crash a newer client.
+	startForecast?: IFeatureStart;
+	teamForecasts?: IFeatureTeamForecast[];
 	// Non-empty means no forecast exists at all, and names the teams to chase.
 	teamsWithoutForecast?: string[];
 	// The place in the order across the whole instance, supplied by the backend and never counted here.
@@ -41,7 +46,46 @@ export interface IFeature extends IWorkItem {
 	getTotalWorkForTeam(id: number): number;
 }
 
+/**
+ * Where a Feature's start date came from. Carried rather than worked out from what is missing: "no
+ * percentiles because work has started" and "no percentiles because nothing can be forecast" are
+ * opposite situations that look identical from the outside.
+ */
+export type StartDateSource = "Unknown" | "Forecast" | "Observed";
+
+export interface IFeatureStart {
+	source: StartDateSource;
+	// Set only when the source is Observed. A date here is a fact, not a percentile.
+	observedDate?: Date;
+	// Filled only when the source is Forecast. Empty otherwise, deliberately.
+	percentiles: IWhenForecast[];
+}
+
+// One contributing team's share of a Feature, at both ends. Carried by the model and read by nothing
+// yet - the table shows one forecast at four percentiles and no expander; the timeline's sub-lanes are
+// what these are for.
+export interface IFeatureTeamForecast {
+	teamId: number;
+	startPercentiles: IWhenForecast[];
+	completionPercentiles: IWhenForecast[];
+}
+
 const WorkByTeamSchema = z.record(z.string(), z.number());
+
+export const FeatureStartSchema = z.object({
+	source: z.enum(["Unknown", "Forecast", "Observed"]),
+	observedDate: z.coerce
+		.date()
+		.nullish()
+		.transform((value) => value ?? undefined),
+	percentiles: z.array(WhenForecastSchema).optional().default([]),
+});
+
+export const FeatureTeamForecastSchema = z.object({
+	teamId: z.number(),
+	startPercentiles: z.array(WhenForecastSchema).optional().default([]),
+	completionPercentiles: z.array(WhenForecastSchema).optional().default([]),
+});
 
 export const FeatureSchema = z.object({
 	name: z.string(),
@@ -65,6 +109,8 @@ export const FeatureSchema = z.object({
 	remainingWork: WorkByTeamSchema,
 	totalWork: WorkByTeamSchema,
 	forecasts: z.array(WhenForecastSchema),
+	startForecast: FeatureStartSchema.optional(),
+	teamForecasts: z.array(FeatureTeamForecastSchema).optional().default([]),
 	teamsWithoutForecast: z.array(z.string()).optional().default([]),
 	position: z.number().nullable().optional(),
 	canMove: z.boolean().nullable().optional(),
@@ -90,6 +136,8 @@ export class Feature implements IFeature {
 	remainingWork: { [key: number]: number } = {};
 	totalWork: { [key: number]: number } = {};
 	forecasts: IWhenForecast[] = [];
+	startForecast?: IFeatureStart;
+	teamForecasts: IFeatureTeamForecast[] = [];
 	teamsWithoutForecast: string[] = [];
 	position?: number;
 	canMove?: boolean;
@@ -190,6 +238,24 @@ export class Feature implements IFeature {
 		feature.forecasts = data.forecasts.map((forecast) =>
 			WhenForecast.new(forecast.probability, forecast.expectedDate),
 		);
+		feature.startForecast = data.startForecast
+			? {
+					source: data.startForecast.source,
+					observedDate: data.startForecast.observedDate,
+					percentiles: data.startForecast.percentiles.map((percentile) =>
+						WhenForecast.new(percentile.probability, percentile.expectedDate),
+					),
+				}
+			: undefined;
+		feature.teamForecasts = data.teamForecasts.map((forTeam) => ({
+			teamId: forTeam.teamId,
+			startPercentiles: forTeam.startPercentiles.map((percentile) =>
+				WhenForecast.new(percentile.probability, percentile.expectedDate),
+			),
+			completionPercentiles: forTeam.completionPercentiles.map((percentile) =>
+				WhenForecast.new(percentile.probability, percentile.expectedDate),
+			),
+		}));
 		feature.teamsWithoutForecast = data.teamsWithoutForecast ?? [];
 		feature.position = data.position ?? undefined;
 		feature.canMove = data.canMove ?? undefined;

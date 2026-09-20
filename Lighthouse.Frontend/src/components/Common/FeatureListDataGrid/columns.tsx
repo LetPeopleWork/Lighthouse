@@ -25,6 +25,7 @@ import ForecastInfoList from "../Forecasts/ForecastInfoList";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
 import ActiveWorkIndicator from "./ActiveWorkIndicator";
 import FeatureMoveMenu from "./FeatureMoveMenu";
+import ForecastedStartCell from "./ForecastedStartCell";
 import type { FeatureOrderingBinding } from "./types";
 import WarningsIndicator from "./WarningsIndicator";
 
@@ -63,6 +64,23 @@ export const createForecastsColumn = (
 			) : (
 				<ForecastInfoList title={""} forecasts={row.forecasts} />
 			)}
+		</Box>
+	),
+});
+
+// Beside the completion column and following it: same width, same percentile presentation, same empty
+// state. A start and a completion answer the same kind of question, and a column that rendered one of
+// them differently would read as a different kind of answer.
+export const createForecastedStartColumn = (
+	headerName = "Forecasted Start",
+): DataGridColumn<IFeature & GridValidRowModel> => ({
+	field: "startForecast",
+	headerName,
+	width: 200,
+	sortable: false,
+	renderCell: ({ row }) => (
+		<Box data-testid="feature-forecasted-start-cell">
+			<ForecastedStartCell feature={row} />
 		</Box>
 	),
 });
