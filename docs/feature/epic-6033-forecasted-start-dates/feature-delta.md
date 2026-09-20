@@ -211,10 +211,20 @@ simulation itself works in. Dependencies are drawn if they can be drawn cheaply;
 
 ### D11 — Build the timeline before buying one
 
-MUI X Gantt would fit and is Premium-licence-only (S19); the product owner is open to buying it but wants
-a build evaluated first. Slice 04 opens with a timeboxed evaluation whose output is a recommendation with
-a number attached, not an opinion. What is being drawn is a horizontal bar per row against a date axis —
-`@mui/x-charts` is already present and the existing charts establish the theming.
+**Settled by slice 04's spike, 2026-09-20, and it returned a split result worth recording rather than
+rounding to a pass or a fail.**
+
+*Built from what is installed*: **no.** A dependency is added. The hypothesis was achievable — a
+throwaway prototype on the already-installed `@mui/x-charts` covered AC-4.1 to AC-4.6 plus tooltips and
+a sub-lane probe in ~205 lines, and that was the spike's own recommendation — but it is not the route
+chosen. The outcome is a decision taken against the evidence, not a failure to find a way.
+
+*Ends without a commercial dependency*: **yes.** `@svar-ui/react-gantt` 2.7.3 is MIT, as are all 25
+packages in its transitive tree. Nothing is bought.
+
+The original framing assumed MUI X Gantt was the thing one would buy. **It does not exist** — MUI's own
+docs say it "isn't available yet", so there was never a licence to weigh against a build. Do not re-open
+that comparison.
 
 ### D12 — Storage is shaped so that a snapshot can be added later. No snapshot is added now
 
@@ -465,8 +475,16 @@ table at all.
 - **AC-4.4** — A started Feature's bar begins at its observed start date (D5) and ends at its forecasted
   completion at the selected percentile.
 - **AC-4.5** — A Feature with no forecast is listed with no bar and a stated reason, rather than omitted.
-  A Delivery where none can be forecast says so instead of rendering an empty axis.
-- **AC-4.6** — The Delivery's target date, where it has one, is marked on the axis.
+  A Delivery where none can be forecast says so instead of rendering an empty axis. **Rendered beside the
+  timeline rather than as a row inside it** — corrected 2026-09-20 from slice 04's spike. An in-chart row
+  for an undated task is a paid feature of the chosen component, and its free build does something worse
+  than omit such a task: it draws a bar at a position the data does not support. The adapter must never
+  hand the component a task it cannot place. The AC's intent is unchanged — the Feature must not vanish;
+  only where it is rendered has moved.
+- **AC-4.6** — The Delivery's target date, where it has one, is marked on the axis. **As a tinted axis
+  column rather than a drawn vertical line** — corrected 2026-09-20 from slice 04's spike. A drawn marker
+  is a paid feature and is deferred; a licence bought later adds it without rework. The date is still
+  marked: shaded, not ruled.
 - **AC-4.7** — The tab is premium-gated, using the notice the Delivery surface already uses (D8).
 - **AC-4.8** — Legible in light and dark themes, and at the narrowest width the Delivery view supports.
 - **AC-4.9** — The docs say plainly what an out-of-order board does to the picture (D6): a Feature nobody
@@ -566,7 +584,7 @@ assumption that could be wrong actually lives.
   distribution, which is why it ships first and alone. Pass.
 - **Does any slice disprove a pre-commitment?** Slice 01 disproves D4 and D6's containment if the start
   forecast turns out to be systematically optimistic, and disproves the "minimal" premise if the storage
-  cost is not small. Slice 04 disproves D11. Pass.
+  cost is not small. Slice 04 disproves D11 — and it did, in half: the spike returned a split result. Pass.
 - **Synthetic data only?** Slices 01, 02 and 04 are demonstrated on the dev instance against real history.
   Slice 03 writes to a real Jira instance. Pass.
 - **Two slices identical but for scale?** 04 and 05 are both the timeline, but 05 draws a different thing
@@ -656,9 +674,10 @@ No configurable or env-switching strategy is used, so the WS-strategy-D expansio
 | P5 | Board order exists and is maintained | **Confirmed** — `WorkItemBase.Order` (S15), Epic 5375 |
 | P6 | The write-back value source enum can be extended safely | **Confirmed** — append-only, documented in place (S12) |
 | P7 | A Delivery has a tab slot | **Confirmed** — `DeliveryMetricsTab.tsx` (S20) |
-| P8 | A timeline can be built from what is installed | **Unverified** — slice 04's evaluation (D11, S19) |
+| P8 | A timeline can be built from what is installed | **Closed 2026-09-20** — split result; see D11. Proven buildable on `@mui/x-charts`; `@svar-ui/react-gantt` (MIT) chosen instead |
 
-P8 is the only open one, it is confined to slice 04, and slice 04 opens by closing it.
+P8 was the last open one. Slice 04's spike closed it on 2026-09-20, so all eight are now confirmed or
+closed.
 
 ---
 
@@ -669,15 +688,15 @@ P8 is the only open one, it is confined to slice 04, and slice 04 opens by closi
 | 1 | Business value articulated | Jira Plans that draw themselves from measured flow; requested by a paying customer and seconded in-thread |
 | 2 | User stories with job traceability | US-01 to US-06, each carrying a `job_id` appended to `docs/product/jobs.yaml`. US-02's persona is `product-owner` while its job is the delivery lead's: deliberate, because the question is the same one ("when will you get to this?") asked from two seats, and a second job whose only difference is who is asking would be a duplicate rather than a distinction |
 | 3 | Acceptance criteria testable | **39 ACs across six stories** — 10 / 5 / 6 / 9 / 4 / 5 for US-01 to US-06 — each asserting an observable output. *(Corrected 2026-09-20: this read "27 across five", which counted neither US-06 nor AC-1.9/AC-1.10.)* |
-| 4 | Dependencies identified | P1-P8; only P8 open, and confined to slice 04 |
+| 4 | Dependencies identified | P1-P8, all closed. P8 was the last open one and slice 04's spike settled it on 2026-09-20 |
 | 5 | Sized to fit a slice | **Six slices, 3-8h each, two severable** (05 and 06, independent of each other). *(Corrected 2026-09-20: this read "five slices … one severable".)* US-01 at ~7h and US-04 at ~6h plus a 2h evaluation both sit at the top of the band; slice 01's split is planned rather than contingent — see its brief |
 | 6 | Technical approach known | D1-D4 name the mechanism; the surface inventory gives every line it touches |
-| 7 | Risks named | D6 (optimism residual), D13 (accepted flattening), P8 (build vs buy) |
+| 7 | Risks named | D6 (optimism residual), D13 (accepted flattening), P8 (build vs buy — closed, see D11) |
 | 8 | Out of scope explicit | Seven items, two carrying owed follow-ups |
 | 9 | Terminology settled | D14 |
 
-**DoR: PASS.** One qualification, stated rather than absorbed: item 4 rests on P8, which slice 04 closes
-rather than assumes. Slices 01-03 do not depend on it.
+**DoR: PASS.** The one qualification it carried — item 4 resting on P8 — is discharged: slice 04's spike
+closed P8 on 2026-09-20. Slices 01-03 never depended on it.
 
 ---
 
@@ -721,7 +740,8 @@ rather than assumes. Slices 01-03 do not depend on it.
 - **[D7]** At Feature WIP 1 the next Feature starts the same day, not the day after.
 - **[D8]** Forecast and table free; timeline premium; write-back inherits the mapping screen's gate.
 - **[D10]** One percentile selector moves both ends of every bar.
-- **[D11]** Build the timeline before buying one; evaluation is timeboxed and produces a number.
+- **[D11]** Build the timeline before buying one. Closed with a split result: a dependency is added, but
+  it is MIT and nothing is bought.
 - **[D12]** Storage shaped for a future snapshot; no snapshot built.
 - **[D13]** The flattened-bar risk is accepted on the record and closes the Epic's open design risk.
 
@@ -978,7 +998,7 @@ rather than a modelling preference.
 | `WriteBackTriggerService` | `Services/Implementation/WriteBackTriggerService.cs` | EXTEND | Start resolver reading the ADR-201 member; the forecast-source list and the percentile switch both extended. |
 | `WriteBackMappingValidator` | `API/Helpers/WriteBackMappingValidator.cs` | EXTEND | The second of the two hardcoded forecast-source lists. |
 | Feature table column | `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/` | EXTEND | One forecast at four percentiles, following the completion column. No expander (D16). |
-| Delivery Timeline tab | `pages/Portfolios/Detail/Components/DeliveryGrid/` | NEW (frontend) | The one genuinely new component. Its shape is P8 and is settled by slice 04's evaluation, not here. |
+| Delivery Timeline tab | `pages/Portfolios/Detail/Components/DeliveryGrid/` | NEW (frontend) | The one genuinely new component. P8 settled its shape on 2026-09-20: a thin adapter over `@svar-ui/react-gantt` that owns every `@svar-ui/*` import and speaks Lighthouse's vocabulary at its props. |
 
 ---
 
@@ -998,9 +1018,10 @@ rather than a modelling preference.
 | `ProjectWorkingDays` / blackout services | per ADR-058 | Day-to-date translation | **REUSED AS IS** | Identical for a start and a completion. |
 | Completion column | `FeatureListDataGrid` | Percentile presentation in a table cell | **EXTEND** | The start column follows it; D16 keeps them the same shape deliberately, so divergence would be the defect. |
 | `DeliveryMetricsTab` | `.../DeliveryGrid/DeliveryMetricsTab.tsx` | Tab slot on a Delivery | **EXTEND** | The Timeline tab reuses the tab structure; only its content is new. |
-| A Gantt component | — | Bars on a date axis | **CREATE NEW — justified, and costed first** | Nothing in the codebase draws a bar against a date axis. MUI X Gantt exists and is Premium-licence-only and not owned. This is the only CREATE NEW here, it is the Epic's only open pre-requisite (P8), and slice 04 opens with a timeboxed evaluation and a candidate shortlist rather than a decision taken now. |
+| A Gantt component | — | Bars on a date axis | **ADOPT behind an adapter — was CREATE NEW, and was costed first** | Nothing in the codebase draws a bar against a date axis. Slice 04's spike closed P8 on 2026-09-20: buildable on `@mui/x-charts` in ~205 lines, but `@svar-ui/react-gantt`'s free MIT edition was chosen instead. MUI X Gantt, which this row assumed was the thing one would buy, does not exist. What is written new is the adapter, not the chart. |
 
-**Zero unjustified CREATE NEW.** The single CREATE NEW row is gated behind an evaluation.
+**Zero unjustified CREATE NEW.** The single such row was gated behind an evaluation, and the evaluation
+turned it into an adopted MIT dependency wrapped in one component.
 
 ### Contract shape per component
 
@@ -1040,9 +1061,10 @@ requires knowing the port exactly, so it is DESIGN's to verify rather than DISCU
 
 ## Wave: DESIGN / [REF] Technology Choices
 
-Nothing new is pinned. C# .NET 10 / EF Core on the backend, React 18 + TypeScript on the frontend, both
-unchanged. The only open technology question is the timeline component (P8), deliberately unanswered
-here — see Open Questions.
+C# .NET 10 / EF Core on the backend, React 18 + TypeScript on the frontend, both unchanged. One new
+frontend dependency is pinned, and it was deliberately left open here until slice 04's spike settled P8:
+**`@svar-ui/react-gantt` 2.7.3** — MIT, ~90 KiB gzip, 25 transitive packages all MIT. Every `@svar-ui/*`
+import is confined to a single adapter component, so replacing it later is one file's work.
 
 ---
 
@@ -1064,8 +1086,8 @@ here — see Open Questions.
 
 | # | Question | Deferred to |
 |---|---|---|
-| P8 | What draws the timeline — `@mui/x-charts` primitives, plain SVG, a third-party Gantt, or a purchased MUI X Premium licence? | Slice 04's 2h evaluation, which carries a candidate shortlist and produces a costed recommendation |
-| — | Can the chosen component render sub-lanes under a summary bar? | Same evaluation. Slice 06 is severable, so this does not gate the choice, but a component that forecloses it is worth knowing about while the choice is open |
+| P8 | What draws the timeline | **Closed 2026-09-20 by slice 04's spike: `@svar-ui/react-gantt`, free MIT edition, behind an adapter.** The purchased-licence half of the question was void — MUI X Gantt does not exist |
+| — | Can the chosen component render sub-lanes under a summary bar? | **Still open for the component actually chosen.** The spike answered it for the x-charts route it recommended (a nested `<rect>` loop, ~12 lines, probed and passed), but that route was not taken and SVAR's sub-lane story was never exercised hands-on. Slice 06 is severable, so this gates nothing now; settle it at the head of slice 06 |
 | — | Does the summary-versus-sub-lane disagreement (ADR-199) read as correct to a user? | Slice 06's dogfood. If it cannot be made to read as correct, slice 06 does not ship |
 | — | Is `TrialCompletions` renamed, and to what? | **Closed in DELIVER: `TrialRecordings`.** It records three things now and completions are one of them, so the old name named a third of the type |
 | — | How many Features on a real instance have more than one contributing team? | Slice 06's pre-code count. It decides whether sub-lanes are worth building at all |
@@ -1189,7 +1211,8 @@ than skipped silently, with the reason per slice:
 | 01 | **Executable**, 10 scenarios + 1 probe, committed RED-ready | Next into DELIVER |
 | 02 (table column) | Catalogued | Frontend. A skipped Vitest test is still type-checked, so a pending test that names a prop forces that prop to exist before the suite can be green — authoring it now would drag slice 02's component surface into slice 01's commit. Authored at the head of its own DELIVER, which is this repo's standing practice (`DeliverySources/Slice0*`) |
 | 03 (write-back) | Catalogued | Backend, and authorable now; held with 02 so each slice's ATs land with the slice, per the same practice |
-| 04–06 (timeline) | Catalogued | Blocked on **P8** — what draws the timeline is an open DESIGN question settled by slice 04's own 2h evaluation. Scenarios written against a component nobody has chosen would pin the wrong driving surface |
+| 04 (timeline) | **Executable — authored 2026-09-20**, once P8 closed | The block lifted with the spike. The scenarios drive the *adapter's mapping function* — Features and a percentile in, placeable tasks out — not the third-party component's DOM. Asserting on markup we did not write would break on their release rather than ours |
+| 05–06 (dependency lines, sub-lanes) | Catalogued | Both severable, both sit on 04. Authored at the head of their own slice, per the same practice |
 
 ---
 
@@ -1392,16 +1415,16 @@ starts by re-deciding what to prove.
 | 03 | A Done Feature writes nothing | AC-3.4 | same |
 | 03 | A Feature with no start forecast writes nothing rather than an epoch date | AC-3.5 | same |
 | 03 | The sources appear only under a premium licence | AC-3.6 | mapping screen endpoints |
-| 04 | A Delivery carries a Timeline tab, one bar per Feature in board order | AC-4.1 | **P8 — surface not chosen** |
-| 04 | A bar spans start to completion at the selected percentile; the selector moves both ends | AC-4.2, AC-4.3 | P8 |
-| 04 | A started Feature's bar begins at its observed start | AC-4.4 | P8 |
-| 04 | A Feature with no forecast is listed with a stated reason rather than omitted | AC-4.5 | P8 |
-| 04 | The Delivery's target date is marked on the axis | AC-4.6 | P8 |
-| 04 | The tab is premium-gated using the existing notice | AC-4.7 | P8 |
-| 04 | Legible in both themes and at the narrowest supported width | AC-4.8 | P8 |
+| 04 | A Delivery carries a Timeline tab, one bar per Feature in board order | AC-4.1 | Timeline tab component, rendered through the adapter |
+| 04 | A bar spans start to completion at the selected percentile; the selector moves both ends | AC-4.2, AC-4.3 | The adapter's mapping function — Features + percentile in, tasks out |
+| 04 | A started Feature's bar begins at its observed start | AC-4.4 | Same mapping function |
+| 04 | A Feature with no forecast is listed with a stated reason rather than omitted | AC-4.5 | Mapping function (the unplaceable are filtered out) plus the list rendered beside the chart |
+| 04 | The Delivery's target date is marked on the axis | AC-4.6 | The axis tint, standing in for a drawn marker |
+| 04 | The tab is premium-gated using the existing notice | AC-4.7 | Tab render under each licence state |
+| 04 | Legible in both themes and at the narrowest supported width | AC-4.8 | Theme and narrow-width render |
 | 04 | **AC-4.9 is a docs deliverable, not a test.** ADR-202's mitigation is the documentation saying plainly what an out-of-order board does to the picture. If it is cut, the decision is not implemented — only the code is | AC-4.9 | docs |
-| 05 | Dependency lines on the timeline | US-05 | P8, severable |
-| 06 | Per-team sub-lanes under the summary bar | US-06 | P8, severable |
+| 05 | Dependency lines on the timeline | US-05 | Severable. **No licence implication** — dependency arrows with automatic routing are in the free edition, correcting an earlier note in the slice 04 brief |
+| 06 | Per-team sub-lanes under the summary bar | US-06 | Severable. Sub-lanes were probed on the route not taken; unexercised on the chosen one |
 
 ---
 
@@ -1423,7 +1446,7 @@ point at a file nobody has written. Registered in the same commit that creates i
 | — | `GetFeatures()` must eager-load `StartForecasts` | **Owed by slice 01** (upstream issue 2 above) |
 | — | EF migration, additive and expand-only, via `CreateMigration` across all providers | Owed by slice 01 |
 | AC-1.8 | Wall-clock budget | **Measured both sides, and it passes.** Twelve samples each, same machine, the baseline re-taken in a worktree at the pre-implementation commit: median **334 ms** before, **354.5 ms** after — **106.1%** against a budget of 110%. Detail, including why the sample was widened and what that cost in credibility, is in the slice brief |
-| P8 | What draws the timeline | Still open. Gates slices 04–06 only |
+| P8 | What draws the timeline | **Closed 2026-09-20.** `@svar-ui/react-gantt`, free MIT edition, behind an adapter owning every `@svar-ui/*` import. Carried into slice 04's DELIVER as a dependency to add, not a question to answer |
 
 ---
 

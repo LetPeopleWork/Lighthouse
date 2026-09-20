@@ -472,9 +472,10 @@ dependency upkeep that the in-house route did not carry. The saving is in risk a
 3. **Whether `readonly` also suppresses hover affordances and the context menu**, or only blocks the
    write. Editing was confirmed not to happen; whether the UI still *offers* it was not checked.
 
-### Handover — changes needed in `feature-delta.md`
+### Handover — changes needed in `feature-delta.md` — **APPLIED 2026-09-20**
 
-This session does not own that file; the slice 03 session does. Four changes, none of them made here:
+All four are now in `feature-delta.md`, along with the P8 references elsewhere in that file that would
+otherwise have contradicted them. Kept here as the record of what changed and why:
 
 1. **P8** in the pre-requisites table → resolved: SVAR React Gantt, free MIT edition. Not "build on
    x-charts", which is what this brief recommended before the decision.
@@ -503,9 +504,9 @@ first, which is why it is sequenced earlier.
 
 ## Effort
 
-~2h evaluation + ~6h build. The build half is a genuine ≤1-day slice only if the evaluation confirms
-the geometry is simple. If it does not, this brief is rewritten around whatever the evaluation
-recommends rather than stretched.
+**~7–9h build.** The evaluation is spent; its 2h produced the decision recorded above. The earlier
+figure here — "~2h evaluation + ~6h build" — was computed for the `@mui/x-charts` route and does not
+transfer. The itemised breakdown behind 7–9h is in the build-estimate table above.
 
 ## Dogfood moment
 
