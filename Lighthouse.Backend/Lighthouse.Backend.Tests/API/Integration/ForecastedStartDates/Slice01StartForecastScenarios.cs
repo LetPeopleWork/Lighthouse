@@ -229,5 +229,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
                     "a team that has never delivered does not get a date, least of all today's.");
             }
         }
+
+        /// <summary>
+        /// The same silent Team, on a Feature somebody has already started. The two facts arrive together
+        /// and only one of them is a forecast: the Team with nothing measured stops us saying when work
+        /// will begin, and says nothing about when work did begin. So the observed day is reported even
+        /// though the Feature as a whole cannot be forecast.
+        ///
+        /// The client relies on this order. Its Forecasted Start column asks which source the server named
+        /// before it decides whether to draw the cannot-forecast state, so flipping these two here would
+        /// hide a date the client is holding.
+        /// </summary>
+        // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.7, DDD-4)
+        [Test]
+        public async Task A_started_Feature_reports_the_day_it_began_even_when_a_Team_cannot_be_forecast()
+        {
+            var startedOn = new DateTime(2026, 8, 3, 0, 0, 0, DateTimeKind.Utc);
+            var (portfolio, silentTeamName, _) = await GivenAFeatureOneOfWhoseTeamsHasNeverDelivered(startedOn);
+
+            await WhenTheForecastRuns(portfolio);
+
+            var features = await TheFeaturesAsTheClientSeesThem(portfolio.Id);
+            var shared = TheFeatureNamed(features, Shared);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheTeamsWithoutForecastOf(shared), Does.Contain(silentTeamName),
+                    "the Team still cannot be forecast - that has not changed.");
+                Assert.That(TheStartSource(shared), Is.EqualTo("Observed"));
+                Assert.That(TheObservedStart(shared), Is.EqualTo(startedOn));
+                Assert.That(TheForecastedCompletion(shared, 85), Is.Null,
+                    "the completion side is a forecast and still has nothing to say.");
+            }
+        }
     }
 }
