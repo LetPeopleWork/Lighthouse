@@ -66,6 +66,7 @@ const renderInTheme = (mode: "light" | "dark") =>
 			<DeliveryGanttChart
 				bars={[bar(1, "Deep Sea Mapping"), bar(2, "Sonar Refit")]}
 				targetDate={new Date(2026, 9, 25)}
+				today={new Date(2026, 9, 12)}
 			/>
 		</ThemeProvider>,
 	);
@@ -158,7 +159,15 @@ describe("DeliveryGanttChart", () => {
 			scales[scales.length - 1].unit;
 
 		it("rules a short delivery by the day", () => {
-			expect(finestUnit(spanOf(21))).toBe("day");
+			expect(finestUnit(spanOf(10))).toBe("day");
+		});
+
+		it("is already off days by the time a delivery runs a month", () => {
+			// The first version of this kept day columns up to two months and the chart scrolled
+			// at three weeks — each column is a fixed width, so a fortnight of them is about all
+			// a panel holds. Pinned because the mistake was an order of magnitude, not a nudge.
+			expect(finestUnit(spanOf(30))).not.toBe("day");
+			expect(finestUnit(spanOf(30))).toBe("week");
 		});
 
 		it("coarsens as the delivery gets longer, never the other way", () => {
@@ -271,7 +280,7 @@ describe("DeliveryGanttChart", () => {
 	it("mounts with nothing to draw", () => {
 		render(
 			<ThemeProvider theme={createTheme()}>
-				<DeliveryGanttChart bars={[]} />
+				<DeliveryGanttChart bars={[]} today={new Date(2026, 9, 12)} />
 			</ThemeProvider>,
 		);
 

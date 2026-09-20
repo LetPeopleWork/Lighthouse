@@ -1,6 +1,6 @@
 import "@svar-ui/react-gantt/all.css";
 
-import { Box, Tooltip, useTheme } from "@mui/material";
+import { alpha, Box, Tooltip, useTheme } from "@mui/material";
 import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type React from "react";
 import { type ComponentProps, useCallback, useMemo } from "react";
@@ -10,6 +10,7 @@ import {
 	type TimelineBar,
 	timelineWindow,
 } from "./deliveryTimelineModel";
+import { markerColors, TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
 
 /**
  * The one place in this application that knows a third-party Gantt exists.
@@ -27,6 +28,8 @@ import {
 export interface DeliveryGanttChartProps {
 	bars: TimelineBar[];
 	targetDate?: Date;
+	/** Passed in rather than read here, so the chart and its legend mark the same day. */
+	today: Date;
 	/** Called with the Feature's id when its bar is chosen. Absent means the bars are inert. */
 	onBarSelected?: (featureId: number) => void;
 }
@@ -43,9 +46,6 @@ export function barTooltip(bar: TimelineBar, isClickable: boolean): string {
 
 	return isClickable ? `${span} (click for more details)` : span;
 }
-
-const TARGET_DAY_CLASS = "delivery-target-day";
-const TODAY_CLASS = "delivery-today";
 
 // The classes the library's own theme wrappers carry. Ours is the only code that needs to know
 // them, and it needs to because they are where the library declares the variables we override.
@@ -65,7 +65,12 @@ export const THEMED_ELEMENT_SELECTOR = `& .${LIGHT_THEME_CLASS}, & .${DARK_THEME
  * the declaration that ought to win is not there to win and either arrangement looks identical.
  * The assertion below pins the shape; the rendered result is the screenshot test's job.
  */
-export function ganttColorOverrides(barColor: string, fontColor: string) {
+export function ganttColorOverrides(
+	barColor: string,
+	fontColor: string,
+): {
+	[selector: string]: Record<string, string>;
+} {
 	return {
 		[THEMED_ELEMENT_SELECTOR]: {
 			"--wx-gantt-task-color": barColor,
@@ -182,46 +187,55 @@ const MONTHLY_SCALES = [
 	{ unit: "month" as const, step: 1, format: shortMonthAndYear },
 ];
 
-/** Beyond these many days a row of one column per day stops fitting any reasonable window. */
-const DAYS_BEFORE_WEEKS = 60;
-const DAYS_BEFORE_MONTHS = 365;
+/**
+ * Roughly how many columns fit across the Delivery panel before it starts scrolling. The library
+ * gives each column a fixed width, so this is a count rather than a span — and it is what makes the
+ * rule below hold at any window size worth supporting rather than only at the one it was written on.
+ */
+const COLUMNS_THAT_FIT = 16;
+
+const DAYS_PER = { day: 1, week: 7, month: 30 } as const;
 
 /**
  * How coarsely to rule the axis, so a Delivery of any length arrives fitting the screen.
  *
- * A long Delivery drawn in day columns is a horizontal scrollbar with a plan somewhere inside it —
- * the reader has to drag to discover the shape, which is the one thing a timeline is for. Coarsening
- * the unit trades exact days for a picture that can be taken in at once, and the exact days are
- * still a hover away.
+ * Choose the *finest* unit whose columns still fit, rather than judging by the number of days.
+ * Judging by days was the first attempt and it was wrong by a wide margin: three weeks of work
+ * already overflows, because each column is a fixed width and a fortnight of them is all a panel
+ * holds. So days are for a short Delivery only, weeks carry the ordinary case, and months take
+ * over past a season.
+ *
+ * A timeline the reader has to drag along is a plan they have to discover instead of see, which
+ * loses the one thing this view is for. Coarsening trades exact days for a shape that arrives
+ * whole — and the exact days are still a hover away on the bar.
  */
 export function scalesForSpan(start: Date, end: Date) {
 	const days = Math.round(
 		(end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
 	);
 
-	if (days <= DAYS_BEFORE_WEEKS) {
+	const fits = (unit: keyof typeof DAYS_PER) =>
+		days / DAYS_PER[unit] <= COLUMNS_THAT_FIT;
+
+	if (fits("day")) {
 		return TIMELINE_SCALES;
 	}
 
-	return days <= DAYS_BEFORE_MONTHS ? WEEKLY_SCALES : MONTHLY_SCALES;
+	return fits("week") ? WEEKLY_SCALES : MONTHLY_SCALES;
 }
 
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
 	targetDate,
+	today,
 	onBarSelected,
 }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	const barColor = theme.palette.primary.main;
+	const marks = markerColors(theme);
 
 	const tasks = useMemo(() => toGanttTasks(bars), [bars]);
-
-	// Fixed for as long as the chart is mounted, rather than read afresh on every render. A new
-	// Date each time is a new identity, which would invalidate everything memoised against it on
-	// every render — and the cost of holding it is only that a tab left open across midnight keeps
-	// yesterday's marker until something else redraws it.
-	const today = useMemo(() => new Date(), []);
 
 	const axisRange = useMemo(
 		() => timelineWindow(bars, targetDate, today),
@@ -307,18 +321,21 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 			data-theme-mode={isDark ? "dark" : "light"}
 			sx={{
 				height: chartHeight(bars.length),
-				...ganttColorOverrides(
-					barColor,
-					theme.palette.getContrastText(barColor),
-				),
-				// The two are drawn differently on purpose, so a reader can tell at a glance which is
-				// which without a legend: the target is a filled band (a date being aimed at), today
-				// is a ruled edge (a position being stood on). A day that is both shows both.
+				// White on the bar in both modes, rather than whatever contrasts best with the fill.
+				// The two modes use different greens, so computing it per mode made the label flip
+				// from white to near-black between them — the same bar reading as two components.
+				...ganttColorOverrides(barColor, theme.palette.primary.contrastText),
+				// Drawn differently from each other on purpose — the target is a filled band, a date
+				// being aimed at; today is a ruled line, a position being stood on — and both in a
+				// colour the bars never use, so neither reads as another bar. The legend beside the
+				// chart names them, because a mark nobody can name is decoration.
 				[`& .${TARGET_DAY_CLASS}`]: {
-					backgroundColor: theme.palette.action.selected,
+					backgroundColor: alpha(marks.target, 0.22),
+					boxShadow: `inset 0 3px 0 0 ${marks.target}`,
 				},
 				[`& .${TODAY_CLASS}`]: {
-					boxShadow: `inset 2px 0 0 0 ${theme.palette.primary.main}`,
+					backgroundColor: alpha(marks.today, 0.12),
+					boxShadow: `inset 3px 0 0 0 ${marks.today}`,
 				},
 			}}
 		>

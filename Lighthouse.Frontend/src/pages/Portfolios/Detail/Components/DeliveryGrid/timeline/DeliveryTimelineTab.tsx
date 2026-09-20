@@ -21,6 +21,7 @@ import {
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
+import TimelineLegend from "./TimelineLegend";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -46,6 +47,12 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(
 		null,
 	);
+
+	// One reading of the clock, handed to both the legend and the chart, so they cannot disagree
+	// about which day today is. Fixed for as long as the tab is open: a fresh Date on every render
+	// is a fresh identity and would invalidate everything memoised against it, and the cost is only
+	// that a tab left open across midnight keeps yesterday's marker until something redraws it.
+	const today = useMemo(() => new Date(), []);
 
 	// Held by id rather than by object, so the dialog follows a refreshed Feature instead of
 	// showing the one that was on screen when it was opened.
@@ -101,10 +108,15 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				</ToggleButtonGroup>
 			</Box>
 
+			{bars.length > 0 && (
+				<TimelineLegend targetDate={targetDate} today={today} />
+			)}
+
 			{bars.length > 0 ? (
 				<DeliveryGanttChart
 					bars={bars}
 					targetDate={targetDate}
+					today={today}
 					onBarSelected={setSelectedFeatureId}
 				/>
 			) : (
