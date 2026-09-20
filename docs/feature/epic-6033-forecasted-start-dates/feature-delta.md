@@ -1445,3 +1445,64 @@ point at a file nobody has written. Registered in the same commit that creates i
 | Sub-assertions that only start working later | ⚠ Named rather than removed. In scenario 3, `no start percentiles` is vacuously true today; in scenario 7, the completion and `teamsWithoutForecast` assertions read pre-existing fields. Each sits beside a sibling that genuinely fails, so the scenario as a whole is honest RED — but a partial implementation that leaves *those* green has not proven that part, and DELIVER should not read it that way |
 
 Next wave: DELIVER, slice 01 (Story #6045).
+
+---
+
+## Wave: DISTILL / [REF] Slice 02 — scenarios
+
+Authored 2026-09-20, at the head of slice 02's own DELIVER, which is what the Scope of This Pass section
+above said would happen. Story #6046.
+
+**Driving port**: the React component tree, through Vitest and React Testing Library, rendering the real
+column factory — the mechanism the ATDD infrastructure policy already records for frontend acceptance
+tests. No shallow rendering and no component mocking.
+
+**Test placement**: `components/Common/FeatureListDataGrid/columns.forecastedStart.test.tsx`, beside the
+`columns.test.tsx` that covers the completion column. Same file-per-concern split the directory already
+uses (`columns.dependsOn.test.tsx`, `columns.position.test.tsx`, `columns.warnings.test.tsx`).
+
+**Surface**: `createForecastedStartColumn` in `columns.tsx`, a sibling of `createForecastsColumn` at
+line 48. Wired into `FeaturesView.tsx` and the Delivery grid's `DeliverySection.tsx`, the two places
+`createForecastsColumn` is used today.
+
+### What the frontend binds to
+
+Slice 01's wire contract, unchanged — this slice adds no backend field and needs none. If it turns out
+to need one, slice 01 was incomplete and the change belongs there rather than here.
+
+```jsonc
+"startForecast": { "source": "Forecast" | "Observed" | "Unknown", "observedDate": "…", "percentiles": [ … ] },
+"teamForecasts": [ { "teamId": 7, "startPercentiles": [ … ], "completionPercentiles": [ … ] } ]
+```
+
+Both are optional on the TypeScript model, for the same reason every other additive field on `IFeature`
+is: a fixture built before they existed is still a valid fixture, and a client reading an older instance
+must not crash. `teamForecasts` is carried on the model and read by nothing in this slice — the table
+shows one forecast at four percentiles and no expander (D16), and the per-team breakdown is slice 06's.
+
+### Scenarios
+
+| # | Scenario | AC | Notes |
+|---|---|---|---|
+| 1 | A Feature nobody has started shows its four start percentiles | AC-2.1 | **walking skeleton** for this slice |
+| 2 | A started Feature shows one date, marked observed, with no percentile beside it | AC-2.2, D5 | |
+| 3 | The observed marking is legible without hovering | AC-2.2 | the brief's own wording: a reader scanning the column must not mistake an observed date for a P50 |
+| 4 | A Feature no contributing team can be forecast for shows the column's existing empty state | AC-2.3 | the same `Cannot forecast` the completion column uses, not a new one |
+| 5 | A Feature whose start is unknown but whose teams are all forecastable still says so | AC-2.3 | the `Unknown` source with no `teamsWithoutForecast` — reachable when a start row has no runs behind it |
+| 6 | A payload with no `startForecast` at all renders rather than throwing | AC-2.3 | mirrors `columns.test.tsx`'s own "tolerates a backend payload that omits the field" |
+| 7 | The column renders with no premium licence | AC-2.4 | core forecasting has never been gated (D8); asserted with the licence absent rather than assumed |
+| 8 | The completion column is untouched — same cell, same content | AC-2.5 | |
+
+**Error and edge coverage: 4 of 8** (4, 5, 6, 8). The column takes no user input, makes no call and has
+no failure mode of its own; its edges are all shapes of "there is no answer", which is the thing this
+Epic is most at risk of rendering as a confident date.
+
+### What this slice cannot settle, and who has to
+
+The brief names a **dogfood judgement**, not a test: reading the column in board order on the dev
+instance and saying out loud whether the dates are *believable*. D6 predicts a not-started Feature will
+show as starting today while others are in flight, and that is the design working as decided (ADR-202) —
+but whether it reads as acceptable or as a bug is a product call, not one an acceptance test can make.
+Brought to the maintainer with a screenshot rather than decided here.
+
+Next: DELIVER, slice 02 (Story #6046).
