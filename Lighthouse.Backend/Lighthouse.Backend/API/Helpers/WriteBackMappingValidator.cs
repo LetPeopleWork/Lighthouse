@@ -4,20 +4,11 @@ namespace Lighthouse.Backend.API.Helpers
 {
     public static class WriteBackMappingValidator
     {
-        // Every source that writes a date, at either end of a Feature. They are listed together because
-        // the rule below is about writing a date as text, and that is the same problem whichever end the
+        // Every source that writes a date, at either end of a Feature. Both ends are here because the
+        // rule below is about rendering a date as text, and that is the same problem whichever end the
         // date came from.
-        private static readonly HashSet<WriteBackValueSource> ForecastSources =
-        [
-            WriteBackValueSource.ForecastPercentile50,
-            WriteBackValueSource.ForecastPercentile70,
-            WriteBackValueSource.ForecastPercentile85,
-            WriteBackValueSource.ForecastPercentile95,
-            WriteBackValueSource.ForecastedStartPercentile50,
-            WriteBackValueSource.ForecastedStartPercentile70,
-            WriteBackValueSource.ForecastedStartPercentile85,
-            WriteBackValueSource.ForecastedStartPercentile95,
-        ];
+        private static readonly HashSet<WriteBackValueSource> DateWritingSources =
+            [.. WriteBackValueSources.Completion, .. WriteBackValueSources.Start];
 
         public static WriteBackMappingValidationResult Validate(List<WriteBackMappingDefinition> mappings)
         {
@@ -30,7 +21,7 @@ namespace Lighthouse.Backend.API.Helpers
                     errors.Add("An additional field is required for every write-back mapping.");
                 }
 
-                if (ForecastSources.Contains(mapping.ValueSource) &&
+                if (DateWritingSources.Contains(mapping.ValueSource) &&
                     mapping.TargetValueType == WriteBackTargetValueType.FormattedText &&
                     string.IsNullOrEmpty(mapping.DateFormat))
                 {

@@ -17,26 +17,10 @@ namespace Lighthouse.Backend.Services.Implementation
         ILogger<WriteBackTriggerService> logger)
         : IWriteBackTriggerService
     {
-        private static readonly HashSet<WriteBackValueSource> CompletionSources =
-        [
-            WriteBackValueSource.ForecastPercentile50,
-            WriteBackValueSource.ForecastPercentile70,
-            WriteBackValueSource.ForecastPercentile85,
-            WriteBackValueSource.ForecastPercentile95,
-        ];
-
-        private static readonly HashSet<WriteBackValueSource> StartSources =
-        [
-            WriteBackValueSource.ForecastedStartPercentile50,
-            WriteBackValueSource.ForecastedStartPercentile70,
-            WriteBackValueSource.ForecastedStartPercentile85,
-            WriteBackValueSource.ForecastedStartPercentile95,
-        ];
-
         // Both ends of a Feature are answers the simulation produced, so both belong to the pass that
         // runs after a forecast rather than the one that runs after a sync.
         private static readonly HashSet<WriteBackValueSource> ForecastSources =
-            [.. CompletionSources, .. StartSources];
+            [.. WriteBackValueSources.Completion, .. WriteBackValueSources.Start];
 
         public IReadOnlyList<WriteBackFieldUpdate> ResolveWriteBackForTeam(Team team)
         {
@@ -248,12 +232,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private string? ResolveFeatureValue(WriteBackMappingDefinition mapping, Feature feature)
         {
-            if (StartSources.Contains(mapping.ValueSource))
+            if (WriteBackValueSources.Start.Contains(mapping.ValueSource))
             {
                 return ResolveStartValue(mapping, feature);
             }
 
-            if (CompletionSources.Contains(mapping.ValueSource))
+            if (WriteBackValueSources.Completion.Contains(mapping.ValueSource))
             {
                 return ResolveForecastValue(mapping, feature);
             }
