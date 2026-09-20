@@ -165,3 +165,48 @@ empty state — as is every mutant in the new column and the renamed header defa
 
 The gate is met at 93.88 %, and the one thing this slice is actually responsible for deciding — which of
 the three sources the column draws, and what each one looks like — is fully killed.
+
+---
+
+# Mutation testing — Epic 6033 slice 03 (the tracker receives the start date)
+
+Run 2026-09-20 against `main` @ `fc0ebdd3e`, after the adversarial review's findings were fixed. Gate is
+80 % kill rate on each stack touched.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET) | **93.94 %** | 99 | 93 | 4 | 2 | 2 m 31 s |
+| Frontend (StrykerJS) | **100 %** | 26 | 26 | 0 | 0 | ~1 m 30 s |
+
+Configs: `stryker-6047-slice-03.backend.json`, `stryker-6047-slice-03.frontend.json` and its vitest
+include set `vitest.stryker.6047-slice-03.config.ts`, all copied here; the working copies are gitignored
+as local tooling.
+
+Backend mutates whole files, because Stryker.NET ignores line spans — 19 298 of 19 395 mutants were
+removed by the `mutate` filter and the ignore comments the codebase already carries, leaving 97 tested.
+Frontend mutates line ranges, which StrykerJS does honour: `38-68` and `77-101` in
+`WriteBackMappingDefinition.ts`, `182-215` in `WorkTrackingSystemService.ts`.
+
+## What the frontend run found, and the re-run
+
+The first frontend run read **88.46 %** with three mutants alive, and two of them were a real gap this
+slice put there: the rename touched four completion labels and the test pinned the 50th and the 85th, so
+the **70th and the 95th could have said anything at all**. The third was the `?? []` guard on a
+connection that carries no sync mappings — a shape the save path handles and nothing exercised.
+
+Three tests closed all three, and the run was repeated to **100 %**. Only tests were added between the
+two runs, so the mutate ranges did not move; had a line shifted, the ranges would have needed
+re-deriving and the earlier number would not have been comparable.
+
+## The six the backend run left alive
+
+| file:line | mutation | why it is accepted |
+| --- | --- | --- |
+| `WriteBackMappingValidator.cs:43` | `g.First()` → `g.FirstOrDefault()` | Equivalent. The value is read from a `GroupBy` group, and a group with no members does not exist. Pre-existing line. |
+| `WriteBackMappingValidator.cs:40` | `is not null and not 0` → `not null or not 0` | Reachable, pre-existing, and not this slice's to close. The `or` form admits field-less mappings into duplicate detection, so two mappings that both lack a field would report a *duplicate* on top of the "an additional field is required" error they already report. A worse message, not a wrong write. Noted rather than fixed, because the line predates this slice and the fix belongs with whoever owns that message. |
+| `WriteBackTriggerService.cs:188` (x2) | the `LogError` in the new per-mapping catch — statement removed, and its message rewritten | Accepted by the convention this codebase already applies to logging: the run skipped several hundred such mutants under in-place ignore comments whose reasons say the tests pin *that* an operator is told, not the wording. These two were written after that convention and simply have no ignore comment yet. What matters — that a failing mapping is skipped and the others still write — is asserted, and killed. |
+| `WriteBackTriggerService.cs:43` | `wi.TeamId == team.Id` → `!=` (no coverage) | Unobservable through the test double. The repository is a Moq mock matching `It.IsAny<Expression<…>>()`, so the predicate is never evaluated — no unit test can kill it. Pre-existing, and the kind of thing only an integration test reaches. |
+| `WriteBackTriggerService.cs:364` | the `ArgumentOutOfRangeException` message (no coverage) | Unreachable, and confirmed so rather than assumed. `GetPercentileFromSource` has two callers and both are entered only after membership in `WriteBackValueSources.Start` or `.Completion` has been tested — whose union is exactly the eight members the switch handles. Nothing can reach the default arm today. |
+
+Both gates are met. Every mutant in the code this slice is responsible for deciding — which of the two
+answers a start is, which day that lands on, and which sources a mapping may name — is killed.
