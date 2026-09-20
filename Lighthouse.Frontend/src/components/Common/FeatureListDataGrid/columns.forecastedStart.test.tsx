@@ -74,6 +74,12 @@ describe("createForecastedStartColumn", () => {
 		for (const day of [12, 13, 14, 16]) {
 			expectNotShown(inOctober(day));
 		}
+
+		// The four dates and nothing else. The column header already says what this column is, so a
+		// caption inside the cell would repeat it on every row.
+		expect(
+			screen.getByTestId("feature-forecasted-start-cell"),
+		).toHaveTextContent(/^(9\/14\/2026){4}$/);
 	});
 
 	it("reuses the empty state the completion column already uses when a team cannot be forecast", () => {
@@ -129,10 +135,30 @@ describe("createForecastedStartColumn", () => {
 	it("tolerates a backend payload that omits the field entirely", () => {
 		renderStartCell(feature({ startForecast: undefined }));
 
-		expect(
-			screen.getByTestId("feature-forecasted-start-cell"),
-		).toBeInTheDocument();
+		const cell = screen.getByTestId("feature-forecasted-start-cell");
+
+		expect(cell).toBeInTheDocument();
 		expect(screen.queryByTestId("observed-start")).not.toBeInTheDocument();
+
+		// An empty cell, down to the last character. Anything standing in for the missing forecasts -
+		// a placeholder entry, a caption - would be this column inventing something the server did not
+		// say, and the test would not otherwise notice.
+		expect(cell.textContent).toBe("");
+	});
+
+	// The grid identifies a column by its field: that is what the column-visibility menu toggles and
+	// what an export writes out. A field naming no real property breaks both silently, because the cell
+	// still draws correctly - it reads the row directly and never looks the field up.
+	it("identifies itself by a property the row actually carries", () => {
+		expect(Object.keys(feature())).toContain(
+			createForecastedStartColumn().field,
+		);
+	});
+
+	// Sorting here would order rows by the start object itself rather than by the date inside it, which
+	// is not an order anyone would recognise.
+	it("does not offer to sort rows by a forecast object", () => {
+		expect(createForecastedStartColumn().sortable).toBe(false);
 	});
 
 	it("leaves the completion column showing exactly what it showed before", () => {
