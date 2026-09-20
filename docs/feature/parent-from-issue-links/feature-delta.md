@@ -340,9 +340,11 @@ from an empty Feature list weeks later.
 
 **Acceptance criteria**
 
-- **AC-4.1** On Azure DevOps, ServiceNow, Linear and CSV connections, an Additional Field naming a Jira
-  link type fails validation naming the reference. Asserted per connector — the behaviour exists today by
-  accident (D6) and this is what stops the next change to field resolution from removing it.
+- **AC-4.1** ~~On Azure DevOps, ServiceNow, Linear and CSV connections, an Additional Field naming a Jira
+  link type fails validation naming the reference.~~ **RETIRED during DELIVER, 2026-09-20** — see
+  *DELIVER / [WHY] AC-4.1 retired* below. The criterion described something that cannot happen: the
+  override is a foreign key to an `AdditionalFieldDefinition` row, so a link-type reference is not a thing
+  a non-Jira connection can hold.
 - **AC-4.2** `docs/teams/edit.md` and `docs/portfolios/edit.md` state which trackers honour the Parent
   Override Field. Linear and CSV do not (S4); that pre-existing gap is documented rather than left to be
   discovered.
@@ -471,7 +473,7 @@ Lighthouse is self-hosted with no vendor pipeline, so every KPI is `per_instance
 | 5 | No blocking unknowns | Three unknowns, each confined to one slice with a pre-registered gate: P1 (endpoint reachability) in slice 01, which runs first so it can fail cheaply; D3's both-ends claim in slice 02's spike, which resizes that slice rather than blocking it; ambiguity frequency in slice 03, gated at **≥ 5% sends the feature back to DESIGN** |
 | 6 | UX defined | D1 — the surface does not change. Existing dropdown, existing validation, existing warning surface |
 | 7 | Job traceability | Every story carries a real `job_id`; the infrastructure-only escape valve is not used |
-| 8 | Non-functional constraints stated | No extra request (AC-2.7); no behaviour change for existing instances (AC-1.3); cross-connector refusal (D6, AC-4.1); Terminology (D10) |
+| 8 | Non-functional constraints stated | No extra request (AC-2.7); no behaviour change for existing instances (AC-1.3); cross-connector refusal (D6, AC-4.1 — retired during DELIVER, see below); Terminology (D10) |
 | 9 | Out-of-scope explicit | Seven exclusions with reasons, including the `BlockedByLinkName` const deliberately left to epic-4365's surface |
 
 **Verdict: READY.** Requirements completeness **0.96**. The shortfall is P1 — an honest unknown about
@@ -814,6 +816,11 @@ No upstream change to any user story or acceptance criterion. AC-4.1 still reads
 outside — a link-type reference fails validation on the other four connectors. Only the mechanism beneath
 it moved, so `upstream-changes.md` is not owed.
 
+**Overtaken by DELIVER, 2026-09-20.** AC-4.1 is retired and DDD-1's port method is not built: nothing
+outside the Jira connector asks for link types, so the capability would have been declared to no caller.
+See *DELIVER / [WHY] AC-4.1 retired* below. ADR-193 keeps its value as the reason the lookup lives where
+it does; what it does not survive is the part that put the lookup on the shared port.
+
 ---
 
 ## Wave: DISTILL / [REF] Prior Wave Consultation
@@ -830,7 +837,9 @@ it moved, so `upstream-changes.md` is not owed.
 
 **Wave-decision reconciliation**: no contradiction found between DISCUSS and DESIGN. DESIGN's one
 correction (DDD-1, the port-declared capability) strengthens AC-4.1 without changing what it asserts from
-the outside, and is recorded in both waves' Changed Assumptions.
+the outside, and is recorded in both waves' Changed Assumptions. Both were retired in DELIVER — the
+contradiction was with the code, not between the waves, and neither wave could have seen it without
+reading what the override column actually stores.
 
 ---
 
@@ -1014,6 +1023,9 @@ Feature: Refusing a parent when more than one candidate matches
 ```
 
 ### Slice 04 — the trackers that cannot honour this
+
+**These three scenarios were retired unrun on 2026-09-20** and no test file was written for them. They
+are kept as written so the reason below has something to point at. See *DELIVER / [WHY] AC-4.1 retired*.
 
 ```gherkin
 Feature: A tracker that cannot read link types says so
@@ -1323,3 +1335,49 @@ mapping* going stale when an administrator renames a link type, and a reference 
 still names one after a rename — it simply stops matching, which the unresolved path already handles.
 Resolving on demand instead would put a Jira round-trip into four UI paths and break them whenever Jira
 is unreachable.
+
+---
+
+## Wave: DELIVER / [WHY] AC-4.1 retired, and slice 04 cut to its docs
+
+Slice 04 was planned as three steps: declare link-type reading as a port capability (04-01), assert that
+the other four connectors refuse a link-type reference (04-02), and write the docs (04-03). The first two
+were dropped before either was written. The docs step stands, and is the whole of the slice.
+
+**What the setting actually is.** `ParentOverrideAdditionalFieldDefinitionId` is a nullable foreign key to
+an `AdditionalFieldDefinition` row on the connection. It is not free text. So on a ServiceNow, Linear or
+CSV connection there is no such thing as "an Additional Field naming a Jira link type" — there is a field
+definition whose name is some string, and whether that string resolves is the generic question of whether
+those connectors validate additional-field names at all. They do not, and that gap predates this feature
+by years and will outlive it. AC-4.1 read as a statement about this feature and was a statement about
+something else.
+
+**What 04-01 would have added.** `IWorkTrackingConnector` would have gained a member returning the
+instance's parent link types, with four `=> []` implementations. Nothing would have called it: the lookup
+is private to `JiraWorkTrackingConnector` (`IssueLinkTypeEndpoint:42`), reached only through
+`ParentSourceSelector` at `:1706` and `:1759`, and no caller outside that file asks. A public member with
+no consumer is the thing slice 03 was told to delete rather than leave, and this would have been one by
+construction.
+
+**The cross-cutting risk that is real was found in slice 01 and is already recorded**, one section above:
+four surfaces inside the Jira connector's own configuration — write-back targets, forecast filter rules,
+delivery rules, blocked-item rules — cannot tell a registered link type from a real field. That is where
+the danger lives, and it was accepted deliberately with the shape of the fix written down.
+
+**What the docs still owe, unchanged.** AC-4.2 and AC-4.3 stand and are what slice 04 delivers. Which
+trackers honour the Parent Override Field, verified in the code rather than assumed:
+
+| Tracker | Honours the Parent Override Field | Where |
+|---|---|---|
+| Jira | Yes — a field, and after this feature a link type | `ParentSourceSelector.TheParentOf` |
+| Azure DevOps | Yes — override first, the tracker's own relation as fallback | `AzureDevOpsWorkTrackingConnector:1241` |
+| Linear | No — the project or initiative id is assigned outright | `LinearWorkTrackingConnector:361`, `:438` |
+| CSV | No — the parent comes from its own column | `CsvWorkTrackingConnector:239` |
+| ServiceNow | No — no portfolio parenting at all | `ServiceNowWorkTrackingConnector:31` |
+
+That table is a fact about those trackers and is worth a reader's time. "ServiceNow does not support Jira
+link types" is not, and appears nowhere.
+
+**The residue.** The three connectors that never look at `AdditionalFieldDefinitions` still accept an
+unresolvable field reference and silently ignore it. Not this feature's to fix, not this feature's to
+assert, and named here so the next person meeting it knows it was seen rather than missed.
