@@ -1,6 +1,5 @@
 import type { IFeature } from "../../../../../../models/Feature";
 import type { IWhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
-import { formatLocalDate } from "../../../../../../utils/date/localDate";
 import {
 	cannotBeForecast,
 	cannotForecastReason,
@@ -146,41 +145,15 @@ export function buildDeliveryTimeline(
 }
 
 /**
- * The calendar day of a Delivery's target, which is stored as an instant and is not the viewer's day.
- *
- * The Delivery heading prints this date with `timeZone: "UTC"`, so a target late in the UTC day shows
- * as that day even to a reader whose own clock has already rolled over. Reducing it locally instead
- * would tint one column on the timeline while the heading above it names another.
- */
-const targetCalendarDay = (target: Date): string =>
-	[
-		target.getUTCFullYear(),
-		String(target.getUTCMonth() + 1).padStart(2, "0"),
-		String(target.getUTCDate()).padStart(2, "0"),
-	].join("-");
-
-/**
- * Whether an axis column is the Delivery's target day.
- *
- * The two sides are reduced differently on purpose, and that is the whole difficulty here. The chart
- * hands its scale callbacks a date at LOCAL midnight, so a column is a local day; the target is an
- * instant the product reads as a UTC day. Reducing both the same way agrees with itself and disagrees
- * with the heading.
- */
-export function isTargetDay(day: Date, targetDate?: Date): boolean {
-	if (!targetDate) {
-		return false;
-	}
-
-	return formatLocalDate(day) === targetCalendarDay(targetDate);
-}
-
-/**
  * A Delivery's target as a plain calendar date in the reader's own frame.
  *
- * The stored value is an instant that the product reads as a UTC day. Once it is here, it can be
- * compared to axis columns with ordinary local arithmetic — which is what lets one containment
- * rule serve both marked dates instead of each needing its own comparison.
+ * The stored value is an instant, and the product reads it as a UTC day — the Delivery heading
+ * prints it with `timeZone: "UTC"`, so a target late in the UTC day shows as that day even to a
+ * reader whose own clock has already rolled over. Reducing it locally instead would mark one
+ * column on the timeline while the heading above named another.
+ *
+ * Converting once, here, is what lets everything downstream compare it with ordinary local
+ * arithmetic instead of each caller having to remember the asymmetry.
  */
 export function targetCalendarDate(targetDate: Date): Date {
 	return new Date(
@@ -188,20 +161,4 @@ export function targetCalendarDate(targetDate: Date): Date {
 		targetDate.getUTCMonth(),
 		targetDate.getUTCDate(),
 	);
-}
-
-/**
- * Whether two dates are the same day in the reader's own zone.
- *
- * Deliberately NOT `isTargetDay`, and the difference is the easy mistake here. That one exists to
- * compare an axis column against a stored instant, so it reduces its two sides differently. Today
- * is not a stored instant — it is the reader's own clock, already local — and putting it through
- * the same comparison reads it as a UTC day and marks the wrong column for most of the day.
- */
-export function isSameLocalDay(day: Date, other?: Date): boolean {
-	if (!other) {
-		return false;
-	}
-
-	return formatLocalDate(day) === formatLocalDate(other);
 }

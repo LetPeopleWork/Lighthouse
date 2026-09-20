@@ -4,8 +4,8 @@ import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
-	isTargetDay,
 	TIMELINE_PERCENTILES,
+	targetCalendarDate,
 	timelineWindow,
 } from "./deliveryTimelineModel";
 
@@ -227,43 +227,38 @@ describe("timelineWindow", () => {
 	});
 });
 
-describe("isTargetDay", () => {
-	// The axis hands its callbacks LOCAL midnight; the target arrives as the instant the backend
-	// stored. The helper below builds each side the way its real producer does, because building
-	// both the same way is what makes this whole question look settled when it is not.
-	const axisColumnFor = (day: number) => new Date(2026, 9, day, 0, 0, 0);
+describe("targetCalendarDate", () => {
 	const targetStoredAt = (iso: string) => new Date(iso);
 
-	it("marks the target day and no other", () => {
-		const target = targetStoredAt("2026-10-15T00:00:00Z");
-
-		expect(isTargetDay(axisColumnFor(15), target)).toBe(true);
-		expect(isTargetDay(axisColumnFor(16), target)).toBe(false);
+	it("gives the calendar day the target names", () => {
+		expect(targetCalendarDate(targetStoredAt("2026-10-15T00:00:00Z"))).toEqual(
+			new Date(2026, 9, 15),
+		);
 	});
 
-	it("marks nothing when the Delivery has no target date", () => {
-		expect(isTargetDay(axisColumnFor(15), undefined)).toBe(false);
-	});
-
-	it("pads a single-digit month and day, so the two sides can be compared at all", () => {
-		// Both sides are reduced to a `YYYY-MM-DD` string and compared as text, so an unpadded
-		// "2026-3-7" matches nothing and the tint silently never appears in nine months of twelve.
-		const target = targetStoredAt("2026-03-07T00:00:00Z");
-
-		expect(isTargetDay(new Date(2026, 2, 7), target)).toBe(true);
-		expect(isTargetDay(new Date(2026, 2, 8), target)).toBe(false);
-	});
-
-	it("tints the day the Delivery heading names, for a target late in the UTC day", () => {
-		// The heading prints the target with `timeZone: "UTC"`, so this one reads as the 15th. The
-		// suite is pinned to Europe/Zurich, where the same instant is already 01:30 on the 16th
-		// locally — so reducing the target the way the axis column is reduced tints the 16th and
-		// disagrees with the heading directly above it. That is the failure this pins; a target at
-		// UTC midnight cannot see it, because at this offset both reductions agree.
+	it("gives the day the Delivery heading names, for a target late in the UTC day", () => {
+		// The heading prints the target with `timeZone: "UTC"`, so this one reads as the 15th.
+		// The suite is pinned to Europe/Zurich, where the same instant is already 01:30 on the
+		// 16th locally — so reading it with the local getters yields the 16th and disagrees with
+		// the heading directly above the chart. That is the failure this pins; a target at UTC
+		// midnight cannot see it, because at this offset both readings agree.
 		const target = targetStoredAt("2026-10-15T23:30:00Z");
 		expect(target.getDate()).toBe(16);
 
-		expect(isTargetDay(axisColumnFor(15), target)).toBe(true);
-		expect(isTargetDay(axisColumnFor(16), target)).toBe(false);
+		expect(targetCalendarDate(target)).toEqual(new Date(2026, 9, 15));
+	});
+
+	it("keeps a single-digit month and day on the right day", () => {
+		expect(targetCalendarDate(targetStoredAt("2026-03-07T00:00:00Z"))).toEqual(
+			new Date(2026, 2, 7),
+		);
+	});
+
+	it("returns a date at local midnight, so it compares cleanly against an axis column", () => {
+		const day = targetCalendarDate(targetStoredAt("2026-10-15T23:30:00Z"));
+
+		expect([day.getHours(), day.getMinutes(), day.getSeconds()]).toEqual([
+			0, 0, 0,
+		]);
 	});
 });

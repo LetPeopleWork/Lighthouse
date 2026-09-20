@@ -26,6 +26,8 @@ export default defineConfig({
 			"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttAdapterBoundary.enforcement.test.ts",
 			"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineLegend.test.tsx",
 			"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.test.ts",
+			"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineBarContent.test.tsx",
+			"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.config.test.tsx",
 		],
 		exclude: [
 			"**/node_modules/**",

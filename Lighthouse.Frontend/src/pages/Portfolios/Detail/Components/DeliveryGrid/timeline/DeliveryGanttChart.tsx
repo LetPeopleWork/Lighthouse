@@ -1,12 +1,11 @@
 import "@svar-ui/react-gantt/all.css";
 
-import { alpha, Box, Tooltip, useTheme } from "@mui/material";
+import { alpha, Box, useTheme } from "@mui/material";
 import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type React from "react";
 import { type ComponentProps, useCallback, useMemo } from "react";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
 import {
-	barTooltip,
 	chartHeight,
 	columnHighlight,
 	ganttColorOverrides,
@@ -16,6 +15,7 @@ import {
 	TIMELINE_SCALES,
 	toGanttTasks,
 } from "./ganttShapes";
+import TimelineBarContent from "./TimelineBarContent";
 import { markerColors, TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
 
 /**
@@ -85,52 +85,13 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		[bars],
 	);
 
-	/**
-	 * The inside of each bar, rendered by us rather than by the library.
-	 *
-	 * This is the documented way to own a bar's content, and owning it is what keeps the hover text
-	 * and the click in ordinary React. The alternative — subscribing to the library's own task
-	 * events — types as valid whatever name is passed, because its props carry an `on${string}`
-	 * index signature, so a wrong guess compiles and silently does nothing.
-	 */
 	const BarContent = useCallback(
-		({ data }: { data: { id?: string | number } }) => {
-			const bar = barsById.get(Number(data.id));
-
-			if (!bar) {
-				return null;
-			}
-
-			const select = onBarSelected;
-
-			return (
-				<Tooltip title={barTooltip(bar, select !== undefined)} followCursor>
-					<Box
-						component={select ? "button" : "div"}
-						type={select ? "button" : undefined}
-						onClick={select ? () => select(bar.featureId) : undefined}
-						sx={{
-							width: "100%",
-							height: "100%",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							overflow: "hidden",
-							whiteSpace: "nowrap",
-							textOverflow: "ellipsis",
-							px: 1,
-							background: "none",
-							border: "none",
-							font: "inherit",
-							color: "inherit",
-							cursor: select ? "pointer" : "default",
-						}}
-					>
-						{bar.name}
-					</Box>
-				</Tooltip>
-			);
-		},
+		({ data }: { data: { id?: string | number } }) => (
+			<TimelineBarContent
+				bar={barsById.get(Number(data.id))}
+				onSelect={onBarSelected}
+			/>
+		),
 		[barsById, onBarSelected],
 	);
 
