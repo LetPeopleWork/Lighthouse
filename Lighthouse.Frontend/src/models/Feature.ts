@@ -121,6 +121,18 @@ export const FeatureSchema = z.object({
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
 
+/**
+ * How a percentile arrives from the backend and how it is held here. Written once because the two
+ * forecast columns, the per-team breakdown and the aggregate all decode the same thing, and four
+ * copies of one decision is four chances for them to stop agreeing.
+ */
+const asWhenForecasts = (
+	percentiles: z.infer<typeof WhenForecastSchema>[],
+): IWhenForecast[] =>
+	percentiles.map((percentile) =>
+		WhenForecast.new(percentile.probability, percentile.expectedDate),
+	);
+
 export class Feature implements IFeature {
 	name!: string;
 	id!: number;
@@ -235,26 +247,18 @@ export class Feature implements IFeature {
 		feature.projects = data.projects;
 		feature.remainingWork = data.remainingWork;
 		feature.totalWork = data.totalWork;
-		feature.forecasts = data.forecasts.map((forecast) =>
-			WhenForecast.new(forecast.probability, forecast.expectedDate),
-		);
+		feature.forecasts = asWhenForecasts(data.forecasts);
 		feature.startForecast = data.startForecast
 			? {
 					source: data.startForecast.source,
 					observedDate: data.startForecast.observedDate,
-					percentiles: data.startForecast.percentiles.map((percentile) =>
-						WhenForecast.new(percentile.probability, percentile.expectedDate),
-					),
+					percentiles: asWhenForecasts(data.startForecast.percentiles),
 				}
 			: undefined;
 		feature.teamForecasts = data.teamForecasts.map((forTeam) => ({
 			teamId: forTeam.teamId,
-			startPercentiles: forTeam.startPercentiles.map((percentile) =>
-				WhenForecast.new(percentile.probability, percentile.expectedDate),
-			),
-			completionPercentiles: forTeam.completionPercentiles.map((percentile) =>
-				WhenForecast.new(percentile.probability, percentile.expectedDate),
-			),
+			startPercentiles: asWhenForecasts(forTeam.startPercentiles),
+			completionPercentiles: asWhenForecasts(forTeam.completionPercentiles),
 		}));
 		feature.teamsWithoutForecast = data.teamsWithoutForecast ?? [];
 		feature.position = data.position ?? undefined;
