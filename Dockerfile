@@ -64,6 +64,11 @@ USER app
 COPY --from=publish /app/publish .
 COPY LICENSE NOTICE /app/
 
+# The base image asks for a port of its own through ASPNETCORE_HTTP_PORTS. The endpoint settings
+# below win over it, and the framework reports every address it discards as a startup warning -
+# which this app puts in front of its users as a problem with their instance. Emptying it leaves one
+# place deciding the ports; it never bound anything anyway.
+ENV ASPNETCORE_HTTP_PORTS=""
 ENV Kestrel__Endpoints__Http__Url="http://+:80"
 ENV Kestrel__Endpoints__Https__Url="https://+:443"
 ENV LIGHTHOUSE_DOCKER="true"
