@@ -234,6 +234,30 @@ namespace Lighthouse.Backend.Data
                 .HasForeignKey(wf => wf.FeatureId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // A second collection of forecasts on the same Feature, and deliberately of a different
+            // type: the completion aggregate reads Forecasts without filtering, so start rows have to be
+            // somewhere it cannot reach. Both live in the ForecastBase table, so the two foreign keys
+            // need columns of their own - left to convention EF would invent FeatureId1 and TeamId1.
+            modelBuilder.Entity<Feature>()
+                .HasMany(f => f.StartForecasts)
+                .WithOne(sf => sf.Feature)
+                .HasForeignKey(sf => sf.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StartForecast>()
+                .Property(sf => sf.FeatureId)
+                .HasColumnName("StartFeatureId");
+
+            modelBuilder.Entity<StartForecast>()
+                .Property(sf => sf.TeamId)
+                .HasColumnName("StartTeamId");
+
+            modelBuilder.Entity<StartForecast>()
+                .HasOne(sf => sf.Team)
+                .WithMany()
+                .HasForeignKey(sf => sf.TeamId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<IndividualSimulationResult>()
                 .HasOne(isr => isr.Forecast)
                 .WithMany(f => f.SimulationResults)

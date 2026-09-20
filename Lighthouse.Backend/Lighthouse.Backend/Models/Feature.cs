@@ -60,6 +60,12 @@ namespace Lighthouse.Backend.Models
 
         public List<WhenForecast> Forecasts { get; set; } = [];
 
+        // When the simulation expects work on this Feature to begin - one entry per contributing Team,
+        // plus one for the Feature itself whose TeamId is null. Deliberately not in Forecasts: the
+        // Forecast property above folds that collection into one distribution without asking what is in
+        // it, so a start day in there would move every completion date in the product.
+        public List<StartForecast> StartForecasts { get; set; } = [];
+
         public List<FeatureWork> FeatureWork { get; } = new List<FeatureWork>();
 
         public List<Portfolio> Portfolios { get; } = [];
@@ -213,6 +219,24 @@ namespace Lighthouse.Backend.Models
                 forecast.Feature = this;
                 forecast.FeatureId = Id;
                 Forecasts.Add(forecast);
+            }
+        }
+
+        /// <summary>
+        /// Mirrors <see cref="SetFeatureForecasts"/>, and is called in the same pass. A forecast is
+        /// current state rather than history, so both collections are cleared and rewritten in full on
+        /// every run; a refresh that wrote one without the other would leave a Feature saying it starts
+        /// on a day that has nothing to do with the day it says it finishes.
+        /// </summary>
+        public void SetStartForecasts(IEnumerable<StartForecast> startForecasts)
+        {
+            StartForecasts.Clear();
+
+            foreach (var startForecast in startForecasts)
+            {
+                startForecast.Feature = this;
+                startForecast.FeatureId = Id;
+                StartForecasts.Add(startForecast);
             }
         }
 

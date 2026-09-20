@@ -49,6 +49,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .Include(f => f.Portfolios)
                 .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
+                // Loaded beside Forecasts rather than left to lazy loading, which is off: a Feature read
+                // through here without this reports no start dates at all, everywhere in the product,
+                // while any test holding the entity in the change tracker still sees them.
+                .Include(f => f.StartForecasts).ThenInclude(f => f.SimulationResults)
                 .Include(f => f.DependsOnReferences);
 #pragma warning restore S8733
         }

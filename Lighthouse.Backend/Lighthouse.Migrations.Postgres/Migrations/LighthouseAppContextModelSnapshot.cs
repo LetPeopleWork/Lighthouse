@@ -1710,6 +1710,25 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("WriteBackMappingDefinition");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.StartForecast", b =>
+                {
+                    b.HasBaseType("Lighthouse.Backend.Models.Forecast.ForecastBase");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("integer")
+                        .HasColumnName("StartFeatureId");
+
+                    b.Property<int?>("TeamId")
+                        .HasColumnType("integer")
+                        .HasColumnName("StartTeamId");
+
+                    b.HasIndex("FeatureId");
+
+                    b.HasIndex("TeamId");
+
+                    b.HasDiscriminator().HasValue("StartForecast");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.WhenForecast", b =>
                 {
                     b.HasBaseType("Lighthouse.Backend.Models.Forecast.ForecastBase");
@@ -2025,6 +2044,24 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Navigation("WorkTrackingSystemConnection");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.StartForecast", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Feature", "Feature")
+                        .WithMany("StartForecasts")
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lighthouse.Backend.Models.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Feature");
+
+                    b.Navigation("Team");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.WhenForecast", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Feature", "Feature")
@@ -2050,6 +2087,8 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Navigation("FeatureWork");
 
                     b.Navigation("Forecasts");
+
+                    b.Navigation("StartForecasts");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.ForecastBase", b =>
