@@ -48,6 +48,23 @@ export class FeaturesPage {
 		return this.getFeatureRow(featureName).locator('[data-field="dependsOn"]');
 	}
 
+	/**
+	 * When work on a Feature is expected to begin, as the Forecasted Start column renders it. Addressed
+	 * by the column rather than by what it prints, for the same reason the dependencies cell is: the
+	 * cell holds percentiles, an observed date or nothing at all, and only one of those has text worth
+	 * looking for.
+	 */
+	getForecastedStartCell(featureName: string): Locator {
+		return this.getFeatureRow(featureName).locator(
+			'[data-field="startForecast"]',
+		);
+	}
+
+	/** The column as a whole, for judging that the rows got an answer rather than a blank grid. */
+	async getListedForecastedStarts(): Promise<string[]> {
+		return this.readColumn("startForecast");
+	}
+
 	/** The sequence itself, which is what "nothing moved" is judged against. */
 	async getListedFeatureNames(): Promise<string[]> {
 		return this.readColumn("name");

@@ -40,6 +40,7 @@ import type {
 	DataGridExportTable,
 } from "../../../../../components/Common/DataGrid/types";
 import {
+	createForecastedStartColumn,
 	createForecastsColumn,
 	createStateColumn,
 } from "../../../../../components/Common/FeatureListDataGrid/columns";
@@ -368,7 +369,13 @@ function featureColumns({
 			),
 		},
 		{
-			...createForecastsColumn("Forecast"),
+			...createForecastedStartColumn("Forecasted Start"),
+			minWidth: 100,
+			flex: 0.5,
+			width: undefined,
+		},
+		{
+			...createForecastsColumn("Forecasted Completion"),
 			minWidth: 100,
 			flex: 0.5,
 			width: undefined,

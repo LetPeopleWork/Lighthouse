@@ -106,9 +106,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 					/>
 				),
 			},
+			createParentColumn(parentMap),
 			createForecastedStartColumn(),
 			createForecastsColumn(),
-			createParentColumn(parentMap),
 			{
 				field: "projects",
 				headerName: portfoliosTerm,

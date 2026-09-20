@@ -271,7 +271,8 @@ describe("TeamFeatureList component", () => {
 		expect(screen.getByText("Progress")).toBeInTheDocument();
 		expect(screen.getByText("Parent")).toBeInTheDocument();
 		expect(screen.getByText("Portfolios")).toBeInTheDocument();
-		expect(screen.getByText("Forecasts")).toBeInTheDocument();
+		expect(screen.getByText("Forecasted Start")).toBeInTheDocument();
+		expect(screen.getByText("Forecasted Completion")).toBeInTheDocument();
 	});
 
 	it("should render toggle for hide completed features", async () => {

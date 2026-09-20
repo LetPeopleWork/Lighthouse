@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import type { IFeature, IFeatureStart } from "../../../models/Feature";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { createForecastedStartColumn, createForecastsColumn } from "./columns";
-import { OBSERVED_START_LABEL } from "./ForecastedStartCell";
 
 const aPercentile = (probability: number, day: number) =>
 	WhenForecast.new(probability, new Date(2026, 9, day));
@@ -68,27 +67,13 @@ describe("createForecastedStartColumn", () => {
 			}),
 		);
 
-		expect(screen.getByTestId("observed-start")).toHaveTextContent("9/14/2026");
+		// Drawn the way a Feature that is already done draws its completion: the same four confidence
+		// levels, all carrying the same day. It reads as settled because the four agree.
+		expect(screen.getAllByText("9/14/2026")).toHaveLength(4);
 
 		for (const day of [12, 13, 14, 16]) {
 			expectNotShown(inOctober(day));
 		}
-	});
-
-	it("says a started Feature has started in the cell rather than in a tooltip", () => {
-		renderStartCell(
-			feature({
-				startForecast: {
-					source: "Observed",
-					observedDate: new Date(2026, 8, 14),
-					percentiles: [],
-				},
-			}),
-		);
-
-		expect(screen.getByTestId("observed-start")).toHaveTextContent(
-			OBSERVED_START_LABEL,
-		);
 	});
 
 	it("reuses the empty state the completion column already uses when a team cannot be forecast", () => {

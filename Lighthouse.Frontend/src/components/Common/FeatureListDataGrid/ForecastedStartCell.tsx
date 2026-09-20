@@ -1,19 +1,32 @@
-import { Tooltip, Typography } from "@mui/material";
+import { Box, Tooltip, Typography } from "@mui/material";
 import type React from "react";
 import type { IFeature } from "../../../models/Feature";
+import {
+	type IWhenForecast,
+	WhenForecast,
+} from "../../../models/Forecasts/WhenForecast";
 import {
 	CANNOT_FORECAST_SHORT,
 	cannotBeForecast,
 	cannotForecastReason,
 } from "../../../utils/forecast/cannotForecast";
 import ForecastInfoList from "../Forecasts/ForecastInfoList";
-import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 
-// Said in the cell rather than in a tooltip. A reader scanning the column has to be able to tell an
-// observed date from a percentile without stopping to hover over each one - otherwise the day work
-// actually began reads as the day it is predicted to, which is the more confident of the two claims
-// and the wrong one.
-export const OBSERVED_START_LABEL = "Started";
+// The four the forecast columns have always shown.
+const THE_USUAL_PERCENTILES = [50, 70, 85, 95];
+
+/**
+ * A date that has already happened, rendered the way the completion column renders a Feature that is
+ * already done: the same four confidence levels, all carrying the same day.
+ *
+ * It reads as settled precisely because the four agree - there is no spread left to show. Inventing a
+ * second way to draw one date would make the column two visual languages, and a reader would have to
+ * learn which one they were looking at.
+ */
+const asSettledOn = (day: Date): IWhenForecast[] =>
+	THE_USUAL_PERCENTILES.map((probability) =>
+		WhenForecast.new(probability, day),
+	);
 
 /**
  * When work on a Feature begins, as the Feature table shows it.
@@ -40,14 +53,12 @@ const ForecastedStartCell: React.FC<{ feature: IFeature }> = ({ feature }) => {
 
 	if (start?.source === "Observed" && start.observedDate) {
 		return (
-			<Typography
-				variant="body2"
-				data-testid="observed-start"
-				sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-			>
-				{OBSERVED_START_LABEL}
-				<LocalDateTimeDisplay utcDate={start.observedDate} />
-			</Typography>
+			<Box data-testid="observed-start">
+				<ForecastInfoList
+					title={""}
+					forecasts={asSettledOn(start.observedDate)}
+				/>
+			</Box>
 		);
 	}
 

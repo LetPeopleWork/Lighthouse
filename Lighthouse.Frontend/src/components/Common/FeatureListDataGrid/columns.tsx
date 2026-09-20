@@ -46,8 +46,10 @@ export const createNameColumn = (
 	),
 });
 
+// Named for what it answers rather than for what it is. "Forecasts" said nothing about which end of a
+// Feature it meant, which only became a question once a second forecast column sat next to it.
 export const createForecastsColumn = (
-	headerName = "Forecasts",
+	headerName = "Forecasted Completion",
 ): DataGridColumn<IFeature & GridValidRowModel> => ({
 	field: "forecasts",
 	headerName,
