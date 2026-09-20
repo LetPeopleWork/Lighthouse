@@ -72,8 +72,16 @@ describe("the write-back sources for when work begins", () => {
 			"Forecasted Completion (50th Percentile)",
 		],
 		[
+			WriteBackValueSource.ForecastPercentile70,
+			"Forecasted Completion (70th Percentile)",
+		],
+		[
 			WriteBackValueSource.ForecastPercentile85,
 			"Forecasted Completion (85th Percentile)",
+		],
+		[
+			WriteBackValueSource.ForecastPercentile95,
+			"Forecasted Completion (95th Percentile)",
 		],
 	])("names %s as %s", (source, expected) => {
 		expect(VALUE_SOURCE_DISPLAY_NAMES[source]).toBe(expected);

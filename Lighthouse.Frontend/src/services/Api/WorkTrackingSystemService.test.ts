@@ -393,6 +393,34 @@ describe("WorkTrackingSystemService", () => {
 			);
 		});
 
+		// A connection that carries no sync mappings at all - an older stored payload, or one saved before
+		// the field existed. It has to save as an empty list rather than throwing on the way out.
+		it("saves a connection whose sync mappings are missing entirely", async () => {
+			const connection = {
+				id: 1,
+				name: "ADO",
+				workTrackingSystem: "AzureDevOps",
+				options: [],
+				authenticationMethodKey: "ado.pat",
+				additionalFieldDefinitions: [],
+				workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL",
+			} as unknown as IWorkTrackingSystemConnection;
+
+			mockedAxios.put.mockResolvedValueOnce({
+				data: { ...connection, writeBackMappingDefinitions: [] },
+			});
+
+			await workTrackingSystemService.updateWorkTrackingSystemConnection(
+				connection,
+			);
+
+			const sentPayload = mockedAxios.put.mock.calls[0][1] as {
+				writeBackMappingDefinitions: unknown[];
+			};
+
+			expect(sentPayload.writeBackMappingDefinitions).toEqual([]);
+		});
+
 		// A tab left open across an upgrade holds a bundle that has never heard of a source the server
 		// added. Sending it as undefined would have JSON drop the field, and the server reads a missing
 		// value as the first member of the enum - so a field set up to receive a forecasted start date

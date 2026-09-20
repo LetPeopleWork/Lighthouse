@@ -71,7 +71,29 @@ entirely about whether that list is complete, and it costs one search to close.
 
 Record the result here:
 
-> _(to be filled before implementation)_
+> **Run across `Lighthouse.Backend/`, `Lighthouse.Frontend/src/` and `Lighthouse.EndToEndTests/`. The list
+> was complete — there is no third list.** Backend: `WriteBackMappingValidator`'s set,
+> `WriteBackTriggerService`'s set, and the `GetPercentileFromSource` switch, all three as the brief
+> predicted. Frontend: three more that the brief did not predict, because it only looked at the backend —
+> `FORECAST_SOURCES`, `PORTFOLIO_ONLY_SOURCES` and `VALUE_SOURCE_DISPLAY_NAMES` in
+> `models/WorkTracking/WriteBackMappingDefinition.ts`. Nothing in the E2E suite enumerates them.
+>
+> Risk 1 is therefore closed, and it was closed twice: the two backend sets are now one shared membership
+> beside the enum, so the "third list" failure mode cannot recur there. The three frontend lists remain
+> separate by necessity — a different codebase — and the cross-stack contract they depend on is not the
+> ordinals but the member *names*, which is what the wire carries. That contract had no test on either
+> side; saving now refuses rather than silently rewriting a mapping it cannot name.
+>
+> Recorded after implementation rather than before, which is the discipline this section exists to
+> enforce and did not get. The answer is the same either way, but the next reader could not have told
+> "checked, clean" from "skipped" — which is the whole reason the line is here.
+
+**Risk 2 — a backwards bar — is reachable, and deliberately not prevented.** Start and completion come
+from two independent distributions, both projected from today, with no cross-mapping validation anywhere:
+mapping start P95 against completion P50 produces a bar that ends before it begins, and even the same
+percentile on both ends carries no guarantee that start precedes completion, because they are separate
+reads of separate histograms. Both values validate and both write. Left as is for now — constraining the
+pairing is a product decision, not a defect — but it is now written down rather than unexamined.
 
 ## Effort
 
