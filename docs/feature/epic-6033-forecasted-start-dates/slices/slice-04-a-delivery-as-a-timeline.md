@@ -32,9 +32,11 @@ selector moving both ends of every bar together.
   feature, and the free build does something worse than omit it (it invents a bar), so such Features
   are filtered out of the chart and listed next to it.
 - Premium gate, using the Delivery surface's existing notice (D8).
-- Light and dark, and the narrowest width the Delivery view supports. **Below the narrow breakpoint the
-  task-name pane is dropped** (`columns={false}`) and the timeline scrolls at full bar size; leaving the
-  pane in place pushes the chart off-screen entirely at 360px.
+- Light and dark, and the narrowest width the Delivery view supports. **The task-name pane is dropped
+  at every width** (`columns={false}`) and the timeline scrolls at full bar size. The plan here was to
+  drop it only below a breakpoint; seeing it rendered settled it — every name the pane lists is already
+  written on its own bar, so at any width it is a fixed column spent repeating the chart, and at 360px
+  it pushes the chart off-screen entirely.
 - Docs saying plainly what an out-of-order board does to the picture (AC-4.9, D6). A Feature nobody has
   started, drawn as starting now while work sits lower in the order, is the timeline reporting the board
   rather than misreading it. Undocumented, that intended oddness arrives as a bug report.

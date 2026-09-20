@@ -487,6 +487,9 @@ table at all.
   marked: shaded, not ruled.
 - **AC-4.7** — The tab is premium-gated, using the notice the Delivery surface already uses (D8).
 - **AC-4.8** — Legible in light and dark themes, and at the narrowest width the Delivery view supports.
+  **The task-name pane is absent at every width** — decided during DELIVER, 2026-09-20, having seen it
+  rendered. The earlier plan dropped it only below a breakpoint; in practice every name it lists is
+  already written on its own bar, so at any width it is a fixed column spent repeating the chart.
 - **AC-4.9** — The docs say plainly what an out-of-order board does to the picture (D6): a Feature nobody
   has started, drawn as starting now while work sits lower in the order, is the timeline reporting the
   board rather than misreading it. Without this the intended oddness arrives as a bug report.
@@ -1706,11 +1709,14 @@ than remembered. That rule is itself a deliverable of this slice.
 | 12 | Unplaceable Features are listed beside the timeline with their reason | AC-4.5 | Tab (RTL) | the substitute for the in-chart row, which is a paid feature |
 | 13 | Without a premium licence the tab shows the existing notice and no chart | AC-4.7 | Tab (RTL) | `premium-feature-notice`, the Alert the Delivery surface already uses (D8) |
 | 14 | In dark mode the chart is wrapped in the dark theme, in light mode the light one | AC-4.8 | Adapter boundary | asserted on the theme *we* select, not on rendered colour. The free build crashes on the Material theme, so the choice is not cosmetic |
-| 15 | Below the narrow breakpoint the task-name pane is dropped | AC-4.8 | Adapter boundary | asserted as the prop we compute. Leaving the pane in pushes the chart off-screen entirely at 360px |
+| 15 | ~~Below the narrow breakpoint the task-name pane is dropped~~ | AC-4.8 | — | **Withdrawn during DELIVER, 2026-09-20.** The pane is gone at every width, not below a breakpoint: every name it listed is already written on its own bar, so it was a fixed width spent repeating the chart. The scenario went with the prop, the constant and the width query it was written against |
 | 16 | A Delivery with a target date tints that day's axis column; one without tints nothing | AC-4.6 | Model | |
-| 17 | The target-date tint lands on the right day east of UTC | AC-4.6 | Model | the scale callback is handed **local** midnight, so `getUTCMonth()` is a month early in a positive offset. Bug #5567's class, and the reason this gets a scenario of its own |
+| 17 | The target-date tint lands on the right day east of UTC | AC-4.6 | Model | rewritten during DELIVER. The two sides are reduced **differently** — the axis hands back local midnight, the target is an instant the Delivery heading prints as a UTC day — and the first version reduced both locally, which agrees with itself and disagrees with the heading. At this suite's offset a UTC-midnight fixture cannot tell them apart, so the case is pinned with a target at `T23:30:00Z`. Bug #5567's class |
+| 18 | Each axis row formats its label with a function, and those functions name the month and number the day | AC-4.1 | Adapter boundary | **added during DELIVER**, for a defect that shipped to the first screenshot: the library calls `format` only when it is a function and otherwise prints it as it stands, so the pattern `"MMMM yyyy"` headed every column with those eight characters. The axis has no measured width outside a browser and draws nothing, so an assertion on the rendered header passes against the broken version too |
+| 19 | The bars are painted in the product's own colour | AC-4.8 | Adapter boundary | added during DELIVER. The library paints from its own CSS variables rather than from the MUI theme, so left alone it drew a blue that appears nowhere else in Lighthouse |
 
-**Error and edge coverage: 7 of 17** (7, 8, 9, 10, 11, 13, 17) — 41%. They are almost all one shape:
+**Error and edge coverage: 7 of 18 as delivered** (7, 8, 9, 10, 11, 13, 17) — 39%, scenario 15 having
+been withdrawn and 18 and 19 added. They are almost all one shape:
 *this Feature has no answer*, which on a planning picture is the failure that matters. A Feature that
 silently disappears from a timeline is worse than one shown as unknown, and the component's own free
 build fails exactly that way if the model lets it.
