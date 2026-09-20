@@ -35,9 +35,16 @@ type: application
 #         Work Item Age bands in the work item dialog (Story 5884), one Behaviour Settings table that
 #         Feature Ordering moved into (Story 5876), and Faster Updates on by default for new instances
 #         (Story 5912). No chart values changed.
-version: 0.1.15
+# 0.1.16: track the v26.9.19.10 release — the risk an in-progress Work Item misses its team's SLE
+#         (Epic 4127), a Task Manager showing what is refreshing and what is queued, with a stop
+#         (Epic 5511), strictly opt-in usage data (Epic 5733), parents read from a Jira instance's
+#         own issue links (Epic 6028), and the move off MIT to the Lighthouse Source Available
+#         License 1.0 (Epic 5874). No chart values changed: the usage-data collector is baked into
+#         the published image, and the instance-wide veto over it is a Behaviour Setting row rather
+#         than a chart value.
+version: 0.1.16
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-appVersion: "26.9.9.9"
+appVersion: "26.9.19.10"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse
