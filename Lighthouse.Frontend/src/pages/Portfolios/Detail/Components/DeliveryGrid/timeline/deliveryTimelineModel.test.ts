@@ -214,8 +214,16 @@ describe("timelineWindow", () => {
 		expect(window?.end).toEqual(new Date(2026, 10, 3));
 	});
 
+	it("reaches today when the work is all still ahead of it", () => {
+		// A Delivery nobody has started sits entirely in the future. Without today in the window
+		// the reader gets bars and no sense of how far off they are.
+		const window = timelineWindow([bar(20, 25)], undefined, october(1));
+
+		expect(window?.start).toEqual(new Date(2026, 8, 28));
+	});
+
 	it("has no window at all when there is nothing to draw", () => {
-		expect(timelineWindow([], october(15))).toBeUndefined();
+		expect(timelineWindow([], october(15), october(1))).toBeUndefined();
 	});
 });
 

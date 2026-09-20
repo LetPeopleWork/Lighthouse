@@ -43,15 +43,17 @@ const shiftedByDays = (date: Date, days: number): Date => {
 };
 
 /**
- * The span of time the chart should cover.
+ * The span of time the chart should cover: every bar, the target date and today, whichever of them
+ * reaches furthest in each direction, plus a little air.
  *
- * The target date is inside it even when it falls beyond every bar, which is the case a reader most
- * wants to see: a Delivery whose last Feature finishes well before its target has slack, and a window
- * ending at the last bar would hide exactly that.
+ * The two extra dates are the point. A Delivery whose last Feature finishes well before its target
+ * has slack, and one whose work has not started yet sits entirely in the future — a window drawn
+ * around the bars alone hides the first and gives the second no anchor to read against.
  */
 export function timelineWindow(
 	bars: TimelineBar[],
 	targetDate?: Date,
+	today?: Date,
 ): { start: Date; end: Date } | undefined {
 	if (bars.length === 0) {
 		return undefined;
@@ -59,8 +61,10 @@ export function timelineWindow(
 
 	const moments = bars.flatMap((bar) => [bar.start, bar.end]);
 
-	if (targetDate) {
-		moments.push(targetDate);
+	for (const marked of [targetDate, today]) {
+		if (marked) {
+			moments.push(marked);
+		}
 	}
 
 	const times = moments.map((moment) => moment.getTime());
@@ -169,4 +173,20 @@ export function isTargetDay(day: Date, targetDate?: Date): boolean {
 	}
 
 	return formatLocalDate(day) === targetCalendarDay(targetDate);
+}
+
+/**
+ * Whether two dates are the same day in the reader's own zone.
+ *
+ * Deliberately NOT `isTargetDay`, and the difference is the easy mistake here. That one exists to
+ * compare an axis column against a stored instant, so it reduces its two sides differently. Today
+ * is not a stored instant — it is the reader's own clock, already local — and putting it through
+ * the same comparison reads it as a UTC day and marks the wrong column for most of the day.
+ */
+export function isSameLocalDay(day: Date, other?: Date): boolean {
+	if (!other) {
+		return false;
+	}
+
+	return formatLocalDate(day) === formatLocalDate(other);
 }

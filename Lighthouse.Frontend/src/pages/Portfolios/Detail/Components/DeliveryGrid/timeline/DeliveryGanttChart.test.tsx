@@ -3,10 +3,10 @@ import { render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import DeliveryGanttChart, {
 	chartHeight,
+	dayHighlight,
 	ganttColorOverrides,
 	THEMED_ELEMENT_SELECTOR,
 	TIMELINE_SCALES,
-	targetDayHighlight,
 	toGanttTasks,
 } from "./DeliveryGanttChart";
 import type { TimelineBar } from "./deliveryTimelineModel";
@@ -164,23 +164,43 @@ describe("DeliveryGanttChart", () => {
 		});
 	});
 
-	describe("the target tint", () => {
-		const target = new Date("2026-10-15T00:00:00Z");
-		const theDay = new Date(2026, 9, 15);
+	describe("marking the target day and today", () => {
+		const targetDate = new Date("2026-10-15T00:00:00Z");
+		const today = new Date(2026, 9, 2);
+		const marks = { targetDate, today };
 
-		it("tints the target day on the day row", () => {
-			expect(targetDayHighlight(theDay, "day", target)).not.toBe("");
+		it("marks each of the two days, and marks them differently", () => {
+			const onTarget = dayHighlight(new Date(2026, 9, 15), "day", marks);
+			const onToday = dayHighlight(new Date(2026, 9, 2), "day", marks);
+
+			expect(onTarget).not.toBe("");
+			expect(onToday).not.toBe("");
+			// Two marks that rendered identically would need a legend to tell apart, which is worse
+			// than not marking the second one.
+			expect(onTarget).not.toBe(onToday);
 		});
 
-		it("tints nothing on any other row", () => {
+		it("says both when the Delivery is due today", () => {
+			const dueToday = new Date(2026, 9, 15);
+			const classes = dayHighlight(dueToday, "day", {
+				targetDate,
+				today: dueToday,
+			}).split(" ");
+
+			expect(classes).toHaveLength(2);
+			expect(new Set(classes).size).toBe(2);
+		});
+
+		it("marks nothing on any row but the day row", () => {
 			// The scale calls this for the month row too, with the first day of the month. Without
-			// the unit guard the whole month holding the target would be shaded instead of one day.
-			expect(targetDayHighlight(theDay, "month", target)).toBe("");
+			// the unit guard the whole month holding a marked day would be shaded instead of it.
+			expect(dayHighlight(new Date(2026, 9, 15), "month", marks)).toBe("");
+			expect(dayHighlight(new Date(2026, 9, 2), "month", marks)).toBe("");
 		});
 
-		it("tints nothing on another day, or with no target at all", () => {
-			expect(targetDayHighlight(new Date(2026, 9, 16), "day", target)).toBe("");
-			expect(targetDayHighlight(theDay, "day", undefined)).toBe("");
+		it("marks nothing on an ordinary day, or when neither date is given", () => {
+			expect(dayHighlight(new Date(2026, 9, 8), "day", marks)).toBe("");
+			expect(dayHighlight(new Date(2026, 9, 15), "day", {})).toBe("");
 		});
 	});
 

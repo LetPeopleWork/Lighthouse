@@ -27,6 +27,8 @@ export interface DeliveryTimelineTabProps {
 	featuresTerm: string;
 }
 
+const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
+
 const PREMIUM_NOTICE =
 	"The delivery timeline is a premium feature. The forecasts behind it are not — they stay in the table.";
 
@@ -56,26 +58,37 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 
 	return (
 		<Box sx={{ p: 2 }} data-testid="delivery-timeline-tab">
-			<ToggleButtonGroup
-				exclusive
-				size="small"
-				value={percentile}
-				onChange={(_, chosen: TimelinePercentile | null) => {
-					// Null arrives when the active button is clicked again. A timeline with no
-					// percentile selected would have nothing to draw, so the choice stands.
-					if (chosen !== null) {
-						setPercentile(chosen);
-					}
-				}}
-				aria-label="Confidence level"
-				sx={{ mb: 2 }}
-			>
-				{TIMELINE_PERCENTILES.map((option) => (
-					<ToggleButton key={option} value={option}>
-						{`${option}%`}
-					</ToggleButton>
-				))}
-			</ToggleButtonGroup>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+				{/* "Probability" is what Settings already calls this number. Three buttons rather
+				    than a dropdown because the whole value here is flicking between them and
+				    watching every bar move; a dropdown hides two of the three behind a click. */}
+				<Typography
+					variant="body2"
+					color="text.secondary"
+					id={PROBABILITY_LABEL_ID}
+				>
+					Probability
+				</Typography>
+				<ToggleButtonGroup
+					exclusive
+					size="small"
+					value={percentile}
+					onChange={(_, chosen: TimelinePercentile | null) => {
+						// Null arrives when the active button is clicked again. A timeline with no
+						// percentile selected would have nothing to draw, so the choice stands.
+						if (chosen !== null) {
+							setPercentile(chosen);
+						}
+					}}
+					aria-labelledby={PROBABILITY_LABEL_ID}
+				>
+					{TIMELINE_PERCENTILES.map((option) => (
+						<ToggleButton key={option} value={option}>
+							{`${option}%`}
+						</ToggleButton>
+					))}
+				</ToggleButtonGroup>
+			</Box>
 
 			{bars.length > 0 ? (
 				<DeliveryGanttChart bars={bars} targetDate={targetDate} />

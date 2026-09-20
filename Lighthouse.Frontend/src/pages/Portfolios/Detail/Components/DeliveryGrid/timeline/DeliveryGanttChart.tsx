@@ -5,6 +5,7 @@ import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type React from "react";
 import { type ComponentProps, useCallback, useMemo } from "react";
 import {
+	isSameLocalDay,
 	isTargetDay,
 	type TimelineBar,
 	timelineWindow,
@@ -29,6 +30,7 @@ export interface DeliveryGanttChartProps {
 }
 
 const TARGET_DAY_CLASS = "delivery-target-day";
+const TODAY_CLASS = "delivery-today";
 
 // The classes the library's own theme wrappers carry. Ours is the only code that needs to know
 // them, and it needs to because they are where the library declares the variables we override.
@@ -60,22 +62,40 @@ export function ganttColorOverrides(barColor: string, fontColor: string) {
 }
 
 /**
- * Which axis columns get the target tint.
+ * Which of the two dates worth finding at a glance an axis column is: the day the Delivery is due,
+ * and the day the reader is standing on.
  *
  * The `unit` guard is load-bearing: the scale calls this for the month row as well as the day row,
- * and without it the whole month containing the target would be shaded rather than the one day.
+ * and without it the whole month containing a marked day would be shaded rather than the one day.
+ *
+ * A day can be both, and then it says both — which is the most informative thing a Delivery due
+ * today could render.
  *
  * Exported and tested directly because the axis needs a measured width and so never renders outside
  * a browser — nothing invokes this callback in a test run otherwise.
  */
-export function targetDayHighlight(
+export function dayHighlight(
 	date: Date,
 	unit: string,
-	targetDate: Date | undefined,
+	marks: { targetDate?: Date; today?: Date },
 ): string {
-	return unit === "day" && isTargetDay(date, targetDate)
-		? TARGET_DAY_CLASS
-		: "";
+	if (unit !== "day") {
+		return "";
+	}
+
+	const classes: string[] = [];
+
+	if (isTargetDay(date, marks.targetDate)) {
+		classes.push(TARGET_DAY_CLASS);
+	}
+
+	// Not `isTargetDay`: today is the reader's own clock, not a stored instant, so it is compared
+	// as a local day. Reusing the target's comparison marks the wrong column for most of the day.
+	if (isSameLocalDay(date, marks.today)) {
+		classes.push(TODAY_CLASS);
+	}
+
+	return classes.join(" ");
 }
 
 const ROW_HEIGHT = 38;
@@ -139,17 +159,24 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 
 	const tasks = useMemo(() => toGanttTasks(bars), [bars]);
 
+	// Fixed for as long as the chart is mounted, rather than read afresh on every render. A new
+	// Date each time is a new identity, which would invalidate everything memoised against it on
+	// every render — and the cost of holding it is only that a tab left open across midnight keeps
+	// yesterday's marker until something else redraws it.
+	const today = useMemo(() => new Date(), []);
+
 	const axisRange = useMemo(
-		() => timelineWindow(bars, targetDate),
-		[bars, targetDate],
+		() => timelineWindow(bars, targetDate, today),
+		[bars, targetDate, today],
 	);
 
 	// The library hands this callback a date at local midnight and expects a class name back. A
 	// tinted column is the free edition's substitute for the vertical marker, which is a paid
 	// feature; buying one later replaces this without changing anything above.
 	const highlightTime = useCallback(
-		(date: Date, unit: string) => targetDayHighlight(date, unit, targetDate),
-		[targetDate],
+		(date: Date, unit: string) =>
+			dayHighlight(date, unit, { targetDate, today }),
+		[targetDate, today],
 	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;
@@ -164,8 +191,14 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					barColor,
 					theme.palette.getContrastText(barColor),
 				),
+				// The two are drawn differently on purpose, so a reader can tell at a glance which is
+				// which without a legend: the target is a filled band (a date being aimed at), today
+				// is a ruled edge (a position being stood on). A day that is both shows both.
 				[`& .${TARGET_DAY_CLASS}`]: {
 					backgroundColor: theme.palette.action.selected,
+				},
+				[`& .${TODAY_CLASS}`]: {
+					boxShadow: `inset 2px 0 0 0 ${theme.palette.primary.main}`,
 				},
 			}}
 		>
@@ -179,6 +212,10 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					cellHeight={ROW_HEIGHT}
 					scaleHeight={SCALE_HEIGHT}
 					highlightTime={highlightTime}
+					// Off, or the library recomputes the range from the tasks alone and discards the
+					// start and end above — which silently drops a target date that falls beyond the
+					// last bar, exactly the case a reader opens this chart to check.
+					autoScale={false}
 					// No task-name pane. Every name it would list is already on its own bar, and the
 					// pane is a fixed width that pushes the chart off-screen on a narrow window.
 					//

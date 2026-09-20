@@ -88,6 +88,15 @@ describe("DeliveryTimelineTab", () => {
 		expect(ganttProps.current?.bars).toHaveLength(1);
 	});
 
+	it("names what the buttons are choosing", () => {
+		renderTab([feature()]);
+
+		// Three bare percentages with no label leave the reader guessing what they are a
+		// percentage of. "Probability" is the word Settings already uses for this number.
+		expect(screen.getByText("Probability")).toBeInTheDocument();
+		expect(screen.getByRole("group")).toHaveAccessibleName("Probability");
+	});
+
 	it("starts at 70% and offers 85 and 95", () => {
 		renderTab([feature()]);
 
