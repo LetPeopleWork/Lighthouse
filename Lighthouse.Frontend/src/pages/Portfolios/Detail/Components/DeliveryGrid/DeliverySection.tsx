@@ -487,6 +487,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const isMetricsTabDisabled =
 		delivery.metricSnapshotCount < MINIMUM_METRIC_SNAPSHOTS;
 
+	// Parsed once rather than inline in the timeline's props: a fresh Date on every render is a
+	// fresh identity, and the chart's axis range is memoised against it.
+	const targetDate = useMemo(
+		() => (delivery.date ? new Date(delivery.date) : undefined),
+		[delivery.date],
+	);
+
 	const handleTabChange = useCallback(
 		(_event: React.SyntheticEvent, nextTab: DeliveryDetailTab) => {
 			if (nextTab === "metrics" && isMetricsTabDisabled) {
@@ -844,7 +851,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						{activeTab === "timeline" && (
 							<DeliveryTimelineTab
 								features={features}
-								targetDate={delivery.date ? new Date(delivery.date) : undefined}
+								targetDate={targetDate}
 								featuresTerm={featuresTerm}
 							/>
 						)}

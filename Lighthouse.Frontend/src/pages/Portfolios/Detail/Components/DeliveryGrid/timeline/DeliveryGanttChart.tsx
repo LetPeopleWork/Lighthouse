@@ -3,7 +3,7 @@ import "@svar-ui/react-gantt/all.css";
 import { Box, useTheme } from "@mui/material";
 import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type React from "react";
-import { type ComponentProps, useMemo } from "react";
+import { type ComponentProps, useCallback, useMemo } from "react";
 import {
 	isTargetDay,
 	type TimelineBar,
@@ -78,7 +78,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		[bars],
 	);
 
-	const window = useMemo(
+	const axisRange = useMemo(
 		() => timelineWindow(bars, targetDate),
 		[bars, targetDate],
 	);
@@ -86,8 +86,11 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	// The library hands this callback a date at local midnight and expects a class name back. A
 	// tinted column is the free edition's substitute for the vertical marker, which is a paid
 	// feature; buying one later replaces this without changing anything above.
-	const highlightTime = (date: Date, unit: string) =>
-		unit === "day" && isTargetDay(date, targetDate) ? TARGET_DAY_CLASS : "";
+	const highlightTime = useCallback(
+		(date: Date, unit: string) =>
+			unit === "day" && isTargetDay(date, targetDate) ? TARGET_DAY_CLASS : "",
+		[targetDate],
+	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;
 
@@ -114,8 +117,8 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					tasks={tasks}
 					links={[]}
 					scales={TIMELINE_SCALES}
-					start={window?.start}
-					end={window?.end}
+					start={axisRange?.start}
+					end={axisRange?.end}
 					cellHeight={ROW_HEIGHT}
 					scaleHeight={SCALE_HEIGHT}
 					highlightTime={highlightTime}
