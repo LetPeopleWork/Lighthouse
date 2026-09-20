@@ -192,6 +192,51 @@ describe("SnackbarErrorHandler", () => {
 				"Generic error message",
 			);
 		});
+
+		it("says nothing about a resize loop the browser already recovered from", async () => {
+			render(
+				<SnackbarErrorHandler>
+					<div data-testid="content">Content</div>
+				</SnackbarErrorHandler>,
+			);
+
+			// The browser raises this whenever a resize callback causes another resize in the same
+			// frame. It defers the rest to the next frame and loses nothing — but it arrives as a
+			// window error event, so without a filter a chart that measures itself puts a red
+			// failure toast in front of the reader for something that did not fail.
+			fireEvent(
+				window,
+				new ErrorEvent("error", {
+					message:
+						"ResizeObserver loop completed with undelivered notifications.",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+			});
+		});
+
+		it("still reports a resize loop that never settled", async () => {
+			render(
+				<SnackbarErrorHandler>
+					<div data-testid="content">Content</div>
+				</SnackbarErrorHandler>,
+			);
+
+			// The harsher variant. This one means the loop hit its limit rather than deferring, so
+			// it is a real runaway and must not be swallowed with its benign sibling.
+			fireEvent(
+				window,
+				new ErrorEvent("error", {
+					message: "ResizeObserver loop limit exceeded",
+				}),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toBeInTheDocument();
+			});
+		});
 	});
 
 	describe("Unhandled Rejection Handling", () => {

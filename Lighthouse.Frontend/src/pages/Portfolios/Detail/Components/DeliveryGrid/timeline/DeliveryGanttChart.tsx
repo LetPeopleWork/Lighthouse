@@ -30,6 +30,35 @@ export interface DeliveryGanttChartProps {
 
 const TARGET_DAY_CLASS = "delivery-target-day";
 
+// The classes the library's own theme wrappers carry. Ours is the only code that needs to know
+// them, and it needs to because they are where the library declares the variables we override.
+const LIGHT_THEME_CLASS = "wx-willow-theme";
+const DARK_THEME_CLASS = "wx-willow-dark-theme";
+
+export const THEMED_ELEMENT_SELECTOR = `& .${LIGHT_THEME_CLASS}, & .${DARK_THEME_CLASS}`;
+
+/**
+ * The product's colour, handed to the library's own variables — the one place the two colour
+ * systems meet.
+ *
+ * **The selector is the whole point.** The library declares these same variables on its theme
+ * element, and a declaration on the element beats anything inherited from an ancestor, so setting
+ * them on our wrapper reads correctly and draws the library's default blue. That is what shipped
+ * first, and no unit test can catch it: this environment mocks the library's stylesheet away, so
+ * the declaration that ought to win is not there to win and either arrangement looks identical.
+ * The assertion below pins the shape; the rendered result is the screenshot test's job.
+ */
+export function ganttColorOverrides(barColor: string, fontColor: string) {
+	return {
+		[THEMED_ELEMENT_SELECTOR]: {
+			"--wx-gantt-task-color": barColor,
+			"--wx-gantt-task-fill-color": barColor,
+			"--wx-gantt-task-border-color": barColor,
+			"--wx-gantt-task-font-color": fontColor,
+		},
+	};
+}
+
 /**
  * Which axis columns get the target tint.
  *
@@ -131,13 +160,10 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 			data-theme-mode={isDark ? "dark" : "light"}
 			sx={{
 				height: chartHeight(bars.length),
-				// The library paints its bars from its own variables, not from the MUI theme, so the
-				// brand colour is handed across here rather than left at its default blue. This is the
-				// one place the two colour systems meet.
-				"--wx-gantt-task-color": barColor,
-				"--wx-gantt-task-fill-color": barColor,
-				"--wx-gantt-task-border-color": barColor,
-				"--wx-gantt-task-font-color": theme.palette.getContrastText(barColor),
+				...ganttColorOverrides(
+					barColor,
+					theme.palette.getContrastText(barColor),
+				),
 				[`& .${TARGET_DAY_CLASS}`]: {
 					backgroundColor: theme.palette.action.selected,
 				},

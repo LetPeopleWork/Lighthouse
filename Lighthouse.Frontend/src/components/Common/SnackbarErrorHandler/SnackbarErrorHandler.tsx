@@ -19,6 +19,21 @@ export const useErrorSnackbar = () => {
 	return ctx;
 };
 
+/**
+ * The browser raises this when a resize callback triggers another resize in the same frame. It is a
+ * notice, not an exception: the observer defers the remaining work to the next frame and nothing is
+ * lost. No user can act on it and no developer needs a toast for it, so it is dropped before it can
+ * become one.
+ *
+ * The harsher sibling, "ResizeObserver loop limit exceeded", is deliberately NOT dropped — that one
+ * means the loop never settled, which is a real runaway worth seeing.
+ */
+const BENIGN_RESIZE_NOTICE = "ResizeObserver loop completed with undelivered";
+
+export function isBenignBrowserNotice(message: string): boolean {
+	return message.startsWith(BENIGN_RESIZE_NOTICE);
+}
+
 interface ErrorBoundaryProps {
 	onError: (msg: string) => void;
 	children?: React.ReactNode;
@@ -75,6 +90,11 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 	useEffect(() => {
 		const onWindowError = (ev: ErrorEvent) => {
 			const msg = ev.error instanceof Error ? ev.error.message : ev.message;
+
+			if (isBenignBrowserNotice(msg)) {
+				return;
+			}
+
 			showError(msg);
 		};
 

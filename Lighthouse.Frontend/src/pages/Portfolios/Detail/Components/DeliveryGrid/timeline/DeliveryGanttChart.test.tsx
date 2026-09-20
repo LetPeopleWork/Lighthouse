@@ -3,6 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import DeliveryGanttChart, {
 	chartHeight,
+	ganttColorOverrides,
+	THEMED_ELEMENT_SELECTOR,
 	TIMELINE_SCALES,
 	targetDayHighlight,
 	toGanttTasks,
@@ -76,13 +78,32 @@ describe("DeliveryGanttChart", () => {
 		);
 	});
 
-	it("paints the bars in the product's own colour, not the library's", () => {
-		renderInTheme("light");
+	describe("the bar colour", () => {
+		// This is as far as a unit test can honestly go, and the reason is worth knowing before
+		// anyone strengthens it. The library declares these variables on its own theme element, so
+		// ours must be aimed at that element rather than set on the wrapper around it. The first
+		// version set them on the wrapper: it drew the library's default blue, and an assertion on
+		// the rendered value passed anyway — this environment mocks the library's stylesheet away,
+		// so the declaration that ought to have won was not there to win. Both arrangements look
+		// identical to jsdom. What is pinned here is the shape; the colour on screen is the
+		// screenshot test's job, and only its job.
+		it("is aimed at the element that declares the variables, not the wrapper", () => {
+			const overrides = ganttColorOverrides(BRAND_GREEN, "#ffffff");
 
-		// The library takes its colours from its own variables rather than from the MUI theme, so
-		// left alone it draws a blue that appears nowhere else in this product.
-		expect(screen.getByTestId("delivery-gantt")).toHaveStyle({
-			"--wx-gantt-task-color": BRAND_GREEN,
+			expect(Object.keys(overrides)).toEqual([THEMED_ELEMENT_SELECTOR]);
+			expect(THEMED_ELEMENT_SELECTOR).toContain("wx-willow-theme");
+			expect(THEMED_ELEMENT_SELECTOR).toContain("wx-willow-dark-theme");
+		});
+
+		it("carries the product's colour, and a legible label over it", () => {
+			const overrides = ganttColorOverrides(BRAND_GREEN, "#ffffff")[
+				THEMED_ELEMENT_SELECTOR
+			];
+
+			expect(overrides["--wx-gantt-task-color"]).toBe(BRAND_GREEN);
+			expect(overrides["--wx-gantt-task-fill-color"]).toBe(BRAND_GREEN);
+			expect(overrides["--wx-gantt-task-border-color"]).toBe(BRAND_GREEN);
+			expect(overrides["--wx-gantt-task-font-color"]).toBe("#ffffff");
 		});
 	});
 
