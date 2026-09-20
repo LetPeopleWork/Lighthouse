@@ -241,6 +241,8 @@ describe("marking the target day and today", () => {
 		// The scale has two rows. Marking the coarser one as well would put a band across the
 		// whole month or year holding the date.
 		expect(columnHighlight(dayColumn(15), "month", "day", marks)).toBe("");
+		// The monthly scale's upper row is years, and it must stay unmarked — otherwise a whole
+		// year is shaded because one day inside it is the target.
 		expect(columnHighlight(dayColumn(15), "year", "month", marks)).toBe("");
 	});
 

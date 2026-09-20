@@ -129,7 +129,14 @@ export function columnHighlight(
 	return classes.join(" ");
 }
 
-/** Where the column after this one begins, which is where this one stops covering. */
+/**
+ * Where the column after this one begins, which is where this one stops covering.
+ *
+ * Days, weeks and months are the whole set: those are the finest rows the three scales offer, and
+ * only the finest row is ever marked. A year column exists on the monthly scale but sits above the
+ * months, so nothing asks about it — a branch for it would be unreachable, and mutation testing is
+ * what pointed that out.
+ */
 function nextColumnStart(columnStart: Date, unit: string): Date {
 	const next = new Date(columnStart);
 
@@ -137,8 +144,6 @@ function nextColumnStart(columnStart: Date, unit: string): Date {
 		next.setDate(next.getDate() + 7);
 	} else if (unit === "month") {
 		next.setMonth(next.getMonth() + 1);
-	} else if (unit === "year") {
-		next.setFullYear(next.getFullYear() + 1);
 	} else {
 		next.setDate(next.getDate() + 1);
 	}
