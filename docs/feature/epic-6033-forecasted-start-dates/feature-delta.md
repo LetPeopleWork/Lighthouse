@@ -1580,3 +1580,57 @@ read. The labels are display-only: the wire carries the enum member's **name** a
 and were updated.
 
 Next: DELIVER, slice 03 (Story #6047).
+
+---
+
+## Wave: DELIVER / [REF] Examined after slice 03, and deliberately not changed
+
+Three things the adversarial review of slice 03 raised that are not defects in slice 03. One became a
+work item; two were judged acceptable by the maintainer. All three are written down here because each is
+the kind of thing a later reader finds, assumes nobody noticed, and re-reports — the review that found
+them was doing exactly that.
+
+### Raised as Bug #6054 — a finished or in-progress Feature can show a start date in the future
+
+Two cases under one rule: a completed Feature keeps in the tracker whatever forecast was last written to
+it, because a Done Feature writes nothing and so never overwrites; and a Feature that is Doing without a
+recorded `StartedDate` falls through to the forecast branch and is given a future start on both surfaces.
+The fix is one domain rule — a Feature that is Doing or Done has started, so it gets its observed date
+when known and nothing otherwise, never a forecast — and it **reverses AC-3.4**, which is why it is an
+item rather than a quiet correction. Detail is on the work item.
+
+Worth keeping here: the Feature *table* was checked and is already correct for a Done Feature.
+`InitializeSimulationResults` only creates rows where remaining work is above zero, so a Done Feature
+gets no start rows and `SetStartForecasts` clears any it held. The defect is confined to the value left
+behind in the tracker.
+
+### Accepted — a Feature whose state moved back to ToDo still receives a forecast
+
+`WhenWorkBegins` reports an observed start only while a Feature is Doing. A Feature that was started and
+then moved back behind a dependency keeps its `StartedDate` but reads as ToDo, so the tracker is told it
+begins in a fortnight for work its own history says began a fortnight ago. Lighthouse's own screen agrees,
+because both read the same rule — the two are consistent with each other and both disagree with the
+tracker's record.
+
+Judged acceptable: it is the same family as #6054 but a genuinely rarer shape, and a Feature that has been
+pushed back arguably *has* not started in any sense a plan cares about. Not fixed, and not to be fixed
+incidentally while #6054 is in hand without saying so.
+
+### Accepted — start percentiles are conditional on the work starting within the horizon
+
+A `StartForecast` histogram counts only the runs in which work on that Feature actually began;
+`TotalTrials` is the sum of those counts, so `GetProbability` divides by the number of runs that started
+the Feature rather than the number of runs. For a Feature reached in only some runs, an "85th percentile
+start" is therefore the 85th percentile *of the runs that started it*, presented as though unconditional.
+A run can end before reaching everything — `SimulatedRun.CarryOut` returns `RanOutOfDays` at the horizon
+and `NothingLeftCouldBeStarted` on a deadlock — so this is reachable, not theoretical.
+
+**It is not something this Epic introduced.** Completion forecasts have worked the same way since long
+before start dates existed: `CloseOneItemOf` records a row only in the runs where that row actually
+finished, so `WhenForecast.TotalTrials` is likewise a count of runs that finished rather than runs that
+ran. Start dates inherited the convention rather than inventing it.
+
+Changing it would move every forecast number in the product, on every screen, and the honest alternative
+— refusing to answer when the share of runs that started the Feature falls below the percentile asked for
+— is a product decision about what a percentile means, not a bug fix. Deliberately left alone. If it is
+ever revisited, it belongs to the forecasting engine as a whole and not to this Epic.
