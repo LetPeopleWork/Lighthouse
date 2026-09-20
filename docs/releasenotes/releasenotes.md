@@ -4,6 +4,93 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.9.19.10
+
+## Display Risk of Missing your Service Level Expectation
+
+An aging chart tells you how old an item is. It does not tell you whether its age is a *problem*.
+
+Lighthouse now puts a number on it. Every in-progress Work Item carries the chance it will finish later than its Team's SLE, derived from that Team's own cycle time history.
+
+![The SLE Risk column](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/sle_risk_column.png)
+
+As an example, let's assume your SLE is 5 days at 80%. Your relevant history includes 45 items that were closed. You want to know the risk of breaching your SLE for an item that is right now 3 days old.
+Of your historical 45 items, 20 items had a Cycle Time of 3 days or more. 8 of those were breaching the SLE (Cycle Time of 6+ days). That means, for your current item, the risk is: `(100 / 20) * 8 = 40%`
+
+The number can be seen in the Work Items Dialog for in Progress Items, as well as in a new widget that shows you all the "At Risk" items currently in progress. At risk means that there is a 70+ percent chance that you breach the SLE.
+
+![The at-risk widget](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/sleRiskWidget.png)
+
+Full detail: [Flow Metrics](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#sle-risk-column).
+
+## Task Manager
+
+"Is Lighthouse doing anything right now?" had no good answer. A refresh that hung, a connection whose credential quietly expired, an error that scrolled past in the log — all of it invisible unless you went digging.
+
+Now you can watch what Lighthouse is up to when you click on the *timeline icon* in the header: what is refreshing and what is queued, the health of every connection to your Work Tracking Systems, and what has gone wrong recently.
+
+You can also **stop a refresh**, which was not possible from the UI before — every connector now notices the stop mid-page rather than finishing the fetch anyway.
+
+![The Task Manager](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/taskmanager.png)
+
+It names every Team, Portfolio and connection on the instance, so it is shown to System Administrators only.
+
+Full detail: [Task Manager](https://docs.lighthouse.letpeople.work/settings/taskmanager.html).
+
+## Parents read from Jira issue links
+
+Some Jira instances do not record hierarchy as a parent field at all. They record it as an issue link — "caused by", "results in", etc.
+You can now define additional fields that point to those "link types", and use them as "Parent Overrides" for your Teams and Portfolios.
+
+This allows Lighthouse to set up Portfolios with Features and proper forecasting, even if you don't use any built-in Parent-Child connection on your Jira instance.
+
+Jira only, Data Center and Cloud, and free — no licence needed. Full detail: [Team settings](https://docs.lighthouse.letpeople.work/teams/edit.html#parent-override-field) and [Portfolio settings](https://docs.lighthouse.letpeople.work/portfolios/edit.html#parent-override-field).
+
+
+## Usage Data Collection
+
+Up until now, we used to have no indication who and how Lighthouse is used. The nature of the tool, allowing to self-host and all made it tricky. We understand that not everyone wants to send their usage data, and that's completely ok. However, some people may be ok with that. And it would be of great help to us.
+
+So we introduced a **strictly opt-in** feature that enables sending of some data points. If enabled, Lighthouse can now tell us which parts of it get used, plus a little about the instance doing the using: its version, how it is deployed, which licence tier it runs on.
+
+To repeat, **nothing is sent until somebody using that instance agrees to it**, and anyone can stop it again with one click.
+
+We don't send any info about your work items, team names etc., but only basic information about your instance as well as what you are using. You can see the full details in the docs below.
+
+Important: If you are using a premium license, a system administrator can disable any usage data sending for the full instance. This will prevent sending data for anyone that uses this instance, independent of their individual answer.
+
+Full detail: [Usage Data](https://docs.lighthouse.letpeople.work/settings/usagedata.html).
+
+## Lighthouse is now source available
+
+This is the first release under the **Lighthouse Source Available License 1.0**. The source stays public on GitHub: you can read it, run it, audit it and change it for your own use, but it is no longer MIT.
+
+**Everything up to and including v26.9.9.9 remains MIT licensed in perpetuity.** That is not retroactive: if you run one of those versions, or hold a copy or a fork, your rights are untouched.
+
+For almost everyone, nothing changes. Running Lighthouse inside your company for as many people as you like, modifying it heavily, forking it, building plugins or dashboards on top of it, and consulting or coaching with it all stay permitted. What is not permitted is offering Lighthouse as a hosted or managed service to other people, removing or bypassing the licence key check, and building a separate product out of the source whose primary purpose is to replace Lighthouse.
+
+Publishing the source is how we let you verify that your delivery data stays on your own infrastructure, and we want to keep doing that. What we did not intend was to hand someone a complete forecasting product to resell, or to make the paid tier trivially removable. There is a free Community edition, and there always will be.
+
+Full detail: [Licensing](https://docs.lighthouse.letpeople.work/licensing/licensing.html).
+
+## Bugfixes and Improvements
+
+- **Team creation failed validation on Jira Data Center.** Selecting a board could fail with a bare 400. The query had outgrown what fits in a request line — Lighthouse now asks Data Center for issues over POST.
+- **A Portfolio refresh could fail with a 400 that said nothing.** Lighthouse now reports what Jira actually said, and names the query it sent when Jira will not say what was wrong. A configuration that narrows nothing gets no query rather than an empty one, and board filters and sub-filters are bracketed independently.
+- **A mistyped additional field killed every refresh on Jira Data Center.** An unresolvable field reference now names the field it could not find, pinned to the Additional Fields input, instead of throwing an unexpected error.
+- **Azure DevOps blamed the wrong thing for a refused field list.** A field-metadata lookup that fails now says so, instead of reporting an unreachable URL or a bad token — and fields that cannot be resolved are no longer dropped in silence.
+- **A failed connection validation hid what Lighthouse already knew.** The verdict now carries what the connector itself said.
+- **The log viewer opens at the tail.** It opened at the top, which is the wrong end of a log when you are looking for what just went wrong.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.9.9.9...v26.9.19.10)
+
 # Lighthouse v26.9.9.9
 
 ## Named time ranges, and stepping the metrics window
