@@ -1977,7 +1977,7 @@ namespace Lighthouse.Backend.Migrations
                     b.HasOne("Lighthouse.Backend.Models.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Feature");
 

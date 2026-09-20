@@ -252,11 +252,17 @@ namespace Lighthouse.Backend.Data
                 .Property(sf => sf.TeamId)
                 .HasColumnName("StartTeamId");
 
+            // Deleted with the team rather than orphaned, which is the opposite of what the completion
+            // rows beside them do. A start row means "this is when that team gets to it", so once the
+            // team is gone the row says nothing - and worse, nulling its team would leave it
+            // indistinguishable from the Feature's own row, which is the one whose team is null by
+            // design. A Feature would then report one team's start as its own until the next forecast
+            // happened to rewrite it, silently and with no way for a reader to tell.
             modelBuilder.Entity<StartForecast>()
                 .HasOne(sf => sf.Team)
                 .WithMany()
                 .HasForeignKey(sf => sf.TeamId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<IndividualSimulationResult>()
                 .HasOne(isr => isr.Forecast)

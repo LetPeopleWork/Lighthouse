@@ -56,6 +56,35 @@ at the column list.
 The reuse verdict at the foot of this document is corrected accordingly: `WhenForecast` → **NOT REUSED**;
 `ForecastBase` → **REUSED AS IS, by inheritance**; **one new type**, `StartForecast`.
 
+## Amendment, 2026-09-20 — a deleted team takes its start row with it
+
+Found in adversarial review of the implementation, before it was pushed.
+
+Decision point 1 below says the Feature-grain row is the one whose `TeamId` is null, on ADR-111's
+precedent, and notes approvingly that the team relationship "is already nullable with
+`OnDelete(SetNull)`". Those two together are a defect. `SetNull` is how the **completion** rows behave and
+is harmless there, because nothing reads a completion row by the absence of a team. Here it is the
+identity of the Feature-grain row.
+
+Delete a contributing team and its per-team start row keeps its data while losing its team — which makes
+it indistinguishable from the Feature's own row, and it sorts ahead of it. `Feature.WhenWorkBegins` takes
+the first null-team row it finds, so the Feature reports **that team's** start as its own, silently, until
+some later forecast happens to rewrite the rows. Reproduced: with `SetNull`, a Feature whose own start is
+day 9 reports day 2 — the removed team's — after the deletion.
+
+**`StartForecast.Team` therefore cascades.** A start row says when a particular team gets to a Feature;
+once that team is gone the row has nothing left to say, and deleting it is both the honest answer and the
+one that keeps the null-team row unique. The completion rows are untouched and keep `SetNull`, because
+that behaviour is load-bearing for them and this Epic does not get to change it.
+
+The alternative was a discriminator column on `StartForecast` saying which row is the Feature's own. It
+would work, and it is more code and another thing to keep true, for a row that is stale the moment its
+team is deleted. Rejected on that basis rather than on principle — if a later feature needs to keep
+per-team start rows for teams that no longer exist, it should revisit this and add the column.
+
+`DeletionTests.TeamInProject_WithExistingStartForecasts_DeleteTeam_LeavesTheFeaturesOwnStartAlone` is the
+regression test, and it fails with `SetNull` restored.
+
 ## Context
 
 [ADR-199](./adr-199-start-day-observed-per-trial-at-two-grains.md) produces two kinds of start

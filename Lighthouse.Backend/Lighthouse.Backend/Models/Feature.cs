@@ -138,13 +138,26 @@ namespace Lighthouse.Backend.Models
             }
         }
 
-        /// <summary>What the simulation expects of one contributing team, or nothing if it has no row.</summary>
+        /// <summary>What the simulation expects of one contributing team, or nothing if it has no answer.</summary>
         public StartForecast? StartForecastFor(Team team)
-            => StartForecasts.Find(forecast => forecast.TeamId == team.Id);
+            => SomethingToSay(StartForecasts.Find(forecast => forecast.TeamId == team.Id));
 
         /// <summary>What the simulation expects of one contributing team's completion, mirroring the above.</summary>
         public WhenForecast? CompletionForecastFor(Team team)
-            => Forecasts.Find(forecast => (forecast.Team?.Id ?? forecast.TeamId) == team.Id);
+            => SomethingToSay(Forecasts.Find(forecast => (forecast.Team?.Id ?? forecast.TeamId) == team.Id));
+
+        /// <summary>
+        /// A distribution built from no runs at all is not an answer, and it is worse than none: every
+        /// percentile off an empty histogram reads as day zero, which every date projection turns into
+        /// today. A team that has never delivered would report that it finishes today, at every
+        /// confidence level, in the same shape a real forecast arrives in.
+        ///
+        /// A team with nothing measured is exactly the case the rest of the product is careful to say
+        /// nothing about - `TeamsWithoutForecast` names it, and `CanBeForecast` blanks the Feature's own
+        /// dates because of it. The per-team rows have to answer the same way.
+        /// </summary>
+        private static TForecast? SomethingToSay<TForecast>(TForecast? forecast) where TForecast : ForecastBase
+            => forecast is not null && forecast.TotalTrials > 0 ? forecast : null;
 
         // A team that must still finish but has no throughput leaves the feature with no honest
         // completion distribution. A feature with no remaining work is exempt - it carries

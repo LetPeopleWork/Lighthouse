@@ -145,6 +145,30 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        /// <summary>
+        /// A team with nothing measured takes no part in the run, so it has a completion row with no runs
+        /// behind it - and every percentile off an empty histogram is day zero, which every date
+        /// projection turns into today. Reported as-is, that team would say it finishes today at every
+        /// confidence level: a confident, fabricated answer in exactly the shape a real one arrives in,
+        /// for the one case the rest of the product is careful to say nothing about.
+        /// </summary>
+        [Test]
+        public void ATeamWithNothingMeasured_HasNoForecastAtEitherEndRatherThanOneDatedToday()
+        {
+            var team = new Team { Id = 7, Name = "Never delivered" };
+            var feature = new Feature(team, 5);
+
+            feature.SetFeatureForecasts([new WhenForecast(new SimulationResult(team, feature, 5))]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int>(), team)]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.Forecasts.Single().TotalTrials, Is.Zero, "the row is there, it just has nothing behind it");
+                Assert.That(feature.CompletionForecastFor(team), Is.Null);
+                Assert.That(feature.StartForecastFor(team), Is.Null);
+            }
+        }
+
         [Test]
         public void TheForecastsForOneTeam_AreFoundByThatTeam()
         {

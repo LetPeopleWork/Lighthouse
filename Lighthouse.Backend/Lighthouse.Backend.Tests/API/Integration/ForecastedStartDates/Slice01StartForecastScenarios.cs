@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         [Test]
         public async Task A_Feature_a_Team_cannot_be_forecast_for_carries_no_start_date_either()
         {
-            var (portfolio, silentTeamName) = await GivenAFeatureOneOfWhoseTeamsHasNeverDelivered();
+            var (portfolio, silentTeamName, silentTeamId) = await GivenAFeatureOneOfWhoseTeamsHasNeverDelivered();
 
             await WhenTheForecastRuns(portfolio);
 
@@ -219,6 +219,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
                 Assert.That(TheForecastedStart(shared, 85), Is.Null);
                 Assert.That(TheForecastedCompletion(shared, 85), Is.Null,
                     "the completion side already behaves this way and the start side inherits it.");
+
+                // The per-team rows are new here, and they are where this could still go wrong: a team
+                // with nothing measured has a completion row with no runs behind it, and every percentile
+                // off that reads as day zero, which projects to today. Served as-is it would say this
+                // team finishes today, in the same shape a real answer arrives in.
+                Assert.That(TheForecastedStartFor(shared, silentTeamId, 85), Is.Null);
+                Assert.That(TheForecastedCompletionFor(shared, silentTeamId, 85), Is.Null,
+                    "a team that has never delivered does not get a date, least of all today's.");
             }
         }
     }

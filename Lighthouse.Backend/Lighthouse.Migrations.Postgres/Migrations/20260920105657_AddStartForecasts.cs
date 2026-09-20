@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Lighthouse.Backend.Migrations
+namespace Lighthouse.Migrations.Postgres.Migrations
 {
     /// <inheritdoc />
     public partial class AddStartForecasts : Migration
@@ -13,13 +13,13 @@ namespace Lighthouse.Backend.Migrations
             migrationBuilder.AddColumn<int>(
                 name: "StartFeatureId",
                 table: "ForecastBase",
-                type: "INTEGER",
+                type: "integer",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "StartTeamId",
                 table: "ForecastBase",
-                type: "INTEGER",
+                type: "integer",
                 nullable: true);
 
             migrationBuilder.CreateIndex(
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Migrations
                 column: "StartTeamId",
                 principalTable: "Teams",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />

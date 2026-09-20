@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
             return (await GivenAPortfolioOf(connection, shared), first.Id, second.Id);
         }
 
-        private async Task<(Portfolio Portfolio, string SilentTeamName)> GivenAFeatureOneOfWhoseTeamsHasNeverDelivered()
+        private async Task<(Portfolio Portfolio, string SilentTeamName, int SilentTeamId)> GivenAFeatureOneOfWhoseTeamsHasNeverDelivered()
         {
             const string silent = "The Silent Team";
 
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
 
             var shared = AFeature(Shared, "10", (measured, 6), (neverDelivered, 4));
 
-            return (await GivenAPortfolioOf(connection, shared), silent);
+            return (await GivenAPortfolioOf(connection, shared), silent, neverDelivered.Id);
         }
     }
 }
