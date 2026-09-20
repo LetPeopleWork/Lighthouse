@@ -73,7 +73,11 @@ export interface IFeatureTeamForecast {
 const WorkByTeamSchema = z.record(z.string(), z.number());
 
 export const FeatureStartSchema = z.object({
-	source: z.enum(["Unknown", "Forecast", "Observed"]),
+	// Every Feature in a response is parsed as one array, so a value this enum does not know would
+	// throw for the whole array and blank all three Feature tables entirely - not just this column, and
+	// not just the one row. A source we cannot read means we cannot say when the Feature starts, which
+	// is what Unknown already means, so it falls back rather than taking the page down.
+	source: z.enum(["Unknown", "Forecast", "Observed"]).catch("Unknown"),
 	observedDate: z.coerce
 		.date()
 		.nullish()

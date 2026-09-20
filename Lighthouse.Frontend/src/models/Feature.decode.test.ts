@@ -105,6 +105,20 @@ describe("reading a Feature's start forecast off the wire", () => {
 		expect(feature.startForecast).toBeUndefined();
 		expect(feature.name).toBe("Some Feature");
 	});
+
+	// The other direction: a backend newer than this bundle, sending a source this build has never
+	// heard of. Features are parsed as one array, so rejecting the value would blank every row of
+	// every Feature table rather than one column of one row.
+	it("falls back to an unknown start rather than rejecting a source it does not recognise", () => {
+		const feature = decode(
+			wireFeature({
+				startForecast: { source: "SomethingNewerThanThisBuild" },
+			}),
+		);
+
+		expect(feature.startForecast?.source).toBe("Unknown");
+		expect(feature.name).toBe("Some Feature");
+	});
 });
 
 describe("reading a Feature's per-team forecasts off the wire", () => {
