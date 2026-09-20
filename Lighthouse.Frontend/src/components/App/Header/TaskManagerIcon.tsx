@@ -7,6 +7,7 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
+import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import { useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
@@ -25,6 +26,7 @@ import SectionHeading from "./TaskManager/SectionHeading";
 import { useTaskManagerPopover } from "./TaskManager/useTaskManagerPopover";
 
 const TaskManagerIcon = () => {
+	const theme = useTheme();
 	const { isSystemAdmin } = useRbac();
 	const { getTerm } = useTerminology();
 
@@ -61,7 +63,7 @@ const TaskManagerIcon = () => {
 						badgeContent={tasks.length + connections.filter(isBroken).length}
 						color={badgeColourFor(connections)}
 					>
-						<TimelineIcon />
+						<TimelineIcon style={{ color: theme.palette.primary.main }} />
 					</Badge>
 				</IconButton>
 			</Tooltip>
