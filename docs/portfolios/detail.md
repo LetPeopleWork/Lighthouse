@@ -349,5 +349,51 @@ Click **Legend** to open it, then click features to show only those bars — use
 {: .note}
 These charts accrue from the day a delivery is created. A newly added delivery shows an empty state until the first snapshots are recorded — give it a day or two of background updates to populate.
 
+## Delivery Timeline
+
+Expand a delivery and open its **Timeline** tab to see the delivery as a plan: one bar per feature, running from the day work on it is forecast to *begin* to the day it is forecast to *finish*.
+
+This is the view that answers *"what order will these get worked, and when does each one actually start?"*. The Features table answers it a row at a time; the timeline answers it at a glance, and shows you the queue — the features that cannot start yet because the teams are busy with the ones above them.
+
+Features appear in board order, top to bottom. That is not a display choice: it is the order Lighthouse's simulation itself pulls them in, so the picture and the forecast behind it agree.
+
+{: .note}
+> The Timeline is a premium feature. The forecasts it draws are not — the start and completion dates stay in the Features table on every licence.
+
+### Choosing a confidence level
+
+The **70% / 85% / 95%** buttons above the chart set the confidence level for the whole timeline. Moving between them slides *both ends* of every bar together, so each bar is always one consistent scenario rather than an optimistic start welded to a pessimistic finish.
+
+Switching from 70% to 95% and watching whether the last bar still lands before your target date is the quickest read on how much slack the delivery really has.
+
+### The target date
+
+Where a delivery has a target date, that day is shaded on the axis. The shading uses the same date shown in the delivery's heading.
+
+### Features already under way
+
+A feature that has already started begins its bar on the day it actually started, not on a forecast. A date that has happened is a fact, and no confidence level changes it — only the far end of the bar moves when you change the percentile.
+
+### Features that cannot be drawn
+
+Some features cannot be placed on a timeline: no team has enough history to forecast them, or the delivery has no forecast for one end of the bar yet. Those are listed **beneath the chart with the reason**, never silently left out.
+
+This matters more than it sounds. A feature that vanishes from a plan is worse than one shown as unknown — you would be reading a picture with a hole in it and no way to tell.
+
+### Why a feature nobody has started can show as starting today
+
+This is the one thing on the timeline that looks wrong and is not.
+
+Lighthouse forecasts the top few features on each board — as many as the team's feature WIP allows — as the ones being worked right now. It reads the board's order, not what is physically in progress. So if a feature sits high in the order while the team is actually working on something further down, the timeline draws the high one as starting immediately.
+
+That is the timeline reporting your board, not misreading it. The forecast is telling you the order you have published does not match the order you are working. Reordering the board so it reflects reality changes the picture — and is the thing worth doing regardless, because everything downstream of the board reads that order too.
+
+### Bars that touch
+
+Where one team works several features in sequence, you will see each bar begin on the same day the one above it ends, with no gap. That is correct. A team that finishes a feature part-way through a day pulls the next one the same day, so the handover is not a day long. A gap appears only where a *different* team has to pick the work up.
+
+{: .note}
+> This tab uses whatever you call features in **Settings → Terminology**, so its bars may be titled with your own word for them throughout.
+
 # Metrics
 Similar to the Team Details, the Portfolio contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Portfolio. Check the [Metrics Page](../metrics/metrics.html) for more details.
