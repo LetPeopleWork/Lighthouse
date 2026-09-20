@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private readonly int[] remainingOfTeam;
         private readonly int[] dayEachRowFinished;
         private readonly int[] rowsReadyToBeWorkedOn;
+        private readonly bool[] rowHasBeenWorked;
+        private readonly bool[] featureHasBeenWorked;
 
         public TrialState(ForecastRunPlan plan)
         {
@@ -26,6 +28,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             remainingOfTeam = new int[plan.TeamCount];
             dayEachRowFinished = new int[plan.RowCount];
             rowsReadyToBeWorkedOn = new int[plan.RowCount];
+            rowHasBeenWorked = new bool[plan.RowCount];
+            featureHasBeenWorked = new bool[plan.FeatureCount];
 
             StartAgain();
         }
@@ -36,6 +40,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         {
             Array.Clear(remainingOfTeam);
             Array.Fill(dayEachRowFinished, StillHasWorkLeft);
+            Array.Clear(rowHasBeenWorked);
+            Array.Clear(featureHasBeenWorked);
             RemainingEverywhere = 0;
 
             for (var row = 0; row < remainingOfRow.Length; row++)
@@ -130,6 +136,37 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
 
             return rowsReadyToBeWorkedOn.AsSpan(0, howMany);
+        }
+
+        /// <returns>True when that was the first item of the row worked in this run.</returns>
+        public bool StartOneItemOf(int rowIndex)
+        {
+            if (rowHasBeenWorked[rowIndex])
+            {
+                return false;
+            }
+
+            rowHasBeenWorked[rowIndex] = true;
+
+            return true;
+        }
+
+        /// <summary>
+        /// The Feature, rather than one Team's share of it. A Feature two Teams work has started as soon
+        /// as either of them pulls an item, so whichever of them gets there first in this run is the one
+        /// that answers - and the second one to arrive is not a start.
+        /// </summary>
+        /// <returns>True when that was the first item of the Feature worked in this run.</returns>
+        public bool StartOneItemOfFeature(int featureIndex)
+        {
+            if (featureIndex == ForecastRunPlan.NoFeature || featureHasBeenWorked[featureIndex])
+            {
+                return false;
+            }
+
+            featureHasBeenWorked[featureIndex] = true;
+
+            return true;
         }
 
         /// <returns>True when that was the last item of the row, which is the day the row finished.</returns>

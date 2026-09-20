@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     {
         private readonly TrialState state = new(plan);
 
-        public TrialCompletions Completions { get; } = new(plan.RowCount);
+        public TrialCompletions Completions { get; } = new(plan.RowCount, plan.FeatureCount);
 
         public WhatTheRunsCouldNotFinish WhatWentWrong { get; } = new();
 

@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -209,6 +210,36 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
             var features = ServiceProvider.GetRequiredService<IRepository<Feature>>();
             features.Update(waiting);
             await features.Save();
+
+            var asStored = features.GetAll().Single(feature => feature.Id == waiting.Id);
+
+            Assert.That(
+                asStored.DependsOnReferences.Select(reference => reference.ReferenceId),
+                Does.Contain(blocker.ReferenceId),
+                $"'{waiting.Name}' was not stored as waiting on '{blocker.Name}'.");
+        }
+
+        /// <summary>
+        /// That the run will actually wait, which is a different claim from the wait being stored and
+        /// looks identical from the outside. The product decides whether to act on a dependency in one
+        /// place, and that decision turns on the licence, on the Portfolio the two Features share, and on
+        /// whether both of them can be forecast at all.
+        ///
+        /// The last of those is why this is asserted separately rather than inside the step that stores
+        /// the wait: a Feature cannot be forecast until it has forecast rows, and it has none until a
+        /// forecast has run - so the very first run over a Portfolio honours no dependency at all. A
+        /// fixture that forecast once would quietly be testing an instance that has never refreshed, and
+        /// its Features would start on day one for a reason that has nothing to do with what it asserts.
+        /// </summary>
+        protected void GivenTheForecastIsNowWaitingFor(Feature waiting, Feature blocker)
+        {
+            var features = ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            var waits = ServiceProvider.GetRequiredService<IWhatTheForecastWaitsFor>().Of(features.GetAll().ToList());
+
+            Assert.That(
+                waits.Of(waiting.ReferenceId),
+                Does.Contain(blocker.ReferenceId),
+                $"'{waiting.Name}' is stored as waiting on '{blocker.Name}', but the forecast was not told to wait for it.");
         }
 
         // --- When ---

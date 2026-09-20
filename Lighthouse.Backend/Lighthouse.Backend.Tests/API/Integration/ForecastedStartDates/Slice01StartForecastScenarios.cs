@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         // @walking_skeleton @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.1)
         [Test]
         [Category("walking_skeleton")]
-        [Ignore(PendingDeliver)]
         public async Task A_Feature_nobody_has_started_says_when_work_on_it_is_expected_to_begin()
         {
             var portfolio = await GivenAQueueOfTwoFeaturesOnOneTeam();
@@ -62,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.2, D7)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task At_Feature_WIP_one_the_next_Feature_starts_the_day_the_one_above_it_finishes()
         {
             var portfolio = await GivenAQueueOfTwoFeaturesOnOneTeam();
@@ -84,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @edge @real-io @contract-shape:bounded-change (AC-1.6, D5)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_Feature_already_in_flight_reports_the_day_it_actually_started()
         {
             var startedOn = new DateTime(2026, 9, 14, 0, 0, 0, DateTimeKind.Utc);
@@ -115,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.9, AC-1.10, D16)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_Feature_two_Teams_share_reports_a_start_and_a_completion_for_each_of_them()
         {
             var (portfolio, firstTeamId, secondTeamId) = await GivenAFeatureTwoTeamsShare();
@@ -142,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @invariant @real-io @contract-shape:pure-function (AC-1.9, D4)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_Feature_one_Team_works_reports_the_same_number_at_both_grains()
         {
             var portfolio = await GivenAQueueOfTwoFeaturesOnOneTeam();
@@ -174,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         // Passes on unmodified main. It is a regression guard rather than a RED scaffold: it asserts
         // only against the completion contract, which this slice must leave exactly where it is.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Nothing_about_the_completion_forecast_moves()
         {
             var portfolio = await GivenAQueueOfTwoFeaturesOnOneTeam();
@@ -209,7 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @error @real-io @contract-shape:bounded-change (AC-1.7, DDD-4)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_Feature_a_Team_cannot_be_forecast_for_carries_no_start_date_either()
         {
             var (portfolio, silentTeamName) = await GivenAFeatureOneOfWhoseTeamsHasNeverDelivered();

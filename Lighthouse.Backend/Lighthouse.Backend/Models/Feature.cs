@@ -106,6 +106,46 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public bool CanBeForecast => !TeamsWithoutForecast.Any();
 
+        /// <summary>
+        /// When work on this Feature begins. A Feature somebody has already started reports the day they
+        /// did, and the simulation is not consulted - it still ran, and still recorded a day, but a
+        /// forecast of something that has happened is a worse answer than the thing itself.
+        ///
+        /// The simulation is never told what is in flight. This is decided on the way out, so nothing
+        /// about how a forecast is produced depends on it.
+        /// </summary>
+        [NotMapped]
+        public FeatureStart WhenWorkBegins
+        {
+            get
+            {
+                if (StateCategory == StateCategories.Doing && StartedDate is { } startedOn)
+                {
+                    return FeatureStart.On(startedOn);
+                }
+
+                if (!CanBeForecast)
+                {
+                    return FeatureStart.NotKnown;
+                }
+
+                // The Feature's own row, the one no single team owns. Per-team rows name their team.
+                var acrossEveryTeam = StartForecasts.Find(forecast => forecast.TeamId is null);
+
+                return acrossEveryTeam is null || acrossEveryTeam.TotalTrials == 0
+                    ? FeatureStart.NotKnown
+                    : FeatureStart.ExpectedFrom(acrossEveryTeam);
+            }
+        }
+
+        /// <summary>What the simulation expects of one contributing team, or nothing if it has no row.</summary>
+        public StartForecast? StartForecastFor(Team team)
+            => StartForecasts.Find(forecast => forecast.TeamId == team.Id);
+
+        /// <summary>What the simulation expects of one contributing team's completion, mirroring the above.</summary>
+        public WhenForecast? CompletionForecastFor(Team team)
+            => Forecasts.Find(forecast => (forecast.Team?.Id ?? forecast.TeamId) == team.Id);
+
         // A team that must still finish but has no throughput leaves the feature with no honest
         // completion distribution. A feature with no remaining work is exempt - it carries
         // ForecastService's day-0 sentinel, which has no trials either, but is a fact, not a forecast.

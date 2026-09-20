@@ -6,6 +6,11 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureDto : WorkItemDto
     {
+        // The four the completion forecast has always reported. A start is read at the same confidence
+        // levels deliberately: a column showing one figure is where a forecast starts being read as a
+        // promise, and carrying all four costs nothing.
+        private static readonly int[] TheUsualPercentiles = [50, 70, 85, 95];
+
         /// <param name="asOf">
         /// The moment ages are measured at, handed down to the base so every aging surface measures from
         /// the same one. Left unthreaded, the portfolio aging chart stays anchored on today while the
@@ -28,7 +33,20 @@ namespace Lighthouse.Backend.API.DTO
 
             if (feature.CanBeForecast)
             {
-                Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(clock.Today, blackoutPeriods, 50, 70, 85, 95) ?? []);
+                Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(clock.Today, blackoutPeriods, TheUsualPercentiles) ?? []);
+            }
+
+            StartForecast = new FeatureStartDto(feature.WhenWorkBegins, clock.Today, blackoutPeriods, TheUsualPercentiles);
+
+            foreach (var team in feature.Teams.DistinctBy(team => team.Id))
+            {
+                TeamForecasts.Add(new FeatureTeamForecastDto(
+                    team.Id,
+                    feature.StartForecastFor(team),
+                    feature.CompletionForecastFor(team),
+                    clock.Today,
+                    blackoutPeriods,
+                    TheUsualPercentiles));
             }
 
             foreach (var work in feature.FeatureWork)
@@ -68,6 +86,13 @@ namespace Lighthouse.Backend.API.DTO
         public Dictionary<int, int> TotalWork { get; } = new Dictionary<int, int>();
 
         public List<WhenForecastDto> Forecasts { get; } = new List<WhenForecastDto>();
+
+        // When work on this Feature begins, and where that answer came from. Never absent - an
+        // un-forecastable Feature says so rather than saying nothing.
+        public FeatureStartDto StartForecast { get; }
+
+        // Both ends, per contributing team. Empty for a Feature nobody is working.
+        public List<FeatureTeamForecastDto> TeamForecasts { get; } = [];
 
         // Non-empty means the feature cannot be forecast, and names the teams to chase.
         public List<string> TeamsWithoutForecast { get; } = [];

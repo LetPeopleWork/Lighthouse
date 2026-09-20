@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
     public partial class Slice01StartForecastTest()
         : ForecastedStartDateAcceptanceTest(new ForecastedStartDateHost(new DrawsTheSameNumberEveryTime(), DeterministicTrials))
     {
-        internal const string PendingDeliver =
-            "RED scaffold written by DISTILL. DELIVER slice 01 (Story #6045) unskips these one at a time.";
 
         private const string Alpha = "Alpha";
 

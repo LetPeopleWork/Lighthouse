@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @edge @real-io @contract-shape:bounded-change (AC-1.3, S2)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Feature_WIP_bounds_how_many_Features_can_begin_on_the_first_day()
         {
             var portfolio = await GivenFiveFeaturesOnOneTeamAt(featureWip: 3);
@@ -57,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.3)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Raising_Feature_WIP_lets_them_all_begin_on_the_first_day()
         {
             var portfolio = await GivenFiveFeaturesOnOneTeamAt(featureWip: 5);
@@ -94,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// </summary>
         // @driving_port @us-01 @edge @invariant @real-io @contract-shape:bounded-change (AC-1.4, D4, ADR-199)
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task The_start_a_Feature_reports_is_the_one_the_run_saw_not_the_one_its_Teams_marginals_imply()
         {
             var (portfolio, firstTeamId, secondTeamId) = await GivenTwoTeamsWaitingOnTheSameUpstreamFeature();

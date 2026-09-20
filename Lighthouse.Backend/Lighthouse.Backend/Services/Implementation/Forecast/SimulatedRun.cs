@@ -75,10 +75,35 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 var howManyItMayWorkOnAtOnce = Math.Min(HowManyFeaturesAtOnce(teamIndex), ready.Length);
                 var worked = ready[draws.Draw(trial, teamId, day, TheDrawsThatPickAFeature + closed, howManyItMayWorkOnAtOnce)];
 
+                RecordThatWorkBeganOn(worked, day, state, completions);
+
                 if (state.CloseOneItemOf(worked, day))
                 {
                     completions.RecordThat(worked, day);
                 }
+            }
+        }
+
+        /// <summary>
+        /// The day a Feature was started is the day an item of it was first pulled, whether or not that
+        /// item finished the row it came from.
+        ///
+        /// Recorded before the item is closed, and that ordering is the whole of it: a row of one item is
+        /// started and finished on the same day, and a start taken after the close would be a start taken
+        /// from a row that no longer has work - which reads as never having started at all.
+        /// </summary>
+        private void RecordThatWorkBeganOn(int rowIndex, int day, TrialState state, TrialCompletions completions)
+        {
+            if (state.StartOneItemOf(rowIndex))
+            {
+                completions.RecordThatWorkBeganOnRow(rowIndex, day);
+            }
+
+            var feature = plan.FeatureOf(rowIndex);
+
+            if (state.StartOneItemOfFeature(feature))
+            {
+                completions.RecordThatWorkBeganOnFeature(feature, day);
             }
         }
 

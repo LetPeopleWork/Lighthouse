@@ -10,12 +10,21 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public WhenForecastDto(WhenForecast forecast, int probability, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        /// <param name="forecast">
+        /// A completion distribution or a start one. Both are read the same way - a day off the
+        /// histogram, projected over working days - which is why the day-to-date translation stays in one
+        /// place. Only a completion carries the throughput-filter notice, so only a completion sets it.
+        /// </param>
+        public WhenForecastDto(ForecastBase forecast, int probability, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             Probability = probability;
             ExpectedDate = blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), forecast.GetProbability(probability));
-            FilterApplied = forecast.FilterApplied;
-            ExcludedSummary = forecast.ExcludedSummary;
+
+            if (forecast is WhenForecast completion)
+            {
+                FilterApplied = completion.FilterApplied;
+                ExcludedSummary = completion.ExcludedSummary;
+            }
         }
 
         public int Probability { get; set; }

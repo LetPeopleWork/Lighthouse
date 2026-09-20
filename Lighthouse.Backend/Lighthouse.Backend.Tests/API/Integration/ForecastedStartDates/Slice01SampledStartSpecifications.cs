@@ -16,8 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
     public partial class Slice01SampledStartTest()
         : ForecastedStartDateAcceptanceTest(new ForecastedStartDateHost(new DrawsFromAPinnedStartingNumber(PinnedStartingNumber), SampledTrials))
     {
-        internal const string PendingDeliver =
-            "RED scaffold written by DISTILL. DELIVER slice 01 (Story #6045) unskips these one at a time.";
 
         private const string Downstream = "Downstream";
 
@@ -69,6 +67,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
             var portfolio = await GivenAPortfolioOf(connection, wall, downstream);
 
             await GivenTheFeatureWaitsOn(downstream, wall);
+
+            // Forecast once before the scenario's own run, because a dependency is only acted on when
+            // both Features can be forecast and neither can until it has forecast rows to be judged by.
+            // Any instance a user is looking at has refreshed before; one that has never refreshed is a
+            // different situation, and not the one this scenario is about.
+            await WhenTheForecastRuns(portfolio);
+            GivenTheForecastIsNowWaitingFor(downstream, wall);
 
             return (portfolio, first.Id, second.Id);
         }

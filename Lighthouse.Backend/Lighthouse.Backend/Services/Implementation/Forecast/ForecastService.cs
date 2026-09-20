@@ -91,9 +91,9 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var waits = whatTheForecastWaitsFor.Of(featuresToForecast);
             var draws = drawStreamFactory.ForOneRun();
 
-            await Task.Run(() => RunMonteCarloSimulation(simulationResults, throughputByTeam, waits, draws));
+            var startForecasts = await Task.Run(() => RunMonteCarloSimulation(simulationResults, throughputByTeam, waits, draws));
 
-            UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam);
+            UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam, startForecasts);
         }
 
         private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, ThroughputFilterMode mode, out Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// which is the only thing that makes "has the Feature waited on finished yet?" a question with an
         /// answer at all.
         /// </summary>
-        private void RunMonteCarloSimulation(
+        private Dictionary<Feature, List<StartForecast>> RunMonteCarloSimulation(
             List<SimulationResult> simulationResults,
             Dictionary<int, RunChartData> throughputByTeam,
             ForecastWaits waits,
@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             if (plan.RowCount == 0)
             {
-                return;
+                return [];
             }
 
             var oneRun = new SimulatedRun(plan, draws, limits.MostDaysOneSimulatedRunMayCover);
@@ -157,6 +157,73 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             ReportTheRunsThatCouldNotFinish(whatWentWrong);
             ReportTheRunsThatRanOutOfDays(whatWentWrong, draws);
+
+            return TheDaysWorkBeganOn(plan, shares);
+        }
+
+        /// <summary>
+        /// The start distributions, at both grains, added up once after every run is over - the same pass
+        /// and the same arithmetic the finished days get.
+        ///
+        /// The Feature-grain row is the one the run observed rather than one computed from the per-team
+        /// rows beside it. Computing it would mean combining those marginals, which can only be done by
+        /// assuming the teams move independently; a Feature whose teams both wait on the same upstream
+        /// work is precisely where that is false, and is also the case anyone looks at a start date for.
+        /// </summary>
+        private static Dictionary<Feature, List<StartForecast>> TheDaysWorkBeganOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
+        {
+            var byRow = ADayCountPer(plan.RowCount);
+            var byFeature = ADayCountPer(plan.FeatureCount);
+
+            foreach (var recorded in shares.Select(share => share.Completions))
+            {
+                recorded.AddRowStartsInto(byRow);
+                recorded.AddFeatureStartsInto(byFeature);
+            }
+
+            var startForecasts = new Dictionary<Feature, List<StartForecast>>();
+
+            for (var row = 0; row < plan.RowCount; row++)
+            {
+                if (plan.RowAt(row).Feature is { } feature)
+                {
+                    TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byRow[row]), plan.RowAt(row).Team));
+                }
+            }
+
+            for (var featureIndex = 0; featureIndex < plan.FeatureCount; featureIndex++)
+            {
+                var feature = plan.FeatureAt(featureIndex);
+                TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byFeature[featureIndex]), null));
+            }
+
+            return startForecasts;
+        }
+
+        private static List<StartForecast> TheStartForecastsOf(Dictionary<Feature, List<StartForecast>> startForecasts, Feature feature)
+        {
+            if (!startForecasts.TryGetValue(feature, out var ofThisFeature))
+            {
+                ofThisFeature = [];
+                startForecasts[feature] = ofThisFeature;
+            }
+
+            return ofThisFeature;
+        }
+
+        private static Dictionary<int, int> InDayOrder(Dictionary<int, int> days)
+            => days.OrderBy(day => day.Key).ToDictionary(day => day.Key, day => day.Value);
+
+        private static Dictionary<int, int>[] ADayCountPer(int howMany)
+        {
+            var counts = new Dictionary<int, int>[howMany];
+
+            for (var index = 0; index < howMany; index++)
+            {
+                counts[index] = [];
+            }
+
+            return counts;
         }
 
         /// <summary>
@@ -166,12 +233,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// </summary>
         private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
         {
-            var total = new Dictionary<int, int>[plan.RowCount];
-
-            for (var row = 0; row < plan.RowCount; row++)
-            {
-                total[row] = [];
-            }
+            var total = ADayCountPer(plan.RowCount);
 
             foreach (var share in shares)
             {
@@ -227,10 +289,19 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 whatWentWrong.FirstRunThatRanOutOfDays);
         }
 
-        private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
+        private static void UpdateFeatureForecasts(
+            IEnumerable<Feature> features,
+            List<SimulationResult> simulationResults,
+            Dictionary<int, ForecastThroughputStatus> chipStatusByTeam,
+            Dictionary<Feature, List<StartForecast>> startForecasts)
         {
             foreach (var feature in features)
             {
+                // Every Feature being forecast has its start distributions rewritten, including the ones
+                // the run admitted no row for. Left alone they would go on reporting the last run that
+                // did have them, which is a date from a world that no longer exists.
+                feature.SetStartForecasts(startForecasts.TryGetValue(feature, out var ofThisFeature) ? ofThisFeature : []);
+
                 var simulationResultsForFeature = simulationResults
                     .Where(x => x.Feature == feature).ToList();
 

@@ -20,25 +20,36 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     {
         private static readonly int[] NothingToWaitFor = [];
 
+        /// <summary>A row whose work belongs to no Feature at all, which only the ad-hoc forecast has.</summary>
+        public const int NoFeature = -1;
+
         private readonly SimulationResult[] rows;
         private readonly int[] teamOfRow;
+        private readonly int[] featureOfRow;
+        private readonly Feature[] features;
         private readonly int[] initialRemainingOfRow;
         private readonly int[][] blockersOfRow;
         private readonly int[][] rowsOfTeam;
         private readonly Team[] teams;
         private readonly RunChartData[] throughputOfTeam;
 
+#pragma warning disable S107 // One immutable plan built once per forecast, from parts computed once each. Grouping them into a record would hide which of them the run reads on its hot path.
         private ForecastRunPlan(
             SimulationResult[] rows,
             int[] teamOfRow,
+            int[] featureOfRow,
+            Feature[] features,
             int[] initialRemainingOfRow,
             int[][] blockersOfRow,
             int[][] rowsOfTeam,
             Team[] teams,
             RunChartData[] throughputOfTeam)
+#pragma warning restore S107
         {
             this.rows = rows;
             this.teamOfRow = teamOfRow;
+            this.featureOfRow = featureOfRow;
+            this.features = features;
             this.initialRemainingOfRow = initialRemainingOfRow;
             this.blockersOfRow = blockersOfRow;
             this.rowsOfTeam = rowsOfTeam;
@@ -49,6 +60,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         public int RowCount => rows.Length;
 
         public int TeamCount => teams.Length;
+
+        public int FeatureCount => features.Length;
 
         /// <summary>
         /// Whether anything in this forecast waits on anything at all. Almost every forecast answers no, and
@@ -74,9 +87,16 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             var teamOfRow = takingPart.Select(row => placeOfTeam[row.Team]).ToArray();
 
+            var features = takingPart.Select(row => row.Feature).Where(feature => feature is not null).Distinct().ToArray();
+            var placeOfFeature = features
+                .Select((feature, index) => (feature, index))
+                .ToDictionary(entry => entry.feature, entry => entry.index);
+
             return new ForecastRunPlan(
                 takingPart,
                 teamOfRow,
+                takingPart.Select(row => row.Feature is null ? NoFeature : placeOfFeature[row.Feature]).ToArray(),
+                features,
                 takingPart.Select(row => row.InitialRemainingItems).ToArray(),
                 WhatEachRowWaitsFor(takingPart, waits),
                 TheRowsOfEachTeam(teamOfRow, teams.Length),
@@ -106,6 +126,20 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         public SimulationResult RowAt(int rowIndex) => rows[rowIndex];
 
         public int TeamOf(int rowIndex) => teamOfRow[rowIndex];
+
+        /// <summary>
+        /// Which Feature a row belongs to, as a place in this run rather than as an identifier. Built here
+        /// because the run needs to mark a Feature as started once, across every team working it, and an
+        /// array indexed by a small number is the only form that costs nothing on the hot path.
+        ///
+        /// Grouped by the Feature object rather than by its reference id, which is what
+        /// <see cref="WhatEachRowWaitsFor"/> uses: waits arrive as ids and have to be looked up by one,
+        /// but two Features that have never been imported share an empty id, and folding those together
+        /// would have them start on each other's day.
+        /// </summary>
+        public int FeatureOf(int rowIndex) => featureOfRow[rowIndex];
+
+        public Feature FeatureAt(int featureIndex) => features[featureIndex];
 
         /// <summary>
         /// Always at least one. A row exists because a Team has work left on a Feature, and "finished" is
