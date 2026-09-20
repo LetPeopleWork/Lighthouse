@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
@@ -100,8 +101,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         /// <summary>
-        /// The marker that says a Feature has begun has to be cleared between runs. Left set, only the
-        /// first run would ever record anything and the distribution would be built from one sample.
+        /// The markers that say a Feature and a team's share of it have begun both have to be cleared
+        /// between runs. Left set, only the first run each worker carried out would record anything and
+        /// the distribution would be built from a handful of samples rather than all of them.
+        ///
+        /// Both grains are asserted because they are kept by separate markers. Asserting only the
+        /// Feature's own start leaves the per-row marker's reset unchecked, which is exactly what a
+        /// mutation run found here.
         /// </summary>
         [Test]
         public async Task EveryRun_RecordsItsOwnStart()
@@ -114,8 +120,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(TheStartOf(alpha).TotalTrials, Is.EqualTo(Trials));
+                Assert.That(TheStartOf(alpha).TotalTrials, Is.EqualTo(Trials), "the Feature's own start");
                 Assert.That(TheStartOf(bravo).TotalTrials, Is.EqualTo(Trials));
+                Assert.That(TheStartOf(alpha, team).TotalTrials, Is.EqualTo(Trials), "and the team's share of it");
+                Assert.That(TheStartOf(bravo, team).TotalTrials, Is.EqualTo(Trials));
             }
         }
 
@@ -229,6 +237,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         /// <summary>
+        /// A row can belong to no Feature at all - the ad-hoc forecast builds one. It is numbered as such
+        /// rather than being given a place, because a place would be an index into the per-Feature
+        /// markers and there is no Feature there to mark.
+        /// </summary>
+        [Test]
+        public void ThePlan_GivesARowWithNoFeatureNoPlaceAmongThem()
+        {
+            var team = ATeamDelivering(1, ThreeADay, featureWip: 1);
+            var rowBelongingToNoFeature = new SimulationResult(team, null!, 4);
+
+            var plan = ForecastRunPlan.For(
+                [rowBelongingToNoFeature],
+                new Dictionary<int, RunChartData> { [team.Id] = TheThroughputOf(team) },
+                ForecastWaits.Nothing);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(plan.RowCount, Is.EqualTo(1));
+                Assert.That(plan.FeatureCount, Is.Zero);
+                Assert.That(plan.FeatureOf(0), Is.EqualTo(ForecastRunPlan.NoFeature));
+            }
+        }
+
+        /// <summary>
         /// Two Features that have never been imported share an empty reference id. Numbering by the
         /// Feature itself rather than by that id is what stops them being folded together and reported as
         /// starting on each other's day.
@@ -294,10 +326,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var throughput = rows
                 .Select(row => row.Team)
                 .Distinct()
-                .ToDictionary(team => team.Id, team => teamMetrics.Object.GetForecastThroughputStatus(team).Throughput);
+                .ToDictionary(team => team.Id, TheThroughputOf);
 
-            return ForecastRunPlan.For(rows, throughput, Lighthouse.Backend.Models.Dependencies.ForecastWaits.Nothing);
+            return ForecastRunPlan.For(rows, throughput, ForecastWaits.Nothing);
         }
+
+        private RunChartData TheThroughputOf(Team team) => teamMetrics.Object.GetForecastThroughputStatus(team).Throughput;
 
         private static StartForecast TheStartOf(Feature feature, Team? team = null)
             => feature.StartForecasts.Single(forecast => forecast.TeamId == team?.Id);

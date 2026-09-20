@@ -95,6 +95,34 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         /// <summary>
+        /// The run still records a start for a Feature it cannot honestly forecast, because the teams it
+        /// *can* forecast take part as usual - so the distribution is there, and it is a real one. It
+        /// must still not be reported.
+        ///
+        /// A Feature reports no dates at all when any contributing team cannot be forecast, rather than
+        /// dates built from the teams that could, because a partial answer in the shape of a whole one is
+        /// read as a whole one. The start side inherits that rule; this is the case where inheriting it
+        /// costs something, and therefore the case where forgetting to would not show.
+        /// </summary>
+        [Test]
+        public void AFeatureThatCannotBeForecast_SaysSoEvenWhenTheRunDidRecordAStartForIt()
+        {
+            var measured = new Team { Id = 1, Name = "Measured" };
+            var silent = new Team { Id = 2, Name = "Never delivered" };
+
+            var feature = new Feature([(measured, 5, 5), (silent, 3, 3)]);
+            feature.SetFeatureForecasts([AsJustForecast(measured, 10)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }, null)]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.CanBeForecast, Is.False, "one of its teams has no measured delivery");
+                Assert.That(feature.StartForecasts.Single().TotalTrials, Is.EqualTo(10), "yet a start was recorded");
+                Assert.That(feature.WhenWorkBegins.Source, Is.EqualTo(StartDateSource.Unknown));
+            }
+        }
+
+        /// <summary>
         /// A distribution built from no runs at all is not an answer. It would report day zero at every
         /// percentile, which reads as "today" on every screen that draws it.
         /// </summary>
