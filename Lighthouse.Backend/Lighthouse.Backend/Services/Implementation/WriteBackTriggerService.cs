@@ -174,22 +174,52 @@ namespace Lighthouse.Backend.Services.Implementation
                     continue;
                 }
 
-                foreach (var feature in features)
+                try
                 {
-                    var value = ResolveFeatureValue(mapping, feature);
-                    if (value != null)
-                    {
-                        updates.Add(new WriteBackFieldUpdate
-                        {
-                            WorkItemId = feature.ReferenceId,
-                            TargetFieldReference = fieldReference,
-                            Value = value,
-                        });
-                    }
+                    updates.AddRange(TheUpdatesFor(mapping, fieldReference, features));
+                }
+#pragma warning disable CA1031 // One bad mapping must not cost the others. The caller catches per
+                // portfolio, so without this a single unusable mapping - an invalid DateFormat is the
+                // reachable one - returns nothing for the whole portfolio, on every round, and the fields
+                // that were working silently stop updating with only a log line to say why.
+                catch (Exception ex)
+#pragma warning restore CA1031
+                {
+                    logger.LogError(ex,
+                        "Write-back mapping {MappingId} ({ValueSource} -> {FieldReference}) could not be resolved and was skipped: {ErrorMessage}",
+                        mapping.Id, mapping.ValueSource, fieldReference, ex.Message);
                 }
             }
 
             return updates;
+        }
+
+        /// <summary>
+        /// Resolved fully before any of it is kept, so a mapping that fails part way through contributes
+        /// nothing rather than the Features it happened to reach first.
+        /// </summary>
+        private List<WriteBackFieldUpdate> TheUpdatesFor(
+            WriteBackMappingDefinition mapping,
+            string fieldReference,
+            List<Feature> features)
+        {
+            var resolved = new List<WriteBackFieldUpdate>();
+
+            foreach (var feature in features)
+            {
+                var value = ResolveFeatureValue(mapping, feature);
+                if (value != null)
+                {
+                    resolved.Add(new WriteBackFieldUpdate
+                    {
+                        WorkItemId = feature.ReferenceId,
+                        TargetFieldReference = fieldReference,
+                        Value = value,
+                    });
+                }
+            }
+
+            return resolved;
         }
 
         private void LogUnresolvedMapping(WriteBackMappingDefinition mapping)
@@ -281,7 +311,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return start.Source switch
             {
-                StartDateSource.Observed when start.ObservedDate is { } dayWorkBegan => Format(mapping, dayWorkBegan),
+                // Bug #5567 decision 4: StartedDate is a stored instant, and the day it falls on depends on
+                // the zone you ask in. Formatting it directly would send the tracker the UTC day while the
+                // screen shows the instance day - one apart for anything recorded late evening or early
+                // morning, which is exactly when a state transition tends to be recorded.
+                StartDateSource.Observed when start.ObservedDate is { } dayWorkBegan
+                    => Format(mapping, InstanceCalendar.AsUtcMidnight(clock.ToInstanceDay(dayWorkBegan))),
                 StartDateSource.Forecast when start.Forecast is { } forecast
                     => ProjectFromToday(mapping, forecast, GetPercentileFromSource(mapping.ValueSource)),
 
@@ -309,9 +344,13 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static string Format(WriteBackMappingDefinition mapping, DateTime date)
         {
+            // Invariant, like RiskValueFor above: a write-back runs on a background job, so the culture is
+            // whatever the process happens to have. Under a non-invariant one the "/" in a custom format is
+            // a separator placeholder rather than a slash, and the culture's own calendar applies - ar-SA
+            // would render 2026-03-16 as 1447-09-27.
             return mapping.TargetValueType == WriteBackTargetValueType.FormattedText && !string.IsNullOrEmpty(mapping.DateFormat)
-                ? date.ToString(mapping.DateFormat)
-                : date.ToString("yyyy-MM-dd");
+                ? date.ToString(mapping.DateFormat, CultureInfo.InvariantCulture)
+                : date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
         private static int GetPercentileFromSource(WriteBackValueSource source)

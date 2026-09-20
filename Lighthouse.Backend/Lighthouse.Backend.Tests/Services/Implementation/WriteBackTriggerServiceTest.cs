@@ -925,13 +925,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 $"Resolved plan did not match: [{string.Join(", ", plan.Select(u => $"{u.WorkItemId}/{u.TargetFieldReference}={u.Value}"))}]");
         }
 
-        private WriteBackTriggerService CreateSubject()
+        /// <param name="zone">
+        /// Bug #5567: the instance zone. Defaults to UTC, where an instant and its calendar day always
+        /// agree - which is convenient for most of these tests and useless for the ones about a stored
+        /// instant, so those pass a real zone.
+        /// </param>
+        private WriteBackTriggerService CreateSubject(TimeZoneInfo? zone = null)
         {
             return new WriteBackTriggerService(
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
-                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant),
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant, zone),
                 teamMetricsServiceMock.Object,
                 loggerMock.Object);
         }
