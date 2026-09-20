@@ -1657,3 +1657,78 @@ Changing it would move every forecast number in the product, on every screen, an
 — refusing to answer when the share of runs that started the Feature falls below the percentile asked for
 — is a product decision about what a percentile means, not a bug fix. Deliberately left alone. If it is
 ever revisited, it belongs to the forecasting engine as a whole and not to this Epic.
+
+---
+
+## Wave: DISTILL / [REF] Slice 04 — scenarios
+
+Authored 2026-09-20, at the head of slice 04's own DELIVER, and only now: the Scope of This Pass section
+above held slices 04–06 back because scenarios written against a component nobody had chosen would pin
+the wrong driving surface. P8 closed, so the surface is known. Story #6048.
+
+**Driving port**: the React component tree, through Vitest and React Testing Library, rendering the real
+Timeline tab — the same mechanism slices 02 and 03 used. No shallow rendering, no component mocking.
+
+### The boundary these scenarios are written against
+
+The third-party Gantt is wrapped, and the wrapping is what most of these scenarios actually test. Three
+files, one job each:
+
+| File | Owns | Imports `@svar-ui/*` |
+|---|---|---|
+| `timelineModel.ts` | The mapping. Features + a percentile in, placeable bars and unplaceable Features out. Pure, no React, no third-party types | No |
+| `DeliveryGanttChart.tsx` | The only file that may. Takes bars in Lighthouse's vocabulary, hands the component its own | **Yes — and nothing else does** |
+| `DeliveryTimelineTab.tsx` | Composes the two, the percentile selector, the unplaceable list and the premium gate | No |
+
+**Nearly every scenario below drives `timelineModel.ts`.** That is deliberate and it is the spike's own
+advice: the mapping is pure and it is where every interesting decision lives, while the component's DOM
+is markup we did not write and would break on their release rather than ours. Two scenarios drive the
+tab through RTL; none assert on the component's internals.
+
+A Biome `noRestrictedImports` rule pins the boundary, so "only one file imports it" is enforced rather
+than remembered. That rule is itself a deliverable of this slice.
+
+### Scenarios
+
+| # | Scenario | AC | Drives | Notes |
+|---|---|---|---|---|
+| 1 | A Delivery carries a Timeline tab beside Work Items, Metrics and Notes | AC-4.1 | Tab (RTL) | **walking skeleton** for this slice |
+| 2 | A not-started Feature becomes one bar, from its start percentile to its completion percentile at the same percentile | AC-4.2 | Model | |
+| 3 | Changing the percentile moves both ends of every bar | AC-4.2, AC-4.3 | Model | a bar is one scenario throughout, never a P70 start welded to a P85 finish (D10) |
+| 4 | The selector defaults to P70 and offers P85 and P95 | AC-4.3 | Tab (RTL) | |
+| 5 | Bars come back in the order the Features arrived, not sorted by date | AC-4.1 | Model | board order (S15) is the order the run itself works in; a model that sorts by start would quietly re-rank the board |
+| 6 | A started Feature's bar begins at its observed date and ends at its forecast completion | AC-4.4 | Model | |
+| 7 | A Feature with no start forecast is returned unplaceable with a reason, never as a bar | AC-4.5 | Model | the trap: the free build draws an undated task **at a position the data does not support**, so the model must never emit one |
+| 8 | A Feature with a start but no completion at the selected percentile is unplaceable too | AC-4.5 | Model | a bar needs both ends; one end is not half a bar |
+| 9 | A Feature no contributing team can be forecast for is unplaceable, naming the teams | AC-4.5 | Model | reuses `teamsWithoutForecast`, as the table column does |
+| 10 | A Delivery where nothing can be placed returns no bars and says so, rather than an empty axis | AC-4.5 | Model + Tab | |
+| 11 | A Feature forecast to start and finish on the same day is placeable, not dropped | AC-4.2 | Model | at Feature WIP 1 this is reachable (D7). A zero-length bar is a real answer; filtering it as "no duration" would vanish the Feature |
+| 12 | Unplaceable Features are listed beside the timeline with their reason | AC-4.5 | Tab (RTL) | the substitute for the in-chart row, which is a paid feature |
+| 13 | Without a premium licence the tab shows the existing notice and no chart | AC-4.7 | Tab (RTL) | `premium-feature-notice`, the Alert the Delivery surface already uses (D8) |
+| 14 | In dark mode the chart is wrapped in the dark theme, in light mode the light one | AC-4.8 | Adapter boundary | asserted on the theme *we* select, not on rendered colour. The free build crashes on the Material theme, so the choice is not cosmetic |
+| 15 | Below the narrow breakpoint the task-name pane is dropped | AC-4.8 | Adapter boundary | asserted as the prop we compute. Leaving the pane in pushes the chart off-screen entirely at 360px |
+| 16 | A Delivery with a target date tints that day's axis column; one without tints nothing | AC-4.6 | Model | |
+| 17 | The target-date tint lands on the right day east of UTC | AC-4.6 | Model | the scale callback is handed **local** midnight, so `getUTCMonth()` is a month early in a positive offset. Bug #5567's class, and the reason this gets a scenario of its own |
+
+**Error and edge coverage: 7 of 17** (7, 8, 9, 10, 11, 13, 17) — 41%. They are almost all one shape:
+*this Feature has no answer*, which on a planning picture is the failure that matters. A Feature that
+silently disappears from a timeline is worse than one shown as unknown, and the component's own free
+build fails exactly that way if the model lets it.
+
+### What is deliberately not tested here
+
+- **The component's DOM.** No assertion reaches inside `@svar-ui/*` markup. If that library changes its
+  class names the suite stays green, which is the point of the adapter.
+- **`readonly` actually blocking a drag.** Verified by hand in the spike. An automated drag against a
+  component we did not write tests their library, not our boundary.
+- **Whether the picture is believable.** Same as slice 02: a dogfood judgement, not an assertion. D6
+  guarantees a not-started Feature above in-flight work draws a start that is too early, ADR-202 says
+  that is the board being reported rather than misread, and AC-4.9 is the docs deliverable that stops it
+  arriving as a bug report.
+
+### Playwright
+
+**None in this slice, and not by omission.** The tab is reachable through the existing Delivery page
+object and adds no new flow — E2E here is one walking skeleton per flow, and this flow's skeleton
+already exists. A Timeline spec is worth one addition once the shape has been reviewed and is not
+moving; adding it before that pins a locator to markup that is still in question.
