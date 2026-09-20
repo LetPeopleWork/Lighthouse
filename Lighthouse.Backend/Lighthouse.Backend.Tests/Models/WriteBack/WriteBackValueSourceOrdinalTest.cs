@@ -1,3 +1,4 @@
+using System.Reflection;
 using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.Tests.Models.WriteBack
@@ -38,16 +39,40 @@ namespace Lighthouse.Backend.Tests.Models.WriteBack
         }
 
         /// <summary>
-        /// The per-member tests above cannot see a member added in the middle and every later member
-        /// shifted, because the shifted ones were never named. Counting catches that: a new member
-        /// changes this number, and the only way to change it without reddening the tests above is to
-        /// have appended.
+        /// Every member is pinned by one of the tests above, and this is what keeps that true. Without it a
+        /// member added tomorrow is simply unpinned - it has no stored ordinal to disagree with, so nothing
+        /// reds, and the next member after that can be inserted in front of it freely.
+        ///
+        /// It names the unpinned member rather than counting, because a count fails on the one edit the
+        /// class calls safe and teaches whoever reads it to bump a number until the message goes away.
         /// </summary>
         [Test]
-        public void TheEnumHasExactlyTheMembersThoseOrdinalsAccountFor()
+        public void EveryMemberOfTheEnumIsPinnedByOneOfTheTestsAbove()
         {
-            Assert.That(Enum.GetValues<WriteBackValueSource>(), Has.Length.EqualTo(11),
-                "A member was added or removed. Appending is safe - anything else re-points stored mappings.");
+            var pinned = TheOrdinalsThoseTestsPin();
+
+            var unpinned = Enum.GetValues<WriteBackValueSource>()
+                .Where(source => !pinned.ContainsKey(source))
+                .ToList();
+
+            Assert.That(unpinned, Is.Empty,
+                $"Add a [TestCase] pinning the stored ordinal of: {string.Join(", ", unpinned)}. "
+                + "Appending is safe; leaving a member unpinned is what lets the next edit stop being safe.");
+        }
+
+        /// <summary>
+        /// Read off the attributes rather than written out again, so this cannot drift from the tests it
+        /// claims to describe - a second hand-kept list would be the very thing these tests exist to stop.
+        /// </summary>
+        private static Dictionary<WriteBackValueSource, int> TheOrdinalsThoseTestsPin()
+        {
+            return typeof(WriteBackValueSourceOrdinalTest)
+                .GetMethods()
+                .SelectMany(method => method.GetCustomAttributes<TestCaseAttribute>())
+                .Where(testCase => testCase.Arguments is [WriteBackValueSource, int])
+                .ToDictionary(
+                    testCase => (WriteBackValueSource)testCase.Arguments[0]!,
+                    testCase => (int)testCase.Arguments[1]!);
         }
     }
 }

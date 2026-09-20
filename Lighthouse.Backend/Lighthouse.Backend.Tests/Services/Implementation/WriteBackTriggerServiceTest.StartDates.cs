@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
@@ -70,13 +71,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 CreateMapping(WriteBackValueSource.ForecastedStartPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Start85", WriteBackTargetValueType.Date));
 
             var team = new Team { Id = 1, Name = "Team 1" };
-            var startedOn = new DateTime(2026, 2, 17, 0, 0, 0, DateTimeKind.Utc);
 
-            var started = CreateFeatureExpectedToStartIn("F-32", team, workingDaysUntilStart: 6, daysAt85: 20);
-            started.StateCategory = StateCategories.Doing;
-            started.StartedDate = startedOn;
-
-            portfolio.Features.Add(started);
+            portfolio.Features.Add(AStartedFeature("F-32", team, new DateTime(2026, 2, 17, 9, 0, 0, DateTimeKind.Utc)));
 
             var subject = CreateSubject();
 
@@ -86,6 +82,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "F-32" &&
                         updates[0].Value == "2026-02-17");
+        }
+
+        /// <summary>
+        /// Bug #5567 again, at a new boundary. The stored instant is one day in UTC and the next one in the
+        /// instance zone, and the instance zone is the one the screen answers in - so sending the tracker the
+        /// UTC day would put the roadmap bar one day off the date Lighthouse itself displays.
+        ///
+        /// Both directions are covered because an off-by-one that only moves one way is usually a sign the
+        /// conversion was applied in the wrong place rather than not at all. Expectations are literal: deriving
+        /// them would let the test agree with whatever the code does.
+        /// </summary>
+        [Test]
+        [TestCase("Europe/Zurich", "2026-02-17T23:30:00", "2026-02-18", TestName = "AheadOfUtc_TheDayHasAlreadyTurnedLocally")]
+        [TestCase("America/Los_Angeles", "2026-02-18T03:00:00", "2026-02-17", TestName = "BehindUtc_TheDayHasNotTurnedYetLocally")]
+        public void ResolveForecastWriteBackForPortfolio_StartedFeature_WritesTheDayInTheInstanceZone(
+            string zoneId, string startedAtUtc, string expectedDay)
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastedStartPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Start85", WriteBackTargetValueType.Date));
+
+            var team = new Team { Id = 1, Name = "Team 1" };
+            var startedOn = DateTime.SpecifyKind(DateTime.Parse(startedAtUtc, CultureInfo.InvariantCulture), DateTimeKind.Utc);
+
+            portfolio.Features.Add(AStartedFeature("F-37", team, startedOn));
+
+            var subject = CreateSubject(TimeZoneInfo.FindSystemTimeZoneById(zoneId));
+
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
+
+            AssertPlanned(plan, updates => updates.Count == 1 && updates[0].Value == expectedDay);
         }
 
         /// <summary>
@@ -122,13 +149,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// AC-3.5. A Feature nothing can be said about writes nothing. The failure this guards against is
-        /// specific: every percentile off an empty distribution reads as day zero, and day zero projects
-        /// to today - so the field would fill with today's date, in the same shape a real answer arrives
-        /// in, and a reader would have no way to tell them apart.
+        /// AC-3.5. A Feature nothing can be said about writes nothing, in both of the ways nothing can be
+        /// said: no start rows at all, and start rows with no runs behind them.
+        ///
+        /// The second is the one worth having. Every percentile off an empty distribution reads as day zero,
+        /// and day zero projects to today - so without the guard the field fills with today's date, in the
+        /// same shape a real answer arrives in, and nobody can tell the two apart. A fixture with no rows at
+        /// all never reaches that code, so on its own it proves nothing about it.
         /// </summary>
         [Test]
-        public void ResolveForecastWriteBackForPortfolio_NoStartForecast_WritesNothingRatherThanToday()
+        public void ResolveForecastWriteBackForPortfolio_NothingToSayAboutTheStart_WritesNothingRatherThanToday()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -140,34 +170,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // added start rows and the first run that fills them.
             portfolio.Features.Add(CreateFeatureWithForecast("F-35", StateCategories.ToDo, team, daysAt85: 20));
 
+            // Start rows that exist and were never run - an empty histogram, whose every percentile is day
+            // zero, which projects to today.
+            var neverRun = CreateFeatureWithForecast("F-38", StateCategories.ToDo, team, daysAt85: 20);
+            neverRun.SetStartForecasts([new StartForecast(new Dictionary<int, int>())]);
+            portfolio.Features.Add(neverRun);
+
+            // A Feature that does have an answer, so neither of the above can pass by nothing resolving.
+            portfolio.Features.Add(CreateFeatureExpectedToStartIn("F-39", team, workingDaysUntilStart: 6, daysAt85: 20));
+
             var subject = CreateSubject();
 
             var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            AssertPlanned(plan, updates => updates.Count == 0);
+            AssertPlanned(plan, updates =>
+                        updates.Count == 1 &&
+                        updates[0].WorkItemId == "F-39");
         }
 
         /// <summary>
-        /// AC-3.6. By inheritance - the premium check sits above the resolver and covers every source, so
-        /// the start sources needed no gate of their own. This asserts they are in fact behind it.
+        /// A mapping nobody can resolve costs only itself. The round is caught per portfolio one level up,
+        /// so before this a single unusable mapping returned nothing at all - and the completion date that
+        /// had been arriving for months simply stopped, with a log line as the only evidence.
+        ///
+        /// An unusable DateFormat is the reachable way in: the box takes free text. The validator now
+        /// refuses one, so this covers the mappings already stored before it did.
         /// </summary>
         [Test]
-        public void ResolveForecastWriteBackForPortfolio_StartPercentileWithoutPremium_ResolvesNothing()
+        public void ResolveForecastWriteBackForPortfolio_OneMappingCannotBeResolved_StillWritesTheOthers()
         {
-            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
-
             var portfolio = CreatePortfolioWithFeatures();
+
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
-                CreateMapping(WriteBackValueSource.ForecastedStartPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Start85", WriteBackTargetValueType.Date));
+                CreateMapping(WriteBackValueSource.ForecastedStartPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Broken", WriteBackTargetValueType.FormattedText, "dd 'of MMM"));
+
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
             var team = new Team { Id = 1, Name = "Team 1" };
-            portfolio.Features.Add(CreateFeatureExpectedToStartIn("F-36", team, workingDaysUntilStart: 6, daysAt85: 20));
+            portfolio.Features.Add(CreateFeatureExpectedToStartIn("F-40", team, workingDaysUntilStart: 6, daysAt85: 14));
 
             var subject = CreateSubject();
 
             var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            Assert.That(plan, Is.Empty);
+            AssertPlanned(plan, updates =>
+                        updates.Count == 1 &&
+                        updates[0].TargetFieldReference == "Custom.Forecast85" &&
+                        updates[0].Value == "2026-03-24");
+        }
+
+        private static Feature AStartedFeature(string referenceId, Team team, DateTime startedOn)
+        {
+            // It carries a start forecast too, so that writing the observed day is the resolver preferring a
+            // fact over a forecast rather than it having nothing else to write.
+            var feature = CreateFeatureExpectedToStartIn(referenceId, team, workingDaysUntilStart: 6, daysAt85: 20);
+
+            feature.StateCategory = StateCategories.Doing;
+            feature.StartedDate = startedOn;
+
+            return feature;
         }
 
         /// <summary>
