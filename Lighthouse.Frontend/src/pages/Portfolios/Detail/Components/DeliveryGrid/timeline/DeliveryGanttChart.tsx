@@ -150,19 +150,61 @@ export function chartHeight(barCount: number): number {
  * Exported because the axis needs a measured width to render and therefore draws nothing outside a
  * browser; asserting on these directly is the only way this stays pinned.
  */
+const monthAndYear = (date: Date) =>
+	date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+const shortMonthAndYear = (date: Date) =>
+	date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+
+const dayAndMonth = (date: Date) =>
+	date.toLocaleDateString(undefined, { day: "numeric", month: "numeric" });
+
 export const TIMELINE_SCALES = [
-	{
-		unit: "month" as const,
-		step: 1,
-		format: (date: Date) =>
-			date.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
-	},
+	{ unit: "month" as const, step: 1, format: monthAndYear },
 	{
 		unit: "day" as const,
 		step: 1,
 		format: (date: Date) => String(date.getDate()),
 	},
 ];
+
+const WEEKLY_SCALES = [
+	{ unit: "month" as const, step: 1, format: monthAndYear },
+	{ unit: "week" as const, step: 1, format: dayAndMonth },
+];
+
+const MONTHLY_SCALES = [
+	{
+		unit: "year" as const,
+		step: 1,
+		format: (date: Date) => String(date.getFullYear()),
+	},
+	{ unit: "month" as const, step: 1, format: shortMonthAndYear },
+];
+
+/** Beyond these many days a row of one column per day stops fitting any reasonable window. */
+const DAYS_BEFORE_WEEKS = 60;
+const DAYS_BEFORE_MONTHS = 365;
+
+/**
+ * How coarsely to rule the axis, so a Delivery of any length arrives fitting the screen.
+ *
+ * A long Delivery drawn in day columns is a horizontal scrollbar with a plan somewhere inside it —
+ * the reader has to drag to discover the shape, which is the one thing a timeline is for. Coarsening
+ * the unit trades exact days for a picture that can be taken in at once, and the exact days are
+ * still a hover away.
+ */
+export function scalesForSpan(start: Date, end: Date) {
+	const days = Math.round(
+		(end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
+	);
+
+	if (days <= DAYS_BEFORE_WEEKS) {
+		return TIMELINE_SCALES;
+	}
+
+	return days <= DAYS_BEFORE_MONTHS ? WEEKLY_SCALES : MONTHLY_SCALES;
+}
 
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
@@ -193,6 +235,14 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		(date: Date, unit: string) =>
 			dayHighlight(date, unit, { targetDate, today }),
 		[targetDate, today],
+	);
+
+	const scales = useMemo(
+		() =>
+			axisRange
+				? scalesForSpan(axisRange.start, axisRange.end)
+				: TIMELINE_SCALES,
+		[axisRange],
 	);
 
 	const barsById = useMemo(
@@ -276,7 +326,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 				<Gantt
 					tasks={tasks}
 					links={[]}
-					scales={TIMELINE_SCALES}
+					scales={scales}
 					start={axisRange?.start}
 					end={axisRange?.end}
 					cellHeight={ROW_HEIGHT}

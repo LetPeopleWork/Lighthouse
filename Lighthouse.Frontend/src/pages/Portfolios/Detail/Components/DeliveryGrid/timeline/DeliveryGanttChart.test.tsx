@@ -6,6 +6,7 @@ import DeliveryGanttChart, {
 	chartHeight,
 	dayHighlight,
 	ganttColorOverrides,
+	scalesForSpan,
 	THEMED_ELEMENT_SELECTOR,
 	TIMELINE_SCALES,
 	toGanttTasks,
@@ -146,6 +147,46 @@ describe("DeliveryGanttChart", () => {
 
 			expect(tasks.map((task) => task.text)).toEqual(["First", "Second"]);
 			expect(toGanttTasks([])).toEqual([]);
+		});
+	});
+
+	describe("fitting the axis to the delivery's length", () => {
+		const spanOf = (days: number) =>
+			scalesForSpan(new Date(2026, 0, 1), new Date(2026, 0, 1 + days));
+
+		const finestUnit = (scales: { unit: string }[]) =>
+			scales[scales.length - 1].unit;
+
+		it("rules a short delivery by the day", () => {
+			expect(finestUnit(spanOf(21))).toBe("day");
+		});
+
+		it("coarsens as the delivery gets longer, never the other way", () => {
+			// The point is not the exact thresholds, which are a judgement and will move. It is
+			// that a longer delivery never gets a finer axis than a shorter one — that is what
+			// keeps it on screen instead of behind a scrollbar.
+			const order = ["day", "week", "month"];
+			const spans = [10, 45, 90, 200, 400, 900];
+
+			const coarseness = spans.map((days) =>
+				order.indexOf(finestUnit(spanOf(days))),
+			);
+
+			expect(coarseness).toEqual([...coarseness].sort((a, b) => a - b));
+			expect(new Set(coarseness).size).toBeGreaterThan(1);
+		});
+
+		it("rules a multi-year delivery by the month", () => {
+			expect(finestUnit(spanOf(900))).toBe("month");
+		});
+
+		it("formats every row of every scale with a function", () => {
+			// Same trap as the default scales: a format given as a string is printed verbatim.
+			for (const days of [10, 90, 900]) {
+				for (const scale of spanOf(days)) {
+					expect(typeof scale.format).toBe("function");
+				}
+			}
 		});
 	});
 
