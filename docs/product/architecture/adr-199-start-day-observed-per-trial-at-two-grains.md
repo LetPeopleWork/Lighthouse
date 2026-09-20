@@ -122,8 +122,12 @@ allows 110 % of the `main` wall-clock.
 - **Reuse verdict**: `TrialState` → **EXTEND** (one marker array, cleared in `StartAgain`).
   `TrialCompletions` → **EXTEND** (parallel arrays and one more fold; consider renaming, since it no
   longer records only completions). `SimulatedRun.WorkOneDayOf` → **EXTEND** (one call where `worked` is
-  assigned). `ForecastRunPlan` → **EXTEND** (hoist the row→Feature grouping it already builds privately
-  inside `WhatEachRowWaitsFor`). `ForecastService` → **EXTEND** (a second fold beside
+  assigned). `ForecastRunPlan` → **EXTEND** (build a dense row→Feature index unconditionally.
+  *Corrected 2026-09-20: this said "hoist the grouping it already builds privately inside
+  `WhatEachRowWaitsFor`". That grouping is keyed by `Feature.ReferenceId`, a string rather than a dense
+  index, and `WhatEachRowWaitsFor` returns early with no grouping at all whenever
+  `NobodyWaitsForAnything` — almost every forecast. There is nothing to hoist in the ordinary case.*)
+  `ForecastService` → **EXTEND** (a second fold beside
   `RecordTheDaysEachRowFinishedOn`). **No new type in the simulation.**
 - Cross-refs [ADR-156](./adr-156-per-trial-max-replaces-product-of-cdfs.md) (the deferred completion
   equivalent, and the costing this relies on),

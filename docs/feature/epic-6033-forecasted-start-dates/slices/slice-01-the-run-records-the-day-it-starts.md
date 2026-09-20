@@ -47,17 +47,26 @@ work on it is expected to begin — and for every Feature that has, the day it a
    principle; `Parallel.For` with per-worker state is already the shape, so there is no new
    contention. But this is the busiest loop in the product and the cheapness is asserted, not measured.
    AC-1.8 measures it.
-2. **The Feature-grain recording is more intrusive than row-grain.** `TrialCompletions` is indexed by
-   row and knows nothing about Features. `ForecastRunPlan` already groups rows by
-   `Feature.ReferenceId` when computing what waits on what, so the mapping exists — but it exists
-   inside a private method, and hoisting it may be less tidy than it looks from outside. The per-row
-   half is free; it is the Feature-level roll-up that needs the grouping.
+2. **The Feature-grain recording is more intrusive than row-grain. — CONFIRMED at the review gate,
+   before any code was written.** `TrialCompletions` is indexed by row and knows nothing about Features.
+   `ForecastRunPlan` does group rows by `Feature.ReferenceId` when computing what waits on what, but
+   that grouping is keyed by a string rather than a dense index **and `WhatEachRowWaitsFor` returns
+   early with no grouping at all whenever nothing waits on anything** — which the class's own comment
+   says is almost every forecast. So there is nothing to hoist in the ordinary case: a dense `int[]`
+   row-to-Feature index has to be built unconditionally. The per-row half is still free; the Feature-level
+   roll-up costs a little more than this slice was scoped on.
 3. **Storage shape.** A separate collection off `Feature` is the clean answer, but `SetFeatureForecasts`
    clears and rewrites on every refresh, and a second collection has to follow the same lifecycle
    without a second round of cascade-delete surprises.
 
 **Confirms, if it succeeds**: every other slice is presentation over a number that already exists.
 Slices 02-05 add no forecasting logic whatsoever.
+
+**Baseline, measured 2026-09-20 before any of this slice was written** (`StartForecastWallClockProbe`,
+fifty Features across five Teams at the shipped ten thousand runs, on the development machine):
+**313 ms, 335 ms, 365 ms — median 335 ms.** AC-1.8's 110% budget is a median of **369 ms** on that same
+machine. The number is worth nothing on another one, which is why the probe is `[Explicit]` and not an
+assertion; it is worth everything here, because it cannot be taken again once the recorder exists.
 
 If (1) fails, the shape changes rather than the feature dying: record the start day for the top N rows
 per team rather than for every Feature, since the rows deep in the order are the ones whose start dates
@@ -85,11 +94,24 @@ AC-1.8 rather than a spike — it needs the implementation to exist before it ca
 ## Effort
 
 ~7h. Recording both grains ~1.5h, storage and migration ~2h, DTO including per-team completion ~1.5h,
-read-time override ~1h, tests ~2h — rounded down where they overlap.
+read-time override ~1h, tests ~2h — rounded down where they overlap. Two things found at the DISTILL
+review gate push at the upper end rather than the lower: the row-to-Feature index is new work rather
+than a hoist (the existing grouping is keyed by string and is skipped entirely when nothing waits on
+anything), and the row type is a new `StartForecast` entity rather than a reused `WhenForecast`.
 
-At the top of the ≤1-day band, and the likeliest of the six to run over. If it does, the split is along
-D5: recording plus storage plus the API contract first, the observed-date override second. The override
-is read-time only and touches nothing the first half touches.
+**The split is planned, not contingent.** It runs along D5, and it is planned because the over-run is
+predicted rather than merely possible — ten acceptance scenarios against one slice is itself the signal.
+
+| Part | Ships | Scenarios it turns green |
+|---|---|---|
+| **01a** | The run records the day, both grains stored, the read carries start percentiles and the per-team breakdown | 1, 2, 4, 5, 7, 8, 9, 10 |
+| **01b** | The read-time observed-start override | 3 |
+
+Scenario 6 is green throughout — it is the regression guard that says neither part moved the completion
+forecast. 01b is read-time only and touches nothing 01a touches, so 01a is shippable on its own: a
+Feature in flight simply reports a forecast start until 01b lands, which is wrong but not incoherent.
+
+At the top of the ≤1-day band, and the likeliest of the six to run over.
 
 ## Dogfood moment
 

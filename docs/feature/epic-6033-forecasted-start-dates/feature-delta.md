@@ -22,6 +22,8 @@ from manually estimated dates.
 
 ## Wave: DISCUSS / [REF] Persona IDs
 
+Defined in `docs/product/personas/` — these are the SSOT ids, not personas invented for this feature.
+
 | Persona | Role here |
 |---|---|
 | `delivery-lead-rte` | **Primary.** Plans a Delivery across several Features and needs to tell a stakeholder when each one begins, not only when the last one ends. Reads the timeline. Never opens a setting. |
@@ -322,16 +324,20 @@ one?" has an answer that comes from measured flow.
 #### Elevator Pitch
 
 Before: the API returns four completion percentiles per Feature and nothing about when work on it begins.
-After: run `GET /api/latest/portfolios/{portfolioId}` and each Feature carries `startForecasts` with
-dated P50/P70/P85/P95, or an observed start date when it has already begun.
+After: run `GET /api/latest/features` and each Feature carries a `startForecast` with dated
+P50/P70/P85/P95, or an observed start date when it has already begun. **Corrected 2026-09-20 during
+DISTILL**: this said `GET /api/latest/portfolios/{portfolioId}`, which returns only each Feature's id and
+name and cannot serve this field. This sentence is where the error entered the document.
 Decision enabled: whether a Feature further down the order can be promised to a stakeholder this quarter
 at all, before anyone opens a timeline.
 
 #### Acceptance Criteria
 
 - **AC-1.1** — A Feature with remaining work and no observed start carries four dated start percentiles
-  (50, 70, 85, 95) in the portfolio response, projected over working days and effective blackout days by
-  the same path the completion percentiles use.
+  (50, 70, 85, 95) in the Feature read (`GET /api/latest/features`, and `…/features/ids?featureIds=…`),
+  projected over working days and effective blackout days by the same path the completion percentiles
+  use. **Corrected 2026-09-20 during DISTILL**: this said "the portfolio response", which carries only a
+  Feature's id and name — an AC satisfiable by wiring the wrong DTO.
 - **AC-1.2** — With Feature WIP 1 and two Features on one team with no dependency between them, the
   second Feature's P85 start equals the first Feature's P85 completion — the same day, not the day after
   (D7).
@@ -344,9 +350,10 @@ at all, before anyone opens a timeline.
 - **AC-1.9** — The same Feature also reports one start per contributing team, at the same four
   percentiles (D4). For a single-team Feature the per-team value and the Feature-level value are the same
   number.
-- **AC-1.10** — The portfolio response carries the per-team **completion** forecasts alongside the
+- **AC-1.10** — The same Feature read carries the per-team **completion** forecasts alongside the
   per-team starts (D16, S22). The existing aggregate `Forecasts` list is unchanged in shape and content,
-  so nothing reading it today sees a difference.
+  so nothing reading it today sees a difference. **Corrected 2026-09-20 during DISTILL**, same reason as
+  AC-1.1.
 - **AC-1.5** — `Feature.Forecast`, the completion percentiles and every existing forecast assertion are
   unchanged before and after this slice. The start distribution is not in `Feature.Forecasts` (D3).
 - **AC-1.6** — A Feature whose `StateCategory` is `Doing` reports its `StartedDate`, marked as observed
@@ -617,7 +624,7 @@ No configurable or env-switching strategy is used, so the WS-strategy-D expansio
 
 | Port | Surface | Slice |
 |---|---|---|
-| HTTP | `GET /api/latest/portfolios/{portfolioId:int}` — Features carry start percentiles or an observed start date | 01 |
+| HTTP | `GET /api/latest/features` and `GET /api/latest/features/ids?featureIds=…` — Features carry start percentiles or an observed start date. **Corrected during DISTILL**; `GET /api/latest/portfolios/{id}` carries only id and name and cannot serve a `FeatureDto` | 01 |
 | UI | Portfolio, Feature table, Forecasted Start column | 02 |
 | UI | Settings, Work Tracking Systems, Write-Back, value source list | 03 |
 | Outbound | Write-back round to a Jira or Azure DevOps date field | 03 |
@@ -630,7 +637,7 @@ No configurable or env-switching strategy is used, so the WS-strategy-D expansio
 | KPI | Target | Measurement |
 |---|---|---|
 | Forecast wall-clock cost of carrying start dates | at most 110% of `main` | Ten thousand runs over a fifty-Feature portfolio on the dev instance, before and after slice 01 |
-| Start percentiles present where a completion percentile is | 100% of Features that carry a completion forecast | Assertion over the dev instance's portfolio response |
+| Start percentiles present where a completion percentile is | 100% of Features that carry a completion forecast | Assertion over the dev instance's Feature read |
 | Start dates that are observed rather than forecast, for in-flight work | 100% of Features in a Doing state | AC-1.6, asserted |
 | Completion forecast drift introduced by this Epic | 0 | AC-1.5 — existing forecast assertions unchanged |
 | Write-back mappings using a start source, 60 days after release | at least 1 (Focusrite) | Usage data, if consent is given; otherwise the requester is asked directly |
@@ -660,10 +667,10 @@ P8 is the only open one, it is confined to slice 04, and slice 04 opens by closi
 | # | Item | Evidence |
 |---|---|---|
 | 1 | Business value articulated | Jira Plans that draw themselves from measured flow; requested by a paying customer and seconded in-thread |
-| 2 | User stories with job traceability | US-01 to US-05, each carrying a `job_id` appended to `docs/product/jobs.yaml` |
-| 3 | Acceptance criteria testable | 27 ACs across five stories, each asserting an observable output |
+| 2 | User stories with job traceability | US-01 to US-06, each carrying a `job_id` appended to `docs/product/jobs.yaml`. US-02's persona is `product-owner` while its job is the delivery lead's: deliberate, because the question is the same one ("when will you get to this?") asked from two seats, and a second job whose only difference is who is asking would be a duplicate rather than a distinction |
+| 3 | Acceptance criteria testable | **39 ACs across six stories** — 10 / 5 / 6 / 9 / 4 / 5 for US-01 to US-06 — each asserting an observable output. *(Corrected 2026-09-20: this read "27 across five", which counted neither US-06 nor AC-1.9/AC-1.10.)* |
 | 4 | Dependencies identified | P1-P8; only P8 open, and confined to slice 04 |
-| 5 | Sized to fit a slice | Five slices, 3-8h each, one severable |
+| 5 | Sized to fit a slice | **Six slices, 3-8h each, two severable** (05 and 06, independent of each other). *(Corrected 2026-09-20: this read "five slices … one severable".)* US-01 at ~7h and US-04 at ~6h plus a 2h evaluation both sit at the top of the band; slice 01's split is planned rather than contingent — see its brief |
 | 6 | Technical approach known | D1-D4 name the mechanism; the surface inventory gives every line it touches |
 | 7 | Risks named | D6 (optimism residual), D13 (accepted flattening), P8 (build vs buy) |
 | 8 | Out of scope explicit | Seven items, two carrying owed follow-ups |
@@ -685,6 +692,11 @@ rather than assumes. Slices 01-03 do not depend on it.
 7. EF migrations generated by `CreateMigration`, expand-only.
 8. Docs and per-feature screenshots updated at feature finalization, in the configurable terminology.
 9. ADO Epic #6033 and its child Stories transitioned; Epic stops at Resolved, never Closed.
+10. **AC-1.8 re-measured, not assumed.** `StartForecastWallClockProbe` is `[Explicit]` and never runs in
+    CI, so the criterion has no automated enforcement anywhere. Story #6045 does not reach Resolved
+    until the probe has been run again on the machine that produced the baseline and both numbers are
+    written into the slice brief. Baseline, taken before any of slice 01 was written: median **335 ms**,
+    budget **≤ 369 ms**.
 
 ---
 
@@ -824,8 +836,13 @@ which changed this wave's output.
    storage is not needed: with a shared clock, the maximum over a Feature's rows is a running count, not
    a retained array."* A minimum is a running value for the same reason. D4's cost claim now rests on an
    ADR rather than on assertion.
-2. **Slice 01 builds the machinery ADR-156 needs.** Same array lifecycle, same recorder, same fold,
-   mirrored. Un-deferring ADR-156 later becomes materially cheaper. **This wave does not un-defer it** —
+2. **Slice 01 builds part of the machinery ADR-156 needs — the indexing, not the recorder.** Narrowed
+   2026-09-20: this said "same array lifecycle, same recorder, same fold, mirrored", which overstates it.
+   ADR-156's mechanic is an outstanding-row counter per Feature that is seeded, decremented as rows
+   finish and fires at zero; the start mechanic is a marker set once, on first pull, that never
+   decrements. What they genuinely share is the row-to-Feature index and the per-worker array lifecycle
+   around it. Un-deferring ADR-156 later becomes cheaper because that prerequisite exists, not because
+   the recorder can be reused. **This wave does not un-defer it** —
    AC-1.5 forbids moving completion, and ADR-156's own deferral reason was "one change to forecasting at
    a time". ADR-199 says so explicitly so that a future reader sees the constraint was honoured rather
    than sidestepped.
@@ -837,30 +854,61 @@ which changed this wave's output.
 
 ## Wave: DESIGN / [REF] DDD List
 
-### DDD-1 — Start forecasts live in `Feature.StartForecasts`, their own collection
+### DDD-1 — Start forecasts live in `Feature.StartForecasts`, a collection of their own type
 
 **ADR-200.** Per-team rows carry `TeamId`; the Feature-grain row carries `TeamId == null` per ADR-111.
 `Feature.Forecast` is not touched, so AC-1.5 is a structural property rather than a test —
 `AggregatedWhenForecast` cannot see a start row because start rows are not in the collection it reads.
 
-Rejected: one collection with a `ForecastKind` discriminator. It would put a filter on the product's
-most load-bearing number for a storage-tidiness reason, and turn AC-1.5 into something a test has to
-catch. Also rejected: a separate entity with its own repository, which would need a second
-clear-and-rewrite lifecycle kept in step with `SetFeatureForecasts` by hand.
+**Amended 2026-09-20, during the DISTILL review gate.** This decision originally said the collection
+would be a second `List<WhenForecast>`. That cannot be mapped. `WhenForecast` has exactly one
+`FeatureId`/`Feature` pair and `LighthouseAppContext.cs:231-235` already binds it to `Feature.Forecasts`;
+EF Core cannot carry two collections of one type over one foreign key. A second FK on `WhenForecast` does
+not rescue it either: `FeatureId` is a **required** `int`, so a start row would still have to carry a
+valid one and would be loaded straight into `Feature.Forecasts` — the silent corruption D3 exists to
+prevent, reintroduced by the mapping.
 
-### DDD-2 — `WhenForecast` is reused as-is for start rows
+The forecast hierarchy is already **TPH**: `ForecastBase` is the table, with a `Discriminator` column and
+`WhenForecast` as one of its values (`IndividualSimulationResult.Forecast` is typed `ForecastBase`). So:
+
+> **`StartForecast : ForecastBase`** — a TPH *sibling* of `WhenForecast`, not a derived type, carrying
+> its own `FeatureId` and `TeamId`. `Feature.StartForecasts` is `List<StartForecast>`.
+
+The guarantee gets stronger rather than weaker: `Feature.Forecasts` is `List<WhenForecast>` and a sibling
+type cannot appear in it **by CLR type**, not by filter and not by convention. Expand-only, as the
+standing migration rule requires: one new discriminator value and two new nullable columns in an existing
+table, with no existing column altered. `SimulationResults` already hangs off `ForecastBase`, so start
+rows reuse `IndividualSimulationResult` untouched.
+
+Still rejected, and now for a second reason: one collection with a `ForecastKind` discriminator would put
+a filter on the product's most load-bearing number for a storage-tidiness reason, and turn AC-1.5 into
+something a test has to catch. Also still rejected: a separate entity with its **own repository**, which
+would need a second clear-and-rewrite lifecycle kept in step with `SetFeatureForecasts` by hand — note
+that `StartForecast` is not that. It is a collection on the aggregate, written by a setter mirroring
+`SetFeatureForecasts`, with no repository of its own.
+
+### DDD-2 — `ForecastBase` is reused as-is for start rows
 
 **ADR-200.** `ForecastBase.GetProbability` with its ascending `KeyOrder` is exactly what a start
-percentile needs. `NumberOfItems` is meaningless for a start and is tolerated for the same reason
-ADR-111 tolerated it on the aggregate: nothing reads it, and forking the type hierarchy for one unused
-field is disproportionate — the alternative ADR-111 itself rejected.
+percentile needs, and it is on the base rather than on `WhenForecast`.
+
+**Amended 2026-09-20 alongside DDD-1**, and the amendment improves it. This said `WhenForecast` was
+reused as-is, and had to excuse `NumberOfItems` — meaningless for a start — as a tolerable wart on the
+ADR-111 precedent. `NumberOfItems` is declared on `WhenForecast`, not on `ForecastBase`, so a sibling
+never inherits it. There is no wart left to excuse and no unused field on the new type.
 
 ### DDD-3 — The recorder extends `TrialState` and `TrialCompletions`. No new type in the simulation
 
 **ADR-199.** One marker array per worker indexed by row and one indexed by Feature, cleared in
 `StartAgain()`, written at most once per entity per trial, folded by the existing merge.
-`SimulatedRun.WorkOneDayOf` gains one call where `worked` is assigned. `ForecastRunPlan` hoists the
-row-to-Feature grouping it already builds privately inside `WhatEachRowWaitsFor`.
+`SimulatedRun.WorkOneDayOf` gains one call where `worked` is assigned. `ForecastRunPlan` gains an
+unconditional dense row-to-Feature index (`int[]`, parallel to `teamOfRow`) and a Feature count.
+
+**Corrected 2026-09-20**: this said `ForecastRunPlan` *hoists* the grouping it already builds privately
+inside `WhatEachRowWaitsFor`. It cannot. That grouping is keyed by `Feature.ReferenceId`, a string,
+rather than by a dense index — and `WhatEachRowWaitsFor` returns early with no grouping at all whenever
+`NobodyWaitsForAnything`, which the class's own comment says is almost every forecast. There is nothing
+to hoist in the ordinary case; the index is new work, and slice 01's estimate carries it as such.
 
 `TrialCompletions` is worth renaming: after this it no longer records only completions.
 
@@ -909,17 +957,21 @@ decision is not implemented, only the code is.
 
 ## Wave: DESIGN / [REF] Component Decomposition
 
-Every row is **EXTEND**. This feature introduces no new type in the backend.
+Every row is **EXTEND** but one. **Corrected 2026-09-20**: this said the feature introduces no new type in
+the backend. DDD-1's amendment adds exactly one, `StartForecast`, and the reason is a mapping constraint
+rather than a modelling preference.
 
 | Component | File | Change | Summary |
 |---|---|---|---|
 | `TrialState` | `Services/Implementation/Forecast/TrialState.cs` | EXTEND | Per-row and per-Feature start markers, cleared in `StartAgain()`, set on first pull, read once at trial end. |
 | `TrialCompletions` | `Services/Implementation/Forecast/TrialCompletions.cs` | EXTEND (rename) | Parallel arrays for the two start grains plus their fold. No longer records only completions. |
 | `SimulatedRun` | `Services/Implementation/Forecast/SimulatedRun.cs` | EXTEND | One recording call in `WorkOneDayOf` where `worked` is assigned — before the `CloseOneItemOf` branch, so a pull that does not finish the row still counts as a start. |
-| `ForecastRunPlan` | `Services/Implementation/Forecast/ForecastRunPlan.cs` | EXTEND | Hoist the row-to-Feature grouping already built privately in `WhatEachRowWaitsFor`; expose a Feature count and a row-to-Feature index. |
+| `ForecastRunPlan` | `Services/Implementation/Forecast/ForecastRunPlan.cs` | EXTEND | Build an unconditional row-to-Feature index (`int[]`, parallel to `teamOfRow`) plus a Feature count. **Corrected 2026-09-20**: this said "hoist the grouping already built privately in `WhatEachRowWaitsFor`". That grouping is keyed by `Feature.ReferenceId` (a string), not by a dense index, and `WhatEachRowWaitsFor` returns early with no grouping at all whenever `NobodyWaitsForAnything` — which the class's own comment says is almost every forecast. There is nothing to hoist in the common case; the index is new work. |
 | `ForecastService` | `Services/Implementation/Forecast/ForecastService.cs` | EXTEND | A second fold beside `RecordTheDaysEachRowFinishedOn`; build and attach start forecasts in `UpdateFeatureForecasts`. |
-| `Feature` | `Models/Feature.cs` | EXTEND | `StartForecasts` collection, its setter mirroring `SetFeatureForecasts`, and the ADR-201 observed-or-forecast member. |
-| `LighthouseAppContext` | `Data/LighthouseAppContext.cs` | EXTEND | One `HasMany` and one nullable-team `HasOne`, mirroring the existing `Forecasts` pair. |
+| `StartForecast` | `Models/Forecast/StartForecast.cs` | **NEW** | A TPH sibling of `WhenForecast` under `ForecastBase`, carrying `FeatureId` and a nullable `TeamId`. The one new type in the backend — see DDD-1, amended. |
+| `Feature` | `Models/Feature.cs` | EXTEND | `StartForecasts` (`List<StartForecast>`), its setter mirroring `SetFeatureForecasts`, and the ADR-201 observed-or-forecast member. |
+| `LighthouseAppContext` | `Data/LighthouseAppContext.cs` | EXTEND | One `HasMany` and one nullable-team `HasOne` for the new sibling type, alongside the existing `Forecasts` pair rather than duplicating it over the same foreign key. **Name the columns explicitly**: `StartForecast.FeatureId`/`TeamId` collide by name with `WhenForecast`'s in the shared TPH table, and convention will either uniquify them to `FeatureId1` or refuse. Map them with `HasColumnName` and read the generated migration before accepting it. |
+| `FeatureRepository` | `Services/Implementation/Repositories/FeatureRepository.cs` | EXTEND | `GetFeatures()` eager-loads `Forecasts` and must load `StartForecasts` the same way. Missed by DESIGN's first pass and found during DISTILL: without it the collection reads back empty through every path in the product, while any test that keeps the entity in the tracker still passes. |
 | EF migration | `Lighthouse.Migrations.*` | NEW (generated) | Additive, expand-only, via the `CreateMigration` script across all providers. |
 | `FeatureDto` | `API/DTO/FeatureDto.cs` | EXTEND | Start percentiles or observed date with provenance; **and** the per-team completion forecasts, which die at this boundary today (S22). Existing `Forecasts` list unchanged in shape and content. |
 | `WriteBackValueSource` | `Models/WriteBack/WriteBackValueSource.cs` | EXTEND | Four members appended after `SleRisk`. Ordinals are persisted; a regression test pins every pre-existing member. |
@@ -934,13 +986,13 @@ Every row is **EXTEND**. This feature introduces no new type in the backend.
 
 | Existing component | File | Overlap | Decision | Justification |
 |---|---|---|---|---|
-| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | Carries a histogram, a nullable team, a Feature FK | **REUSED AS IS** | Exactly the shape a start row needs. A lean `StartForecast` would duplicate `ForecastBase` or inherit it and gain the same fields anyway — the alternative ADR-111 rejected as disproportionate. |
-| `ForecastBase` | `Models/Forecast/ForecastBase.cs` | Percentile and likelihood reads over a histogram | **REUSED AS IS** | `KeyOrder` already parameterises direction; a start is ascending-by-day exactly as a completion is. |
+| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | Carries a histogram, a nullable team, a Feature FK | **NOT REUSED — corrected 2026-09-20** | It cannot be: its single required `FeatureId` is already bound to `Feature.Forecasts`, so a start row of this type would be loaded into the completion collection. See DDD-1, amended. |
+| `ForecastBase` | `Models/Forecast/ForecastBase.cs` | Percentile and likelihood reads over a histogram, and the TPH root the forecast table is keyed on | **REUSED AS IS — now by inheritance** | `KeyOrder` already parameterises direction; a start is ascending-by-day exactly as a completion is. `StartForecast` derives from it directly, so it inherits the percentile reads and the `SimulationResults` relationship and nothing else. |
 | `AggregatedWhenForecast` | `Models/Forecast/AggregatedWhenForecast.cs` | Combines per-team histograms to Feature grain | **NOT REUSED — deliberately** | It combines *marginals after the run*, which is the assumption ADR-199 exists to avoid. The Feature-grain start is observed in-trial and stored. Leaving this type untouched is what makes AC-1.5 structural. |
 | `JointCompletionDistribution` | `Models/Forecast/JointCompletionDistribution.cs` | Product of CDFs across teams | **NOT REUSED — deliberately** | Its mirror for a minimum is `1 - Π(1 - Fi)`, and it carries the independence assumption epic-5792 made false. Untouched; ADR-110 and ADR-156 both stand. |
 | `TrialCompletions` | `Services/.../TrialCompletions.cs` | Per-worker lock-free day histograms, merged once | **EXTEND** | Adding two arrays to an existing per-worker recorder is a handful of lines against a new parallel recorder with its own merge, its own lifetime and a second chance to get the lock-free contract wrong. |
 | `TrialState` | `Services/.../TrialState.cs` | Per-trial mutable state owned by one run | **EXTEND** | It already owns `dayEachRowFinished` with exactly this lifecycle. A start marker is the same array with the opposite trigger. |
-| `ForecastRunPlan` | `Services/.../ForecastRunPlan.cs` | Row-to-Feature grouping | **EXTEND** | The grouping already exists inside `WhatEachRowWaitsFor`; hoisting it is strictly less code than computing it a second time. |
+| `ForecastRunPlan` | `Services/.../ForecastRunPlan.cs` | Row-to-Feature grouping | **EXTEND — new work, not a hoist** | Corrected 2026-09-20. The existing grouping is keyed by string `ReferenceId` and is skipped entirely when nothing waits on anything, which is the ordinary case. A dense `int[]` index has to be built unconditionally, and slice 01's estimate should carry it as new work rather than as a move. |
 | `ResolveForecastValue` | `Services/.../WriteBackTriggerService.cs` | Percentile, working-day projection, blackout, format | **EXTEND** | The start resolver is this method with a different distribution and one branch. Writing a parallel resolver would duplicate the blackout handling, which is exactly where ADR-058 says one implementation belongs. |
 | `Feature.CanBeForecast` / `TeamsWithoutForecast` | `Models/Feature.cs` | Unknown-forecast predicate | **REUSED AS IS** | ADR-159 reached the same verdict on the same members. Start inherits the gate; no new rule. |
 | `ProjectWorkingDays` / blackout services | per ADR-058 | Day-to-date translation | **REUSED AS IS** | Identical for a start and a completion. |
@@ -950,12 +1002,34 @@ Every row is **EXTEND**. This feature introduces no new type in the backend.
 
 **Zero unjustified CREATE NEW.** The single CREATE NEW row is gated behind an evaluation.
 
+### Contract shape per component
+
+Added 2026-09-20 on review: the Effect Isolation mandate wants every touched component classified, and
+neither table above did it. Kept as its own table rather than a sixth column, because the Reuse Analysis
+row is already the widest thing in this document.
+
+| Component | Contract shape | Universe it may touch |
+|---|---|---|
+| `TrialState`, `TrialCompletions` | bounded-change | The new per-row and per-Feature marker arrays, and nothing else. The completion arrays are read and written exactly as before. |
+| `SimulatedRun` | bounded-change | One recording call. It may not change which row is drawn, how much is delivered, or when a row closes. |
+| `ForecastRunPlan` | bounded-change | A new index and count. The row order, the team mapping and the waits are unchanged. |
+| `ForecastService` | bounded-change | A second fold and a second attach. `RecordTheDaysEachRowFinishedOn` and `SetFeatureForecasts` are untouched. |
+| `StartForecast`, `Feature.StartForecasts` | pure-function on read | A distribution and its percentile reads. No behaviour of `Feature.Forecast` is reachable from it. |
+| `FeatureDto` | bounded-change | New fields only. `Forecasts` keeps its shape and its content — the `unbounded-preservation` half, asserted by scenario 6. |
+| `WriteBackValueSource` | unbounded-preservation | Every existing ordinal. Members may be appended, never inserted or reordered; a stored mapping that re-points is a silent data corruption. |
+| `WriteBackTriggerService` | bounded-change | The value-resolution branch. **The outbound write path itself is REUSED AS IS** — this is the one component here with a real external effect, and slice 03 may not touch how or when it writes, only what value it resolves. |
+
 ---
 
 ## Wave: DESIGN / [REF] Driving and Driven Ports
 
-No new driving port. `GET /api/latest/portfolios/{portfolioId:int}` carries the new payload; the
-write-back mapping screen's existing endpoints carry the four new value sources.
+No new driving port. **`GET /api/latest/features`** (and `…/features/ids?featureIds=…`) carries the new
+payload; the write-back mapping screen's existing endpoints carry the four new value sources.
+
+**Corrected 2026-09-20 during DISTILL.** This section named `GET /api/latest/portfolios/{portfolioId:int}`,
+inherited unchecked from US-01's pitch. That endpoint returns `PortfolioDto`, which carries only a
+Feature's id and name and cannot serve a `FeatureDto` at all. "No new driving port" is a claim that
+requires knowing the port exactly, so it is DESIGN's to verify rather than DISCUSS's to be trusted on.
 
 | Driven port | Adapter | Change |
 |---|---|---|
@@ -1048,8 +1122,8 @@ from it. Against this feature that surface is genuinely empty:
 | Deployment topology | **N/A** — no new container, no new service, no new external dependency. ADR-202's brief delta records that nothing is visible at C4 System Context or Container level. |
 | Infrastructure as code | **N/A** — no chart change, no new environment variable, no new secret. |
 | CI/CD pipeline | **N/A** — no new workflow. The existing gates cover it: `dotnet build`/`test`, `pnpm test`/`build`, Biome, SonarQube Cloud, and E2E through `ci_verifysqlite` / `ci_verifypostgres`. |
-| Database migration | **Covered by DESIGN, not DEVOPS** — additive and expand-only, generated by the `CreateMigration` script across all providers, per the standing project rule. |
-| Observability / instrumentation | **The one real item, and it is already owned.** The forecast wall-clock budget (AC-1.8: ten thousand runs over a fifty-Feature portfolio within 110 % of the `main` baseline) is a measurement slice 01 takes on the dev instance, before and after. It is an acceptance criterion rather than a dashboard, because it gates one change rather than running forever. |
+| Database migration | **Covered by DESIGN, not DEVOPS** — additive and expand-only, generated by the `CreateMigration` script across all providers, per the standing project rule. Why that is a sufficient safety argument, named on review rather than left to be rediscovered: migrations are applied automatically at startup (`Program.cs`, `DatabaseConfigurator.ApplyMigrations`) and gated by the existing `MigrationsAppliedHealthCheck` on the readiness and startup tags, so an instance that has not finished migrating never takes traffic. This feature adds no new logic to that mechanism; it relies on it. |
+| Observability / instrumentation | **The one real item, and it is already owned.** The forecast wall-clock budget (AC-1.8: ten thousand runs over a fifty-Feature portfolio within 110 % of the `main` baseline) is a measurement slice 01 takes on the dev instance, before and after. It is an acceptance criterion rather than a dashboard, because it gates one change rather than running forever. **The residual, named on review:** nothing then watches forecast latency over time, so if a real portfolio grows past the shape the probe measures and the forecast slows, it surfaces as a support ticket rather than as a metric. Accepted — this Epic is not the place to build forecast-latency instrumentation — but accepted explicitly rather than by omission. Enforcement of the *one* measurement it does owe is Definition of Done item 10. |
 | Rollout / feature gating | **Covered by DISCUSS D8** — forecast and table free, timeline premium via the Delivery surface's existing notice, write-back inheriting the mapping screen's existing gate. No new gate mechanism. |
 | Production readiness sign-off | **Deferred to DELIVER**, where it always sits for this project. |
 
@@ -1059,3 +1133,315 @@ stated method and a stated threshold rather than left to be discovered under loa
 01's learning hypothesis names the fallback.
 
 Next wave: DISTILL.
+
+---
+
+## Wave: DISTILL / [REF] Prior Wave Consultation
+
+Read 2026-09-20, before a scenario was written.
+
+| File | State |
+|---|---|
+| `docs/feature/epic-6033-forecasted-start-dates/feature-delta.md` (DISCUSS + DESIGN + DEVOPS sections) | ✓ read |
+| `slices/slice-01-the-run-records-the-day-it-starts.md` | ✓ read |
+| `docs/product/journeys/epic-6033-forecasted-start-dates.yaml` | ✓ present |
+| `docs/architecture/atdd-infrastructure-policy.md` | ✓ read, and appended to (two rows, below) |
+| `docs/product/outcomes/registry.yaml` | ✓ read — registration deferred, see below |
+| `.nwave/des-config.json` | ✓ read — no `deliverable_type` key, so `application`; no type-specific reviewer routing applies |
+| `spike/` | ⊘ not found (none was run, by decision) |
+
+Wave-decision reconciliation: **0 contradictions.** DEVOPS is a recorded skip rather than a missing
+wave, and the one concern it would have owned is already an acceptance criterion (AC-1.8), so the
+graceful-degradation path does not apply — there is nothing to improvise a default for.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues Found While Writing the Scenarios
+
+Two, both corrected here rather than left for DELIVER to trip over.
+
+**1. US-01's elevator pitch names the wrong endpoint.** It says the payload arrives from
+`GET /api/latest/portfolios/{portfolioId}`. That endpoint returns `PortfolioDto`, which carries only
+`EntityReferenceDto` rows — a Feature's id and name. `FeatureDto`, and therefore every forecast on it,
+is served by **`GET /api/latest/features`** and `GET /api/latest/features/ids?featureIds=…`
+(`FeaturesController.BuildFeatureDto`). The scenarios drive the real one. No decision changes; the
+pitch's wording is wrong and the driving port below is authoritative.
+
+**2. `FeatureRepository.GetFeatures()` eager-loads `Forecasts` and will have to load `StartForecasts`
+too.** `Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults)`. A second collection that is
+not added there reads back empty through every path in the product while passing any test that keeps
+the entity in the tracker. Named now because it is invisible until it is a bug report. Slice 01 owns it.
+
+One thing DISTILL **confirmed** rather than corrected, because D6 and AC-1.3 both rest on it:
+`FeatureRepository.GetAll()` applies `featureOrdering.Order(...)`, so the simulation really does build
+its rows in board order. D6's "the run forecasts the board as configured" is a property of the code,
+not an assumption.
+
+---
+
+## Wave: DISTILL / [REF] Scope of This Pass
+
+**Slice 01's scenarios are executable now. Slices 02–06's are catalogued, not authored.** Stated rather
+than skipped silently, with the reason per slice:
+
+| Slice | State | Why |
+|---|---|---|
+| 01 | **Executable**, 10 scenarios + 1 probe, committed RED-ready | Next into DELIVER |
+| 02 (table column) | Catalogued | Frontend. A skipped Vitest test is still type-checked, so a pending test that names a prop forces that prop to exist before the suite can be green — authoring it now would drag slice 02's component surface into slice 01's commit. Authored at the head of its own DELIVER, which is this repo's standing practice (`DeliverySources/Slice0*`) |
+| 03 (write-back) | Catalogued | Backend, and authorable now; held with 02 so each slice's ATs land with the slice, per the same practice |
+| 04–06 (timeline) | Catalogued | Blocked on **P8** — what draws the timeline is an open DESIGN question settled by slice 04's own 2h evaluation. Scenarios written against a component nobody has chosen would pin the wrong driving surface |
+
+---
+
+## Wave: DISTILL / [REF] The Wire Contract Slice 01 Is Written Against
+
+DESIGN settled that `FeatureDto` carries "start percentiles or observed date with provenance, and the
+per-team completion forecasts" without naming fields. The scenarios are executable, so they had to. This
+is the contract; it is the spec, and DELIVER implements it rather than renaming it.
+
+```jsonc
+{
+  "forecasts": [ /* unchanged - the aggregate completion, four percentiles */ ],
+
+  "startForecast": {
+    // Provenance first and always explicit. Never inferred from the absence of percentiles:
+    // ADR-112's rule, for the reason that produced the `return 100` trap.
+    "source": "Forecast" | "Observed" | "Unknown",
+    "observedDate": "2026-09-14T00:00:00Z",   // set iff source == Observed
+    "percentiles": [ { "probability": 50, "expectedDate": "…" }, … ]  // four iff source == Forecast
+  },
+
+  "teamForecasts": [
+    {
+      "teamId": 7,
+      "startPercentiles": [ /* four */ ],
+      "completionPercentiles": [ /* four - the gap S22 named, closed here */ ]
+    }
+  ]
+}
+```
+
+`Unknown` is the third source rather than an omitted object, because "this Feature cannot be forecast"
+and "this Feature has not been forecast yet" are different answers and a client that read absence would
+be re-deciding, in every screen, a rule the domain already decided.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List With Tags
+
+All ten drive `GET /api/latest/features` against a real ASP.NET host with real EF over SQLite. Categories
+carried by every fixture: `acceptance`, `epic-6033-forecasted-start-dates`, `slice-01`.
+
+Each scenario also carries a `// @…` tag line above it, following the convention already used by
+`API/Integration/BlockedItems/Slice0*Scenarios.cs` — `@driving_port`, `@real-io`, `@walking_skeleton`,
+`@error`/`@edge`/`@regression`/`@invariant`, the `@us-01` trace and a
+`@contract-shape:<pure-function|bounded-change|unbounded-preservation>` classification. Added on review;
+they were missing from the first pass, and the per-component classification they roll up to is the
+Contract shape table in the DESIGN sections.
+
+| # | Scenario | AC | Fixture | Notes |
+|---|---|---|---|---|
+| 1 | `A_Feature_nobody_has_started_says_when_work_on_it_is_expected_to_begin` | AC-1.1 | deterministic | **walking skeleton** — the whole path, run to wire |
+| 2 | `At_Feature_WIP_one_the_next_Feature_starts_the_day_the_one_above_it_finishes` | AC-1.2, D7 | deterministic | written from the reasoning, before it was run |
+| 3 | `A_Feature_already_in_flight_reports_the_day_it_actually_started` | AC-1.6, D5 | deterministic | |
+| 4 | `A_Feature_two_Teams_share_reports_a_start_and_a_completion_for_each_of_them` | AC-1.9, AC-1.10 | deterministic | |
+| 5 | `A_Feature_one_Team_works_reports_the_same_number_at_both_grains` | AC-1.9 | deterministic | the roll-up must read, not compute |
+| 6 | `Nothing_about_the_completion_forecast_moves` | AC-1.5 | deterministic | **Green from day one** — a regression guard, not a RED scaffold. See Red Classification |
+| 7 | `A_Feature_a_Team_cannot_be_forecast_for_carries_no_start_date_either` | AC-1.7, DDD-4 | deterministic | |
+| 8 | `Feature_WIP_bounds_how_many_Features_can_begin_on_the_first_day` | AC-1.3, S2 | sampled | |
+| 9 | `Raising_Feature_WIP_lets_them_all_begin_on_the_first_day` | AC-1.3 | sampled | |
+| 10 | `The_start_a_Feature_reports_is_the_one_the_run_saw_not_the_one_its_Teams_marginals_imply` | AC-1.4, D4, ADR-199 | sampled + dependency | **the decisive one** |
+| — | `StartForecastWallClockProbe` | AC-1.8 | `[Explicit]` | measured by hand, before and after |
+
+**Error and edge coverage: 4 of 10** (3, 7, 8, 10 — an already-started Feature, an un-forecastable
+contributor, a Feature held out by WIP, and a Feature whose Teams do not move independently), and the
+tags back the claim: `grep -c '@error\|@edge'` over the two scenario files returns 4. The
+remaining six are the contract itself. The 40% target is met without inventing failure modes this slice
+does not have: it adds no new input the user supplies, no new adapter and no new external call.
+
+**How scenario 10 is decisive.** Both Teams of the shared Feature wait on the same upstream Feature, so
+they begin on the same day in every run. Observed in-trial, the Feature's start is that day — exactly
+what each Team reports. Derived from the marginals with `1 − Π(1 − Fi)` it would be strictly earlier,
+because the formula credits the Feature with two independent chances of having started when it only ever
+had one. The scenario also asserts the distribution is not a point mass, because on a degenerate one the
+two methods agree and the test would prove nothing.
+
+---
+
+## Wave: DISTILL / [REF] Architecture of Reference and Infrastructure Policy
+
+`--policy=inherit`. Every port in scope was already in
+`docs/architecture/atdd-infrastructure-policy.md` except two, which were appended there per
+write-if-absent rather than decided inline:
+
+| Port | Class | Mechanism |
+|---|---|---|
+| HTTP API | Driving | `TestWebApplicationFactory<Program>`, existing row |
+| `LighthouseAppContext` + repositories | Driven internal | Real EF over SQLite, existing row |
+| `IForecastService` | Driven internal — **real, never mocked here** | The simulation is the subject. Existing row already carves out this exception for epic-4365's gold tests; this slice is the same case |
+| `IDrawStreamFactory` | Driven external / non-deterministic | **New row.** `DrawsTheSameNumberEveryTime` where the claim is about which day; `DrawsFromAPinnedStartingNumber` where the claim needs spread |
+| `ForecastSimulationLimits` | Configuration, not a port | **New row.** 50 runs deterministic, 1 000 sampled, against the product's 10 000 |
+| `ITeamMetricsService` | Driven internal — **faked** | **New row.** Measured throughput is this feature's *input*. Seeding it as closed work items would put the metrics service's windowing, filtering and blackout arithmetic between the number the test chose and the number the run drew |
+| `ILicenseService` | Driven external | Existing row — premium true, so the dependency decision scenario 10 needs is reachable |
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| EF `LighthouseAppContext` (SQLite) | YES | all ten — the Feature is written, re-read through the repository and served |
+| `FeaturesController` read path | YES | all ten |
+| `IWorkTrackingConnector` | N/A | nothing in slice 01 reaches a tracker. Slice 03 is where a write-back adapter first appears, and its ATs are catalogued below |
+| Work tracking system write-back | N/A | slice 03 |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+DESIGN declares **no new driving port**. Scanned for entry points: no new CLI, no new endpoint, no new
+hook. The existing `GET /api/latest/features` carries the new payload and every scenario invokes it over
+HTTP through the real host — not by calling `BuildFeatureDto`, which would prove the projection works
+without proving it is wired, serialised and reachable.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds (Mandate 7)
+
+**None, and that is the point.** Mandate 7 exists so a test importing a not-yet-written production type
+fails RED rather than failing to build. The scenarios import no such type: they arrange through surfaces
+that already exist (`Feature`, `FeatureWork`, `StateCategory`, `StartedDate`, `IForecastService`) and
+assert against the **wire**, reading `startForecast` and `teamForecasts` out of the JSON.
+
+So the test project compiles against `main` as it stands, and each scenario fails on the answer — "no
+forecasted start at the 50th percentile" — rather than on a missing symbol. That is RED for the right
+reason with nothing to clean up afterwards, and it is why a `__SCAFFOLD__` sweep has nothing to find.
+
+The cost is named: a wire-level assertion cannot see inside the domain, so **AC-1.5's structural half —
+that no start row is in `Feature.Forecasts` — is asserted by consequence rather than directly.** A start
+row folded into that collection drags every completion percentile earlier, which scenario 6 catches. A
+direct assertion on the collection belongs in DELIVER's unit tests, where the type exists.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+`Lighthouse.Backend.Tests/API/Integration/ForecastedStartDates/`, following
+`API/Integration/DependencyAwareForecasting/` and `API/Integration/DeliverySources/` — the two nearest
+precedents, both forecast-adjacent, both split `Slice0N…Scenarios.cs` (the Given/When/Then) from
+`Slice0N…Specifications.cs` (the step definitions) across one partial class.
+
+| File | Holds |
+|---|---|
+| `ForecastedStartDateAcceptanceTest.cs` | The pinned host and the shared Given/When/Then vocabulary |
+| `Slice01StartForecastScenarios.cs` / `…Specifications.cs` | Scenarios 1–7, deterministic draws |
+| `Slice01SampledStartScenarios.cs` / `…Specifications.cs` | Scenarios 8–10, pinned sampled draws |
+| `StartForecastWallClockProbe.cs` | AC-1.8, `[Explicit]` |
+
+---
+
+## Wave: DISTILL / [REF] Red Classification
+
+**Measured, not inferred.** The ten scenarios were unskipped once locally, run against unmodified `main`,
+and the `[Ignore]` attributes put back; nothing from that run is committed. Build succeeded with 0 errors
+and 0 warnings, and the run was **9 failed, 1 passed**.
+
+Every one of the nine fails on an assertion — `Expected: "Forecast" But was: null`, `Expected: not null
+But was: null`, `Expected: 2026-09-22 But was: null` — with no exception, no import error and no fixture
+failure anywhere. That is RED for the right reason, stated on evidence.
+
+Two things the run settled that a green build could not have:
+
+- **Scenario 6 is a regression guard, not a RED scaffold.** It is the one that passes. It asserts only
+  against the completion contract, which this slice must leave exactly where it is, so it is green from
+  day one by design. It is marked as such in the code, because DELIVER reading its green as evidence of
+  work done would be reading false progress.
+- **The fixtures work end to end.** Scenario 10 reached its assertion, so the dependency seeding, the
+  premium licence path, EF, the real forecast and the HTTP read are all wired correctly — the parts of
+  this fixture most likely to be broken in a way that looks like a failing feature. And
+  `At_Feature_WIP_one…` reported Alpha's completion as `2026-09-22`: simulated day 2, projected over
+  working days, which is exactly the arithmetic scenario 2 was built on. The fixture's premise is
+  confirmed by the half of it that already exists.
+
+Every scenario carries `[Ignore("RED scaffold written by DISTILL. DELIVER slice 01 (Story #6045)
+unskips these one at a time.")]`, so the hand-off commit is green and nothing RED reaches `main`.
+
+One shape was chosen for that reason: every comparison between two dates asserts each date is present
+**first, and outside the multiple-assert scope**. Inside one, a failed not-null assertion does not
+throw, so the comparison that followed would dereference a null and the scenario would be reported as an
+error rather than a failure — BROKEN dressed as RED, which is the exact signal this gate exists to keep
+clean.
+
+---
+
+## Wave: DISTILL / [REF] Scenario Catalogue for Slices 02–06
+
+Authored at the head of each slice's own DELIVER. Listed here so the ACs are already mapped and no slice
+starts by re-deciding what to prove.
+
+| Slice | Scenario | AC | Driving port |
+|---|---|---|---|
+| 02 | The Feature table shows a Forecasted Start column following the completion column's presentation | AC-2.1 | React component tree (Vitest + RTL) |
+| 02 | A started Feature shows one date, visibly marked observed, with no percentile | AC-2.2 | same |
+| 02 | A Feature with no start forecast shows the empty state the completion column already uses | AC-2.3 | same |
+| 02 | The column renders with no premium licence | AC-2.4 | same |
+| 02 | Sorting and the existing column set are unchanged | AC-2.5 | same |
+| 03 | Four new `WriteBackValueSource` members, appended last; a test pins every pre-existing ordinal | AC-3.1 | unit — the enum is persisted by ordinal |
+| 03 | A mapped start source writes the forecasted start on the next round, honouring `DateFormat` | AC-3.2 | write-back round through the real resolver |
+| 03 | A started Feature writes its observed date | AC-3.3 | same |
+| 03 | A Done Feature writes nothing | AC-3.4 | same |
+| 03 | A Feature with no start forecast writes nothing rather than an epoch date | AC-3.5 | same |
+| 03 | The sources appear only under a premium licence | AC-3.6 | mapping screen endpoints |
+| 04 | A Delivery carries a Timeline tab, one bar per Feature in board order | AC-4.1 | **P8 — surface not chosen** |
+| 04 | A bar spans start to completion at the selected percentile; the selector moves both ends | AC-4.2, AC-4.3 | P8 |
+| 04 | A started Feature's bar begins at its observed start | AC-4.4 | P8 |
+| 04 | A Feature with no forecast is listed with a stated reason rather than omitted | AC-4.5 | P8 |
+| 04 | The Delivery's target date is marked on the axis | AC-4.6 | P8 |
+| 04 | The tab is premium-gated using the existing notice | AC-4.7 | P8 |
+| 04 | Legible in both themes and at the narrowest supported width | AC-4.8 | P8 |
+| 04 | **AC-4.9 is a docs deliverable, not a test.** ADR-202's mitigation is the documentation saying plainly what an out-of-order board does to the picture. If it is cut, the decision is not implemented — only the code is | AC-4.9 | docs |
+| 05 | Dependency lines on the timeline | US-05 | P8, severable |
+| 06 | Per-team sub-lanes under the summary bar | US-06 | P8, severable |
+
+---
+
+## Wave: DISTILL / [REF] Outcomes Registry
+
+**Registration deferred to DELIVER, deliberately.** Slice 01 introduces one new typed contract worth a
+row — the observed-or-forecast start rule on `Feature` (ADR-201), a `specification`. Every existing row
+in `docs/product/outcomes/registry.yaml` names an `artifact` path that exists; registering one now would
+point at a file nobody has written. Registered in the same commit that creates it.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites Carried Into DELIVER
+
+| # | Pre-requisite | State |
+|---|---|---|
+| P1, P2, P4 | The `worked` variable, the WIP draw range, `StartedDate` on the entity | Confirmed by reading (S1, S2, S14) and again here |
+| — | Board order really governs the run | **Newly confirmed** — `FeatureRepository.GetAll()` orders through `IFeatureOrdering` |
+| — | `GetFeatures()` must eager-load `StartForecasts` | **Owed by slice 01** (upstream issue 2 above) |
+| — | EF migration, additive and expand-only, via `CreateMigration` across all providers | Owed by slice 01 |
+| AC-1.8 | Wall-clock baseline on `main` | **Taken 2026-09-20, before a line of slice 01 was written** — it cannot be taken afterwards. Fifty Features, five Teams, 10 000 runs: **313 / 335 / 365 ms, median 335 ms**, on the development machine. AC-1.8's budget is therefore **≤ 369 ms median** on the same machine. Re-measure with the same probe after the recorder lands |
+| P8 | What draws the timeline | Still open. Gates slices 04–06 only |
+
+---
+
+## Wave: DISTILL / [REF] Self-Review
+
+| Item | State |
+|---|---|
+| Walking skeleton exists, exercises the real driving adapter over HTTP | ✓ scenario 1 |
+| Every driven adapter has a real-I/O scenario | ✓ — EF is real in all ten; no other adapter is in slice 01 |
+| In-memory doubles: what they cannot model is written down | ✓ — the `ITeamMetricsService` fake cannot model throughput windowing, filtering or blackout arithmetic, and no scenario asserts any of them |
+| Mandate 7: imports resolve, tests RED not BROKEN | ✓ — build clean, no scaffolds needed, and the reason is recorded |
+| Business language in scenario names | ✓ — no scenario name contains API, DTO, endpoint or histogram |
+| Error and edge coverage | ✓ 4 of 10 |
+| Test placement follows precedent | ✓ |
+| Prior-wave decisions reconciled | ✓ 0 contradictions |
+| Upstream issues raised rather than worked around | ✓ two, both above |
+| Red classification measured rather than inferred | ✓ — unskipped once locally, 9 failed / 1 passed, every failure an assertion |
+| Scenario count against the sizing signal | ⚠ **10 scenarios, above the 8 that prompts a sizing conversation.** Not reduced: the count is AC-driven, and the ACs are the Epic's decisive claims. Flagged for the estimate rather than trimmed — and it is a second reason slice 01's planned split matters |
+| Sub-assertions that only start working later | ⚠ Named rather than removed. In scenario 3, `no start percentiles` is vacuously true today; in scenario 7, the completion and `teamsWithoutForecast` assertions read pre-existing fields. Each sits beside a sibling that genuinely fails, so the scenario as a whole is honest RED — but a partial implementation that leaves *those* green has not proven that part, and DELIVER should not read it that way |
+
+Next wave: DELIVER, slice 01 (Story #6045).
