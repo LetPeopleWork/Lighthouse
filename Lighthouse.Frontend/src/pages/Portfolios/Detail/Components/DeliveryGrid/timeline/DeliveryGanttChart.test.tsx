@@ -2,6 +2,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import DeliveryGanttChart, {
+	barTooltip,
 	chartHeight,
 	dayHighlight,
 	ganttColorOverrides,
@@ -145,6 +146,28 @@ describe("DeliveryGanttChart", () => {
 
 			expect(tasks.map((task) => task.text)).toEqual(["First", "Second"]);
 			expect(toGanttTasks([])).toEqual([]);
+		});
+	});
+
+	describe("what a bar says on hover", () => {
+		it("gives the span, and offers the detail behind it", () => {
+			expect(barTooltip(bar(1, "Sonar Refit"), true)).toBe(
+				"10/10/2026 – 10/20/2026 (click for more details)",
+			);
+		});
+
+		it("does not offer detail there is no way to reach", () => {
+			// Nothing is listening for a click, so promising one would be a lie the reader only
+			// discovers by trying it.
+			expect(barTooltip(bar(1, "Sonar Refit"), false)).toBe(
+				"10/10/2026 – 10/20/2026",
+			);
+		});
+
+		it("leaves the name to the bar it is already written on", () => {
+			expect(barTooltip(bar(1, "Sonar Refit"), true)).not.toContain(
+				"Sonar Refit",
+			);
 		});
 	});
 

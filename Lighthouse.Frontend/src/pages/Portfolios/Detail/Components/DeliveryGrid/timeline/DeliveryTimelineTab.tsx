@@ -10,8 +10,10 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useMemo, useState } from "react";
+import WorkItemsDialog from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../../../../hooks/useLicenseRestrictions";
 import type { IFeature } from "../../../../../../models/Feature";
+import { getWorkItemName } from "../../../../../../utils/featureName";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import {
 	buildDeliveryTimeline,
@@ -40,6 +42,15 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const { licenseStatus } = useLicenseRestrictions();
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
+	);
+	const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(
+		null,
+	);
+
+	// Held by id rather than by object, so the dialog follows a refreshed Feature instead of
+	// showing the one that was on screen when it was opened.
+	const selectedFeature = features.find(
+		(feature) => feature.id === selectedFeatureId,
 	);
 	const { bars, unplaceable } = useMemo(
 		() => buildDeliveryTimeline(features, percentile),
@@ -91,7 +102,11 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			</Box>
 
 			{bars.length > 0 ? (
-				<DeliveryGanttChart bars={bars} targetDate={targetDate} />
+				<DeliveryGanttChart
+					bars={bars}
+					targetDate={targetDate}
+					onBarSelected={setSelectedFeatureId}
+				/>
 			) : (
 				<Typography variant="body2" color="text.secondary">
 					{`None of these ${featuresTerm} can be placed on a timeline yet.`}
@@ -115,6 +130,17 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 					</List>
 				</Box>
 			)}
+
+			<WorkItemsDialog
+				title={
+					selectedFeature
+						? getWorkItemName(selectedFeature.name, selectedFeature.referenceId)
+						: ""
+				}
+				items={selectedFeature ? [selectedFeature] : []}
+				open={selectedFeature !== undefined}
+				onClose={() => setSelectedFeatureId(null)}
+			/>
 		</Box>
 	);
 };

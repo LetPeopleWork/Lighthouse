@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature, IFeatureStart } from "../../../../../../models/Feature";
@@ -27,12 +27,16 @@ vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
  * which target, with or without its name pane. Its markup is theirs; a test reaching into it would
  * go red on their release rather than on our defect, which is the whole reason the adapter exists.
  */
-const ganttProps = vi.hoisted(() => ({
-	current: null as { bars: TimelineBar[]; targetDate?: Date } | null,
-}));
+type GanttProps = {
+	bars: TimelineBar[];
+	targetDate?: Date;
+	onBarSelected?: (featureId: number) => void;
+};
+
+const ganttProps = vi.hoisted(() => ({ current: null as GanttProps | null }));
 
 vi.mock("./DeliveryGanttChart", () => ({
-	default: (props: { bars: TimelineBar[]; targetDate?: Date }) => {
+	default: (props: GanttProps) => {
 		ganttProps.current = props;
 		return <div data-testid="delivery-gantt" />;
 	},
@@ -204,6 +208,31 @@ describe("DeliveryTimelineTab", () => {
 		expect(
 			screen.queryByTestId("timeline-unplaceable"),
 		).not.toBeInTheDocument();
+	});
+
+	it("opens the details for the Feature whose bar was chosen", async () => {
+		renderTab([
+			feature({ id: 1, name: "Deep Sea Mapping" }),
+			feature({ id: 2, name: "Sonar Refit" }),
+		]);
+
+		// The chart is stood in for, so the click is driven through the handler it was handed —
+		// which is the contract that matters here. Whether a bar is clickable in a browser is the
+		// screenshot test's business, not this one's.
+		act(() => {
+			ganttProps.current?.onBarSelected?.(2);
+		});
+
+		const dialog = await screen.findByRole("dialog");
+
+		expect(dialog).toHaveTextContent("Sonar Refit");
+		expect(dialog).not.toHaveTextContent("Deep Sea Mapping");
+	});
+
+	it("shows no details until a bar is chosen", () => {
+		renderTab([feature()]);
+
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
 	it("hands the Delivery's target date through to the chart", () => {

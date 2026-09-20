@@ -1,6 +1,6 @@
 import "@svar-ui/react-gantt/all.css";
 
-import { Box, useTheme } from "@mui/material";
+import { Box, Tooltip, useTheme } from "@mui/material";
 import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type React from "react";
 import { type ComponentProps, useCallback, useMemo } from "react";
@@ -27,6 +27,21 @@ import {
 export interface DeliveryGanttChartProps {
 	bars: TimelineBar[];
 	targetDate?: Date;
+	/** Called with the Feature's id when its bar is chosen. Absent means the bars are inert. */
+	onBarSelected?: (featureId: number) => void;
+}
+
+/**
+ * What a bar says when you hover it.
+ *
+ * Only the span, because the name is already written along the bar and repeating it in the tooltip
+ * spends the reader's attention on something they can see.
+ */
+export function barTooltip(bar: TimelineBar, isClickable: boolean): string {
+	const asDay = (date: Date) => date.toLocaleDateString();
+	const span = `${asDay(bar.start)} – ${asDay(bar.end)}`;
+
+	return isClickable ? `${span} (click for more details)` : span;
 }
 
 const TARGET_DAY_CLASS = "delivery-target-day";
@@ -152,6 +167,7 @@ export const TIMELINE_SCALES = [
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
 	targetDate,
+	onBarSelected,
 }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -177,6 +193,60 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		(date: Date, unit: string) =>
 			dayHighlight(date, unit, { targetDate, today }),
 		[targetDate, today],
+	);
+
+	const barsById = useMemo(
+		() => new Map(bars.map((bar) => [bar.featureId, bar])),
+		[bars],
+	);
+
+	/**
+	 * The inside of each bar, rendered by us rather than by the library.
+	 *
+	 * This is the documented way to own a bar's content, and owning it is what keeps the hover text
+	 * and the click in ordinary React. The alternative — subscribing to the library's own task
+	 * events — types as valid whatever name is passed, because its props carry an `on${string}`
+	 * index signature, so a wrong guess compiles and silently does nothing.
+	 */
+	const BarContent = useCallback(
+		({ data }: { data: { id?: string | number } }) => {
+			const bar = barsById.get(Number(data.id));
+
+			if (!bar) {
+				return null;
+			}
+
+			const select = onBarSelected;
+
+			return (
+				<Tooltip title={barTooltip(bar, select !== undefined)} followCursor>
+					<Box
+						component={select ? "button" : "div"}
+						type={select ? "button" : undefined}
+						onClick={select ? () => select(bar.featureId) : undefined}
+						sx={{
+							width: "100%",
+							height: "100%",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							overflow: "hidden",
+							whiteSpace: "nowrap",
+							textOverflow: "ellipsis",
+							px: 1,
+							background: "none",
+							border: "none",
+							font: "inherit",
+							color: "inherit",
+							cursor: select ? "pointer" : "default",
+						}}
+					>
+						{bar.name}
+					</Box>
+				</Tooltip>
+			);
+		},
+		[barsById, onBarSelected],
 	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;
@@ -212,6 +282,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					cellHeight={ROW_HEIGHT}
 					scaleHeight={SCALE_HEIGHT}
 					highlightTime={highlightTime}
+					taskTemplate={BarContent}
 					// Off, or the library recomputes the range from the tasks alone and discards the
 					// start and end above — which silently drops a target date that falls beyond the
 					// last bar, exactly the case a reader opens this chart to check.
