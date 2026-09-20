@@ -186,10 +186,32 @@ export class WorkTrackingSystemService
 				connection.writeBackMappingDefinitions ?? []
 			).map((m) => ({
 				...m,
-				valueSource: WriteBackValueSource[m.valueSource],
+				valueSource: this.nameOfValueSource(m.valueSource),
 				appliesTo: WriteBackAppliesTo[m.appliesTo],
 				targetValueType: WriteBackTargetValueType[m.targetValueType],
 			})),
 		};
+	}
+
+	/**
+	 * The wire carries the member name, so a source this build does not know has no name to send. That
+	 * happens when the page was loaded from a bundle older than the server - a long-lived tab across an
+	 * upgrade is enough.
+	 *
+	 * Refusing to save is the point. The name would otherwise be sent as undefined, which JSON drops,
+	 * which the server reads as the first member of the enum: a field set up to receive a forecasted
+	 * start date would silently begin receiving work item age, from an edit the admin made to something
+	 * else entirely on the same screen.
+	 */
+	private nameOfValueSource(valueSource: WriteBackValueSource): string {
+		const name = WriteBackValueSource[valueSource];
+
+		if (name === undefined) {
+			throw new Error(
+				"This page cannot save a sync mapping it does not recognise. Reload the page to pick up the current version, then try again.",
+			);
+		}
+
+		return name;
 	}
 }

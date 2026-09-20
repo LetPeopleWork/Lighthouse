@@ -393,6 +393,42 @@ describe("WorkTrackingSystemService", () => {
 			);
 		});
 
+		// A tab left open across an upgrade holds a bundle that has never heard of a source the server
+		// added. Sending it as undefined would have JSON drop the field, and the server reads a missing
+		// value as the first member of the enum - so a field set up to receive a forecasted start date
+		// would begin receiving work item age, from an edit to something else on the same screen.
+		it("refuses to save a sync mapping whose source this build does not know", async () => {
+			const connection: IWorkTrackingSystemConnection = {
+				id: 1,
+				name: "ADO",
+				workTrackingSystem: "AzureDevOps",
+				options: [],
+				authenticationMethodKey: "ado.pat",
+				additionalFieldDefinitions: [],
+				writeBackMappingDefinitions: [
+					{
+						id: 7,
+						// A member number no released build has, standing in for one a later server added.
+						valueSource: 99 as WriteBackValueSource,
+						appliesTo: WriteBackAppliesTo.Portfolio,
+						additionalFieldDefinitionId: 10,
+						targetValueType: WriteBackTargetValueType.Date,
+						dateFormat: null,
+					},
+				],
+				workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL",
+			};
+
+			await expect(
+				workTrackingSystemService.updateWorkTrackingSystemConnection(
+					connection,
+				),
+			).rejects.toThrow(/does not recognise/i);
+
+			// Nothing reached the server, so the stored mapping is exactly as the admin left it.
+			expect(mockedAxios.put).not.toHaveBeenCalled();
+		});
+
 		it("should serialize numeric enum values to strings when sending to API", async () => {
 			const connection: IWorkTrackingSystemConnection = {
 				id: 1,

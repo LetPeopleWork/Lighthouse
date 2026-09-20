@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.API.Helpers
@@ -22,10 +23,16 @@ namespace Lighthouse.Backend.API.Helpers
                 }
 
                 if (DateWritingSources.Contains(mapping.ValueSource) &&
-                    mapping.TargetValueType == WriteBackTargetValueType.FormattedText &&
-                    string.IsNullOrEmpty(mapping.DateFormat))
+                    mapping.TargetValueType == WriteBackTargetValueType.FormattedText)
                 {
-                    errors.Add($"DateFormat is required when TargetValueType is FormattedText for forecast sources (field id: '{mapping.AdditionalFieldDefinitionId}').");
+                    if (string.IsNullOrEmpty(mapping.DateFormat))
+                    {
+                        errors.Add($"DateFormat is required when TargetValueType is FormattedText for forecast sources (field id: '{mapping.AdditionalFieldDefinitionId}').");
+                    }
+                    else if (!CanFormatADate(mapping.DateFormat))
+                    {
+                        errors.Add($"DateFormat '{mapping.DateFormat}' is not a date format .NET understands (field id: '{mapping.AdditionalFieldDefinitionId}').");
+                    }
                 }
             }
 
@@ -42,6 +49,29 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             return new WriteBackMappingValidationResult(errors);
+        }
+
+        /// <summary>
+        /// The format box takes free text, and an unusable one is not discovered until a write-back round
+        /// tries to use it - by which point it throws somewhere the caller can only answer by abandoning the
+        /// round. Asking a sample date to render is the cheapest way to find out here, where the admin is
+        /// still looking at the field they typed it into.
+        ///
+        /// This catches only what actually throws - a lone character that is not a standard specifier, an
+        /// unclosed quote. Text .NET does not recognise is copied through as a literal, so a format that is
+        /// merely wrong still renders, and telling wrong from deliberate is not something a validator can do.
+        /// </summary>
+        private static bool CanFormatADate(string format)
+        {
+            try
+            {
+                _ = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc).ToString(format, CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 

@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace Lighthouse.Backend.Models.WriteBack
 {
     /// <summary>
@@ -11,20 +13,22 @@ namespace Lighthouse.Backend.Models.WriteBack
     /// </summary>
     public static class WriteBackValueSources
     {
-        public static readonly IReadOnlySet<WriteBackValueSource> Completion = new HashSet<WriteBackValueSource>
+        // Frozen rather than a HashSet behind an interface: these are process-wide and a caller holding the
+        // interface can cast back to the concrete set and add to it, which would edit routing for everyone.
+        public static readonly FrozenSet<WriteBackValueSource> Completion = new[]
         {
             WriteBackValueSource.ForecastPercentile50,
             WriteBackValueSource.ForecastPercentile70,
             WriteBackValueSource.ForecastPercentile85,
             WriteBackValueSource.ForecastPercentile95,
-        };
+        }.ToFrozenSet();
 
-        public static readonly IReadOnlySet<WriteBackValueSource> Start = new HashSet<WriteBackValueSource>
+        public static readonly FrozenSet<WriteBackValueSource> Start = new[]
         {
             WriteBackValueSource.ForecastedStartPercentile50,
             WriteBackValueSource.ForecastedStartPercentile70,
             WriteBackValueSource.ForecastedStartPercentile85,
             WriteBackValueSource.ForecastedStartPercentile95,
-        };
+        }.ToFrozenSet();
     }
 }

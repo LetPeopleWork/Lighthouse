@@ -80,6 +80,70 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             }
         }
 
+        /// <summary>
+        /// The format box takes free text, so "not empty" was never enough.
+        ///
+        /// Only a narrow class of text actually breaks: .NET copies characters it does not recognise through
+        /// as literals, so most nonsense renders as nonsense rather than throwing. What throws is a lone
+        /// character that is not a standard specifier, and a quote that is never closed. Those are the ones
+        /// worth catching, because a format that throws cannot be handled by the write-back round at all -
+        /// it is caught here instead, while the admin is still looking at the box they typed it into.
+        /// </summary>
+        [Test]
+        [TestCase("x")]
+        [TestCase("dd 'of MMM")]
+        public void Validate_FormattedTextMapping_UnusableDateFormat_ReturnsInvalid(string dateFormat)
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.ForecastedStartPercentile85,
+                    AppliesTo = WriteBackAppliesTo.Portfolio,
+                    AdditionalFieldDefinitionId = 1,
+                    TargetValueType = WriteBackTargetValueType.FormattedText,
+                    DateFormat = dateFormat
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors[0], Does.Contain(dateFormat));
+            }
+        }
+
+        /// <summary>
+        /// The formats the screen itself offers must all survive the check above, or the presets would be
+        /// unsaveable.
+        /// </summary>
+        [Test]
+        [TestCase("yyyy-MM-dd")]
+        [TestCase("MM/dd/yyyy")]
+        [TestCase("dd.MM.yyyy")]
+        [TestCase("dd MMM yyyy")]
+        [TestCase("dd 'of' MMM yyyy")]
+        public void Validate_FormattedTextMapping_AFormatTheScreenOffers_ReturnsValid(string dateFormat)
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.ForecastedStartPercentile85,
+                    AppliesTo = WriteBackAppliesTo.Portfolio,
+                    AdditionalFieldDefinitionId = 1,
+                    TargetValueType = WriteBackTargetValueType.FormattedText,
+                    DateFormat = dateFormat
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
         [Test]
         public void Validate_FormattedTextMapping_EmptyDateFormat_ReturnsInvalid()
         {
