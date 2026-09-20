@@ -8474,3 +8474,130 @@ other has one payload and one render site. No System Context diagram is drawn: a
 about this change is visible.
 
 Feature delta: `docs/feature/epic-4127-sle-risk-corrections/feature-delta.md`.
+
+---
+
+## Application Architecture — epic-6033-forecasted-start-dates (DESIGN delta)
+
+Feature: epic-6033-forecasted-start-dates (ADO Epic #6033)
+Wave: DESIGN
+Date: 2026-09-20
+Scope: application / components
+Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
+
+A Feature's forecast gains a **start** date at P50/P70/P85/P95 beside the completion date it already
+carries, so a Jira Plan bar can be populated at both ends from measured flow. The idea-board proposal —
+derive a Feature's start from the preceding Feature's completion date — is rejected: the Monte Carlo run
+already names the row it is working on the day it works it, and discards the number ten thousand times
+per forecast.
+
+### Architectural Pattern
+
+Unchanged. Ports-and-adapters, modular monolith. This feature runs a second value down a path that
+already exists end to end, from `SimulatedRun` through `FeatureDto` to a work tracking system field.
+
+### Key invariants introduced
+
+- **`Feature.Forecast` is not touched, and cannot be.** Start forecasts live in their own collection, so
+  `AggregatedWhenForecast` has no way to see one. The completion forecast being unchanged by this
+  feature is a structural property, not a test (ADR-200).
+- **The Feature-grain start is observed, never derived.** It is the earliest across the Feature's rows
+  taken *inside* a simulated run. Deriving it from the per-team marginals would need `1 - Π(1 - Fi(d))`,
+  which assumes the contributing teams are independent — the assumption epic-5792 made false (ADR-199).
+- **One rule answers "when did this Feature start".** It lives on `Feature`, carries its own provenance
+  (observed or forecast), and is read by both `FeatureDto` and the write-back resolver. Neither owns it
+  (ADR-201).
+- **The run forecasts the board as configured.** In-flight Features are not seeded into the WIP slots.
+  Where the board disagrees with what a team is actually working, the picture is meant to look odd, and
+  the documentation saying so is the mitigation (ADR-202).
+
+### Component Decomposition
+
+Every backend change is EXTEND. The feature introduces **no new backend type**.
+
+| Component | File | Change Type | Change Summary |
+|---|---|---|---|
+| `TrialState` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/TrialState.cs` | EXTEND | Per-row and per-Feature start markers, cleared in `StartAgain()`, set on first pull. Same lifecycle as the existing `dayEachRowFinished`. |
+| `TrialCompletions` | `.../Forecast/TrialCompletions.cs` | EXTEND (rename warranted) | Parallel per-worker arrays for the two start grains and their fold. After this it no longer records only completions. |
+| `SimulatedRun` | `.../Forecast/SimulatedRun.cs` | EXTEND | One recording call in `WorkOneDayOf` where `worked` is assigned — before the `CloseOneItemOf` branch, so a pull that does not finish the row still counts as a start. |
+| `ForecastRunPlan` | `.../Forecast/ForecastRunPlan.cs` | EXTEND | Hoist the row-to-Feature grouping already built privately inside `WhatEachRowWaitsFor`. |
+| `ForecastService` | `.../Forecast/ForecastService.cs` | EXTEND | A second fold beside `RecordTheDaysEachRowFinishedOn`; attach start forecasts in `UpdateFeatureForecasts`. |
+| `Feature` | `Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs` | EXTEND | `StartForecasts` collection with a setter mirroring `SetFeatureForecasts`, plus the observed-or-forecast member (ADR-201). |
+| `LighthouseAppContext` | `.../Data/LighthouseAppContext.cs` | EXTEND | One `HasMany` and one nullable-team `HasOne`, mirroring the existing `Forecasts` pair. |
+| EF migration | `Lighthouse.Migrations.*` | NEW (generated) | Additive, expand-only, via the `CreateMigration` script across all providers. |
+| `FeatureDto` | `.../API/DTO/FeatureDto.cs` | EXTEND | Start percentiles or the observed date with provenance, **and** the per-team completion forecasts — which are computed today and discarded at this boundary. The existing aggregate `Forecasts` list is unchanged in shape and content. |
+| `WriteBackValueSource` | `.../Models/WriteBack/WriteBackValueSource.cs` | EXTEND | Four members appended after `SleRisk`. Ordinals are persisted; a regression test pins every pre-existing member. |
+| `WriteBackTriggerService` | `.../Services/Implementation/WriteBackTriggerService.cs` | EXTEND | Start resolver reading the ADR-201 member. Both the forecast-source list and the percentile switch extended. |
+| `WriteBackMappingValidator` | `.../API/Helpers/WriteBackMappingValidator.cs` | EXTEND | The second of two hardcoded forecast-source lists. |
+| Feature table column | `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/` | EXTEND | One forecast at four percentiles, following the completion column. No expander — a Feature never splits by team in the table. |
+| Delivery Timeline tab | `Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/` | CREATE NEW | The only new component. Bars on a date axis with a percentile selector. Its implementation is an open pre-requisite settled by a timeboxed evaluation, not here. |
+
+### Driving Ports (HTTP)
+
+None added. `GET /api/latest/portfolios/{portfolioId:int}` carries the enlarged payload; the write-back
+mapping screen's existing endpoints carry the four new value sources.
+
+### Driven Ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Persistence | `LighthouseAppContext` → EF Core (SQLite, Postgres) | EXTEND — one collection, one additive migration |
+| Work tracking system | `WriteBackService` → Jira and Azure DevOps connectors | REUSED AS IS — the resolver is connector-agnostic, so both gain start sources by existing |
+
+### Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | Histogram, nullable team, Feature FK | REUSED AS IS | Exactly the shape a start row needs. A lean `StartForecast` type would duplicate `ForecastBase` or inherit it and gain the same fields — the alternative ADR-111 rejected as disproportionate. |
+| `ForecastBase` | `Models/Forecast/ForecastBase.cs` | Percentile reads over a histogram | REUSED AS IS | `KeyOrder` already parameterises direction; a start is ascending-by-day as a completion is. |
+| `AggregatedWhenForecast` | `Models/Forecast/AggregatedWhenForecast.cs` | Combines per-team histograms to Feature grain | NOT REUSED — deliberate | It combines marginals *after* the run, which is the assumption ADR-199 exists to avoid. Leaving it untouched is what makes the completion invariant structural. |
+| `JointCompletionDistribution` | `Models/Forecast/JointCompletionDistribution.cs` | Product of CDFs across teams | NOT REUSED — deliberate | Its minimum-mirror carries the independence assumption epic-5792 made false. ADR-110 and ADR-156 both stand unchanged. |
+| `TrialCompletions` | `Services/.../TrialCompletions.cs` | Per-worker lock-free day histograms, merged once | EXTEND | Two arrays on an existing recorder, against a new parallel recorder with its own merge, its own lifetime and a second chance to get the lock-free contract wrong. |
+| `TrialState` | `Services/.../TrialState.cs` | Per-trial mutable state owned by one run | EXTEND | Already owns `dayEachRowFinished` with this exact lifecycle. A start marker is the same array with the opposite trigger. |
+| `ForecastRunPlan` | `Services/.../ForecastRunPlan.cs` | Row-to-Feature grouping | EXTEND | The grouping already exists inside `WhatEachRowWaitsFor`; hoisting it is less code than computing it twice. |
+| `ResolveForecastValue` | `Services/.../WriteBackTriggerService.cs` | Percentile, working-day projection, blackout, format | EXTEND | The start resolver is this method with a different distribution and one branch. A parallel resolver would duplicate blackout handling, which ADR-058 places in one implementation. |
+| `Feature.CanBeForecast` / `TeamsWithoutForecast` | `Models/Feature.cs` | Unknown-forecast predicate | REUSED AS IS | ADR-159 reached the same verdict on the same members. Start inherits the gate; no new rule is written. |
+| `DeliveryMetricsTab` | `.../DeliveryGrid/DeliveryMetricsTab.tsx` | Tab slot on a Delivery | EXTEND | The Timeline tab reuses the tab structure; only its content is new. |
+| A Gantt component | — | Bars on a date axis | CREATE NEW — justified, costed first | Nothing in the codebase draws a bar against a date axis. MUI X Gantt is Premium-licence-only and not owned. The only CREATE NEW here, and it is gated behind a 2-hour build-versus-buy evaluation with a candidate shortlist. |
+
+### ADR References (this feature)
+
+- [ADR-199](./adr-199-start-day-observed-per-trial-at-two-grains.md) — the start day is observed inside
+  the trial at Feature grain and team grain; derived from neither the preceding Feature nor the marginals
+- [ADR-200](./adr-200-start-forecasts-live-in-their-own-collection.md) — `Feature.StartForecasts`, not a
+  discriminator on `Feature.Forecasts`
+- [ADR-201](./adr-201-observed-start-supersedes-the-forecast-in-the-domain.md) — a started Feature
+  reports its observed date, and the rule lives on `Feature` because two consumers need it
+- [ADR-202](./adr-202-the-run-forecasts-the-board-as-configured.md) — in-flight Features are not seeded
+  into the WIP slots; the resulting oddness is documented rather than corrected
+
+Consumed unchanged: [ADR-110](./adr-110-multi-team-forecast-joint-probability.md),
+[ADR-111](./adr-111-aggregate-forecast-field-provenance.md),
+[ADR-112](./adr-112-unknown-forecast-when-contributor-cannot-be-forecast.md),
+[ADR-154](./adr-154-addressable-draw-streams-for-the-feature-forecast.md),
+[ADR-155](./adr-155-joint-trial-clock-replaces-per-team-simulation.md),
+[ADR-159](./adr-159-un-forecastable-blocker-drops-and-the-date-reads-as-a-floor.md),
+[ADR-058](./adr-058-blackout-forecast-date-shift-translation-placement.md).
+
+**[ADR-156](./adr-156-per-trial-max-replaces-product-of-cdfs.md) stays deferred**, and ADR-199 is
+explicit that it is not being un-deferred. Worth recording here because the two describe the same
+mechanic at opposite ends of a Feature: ADR-156 records the day the *last* row finishes, ADR-199 the day
+the *first* row starts. Implementing ADR-199 builds the array lifecycle, the recorder and the fold that
+ADR-156 needs, which makes un-deferring it later materially cheaper than it is today.
+
+### Architectural Enforcement (this feature)
+
+- No start forecast may enter `Feature.Forecasts`. Enforced structurally by the separate collection; the
+  existing forecast assertions are the regression net.
+- `WriteBackValueSource` ordinals are persisted — new members append last, and a test pins every
+  pre-existing ordinal so the next person to add a source is stopped by a red test rather than by having
+  read a comment.
+- No `DataGridPro` feature may be introduced. The Feature table is on the MIT `DataGrid`, and nothing in
+  `src/` references a Pro feature today.
+- The forecast wall-clock budget is asserted, not assumed: ten thousand runs over a fifty-Feature
+  portfolio within 110 % of the `main` baseline.
+
+No C4 diagram is added. At System Context and Container level nothing about this change is visible — no
+new actor, no new container, no new integration. The component-level change is the table above.
+
+Feature delta: `docs/feature/epic-6033-forecasted-start-dates/feature-delta.md`.

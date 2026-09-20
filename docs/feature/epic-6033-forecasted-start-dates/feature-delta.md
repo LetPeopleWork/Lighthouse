@@ -779,3 +779,255 @@ That belongs in the slice brief where the spike is run, not in a Tier-2 section 
 there instead.
 
 No expansion rendered. Telemetry: one `choice = "skip"` per triggered id.
+
+---
+
+## Wave: DESIGN / [REF] Prior Wave Consultation
+
+Read 2026-09-20 before any decision below. Scope: **application / components**. Mode: **propose**.
+
+| File | State |
+|---|---|
+| `docs/product/architecture/brief.md` | ✓ read (8476 lines — base Application Architecture plus per-feature deltas) |
+| `docs/product/architecture/adr-110-multi-team-forecast-joint-probability.md` | ✓ read |
+| `docs/product/architecture/adr-111-aggregate-forecast-field-provenance.md` | ✓ read |
+| `docs/product/architecture/adr-112-unknown-forecast-when-contributor-cannot-be-forecast.md` | ✓ read |
+| `docs/product/architecture/adr-156-per-trial-max-replaces-product-of-cdfs.md` | ✓ read — **decisive** |
+| `docs/product/architecture/adr-159-un-forecastable-blocker-drops-and-the-date-reads-as-a-floor.md` | ✓ read |
+| `docs/product/journeys/epic-6033-forecasted-start-dates.yaml` | ✓ read |
+| This file's DISCUSS sections, and the six slice briefs | ✓ read |
+| `docs/product/outcomes/registry.yaml` | ✓ checked — `check-delta`: 0 collisions |
+| `docs/feature/epic-6033-forecasted-start-dates/spike/` | ⊘ not found (no spike was run) |
+
+Rigor: `.nwave/des-config.json` carries no `rigor` key, so standard defaults apply.
+
+**Contradictions with DISCUSS: none.** One decision is corroborated by an ADR that DISCUSS had not read,
+and one is reframed. Both are recorded under Changed Assumptions below.
+
+---
+
+## Wave: DESIGN / [REF] The ADR-156 Finding
+
+DISCUSS D4 — observe the Feature-level value inside the trial rather than derive it from the marginals —
+is not new here. **ADR-156 proposes exactly that mechanic for completion, and is `Deferred`, not
+refused.** Its decision text:
+
+> `TrialState` holds an outstanding-row count per Feature; when a row reaches zero the count is
+> decremented, and when the count reaches zero the current simulated day is recorded into that Feature's
+> histogram.
+
+The start recorder is that, mirrored: a per-Feature marker set on first pull. Three consequences, all of
+which changed this wave's output.
+
+1. **ADR-110's cost objection to per-trial recording is already retired.** It claimed per-trial max
+   "needs trial-level storage (10 000 ints × teams per feature)". ADR-156 corrected it: *"trial-level
+   storage is not needed: with a shared clock, the maximum over a Feature's rows is a running count, not
+   a retained array."* A minimum is a running value for the same reason. D4's cost claim now rests on an
+   ADR rather than on assertion.
+2. **Slice 01 builds the machinery ADR-156 needs.** Same array lifecycle, same recorder, same fold,
+   mirrored. Un-deferring ADR-156 later becomes materially cheaper. **This wave does not un-defer it** —
+   AC-1.5 forbids moving completion, and ADR-156's own deferral reason was "one change to forecasting at
+   a time". ADR-199 says so explicitly so that a future reader sees the constraint was honoured rather
+   than sidestepped.
+3. **ADR-156 declares the completion aggregate would join `Feature.Forecasts` as its `TeamId == null`
+   row.** That collection's intended future already contains a Feature-grain row. DDD-1 is reconciled
+   against it deliberately rather than by coincidence.
+
+---
+
+## Wave: DESIGN / [REF] DDD List
+
+### DDD-1 — Start forecasts live in `Feature.StartForecasts`, their own collection
+
+**ADR-200.** Per-team rows carry `TeamId`; the Feature-grain row carries `TeamId == null` per ADR-111.
+`Feature.Forecast` is not touched, so AC-1.5 is a structural property rather than a test —
+`AggregatedWhenForecast` cannot see a start row because start rows are not in the collection it reads.
+
+Rejected: one collection with a `ForecastKind` discriminator. It would put a filter on the product's
+most load-bearing number for a storage-tidiness reason, and turn AC-1.5 into something a test has to
+catch. Also rejected: a separate entity with its own repository, which would need a second
+clear-and-rewrite lifecycle kept in step with `SetFeatureForecasts` by hand.
+
+### DDD-2 — `WhenForecast` is reused as-is for start rows
+
+**ADR-200.** `ForecastBase.GetProbability` with its ascending `KeyOrder` is exactly what a start
+percentile needs. `NumberOfItems` is meaningless for a start and is tolerated for the same reason
+ADR-111 tolerated it on the aggregate: nothing reads it, and forking the type hierarchy for one unused
+field is disproportionate — the alternative ADR-111 itself rejected.
+
+### DDD-3 — The recorder extends `TrialState` and `TrialCompletions`. No new type in the simulation
+
+**ADR-199.** One marker array per worker indexed by row and one indexed by Feature, cleared in
+`StartAgain()`, written at most once per entity per trial, folded by the existing merge.
+`SimulatedRun.WorkOneDayOf` gains one call where `worked` is assigned. `ForecastRunPlan` hoists the
+row-to-Feature grouping it already builds privately inside `WhatEachRowWaitsFor`.
+
+`TrialCompletions` is worth renaming: after this it no longer records only completions.
+
+### DDD-4 — An un-forecastable contributing team needs no new rule
+
+**ADR-199, ADR-201.** `ForecastRunPlan.For` admits no row for a team with no measured throughput, so
+nothing is recorded; ADR-112's unknown state already governs the whole Feature through
+`Feature.CanBeForecast`, and `FeatureDto` already guards every forecast emission on it. Start forecasts
+inherit unknown for free.
+
+ADR-159's competing precedent — a directionally-known date presented as a bound rather than blanked —
+was considered and does not apply. ADR-159 distinguishes a team that owns work *inside* the Feature
+(ADR-112's case, and ours) from one that is only a start constraint on a Feature whose own work is
+forecastable. On our case ADR-159 defers to ADR-112.
+
+### DDD-5 — The observed-start rule lives on `Feature`, not in the DTO
+
+**ADR-201.** DISCUSS D5 said "at read time" and left the placement open. It is not one place: the table
+and the timeline read `FeatureDto`, but Story #6047's write-back resolver reads `feature.Forecast`
+directly and never passes through the DTO. Putting the rule in the DTO would leave the resolver to
+re-implement it — ADR-156 names that failure mode by name ("two independent implementations of the same
+verdict"), and the visible symptom would be a Jira Plan bar starting on a forecast date while the table
+beside it shows the observed one.
+
+So: one member on `Feature`, carrying the date **and** its provenance, with the DTO and the resolver as
+two consumers. Provenance is carried explicitly, never inferred from the absence of percentiles —
+ADR-112's rule, for the reason that produced the `return 100` trap.
+
+### DDD-6 — Day-to-date translation is unchanged
+
+**ADR-058** governs and is unaffected. A start day runs through the same `ProjectWorkingDays` over
+effective blackout days that a completion day does, after the distribution is read, in both the DTO and
+the write-back resolver. **REUSED AS IS.**
+
+### DDD-7 — In-flight Features are not seeded into the WIP slots
+
+**ADR-202.** Records DISCUSS D6 as an architectural decision rather than a product preference, because
+seeding is the first thing a reader of ADR-199 will propose. Two reasons it is refused: it would launder
+the discrepancy worth seeing, and it would move completion forecasts for every existing user as a side
+effect of an Epic about start dates.
+
+The docs obligation in AC-4.9 is the whole mitigation, not a nicety. If it is cut from Story #6048 the
+decision is not implemented, only the code is.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+Every row is **EXTEND**. This feature introduces no new type in the backend.
+
+| Component | File | Change | Summary |
+|---|---|---|---|
+| `TrialState` | `Services/Implementation/Forecast/TrialState.cs` | EXTEND | Per-row and per-Feature start markers, cleared in `StartAgain()`, set on first pull, read once at trial end. |
+| `TrialCompletions` | `Services/Implementation/Forecast/TrialCompletions.cs` | EXTEND (rename) | Parallel arrays for the two start grains plus their fold. No longer records only completions. |
+| `SimulatedRun` | `Services/Implementation/Forecast/SimulatedRun.cs` | EXTEND | One recording call in `WorkOneDayOf` where `worked` is assigned — before the `CloseOneItemOf` branch, so a pull that does not finish the row still counts as a start. |
+| `ForecastRunPlan` | `Services/Implementation/Forecast/ForecastRunPlan.cs` | EXTEND | Hoist the row-to-Feature grouping already built privately in `WhatEachRowWaitsFor`; expose a Feature count and a row-to-Feature index. |
+| `ForecastService` | `Services/Implementation/Forecast/ForecastService.cs` | EXTEND | A second fold beside `RecordTheDaysEachRowFinishedOn`; build and attach start forecasts in `UpdateFeatureForecasts`. |
+| `Feature` | `Models/Feature.cs` | EXTEND | `StartForecasts` collection, its setter mirroring `SetFeatureForecasts`, and the ADR-201 observed-or-forecast member. |
+| `LighthouseAppContext` | `Data/LighthouseAppContext.cs` | EXTEND | One `HasMany` and one nullable-team `HasOne`, mirroring the existing `Forecasts` pair. |
+| EF migration | `Lighthouse.Migrations.*` | NEW (generated) | Additive, expand-only, via the `CreateMigration` script across all providers. |
+| `FeatureDto` | `API/DTO/FeatureDto.cs` | EXTEND | Start percentiles or observed date with provenance; **and** the per-team completion forecasts, which die at this boundary today (S22). Existing `Forecasts` list unchanged in shape and content. |
+| `WriteBackValueSource` | `Models/WriteBack/WriteBackValueSource.cs` | EXTEND | Four members appended after `SleRisk`. Ordinals are persisted; a regression test pins every pre-existing member. |
+| `WriteBackTriggerService` | `Services/Implementation/WriteBackTriggerService.cs` | EXTEND | Start resolver reading the ADR-201 member; the forecast-source list and the percentile switch both extended. |
+| `WriteBackMappingValidator` | `API/Helpers/WriteBackMappingValidator.cs` | EXTEND | The second of the two hardcoded forecast-source lists. |
+| Feature table column | `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/` | EXTEND | One forecast at four percentiles, following the completion column. No expander (D16). |
+| Delivery Timeline tab | `pages/Portfolios/Detail/Components/DeliveryGrid/` | NEW (frontend) | The one genuinely new component. Its shape is P8 and is settled by slice 04's evaluation, not here. |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | Carries a histogram, a nullable team, a Feature FK | **REUSED AS IS** | Exactly the shape a start row needs. A lean `StartForecast` would duplicate `ForecastBase` or inherit it and gain the same fields anyway — the alternative ADR-111 rejected as disproportionate. |
+| `ForecastBase` | `Models/Forecast/ForecastBase.cs` | Percentile and likelihood reads over a histogram | **REUSED AS IS** | `KeyOrder` already parameterises direction; a start is ascending-by-day exactly as a completion is. |
+| `AggregatedWhenForecast` | `Models/Forecast/AggregatedWhenForecast.cs` | Combines per-team histograms to Feature grain | **NOT REUSED — deliberately** | It combines *marginals after the run*, which is the assumption ADR-199 exists to avoid. The Feature-grain start is observed in-trial and stored. Leaving this type untouched is what makes AC-1.5 structural. |
+| `JointCompletionDistribution` | `Models/Forecast/JointCompletionDistribution.cs` | Product of CDFs across teams | **NOT REUSED — deliberately** | Its mirror for a minimum is `1 - Π(1 - Fi)`, and it carries the independence assumption epic-5792 made false. Untouched; ADR-110 and ADR-156 both stand. |
+| `TrialCompletions` | `Services/.../TrialCompletions.cs` | Per-worker lock-free day histograms, merged once | **EXTEND** | Adding two arrays to an existing per-worker recorder is a handful of lines against a new parallel recorder with its own merge, its own lifetime and a second chance to get the lock-free contract wrong. |
+| `TrialState` | `Services/.../TrialState.cs` | Per-trial mutable state owned by one run | **EXTEND** | It already owns `dayEachRowFinished` with exactly this lifecycle. A start marker is the same array with the opposite trigger. |
+| `ForecastRunPlan` | `Services/.../ForecastRunPlan.cs` | Row-to-Feature grouping | **EXTEND** | The grouping already exists inside `WhatEachRowWaitsFor`; hoisting it is strictly less code than computing it a second time. |
+| `ResolveForecastValue` | `Services/.../WriteBackTriggerService.cs` | Percentile, working-day projection, blackout, format | **EXTEND** | The start resolver is this method with a different distribution and one branch. Writing a parallel resolver would duplicate the blackout handling, which is exactly where ADR-058 says one implementation belongs. |
+| `Feature.CanBeForecast` / `TeamsWithoutForecast` | `Models/Feature.cs` | Unknown-forecast predicate | **REUSED AS IS** | ADR-159 reached the same verdict on the same members. Start inherits the gate; no new rule. |
+| `ProjectWorkingDays` / blackout services | per ADR-058 | Day-to-date translation | **REUSED AS IS** | Identical for a start and a completion. |
+| Completion column | `FeatureListDataGrid` | Percentile presentation in a table cell | **EXTEND** | The start column follows it; D16 keeps them the same shape deliberately, so divergence would be the defect. |
+| `DeliveryMetricsTab` | `.../DeliveryGrid/DeliveryMetricsTab.tsx` | Tab slot on a Delivery | **EXTEND** | The Timeline tab reuses the tab structure; only its content is new. |
+| A Gantt component | — | Bars on a date axis | **CREATE NEW — justified, and costed first** | Nothing in the codebase draws a bar against a date axis. MUI X Gantt exists and is Premium-licence-only and not owned. This is the only CREATE NEW here, it is the Epic's only open pre-requisite (P8), and slice 04 opens with a timeboxed evaluation and a candidate shortlist rather than a decision taken now. |
+
+**Zero unjustified CREATE NEW.** The single CREATE NEW row is gated behind an evaluation.
+
+---
+
+## Wave: DESIGN / [REF] Driving and Driven Ports
+
+No new driving port. `GET /api/latest/portfolios/{portfolioId:int}` carries the new payload; the
+write-back mapping screen's existing endpoints carry the four new value sources.
+
+| Driven port | Adapter | Change |
+|---|---|---|
+| Persistence | `LighthouseAppContext` → EF Core, all providers | EXTEND — one collection, one additive migration |
+| Work tracking system | `WriteBackService` → Jira / Azure DevOps connectors | REUSED AS IS — the resolver is connector-agnostic, so both gain start sources by existing (D15) |
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+Nothing new is pinned. C# .NET 10 / EF Core on the backend, React 18 + TypeScript on the frontend, both
+unchanged. The only open technology question is the timeline component (P8), deliberately unanswered
+here — see Open Questions.
+
+---
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| ID | Decision | ADR |
+|---|---|---|
+| DDD-1 | Start forecasts live in `Feature.StartForecasts` | ADR-200 |
+| DDD-2 | `WhenForecast` reused as-is for start rows | ADR-200 |
+| DDD-3 | Recorder extends `TrialState` + `TrialCompletions`; no new simulation type | ADR-199 |
+| DDD-4 | Un-forecastable contributor inherits ADR-112's unknown; no new rule | ADR-199, ADR-201 |
+| DDD-5 | Observed-start rule on `Feature`, consumed by the DTO and the resolver | ADR-201 |
+| DDD-6 | Day-to-date translation unchanged | ADR-058 (existing) |
+| DDD-7 | In-flight Features are not seeded into the WIP slots | ADR-202 |
+
+---
+
+## Wave: DESIGN / [REF] Open Questions
+
+| # | Question | Deferred to |
+|---|---|---|
+| P8 | What draws the timeline — `@mui/x-charts` primitives, plain SVG, a third-party Gantt, or a purchased MUI X Premium licence? | Slice 04's 2h evaluation, which carries a candidate shortlist and produces a costed recommendation |
+| — | Can the chosen component render sub-lanes under a summary bar? | Same evaluation. Slice 06 is severable, so this does not gate the choice, but a component that forecloses it is worth knowing about while the choice is open |
+| — | Does the summary-versus-sub-lane disagreement (ADR-199) read as correct to a user? | Slice 06's dogfood. If it cannot be made to read as correct, slice 06 does not ship |
+| — | Is `TrialCompletions` renamed, and to what? | DELIVER. Naming, not architecture |
+| — | How many Features on a real instance have more than one contributing team? | Slice 06's pre-code count. It decides whether sub-lanes are worth building at all |
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+**1. D4's justification was overstated.**
+
+> **Original** (this file, DISCUSS / Locked Decisions, D4, 2026-09-20): "A start cannot be [derived], and
+> the difference is not a detail: the earliest of several teams' starts has to be taken **within one
+> simulated run** … Taking the minimum of separately computed per-team percentiles afterwards gives a
+> number that no simulated run ever produced."
+
+**New**: the Feature-grain start *can* be recovered from the marginals, via `1 - Π(1 - Fi(t))` — the
+exact mirror of what `JointCompletionDistribution.Combine` does for completion under ADR-110. The
+argument for observing it in-trial is narrower and stronger: that formula assumes the contributing teams
+are independent, and epic-5792 made that false. Same decision, honest reasoning. D4 was corrected in
+place on 2026-09-20; ADR-199 carries the full form.
+
+**2. D4's grain was widened at the maintainer's request.**
+
+> **Original** (D4, first form): Feature grain only.
+
+**New**: both grains are recorded and stored. Per-team rows cost nothing extra — the marker is per row
+before it is folded per Feature — and slice 06's sub-lanes need them. Recorded as US-06, AC-1.9 and
+AC-1.10, and reflected in ADR-199 and ADR-200.
+
+**3. D6 moved from a documented residual to an architectural decision.**
+
+> **Original** (D6, first form): "A follow-up item is owed" for seeding in-flight Features into the WIP
+> slots.
+
+**New**: declined, not deferred to an owed item. ADR-202 records why, and moves the mitigation to a docs
+deliverable (AC-4.9) that is load-bearing rather than optional.
+
+**No upstream changes are owed.** No DISCUSS user story or acceptance criterion is invalidated by this
+wave; AC-1.9 and AC-1.10 were added during DISCUSS itself, before DESIGN began.
