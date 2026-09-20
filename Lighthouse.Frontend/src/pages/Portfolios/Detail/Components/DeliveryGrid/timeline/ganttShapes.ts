@@ -209,35 +209,45 @@ const MONTHLY_SCALES = [
 	{ unit: "month" as const, step: 1, format: shortMonthAndYear },
 ];
 
-/**
- * Roughly how many columns fit across the Delivery panel before it starts scrolling. The library
- * gives each column a fixed width, so this is a count rather than a span — and it is what makes
- * the rule below hold at any window size worth supporting, not only the one it was written on.
- */
-const COLUMNS_THAT_FIT = 16;
+/** The narrowest a column can be and still carry a readable date. */
+const MINIMUM_COLUMN_WIDTH = 96;
+
+/** Used until the panel has been measured — roughly a laptop's worth of Delivery panel. */
+export const ASSUMED_PANEL_WIDTH = 1200;
 
 const DAYS_PER = { day: 1, week: 7, month: 30 } as const;
 
 /**
- * How coarsely to rule the axis, so a Delivery of any length arrives fitting the screen.
+ * How coarsely to rule the axis, so a Delivery of any length arrives fitting the space it has.
  *
- * Choose the *finest* unit whose columns still fit, rather than judging by the number of days.
- * Judging by days was the first attempt and it was wrong by a wide margin: three weeks of work
- * already overflowed, because each column is a fixed width and a fortnight of them is all a panel
- * holds. So days are for a short Delivery only, weeks carry the ordinary case, and months take
- * over past a season.
+ * Choose the *finest* unit whose columns still fit across the panel, rather than judging by the
+ * number of days. Judging by days was the first attempt and it was wrong by a wide margin: three
+ * weeks of work already overflowed, because a column has a floor on how narrow it can get and a
+ * fortnight of them is all a laptop holds.
  *
- * A timeline the reader has to drag along is a plan they have to discover instead of see, which
- * loses the one thing this view is for. Coarsening trades exact days for a shape that arrives
- * whole — and the exact days are still a hover away on the bar.
+ * The width is measured rather than assumed, so the same Delivery rules itself by days on a wide
+ * screen and by weeks on a narrow one — which is the whole point, since a timeline the reader has
+ * to drag along is a plan they have to discover instead of see. Coarsening trades exact days for a
+ * shape that arrives whole, and the exact days are still a hover away on the bar.
  */
-export function scalesForSpan(start: Date, end: Date) {
+export function scalesForSpan(
+	start: Date,
+	end: Date,
+	availableWidth: number = ASSUMED_PANEL_WIDTH,
+) {
 	const days = Math.round(
 		(end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000),
 	);
 
+	// At least one, or a panel measured at zero — which is what it measures before it is laid out —
+	// would rule even a week-long Delivery by months.
+	const columnsThatFit = Math.max(
+		1,
+		Math.floor((availableWidth || ASSUMED_PANEL_WIDTH) / MINIMUM_COLUMN_WIDTH),
+	);
+
 	const fits = (unit: keyof typeof DAYS_PER) =>
-		days / DAYS_PER[unit] <= COLUMNS_THAT_FIT;
+		days / DAYS_PER[unit] <= columnsThatFit;
 
 	if (fits("day")) {
 		return TIMELINE_SCALES;

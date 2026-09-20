@@ -1188,7 +1188,6 @@ testWithDemo(
 		await expect(timelineTab.premiumNotice).toBeHidden();
 
 		await expect(timelineTab.chart).toBeVisible();
-		await expect(timelineTab.legend).toBeVisible();
 		await expect.poll(() => timelineTab.countBars()).toBeGreaterThan(0);
 
 		await takeElementScreenshot(

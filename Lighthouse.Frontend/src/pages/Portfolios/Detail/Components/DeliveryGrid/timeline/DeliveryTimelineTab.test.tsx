@@ -255,24 +255,14 @@ describe("DeliveryTimelineTab", () => {
 		expect(await screen.findByRole("dialog")).toHaveTextContent("Sonar Refit");
 	});
 
-	it("shows no legend when there is no timeline to explain", () => {
-		renderTab([feature({ forecasts: [] })]);
-
-		expect(screen.queryByTestId("timeline-legend")).not.toBeInTheDocument();
-	});
-
-	it("marks the same day on the chart as the legend names", async () => {
+	it("gives the chart one reading of today, and keeps it across a re-render", async () => {
 		renderTab([feature()]);
 
-		// Two readings of the clock would let the legend say one day while the chart shades
-		// another, and nothing else would notice. One reading, handed to both.
+		// A fresh Date per render is a fresh identity, which would invalidate everything the
+		// chart memoises against it — including the axis range — on every keystroke elsewhere.
 		const chartsDay = ganttProps.current?.today;
 		expect(chartsDay).toBeInstanceOf(Date);
-		expect(screen.getByTestId("timeline-legend")).toHaveTextContent(
-			(chartsDay as Date).toLocaleDateString(),
-		);
 
-		// And it stays put across a re-render, or a tab left open would drift.
 		await userEvent.click(screen.getByRole("button", { name: "95%" }));
 
 		expect(ganttProps.current?.today).toBe(chartsDay);

@@ -59,9 +59,13 @@ describe("the bar colour", () => {
 		expect(overrides["--wx-gantt-task-font-color"]).toBe("#ffffff");
 	});
 });
-describe("fitting the axis to the delivery's length", () => {
-	const spanOf = (days: number) =>
-		scalesForSpan(new Date(2026, 0, 1), new Date(2026, 0, 1 + days));
+describe("fitting the axis to the delivery's length and the space it has", () => {
+	// A laptop-ish panel unless a test is about width, in which case it says so.
+	const WIDE = 1600;
+	const NARROW = 400;
+
+	const spanOf = (days: number, width = WIDE) =>
+		scalesForSpan(new Date(2026, 0, 1), new Date(2026, 0, 1 + days), width);
 
 	const finestUnit = (scales: { unit: string }[]) =>
 		scales[scales.length - 1].unit;
@@ -70,18 +74,25 @@ describe("fitting the axis to the delivery's length", () => {
 		expect(finestUnit(spanOf(10))).toBe("day");
 	});
 
-	it("is already off days by the time a delivery runs a month", () => {
-		// The first version of this kept day columns up to two months and the chart scrolled
-		// at three weeks — each column is a fixed width, so a fortnight of them is about all
-		// a panel holds. Pinned because the mistake was an order of magnitude, not a nudge.
+	it("is off days well before a delivery runs a month", () => {
+		// The first version kept day columns up to two months and the chart scrolled at three
+		// weeks, because a column has a floor on how narrow it can get. Pinned because the
+		// mistake was an order of magnitude, not a nudge.
 		expect(finestUnit(spanOf(30))).not.toBe("day");
-		expect(finestUnit(spanOf(30))).toBe("week");
 	});
 
-	it("coarsens as the delivery gets longer, never the other way", () => {
-		// The point is not the exact thresholds, which are a judgement and will move. It is
-		// that a longer delivery never gets a finer axis than a shorter one — that is what
-		// keeps it on screen instead of behind a scrollbar.
+	it("rules the same delivery more coarsely on a narrower panel", () => {
+		// The whole reason the width is measured rather than assumed: resizing the window has
+		// to re-rule the axis, or a chart that fitted a moment ago starts scrolling.
+		// Ten days is sixteen columns' worth of room on the wide panel and four on the narrow one.
+		const days = 10;
+
+		expect(finestUnit(spanOf(days, WIDE))).toBe("day");
+		expect(finestUnit(spanOf(days, NARROW))).not.toBe("day");
+	});
+
+	it("never rules a longer delivery more finely than a shorter one", () => {
+		// The thresholds are a judgement and will move; this is the property that must not.
 		const order = ["day", "week", "month"];
 		const spans = [10, 45, 90, 200, 400, 900];
 
@@ -97,11 +108,16 @@ describe("fitting the axis to the delivery's length", () => {
 		expect(finestUnit(spanOf(900))).toBe("month");
 	});
 
+	it("falls back to a sensible axis before the panel has been measured", () => {
+		// A panel reports zero width until it is laid out. Taken at face value that is "no
+		// columns fit", and every Delivery would open ruled by months and re-rule a frame later.
+		expect(finestUnit(spanOf(10, 0))).toBe("day");
+	});
+
 	it("formats every row of every scale with a function, and each one returns a date", () => {
-		// Same trap as the default scales: a format given as a string is printed verbatim. Checking
-		// only that it IS a function leaves the coarser scales' formatters never once called, so a
-		// broken one on the weekly or monthly axis would go unnoticed until someone opened a long
-		// Delivery. Each is invoked here.
+		// Same trap as the default scales: a format given as a string is printed verbatim.
+		// Checking only that it IS a function leaves the coarser scales' formatters never once
+		// called, so a broken one would go unnoticed until someone opened a long Delivery.
 		const day = new Date(2026, 2, 7);
 
 		for (const days of [10, 90, 900]) {
@@ -118,21 +134,23 @@ describe("fitting the axis to the delivery's length", () => {
 	});
 
 	it("labels the coarser axes with the month and the year they show", () => {
-		const weekly = spanOf(90);
-		const monthly = spanOf(900);
 		const day = new Date(2026, 2, 7);
+		const weekly = spanOf(60);
+		const monthly = spanOf(900);
 
+		expect(finestUnit(weekly)).toBe("week");
 		expect(weekly[0].format(day)).toBe("March 2026");
 		expect(weekly[1].format(day)).toBe("3/7");
+
 		expect(monthly[0].format(day)).toBe("2026");
 		expect(monthly[1].format(day)).toBe("Mar 2026");
 	});
 
-	it("still fits at exactly the column count, and coarsens one past it", () => {
-		// The boundary itself, because `<=` and `<` are one character apart and the difference is
-		// a whole extra column of overflow.
-		expect(finestUnit(spanOf(16))).toBe("day");
-		expect(finestUnit(spanOf(17))).toBe("week");
+	it("coarsens one column past what fits, and not before", () => {
+		// The boundary itself, because `<=` and `<` are one character apart and the difference
+		// is a column of overflow. At 96px a column, 960px holds ten.
+		expect(finestUnit(spanOf(10, 960))).toBe("day");
+		expect(finestUnit(spanOf(11, 960))).toBe("week");
 	});
 });
 describe("what a bar says on hover", () => {

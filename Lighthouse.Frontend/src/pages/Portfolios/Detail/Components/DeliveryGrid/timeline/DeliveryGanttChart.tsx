@@ -3,7 +3,14 @@ import "@svar-ui/react-gantt/all.css";
 import { alpha, Box, useTheme } from "@mui/material";
 import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type React from "react";
-import { type ComponentProps, useCallback, useMemo } from "react";
+import {
+	type ComponentProps,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
 import {
 	chartHeight,
@@ -41,6 +48,45 @@ export interface DeliveryGanttChartProps {
 	onBarSelected?: (featureId: number) => void;
 }
 
+/** How far apart two measurements have to be before the axis is re-ruled. */
+const WIDTH_STEP = 24;
+
+const asDay = (date?: Date) => date?.toLocaleDateString() ?? "";
+
+/**
+ * A hover label on a marked column, drawn as a pseudo-element on the column itself.
+ *
+ * The columns belong to the chart library, so there is no element of ours to hang a real tooltip
+ * on — but the class that tints them is ours, and CSS can put a label on it. The text travels as a
+ * custom property because `content` cannot be built from anything else.
+ *
+ * This replaces a legend beside the chart. The legend was there because the markers were invisible
+ * and therefore unexplainable; now that they read clearly, naming them where the eye already is
+ * beats a key the reader has to look away to consult.
+ */
+function markerLabel(text: string) {
+	return {
+		"--delivery-marker-label": `"${text}"`,
+		position: "relative",
+		"&:hover::after": {
+			content: "var(--delivery-marker-label)",
+			position: "absolute",
+			left: "50%",
+			top: "100%",
+			transform: "translateX(-50%)",
+			zIndex: 10,
+			whiteSpace: "nowrap",
+			pointerEvents: "none",
+			px: 1,
+			py: 0.25,
+			borderRadius: 1,
+			fontSize: "0.75rem",
+			backgroundColor: "rgba(0, 0, 0, 0.87)",
+			color: "#fff",
+		},
+	};
+}
+
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
 	targetDate,
@@ -59,12 +105,37 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		[bars, targetDate, today],
 	);
 
+	// Measured rather than assumed, so the axis re-rules itself when the window changes. Only the
+	// width is held, and only in steps: a value that moved by a pixel would re-render the chart,
+	// whose own layout can move the panel by a pixel, which is how a resize loop starts.
+	const panel = useRef<HTMLDivElement>(null);
+	const [panelWidth, setPanelWidth] = useState(0);
+
+	useEffect(() => {
+		const element = panel.current;
+
+		if (!element || typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const observer = new ResizeObserver(([entry]) => {
+			const measured = Math.round(entry.contentRect.width);
+			setPanelWidth((held) =>
+				Math.abs(held - measured) < WIDTH_STEP ? held : measured,
+			);
+		});
+
+		observer.observe(element);
+
+		return () => observer.disconnect();
+	}, []);
+
 	const scales = useMemo(
 		() =>
 			axisRange
-				? scalesForSpan(axisRange.start, axisRange.end)
+				? scalesForSpan(axisRange.start, axisRange.end, panelWidth)
 				: TIMELINE_SCALES,
-		[axisRange],
+		[axisRange, panelWidth],
 	);
 
 	// The finest row of the axis, which is the one worth marking. It changes with the Delivery's
@@ -99,6 +170,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 
 	return (
 		<Box
+			ref={panel}
 			data-testid="delivery-gantt"
 			data-theme-mode={isDark ? "dark" : "light"}
 			sx={{
@@ -114,10 +186,12 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 				[`& .${TARGET_DAY_CLASS}`]: {
 					backgroundColor: alpha(marks.target, 0.22),
 					boxShadow: `inset 0 3px 0 0 ${marks.target}`,
+					...markerLabel(`Target date · ${asDay(targetDate)}`),
 				},
 				[`& .${TODAY_CLASS}`]: {
 					backgroundColor: alpha(marks.today, 0.12),
 					boxShadow: `inset 3px 0 0 0 ${marks.today}`,
+					...markerLabel(`Today · ${asDay(today)}`),
 				},
 			}}
 		>

@@ -21,7 +21,6 @@ import {
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
-import TimelineLegend from "./TimelineLegend";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -107,10 +106,6 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 					))}
 				</ToggleButtonGroup>
 			</Box>
-
-			{bars.length > 0 && (
-				<TimelineLegend targetDate={targetDate} today={today} />
-			)}
 
 			{bars.length > 0 ? (
 				<DeliveryGanttChart
