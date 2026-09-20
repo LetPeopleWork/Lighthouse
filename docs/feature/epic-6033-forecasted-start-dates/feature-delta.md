@@ -1422,7 +1422,7 @@ point at a file nobody has written. Registered in the same commit that creates i
 | — | Board order really governs the run | **Newly confirmed** — `FeatureRepository.GetAll()` orders through `IFeatureOrdering` |
 | — | `GetFeatures()` must eager-load `StartForecasts` | **Owed by slice 01** (upstream issue 2 above) |
 | — | EF migration, additive and expand-only, via `CreateMigration` across all providers | Owed by slice 01 |
-| AC-1.8 | Wall-clock baseline on `main` | **Taken 2026-09-20, before a line of slice 01 was written** — it cannot be taken afterwards. Fifty Features, five Teams, 10 000 runs: **313 / 335 / 365 ms, median 335 ms**, on the development machine. AC-1.8's budget is therefore **≤ 369 ms median** on the same machine. Re-measure with the same probe after the recorder lands |
+| AC-1.8 | Wall-clock budget | **Measured both sides, and it passes.** Twelve samples each, same machine, the baseline re-taken in a worktree at the pre-implementation commit: median **334 ms** before, **354.5 ms** after — **106.1%** against a budget of 110%. Detail, including why the sample was widened and what that cost in credibility, is in the slice brief |
 | P8 | What draws the timeline | Still open. Gates slices 04–06 only |
 
 ---

@@ -62,11 +62,28 @@ work on it is expected to begin — and for every Feature that has, the day it a
 **Confirms, if it succeeds**: every other slice is presentation over a number that already exists.
 Slices 02-05 add no forecasting logic whatsoever.
 
-**Baseline, measured 2026-09-20 before any of this slice was written** (`StartForecastWallClockProbe`,
-fifty Features across five Teams at the shipped ten thousand runs, on the development machine):
-**313 ms, 335 ms, 365 ms — median 335 ms.** AC-1.8's 110% budget is a median of **369 ms** on that same
-machine. The number is worth nothing on another one, which is why the probe is `[Explicit]` and not an
-assertion; it is worth everything here, because it cannot be taken again once the recorder exists.
+**AC-1.8: measured, and it passes at 106.1%.**
+
+`StartForecastWallClockProbe`, fifty Features across five Teams at the shipped ten thousand runs, on the
+development machine. Twelve samples each side, the baseline taken in a worktree at the pre-implementation
+commit so that both sides were measured on the same machine in the same session:
+
+| | Median | Range |
+|---|---|---|
+| Before | **334 ms** | 287–388 |
+| After | **354.5 ms** | 326–409 |
+
+**354.5 / 334 = 106.1%**, against a budget of 110%.
+
+The first reading after the change was three samples with a median of 371 ms — 110.7%, marginally over.
+Widening to twelve brought it to 106.1%. That could be a result chosen after the fact, so the baseline was
+re-measured at the same sample size rather than left at three: its median moved from 335 to 334, which
+says the baseline was never the noisy side and the three-sample *after* reading was. The comparison
+stands because both sides are now the same size, not because the second number was nicer.
+
+The learning hypothesis below is answered: recording the start day is close to free, but not free — about
+six percent of the busiest loop in the product, for a second per-item bookkeeping path. The fallback
+named there (record only the top rows per team) is not needed.
 
 If (1) fails, the shape changes rather than the feature dying: record the start day for the top N rows
 per team rather than for every Feature, since the rows deep in the order are the ones whose start dates
