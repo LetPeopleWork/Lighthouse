@@ -102,3 +102,66 @@ Killing the `Feature.cs:147` pair would mean constructing a completion row with 
 its id left unset — a state nothing in the product produces. The rest are equivalent mutants. The gate is
 met at 93.83 % on the code this slice is responsible for, with the decision logic — the recorder, the
 per-trial reset, the two grains, the observed-start rule and the read contract — fully killed.
+
+---
+
+# Mutation testing — Epic 6033 slice 02 (the Feature table shows when work begins)
+
+Run 2026-09-20 against `main` @ `8d61cb004`. Gate is 80 % kill rate on each stack touched.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS) | **93.88 %** | 49 | 46 | 2 | 1 | ~1 m 45 s |
+| Backend (Stryker.NET) | **N/A** | — | — | — | — | — |
+
+Backend is N/A because this slice adds no backend production code. The one backend change it carries is
+a test — the scenario pinning the precedence the column depends on — and a test cannot be mutated.
+
+Config: `stryker-6046-slice-02.frontend.json` and its vitest include set
+`vitest.stryker.6046-slice-02.config.ts`, both copied here; the working copies in
+`Lighthouse.Frontend/` are gitignored as local tooling.
+
+## Scope, and a correction to the first attempt
+
+`Feature.ts` and `columns.tsx` are both large pre-existing files that this slice edited in places, so
+the config mutates line ranges rather than whole files — 75-92, 116-117, 133-138, 155-156 and 254-266 in
+`Feature.ts`; 51-52 and 76-88 in `columns.tsx`; all of `ForecastedStartCell.tsx`, which is new.
+
+The first run reported **73.08 %**, and that number is not comparable, because the ranges were stale: a
+four-line comment added while fixing the review's D2 finding shifted `Feature.ts` down by four lines
+after the ranges were written. The run therefore mutated pre-existing `url` handling and missed part of
+the mapping it was meant to measure. Ranges were re-derived from the file as it stands and the run
+repeated. Both numbers are recorded here rather than only the good one.
+
+That first run did find three genuine holes before the ranges were corrected, all the same shape — the
+tests asserted that the right thing was drawn and never that nothing else was:
+
+- **An empty cell** was only asserted to lack the observed-start marker, so a placeholder entry standing
+  in for the missing forecasts would have passed. It now has to be empty to the character.
+- **The observed-start cell** was only asserted to carry its four dates, so a caption above them —
+  repeating on every row what the column header says once — would have passed.
+- **The column's `field` and `sortable`** had no test at all. `field` is what the column-visibility menu
+  toggles and what an export writes; naming a property the row does not carry breaks both silently,
+  because the cell keeps drawing correctly — it reads the row directly and never looks the field up.
+
+## Per file
+
+| file | score | killed | survived | no coverage | tested |
+| --- | --- | --- | --- | --- | --- |
+| `components/Common/FeatureListDataGrid/columns.tsx` | **100 %** | 7 | 0 | 0 | 7 |
+| `components/Common/FeatureListDataGrid/ForecastedStartCell.tsx` | 95.7 % | 22 | 0 | 1 | 23 |
+| `models/Feature.ts` | 89.5 % | 17 | 2 | 0 | 19 |
+
+Every mutant in the cell's decision logic is killed — which source wins, what each branch draws, and the
+empty state — as is every mutant in the new column and the renamed header default.
+
+## The three that remain
+
+| file:line | mutation | why it is accepted |
+| --- | --- | --- |
+| `Feature.ts:80` | `"Unknown"` inside `z.enum([…])` → `""` | Equivalent, and created by the fix on the same line. With `.catch("Unknown")` attached, a payload carrying `Unknown` fails the mutated enum and falls to the catch, which yields `Unknown` — the same value by the other route. No observable difference exists to assert. |
+| `Feature.ts:156` | `teamForecasts: IFeatureTeamForecast[] = []` → `["Stryker was here"]` | Unobservable today. `fromParsed` assigns this field unconditionally on the only path that builds a Feature from the wire, and the field's sole production reference in the codebase is that assignment — nothing reads it yet, by design; it is there for the timeline's sub-lanes. A test could only assert the initialiser on a bare `new Feature()`, which no code path observes. |
+| `ForecastedStartCell.tsx:62` | `feature.teamsWithoutForecast ?? []` → `["Stryker was here"]` (no coverage) | Unreachable, and required anyway. Reaching this line means `cannotBeForecast` returned true, which means the list is non-empty and therefore defined, so the `??` branch cannot be taken at runtime. It cannot be deleted: `IFeature.teamsWithoutForecast` is optional, so the type checker needs it, and replacing it with a non-null assertion would be worse. The sibling completion column carries the identical expression. |
+
+The gate is met at 93.88 %, and the one thing this slice is actually responsible for deciding — which of
+the three sources the column draws, and what each one looks like — is fully killed.
