@@ -36,6 +36,7 @@ import {
 import { WaitStatesEditor } from "../../models/metrics/WaitStatesEditor";
 import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
 import { DeliveryMetricsTab } from "../../models/portfolios/Deliveries/DeliveryMetricsTab";
+import { DeliveryTimelineTab } from "../../models/portfolios/Deliveries/DeliveryTimelineTab";
 
 const DEMO_SCENARIO_ID = 0;
 const testWithDemo = testWithDemoData(DEMO_SCENARIO_ID);
@@ -1158,6 +1159,41 @@ testWithDemo(
 		await takeElementScreenshot(
 			metricsTab.epicSizeChart,
 			"features/deliveryEpicSize.png",
+		);
+	},
+);
+
+// Epic 6033 slice 04 — the Delivery as a plan. This is also the only automated look at the
+// timeline that a browser takes: the chart's colours come from a stylesheet the unit tests mock
+// away, and its axis needs a measured width it never gets there, so three defects in this feature
+// passed their unit tests and were caught by eye. This shot is what would catch the fourth.
+testWithDemo(
+	"Take @screenshot of the delivery timeline",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0].name,
+		);
+		const deliveryPage = await portfolioDetailPage.goToDeliveries();
+		const delivery = deliveryPage.getDeliveryByName("Apollo Release");
+		await delivery.toggleDetails();
+
+		const timelineTab = new DeliveryTimelineTab(delivery);
+		await timelineTab.openTimelineTab();
+
+		// The timeline is premium. If the instance has no licence the tab renders the notice
+		// instead, and the shot would quietly become a picture of that — so it is ruled out here
+		// rather than discovered in the docs.
+		await expect(timelineTab.premiumNotice).toBeHidden();
+
+		await expect(timelineTab.chart).toBeVisible();
+		await expect(timelineTab.legend).toBeVisible();
+		await expect.poll(() => timelineTab.countBars()).toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			timelineTab.tab,
+			"features/deliveryTimeline.png",
 		);
 	},
 );

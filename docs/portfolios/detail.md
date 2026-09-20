@@ -353,6 +353,8 @@ These charts accrue from the day a delivery is created. A newly added delivery s
 
 Expand a delivery and open its **Timeline** tab to see the delivery as a plan: one bar per feature, running from the day work on it is forecast to *begin* to the day it is forecast to *finish*.
 
+![Delivery Timeline](../assets/features/deliveryTimeline.png)
+
 This is the view that answers *"what order will these get worked, and when does each one actually start?"*. The Features table answers it a row at a time; the timeline answers it at a glance, and shows you the queue — the features that cannot start yet because the teams are busy with the ones above them.
 
 Features appear in board order, top to bottom. That is not a display choice: it is the order Lighthouse's simulation itself pulls them in, so the picture and the forecast behind it agree.
