@@ -25,6 +25,26 @@ describe("TimelineLegend", () => {
 		expect(legend).toHaveTextContent("10/25/2026");
 	});
 
+	it("draws its two swatches differently, the way the chart draws its two columns", () => {
+		renderLegend(new Date(2026, 9, 25));
+
+		const ruled = screen.getByTestId("legend-swatch-ruled");
+		const filled = screen.getByTestId("legend-swatch-filled");
+
+		// A legend whose two entries look alike explains nothing — the reader still cannot tell
+		// which column on the chart is which. Asserted as a difference rather than as two literal
+		// colours, because the rule is that they must not match; pinning the values would also
+		// break on any palette change without anything actually being wrong.
+		const styleOf = (element: HTMLElement) => getComputedStyle(element);
+
+		expect(styleOf(filled).backgroundColor).not.toBe(
+			styleOf(ruled).backgroundColor,
+		);
+		expect(styleOf(ruled).borderLeftWidth).not.toBe(
+			styleOf(filled).borderLeftWidth,
+		);
+	});
+
 	it("says nothing about a target the Delivery does not have", () => {
 		renderLegend(undefined);
 

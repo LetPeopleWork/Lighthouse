@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature, IFeatureStart } from "../../../../../../models/Feature";
@@ -234,6 +234,31 @@ describe("DeliveryTimelineTab", () => {
 		renderTab([feature()]);
 
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	});
+
+	it("closes the details again, and can reopen them", async () => {
+		renderTab([feature({ id: 2, name: "Sonar Refit" })]);
+
+		act(() => ganttProps.current?.onBarSelected?.(2));
+		await screen.findByRole("dialog");
+
+		await userEvent.click(screen.getByRole("button", { name: /close/i }));
+
+		// A dialog that cannot be dismissed leaves the timeline behind it unreachable, and one
+		// that forgets to clear its selection cannot be opened on the same bar twice.
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+
+		act(() => ganttProps.current?.onBarSelected?.(2));
+
+		expect(await screen.findByRole("dialog")).toHaveTextContent("Sonar Refit");
+	});
+
+	it("shows no legend when there is no timeline to explain", () => {
+		renderTab([feature({ forecasts: [] })]);
+
+		expect(screen.queryByTestId("timeline-legend")).not.toBeInTheDocument();
 	});
 
 	it("marks the same day on the chart as the legend names", async () => {

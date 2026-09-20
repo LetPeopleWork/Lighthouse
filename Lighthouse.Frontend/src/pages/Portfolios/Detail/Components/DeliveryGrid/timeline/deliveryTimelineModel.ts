@@ -176,6 +176,21 @@ export function isTargetDay(day: Date, targetDate?: Date): boolean {
 }
 
 /**
+ * A Delivery's target as a plain calendar date in the reader's own frame.
+ *
+ * The stored value is an instant that the product reads as a UTC day. Once it is here, it can be
+ * compared to axis columns with ordinary local arithmetic — which is what lets one containment
+ * rule serve both marked dates instead of each needing its own comparison.
+ */
+export function targetCalendarDate(targetDate: Date): Date {
+	return new Date(
+		targetDate.getUTCFullYear(),
+		targetDate.getUTCMonth(),
+		targetDate.getUTCDate(),
+	);
+}
+
+/**
  * Whether two dates are the same day in the reader's own zone.
  *
  * Deliberately NOT `isTargetDay`, and the difference is the easy mistake here. That one exists to

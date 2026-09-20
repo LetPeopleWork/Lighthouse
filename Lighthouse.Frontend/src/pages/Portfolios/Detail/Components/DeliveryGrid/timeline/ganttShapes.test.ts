@@ -3,7 +3,7 @@ import type { TimelineBar } from "./deliveryTimelineModel";
 import {
 	barTooltip,
 	chartHeight,
-	dayHighlight,
+	columnHighlight,
 	ganttColorOverrides,
 	scalesForSpan,
 	THEMED_ELEMENT_SELECTOR,
@@ -97,13 +97,42 @@ describe("fitting the axis to the delivery's length", () => {
 		expect(finestUnit(spanOf(900))).toBe("month");
 	});
 
-	it("formats every row of every scale with a function", () => {
-		// Same trap as the default scales: a format given as a string is printed verbatim.
+	it("formats every row of every scale with a function, and each one returns a date", () => {
+		// Same trap as the default scales: a format given as a string is printed verbatim. Checking
+		// only that it IS a function leaves the coarser scales' formatters never once called, so a
+		// broken one on the weekly or monthly axis would go unnoticed until someone opened a long
+		// Delivery. Each is invoked here.
+		const day = new Date(2026, 2, 7);
+
 		for (const days of [10, 90, 900]) {
 			for (const scale of spanOf(days)) {
 				expect(typeof scale.format).toBe("function");
+
+				const rendered = scale.format(day);
+
+				expect(rendered).not.toBe("");
+				// Neither a leftover pattern nor a raw Date stringified by accident.
+				expect(rendered).not.toMatch(/MMM|yyyy|GMT/);
 			}
 		}
+	});
+
+	it("labels the coarser axes with the month and the year they show", () => {
+		const weekly = spanOf(90);
+		const monthly = spanOf(900);
+		const day = new Date(2026, 2, 7);
+
+		expect(weekly[0].format(day)).toBe("March 2026");
+		expect(weekly[1].format(day)).toBe("3/7");
+		expect(monthly[0].format(day)).toBe("2026");
+		expect(monthly[1].format(day)).toBe("Mar 2026");
+	});
+
+	it("still fits at exactly the column count, and coarsens one past it", () => {
+		// The boundary itself, because `<=` and `<` are one character apart and the difference is
+		// a whole extra column of overflow.
+		expect(finestUnit(spanOf(16))).toBe("day");
+		expect(finestUnit(spanOf(17))).toBe("week");
 	});
 });
 describe("what a bar says on hover", () => {
@@ -147,9 +176,11 @@ describe("marking the target day and today", () => {
 	const today = new Date(2026, 9, 2);
 	const marks = { targetDate, today };
 
+	const dayColumn = (day: number) => new Date(2026, 9, day);
+
 	it("marks each of the two days, and marks them differently", () => {
-		const onTarget = dayHighlight(new Date(2026, 9, 15), "day", marks);
-		const onToday = dayHighlight(new Date(2026, 9, 2), "day", marks);
+		const onTarget = columnHighlight(dayColumn(15), "day", "day", marks);
+		const onToday = columnHighlight(dayColumn(2), "day", "day", marks);
 
 		expect(onTarget).not.toBe("");
 		expect(onToday).not.toBe("");
@@ -159,8 +190,8 @@ describe("marking the target day and today", () => {
 	});
 
 	it("says both when the Delivery is due today", () => {
-		const dueToday = new Date(2026, 9, 15);
-		const classes = dayHighlight(dueToday, "day", {
+		const dueToday = dayColumn(15);
+		const classes = columnHighlight(dueToday, "day", "day", {
 			targetDate,
 			today: dueToday,
 		}).split(" ");
@@ -169,16 +200,53 @@ describe("marking the target day and today", () => {
 		expect(new Set(classes).size).toBe(2);
 	});
 
-	it("marks nothing on any row but the day row", () => {
-		// The scale calls this for the month row too, with the first day of the month. Without
-		// the unit guard the whole month holding a marked day would be shaded instead of it.
-		expect(dayHighlight(new Date(2026, 9, 15), "month", marks)).toBe("");
-		expect(dayHighlight(new Date(2026, 9, 2), "month", marks)).toBe("");
+	it("marks the week that contains each date, when the axis is weekly", () => {
+		// The defect this replaces: the first version answered only for day columns, so the
+		// moment the axis coarsened — which is the ordinary case for any Delivery past a
+		// fortnight — both markers vanished and the legend pointed at nothing.
+		expect(columnHighlight(dayColumn(12), "week", "week", marks)).toContain(
+			"target",
+		);
+		// Today is 2 October, so the week that holds it is the one opening 28 September.
+		expect(
+			columnHighlight(new Date(2026, 8, 28), "week", "week", marks),
+		).toContain("today");
 	});
 
-	it("marks nothing on an ordinary day, or when neither date is given", () => {
-		expect(dayHighlight(new Date(2026, 9, 8), "day", marks)).toBe("");
-		expect(dayHighlight(new Date(2026, 9, 15), "day", {})).toBe("");
+	it("marks the month that contains each date, when the axis is monthly", () => {
+		const september = new Date(2026, 8, 1);
+		const october = new Date(2026, 9, 1);
+
+		expect(columnHighlight(october, "month", "month", marks)).toContain(
+			"target",
+		);
+		expect(columnHighlight(september, "month", "month", marks)).toBe("");
+	});
+
+	it("leaves the neighbouring column alone at every resolution", () => {
+		// Containment has two edges and only one of them is obvious. A week column starting the
+		// day after the target must not claim it.
+		expect(columnHighlight(dayColumn(16), "week", "week", marks)).not.toContain(
+			"target",
+		);
+		expect(columnHighlight(dayColumn(8), "week", "week", marks)).not.toContain(
+			"target",
+		);
+		expect(columnHighlight(dayColumn(15), "week", "week", marks)).toContain(
+			"target",
+		);
+	});
+
+	it("marks only the finest row of the axis", () => {
+		// The scale has two rows. Marking the coarser one as well would put a band across the
+		// whole month or year holding the date.
+		expect(columnHighlight(dayColumn(15), "month", "day", marks)).toBe("");
+		expect(columnHighlight(dayColumn(15), "year", "month", marks)).toBe("");
+	});
+
+	it("marks nothing on an ordinary column, or when neither date is given", () => {
+		expect(columnHighlight(dayColumn(8), "day", "day", marks)).toBe("");
+		expect(columnHighlight(dayColumn(15), "day", "day", {})).toBe("");
 	});
 });
 describe("translating bars into the library's tasks", () => {

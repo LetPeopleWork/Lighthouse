@@ -1,8 +1,4 @@
-import {
-	isSameLocalDay,
-	isTargetDay,
-	type TimelineBar,
-} from "./deliveryTimelineModel";
+import { type TimelineBar, targetCalendarDate } from "./deliveryTimelineModel";
 import { TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
 
 /**
@@ -90,37 +86,82 @@ export function ganttColorOverrides(
 }
 
 /**
- * Which of the two dates worth finding at a glance an axis column is: the day the Delivery is due,
+ * Which of the two dates worth finding at a glance a column covers: the day the Delivery is due,
  * and the day the reader is standing on.
  *
- * The `unit` guard is load-bearing: the scale calls this for the month row as well as the day row,
- * and without it the whole month containing a marked day would be shaded rather than the one day.
+ * **A column is not always a day.** The axis coarsens to weeks and then months so a long Delivery
+ * fits on screen, and the library calls this for every row of it. The first version only ever
+ * answered for `unit === "day"`, which meant that the moment the axis coarsened — which is the
+ * ordinary case — both markers silently disappeared. So the question is containment, not equality:
+ * does this column's span cover the date, at whatever width the column happens to be?
  *
- * A day can be both, and then it says both — which is the most informative thing a Delivery due
- * today could render.
+ * Only the finest row is marked. The scale has two rows, and shading the coarser one as well would
+ * put a band across the whole month or year that contains the date.
+ *
+ * A column can cover both dates, and then it says both — which is the most informative thing a
+ * Delivery due this week could render.
  */
-export function dayHighlight(
-	date: Date,
+export function columnHighlight(
+	columnStart: Date,
 	unit: string,
+	finestUnit: string,
 	marks: { targetDate?: Date; today?: Date },
 ): string {
-	if (unit !== "day") {
+	if (unit !== finestUnit) {
 		return "";
 	}
 
+	const covers = (date?: Date) =>
+		date !== undefined && columnCovers(columnStart, unit, date);
+
 	const classes: string[] = [];
 
-	if (isTargetDay(date, marks.targetDate)) {
+	// The target is a stored instant the product reads as a UTC day; today is the reader's own
+	// clock and already local. Reducing the target first lets one containment rule serve both.
+	if (covers(marks.targetDate && targetCalendarDate(marks.targetDate))) {
 		classes.push(TARGET_DAY_CLASS);
 	}
 
-	// Not `isTargetDay`: today is the reader's own clock, not a stored instant, so it is compared
-	// as a local day. Reusing the target's comparison marks the wrong column for most of the day.
-	if (isSameLocalDay(date, marks.today)) {
+	if (covers(marks.today)) {
 		classes.push(TODAY_CLASS);
 	}
 
 	return classes.join(" ");
+}
+
+/** Where the column after this one begins, which is where this one stops covering. */
+function nextColumnStart(columnStart: Date, unit: string): Date {
+	const next = new Date(columnStart);
+
+	if (unit === "week") {
+		next.setDate(next.getDate() + 7);
+	} else if (unit === "month") {
+		next.setMonth(next.getMonth() + 1);
+	} else if (unit === "year") {
+		next.setFullYear(next.getFullYear() + 1);
+	} else {
+		next.setDate(next.getDate() + 1);
+	}
+
+	return next;
+}
+
+function columnCovers(columnStart: Date, unit: string, date: Date): boolean {
+	const startOfColumnDay = new Date(
+		columnStart.getFullYear(),
+		columnStart.getMonth(),
+		columnStart.getDate(),
+	);
+	const theDay = new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+	).getTime();
+
+	return (
+		theDay >= startOfColumnDay.getTime() &&
+		theDay < nextColumnStart(startOfColumnDay, unit).getTime()
+	);
 }
 
 const monthAndYear = (date: Date) =>

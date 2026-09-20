@@ -34,11 +34,11 @@ describe("the Gantt adapter boundary", () => {
 	const importers = sourceFilesUnder(sourceRoot)
 		.filter((path) => readFileSync(path, "utf8").includes(VENDOR))
 		.map((path) => relative(sourceRoot, path).replaceAll("\\", "/"))
-		// This file names the vendor in order to police it, which would otherwise make it its own
-		// first violation.
-		.filter(
-			(path) => !path.endsWith("ganttAdapterBoundary.enforcement.test.ts"),
-		);
+		// Production files only. A test names the vendor in order to stand it in, which is how the
+		// contract handed across this boundary gets asserted at all; this file names it in order to
+		// police it. What the rule protects is shipped code — a second importer there is what turns
+		// replacing the library from a rewrite of one file into a search across the app.
+		.filter((path) => !/\.test\.tsx?$/.test(path));
 
 	it("is the only place the Gantt library is named", () => {
 		expect(importers).toEqual([THE_ADAPTER]);

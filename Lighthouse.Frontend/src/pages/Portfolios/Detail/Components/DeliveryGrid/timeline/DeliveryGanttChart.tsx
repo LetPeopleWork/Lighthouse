@@ -8,7 +8,7 @@ import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
 import {
 	barTooltip,
 	chartHeight,
-	dayHighlight,
+	columnHighlight,
 	ganttColorOverrides,
 	ROW_HEIGHT,
 	SCALE_HEIGHT,
@@ -59,21 +59,25 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		[bars, targetDate, today],
 	);
 
-	// The library hands this callback a date at local midnight and expects a class name back. A
-	// tinted column is the free edition's substitute for the vertical marker, which is a paid
-	// feature; buying one later replaces this without changing anything above.
-	const highlightTime = useCallback(
-		(date: Date, unit: string) =>
-			dayHighlight(date, unit, { targetDate, today }),
-		[targetDate, today],
-	);
-
 	const scales = useMemo(
 		() =>
 			axisRange
 				? scalesForSpan(axisRange.start, axisRange.end)
 				: TIMELINE_SCALES,
 		[axisRange],
+	);
+
+	// The finest row of the axis, which is the one worth marking. It changes with the Delivery's
+	// length, so it is read off the scales rather than assumed to be days.
+	const finestUnit = scales[scales.length - 1].unit;
+
+	// The library hands this callback the start of each column and expects a class name back. A
+	// tinted column is the free edition's substitute for the vertical marker, which is a paid
+	// feature; buying one later replaces this without changing anything above.
+	const highlightTime = useCallback(
+		(date: Date, unit: string) =>
+			columnHighlight(date, unit, finestUnit, { targetDate, today }),
+		[targetDate, today, finestUnit],
 	);
 
 	const barsById = useMemo(

@@ -21,6 +21,7 @@ const Swatch: React.FC<{ color: string; filled: boolean }> = ({
 }) => (
 	<Box
 		aria-hidden
+		data-testid={filled ? "legend-swatch-filled" : "legend-swatch-ruled"}
 		sx={{
 			width: 14,
 			height: 14,
