@@ -37,6 +37,24 @@ const asSettledOn = (day: Date): IWhenForecast[] =>
  * forecast" indistinguishable.
  */
 const ForecastedStartCell: React.FC<{ feature: IFeature }> = ({ feature }) => {
+	const start = feature.startForecast;
+
+	// A day somebody already started on is a fact, and a fact outranks whether anything can be
+	// forecast. A team with no history stops the simulation from saying when work will begin; it says
+	// nothing about when work did begin. Asking "can this be forecast?" first would answer "cannot
+	// forecast" for a date the server has already reported, under a tooltip offering to wait for
+	// throughput that would not change it. The server settles this in the same order.
+	if (start?.source === "Observed" && start.observedDate) {
+		return (
+			<Box data-testid="observed-start">
+				<ForecastInfoList
+					title={""}
+					forecasts={asSettledOn(start.observedDate)}
+				/>
+			</Box>
+		);
+	}
+
 	if (
 		cannotBeForecast({ teamsWithoutForecast: feature.teamsWithoutForecast })
 	) {
@@ -46,19 +64,6 @@ const ForecastedStartCell: React.FC<{ feature: IFeature }> = ({ feature }) => {
 					{CANNOT_FORECAST_SHORT}
 				</Typography>
 			</Tooltip>
-		);
-	}
-
-	const start = feature.startForecast;
-
-	if (start?.source === "Observed" && start.observedDate) {
-		return (
-			<Box data-testid="observed-start">
-				<ForecastInfoList
-					title={""}
-					forecasts={asSettledOn(start.observedDate)}
-				/>
-			</Box>
 		);
 	}
 

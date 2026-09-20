@@ -92,6 +92,26 @@ describe("createForecastedStartColumn", () => {
 		).toBeInTheDocument();
 	});
 
+	// Both states at once, which is the combination the server actually produces: it reports an observed
+	// start before it asks whether the Feature can be forecast, so a started Feature keeps its start date
+	// even while one of its teams has no history. A cell that asked the questions the other way round
+	// would hide a date it had been handed.
+	it("still shows the day a started Feature began when another team cannot be forecast", () => {
+		renderStartCell(
+			feature({
+				teamsWithoutForecast: ["Team Meridian"],
+				startForecast: {
+					source: "Observed",
+					observedDate: new Date(2026, 8, 14),
+					percentiles: [],
+				},
+			}),
+		);
+
+		expect(screen.getAllByText("9/14/2026")).toHaveLength(4);
+		expectNotShown("Cannot forecast");
+	});
+
 	it("renders nothing rather than a date when the start is unknown but the teams are forecastable", () => {
 		renderStartCell(
 			feature({ startForecast: { source: "Unknown", percentiles: [] } }),
@@ -99,9 +119,11 @@ describe("createForecastedStartColumn", () => {
 
 		expect(screen.queryByTestId("observed-start")).not.toBeInTheDocument();
 
-		for (const day of [12, 13, 14, 16]) {
-			expectNotShown(inOctober(day));
-		}
+		// Naming days the fixture never carried would assert nothing, so this asks the only question that
+		// discriminates: whether any date at all reached the cell.
+		expect(
+			screen.queryByText(/\d{1,2}\/\d{1,2}\/\d{4}/),
+		).not.toBeInTheDocument();
 	});
 
 	it("tolerates a backend payload that omits the field entirely", () => {
