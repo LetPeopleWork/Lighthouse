@@ -1506,3 +1506,77 @@ but whether it reads as acceptable or as a bug is a product call, not one an acc
 Brought to the maintainer with a screenshot rather than decided here.
 
 Next: DELIVER, slice 02 (Story #6046).
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 — scenarios
+
+Authored 2026-09-20, at the head of slice 03's own DELIVER. Story #6047. This is the slice the Epic is
+named after: until now the start dates existed inside Lighthouse, and here they reach the tracker.
+
+**Driving port**: `IWriteBackTriggerService`, invoked directly with the real implementation and its
+collaborators doubled — the mechanism `WriteBackTriggerServiceTest` already uses for every completion
+source. The one new port is the enum itself, which is exercised as data because that is what it is.
+
+**Test placement**: `WriteBackTriggerServiceTest.StartDates.cs`, a partial of the existing class rather
+than a new one, so the fixtures (`CreateSubject`, `CreateMapping`, `CreatePortfolioWithFeatures`,
+`CreateFeatureWithForecast`) and the fixed clock are the same ones the completion tests run against. A
+second class with its own copies would let the two drift into disagreeing about what day it is. The
+ordinal guard lives apart, in `Models/WriteBack/WriteBackValueSourceOrdinalTest.cs`, because its subject
+is a stored contract rather than a behaviour.
+
+### What this slice binds to
+
+Slice 01's `Feature.WhenWorkBegins`, and nothing new. That was the point of putting the observed-or-
+forecast rule on the domain in the first place, and `FeatureStart`'s own doc comment named this caller
+before it existed: *"the write-back resolver goes to the domain directly. Two implementations of one
+verdict is how a Jira plan ends up starting on a forecast date while the table beside it shows the real
+one."* The resolver reads the verdict; it does not re-derive it.
+
+### Scenarios
+
+| # | Scenario | AC | Notes |
+|---|---|---|---|
+| 1 | Every shipped source keeps the ordinal it was stored under | AC-3.1 | seven cases, one per pre-existing member |
+| 2 | The four start sources were appended after everything before them | AC-3.1 | ordinals 7–10 |
+| 3 | The enum has exactly the members those ordinals account for | AC-3.1 | the count catches an insert that shifts members nobody named |
+| 4 | A mapped start source writes the day work is expected to begin | AC-3.2 | **walking skeleton** for this slice |
+| 5 | A start written as text uses the same `DateFormat` completion does | AC-3.2 | |
+| 6 | A started Feature writes the day it actually began | AC-3.3, D5 | the decisive one: a fact outranks a forecast at this boundary too |
+| 7 | A Done Feature writes nothing | AC-3.4 | carries an open Feature as a control, so it cannot pass by resolving nothing at all |
+| 8 | A Feature with no start forecast writes nothing rather than today | AC-3.5 | |
+| 9 | A start source resolves nothing without a premium licence | AC-3.6 | the gate is inherited, so this asserts the inheritance rather than a new gate |
+| 10 | The four sources are offered to a portfolio, at both ends | AC-3.2, AC-3.6 | frontend; the editor's own premium gate covers the whole panel |
+| 11 | A Feature's start is not offered to a team | AC-3.2 | carries a positive control for the same reason as 7 |
+| 12 | Every source's classification and label | AC-3.2 | forecast-source, portfolio-only, and what the admin reads |
+
+**Error and edge coverage: 5 of 12** (3, 7, 8, 9, 11).
+
+### Red classification, measured
+
+Run before implementing, and reported as measured rather than as intended:
+
+- **RED, 4**: scenarios 4, 5, 6 and 7. Each fails on an assertion, none on a missing symbol.
+- **Green at authoring, 2**: scenarios 8 and 9. Both assert that nothing is written, and nothing was
+  being written yet, so they were **vacuously true** until scenario 4 went green. They are honest tests
+  of the finished behaviour and were worthless as RED signal; recorded here so DELIVER could not read
+  them as evidence of anything.
+- **Green by scaffold, the rest**: C# and TypeScript both refuse to compile a test naming an enum member
+  that does not exist, so the members had to be added for scenarios 1–3 and 10–12 to be RED-able at all —
+  and adding them *is* AC-3.1's implementation. On the frontend the same forcing went further:
+  `VALUE_SOURCE_DISPLAY_NAMES` is typed `Record<WriteBackValueSource, string>`, so the compiler demanded
+  a label for each new member before anything would build, which made scenario 12's label assertions
+  green on arrival too. What stayed genuinely RED there were the two classification sets.
+
+### One change beyond the ACs, made deliberately
+
+The completion sources were relabelled from `Forecast (Nth Percentile)` to
+`Forecasted Completion (Nth Percentile)`. No AC asks for it. It is the same ambiguity slice 02 was asked
+to fix in the Feature table — a list offering "Forecast" beside "Forecasted Start" does not say which
+date the administrator is picking — and leaving it would have reintroduced, on the screen where the
+choice is actually made, the exact problem that was just removed from the screen where the result is
+read. The labels are display-only: the wire carries the enum member's **name** and the database its
+**ordinal**, so nothing stored or transmitted changes. Four existing editor tests asserted the old label
+and were updated.
+
+Next: DELIVER, slice 03 (Story #6047).
