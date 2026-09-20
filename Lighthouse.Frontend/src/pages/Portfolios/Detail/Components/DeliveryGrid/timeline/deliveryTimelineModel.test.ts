@@ -144,6 +144,15 @@ describe("buildDeliveryTimeline", () => {
 		expect(refusal.reason).toMatch(/finishes/);
 	});
 
+	it("places a Feature from a payload that predates the team field", () => {
+		// `teamsWithoutForecast` is optional on the model for the reason every additive field is:
+		// an older instance, or a fixture built before it existed, simply omits it. Reading its
+		// length without a fallback throws and takes the whole timeline down.
+		const bar = onlyBar([feature({ teamsWithoutForecast: undefined })]);
+
+		expect(bar.start).toEqual(october(11));
+	});
+
 	it("names the teams when no contributing team can be forecast", () => {
 		const refusal = onlyRefusal([
 			feature({ teamsWithoutForecast: ["Deep Divers"] }),
@@ -226,6 +235,15 @@ describe("isTargetDay", () => {
 
 	it("marks nothing when the Delivery has no target date", () => {
 		expect(isTargetDay(axisColumnFor(15), undefined)).toBe(false);
+	});
+
+	it("pads a single-digit month and day, so the two sides can be compared at all", () => {
+		// Both sides are reduced to a `YYYY-MM-DD` string and compared as text, so an unpadded
+		// "2026-3-7" matches nothing and the tint silently never appears in nine months of twelve.
+		const target = targetStoredAt("2026-03-07T00:00:00Z");
+
+		expect(isTargetDay(new Date(2026, 2, 7), target)).toBe(true);
+		expect(isTargetDay(new Date(2026, 2, 8), target)).toBe(false);
 	});
 
 	it("tints the day the Delivery heading names, for a target late in the UTC day", () => {

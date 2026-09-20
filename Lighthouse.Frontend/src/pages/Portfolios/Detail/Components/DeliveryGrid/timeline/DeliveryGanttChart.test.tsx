@@ -1,7 +1,12 @@
 import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import DeliveryGanttChart, { TIMELINE_SCALES } from "./DeliveryGanttChart";
+import DeliveryGanttChart, {
+	chartHeight,
+	TIMELINE_SCALES,
+	targetDayHighlight,
+	toGanttTasks,
+} from "./DeliveryGanttChart";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 // The chart paints its background grid onto a canvas, and this test environment has no 2D canvas —
@@ -98,6 +103,63 @@ describe("DeliveryGanttChart", () => {
 		it("names the month and numbers the day", () => {
 			expect(months.format(new Date(2026, 9, 15))).toBe("October 2026");
 			expect(days.format(new Date(2026, 9, 15))).toBe("15");
+		});
+	});
+
+	describe("translating bars into the library's tasks", () => {
+		it("carries each bar's identity, name and both ends across", () => {
+			const [task] = toGanttTasks([bar(7, "Sonar Refit")]);
+
+			expect(task).toEqual({
+				id: 7,
+				text: "Sonar Refit",
+				start: new Date(2026, 9, 10),
+				end: new Date(2026, 9, 20),
+				type: "task",
+			});
+		});
+
+		it("keeps the order it was given, and translates nothing extra", () => {
+			const tasks = toGanttTasks([bar(1, "First"), bar(2, "Second")]);
+
+			expect(tasks.map((task) => task.text)).toEqual(["First", "Second"]);
+			expect(toGanttTasks([])).toEqual([]);
+		});
+	});
+
+	describe("the chart's height", () => {
+		it("grows by a row per bar", () => {
+			expect(chartHeight(3) - chartHeight(2)).toBe(
+				chartHeight(2) - chartHeight(1),
+			);
+			expect(chartHeight(3)).toBeGreaterThan(chartHeight(2));
+		});
+
+		it("keeps a row's worth of height with nothing to draw", () => {
+			// Otherwise an empty chart collapses onto its own axis and the tab looks broken rather
+			// than empty.
+			expect(chartHeight(0)).toBe(chartHeight(1));
+			expect(chartHeight(0)).toBeGreaterThan(0);
+		});
+	});
+
+	describe("the target tint", () => {
+		const target = new Date("2026-10-15T00:00:00Z");
+		const theDay = new Date(2026, 9, 15);
+
+		it("tints the target day on the day row", () => {
+			expect(targetDayHighlight(theDay, "day", target)).not.toBe("");
+		});
+
+		it("tints nothing on any other row", () => {
+			// The scale calls this for the month row too, with the first day of the month. Without
+			// the unit guard the whole month holding the target would be shaded instead of one day.
+			expect(targetDayHighlight(theDay, "month", target)).toBe("");
+		});
+
+		it("tints nothing on another day, or with no target at all", () => {
+			expect(targetDayHighlight(new Date(2026, 9, 16), "day", target)).toBe("");
+			expect(targetDayHighlight(theDay, "day", undefined)).toBe("");
 		});
 	});
 

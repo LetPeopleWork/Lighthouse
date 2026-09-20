@@ -210,3 +210,84 @@ re-deriving and the earlier number would not have been comparable.
 
 Both gates are met. Every mutant in the code this slice is responsible for deciding — which of the two
 answers a start is, which day that lands on, and which sources a mapping may name — is killed.
+
+---
+
+# Mutation testing — Epic 6033 slice 04 (a Delivery as a timeline)
+
+Run 2026-09-20 against `main` @ `6fcbd6482` plus the test-strengthening this section describes. Gate is
+80 % kill rate on each stack touched. **Frontend only** — this slice changes no backend file.
+
+| stack | score | tested | killed | survived | timeout | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS) | **88.89 %** | 153 | 136 | 17 | 0 | 0 | 1 m 21 s |
+| Backend (Stryker.NET) | **N/A** | — | — | — | — | — | — |
+
+Backend is N/A because nothing under `Lighthouse.Backend` is touched; the wire contract this slice reads
+shipped with slices 01 and 02.
+
+| file | score | survived |
+| --- | --- | --- |
+| `deliveryTimelineModel.ts` | 98.67 % | 1 |
+| `DeliveryTimelineTab.tsx` | 87.88 % | 4 |
+| `DeliveryGanttChart.tsx` | 73.33 % | 12 |
+
+**All three targets are new files, so they are mutated whole rather than by line range.** That is both
+the honest scope — every line is this slice's — and immune to the drift that makes a stale range mutate
+the wrong code and report a number that means nothing.
+
+Config: `stryker-6048-slice-04.frontend.json` + `vitest.stryker.6048-slice-04.config.ts`, copied here;
+the working copies under `Lighthouse.Frontend/` are gitignored as local tooling.
+
+## Three runs, and what the first two were worth
+
+**75.33 %** first time — below the gate. **86.09 %** after closing six real gaps. **88.89 %** after
+extracting two functions that had no test at all. The middle number is the one worth keeping in view:
+the six gaps it closed were all things a reader would expect to be tested, and none of them were.
+
+- The **premium notice's copy** was never asserted, only its presence. A notice that renders empty is a
+  blank panel where the chart was, telling the reader nothing.
+- The **unknown licence state** was never exercised. The hook answers `null` until the licence has been
+  fetched; reading through it without a guard throws and takes the tab down.
+- **Re-clicking the selected confidence level** was never exercised. A toggle group reports `null` when
+  its active button is pressed again, and taking that at face value leaves the chart with no percentile.
+- The **count in the unplaceable heading**, and **the absence of that section** when everything is
+  placeable, were both unasserted — so the section could have read "Not on the timeline (0)" forever.
+- `isTargetDay` was only ever given **two-digit** months and days, so the zero-padding on both sides was
+  free to disappear. Unpadded, `2026-3-7` matches nothing and the tint silently never appears in nine
+  months out of twelve.
+- The **target-tint callback had no coverage at all** — seven mutants, none reachable. The axis needs a
+  measured width and therefore never renders outside a browser, so nothing invoked it. Its rule is now
+  a named function, `targetDayHighlight`, tested directly. Its `unit === "day"` guard turns out to be
+  load-bearing: the scale calls it for the month row too, and without the guard the whole month holding
+  the target would be shaded instead of the one day.
+
+The third run's two extractions were taken on their merits rather than for the score. `toGanttTasks` is
+**the** translation into the library's vocabulary and had no test whatsoever — and since nothing asserts
+on what the library renders, untested there means untested anywhere. `chartHeight` carries a real rule:
+an empty chart keeps a row's height instead of collapsing onto its own axis.
+
+## The seventeen left alive
+
+Grouped, because they are a few kinds of thing and only one of them is interesting.
+
+| group | count | why it is accepted |
+| --- | --- | --- |
+| `sx` spacing object literals (`{ p: 2 }`, `{ mb: 2 }`, `{ mt: 2 }`) | 4 | Padding. No behavioural assertion distinguishes them, and pinning spacing in a unit test is how a suite becomes a brake on design. |
+| `useMemo` / `useCallback` wrappers and their dependency arrays | 6 | Equivalent by construction: memoisation changes how often a value is recomputed, never what it is. Killing them would mean asserting on render counts. |
+| Exact pixel arithmetic in `chartHeight` | 3 | The tests pin the two rules that matter — one row per bar, and never less than one row — not the constants. Pinning the exact number asserts a magic value and breaks on any spacing change, which is worse than the mutant. |
+| The `& .delivery-target-day` selector key | 2 | The tint's *rule* is tested; that the CSS selector matches the class the callback returns is only observable as a computed style on rendered library markup. |
+| `links={[]}` | 1 | Dependency arrows are slice 05. Killing it means asserting what the library was handed, at a seam this slice deliberately does not reach into. |
+| `start?.percentiles ?? []` | 1 | Equivalent. The mutant substitutes a non-empty array whose elements carry no `probability`, so the lookup still finds nothing and returns the same answer. |
+
+**None of the seventeen is in the mapping.** Every mutant in the code that decides which day each end of
+a bar sits on, which Features cannot be drawn, and what the reader is told instead, is killed — that
+file is at 98.67 %, and its single survivor is the equivalent one above.
+
+`DeliveryGanttChart.tsx` sits at 73.33 % on its own, and that is the one number worth understanding
+rather than chasing. Twelve of its remaining mutants are memo wrappers, pixel arithmetic, and props
+handed to a component whose output is deliberately not asserted anywhere. **That is the cost of the
+adapter boundary, and it is the right trade**: a test that killed them would be a test of somebody
+else's markup, going red on their release rather than on our defect. Everything in that file which is a
+*decision* — the task translation, the axis formats, the tint rule, the theme choice, the height rule —
+is extracted and tested directly, which is why the file's own score understates its coverage.

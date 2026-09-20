@@ -6,11 +6,17 @@ import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
-const licence = vi.hoisted(() => ({ isPremium: true }));
+const licence = vi.hoisted(() => ({
+	isPremium: true,
+	/** Null until the licence has been fetched, which is a state the tab really meets. */
+	isKnown: true,
+}));
 
 vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => ({
-		licenseStatus: { canUsePremiumFeatures: licence.isPremium },
+		licenseStatus: licence.isKnown
+			? { canUsePremiumFeatures: licence.isPremium }
+			: null,
 	}),
 }));
 
@@ -70,6 +76,7 @@ const renderTab = (features: IFeature[], targetDate?: Date) =>
 
 beforeEach(() => {
 	licence.isPremium = true;
+	licence.isKnown = true;
 	ganttProps.current = null;
 });
 
@@ -137,8 +144,57 @@ describe("DeliveryTimelineTab", () => {
 
 		renderTab([feature()]);
 
+		// An empty notice is a silent failure: the reader sees a blank panel where the chart was
+		// and is told nothing, so the copy is pinned rather than just the element.
+		expect(screen.getByTestId("premium-feature-notice")).toHaveTextContent(
+			/premium feature/i,
+		);
+		expect(screen.queryByTestId("delivery-gantt")).not.toBeInTheDocument();
+	});
+
+	it("withholds the chart while the licence is still unknown", () => {
+		// The hook answers null until the licence has been fetched. Reading through it without a
+		// guard throws and takes the whole tab down; treating unknown as licensed would show a
+		// premium chart to an unlicensed instance for as long as the request is in flight.
+		licence.isKnown = false;
+
+		renderTab([feature()]);
+
 		expect(screen.getByTestId("premium-feature-notice")).toBeInTheDocument();
 		expect(screen.queryByTestId("delivery-gantt")).not.toBeInTheDocument();
+	});
+
+	it("keeps a confidence level selected when its button is clicked again", async () => {
+		renderTab([feature()]);
+
+		// A toggle group reports null when the active button is pressed a second time. Taking that
+		// at face value would leave the timeline with no percentile and nothing to draw.
+		await userEvent.click(screen.getByRole("button", { name: "70%" }));
+
+		expect(screen.getByRole("button", { name: "70%" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		expect(ganttProps.current?.bars).toHaveLength(1);
+	});
+
+	it("says how many Features are not on the timeline", () => {
+		renderTab([
+			feature({ id: 1, name: "One", forecasts: [] }),
+			feature({ id: 2, name: "Two", startForecast: undefined }),
+		]);
+
+		expect(screen.getByTestId("timeline-unplaceable")).toHaveTextContent(
+			"Not on the timeline (2)",
+		);
+	});
+
+	it("shows no list at all when every Feature is on the timeline", () => {
+		renderTab([feature()]);
+
+		expect(
+			screen.queryByTestId("timeline-unplaceable"),
+		).not.toBeInTheDocument();
 	});
 
 	it("hands the Delivery's target date through to the chart", () => {

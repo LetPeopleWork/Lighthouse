@@ -104,10 +104,10 @@ export function buildDeliveryTimeline(
 			unplaceable.push({ featureId: feature.id, name: feature.name, reason });
 		};
 
-		if (
-			cannotBeForecast({ teamsWithoutForecast: feature.teamsWithoutForecast })
-		) {
-			cannotPlace(cannotForecastReason(feature.teamsWithoutForecast ?? []));
+		const teamsWithoutForecast = feature.teamsWithoutForecast ?? [];
+
+		if (cannotBeForecast({ teamsWithoutForecast })) {
+			cannotPlace(cannotForecastReason(teamsWithoutForecast));
 			continue;
 		}
 
