@@ -26,8 +26,6 @@ import {
 export interface DeliveryGanttChartProps {
 	bars: TimelineBar[];
 	targetDate?: Date;
-	/** False below the narrow breakpoint, where a fixed name pane pushes the bars off-screen. */
-	showTaskPane: boolean;
 }
 
 const TARGET_DAY_CLASS = "delivery-target-day";
@@ -35,18 +33,38 @@ const TARGET_DAY_CLASS = "delivery-target-day";
 const ROW_HEIGHT = 38;
 const SCALE_HEIGHT = 30;
 
-const SCALES = [
-	{ unit: "month" as const, step: 1, format: "MMMM yyyy" },
-	{ unit: "day" as const, step: 1, format: "d" },
+/**
+ * The two rows of the date axis.
+ *
+ * `format` MUST be a function. The library calls it only when it is one and otherwise prints the
+ * value as it stands, so a pattern like "MMMM yyyy" heads every column with those eight characters
+ * instead of a date. Formatting by hand also keeps the axis in the reader's own regional format,
+ * like every other date in the product.
+ *
+ * Exported because the axis needs a measured width to render and therefore draws nothing outside a
+ * browser; asserting on these directly is the only way this stays pinned.
+ */
+export const TIMELINE_SCALES = [
+	{
+		unit: "month" as const,
+		step: 1,
+		format: (date: Date) =>
+			date.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+	},
+	{
+		unit: "day" as const,
+		step: 1,
+		format: (date: Date) => String(date.getDate()),
+	},
 ];
 
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
 	targetDate,
-	showTaskPane,
 }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const barColor = theme.palette.primary.main;
 
 	const tasks = useMemo(
 		() =>
@@ -79,6 +97,13 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 			data-theme-mode={isDark ? "dark" : "light"}
 			sx={{
 				height: Math.max(bars.length, 1) * ROW_HEIGHT + SCALE_HEIGHT + 20,
+				// The library paints its bars from its own variables, not from the MUI theme, so the
+				// brand colour is handed across here rather than left at its default blue. This is the
+				// one place the two colour systems meet.
+				"--wx-gantt-task-color": barColor,
+				"--wx-gantt-task-fill-color": barColor,
+				"--wx-gantt-task-border-color": barColor,
+				"--wx-gantt-task-font-color": theme.palette.getContrastText(barColor),
 				[`& .${TARGET_DAY_CLASS}`]: {
 					backgroundColor: theme.palette.action.selected,
 				},
@@ -88,21 +113,19 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 				<Gantt
 					tasks={tasks}
 					links={[]}
-					scales={SCALES}
+					scales={TIMELINE_SCALES}
 					start={window?.start}
 					end={window?.end}
 					cellHeight={ROW_HEIGHT}
 					scaleHeight={SCALE_HEIGHT}
 					highlightTime={highlightTime}
-					// The cast is the library's bug, not ours. Its component documents and accepts
-					// `false` here to drop the name pane, but the prop type is intersected with a
-					// config type declaring an array, and `false` satisfies neither half of the
-					// result. Dropping the pane is the only way the chart fits a phone.
-					columns={
-						showTaskPane
-							? undefined
-							: (false as unknown as ComponentProps<typeof Gantt>["columns"])
-					}
+					// No task-name pane. Every name it would list is already on its own bar, and the
+					// pane is a fixed width that pushes the chart off-screen on a narrow window.
+					//
+					// The cast is the library's bug, not ours: its component documents and accepts
+					// `false` here, but the prop type is intersected with a config type declaring an
+					// array, and `false` satisfies neither half of the result.
+					columns={false as unknown as ComponentProps<typeof Gantt>["columns"]}
 					readonly
 				/>
 			</GanttTheme>

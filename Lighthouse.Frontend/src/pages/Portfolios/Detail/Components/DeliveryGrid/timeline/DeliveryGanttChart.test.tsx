@@ -1,7 +1,7 @@
 import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import DeliveryGanttChart from "./DeliveryGanttChart";
+import DeliveryGanttChart, { TIMELINE_SCALES } from "./DeliveryGanttChart";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 // The chart paints its background grid onto a canvas, and this test environment has no 2D canvas —
@@ -45,13 +45,18 @@ const bar = (id: number, name: string): TimelineBar => ({
 	startIsObserved: false,
 });
 
+const BRAND_GREEN = "#30574e";
+
 const renderInTheme = (mode: "light" | "dark") =>
 	render(
-		<ThemeProvider theme={createTheme({ palette: { mode } })}>
+		<ThemeProvider
+			theme={createTheme({
+				palette: { mode, primary: { main: BRAND_GREEN } },
+			})}
+		>
 			<DeliveryGanttChart
 				bars={[bar(1, "Deep Sea Mapping"), bar(2, "Sonar Refit")]}
 				targetDate={new Date(2026, 9, 25)}
-				showTaskPane
 			/>
 		</ThemeProvider>,
 	);
@@ -66,23 +71,40 @@ describe("DeliveryGanttChart", () => {
 		);
 	});
 
-	it("renders without the name pane on a narrow viewport", () => {
-		render(
-			<ThemeProvider theme={createTheme()}>
-				<DeliveryGanttChart
-					bars={[bar(1, "Deep Sea Mapping")]}
-					showTaskPane={false}
-				/>
-			</ThemeProvider>,
+	it("paints the bars in the product's own colour, not the library's", () => {
+		renderInTheme("light");
+
+		// The library takes its colours from its own variables rather than from the MUI theme, so
+		// left alone it draws a blue that appears nowhere else in this product.
+		expect(screen.getByTestId("delivery-gantt")).toHaveStyle({
+			"--wx-gantt-task-color": BRAND_GREEN,
+		});
+	});
+
+	describe("the date axis", () => {
+		const [months, days] = TIMELINE_SCALES;
+
+		// The axis needs a measured width and so draws nothing in this environment, which is why
+		// these assert the scales rather than the rendered header. They pin the defect that shipped:
+		// the library calls `format` only when it is a function and otherwise prints it as it
+		// stands, so the first version headed every column with the characters "MMMM yyyy".
+		it.each(TIMELINE_SCALES)(
+			"formats the $unit row with a function",
+			(scale) => {
+				expect(typeof scale.format).toBe("function");
+			},
 		);
 
-		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+		it("names the month and numbers the day", () => {
+			expect(months.format(new Date(2026, 9, 15))).toBe("October 2026");
+			expect(days.format(new Date(2026, 9, 15))).toBe("15");
+		});
 	});
 
 	it("mounts with nothing to draw", () => {
 		render(
 			<ThemeProvider theme={createTheme()}>
-				<DeliveryGanttChart bars={[]} showTaskPane />
+				<DeliveryGanttChart bars={[]} />
 			</ThemeProvider>,
 		);
 

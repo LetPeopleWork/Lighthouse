@@ -7,7 +7,6 @@ import DeliveryTimelineTab from "./DeliveryTimelineTab";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 const licence = vi.hoisted(() => ({ isPremium: true }));
-const viewport = vi.hoisted(() => ({ isWide: true }));
 
 vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => ({
@@ -23,19 +22,11 @@ vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
  * go red on their release rather than on our defect, which is the whole reason the adapter exists.
  */
 const ganttProps = vi.hoisted(() => ({
-	current: null as {
-		bars: TimelineBar[];
-		targetDate?: Date;
-		showTaskPane: boolean;
-	} | null,
+	current: null as { bars: TimelineBar[]; targetDate?: Date } | null,
 }));
 
 vi.mock("./DeliveryGanttChart", () => ({
-	default: (props: {
-		bars: TimelineBar[];
-		targetDate?: Date;
-		showTaskPane: boolean;
-	}) => {
+	default: (props: { bars: TimelineBar[]; targetDate?: Date }) => {
 		ganttProps.current = props;
 		return <div data-testid="delivery-gantt" />;
 	},
@@ -79,22 +70,7 @@ const renderTab = (features: IFeature[], targetDate?: Date) =>
 
 beforeEach(() => {
 	licence.isPremium = true;
-	viewport.isWide = true;
 	ganttProps.current = null;
-
-	Object.defineProperty(globalThis, "matchMedia", {
-		writable: true,
-		value: vi.fn().mockImplementation((query: string) => ({
-			matches: viewport.isWide,
-			media: query,
-			onchange: null,
-			addListener: vi.fn(),
-			removeListener: vi.fn(),
-			addEventListener: vi.fn(),
-			removeEventListener: vi.fn(),
-			dispatchEvent: vi.fn(),
-		})),
-	});
 });
 
 describe("DeliveryTimelineTab", () => {
@@ -163,20 +139,6 @@ describe("DeliveryTimelineTab", () => {
 
 		expect(screen.getByTestId("premium-feature-notice")).toBeInTheDocument();
 		expect(screen.queryByTestId("delivery-gantt")).not.toBeInTheDocument();
-	});
-
-	it("drops the task-name pane on a narrow viewport", () => {
-		viewport.isWide = false;
-
-		renderTab([feature()]);
-
-		expect(ganttProps.current?.showTaskPane).toBe(false);
-	});
-
-	it("keeps the task-name pane when there is room for it", () => {
-		renderTab([feature()]);
-
-		expect(ganttProps.current?.showTaskPane).toBe(true);
 	});
 
 	it("hands the Delivery's target date through to the chart", () => {

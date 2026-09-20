@@ -7,7 +7,6 @@ import {
 	ToggleButton,
 	ToggleButtonGroup,
 	Typography,
-	useMediaQuery,
 } from "@mui/material";
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -17,7 +16,6 @@ import DeliveryGanttChart from "./DeliveryGanttChart";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
-	TASK_PANE_MINIMUM_WIDTH,
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
@@ -41,10 +39,6 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
 	);
-	const hasRoomForTaskPane = useMediaQuery(
-		`(min-width:${TASK_PANE_MINIMUM_WIDTH}px)`,
-	);
-
 	const { bars, unplaceable } = useMemo(
 		() => buildDeliveryTimeline(features, percentile),
 		[features, percentile],
@@ -84,11 +78,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			</ToggleButtonGroup>
 
 			{bars.length > 0 ? (
-				<DeliveryGanttChart
-					bars={bars}
-					targetDate={targetDate}
-					showTaskPane={hasRoomForTaskPane}
-				/>
+				<DeliveryGanttChart bars={bars} targetDate={targetDate} />
 			) : (
 				<Typography variant="body2" color="text.secondary">
 					{`None of these ${featuresTerm} can be placed on a timeline yet.`}

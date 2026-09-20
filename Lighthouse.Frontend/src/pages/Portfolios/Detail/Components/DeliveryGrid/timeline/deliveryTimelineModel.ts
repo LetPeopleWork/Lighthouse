@@ -71,14 +71,6 @@ export function timelineWindow(
 	};
 }
 
-/**
- * The width below which the chart drops its list of task names beside the bars.
- *
- * Narrower than this the pane and the bars cannot both fit, and the pane wins by default — it is a
- * fixed width, so it pushes the chart off-screen entirely rather than sharing the space.
- */
-export const TASK_PANE_MINIMUM_WIDTH = 900;
-
 const NO_START = "No forecast for when work on this begins.";
 const NO_END = "No forecast for when work on this finishes.";
 
