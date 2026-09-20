@@ -173,6 +173,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 			ref={panel}
 			data-testid="delivery-gantt"
 			data-theme-mode={isDark ? "dark" : "light"}
+			data-axis-unit={finestUnit}
 			sx={{
 				height: chartHeight(bars.length),
 				// White on the bar in both modes, rather than whatever contrasts best with the fill.
@@ -197,6 +198,14 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		>
 			<GanttTheme>
 				<Gantt
+					// Remounts when the axis changes resolution, and only then. The library reads
+					// `scales` into its own store when it initialises and does not pick up a later
+					// change, so on a resize the new scales were computed and never drawn — the old
+					// axis stayed until something else forced a redraw, which made it look as though
+					// the resolution only followed the percentile buttons. Crossing a threshold is
+					// rare, so a remount is cheaper than it sounds and is the only lever we have from
+					// outside their store.
+					key={finestUnit}
 					tasks={tasks}
 					links={[]}
 					scales={scales}

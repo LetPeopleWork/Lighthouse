@@ -1,5 +1,5 @@
 import { createTheme, ThemeProvider } from "@mui/material";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import type { TimelineBar } from "./deliveryTimelineModel";
@@ -82,6 +82,25 @@ describe("what the adapter configures the library with", () => {
 		// Dependency arrows are a later slice. An accidental non-empty list here would draw
 		// something nobody asked for.
 		expect(ganttConfig.current?.links).toEqual([]);
+	});
+
+	it("reports the axis resolution it settled on", () => {
+		renderChart();
+
+		// Carried on our own wrapper, and the same value keys the chart so a change of
+		// resolution remounts it. The library reads `scales` once at init and ignores later
+		// changes, so without that the axis silently keeps the resolution it opened with.
+		// Whether the remount actually redraws is a browser's answer, not this environment's.
+		const scales = ganttConfig.current?.scales as { unit: string }[];
+		const finest = scales[scales.length - 1].unit;
+
+		// Tied to the scales actually handed over rather than to a literal, so the two cannot
+		// drift: the attribute is what keys the remount, and a value that disagreed with the
+		// scales would remount on the wrong changes and not on the right ones.
+		expect(screen.getByTestId("delivery-gantt")).toHaveAttribute(
+			"data-axis-unit",
+			finest,
+		);
 	});
 
 	it("supplies its own axis formatting and its own bar content", () => {
