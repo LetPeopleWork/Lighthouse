@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private const int TheDrawsThatPickAFeature = 1;
 
-        public HowTheRunEnded CarryOut(int trial, TrialState state, TrialCompletions completions)
+        public HowTheRunEnded CarryOut(int trial, TrialState state, TrialRecordings recordings)
         {
             state.StartAgain();
 
@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 {
                     if (state.RemainingOf(team) > 0)
                     {
-                        WorkOneDayOf(team, trial, day, state, completions);
+                        WorkOneDayOf(team, trial, day, state, recordings);
                     }
                 }
 
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// away, because carrying it forward would hand the wait back the time it cost - which is the whole
         /// point of leaving a Feature that cannot start out of the running.
         /// </summary>
-        private void WorkOneDayOf(int teamIndex, int trial, int day, TrialState state, TrialCompletions completions)
+        private void WorkOneDayOf(int teamIndex, int trial, int day, TrialState state, TrialRecordings recordings)
         {
             var throughput = plan.ThroughputOf(teamIndex);
             var teamId = plan.TeamAt(teamIndex).Id;
@@ -75,11 +75,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 var howManyItMayWorkOnAtOnce = Math.Min(HowManyFeaturesAtOnce(teamIndex), ready.Length);
                 var worked = ready[draws.Draw(trial, teamId, day, TheDrawsThatPickAFeature + closed, howManyItMayWorkOnAtOnce)];
 
-                RecordThatWorkBeganOn(worked, day, state, completions);
+                RecordThatWorkBeganOn(worked, day, state, recordings);
 
                 if (state.CloseOneItemOf(worked, day))
                 {
-                    completions.RecordThat(worked, day);
+                    recordings.RecordThat(worked, day);
                 }
             }
         }
@@ -92,18 +92,18 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// started and finished on the same day, and a start taken after the close would be a start taken
         /// from a row that no longer has work - which reads as never having started at all.
         /// </summary>
-        private void RecordThatWorkBeganOn(int rowIndex, int day, TrialState state, TrialCompletions completions)
+        private void RecordThatWorkBeganOn(int rowIndex, int day, TrialState state, TrialRecordings recordings)
         {
             if (state.StartOneItemOf(rowIndex))
             {
-                completions.RecordThatWorkBeganOnRow(rowIndex, day);
+                recordings.RecordThatWorkBeganOnRow(rowIndex, day);
             }
 
             var feature = plan.FeatureOf(rowIndex);
 
             if (state.StartOneItemOfFeature(feature))
             {
-                completions.RecordThatWorkBeganOnFeature(feature, day);
+                recordings.RecordThatWorkBeganOnFeature(feature, day);
             }
         }
 

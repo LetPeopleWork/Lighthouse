@@ -9,17 +9,17 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     /// Adding is what makes the total independent of how the runs were shared out; putting the days in order
     /// is the caller's job, once, rather than every worker's on the way in.
     /// </summary>
-    public sealed class TrialCompletions
+    public sealed class TrialRecordings
     {
         private readonly Dictionary<int, int>[] daysEachRowFinishedOn;
         private readonly Dictionary<int, int>[] daysEachRowWasFirstWorkedOn;
         private readonly Dictionary<int, int>[] daysEachFeatureWasFirstWorkedOn;
 
-        public TrialCompletions(int rowCount, int featureCount)
+        public TrialRecordings(int rowCount, int featureCount)
         {
-            daysEachRowFinishedOn = ADayCountPer(rowCount);
-            daysEachRowWasFirstWorkedOn = ADayCountPer(rowCount);
-            daysEachFeatureWasFirstWorkedOn = ADayCountPer(featureCount);
+            daysEachRowFinishedOn = DayCounts.EmptyPer(rowCount);
+            daysEachRowWasFirstWorkedOn = DayCounts.EmptyPer(rowCount);
+            daysEachFeatureWasFirstWorkedOn = DayCounts.EmptyPer(featureCount);
         }
 
         public void RecordThat(int rowIndex, int finishedOnDay)
@@ -46,18 +46,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         public void AddRowStartsInto(Dictionary<int, int>[] total) => AddAllOf(daysEachRowWasFirstWorkedOn, total);
 
         public void AddFeatureStartsInto(Dictionary<int, int>[] total) => AddAllOf(daysEachFeatureWasFirstWorkedOn, total);
-
-        private static Dictionary<int, int>[] ADayCountPer(int howMany)
-        {
-            var counts = new Dictionary<int, int>[howMany];
-
-            for (var index = 0; index < howMany; index++)
-            {
-                counts[index] = [];
-            }
-
-            return counts;
-        }
 
         private static void CountOneMore(Dictionary<int, int> days, int day)
             => days[day] = days.GetValueOrDefault(day) + 1;

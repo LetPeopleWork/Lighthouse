@@ -9,11 +9,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     {
         private readonly TrialState state = new(plan);
 
-        public TrialCompletions Completions { get; } = new(plan.RowCount, plan.FeatureCount);
+        public TrialRecordings Recordings { get; } = new(plan.RowCount, plan.FeatureCount);
 
         public WhatTheRunsCouldNotFinish WhatWentWrong { get; } = new();
 
         public void CarryOut(SimulatedRun oneRun, int trial)
-            => WhatWentWrong.Note(oneRun.CarryOut(trial, state, Completions), trial, plan, state);
+            => WhatWentWrong.Note(oneRun.CarryOut(trial, state, Recordings), trial, plan, state);
     }
 }

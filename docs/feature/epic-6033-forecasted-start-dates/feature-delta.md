@@ -1067,7 +1067,7 @@ here — see Open Questions.
 | P8 | What draws the timeline — `@mui/x-charts` primitives, plain SVG, a third-party Gantt, or a purchased MUI X Premium licence? | Slice 04's 2h evaluation, which carries a candidate shortlist and produces a costed recommendation |
 | — | Can the chosen component render sub-lanes under a summary bar? | Same evaluation. Slice 06 is severable, so this does not gate the choice, but a component that forecloses it is worth knowing about while the choice is open |
 | — | Does the summary-versus-sub-lane disagreement (ADR-199) read as correct to a user? | Slice 06's dogfood. If it cannot be made to read as correct, slice 06 does not ship |
-| — | Is `TrialCompletions` renamed, and to what? | DELIVER. Naming, not architecture |
+| — | Is `TrialCompletions` renamed, and to what? | **Closed in DELIVER: `TrialRecordings`.** It records three things now and completions are one of them, so the old name named a third of the type |
 | — | How many Features on a real instance have more than one contributing team? | Slice 06's pre-code count. It decides whether sub-lanes are worth building at all |
 
 ---

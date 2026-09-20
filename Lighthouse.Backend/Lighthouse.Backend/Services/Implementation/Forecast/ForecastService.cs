@@ -172,10 +172,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// </summary>
         private static Dictionary<Feature, List<StartForecast>> TheDaysWorkBeganOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
         {
-            var byRow = ADayCountPer(plan.RowCount);
-            var byFeature = ADayCountPer(plan.FeatureCount);
+            var byRow = DayCounts.EmptyPer(plan.RowCount);
+            var byFeature = DayCounts.EmptyPer(plan.FeatureCount);
 
-            foreach (var recorded in shares.Select(share => share.Completions))
+            foreach (var recorded in shares.Select(share => share.Recordings))
             {
                 recorded.AddRowStartsInto(byRow);
                 recorded.AddFeatureStartsInto(byFeature);
@@ -214,18 +214,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private static Dictionary<int, int> InDayOrder(Dictionary<int, int> days)
             => days.OrderBy(day => day.Key).ToDictionary(day => day.Key, day => day.Value);
 
-        private static Dictionary<int, int>[] ADayCountPer(int howMany)
-        {
-            var counts = new Dictionary<int, int>[howMany];
-
-            for (var index = 0; index < howMany; index++)
-            {
-                counts[index] = [];
-            }
-
-            return counts;
-        }
-
         /// <summary>
         /// Added up once, after every run is over. Counts add up the same whichever worker's share is taken
         /// first, and the days are written out in order, so how the work happened to be split between workers
@@ -233,11 +221,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// </summary>
         private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
         {
-            var total = ADayCountPer(plan.RowCount);
+            var total = DayCounts.EmptyPer(plan.RowCount);
 
             foreach (var share in shares)
             {
-                share.Completions.AddInto(total);
+                share.Recordings.AddInto(total);
             }
 
             for (var row = 0; row < plan.RowCount; row++)

@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That()
                 .DoNotResideInNamespace(TheForecastComponents)
-                .Should().NotDependOnAny(Types().That().Are(typeof(TrialState), typeof(TrialCompletions)))
+                .Should().NotDependOnAny(Types().That().Are(typeof(TrialState), typeof(TrialRecordings)))
                 .Because(
                     "What one simulated run has left to do, and what it has finished, belong to that run. " +
                     "Anything outside the forecast holding one of them is holding the working state of a " +
