@@ -1,0 +1,189 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IFeature, IFeatureStart } from "../../../../../../models/Feature";
+import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
+import DeliveryTimelineTab from "./DeliveryTimelineTab";
+import type { TimelineBar } from "./deliveryTimelineModel";
+
+const licence = vi.hoisted(() => ({ isPremium: true }));
+const viewport = vi.hoisted(() => ({ isWide: true }));
+
+vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({
+		licenseStatus: { canUsePremiumFeatures: licence.isPremium },
+	}),
+}));
+
+/**
+ * The chart itself is stood in for, on purpose and as a rule rather than a convenience.
+ *
+ * What is worth asserting at this seam is the contract we hand the third party — which spans, with
+ * which target, with or without its name pane. Its markup is theirs; a test reaching into it would
+ * go red on their release rather than on our defect, which is the whole reason the adapter exists.
+ */
+const ganttProps = vi.hoisted(() => ({
+	current: null as {
+		bars: TimelineBar[];
+		targetDate?: Date;
+		showTaskPane: boolean;
+	} | null,
+}));
+
+vi.mock("./DeliveryGanttChart", () => ({
+	default: (props: {
+		bars: TimelineBar[];
+		targetDate?: Date;
+		showTaskPane: boolean;
+	}) => {
+		ganttProps.current = props;
+		return <div data-testid="delivery-gantt" />;
+	},
+}));
+
+const october = (day: number) => new Date(2026, 9, day);
+
+const aPercentile = (probability: number, day: number) =>
+	WhenForecast.new(probability, october(day));
+
+const spreadFrom = (day: number) => [
+	aPercentile(50, day),
+	aPercentile(70, day + 1),
+	aPercentile(85, day + 2),
+	aPercentile(95, day + 4),
+];
+
+const startingAround = (day: number): IFeatureStart => ({
+	source: "Forecast",
+	percentiles: spreadFrom(day),
+});
+
+const feature = (overrides: Partial<IFeature> = {}): IFeature =>
+	({
+		id: 1,
+		name: "Deep Sea Mapping Initiative",
+		startForecast: startingAround(10),
+		forecasts: spreadFrom(20),
+		teamsWithoutForecast: [],
+		...overrides,
+	}) as IFeature;
+
+const renderTab = (features: IFeature[], targetDate?: Date) =>
+	render(
+		<DeliveryTimelineTab
+			features={features}
+			targetDate={targetDate}
+			featuresTerm="Features"
+		/>,
+	);
+
+beforeEach(() => {
+	licence.isPremium = true;
+	viewport.isWide = true;
+	ganttProps.current = null;
+
+	Object.defineProperty(globalThis, "matchMedia", {
+		writable: true,
+		value: vi.fn().mockImplementation((query: string) => ({
+			matches: viewport.isWide,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
+});
+
+describe("DeliveryTimelineTab", () => {
+	it("draws the Features that can be placed", () => {
+		renderTab([feature()]);
+
+		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+		expect(ganttProps.current?.bars).toHaveLength(1);
+	});
+
+	it("starts at 70% and offers 85 and 95", () => {
+		renderTab([feature()]);
+
+		expect(screen.getByRole("button", { name: "70%" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+
+		for (const other of ["85%", "95%"]) {
+			expect(screen.getByRole("button", { name: other })).toHaveAttribute(
+				"aria-pressed",
+				"false",
+			);
+		}
+	});
+
+	it("moves the bars when another confidence level is chosen", async () => {
+		renderTab([feature()]);
+
+		const atSeventy = ganttProps.current?.bars[0].start;
+
+		await userEvent.click(screen.getByRole("button", { name: "95%" }));
+
+		expect(ganttProps.current?.bars[0].start).not.toEqual(atSeventy);
+	});
+
+	it("lists a Feature it cannot place, with the reason, rather than dropping it", () => {
+		renderTab([
+			feature({ id: 1, name: "Placed" }),
+			feature({ id: 2, name: "Nothing To Go On", forecasts: [] }),
+		]);
+
+		const listed = screen.getByTestId("timeline-unplaceable");
+
+		expect(listed).toHaveTextContent("Nothing To Go On");
+		expect(listed).toHaveTextContent(/finishes/);
+		// The placeable one is on the chart, not in the list of refusals.
+		expect(listed).not.toHaveTextContent("Placed");
+		expect(ganttProps.current?.bars).toHaveLength(1);
+	});
+
+	it("says so when nothing at all can be placed, rather than drawing an empty axis", () => {
+		renderTab([feature({ forecasts: [] })]);
+
+		expect(screen.queryByTestId("delivery-gantt")).not.toBeInTheDocument();
+		expect(
+			screen.getByText(/None of these Features can be placed/i),
+		).toBeInTheDocument();
+		expect(screen.getByTestId("timeline-unplaceable")).toBeInTheDocument();
+	});
+
+	it("shows the premium notice and no chart without a licence", () => {
+		licence.isPremium = false;
+
+		renderTab([feature()]);
+
+		expect(screen.getByTestId("premium-feature-notice")).toBeInTheDocument();
+		expect(screen.queryByTestId("delivery-gantt")).not.toBeInTheDocument();
+	});
+
+	it("drops the task-name pane on a narrow viewport", () => {
+		viewport.isWide = false;
+
+		renderTab([feature()]);
+
+		expect(ganttProps.current?.showTaskPane).toBe(false);
+	});
+
+	it("keeps the task-name pane when there is room for it", () => {
+		renderTab([feature()]);
+
+		expect(ganttProps.current?.showTaskPane).toBe(true);
+	});
+
+	it("hands the Delivery's target date through to the chart", () => {
+		const target = october(31);
+
+		renderTab([feature()], target);
+
+		expect(ganttProps.current?.targetDate).toEqual(target);
+	});
+});

@@ -82,6 +82,9 @@ import DeliveryPublishRefusedNotice from "./DeliveryPublishRefusedNotice";
 import DeliverySourceUnavailableNotice from "./DeliverySourceUnavailableNotice";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
 import { isStoredAs } from "./deliverySelectionTabs";
+import DeliveryTimelineTab from "./timeline/DeliveryTimelineTab";
+
+type DeliveryDetailTab = "workItems" | "metrics" | "timeline" | "notes";
 
 // A Feature's own chance of landing, not the Delivery's — the Delivery's asks whether they ALL land,
 // so it sits below any single row's, and the heading must not invite the two to be read as one number.
@@ -473,9 +476,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 	const [isUnbindDialogOpen, setIsUnbindDialogOpen] = useState(false);
 
-	const [activeTab, setActiveTab] = useState<"workItems" | "metrics" | "notes">(
-		"workItems",
-	);
+	const [activeTab, setActiveTab] = useState<DeliveryDetailTab>("workItems");
 	const {
 		history: metricsHistory,
 		isLoading: isLoadingMetrics,
@@ -487,10 +488,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		delivery.metricSnapshotCount < MINIMUM_METRIC_SNAPSHOTS;
 
 	const handleTabChange = useCallback(
-		(
-			_event: React.SyntheticEvent,
-			nextTab: "workItems" | "metrics" | "notes",
-		) => {
+		(_event: React.SyntheticEvent, nextTab: DeliveryDetailTab) => {
 			if (nextTab === "metrics" && isMetricsTabDisabled) {
 				return;
 			}
@@ -819,6 +817,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									</Tooltip>
 								}
 							/>
+							<Tab label="Timeline" value="timeline" />
 							{/* Always enabled: unlike Metrics, a note needs no accumulated history. */}
 							<Tab label="Notes" value="notes" />
 						</Tabs>
@@ -839,6 +838,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								isLoading={isLoadingMetrics}
 								history={metricsHistory}
 								hasFailed={metricsFailed}
+								featuresTerm={featuresTerm}
+							/>
+						)}
+						{activeTab === "timeline" && (
+							<DeliveryTimelineTab
+								features={features}
+								targetDate={delivery.date ? new Date(delivery.date) : undefined}
 								featuresTerm={featuresTerm}
 							/>
 						)}

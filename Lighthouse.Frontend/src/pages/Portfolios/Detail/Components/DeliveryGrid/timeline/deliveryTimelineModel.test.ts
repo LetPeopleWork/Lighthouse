@@ -6,6 +6,7 @@ import {
 	DEFAULT_TIMELINE_PERCENTILE,
 	isTargetDay,
 	TIMELINE_PERCENTILES,
+	timelineWindow,
 } from "./deliveryTimelineModel";
 
 const october = (day: number) => new Date(2026, 9, day);
@@ -177,6 +178,35 @@ describe("buildDeliveryTimeline", () => {
 
 		expect(bar.start).toEqual(october(15));
 		expect(bar.end).toEqual(october(15));
+	});
+});
+
+describe("timelineWindow", () => {
+	const bar = (start: number, end: number) => ({
+		featureId: 1,
+		name: "One",
+		start: october(start),
+		end: october(end),
+		startIsObserved: false,
+	});
+
+	it("covers every bar, with a few days of air either side", () => {
+		const window = timelineWindow([bar(10, 20), bar(14, 25)]);
+
+		expect(window?.start).toEqual(october(7));
+		expect(window?.end).toEqual(october(28));
+	});
+
+	it("reaches a target date that falls beyond the last bar", () => {
+		// The slack between the last forecast finish and the target is the thing a reader opens this
+		// chart to see. A window that stopped at the last bar would crop out the answer.
+		const window = timelineWindow([bar(10, 20)], october(31));
+
+		expect(window?.end).toEqual(new Date(2026, 10, 3));
+	});
+
+	it("has no window at all when there is nothing to draw", () => {
+		expect(timelineWindow([], october(15))).toBeUndefined();
 	});
 });
 

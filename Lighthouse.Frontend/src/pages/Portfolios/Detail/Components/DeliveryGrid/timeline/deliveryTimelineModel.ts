@@ -33,6 +33,52 @@ export interface DeliveryTimeline {
 	unplaceable: UnplaceableFeature[];
 }
 
+/** Days of air either side, so the first and last bars are not flush against the frame. */
+const WINDOW_PADDING_DAYS = 3;
+
+const shiftedByDays = (date: Date, days: number): Date => {
+	const shifted = new Date(date);
+	shifted.setDate(shifted.getDate() + days);
+	return shifted;
+};
+
+/**
+ * The span of time the chart should cover.
+ *
+ * The target date is inside it even when it falls beyond every bar, which is the case a reader most
+ * wants to see: a Delivery whose last Feature finishes well before its target has slack, and a window
+ * ending at the last bar would hide exactly that.
+ */
+export function timelineWindow(
+	bars: TimelineBar[],
+	targetDate?: Date,
+): { start: Date; end: Date } | undefined {
+	if (bars.length === 0) {
+		return undefined;
+	}
+
+	const moments = bars.flatMap((bar) => [bar.start, bar.end]);
+
+	if (targetDate) {
+		moments.push(targetDate);
+	}
+
+	const times = moments.map((moment) => moment.getTime());
+
+	return {
+		start: shiftedByDays(new Date(Math.min(...times)), -WINDOW_PADDING_DAYS),
+		end: shiftedByDays(new Date(Math.max(...times)), WINDOW_PADDING_DAYS),
+	};
+}
+
+/**
+ * The width below which the chart drops its list of task names beside the bars.
+ *
+ * Narrower than this the pane and the bars cannot both fit, and the pane wins by default — it is a
+ * fixed width, so it pushes the chart off-screen entirely rather than sharing the space.
+ */
+export const TASK_PANE_MINIMUM_WIDTH = 900;
+
 const NO_START = "No forecast for when work on this begins.";
 const NO_END = "No forecast for when work on this finishes.";
 
