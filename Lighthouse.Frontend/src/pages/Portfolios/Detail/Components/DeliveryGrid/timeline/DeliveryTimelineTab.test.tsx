@@ -14,6 +14,7 @@ import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
+import { forgetShowTeams } from "./useShowTeams";
 
 const licence = vi.hoisted(() => ({
 	isPremium: true,
@@ -181,6 +182,10 @@ beforeEach(() => {
 	ganttProps.current = null;
 	terminology.overrides = {};
 	localStorage.clear();
+	// The switch's state is shared across every Delivery on the page, which means it is held
+	// outside React and outlives a test. Clearing storage alone would leave the previous test's
+	// choice standing.
+	forgetShowTeams();
 	vi.restoreAllMocks();
 });
 
@@ -899,6 +904,33 @@ describe("showing the Teams behind a Feature's bar", () => {
 		await userEvent.click(within(blocked.container).getByRole("switch"));
 
 		expect(ganttProps.current?.lanes).toHaveLength(2);
+	});
+
+	it("moves every switch on the page together, not just the one clicked", async () => {
+		// A Portfolio opens several Deliveries at once, each with a switch of its own. Held in
+		// component state they each get a truth of their own: flick one and the others sit there
+		// contradicting it, and storage agrees with none of them.
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+		renderTab(
+			[
+				splittingFeature({
+					id: 42,
+					name: "Whale Migration Study",
+				}),
+			],
+			undefined,
+			[ZENITH, GRAVITY],
+		);
+
+		const [first, second] = screen.getAllByRole("switch");
+
+		expect(second).not.toBeChecked();
+
+		await userEvent.click(first);
+
+		expect(first).toBeChecked();
+		expect(second).toBeChecked();
+		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBe("true");
 	});
 
 	it("carries the reader's choice into the next Delivery they open", async () => {
