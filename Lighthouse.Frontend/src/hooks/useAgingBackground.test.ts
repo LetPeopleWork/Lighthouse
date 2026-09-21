@@ -1,13 +1,43 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	AGING_BACKGROUND_STORAGE_KEY,
 	useAgingBackground,
 } from "./useAgingBackground";
 
+/**
+ * Breaks one of storage's own methods, and puts it back afterwards.
+ *
+ * **Spied on the object, not on `Storage.prototype`.** In this environment `localStorage` does not
+ * inherit from it - `getItem` and `setItem` are its own properties - so a prototype spy installs
+ * cleanly, reports itself as installed, and intercepts nothing at all. The two tests below were
+ * written that way and passed for years without once entering the guard they name.
+ *
+ * Undone by hand, because `vi.restoreAllMocks()` does not put these back and a broken `setItem`
+ * leaking into the next test fails it while it is arranging its own fixture - a long way from the
+ * cause.
+ */
+const brokenStorage: { mockRestore: () => void }[] = [];
+
+const breakStorage = (method: "getItem" | "setItem") => {
+	const spy = vi.spyOn(localStorage, method).mockImplementation(() => {
+		throw new Error("site data is blocked");
+	});
+
+	brokenStorage.push(spy);
+
+	return spy;
+};
+
 describe("useAgingBackground", () => {
 	beforeEach(() => {
 		localStorage.clear();
+	});
+
+	afterEach(() => {
+		for (const spy of brokenStorage.splice(0)) {
+			spy.mockRestore();
+		}
 	});
 
 	it("paints nothing when no preference is stored", () => {
@@ -71,41 +101,35 @@ describe("useAgingBackground", () => {
 		// The read side of the same private-window case as below. Without the guard the throw
 		// escapes the effect and takes the whole chart with it, which is a worse outcome than
 		// forgetting a preference.
-		const getItem = vi
-			.spyOn(Storage.prototype, "getItem")
-			.mockImplementation(() => {
-				throw new Error("site data is blocked");
-			});
+		//
+		// **A choice is stored before the read is broken, and that is what gives this an answer.**
+		// Asserting "off" against an empty store says nothing: "off" is what no stored preference
+		// produces anyway, so a guard that ran and a guard that was never reached look identical.
+		// With "pace" stored, a read that got through would paint it.
+		localStorage.setItem(AGING_BACKGROUND_STORAGE_KEY, "pace");
+		breakStorage("getItem");
 
-		try {
-			const { result } = renderHook(() => useAgingBackground());
+		const { result } = renderHook(() => useAgingBackground());
 
-			expect(result.current.background).toBe("off");
-		} finally {
-			getItem.mockRestore();
-		}
+		expect(result.current.background).toBe("off");
 	});
 
 	it("still applies a choice the browser refuses to remember", () => {
 		// A private window, or site data blocked. The chart must still change when asked; it just
 		// will not outlive the tab.
-		const setItem = vi
-			.spyOn(Storage.prototype, "setItem")
-			.mockImplementation(() => {
-				throw new Error("storage is full");
-			});
+		breakStorage("setItem");
 
-		try {
-			const { result } = renderHook(() => useAgingBackground());
+		const { result } = renderHook(() => useAgingBackground());
 
-			act(() => {
-				result.current.chooseBackground("pace");
-			});
+		act(() => {
+			result.current.chooseBackground("pace");
+		});
 
-			expect(result.current.background).toBe("pace");
-		} finally {
-			setItem.mockRestore();
-		}
+		// Both halves. The chart the reader asked for, and the memory they did not get - without
+		// the second, this holds just as well against a write that succeeded, which is every run
+		// where the throw was never reached.
+		expect(result.current.background).toBe("pace");
+		expect(localStorage.getItem(AGING_BACKGROUND_STORAGE_KEY)).toBeNull();
 	});
 
 	// --- What earlier versions of this control wrote ---

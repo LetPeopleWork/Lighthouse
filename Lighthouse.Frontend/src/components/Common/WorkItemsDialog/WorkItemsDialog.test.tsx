@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Mock } from "vitest";
+import { ENLARGED_WORK_ITEMS_DIALOG_STORAGE_KEY } from "../../../hooks/useEnlargedWorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
@@ -1783,8 +1784,18 @@ describe("the room the dialog opens with", () => {
 	});
 
 	test("opens anyway when the browser will not remember anything", () => {
-		const blocked = vi.spyOn(Storage.prototype, "getItem");
-		blocked.mockImplementation(() => {
+		// The size is stored as enlarged before the read is broken, and that is what gives this an
+		// answer. Asserting that the dialog opens un-enlarged against an *empty* store says
+		// nothing - un-enlarged is what no stored size produces anyway, so a guard that ran and a
+		// guard that was never reached look the same. With "true" stored, a read that got through
+		// would open it full screen and name the control "Restore size" instead.
+		//
+		// The spy goes on the object rather than on `Storage.prototype`: `localStorage` does not
+		// inherit from it here, so a prototype spy installs, reports itself installed, and
+		// intercepts nothing.
+		localStorage.setItem(ENLARGED_WORK_ITEMS_DIALOG_STORAGE_KEY, "true");
+
+		const blocked = vi.spyOn(localStorage, "getItem").mockImplementation(() => {
 			throw new Error("The operation is insecure.");
 		});
 
