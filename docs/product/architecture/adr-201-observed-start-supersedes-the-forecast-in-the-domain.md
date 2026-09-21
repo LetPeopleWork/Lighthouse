@@ -5,6 +5,23 @@
 - **Feature**: epic-6033-forecasted-start-dates (ADO Epic #6033, Stories #6045 and #6047)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 
+**Amended 2026-09-21** — `bug-6054-started-means-started`, ADO Bug #6054. **The predicate is `Doing` or
+`Done`, and a started Feature with no recorded start day stands in the day it was created.** The decision
+that one rule lives on `Feature`, carries its provenance explicitly, and is read by both consumers without
+being owned by either, stands exactly as written; §1 and §4 below name the wrong cases and are corrected
+here.
+
+| Section | What it says | What now holds |
+|---|---|---|
+| §1 | *"returning the observed `StartedDate` when `StateCategory == StateCategories.Doing`, and otherwise deferring to the stored Feature-grain start forecast"* | The observed branch is taken for `Doing` **or** `Done`, and its value is `StartedDate ?? CreatedDate`. It defers to the forecast only for `ToDo` and the unmapped `Unknown`, and reports nothing at all only when a started Feature has neither date. A null start day used to fall through to the forecast, which is the defect: three connectors legitimately report a Doing state with no start instant |
+| §4 | *"the write-back resolver keeps its existing refusal to write anything for a Feature in a Done state — unchanged from the completion sources"* | The refusal is deleted for the start source and kept for the completion source. The symmetry was copied at the level of code shape: for a finished Feature a *completion* forecast is genuinely unanswerable, whereas a *start* is the most certainly known date it has, and refusing to write it left the stale future date the Feature carried while it was open frozen in the user's work tracking system for good |
+| §5 | *"`StateCategory`, not `StartedDate` alone, is the predicate"* | Unchanged, and load-bearing. The rule names `Doing` and `Done` positively rather than keying off the date with state as an exclusion, because any date-first wording would also stop a Feature moved back to To Do from receiving a forecast — an accepted behaviour this bug must not close by accident |
+| §2, §3 | Provenance is carried explicitly; an observed start carries no percentiles | Unchanged |
+
+This amendment reverses AC-2.3 and AC-3.4 of Epic 6033 and narrows AC-2.2 and AC-3.3. The full reasoning,
+including the two regressions the fix itself introduced and the review that found them, is in
+`docs/evolution/2026-09-21-bug-6054-started-means-started.md`.
+
 ## Context
 
 [ADR-199](./adr-199-start-day-observed-per-trial-at-two-grains.md) records a start day for every Feature
