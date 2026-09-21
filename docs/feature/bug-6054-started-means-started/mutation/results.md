@@ -3,10 +3,15 @@
 Run 2026-09-21 against `main` @ `15e8cf94c`, with the tree frozen after the last code commit. Gate is
 80 % kill rate on both stacks.
 
-| stack | score | tested | killed | survived | no coverage | timeout | wall clock |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Backend (Stryker.NET) | **90.38 %** | 156 | 141 | 11 | 4 | 0 | 3 m 15 s |
-| Frontend (StrykerJS) | **98.48 %** | 66 | 65 | 1 | 0 | 0 | 30 s |
+| stack | score | in score | executed | killed | survived | no coverage | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET) | **90.38 %** | 156 | 152 | 141 | 11 | 4 | 0 | 3 m 15 s |
+| Frontend (StrykerJS) | **98.48 %** | 66 | 66 | 65 | 1 | 0 | 0 | 30 s |
+
+**Two counts, and they are not the same thing.** 152 mutants were *executed*; a further 4 had no covering
+test and were never run. Both count against the score, so the denominator is 156 and 141/156 = 90.38 %.
+Stryker's own log reports only the executed figure ("152 total mutants will be tested"), which is why
+the two numbers appear in the same report.
 
 Configs: `stryker.6054.backend.json`, `stryker.6054.frontend.json`, `vitest.stryker.6054.config.ts`.
 
@@ -20,7 +25,7 @@ was killed.**
 Scope sanity check: `19397 mutants created` across the whole backend, `19245` skipped by the mutate
 filter, **`152` tested** — consistent with two files and no more.
 
-| file | tested | killed | survived | no coverage | score |
+| file | in score | killed | survived | no coverage | score |
 | --- | --- | --- | --- | --- | --- |
 | `Models/Feature.cs` | 83 | 72 | 9 | 2 | 86.75 % |
 | `Services/Implementation/WriteBackTriggerService.cs` | 73 | 69 | 2 | 2 | 94.52 % |
