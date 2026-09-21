@@ -1,0 +1,158 @@
+{
+  "roadmap": {
+    "project_id": "epic-6033-forecasted-start-dates",
+    "created_at": "2026-09-21",
+    "total_steps": 7,
+    "goal": "Draw dependency lines on the Delivery timeline, and mark the dependencies that cannot be drawn",
+    "wave": "DELIVER",
+    "paradigm": "object-oriented"
+  },
+  "validation": {
+    "status": "approved",
+    "note": "Transcribed from the 28-scenario DISTILL table in feature-delta.md, reviewed by nw-acceptance-designer-reviewer on 2026-09-21 (conditionally approved, zero blockers). Scenario numbers index that table. Slice 05 only."
+  },
+  "phases": [
+    {
+      "id": "05",
+      "name": "Dependency lines on the Delivery timeline",
+      "description": "Slice 05, ADO #6049. Frontend-only but for the demo-data rule. ADR-203 governs: a drawn line means the forecast acted on that edge.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "The overlay joins a Feature to its blocker",
+          "criteria": [
+            "An honoured dependency on a Feature with a bar in this Delivery yields one edge",
+            "The blocker is found by referenceId, never by name",
+            "The referenceId match is exact, asserted both positively and negatively",
+            "Two Features waiting on one blocker each get their own edge",
+            "An empty referenceId joins nothing; a Feature without dependencies gets no entry"
+          ],
+          "scenario": "Scenarios 1, 2, 3, 4, 11, 13, 14",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts",
+          "scenario_name": "A Feature waiting on another Feature in the same Delivery is connected to it",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts"
+          ],
+          "implementation_notes": "The one CREATE NEW of this slice. Pure module: takes the Delivery's IFeature[] and the DeliveryTimeline already built beside it, returns a DependencyOverlay. Imports nothing from @svar-ui. Scenario 11 guards FeatureDependsOnDto.Withheld setting ReferenceId to the empty string."
+        },
+        {
+          "id": "05-02",
+          "name": "A blocker with no bar gets a reason",
+          "criteria": [
+            "A blocker not in this Delivery gets a neutral mark, never a warning",
+            "A blocker in the Delivery but unplaceable gets its own distinct reason",
+            "Where both apply, the unhonoured reason is reported over the no-bar one",
+            "A withheld blocker is marked, and its name appears nowhere in the output"
+          ],
+          "scenario": "Scenarios 7, 8, 9, 10",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts",
+          "scenario_name": "A blocker with no bar because it is not in this Delivery gets a neutral mark",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts"
+          ],
+          "implementation_notes": "Absence from the Delivery is COMPUTED from the Delivery's own Features. Never read OutsideThisPortfolio off the payload: it answers a different question (Portfolio, not Delivery). Unplaceable means present in features[] but filtered into DeliveryTimeline.unplaceable."
+        },
+        {
+          "id": "05-03",
+          "name": "Unhonoured edges warn instead of drawing",
+          "criteria": [
+            "Each notHonouredReason draws no line and warns in that reason's own words",
+            "A set-aside Portfolio raises no per-bar mark and says it once above the chart",
+            "blockerPositionedBelow is drawn and also marked",
+            "The warning styling calls isWorthWarningAbout rather than re-deriving the rule",
+            "Every timeline sentence renders the reader's own configurable terminology"
+          ],
+          "scenario": "Scenarios 5, 6, 12",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts",
+          "scenario_name": "Every reason the forecast gives for not acting draws no line and warns the waiting bar",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts",
+            "Lighthouse.Frontend/src/utils/dependencies/dependencySentences.ts",
+            "Lighthouse.Frontend/src/utils/dependencies/dependencySentences.test.ts"
+          ],
+          "implementation_notes": "ADR-203 core. NotLicensed is unreachable here because the tab is premium-gated entirely; do not design for it. Reuse isWorthWarningAbout and isSetAside from models/FeatureDependency.ts; a third copy of the warning rule is a third chance for the surfaces to disagree. CORRECTION 2026-09-21: step 05-02 wrote its three no-bar sentences locally because dependencySentences.ts was wrongly left out of its files_to_modify, and duplicated the existing withheldName(terms). This step owns the relocation and the terminology threading."
+        },
+        {
+          "id": "05-04",
+          "name": "Density degrades the chart, not the meaning",
+          "criteria": [
+            "Above the threshold no line is drawn and every dependent bar is marked",
+            "At the threshold exactly, lines are still drawn",
+            "Degrading leaves a sound dependency neutral and a warned one warned",
+            "The threshold is a parameter with a default, not a constant inside the function"
+          ],
+          "scenario": "Scenarios 15, 16, 17, 18",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts",
+          "scenario_name": "Above the density threshold nothing is drawn and every dependent bar is marked",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts"
+          ],
+          "implementation_notes": "D5-9 and D5-9a. Test the degraded branch at threshold=1 against a two-edge fixture; never build a 40-bar fixture. Scenario 16 pins the boundary operator, which is the mutant slice 04's run found alive in the column-count helper."
+        },
+        {
+          "id": "05-05",
+          "name": "The adapter hands links to the chart",
+          "criteria": [
+            "One link per drawn edge, each with its own id, source and target",
+            "The chart receives the links instead of an empty array",
+            "No second production file imports from the vendor package"
+          ],
+          "scenario": "Scenarios 19, 25",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.test.ts",
+          "scenario_name": "The adapter turns drawn edges into the library's link shape",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.test.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.tsx"
+          ],
+          "implementation_notes": "DeliveryGanttChart.tsx line 210 currently passes links={[]} and that empty array is the mutant scenario 25 catches. toGanttLinks writes the routing enum by hand exactly as toGanttTasks writes type: task. ganttAdapterBoundary.enforcement.test.ts must stay green."
+        },
+        {
+          "id": "05-06",
+          "name": "The bar marks it and the dialog explains it",
+          "criteria": [
+            "A warning mark and a neutral mark are distinguishable by accessible name",
+            "A bar with nothing to say carries no mark and no green check",
+            "Opening a bar lists that Feature's warnings, matching the Feature table",
+            "A dialog given no descriptor shows no warnings column"
+          ],
+          "scenario": "Scenarios 20, 21, 22, 23, 24, 26",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.test.tsx",
+          "scenario_name": "A bar whose dependency was not honoured carries a warning symbol",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineBarContent.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineBarContent.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx"
+          ],
+          "implementation_notes": "The warnings column is ADR-198's fifth optional descriptor, attached at the timeline's call site ONLY. Do not wire it into other WorkItemsDialog callers. Reuse WarningsIndicator's icon and featureWarningSentences but not the component itself: its no-warnings branch draws a green check, which is wrong inside a bar a few pixels tall."
+        },
+        {
+          "id": "05-07",
+          "name": "Demo data gives the out-of-Delivery case",
+          "criteria": [
+            "The narrowed rule selects the Ocean Explorer Features except OE-008 and OE-013",
+            "The Apollo burnup Delivery still selects every Feature",
+            "The existing Portfolio-grain demo factory test still passes"
+          ],
+          "scenario": "Scenarios 27, 28",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs",
+          "scenario_name": "The narrowed Ocean Explorer rule leaves its blockers outside the Delivery",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DemoDataService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs"
+          ],
+          "implementation_notes": "A SIBLING of BuildAllFeaturesRuleDefinition; that one is shared with the Apollo burnup Delivery and must not be narrowed in place. Use the literal feature.referenceid because FeatureFieldProvider.FeatureReferenceIdKey is private const. RuleOperators.NotEquals is public and compares OrdinalIgnoreCase."
+        }
+      ]
+    }
+  ]
+}
