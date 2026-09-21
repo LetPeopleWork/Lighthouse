@@ -32,13 +32,30 @@ The colour is the worst thing there is to say about your connections:
 Hovering the icon names the broken connection, so you can tell *which* one needs attention without opening anything.
 
 # Activity
-The *Activity* section lists the refreshes this instance has admitted — for Teams and for Portfolios — plus any removal of a Team or Portfolio that is still being processed. If nothing is in flight, it says so.
+The *Activity* section lists the work this instance has admitted: the refreshes of your Teams and Portfolios, the forecasts that follow a Portfolio refresh, and any removal of a Team or Portfolio that is still being processed. If nothing is in flight, it says so.
 
 Lighthouse runs **one** of these at a time. The list is ordered the way the queue will reach them: whatever is running first, then the longest-waiting.
 
-| The row says | It means |
-|--------------|----------|
-| `Running` | The refresh is talking to your Work Tracking System right now. |
+A row reads `Refreshing Team '<name>' — Running`: what is happening, what it is happening to, and the state it is in. There are five kinds of work, and each says which it is:
+
+| The row starts with | It means |
+|---------------------|----------|
+| `Refreshing Team '<name>'` | Lighthouse is fetching that Team's Work Items. |
+| `Refreshing Portfolio '<name>'` | The same for a Portfolio: its Features and the Work Items under them. |
+| `Forecasting Portfolio '<name>'` | Lighthouse is recalculating that Portfolio's forecasts. |
+| `Removing Team '<name>'` | That Team is being deleted and the deletion is still running. |
+| `Removing Portfolio '<name>'` | The same for a Portfolio. |
+
+The words *Team* and *Portfolio* follow your own [terminology](configuration.html#terminology-configuration). What is being done to them does not — renaming a Portfolio changes what is being worked on, not what is happening to it.
+
+{: .note}
+Refreshing a Portfolio and forecasting it are two separate pieces of work, so **one Portfolio can appear twice**. A Portfolio refresh ends by queueing a forecast of that same Portfolio: you see `Refreshing Portfolio '<name>'` run, then `Forecasting Portfolio '<name>'` behind it. Nothing is duplicated and nothing has gone wrong.
+
+After the name comes the state:
+
+| The row ends with | It means |
+|-------------------|----------|
+| `Running` | This is the one piece of work under way right now. |
 | `Queued` | It has been admitted and is waiting for the lane to free up. |
 | `Queued behind <name>` | The same, and this is what it is waiting for. |
 | `Stopping…` | You asked it to stop, and Lighthouse has not yet confirmed it has. |
