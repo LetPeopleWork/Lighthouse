@@ -57,6 +57,34 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         /// <summary>
+        /// A Feature can be finished and still hold a start forecast, so being finished is not on its own
+        /// enough to keep a predicted date off the screen. The simulation picks which Features to forecast
+        /// by which teams contribute to them and never looks at their state, and it keeps a start row for
+        /// any Feature that still has work left - which a finished Feature does whenever one of its
+        /// children is still open. The day it actually started has to win over that surviving row.
+        /// </summary>
+        [Test]
+        public void AFinishedFeatureWithWorkStillOpen_CarriesTheDayItStartedRatherThanTheSurvivingForecast()
+        {
+            var startedOn = new DateTime(2026, 9, 7, 0, 0, 0, DateTimeKind.Utc);
+
+            var team = ATeam(1);
+            var feature = AForecastableFeature(team, startsOnDay: 4, finishesOnDay: 11);
+            feature.StateCategory = StateCategories.Done;
+            feature.StartedDate = startedOn;
+
+            var dto = TheReadOf(feature);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.StartForecasts, Is.Not.Empty, "the forecast the read has to pass over");
+                Assert.That(dto.StartForecast.Source, Is.EqualTo("Observed"));
+                Assert.That(dto.StartForecast.ObservedDate, Is.EqualTo(startedOn));
+                Assert.That(dto.StartForecast.Percentiles, Is.Empty);
+            }
+        }
+
+        /// <summary>
         /// The start date is absent and says why. The completion list is absent too, which it has always
         /// been for this case - the point here is that the start side did not invent a different answer.
         /// </summary>
