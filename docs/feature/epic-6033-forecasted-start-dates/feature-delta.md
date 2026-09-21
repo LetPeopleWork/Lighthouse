@@ -2484,3 +2484,992 @@ and no wave-end expansion menu.
 `wave declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
 
 Next: DELIVER, slice 05 (Story #6049).
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — What Was Given, and What Was Found
+
+**Pass run 2026-09-21, PROPOSE mode, slice 06 only (ADO User Story #6050).** Taken as given and not
+re-derived: the Epic's architecture is settled and slices 01–05 are on main; the scope is
+frontend-only and **no backend change is permitted** — no DTO, no query, no migration; the adapter
+boundary is enforced by `ganttAdapterBoundary.enforcement.test.ts` and `DeliveryGanttChart.tsx`
+remains the only production importer of `@svar-ui/*`; the Timeline tab is premium-gated in its
+entirety; DEVOPS stays skipped by recorded decision.
+
+Six things the acceptance criteria did not say: four found by reading the code and the bundle this
+slice sits on, and two by counting the demo data — the second of which is a defect in the demo data
+itself and belongs to nobody's slice.
+
+**1. The join the slice needs is one prop that is already in scope.** `IFeatureTeamForecast` keys on
+`teamId`, a number. `teamsWithoutForecast` is a `string[]` of **names** with no ids attached, so the
+two cannot be joined to each other, and `DeliveryTimelineTabProps` carries no Team context at all.
+The name is nonetheless already client-side: `DeliverySection` receives `teams: IEntityReference[]`
+(`{id, name}`), passes it to `featureColumns` and to `FeatureProgressIndicator`, and renders
+`<DeliveryTimelineTab>` at line 852 **without passing it**. The sole production call site,
+`PortfolioDeliveryView.tsx:78`, supplies `teams={portfolio.involvedTeams}`. So the whole join is one
+prop on `DeliveryTimelineTabProps` and one line at a call site that already holds the value — no new
+plumbing, no fetch, no context, and emphatically no backend change. Adding `teamName` to
+`FeatureTeamForecastDto` was considered and is rejected against the slice brief's own sentence: it
+would put a second copy of a name on a shipped contract in order to re-deliver something the caller
+already has.
+
+**The residual that comes with it, and it is not hypothetical.** `involvedTeams` is the *Portfolio's*
+Team set. A Feature can sit in several Portfolios, so a `teamId` in `teamForecasts` need not resolve
+to a name. Dropping that lane would recreate the silent disagreement AC-6.4 exists to prevent, one
+level down and harder to see, so an unresolvable id gets a lane with a stated fallback name (D6-7).
+The shape already exists in the repository today: `DeliverySourceTabFixture.tsx:55` sets
+`involvedTeams: []`.
+
+**2. AC-6.4 is not reachable as written, and this is the most consequential finding in the pass.**
+`buildDeliveryTimeline` calls `cannotBeForecast({ teamsWithoutForecast })` first and pushes the
+Feature to `unplaceable` when that list is non-empty. `Feature.cs:107` has
+`CanBeForecast => !TeamsWithoutForecast.Any()`, and `FeatureDto.cs:34` only fills `Forecasts` when
+`CanBeForecast`. **So a Feature with any contributing Team lacking throughput has no bar at all and
+cannot be expanded** — the route AC-6.4 describes can never fire.
+
+The shape that *is* reachable runs the other way. `Feature.TeamsWithoutForecast` returns `[]`
+outright when `FeatureWork.Sum(RemainingWorkItems) <= 0` (`Feature.cs:178`), while
+`SomethingToSay(...)` still returns `null` for a per-Team forecast whose `TotalTrials` is zero
+(`Feature.cs:167`). A **placeable** Feature can therefore carry a `teamForecasts` row with empty
+percentiles at both ends. Two further facts settle what that row looks like on the wire:
+`FeatureDto.cs:41–50` builds a `FeatureTeamForecastDto` for **every** `FeatureWork` Team, outside the
+`CanBeForecast` guard, and `FeatureTeamForecastDto` simply leaves `StartPercentiles` /
+`CompletionPercentiles` empty when the forecast is null. So the Team is never absent from the
+payload — only its dates are. AC-6.4 is restated under Changed Assumptions with the original quoted
+verbatim.
+
+**3. The library's expander is grid-pane only, which is why one global switch is the only affordance
+available.** Verified in the bundle for `@svar-ui/react-gantt` 2.7.3 / `@svar-ui/gantt-store` 2.7.2:
+`ITask` does support `parent`, `open` and `type: "task" | "summary" | "milestone"`, and hierarchy
+works in the free edition — but the toggle itself (`wx-toggle-icon`, `data-action="open-task"`,
+indented by `$level`) is rendered by the **grid cell renderer**, and the handler that execs
+`open-task` is bound in the **grid component**. `DeliveryGanttChart.tsx` sets `columns={false}`
+deliberately, so there is no grid pane and no expander. `api.exec("open-task", …)` is reachable
+through `init`/a ref but is not used; `open` on the task objects is what the toggle drives.
+
+**Which makes the hierarchy itself worth questioning, and the answer changes the design.** With the
+grid pane off, `parent` buys no indentation (indentation is a grid-cell concern), and `open` buys
+inclusion — which a global switch decides anyway by emitting lanes or not emitting them. The store
+does recompute a `type: "summary"` span from its children only when `!(start && end)`, so supplying
+both would preserve the stored Feature-level value verbatim, and the drag/update paths that call
+`resetSummaryDates` are unreachable under `readonly`. That is all true and it is still the wrong
+trade: it stakes AC-6.3 on a conditional inside somebody else's store, read out of a bundle, with
+nothing that re-asks after an upgrade. **Flat lanes — ordinary tasks, no `parent`, no `open`, no
+`summary` — make AC-6.3 hold by construction and add no new vendor literal at all.** Recommended as
+D6-2 and recorded as ADR-204.
+
+**4. The accepted-residual class from ADR-203 carries over, and this design deliberately does not
+extend it.** `ganttShapes.ts` writes the library's vocabulary by hand — `type: "task"`, the `e2s`
+link routing enum — and a value the library does not recognise draws nothing and raises nothing. The
+file's own comments record both traps, including the axis `format` that shipped once as a string and
+printed eight characters of column heading. No unit test can catch any of it, structurally: there is
+no drawing surface in this environment, which is the reason `ganttShapes` exists as a library-free
+file. Rather than re-derive that argument, this slice takes the cheapest available position on it —
+**emit no literal that is not already on screen** — and carries two *new* residuals of its own, both
+named in ADR-204: order preservation now groups as well as ranks, and the per-Team fill is painted
+inside our bar template over the library's own element.
+
+**5. The demo data carries this slice well — four expandable Features between them carrying eleven
+lanes — but it contains no AC-6.4 case at all.** Counted from the CSVs and laid out below under
+*Demo Data and the Dogfood Walkthrough*. **OE-008 is already excluded from the Delivery** — slice
+05's narrowing shipped (`DemoDataService.cs:167–175`), so OE-008 is not a case for this slice.
+Placeable and multi-Team: **OE-002 (4 Teams), OE-007 (3), OE-004 (2), OE-010 (2)**. OE-001 has three
+Teams and no bar.
+
+**This count is only true because `Team Lightspeed.csv` was repaired on 2026-09-21, and the reason
+matters more than the number.** An earlier pass of this document read the team CSVs by column
+position, got these same figures, and got them by luck — the file's rows were malformed in a way that
+made a positional read agree with the intended data and the *product's* read disagree with both.
+Finding 6 is that defect. Nobody should take these figures as evidence that a positional read is
+sound; it is not, for this file or any other.
+
+**No demo Feature has both two or more Teams and a Team row with empty percentiles**, because that
+shape needs a Feature with zero remaining work everywhere, and the only such Feature (OE-011) has one
+Team. The same is true of the unresolvable-name case: every Team that contributes is in the
+Portfolio. Both are covered by fixtures rather than by a demo change (D6-12).
+
+**6. `Team Lightspeed.csv` imported twenty-five Ocean Explorer rows as nothing at all. Found in this
+pass, repaired 2026-09-21, and kept here because it is the most transferable thing the slice
+learned.** The file's header is
+`ID,Type,Name,State,Tags,StartedDate,ClosedDate,Parent,StateEnteredDate`; every other team file uses
+`ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate`. Its own `2xxx` rows were
+written in its own order and imported correctly. **Its `OE-*` rows were written in the other order**,
+so they read correctly to a human eye scanning the block and incorrectly to the product. The old row
+105 — `OE-002-001,Assess coral reef health status,Backlog,User Story,OE-002,,,,` — parsed against
+Lightspeed's own header yielded `Type` = "Assess coral reef health status", `Name` = "Backlog",
+`State` = "User Story", `Tags` = "OE-002" and **`Parent` = ""**.
+
+The connector resolves **by header name, never by position**: `CsvWorkTrackingConnector.cs:204–216`
+reads each field through `csv.GetField(GetOptionByKey(…, <header option>))`, and
+`DemoDataFactory.cs:72` sets the parent option to the literal `"Parent"`. So those rows were dead
+three times over, and any one of the three would have been enough:
+
+- the parsed `Parent` was empty, so nothing attached them to an Epic;
+- the parsed `State` was "User Story", which is in none of the team's ToDo, Doing or Done lists;
+- the parsed `Type` was the item's *name*, and `DemoDataFactory.cs:50` admits only `User Story` and
+  `Bug` — `CsvWorkTrackingConnector.cs:222` drops such a row before state mapping runs.
+
+**How it presented, and why nobody had noticed.** Team Lightspeed contributed to no Ocean Explorer
+Feature, while remaining attached to the Portfolio by scenario 12 — so it appeared in `involvedTeams`
+and owned no work, which is a perfectly legal state and reads as a Team that simply has not started.
+Every affected Feature still had *a* Team, so nothing looked empty. The one place it was load-bearing
+is **OE-005, whose entire child set was these rows**: it had no contributing Team at all, which
+falsifies slice 05's own claim at `feature-delta.md:2187` that "OE-005 stays in the Delivery, is
+placeable (Team Lightspeed, which has throughput)" — the Feature slice 05 nominated as its *pure*
+AC-5.2 case. A demo defect that silently removes the demonstration of a shipped acceptance criterion
+is exactly the kind that survives review.
+
+**Repaired 2026-09-21**: all twenty-five `OE-*` rows rewritten into the file's own header order, plus
+one unrelated row (`2984`) whose unquoted comma in "Allow to show additional widgets (team only,
+project only)" split it into ten fields and is now quoted. Twenty-six lines, one file; no other team
+file needed it. **Slice 05's line 2187 is true again, and OE-005 is childless no longer** — noted
+here rather than edited there, because slices 01–05 are not this pass's to amend.
+
+The lesson worth carrying past this Epic: **a CSV's header is the contract, and a block of rows that
+looks right is not evidence that it parses right.** Two readers can agree with each other and both
+disagree with the connector.
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Options Considered, and the Recommendation
+
+Presented as options because this pass ran in PROPOSE mode. The recommendation is stated for each;
+the D-rows below record the recommended option.
+
+### The sub-lane model — how a lane reaches the chart
+
+| | Option | Trade-off |
+|---|---|---|
+| A | **Flat lanes: a lane is an ordinary task placed immediately after its Feature; no `parent`, no `open`, no `summary`** | ★ **Recommended.** Adds **zero** new vendor vocabulary, so the ADR-203 residual class is not widened by one literal. AC-6.3 stops being a thing a test checks and becomes a thing that cannot be otherwise: the Feature's task object is byte-identical with lanes on and off. Costs the store's grouping, which nothing reads while the grid pane is off. |
+| B | Hierarchy with the parent as `type: "task"` and `parent` on each lane | Groups the rows in the store and would indent if the grid pane were ever turned back on. Buys two new hand-written literals (`parent`, `open`) whose effect here is invisible — and an invisible literal is exactly the one that rots unnoticed. |
+| C | Hierarchy with the parent as `type: "summary"` | The idiomatic Gantt answer, and it does work: the store recomputes a summary's span only when a date is missing, and we supply both. But it makes the slice's central guarantee depend on a conditional inside a vendor store, verified once by reading a bundle. Rejected for that reason, not because it fails. |
+
+Both B and C also make the toggle mean "collapse", which is a second state in the store that our own
+switch already decides. A makes off mean **absent** — the task list is then the shipped one, which is
+what turns AC-6.5's severability into a deletion rather than a diff.
+
+### Where the lane model lives
+
+| | Option | Trade-off |
+|---|---|---|
+| A | Inside `buildDeliveryTimeline`, which grows a third return value | One pass, and lanes are built where bars are. But it widens a shipped function's contract and makes AC-6.5 a diff. This is the same argument D5-1 settled the same way one slice ago. |
+| B | **A new pure sibling module, `deliveryTeamLanes.ts`** | ★ **Recommended.** Consumes the built `DeliveryTimeline`, the same `IFeature[]`, the Portfolio's Teams and the selected percentile; returns lanes and un-laned Team notes. The lane *decision* is then severable structurally — delete one file — rather than unpicked out of a shipped function. Testable with no drawing surface. Mirrors `deliveryDependencyOverlay.ts` exactly, so the module family stays legible. (It does not make the whole slice a deletion: the axis change still opens `deliveryTimelineModel.ts`. See the severability argument under Component Decomposition.) |
+| C | Inside `ganttShapes.ts` | Which Teams get a lane and what an unnamed Team is called is product logic, not vendor translation. Putting it there means the decision and the vendor shape change together forever. |
+
+**Recommended split: B for the decision, C for the translation only** — `toGanttTasks(bars, lanes =
+[])` gains an optional second argument, so the existing one-argument call is untouched and the OFF
+path is provably the shipped path.
+
+### Toggle placement and label
+
+| | Option | Trade-off |
+|---|---|---|
+| A | **A labelled `Switch` beside the Probability buttons, rendered only when some placed Feature has two or more Teams** | ★ **Recommended, and confirmed by the maintainer.** A switch is the right control for on/off; the `ToggleButtonGroup` next to it means "pick one of three", and reusing that shape for a binary would teach the reader the wrong thing about both. Hiding it when nothing can split avoids a control that is present but inert. |
+| B | A fourth `ToggleButton` in the existing group | Cheapest to build, and wrong: the group is `exclusive`, so a lanes button would have to sit outside its semantics or break them. |
+| C | Always rendered, disabled when nothing can split | A disabled control asks the reader to work out why. An absent one asks nothing. |
+
+**The label is "Show Teams", decided by the maintainer on 2026-09-21** — not a DESIGN recommendation,
+and it settles a problem this pass had raised. *Team* is user-renameable, so the string is composed
+from `TERMINOLOGY_KEYS.TEAMS` and renders "Show Squads" for a reader who renamed it. DESIGN had
+proposed `` `Lanes per ${teamTerm}` `` to avoid `toLowerCase()` surgery on somebody's chosen word;
+**both that recommendation and the case problem it was working around are withdrawn**, because "Show
+Teams" needs no transformation either and says what the control does rather than what it produces
+(D6-5).
+
+### A Team with no lane to draw
+
+| | Option | Trade-off |
+|---|---|---|
+| A | **No task; the Team is named on the Feature's existing bar mark, as one more neutral note** | ★ **Recommended.** Reuses the mark, the tooltip and the note list wholesale — no new UI at all — and it cannot be mistaken for a date. The note is neutral rather than amber, on the same reasoning D5-14 settled: the Feature is forecasting correctly, only the picture is short. |
+| B | A lane task with no dates | **Rejected on the adapter's own recorded evidence.** `DeliveryGanttChart`'s header states it: the free edition "draws an undated task at a position the data does not support instead of leaving it out, so the caller filters first". A dateless lane would put a bar somewhere arbitrary and assert a schedule that does not exist. |
+| C | A zero-length lane pinned to the Feature's own start | Draws a dot at a date that Team never claimed. It is B's problem with a plausible-looking position attached, which is worse. |
+
+### An unresolvable Team name
+
+| | Option | Trade-off |
+|---|---|---|
+| A | Drop the lane | **Rejected outright** — this is the silent disagreement AC-6.4 exists to prevent, recreated at a level nobody is looking at. |
+| B | Name it by id — "Team 47" | Puts a database identifier on a user's screen, and a reader who looks it up finds nothing they can reach. |
+| C | **A stated fallback: a Team from outside this Portfolio, composed from the Team and Portfolio terms** | ★ **Recommended.** Truthful about what is missing and about why. Several unnamed Teams read alike in words but stay distinguishable on the chart, because the colour map is keyed by id and gives each of them its own (D6-6). |
+
+### Lane colour
+
+`getColorMapForKeys` is **REUSED AS IS**, the same helper `deliveryEpicColors` hands the Delivery
+Metrics charts, and for the same stated reason — a per-Feature map would paint one Team two colours
+on one screen. Built once over every Team with a lane anywhere on the chart, and keyed by
+`String(teamId)` rather than by name, because an unnamed Team still needs a colour of its own and
+keying on the name would collapse every unnamed Team into one bucket. **Stability is within one
+chart, not across the product**: the helper sorts its key set, so a Team's colour is a function of
+the set it appears in — exactly as it already is on the Metrics tab, and worth saying rather than
+over-promising.
+
+**Colour is never the only carrier.** The lane's text is the Team's name, so a reader who cannot
+distinguish the hues loses nothing but the grouping shortcut.
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Component Decomposition
+
+| Path | Change | What it does |
+|---|---|---|
+| `…/DeliveryGrid/timeline/deliveryTeamLanes.ts` | **new** | Pure. Given the Delivery's Features, the built `DeliveryTimeline`, the Portfolio's Teams and the percentile: returns one lane per contributing Team that has both ends, and one note per Team that has not. Library-free. |
+| `…/DeliveryGrid/timeline/DeliveryTimelineTab.tsx` | extend | New `teams` prop; the **Show Teams** switch, the label composed from `TERMINOLOGY_KEYS.TEAMS` and the control rendered only when something can split; calls `buildDeliveryTeamLanes`; folds the un-laned notes into `barMarksFor`; passes lanes down when the switch is on. **The switch's state is persisted per browser** under `lighthouse:deliveryTimeline:showTeams`, following `useShowTips`' shape — lazy `useState` initialiser, `try/catch` on read and write, default on any failure, and **an explicit string comparison rather than a truthiness test**. Whether that lives inline or in a small `hooks/` sibling is the crafter's call; the shape is not. |
+| `…/DeliveryGrid/timeline/ganttShapes.ts` | extend | `toGanttTasks(bars, lanes = [])` interleaves each lane after its Feature and mints the lane ids. |
+| `…/DeliveryGrid/timeline/deliveryTimelineModel.ts` | extend | `timelineWindow` (defined here at line 52, **not** in `ganttShapes`) widens its first parameter to anything carrying a start and an end. Additive: `buildDeliveryTimeline` and every existing export are untouched. |
+| `…/DeliveryGrid/timeline/DeliveryGanttChart.tsx` | extend | New `lanes` prop; height from the visible row count rather than `bars.length`; the bar-content lookup keys on the task id as issued rather than on `Number(data.id)`; **and the `timelineWindow` call at line 114 is changed to pass the lanes** — without that, the widened type compiles and changes nothing. |
+| `…/DeliveryGrid/timeline/TimelineBarContent.tsx` | extend | Renders a lane's content as well as a Feature's: the Team's name, the Team's fill, and a click that opens the Feature the lane belongs to. |
+| `…/DeliveryGrid/DeliverySection.tsx` | extend | One line: `teams={teams}` on the `<DeliveryTimelineTab>` already rendered at line 852. |
+| `Lighthouse.Frontend/src/utils/theme/colors.ts` | **none** | `getColorMapForKeys` is called, not changed. |
+| Everything backend | **none** | No DTO, no query, no migration, no demo-data change. |
+
+**No C4 diagram is redrawn, and that is a finding rather than an omission** — the same one slice 05
+recorded. This slice adds no container, crosses no component boundary and introduces no actor or
+external system. Every new artifact is a module inside the Timeline tab the slice-04 diagrams already
+show, and redrawing them with one more box inside an existing box would cost a reader the time to
+notice nothing had changed.
+
+Two mechanical points the decomposition turns on, because both are silent if got wrong.
+
+**Lane ids must not collide with Feature ids, and the bar-content lookup has to follow.**
+`DeliveryGanttChart` currently resolves a bar with `barsById.get(Number(data.id))`. A lane id of the
+form `` `${featureId}:${teamId}` `` yields `NaN` there, the lookup misses, `TimelineBarContent`
+returns `null`, and the library's own untemplated bar is drawn instead — a lane that renders as a
+blank box with no name and no click. The lookup keys on the id as issued.
+
+**The window has to know about lanes or a lane can be clipped without a sound — and widening the
+signature is not what fixes it.** `timelineWindow` reads `bars` only. A Team's own percentile is not
+bounded by the Feature's in the general case — D4 says so in as many words and AC-6.3 exists because
+of it — so a lane can reach past the axis.
+
+An earlier version of this section said that because `timelineWindow` only ever reads `.start` and
+`.end`, widening its parameter "admits lanes with no call site changed". **That is half true and the
+wrong half is dangerous.** The *type* widens for free; the *behaviour* does not.
+`DeliveryGanttChart.tsx:114` calls `timelineWindow(bars, targetDate, today)`, and until that call is
+changed the widening compiles, every scenario still passes, and the clipping happens anyway — nothing
+is clipped in the test environment because nothing is drawn there. **The required change is the call
+site, not the signature**, and the form that cannot drift is to compute the window from **the task
+list the chart is actually handed**, so the window and the drawing cannot disagree about what is on
+the chart.
+
+**And `timelineWindow` lives in `deliveryTimelineModel.ts`, not in `ganttShapes.ts`** — line 52, with
+`DeliveryGanttChart.tsx:15` importing it from there. An earlier draft of this document filed it under
+`ganttShapes` in two tables, and that misfiling had a consequence beyond tidiness, taken up next.
+
+### AC-6.5's severability has to be argued differently from slice 05's, and the earlier version of this document got that wrong
+
+**Slice 05 could argue AC-5.4 from an untouched model.** Its whole case was that
+`buildDeliveryTimeline` was reused as is, no field was added to `TimelineBar` or `UnplaceableFeature`,
+and `deliveryTimelineModel.ts` — and therefore `deliveryTimelineModel.test.ts` — was not opened at
+all. Removing the slice was a deletion of one file and two optional props, and the model's own test
+file standing unchanged was the evidence.
+
+**Slice 06 cannot borrow that argument, because it touches that file.** `timelineWindow` is defined
+there, this slice widens it, and `deliveryTimelineModel.test.ts` exercises it directly at lines
+223–256. So the "untouched model test" evidence does not transfer. **This is a correction, not a
+restatement**: while `timelineWindow` was misfiled under `ganttShapes` in this document, the slice
+appeared not to touch the model at all, and the severability claim was inheriting slice 05's evidence
+without having earned it.
+
+**What AC-6.5 actually rests on, stated in its own terms**, is four things and none of them is an
+untouched file:
+
+1. **Three files are deleted outright** — `deliveryTeamLanes.ts`, and after DELIVER's refactor pass
+   also `useShowTeams.ts` and `TimelineTeamLegend.tsx`. **AMENDED: DESIGN counted one.** The other two
+   are pure moves with no behaviour change, and both are justified on this codebase's own habits —
+   seven hand-rolled preference hooks already live one to a file, and what is drawn is testable on its
+   own only when it is its own component. Severability is unaffected in kind: it is still a deletion
+   rather than a diff, and the count grew because of the refactor rather than because the feature
+   spread.
+2. **`toGanttTasks`' second parameter is optional and defaulted**, so removing the argument restores
+   the shipped one-argument call exactly. The switch being *absent* rather than *collapsed* (D6-3) is
+   what makes that a restoration rather than an approximation: with no lanes emitted, the task list is
+   byte-identical to slice 04's.
+3. **`timelineWindow`'s widening is purely additive and reverting it is local.** No existing caller,
+   test or behaviour changes when the widened parameter is handed only bars — which is exactly the
+   trap named above, and here it is the property that makes the change reversible. `buildDeliveryTimeline`
+   and every other export in that file are untouched.
+4. **The remaining edits are one prop on `DeliveryTimelineTab`, one line in `DeliverySection`, one
+   control, and one lookup change in the adapter.**
+
+So the honest form of the claim is: **removing slice 06 is a deletion of three modules plus the
+reversal of four small additive edits, one of which is in a shipped model file.** That is still cheap,
+and it is a weaker statement than slice 05's. AC-6.5 stands as written; what changes is the evidence
+offered for it, and DISTILL should assert it by that route rather than by asserting a file is
+untouched. *(Amended after DELIVER: the module count was one at DESIGN time and became three when the
+refactor pass gave the preference hook and the legend their own files. The shape of the argument did
+not change — only the count of things to delete.)*
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Reuse Analysis
+
+Default is EXTEND. Every **CREATE NEW** carries evidence that extending is impossible.
+
+| Component | Verdict | Evidence |
+|---|---|---|
+| `getColorMapForKeys` (`utils/theme/colors`) | **REUSED AS IS** | Takes `string[]`, returns a deterministic map. `deliveryEpicColors` already calls it for exactly this purpose one tab over. Nothing about Teams needs a different rule. |
+| `deliveryEpicColors` | **PATTERN REUSED, NOT EXTENDED** | It is a one-expression adapter over `DeliveryMetricsHistory`, a type this module has nothing to do with. Its *reasoning* — build the map over the whole population, not per chart — is what carries across, and is quoted in ADR-204. |
+| `buildDeliveryTimeline` | **REUSED AS IS** | Called unchanged. Lanes are computed beside it from its output, for the same severability reason D5-1 gave: widening a shipped function's contract turns AC-6.5 from a deletion into a diff. |
+| `cannotBeForecast` / `cannotForecastReason` | **REUSED AS IS, and deliberately not called at Team grain** | They read `teamsWithoutForecast`, a Feature-level verdict the backend owns and the DTO blanks dates over. There is no Team-grain equivalent on the contract, and inventing one client-side would be a second opinion on a settled question. A Team's lane is decided by whether its own percentiles resolve, which is a different question with a different answer. |
+| `ganttShapes.toGanttTasks` | **EXTEND** | An optional second parameter. The existing one-argument call is unchanged, so the switch-off path is the shipped path rather than a path that resembles it. |
+| `deliveryTimelineModel.ts` as a file | **EXTEND — and this slice does open it**, unlike slice 05 | Named as its own row because the severability argument turns on it: `deliveryTimelineModel.test.ts` exercises `timelineWindow` at lines 223–256, so slice 05's "the model and its test are untouched" evidence for AC-5.4 does not transfer to AC-6.5. Only `timelineWindow`'s parameter changes; `buildDeliveryTimeline`, `TimelineBar`, `UnplaceableFeature` and `targetCalendarDate` are untouched. |
+| `ganttShapes.chartHeight` | **REUSED AS IS** | Already takes a row count; it is handed the visible row count instead of `bars.length`. Its own "at least one row" floor still applies. |
+| `deliveryTimelineModel.timelineWindow` | **EXTEND** | Defined at `deliveryTimelineModel.ts:52` — **not** in `ganttShapes`, where two earlier tables in this document filed it. Its first parameter widens to `{ start: Date; end: Date }[]`, which `TimelineBar` already satisfies, so the widening itself is additive and breaks nothing. **It also fixes nothing on its own**: `DeliveryGanttChart.tsx:114` must be changed to pass the lanes, or the axis is computed from bars alone exactly as today and a lane is clipped silently while every scenario passes. The signature is the cheap half; the call site is the change. |
+| `TimelineBarContent` | **EXTEND** | It already owns what is drawn inside a bar, already decides clickability, and already renders a mark. A lane is one more thing it can be handed. A second component would be a second place that decides what a bar looks like. |
+| `TimelineBarMarks` / `BarMark` / `BarNote` | **REUSED AS IS** | The un-laned Team's sentence is one more `BarNote` with `isWarning: false` on a mark that already exists. No new field, no new component, no new symbol. |
+| `DeliveryTimelineTab` | **EXTEND** | One prop, one control, one memo, one extra argument to `barMarksFor`, and the persisted switch state. It is already the composition point for percentile state, the overlay and the dialog. |
+| Switch persistence — `usePersistedGridState` | **NOT REUSED, and not a missed opportunity** | It cannot carry a boolean. Its state type is `PersistedGridState` (`sortModel`, `columnVisibilityModel`, `columnOrder`, `columnWidths`) and **every write runs `sanitizeGridState`, which is a whitelist** — it rebuilds a clean object from those four fields and drops everything else, deliberately, to prevent storage poisoning (`hooks.ts:81–89`). A `showTeams` boolean handed to it would be silently discarded on save *and* on read. Widening that type to hold a chart's view preference would make a security-shaped whitelist less of a whitelist for one consumer that is not a grid. |
+| Switch persistence — `useShowTips` (`pages/Common/MetricsView/useShowTips.ts`) | **PATTERN REUSED, NOT EXTENDED** | The project's DRY rule is don't repeat *knowledge*, not code — the same classification and the same reason as `deliveryEpicColors` above. `useShowTips` is the closest existing shape by some distance: a boolean view preference, a lazy `useState` initialiser that reads storage once with no default-flash, `try/catch` on both read and write, and a fall back to the default on any failure. **It also compares the stored string explicitly — `if (stored === "false")` — rather than coercing it**, which is the guard against the trap that `localStorage` returns strings and `Boolean("false")` is `true`; a `showTeams` flag read by coercion would be stuck on forever once written off. **It is a better template than the two boolean-idiom precedents elsewhere** — `OnboardingStepper.tsx:24/32` and `ThemeContext.tsx:29–30` read and write the same way but wrap nothing, so a reader who copies either wholesale ships a control that throws in private browsing. Take the whole shape from `useShowTips`: the comparison and the wrapping, not one without the other. |
+| `DeliveryGanttChart` | **EXTEND** | One prop and one lookup change. It stays the only `@svar-ui` importer, so the enforcement test passes without exception. |
+| `buildDependencyOverlay` / `DrawnDependency` | **NO CHANGE** | Lanes carry no dependency lines — out of scope by the slice brief. The overlay keys on `featureId` and never sees a lane. |
+| `featureWarningSentences` / `isWorthWarningAbout` | **REUSED AS IS** | Untouched. The un-laned Team note is a timeline fact, not a Feature warning, and mixing it in would put a chart-local sentence under a "Warnings" header the other fifteen dialog sites also read. |
+| `DeliverySection` | **EXTEND** | One line. `teams` is already a prop, already destructured, already passed to two siblings. |
+| `IFeatureTeamForecast` / `FeatureSchema` | **REUSED AS IS** | Read for the first time. The model, the schema and the parse already carry both ends per Team; slice 01 built them for this. |
+| `FeatureTeamForecastDto` / `FeatureDto` / `Feature.cs` | **NO CHANGE** | No field, no query, no migration. Named explicitly because adding `teamName` is the obvious wrong move and the slice brief forbids it. |
+| `deliveryTeamLanes.ts` | **CREATE NEW** | The only new file. Extending is impossible in the sense that matters: the decision it makes exists nowhere — no function today reads `teamForecasts` at all, in any module. Placing it inside `buildDeliveryTimeline` or `ganttShapes` was considered and rejected above with reasons, so "new" here means "a new sibling in an established family", modelled directly on `deliveryDependencyOverlay.ts`. |
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Ports, Topology and the Accepted Residuals
+
+**No port changes, driving or driven.** `GET /api/latest/features` already carries `teamForecasts` in
+full; slice 01 put it there and nothing has read it until now. No persistence change, no work-tracking
+change, no new endpoint, no new field. The Driving and Driven Ports table stands unamended.
+
+**ADR-203's residual is carried forward, not re-derived, and not extended.** `ganttShapes` writes the
+library's vocabulary by hand; a value the library does not recognise draws nothing and raises nothing;
+no unit test can catch it, because this environment has no drawing surface, which is why the file
+exists library-free at all. The maintainer's position on that class is on record and stands: the live
+visual check before the push is the whole verification, and what is given up is durability. **This
+slice's contribution to that class is nil by design** — flat lanes emit `type: "task"` and nothing
+else, so no literal is added that a later refactor can silently break.
+
+Two residuals this slice does add, both accepted and both named in ADR-204.
+
+**Order preservation now carries the grouping, not just the ranking.** Flat lanes sit immediately
+after their Feature and rely on the library rendering tasks in the order it is handed them. That
+reliance is not new — board order is already load-bearing for the Features themselves, and
+`buildDeliveryTimeline`'s own comment says re-sorting here would "quietly re-rank the board on the
+way to the screen" — but its failure mode is now worse. If the library ever re-sorted, the chart
+would read as nonsense rather than as broken, which is the harder thing to report.
+
+**The per-Team fill is painted inside our own bar template, over the library's element.** The
+template Box is `width: 100%; height: 100%` with `background: "none"` today, so giving it the Team's
+colour paints the lane. The library's own border and fill stay underneath, so a rim of the default
+colour may show at the edges. Nothing here can see it: the environment mocks the library's stylesheet
+away, which `ganttColorOverrides`' own comment already records as the reason its rendered result is
+somebody else's job. Verified by looking, once, at delivery.
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Decisions Table
+
+D-numbered `D6-n`, continuing the presentation-and-composition series slice 05 opened, and separate
+from the `DDD-` rows, which are backend domain decisions.
+
+| ID | Decision | Record |
+|---|---|---|
+| D6-1 | **One global switch, default OFF.** No per-row expander and no per-Feature state. The library's expander is grid-pane only and this chart has no grid pane | **ADR-204** |
+| D6-2 | **Flat lanes.** A lane is an ordinary task after its Feature — no `parent`, no `open`, no `type: "summary"`. This slice adds **no new vendor literal** | **ADR-204** |
+| D6-3 | **OFF means absent, not collapsed.** With the switch off, the task list is byte-identical to the shipped one, so AC-6.3 holds by construction. It also carries most of AC-6.5 — but **not all of it**, because this slice opens `deliveryTimelineModel.ts` and so cannot borrow slice 05's "the model and its test are untouched" evidence. The corrected argument is set out under Component Decomposition | **ADR-204** |
+| D6-3a | **ADDED during DELIVER — with the Teams shown, a single-Team Feature's bar takes that Team's colour and name.** DESIGN had it carry nothing, on the reasoning that a lane restating a summary bar is noise (the slice brief says so too). **Seeing the running chart overturned that**: with the switch on, five of the demo Delivery's ten Features showed no Team at all, so the reader was asked "which Team" and half the chart declined to answer. The bar is not split and gains no lane — it is one Team's work and already has a row — it simply says whose. **This is what widened D6-13, and it is what forced AC-6.3's amendment**: the bar's *dates* are untouched, its *appearance* is not | Maintainer, during DELIVER |
+| D6-4 | The lane model lives in a new pure sibling, `deliveryTeamLanes.ts`; the vendor translation stays in `ganttShapes` as an optional second argument to `toGanttTasks` | This document |
+| D6-5 | The switch's label is **"Show Teams"**, composed from `TERMINOLOGY_KEYS.TEAMS` so it renders "Show Squads" for a renamed term. **Decided by the maintainer on 2026-09-21**, not recommended by DESIGN — it supersedes the proposed `Lanes per {Team}` and dissolves the `toLowerCase()` problem that proposal existed to avoid | Maintainer, 2026-09-21 |
+| D6-6 | **Lane colour comes from `getColorMapForKeys`**, keyed by `String(teamId)` and **not by name** — two Teams this Portfolio cannot name share one fallback phrase, so a name-keyed map would paint them identically, and a Team with no name at all is dropped outright by the helper's `keys.filter(Boolean)` (`utils/theme/colors.ts:307`). A zero id is safe: `String(0)` is `"0"` and survives the filter, which matters in a repository that has already shipped rows carrying `Id=0` | ADR-204 |
+| D6-6a | **AMENDED after DELIVER — the key set is every Team *in reach*, not every Team with a lane, and this was a proven defect rather than a precaution.** DESIGN said "built once over every Team with a lane on the chart" and that is **wrong**: the set of Teams that resolve a lane moves with the probability, the helper sorts its keys and hands out colours by position, so a Team dropping out at one percentile gives **every Team after it its neighbour's colour**. The adversarial review reproduced exactly that — a Team's colour shifting as the reader moved the control, and one Team inheriting another's. The shipped set is the Portfolio's own Teams unioned with every Team any Feature names (`deliveryTeamLanes.ts:349–366`), which no percentile can change. Consequence worth having in the record rather than only in a commit message: **a Team's colour is stable across percentile changes and across the Deliveries of one Portfolio**, which is what makes the legend readable at all. DESIGN's "stability is within one chart" under-promised | This document |
+| D6-7 | A `teamId` that resolves to no name gets a **real lane** with a stated fallback naming it as a Team outside this Portfolio. Never dropped | **ADR-204** |
+| D6-8 | A Team with a row but **no percentiles at either end gets no lane** — it is named on the Feature's existing bar mark as one more note. A dateless task would be drawn at a position the data does not support, which the adapter's own header already records | **ADR-204** |
+| D6-9 | That note is **neutral, not a warning** — same reasoning as D5-14. On the one reachable shape the Feature is forecasting correctly and the Team has nothing left to do | ADR-204 |
+| D6-9a | **When lanes are shown, an un-laned Team is named on the bar itself, not only in its tooltip.** Raised by the DISCUSS reviewer at the wave gate as its only low, and the objection is right: a name reachable solely by hovering fails the test US-06 is built on — seeing which Team it is without opening anything. **The split answer**: with lanes *off*, the bar is a few pixels tall and competing with the Feature's own name, so the symbol carries it and the name is a hover away; with lanes *on*, the reader has explicitly asked to see Teams, every other Team on that Feature is named in full along its own row, and the one Team without a row is the only one that would need hovering for. Naming it inline beside the symbol costs one short string on a bar no longer competing for width, and it is exactly when the completeness guarantee matters — a Team is noticed missing while the Teams are being read. **The demo data cannot exercise this** (every Team in OE-002 has a forecast), so it is fixture-covered and DISTILL owns the assertion | This document |
+| D6-10 | A lane is drawn only when **both** ends resolve at the selected percentile, mirroring `buildDeliveryTimeline`'s own two gates. One end alone is treated as D6-8 | This document |
+| D6-11 | Lanes are ordered **alphabetically by Team name**, unnamed ones last — stable across percentile changes and across Features, so a reader tracks one Team down the chart. Which Team is late is read off the bars, not off the row order | This document |
+| D6-12 | **No demo-data change.** The two failure shapes (empty per-Team percentiles, unresolvable name) have no multi-Team instance in the Ocean Explorer data and manufacturing one would need a Feature with zero remaining work everywhere — a screen that demonstrates nothing. Covered by fixtures | This document |
+| D6-12a | **`Team Lightspeed.csv`'s twenty-five `OE-*` rows imported as nothing — found in this pass, repaired 2026-09-21.** Its header order disagreed with its own rows; the connector resolves by header name, so the rows arrived with no parent, an unmapped state and an unknown type. The repair rewrites them into the file's own order (plus one unrelated unquoted-comma row). It restores four multi-Team Features to the demo Delivery and restores slice 05's own AC-5.2 case, which the defect had silently removed | Maintainer, 2026-09-21 |
+| D6-13 | ~~The switch is rendered only when some placed Feature has **two or more** contributing Teams.~~ **AMENDED after DELIVER: the gate is "would showing the Teams change anything here"** — a lane, a note about a Team that has none, or a Team's name on a bar it has to itself. **Direct consequence of D6-3a**: once a single-Team Feature answers "which Team", a ≥2 gate hides a control that demonstrably works. The principle is unchanged and is what widened the rule — absent when there is genuinely nothing to show, and **never present-and-inert**, because a control that cannot change anything still invites the click that proves it and a reader who gets nothing back concludes the feature is broken rather than inapplicable. **Two existing tests were changed rather than added**, since they encoded the ≥2 rule; recorded because a widened criterion that quietly rewrites its own tests is exactly what a later reader should be able to watch happening | Maintainer, during DELIVER |
+| D6-14 | A lane's click opens the **same dialog the Feature's bar opens**. A lane is that Feature, for one Team; making it inert beside a clickable bar reads as a defect | This document |
+| D6-14a | **A mark belongs to the Feature's bar only. A lane never repeats it.** `TimelineBarContent` reads `marks.get(bar.featureId)`, so a lane rendered through the same component with its Feature's id would wear the same warning symbol once per lane — four amber icons on a three-lane Feature, which trains the reader to stop reading them, the exact failure D5-13 and D5-14 were written to avoid. Every mark this slice can produce is a statement about the **Feature** (a warning from the table's own sentences, a dependency note, or a Team with no lane), so the Feature's bar is where all of them are true and a lane is where none of them are. **Added because DISTILL had to assume it**: no D-row said it, its scenario 24 asserted the reading, and an assumption that reaches DELIVER unrecorded gets settled by whoever types first | This document |
+| D6-15 | **REVERSED 2026-09-21 — the switch IS persisted**, per browser, via `localStorage`. **The original row's reason was factually wrong and that is why this reads as a reversal rather than a rewrite**: it said persisting "would need a settings surface, which is a backend change this slice forbids". The codebase already persists exactly this class of per-viewer view preference client-side, in seven hand-rolled hooks — `useShowTips`, `useHideCompletedFeatures`, `useAgingBackground`, `useArchiveConfirmationPreference`, `useEnlargedWorkItemsDialog`, `useCategorySelection` and the grid's `usePersistedGridState`. A backend was never the obstacle; DESIGN asserted a constraint without checking it | Maintainer, 2026-09-21 |
+| D6-15a | **Default OFF on first visit only.** D6-1 is untouched — the default is about a reader who has never used the control, not about one returning to a Delivery they have already set up. Once used, the switch remembers | Maintainer, 2026-09-21 |
+| D6-15b | **One key for the reader, not one per Delivery**: `lighthouse:deliveryTimeline:showTeams`. "Show me Teams" is a property of the reader, not of the Delivery — the same call column visibility already makes, which is global to a grid type rather than to a row set. **This diverges from the nearest precedent and the divergence is deliberate**: `useShowTips` keys per owner (`lighthouse:metrics:${ownerType}:${ownerId}:showTips`), because a tip is *content* a reader finishes with for one thing, while lanes are a *view mode* a reader adopts. **The spelling is the house form, not a free choice** — `lighthouse:`-prefixed, colon-separated, camelCase, matching `lighthouse:workItemsDialog:enlarged` most closely; the hyphenated and bare outliers (`theme`, `lighthouse-hide-onboarding-stepper`) are older and are the shape the codebase has moved away from. The prefix and the single key are the **same argument twice**: this store is shared origin-wide with the auth, theme and usage-data markers, so an unprefixed key is what eventually collides and a key per Delivery is what accumulates orphans nothing ever cleans | This document |
+| D6-15c | **Storage that is unavailable, blocked or corrupt degrades to the default and the tab keeps working.** Verified, not assumed: every access in `usePersistedGridState` carries its own `try/catch` — read at `hooks.ts:146–154`, writes at `168–172` and `185–189`, clear at `203–207` — each logging and falling back rather than rethrowing, and `useShowTips` does the same for a boolean. Private browsing and cleared site data are therefore an existing, handled case in this codebase, not a new risk this slice introduces | This document |
+| D6-16 | **The chart's window is computed from the task list the chart is handed, not from the bars.** A Team's percentile is not bounded by the Feature's in the general case, so a lane can otherwise be clipped silently. Widening `timelineWindow`'s parameter (in `deliveryTimelineModel.ts`, not `ganttShapes`) is necessary and **not sufficient** — the type widens for free, the behaviour does not, and until `DeliveryGanttChart.tsx:114` passes the lanes the clipping happens anyway with every scenario green. Corrected from an earlier form that said the widening needed no call-site change | This document |
+| D6-17 | **Accepted residual, load-bearing: order preservation now groups as well as ranks.** The chart is ordered by the board's own order, so lanes gathering under their Feature changes what a reader sees scanning down — and if the library ever re-sorts, lanes separate from the Feature they belong to and the chart reads as nonsense. Verified by looking, once, at delivery; after that day nothing re-asks | **ADR-204** |
+| D6-17a | **Accepted residual, cosmetic: the per-Team fill is painted over the library's own element, so a rim of its default colour may show at a bar's edge.** Invisible in the test environment, which mocks the vendor stylesheet away. **Split from D6-17 deliberately** — one of these can misread the whole chart and the other is a few pixels, and carrying both in one row hid that | **ADR-204** |
+| D6-17b | **WITHDRAWN during DELIVER: the chart no longer explains why a Feature's bar reaches past its Teams' lanes.** A sentence above the chart said so; the maintainer removed it on seeing the running chart — *"Remove that, we don't care."* **The fact it stated is not in dispute and is kept here**: a Feature's start is recorded inside each simulated run as the earliest across its Teams (D4), so its P70 is the 70th percentile of the minimum rather than the minimum of the Teams' P70s, and `P70(min) ≤ min(P70)`; the far end mirrors it. What is withdrawn is only the product saying it on screen. **This was DESIGN's mitigation for the slice brief's own risk 2** — that a legitimate summary-versus-lane disagreement would read as a bug — and the maintainer, having looked at the chart, judged the disagreement not worth explaining. **That is risk 2 being answered by observation, which is what the dogfood moment was always for**, and it is the outcome the brief asked for rather than a step skipped. Recorded for a reader who finds the arithmetic surprising and no sentence beside it. *(Noted honestly: DESIGN never wrote this sentence into a D-row — it arose and was removed inside DELIVER — so this row records a removal rather than amends a decision.)* | Maintainer, during DELIVER |
+| D6-18 | Peer review was **not dispatched by DESIGN itself**, on the same grounds D5-19 recorded: ADR-204 is a presentation decision inside one shipped module, there is no performance or security surface, and no contract changes. **That was a decision about who dispatches, not a claim that this pass goes unreviewed** — the consolidated review was always the instrument. It has since run: a supplemental reviewer pass assessed the trailing decision rows and returned PASS while flagging D6-17's bundling (hence D6-17a), and the same reviewer now holds the DESIGN slot of the Final Wave Review Gate. Kept rather than deleted because the reasoning for not dispatching *separately* is still the reasoning, and a row that quietly became untrue is worse than one that says what happened | This document |
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Demo Data and the Dogfood Walkthrough
+
+Read from `Factories/DemoData/*.csv` and `DemoDataService.cs` on 2026-09-21, **parsing every team CSV
+against its own header rather than by column position**, and **after the repair finding 6 describes**.
+Both qualifications are load-bearing: one file's header disagreed with its own rows, so a positional
+read of this table and a correct read of it happened to agree while the *product* disagreed with
+both. The figures below are what the connector will actually import.
+
+**Slice 05's narrowing has shipped** — `BuildMultiTeamDeliveryRuleDefinition` excludes `OE-008` and
+`OE-013` by reference id (`DemoDataService.cs:167–175`) — so the Ocean Explorer Milestone selects
+eleven Epics, not thirteen.
+
+The Portfolio's five Teams: **Zenith** (good throughput), **Gravity** (old items), **Lightspeed**
+(part-time), **Meridian** (*no* throughput), **Equinox** (*thin* throughput). All five contribute.
+
+| In the Delivery | Contributing Teams | On the timeline |
+|---|---|---|
+| **OE-002** *Coral Reef Restoration Program* | **Equinox, Gravity, Lightspeed, Zenith (4)** | **The AC-6.2 / AC-6.3 case, and the widest split on the chart.** Placeable, and state `Next` with a started date 8 days ago — so its bar starts **observed** while all four lanes start from forecasts. |
+| **OE-007** *Kelp Forest Conservation* | **Gravity, Lightspeed, Zenith (3)** | The clean AC-6.2 case: no started date, so bar and lanes are all forecast and read against each other directly. |
+| **OE-004** *Underwater Research Station* | Lightspeed, Zenith (2) | Two lanes. Also waits on OE-001, which has no bar — so it carries slice 05's mark **and** lanes at once, which is the one place the two mechanisms have to coexist on one bar. |
+| **OE-010** *Whale Migration Study* | Lightspeed, Zenith (2) | Two lanes, and one half of the `InALoop` pair with OE-009. |
+| **OE-001** *Deep Sea Mapping Initiative* | Gravity, Zenith, **Meridian** (3) | **The live proof of finding 2.** Meridian has no throughput, so OE-001 is `unplaceable` — no bar, nothing to expand. Three Teams and not a single lane. |
+| OE-003, OE-005, OE-006, OE-009, OE-011 | one Team each | **AC-6.1**: no lane, switch on or off. OE-005's children are the rows finding 6 repaired, so it has a Team again — which is also what restores slice 05's AC-5.2 case. |
+| OE-012 *Plastic Cleanup Operations* | none | No child work item in any Team CSV. Carried from slice 05 as **flagged, not relied on**; whether it is placeable was not verified then and is not verified here, and nothing in this design depends on the answer. |
+
+**So the switch turns ten bars into twenty-one rows**: four Features carry eleven lanes between them
+— roughly 850 pixels of chart where 430 sits today.
+
+**One piece of reasoning was weakened and is now restored, and the round trip is worth recording
+rather than quietly reverting.** D6-1 defaults the switch to off partly because lanes are expensive in
+vertical space. While `Team Lightspeed.csv` was malformed, this Delivery split only twice and that
+argument had almost no demo evidence behind it; the decision stood on the general case alone. The
+repair restores the evidence — the chart genuinely doubles — so the vertical-cost argument is again
+supported by the surface the maintainer will actually look at. Nothing about the decision changed;
+what changed is whether the demo could witness it.
+
+### The walkthrough, same day
+
+1. Open **Project Ocean Explorer → Ocean Explorer Milestone → Timeline**. Ten bars. If the **Show
+   Teams** switch is not visible, D6-13's guard is wrong — four Features qualify.
+2. **Confirm AC-6.1 before touching anything.** OE-003, OE-005, OE-006, OE-009 and OE-011 are
+   single-Team. Note what they look like.
+3. **Turn the switch on.** OE-002 grows four lanes, OE-007 three, OE-004 and OE-010 two each. The five
+   single-Team Features are unchanged — that is AC-6.1 under the new wording.
+4. **Check AC-6.3 on OE-007 first**, because it has no observed start to confuse the reading. Its bar
+   must not move by a pixel. Then check that the earliest lane does *not* have to start where the bar
+   starts — and that when it does not, the chart still reads as correct rather than as broken. **This
+   is the slice's whole learning hypothesis and it is decided here, by eye.**
+5. **Then OE-002, which is the hard one.** Its bar starts eight days ago, observed. Its four lanes —
+   Equinox, Gravity, Lightspeed, Zenith — start from forecasts, in the future. A bar beginning in the
+   past above four lanes beginning in the future is the single most likely thing in this slice to be
+   screenshotted into a support thread. If the presentation cannot carry it, the honest outcome is
+   the one the slice brief already names.
+6. **Move the probability from 70 to 95.** Every lane and every bar moves together. Nothing jumps
+   rows — lanes are ordered by Team name, not by date, exactly so that they do not.
+7. **Check one Team's colour across Features.** Zenith contributes to OE-002, OE-004, OE-007 and
+   OE-010; Lightspeed to all four as well. One colour per Team across all four, or D6-6 has been
+   built per Feature instead of per chart.
+8. **Read OE-004 with both mechanisms on it** — slice 05's mark for a blocker with no bar, and two
+   lanes of its own. One bar carrying a symbol and a split is the densest thing this chart will show,
+   and it is the case to check before believing the presentation scales.
+9. **Click a lane.** The Feature's dialog opens — the same one its bar opens.
+10. **Turn the switch off.** The chart must be indistinguishable from step 1. If anything differs,
+    D6-3 has not been built as written.
+11. **Scroll to "Not on the timeline".** OE-001 is there with Meridian named. Three Teams, no lanes,
+    and that is correct — it is finding 2 on screen.
+12. **Turn the switch back on, then reload the page.** The lanes come back by themselves. This is the
+    whole of what the demo can show about D6-15, and it is worth doing deliberately rather than
+    noticing by accident, because the reversal of D6-15 arrived late and nothing before this step
+    exercises it.
+13. **With lanes still on, open Project Apollo → Apollo Release → Timeline.** The **Show Teams** switch
+    is **not there**, and no bar splits. That is D6-13 and the second clause of AC-6.1 on screen, and
+    it is also the check that a persisted *on* does nothing strange in a Delivery that cannot use it.
+
+**What step 13 cannot show, and it is the one place the demo is short of the design.** Every Apollo
+Epic is worked by Team Zenith alone — `AP-001` through `AP-004` appear as a parent in
+`Team Zenith.csv` and in no other team file — so Apollo cannot demonstrate the thing the per-browser
+key actually decides: **lanes arriving already on in a *different* Delivery that can split.** The
+Ocean Explorer Milestone is the only demo Delivery with multi-Team Features, so there is no second
+one to carry the preference into.
+
+So D6-15b's cross-Delivery behaviour is **asserted in fixtures and never seen in the demo**. That is
+recorded rather than papered over, because this is precisely the choice a user is most likely to be
+surprised by and the walkthrough cannot rehearse it. If the maintainer wants it rehearsed, the
+cheapest route is a second Delivery over the same Ocean Explorer Portfolio with a different selection
+rule — a demo-data change this slice does not make (D6-12) and which should be weighed on its own
+merits rather than folded in here.
+
+**What the walkthrough cannot show**, and this is stated rather than glossed: neither an empty
+per-Team forecast nor an unresolvable Team name occurs anywhere in this data (D6-12). Both are
+fixture-covered, and DISTILL owns the scenarios.
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Changed Assumptions and Back-Propagation
+
+**Three upstream changes are owed.** All are changes to DISCUSS artifacts and are recorded here
+rather than applied silently; `design/upstream-changes.md` carries them for whoever edits US-06.
+
+### AC-6.1 — rewritten by the global switch
+
+> **Original** (`docs/feature/epic-6033-forecasted-start-dates/feature-delta.md`, DISCUSS / User
+> Stories, US-06, 2026-09-20): "**AC-6.1** — A Feature with one contributing team has no expander on
+> the timeline. Its row is unchanged."
+
+There is no expander to have, on any row, for any Feature. The library's toggle is rendered by the
+grid pane and this chart has none (finding 3), and the maintainer settled on one global switch on
+2026-09-21. The criterion's *intent* — a single-Team Feature is never split — survives intact, and is
+worth keeping precisely because a global switch makes it easier to get wrong.
+
+**A second clause is owed, and the original had no equivalent.** With one control governing the whole
+chart, "never split" has a Delivery-wide counterpart: a Delivery in which *nothing* can split must not
+offer the control at all. That is observable behaviour and it was, until this clause, asserted
+nowhere — D6-13 stated the rule and no criterion could fail on it.
+
+- **AC-6.1** — A Feature with one contributing Team is never split into lanes, whether lanes are
+  shown or hidden. Its bar and its row are the same in both. **Where no Feature in the Delivery has
+  two or more contributing Teams, there is no control to show them** — not a disabled one, and not
+  one that does nothing when used.
+
+### AC-6.4 — unreachable as written
+
+> **Original** (same file, same section): "**AC-6.4** — A team contributing to the Feature but
+> carrying no forecast gets a named lane with its reason, not no lane — otherwise the expansion
+> silently disagrees with `TeamsWithoutForecast`."
+
+The route it describes cannot fire. A Feature with any Team in `TeamsWithoutForecast` has no bar
+(finding 2), so there is nothing to expand and no lane to give. And where the reachable shape does
+occur, a *lane* is the wrong answer — a lane with no dates is drawn at a position the data does not
+support, which is the trap `DeliveryGanttChart`'s own header warns about. What has to survive is the
+criterion's actual purpose, which is that a contributing Team is never silently dropped.
+
+- **AC-6.4** — A contributing Team that the Feature carries no forecast for is **named on the
+  Feature's bar**, with the reason it has no lane, so the split can never quietly show fewer Teams
+  than the Feature has. **While lanes are shown its name is readable without hovering or opening
+  anything**, alongside the Teams that do have lanes. Where nothing is wrong with the Feature itself,
+  that naming does not read as a warning.
+- **AC-6.6** *(new)* — A contributing Team whose name this Portfolio does not hold still gets its own
+  lane, identified as a Team from outside this Portfolio rather than omitted.
+
+AC-6.6 is new because the original set had no criterion at all for the case, and it is the one that
+finding 1's residual produces. Both new forms are deliberately behavioural: they say what a reader can
+observe and name no component, prop or predicate.
+
+### The slice brief's observed-start bullet — withdrawn, with a reason
+
+> **Original** (`slices/slice-06-per-team-sub-lanes-on-the-timeline.md`, IN scope): "A started team's
+> sub-lane begins at that team's observed start where one exists, consistent with D5."
+
+**There is no per-Team observed start anywhere.** `FeatureTeamForecastDto` carries a Team id and two
+percentile lists and nothing else; `IFeatureTeamForecast` mirrors it exactly. Nor is this a plumbing
+gap slice 01 left — the *domain* has never recorded it either. `WhenWorkBegins` is Feature-level and
+resolves to `StartedDate ?? CreatedDate` **of the Feature**; a Team-grain equivalent would mean the
+earliest started child work item of that Feature for that Team, which is a value nothing computes.
+So this is not "slice 01 was incomplete"; it is a domain addition, and it is out of scope by the same
+no-backend-change rule that keeps the rest of this slice honest.
+
+The consequence is visible and is carried rather than hidden: **a lane is always a forecast, even
+under a bar that starts at an observed date.** OE-002 is exactly that Feature, and step 5 of the
+walkthrough is where it is judged.
+
+**At DESIGN time, AC-6.2, AC-6.3 and AC-6.5 stood exactly as written**, and AC-6.3 was strengthened
+rather than qualified by D6-2 and D6-3: with lanes flat and OFF meaning absent, the Feature's task
+object is byte-identical either way, so the criterion holds by construction and is assertable with no
+drawing surface — more than the dependency lines one slice ago could say for their own central claim.
+That last sentence is still true and is now pinned twice over. **Three of these criteria were
+nevertheless amended during DELIVER**, below.
+
+### Amended during DELIVER (2026-09-21), after the chart was seen running
+
+These are not corrections of DESIGN errors. They are decisions the maintainer took on the working
+software, which is where a question like "does this read" is supposed to be settled.
+
+**AC-6.3 — the bar's dates are what the criterion protects, not its pixels.**
+
+> **Original** (this file, DISCUSS / User Stories, US-06, 2026-09-20): "**AC-6.3** — The summary bar
+> is unchanged by expanding, and stays the stored Feature-level value (D4) rather than the earliest of
+> the sub-lanes. A dependent pair where the two differ asserts it."
+
+"Unchanged by expanding" is now false of the bar's *appearance*, because a single-Team Feature's bar
+takes its Team's colour and name when the Teams are shown (D6-3a). It remains exactly true of the
+thing the criterion exists to protect, and that guarantee is now stronger than when it was written:
+the Feature's task object is byte-identical with the switch on and off, and a single-Team Feature's
+bar additionally has its own assertion that its span survives the toggle.
+
+- **AC-6.3** — Showing the Teams does not move a Feature's bar. Its dates stay the stored
+  Feature-level value rather than the earliest of its Teams', and a dependent pair where the two
+  differ asserts it. **Its colour and its label may change; its span may not.**
+
+**AC-6.1's second clause — the control appears whenever showing the Teams would change anything.**
+
+> **As this document proposed it, 2026-09-21**: "Where no Feature in the Delivery has two or more
+> contributing Teams, there is no control to show them — not a disabled one, and not one that does
+> nothing when used."
+
+The counting rule widened for the reason D6-13 records: once a single-Team Feature answers "which
+Team", gating on two-or-more hides a control that works. **The principle is untouched** — what changed
+is what counts as something to show.
+
+- **AC-6.1** — A Feature with one contributing Team is never split into lanes, whether the Teams are
+  shown or hidden; its bar keeps its own span in both. **Where showing the Teams would change nothing
+  at all, there is no control to show them** — not a disabled one, and not one that does nothing when
+  used.
+
+**AC-6.5 — still a deletion, now of three files rather than one.** See the severability argument under
+Component Decomposition, amended in place.
+
+**AC-6.5 is unchanged as a criterion but its evidence is weaker than this document first claimed, and
+that is a correction rather than a nuance.** Slice 05 argued AC-5.4 partly from `deliveryTimelineModel.ts`
+and its test file being untouched. Slice 06 widens `timelineWindow`, which lives in that file
+(line 52) and is exercised by that test (lines 223–256) — an earlier draft of this document misfiled
+it under `ganttShapes` and so inherited slice 05's evidence without earning it. The corrected
+argument is set out under Component Decomposition: **three modules deleted** plus four additive edits
+reversed, one of them in a shipped model file. **DISTILL should assert AC-6.5 by that route, not by
+asserting any file is untouched.**
+
+**Two DESIGN questions were deferred to DISTILL and are now answered there**, recorded here so the
+thread closes rather than dangling. `teamForecasts` versus the Feature table's `OwningTeams`
+(`DeliverySection.tsx:301`, filtered by `getTotalWorkForTeam(id) > 0`) is asserted deliberately in
+both directions rather than left to be discovered. And whether a lane repeats its Feature's mark — a
+gap no D-row covered — is settled as **the Feature's bar only**, now written down as D6-14a so DELIVER
+meets a decision instead of an assumption.
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Open Questions Carried Forward
+
+| # | Question | Deferred to |
+|---|---|---|
+| — | **Does the free edition render flat tasks in the order handed to it, reliably enough to carry grouping?** Order preservation is already relied on for board rank and was verified by eye at slice 04's delivery. Grouping raises the cost of it being wrong from "mis-ranked" to "unreadable" | **The maintainer's live visual check at delivery**, which is the only instrument for this class (D5-18's position, unchanged). Step 3 of the walkthrough is the check |
+| — | **Do twenty-one rows still read inside the accordion?** The chart has no scroll of its own; it grows and the page scrolls. A real question again: while `Team Lightspeed.csv` was malformed the demo split only twice and this was barely worth asking, and the repair puts the chart back to roughly double its current height | The walkthrough, which now genuinely exercises it. If it does not read, the cheapest answer is a maximum height on the chart container, a DELIVER-time change with no design consequence |
+| — | **Does the Team's fill leave a rim of the default colour at the bar's edges?** Nothing in this environment can see it | The live visual check. If it does, the fallback is to drop the fill and keep the name — colour is redundant encoding by design (D6-6) |
+| — | ~~Is `teamForecasts` the right set for "contributing Teams", given the Feature table counts differently?~~ | **Closed — answered in DISTILL, as deferred.** `OwningTeams` (`DeliverySection.tsx:301`) filters the Portfolio's Teams by `getTotalWorkForTeam(id) > 0` while `teamForecasts` is one row per `FeatureWork` Team, so the two can disagree over a Team outside the Portfolio or a work row with zero total work. DESIGN's position stood: the set the lanes are drawn from must be the set that decides whether to split. DISTILL asserts the divergence **deliberately and in both directions**, so a later reader meets a recorded disagreement rather than discovering one |
+| — | Is OE-012 placeable on the timeline, given it has no child work item in any Team? | Carried unchanged from slice 05. OE-005 briefly joined it and no longer does, since the repair gave OE-005 its children back. Verified in DELIVER while seeding; nothing in this design depends on the answer |
+| — | **Does anything re-ask whether a demo CSV parses as written?** `Team Lightspeed.csv` is repaired, so the question is not whether to fix it but whether the same defect can return unseen. Its rows were wrong for as long as they existed, survived review, and were found only because this slice needed to count Teams per Feature | **DELIVER, as a judgement call rather than a task.** A cheap guard exists — a demo-seed assertion that every Epic the CSVs name has at least one child work item — but it is out of scope here and it is not obviously worth its maintenance. Recorded because the next person to meet this should meet a decision, not a surprise |
+| — | **Should a per-Team observed start exist at all?** It would remove the one reading this slice most expects to be mistaken for a bug | A separate Epic-level question, not a slice. It is a domain addition, not a DTO gap, and the walkthrough's step 5 is what should decide whether it is worth raising |
+
+---
+
+## Wave: DESIGN / [REF] Slice 06 — Density and Expansion
+
+`documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`. DESIGN declares no
+ask-intelligent triggers, so this pass emitted **Tier-1 `[REF]` sections only** — no Tier-2 expansions
+and no wave-end expansion menu.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DESIGN`, slice `06`, reason
+`wave declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
+
+Next: DISTILL, slice 06 (Story #6050).
+
+---
+
+## Wave: DISTILL / [REF] Slice 06 — scenarios
+
+Authored 2026-09-21, ahead of slice 06's DELIVER. Story #6050. The slice puts one switch above the
+timeline slice 04 shipped and turns every multi-Team Feature into one lane per contributing Team
+beneath its bar. `teamForecasts` has been on the frontend `Feature` model since slice 01 and nothing
+has read it until now, so there is no backend work here at all — no DTO, no query, no demo-data
+change.
+
+**Driving port**: the React component tree, through Vitest and React Testing Library, plus the pure
+modules beneath it called directly — the same mechanism slices 02, 03, 04 and 05 used. There is no
+backend scenario in this slice; D6-12 records no demo-data change, so `DemoDataServiceTest` is not
+reopened.
+
+**Wave-decision reconciliation**: DISCUSS, DESIGN and DEVOPS read, **0 contradictions**. Three
+things were checked rather than assumed. D16 puts the per-Team split on the timeline and nowhere
+near the Feature table, which is what this slice builds. D10's one percentile control moving both
+ends of every bar is what AC-6.2 extends to the lanes. And AC-6.1's rewrite from an expander to a
+global switch is DESIGN back-propagation with the original quoted verbatim in two places — it is an
+amendment on the record, which is the same shape slice 05's AC-5.2 amendment took and not a
+disagreement. DEVOPS remains skipped for this Epic by explicit decision with a per-concern N/A
+table; a wave that does not run having said so is the opposite of a contradiction.
+
+**The Elevator Pitch survives the rewrite, and it is worth saying which part.** US-06 promised
+"one lane per team beneath its summary bar — Platform running Oct to early Nov, Mobile picking up in
+Nov", and the decision enabled — which Team to talk to. Every word of that is still deliverable; the
+only thing the rewrite took away is the word *expander*, which named an affordance this chart cannot
+have. Scenario 26 is that sentence, in this Delivery's own words.
+
+**Two things were added after the Final Wave Review Gate cleared on 2026-09-21, and both are recorded
+here rather than folded in silently.**
+
+**D6-15 is reversed: the switch is persisted.** Its stated reason — that persisting would need a
+settings surface and therefore a backend change — was simply wrong. Seventeen production files
+already use `localStorage`, among them a hook that persists column-visibility toggles, which is the
+same class of per-viewer view preference. Shown that, the maintainer chose to persist: one key,
+`lighthouse:deliveryTimeline:showTeams`, **default off on a first visit**. Scenarios 31–34 are the
+consequence, and the bullet that used to record non-persistence as deliberately untested is gone
+from below rather than left to contradict them.
+
+**AC-6.4's naming has to survive a reader who opens nothing**, which was the gate's one substantive
+low. Scenario 24 asserts that the mark is there; nothing asserted that the Team's *name* is readable
+without a hover or a click, which is the precise thing US-06 is built on — "see which team it is"
+without opening anything. Scenario 35 asserts the half jsdom can hold, and the paragraph below says
+plainly which half that is.
+
+### The boundary these scenarios are written against
+
+Slice 04 learned where the assertable surface is and wrote the reason into `ganttShapes.ts` itself:
+the vendor component paints to a canvas jsdom does not have and its axis needs a measured width it
+never gets, **so an assertion on rendered vendor markup passes against broken code**. Slice 05 kept
+that split and so does this one. Nothing below asserts on `@svar-ui` markup.
+
+| File | Owns | New in this slice |
+|---|---|---|
+| `deliveryTeamLanes.ts` | The decision. Which Teams get a lane, what each lane spans, what it is called and coloured, and what is said on the bar about the Teams that get none. Pure; names nothing from the library and nothing from React | **Yes** — a new sibling of `deliveryDependencyOverlay.ts` (D6-4) |
+| `ganttShapes.ts` | The translation only. `toGanttTasks(bars, lanes = [])` interleaves each lane after its Feature and mints the lane ids | An optional second argument, and the lookup by which a task id finds its content |
+| `deliveryTimelineModel.ts` | The window. `timelineWindow` widens to anything carrying a start and an end | Parameter widened (D6-16) — **not** `ganttShapes`, see Upstream findings |
+| `TimelineBarContent.tsx` | What is drawn inside a bar, and now inside a lane: the Team's name, the Team's fill, and a click that opens the Feature | Extended |
+| `DeliveryTimelineTab.tsx` | Composes the lanes, the **Show Teams** switch and its state, and folds the un-laned Teams' notes into `barMarksFor` | Extended; gains a `teams` prop, and the switch's state is remembered for this reader under `lighthouse:deliveryTimeline:showTeams` (D6-15 as reversed) |
+| `DeliveryGanttChart.tsx` | Still the only `@svar-ui/*` importer; `ganttAdapterBoundary.enforcement.test.ts` keeps it that way | One prop, a height from the visible row count, and a lookup that stops coercing ids to numbers |
+| `DeliverySection.tsx` | One line: `teams={teams}` on the `<DeliveryTimelineTab>` already rendered at line 852 | Extended |
+
+**Twenty-one of the thirty-five scenarios drive the three pure modules.** Fourteen drive React
+through RTL — nine at the tab, five at the bar. None is backend, and none asserts on `@svar-ui`
+markup.
+
+### Every scenario, and what would red it
+
+Slice 04's round-two review found **four assertions that were structurally incapable of failing** —
+two sides reduced the same way, a CSS variable read off the element we set rather than the one that
+resolves it, an expectation read back out of the constant the function returns. Naming the falsifier
+is therefore a column here rather than a habit. **A scenario with no nameable mutation is not a
+scenario**, and this slice has a second hazard on top of that one: a great many of its criteria are
+satisfied by *absence*, and an absence asserted alone passes against code that does nothing. Where a
+row says **both halves**, the pairing is the point and is not a redundancy to simplify away.
+
+| # | Scenario | AC | Drives | What reds it |
+|---|---|---|---|---|
+| 1 | A Feature two Teams contribute to gets a lane for each, spanning that Team's own start to that Team's own completion | AC-6.2 | Lanes | Returning no lane at all. The fixture gives the Feature's own forecast dates **no Team shares**, the two Teams disjoint spans, and start and completion lists that do not overlap — so reading the Feature's forecast fails, swapping the two ends fails, and serving one Team's dates to both fails |
+| 2 | A Feature one Team contributes to is not split, whatever the switch says | AC-6.1 | Lanes | Splitting whenever a Feature carries any `teamForecasts` row. **Absence, so it is asserted in the same call as a two-Team Feature that does get its lanes** — alone it passes against a module that returns nothing |
+| 3 | Moving the probability moves every lane and reorders none of them | AC-6.2, D6-11 | Lanes | **Both halves.** Every lane's dates MUST differ between 70 and 95, so a module that ignores the percentile fails; and the sequence of Teams MUST be identical, so ordering by date fails. Either half alone is satisfied by a module that returns the same thing twice |
+| 4 | Lanes are read in the Teams' own alphabetical order, with the Team that has no name last | D6-11 | Lanes | `teamForecasts` order preserved — the fixture supplies the Teams in reverse alphabetical order. And sorting by the *displayed* name: the fixture's fallback name begins with a letter that would sort it **first**, so "unnamed last" and "sorted by what is written on the lane" give different answers |
+| 5 | A lane that begins before its Feature's bar keeps its own date | AC-6.3 | Lanes | Clamping a lane into the bar's span, which is the plausible fix for a chart that looks wrong. This is the disagreement AC-6.3 exists to permit: the Feature's start is taken inside each run and a lane is that Team's own marginal, so the earliest lane is not required to start where the bar does |
+| 6 | A Feature whose bar starts at an observed date still gets lanes that start at forecasts | AC-6.3 | Lanes | Copying the Feature's observed start onto its earliest lane, or marking a lane observed. There is no per-Team observed start anywhere — the domain has never recorded one — so a lane claiming one is inventing it. This is the OE-002 shape and the reading most likely to be reported as a defect |
+| 7 | A contributing Team with no forecast at either end gets no lane and is named on the Feature's bar instead | AC-6.4, D6-8 | Lanes | **Both halves.** A lane emitted with no dates, which the library draws at a position the data does not support rather than leaving out — the trap the adapter's own header records. And the Team vanishing: the note must name it, and the other Team's lane must still be there, or the assertion passes against a module that emits nothing |
+| 8 | A Team that resolves at one end only, or at one probability only, is treated the same way | D6-10 | Lanes | **Three cases** — a start with no completion, a completion with no start, and a Team that resolves at 70 and not at 95. Emitting a half-dated lane fails the first two; the third fails a module that decides lane-worthiness off the presence of *any* percentile rather than the selected one, which is what a `percentiles.length > 0` test would pass |
+| 9 | The Team named on the bar is a note, not an alarm | AC-6.4, D6-9 | Lanes | `isWarning: true`. On the one reachable shape the Feature is forecasting correctly and the Team has nothing left to do; amber there devalues the symbol on exactly the terms D5-14 settled one slice ago. Asserted with the note present, so it cannot pass on an empty list |
+| 10 | The split never shows fewer Teams than the Feature has | AC-6.4 | Lanes | **The criterion's purpose rather than its mechanism**, which is what the rewrite of AC-6.4 asks for and where the rewrite is thinnest against the original. Every Team id in `teamForecasts` appears exactly once across the lanes and the notes — a dropped Team fails it, and so does a Team handed both a lane and a note |
+| 11 | A Team this Portfolio cannot name still gets a lane, said in the reader's own words | AC-6.6, D6-7 | Lanes | **Both halves and a literal.** The lane missing — dropping it is the silent disagreement AC-6.4 exists to prevent, recreated one level down. The lane named by its id, or by nothing. And the sentence hard-coded: asserted once against the literal with the seeded terms and once with *Team* and *Portfolio* renamed, because StrykerJS does not mutate copy and a loose match would never be challenged |
+| 12 | Two Teams this Portfolio cannot name are still told apart | D6-6 | Lanes | **Keying the colour map on the name.** `getColorMapForKeys` drops falsy keys outright (`keys.filter(Boolean)`), so a name-keyed map does not merely collapse the unnamed Teams into one bucket — it gives them **no colour at all**. Asserted as a difference between the two rather than against a colour value, and paired with two *named* Teams also differing, so a map returning one colour for everything fails |
+| 13 | One Team is one colour wherever it appears on the chart | D6-6 | Lanes | A map built per Feature, which is the mistake `deliveryEpicColors` exists to name one tab over. Asserted across two Features that share a Team, and against **the other lane's colour** rather than against a value read back out of `getColorMapForKeys` — that would be the same reduction on both sides and could not fail |
+| 14 | The split counts the Teams the forecast has, not the Teams the table shows | — | Lanes | **Filtering the lanes by work, which is what would make the chart agree with the Feature table.** `OwningTeams` lists the Portfolio's Teams with `getTotalWorkForTeam(id) > 0`; `teamForecasts` is one row per work row. The fixture makes them disagree both ways — a Team with a forecast and no total work, and a Team the Portfolio lists with no forecast row — and asserts the lanes follow the forecast. DESIGN deferred this question to DISTILL by name; this is the answer, asserted rather than discovered |
+| 15 | With the switch off, the chart is handed the list it is handed today | AC-6.3, AC-6.5, D6-3 | Translation | A second argument that injects anything when it is not supplied. **Vacuously green on arrival** — it passes against the shipped one-argument function, and is listed as such below. Written anyway, because it is what makes "off is a deletion" a fact rather than a claim |
+| 16 | With lanes on, every Feature's own task is the object it was without them | AC-6.3, D6-3 | Translation | **Both halves in one assertion.** The lanes must be present *and* each Feature entry must deep-equal the entry the no-lane call produced. The presence half is what stops this passing against a function that ignores its second argument, which is today's behaviour. This is the slice's central guarantee and it needs no drawing surface |
+| 17 | Each lane sits immediately after the Feature it belongs to, and the Features keep the board's order | D6-2, D6-17 | Translation | Appending the lanes after the last bar, or sorting the list by date. The fixture puts two multi-Team Features on the board in an order that is neither alphabetical nor chronological, so any re-sort fails |
+| 18 | Everything handed over is an ordinary task | D6-2 | Translation | A `parent`, an `open` or a `type: "summary"` arriving with the lanes — the vendor vocabulary this slice promised not to widen by one word. **Absence again**, so it is asserted with the lanes present and typed `task`; alone it passes against today's function |
+| 19 | No two tasks share an id | — | Translation | A lane id that is its Feature's, or one that is the Team's alone — which collides for a Team contributing to two Features. The fixture puts one Team on two Features and two Teams on one Feature, so both collisions are reachable |
+| 20 | Every id the translation issues resolves to the content it was minted for | — | Translation | **`barsById.get(Number(data.id))`, which is what `DeliveryGanttChart.tsx` does today.** A lane id of `"12:7"` coerces to `NaN`, the lookup misses, `TimelineBarContent` returns `null`, and the library draws its own untemplated bar — a blank box with no name and no click, and nothing anywhere says so. Asserted by feeding the lookup every id the translation produced. Needs the lookup to be a named function rather than a closure inside the vendor-importing module; see Upstream findings |
+| 21 | A lane reaching past every bar widens the window instead of being clipped | D6-16 | Window | **Three halves.** A lane ending after the last bar must move the window's end; a lane starting before the first must move its start; and a call with no lanes must still return what it returns today. A Team's percentile is not bounded by its Feature's, so the clipping is **silent** — the lane is simply not on the axis. The third half is vacuously green on arrival and is listed as such |
+| 22 | A lane is written with its Team's name | AC-6.2 | Bar (RTL) | Rendering the Feature's name, which is what the component does with everything it is given today. The fixture's Team name and Feature name share no substring, so a substring match cannot rescue it |
+| 23 | A lane opens the Feature it belongs to | D6-14 | Bar (RTL) | **Both halves.** An inert lane beside a clickable bar — a lane is that Feature, for one Team, and making it dead reads as a defect. And a click reporting the Team's id instead of the Feature's: the fixture's two ids are different numbers, so the swap fails |
+| 24 | A Feature's mark is not repeated on each of its lanes | D6-9 | Bar (RTL) | Looking the mark up by the Feature's id for a lane too, which is exactly what the existing `marks.get(bar.featureId)` does when a lane arrives carrying its Feature's id — a three-lane Feature would then wear the same symbol four times. **Both halves**: the Feature's own bar carries the mark and its lanes do not. No D-row decides this; see Upstream findings |
+| 25 | Two Teams' lanes do not paint alike | D6-6, D6-17a | Bar (RTL) | Every lane filled with the one bar colour, which is the shipped behaviour. Asserted as a **difference between the two rendered fills**, never against a colour value — "all three strokes identical" passes when every stroke is `none`, and this project has paid for that once already. What it cannot see is what the reader sees: the vendor stylesheet is mocked away here, and the rim D6-17a names is a live check |
+| 26 | A reader turns on **Show Teams** and sees which Team drives which end | AC-6.2, AC-6.3, D6-1 | Tab (RTL) | **Walking skeleton for this slice**, and the story's own sentence. The switch doing nothing; the lanes never reaching the chart, which is the state at that seam today; the Feature's own bar arriving different from the way it arrived before the click. The chart is stood in for by the `vi.mock("./DeliveryGanttChart")` already in the file, so what is asserted is the contract handed across the boundary |
+| 27 | Lanes are off until they are asked for, and off again afterwards | D6-1, D6-3 | Tab (RTL) | A default of on. And a round trip that does not return: the props captured after the switch goes off must equal the ones captured before it was ever touched. The first half is vacuously green on arrival; the middle half — turning it on and seeing the lanes arrive — is what stops the row being worthless |
+| 28 | The control is there when something can split, and absent, not disabled, when nothing can | AC-6.1, D6-13 | Tab (RTL) | **Three cases.** Nothing to split: no control, asserted with the chart still rendered so it cannot pass on a blank tab. A Feature with three Teams and **no bar** (OE-001, whose Meridian has no throughput): still no control, which fails a count taken over every Feature rather than over the placed ones. A placed Feature whose second Team has no dates: the control **is** offered, which fails a count taken over the lanes actually drawn rather than over the `teamForecasts` rows. The first two cases are vacuously green on arrival |
+| 29 | The control is named in the reader's own word for a Team | D6-5 | Tab (RTL) | A hard-coded label, caught by the renamed half; and the singular terminology key, caught by the literal half. Pinned once against `Show Teams` with the seeded terms and once against `Show Squads` with the term renamed — the label is JSX text and a mutation run will never challenge it |
+| 30 | A Team with no lane is named on its Feature's bar, as a note | AC-6.4, D6-9 | Tab (RTL) | The notes never folded into `barMarksFor`, so no mark appears; or folded as warnings, which puts amber on a Feature that is forecasting correctly. Asserted against the **fixture's own Team name** and against the mark's accessible name — its leading word is what tells `Note.` from `Warning.` — and never against the sentence helper's return value, which would be the same reduction on both sides |
+| 31 | A reader who turns the lanes on and comes back later finds them on | D6-15, reversed | Tab (RTL) | State that resets to the default on a remount — which is what component-local state does, and what D6-15 said to build until it was reversed on 2026-09-21. Asserted as a **round trip**: turn it on, unmount, render again, lanes on. The round trip is the behaviour and it names no key, which is deliberate — an assertion that reads the key back out of the constant the code just wrote it to proves only that somebody typed it twice. The key is nonetheless pinned **once**, here, as a second clause: a renamed key silently forgets every reader's choice and the round trip passes happily against any key at all, so `lighthouse:deliveryTimeline:showTeams` is the one literal in these four rows and the rename is the one failure it exists to make loud |
+| 32 | A reader who has never touched the control sees no lanes | D6-1, D6-15 | Tab (RTL) | **The house precedent copied without flipping it.** `useShowTips` defaults to *on* and therefore tests `stored === "false"`; this slice defaults to *off* and must test `stored === "true"`. A crafter who lifts the hook wholesale — which is the recommended thing to do — gets `stored !== "false"`, and an absent key then reads as on, so every reader who has never heard of the feature meets a chart of twenty-one rows. **Vacuously green on arrival**: it also passes against a tab with no switch at all, so it is listed with the others below rather than counted as signal. Distinct from 27, whose falsifier is a component-state default rather than a storage default |
+| 33 | Storage that is blocked or corrupt leaves the tab working and the lanes off | D6-15 | Tab (RTL) | **Three cases, and each falsifier is a line somebody will actually write.** `getItem` throwing, which is private browsing and blocked site data: an unguarded read lets the throw escape and takes the whole Portfolio accordion with it, and the two *nearest* boolean precedents in this repository — `OnboardingStepper.tsx:24` and `ThemeContext.tsx:29–30` — are both bare, so a crafter reaching for the closest example rather than the best one ships exactly that. A stored value that is neither `"true"` nor `"false"`: **`Boolean(stored)`, which is the single most likely way this gets written wrong, because it is the way it is written wrong everywhere** — it reads the *string* `"false"` as true, so the preference inverts itself on every reload and off becomes unreachable once the key has been written. The house idiom compares the string and never coerces (`useShowTips`), and this row is what keeps it that way. And `setItem` throwing: the lanes must still appear for this visit, so the toggle is lost as well as the memory. What is asserted throughout is the tab's behaviour, never that any particular hook is called |
+| 34 | Turning the lanes on for one Delivery turns them on for the next one opened | D6-15 | Tab (RTL) | **A key composed with the Delivery's id — and the precedent this slice is told to copy does exactly that.** `useShowTips` keys on `lighthouse:metrics:${ownerType}:${ownerId}:showTips`, one key per owner, so a crafter lifting its shape faithfully arrives at per-Delivery by default and nothing complains. DESIGN decided per-browser: a view mode is a property of the reader, as column visibility is. The grain is the whole of what this row asserts, and it is **assertable either way at no extra cost** — open one Delivery, turn the lanes on, open another, and the row reads either "on" or "off" depending on which way the decision lands. The maintainer's confirmation was outstanding when this was written; if it moves, flip the expectation in this row and nothing else in the table moves with it |
+| 35 | The Team with no lane is named on the bar before anyone hovers or clicks | AC-6.4 | Bar (RTL) | **The gate's finding, and the half of it jsdom can hold.** Asserted on the first render with no interaction at all, which reds on naming that lives **only** in the `Tooltip` — its content is not rendered until a hover — and on naming that lives only in the dialog's Warnings column. And it reds on a sentence that reports a **count** rather than a name: "1 Team without a forecast" satisfies "the bar says something" while defeating the criterion outright, since AC-6.4 exists so the split can never quietly show fewer Teams than the Feature has. What it cannot see is whether the name is *legible*; that half is below, stated rather than implied |
+
+**Error and edge coverage: 19 of 35 — 54 %** (2, 5, 6, 7, 8 counting as three cases, 9, 10, 11, 12,
+14, 18, 19, 20, 21, 24, 28 counting as three, 32, 33 counting as three, and 35). That weighting is
+the slice rather than an accident.
+The happy path here is four Features growing eleven lanes and is one scenario; everything else this
+slice has to get right is a Team that cannot be named, cannot be dated, cannot be told from another,
+or must not be dropped — and every one of those failures is silent on the screen.
+
+### What is deliberately not tested here
+
+- **The chart's height.** `chartHeight` is handed the visible row count rather than `bars.length`.
+  The count is one expression over the task list scenario 17 already pins, and the height itself
+  lands as an `sx` value on a Box wrapping a library that cannot lay itself out here. A chart one row
+  too short is a live-check finding, and after the fill it is the most likely thing to be noticed at
+  delivery.
+- **The library's own rendering order.** D6-17: flat lanes rely on tasks being drawn in the order
+  they are handed over, and nothing in this environment can ask. The maintainer's live check is the
+  instrument, exactly as D5-18 settled for the routing enum one slice ago, and step 3 of the
+  walkthrough is where it happens. What is given up is durability: after that day nothing re-asks,
+  and a library that re-sorted would separate every lane from its Feature and read as nonsense
+  rather than as broken.
+- **The rim of default colour at a lane's edge** (D6-17a). This environment mocks the vendor
+  stylesheet away, which `ganttColorOverrides`' own comment already records as the reason its
+  rendered result is somebody else's job.
+- **How legible the un-laned Team's name is** — the other half of scenario 35, and the half jsdom
+  cannot hold. This environment applies no layout and no CSS, and `TimelineBarContent`'s Box is
+  already `overflow: hidden; whiteSpace: nowrap; textOverflow: ellipsis`, so a name appended to a bar
+  a few pixels tall is truncated by a rule nothing here evaluates. What scenario 35 does assert is
+  that the name is reachable on the bar with no interaction; whether a reader scanning bar positions
+  can actually *read* it belongs with the fill and the rim in the maintainer's walkthrough. Said
+  outright, because a half-assertion that looks whole is worse than an absent one.
+- **Whether a demo CSV parses as written.** D6-12a repaired `Team Lightspeed.csv` and DESIGN left the
+  standing guard open as a DELIVER judgement call; DISTILL does not pre-empt it. Nothing in this
+  slice's scenarios reads demo data: D6-12 records no demo-data change and both failure shapes —
+  empty per-Team percentiles, an unresolvable name — have no instance in the Ocean Explorer data and
+  are fixture-covered here.
+- **`NotLicensed` and the premium gate.** Unchanged by this slice. AC-4.7 gates the Timeline tab in
+  its entirety and slice 04 owns that assertion; repeating it here would be a second test of somebody
+  else's decision.
+- **The Feature table**, which is AC-6.5's other half. Nothing under `FeatureListDataGrid` changes, so
+  the evidence is the absence of a diff rather than a test. AC-6.5's severability evidence otherwise
+  is structural — one new file, one prop, one control — but it is **not** the same evidence slice 05
+  used, and the reason is in Upstream findings 1.
+
+### Playwright
+
+**None, and not by omission.** E2E here is one thin walking skeleton per flow, the Delivery flow's
+skeleton already exists from slice 04, and this slice adds a control inside a tab that skeleton
+already reaches rather than a flow. The maintainer overruled a Playwright step for slice 05 (D5-18)
+on a *stronger* case than this one — there the unverifiable thing was a vendor literal that draws
+nothing when wrong, whereas this slice adds no vendor literal at all by design. Adding a step here
+would be the mitigation the maintainer declined, wearing a different name and covering less.
+
+One thing is nonetheless owed in DELIVER, from the CI ledger rather than from this slice's design:
+**changing or deleting any `data-testid` or accessible name means grepping
+`Lighthouse.EndToEndTests/` in the same edit.** This slice adds names and removes none as designed,
+so no page object is at risk — but the switch, the lane content and the mark all touch a component
+the existing specs walk past, and the grep costs seconds against a Playwright timeout that costs
+three retries.
+
+### Scaffolds (Mandate 7)
+
+**None, and none needed.** This Epic's precedent is that DISTILL authors the scenario table and
+DELIVER writes the code — slices 02, 03, 04 and 05 each did exactly that, and slice 03's red
+classification was measured at the head of its own DELIVER rather than promised here. No test file is
+committed by this pass, so nothing imports a module that does not exist and there is no
+BROKEN-versus-RED classification to protect. A throwing `buildDeliveryTeamLanes` added to `main`
+today would be dead code no test reaches: a cost with no signal attached.
+
+**Owed at the head of DELIVER**: the red classification, measured and reported as measured. Six
+assertions are **vacuously green on arrival** and must not be read as evidence of anything until
+scenario 26 goes green — 15, 18, 21's unchanged half, 27's default half, 28's first two cases, and
+**32**, which the persistence addition brought with it: a reader who has never touched a control
+that does not exist yet does indeed see no lanes. Each is an honest test of the finished behaviour
+and worthless as RED signal, which is the shape slice 03 found and slice 05 recorded.
+
+Seven more assert an absence and are **defused by construction rather than by luck** — 2, 7, 10, 12,
+16, 24 and 30 each pair the absence with a presence today's code cannot satisfy, inside the same
+assertion. That pairing is why they are written the way they are; collapsing any of them to the
+absence half alone during review would return it to the vacuous set silently.
+
+### Upstream findings
+
+Eight things found by reading the code this slice sits on — six in the first pass, two more when the
+gate's persistence decision sent this document back. None blocks; five change what a scenario has to
+say and three change what DELIVER has to build.
+
+1. **`timelineWindow` lives in `deliveryTimelineModel.ts`, not `ganttShapes.ts`.** DESIGN's
+   decomposition and reuse tables both file it under `ganttShapes`, and `DeliveryGanttChart.tsx:15`
+   imports it from the model. Scenario 21 therefore goes in `deliveryTimelineModel.test.ts` — and the
+   consequence is that **slice 05's severability evidence does not transfer**. Slice 05 could argue
+   AC-5.4 by pointing at an untouched `deliveryTimelineModel.test.ts`; slice 06 touches it. AC-6.5
+   still holds structurally — one new file, one prop, one control, and a widened parameter with no
+   behaviour change when it is not used — but it has to be argued that way rather than by that file's
+   stillness.
+2. **"Widening its parameter admits lanes with no call site changed" is half true, and the wrong half
+   is the dangerous one.** The *type* widens with no call site change; the *behaviour* does not.
+   `DeliveryGanttChart.tsx:114` calls `timelineWindow(bars, targetDate, today)`, and unless that call
+   is given the lanes as well, D6-16's clipping happens exactly as described while every test in this
+   table passes. **DISTILL's reading: compute the window from the task list the chart is actually
+   handed**, so the window cannot disagree with what is drawn. That is the same move D6-2 makes for
+   AC-6.3 — turn a wiring step nobody re-asks into a fact that cannot be otherwise. Scenario 21 is
+   written against the pure function either way; if DELIVER keeps two lists, the wiring between them
+   is a residual nothing here can see.
+3. **The bar-content lookup has no assertable home as written.** It is a `useCallback` closure inside
+   the only module that imports the library, so the sole way to exercise it is through rendered
+   vendor markup — the one thing this module has established cannot falsify anything. Scenario 20 is
+   written against a named lookup beside the translation that mints the ids. If DELIVER keeps it
+   inline, scenario 20 has nowhere to live and the `Number(data.id)` trap becomes a residual verified
+   by eye — for a failure that presents as a blank bar rather than as an error. Recorded as a DISTILL
+   reading, not as a decision.
+4. **`getColorMapForKeys` drops falsy keys.** `keys.filter(Boolean)` runs before anything else, so a
+   name-keyed map does not give the unnamed Teams a shared colour — it gives them **none**, and the
+   lookup answers `undefined`. D6-6's reasoning is right and its consequence is worse than it states.
+   Scenario 12 is sharpened by it.
+5. **No D-row decides whether a lane carries its Feature's mark.** The existing component finds one
+   with `marks.get(bar.featureId)`, so a lane arriving with its Feature's id inherits it and a
+   three-lane Feature wears the same symbol four times. DISTILL reads it as: the mark belongs to the
+   Feature's own bar and a lane carries none — the note about a Team with no lane is a fact about the
+   Feature, said once, where the reader already looks for it. Scenario 24 asserts that reading. If
+   DELIVER disagrees, it is a decision to record, not a test to adjust.
+6. **`teamForecasts` is optional on `IFeature` and defaults to `[]`.** Every timeline fixture written
+   before slice 01 therefore yields no lanes and no control. That cuts both ways and both are worth
+   knowing: it is what makes this slice safe to add — no existing timeline test changes — and it is
+   also precisely why scenarios 15, 18, 21's third half, 27's first half and 28's first two cases pass
+   today against code that does nothing.
+7. **The hook that suggested persisting cannot hold what this slice needs to persist, and the right
+   precedent is a different one.** `usePersistedGridState` is typed to `{sortModel,
+   columnVisibilityModel, columnOrder, columnWidths}` and runs `sanitizeGridState` on every read and
+   every write, which returns an object carrying exactly those four keys — so a boolean handed to it
+   round-trips to nothing. There is no generic preference hook in this frontend; there are seven
+   hand-rolled ones, so a dedicated small hook is the established shape rather than a shortcut. The
+   one to copy is **`useShowTips`** (`pages/Common/MetricsView/useShowTips.ts`): a boolean view
+   preference, a lazy `useState` initialiser that reads storage once, `try/catch` on the read and on
+   the write, and a fall back to the default on any failure. Reading during the first state creation
+   rather than in an effect matters here specifically — an effect applies the stored value one frame
+   late, which is invisible on a chart's background and visible when the thing that changes is a
+   chart's height, and this chart roughly doubles. **What is reused is the pattern, not the hook**,
+   which is how DESIGN is recording it; no scenario asserts that any hook is called, because 31–34
+   assert behaviour that survives DELIVER choosing differently.
+8. **Both of the things a crafter would most naturally copy are traps, and each has a scenario
+   pointed at it.** `useShowTips` compares the **string** — `stored === "false"` — and never coerces,
+   which is correct and is the idiom; but it defaults to *on* where this slice defaults to *off*, so
+   lifting it faithfully inverts the default (scenario 32), and it keys **per owner**
+   (`lighthouse:metrics:${ownerType}:${ownerId}:showTips`), so lifting it faithfully also produces
+   per-Delivery grain where DESIGN decided per-browser (scenario 34). Separately, the two nearest
+   *boolean* precedents are unguarded — `OnboardingStepper.tsx:24` and `ThemeContext.tsx:29–30` both
+   touch `localStorage` bare — so reaching for the closest example rather than the best one ships a
+   tab that throws where site data is blocked (scenario 33). The key itself was corrected in this
+   round from `delivery-timeline-show-teams` to **`lighthouse:deliveryTimeline:showTeams`**, which is
+   the convention the newer keys follow (`lighthouse:metrics:team:42:showTips`,
+   `lighthouse:workItemsDialog:enlarged`, `lighthouse:usagedata:consent`); the hyphenated and bare
+   forms are older and are what the codebase is moving away from.
+
+### Test placement
+
+| Scenarios | File | Why there |
+|---|---|---|
+| 1–14 | `timeline/deliveryTeamLanes.test.ts` | Beside the module, as `deliveryTimelineModel.test.ts` and `deliveryDependencyOverlay.test.ts` already sit beside theirs. The only new test file in this slice |
+| 15–20 | `timeline/ganttShapes.test.ts` | Existing. The second argument to `toGanttTasks`, the ids it mints and the lookup that resolves them are one contract and belong in one file |
+| 21 | `timeline/deliveryTimelineModel.test.ts` | Existing, and where `timelineWindow` actually lives — see Upstream findings 1 |
+| 22–25, 35 | `timeline/TimelineBarContent.test.tsx` | Existing. The file was extracted in slice 04 precisely so a bar's decisions could be rendered on their own; a lane is one more thing it is handed, and so is the question of what a bar says before anyone touches it |
+| 26–34 | `timeline/DeliveryTimelineTab.test.tsx` | Existing, with the chart stood in for by the `vi.mock("./DeliveryGanttChart")` already there. The four persistence scenarios belong here rather than beside a hook: what is asserted is the tab's behaviour across a remount, not a hook's return value — and `FeatureListDataGrid.test.tsx` already reads `localStorage` from a component test for exactly this kind of preference |
+
+`ganttAdapterBoundary.enforcement.test.ts` is **not touched and must stay green**: this slice adds no
+`@svar-ui` importer, which is the whole of what it asserts. `DeliveryGanttChart.test.tsx` is likewise
+untouched — it mounts the real library behind a canvas stub and asserts only that the wiring mounts,
+which is deliberately all it can honestly say.
+
+No backend test. `DemoDataServiceTest` is not reopened: D6-12 records no demo-data change, and the
+CSV repair D6-12a describes has already shipped.
+
+### Outcomes registry
+
+**Registration deferred to DELIVER, deliberately — the same call slices 01 and 05 made and for the
+same reason.** `buildDeliveryTeamLanes` is a new typed contract surface and is worth a row of kind
+`specification`: *given a Delivery's placed Features, the Features themselves, the Portfolio's Teams
+and a selected probability, decides which contributing Teams get a lane of their own, what each lane
+spans, what it is called and coloured, and what has to be said on the Feature's bar about the Teams
+that get none.* Every existing row in `docs/product/outcomes/registry.yaml` names an `artifact` path
+that exists and the registry rejects one that does not, so the row is written in the commit that
+creates `deliveryTeamLanes.ts`, not before it. The `OUT-n` number is read off the registry at that
+moment rather than guessed here — slice 05 nominated `OUT-3` and whether it was taken is a fact about
+the file, not about this document.
+
+### Review gate
+
+**The four-reviewer Final Wave Review Gate was not dispatched, and that is recorded rather than
+skipped.** The maintainer runs reviews explicitly on this Epic, one has already run over DESIGN, and
+D6-18 records that no DESIGN gate trigger fired. What would otherwise have gone out, so the decision
+is visible: `@nw-product-owner-reviewer` over the DISCUSS sections — whose live question is whether
+AC-6.1's rewrite and the new AC-6.6 read as the same story US-06 promised;
+`@nw-solution-architect-reviewer` over DESIGN, where findings 1 and 2 above are exactly the kind of
+thing it exists to catch; `@nw-platform-architect-reviewer` over DEVOPS, which would have had nothing
+to read; and `@nw-acceptance-designer-reviewer` over this table, which is the one with real work to
+do — the vacuous-green set and the both-halves pairings are precisely its brief. If any single
+reviewer is worth spending, it is that last one, after DELIVER has the tests written rather than now.
+
+### Density and expansion
+
+`documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`. DISTILL declares no
+ask-intelligent triggers, so this pass emitted **Tier-1 `[REF]` sections only** — no Tier-2 expansions
+and no wave-end expansion menu.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DISTILL`, slice `06`, reason
+`wave declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
+
+Next: DELIVER, slice 06 (Story #6050).
