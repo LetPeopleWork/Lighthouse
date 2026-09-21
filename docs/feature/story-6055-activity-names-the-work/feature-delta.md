@@ -538,7 +538,7 @@ DESIGN decision here was built on the false claim.
 |---|---|---|
 | DDD-1 | The row's phrase is one total function over `UpdateTaskType`, returning verb + kind + name | Locked |
 | DDD-2 | Both lookups are `Record<UpdateTaskType, …>`, not `switch` with `default:` | Locked — refines DISCUSS D2 |
-| DDD-3 | `waitingBehind` carries the holder as a described piece of work (ADR-205) | Locked |
+| DDD-3 | `waitingBehind` carries the holder as a described piece of work (ADR-206) | Locked |
 | DDD-4 | "Same entity" is (entity kind, id), never id alone | Locked |
 | DDD-5 | The sameness comparison lives in `UpdateController`'s read path; nothing compares in the browser | Locked |
 | DDD-6 | The activity noun (*refresh* / *forecast* / *removal*) is derived in the browser from the holder's `UpdateType` | Locked |
@@ -606,7 +606,7 @@ No new file on either side. The two new types are nested in files that already e
 
 | Port | Change |
 |---|---|
-| `GET /api/latest/update/tasks` (+ `/api/v1/…`) | `waitingBehind` changes from `string?` to an object (ADR-205). `updateType`, `id`, `name`, `status`, `elapsedMs` unchanged. Still `[RbacGuard(SystemAdmin)]`. |
+| `GET /api/latest/update/tasks` (+ `/api/v1/…`) | `waitingBehind` changes from `string?` to an object (ADR-206). `updateType`, `id`, `name`, `status`, `elapsedMs` unchanged. Still `[RbacGuard(SystemAdmin)]`. |
 | `GET /api/latest/update/status` | **Unchanged.** |
 | `POST /api/latest/update/tasks/{updateType}/{id}/cancel` | **Unchanged.** |
 | Header → Task Manager popover, Activity section | Rows lead with the work; the queued clause gains the self case. |
@@ -724,7 +724,7 @@ outcomes; the registry tracks none for this surface).
 |---|---|
 | DDD-1 | One total phrase function per row: verb + tenant noun + name |
 | DDD-2 | `Record<UpdateTaskType, …>` for both lookups; no `default:` arm |
-| DDD-3 | `WaitingBehind` becomes `WaitingBehindResponse?` — name, update type, is-same-entity (ADR-205) |
+| DDD-3 | `WaitingBehind` becomes `WaitingBehindResponse?` — name, update type, is-same-entity (ADR-206) |
 | DDD-4 | Sameness is (entity kind, id) |
 | DDD-5 | The comparison lives in `UpdateController`; the browser never compares |
 | DDD-6 | Activity noun derived in the browser from the holder's `UpdateType` |
@@ -782,7 +782,7 @@ keeps its name and its meaning and changes its type, from `string?` to `WaitingB
 **Rationale**: as written the criterion forbade changing the one field the story is about. Its purpose
 was to guard against collateral damage to the other five, and it now says that. The change is
 affordable because the grep behind S9 is part of the decision: six files, one repository, no external
-consumer (ADR-205).
+consumer (ADR-206).
 
 ### 3. DISCUSS D5 and Pre-requisites — #5877's status
 
@@ -793,7 +793,7 @@ consumer (ADR-205).
 **New**: #5877 is **shelved** (user decision, 2026-09-21). The rebase risk is not live, slice 02 needs
 no sequencing against it, and the self-reference case is permanently reachable rather than temporarily
 so — which raises slice 02's value rather than lowering it. **Rationale**: the DISCUSS text was written
-before the question was asked. D5's prohibition on re-landing any of #5877 still stands, and ADR-205
+before the question was asked. D5's prohibition on re-landing any of #5877 still stands, and ADR-206
 records how the two would compose if it ever returns.
 
 ### 4. SSOT `brief.md` — the queue's lane count
@@ -957,7 +957,7 @@ this feature will look.
 
 **Unchanged, and this feature does not exercise the interesting parts of it.** Lighthouse ships as one
 artifact containing both the built frontend and the backend, so a browser served the new bundle always
-talks to a backend serving the new response — the `waitingBehind` type change (ADR-205) has no
+talks to a backend serving the new response — the `waitingBehind` type change (ADR-206) has no
 mixed-version window *within* an instance.
 
 **Rollback contract**: `git revert` of the feature commits, then the ordinary release path. No
@@ -1061,7 +1061,7 @@ Full table in `environments.yaml`. What must keep working while this ships:
 
 | DESIGN constraint | Platform answer |
 |---|---|
-| ADR-205 changes a shipped response field's type | No versioning needed within an instance (one artifact). The rolling-update window is named and accepted above. |
+| ADR-206 changes a shipped response field's type | No versioning needed within an instance (one artifact). The rolling-update window is named and accepted above. |
 | DDD-5 — the comparison lives in the backend | Nothing to enforce at the platform layer; asserted by AC-02.8 in CI. |
 | DDD-2 — exhaustive `Record` lookups | Enforced by the TypeScript compiler in `ci_frontend.yml`'s `tsc -b`. No platform mechanism required. |
 | No new driven port | No new network egress, no new credential, no firewall or secret-store change. |
@@ -1083,7 +1083,7 @@ Three things DISTILL should take from this wave specifically:
    criterion whose answer differs by environment, and the axis exists for it alone.
 2. **Do not parametrise the row-wording criteria over providers or platforms.** They are string
    assembly in the browser. `scenario_axes` says so per criterion.
-3. **`AC-02.6`'s payload assertion is the contract guard for ADR-205**, and it is also where OQ-2 gets
+3. **`AC-02.6`'s payload assertion is the contract guard for ADR-206**, and it is also where OQ-2 gets
    settled — whether `WaitingBehindResponse.UpdateType` is sent in the different-entity case too.
    DISTILL fixes that as it writes the assertion.
 
@@ -1127,7 +1127,7 @@ policy already records that the Python-pilot artifacts do not apply in this repo
 ✓ `docs/architecture/atdd-infrastructure-policy.md` — the three port tables; `--policy=inherit`
 ✓ `docs/product/journeys/story-6055-activity-names-the-work.yaml`
 ✓ `docs/product/architecture/brief.md` § this feature, § `epic-5511-task-manager`, § `story-5877-…`
-✓ `docs/product/architecture/adr-205-…` and `adr-181-…`
+✓ `docs/product/architecture/adr-206-…` and `adr-181-…`
 ✓ `docs/product/kpi-contracts.yaml` — 45 entries; none for this surface
 ✓ `docs/feature/story-6055-activity-names-the-work/feature-delta.md` — DISCUSS + DESIGN + DEVOPS
 ✓ `docs/feature/story-6055-activity-names-the-work/environments.yaml` — five environments, `scenario_axes`
@@ -1278,21 +1278,43 @@ two-field record is cheaper to repeat than a shared type coupling two stories' f
 
 ## Wave: DISTILL / [REF] Existing Specifications This Story Must Update
 
-Grepped 2026-09-21, not inferred. These are green today and **will break** when DELIVER narrows the
-type and changes the renderer. They are the price of ADR-205 and they are named here so DELIVER budgets
-for them rather than meeting them as a surprise mid-slice.
+Grepped 2026-09-21, not inferred. These are green today and **will break** when DELIVER changes the
+renderer and narrows the type. They are the price of D1 and ADR-206 and they are named here so DELIVER
+budgets for them rather than meeting them as a surprise mid-slice.
+
+> **Corrected 2026-09-21, during DELIVER step 01-01.** This table first listed five. It listed five
+> because the grep behind it searched `TaskManagerIcon.test.tsx` for `waitingBehind` and for `behind`,
+> and never for `removal` — so the two pins on the `(removal)` suffix were invisible to it. The crafter
+> hit them at the full-suite gate and stopped rather than editing a failing test to make it pass, which
+> is the right instinct and the reason they were found at all. **Seven, not five.** A blast-radius table
+> is only as wide as the terms it was grepped for, and one term was missing.
+>
+> **Corrected again, same step.** Fixing those two surfaced a third at `:449` that the table would
+> never have caught by looking for breakage, because it does not break — it survives as an assertion
+> that can no longer fail. A blast-radius table that asks "what turns red?" misses everything that
+> turns *permanently green*, which is the more expensive failure: red gets fixed, vacuous gets kept.
 
 | File | Line | What breaks |
 |---|---|---|
+| `TaskManagerIcon.test.tsx` | 419 | *"says when the work in the list is a removal rather than a refresh"* — asserts `/removal/i`, a direct pin on the suffix D1 deletes. `Removing` does not match it. |
+| `TaskManagerIcon.test.tsx` | 471 | *"says when a portfolio is being removed too"* — the same assertion on the `PortfolioDelete` row |
+| `TaskManagerIcon.test.tsx` | 452 | **A different category: it does not break — it goes vacuous.** `it("does not call an ordinary refresh a removal")` asserts `.not.toHaveTextContent(/removal/i)`. Once the suffix is gone the string `removal` exists nowhere in the component, so the assertion passes forever and can never fail again — the test's own comment, *"or the word stops meaning anything"*, stops being enforced by the test that says it. Updated to `/Removing/`, the word the sibling removal rows do emit, so the discrimination its name claims is one it can actually make. Found by the crafter at the suite gate, not by any grep. |
 | `Slice02SeeWhatIsRunningSpecifications.cs` | 219-226 | `ThenTheQueuedRowSaysItIsWaitingBehind` reads `Text(row, "waitingBehind")` — a string where the response now sends an object |
 | `TaskManagerIcon.test.tsx` | 87 | `aQueuedPortfolio` builds `waitingBehind: "Lagunitas"`; a type error once the scaffold's `string` arm goes |
 | `TaskManagerIcon.test.tsx` | 349 | *"says what a waiting refresh is waiting behind"* — asserts the old clause |
 | `TaskManagerIcon.test.tsx` | 602, 609 | *"still says what a waiting refresh is waiting behind"* — asserts `/queued behind Lagunitas/i`; it is #5511 slice-07A's guard that the clause survived a redesign, and it has to survive this one too |
 | `TaskManagerIcon.test.tsx` | 476-483 | *"does not claim a queued refresh is behind anything when nothing is running"* — passes `waitingBehind: null`, so it survives unchanged. Listed because it looks like it should break and does not. |
 
-Four of the five are **updates, not deletions**. Each asserts something that stays true — a queued row
-names what holds its lane — in a payload shape that changes. An update that quietly weakens one of them
-into something the new shape satisfies trivially would lose #5511's and #5877's guard at the same time.
+Six of the seven are **updates, not deletions**. Each asserts something that stays true — a queued row
+names what holds its lane; a removal row says it is a removal — in a wording or a payload shape that
+changes. An update that quietly weakens one of them into something the new shape satisfies trivially
+would lose #5511's and #5877's guard at the same time.
+
+For the two `removal` pins the replacement is `/Removing/`: the claim each makes — *this row says the
+work is a removal* — survives word for word, and `ActivitySection.test.tsx`'s AC-01.4 is strictly
+stronger than either, asserting `Removing` present **and** `(removal)` absent on the same row. The
+sibling at `:423`, *"names a removal after the kind of thing being removed"*, passes untouched — it pins
+the tenant's noun, which this story does not move.
 
 ---
 
@@ -1302,7 +1324,7 @@ into something the new shape satisfies trivially would lose #5511's and #5877's 
 - **DEVOPS's environment matrix**: `scenario_axes` maps each AC to the environments worth varying it
   over. Followed exactly — the row-wording specifications are not parametrised over providers or
   platforms, and `renamed-terminology` is exercised by AC-01.3 alone.
-- **ADR-205's payload**: `{ name, updateType, isSameEntity }`, fixed in the Specifications' doc-comment
+- **ADR-206's payload**: `{ name, updateType, isSameEntity }`, fixed in the Specifications' doc-comment
   so DELIVER builds to a written contract rather than to a reading of the tests.
 - **OQ-2 settled**: `updateType` is sent in **both** cases, not only the self-reference. AC-02.2 asserts
   the name and AC-02.1/02.3 assert the activity; sending one field conditionally would make the payload
@@ -1382,7 +1404,7 @@ Four reviewers dispatched in parallel against the full four-wave delta, 2026-09-
 | Reviewer | Scope | Verdict | Findings |
 |---|---|---|---|
 | Eclipse — `nw-product-owner-reviewer` | DISCUSS | **approved** | 0 |
-| Atlas — `nw-solution-architect-reviewer` | DESIGN + ADR-205 | **conditionally approved** | 1 high, 3 medium |
+| Atlas — `nw-solution-architect-reviewer` | DESIGN + ADR-206 | **conditionally approved** | 1 high, 3 medium |
 | Forge — `nw-platform-architect-reviewer` | DEVOPS + `environments.yaml` | **rejected** (iteration 1) → **conditionally approved** (iteration 2) | 1 blocker, 1 critical, 1 high, 1 medium, 2 low — all six resolved and re-verified |
 | Sentinel — `nw-acceptance-designer-reviewer` | DISTILL + both test files + the component | **conditionally approved** | 1 high, 1 low |
 

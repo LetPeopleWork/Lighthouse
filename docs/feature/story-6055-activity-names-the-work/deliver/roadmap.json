@@ -1,0 +1,270 @@
+{
+  "roadmap": {
+    "project_id": "story-6055-activity-names-the-work",
+    "created_at": "2026-09-21",
+    "total_steps": 6,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6055 — the Task Manager's Activity list names entities where it should name work. Two slices. Slice 01 (frontend only, no contract touched): every row leads with a verb — Refreshing / Forecasting / Removing — so a Portfolio refresh and the forecast it triggers stop drawing two rows with the same text; both lookups become exhaustive Record<UpdateTaskType, …> so a sixth update type is a compile error rather than a silent tenant of a default arm; the '(removal)' suffix is replaced, not joined. Slice 02 (backend + frontend): UpdateTaskResponse.WaitingBehind changes from string? to a nested WaitingBehindResponse(string Name, UpdateType UpdateType, bool IsSameEntity) per ADR-206; the backend decides sameness as (entity kind, id) and NEVER as id alone; the browser words it — same entity reads 'Queued behind its own refresh/forecast/removal', a different entity still reads 'Queued behind <name>'. Done when: every pending specification listed below is un-skipped and green, the five named existing specifications are updated rather than deleted and are green, `grep -n \"string | IWaitingBehind\" Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts` returns zero matches, the backend suite (live-connector categories excluded) and `pnpm test` / `pnpm build` are green with zero warnings, and Stryker kill rate is >= 80% on both stacks for the touched surfaces.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply here and its omission is deliberate, not an oversight. DISTILL already recorded the resolution (feature-delta.md, DISTILL / Reconciliation): this repository is C# + NUnit 4.6 + Moq and TypeScript + Vitest + RTL; there is no pytest-bdd, no .feature file and no Hypothesis, and the ATDD policy records that the Python-pilot artifacts do not apply. The crafter authors NO tests in this story — all fifteen specifications were written by DISTILL and sit skipped. The crafter's RED phase is UN-SKIPPING them; its GREEN phase is production code. The only tests the crafter edits are the five existing green specifications named in the delta as breaking on purpose."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-solution-architect (Morgan), from DESIGN + DISTILL of feature-delta.md",
+    "reviewed_at": "2026-09-21",
+    "notes": "DISTILL exists and is authoritative: fifteen specifications across two files, ten pending, two pins already running, three carried elsewhere or by hand. Every step below names the specifications it un-skips, because un-skipping IS the RED phase in this story. Two claims were checked against the code rather than inferred: (1) UpdateController.GetTasks already selects the lane holder and already resolves its name (the sameness comparison costs no extra query, which is slice 02's learning hypothesis); (2) UpdateTaskNaming.NameOf already performs the entity-kind split it switches on to choose a repository, so DDD-9's extraction has a real second caller rather than a speculative one."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6055-activity-names-the-work/feature-delta.md",
+    "slice_01": "docs/feature/story-6055-activity-names-the-work/slices/slice-01-say-what-the-work-is.md",
+    "slice_02": "docs/feature/story-6055-activity-names-the-work/slices/slice-02-nothing-waits-behind-itself.md",
+    "environments": "docs/feature/story-6055-activity-names-the-work/environments.yaml",
+    "adr": "docs/product/architecture/adr-206-... (the waitingBehind payload) and adr-181-... (the Task Manager surface)",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6055"
+  },
+  "user_decisions": [
+    "D1 — the row reads `<Verb> <Kind> '<name>'`. The verb is Lighthouse's own word and is never looked up; the kind stays the tenant's configured Terminology.",
+    "D2 — both lookups become total over all five UpdateTaskType members, written as a Record rather than a switch, so a sixth type is a compile error unconditionally rather than dependent on a tsconfig setting.",
+    "D3 — the backend decides sameness on the read path; the browser words the clause, because the words are terminology-dependent.",
+    "D4 — where the holder is the same entity the clause names the HOLDER's activity, not the queued row's.",
+    "D5 — the queue stays one lane. Nothing here re-lands #5877's per-type lanes.",
+    "D7 — docs/settings/taskmanager.md's row-wording table matches what the component emits, and the page names forecasts.",
+    "OQ-2 settled at DISTILL — WaitingBehindResponse.UpdateType is sent in BOTH cases, not only the self-reference. A payload whose shape depends on its own contents buys nothing."
+  ],
+  "out_of_scope": [
+    "Story #5877's per-type update-queue lanes (UpdateLane, UpdateLaneMapping). They shipped 2026-09-19 and were reverted the same day for destroying Feature ownership under concurrent refreshes. No step here re-lands them, reintroduces those types, or depends on lanes existing. The queue is one lane in, one lane out, and D4's rule holds either way.",
+    "Collapsing the refresh row and the forecast row into one — rejected 2026-09-21. Two pieces of work are two rows.",
+    "The stop button's `Stop refreshing <name>` label, including on a removal row.",
+    "The `\"{UpdateType} {Id}\"` fallback name for an entity that has gone.",
+    "Queue position or an estimated wait — refused in #5511 (D15) and again in #5877.",
+    "The Stopping… and terminal row states, which carry no clause.",
+    "A Redis-backed IUpdateStatusStore scenario. This story changes what the controller does with what the store returns, not what the store returns; GetAdmittedWork() is called identically and its result shaped identically. DEVOPS's scenario_axes routes AC-02.6 over sqlite and postgres only.",
+    "Any change to UpdateQueueService or AdmittedWorkOrdering."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Say what the work is",
+      "description": "Every row in the Activity list leads with what the work is, so a Portfolio being refreshed and the forecast that refresh triggers stop drawing two rows with the same text. Frontend only — no contract moves, and the backend already sends the update type the row needs.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A row leads with the verb, and the lookup is total",
+          "description": "Replace the two-armed `useKindOf` with an exhaustive description of the work, remove the `(removal)` suffix, and un-skip the four slice-01 specifications that say so.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.test.tsx",
+          "scenario_name": "Activity rows say what the work is",
+          "unskips": [
+            "it.skip → it :: tells a portfolio refresh apart from the forecast it triggers (AC-01.1)",
+            "it.skip → it :: gives every kind of work its own phrase (AC-01.2)",
+            "it.skip → it :: uses the tenant's noun and Lighthouse's own verb (AC-01.3, AC-01.5)",
+            "it.skip → it :: says a removal is a removal without also appending one (AC-01.4)"
+          ],
+          "red_to_green_tests": [
+            "ActivitySection.test.tsx :: tells a portfolio refresh apart from the forecast it triggers",
+            "ActivitySection.test.tsx :: gives every kind of work its own phrase",
+            "ActivitySection.test.tsx :: uses the tenant's noun and Lighthouse's own verb",
+            "ActivitySection.test.tsx :: says a removal is a removal without also appending one"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.tsx (edit — useKindOf becomes useDescribeWork; a verb lookup is added; isDelete and the \" (removal)\" fragment are deleted)",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.test.tsx (edit — remove four `.skip` markers only; assertions and comments are DISTILL's and must not be softened)",
+      "Lighthouse.Frontend/src/components/App/Header/TaskManagerIcon.test.tsx (edit — ONLY the two `/removal/i` regexes at :419 and :471 become `/Removing/`; nothing else in this 1633-line file is touched)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The four named specifications are un-skipped, and the RED run is captured before any production edit: 'tells a portfolio refresh apart' and 'gives every kind of work its own phrase' fail against today's component, proving the default arm is the defect.",
+            "The verb lookup is `Record<UpdateTaskType, string>` with all five members written out — Team and Features → Refreshing, Forecasts → Forecasting, TeamDelete and PortfolioDelete → Removing. No `default:` arm and no `switch`; a missing member must be a compile error unconditionally rather than conditional on noImplicitReturns.",
+            "The entity-kind lookup becomes `Record<UpdateTaskType, …>` too. Which term each member maps to is unchanged — Team and TeamDelete to the Team term, the other three to the Portfolio term — but it is written out per member instead of falling through.",
+            "The verb is a literal in this file and is NEVER passed through getTerm. The kind is always getTerm. With every configurable term renamed, the kind changes and the verb does not — that separation is what AC-01.3 asserts and it is the story's learning hypothesis.",
+            "The `(removal)` suffix is gone, not kept alongside 'Removing'. Two ways of saying one thing in one column is how they come to disagree.",
+            "The `data-testid={task-manager-row-<updateType>-<id>}` handle is byte-identical to what it is today. The already-running pin 'keeps the handle every other specification addresses a row by' stays green, and so does every test in TaskManagerIcon.test.tsx that addresses rows by it. CORRECTED 2026-09-21: the original criterion said the WHOLE of that file stays green, which is false and cannot be made true. Two tests there pin the suffix this step deletes — :419 and :471 assert toHaveTextContent(/removal/i), and 'Removing' does not match it. They are updates to /Removing/, not deletions: the claim each makes survives word for word, and AC-01.4 in ActivitySection.test.tsx is strictly stronger, asserting 'Removing' present AND '(removal)' absent on the same row. The sibling at :423 pins the tenant's noun and passes untouched.",
+            "`pnpm test` green, `pnpm build` green with zero errors and zero warnings (Biome runs as prebuild and writes to ./src — re-check `git diff` after building)."
+          ],
+          "implementation_notes": "One production file. The row template becomes `<verb> <kind> '<name>' — <state>`; the em-dash separator and the state clause are untouched in this step. Do not touch describeState — the waitingBehind clause is slice 02 and this slice leaves 'Queued behind Ocean Explorer' reading exactly as it does today, self-reference included. Comments: the existing doc-comment on useKindOf explains why the kind is the tenant's word; extend that thought to say why the verb is not, in plain language, without citing D1/D2/AC numbers — those name sections of a document that gets archived and explain nothing to a cold reader. Commit: `feat(task-manager): activity rows lead with the work, not the entity (story 6055)`"
+        },
+        {
+          "id": "01-02",
+          "name": "The settings page shows the rows it describes",
+          "description": "Bring docs/settings/taskmanager.md's row-wording table in line with what the component now emits, name forecasts in the Activity section, and regenerate the page's screenshot from the real popover.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+          "scenario_name": "Take @screenshot of the Task Manager",
+          "unskips": [
+            "None — this step un-skips no specification. It is AC-01.7, which DISTILL recorded as deliberately not a test: it is the dogfood screenshot that becomes docs/assets/settings/taskmanager.png, carried on the DELIVER checklist with its preconditions in environments.yaml."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/settings/taskmanager.md (edit — row-wording table; the Activity section gains forecasts)",
+            "docs/assets/settings/taskmanager.png (regenerated, not hand-edited)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "The row-wording table quotes what the component actually emits after 01-01, for all five update types. A table that describes four and leaves the fifth implied is the same defect as the default arm, written in prose.",
+            "The Activity section of the page names forecasts as work the list shows, which it does not today.",
+            "Every configurable term in the prose renders as the seeded default from TerminologySeeder.cs — Feature/Features, Work Item/Work Items, Team, Portfolio. Never Epic, Initiative or Story.",
+            "The PNG is deleted before the screenshot run. A diff under the pixel threshold silently keeps the OLD image, so a run that 'passed' without an `rm` first proves nothing.",
+            "The run is `@screenshot` with `@auth` EXCLUDED: the auth specs wipe the database, which reds the six premium tests and permanently loses the PNGs they had already regenerated.",
+            "The premium licence fixture is imported from the main checkout before the run — it is gitignored and therefore absent in this worktree.",
+            "Remove any `*/docs` symlink before running a frontend build in this step, or Biome's prebuild --write pass reformats the docs tree.",
+            "The regenerated image shows a Refreshing row and a Forecasting row at the same moment, which is AC-01.7's production-data check and the taste question the slice exists to settle."
+          ],
+          "implementation_notes": "Screenshots.spec.ts:129-140 already opens this popover and needs no edit. Its trailing comment explains why there is deliberately no companion shot of the Activity section with work in it — do not add one; which rows read Running and which read Queued depends on when the shutter falls, and the image would carry a diff on every regeneration. If the popover comes up empty the seeded connection is missing, which the spec's own `expect(testData.teams).not.toHaveLength(0)` guard will say. Commit: `docs(task-manager): the settings page shows the rows it describes (story 6055)`"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Nothing waits behind itself",
+      "description": "The one field whose whole purpose is to explain a wait stops naming the waiting row's own entity as the thing it is waiting for. Backend decides sameness as (entity kind, id); the browser words it. ADR-206 changes one field's type and nothing else, and AC-02.6 is where that claim is checked on the serialised payload.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "One named total function says which entity a piece of work is about",
+          "description": "DDD-9: extract the update-type → entity-kind projection that is currently implicit in UpdateTaskNaming.NameOf's repository choice into one named total function in the Update namespace, and have NameOf call it. Pure extraction, green throughout, so the sameness check in 02-02 has a decider to reuse rather than a second copy to drift from.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningScenarios.cs",
+          "scenario_name": "A_refresh_that_is_running_is_listed_by_name",
+          "unskips": [
+            "None, and deliberately — this step is a behaviour-preserving extraction under specifications that are already green. Every specification it enables is un-skipped by 02-02. Stated here rather than omitted so its absence is a decision and not an oversight."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateEntityKinds.cs (new — suggested name; the exact signature is DELIVER's call per DESIGN)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateTaskNaming.cs (edit — NameOf's `switch` over UpdateType delegates to the new function instead of deciding the split inline)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The function is TOTAL over UpdateType: a `switch` expression with every member named and NO discard arm, so adding a sixth update type is a compile error. This is the same property D2 buys on the frontend, for the same reason — the defect being fixed is a default arm silently absorbing three of five members.",
+            "It returns an entity KIND, not a repository and not a bool. Team and TeamDelete → the Team kind; Features, Forecasts and PortfolioDelete → the Portfolio kind.",
+            "It lives in the Update namespace beside UpdateTaskNaming, because both of its callers do.",
+            "UpdateTaskNaming.NameOf produces byte-identical names for all five update types after the change. No observable behaviour moves in this step.",
+            "The backend suite is green with the live-connector categories excluded, before and after. In particular the inherited walking skeleton A_refresh_that_is_running_is_listed_by_name is green — it is the pin that NameOf still resolves a real seeded entity through the real repositories."
+          ],
+          "implementation_notes": "Run this as a refactor commit, separate from the feature commit that follows. The second caller does not exist yet, which is why this step is first: adding the sameness comparison in 02-02 to a codebase where the projection is still inline would mean writing the (kind, id) split twice, and AC-02.4 exists precisely because a second copy that compares ids alone passes every other scenario. Exclude the live-connector categories when running: `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. Commit: `refactor(update): name the projection from update type to entity kind (story 6055)`"
+        },
+        {
+          "id": "02-02",
+          "name": "The response says what holds the lane and whether it is this row's own entity",
+          "description": "UpdateTaskResponse.WaitingBehind changes from string? to a nested WaitingBehindResponse record carrying the holder's name, the holder's update type and the sameness verdict. Un-skips seven backend scenarios and updates the one existing specification that reads the field as a string.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Story6055ActivityNamesTheWorkScenarios.cs",
+          "scenario_name": "A_team_queued_behind_a_portfolio_with_the_same_id_is_not_waiting_behind_itself",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_queued_forecast_does_not_say_it_is_waiting_behind_its_own_portfolio (AC-02.1)",
+            "[Ignore(Pending)] removed :: A_queued_team_still_learns_the_name_of_the_portfolio_holding_the_lane (AC-02.2)",
+            "[Ignore(Pending)] removed :: A_queued_removal_behind_its_own_refresh_names_the_refresh (AC-02.3)",
+            "[Ignore(Pending)] removed :: A_queued_refresh_behind_its_own_removal_names_the_removal (AC-02.3, the mirror)",
+            "[Ignore(Pending)] removed :: A_team_queued_behind_a_portfolio_with_the_same_id_is_not_waiting_behind_itself (AC-02.4)",
+            "[Ignore(Pending)] removed :: Work_that_is_waiting_for_nothing_says_nothing (AC-02.5)",
+            "[Ignore(Pending)] removed :: Every_other_field_of_a_task_row_is_what_it_has_always_been (AC-02.6)",
+            "NOT un-skipped :: On_a_real_instance_a_triggered_forecast_does_not_name_its_own_portfolio carries [Ignore(ProductionData)], not [Ignore(Pending)]. It stays ignored in CI and is run by hand in 02-04."
+          ],
+          "red_to_green_tests": [
+            "Story6055ActivityNamesTheWorkTest :: A_queued_forecast_does_not_say_it_is_waiting_behind_its_own_portfolio",
+            "Story6055ActivityNamesTheWorkTest :: A_queued_team_still_learns_the_name_of_the_portfolio_holding_the_lane",
+            "Story6055ActivityNamesTheWorkTest :: A_queued_removal_behind_its_own_refresh_names_the_refresh",
+            "Story6055ActivityNamesTheWorkTest :: A_queued_refresh_behind_its_own_removal_names_the_removal",
+            "Story6055ActivityNamesTheWorkTest :: A_team_queued_behind_a_portfolio_with_the_same_id_is_not_waiting_behind_itself",
+            "Story6055ActivityNamesTheWorkTest :: Work_that_is_waiting_for_nothing_says_nothing",
+            "Story6055ActivityNamesTheWorkTest :: Every_other_field_of_a_task_row_is_what_it_has_always_been"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs (edit — new nested record WaitingBehindResponse(string Name, UpdateType UpdateType, bool IsSameEntity); UpdateTaskResponse.WaitingBehind changes type; GetTasks's projection gains the sameness comparison)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs (edit — ThenTheQueuedRowSaysItIsWaitingBehind at 219-226 reads Text(row, \"waitingBehind\"), a string where an object now arrives)"
+          ],
+          "dependencies": ["02-01"],
+          "criteria": [
+            "The seven [Ignore(Pending)] markers are removed and the RED run is captured BEFORE any production edit. DISTILL's doc-comment records these are RED rather than BROKEN when un-skipped — the assertions read JSON, so they compile against today's response and fail on its content.",
+            "Sameness is decided as (entity kind, id) using the total function from 02-01 — NEVER id alone. AC-02.4 is the whole reason: a Team with id 3 and a Portfolio with id 3 are two entities, and an implementation comparing ids alone passes every other scenario in the file and fails that one.",
+            "WaitingBehindResponse.UpdateType is populated in BOTH cases, not only the self-reference — OQ-2, settled at DISTILL. AC-02.2 asserts the name, AC-02.1 and AC-02.3 assert the activity, and a payload whose shape depends on its own contents buys nothing.",
+            "UpdateType on the response is the HOLDER's update type, never the queued row's. The two AC-02.3 scenarios are mirrors of each other precisely so an implementation that echoes the wrong side cannot pass by coincidence.",
+            "Work whose lane is free still sends null rather than naming an arbitrary running row (AC-02.5). The `work.Status == UpdateProgress.Queued ? … : null` guard stays.",
+            "No extra repository round-trip per row. GetTasks already selects the lane holder and already resolves its name; the sameness comparison reads the holder record the method is holding. Slice 02's learning hypothesis is that this is cheap on the read path — an implementation that queries per row disproves it and must be reported rather than shipped.",
+            "Every other field of UpdateTaskResponse keeps its name, its type and its meaning — updateType, id, name, status, elapsedMs — asserted on the SERIALISED payload by AC-02.6, where a consumer would break.",
+            "ThenTheQueuedRowSaysItIsWaitingBehind is UPDATED, not deleted and not weakened. It asserts something that stays true — a queued row names what holds its lane — in a payload shape that changes. An update that quietly relaxes it into something the new shape satisfies trivially loses #5511's guard.",
+            "Both route prefixes (api/v1 and api/latest) carry the new shape; there is one action serving both and no versioned divergence is introduced.",
+            "The backend suite is green with the live-connector categories excluded.",
+            "No UpdateLane, no UpdateLaneMapping, no per-type queue. The holder is still `admitted.FirstOrDefault(work => work.Status == UpdateProgress.InProgress)` — one lane in, one lane out."
+          ],
+          "implementation_notes": "ADR-206 fixes the payload as `{ name, updateType, isSameEntity }` and DISTILL pinned it in the Specifications' doc-comment, so build to the written contract rather than to a reading of the tests. Note the serialisation convention this repo already carries: enums go out as STRINGS and come in as ints, so the payload's updateType is \"Features\", not 1 — the frontend's UpdateTaskType union already matches. Prior art worth reading before writing: 53aa75a1b, #5877's own reverted fix to this field — four files, ~100 insertions, no contract change. It is the shape to argue with, not the shape to copy, and nothing from #5877's lane work comes back with it. Program.cs is not touched, so the full Integration suite is not forced. Commit: `feat(update): a queued row never names its own entity as what it waits for (story 6055)`"
+        },
+        {
+          "id": "02-03",
+          "name": "The browser words the wait, and trusts the instance's verdict",
+          "description": "Narrow IUpdateTask.waitingBehind from the DISTILL scaffold union to IWaitingBehind | null, word the self-reference clause in ActivitySection, and update the three existing TaskManagerIcon specifications that break on the shape change.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.test.tsx",
+          "scenario_name": "Activity rows explain a wait without naming themselves",
+          "unskips": [
+            "it.skip → it :: says a forecast is behind its own portfolio's refresh (AC-02.1)",
+            "it.skip → it :: says a refresh is behind its own portfolio's removal (AC-02.3)",
+            "it.skip → it :: still names a different entity that is holding the lane (AC-02.2)",
+            "it.skip → it :: trusts the instance's verdict rather than recomputing it (AC-02.8)",
+            "Already running, must stay green :: says nothing extra when the row is waiting for nothing (AC-02.5) — a pin, because 'the clause gains a branch' is exactly when a row with no clause starts growing one."
+          ],
+          "red_to_green_tests": [
+            "ActivitySection.test.tsx :: says a forecast is behind its own portfolio's refresh",
+            "ActivitySection.test.tsx :: says a refresh is behind its own portfolio's removal",
+            "ActivitySection.test.tsx :: still names a different entity that is holding the lane",
+            "ActivitySection.test.tsx :: trusts the instance's verdict rather than recomputing it"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts (edit — `waitingBehind?: string | IWaitingBehind | null` narrows to `IWaitingBehind | null`; the scaffold comment explaining the union goes with it)",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.tsx (edit — describeState's waiting branch gains the self-reference case)",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/TaskManagerIcon.test.tsx (edit — the builder at :87 and the assertions at :349 and :602/609)"
+          ],
+          "dependencies": ["01-01", "02-02"],
+          "criteria": [
+            "ACCEPTANCE CRITERION, explicit: the `string` arm is removed from IUpdateTask.waitingBehind, leaving `IWaitingBehind | null`. DISTILL's detection command is the check — `grep -n \"string | IWaitingBehind\" Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts` must return ZERO matches when this step is done. The union was a scaffold so that skipped-but-type-checked specifications could express the target shape; leaving it in place ships a permanent lie about the contract.",
+            "The four named specifications are un-skipped and the RED run is captured before the production edit.",
+            "Where isSameEntity is true the clause names the HOLDER's activity: 'Queued behind its own refresh' / '… its own forecast' / '… its own removal'. The word is derived from waitingBehind.updateType, never from the row's own updateType.",
+            "Where isSameEntity is false the clause is byte-identical to today: 'Queued behind <name>'. That name is the difference between waiting and wedged.",
+            "The component reads waitingBehind.isSameEntity and NEVER recomputes sameness by comparing the row to the holder. AC-02.8 hands it a deliberately self-contradictory payload — the flag says 'your own entity', the name says otherwise — and requires the flag to win. One decider; a second one in the browser would answer differently under a partial re-read, which ActivitySection.tsx already warns about in its own comment.",
+            "A row with waitingBehind null still reads 'Queued' with no 'behind' anywhere (AC-02.5, already-running pin).",
+            "TaskManagerIcon.test.tsx:87's aQueuedPortfolio builder constructs the object shape instead of the string \"Lagunitas\".",
+            "TaskManagerIcon.test.tsx:349 and :602/609 are UPDATED, not deleted. Both assert that a queued row says what it is waiting behind — :602/609 is #5511 slice-07A's guard that the clause survived a redesign, and it has to survive this one too. Keep the assertions as strong as they are: a different entity's name must still appear.",
+            "TaskManagerIcon.test.tsx:476-483 ('does not claim a queued refresh is behind anything when nothing is running') is NOT touched. It passes waitingBehind: null and survives unchanged — it is named here because it looks like it should break and does not.",
+            "`pnpm test` green, `pnpm build` green with zero errors and zero warnings.",
+            "No Biome suppression is added to make the narrowing compile. If a call site outside these files still assumes a string, fix the call site."
+          ],
+          "implementation_notes": "The three edits are atomic and cannot be split without redding the suite: once the response sends an object, a describeState that interpolates `${task.waitingBehind}` renders '[object Object]', and a builder still typed as string stops compiling. Word the clause by looking the holder's activity up in the SAME verb source 01-01 introduced, rather than writing a second three-armed lookup — 'refresh'/'forecast'/'removal' are the noun forms of the verbs already there, and two lookups over one enum is how the original defect got in. If the noun forms warrant their own Record, make it total over UpdateTaskType like its neighbour. Terminology: the self-reference clause contains NO tenant noun — 'its own refresh' names the activity, not the entity — so no getTerm call belongs in that branch. Commit: `feat(task-manager): a queued row says when it is waiting on its own work (story 6055)`"
+        },
+        {
+          "id": "02-04",
+          "name": "Prove it on real data, then freeze and mutate",
+          "description": "Run AC-01.7 and AC-02.7 by hand against the dogfood instance, then run Stryker on both stacks against frozen code.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Story6055ActivityNamesTheWorkScenarios.cs",
+          "scenario_name": "On_a_real_instance_a_triggered_forecast_does_not_name_its_own_portfolio",
+          "unskips": [
+            "None in CI, by design. On_a_real_instance_a_triggered_forecast_does_not_name_its_own_portfolio keeps its [Ignore(ProductionData)] permanently — it needs a real connection. It is RUN by hand here, with the marker left in place, and the result recorded.",
+            "Every other specification in both files is already un-skipped by 01-01, 02-02 and 02-03. Confirm zero remaining [Ignore(Pending)] in Story6055ActivityNamesTheWorkScenarios.cs and zero remaining it.skip in ActivitySection.test.tsx."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/feature/story-6055-activity-names-the-work/deliver/ (mutation run record, following the story-5884 and story-6049 precedent)"
+          ],
+          "dependencies": ["01-02", "02-03"],
+          "criteria": [
+            "AC-02.7 on real data: a genuine Portfolio refresh on the dogfood instance triggers its forecast, and the queued forecast row does NOT name its own Portfolio. This is the only place the sameness verdict meets a real update queue rather than a seeded store.",
+            "AC-01.7 on real data: the same frame shows a Refreshing row and a Forecasting row at once — which is the frame 01-02's screenshot captured, so confirm the two agree rather than re-shooting.",
+            "Both files carry zero pending markers: no [Ignore(Pending)] in the backend Scenarios file, no it.skip in ActivitySection.test.tsx, and `grep -n \"string | IWaitingBehind\" …/UpdateSubscriptionService.ts` returns nothing.",
+            "Stryker.NET on the backend surface (UpdateController's projection and the new entity-kind function) and StrykerJS on ActivitySection: kill rate >= 80% on both.",
+            "The mutation run happens on FROZEN code. Any edit after the run staleness-shifts the line ranges and invalidates the report — if something must change, re-run.",
+            "Stryker excludes the acceptance suite (80 minutes against 3), and the run is backgrounded so the 60-minute job cap does not kill it.",
+            "Survivors are either killed or argued as equivalent in the run record, one line each. An unexplained survivor is a gap, not a note.",
+            "Full backend suite green with live-connector categories excluded; `pnpm test` and `pnpm build` green with zero warnings; no new SonarQube issue of any severity on either stack."
+          ],
+          "implementation_notes": "Dogfood verification needs a running instance — start the backend with Lighthouse.Backend/Start-DevServer.ps1, never a bare `dotnet run`, which keeps its key ring inside the project directory where a worktree or `git clean -xfd` destroys it and leaves stored credentials unreadable. Never point a key store at data-protection-keys. If the dogfood instance is unavailable, STOP and report rather than marking AC-02.7 satisfied from the seeded scenarios — an acceptance criterion whose whole point is real data is not satisfied by a fixture. Per repo convention nothing is pushed red and the slice-boundary ritual applies: push, wait for CI green, then transition the ADO item Active → Resolved. Never Closed — Closed means released. Commit: `test(task-manager): record the mutation run for the activity rows (story 6055)`"
+        }
+      ]
+    }
+  ]
+}

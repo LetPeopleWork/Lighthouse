@@ -1,4 +1,4 @@
-# ADR-205: The lane holder on a queued task row is a piece of work, not a name
+# ADR-206: The lane holder on a queued task row is a piece of work, not a name
 
 - **Status**: **Proposed** (DESIGN, 2026-09-21)
 - **Date**: 2026-09-21

@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
             Assert.That(describesItsHolder, Is.True,
                 $"{updateType} {id} is queued behind something, so the row has to say what — as a described piece "
-                + "of work (ADR-205), not a bare name. A missing field means the row explains nothing; a string "
+                + "of work (ADR-206), not a bare name. A missing field means the row explains nothing; a string "
                 + $"means the browser has to guess which of two rows about one entity it is looking at. Got: {row}");
 
             return behind;

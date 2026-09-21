@@ -8668,7 +8668,7 @@ a browser that owns every word.
 
 | Route | Change |
 |---|---|
-| `GET /api/v1/update/tasks`, `GET /api/latest/update/tasks` | `waitingBehind` changes from `string?` to an object carrying the holder's `name`, `updateType` and `isSameEntity` (ADR-205). `updateType`, `id`, `name`, `status` and `elapsedMs` are unchanged. `[RbacGuard(SystemAdmin)]` unchanged. |
+| `GET /api/v1/update/tasks`, `GET /api/latest/update/tasks` | `waitingBehind` changes from `string?` to an object carrying the holder's `name`, `updateType` and `isSameEntity` (ADR-206). `updateType`, `id`, `name`, `status` and `elapsedMs` are unchanged. `[RbacGuard(SystemAdmin)]` unchanged. |
 | `GET /api/latest/update/status` | Unchanged. |
 | `POST /api/latest/update/tasks/{updateType}/{id}/cancel` | Unchanged. |
 
@@ -8716,7 +8716,7 @@ than written a second time.
 
 ### ADR References (this feature)
 
-- [ADR-205](./adr-205-the-lane-holder-is-a-piece-of-work-not-a-name.md): the lane holder on a queued row
+- [ADR-206](./adr-206-the-lane-holder-is-a-piece-of-work-not-a-name.md): the lane holder on a queued row
   is a described piece of work, not a name. PROPOSED.
 - [ADR-181](./adr-181-update-activity-is-a-read-through-the-status-store.md): the read-path shape this
   feature works inside. Unchanged; its §3 `UpdateActivityService` remains unbuilt, now recorded.
@@ -8735,5 +8735,5 @@ than written a second time.
 #5877 is **reverted and shelved** (see the status note on its section above). Its own fix to this same
 field (`53aa75a1b`) resolved the holder *per lane* and needed no contract change; it went out with the
 revert. The two are orthogonal — #5877 asks *which* running thing holds your lane, this asks *whether*
-the holder is you — and ADR-205 records how they would compose if the lanes ever return. Nothing in
+the holder is you — and ADR-206 records how they would compose if the lanes ever return. Nothing in
 this feature re-lands any of #5877 or depends on lanes existing.
