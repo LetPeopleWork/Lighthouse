@@ -12,6 +12,7 @@ import {
 import { useTerminology } from "../../../../services/TerminologyContext";
 import type {
 	IUpdateTask,
+	IWaitingBehind,
 	UpdateTaskType,
 } from "../../../../services/UpdateSubscriptionService";
 
@@ -40,12 +41,24 @@ export const taskKey = (task: IUpdateTask): string =>
  * put a Portfolio refresh and the forecast it triggers in the same words, and it would do it again to
  * the next kind of work someone adds; written out, that work cannot be added without being described.
  */
-const WORK_VERBS: Record<UpdateTaskType, string> = {
+const WORK_VERBS = {
 	Team: "Refreshing",
 	Features: "Refreshing",
 	Forecasts: "Forecasting",
 	TeamDelete: "Removing",
 	PortfolioDelete: "Removing",
+} as const satisfies Record<UpdateTaskType, string>;
+
+/**
+ * The same doing, said as a thing rather than as an activity, for the clause that explains a wait: a row
+ * is behind a refresh, not behind refreshing. Keyed by the verb rather than by the update type so there
+ * is still only one place that decides what a kind of work is called - a second table over the same enum
+ * is what let a refresh and a forecast drift into the same words in the first place.
+ */
+const WORK_NOUNS: Record<(typeof WORK_VERBS)[UpdateTaskType], string> = {
+	Refreshing: "refresh",
+	Forecasting: "forecast",
+	Removing: "removal",
 };
 
 const WORK_SUBJECT_TERMS: Record<UpdateTaskType, TerminologyKey> = {
@@ -88,6 +101,21 @@ const activityOf = (task: IUpdateTask, stopping: boolean): RowActivity => {
 	}
 };
 
+/**
+ * What a waiting row is waiting for. Work about some other thing is named, because that name is the
+ * difference between a queue moving and a queue stuck. Work about this row's own thing is described
+ * instead, because repeating the row's own name back at it reads as a row waiting for itself - every
+ * Portfolio refresh ends by triggering a forecast of the same Portfolio, so this is the common case.
+ *
+ * Whether the two are the same thing is the instance's answer, taken as given. Working it out again here
+ * from the row and the holder would be a second decider, and two deciders over one question disagree the
+ * moment a re-read brings back half the picture.
+ */
+const describeWait = (waitingBehind: IWaitingBehind): string =>
+	waitingBehind.isSameEntity
+		? `its own ${WORK_NOUNS[WORK_VERBS[waitingBehind.updateType]]}`
+		: waitingBehind.name;
+
 const describeState = (task: IUpdateTask, activity: RowActivity): string => {
 	switch (activity) {
 		case "stopping":
@@ -96,7 +124,7 @@ const describeState = (task: IUpdateTask, activity: RowActivity): string => {
 			return RUNNING;
 		case "waiting":
 			return task.waitingBehind
-				? `${WAITING} behind ${task.waitingBehind}`
+				? `${WAITING} behind ${describeWait(task.waitingBehind)}`
 				: WAITING;
 		default:
 			return task.status;

@@ -84,7 +84,11 @@ const aQueuedPortfolio: IUpdateTask = {
 	id: 3,
 	name: "Q4 Platform",
 	status: "Queued",
-	waitingBehind: "Lagunitas",
+	waitingBehind: {
+		name: "Lagunitas",
+		updateType: "Team",
+		isSameEntity: false,
+	},
 };
 
 const renderIcon = (

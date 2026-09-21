@@ -133,7 +133,7 @@ describe("Activity rows say what the work is", () => {
 
 describe("Activity rows explain a wait without naming themselves", () => {
 	// @AC-02.1 — the clause names the holder's activity when the holder is this row's own entity.
-	it.skip("says a forecast is behind its own portfolio's refresh", () => {
+	it("says a forecast is behind its own portfolio's refresh", () => {
 		renderRows([
 			aTask({
 				updateType: "Forecasts",
@@ -153,7 +153,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 	});
 
 	// @AC-02.3 — and the word follows what the HOLDER is doing, not what this row is doing.
-	it.skip("says a refresh is behind its own portfolio's removal", () => {
+	it("says a refresh is behind its own portfolio's removal", () => {
 		renderRows([
 			aTask({
 				updateType: "Features",
@@ -171,7 +171,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 
 	// @AC-02.2 — the reading that already shipped, which must not regress. A different entity is still
 	// named, because that name is the difference between waiting and wedged.
-	it.skip("still names a different entity that is holding the lane", () => {
+	it("still names a different entity that is holding the lane", () => {
 		renderRows([
 			aTask({
 				updateType: "Team",
@@ -203,7 +203,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 	// own entity" while the name says otherwise. A browser that recomputed sameness from the row and the
 	// holder would print the name; one that trusts the instance prints the activity. Only the second
 	// keeps a partial re-read from making the two disagree.
-	it.skip("trusts the instance's verdict rather than recomputing it", () => {
+	it("trusts the instance's verdict rather than recomputing it", () => {
 		renderRows([
 			aTask({
 				updateType: "Forecasts",

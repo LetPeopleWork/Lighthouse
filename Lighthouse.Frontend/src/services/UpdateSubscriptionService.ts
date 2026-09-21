@@ -44,14 +44,8 @@ export interface IUpdateTask {
 	id: number;
 	name: string;
 	status: UpdateProgress;
-	/**
-	 * What this one is waiting for. Absent for work that is running, and for work whose lane is free.
-	 *
-	 * The bare `string` arm is a DISTILL scaffold (story 6055 slice 02) and is the shape the instance
-	 * still sends: it lets the pending specifications express the target object while every already-green
-	 * test keeps compiling. DELIVER narrows this to `IWaitingBehind | null` and the arm goes.
-	 */
-	waitingBehind?: string | IWaitingBehind | null;
+	/** What this one is waiting for. Absent for work that is running, and for work whose lane is free. */
+	waitingBehind?: IWaitingBehind | null;
 	/**
 	 * How long the work has been in the state `status` names, measured by the instance. Running counts
 	 * from when it started, waiting from when it was admitted, so one number reads correctly either way.
