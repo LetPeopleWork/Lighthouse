@@ -6,14 +6,12 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { useId } from "react";
 import {
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
 import type { TimelineView } from "./timelineView";
-
-const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
-const VIEW_LABEL_ID = "delivery-timeline-view";
 
 /**
  * One thing the chart can be asked to show, and whether this Delivery can answer it.
@@ -34,6 +32,56 @@ export interface TimelineControlsProps {
 	view: TimelineView;
 	onViewChosen: (chosen: TimelineView) => void;
 	views: TimelineViewOption[];
+}
+
+/**
+ * A named row of buttons, exactly one of which is pressed.
+ *
+ * **It never lets go of the last one.** Clicking the pressed button reports an empty group, and an
+ * empty group here would mean a control claiming the chart is showing nothing while the chart shows
+ * something. Both groups on this row reach that state by a button of their own instead - the
+ * probability has no "off" to reach, and the views have "Nothing".
+ *
+ * Buttons rather than a dropdown because the whole value of both of these is flicking between the
+ * options and watching the picture change; a dropdown hides every option but one behind a click.
+ */
+function ChoiceGroup<T extends string | number>({
+	name,
+	chosen,
+	options,
+	onChosen,
+}: {
+	name: string;
+	chosen: T;
+	options: { value: T; label: string }[];
+	onChosen: (next: T) => void;
+}) {
+	const labelId = useId();
+
+	return (
+		<>
+			<Typography variant="body2" color="text.secondary" id={labelId}>
+				{name}
+			</Typography>
+			<ToggleButtonGroup
+				exclusive
+				size="small"
+				value={chosen}
+				onChange={(_, next: T | null) => {
+					if (next !== null) {
+						onChosen(next);
+					}
+				}}
+				aria-labelledby={labelId}
+			>
+				{options.map((option) => (
+					<ToggleButton key={option.value} value={option.value}>
+						{option.label}
+					</ToggleButton>
+				))}
+			</ToggleButtonGroup>
+		</>
+	);
 }
 
 /**
@@ -67,35 +115,16 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
 				mb: 2,
 			}}
 		>
-			{/* "Probability" is what Settings already calls this number. Three buttons rather than a
-			    dropdown because the whole value here is flicking between them and watching every bar
-			    move; a dropdown hides two of the three behind a click. */}
-			<Typography
-				variant="body2"
-				color="text.secondary"
-				id={PROBABILITY_LABEL_ID}
-			>
-				Probability
-			</Typography>
-			<ToggleButtonGroup
-				exclusive
-				size="small"
-				value={percentile}
-				onChange={(_, chosen: TimelinePercentile | null) => {
-					// Null arrives when the active button is clicked again. A timeline with no
-					// percentile selected would have nothing to draw, so the choice stands.
-					if (chosen !== null) {
-						onPercentileChosen(chosen);
-					}
-				}}
-				aria-labelledby={PROBABILITY_LABEL_ID}
-			>
-				{TIMELINE_PERCENTILES.map((option) => (
-					<ToggleButton key={option} value={option}>
-						{`${option}%`}
-					</ToggleButton>
-				))}
-			</ToggleButtonGroup>
+			{/* "Probability" is what Settings already calls this number. */}
+			<ChoiceGroup
+				name="Probability"
+				chosen={percentile}
+				onChosen={onPercentileChosen}
+				options={TIMELINE_PERCENTILES.map((option) => ({
+					value: option,
+					label: `${option}%`,
+				}))}
+			/>
 
 			{/* Offered only where there is a choice to make. With nothing this Delivery can say
 			    about its bars, the group is one button reading "Nothing" - which is not a control,
@@ -104,30 +133,15 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
 				<>
 					<Divider orientation="vertical" flexItem sx={{ mx: 1.5, my: 0.5 }} />
 
-					<Typography variant="body2" color="text.secondary" id={VIEW_LABEL_ID}>
-						Show
-					</Typography>
-					<ToggleButtonGroup
-						exclusive
-						size="small"
-						value={view}
-						onChange={(_, chosen: TimelineView | null) => {
-							// Clicking the active button reports null. "Nothing" is already one of
-							// the buttons, so the useful thing to do with that is nothing at all -
-							// otherwise the group would have two ways to reach one state and a
-							// reader could empty it by accident.
-							if (chosen !== null) {
-								onViewChosen(chosen);
-							}
-						}}
-						aria-labelledby={VIEW_LABEL_ID}
-					>
-						{offered.map((option) => (
-							<ToggleButton key={option.view} value={option.view}>
-								{option.label}
-							</ToggleButton>
-						))}
-					</ToggleButtonGroup>
+					<ChoiceGroup
+						name="Show"
+						chosen={view}
+						onChosen={onViewChosen}
+						options={offered.map((option) => ({
+							value: option.view,
+							label: option.label,
+						}))}
+					/>
 				</>
 			)}
 		</Box>

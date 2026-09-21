@@ -2,10 +2,10 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { BarMark } from "./deliveryBarMarks";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent, {
-	type BarMark,
 	rowTextColour,
 	TimelineBarMarks,
 } from "./TimelineBarContent";

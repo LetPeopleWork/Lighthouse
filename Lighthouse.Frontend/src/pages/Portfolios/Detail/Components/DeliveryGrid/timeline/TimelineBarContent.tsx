@@ -4,41 +4,10 @@ import { Box, Tooltip } from "@mui/material";
 import type React from "react";
 import { createContext, useContext } from "react";
 import { getContrastText } from "../../../../../../utils/theme/colors";
+import type { BarMark } from "./deliveryBarMarks";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import { barTooltip } from "./ganttShapes";
-
-/**
- * One thing a bar has to say, and whether it is worth an alarm. Decided by whoever writes the note
- * rather than here, so a Feature cannot read as clean on this chart and marked in the Feature table.
- */
-export interface BarNote {
-	text: string;
-	isWarning: boolean;
-	/**
-	 * What the note is about, for the notes whose own words do not say. Two Teams this Portfolio
-	 * cannot name produce the same sentence, so a list keyed on the sentence shows one of them and
-	 * silently drops the other. Absent where the words are their own identity.
-	 */
-	subject?: string;
-}
-
-/** Everything one bar has to say for itself. */
-export interface BarMark {
-	notes: BarNote[];
-	/**
-	 * Names written along the bar rather than left to the symbol and its hover text.
-	 *
-	 * A name reachable only by hovering does not answer the question the split exists for, which is
-	 * seeing which Team it is without opening anything. So while the Teams are being read, the one
-	 * Team without a row of its own is named where all the others already are.
-	 *
-	 * Each carries an id because the names do not have to differ: every Team a Portfolio cannot name
-	 * gets the same phrase, and two of them on one Feature would otherwise be one name twice - which
-	 * a list keyed by name renders as a single entry, showing fewer Teams than the Feature has.
-	 */
-	namesOnTheBar?: { teamId: number; name: string }[];
-}
 
 const BarMarks = createContext<ReadonlyMap<number, BarMark>>(new Map());
 

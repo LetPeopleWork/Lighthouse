@@ -8,23 +8,20 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useMemo, useState } from "react";
-import WorkItemsDialog, {
-	type WarningsColumnDescriptor,
-} from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import WorkItemsDialog from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../../../../hooks/useLicenseRestrictions";
 import type { IEntityReference } from "../../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
-import type { IWorkItem } from "../../../../../../models/WorkItem";
 import { useTerminology } from "../../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../../utils/featureName";
-import {
-	type FeatureWarningInput,
-	type FeatureWarningTerms,
-	featureWarningSentences,
-} from "../../../../../../utils/features/featureWarningSentences";
 import { cannotBeForecast } from "../../../../../../utils/forecast/cannotForecast";
 import DeliveryGanttChart from "./DeliveryGanttChart";
+import {
+	anythingToWarnAbout,
+	barMarksFor,
+	warningsColumnFor,
+} from "./deliveryBarMarks";
 import { buildDeliveryBarStatuses } from "./deliveryBarStatus";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
@@ -33,11 +30,7 @@ import {
 	DEFAULT_TIMELINE_PERCENTILE,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
-import {
-	type BarMark,
-	type BarNote,
-	TimelineBarMarks,
-} from "./TimelineBarContent";
+import { TimelineBarMarks } from "./TimelineBarContent";
 import TimelineControls, { type TimelineViewOption } from "./TimelineControls";
 import TimelineLegend, { type LegendEntry } from "./TimelineLegend";
 import { STATUS_COLORS } from "./timelineMarkers";
@@ -88,110 +81,6 @@ const STATUS_LEGEND: LegendEntry[] = [
 
 const premiumNoticeFor = (deliveryTerm: string) =>
 	`The ${deliveryTerm} timeline is a premium feature. The forecasts behind it are not — they stay in the table.`;
-
-const warningInputFor = (feature: IFeature): FeatureWarningInput => ({
-	isDoneWithRemainingWork:
-		feature.stateCategory === "Done" &&
-		feature.getRemainingWorkForFeature() > 0,
-	isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
-	dependencies: feature.dependsOn,
-});
-
-/**
- * The same sentences the Feature table shows, asked for in the same way, so a Feature cannot read as
- * clean in one place and marked in the other. What the bar says about where a blocker was drawn stays
- * on the bar: this column is shown by fifteen other screens that have no timeline, and a sound
- * dependency listed under a heading that says "Warnings" is a false alarm on every one of them.
- */
-const warningsColumnFor = (
-	features: IFeature[],
-	terms: FeatureWarningTerms,
-): WarningsColumnDescriptor => ({
-	headerName: "Warnings",
-	description: `What is worth checking about this ${terms.featureTerm}`,
-	warningsFor: (item: IWorkItem) => {
-		const feature = features.find((candidate) => candidate.id === item.id);
-
-		if (!feature) {
-			return [];
-		}
-
-		return featureWarningSentences(warningInputFor(feature), terms);
-	},
-});
-
-/**
- * What one bar has to say for itself: everything the Feature table would warn about, then what this
- * chart alone knows - where a blocker it waits on ended up, and which of its Teams has no row.
- *
- * All of them, rather than any one. A bar showing only its dependencies would read as clean beside a
- * table row marked for a default size; one showing only the warnings would leave a reader hunting
- * for a line that was never drawn; and one saying nothing about a Team without a row would show
- * fewer Teams than the Feature has and never admit it.
- *
- * **Two switches feed this, and which one owns what is the whole point of the split.** Naming a Team
- * that got no row is part of the promise the Teams switch makes - that the split never shows fewer
- * Teams than the Feature has - so it follows the Teams switch. Warnings and the account of where a
- * blocker went follow the warnings switch. Carrying the Team's name inside the warnings made a
- * reader who had turned warnings off, or who was simply seeing them off by default, get a split that
- * quietly dropped a Team.
- */
-const barMarksFor = (
-	features: IFeature[],
-	dependencyNotes: ReadonlyMap<number, string[]>,
-	terms: FeatureWarningTerms,
-	teamsWithoutALane: ReadonlyMap<number, UnlanedTeam[]>,
-	showWarnings: boolean,
-): Map<number, BarMark> => {
-	const marks = new Map<number, BarMark>();
-
-	for (const feature of features) {
-		const unlaned = teamsWithoutALane.get(feature.id) ?? [];
-
-		const warnings: BarNote[] = showWarnings
-			? [
-					...featureWarningSentences(warningInputFor(feature), terms).map(
-						(text) => ({ text, isWarning: true }),
-					),
-					// Every dependency worth warning about is already in the sentences above, said
-					// in the words the table uses for it. What is left here is the chart's own
-					// account of a wait there is nothing wrong with, which no warning should be
-					// raised over.
-					...(dependencyNotes.get(feature.id) ?? []).map((text) => ({
-						text,
-						isWarning: false,
-					})),
-				]
-			: [];
-
-		const notes: BarNote[] = [
-			...warnings,
-			// Tagged with the Team it is about: two Teams this Portfolio cannot name produce the
-			// same sentence, and a list keyed on the sentence would show one of them only.
-			...unlaned.map((team) => ({
-				...team.note,
-				subject: `team:${team.teamId}`,
-			})),
-		];
-
-		// A bar with nothing to say stays absent rather than arriving with an empty list, which a
-		// bar would draw as a symbol with nothing behind it.
-		if (notes.length > 0) {
-			marks.set(feature.id, {
-				notes,
-				// Named along the bar, not left to the hover: every other Team on this Feature is
-				// written in full along a lane of its own, so the one without a lane would be the
-				// only Team on the chart a reader had to go looking for.
-				namesOnTheBar: unlaned.map((team) => ({
-					teamId: team.teamId,
-					name: team.teamName,
-				})),
-			});
-		}
-	}
-
-	return marks;
-};
 
 const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	features,
@@ -291,14 +180,11 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 
 	const canShowWarnings = useMemo(
 		() =>
-			placeable.some(
-				(feature) =>
-					featureWarningSentences(warningInputFor(feature), {
-						workItemsTerm,
-						featureTerm,
-						portfolioTerm,
-					}).length > 0 || (feature.dependsOn?.length ?? 0) > 0,
-			),
+			anythingToWarnAbout(placeable, {
+				workItemsTerm,
+				featureTerm,
+				portfolioTerm,
+			}),
 		[placeable, workItemsTerm, featureTerm, portfolioTerm],
 	);
 
