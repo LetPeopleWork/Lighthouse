@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-6033-forecasted-start-dates
-updated: 2026-09-20
+updated: 2026-09-21
 note: >
   ADO Epic #6033, from Chris Graves (Focusrite) on the public idea board. The Epic description's central
   mechanism is superseded: it proposes deriving a Feature's forecasted start from the preceding Feature's
@@ -17,9 +17,12 @@ note: >
   reports its observed StartedDate at read time and the simulation is not changed for it. The known
   residual is written down rather than absorbed: the run does not know which Features are in flight, so a
   not-started Feature sitting above in-flight work forecasts a start that is too early. MUI X Gantt is
-  Premium-licence-only and is not owned, so the timeline is evaluated before it is bought. Five carpaccio
-  slices, the fourth opening with a timeboxed build-versus-buy evaluation, the fifth severable; see
-  docs/feature/epic-6033-forecasted-start-dates/.
+  Premium-licence-only and is not owned, so the timeline is evaluated before it is bought. Seven carpaccio
+  slices, the fourth opening with a timeboxed build-versus-buy evaluation, the fifth, sixth and seventh
+  severable; see docs/feature/epic-6033-forecasted-start-dates/. The seventh was added on 2026-09-21,
+  after the other six had shipped: the target date was marked on the chart in the fourth slice and
+  nothing has compared anything to it since, so the bars now say which Features are finished and which
+  two kinds of late the rest are.
 
 journeys:
 
@@ -163,8 +166,30 @@ journeys:
         output: One sub-lane per team beneath its summary bar, each spanning that team's start to that
           team's completion at the selected percentile. Severable, and timeline-only — the table never
           splits a Feature by team.
+      - step: Ask what is in trouble, without measuring
+        action: Turn on the status switch, then move the percentile
+        output: >
+          A coloured edge on each Feature's own bar — finished, forecast to finish after the target,
+          or forecast not even to start until after it — and the edges move with the bars when the
+          percentile changes. A bar that is on track carries nothing, so the colours are only ever on
+          the bars worth looking at. The edge rather than the fill, because the fill already says which
+          team, and a reader should not have to give up one answer to see the other. Off by default,
+          and severable.
 
     error_paths:
+      - situation: The Delivery has no target date
+        recovery: There is nothing to be late against, so no bar carries either late colour. Finished
+          Features are still marked as finished, because that is a fact about the work and not about
+          the target.
+      - situation: A Feature is finished, and it finished after the target date
+        recovery: It reads as finished, not as late. Its bar already ends at the day it closed rather
+          than at a forecast, so calling it late would be a statement about a forecast nobody is making.
+      - situation: A Feature is forecast to start after the target date
+        recovery: >
+          Marked differently from one merely forecast to finish late, and deliberately so. Every
+          Feature that starts late also finishes late, so without the distinction the sharper case
+          never appears — and it is a different conversation. Work that will not be reached before the
+          date is a question about what the Delivery contains, not about how fast anyone is going.
       - situation: A Feature in the Delivery has no forecast
         recovery: Listed with no bar and a stated reason, rather than omitted. A Delivery where none can
           be forecast says so rather than rendering an empty axis.
@@ -197,6 +222,13 @@ journeys:
         source: >
           one control on the timeline, applied to both ends of every bar. Deliberately not two
           controls — a bar assembled from two different confidence levels describes no scenario.
+      - artifact: whether this reader wants the statuses, the teams and the warnings shown
+        source: >
+          one store per preference, held for the whole page and kept in the browser, never component
+          state. A Portfolio can have several Deliveries open at once; a preference held per accordion
+          gives each of them a truth of its own, and they then sit on one screen contradicting each
+          other. It is a property of the person reading, so it is held once and every switch on the
+          page is a view of it.
 
 accepted_risks:
   - risk: >

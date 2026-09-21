@@ -615,10 +615,12 @@ separate them much; there the win is the smaller one above, that a late bar stop
 | 04 | US-04 | Timeline tab with percentile selector (opens with a build-vs-buy evaluation) | ~6h + 2h evaluation |
 | 05 | US-05 | Dependencies drawn on the timeline — **severable** | ~4h |
 | 06 | US-06 | Per-team sub-lanes on the timeline — **severable**, and depends on 04 | ~4h |
+| 07 | US-07 | Done and late Features marked on the timeline — **severable**, and depends on 04 | ~5h |
 
-Slices 05 and 06 are both severable and independent of each other, and both sit on slice 04. Either can
-be dropped, or both, and what remains still ships. If slice 04's evaluation goes the other way, both are
-re-estimated against whatever it recommends.
+Slices 05, 06 and 07 are all severable and independent of each other, and all three sit on slice 04. Any
+of them can be dropped, or all of them, and what remains still ships. If slice 04's evaluation goes the
+other way, all three are re-estimated against whatever it recommends. *(Corrected 2026-09-21: this read
+"Slices 05 and 06 are both severable … Either can be dropped, or both", before Story #6067 added 07.)*
 
 **Walking skeleton**: slice 01. It crosses every layer the Epic touches except the two UI surfaces — the
 simulation, the storage decision, the aggregation grain and the API contract — and it is where every
@@ -694,7 +696,7 @@ No configurable or env-switching strategy is used, so the WS-strategy-D expansio
 | UI | Portfolio, Feature table, Forecasted Start column | 02 |
 | UI | Settings, Work Tracking Systems, Write-Back, value source list | 03 |
 | Outbound | Write-back round to a Jira or Azure DevOps date field | 03 |
-| UI | Portfolio, Delivery, Timeline tab | 04, 05 |
+| UI | Portfolio, Delivery, Timeline tab | 04, 05, 06, 07 |
 
 ---
 
@@ -734,13 +736,13 @@ closed.
 | # | Item | Evidence |
 |---|---|---|
 | 1 | Business value articulated | Jira Plans that draw themselves from measured flow; requested by a paying customer and seconded in-thread |
-| 2 | User stories with job traceability | US-01 to US-06, each carrying a `job_id` appended to `docs/product/jobs.yaml`. US-02's persona is `product-owner` while its job is the delivery lead's: deliberate, because the question is the same one ("when will you get to this?") asked from two seats, and a second job whose only difference is who is asking would be a duplicate rather than a distinction |
-| 3 | Acceptance criteria testable | **39 ACs across six stories** — 10 / 5 / 6 / 9 / 4 / 5 for US-01 to US-06 — each asserting an observable output. *(Corrected 2026-09-20: this read "27 across five", which counted neither US-06 nor AC-1.9/AC-1.10.)* |
+| 2 | User stories with job traceability | US-01 to US-07, each carrying a `job_id` appended to `docs/product/jobs.yaml`. US-07 traces to `job-lead-see-a-delivery-as-a-timeline`, the same job US-04 and US-05 serve — it is the same person asking the same question of the same picture, with no new job behind it. US-02's persona is `product-owner` while its job is the delivery lead's: deliberate, because the question is the same one ("when will you get to this?") asked from two seats, and a second job whose only difference is who is asking would be a duplicate rather than a distinction |
+| 3 | Acceptance criteria testable | **51 ACs across seven stories** — 10 / 5 / 6 / 9 / 4 / 5 / 12 for US-01 to US-07 — each asserting an observable output. *(Corrected 2026-09-20: this read "27 across five", which counted neither US-06 nor AC-1.9/AC-1.10. Corrected again 2026-09-21: this read "39 across six", before Story #6067 added US-07.)* |
 | 4 | Dependencies identified | P1-P8, all closed. P8 was the last open one and slice 04's spike settled it on 2026-09-20 |
-| 5 | Sized to fit a slice | **Six slices, 3-8h each, two severable** (05 and 06, independent of each other). *(Corrected 2026-09-20: this read "five slices … one severable".)* US-01 at ~7h and US-04 at ~6h plus a 2h evaluation both sit at the top of the band; slice 01's split is planned rather than contingent — see its brief |
+| 5 | Sized to fit a slice | **Seven slices, 3-8h each, three severable** (05, 06 and 07, independent of each other). *(Corrected 2026-09-20: this read "five slices … one severable". Corrected again 2026-09-21: this read "six slices … two severable", before Story #6067 added 07.)* US-01 at ~7h and US-04 at ~6h plus a 2h evaluation both sit at the top of the band; slice 01's split is planned rather than contingent — see its brief |
 | 6 | Technical approach known | D1-D4 name the mechanism; the surface inventory gives every line it touches |
 | 7 | Risks named | D6 (optimism residual), D13 (accepted flattening), P8 (build vs buy — closed, see D11) |
-| 8 | Out of scope explicit | Seven items, two carrying owed follow-ups |
+| 8 | Out of scope explicit | Seven items, two carrying owed follow-ups; five more for slice 07 in its own section, one of them a declined request rather than a deferred one (D7-12) |
 | 9 | Terminology settled | D14 |
 
 **DoR: PASS.** The one qualification it carried — item 4 resting on P8 — is discharged: slice 04's spike
@@ -3473,3 +3475,214 @@ and no wave-end expansion menu.
 `wave declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
 
 Next: DELIVER, slice 06 (Story #6050).
+
+---
+
+## Wave: DISCUSS / [REF] Slice 07 — What Was Asked, and What the Code Already Says
+
+ADO Story **#6067**, opened 2026-09-21 against this Epic after slices 01-06 had shipped. Its own words:
+
+> There are two things that are of interest: things that are done, and things that are forecasted to be
+> late. Late things have even 2 different levels. One thing to start before the target date and be
+> expected to finish after. Another if we are forecasted to even start after the target date (clear
+> candidate to remove this…). We should somehow visually indicate this. Idea: use some coloring —
+> Done → Green, Finish late (but start early enough) → Orange, Start late → Red. We could use the
+> forecasting colors that already define green, orange, red. But open for other options (e.g. hatching?).
+> Can also be a combination. Also this may be toggled on/off (let's go with off by default). While we are
+> at it → Warnings should also be toggled on/off.
+
+Read before deciding anything, because four of the story's premises are already answered by shipped code.
+
+| # | What the code says | Where |
+|---|---|---|
+| S24 | **Both statuses are computable with no backend change and no new prop.** `buildDeliveryTimeline` already reads `feature.closedDate`, and `DeliveryTimelineTab` already holds `targetDate` and `targetCalendarDate()`. Everything the three colours need is in the function that builds the bars | `deliveryTimelineModel.ts` |
+| S25 | **The fill is already spent.** Slice 06 paints `fill={team?.color}` on a Feature's own bar and on every Team lane. A status fill would take it back, and the switch would then cost the reader whichever answer it is not showing | `TimelineBarContent.tsx` |
+| S26 | **The Team palette is not colour-safe against a status palette.** `getColorMapForKeys` claims to avoid "the red spectrum"; its list contains `#E57373` Soft Red, `#F2A65A` Warm Orange and three greens. Against `riskyColor #f44336` and `realisticColor #ff9800` those are near-collisions, not distinctions — a Team wearing Soft Red beside a Feature marked Risky Red is two meanings in one hue | `utils/theme/colors.ts` |
+| S27 | **The product already ships a per-Feature late signal, and it is a different statement.** `IFeatureLikelihood.likelihoodPercentage` — the probability this Feature makes the Delivery's target — renders green/orange/red through `FeatureLikelihoodChip` → `ForecastLevel`. That ladder has **four** levels at 50/70/85 plus `Unknown`, not the three the story names, and it does not move when the reader moves the timeline's probability. `DeliverySection` does not pass it to the timeline today | `models/Delivery.ts`, `ForecastLevel.ts` |
+
+S27 is the one worth pausing on. The Delivery's Features grid already answers "is this one late?" with a
+colour. The story is not asking for that answer a second time — it is asking for it *on the picture*, in a
+form that moves when the probability does, which the chip cannot do because it is one fixed number.
+
+---
+
+### US-07 — The timeline says which Features are done and which are late
+
+**Job**: `job-lead-see-a-delivery-as-a-timeline`
+**Persona**: delivery-lead-rte
+**Slice**: 07 (severable, timeline only)
+
+As someone reading a Delivery's timeline, I want the bars that are finished and the bars that miss the
+target date to say so without my measuring them against the marked column, so that the picture answers
+"what is in trouble here" before I have read a single date.
+
+#### Elevator Pitch
+
+Before: the target date is a tinted column on the axis and every bar is the same colour. Which bars cross
+that column is a thing the reader works out by eye, bar by bar, and re-works every time they move the
+probability.
+After: open a Delivery's Timeline tab, turn on **Show status**, and every bar carries a coloured edge —
+green for finished, orange for forecast to finish after the target, red for forecast not even to *start*
+until after it. Move the probability from 70 to 95 and the edges change with the bars.
+Decision enabled: which Feature to act on, and how. A red bar is not a late Feature — it is a Feature that
+has not been reached, and the conversation about it is about the board, not about the team's pace.
+
+#### Acceptance Criteria
+
+- **AC-7.1** — A Feature whose bar *ends* after the Delivery's target date, at the selected probability,
+  carries the "finishes late" colour. Changing the probability changes which bars carry it (D7-2).
+- **AC-7.2** — A Feature whose bar *starts* after the target date carries the "starts late" colour
+  instead. One status per bar, and the start test wins: a Feature that has not begun by the target cannot
+  finish by it, so saying only "finishes late" about it would be true and useless (D7-4).
+- **AC-7.3** — A finished Feature carries the "done" colour, whether or not it finished after the target.
+  Done is not a forecast, and the scale says what is forecast (D7-3).
+- **AC-7.4** — A Feature that is on track carries no status at all. A mark that lands on every bar tells
+  the reader nothing about any of them (D7-5).
+- **AC-7.5** — The status is carried by an **edge on the bar, not its fill**. With the Teams shown, a bar
+  keeps its Team colour *and* its status; neither hides the other, at any combination of the two switches
+  (D7-1).
+- **AC-7.6** — A Team's sub-lane carries no status. The statement is about the Feature, and repeating it
+  down three lanes would say it four times (D7-7).
+- **AC-7.7** — A key above the chart names each colour, in the same slot and the same form the Team key
+  already uses. Three coloured edges with nothing naming them is the shaded-column mistake slice 04
+  already made once and fixed with a legend.
+- **AC-7.8** — A **Show status** switch, default off. It is **absent, never present-and-inert**, when no
+  bar on this chart would carry a status — the rule `canShowTeams` already established.
+- **AC-7.9** — A **Show warnings** switch, default off, hides every bar mark: the symbol *and* the
+  sentences it contributes to the bar's hover text. Half-hidden is a switch that reads as broken (D7-9).
+- **AC-7.10** — Every status edge is distinguishable from the bar it sits on and from the page behind it,
+  in light and dark themes, over the default fill and over all fourteen Team fills (D7-1, and the
+  white-on-pastel finding from slice 06's review).
+- **AC-7.11** — A Delivery with no target date has nothing to be late against: its finished Features still
+  carry "done" and no bar carries either late colour. The switch appears if any bar would be green.
+- **AC-7.12** — Removing this slice entirely leaves US-04, US-05 and US-06 whole. Nothing already on the
+  chart depends on it.
+
+---
+
+## Wave: DISCUSS / [REF] Slice 07 — Decisions
+
+Settled with the maintainer on 2026-09-21, before any code was written.
+
+| # | Decision | Why |
+|---|---|---|
+| D7-1 | **The status is an edge on the bar, not its fill.** | The fill is slice 06's (S25) and the two palettes are not safe together (S26). An edge coexists with the Team colour at every combination of the two switches, so neither switch silently costs the reader the other answer. The maintainer's words: *"Teams can keep the colouring they have — I am talking about the main lines for the feature."* Hatching was weighed, on the story's own suggestion, and is available as a fallback if DESIGN finds the edge unreadable at bar height |
+| D7-2 | **Late is read off the drawn bar against the target date, at the selected probability** — not from the existing likelihood chip | The chip is one fixed verdict per Feature; the bar moves with the probability selector. A colour that did not move while the bar under it did would be the chart disagreeing with itself. It also keeps the whole rule inside `deliveryTimelineModel.ts`, with nothing new threaded from `DeliverySection`. Consequence, accepted: the edge and the grid's chip can differ on the same Feature at some probabilities, because they answer two different questions. The key has to say which one this is |
+| D7-3 | **Done wins over late.** A Feature that finished after the target is green, not orange | A finished Feature's bar already ends at its close date rather than at a forecast — slice 04 made it so. Calling it "forecast to finish late" would be a statement about a forecast nobody is making. The story lists the three in this order and means them exclusively |
+| D7-4 | **Start-late wins over finish-late** | Every start-late Feature is also finish-late, so without a precedence the red case never appears. The story's parenthesis — *"clear candidate to remove this"* — is the whole reason the red exists: it is a different conversation, not a worse orange |
+| D7-5 | **On track carries nothing** | Colouring every bar spends the scale. The table's green check was right in a scanned column and is wrong on a bar a few pixels tall; slice 06 already made that call for the mark symbol and it holds here |
+| D7-6 | **Timeline only** | The Delivery's Features grid already carries `FeatureLikelihoodChip` for this question (S27). A second indication beside it would be two answers to one question, free to disagree. D16's line — the table gains nothing from this Epic — holds |
+| D7-7 | **Sub-lanes carry no status** | Per the maintainer: the main line for the Feature. A Team lane is that Team's own span; whether the *Feature* misses the target is not a fact about one of its Teams |
+| D7-8 | **Two switches, both default off** — `Show status` and `Show warnings`, independent | The story asks for status off by default. Warnings off by default is a **deliberate change to what an existing reader sees**: the mark symbol is unconditional today. Offered as such and taken as such |
+| D7-9 | **`Show warnings` hides the whole mark** — symbol and the sentences it adds to the hover — not only the `isWarning` ones | A switch that leaves a symbol on the bar reads as a switch that did not work. The cost is that the control hides dependency notes too, which its name does not obviously promise; the label is DESIGN's to settle, under the constraint that it must not promise less than it hides |
+| D7-10 | **The three colours come from the existing forecast palette** (`riskyColor`, `realisticColor`, and a green from the same family), not a new one | The story asks for exactly this. It also keeps the chart from inventing a fourth colour vocabulary beside the chip's, the Team palette's and the target band's. Which green, and the exact tokens, are DESIGN's — `ForecastLevel` carries two and neither was chosen for this use |
+| D7-11 | **The test is on the drawn geometry**, observed or forecast alike | A started Feature's bar begins at its observed date (D5). If that drawn start is past the target, the bar is red, and it is red because it is true. One rule on what is on screen, rather than a second rule about where the number came from — which is the shape Bug #6054 had to be fixed into |
+| D7-12 | **"Clear candidate to remove this" is declined as scope, not deferred** | Removing a Feature from a Delivery is a mutation of the Delivery, with its own permissions, its own undo and its own effect on every forecast on the page. This story indicates; it does not act. Recorded so the sentence in the ADO description does not read as an unbuilt half |
+
+---
+
+## Wave: DISCUSS / [REF] Slice 07 — Out of Scope
+
+- **Removing, hiding or re-ordering a Feature because it is late.** D7-12. Declined, not deferred.
+- **Any surface but the Delivery timeline.** D7-6. The Features grid keeps its chip; the Portfolio Feature
+  table has no target date to be late against and is untouched.
+- **Any backend change.** Everything is computable from what the tab already receives (S24). If this slice
+  needs a backend change, one of slices 01-06 was incomplete and the change belongs there.
+- **Re-deciding `FeatureLikelihoodChip` or `ForecastLevel`'s four-level ladder.** They stay exactly as
+  they are. This slice borrows their colours, not their thresholds.
+- **A status for anything that is not on the chart.** The unplaceable list beside the timeline is prose
+  with a reason; a colour on it would be a fourth thing to explain.
+
+---
+
+## Wave: DISCUSS / [REF] Slice 07 — Scope Assessment and Taste Tests
+
+**Right-sized. ~5h**, and one slice rather than two.
+
+| | |
+|---|---|
+| Status rule, pure, in `deliveryTimelineModel.ts` | ~1h |
+| The edge, rendered in `TimelineBarContent` / `RowBody` | ~1h |
+| The key | ~0.5h |
+| Two switches and the store behind them | ~1h |
+| Tests | ~1.5h |
+
+- **Four or more new components?** One pure function, one key, one store shape reused twice. Pass.
+- **Every slice depending on a new abstraction?** It depends on slice 04's chart and nothing new. Pass.
+- **Does it disprove a pre-commitment?** Yes, and cheaply: if a coloured edge is not readable at the bar
+  height this chart draws, D7-1 falls and hatching (the story's own alternative) is what is left. That is
+  visible in the first dogfood, before the switches are written. Pass.
+- **Synthetic data only?** Demonstrated on the dev instance against a real Delivery with a real target
+  date, and on demo data for the multi-Team case. Pass.
+- **Two slices identical but for scale?** 07 is the third thing drawn on slice 04's chart, after 05's
+  links and 06's lanes — but it is a different statement from different data, and it is the first that is
+  *about the target date*. Not merged. Pass.
+- **Splitting 07 into a status slice and a toggles slice was considered and rejected.** `Show status`
+  cannot be severed from the status: default-off means the switch ships the day the colours do. What *is*
+  severable is `Show warnings` — the story's "while we are at it" rider, which touches nothing the rest
+  of the slice touches. It is marked severable inside the slice rather than given a slice of its own.
+
+---
+
+## Wave: DISCUSS / [REF] Slice 07 — Back-Propagation
+
+Changes to sections written for slices 01-06. The originals are quoted, not edited away.
+
+1. **Story map** — the table gains a row 07 and the sentence under it read *"Slices 05 and 06 are both
+   severable and independent of each other"*. It now names three severable slices. The Epic's shape is
+   unchanged: 04 is still the only slice anything else sits on.
+2. **DoR item 3** — read *"39 ACs across six stories — 10 / 5 / 6 / 9 / 4 / 5 for US-01 to US-06"*. US-07
+   adds 12, for **51 across seven stories**.
+3. **DoR item 5** — read *"Six slices, 3-8h each, two severable (05 and 06, independent of each other)"*.
+   Now **seven slices, three severable**. 07 is the smallest of them.
+4. **Driving ports** — the UI row for the Timeline tab read `04, 05`; it had already gained 06 in
+   practice without the table being updated, and now reads `04, 05, 06, 07`.
+5. **SSOT journey** `see-a-delivery-as-a-timeline` — gains a step ("Ask what is in trouble") and an error
+   path (a Delivery with no target date). The two switches are a shared artifact: one preference per
+   reader, per page, not per Delivery accordion — the thing slice 06 got wrong first and fixed.
+
+Nothing in DISCOVER changes, because there is no DISCOVER. Nothing in D1-D16 is reversed; D16's line
+about the table is reinforced by D7-6 rather than qualified.
+
+---
+
+## Wave: DISCUSS / [REF] Slice 07 — Open Questions Carried Forward
+
+1. **The label on the warnings switch.** It hides dependency notes as well as warnings (D7-9), and
+   "Warnings" is the story's word for it. DESIGN picks one that does not promise less than it hides.
+2. **Three switches and a three-button group on one row.** Slice 06 already added a divider and one
+   switch to that row; this adds two more. At the narrowest width the Delivery view supports (AC-4.8) the
+   row has to wrap rather than overflow, and nobody has seen it wrap yet.
+3. **Whether `useShowTeams` should become one store used three times.** Two more page-wide, storage-backed
+   booleans with the same five traps behind them (string comparison, pre-paint read, guarded access,
+   manual notify, per-page not per-instance) is the point at which copying it a third time stops being
+   cheaper than generalising it. That is a refactor of shipped code, so it is DESIGN's call, not a thing
+   to decide while writing the second copy.
+4. **Slice 06's open question (1) is now less visible and no more settled.** With warnings off by default,
+   the note symbol on a two-Team Feature with one dateless Team is hidden for a reader who changes
+   nothing. That is not an answer to whether it should appear with `Show Teams` off; it only means fewer
+   people meet the question. Still open.
+5. **Whether the edge survives contrast against all fourteen Team fills** (AC-7.10). Slice 06's
+   adversarial review found white-on-pastel at ~1.4:1 on this very chart, and that was one colour on one
+   fill. This is three edges over fifteen possible backgrounds, in two themes.
+
+---
+
+## Wave: DISCUSS / Slice 07 — Tier-2 Expansion Menu
+
+Density is `lean` with `expansion_prompt: ask-intelligent`. Triggers evaluated against this pass:
+
+| Trigger | Fired | Why |
+|---|---|---|
+| AC ambiguity across 2 or more stories | No | One story, and each AC names an observable output |
+| Cross-context complexity (3+ contexts or technologies) | No | React and one chart. No backend, no persistence beyond a browser preference |
+| Multi-stakeholder (3+ personas) | No | One — delivery-lead-rte |
+| Compliance or regulatory | No | No regulated data |
+| WS strategy = D (configurable) | No | Strategy B, unchanged |
+
+No trigger fired. **Tier-1 `[REF]` sections only**, no menu offered.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DISCUSS`, slice `07`, reason `no
+ask-intelligent trigger fired`, expansions emitted `0`, menu emitted `false`.
+
+Next: DESIGN, slice 07 (Story #6067).
