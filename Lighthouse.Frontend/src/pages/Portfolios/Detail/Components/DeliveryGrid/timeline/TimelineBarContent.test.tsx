@@ -357,8 +357,15 @@ describe("TimelineBarContent", () => {
 	});
 
 	it("writes both un-laned Teams on the bar when neither of them can be named", async () => {
-		// Two Teams, one phrase between them. Keyed on that phrase the bar draws one entry and
-		// React warns about duplicate keys; keyed on the Team it draws what the Feature has.
+		// Two Teams, one phrase between them.
+		//
+		// **React does not drop the second of two children sharing a key** - it renders both and
+		// complains. So counting the entries proves the list was built from the Teams rather than
+		// collapsed by name, and it says nothing about the key: this test passed unchanged with
+		// the names used as keys. The key is pinned by the complaint instead, below, because that
+		// is the only thing a duplicate actually changes here.
+		const complaints = vi.spyOn(console, "error").mockImplementation(() => {});
+
 		const outsider = "A Team from outside this Portfolio";
 		const sentence = `No forecast for ${outsider}.`;
 
@@ -383,6 +390,16 @@ describe("TimelineBarContent", () => {
 		const tooltip = await screen.findByRole("tooltip");
 
 		expect(within(tooltip).getAllByText(sentence)).toHaveLength(2);
+
+		// Nothing was keyed on the words. Two entries sharing a key reconcile as one on the next
+		// update, which is invisible on a first render and shows up later as a name that will not
+		// change when the Team behind it does.
+		// Read across every argument of every call rather than matched against one shape: React
+		// splits this message over a format string and its substitutions, and how many there are
+		// is theirs to change.
+		expect(complaints.mock.calls.flat().join(" ")).not.toContain("same key");
+
+		complaints.mockRestore();
 	});
 
 	it("names the one Team a Feature has to itself along its own bar", () => {
@@ -432,6 +449,11 @@ describe("TimelineBarContent", () => {
 
 describe("what a bar says about the target date", () => {
 	const AMBER = "#ff9800";
+	const MERIDIAN: TeamColour = {
+		teamId: 42,
+		teamName: "Meridian",
+		color: "#4DA98C",
+	};
 
 	const paintingOf = (testId: string) =>
 		within(screen.getByTestId(testId)).getByTestId("timeline-bar-content")
@@ -482,15 +504,26 @@ describe("what a bar says about the target date", () => {
 		// The two never arrive together from the tab - the reader picks one view - but the
 		// component is handed both here so the rule is written down somewhere rather than resting
 		// on every caller being careful.
-		renderBar({
-			bar,
-			team: { teamId: 42, teamName: "Meridian", color: "#4DA98C" },
-			statusColor: AMBER,
-		});
-
-		expect(screen.getByTestId("timeline-bar-content")).toHaveTextContent(
-			"Meridian",
+		//
+		// **Asserted on the painting, not on the Team's name.** The name is rendered by a branch
+		// that never looks at the fill, so a test reading it is blind to the precedence it is named
+		// for: inverting the rule to `statusColor ?? team?.color` left all 272 tests green.
+		render(
+			<ThemeProvider theme={createTheme()}>
+				<div data-testid="both">
+					<TimelineBarContent bar={bar} team={MERIDIAN} statusColor={AMBER} />
+				</div>
+				<div data-testid="the-Team-alone">
+					<TimelineBarContent bar={quietBar} team={MERIDIAN} />
+				</div>
+				<div data-testid="the-status-alone">
+					<TimelineBarContent bar={quietBar} statusColor={AMBER} />
+				</div>
+			</ThemeProvider>,
 		);
+
+		expect(paintingOf("both")).toBe(paintingOf("the-Team-alone"));
+		expect(paintingOf("both")).not.toBe(paintingOf("the-status-alone"));
 	});
 
 	it("promises a Team's row nothing it cannot do", async () => {

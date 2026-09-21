@@ -1222,6 +1222,22 @@ describe("saying which Features are finished and which are late", () => {
 		expect(statusButton()).not.toBeInTheDocument();
 	});
 
+	it("withholds the view when the only finished Feature has no beginning to draw from", () => {
+		// Finished work is the one thing that makes this view worth offering on a Delivery with no
+		// date. A finished Feature with nothing saying when it began gets no bar at all, so
+		// nothing on the chart would ever be coloured.
+		renderTab(
+			[
+				feature({ id: 1 }),
+				feature({ id: 2, closedDate: october(9), startForecast: undefined }),
+			],
+			undefined,
+		);
+
+		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+		expect(statusButton()).not.toBeInTheDocument();
+	});
+
 	it("offers the view for a Delivery with no date but finished work in it", () => {
 		// Paired with the test above, which is what stops that one passing against a tab that
 		// never offers the view at all. Finished is not a verdict about a date, so it survives the
@@ -1307,20 +1323,31 @@ describe("quieting what each bar has to say", () => {
 		expect(warningsButton()).not.toBeInTheDocument();
 	});
 
-	it("withholds the view when the only Feature with anything to say has no bar", () => {
-		// A Feature no bar can be drawn for cannot carry a mark, so a view offered for it does
-		// nothing when chosen. The Teams view already counts only what is on the chart.
-		renderTab([
-			feature({ id: 1 }),
-			feature({
-				id: 2,
-				isUsingDefaultFeatureSize: true,
-				teamsWithoutForecast: ["Meridian"],
-			}),
-		]);
+	// A bar is refused for three different reasons, and a Feature refused for any of them can
+	// carry no mark at all. Each is listed so that screening one and calling it "placeable" is
+	// caught here rather than by a reader clicking a control that does nothing.
+	const cannotBeDrawn = [
+		{
+			why: "a Team of its own has no forecast",
+			shape: { teamsWithoutForecast: ["Meridian"] },
+		},
+		{ why: "nothing says when it begins", shape: { startForecast: undefined } },
+		{ why: "nothing says when it ends", shape: { forecasts: [] } },
+	];
 
-		expect(warningsButton()).not.toBeInTheDocument();
-	});
+	it.each(cannotBeDrawn)(
+		"withholds the view when the only Feature with anything to say cannot be drawn because $why",
+		({ shape }) => {
+			renderTab([
+				feature({ id: 1 }),
+				feature({ id: 2, isUsingDefaultFeatureSize: true, ...shape }),
+			]);
+
+			// The chart is rendered, so "no control" cannot pass on a blank tab.
+			expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+			expect(warningsButton()).not.toBeInTheDocument();
+		},
+	);
 
 	it("offers the view for a Feature carrying a dependency there is nothing wrong with", async () => {
 		// A sound dependency raises no warning and still puts a note on the bar, so the view has

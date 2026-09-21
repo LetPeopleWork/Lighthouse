@@ -167,9 +167,18 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		() =>
 			features.filter(
 				(feature) =>
+					// The three reasons a bar is refused, asked in the order the timeline asks
+					// them. Screening only the first was a real gap: a Feature whose start or
+					// completion is missing entirely is just as undrawable, and offering a control
+					// for it is what the comment above promises never to do.
 					!cannotBeForecast({
 						teamsWithoutForecast: feature.teamsWithoutForecast ?? [],
-					}),
+					}) &&
+					// "Has a beginning at all", never "has one at this probability" - the second
+					// is what would make the control come and go under the reader's hand.
+					(feature.startForecast?.source === "Observed" ||
+						(feature.startForecast?.percentiles.length ?? 0) > 0) &&
+					(feature.closedDate != null || feature.forecasts.length > 0),
 			),
 		[features],
 	);
