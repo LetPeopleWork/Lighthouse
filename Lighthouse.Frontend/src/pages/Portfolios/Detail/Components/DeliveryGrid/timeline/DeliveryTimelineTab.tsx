@@ -148,7 +148,12 @@ const barMarksFor = (
 				text,
 				isWarning: false,
 			})),
-			...unlaned.map((team) => team.note),
+			// Tagged with the Team it is about: two Teams this Portfolio cannot name produce the
+			// same sentence, and a list keyed on the sentence would show one of them only.
+			...unlaned.map((team) => ({
+				...team.note,
+				subject: `team:${team.teamId}`,
+			})),
 		];
 
 		// A bar with nothing to say stays absent rather than arriving with an empty list, which a
@@ -157,7 +162,10 @@ const barMarksFor = (
 			marks.set(feature.id, {
 				notes,
 				namesOnTheBar: teamNotes.nameThemOnTheBar
-					? unlaned.map((team) => team.teamName)
+					? unlaned.map((team) => ({
+							teamId: team.teamId,
+							name: team.teamName,
+						}))
 					: [],
 			});
 		}

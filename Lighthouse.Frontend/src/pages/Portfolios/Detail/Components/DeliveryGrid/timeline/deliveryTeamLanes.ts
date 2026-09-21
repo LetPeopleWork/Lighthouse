@@ -47,6 +47,13 @@ export interface UnlanedTeamNote {
 }
 
 export interface UnlanedTeam {
+	/**
+	 * Carried because the name does not identify a Team. Every Team this Portfolio cannot name is
+	 * given the same fallback phrase, so two of them on one Feature are one string twice - and a
+	 * bar keyed on that string shows one of them and drops the other, which is the very thing
+	 * naming them was for.
+	 */
+	teamId: number;
 	teamName: string;
 	note: UnlanedTeamNote;
 }
@@ -302,6 +309,7 @@ function splitByForecast(
 		}
 
 		unlaned.push({
+			teamId: contributor.teamId,
 			teamName,
 			note: { text: noLaneSentence(teamName), isWarning: false },
 		});

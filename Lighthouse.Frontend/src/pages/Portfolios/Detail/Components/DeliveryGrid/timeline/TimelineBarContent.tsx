@@ -14,6 +14,12 @@ import { barTooltip } from "./ganttShapes";
 export interface BarNote {
 	text: string;
 	isWarning: boolean;
+	/**
+	 * What the note is about, for the notes whose own words do not say. Two Teams this Portfolio
+	 * cannot name produce the same sentence, so a list keyed on the sentence shows one of them and
+	 * silently drops the other. Absent where the words are their own identity.
+	 */
+	subject?: string;
 }
 
 /** Everything one bar has to say for itself. */
@@ -24,10 +30,13 @@ export interface BarMark {
 	 *
 	 * A name reachable only by hovering does not answer the question the split exists for, which is
 	 * seeing which Team it is without opening anything. So while the Teams are being read, the one
-	 * Team without a row of its own is named where all the others already are. With the Teams
-	 * hidden the bar is back to competing with its own Feature name, and the symbol carries it.
+	 * Team without a row of its own is named where all the others already are.
+	 *
+	 * Each carries an id because the names do not have to differ: every Team a Portfolio cannot name
+	 * gets the same phrase, and two of them on one Feature would otherwise be one name twice - which
+	 * a list keyed by name renders as a single entry, showing fewer Teams than the Feature has.
 	 */
-	namesOnTheBar?: string[];
+	namesOnTheBar?: { teamId: number; name: string }[];
 }
 
 const BarMarks = createContext<ReadonlyMap<number, BarMark>>(new Map());
@@ -116,8 +125,8 @@ const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 		>
 			{bar.name}
 			{team && <NameOnBar name={team.teamName} />}
-			{mark?.namesOnTheBar?.map((name) => (
-				<NameOnBar key={name} name={name} />
+			{mark?.namesOnTheBar?.map((named) => (
+				<NameOnBar key={named.teamId} name={named.name} />
 			))}
 			{mark && <BarMarkSymbol mark={mark} />}
 		</RowBody>
@@ -236,7 +245,7 @@ const barHoverText = (
 			{span}
 			<Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2 }}>
 				{mark.notes.map((note) => (
-					<li key={note.text}>{note.text}</li>
+					<li key={note.subject ?? note.text}>{note.text}</li>
 				))}
 			</Box>
 		</>

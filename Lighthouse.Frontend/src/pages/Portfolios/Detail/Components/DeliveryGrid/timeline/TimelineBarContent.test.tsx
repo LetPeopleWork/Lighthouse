@@ -311,7 +311,7 @@ describe("TimelineBarContent", () => {
 					isWarning: false,
 				},
 			],
-			namesOnTheBar: ["Meridian"],
+			namesOnTheBar: [{ teamId: 7, name: "Meridian" }],
 		});
 
 		// Matched exactly, and not as a substring of the bar's whole text: the symbol already
@@ -320,6 +320,35 @@ describe("TimelineBarContent", () => {
 		expect(
 			within(screen.getByTestId("timeline-bar-content")).getByText("Meridian"),
 		).toBeInTheDocument();
+	});
+
+	it("writes both un-laned Teams on the bar when neither of them can be named", async () => {
+		// Two Teams, one phrase between them. Keyed on that phrase the bar draws one entry and
+		// React warns about duplicate keys; keyed on the Team it draws what the Feature has.
+		const outsider = "A Team from outside this Portfolio";
+		const sentence = `No forecast for ${outsider}.`;
+
+		renderMarkedBar({
+			notes: [
+				{ text: sentence, isWarning: false, subject: "team:404" },
+				{ text: sentence, isWarning: false, subject: "team:405" },
+			],
+			namesOnTheBar: [
+				{ teamId: 404, name: outsider },
+				{ teamId: 405, name: outsider },
+			],
+		});
+
+		expect(
+			within(screen.getByTestId("timeline-bar-content")).getAllByText(outsider),
+		).toHaveLength(2);
+
+		// And the same again in the hover text, which is its own list with its own keys.
+		await userEvent.hover(screen.getByTestId("timeline-bar-content"));
+
+		const tooltip = await screen.findByRole("tooltip");
+
+		expect(within(tooltip).getAllByText(sentence)).toHaveLength(2);
 	});
 
 	it("names the one Team a Feature has to itself along its own bar", () => {

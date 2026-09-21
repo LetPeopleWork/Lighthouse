@@ -319,6 +319,31 @@ describe("which Teams get a lane of their own", () => {
 		}
 	});
 
+	it("tells apart two un-laned Teams this Portfolio cannot name", () => {
+		// Both are given the same fallback phrase, so the name identifies neither of them. Anything
+		// downstream that keys on it keeps one and drops the other - which shows one Team where the
+		// Feature has two, the exact disagreement naming them was meant to prevent.
+		const { unlanedTeams } = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(404, [], []),
+						forTeam(405, [], []),
+					],
+				}),
+			],
+			[ZENITH],
+		);
+
+		const unlaned = unlanedTeams.get(1) ?? [];
+
+		expect(unlaned.map((one) => one.teamId)).toEqual([404, 405]);
+		// Paired with the thing that makes them indistinguishable, so this cannot be read as
+		// passing because the names happened to differ.
+		expect(new Set(unlaned.map((one) => one.teamName)).size).toBe(1);
+	});
+
 	it("says what it has to say about the un-laned Team as a note, not as an alarm", () => {
 		// The Feature is forecasting correctly and this Team has nothing left to do. Amber here
 		// spends the alarm on something that is not wrong, and teaches the reader to stop reading
