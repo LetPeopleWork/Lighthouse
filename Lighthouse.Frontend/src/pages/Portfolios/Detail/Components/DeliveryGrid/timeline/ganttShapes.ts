@@ -1,4 +1,5 @@
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
+import type { TeamLane } from "./deliveryTeamLanes";
 import { type TimelineBar, targetCalendarDate } from "./deliveryTimelineModel";
 import { TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
 
@@ -24,21 +25,82 @@ export function chartHeight(barCount: number): number {
 	return Math.max(barCount, 1) * ROW_HEIGHT + SCALE_HEIGHT + CHART_PADDING;
 }
 
+/** A lane's id, kept apart from every Feature's so no two rows on the chart can collide. */
+const laneTaskId = (lane: TeamLane) => `${lane.featureId}:${lane.teamId}`;
+
 /**
  * The translation into the library's vocabulary, and the only place it happens.
  *
  * Nothing asserts on what the library then renders — that is markup we did not write — so if this
  * mapping is not tested here it is not tested anywhere, and it is the one piece of the adapter
  * where a mistake is silent rather than loud.
+ *
+ * A Team's lane is an **ordinary task** placed immediately after the Feature it belongs to — no
+ * parent, no open, no summary. The library does have a hierarchy, and it buys nothing that can be
+ * seen here: its indentation is drawn by the name pane, which this chart switches off, and which
+ * rows exist is already decided by whether a lane is handed over at all. So this adds no word to
+ * the vendor vocabulary written out by hand in this file, and a Feature's own task object is the
+ * same object with lanes and without them rather than merely intended to be.
  */
-export function toGanttTasks(bars: TimelineBar[]) {
-	return bars.map((bar) => ({
-		id: bar.featureId,
-		text: bar.name,
-		start: bar.start,
-		end: bar.end,
-		type: "task",
-	}));
+export function toGanttTasks(bars: TimelineBar[], lanes: TeamLane[] = []) {
+	const lanesByFeature = new Map<number, TeamLane[]>();
+
+	for (const lane of lanes) {
+		const gathered = lanesByFeature.get(lane.featureId);
+
+		if (gathered) {
+			gathered.push(lane);
+			continue;
+		}
+
+		lanesByFeature.set(lane.featureId, [lane]);
+	}
+
+	return bars.flatMap((bar) => [
+		{
+			id: bar.featureId,
+			text: bar.name,
+			start: bar.start,
+			end: bar.end,
+			type: "task",
+		},
+		...(lanesByFeature.get(bar.featureId) ?? []).map((lane) => ({
+			id: laneTaskId(lane),
+			text: lane.teamName,
+			start: lane.start,
+			end: lane.end,
+			type: "task",
+		})),
+	]);
+}
+
+/** A row of the chart, and which of the two kinds it is. */
+export interface TimelineTaskContent {
+	bar?: TimelineBar;
+	lane?: TeamLane;
+}
+
+/**
+ * What each id this translation issues was minted for.
+ *
+ * Ids are matched as they were issued and never coerced to numbers. A lane's is `"12:7"`, and
+ * `Number("12:7")` is `NaN`: the lookup misses, the bar template renders nothing, and the library
+ * draws its own untemplated bar instead — a blank box with no name and no click, and not an error
+ * anywhere to say so.
+ */
+export function taskContentLookup(bars: TimelineBar[], lanes: TeamLane[] = []) {
+	const byId = new Map<string, TimelineTaskContent>();
+
+	for (const bar of bars) {
+		byId.set(String(bar.featureId), { bar });
+	}
+
+	for (const lane of lanes) {
+		byId.set(laneTaskId(lane), { lane });
+	}
+
+	return (id?: string | number): TimelineTaskContent | undefined =>
+		id === undefined ? undefined : byId.get(String(id));
 }
 
 /**
@@ -68,9 +130,12 @@ export function toGanttLinks(edges: DrawnDependency[]) {
  * Only the span, because the name is already written along the bar and repeating it in the tooltip
  * spends the reader's attention on something they can see.
  */
-export function barTooltip(bar: TimelineBar, isClickable: boolean): string {
+export function barTooltip(
+	row: { start: Date; end: Date },
+	isClickable: boolean,
+): string {
 	const asDay = (date: Date) => date.toLocaleDateString();
-	const span = `${asDay(bar.start)} – ${asDay(bar.end)}`;
+	const span = `${asDay(row.start)} – ${asDay(row.end)}`;
 
 	return isClickable ? `${span} (click for more details)` : span;
 }

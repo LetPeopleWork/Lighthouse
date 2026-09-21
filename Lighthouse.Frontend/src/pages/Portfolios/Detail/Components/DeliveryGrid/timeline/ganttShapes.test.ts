@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import {
 	barTooltip,
@@ -8,6 +9,7 @@ import {
 	scalesForSpan,
 	THEMED_ELEMENT_SELECTOR,
 	TIMELINE_SCALES,
+	taskContentLookup,
 	toGanttLinks,
 	toGanttTasks,
 } from "./ganttShapes";
@@ -338,5 +340,104 @@ describe("the date axis", () => {
 	it("names the month and numbers the day", () => {
 		expect(months.format(new Date(2026, 9, 15))).toBe("October 2026");
 		expect(days.format(new Date(2026, 9, 15))).toBe("15");
+	});
+});
+describe("interleaving a Team's lanes with the Features they belong to", () => {
+	const lane = (
+		featureId: number,
+		teamId: number,
+		teamName: string,
+	): TeamLane => ({
+		featureId,
+		teamId,
+		teamName,
+		start: new Date(2026, 9, 12),
+		end: new Date(2026, 9, 18),
+		color: "#4DA98C",
+	});
+
+	const board = [bar(7, "Coral Reef"), bar(3, "Kelp Forest")];
+
+	it("hands over the shipped list when no lanes are supplied", () => {
+		expect(toGanttTasks(board)).toEqual(toGanttTasks(board, []));
+	});
+
+	it("leaves every Feature's own task exactly as it was without the lanes", () => {
+		// The slice's central guarantee, and it needs no drawing surface. Both halves in one
+		// assertion: the lanes must actually be there, or this passes against a function that
+		// ignores its second argument — which is what the shipped one does.
+		const withLanes = toGanttTasks(board, [lane(7, 5, "Zenith")]);
+		const withoutLanes = toGanttTasks(board);
+
+		expect(withLanes).toHaveLength(withoutLanes.length + 1);
+		expect(withLanes.filter((task) => typeof task.id === "number")).toEqual(
+			withoutLanes,
+		);
+	});
+
+	it("puts each lane immediately after the Feature it belongs to, in the board's order", () => {
+		// The board's order is neither alphabetical nor chronological here, so any re-sort fails,
+		// and a lane appended at the end rather than interleaved fails too.
+		const tasks = toGanttTasks(board, [
+			lane(3, 6, "Gravity"),
+			lane(7, 5, "Zenith"),
+		]);
+
+		expect(tasks.map((task) => task.text)).toEqual([
+			"Coral Reef",
+			"Zenith",
+			"Kelp Forest",
+			"Gravity",
+		]);
+	});
+
+	it("hands over ordinary tasks and not one word of the library's hierarchy", () => {
+		// Asserted with the lanes present and typed, so it cannot pass against today's function.
+		// `parent`, `open` and `type: "summary"` are vendor vocabulary this slice promised not to
+		// widen by one word — and a value the library does not recognise draws nothing, silently.
+		const tasks = toGanttTasks(board, [lane(7, 5, "Zenith")]);
+
+		expect(tasks).toHaveLength(3);
+
+		for (const task of tasks) {
+			expect(task.type).toBe("task");
+			expect(task).not.toHaveProperty("parent");
+			expect(task).not.toHaveProperty("open");
+		}
+	});
+
+	it("gives no two tasks the same id", () => {
+		// One Team on two Features and two Teams on one Feature, so a lane id that is its
+		// Feature's and a lane id that is the Team's alone both collide here.
+		const tasks = toGanttTasks(board, [
+			lane(7, 5, "Zenith"),
+			lane(7, 6, "Gravity"),
+			lane(3, 5, "Zenith"),
+		]);
+
+		// The count is asserted too. Unique ids over a list the lanes never reached is a property
+		// today's function already has.
+		expect(tasks).toHaveLength(5);
+		expect(new Set(tasks.map((task) => task.id)).size).toBe(tasks.length);
+	});
+
+	it("resolves every id it issues to the content that id was minted for", () => {
+		// The adapter used to look a bar up with `barsById.get(Number(data.id))`. A lane id of
+		// "7:5" coerces to NaN there, the lookup misses, and the library draws its own untemplated
+		// bar — a blank box with no name and no click, and nothing anywhere says so.
+		const lanes = [lane(7, 5, "Zenith"), lane(3, 6, "Gravity")];
+		const contentFor = taskContentLookup(board, lanes);
+
+		const resolved = toGanttTasks(board, lanes).map((task) => {
+			const content = contentFor(task.id);
+			return content?.lane?.teamName ?? content?.bar?.name;
+		});
+
+		expect(resolved).toEqual([
+			"Coral Reef",
+			"Zenith",
+			"Kelp Forest",
+			"Gravity",
+		]);
 	});
 });
