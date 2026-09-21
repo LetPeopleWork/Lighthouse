@@ -107,9 +107,10 @@ namespace Lighthouse.Backend.Models
         public bool CanBeForecast => !TeamsWithoutForecast.Any();
 
         /// <summary>
-        /// When work on this Feature begins. A Feature somebody has already started reports the day they
-        /// did, and the simulation is not consulted - it still ran, and still recorded a day, but a
-        /// forecast of something that has happened is a worse answer than the thing itself.
+        /// When work on this Feature begins. The state settles whether work has begun; the date only
+        /// supplies the value. A Feature being worked on, or already finished, has started - so it reports
+        /// the day it started when that day is known, and reports nothing when it is not. Never a
+        /// prediction: a prediction of when work will start is false about work that has already begun.
         ///
         /// The simulation is never told what is in flight. This is decided on the way out, so nothing
         /// about how a forecast is produced depends on it.
@@ -119,9 +120,9 @@ namespace Lighthouse.Backend.Models
         {
             get
             {
-                if (StateCategory == StateCategories.Doing && StartedDate is { } startedOn)
+                if (StateCategory is StateCategories.Doing or StateCategories.Done)
                 {
-                    return FeatureStart.On(startedOn);
+                    return StartedDate is { } startedOn ? FeatureStart.On(startedOn) : FeatureStart.NotKnown;
                 }
 
                 if (!CanBeForecast)
