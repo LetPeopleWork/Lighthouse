@@ -444,26 +444,27 @@ from the runner's include list makes every mutant in the code it covers survive 
 Run 2026-09-21 against `main`, after the refactor pass, the live-review changes and the
 adversarial-review fixes. **Frontend only**; slice 06 changes no backend file at all.
 
-**The figures below are the third run**, and the slice was mutated three times. What moved between
+**The figures below are the fourth run**, and the slice was mutated four times. What moved between
 them is the useful part of this record:
 
-| run | headline | what it found |
-| --- | --- | --- |
-| one | 77.85 % | two of the three files this slice created were barely tested — the colour key at 20.00 % and the preference store at 59.09 %, both reachable only through the tab that composes them |
-| two | 79.60 % | those gaps closed; two survivors left that were **tests unable to fail** rather than untested code |
-| **three** | **80.06 %** | those two closed. `useShowTeams.ts` went to **zero** no-coverage mutants, which is the evidence its storage guard is now actually entered rather than merely named |
+| run | headline | owned | what it found or changed |
+| --- | --- | --- | --- |
+| one | 77.85 % | — | two of the three files this slice created were barely tested — the colour key at 20.00 % and the preference store at 59.09 %, both reachable only through the tab that composes them |
+| two | 79.60 % | 89.94 % | those gaps closed; two survivors left that were **tests unable to fail** rather than untested code |
+| three | 80.06 % | 90.55 % | those two closed. `useShowTeams.ts` went to **zero** no-coverage mutants, which is the evidence its storage guard is now actually entered rather than merely named |
+| **four** | **79.94 %** | **90.59 %** | no test changed anything here. The maintainer asked for a sentence to be removed from the tab, and **taking well-covered code out moved the headline down while moving the owned surface up** — see below, because that is a ratio moving rather than quality moving |
 
 Each run was against frozen code, as the gate requires. **Frontend only**; slice 06 changes no
 backend file at all.
 
 | stack | score | killed | survived | no coverage | timeout | errors | wall clock |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Frontend, all eight mutated files** | **80.06 %** | 514 | 115 | 13 | 0 | 0 | 8 m 37 s |
-| Frontend, the surface this slice owns | 90.55 % | 441 | 42 | 4 | 0 | 0 | — |
+| Frontend, all eight mutated files | 79.94 % | 506 | 114 | 13 | 0 | 0 | 8 m 51 s |
+| **Frontend, the surface this slice owns** | **90.59 %** | 433 | 41 | 4 | 0 | 0 | — |
 | Slice 04's two carried-over files | 47.10 % | 73 | 73 | 9 | 0 | 0 | — |
 
-The two rows reconcile against the headline without rerunning anything: 441 + 73 = 514 killed,
-42 + 73 = 115 survived, 4 + 9 = 13 uncovered. That arithmetic is written out because a split that
+The two rows reconcile against the headline without rerunning anything: 433 + 73 = 506 killed,
+41 + 73 = 114 survived, 4 + 9 = 13 uncovered. That arithmetic is written out because a split that
 cannot be checked is a convenient number rather than a credible one.
 
 | file | score | killed | survived | no cov | whose code |
@@ -472,32 +473,76 @@ cannot be checked is a convenient number rather than a credible one.
 | `deliveryTeamLanes.ts` | 97.17 % | 103 | 2 | 1 | **slice 06, new** (92.45 → 96.23 → 97.17) |
 | `useShowTeams.ts` | 95.65 % | 22 | 1 | 0 | **slice 06, new** (59.09 → 86.96 → 95.65; uncovered 2 → 0) |
 | `ganttShapes.ts` | 95.14 % | 137 | 6 | 1 | slice 04 and 05, extended by slice 06 |
-| `DeliveryTimelineTab.tsx` | 80.43 % | 111 | 25 | 2 | slice 04 and 05, extended by slice 06 |
+| `DeliveryTimelineTab.tsx` | 79.84 % | 103 | 24 | 2 | slice 04 and 05, extended by slice 06 (80.43 → 79.84, by deletion — see below) |
 | `TimelineBarContent.tsx` | 64.86 % | 48 | 26 | 0 | slice 04 (was 58.00 % at slice 05) |
 | `DeliveryGanttChart.tsx` | 30.86 % | 25 | 47 | 9 | slice 04 (was 27.63 % at slice 05) |
 | `TimelineTeamLegend.tsx` | 30.00 % | 3 | 7 | 0 | **slice 06, new** (was 20.00 %) |
 
 ## The gate verdict
 
-**The headline is 80.06 % and clears the 80 % gate on its own.** No attribution argument is needed
-to pass, and none is being made.
+**The headline is 79.94 % and falls just under the 80 % gate. The surface this slice owns is
+90.59 % and clears it comfortably. The gap between them is slice 04's two files at 47.10 %.**
 
-The owned surface is 90.55 %, and it is worth stating for a different reason than the one it would
-have served at 79.60 %: it is the sharper measurement of this slice's own work, not the number that
-rescues it. The split is kept because it is the honest way to read a mutate list that necessarily
-includes files the slice touched without owning — the tool mutates whole files — and because the
-arithmetic above lets a reader check it rather than take it.
+Run three cleared 80 on the headline and this document said so plainly. Run four does not, and that
+is stated here rather than smoothed over, because the reason it moved is the interesting part and
+softening the turn would hide it.
 
-Slice 05 recorded the same shape from the other side: 72.54 % headline against 92.22 % owned, with
-`DeliveryGanttChart.tsx` attributed to slice 04 at 27.63 %. There the split was load-bearing. Here it
-is explanatory.
+The precedent is slice 05, which shipped at **72.54 % headline against 92.22 % owned**, with
+`DeliveryGanttChart.tsx` attributed to slice 04 at 27.63 %. The mutate list is chosen per slice and
+necessarily includes files the slice touched without owning, because the tool mutates whole files, so
+a headline computed over it measures the list as much as the work.
 
-**The two carried-over files both improved under this slice** — `TimelineBarContent.tsx` from 58.00 %
-to 64.86 % and `DeliveryGanttChart.tsx` from 27.63 % to 30.86 % — because closing the adapter's
-bar-content seam put tests through code that previously had none. Neither is chased to 80. What
-remains in them is `sx` blocks, a `ResizeObserver` callback, a date formatter handed to the vendor
-and the scale callback the vendor invokes, none of which this environment runs; asserting on them is
-how this Epic already shipped assertions incapable of failing.
+What keeps that reading honest here rather than convenient is two things a reader can check:
+
+- **Both of slice 04's files improved under this slice** — `TimelineBarContent.tsx` from 58.00 % to
+  64.86 % and `DeliveryGanttChart.tsx` from 27.63 % to 30.86 % — because closing the adapter's
+  bar-content seam put tests through code that previously had none.
+- **The owned figure rose in the same run the headline fell**, 90.55 % to 90.59 %.
+
+A slice leaning on attribution while making the attributed files worse would be making a different
+claim, and this one can be told from that one by looking.
+
+Neither of slice 04's files is chased to 80. What remains in them is `sx` blocks, a `ResizeObserver`
+callback, a date formatter handed to the vendor and the scale callback the vendor invokes, none of
+which this environment runs; asserting on them is how this Epic already shipped assertions incapable
+of failing.
+
+## Why the headline fell while the slice improved
+
+The only change between run three and run four was a **deletion the maintainer asked for**: the
+sentence above the chart explaining why a Feature's bar reaches past the Teams beneath it. No test
+was weakened and no code was left less covered.
+
+The arithmetic, which is the whole explanation:
+
+| | killed | survived | no cov | total | score |
+| --- | --- | --- | --- | --- | --- |
+| `DeliveryTimelineTab.tsx` before | 111 | 25 | 2 | 138 | 80.43 % |
+| `DeliveryTimelineTab.tsx` after | 103 | 24 | 2 | 129 | 79.84 % |
+| **what the deletion removed** | **8** | **1** | **0** | **9** | **88.89 %** |
+
+**The deleted sentence was better covered than the file it lived in** — 88.89 % against 80.43 % — so
+taking it out raised the proportion of poorly-covered code in what remains. The file's score fell
+without a single line of the surviving code becoming less tested, and the headline fell with it,
+from 80.06 % to 79.94 %.
+
+That is a ratio moving, not quality moving. It is worth stating because the two are indistinguishable
+in a score and a reader meeting `80.06 → 79.94` alongside "a feature was removed" will reasonably
+read it as damage done by the removal. The opposite is true: removing it left the codebase smaller
+and every remaining test exactly as strong.
+
+**Chasing the missing 0.06 % is not worth doing, and the reason is not effort.** The only lever left
+is adding tests to `TimelineBarContent.tsx` and `DeliveryGanttChart.tsx`, which are slice 04's, and
+what remains untested in them is styling and vendor callbacks this environment does not execute.
+Tests written against those would assert the values they set, pass forever, and move the number —
+which is gaming the ratio rather than improving anything, and is precisely the shape this Epic has
+already paid for four times over. The decision is recorded here so a later reader meets it rather
+than inferring it from an unexplained near-miss.
+
+**The three blocked-storage fixes in this pass moved nothing, and could not have.**
+`useAgingBackground.ts`, `useEnlargedWorkItemsDialog.ts` and `WorkItemsDialog.tsx` are outside this
+slice's mutate list, and their specs are outside its vitest include. Their numbers are unchanged
+because they are not in this run at all, not because the run is stale.
 
 ## `TimelineTeamLegend.tsx` reads 30 %, and that is the right number
 
@@ -553,10 +598,11 @@ The correction on the first row is the more useful half of this record. A surviv
 and not closed is worse than one left open, because nothing looks at it again — and what caught it
 was re-reading the report's own mutant spans rather than trusting the previous pass's summary.
 
-## What survives now, triaged one by one against the third run's list
+## What survives now, triaged one by one against the fourth run's list
 
-Re-read from the third report rather than carried over. What is left is four mutants, and every one
-of them is equivalent, unreachable, or styling.
+Re-read from the fourth report rather than carried over. Across the three files this slice created,
+what is left is four mutants outside the colour key — and every one of them is equivalent,
+unreachable, or styling.
 
 **Accepted — equivalent or unreachable.**
 
@@ -568,7 +614,23 @@ of them is equivalent, unreachable, or styling.
 | `TimelineTeamLegend.tsx` | seven `sx` layout mutants | Styling — see the section above |
 | `TimelineBarContent.tsx`, `DeliveryGanttChart.tsx` | 73 between them | Slice 04's code — see the section above |
 
-Nothing else is outstanding. Every survivor in the third run is in the table above.
+Nothing else is outstanding. Every survivor in the fourth run is in the table above.
+
+## One test that had been riding along on another
+
+Worth recording, because it is the same class of thing as an assertion that cannot fail and is
+easier to miss.
+
+The claim *"a Delivery whose Features each have one Team still gets a key to the colours"* was not a
+test. It was two lines at the end of a test about the explanatory sentence — there to establish that
+the sentence was **absent** in that case, with the legend assertion alongside it as scene-setting.
+When the maintainer asked for the sentence to go, that test went with it, and the only assertion
+anywhere that a single-Team Delivery still gets a key would have gone too, silently, in a commit
+whose subject was about deleting a sentence.
+
+It is now a test of its own, with the lane count asserted beside it so it cannot pass against a tab
+that has stopped drawing anything. The general form: **an assertion living inside a test named for
+something else has the lifetime of that other thing**, and nothing warns you when it expires.
 
 ## The finding worth carrying past this slice: a mock that never mocked anything
 
@@ -645,6 +707,12 @@ No backend file is mutated, because slice 06 changes none.
 
 Scoped with `stryker-6050-slice-06.frontend.json` + `vitest.stryker.6050-slice-06.config.ts`.
 
+**Both are committed, but the Stryker config is not where its history suggests.** It was force-added
+past the ignore rule described below and swept into `634aedccb` — a commit whose subject is *"drop
+the sentence explaining why a bar reaches past its Teams"* and which says nothing about it. It is
+tracked, which was the point; it simply has no commit of its own to find. Recorded here so nobody
+spends time looking for one.
+
 **Two different files are called "the config", and only one of them survives `.gitignore`.** This was
 checked file by file with `git ls-files` rather than read off the patterns, because the patterns are
 where the confusion lives.
@@ -661,12 +729,13 @@ multi-megabyte JSON *reports* out of the repository. Its own comment explains th
 because "a config is stryker.5837.frontend.json, a report is stryker-5837-frontend.json" — a dot
 where the other has a hyphen. **No file in this folder actually follows that convention.** Every
 slice's config is `stryker-<id>.frontend.json`, hyphen included, so every one of them matches the
-report pattern. Slices 02 and 03 are committed because they predate the rule; **slices 04, 05 and 06
-are ignored**, and the instruction to commit the config as evidence has been failing silently since.
+report pattern. Slices 02 and 03 are committed because they predate the rule; **slices 04 and 05 are
+ignored and absent**, and the instruction to commit the config as evidence had been failing silently
+since. Slice 06's is present only because it was force-added past the rule.
 
-The consequence is narrow but real: the write-up can be reproduced as far as *which specs ran*, and
-not as far as *which files were mutated or at what threshold*. The durable fix is either a negated
-pattern for the config spelling or renaming the configs to the dotted form the comment already
-claims they use. Recorded rather than done, because changing an ignore rule at a gate is how a
-2.4 MB report ends up committed instead — and one of those is sitting in this folder right now,
+The consequence is narrow but real: slices 04 and 05 can be reproduced as far as *which specs ran*,
+and not as far as *which files were mutated or at what threshold*. The durable fix is either a
+negated pattern for the config spelling or renaming the configs to the dotted form the comment
+already claims they use. Recorded rather than done, because changing an ignore rule at a gate is how
+a 2.4 MB report ends up committed instead — and one of those is sitting in this folder right now,
 correctly ignored.
