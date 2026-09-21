@@ -739,3 +739,103 @@ negated pattern for the config spelling or renaming the configs to the dotted fo
 already claims they use. Recorded rather than done, because changing an ignore rule at a gate is how
 a 2.4 MB report ends up committed instead — and one of those is sitting in this folder right now,
 correctly ignored.
+
+---
+
+## Slice 07 (#6067) — the timeline says which Features are finished and which are late
+
+Five runs, and the first two measure code that no longer exists. Recorded anyway, because what the
+sequence shows about the encodings is worth more than either number.
+
+| Run | Encoding | Score | Killed / survived / no coverage | Wall |
+|---|---|---|---|---|
+| 1 | end caps | 74.69 % | 422 / 131 / 12 | 9m53s |
+| 2 | end caps | 75.22 % | 425 / 128 / 12 | 11m36s |
+| 3 | whole-bar fill | 77.68 % | 442 / 117 / 10 | 11m19s |
+| 4 | whole-bar fill | 79.61 % | 453 / 106 / 10 | 5m30s |
+| 5 | whole-bar fill | **79.96 %** | **455 / 104 / 10** | 5m19s |
+
+**Runs 1 and 2 are void.** They measured the cap encoding, which the maintainer rejected on sight. The
+files they scored — `pagePreference.ts`, `timelinePreferences.ts`, `capShadow`, the swatch-shape legend
+— are gone. They are listed so that nobody reads a score against deleted code as this slice's result.
+
+### Final, per file
+
+| File | Score | Killed | Survived | No coverage |
+|---|---|---|---|---|
+| `timelineMarkers.ts` | **100.00 %** | 16 | 0 | 0 |
+| `timelineView.ts` | **100.00 %** | 4 | 0 | 0 |
+| `deliveryTimelineModel.ts` | 98.55 % | 68 | 1 | 0 |
+| `deliveryBarMarks.ts` | 98.46 % | 64 | 1 | 0 |
+| `pageChoice.ts` | 95.45 % | 21 | 1 | 0 |
+| `deliveryBarStatus.ts` | 92.31 % | 24 | 2 | 0 |
+| `DeliveryTimelineTab.tsx` | 86.86 % | 152 | 22 | 1 |
+| `TimelineControls.tsx` | 80.77 % | 21 | 5 | 0 |
+| `TimelineBarContent.tsx` | 72.00 % | 54 | 21 | 0 |
+| `DeliveryGanttChart.tsx` | 34.18 % | 27 | 43 | 9 |
+| `TimelineLegend.tsx` | 33.33 % | 4 | 8 | 0 |
+
+**The gate is 80 % and this is 79.96 %: one mutant short of it, at 455 of 569.**
+
+That is reported rather than closed, and the reason is the only interesting thing about it. Every
+survivor left in the files this slice owns is an `sx` declaration or a defensive attribute — `width:
+"100%"`, `cursor: isClickable ? "pointer" : "default"`, `type={isClickable ? "button" : undefined}`.
+Writing a test for one of them would cross the line and would be a test written for the number: none of
+them would have been worth writing had the score read 85 %. Slice 06 declined the same trade for the
+same reason and recorded it.
+
+**The two levers that would actually move it are both larger than this slice.** `DeliveryGanttChart.tsx`
+is 79 of the 569 mutants at 34 %, which costs about six points on its own; it is slice 04's file and its
+survivors are vendor configuration and styling. And narrowing the mutate list to the files this slice
+created would read about 90 % without a single test changing, which is the move this ledger already
+caught itself making once. Neither was taken.
+
+### What the numbers say that the score does not
+
+**The extraction is the clearest result in the table.** `deliveryBarMarks.ts` is 98.46 % on 65 mutants.
+Every line of it was inside `DeliveryTimelineTab.tsx` until the refactor, reachable only by rendering a
+component — and those decisions are all settled *before* anything renders, so through the tab they could
+only be checked by inference from what the chart ended up drawing. Pulled out and asked directly, it
+went from a share of the tab's 82.86 % to the second-best-covered file in the slice. The tab itself
+improved at the same time, 82.86 → 86.86 %, because what was left in it is composition.
+
+**`TimelineLegend.tsx` fell from 75 % to 33 % while getting better.** The rework deleted its swatch-shape
+logic — the branch that drew a cap rather than a fill — leaving twelve mutants that are almost entirely
+`sx`. Fewer lines, less logic, nothing worse about it, and a score twenty points lower. The same effect
+this ledger recorded for slice 06, from the other direction: a deletion moves the ratio and not the
+quality.
+
+**The three run-4 and run-5 tests were each aimed at a named survivor and each found real behaviour.**
+A Feature whose start is a fact rather than a forecast carries an observed date and no percentiles, so a
+filter asking only for percentiles calls it undrawable — and it is the one kind of Feature that certainly
+has a bar. `placeable.some(closedDate)` versus `.every` is the difference between offering the status
+view on a Delivery with work in it and withholding it from every Delivery anyone is still working on.
+And the Teams key and the Teams colours are drawn from one comparison that nothing pinned, so written
+the wrong way round it puts a key for Teams above bars coloured by lateness.
+
+### Wall time: `concurrency: 2` was costing this project half its mutation throughput
+
+Runs 3 and 4 differ by one config value and nothing else. **11m19s → 5m30s**, a straight 2× on a
+twelve-core machine that was using two workers.
+
+All eight Stryker configs in this repository carry `concurrency: 2`. It reads as one file copied forward
+rather than a number anybody chose. The speedup is sublinear in the worker count — each vitest worker
+spawns its own thread pool, so eight contend rather than scale — but 2× for changing one digit is worth
+having, and every mutation run in this project has been paying it.
+
+**`coverageAnalysis` stays `"off"`, deliberately.** `"perTest"` is the bigger lever, usually five to ten
+times, and it is the wrong one here: the preference stores are module-level singletons by design, and
+per-test coverage attribution assumes tests do not share mutable module state. Wrong attribution invents
+survivors, which is worse than a slow run.
+
+### Equivalent mutants, so they are not re-litigated
+
+`deliveryBarStatus.ts`'s two survivors are provably equivalent and were checked by hand rather than
+assumed:
+
+- **`target === undefined` → `false`.** Falling through instead of skipping compares `dayOf(bar.start) >
+  undefined`, which is a comparison against `NaN` and therefore false. No bar is marked either way.
+- The same mutation as a block deletion, for the same reason.
+
+The third from the cap encoding — the left operand of `marked.start !== undefined || marked.end !==
+undefined` — went with the caps.
