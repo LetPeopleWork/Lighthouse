@@ -6,6 +6,7 @@ import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent, {
 	type BarMark,
+	rowTextColour,
 	TimelineBarMarks,
 } from "./TimelineBarContent";
 
@@ -55,6 +56,37 @@ const renderMarkedBar = (mark: BarMark) =>
 			</TimelineBarMarks>
 		</ThemeProvider>,
 	);
+
+describe("what a row writes over its fill", () => {
+	// Two colours a Team can actually be given. The whole Team palette is light - the colours are
+	// chosen to be told apart against a dark background - so the chart's white over any of them is
+	// what made a Team's name unreadable.
+	//
+	// What cannot be checked here is whether the result is comfortable to read: this environment
+	// applies no styles and has nothing to measure a contrast ratio with, so legibility is a
+	// question for someone looking at the chart. What can be checked is that no fill a Team wears
+	// is given the white the bars use, which is the part that was wrong.
+	const PALE_LIME = "#C5E06E";
+	const DEEP_CYAN = "#2AA0B5";
+	const THE_CHARTS_WHITE = "#ffffff";
+
+	it("never writes the chart's white over a colour a Team can wear", () => {
+		expect(rowTextColour(PALE_LIME)).not.toBe(THE_CHARTS_WHITE);
+		expect(rowTextColour(DEEP_CYAN)).not.toBe(THE_CHARTS_WHITE);
+	});
+
+	it("still writes light over a fill dark enough to need it", () => {
+		// Paired with the row above, so neither can pass against a function that answers one
+		// colour whatever it is handed.
+		expect(rowTextColour("#000000")).toBe(THE_CHARTS_WHITE);
+	});
+
+	it("leaves a bar with no fill of its own to the colour the chart sets", () => {
+		// A Feature's own bar is painted by the chart in the product's colour, with a text colour
+		// chosen once against it. Only the rows that wear a Team's colour have to work it out.
+		expect(rowTextColour(undefined)).toBe("inherit");
+	});
+});
 
 describe("TimelineBarContent", () => {
 	it("writes the Feature's name along the bar", () => {
@@ -307,7 +339,7 @@ describe("TimelineBarContent", () => {
 		renderMarkedBar({
 			notes: [
 				{
-					text: "No forecast for Meridian, so it has no lane of its own.",
+					text: "No forecast for Meridian, so it is not shown separately.",
 					isWarning: false,
 				},
 			],

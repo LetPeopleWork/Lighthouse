@@ -3,6 +3,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
 import { createContext, useContext } from "react";
+import { getContrastText } from "../../../../../../utils/theme/colors";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import { barTooltip } from "./ganttShapes";
@@ -156,7 +157,17 @@ const NameOnBar: React.FC<{ name: string }> = ({ name }) => (
  * default fill underneath — so a rim of that default may show at the edges. Nothing in a test can
  * see it: this environment mocks the library's stylesheet away, which is the same reason the axis
  * format and the link routing are checked by a person or not at all.
+ *
+ * **The text colour is chosen against the fill rather than inherited.** Everything on this chart
+ * used to be one theme colour, and white over it was a decision taken once for both modes. A Team's
+ * fill comes from a palette of fourteen built to be told apart on a dark background, several of
+ * which are pale enough that white on them is unreadable rather than merely poor. Inherited white
+ * is right for a Feature's own bar and wrong for anything wearing a Team's colour, so the rows that
+ * carry one work it out per fill.
  */
+export const rowTextColour = (fill?: string): string =>
+	fill ? getContrastText(fill) : "inherit";
+
 const RowBody: React.FC<{
 	hoverText: React.ReactNode;
 	fill?: string;
@@ -186,7 +197,7 @@ const RowBody: React.FC<{
 					backgroundColor: fill,
 					border: "none",
 					font: "inherit",
-					color: "inherit",
+					color: rowTextColour(fill),
 					cursor: isClickable ? "pointer" : "default",
 				}}
 			>
