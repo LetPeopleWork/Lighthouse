@@ -21,6 +21,12 @@ A Feature whose bar sits late on the timeline explains itself: it is connected t
   rather than a thicket. The threshold is chosen from what a real Delivery on the dev instance actually
   reaches, not from a guess.
 
+**Added 2026-09-21, DESIGN.** The indicator above is a **warning symbol**, raised by the same rule the
+Feature table uses and by nothing else; a blocker that merely has no bar here gets a neutral mark
+instead, and a bar with nothing to say gets none. Clicking a bar opens the work-items dialog it already
+opens, now carrying a Warnings column — a fifth optional column descriptor on `WorkItemsDialog`,
+attached **at this call site only**. Effort below is understated by roughly an hour as a result.
+
 ## OUT of scope
 
 - Editing dependencies from the timeline. It is a read.
@@ -60,7 +66,39 @@ grain whether or not a Feature is expanded into per-team lanes.
 instance and record the number here. It sets the density threshold, and it decides whether the lines or
 the indicator is the primary presentation.
 
-> _(to be filled)_
+**Counted 2026-09-21**, read-only against the dev instance's SQLite database
+(`Lighthouse.Backend/Lighthouse.Backend/LighthouseAppContext.db`), which is pointed at the real
+Lighthouse Azure DevOps board — real Features and real tracker links, not demo data.
+
+| | |
+|---|---|
+| Portfolios | 1 ("New Portfolio") |
+| Features | 83 |
+| Dependency edges | 12 |
+| Features carrying any dependency | 8 of 83 — **9.6%** |
+| Maximum out-degree | **2** — no Feature waits on three or more things |
+| Mean out-degree among those that have any | 1.5 |
+| Maximum fan-in | **2** — the busiest blockers (ADO #6051, #5698) have two waiters each |
+| Edges resolving inside the same Portfolio | 9 of 12 |
+| Edges pointing outside it | **3 of 12 — one in four** |
+
+**The caveat is part of the number.** This is one instance with one Portfolio, and its only Delivery
+record is a five-Feature scratch row called "Test", so density could not be measured at Delivery grain
+at all. **The counts above are at Portfolio grain.** That is a sound *upper bound* for a Delivery — a
+Delivery's Features are a subset of a Portfolio's, so it can carry no more edges than the Portfolio
+does — but a bound is not an observation, and nobody should quote these as "what a Delivery looks
+like". A second instance, or this one once it carries a real Delivery, would be worth re-counting.
+
+**What it decides.** The learning hypothesis asked whether the lines are decoration and the per-bar
+indicator is the real feature. On this sample the answer is **no**: at a maximum out-degree of 2 and
+one Feature in ten carrying any edge at all, the lines are drawable essentially always, and the
+thicket does not materialise. So the density fallback is designed as cheap insurance against a
+pathological Delivery, not as the expected presentation — see D5-9 in `feature-delta.md`.
+
+**What it changes in the other direction.** One edge in four points out of view. The indicator for a
+dependency that cannot be drawn is therefore ordinary traffic rather than an edge case, which is a far
+stronger argument for giving it a proper presentation than AC-5.2 makes on its own. That is what
+ADR-203 and the AC-5.2 amendment act on.
 
 ## Effort
 

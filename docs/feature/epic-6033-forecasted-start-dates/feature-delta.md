@@ -586,8 +586,10 @@ bar sitting late reads as "it is waiting for that one" rather than as an unexpla
 Before: the timeline shows when each Feature runs, and a Feature that starts late looks arbitrary.
 After: on the Delivery's Timeline tab, a Feature that waits on another is connected to it, so a late bar
 explains itself.
-Decision enabled: which dependency to attack first — the one holding up the most downstream work is
-visible as the bar with the most lines leaving it, and nothing in the product shows that today.
+Decision enabled: which dependency to attack first — a bar with lines leaving it is holding up
+everything they lead to, and nothing in the product shows that today. How sharply that separates one
+Feature from the rest depends on how coupled the Delivery is, and on a lightly coupled one it will not
+separate them much; there the win is the smaller one above, that a late bar stops looking arbitrary.
 
 #### Acceptance Criteria
 
@@ -1046,6 +1048,26 @@ rather than a modelling preference.
 | Feature table column | `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/` | EXTEND | One forecast at four percentiles, following the completion column. No expander (D16). |
 | Delivery Timeline tab | `pages/Portfolios/Detail/Components/DeliveryGrid/` | NEW (frontend) | The one genuinely new component. P8 settled its shape on 2026-09-20: a thin adapter over `@svar-ui/react-gantt` that owns every `@svar-ui/*` import and speaks Lighthouse's vocabulary at its props. |
 
+**Slice 05 rows, added 2026-09-21.** Frontend-only, as established: `dependsOn` is already on the
+frontend `Feature` model (ADR-157, shipped by Epic 5792), so no backend type, no query and no DTO field
+changes. Every row is EXTEND but one, and the new one is a pure function.
+
+| Component | File | Change | Summary |
+|---|---|---|---|
+| `deliveryDependencyOverlay` | `.../DeliveryGrid/timeline/deliveryDependencyOverlay.ts` | **NEW (frontend)** | Pure. Takes the Delivery's `IFeature[]` and the `DeliveryTimeline` already built beside it, returns a `DependencyOverlay`: the links that may be drawn, and per bar the notes about the ones that may not. It owns the `referenceId → featureId` join, which is the hinge of the whole slice. It names no `@svar-ui` type, so it sits outside the adapter boundary and is tested without a drawing surface. |
+| `ganttShapes` | `.../timeline/ganttShapes.ts` | EXTEND | One function, `toGanttLinks`, beside `toGanttTasks`: the overlay's links into the library's `{ id, source, target, type }` shape. Still imports nothing from the library, for the same reason the rest of the file does not. |
+| `DeliveryGanttChart` | `.../timeline/DeliveryGanttChart.tsx` | EXTEND | The hardcoded `links={[]}` becomes the translated overlay, and one new prop arrives in product vocabulary. The only permitted `@svar-ui` importer stays the only one. |
+| `TimelineBarContent` | `.../timeline/TimelineBarContent.tsx` | EXTEND | An optional mark beside the name, whose tooltip lists that bar's notes. It already owns the hover and the click and already exists as a separate file so it can be rendered without the library. |
+| `DeliveryTimelineTab` | `.../timeline/DeliveryTimelineTab.tsx` | EXTEND | Builds the overlay beside the timeline, reads the terminology it needs, and renders the whole-Portfolio set-aside note when it applies. |
+| `dependencySentences` | `src/utils/dependencies/dependencySentences.ts` | EXTEND | Two sentences the product has never had to say: a blocker that is not in this Delivery, and one that is but has no forecast to place it. |
+| `DemoDataService` | `Services/Implementation/DemoDataService.cs` | EXTEND | A second rule builder for the Ocean Explorer Delivery only. `BuildAllFeaturesRuleDefinition` is shared with the Apollo Delivery and is not touched. |
+| `WorkItemsDialog` | `components/Common/WorkItemsDialog/WorkItemsDialog.tsx` | EXTEND | A fifth optional column descriptor beside `highlightColumn`, `timeInStateColumn`, `ageBandColumn` and `sleRiskColumn`. Absent by default, so the other fifteen render sites are byte-identical. The descriptor carries finished sentences; the dialog learns nothing about `IFeatureDependency`, exactly as it learns nothing about a cycle time (ADR-198). |
+
+**Added 2026-09-21** with the warning-symbol decision. `TimelineBarContent` (above) now renders the
+warning symbol rather than an unspecified mark, and `DeliveryTimelineTab` (above) additionally builds
+the dialog's warnings descriptor from the same overlay it builds the links from — one computation, two
+surfaces, so they cannot disagree about the Feature under the cursor.
+
 ---
 
 ## Wave: DESIGN / [REF] Reuse Analysis
@@ -1068,6 +1090,41 @@ rather than a modelling preference.
 
 **Zero unjustified CREATE NEW.** The single such row was gated behind an evaluation, and the evaluation
 turned it into an adopted MIT dependency wrapped in one component.
+
+### Slice 05 rows, added 2026-09-21
+
+Default is EXTEND. Exactly one CREATE NEW, and it is justified in its own row rather than by omission.
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `reasonSentence` / `positionedBelowSentence` / `withheldName` | `src/utils/dependencies/dependencySentences.ts` | Every word the product says about a dependency that is not straightforward | **EXTEND** | It already covers all five `NotHonouredReason` values and the below-the-order advisory, and its own comment says why one copy exists: "two copies would drift apart a phrase at a time and nobody would notice which one they had read." Two sentences are missing and both are about *this Delivery* rather than the Portfolio. Timeline-local copy would give one Feature two explanations on two screens — the disagreement ADR-158's KPI-5 exists to forbid. |
+| `isWorthWarningAbout` / `isSetAside` / `hasNothingWrongWithIt` | `src/models/FeatureDependency.ts` | Which dependencies are worth a warning, and which are a deliberate choice | **REUSED AS IS** | The bar's mark is styled as a warning by calling the same predicate the table's warnings column calls. Same input, same answer, structurally rather than by agreement. Re-deriving "is this worth warning about" on the timeline is how the two surfaces start disagreeing about one Feature. |
+| `buildDeliveryTimeline` | `.../timeline/deliveryTimelineModel.ts` | The placed / unplaceable split over a Delivery's Features | **REUSED AS IS** | The overlay consumes its output and adds nothing to it — no field on `TimelineBar`, no field on `UnplaceableFeature`. That is what keeps AC-5.4 true by construction: delete the overlay module and one prop and the model is byte-identical. |
+| `toGanttTasks` | `.../timeline/ganttShapes.ts` | Translating product vocabulary into the library's | **EXTEND** | `toGanttLinks` is its sibling and belongs beside it for the reason the file's own comment gives: this is the one place a vendor shape is written by hand, so if the mapping is not tested here it is not tested anywhere. |
+| `TimelineBarContent` | `.../timeline/TimelineBarContent.tsx` | The inside of one bar, in ordinary React rather than the library's event system | **EXTEND** | It exists as a separate file precisely so it can be rendered on its own in a test. A mark is one more thing in the same box; a second bar-content component would need its own route through the library's `taskTemplate` and there is only one. |
+| `Gantt`'s `links` prop | `@svar-ui/react-gantt` 2.7.3 | Auto-routed dependency lines | **REUSED AS IS — no licence implication** | Confirmed present in the free MIT edition. The prop is already passed, hardcoded to `[]`; this slice gives it content. No new dependency, no version change. |
+| `renderDependsOn` / `createDependsOnColumn` | `FeatureListDataGrid/columns.tsx` | Presenting a Feature's dependencies to a reader | **NOT REUSED — deliberately** | It is a `DataGrid` cell renderer: it takes a `GridValidRowModel`, returns a stacked list sized for a 260 px column, and the timeline needs a mark inside a bar a few pixels tall. What is genuinely shared is the vocabulary and the predicates, and both of those are reused directly in the rows above — which is the reuse that was worth having. |
+| `deliveryExportTable.dependenciesOf` | `.../DeliveryGrid/deliveryExportTable.ts` | A Delivery's dependencies, flattened for export | **NOT REUSED** | It already flattens per Feature for a CSV column and knows nothing about bars, placement or percentile. The overlay's question — which edges have both ends on *this* chart — does not arise there and would be dead weight if added. |
+| `BuildAllFeaturesRuleDefinition` | `Services/Implementation/DemoDataService.cs` | The Delivery feature-selection rule | **EXTEND by a sibling, not in place** | It is shared with the Apollo Delivery, which must keep every Feature for the burnup. Narrowing it in place would change a Delivery this slice has no business touching, and the change would be invisible until somebody noticed the burnup no longer summed. |
+| `FeatureDependsOnDto` / `IDependencyHonourPolicy` / `GET /api/latest/features` | backend | The edges and their verdicts | **NO CHANGE** | Everything this slice renders is already on the wire (ADR-157, Epic 5792). If an implementer finds they need a new field here, that is a finding to report against this design, not a field to add. |
+| `WorkItemsDialog`'s optional-column mechanism | `components/Common/WorkItemsDialog/WorkItemsDialog.tsx` | Attaching a column the caller owns to a shared dialog | **EXTEND — fifth use of a four-times-proven idiom** | Added 2026-09-21. `highlightColumn`, `timeInStateColumn`, `ageBandColumn` and `sleRiskColumn` establish the shape and ADR-198 records it. A bespoke dependency dialog would be a seventeenth render site of a list the product already has one of, and would lose the enlarge, the terminology and the grid behaviour for free. |
+| `featureWarningSentences` | `src/utils/features/featureWarningSentences.ts` | Everything there is to say about why a Feature needs attention | **REUSED AS IS** | Added 2026-09-21. It already filters by `isWorthWarningAbout` and words the result through `dependencySentences`. Its own comment gives the reason not to copy it: the row's tooltip and the export read the same list "so neither can decide a row is clean while the other shows it a reason". A third reader joins on the same terms. |
+| `createWarningsColumn` | `FeatureListDataGrid/columns.tsx` | The Warnings concept as a grid column | **PATTERN REUSED, NOT EXTENDED** | Added 2026-09-21. It is a `DataGridColumn<IFeature>` with a `valueGetter` reaching into `row.dependsOn`; the dialog's grid is over `IWorkItem` and ADR-198 forbids it knowing what a dependency is. What carries across is the shape — one icon, every reason in one tooltip — and the sentences, which are reused directly in the row above. |
+| `WarningsIndicator` | `FeatureListDataGrid/WarningsIndicator.tsx` | The warning icon and its tooltip | **NOT REUSED on the bar — deliberately; icon and sentences reused** | Added 2026-09-21. Its "no warnings" branch draws a green check, which is right in a column a reader scans down and wrong inside a bar a few pixels tall: a check on every bar is noise on the one surface whose value is that the eye finds the odd one out. The bar reuses `WarningAmberIcon` and `featureWarningSentences`; it does not reuse the component that decides to draw something when there is nothing to say. |
+| `DeliveryTimelineTab`'s existing `WorkItemsDialog` render | `.../timeline/DeliveryTimelineTab.tsx` | The bar-click flow | **REUSED AS IS — one prop added** | Added 2026-09-21. The dialog is already imported and already opened on a bar click with `items={[selectedFeature]}`. This slice adds a prop at an existing call site; it adds no flow, no route and no state. |
+
+### Contract shape per component — slice 05
+
+| Component | Contract shape | Universe it may touch |
+|---|---|---|
+| `buildDependencyOverlay` | **pure-function (return-only)** | Its two arguments, read. Returns a `DependencyOverlay` value — a plan the renderer executes. It may not mutate `bars`, `unplaceable` or any `IFeature`, and it performs no I/O, no clock read and no terminology lookup. The bug class "the overlay re-sorted the bars" is not representable. |
+| `toGanttLinks` | **pure-function** | A list in, a list out. No knowledge of why an edge was included. |
+| `TimelineBarContent`, `DeliveryGanttChart` | bounded-change | Rendered output only. **Neither may decide which edges are drawable.** Handed an overlay, they render it; the classification lives in one place or the two surfaces drift. |
+| `DeliveryTimelineTab` | bounded-change | One more memoised value and one more rendered note. The percentile state, the selection dialog and the unplaceable list are untouched. |
+| `dependencySentences` | **unbounded-preservation** | Every existing sentence. Members may be added; no existing string may be reworded here, because the Feature table, the dependency dialog and the export all read them and none of those is in this slice's blast radius. |
+| `DemoDataService.SeedMultiTeamDelivery` | bounded-change | The rule-definition string on the one Ocean Explorer Delivery. No Feature CSV, no team CSV, no other Delivery, no scenario registration. |
+| `WorkItemsDialog` | **unbounded-preservation** | One optional prop added. Every existing column, its order, and the behaviour of the dialog when the new descriptor is absent must be unchanged — fifteen other render sites pass through this component and none of them is in this slice's blast radius. Absent-by-default is what makes the preservation checkable rather than asserted. |
+| The warnings descriptor built in `DeliveryTimelineTab` | **pure-function (return-only)** | Reads the overlay and the Feature; returns finished sentences. It may not fetch, may not read a clock, and may not compute a warning rule of its own — it calls `featureWarningSentences`, which is the one place that rule lives. |
 
 ### Contract shape per component
 
@@ -1781,3 +1838,649 @@ build fails exactly that way if the model lets it.
 object and adds no new flow — E2E here is one walking skeleton per flow, and this flow's skeleton
 already exists. A Timeline spec is worth one addition once the shape has been reviewed and is not
 moving; adding it before that pins a locator to markup that is still in question.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — What Was Given, and What Was Found
+
+**Pass run 2026-09-21, PROPOSE mode, slice 05 only (ADO User Story #6049).** Taken as given and not
+re-derived: the scope is frontend-only (`dependsOn` is already on the frontend `Feature` model per
+ADR-157 / Epic 5792 — no backend change, no new query, no new DTO field); `@svar-ui/react-gantt` 2.7.3
+free MIT edition draws auto-routed dependency links, so there is **no licence implication**; the adapter
+boundary is enforced by `ganttAdapterBoundary.enforcement.test.ts` and `DeliveryGanttChart.tsx` remains
+the only production importer of `@svar-ui/*`; DEVOPS is skipped for this Epic by explicit decision;
+ADR-156 stays deferred.
+
+Three things the acceptance criteria did not say, found by reading the code this slice sits on.
+
+**1. The join key is `referenceId`, and nothing in the timeline has one.** `IFeatureDependency` carries
+the blocker's tracker `referenceId` (a string), `name`, `url`, `source`, `notHonouredReason`,
+`blockerPositionedBelow` and `isWithheld` — and **no numeric id**. `toGanttTasks` keys every task by
+`bar.featureId`, a number. So a link can only be resolved through a `referenceId → featureId` map, and
+that map has to be built somewhere. D5-1 and D5-2 settle where, and settle it in the one place that
+also answers "is this blocker on the chart at all", because those are the same lookup asked twice.
+
+**2. AC-5.2 is three situations wearing one sentence.** It says "a dependency on a Feature outside this
+Delivery". A line actually cannot be drawn in three distinct cases: the blocker is not among the
+Delivery's selected Features; the blocker **is** selected but `buildDeliveryTimeline` sorted it into
+`unplaceable[]` because it has no forecast, so it has no bar to point at; or the blocker is
+`isWithheld` and the reader may not even learn its name. **The second case is invisible in the
+acceptance criteria as drafted** and is not hypothetical — it is present in the demo data today
+(OE-004 waits on OE-001, which has a contributing team with no throughput). This is an upstream change
+and is carried under Changed Assumptions below.
+
+**3. `OutsideThisPortfolio` is a different question and must not be borrowed.** It is an existing
+`notHonouredReason` about the *Portfolio*. A blocker can be honoured, in the same Portfolio, and still
+fall outside this *Delivery's* feature-selection rule — which is exactly the case AC-5.2 is about, and
+exactly the case the demo-data change below manufactures on purpose. "Outside the Delivery" is computed
+client-side from the Delivery's own Feature set and is never read off the DTO. Reporting a Delivery's
+selection rule as a data problem would be a lie with a plausible-looking sentence attached.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Measured Density, and What It Settles
+
+Counted 2026-09-21 against the dev instance's SQLite database, read-only. Full table and caveats in
+`slices/slice-05-the-timeline-shows-what-waits.md`, whose pre-slice placeholder existed for this.
+
+| | |
+|---|---|
+| Features / dependency edges | 83 / 12 |
+| Features carrying any dependency | 8 of 83 — 9.6% |
+| Maximum out-degree / maximum fan-in | **2 / 2** |
+| Edges pointing outside the Portfolio | **3 of 12 — one in four** |
+
+**The caveat is part of the number, and belongs in the document rather than in a footnote.** This is
+one instance with one Portfolio, and its only Delivery record is a five-Feature scratch row, so density
+could **not** be measured at Delivery grain. These are **Portfolio-grain** counts. They are a sound
+*upper bound* for a Delivery — a Delivery's Features are a subset of a Portfolio's, so it cannot carry
+more edges — but a bound is not an observation, and nobody should quote these as "what a Delivery looks
+like".
+
+Two things it settles, in opposite directions.
+
+**The thicket does not materialise.** The slice's learning hypothesis asked whether the lines are
+decoration and the per-bar indicator is the real feature. On this sample the answer is no: at a maximum
+out-degree of two and one Feature in ten carrying any edge, lines are drawable essentially always. So
+the density fallback is designed as **cheap, stated insurance against a pathological Delivery** — not as
+the expected presentation, and not as something worth spending a second UI vocabulary on (D5-9).
+
+**The undrawable case is ordinary traffic.** One edge in four points out of view at Portfolio grain, and
+at Delivery grain it can only be more. That is a far stronger argument than AC-5.2 makes on its own for
+giving the indicator a proper presentation rather than a footnote, and it is what tips D5-5 towards one
+well-made mark with reasons in it rather than towards saying nothing.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Options Considered, and the Recommendation
+
+Presented as options because this pass ran in PROPOSE mode and these are the user's calls. The
+recommendation is stated for each; the D-rows below record the recommended option.
+
+### Where link-building lives
+
+| | Option | Trade-off |
+|---|---|---|
+| A | Inside `buildDeliveryTimeline`, which grows a third return value | One pass over the Features, and the map over placed bars is built exactly where bars are placed. But it widens a shipped function's contract and makes AC-5.4 (removing the slice leaves US-04 whole) a diff rather than a deletion. |
+| B | **A new pure sibling module, `deliveryDependencyOverlay.ts`** | ★ **Recommended.** Consumes the built `DeliveryTimeline` and the same `IFeature[]`, returns an overlay value. Severability is structural: delete one file and one prop. Testable without a drawing surface. Costs one extra pass over a list that is at most a few dozen long. |
+| C | Inside `ganttShapes.ts` as `toGanttLinks` alone | `ganttShapes` is the vendor-vocabulary translation layer. *Which* edges are drawable is product logic, not translation, and putting it there means the decision and the vendor shape change together forever. |
+
+**Recommended split: B for the decision, C for the translation only.** `buildDependencyOverlay` decides
+and names nothing from the library; `toGanttLinks` turns its output into `{ id, source, target, type }`.
+The enforcement test is satisfied without exception: `ganttShapes.ts` imports nothing from `@svar-ui`
+today and still will, and `DeliveryGanttChart.tsx` stays the only importer.
+
+**The map is built over the Delivery's own Features**, keyed `referenceId → IFeature`, and a blocker is
+classified by asking whether that Feature's id appears among `bars` or among `unplaceable`. Because the
+map is built from `features` rather than from `bars`, **neither `TimelineBar` nor `UnplaceableFeature`
+needs a new field** — slice 04's shipped types are untouched, which is what makes AC-5.4 a deletion.
+
+### AC-5.3 — how the density threshold is expressed
+
+| | Option | Trade-off |
+|---|---|---|
+| A | **Chart-wide count of drawn edges, all-or-nothing** | ★ **Recommended.** One number, one branch, one sentence to explain. Degrades the whole chart at once, so the reader is never left guessing whether a bar has no lines because it has no dependencies or because it degraded. |
+| B | Edges per bar, degraded per bar | Sounds kinder — only the crowded bars lose their lines. It is worse: the chart becomes a mixture in which the absence of a line means two different things, which is the exact ambiguity ADR-203 refuses for line *style*. |
+| C | Count line crossings | The only measure that is actually about legibility. Unavailable: the routing belongs to the library and is computed after we hand the links over, so we cannot see it from behind the adapter. Rejected as infeasible, not as undesirable. |
+
+**The degraded presentation is the AC-5.2 indicator, applied to every dependent bar.** That is the
+economy that makes this cheap: the fallback introduces no new UI at all, because the mark already has to
+exist for the undrawable case. Above the threshold, every edge becomes a note; below it, only the
+undrawable ones do.
+
+**The threshold is a parameter of `buildDependencyOverlay`, not a constant read inside it.** Two reasons,
+and the second is the load-bearing one. It keeps the function pure. And it means the degraded branch is
+tested by passing a threshold of one against a two-edge fixture, rather than by fabricating a
+forty-edge chart nobody will maintain — a branch that can only be exercised by an expensive fixture is a
+branch that quietly stops being exercised.
+
+**Proposed default: 40 drawn edges**, with the reasoning stated rather than the number asserted. At the
+observed maximum out-degree of two, forty edges needs twenty dependency-carrying Features in one
+Delivery — more than the entire 83-Feature instance has (eight). So it is insurance that should never
+fire on anything resembling observed data, which is the footing the measurement puts it on. If a real
+Delivery ever does fire it, that is a finding worth having rather than a rendering to fix.
+
+### What a `notHonouredReason` does to a drawn line
+
+| | Option | Trade-off |
+|---|---|---|
+| A | Draw every edge; dash or mute the non-honoured ones | The most information on screen, and the first thing anybody proposes. Asks one mark to mean two things; and it stakes the honesty of the chart on a vendor capability nobody has probed — per-link styling in the free edition is unverified, and a styling prop silently ignored degrades to option C without a sound. |
+| B | **Draw honoured edges only; every other edge becomes a note on the mark** | ★ **Recommended, and recorded as ADR-203.** A line then means exactly one thing: the schedule accounted for this wait and these bars are positioned accordingly. No second vocabulary to learn, no dependence on link styling, and the indicator already exists for AC-5.2. |
+| C | Draw all edges identically, reason in a tooltip only | Cheapest, and rejected outright. A tooltip nobody knows to hover over says nothing at all, and the default reading of the chart becomes a causal claim that is false. |
+
+The bars were **not** positioned to respect a non-honoured edge — the simulation never waited — so a
+plain line between them is evidence for something untrue. ADR-158's own context names this failure mode
+in almost these words. B makes the wrong reading non-representable rather than merely discouraged.
+
+**`isSetAside` (`IgnoredByPortfolio`) follows the table's precedent, adapted rather than copied.** The
+table's rule is *listed, explained on the entry, never warned about* — and the reason given there is
+that warning on every Feature teaches the reader to stop looking at a column built to be worth looking
+at. On the timeline the same reasoning lands differently, because when a Portfolio sets its dependencies
+aside **every** edge comes back `IgnoredByPortfolio`, so a per-bar mark would appear on every dependent
+bar saying the same sentence each time. So: one note above the chart when the whole set is set aside,
+and set-aside entries never contribute warning styling to a mark. Listed, explained, not warned about —
+the precedent honoured at the grain this surface has.
+
+**`NotLicensed` is unreachable here.** The Timeline tab is premium-gated in its entirety (AC-4.7), so a
+reader who could meet that verdict cannot reach the chart. Stated rather than handled; the sentence
+stays in `dependencySentences` for the Feature table, which is not gated.
+
+### AC-5.2 — one indicator or three
+
+| | Option | Trade-off |
+|---|---|---|
+| A | **One mark per bar; one note per undrawable dependency, each carrying its own reason** | ★ **Recommended.** One affordance to learn, three sentences inside it. Mirrors what the Feature table already does — one cell, one line per dependency, reason carried per entry. |
+| B | Three distinct visual indicators | Precise, and unaffordable: the chart already carries a target band, a today line and an observed-versus-forecast start distinction. A fourth, fifth and sixth mark spend attention on a distinction a sentence makes for free, and all three share the one consequence that matters — there is no line. |
+| C | Say nothing on the bar; leave the unplaceable case to the existing "Not on the timeline (N)" list | Cheapest. The reader looking at a late bar never learns why and must cross-reference a list below the chart — which is the question this slice exists to answer, unanswered. |
+
+At one edge in four pointing out of view, A is not a nicety. A Feature with dependencies would otherwise
+routinely render identically to a Feature with none, and the reader has no way to tell that what they
+are looking at is short.
+
+### `blockerPositionedBelow`
+
+| | Option | Trade-off |
+|---|---|---|
+| A | **Line drawn, and the dependent bar additionally marked** | ★ **Recommended.** The edge *is* honoured (ADR-158 makes `BlockerRankedBelow` advisory), so the line is true and must be drawn. But this is precisely the "why is this bar late" case the slice's elevator pitch names, and the Feature table already warns about it via `isWorthWarningAbout`. Not marking it would let the timeline and the table disagree about the same Feature — the KPI-5 shape ADR-158 exists to forbid. |
+| B | Line drawn, nothing said | The line runs backwards relative to the board order, so the picture technically shows it. It relies on the reader reading row order off a chart that does not label it. |
+| C | A distinct third mark for it | A second vocabulary for a case the existing mark can carry as one more note. |
+
+So the mark has two kinds of note: *not drawn, because …* and *drawn, but worth knowing*. It is styled
+as a warning if and only if `isWorthWarningAbout` returns true for any of its dependencies — the same
+predicate, on the same data, as the table's warnings column. Structural agreement, not agreed agreement.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — The Mark Is a Warning Symbol, and the Click Explains It
+
+**Added 2026-09-21 on the maintainer's decision**, which extends option 4 rather than replacing it: the
+bar's mark is a **warning symbol** consistent with how the Feature table already signals a dependency
+worth warning about, and **clicking the bar opens the dialog it already opens**, now carrying a warnings
+column that names each reason.
+
+Three mechanisms already exist and this design uses all three rather than inventing a fourth.
+
+- **`WorkItemsDialog` already takes optional columns attached by the caller that owns the payload** —
+  `highlightColumn`, `timeInStateColumn`, `ageBandColumn`, `sleRiskColumn`. That is ADR-198's shape, and
+  a warnings column is **a fifth instance of an idiom proven four times**, not a new pattern. The
+  descriptor carries finished answers; the dialog never learns what an `IFeatureDependency` is, exactly
+  as it never learns what a cycle time is.
+- **`DeliveryTimelineTab` already renders that dialog on a bar click**, with
+  `items={selectedFeature ? [selectedFeature] : []}`. The wiring point is a prop at an existing call
+  site, not a new flow.
+- **`featureWarningSentences` already produces the sentences**, filtered by `isWorthWarningAbout` and
+  worded by `dependencySentences`. Its own comment states the reason it exists in one place: "the row's
+  tooltip reads the list and an export asks only whether it is empty, so neither can decide a row is
+  clean while the other shows it a reason." A third copy of the warning rule would be a third chance for
+  the surfaces to disagree — the same failure this design already refused for `blockerPositionedBelow`.
+
+### The distinction that has to be right: a warning is not the same as a note
+
+`isWorthWarningAbout` is `!isSetAside && !hasNothingWrongWithIt`. So a dependency that is **honoured and
+entirely fine**, whose blocker simply has no bar on this timeline, is **not** worth warning about — and
+that is correct, not an oversight. The forecast accounted for that wait properly. Nothing is wrong. What
+is true is only that the picture cannot show it.
+
+If the out-of-Delivery case raised a warning symbol, then on the measured data roughly one dependent bar
+in four would wear a warning for a Delivery that is forecasting correctly, and the symbol would stop
+meaning anything within a week. So:
+
+| | Raises the warning symbol | Where it is read |
+|---|---|---|
+| `isWorthWarningAbout` fires (loop, un-forecastable blocker, outside the Portfolio, positioned below) | **Yes** — amber, same icon and same predicate as the table | Bar tooltip, and the dialog's Warnings column |
+| Blocker has no bar here (not in this Delivery / unplaceable / withheld) | **No** — a neutral mark | Bar tooltip only |
+| Nothing to say | No mark at all | — |
+
+**No mark at all is deliberate and is where this departs from `WarningsIndicator`.** That component
+draws a green check for "no warnings", which is right in a table column a reader scans down and wrong
+inside a bar a few pixels tall — a green check on every bar is noise on the one surface whose whole
+value is that the eye finds the odd one out. So the icon and the sentences are reused; the component is
+not. That is a deliberate NOT REUSED, recorded with its reason in the Reuse Analysis.
+
+### What the dialog column carries, and what it does not
+
+**The column is a general Warnings column — `featureWarningSentences` in full, all three kinds** (done
+with remaining work, default Feature size, dependency warnings). It carries **no timeline vocabulary at
+all**: the neutral "no bar here" notes stay on the bar's tooltip, where they explain the picture the
+reader is looking at.
+
+The alternative — one column mixing warnings with timeline notes — was considered and rejected. It
+would label a correctly-forecast out-of-Delivery dependency as a warning under a column header that
+says so, which is the same mislabelling this slice refuses for line style. It would also make the column
+useless to every other caller, and being useful to them is exactly the "neat addition in general" the
+maintainer is after.
+
+**The notes on the bar and the warnings in the dialog are computed from one overlay.** The timeline tab
+already builds the overlay for the lines; the descriptor it hands the dialog reads the same value. Two
+surfaces, one computation — so the bar and the dialog opened from it cannot disagree about the Feature
+under the cursor.
+
+### Scope boundary, held deliberately
+
+**Slice 05 attaches the column at the timeline's dialog call site only.** The maintainer is right that
+the column would be a neat addition everywhere, and ADR-198 enumerates sixteen render sites — which is
+precisely why wiring them is a separate change with its own blast radius and its own sweep table.
+Two consequences the implementer must hold:
+
+- The column's descriptor **may not assume callers that are not wired**. It is optional, absent by
+  default, and the dialog is unchanged for the other fifteen sites.
+- ADR-198's own limitation applies in mirror and is named rather than papered over: its move-3 partition
+  test covers `buildViewData`'s payloads, and a *fifth optional descriptor attached at one site* is
+  exactly the case it says remains a review-time concern. This section is that review record.
+
+Recorded as a named follow-up in Open Questions below.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Decisions Table
+
+D-numbered separately from the `DDD-` rows above: those are domain-model decisions about the backend,
+these are presentation and composition decisions in one frontend module, and mixing the prefixes would
+suggest a kinship that is not there.
+
+| ID | Decision | Record |
+|---|---|---|
+| D5-1 | Link-building lives in a new pure module, `deliveryDependencyOverlay.ts`, beside the timeline model — not inside `buildDeliveryTimeline`, not inside the adapter | This document |
+| D5-2 | The join is `referenceId → IFeature`, built over the Delivery's own Features; a blocker is classified by whether its Feature appears among `bars` or among `unplaceable`. No new field on `TimelineBar` or `UnplaceableFeature` | This document |
+| D5-3 | "Outside this Delivery" is computed from the Delivery's Feature set and is never the `OutsideThisPortfolio` verdict | ADR-203 |
+| D5-4 | A drawn line means the forecast acted on that edge. Non-honoured edges are never drawn, in any style | **ADR-203** |
+| D5-5 | One per-bar mark, not three. Each undrawable dependency contributes one note carrying its own reason | ADR-203 |
+| D5-6 | When an edge is both non-honoured and undrawable, the **non-honoured reason is reported**. It explains the dates; "no bar here" only explains the picture | This document |
+| D5-7 | `blockerPositionedBelow` is drawn **and** marked, and the mark's warning styling calls `isWorthWarningAbout` rather than re-deriving it | ADR-203 |
+| D5-8 | Set-aside edges are listed and explained, never warned about; when the whole Portfolio is set aside, one note above the chart replaces a mark on every bar | ADR-203 |
+| D5-9 | The density fallback is a chart-wide drawn-edge count, all-or-nothing, **passed in as a parameter**; the degraded presentation is the AC-5.2 mark applied to every dependent bar. Proposed default 40 | This document |
+| D5-9a | Degrading **does not change what a mark means**. A dependency that was sound keeps a neutral mark; one already carrying a warning keeps the warning. A chart that degrades is still forecasting correctly, so raising amber on every dependent bar there would devalue the symbol exactly as warning on the out-of-Delivery case would (D5-14). Recorded as a decision because D5-9 alone left it to be inferred, and an inference is not a thing a test can be wrong about | This document |
+| D5-10 | `NotLicensed` is unreachable on this surface and is not designed for | ADR-203 |
+| D5-11 | The Ocean Explorer demo Delivery's selection rule is narrowed by a **sibling** rule builder; `BuildAllFeaturesRuleDefinition` is shared with Apollo and is not touched | This document |
+| D5-12 | The `referenceId` match is exact, not case-folded, because the backend already normalises (ADR-157's Linear lower-casing). A mixed-case fixture asserts it, because a failed match is silent — every edge would read as "outside this Delivery" | This document |
+| D5-13 | The bar's mark is a **warning symbol** — the same `WarningAmberIcon` the Feature table uses — raised by `isWorthWarningAbout` and by nothing else. No third copy of the warning rule | ADR-203 |
+| D5-14 | A dependency whose blocker merely has no bar here is **not** a warning. It gets a neutral mark; a bar with nothing to say gets no mark at all | ADR-203 |
+| D5-15 | Clicking a bar opens the dialog it already opens, now carrying a **Warnings column** supplied as a fifth optional descriptor — ADR-198's shape, fifth use of a four-times-proven idiom | ADR-198, ADR-203 |
+| D5-16 | That column is `featureWarningSentences` in full and carries **no timeline vocabulary**. The neutral notes stay on the bar's tooltip, so the column stays useful to every other caller | ADR-203 |
+| D5-17 | The column is attached at the **timeline's call site only**. The descriptor is optional and may not assume callers that are not wired; the other fifteen render sites are unchanged. Widening is a named follow-up, not this slice | This document |
+| D5-18 | **The hand-written routing enum is an accepted residual, not a mitigated risk.** No screenshot test, no Playwright step; the maintainer's live visual check at delivery is the verification. What is given up is durability — a later refactor can silently return the links to drawing nothing, with nothing to catch it | **ADR-203** |
+| D5-19 | Peer review is **not** dispatched for this pass. None of the DESIGN gate's triggers fires: ADR-203 is decided rather than contested, the dialog column is a fifth use of an existing idiom, and there is no performance or security surface. The consolidated review at the end of DISTILL covers all four waves | This document |
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Ports, Topology and the Accepted Residual
+
+**No port changes, driving or driven.** `GET /api/latest/features` already carries `dependsOn` in full
+(ADR-157, Epic 5792). No persistence change, no work-tracking-system change, no new endpoint. The
+Driving and Driven Ports table above stands unamended for this slice.
+
+**No C4 diagram is redrawn, and that is a finding rather than an omission.** This slice adds no
+container, crosses no component boundary and introduces no new actor or external system. Every new
+artifact is a module inside the frontend container, inside the Timeline tab that the slice-04 diagrams
+already show. Redrawing the same picture with one more box inside an existing box would cost a reader
+the time to notice nothing had changed.
+
+### The routing enum is an accepted residual, not a mitigated risk
+
+**Decided 2026-09-21 by the maintainer: no screenshot test and no Playwright step for this slice. The
+live visual check at delivery is the whole verification.** DESIGN proposed a rendered probe; that
+proposal was overruled. What follows states the risk as accepted rather than dissolving it, because the
+risk did not go away when the mitigation did.
+
+`toGanttLinks` writes the vendor's link shape by hand — including a routing enum (`e2s` and its
+siblings) — exactly as `toGanttTasks` writes `type: "task"` today. **A wrong value there draws nothing
+and raises nothing.** This is not speculative: it is the same silent-failure class this component has
+already been bitten by once. `ganttShapes` carries a comment recording that the axis `format` *must* be
+a function, because a string was printed verbatim as eight characters of column heading rather than
+failing.
+
+**No unit test can catch it**, and the reason is structural rather than a matter of effort: the test
+environment has no drawing surface, which is precisely why `ganttShapes` exists as a library-free file
+in the first place. An assertion on the object we hand over asserts that we built what we meant to
+build, not that the library understood it.
+
+**What is verified, and what is given up.** The maintainer is holding the push for a live visual check,
+so the enum **is** verified once, at delivery, by a person looking at the screen. That is a real check
+and this document does not pretend otherwise. What is given up is **durability**: after that day
+nothing re-asks the question. A later refactor — a rename, a type change, a library upgrade, a
+well-meant tidy of the literal — can silently return the links to drawing nothing, and the first
+observer will be a user who assumes the Delivery has no dependencies. The failure presents as absence,
+which is the hardest kind to notice and the most expensive kind to report.
+
+**Accepted, recorded as D5-18, and carried into ADR-203's consequences.** A future slice that wants the
+durability back needs one rendered assertion; the cost of adding it later is the same as the cost of
+adding it now, which is part of why accepting it is reasonable.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Demo Data for the Ocean Explorer Milestone
+
+The Delivery currently selects every Feature in the Portfolio
+(`BuildAllFeaturesRuleDefinition` — `feature.name IsNotEmpty`), so **no blocker can ever be outside it**
+and AC-5.2 has no demo case at all. The user has decided the rule is narrowed. What follows is which
+Features fall outside and why that choice exercises the acceptance criteria without damaging premium
+scenario 12 "Dependencies", which the same Delivery serves.
+
+**The edges present today** (`Factories/DemoData/Project Ocean Explorer.csv`, 13 Epics):
+OE-003 → OE-002 · OE-004 → OE-001 · OE-005 → OE-008 · OE-009 ↔ OE-010 (the cycle) · OE-012 → OE-011
+(Done).
+
+**Recommended: exclude OE-008 and OE-013.**
+
+| | Why |
+|---|---|
+| **OE-008** *Deep Water Mineral Survey* | The load-bearing one. OE-005 stays in the Delivery, is placeable (Team Lightspeed, which has throughput), and waits on OE-008 — which is in the same Portfolio, in no loop, and forecastable, so the edge is **honoured**. The forecast genuinely accounted for a wait the reader cannot see. That is the pure AC-5.2 case with no confounding reason attached, and it is the case that is currently impossible to produce. |
+| **OE-013** *Underwater Communication Network* | Waits on nothing and nothing waits on it, and it has no child work items in any team. Excluding it costs no edge and makes the rule read as a *selection* rather than as one Feature surgically removed — which is what a demo reader needs to understand before "outside this Delivery" means anything to them. |
+
+**Everything else stays in, and each earns its place against a different criterion.**
+
+| Kept | What it demonstrates |
+|---|---|
+| OE-003 → OE-002 | **AC-5.1, the drawn line.** Both placeable, honoured. OE-002 carries a `StartedDate`, so the line runs from a bar with an *observed* start — the two slice-04 bar kinds and the slice-05 line in one picture. |
+| OE-004 → OE-001 | **The case invisible in the ACs.** OE-001 has Team Meridian contributing, which has no throughput, so OE-001 lands in `unplaceable[]` and has no bar. The edge is *also* `BlockerCannotBeForecast` (ADR-159), so D5-6's precedence is exercised on real demo data: the reason is reported, not the absence of a bar. |
+| OE-009 ↔ OE-010 | **`InALoop`.** Both placeable, neither edge honoured, so no line either way and both bars marked. |
+| OE-012 → OE-011 | Left as it is. **Flagged, not relied on**: OE-012 has no child work items in any team CSV, so whether it is placeable at all was not verified in this pass. If it turns out unplaceable it simply joins the list below the chart and demonstrates nothing — which is why it is not one of the two cases this design depends on. |
+
+**Why scenario 12 survives.** The narrowing touches the *Delivery's* selection rule and nothing else.
+`DemoDataFactoryTest.CreateDemoProject_ProjectWithDependencies_CarriesOneOfEachAwkwardKind` asserts
+against `CreateDemoProject` and the CSV connector — Portfolio grain — and does not read the Delivery, so
+it is unaffected. The Portfolio's Feature table still shows all 13 Epics and every edge, which is where
+scenario 12's promise ("Epics that wait on other Epics … which dependencies can be honoured") is
+actually kept. The Delivery keeps contributions from Gravity, Zenith, Lightspeed and Meridian, so
+ADR-113's joint rollup still has several teams to roll up, and Meridian still has no throughput, so the
+Delivery still reports "cannot forecast" — the behaviour `DemoDataService`'s own comment says this
+Delivery exists to show.
+
+**Mechanically**: a sibling of `BuildAllFeaturesRuleDefinition` with `Mode = and` and two
+`feature.referenceid` / `notequals` conditions. Both the field key
+(`FeatureFieldProvider.FeatureReferenceIdKey`) and the operator (`RuleOperators.NotEquals`) already
+exist; nothing in the rule engine needs widening. Excluding by `feature.name` / `notcontains` was
+considered and rejected — it would silently start excluding a second Feature the day somebody renames
+one.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Changed Assumptions and Back-Propagation
+
+**AC-5.2 is amended, and a new AC-5.5 is owed.** This is an upstream change to a DISCUSS artifact and is
+recorded here rather than applied silently.
+
+> **Original** (this file, DISCUSS / User Stories, US-05, 2026-09-20): "**AC-5.2** — A dependency on a
+> Feature outside this Delivery is indicated on the waiting bar without drawing a bar for the absent
+> Feature."
+
+**Final proposed form, restated 2026-09-21** now that the mark is specified as a warning symbol with a
+click-through rather than left abstract. The wording is deliberately behavioural — it says what a reader
+can observe, and names no component, predicate or prop.
+
+- **AC-5.2** — A dependency whose blocker has no bar on this timeline is indicated on the waiting bar,
+  with a reason, and without drawing a bar for the absent Feature. The reason distinguishes a blocker
+  that is not in this Delivery from one that is in it but has no forecast to place, and names neither
+  when the blocker is withheld from this reader. **Where nothing is wrong with the dependency itself,
+  the indication does not read as a warning** — the Delivery is forecasting correctly and only the
+  picture is short.
+- **AC-5.5** *(new)* — A dependency the forecast did not act on is never drawn as a line. It is marked
+  on the waiting bar with a warning, carrying the reason it was not honoured, and **opening the waiting
+  bar lists that same reason**. A dependency the forecast *did* act on whose blocker sits below it in
+  the order is drawn **and** marked the same way. A bar with nothing to say carries no mark at all, and
+  a Feature's warnings read the same here as they do on the Feature table.
+
+Three reasons the original will not do, and a fourth added by the warning-symbol decision. It names one
+of three situations that produce the same consequence, and the one it omits — blocker present but
+unplaceable — is reachable in the demo data today. It says nothing about non-honoured edges, leaving the
+most consequential decision in the slice (D5-4 / ADR-203) unasserted by any acceptance criterion. Its
+wording, "outside this Delivery", invites exactly the `OutsideThisPortfolio` conflation that finding 3
+above warns against. And it says "indicated", which was fine while the mark was abstract and is now
+under-specified: the difference between a warning and a neutral note (D5-13, D5-14) is the difference
+between a symbol that keeps meaning something and one that does not, so an acceptance criterion has to
+be able to fail on it.
+
+**The click-through is asserted by AC-5.5's last clause rather than by an AC of its own.** "The same
+reason is listed when the bar is opened" and "a Feature's warnings read the same here as they do on the
+Feature table" are the two observable claims; a separate criterion naming the dialog would be naming a
+component, which is the crafter's to choose.
+
+**AC-5.3 is not amended, but its threshold is now a measured decision** rather than an open one. The
+slice brief's pre-slice count has been filled in; D5-9 records the shape and the proposed default, and
+the measurement's Portfolio-grain caveat travels with it.
+
+**No other upstream change.** AC-5.1 and AC-5.4 stand exactly as written, and AC-5.4's severability is
+strengthened by D5-1 and D5-2 rather than qualified by them: with the overlay in its own module and no
+new field on slice 04's types, removing this slice is a deletion of one file and two optional props.
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Open Questions Carried Forward
+
+| # | Question | Deferred to |
+|---|---|---|
+| — | Does `@svar-ui/react-gantt`'s free edition accept `e2s` (finish-to-start) links against numeric task ids, and does it route them legibly when two bars are adjacent rows? | **The maintainer's live visual check at delivery**, which is now the only instrument (D5-18). Confirmed present as a feature; the exact accepted shape is unexercised, and after that one check nothing re-asks |
+| — | **Should the Warnings column be attached to the other `WorkItemsDialog` callers?** The maintainer's own observation is that it "would be a neat addition in general", and it is right. ADR-198 enumerates sixteen render sites; most list child work items rather than Features, so for many the answer is a reasoned "no" rather than an oversight | **A separate change, deliberately not this slice (D5-17).** It needs its own sweep table — one row per call site with the reason for each "no" — which is the instrument ADR-198 names for exactly this shape and which slice 05 has no budget to produce. Raise it as its own item once the column has shipped and been read on one surface |
+| — | Is 40 drawn edges the right default? | Open by construction. It is insurance that should never fire on observed data; the honest position is that nobody has seen the failure it guards against. Revisit if a real Delivery ever trips it |
+| — | Can density be measured at Delivery grain on any instance? | Owed to whoever next has an instance carrying a real Delivery. The Portfolio-grain bound is sound but is a bound |
+| — | Is OE-012 placeable on the timeline, given it has no child work items in any team? | Verified in DELIVER while seeding. Nothing in this design depends on the answer — it is flagged so nobody later reads the demo-data table as a claim |
+
+---
+
+## Wave: DESIGN / [REF] Slice 05 — Density and Expansion
+
+`documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`. DESIGN declares no
+ask-intelligent triggers, so this pass emitted **Tier-1 `[REF]` sections only** — no Tier-2 expansions
+and no wave-end expansion menu.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DESIGN`, slice `05`, reason
+`wave declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — scenarios
+
+Authored 2026-09-21, ahead of slice 05's DELIVER. Story #6049. The slice draws the dependency edges on
+the timeline slice 04 shipped; `dependsOn` is already on the frontend `Feature` model (ADR-157 /
+Epic 5792), so there is no backend work here beyond one demo-data rule.
+
+**Driving port**: the React component tree, through Vitest and React Testing Library, plus the pure
+modules beneath it called directly — the same mechanism slices 02, 03 and 04 used. The one backend
+scenario pair drives `DemoDataService` through its constructor with repositories doubled, as
+`DemoDataServiceTest` already does.
+
+**Wave-decision reconciliation**: DISCUSS, DESIGN and DEVOPS read, **0 contradictions**. The AC-5.2
+amendment and the new AC-5.5 are DESIGN back-propagation with the original quoted, not a disagreement;
+DEVOPS is skipped for this Epic by explicit decision with a per-concern N/A table.
+
+### The boundary these scenarios are written against
+
+Slice 04 learned where the assertable surface is and wrote the reason into `ganttShapes.ts` itself: the
+vendor component paints to a canvas jsdom does not have and its axis needs a measured width it never
+gets, **so an assertion on rendered vendor markup passes against broken code**. That is not a caveat
+here, it is the design constraint — it is why `ganttShapes` exists as a library-free file at all. Slice
+05 keeps the same split.
+
+| File | Owns | New in this slice |
+|---|---|---|
+| `deliveryDependencyOverlay.ts` | The decision. Which edges are drawable, which bars carry a mark, what each mark says. Pure; names nothing from the library and nothing from React | **Yes** — a new sibling of `deliveryTimelineModel.ts` (D5-1) |
+| `ganttShapes.ts` | The translation only. A drawn edge becomes `{ id, source, target, type }` | `toGanttLinks`, beside `toGanttTasks` (D5-1, option C for translation) |
+| `dependencySentences.ts` | The words. Two sentences added — a blocker not in this Delivery, and one in it with no forecast to place | Two exports (ADR-203 point 2) |
+| `TimelineBarContent.tsx` | The mark on the bar and what it says on hover | Extended |
+| `DeliveryTimelineTab.tsx` | Composes the overlay, the chart's `links` and the dialog's Warnings column | Extended |
+| `WorkItemsDialog.tsx` | A fifth optional column descriptor, absent by default | Extended (ADR-198's shape, D5-15) |
+| `DeliveryGanttChart.tsx` | Still the only `@svar-ui/*` importer; `ganttAdapterBoundary.enforcement.test.ts` keeps it that way | One prop stops being `links={[]}` |
+
+**Twenty of the twenty-eight scenarios drive the two pure functions.** Six drive React through RTL. Two
+are backend. None asserts on `@svar-ui` markup.
+
+### Every scenario, and what would red it
+
+Slice 04's round-two review found **four assertions that were structurally incapable of failing** — two
+sides reduced the same way, a CSS variable read off the element we set rather than the one that
+resolves it, an expectation read back out of the constant the function returns. Naming the falsifier is
+therefore a column here rather than a habit. **A scenario with no nameable mutation is not a scenario**,
+and one row below is marked as deliberately weak rather than dressed up.
+
+| # | Scenario | AC | Drives | What reds it |
+|---|---|---|---|---|
+| 1 | A Feature waiting on another Feature in the same Delivery is connected to it | AC-5.1 | Overlay | **walking skeleton** for this slice. Returning no edge at all. The fixture gives the two Features different ids *and* different reference ids *and* a blocker whose `name` differs from the dependency entry's, so a source/target swap fails and a join on the wrong field fails |
+| 2 | The blocker is found by its reference id, not by its name | AC-5.1, D5-2 | Overlay | Keying the map on `feature.name`. Two halves: names differing while reference ids match still draws; reference ids differing while names match draws nothing |
+| 3 | Reference ids are matched exactly, not case-folded | D5-12 | Overlay | **Two halves, one positive and one negative** — an exactly-matching pair MUST draw its edge, and a pair differing only by case MUST NOT. Reds on a `.toLowerCase()` either side (negative half), and on an overlay that draws nothing at all (positive half). The positive half is what stops this passing vacuously against an empty implementation, which a negative-only assertion would. The backend already normalises (ADR-157's Linear lower-casing), and a failed match is **silent** — it makes every edge read as "not in this Delivery", which is the failure this pins |
+| 4 | Two Features waiting on the same blocker each get a line of their own | AC-5.1 | Overlay | A map that collapses by blocker and emits one edge. Fan-in of two is the measured maximum on real data, so this is the observed case rather than a stress test |
+| 5 | Every reason the forecast gives for not acting draws no line and warns the waiting bar in that reason's own words | AC-5.5 | Overlay | **Three cases** — `InALoop`, `BlockerCannotBeForecast`, `OutsideThisPortfolio`. Drawing the edge anyway; marking it neutral; carrying a sentence that is not the one `reasonSentence` gives for that code. Each case asserts its own sentence, so one sentence serving all three fails two of them |
+| 6 | A dependency the Portfolio has set aside is not drawn and warns nobody; the chart says it once | AC-5.5, D5-8 | Overlay | A per-bar mark appearing. `isSetAside` dropped from the warning rule. The chart-level note missing entirely, which would leave the reader with a chart whose lines silently vanished |
+| 7 | A blocker with no bar because it is not in this Delivery gets a **neutral** mark, not a warning | AC-5.2, D5-14 | Overlay | Raising the warning symbol. This is the distinction the whole mark depends on: the fixture's dependency is honoured and entirely sound, so `isWorthWarningAbout` is false and must stay false. Reading `OutsideThisPortfolio` off the payload instead of computing absence from the Delivery's own Features also fails it |
+| 8 | A blocker that is in this Delivery but has no forecast to place gets its own reason, distinct from 7's | AC-5.2 | Overlay | One sentence serving both cases. Asserts the sentence for this case **and** that it differs from 7's, so a copy-paste of either one fails |
+| 9 | When a blocker is both unhonoured and unplaceable, the unhonoured reason is what is reported | D5-6 | Overlay | Precedence reversed. The reason explains the dates; "no bar here" only explains the picture. This is OE-004 → OE-001 in the demo data, so it is real traffic |
+| 10 | A withheld blocker is marked without naming it | AC-5.2 | Overlay | **Asserts the mark is present AND that the name is absent from it** — both halves, stated, because the absence half alone passes against an overlay that marks nothing. Reds on no mark being raised (positive half), and on the sentence containing the fixture's blocker name (negative half). The fixture gives the withheld entry a name that must not appear anywhere in the output |
+| 11 | A withheld dependency is never joined by its empty reference id | AC-5.2 | Overlay | **`FeatureDependsOnDto.Withheld` sets `ReferenceId = string.Empty`**, so a map that admits `""` as a key draws a line from whichever Feature happens to carry an empty reference id. The fixture puts one in the Delivery. Found by reading the DTO; see Upstream findings below |
+| 12 | An honoured dependency whose blocker sits below it in the order is drawn **and** warned | D5-7, AC-5.5 | Overlay | Treating `blockerPositionedBelow` as a reason not to draw — it is advisory (ADR-158), the forecast did wait, the line is true. Or drawing it and saying nothing, which lets the timeline and the Feature table disagree about one Feature |
+| 13 | A Feature with no dependencies at all carries no mark | AC-5.5, D5-14 | Overlay | A mark on every bar. Asserts the **absence of an entry**, not an entry holding an empty list — an empty-but-present mark is what a component then renders as a badge with nothing in it |
+| 14 | A Feature whose every dependency is drawn carries no mark | AC-5.5 | Overlay | Marking every *dependent* bar. Distinct from 13: here there are dependencies and they are all fine, which is the case a "has dependencies ⇒ mark it" implementation gets wrong |
+| 15 | Above the drawn-edge threshold nothing is drawn and every dependent bar is marked instead | AC-5.3, D5-9 | Overlay | Degrading per bar rather than chart-wide, which would make the absence of a line mean two things. Exercised with **threshold 1 against a two-edge fixture** — the threshold is a parameter precisely so this branch never needs a forty-bar fixture nobody maintains |
+| 16 | At the threshold exactly, the lines are still drawn | AC-5.3 | Overlay | `<` where `<=` belongs. Threshold 2 against the same two-edge fixture. Slice 04's mutation run found this exact operator alive in the column-count helper |
+| 17 | Degrading does not turn a sound dependency into a warning | AC-5.3, D5-14 | Overlay | Styling every degraded mark as a warning. A chart that degrades is a chart that is forecasting correctly, so an amber icon on every bar there is the same symbol-devaluation D5-14 refuses for the out-of-Delivery case. See Upstream findings — no D-row decides this and this is DISTILL's reading |
+| 18 | A Delivery of ordinary density draws its lines without the caller naming a threshold | AC-5.3 | Overlay | A default of 0 or 1. **Deliberately weak, and recorded as such**: it does not pin 40, because pinning a magic number asserts the number rather than the behaviour and breaks on any re-measurement. A mutant that moves 40 to 41 survives it, and that survivor is accepted in advance |
+| 19 | Each drawn edge becomes one link from the blocker's task to the waiting task, with an id of its own | AC-5.1 | Adapter translation | Source and target swapped. Ids colliding when one blocker has two waiters, which the library resolves by drawing one line. Asserts the object handed over — **not** what the library does with it, which nothing here can see |
+| 20 | A bar with a warning shows the warning symbol; a bar with only a note shows a neutral mark | AC-5.2, AC-5.5, D5-13 | Bar (RTL) | One mark serving both. Asserted on the two marks' **accessible names**, not on `sx` or on a colour — slice 04 shipped a CSS-variable assertion that passed against a visibly broken screen, and this environment mocks the vendor stylesheet away, so a rendered-appearance assertion here proves nothing |
+| 21 | A bar with nothing to say shows no mark at all | AC-5.5, D5-14 | Bar (RTL) | A green "all clear" check, which is what `WarningsIndicator` draws and why it is deliberately not reused inside a bar a few pixels tall |
+| 22 | Opening a bar lists that Feature's warnings | AC-5.5 | Tab (RTL) | No Warnings column; the column present but empty; a warning filtered out on the way in. Asserted against the **fixture's own domain facts** — the blocker's name and the loop's words — and never against `featureWarningSentences`' return value, which would be the same reduction on both sides and could not fail |
+| 23 | The bar's neutral notes are not in the dialog's Warnings column | D5-16 | Tab (RTL) | Timeline vocabulary leaking into a general column, which would label a correctly-forecast dependency as a warning under a header that says so, and would make the column useless to the other fifteen render sites |
+| 24 | A dialog rendered without the descriptor has no Warnings column | D5-17 | Dialog (RTL) | Making the column unconditional. The other fifteen call sites are unchanged by this slice and the descriptor may not assume callers that are not wired |
+| 25 | The tab hands the chart the links the overlay built | AC-5.1 | Tab (RTL) | **`links={[]}`, which is what `DeliveryGanttChart` passes today.** The chart is stood in for at this seam, as slice 04's tab tests already do, so what is asserted is the contract handed across the boundary |
+| 26 | A Portfolio that has set its dependencies aside gets one note above the chart | D5-8 | Tab (RTL) | The note rendered once per dependent bar, or not at all |
+| 27 | The Ocean Explorer Milestone selects every Feature in the Portfolio except OE-008 and OE-013 | AC-5.2 | `DemoDataService` (NUnit) | The wrong reference ids; `Mode = or`, which selects everything; the rule not applied to this Delivery. Evaluated through `RuleEvaluator<Feature>` and `FeatureFieldProvider` against Features carrying OE-001…OE-013, so it asserts what the rule *selects* rather than what its JSON says |
+| 28 | The burnup Delivery still selects every Feature | AC-5.4 | `DemoDataService` (NUnit) | Narrowing `BuildAllFeaturesRuleDefinition` in place instead of adding a sibling. The builder is shared with the Apollo burnup Delivery, and this is the scenario that notices |
+
+**Error and edge coverage: 15 of 28 — 54 %** (5 counting as three cases, plus 6, 7, 8, 9, 10, 11, 13,
+15, 16, 17, 21, 23, 24). That weighting is the slice rather than an accident: one edge in four points
+out of view on the measured data, so the undrawable and unhonoured paths are the ordinary traffic and
+the drawn line is the narrow case.
+
+### What is deliberately not tested here
+
+- **The routing enum, and this is an accepted residual rather than a gap.** `toGanttLinks` writes the
+  vendor's link shape by hand — including `e2s` and its siblings — exactly as `toGanttTasks` writes
+  `type: "task"`. **A wrong value there draws nothing and raises nothing.** No unit test can catch it,
+  and the reason is structural: this environment has no drawing surface, which is why `ganttShapes`
+  exists as a library-free file in the first place. Scenario 19 asserts we built what we meant to build,
+  not that the library understood it. DESIGN proposed a rendered probe; **the maintainer overruled it on
+  2026-09-21 — no screenshot test and no Playwright step; the live visual check held before the push is
+  the whole verification** (D5-18, ADR-203). That check is real and the enum *is* verified once, by a
+  person, at delivery. What is given up is durability: after that day nothing re-asks, and a rename, a
+  type change or a library upgrade can silently return the links to drawing nothing. The failure
+  presents as absence, which is the hardest kind to notice.
+- **`NotLicensed`.** Unreachable on this surface — the Timeline tab is premium-gated in its entirety
+  (AC-4.7), so a reader who could meet that verdict cannot reach the chart. Stated rather than tested;
+  a test over an unreachable branch is a test that cannot fail, which is the thing slice 04's mutation
+  run deleted code to avoid. The sentence stays in `dependencySentences` for the Feature table, which is
+  not gated.
+- **The rendered appearance of either mark.** Which icon, which amber, where in the bar. Asserted by
+  accessible name and by kind; the picture is the maintainer's live check.
+- **The vendor's routing, spacing and legibility at density.** Whether two adjacent rows route legibly
+  is the open question D5-18 hands to the live check. The density fallback is tested as a *decision*
+  (scenarios 15–18); whether 40 is the right number is open by construction and nobody has seen the
+  failure it guards against.
+- **AC-5.4, severability, is structural rather than asserted.** The overlay is its own module and no
+  field is added to `TimelineBar` or `UnplaceableFeature`, so removing the slice is the deletion of one
+  file and two props. `deliveryTimelineModel.test.ts` is untouched by this slice, which is the evidence.
+  An enforcement test over "this module has no importers outside the tab" would pin a file layout rather
+  than a behaviour.
+
+### Playwright
+
+**None, and not by omission.** The tab is reachable through the existing Delivery page object and this
+slice adds no flow — E2E here is one walking skeleton per flow and this flow's skeleton already exists.
+A Playwright step for the dependency lines was specifically proposed and specifically overruled
+(D5-18); adding one anyway would be the mitigation the maintainer declined, wearing a different name.
+
+### Scaffolds (Mandate 7)
+
+**None, and none needed.** This Epic's precedent is that DISTILL authors the scenario table and DELIVER
+writes the code — slices 02, 03 and 04 each did exactly that, and slice 03's red classification was
+measured at the head of its own DELIVER rather than promised here. No test file is committed by this
+pass, so nothing imports a module that does not exist and there is no BROKEN-versus-RED classification
+to protect. A throwing `toGanttLinks` added to the shipped `ganttShapes.ts` today would be dead code on
+`main` that no test reaches, which is a cost with no signal attached.
+
+**Owed at the head of DELIVER**: the red classification, measured and reported as measured. Scenarios 13,
+14, 21, 23 and 24 all assert that *nothing* is there, so each is at risk of being **vacuously green on
+arrival** — the shape slice 03 found and recorded. They are honest tests of the finished behaviour and
+worthless as RED signal until the mark exists; DELIVER must not read them as evidence of anything before
+scenario 20 goes green.
+
+### Upstream findings
+
+Five things found by reading the code this slice sits on. None blocks; all five change what a scenario
+has to say.
+
+1. **`FeatureFieldProvider.FeatureReferenceIdKey` is `private const`.** The demo-data section cites it as
+   if `DemoDataService` could name it. It cannot. Use the literal `"feature.referenceid"`, exactly as
+   `BuildAllFeaturesRuleDefinition` already writes `"feature.name"` today. `RuleOperators.NotEquals` *is*
+   public, so that half of the claim holds and nothing in the rule engine needs widening.
+2. **A withheld dependency carries `referenceId = ""`.** `FeatureDependsOnDto.Withheld` sets it to
+   `string.Empty`, and the frontend schema keeps it. ADR-203 treats withheld as one of three situations
+   with "no bar to point at", which is true — but the empty key makes it a **collision** hazard rather
+   than a miss: a map admitting `""` joins every withheld entry to whichever Feature carries an empty
+   reference id. Scenario 11 exists for this.
+3. **The backend rule engine compares `NotEquals` with `OrdinalIgnoreCase`.** So the demo-data narrowing
+   is case-insensitive while D5-12 fixes the frontend join as exact. Not a contradiction — two layers,
+   two questions — but recorded so nobody later "aligns" one to the other and silently breaks the join.
+4. **No D-row decides what kind of mark the density fallback raises.** D5-9 says the degraded
+   presentation is "the AC-5.2 mark applied to every dependent bar", and the AC-5.2 mark is neutral.
+   DISTILL reads it as: degrading marks a sound dependency neutrally and leaves an already-warned one
+   warned, on D5-14's own reasoning — a chart that degrades is forecasting correctly, and an amber icon
+   on every bar there devalues the symbol exactly as the out-of-Delivery case would. Scenario 17 asserts
+   that reading. If DELIVER disagrees, it is a decision to record, not a test to adjust.
+5. **`DeliveryGanttChart` already passes `links={[]}`.** The wiring point is a one-line change at an
+   existing prop, which is what makes scenario 25 cheap and what makes the empty array the mutant it
+   catches.
+
+### Test placement
+
+| Scenarios | File | Why there |
+|---|---|---|
+| 1–18 | `timeline/deliveryDependencyOverlay.test.ts` | Beside the module, as `deliveryTimelineModel.test.ts` sits beside its own |
+| 19 | `timeline/ganttShapes.test.ts` | The existing file for the translation layer; `toGanttLinks` is a sibling of `toGanttTasks` and belongs with it |
+| 20, 21 | `timeline/TimelineBarContent.test.tsx` | Existing. The file was extracted in slice 04 precisely so a bar's decisions could be rendered on their own |
+| 22, 23, 25, 26 | `timeline/DeliveryTimelineTab.test.tsx` | Existing, with the chart stood in for by the `vi.mock("./DeliveryGanttChart")` already there |
+| 24 | `components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx` | Existing. The absence of the column is the dialog's own contract, not the timeline's |
+| 27, 28 | `Services/Implementation/DemoDataServiceTest.cs` | Existing, with the repository doubles and the fixed clock already in place. A second class would let the two drift |
+
+`DemoDataFactoryTest.CreateDemoProject_ProjectWithDependencies_CarriesOneOfEachAwkwardKind` is **not
+touched**: it asserts against `CreateDemoProject` and the CSV connector at Portfolio grain and never
+reads a Delivery, so narrowing the Delivery's selection rule cannot reach it. It stands as the guard
+that premium scenario 12 survives.
+
+### Outcomes registry
+
+**Registration deferred to DELIVER, deliberately — the same call slice 01 made and for the same reason.**
+`buildDependencyOverlay` is a new typed contract surface and is worth an `OUT-3` row of kind
+`specification`: *given a Delivery's placed and unplaceable Features, that Delivery's own Feature list,
+and a limit on how many connections are worth drawing, decides which dependency edges the forecast acted
+on and can be drawn, and what each remaining edge has to be told to the reader instead.* Every existing
+row in `docs/product/outcomes/registry.yaml` names an `artifact` path that exists, and the registry
+rejects one that does not — so the row is written in the commit that creates
+`deliveryDependencyOverlay.ts`, not before it.
+
+### Density and expansion
+
+`documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`. DISTILL declares no
+ask-intelligent triggers, so this pass emitted **Tier-1 `[REF]` sections only** — no Tier-2 expansions
+and no wave-end expansion menu.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DISTILL`, slice `05`, reason
+`wave declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
+
+Next: DELIVER, slice 05 (Story #6049).
