@@ -779,6 +779,33 @@ describe("showing the Teams behind a Feature's bar", () => {
 		);
 	});
 
+	it("says nothing about a missing lane on a chart that has no lanes", async () => {
+		// With the switch off there is no split, so there is nothing for a Team to be missing
+		// from. A note about a lane on a chart without lanes names something the reader cannot
+		// see, and breaks the one promise the switch makes: off is the chart exactly as it was.
+		const oneTeamHasNoDates = splittingFeature({
+			teamForecasts: [
+				forTeam(5, 12, 15),
+				{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
+			],
+		});
+
+		renderTab([oneTeamHasNoDates], undefined, [ZENITH, MERIDIAN]);
+
+		const bar = screen.getByTestId("timeline-bar-1");
+
+		expect(
+			within(bar).queryByTestId("timeline-bar-mark"),
+		).not.toBeInTheDocument();
+		expect(bar).not.toHaveTextContent("Meridian");
+
+		// Paired with the same bar once the Teams are shown, so this cannot pass against a tab
+		// that never says anything about an un-laned Team at all.
+		await userEvent.click(showTeamsSwitch());
+
+		expect(markOn(1)).toHaveAccessibleName(/Meridian/);
+	});
+
 	it("names a Team with no lane on its Feature's bar, as a note rather than an alarm", async () => {
 		renderTab(
 			[

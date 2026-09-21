@@ -59,6 +59,9 @@ export interface DeliveryTimelineTabProps {
 
 const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 
+/** One empty map rather than a fresh one per render, which would re-run every memo below it. */
+const NO_TEAM_NOTES: ReadonlyMap<number, UnlanedTeam[]> = new Map();
+
 /**
  * Why a Feature's bar reaches past the rows beneath it, at both ends.
  *
@@ -107,16 +110,6 @@ const warningsColumnFor = (
 	},
 });
 
-interface TeamNotes {
-	byFeature: ReadonlyMap<number, UnlanedTeam[]>;
-	/**
-	 * Whether those Teams are named along the bar as well as in its hover text. Only while the
-	 * Teams are being read: every other Team on that Feature then has a row with its name written
-	 * along it, and the one without a row is the only one a reader would have to hover to find.
-	 */
-	nameThemOnTheBar: boolean;
-}
-
 /**
  * What one bar has to say for itself: everything the Feature table would warn about, then what this
  * chart alone knows - where a blocker it waits on ended up, and which of its Teams has no row.
@@ -130,12 +123,12 @@ const barMarksFor = (
 	features: IFeature[],
 	dependencyNotes: ReadonlyMap<number, string[]>,
 	terms: FeatureWarningTerms,
-	teamNotes: TeamNotes,
+	teamsWithoutALane: ReadonlyMap<number, UnlanedTeam[]>,
 ): Map<number, BarMark> => {
 	const marks = new Map<number, BarMark>();
 
 	for (const feature of features) {
-		const unlaned = teamNotes.byFeature.get(feature.id) ?? [];
+		const unlaned = teamsWithoutALane.get(feature.id) ?? [];
 
 		const notes: BarNote[] = [
 			...featureWarningSentences(warningInputFor(feature), terms).map(
@@ -161,12 +154,13 @@ const barMarksFor = (
 		if (notes.length > 0) {
 			marks.set(feature.id, {
 				notes,
-				namesOnTheBar: teamNotes.nameThemOnTheBar
-					? unlaned.map((team) => ({
-							teamId: team.teamId,
-							name: team.teamName,
-						}))
-					: [],
+				// Named along the bar, not left to the hover: every other Team on this Feature is
+				// written in full along a lane of its own, so the one without a lane would be the
+				// only Team on the chart a reader had to go looking for.
+				namesOnTheBar: unlaned.map((team) => ({
+					teamId: team.teamId,
+					name: team.teamName,
+				})),
 			});
 		}
 	}
@@ -238,10 +232,12 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				features,
 				marks,
 				{ workItemsTerm, featureTerm, portfolioTerm },
-				{
-					byFeature: teamsOnTheChart.unlanedTeams,
-					nameThemOnTheBar: showTeams,
-				},
+				// Only while the Teams are shown. What these notes serve is the promise that a
+				// split never shows fewer Teams than the Feature has - and with the Teams hidden
+				// there is no split to disagree with. A sentence about a missing lane, on a chart
+				// that has no lanes, names something the reader cannot see and contradicts the
+				// one thing the switch promises: off is the chart exactly as it was.
+				showTeams ? teamsOnTheChart.unlanedTeams : NO_TEAM_NOTES,
 			),
 		[
 			features,
