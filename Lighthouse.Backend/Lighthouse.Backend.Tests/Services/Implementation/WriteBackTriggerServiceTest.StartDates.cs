@@ -116,12 +116,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// AC-3.4. Matching what the completion sources already do for a closed Feature. Nothing is
-        /// written rather than something harmless-looking, because a board has no way to say "no answer"
-        /// and a field that keeps being rewritten is a field nobody trusts.
+        /// A Feature that finished without Lighthouse ever having recorded the day it began. There is no
+        /// fact to send, and a forecast of a start that has already happened would be false, so nothing is
+        /// written rather than something harmless-looking: a board has no way to say "no answer", and a
+        /// field that keeps being rewritten is a field nobody trusts.
         /// </summary>
         [Test]
-        public void ResolveForecastWriteBackForPortfolio_DoneFeature_WritesNothing()
+        public void ResolveForecastWriteBackForPortfolio_ClosedFeatureThatNeverRecordedAStart_WritesNothing()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -129,6 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var team = new Team { Id = 1, Name = "Team 1" };
 
+            // No StartedDate: the helper leaves it unset, and that absence is the whole subject here.
             var done = CreateFeatureExpectedToStartIn("F-33", team, workingDaysUntilStart: 6, daysAt85: 20);
             done.StateCategory = StateCategories.Done;
             done.ClosedDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -146,6 +148,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "F-34");
+        }
+
+        /// <summary>
+        /// A Feature that was started and then closed still knows the day work began, and that day is a
+        /// fact worth sending. Staying silent is not the neutral choice it looks like: a resolution of
+        /// nothing is dropped rather than written as blank, so the forecast that was sent while the
+        /// Feature was still open stays in the tracker for good - leaving finished work permanently
+        /// labelled as starting on a day that never came.
+        /// </summary>
+        [Test]
+        public void ResolveForecastWriteBackForPortfolio_ClosedFeatureThatHasStarted_WritesTheDayItBegan()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastedStartPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Start85", WriteBackTargetValueType.Date));
+
+            var team = new Team { Id = 1, Name = "Team 1" };
+
+            var closed = AStartedFeature("F-41", team, new DateTime(2026, 2, 17, 9, 0, 0, DateTimeKind.Utc));
+            closed.StateCategory = StateCategories.Done;
+            closed.ClosedDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            // An open Feature alongside, so the assertion cannot pass because nothing resolved at all.
+            var open = CreateFeatureExpectedToStartIn("F-42", team, workingDaysUntilStart: 6, daysAt85: 20);
+
+            portfolio.Features.Add(closed);
+            portfolio.Features.Add(open);
+
+            var subject = CreateSubject();
+
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
+
+            AssertPlanned(plan, updates =>
+                        updates.Count == 2 &&
+                        updates.Any(u => u.WorkItemId == "F-41" && u.Value == "2026-02-17") &&
+                        updates.Any(u => u.WorkItemId == "F-42"));
         }
 
         /// <summary>
