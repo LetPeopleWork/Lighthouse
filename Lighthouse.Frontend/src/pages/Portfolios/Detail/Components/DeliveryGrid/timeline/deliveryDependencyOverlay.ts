@@ -1,8 +1,18 @@
 import type { IFeature } from "../../../../../../models/Feature";
 import {
 	type IFeatureDependency,
+	isSetAside,
 	isWorthWarningAbout,
 } from "../../../../../../models/FeatureDependency";
+import {
+	type DependencyTerms,
+	noForecastToPlaceSentence,
+	notOnThisTimelineSentence,
+	positionedBelowSentence,
+	reasonSentence,
+	withheldName,
+	withheldSentence,
+} from "../../../../../../utils/dependencies/dependencySentences";
 import type { DeliveryTimeline } from "./deliveryTimelineModel";
 
 /** One Feature waiting on another, both of them drawn on this timeline. */
@@ -33,6 +43,8 @@ export interface DependencyOverlay {
 	 * than present with an empty list, which a component would draw as a badge with nothing in it.
 	 */
 	marks: Map<number, BarMark>;
+	/** The one thing that is true of the whole chart rather than of any single bar, or nothing. */
+	chartNote: string | null;
 }
 
 /**
@@ -45,9 +57,11 @@ export interface DependencyOverlay {
 export function buildDependencyOverlay(
 	features: IFeature[],
 	timeline: DeliveryTimeline,
+	terms: DependencyTerms,
 ): DependencyOverlay {
 	const edges: DrawnDependency[] = [];
 	const marks = new Map<number, BarMark>();
+	let chartNote: string | null = null;
 
 	const featuresById = new Map<number, IFeature>(
 		features.map((feature) => [feature.id, feature]),
@@ -78,65 +92,117 @@ export function buildDependencyOverlay(
 		marks.set(featureId, { notes: [note] });
 	};
 
-	// Walking the bars rather than the Features keeps board order and leaves out anything the timeline
-	// could not place: a line needs a bar at both of its ends.
-	for (const bar of timeline.bars) {
-		const waiting = featuresById.get(bar.featureId);
+	for (const { waitingFeatureId, dependency } of dependenciesOfDrawnBars(
+		timeline,
+		featuresById,
+	)) {
+		// Matched as written. Reference ids arrive already normalised, and folding case here in case
+		// they did not would hide the day they stop being — a match that fails is silent, and every
+		// dependency in the Delivery would read as one pointing outside it.
+		const blocker = blockersByReference.get(dependency.referenceId);
 
-		for (const dependency of waiting?.dependsOn ?? []) {
-			// Matched as written. Reference ids arrive already normalised, and folding case here in case
-			// they did not would hide the day they stop being — a match that fails is silent, and every
-			// dependency in the Delivery would read as one pointing outside it.
-			const blocker = blockersByReference.get(dependency.referenceId);
+		// Where the Feature waited on is one of this Delivery's own, it is called what the board calls
+		// it: the dependency entry's copy of that name was written elsewhere and drifts, and a reader
+		// matching a sentence against the chart has only what the chart says.
+		const waitedOn = dependency.isWithheld
+			? withheldName(terms)
+			: (blocker?.name ?? dependency.name);
 
-			if (blocker && drawn.has(blocker.id)) {
-				edges.push({
-					blockerFeatureId: blocker.id,
-					waitingFeatureId: bar.featureId,
-				});
-				continue;
-			}
+		// Every edge of a Portfolio that has set its dependencies aside comes back saying the same
+		// thing, so a mark per bar would put identical words on every bar and teach the reader that
+		// marks are not worth reading. Said once, above the chart, instead.
+		if (isSetAside(dependency)) {
+			chartNote = reasonSentence("IgnoredByPortfolio", waitedOn, terms);
+			continue;
+		}
 
-			// A dependency the forecast refused to act on is explained by that refusal, which is what moved
-			// the dates. That there is also nowhere to draw it only explains the picture, and saying both
-			// would bury the half that matters.
-			if (dependency.notHonouredReason) {
-				continue;
-			}
+		// A line is drawn only where the forecast acted on the wait and both ends have a bar. A line
+		// between two bars reads as the reason one of them sits where it does, and for a wait the
+		// schedule never took, that reading is false.
+		const joinedBlocker =
+			dependency.notHonouredReason === null && blocker && drawn.has(blocker.id)
+				? blocker
+				: undefined;
 
-			noteOn(bar.featureId, {
-				text: noBarSentence(dependency, blocker, couldNotBePlaced),
+		if (joinedBlocker) {
+			edges.push({ blockerFeatureId: joinedBlocker.id, waitingFeatureId });
+		}
+
+		const note = noteFor(dependency, terms, {
+			waitedOn,
+			hasALine: joinedBlocker !== undefined,
+			blockerHasNoForecast:
+				blocker !== undefined && couldNotBePlaced.has(blocker.id),
+		});
+
+		if (note) {
+			noteOn(waitingFeatureId, {
+				text: note,
 				isWarning: isWorthWarningAbout(dependency),
 			});
 		}
 	}
 
-	return { edges, marks };
+	return { edges, marks, chartNote };
 }
 
 /**
- * Why a dependency has no line, in words the reader can act on.
- *
- * Nothing here names the blocker of a withheld entry, and nothing reads the entry's own name in that
- * case: the point of withholding it is that this reader may not learn what it is, and a sentence is
- * as much of a leak as a link would be.
- *
- * Where the blocker is a Feature of this Delivery it is called what the board calls it. The row's copy
- * of that name was written elsewhere and drifts, and a reader matching this note against the chart has
- * only what the chart says.
+ * Every dependency of every Feature the timeline managed to place, in board order, each paired with
+ * the bar that would carry a mark about it. Walking the bars rather than the Features leaves out
+ * anything the timeline could not place: a line needs a bar at both of its ends.
  */
-function noBarSentence(
+function* dependenciesOfDrawnBars(
+	timeline: DeliveryTimeline,
+	featuresById: Map<number, IFeature>,
+): Generator<{ waitingFeatureId: number; dependency: IFeatureDependency }> {
+	for (const bar of timeline.bars) {
+		const waiting = featuresById.get(bar.featureId);
+
+		for (const dependency of waiting?.dependsOn ?? []) {
+			yield { waitingFeatureId: bar.featureId, dependency };
+		}
+	}
+}
+
+/** Where a dependency ended up on the chart, which is what decides what there is left to say. */
+interface DependencyPlacement {
+	waitedOn: string;
+	hasALine: boolean;
+	blockerHasNoForecast: boolean;
+}
+
+/**
+ * What the waiting bar has to say about one dependency, or nothing at all when a line between two bars
+ * has already said it.
+ */
+function noteFor(
 	dependency: IFeatureDependency,
-	blocker: IFeature | undefined,
-	couldNotBePlaced: Set<number>,
-): string {
+	terms: DependencyTerms,
+	placement: DependencyPlacement,
+): string | null {
+	const reason = dependency.notHonouredReason;
+
+	// The refusal is what moved the dates. That there is also nowhere to draw the dependency only
+	// explains the picture, and saying both would bury the half the reader can act on.
+	if (reason) {
+		return reasonSentence(reason, placement.waitedOn, terms);
+	}
+
+	// A line was drawn, so the forecast did wait and the picture is complete. It is said again in words
+	// only where the board's own order contradicts the wait, because the Feature table already warns
+	// about that, and one Feature reading as clean on one screen while it is marked on the other is
+	// worse than either answer alone.
+	if (placement.hasALine) {
+		return dependency.blockerPositionedBelow
+			? positionedBelowSentence(placement.waitedOn, terms)
+			: null;
+	}
+
 	if (dependency.isWithheld) {
-		return "Waiting on something you do not have access to.";
+		return withheldSentence(terms);
 	}
 
-	if (blocker && couldNotBePlaced.has(blocker.id)) {
-		return `Waiting on ${blocker.name}, which has no forecast to place on this timeline.`;
-	}
-
-	return `Waiting on ${blocker?.name ?? dependency.name}, which is not on this timeline.`;
+	return placement.blockerHasNoForecast
+		? noForecastToPlaceSentence(placement.waitedOn)
+		: notOnThisTimelineSentence(placement.waitedOn);
 }

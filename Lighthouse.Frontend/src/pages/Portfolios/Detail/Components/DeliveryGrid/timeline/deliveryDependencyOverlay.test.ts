@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { IFeature } from "../../../../../../models/Feature";
 import type { IFeatureDependency } from "../../../../../../models/FeatureDependency";
 import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
+import type { DependencyTerms } from "../../../../../../utils/dependencies/dependencySentences";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import {
 	buildDeliveryTimeline,
@@ -41,10 +42,23 @@ const dependency = (
 	...overrides,
 });
 
-const overlayFor = (features: IFeature[]) =>
+const terms: DependencyTerms = {
+	featureTerm: "Feature",
+	portfolioTerm: "Portfolio",
+};
+
+// Every word a reader can rename is a word this chart has to render as theirs, so the sentences are
+// asked for in the instance's vocabulary rather than written out here.
+const renamedTerms: DependencyTerms = {
+	featureTerm: "Initiative",
+	portfolioTerm: "Programme",
+};
+
+const overlayFor = (features: IFeature[], words: DependencyTerms = terms) =>
 	buildDependencyOverlay(
 		features,
 		buildDeliveryTimeline(features, DEFAULT_TIMELINE_PERCENTILE),
+		words,
 	);
 
 /** The blocker is id 3 / OE-001; the Feature waiting on it is id 7 / OE-004. */
@@ -229,6 +243,10 @@ describe("buildDependencyOverlay", () => {
 
 		expect(notes).toEqual([
 			{
+				text: "Hydrothermal Vent Survey has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
+				isWarning: true,
+			},
+			{
 				text: "Waiting on Seamount Ridge Mapping, which is not on this timeline.",
 				isWarning: false,
 			},
@@ -249,12 +267,122 @@ describe("buildDependencyOverlay", () => {
 
 		expect(overlay.marks.get(7)?.notes).toEqual([
 			{
-				text: "Waiting on something you do not have access to.",
+				text: "Waiting on a Feature you do not have access to.",
 				isWarning: false,
 			},
 		]);
 		expect(JSON.stringify([...overlay.marks.values()])).not.toContain(
 			withheldName,
 		);
+	});
+
+	it("calls a withheld blocker by the word this instance uses for one", () => {
+		const overlay = overlayFor(
+			[
+				aWaiter([
+					dependency({
+						referenceId: "",
+						name: "Classified Hull Retrofit",
+						isWithheld: true,
+					}),
+				]),
+			],
+			renamedTerms,
+		);
+
+		expect(overlay.marks.get(7)?.notes[0].text).toContain("Initiative");
+	});
+
+	// One sentence serving all three reasons tells the reader only that something is wrong, which is the
+	// one thing they could already see.
+	it.each([
+		[
+			"InALoop" as const,
+			"This Feature and Hydrothermal Vent Survey are waiting on each other. That dependency is not included in the forecast.",
+		],
+		[
+			"BlockerCannotBeForecast" as const,
+			"Hydrothermal Vent Survey has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
+		],
+		[
+			"OutsideThisPortfolio" as const,
+			"This Feature depends on Hydrothermal Vent Survey, which is in no Portfolio they share. That dependency is not included in the forecast.",
+		],
+	])(
+		"draws no line for %s and warns the waiting bar in that reason's own words",
+		(reason, sentence) => {
+			const overlay = overlayFor([
+				aBlocker(),
+				aWaiter([
+					dependency({ referenceId: "OE-001", notHonouredReason: reason }),
+				]),
+			]);
+
+			expect(overlay.edges).toEqual([]);
+			expect(overlay.marks.get(7)?.notes).toEqual([
+				{ text: sentence, isWarning: true },
+			]);
+		},
+	);
+
+	const setAside = (referenceId: string) =>
+		dependency({ referenceId, notHonouredReason: "IgnoredByPortfolio" });
+
+	it("raises no mark on any bar when the Portfolio has set its dependencies aside", () => {
+		const overlay = overlayFor([
+			aBlocker(),
+			aWaiter([setAside("OE-001")]),
+			aWaiter([setAside("OE-001")], {
+				id: 9,
+				referenceId: "OE-005",
+				name: "Trench Sediment Sampling",
+			}),
+		]);
+
+		expect(overlay.edges).toEqual([]);
+		expect(overlay.marks.size).toBe(0);
+	});
+
+	it("says once above the chart that dependencies have been set aside", () => {
+		const overlay = overlayFor([aBlocker(), aWaiter([setAside("OE-001")])]);
+
+		expect(overlay.chartNote).toBe("Portfolio is set to ignore dependencies.");
+	});
+
+	it("says that in the word this instance uses for a Portfolio", () => {
+		const overlay = overlayFor(
+			[aBlocker(), aWaiter([setAside("OE-001")])],
+			renamedTerms,
+		);
+
+		expect(overlay.chartNote).toBe("Programme is set to ignore dependencies.");
+	});
+
+	it("leaves the chart with nothing to say when nothing was set aside", () => {
+		const overlay = overlayFor([
+			aBlocker(),
+			aWaiter([dependency({ referenceId: "OE-001" })]),
+		]);
+
+		expect(overlay.chartNote).toBeNull();
+	});
+
+	it("draws the line to a blocker that sits below, and marks the bar as well", () => {
+		const overlay = overlayFor([
+			aBlocker(),
+			aWaiter([
+				dependency({ referenceId: "OE-001", blockerPositionedBelow: true }),
+			]),
+		]);
+
+		expect(overlay.edges).toEqual([
+			{ blockerFeatureId: 3, waitingFeatureId: 7 },
+		]);
+		expect(overlay.marks.get(7)?.notes).toEqual([
+			{
+				text: "This Feature depends on Hydrothermal Vent Survey, which sits below it in the order.",
+				isWarning: true,
+			},
+		]);
 	});
 });

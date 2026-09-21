@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { NOT_HONOURED_REASONS } from "../../models/FeatureDependency";
 import {
 	type DependencyTerms,
+	noForecastToPlaceSentence,
+	notOnThisTimelineSentence,
 	positionedBelowSentence,
 	reasonSentence,
 	withheldName,
+	withheldSentence,
 } from "./dependencySentences";
 
 const terms: DependencyTerms = {
@@ -112,5 +115,31 @@ describe("withheldName", () => {
 	it("names a Feature the reader may not see by what they can be told about it", () => {
 		expect(withheldName(terms)).toBe("a Feature you do not have access to");
 		expect(withheldName(renamedTerms)).toContain("Initiative");
+	});
+});
+
+describe("the sentences for a dependency with no bar to point at", () => {
+	it("says a withheld dependency is being waited on without naming it", () => {
+		expect(withheldSentence(terms)).toBe(
+			"Waiting on a Feature you do not have access to.",
+		);
+		expect(withheldSentence(renamedTerms)).toContain("Initiative");
+	});
+
+	it("says a Feature the Delivery did not select is not on the timeline", () => {
+		expect(notOnThisTimelineSentence("Warehouse sync")).toBe(
+			"Waiting on Warehouse sync, which is not on this timeline.",
+		);
+	});
+
+	// A Feature the Delivery did select and a Feature it could not place are two different things to
+	// go and do something about, so one sentence serving both leaves the reader nowhere to go.
+	it("gives a Feature with no forecast to place a reason of its own", () => {
+		expect(noForecastToPlaceSentence("Warehouse sync")).toBe(
+			"Waiting on Warehouse sync, which has no forecast to place on this timeline.",
+		);
+		expect(noForecastToPlaceSentence("Warehouse sync")).not.toBe(
+			notOnThisTimelineSentence("Warehouse sync"),
+		);
 	});
 });

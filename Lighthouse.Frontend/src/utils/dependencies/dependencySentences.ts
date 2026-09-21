@@ -48,6 +48,24 @@ export const reasonSentence = (
 	return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;
 };
 
+/**
+ * Why a dependency has no line on a chart drawn from a selection of Features, in words the reader can
+ * act on. Three situations, three sentences: there is nothing to go and do about a Feature the reader
+ * may not see, and what to do about one nobody has measured yet is not what to do about one this
+ * Delivery simply did not select.
+ *
+ * Nothing here reads a withheld entry's own name. The point of withholding it is that this reader may
+ * not learn what it is, and a sentence leaks it as readily as a link would.
+ */
+export const withheldSentence = (terms: DependencyTerms): string =>
+	`Waiting on ${withheldName(terms)}.`;
+
+export const notOnThisTimelineSentence = (waitedOn: string): string =>
+	`Waiting on ${waitedOn}, which is not on this timeline.`;
+
+export const noForecastToPlaceSentence = (waitedOn: string): string =>
+	`Waiting on ${waitedOn}, which has no forecast to place on this timeline.`;
+
 /** The one thing worth saying about a dependency that is no reason to leave it out of the forecast. */
 export const positionedBelowSentence = (
 	waitedOn: string,
