@@ -436,3 +436,118 @@ Scoped with `stryker-6049-slice-05.frontend.json` + `vitest.stryker.6049-slice-0
 latter committed here. Every path in both files was checked to exist before the run: a spec missing
 from the runner's include list makes every mutant in the code it covers survive for want of a test
 *run* rather than for want of a test, and the report cannot tell those two apart.
+
+---
+
+# Mutation testing — Epic 6033 slice 06 (Teams on the Delivery timeline)
+
+Run 2026-09-21 against `main`, after the refactor pass, the live-review changes and the
+adversarial-review fixes — frozen code, as the gate requires. **Frontend only**; slice 06 changes no
+backend file at all.
+
+| stack | score | killed | survived | timeout | no coverage | errors | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Frontend, all eight mutated files | 77.85 % | 499 | 126 | 0 | 16 | 0 | 8 m 49 s |
+| **Frontend, the surface this slice owns** | **92.45 %** (`deliveryTeamLanes.ts`) | — | 6 | 0 | 2 | 0 | — |
+
+| file | score | survived | whose code |
+| --- | --- | --- | --- |
+| `deliveryTimelineModel.ts` | 98.48 % | 1 | slice 04, one parameter widened by slice 06 |
+| `ganttShapes.ts` | 95.14 % | 6 | slice 04 and 05, extended by slice 06 |
+| `deliveryTeamLanes.ts` | 92.45 % | 6 | **slice 06, new** |
+| `DeliveryTimelineTab.tsx` | 80.43 % | 25 | slice 04 and 05, extended by slice 06 |
+| `TimelineBarContent.tsx` | 64.86 % | 26 | slice 04 (was 58.00 % at slice 05) |
+| `useShowTeams.ts` | 59.09 % | 7 + 2 no-cov | **slice 06, new** |
+| `DeliveryGanttChart.tsx` | 30.86 % | 47 + 9 no-cov | slice 04 (was 27.63 % at slice 05) |
+| `TimelineTeamLegend.tsx` | 20.00 % | 8 | **slice 06, new** |
+
+## The headline, and the part of it that is this slice's problem
+
+The 72.54 % / 92.22 % split slice 05 recorded holds again in shape: the headline is an artefact of
+what is in the mutate list, and the two lowest files are slice 04's presentation code mutated whole
+because the tool takes whole files. **Both of them improved under this slice** —
+`TimelineBarContent.tsx` from 58.00 % to 64.86 % and `DeliveryGanttChart.tsx` from 27.63 % to
+30.86 % — because closing the adapter's bar-content seam put tests through code that previously had
+none. Neither is chased to 80: what is left in them is `sx` blocks, a `ResizeObserver` callback, a
+date formatter handed to the vendor and the scale callback the vendor invokes, none of which this
+environment runs, and asserting on them is how this Epic already shipped four assertions incapable
+of failing.
+
+**Two of the three files slice 06 created were genuinely under-tested, and that is not an artefact.**
+`TimelineTeamLegend.tsx` at 20 % and `useShowTeams.ts` at 59 % were both reachable only through the
+tab that composes them. A component's own decisions are hard to reach through its composer, and the
+store's were harder still — by the time a component has rendered, the store has already answered.
+The preference store being the least-tested thing in the slice was the worst of it: sharing the
+choice across Deliveries is one of the six fixes the adversarial review proved, and it was pinned by
+nothing.
+
+## Closed by this pass
+
+Each mutation below was re-applied by hand against the finished code and watched to fail.
+
+| file | mutation | what now kills it |
+| --- | --- | --- |
+| `deliveryTeamLanes.ts` | `canShowTeams` forced to `false` | the control's verdict asserted **true** for a splitting Delivery. Both existing assertions on it expected `false`, so a verdict hard-wired to "nothing to show" satisfied them |
+| `deliveryTeamLanes.ts` | `if (split.unlaned.length > 0)` → `true` | a Feature where every Team has a lane leaves no note entry at all, rather than an empty one |
+| `deliveryTeamLanes.ts` | `if (team.name)` → `true` | a Team the Portfolio lists **with a blank name** is treated as one it cannot name. A blank is not a name: written along a lane it is nothing, and the colour helper drops a falsy key outright |
+| `deliveryTeamLanes.ts` | `left.isNamed ? -1 : 1` → `+1` | the un-nameable Team arriving **first** in the forecast still sorts last. The two orderings only disagree when the named Team is the one being asked about, which the existing fixture never provoked |
+| `useShowTeams.ts` | the stored read forced to `false`; `=== "true"` → `=== ""` | the store's own spec: a stored `"true"` reads as on |
+| `useShowTeams.ts` | `shownNow ??= readStored()` → `&&=` | a first reader with a stored choice sees it. Under `&&=` the store never reads storage at all |
+| `useShowTeams.ts` | unsubscribe replaced by an empty function | a listener that has stopped listening is not told, paired with one that is, so it cannot pass against a store that tells nobody |
+| `useShowTeams.ts` | the `catch` arms, both previously uncovered | blocked reads and blocked writes exercised directly |
+| `TimelineTeamLegend.tsx` | the swatch's `sx` → `{}` | two Teams' patches must be styled differently. With the fill gone they share one class |
+
+`useShowTeams.ts` was reshaped to make this possible: it is now an exported store — subscribe, read,
+set, forget — with the hook as its React binding. That is what it always was; it was simply not
+reachable. **Both copies of `vitest.stryker.6050-slice-06.config.ts` gained the two new specs.** A
+spec missing from the runner's include list makes every mutant in the code it covers survive for
+want of a test *run* rather than for want of a test, and the report cannot tell those two apart —
+which is exactly what a new spec file would have hit here.
+
+## Accepted survivors
+
+| file | mutation | why it cannot be meaningfully killed |
+| --- | --- | --- |
+| `deliveryTeamLanes.ts` | `byId.get(featureId) ?? []` → a sentinel array | Unreachable by construction. The index is built from the same Features the timeline was built from, so the fallback answers a question that cannot be asked. TypeScript requires it to be written |
+| `deliveryTeamLanes.ts` | `feature.teamForecasts ?? []` → a sentinel array, in both places | **Equivalent, and checked rather than assumed.** A one-element array holding a string takes the single-Team path, where the id resolves to nothing and no Team is recorded — which is precisely what an empty array produces. In the colour key set it adds `"undefined"`, which sorts last and so shifts no Team's colour. A test was written for the shape that reaches it — a Feature carrying no per-Team forecast at all, which is every timeline fixture older than slice 01 — and it is worth having for its own sake even though it kills nothing |
+| `useShowTeams.ts` | `useCallback` deps `[]` → `["Stryker was here"]` | Equivalent. The dependency is a constant, so the callback's identity is as stable as it was |
+| `TimelineTeamLegend.tsx` | seven `sx` layout mutants (`display`, `flexWrap`, `alignItems`, `gap`) | Styling. This environment resolves none of it, so an assertion would be reading back the value it set — the shape of not-really-asserting this Epic has already paid for. What the key *decides* — one entry per Team, the name in full, the patch hidden from a screen reader, two Teams distinguishable, two un-nameable Teams both listed — is asserted directly |
+| `TimelineBarContent.tsx`, `DeliveryGanttChart.tsx` | 73 between them | Slice 04's code. See above |
+
+## Not mutated
+
+`DeliverySection.tsx` is excluded deliberately. Slice 06 changed **one line** in it — `teams={teams}`
+on a component it already rendered — and the file is around 900 lines. Mutating it would have buried
+this slice's score under a thousand mutants of untouched code and told nobody anything about either.
+
+No backend file is mutated, because slice 06 changes none.
+
+## Method note, and a gap in the evidence trail worth knowing about
+
+Scoped with `stryker-6050-slice-06.frontend.json` + `vitest.stryker.6050-slice-06.config.ts`.
+
+**Two different files are called "the config", and only one of them survives `.gitignore`.** This was
+checked file by file with `git ls-files` rather than read off the patterns, because the patterns are
+where the confusion lives.
+
+The **vitest runner config** — `vitest.stryker.<id>.config.ts`, the one that decides which specs
+Stryker runs — is fine. `.gitignore:450` ignores `**/vitest.stryker*.ts` and `:453` carves out
+`!docs/feature/*/mutation/vitest.stryker*.ts`, so the copy beside this write-up is committable. All
+of slices 02, 03, 04 and 05 have theirs committed, and slice 06's is committed here with an ordinary
+`git add`.
+
+The **Stryker config** — `stryker-<id>.frontend.json`, the one naming the mutate list and the
+thresholds — is not. `.gitignore:463` is `**/mutation/stryker-*.json`, written to keep the
+multi-megabyte JSON *reports* out of the repository. Its own comment explains that this is safe
+because "a config is stryker.5837.frontend.json, a report is stryker-5837-frontend.json" — a dot
+where the other has a hyphen. **No file in this folder actually follows that convention.** Every
+slice's config is `stryker-<id>.frontend.json`, hyphen included, so every one of them matches the
+report pattern. Slices 02 and 03 are committed because they predate the rule; **slices 04, 05 and 06
+are ignored**, and the instruction to commit the config as evidence has been failing silently since.
+
+The consequence is narrow but real: the write-up can be reproduced as far as *which specs ran*, and
+not as far as *which files were mutated or at what threshold*. The durable fix is either a negated
+pattern for the config spelling or renaming the configs to the dotted form the comment already
+claims they use. Recorded rather than done, because changing an ignore rule at a gate is how a
+2.4 MB report ends up committed instead — and one of those is sitting in this folder right now,
+correctly ignored.
