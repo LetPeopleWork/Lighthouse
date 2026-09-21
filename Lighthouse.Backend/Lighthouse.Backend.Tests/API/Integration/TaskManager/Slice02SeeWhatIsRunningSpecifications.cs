@@ -220,16 +220,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         {
             var row = await TheRowFor(UpdateType.Team, waiting.Id);
 
-            // One assertion rather than two, because the name is meaningless without the object it sits
-            // in and the analyzer reads a sequential pair as independent.
-            var holderName = row.TryGetProperty("waitingBehind", out var behind)
-                && behind.ValueKind is JsonValueKind.Object
-                ? Text(behind, "name")
-                : null;
+            // Both facts are read out of the object first, because neither means anything without the
+            // object it sits in and the analyzer reads a sequential pair as independent.
+            var describesItsHolder = row.TryGetProperty("waitingBehind", out var behind)
+                && behind.ValueKind is JsonValueKind.Object;
 
-            Assert.That(holderName, Is.EqualTo(holdingTheLane.Name),
-                "A row that says only 'queued' is what let a user read three teams stuck behind one portfolio as a hang. "
-                + $"Naming the lane-holder is the difference between waiting and wedged. Got: {row}");
+            var holderName = describesItsHolder ? Text(behind, "name") : null;
+            var theRowsOwnEntity = describesItsHolder ? Bool(behind, "isSameEntity") : null;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holderName, Is.EqualTo(holdingTheLane.Name),
+                    "A row that says only 'queued' is what let a user read three teams stuck behind one portfolio as a hang. "
+                    + $"Naming the lane-holder is the difference between waiting and wedged. Got: {row}");
+
+                Assert.That(theRowsOwnEntity, Is.False,
+                    "Two teams are two things, however alike the work on them looks. A row that called this its own "
+                    + "entity would drop the holder's name and say it was waiting for itself, which is the same hang "
+                    + $"in a different sentence. Got: {row}");
+            }
         }
 
         private async Task ThenTheRunningRowSaysItIsWaitingBehindNothing(SeededTeam running)
@@ -275,7 +284,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 Assert.That(Text(row, "updateType"), Is.EqualTo(nameof(UpdateType.TeamDelete)),
                     "Deletes go through the same queue and reach this list; the browser knowing only three of the five "
                     + "update types is what makes them render as nothing at all.");
-                Assert.That(Text(row, "name"), Is.Not.Null.And.Not.Empty);
+                Assert.That(Text(row, "name"), Is.EqualTo(team.Name),
+                    "A delete is about the team being deleted, so the team is where the name comes from. Asking only "
+                    + "for something non-empty would be answered by the fallback the list prints when it looked the "
+                    + "work up among the wrong kind of entity and found nothing.");
             }
         }
 

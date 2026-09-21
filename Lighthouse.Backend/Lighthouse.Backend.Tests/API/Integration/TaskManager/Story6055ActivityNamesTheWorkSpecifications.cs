@@ -184,8 +184,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 Assert.That(Number(row, "id"), Is.EqualTo(id));
                 Assert.That(Text(row, "name"), Is.EqualTo(name));
                 Assert.That(Text(row, "status"), Is.EqualTo(nameof(UpdateProgress.Queued)));
-                Assert.That(row.TryGetProperty("elapsedMs", out _), Is.True,
-                    "elapsedMs is how long the row has been in the state it is in. It is not this story's to move.");
+                Assert.That(Milliseconds(row, "elapsedMs"), Is.Not.Null.And.GreaterThanOrEqualTo(0),
+                    "elapsedMs is how long the row has been in the state it is in, and the store stamped that "
+                    + "moment when it admitted this work, so there is a duration to report. Asking only whether "
+                    + "the field is there would agree with a row that answers nothing on every path, because a "
+                    + "null is still serialised.");
             }
         }
 
@@ -232,9 +235,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             return behind;
         }
 
-        private static bool? Bool(JsonElement row, string property)
-            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
-                ? value.GetBoolean()
+        private static long? Milliseconds(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.Number
+                ? value.GetInt64()
                 : null;
     }
 }

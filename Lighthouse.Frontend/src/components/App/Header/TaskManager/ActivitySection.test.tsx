@@ -102,6 +102,20 @@ describe("Activity rows say what the work is", () => {
 		expect(rowText("Features", 3)).not.toContain("Portfolio");
 	});
 
+	// @AC-01.2 @AC-01.3 @AC-01.5 — the same sentence, read for a forecast. The two promises above are
+	// kept differentially: one compares two rows, the other counts distinct phrases. Both still agree
+	// with themselves when the forecast's own words are emptied, so a forecast is the one kind of work
+	// nothing here ever actually reads.
+	it("says a forecast in the tenant's own word for what is being forecast", () => {
+		mockGetTerm.mockImplementation((key: string) =>
+			key === "team" ? "Squad" : "Programme",
+		);
+
+		renderRows([aTask({ updateType: "Forecasts", status: "InProgress" })]);
+
+		expect(rowText("Forecasts", 3)).toContain("Forecasting Programme");
+	});
+
 	// @AC-01.4 — the suffix is replaced, not joined. Two ways of saying one thing in one column is how
 	// they come to disagree.
 	it("says a removal is a removal without also appending one", () => {
@@ -159,6 +173,25 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		]);
 
 		expect(rowText("Features", 3)).toContain("Queued behind its own removal");
+	});
+
+	// @AC-02.1 @AC-02.3 — and the third kind of holder. A portfolio refresh ends by triggering a
+	// forecast of the same portfolio, so a refresh asked for again while that forecast still holds the
+	// lane is an ordinary state; without this the word a forecast lends to this clause is never read.
+	it("says a refresh is behind its own portfolio's forecast", () => {
+		renderRows([
+			aTask({
+				updateType: "Features",
+				status: "Queued",
+				waitingBehind: {
+					name: "Ocean Explorer",
+					updateType: "Forecasts",
+					isSameEntity: true,
+				},
+			}),
+		]);
+
+		expect(rowText("Features", 3)).toContain("Queued behind its own forecast");
 	});
 
 	// @AC-02.2 — the reading that already shipped, which must not regress. A different entity is still

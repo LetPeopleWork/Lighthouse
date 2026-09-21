@@ -415,6 +415,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 ? value.GetInt32()
                 : null;
 
+        protected static bool? Bool(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? value.GetBoolean()
+                : null;
+
         protected static string Describe(IReadOnlyList<JsonElement> rows)
             => rows.Count == 0 ? "(an empty list)" : string.Join(" | ", rows.Select(row => row.ToString()));
     }
