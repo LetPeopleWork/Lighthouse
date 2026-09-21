@@ -21,8 +21,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// object per admitted piece of work: <c>updateType</c>, <c>id</c>, <c>name</c>, <c>status</c> and
     /// <c>waitingBehind</c>. Enums render as their names, because the browser's own union is strings.
     /// <c>name</c> is resolved on the read path and falls back to something descriptive when the entity
-    /// has gone. <c>waitingBehind</c> names the entity holding the lane, and is absent for work that is
-    /// running.
+    /// has gone. <c>waitingBehind</c> describes the piece of work holding the lane, and is absent for
+    /// work that is running.
     /// </summary>
     public partial class Slice02SeeWhatIsRunningTest : TaskManagerAcceptanceTest
     {
@@ -220,9 +220,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         {
             var row = await TheRowFor(UpdateType.Team, waiting.Id);
 
-            Assert.That(Text(row, "waitingBehind"), Is.EqualTo(holdingTheLane.Name),
+            // One assertion rather than two, because the name is meaningless without the object it sits
+            // in and the analyzer reads a sequential pair as independent.
+            var holderName = row.TryGetProperty("waitingBehind", out var behind)
+                && behind.ValueKind is JsonValueKind.Object
+                ? Text(behind, "name")
+                : null;
+
+            Assert.That(holderName, Is.EqualTo(holdingTheLane.Name),
                 "A row that says only 'queued' is what let a user read three teams stuck behind one portfolio as a hang. "
-                + "Naming the lane-holder is the difference between waiting and wedged.");
+                + $"Naming the lane-holder is the difference between waiting and wedged. Got: {row}");
         }
 
         private async Task ThenTheRunningRowSaysItIsWaitingBehindNothing(SeededTeam running)

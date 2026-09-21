@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @real-io @AC-02.1 — the reported defect's second half. A Portfolio refresh
         // triggers a forecast of the same Portfolio, so this pair is the ordinary case, not an edge.
         [Test]
-        [Ignore(Pending)]
         public async Task A_queued_forecast_does_not_say_it_is_waiting_behind_its_own_portfolio()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -44,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @real-io @AC-02.2 — the already-shipped reading, which must not regress. A row
         // waiting for something else still learns its name.
         [Test]
-        [Ignore(Pending)]
         public async Task A_queued_team_still_learns_the_name_of_the_portfolio_holding_the_lane()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -59,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @real-io @AC-02.3 — the clause names what the HOLDER is doing, never what the
         // queued row is doing. A removal waiting behind a refresh reads as a refresh.
         [Test]
-        [Ignore(Pending)]
         public async Task A_queued_removal_behind_its_own_refresh_names_the_refresh()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -74,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // row's own type by accident. Both scenarios pass against an implementation that echoes the
         // wrong side only if the two types happen to match, which is why both exist.
         [Test]
-        [Ignore(Pending)]
         public async Task A_queued_refresh_behind_its_own_removal_names_the_removal()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -89,7 +85,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // share an integer are two entities, not one. An implementation comparing ids alone passes every
         // other scenario in this file and fails this one; that is the whole reason it is written.
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_queued_behind_a_portfolio_with_the_same_id_is_not_waiting_behind_itself()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
@@ -103,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @real-io @AC-02.5 — work whose lane is free is waiting for nothing, and the
         // honest answer is no clause rather than an arbitrary running row.
         [Test]
-        [Ignore(Pending)]
         public async Task Work_that_is_waiting_for_nothing_says_nothing()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
@@ -117,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // affordable only because it changes nothing else; this is where that claim is checked, on the
         // serialised payload, where a consumer would break.
         [Test]
-        [Ignore(Pending)]
         public async Task Every_other_field_of_a_task_row_is_what_it_has_always_been()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();

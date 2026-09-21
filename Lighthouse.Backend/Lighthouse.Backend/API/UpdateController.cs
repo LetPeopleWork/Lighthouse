@@ -59,6 +59,9 @@ namespace Lighthouse.Backend.API
             // The queue runs one thing at a time, so whatever is running is what everything queued is
             // waiting for. That is the whole claim this field makes - not a position, not an estimate.
             var holdingTheLane = admitted.FirstOrDefault(work => work.Status == UpdateProgress.InProgress);
+
+            // Resolved here rather than inside the projection below: every queued row is waiting for the
+            // same piece of work, so asking per row would repeat one lookup once for each row that waits.
             var laneHolderName = holdingTheLane is null ? null : naming.NameOf(holdingTheLane);
 
             var tasks = AdmittedWorkOrdering.InTheOrderTheQueueWillReachThem(admitted)
@@ -67,7 +70,7 @@ namespace Lighthouse.Backend.API
                     work.Id,
                     naming.NameOf(work),
                     work.Status,
-                    work.Status == UpdateProgress.Queued ? laneHolderName : null,
+                    WhatItIsWaitingFor(work, holdingTheLane, laneHolderName),
                     ElapsedOn(work)))
                 .ToList();
 
@@ -127,6 +130,28 @@ namespace Lighthouse.Backend.API
             return elapsed < TimeSpan.Zero ? 0 : (long)elapsed.TotalMilliseconds;
         }
 
+        /// <summary>
+        /// What a queued row is waiting for, or nothing when its lane is free. Nothing is the honest
+        /// answer there: naming some other row instead would put a dependency in front of an operator
+        /// that does not exist, and they have no way to tell it from a real one.
+        /// </summary>
+        private static WaitingBehindResponse? WhatItIsWaitingFor(
+            UpdateStatus work, UpdateStatus? holdingTheLane, string? laneHolderName)
+        {
+            if (work.Status != UpdateProgress.Queued || holdingTheLane is null || laneHolderName is null)
+            {
+                return null;
+            }
+
+            // A kind of thing and an id only identify something together: team 4 and portfolio 4 are two
+            // entities that happen to share a number. Comparing the numbers alone would have a team
+            // report that it is waiting for itself.
+            var isSameEntity = holdingTheLane.Id == work.Id
+                && UpdateEntityKinds.Of(holdingTheLane.UpdateType) == UpdateEntityKinds.Of(work.UpdateType);
+
+            return new WaitingBehindResponse(laneHolderName, holdingTheLane.UpdateType, isSameEntity);
+        }
+
         public sealed record UpdateStatusResponse(bool HasActiveUpdates, int ActiveCount);
 
         public sealed record UpdateTaskResponse(
@@ -134,8 +159,19 @@ namespace Lighthouse.Backend.API
             int Id,
             string Name,
             UpdateProgress Status,
-            string? WaitingBehind,
+            WaitingBehindResponse? WaitingBehind,
             long? ElapsedMs);
+
+        /// <summary>
+        /// What holds the lane a row is waiting in, as three facts rather than a finished sentence: who
+        /// holds it, what they are doing with it, and whether they are this row's own entity. The browser
+        /// writes the sentence.
+        ///
+        /// The last fact is what stops a row reading its own name back as the thing it is waiting for -
+        /// a refresh of something and the forecast it triggers are two rows about one entity, and
+        /// without it the second one appears to be waiting for itself.
+        /// </summary>
+        public sealed record WaitingBehindResponse(string Name, UpdateType UpdateType, bool IsSameEntity);
     }
 #pragma warning restore S6960
 }
