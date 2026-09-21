@@ -445,41 +445,72 @@ Run 2026-09-21 against `main`, after the refactor pass, the live-review changes 
 adversarial-review fixes — frozen code, as the gate requires. **Frontend only**; slice 06 changes no
 backend file at all.
 
-| stack | score | killed | survived | timeout | no coverage | errors | wall clock |
+The figures below are the **second** run. A first run at 77.85 % found two of the three files this
+slice created barely tested at all — the colour key at 20.00 % and the preference store at 59.09 %,
+both reachable only through the tab that composes them. Those gaps were closed and the code frozen
+again. What that run found is kept in *Closed by this pass* below rather than overwritten, because a
+score that moved says more than a score that was always there.
+
+| stack | score | killed | survived | no coverage | timeout | errors | wall clock |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Frontend, all eight mutated files | 77.85 % | 499 | 126 | 0 | 16 | 0 | 8 m 49 s |
-| **Frontend, the surface this slice owns** | **92.45 %** (`deliveryTeamLanes.ts`) | — | 6 | 0 | 2 | 0 | — |
+| Frontend, all eight mutated files | 79.60 % | 511 | 116 | 15 | 0 | 0 | 8 m 39 s |
+| **Frontend, the surface this slice owns** | **89.94 %** | 438 | 43 | 6 | 0 | 0 | — |
+| Slice 04's two carried-over files | 47.10 % | 73 | 73 | 9 | 0 | 0 | — |
 
-| file | score | survived | whose code |
-| --- | --- | --- | --- |
-| `deliveryTimelineModel.ts` | 98.48 % | 1 | slice 04, one parameter widened by slice 06 |
-| `ganttShapes.ts` | 95.14 % | 6 | slice 04 and 05, extended by slice 06 |
-| `deliveryTeamLanes.ts` | 92.45 % | 6 | **slice 06, new** |
-| `DeliveryTimelineTab.tsx` | 80.43 % | 25 | slice 04 and 05, extended by slice 06 |
-| `TimelineBarContent.tsx` | 64.86 % | 26 | slice 04 (was 58.00 % at slice 05) |
-| `useShowTeams.ts` | 59.09 % | 7 + 2 no-cov | **slice 06, new** |
-| `DeliveryGanttChart.tsx` | 30.86 % | 47 + 9 no-cov | slice 04 (was 27.63 % at slice 05) |
-| `TimelineTeamLegend.tsx` | 20.00 % | 8 | **slice 06, new** |
+The two rows reconcile against the headline without rerunning anything: 438 + 73 = 511 killed, and
+43 + 73 = 116 survived. That is the whole of the arithmetic, and it is written out because a split
+that cannot be checked is a convenient number rather than a credible one.
 
-## The headline, and the part of it that is this slice's problem
+| file | score | killed | survived | no cov | whose code |
+| --- | --- | --- | --- | --- | --- |
+| `deliveryTimelineModel.ts` | 98.48 % | 65 | 1 | 0 | slice 04, one parameter widened by slice 06 |
+| `deliveryTeamLanes.ts` | 96.23 % | 102 | 3 | 1 | **slice 06, new** (was 92.45 %) |
+| `ganttShapes.ts` | 95.14 % | 137 | 6 | 1 | slice 04 and 05, extended by slice 06 |
+| `useShowTeams.ts` | 86.96 % | 20 | 1 | 2 | **slice 06, new** (was 59.09 %) |
+| `DeliveryTimelineTab.tsx` | 80.43 % | 111 | 25 | 2 | slice 04 and 05, extended by slice 06 |
+| `TimelineBarContent.tsx` | 64.86 % | 48 | 26 | 0 | slice 04 (was 58.00 % at slice 05) |
+| `DeliveryGanttChart.tsx` | 30.86 % | 25 | 47 | 9 | slice 04 (was 27.63 % at slice 05) |
+| `TimelineTeamLegend.tsx` | 30.00 % | 3 | 7 | 0 | **slice 06, new** (was 20.00 %) |
 
-The 72.54 % / 92.22 % split slice 05 recorded holds again in shape: the headline is an artefact of
-what is in the mutate list, and the two lowest files are slice 04's presentation code mutated whole
-because the tool takes whole files. **Both of them improved under this slice** —
+## The gate verdict, stated plainly
+
+**The headline is 79.60 %, which is below the 80 % gate. The surface this slice owns is 89.94 %,
+which is above it.** Both numbers are true and the second is the one to judge the slice by — but it
+is not the headline and is not presented as one.
+
+The reading follows the precedent slice 05 set and recorded: 72.54 % headline against 92.22 % owned,
+with `DeliveryGanttChart.tsx` attributed to slice 04 at 27.63 %. The mutate list is chosen per slice
+and necessarily includes files the slice touched without owning, because the tool mutates whole
+files; a headline computed over that list measures the list as much as the work.
+
+What makes the split honest here rather than convenient is that it is checkable — the arithmetic
+above reconciles to the headline exactly — and that **the two carried-over files both improved**:
 `TimelineBarContent.tsx` from 58.00 % to 64.86 % and `DeliveryGanttChart.tsx` from 27.63 % to
-30.86 % — because closing the adapter's bar-content seam put tests through code that previously had
-none. Neither is chased to 80: what is left in them is `sx` blocks, a `ResizeObserver` callback, a
-date formatter handed to the vendor and the scale callback the vendor invokes, none of which this
+30.86 %, because closing the adapter's bar-content seam put tests through code that previously had
+none. A slice that leaned on attribution while making the attributed files worse would be a
+different claim.
+
+Neither is chased to 80. What remains in them is `sx` blocks, a `ResizeObserver` callback, a date
+formatter handed to the vendor and the scale callback the vendor invokes — none of which this
 environment runs, and asserting on them is how this Epic already shipped four assertions incapable
 of failing.
 
-**Two of the three files slice 06 created were genuinely under-tested, and that is not an artefact.**
-`TimelineTeamLegend.tsx` at 20 % and `useShowTeams.ts` at 59 % were both reachable only through the
-tab that composes them. A component's own decisions are hard to reach through its composer, and the
-store's were harder still — by the time a component has rendered, the store has already answered.
-The preference store being the least-tested thing in the slice was the worst of it: sharing the
-choice across Deliveries is one of the six fixes the adversarial review proved, and it was pinned by
-nothing.
+## `TimelineTeamLegend.tsx` reads 30 %, and that is the right number
+
+The colour key has ten mutants. **Seven of them are CSS properties** — `display`, `flexWrap`,
+`alignItems` and two `gap` values, plus the two object literals that hold them. Killing any of them
+means asserting that a flex container is `display: flex`, which pins the implementation, catches no
+defect anyone could have, and would go red the day someone reaches the same layout another way.
+
+The eighth was worth killing and is dead: emptying the swatch's style removes the Team's colour
+altogether, and the key then explains nothing. That is caught by requiring two Teams' patches to be
+styled differently.
+
+So what the component *decides* is covered — one entry per Team, the name written in full, the patch
+hidden from anything reading the page aloud, two Teams distinguishable, and both entries present
+when the Portfolio can name neither Team. What is not covered is how it is arranged, deliberately.
+A reader meeting 30 % here should read it as a file that is nine-tenths layout, not as a file that
+is nine-tenths untested.
 
 ## Closed by this pass
 
@@ -487,14 +518,14 @@ Each mutation below was re-applied by hand against the finished code and watched
 
 | file | mutation | what now kills it |
 | --- | --- | --- |
-| `deliveryTeamLanes.ts` | `canShowTeams` forced to `false` | the control's verdict asserted **true** for a splitting Delivery. Both existing assertions on it expected `false`, so a verdict hard-wired to "nothing to show" satisfied them |
+| `deliveryTeamLanes.ts` | the control's verdict forced to `false` | asserted **true** for a splitting Delivery. Both existing assertions on it expected `false`, so a verdict hard-wired to "nothing to show" satisfied them. This closed the first and third operands of that verdict; the middle one survives and is taken up below — the first pass read the mutant as covering the whole expression, and it does not |
 | `deliveryTeamLanes.ts` | `if (split.unlaned.length > 0)` → `true` | a Feature where every Team has a lane leaves no note entry at all, rather than an empty one |
 | `deliveryTeamLanes.ts` | `if (team.name)` → `true` | a Team the Portfolio lists **with a blank name** is treated as one it cannot name. A blank is not a name: written along a lane it is nothing, and the colour helper drops a falsy key outright |
 | `deliveryTeamLanes.ts` | `left.isNamed ? -1 : 1` → `+1` | the un-nameable Team arriving **first** in the forecast still sorts last. The two orderings only disagree when the named Team is the one being asked about, which the existing fixture never provoked |
 | `useShowTeams.ts` | the stored read forced to `false`; `=== "true"` → `=== ""` | the store's own spec: a stored `"true"` reads as on |
 | `useShowTeams.ts` | `shownNow ??= readStored()` → `&&=` | a first reader with a stored choice sees it. Under `&&=` the store never reads storage at all |
 | `useShowTeams.ts` | unsubscribe replaced by an empty function | a listener that has stopped listening is not told, paired with one that is, so it cannot pass against a store that tells nobody |
-| `useShowTeams.ts` | the `catch` arms, both previously uncovered | blocked reads and blocked writes exercised directly |
+| `useShowTeams.ts` | the `catch` around the **write**, previously uncovered | a choice the store could not persist is still the choice for this visit, which is only true if the throw was caught. The `catch` around the *read* is still uncovered and is taken up below |
 | `TimelineTeamLegend.tsx` | the swatch's `sx` → `{}` | two Teams' patches must be styled differently. With the fill gone they share one class |
 
 `useShowTeams.ts` was reshaped to make this possible: it is now an exported store — subscribe, read,
@@ -504,15 +535,49 @@ spec missing from the runner's include list makes every mutant in the code it co
 want of a test *run* rather than for want of a test, and the report cannot tell those two apart —
 which is exactly what a new spec file would have hit here.
 
-## Accepted survivors
+## What survives now, triaged one by one against the second run's list
+
+Re-read from the new report rather than carried over: the line numbers moved when `useShowTeams.ts`
+was reshaped, and one survivor turned out not to be the mutation the first pass had assumed.
+
+**Accepted — equivalent or unreachable.**
 
 | file | mutation | why it cannot be meaningfully killed |
 | --- | --- | --- |
-| `deliveryTeamLanes.ts` | `byId.get(featureId) ?? []` → a sentinel array | Unreachable by construction. The index is built from the same Features the timeline was built from, so the fallback answers a question that cannot be asked. TypeScript requires it to be written |
-| `deliveryTeamLanes.ts` | `feature.teamForecasts ?? []` → a sentinel array, in both places | **Equivalent, and checked rather than assumed.** A one-element array holding a string takes the single-Team path, where the id resolves to nothing and no Team is recorded — which is precisely what an empty array produces. In the colour key set it adds `"undefined"`, which sorts last and so shifts no Team's colour. A test was written for the shape that reaches it — a Feature carrying no per-Team forecast at all, which is every timeline fixture older than slice 01 — and it is worth having for its own sake even though it kills nothing |
+| `deliveryTeamLanes.ts` | `byId.get(featureId) ?? []` → a sentinel array (no coverage) | Unreachable by construction. The index is built from the same Features the timeline was built from, so the fallback answers a question that cannot be asked. TypeScript requires it written |
+| `deliveryTeamLanes.ts` | `feature.teamForecasts ?? []` → a sentinel array, in both places | **Equivalent, and checked rather than assumed.** A one-element array holding a string takes the single-Team path, where the id resolves to nothing and no Team is recorded — precisely what an empty array produces. In the colour key set it adds `"undefined"`, which sorts last and so shifts no Team's colour. The test written for the shape that reaches it — a Feature carrying no per-Team forecast at all, which is every timeline fixture older than slice 01 — is worth having for its own sake even though it kills nothing |
 | `useShowTeams.ts` | `useCallback` deps `[]` → `["Stryker was here"]` | Equivalent. The dependency is a constant, so the callback's identity is as stable as it was |
-| `TimelineTeamLegend.tsx` | seven `sx` layout mutants (`display`, `flexWrap`, `alignItems`, `gap`) | Styling. This environment resolves none of it, so an assertion would be reading back the value it set — the shape of not-really-asserting this Epic has already paid for. What the key *decides* — one entry per Team, the name in full, the patch hidden from a screen reader, two Teams distinguishable, two un-nameable Teams both listed — is asserted directly |
-| `TimelineBarContent.tsx`, `DeliveryGanttChart.tsx` | 73 between them | Slice 04's code. See above |
+| `TimelineTeamLegend.tsx` | seven `sx` layout mutants | Styling — see the section above |
+| `TimelineBarContent.tsx`, `DeliveryGanttChart.tsx` | 73 between them | Slice 04's code — see the section above |
+
+**Two are real, and are recorded here rather than fixed**, because the code is frozen against these
+numbers and closing either means another run. Neither is a defect in shipped behaviour; both are
+tests that do not cover what they appear to.
+
+**1. `deliveryTeamLanes.ts:140` — the middle operand of the control's verdict.** The first pass
+mis-read this as the whole expression and reported it closed; the report's own span says otherwise.
+What is mutated is `unlanedTeams.size > 0` alone, inside
+`lanes.length > 0 || unlanedTeams.size > 0 || soleTeams.size > 0`. It only changes the answer when a
+Delivery has **no lanes and no single-Team bars but does have a Team with nothing to draw** — that
+is, a placed Feature two Teams work on where *neither* resolves at the probability being read. Every
+fixture that gets close has one Team that does resolve, so the first operand carries the verdict and
+the middle one is never load-bearing. The missing test is one Feature, two Teams, both with empty
+percentiles: nothing to draw, two Teams to name, and the control must still be offered because
+turning it on does change the chart.
+
+**2. `useShowTeams.ts:42-43` — the `catch` around the stored read, reported as never executed.**
+Two tests claim to cover it: the store's own "shows nothing, rather than throwing, when storage
+cannot be read at all", and the tab's blocked-storage case. Both mock `Storage.prototype.getItem`
+to throw and then assert the answer is `false`. **That assertion is true either way** — an absent
+key also reads as `false` — so if the spy does not reach the call, the test passes for the wrong
+reason and nothing says so. The report recording the `catch` as uncovered is the evidence that this
+is what is happening. It is the same shape of not-really-asserting this Epic has paid for three
+times, and it is worth fixing properly rather than quickly: the honest assertion distinguishes
+*threw and was caught* from *was absent*, which means the fixture has to store `"true"` first and
+then make the read throw, so that an uncaught throw and a swallowed one give different answers.
+
+Both are listed for a decision rather than actioned. The shipped behaviour is right in both cases —
+the guard exists and works; it is the test that cannot tell.
 
 ## Not mutated
 
