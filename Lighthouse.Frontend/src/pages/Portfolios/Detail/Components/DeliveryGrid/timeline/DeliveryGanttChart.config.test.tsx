@@ -215,11 +215,13 @@ describe("what the adapter configures the library with", () => {
 			lanes: [lane(1, 5), lane(1, 6)],
 		});
 
+		const tasks = ganttConfig.current?.tasks as unknown[];
+
 		expect(screen.getByTestId("delivery-gantt")).toHaveAttribute(
 			"data-row-count",
-			String((ganttConfig.current?.tasks as unknown[]).length),
+			String(tasks.length),
 		);
-		expect(ganttConfig.current?.tasks).toHaveLength(4);
+		expect(tasks).toHaveLength(4);
 	});
 
 	it("draws the axis around the lanes as well, not only around the bars", () => {
