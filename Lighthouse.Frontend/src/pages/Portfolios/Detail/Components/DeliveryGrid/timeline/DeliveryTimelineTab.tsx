@@ -13,14 +13,20 @@ import { useMemo, useState } from "react";
 import WorkItemsDialog from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../../../../hooks/useLicenseRestrictions";
 import type { IFeature } from "../../../../../../models/Feature";
+import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
+import type { IWorkItem } from "../../../../../../models/WorkItem";
+import { useTerminology } from "../../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../../utils/featureName";
+import { featureWarningSentences } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
+import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
+import { TimelineBarMarks } from "./TimelineBarContent";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -40,6 +46,10 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	featuresTerm,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
+	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
 	);
@@ -58,9 +68,48 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const selectedFeature = features.find(
 		(feature) => feature.id === selectedFeatureId,
 	);
-	const { bars, unplaceable } = useMemo(
+	const timeline = useMemo(
 		() => buildDeliveryTimeline(features, percentile),
 		[features, percentile],
+	);
+	const { bars, unplaceable } = timeline;
+
+	const { edges, marks, chartNote } = useMemo(
+		() =>
+			buildDependencyOverlay(features, timeline, {
+				featureTerm,
+				portfolioTerm,
+			}),
+		[features, timeline, featureTerm, portfolioTerm],
+	);
+
+	// The same sentences the Feature table shows, asked for in the same way, so a Feature cannot
+	// read as clean in one place and marked in the other. What the bar says about where a blocker
+	// was drawn stays on the bar: this column is shown by fifteen other screens that have no
+	// timeline, and a sound dependency listed under a heading that says "Warnings" is a false alarm
+	// on every one of them.
+	const warningsColumn = useMemo(
+		() => ({
+			headerName: "Warnings",
+			description: `What is worth checking about this ${featureTerm}`,
+			warningsFor: (item: IWorkItem) => {
+				const feature = features.find((candidate) => candidate.id === item.id);
+
+				return feature
+					? featureWarningSentences(
+							{
+								isDoneWithRemainingWork:
+									feature.stateCategory === "Done" &&
+									feature.getRemainingWorkForFeature() > 0,
+								isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
+								dependencies: feature.dependsOn,
+							},
+							{ workItemsTerm, featureTerm, portfolioTerm },
+						)
+					: [];
+			},
+		}),
+		[features, workItemsTerm, featureTerm, portfolioTerm],
 	);
 
 	if (!licenseStatus?.canUsePremiumFeatures) {
@@ -107,13 +156,29 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				</ToggleButtonGroup>
 			</Box>
 
+			{/* Said once, above the chart, because every bar would otherwise carry the same words -
+			    and a reader who is told nothing sees a chart whose lines silently vanished. */}
+			{chartNote && (
+				<Typography
+					variant="body2"
+					color="text.secondary"
+					sx={{ mb: 1 }}
+					data-testid="timeline-chart-note"
+				>
+					{chartNote}
+				</Typography>
+			)}
+
 			{bars.length > 0 ? (
-				<DeliveryGanttChart
-					bars={bars}
-					targetDate={targetDate}
-					today={today}
-					onBarSelected={setSelectedFeatureId}
-				/>
+				<TimelineBarMarks marks={marks}>
+					<DeliveryGanttChart
+						bars={bars}
+						links={edges}
+						targetDate={targetDate}
+						today={today}
+						onBarSelected={setSelectedFeatureId}
+					/>
+				</TimelineBarMarks>
 			) : (
 				<Typography variant="body2" color="text.secondary">
 					{`None of these ${featuresTerm} can be placed on a timeline yet.`}
@@ -145,6 +210,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						: ""
 				}
 				items={selectedFeature ? [selectedFeature] : []}
+				warningsColumn={warningsColumn}
 				open={selectedFeature !== undefined}
 				onClose={() => setSelectedFeatureId(null)}
 			/>

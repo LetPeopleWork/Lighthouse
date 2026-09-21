@@ -1,9 +1,10 @@
 import { createTheme, ThemeProvider } from "@mui/material";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { BarMark } from "./deliveryDependencyOverlay";
 import type { TimelineBar } from "./deliveryTimelineModel";
-import TimelineBarContent from "./TimelineBarContent";
+import TimelineBarContent, { TimelineBarMarks } from "./TimelineBarContent";
 
 const bar: TimelineBar = {
 	featureId: 7,
@@ -13,12 +14,27 @@ const bar: TimelineBar = {
 	startIsObserved: false,
 };
 
+const quietBar: TimelineBar = {
+	...bar,
+	featureId: 8,
+	name: "Hull Fabrication",
+};
+
 const renderBar = (
 	props: Partial<{ bar: TimelineBar; onSelect: () => void }>,
 ) =>
 	render(
 		<ThemeProvider theme={createTheme()}>
 			<TimelineBarContent {...props} />
+		</ThemeProvider>,
+	);
+
+const renderMarkedBar = (mark: BarMark) =>
+	render(
+		<ThemeProvider theme={createTheme()}>
+			<TimelineBarMarks marks={new Map([[bar.featureId, mark]])}>
+				<TimelineBarContent bar={bar} />
+			</TimelineBarMarks>
 		</ThemeProvider>,
 	);
 
@@ -72,5 +88,94 @@ describe("TimelineBarContent", () => {
 		expect(tooltip).toHaveTextContent("10/10/2026");
 		expect(tooltip).toHaveTextContent("10/20/2026");
 		expect(tooltip).toHaveTextContent(/click for more details/i);
+	});
+
+	it("raises the warning symbol for a bar carrying a warning", () => {
+		renderMarkedBar({
+			notes: [
+				{
+					text: "This Feature and Hull Fabrication are waiting on each other.",
+					isWarning: true,
+				},
+			],
+		});
+
+		expect(screen.getByTestId("timeline-bar-mark")).toHaveAccessibleName(
+			"Warning. This Feature and Hull Fabrication are waiting on each other.",
+		);
+	});
+
+	it("marks a bar that only has something to report without calling it a warning", () => {
+		renderMarkedBar({
+			notes: [
+				{
+					text: "Waiting on Hull Fabrication, which is not on this timeline.",
+					isWarning: false,
+				},
+			],
+		});
+
+		// One symbol serving both kinds would leave the reader unable to tell a dependency that
+		// needs them from one that is simply drawn elsewhere.
+		expect(screen.getByTestId("timeline-bar-mark")).toHaveAccessibleName(
+			"Note. Waiting on Hull Fabrication, which is not on this timeline.",
+		);
+	});
+
+	it("leaves a bar with nothing to say unmarked, and offers it no all-clear either", () => {
+		render(
+			<ThemeProvider theme={createTheme()}>
+				<TimelineBarMarks
+					marks={
+						new Map([
+							[
+								bar.featureId,
+								{
+									notes: [{ text: "Waiting on something.", isWarning: false }],
+								},
+							],
+						])
+					}
+				>
+					<div data-testid="has-something-to-say">
+						<TimelineBarContent bar={bar} />
+					</div>
+					<div data-testid="has-nothing-to-say">
+						<TimelineBarContent bar={quietBar} />
+					</div>
+				</TimelineBarMarks>
+			</ThemeProvider>,
+		);
+
+		expect(
+			within(screen.getByTestId("has-something-to-say")).getByTestId(
+				"timeline-bar-mark",
+			),
+		).toBeInTheDocument();
+
+		const quiet = within(screen.getByTestId("has-nothing-to-say"));
+
+		expect(quiet.queryByTestId("timeline-bar-mark")).not.toBeInTheDocument();
+		// The Feature table answers "nothing wrong here" with a green check. In a bar a few pixels
+		// tall that check competes with the name for the only space there is, and it is shown on
+		// every bar that is fine, which is most of them.
+		expect(quiet.queryByRole("img")).not.toBeInTheDocument();
+	});
+
+	it("reads its notes out on hover, where the symbol alone cannot", async () => {
+		renderMarkedBar({
+			notes: [
+				{
+					text: "Waiting on Hull Fabrication, which is not on this timeline.",
+					isWarning: false,
+				},
+			],
+		});
+
+		await userEvent.hover(screen.getByTestId("timeline-bar-content"));
+
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Waiting on Hull Fabrication, which is not on this timeline.",
+		);
 	});
 });

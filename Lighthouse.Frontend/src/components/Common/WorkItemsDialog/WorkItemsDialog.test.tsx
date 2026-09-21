@@ -13,7 +13,9 @@ import {
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
-import WorkItemsDialog from "./WorkItemsDialog";
+import WorkItemsDialog, {
+	type WarningsColumnDescriptor,
+} from "./WorkItemsDialog";
 
 vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: vi.fn(),
@@ -1813,5 +1815,50 @@ describe("the room the dialog opens with", () => {
 		expect(screen.getByRole("button", { name: "Enlarge" })).not.toBe(
 			screen.getByRole("button", { name: "Close" }),
 		);
+	});
+});
+
+const warningsColumn: WarningsColumnDescriptor = {
+	headerName: "Warnings",
+	description: "What to check before trusting this row",
+	warningsFor: (item) =>
+		item.referenceId === "ZEN-388"
+			? [
+					"Zenith work ZEN-388 and Zenith work ZEN-412 are waiting on each other.",
+				]
+			: [],
+};
+
+describe("Warnings column", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	test("carries whatever the caller found worth warning about", () => {
+		render(
+			<WorkItemsDialog {...agingDialogProps} warningsColumn={warningsColumn} />,
+		);
+
+		expect(
+			screen.getByRole("columnheader", { name: /Warnings/ }),
+		).toBeInTheDocument();
+		expect(
+			screen
+				.getAllByTestId("warningsColumnContent")
+				.map((cell) => cell.textContent?.trim()),
+		).toContain(
+			"Zenith work ZEN-388 and Zenith work ZEN-412 are waiting on each other.",
+		);
+	});
+
+	test("is absent entirely from a dialog nobody wired it into", () => {
+		// Fifteen other screens open this dialog and none of them was changed by the timeline's
+		// column. One that appeared without being asked for would arrive on all of them at once.
+		render(<WorkItemsDialog {...agingDialogProps} />);
+
+		expect(
+			screen.queryByRole("columnheader", { name: /Warnings/ }),
+		).not.toBeInTheDocument();
+		expect(screen.queryAllByTestId("warningsColumnContent")).toHaveLength(0);
 	});
 });

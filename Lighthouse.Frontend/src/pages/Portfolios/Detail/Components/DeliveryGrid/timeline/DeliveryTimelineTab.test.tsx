@@ -1,9 +1,14 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature, IFeatureStart } from "../../../../../../models/Feature";
+import type {
+	IFeatureDependency,
+	NotHonouredReason,
+} from "../../../../../../models/FeatureDependency";
 import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
+import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 const licence = vi.hoisted(() => ({
@@ -29,6 +34,7 @@ vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
  */
 type GanttProps = {
 	bars: TimelineBar[];
+	links?: DrawnDependency[];
 	targetDate?: Date;
 	today?: Date;
 	onBarSelected?: (featureId: number) => void;
@@ -69,6 +75,20 @@ const feature = (overrides: Partial<IFeature> = {}): IFeature =>
 		teamsWithoutForecast: [],
 		...overrides,
 	}) as IFeature;
+
+const waitingOn = (
+	referenceId: string,
+	name: string,
+	notHonouredReason: NotHonouredReason | null = null,
+): IFeatureDependency => ({
+	referenceId,
+	name,
+	url: null,
+	source: "TrackerLink",
+	notHonouredReason,
+	blockerPositionedBelow: false,
+	isWithheld: false,
+});
 
 const renderTab = (features: IFeature[], targetDate?: Date) =>
 	render(
@@ -274,5 +294,98 @@ describe("DeliveryTimelineTab", () => {
 		renderTab([feature()], target);
 
 		expect(ganttProps.current?.targetDate).toEqual(target);
+	});
+
+	it("hands the chart the waits it should draw", () => {
+		renderTab([
+			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [waitingOn("OE-001", "Hull Fabrication")],
+			}),
+		]);
+
+		expect(ganttProps.current?.links).toEqual([
+			{ blockerFeatureId: 1, waitingFeatureId: 2 },
+		]);
+		expect(screen.queryByTestId("timeline-chart-note")).not.toBeInTheDocument();
+	});
+
+	it("lists the chosen Feature's warnings beside it", async () => {
+		renderTab([
+			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [waitingOn("OE-001", "Hull Fabrication", "InALoop")],
+			}),
+		]);
+
+		act(() => ganttProps.current?.onBarSelected?.(2));
+
+		const dialog = await screen.findByRole("dialog");
+
+		expect(
+			within(dialog).getByRole("columnheader", { name: /Warnings/ }),
+		).toBeInTheDocument();
+		// Asserted against the fixture's own facts - the blocker it names and the loop it is in -
+		// rather than against what the sentence builder returns, which would be the same reduction
+		// on both sides of the expectation.
+		expect(dialog).toHaveTextContent("Hull Fabrication");
+		expect(dialog).toHaveTextContent(/waiting on each other/i);
+	});
+
+	it("keeps what only the chart knows out of the Feature's warnings", async () => {
+		renderTab([
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [waitingOn("OE-404", "Mineral Survey")],
+			}),
+		]);
+
+		act(() => ganttProps.current?.onBarSelected?.(2));
+
+		const dialog = await screen.findByRole("dialog");
+
+		// The blocker is simply somewhere else. Nothing is wrong with the dependency, and saying
+		// so under a header that reads "Warnings" would label a sound wait as a problem - on this
+		// screen and on the fifteen others the column was written for.
+		expect(
+			within(dialog).getByRole("columnheader", { name: /Warnings/ }),
+		).toBeInTheDocument();
+		expect(
+			within(dialog).getByTestId("warningsColumnContent").textContent,
+		).toBe("");
+		expect(dialog).not.toHaveTextContent(/not on this timeline/i);
+		expect(dialog).not.toHaveTextContent("Mineral Survey");
+	});
+
+	it("says once, above the chart, that this Portfolio has set its dependencies aside", () => {
+		renderTab([
+			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [
+					waitingOn("OE-001", "Hull Fabrication", "IgnoredByPortfolio"),
+				],
+			}),
+		]);
+
+		// Said on every dependent bar it would be the same words repeated; said nowhere, the
+		// reader is left with a chart whose lines silently vanished.
+		const notes = screen.getAllByTestId("timeline-chart-note");
+
+		expect(notes).toHaveLength(1);
+		expect(notes[0]).toHaveTextContent(
+			"Portfolio is set to ignore dependencies.",
+		);
+		expect(ganttProps.current?.links).toEqual([]);
 	});
 });

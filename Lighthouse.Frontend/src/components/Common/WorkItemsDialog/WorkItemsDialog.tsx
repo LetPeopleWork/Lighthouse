@@ -63,6 +63,18 @@ export interface WorkItemsDialogProps {
 	 * never learns what a cycle time is; without one, nothing about the dialog changes.
 	 */
 	sleRiskColumn?: SleRiskColumnDescriptor;
+	/**
+	 * Given one, the dialog draws a column listing what is worth checking about each row. The
+	 * descriptor arrives with the sentences already written, so the dialog never learns what a
+	 * dependency is; without one, nothing about the dialog changes.
+	 */
+	warningsColumn?: WarningsColumnDescriptor;
+}
+
+export interface WarningsColumnDescriptor {
+	headerName: string;
+	description: string;
+	warningsFor: (workItem: IWorkItem) => string[];
 }
 
 export interface HighlightColumnDefinition {
@@ -236,6 +248,41 @@ const sleRiskGridColumn = (
 	},
 });
 
+/**
+ * The warnings column. Outside the dialog for the same reason the two above it are: it needs
+ * nothing from the dialog but its descriptor, which arrives carrying the sentences themselves.
+ */
+const warningsGridColumn = (
+	descriptor: WarningsColumnDescriptor,
+): DataGridColumn<IWorkItem & GridValidRowModel> => ({
+	field: "warnings",
+	headerName: descriptor.headerName,
+	description: descriptor.description,
+	width: 260,
+	sortable: true,
+	// The sentences themselves are the value, so the export carries what the reader saw. A count
+	// would sort the column and tell a reader opening the file nothing about what is wrong.
+	valueGetter: (_, row) => descriptor.warningsFor(row).join(" "),
+	renderCell: ({ value }) => {
+		const warnings = value as string;
+		const cell = (
+			<Typography
+				variant="body2"
+				data-testid="warningsColumnContent"
+				color={warnings ? "warning.main" : "text.secondary"}
+				sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+			>
+				{warnings}
+			</Typography>
+		);
+
+		// The column is narrower than the sentences, so the full text is on hover. A row with
+		// nothing wrong gets no tooltip, because an empty one is a pointer that promises a reason
+		// and then shows a blank box.
+		return warnings ? <Tooltip title={warnings}>{cell}</Tooltip> : cell;
+	},
+});
+
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,
 	items,
@@ -246,6 +293,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	sle,
 	ageBandColumn,
 	sleRiskColumn,
+	warningsColumn,
 }) => {
 	const { getTerm } = useTerminology();
 	const { enlarged, toggleEnlarged } = useEnlargedWorkItemsDialog();
@@ -415,6 +463,10 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			baseColumns.push(sleRiskGridColumn(sleRiskColumn));
 		}
 
+		if (warningsColumn) {
+			baseColumns.push(warningsGridColumn(warningsColumn));
+		}
+
 		if (timeInStateColumn) {
 			baseColumns.push({
 				field: "timeInState",
@@ -451,6 +503,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		timeInStateColumn,
 		ageBandColumn,
 		sleRiskColumn,
+		warningsColumn,
 	]);
 
 	return (
