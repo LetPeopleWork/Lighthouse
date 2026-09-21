@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-18
+updated: 2026-09-21
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -53,6 +53,7 @@ feature_context:
   - epic-5874-relicense-source-available
   - story-5877-update-queue-lanes
   - parent-from-issue-links
+  - story-6055-activity-names-the-work
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6288,6 +6289,17 @@ jobs:
       where you are". A surface that costs a navigation does not serve this job even if it shows the
       same information. Also note the store cannot answer this today: IUpdateStatusStore offers TryGet
       per key and HasActiveWork as a bool, and nothing that enumerates.
+
+      2026-09-21 (story-6055-activity-names-the-work, #6055): the anxiety recorded below materialised,
+      and not where it was expected. The trouble was never the two delete members - it was that the
+      row's kind lookup has a default arm, so Features, Forecasts AND PortfolioDelete all render the
+      one Portfolio word. Since every Portfolio refresh ends by triggering a forecast of the same
+      portfolio, and every Team refresh triggers one for each portfolio it feeds, two rows naming one
+      Portfolio identically is the ordinary case rather than an edge, and the queued one then reads
+      "Queued behind <its own name>". Not re-scored: a glance that returns an ambiguous answer is this
+      job failing, not a different job. Fixed by leading each row with the work - "Refreshing Portfolio
+      'X'", "Forecasting Portfolio 'X'" - with the verb as Lighthouse's own word and the noun still the
+      tenant's.
     job_story: >
       When I am wondering whether Lighthouse is working or wedged,
       I want to see what is running and what is waiting without leaving the page I am on,

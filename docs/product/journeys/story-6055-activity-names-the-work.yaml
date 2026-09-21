@@ -1,0 +1,101 @@
+schema_version: 1
+feature_id: story-6055-activity-names-the-work
+updated: 2026-09-21
+note: >
+  ADO User Story #6055, no parent, tagged Release Notes. Reported with a screenshot showing the Task
+  Manager's Activity list naming the same Portfolio on two rows, with the correct guess that one was
+  the refresh and the other the forecast. The guess was re-derived from the code rather than taken:
+  ActivitySection's kind lookup has two arms, and its default arm sends Features, Forecasts AND
+  PortfolioDelete to the Portfolio term - three of the five update types onto one word. PortfolioUpdater
+  ends every run by triggering a forecast for the same portfolio id, and a Team refresh triggers one for
+  every portfolio that team feeds, so two pieces of work sharing one entity is the ordinary case rather
+  than an edge. The two rows differ only in their data-testid: distinguishable to a test, identical to a
+  reader. The second half of the complaint is that the queued row then reads "Queued behind <its own
+  portfolio's name>", because the read model picks whatever is InProgress and sends its bare name. The
+  user chose, 2026-09-21, to lead each row with the work rather than to append a marker to the entity
+  name or to collapse the two rows into one, and to fix the self-reference in the same story. This is an
+  operator surface behind a System-Administrator gate; nothing about the update queue changes. Note on
+  story-5877: it is reverted, not unstarted. Its per-type lanes shipped on 2026-09-19 and were backed
+  out the same day because concurrent refreshes destroy Feature ownership - RefreshRemainingWork
+  rebuilds each Feature's team work from a snapshot another lane is rewriting. Its own fix to
+  waitingBehind went with it, and that fix needed no change to the response shape, which is why #6055
+  leaves the field open for DESIGN rather than locking one. Nothing in #6055 re-lands any of it.
+  See docs/feature/story-6055-activity-names-the-work/.
+
+journeys:
+
+  - name: read-the-activity-list-and-believe-it
+    goal: >
+      Platform Operator reads the Activity list and comes away with a count of pieces of work they
+      trust, rather than a suspicion that the list has drawn something twice.
+    persona: "platform-operator (both flavours: the self-hoster and the SaaS operator on Tenant Zero)"
+
+    emotional_arc:
+      start: Second-guessing - "it says Ocean Explorer twice. Is that two things, or has the list
+        double-drawn? And the second one says it is waiting behind Ocean Explorer, which is itself."
+      middle: Reading - "Refreshing Ocean Explorer, then Forecasting Ocean Explorer. Two pieces of
+        work, in the order they will happen."
+      end: Done looking - "three things in flight, all of them explained, nothing to investigate."
+
+    steps:
+      - step: Open the popover
+        action: Click the Task Manager icon in the header, from any page
+        output: The Activity section, one row per admitted update, running first then
+          longest-waiting.
+      - step: Read a row
+        action: Read left to right
+        output: What the work is, then what it is about - "Refreshing Portfolio 'Ocean Explorer'",
+          "Forecasting Portfolio 'Ocean Explorer'", "Removing Team 'Voyager'". The verb is
+          Lighthouse's own word; the noun is whatever the tenant renamed it to.
+      - step: Understand a wait
+        action: Read the clause after a queued row's status
+        output: What that row is waiting for. A different entity by name; its own entity by activity -
+          "Queued behind its own refresh" - never its own name.
+      - step: Close it
+        action: Dismiss the popover
+        output: No follow-up. The question the glance was asked has an answer.
+
+    error_paths:
+      - situation: Two pieces of work share one entity
+        recovery: They read as two pieces of work, because the row names the work. This is the defect
+          this feature exists to fix, and it is the ordinary case - every Portfolio refresh ends by
+          triggering a forecast of the same Portfolio.
+      - situation: A new update type is added later
+        recovery: The verb lookup is total over UpdateTaskType, so a new member is a compile-time
+          decision rather than a silent sixth tenant of the default arm. The regression that produced
+          #6055 cannot recur by omission.
+      - situation: The tenant has renamed Team and Portfolio
+        recovery: The noun changes and the verb does not. Refreshing, Forecasting and Removing are
+          Lighthouse's own words and are not in TERMINOLOGY_KEYS; a tenant who renamed everything
+          renameable still reads the same three verbs.
+      - situation: A queued row's lane holder is its own entity
+        recovery: The clause names the holder's activity instead of its name. Reachable today because
+          there is one lane; still reachable if story-5877's per-type lanes return, where a removal and
+          a refresh of the same Portfolio share one. The rule holds under both, so it does not have to
+          be re-decided when those lanes come back.
+      - situation: The entity was deleted while its own update was in flight
+        recovery: Unchanged and deliberately not fixed here. NameOf falls back to "{UpdateType} {Id}",
+          so the row reads "Forecasting Portfolio 'Forecasts 3'" - no worse than before this feature,
+          and out of scope rather than quietly folded in.
+
+    shared_artifacts:
+      - artifact: the verb on each row
+        source: a total lookup over UpdateTaskType in the browser. Lighthouse's own vocabulary, never
+          Terminology, never the backend - the backend sends the type and has no business holding the
+          word.
+      - artifact: the entity kind on each row
+        source: the tenant's configured Terminology for team and portfolio, unchanged from what the
+          Task Manager Epic established.
+      - artifact: the entity's display name
+        source: resolved on the read path from the repository, unchanged - never stored beside the
+          status.
+      - artifact: which piece of work holds the lane
+        source: the read model, as it already is. One decider. What changes is that it sends the
+          holder's identity rather than only its name, so the browser can tell a self-reference from a
+          genuine one and word it.
+      - artifact: the row's addressable id
+        source: data-testid="task-manager-row-{type}-{id}", a fixed point - the existing suite
+          addresses rows through it and this feature does not move it.
+      - artifact: the documented row wording
+        source: docs/settings/taskmanager.md's row table and docs/assets/settings/taskmanager.png,
+          both regenerated as part of this feature rather than left for a later docs sweep.
