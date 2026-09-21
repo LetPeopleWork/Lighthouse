@@ -45,3 +45,28 @@ outcomes:
   artifact: Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.ts
   related: []
   superseded_by: null
+- id: OUT-3
+  kind: specification
+  summary: Decides which of a Feature's contributing Teams get a row of their own beneath
+    its bar on the Delivery timeline, what each row spans, what it is called and coloured,
+    and what the Feature's bar has to say about the Teams that get none, so the split
+    can never quietly show fewer Teams than the Feature has.
+  feature: epic-6033-forecasted-start-dates
+  inputs:
+  - shape: a Delivery's Features with their per-Team forecasts, the timeline already
+      built from them, the Teams the Portfolio can name, the probability being read,
+      and the words this instance uses for a Team and a Portfolio
+  output:
+    shape: one row per contributing Team whose own start and completion both resolve
+      at that probability, each carrying the Team's name and a colour stable across
+      the whole chart; one named note per contributing Team that resolves at neither;
+      and whether anything on this chart splits at all
+  keywords:
+  - team-lanes
+  - delivery-timeline
+  - per-team-forecast
+  - contributing-team
+  - colour-map
+  artifact: Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTeamLanes.ts
+  related: []
+  superseded_by: null
