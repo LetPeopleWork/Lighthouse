@@ -59,9 +59,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// AC-3.3. The day work began is a fact, and a fact outranks a forecast. Writing the simulation's
-        /// answer here would move the left end of a roadmap bar off the day it actually started, onto a
-        /// guess about a day that has already passed.
+        /// The day work began is a fact, and a fact outranks a forecast. Writing the simulation's answer
+        /// here would move the left end of a roadmap bar off the day it actually started, onto a guess
+        /// about a day that has already passed.
         /// </summary>
         [Test]
         public void ResolveForecastWriteBackForPortfolio_StartedFeature_WritesTheDayItActuallyBegan()
@@ -187,8 +187,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// AC-3.5. A Feature nothing can be said about writes nothing, in both of the ways nothing can be
-        /// said: no start rows at all, and start rows with no runs behind them.
+        /// A Feature nothing can be said about writes nothing, in both of the ways nothing can be said:
+        /// no start rows at all, and start rows with no runs behind them.
         ///
         /// The second is the one worth having. Every percentile off an empty distribution reads as day zero,
         /// and day zero projects to today - so without the guard the field fills with today's date, in the
