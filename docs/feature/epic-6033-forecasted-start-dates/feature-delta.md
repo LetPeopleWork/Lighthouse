@@ -3531,25 +3531,32 @@ has not been reached, and the conversation about it is about the board, not abou
 
 - **AC-7.1** — A Feature whose bar *ends* after the Delivery's target date, at the selected probability,
   carries the "finishes late" colour. Changing the probability changes which bars carry it (D7-2).
-- **AC-7.2** — A Feature whose bar *starts* after the target date carries the "starts late" colour
-  instead. One status per bar, and the start test wins: a Feature that has not begun by the target cannot
-  finish by it, so saying only "finishes late" about it would be true and useless (D7-4).
+- **AC-7.2** — **AMENDED by DESIGN — the wording below is superseded; the live form is in
+  `design/upstream-changes.md` §5.** A Feature whose bar *starts* after the target date carries the
+  "starts late" colour instead. One status per bar, and the start test wins: a Feature that has not begun
+  by the target cannot finish by it, so saying only "finishes late" about it would be true and useless
+  (D7-4). *(D7-4 is withdrawn; a start-late bar now wears a mark at both ends.)*
 - **AC-7.3** — A finished Feature carries the "done" colour, whether or not it finished after the target.
   Done is not a forecast, and the scale says what is forecast (D7-3).
 - **AC-7.4** — A Feature that is on track carries no status at all. A mark that lands on every bar tells
   the reader nothing about any of them (D7-5).
-- **AC-7.5** — The status is carried by an **edge on the bar, not its fill**. With the Teams shown, a bar
-  keeps its Team colour *and* its status; neither hides the other, at any combination of the two switches
-  (D7-1).
+- **AC-7.5** — **AMENDED by DESIGN — narrowed from an edge to a cap; live form in
+  `design/upstream-changes.md` §6.** The status is carried by an **edge on the bar, not its fill**. With
+  the Teams shown, a bar keeps its Team colour *and* its status; neither hides the other, at any
+  combination of the two switches (D7-1).
 - **AC-7.6** — A Team's sub-lane carries no status. The statement is about the Feature, and repeating it
   down three lanes would say it four times (D7-7).
 - **AC-7.7** — A key above the chart names each colour, in the same slot and the same form the Team key
   already uses. Three coloured edges with nothing naming them is the shaded-column mistake slice 04
   already made once and fixed with a legend.
-- **AC-7.8** — A **Show status** switch, default off. It is **absent, never present-and-inert**, when no
-  bar on this chart would carry a status — the rule `canShowTeams` already established.
-- **AC-7.9** — A **Show warnings** switch, default off, hides every bar mark: the symbol *and* the
-  sentences it contributes to the bar's hover text. Half-hidden is a switch that reads as broken (D7-9).
+- **AC-7.8** — **AMENDED by DESIGN — the gate is a property of the Delivery, not of the selected
+  probability; live form in `design/upstream-changes.md` §7.** A **Show status** switch, default off. It
+  is **absent, never present-and-inert**, when no bar on this chart would carry a status — the rule
+  `canShowTeams` already established.
+- **AC-7.9** — **AMENDED by DISTILL — a visibility gate was missing; live form in
+  `design/upstream-changes.md` §9.** A **Show warnings** switch, default off, hides every bar mark: the
+  symbol *and* the sentences it contributes to the bar's hover text. Half-hidden is a switch that reads
+  as broken (D7-9).
 - **AC-7.10** — Every status edge is distinguishable from the bar it sits on and from the page behind it,
   in light and dark themes, over the default fill and over all fourteen Team fills (D7-1, and the
   white-on-pastel finding from slice 06's review).
@@ -3980,3 +3987,259 @@ no wave-end menu.
 no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
 
 Next: DEVOPS, slice 07 (Story #6067).
+
+---
+
+## Wave: DEVOPS / [REF] Slice 07 — Skipped, by explicit decision
+
+**Skipped by the user, 2026-09-21**, in as many words ("skip devops"). Recorded rather than passed over,
+for the reason the slice 06 entry gives: a wave that does not run has to say so and say why, or a decision
+it would have made gets improvised somewhere downstream.
+
+The surface is emptier here than it was for the Epic as a whole. Slice 07 adds **no backend change, no
+DTO field, no npm dependency, no environment variable and no migration**. Every DEVOPS concern is either
+N/A or already answered above:
+
+| DEVOPS concern | State for slice 07 |
+|---|---|
+| Deployment topology, infrastructure as code, CI/CD | **N/A** — nothing new to deploy, configure or build. The existing gates cover it unchanged |
+| Database migration | **N/A** — this slice touches no persistence at all. Its only stored state is a browser preference |
+| Observability / instrumentation | **N/A** — no new latency, no new failure mode, nothing to watch. The Epic's one real observability item is AC-1.8, which belongs to slice 01 and is already measured |
+| Rollout / feature gating | **Unchanged** — the tab's premium gate (D8) already governs everything this slice draws. The two switches are reader preferences, not feature flags, and default off |
+| Production readiness sign-off | **Deferred to DELIVER**, where it always sits for this project |
+
+**What a skipped DEVOPS would otherwise have improvised: nothing.** Unlike slice 01, which raised a
+genuine performance budget, this slice raises no question DEVOPS owns. The one risk it does carry — whether
+a cap can be told from the band it sits beside — is a rendering question settled by looking at a chart, and
+no amount of instrumentation would answer it.
+
+Next wave: DISTILL.
+
+---
+
+## Wave: DISTILL / [REF] Slice 07 — scenarios
+
+Authored 2026-09-21, ahead of slice 07's DELIVER. Story #6067. The slice marks the end or ends of a
+Feature's bar that fall past the Delivery's target date, and puts both that and the existing bar marks
+behind switches. No backend, no DTO, no demo-data change, no new dependency.
+
+**Driving port**: the React component tree through Vitest and React Testing Library, plus the pure
+modules beneath it called directly — the mechanism slices 02 through 06 all used. There is no backend
+scenario and no Playwright spec in this slice.
+
+**Wave-decision reconciliation**: DISCUSS, DESIGN and the DEVOPS skip read. **0 contradictions.** Four
+things were checked rather than assumed.
+
+- D7-1 puts the mark anywhere but the fill, and D7-13 narrows it to the ends. That is a narrowing on the
+  record with the original quoted verbatim in `design/upstream-changes.md` §6 — an amendment, which is
+  the shape slices 05 and 06 both used, not a disagreement.
+- **D7-4 is withdrawn by D7-13**, and that is the one place a reconciliation could have gone wrong. A
+  scenario written against the withdrawn precedence would assert that a start-late bar carries *only* a
+  start mark, and the scenarios below assert the opposite. The withdrawal is recorded in two places with
+  the original quoted, so the later decision is the live one by construction rather than by my choosing
+  a side.
+- D7-2 keeps the comparison on the drawn geometry, so no scenario reaches for `IFeatureLikelihood`.
+- D7-6 keeps the slice off the Feature table, which D16 already forbade. Nothing below touches it.
+
+DEVOPS remains skipped by explicit decision, now for a second time and with its own per-concern N/A
+table. A wave that does not run having said so is the opposite of a contradiction.
+
+**The Elevator Pitch survives the amendment, and it is worth saying which part.** US-07 promised that
+the reader turns on a switch, sees which bars are finished and which two kinds of late the rest are, and
+decides which Feature to act on — a red bar being a different conversation from an amber one. Every word
+of that still holds. What the end-cap amendment took away is only the phrase *"one status per bar"*,
+which was machinery, not promise. Scenario 2 is the sentence the promise now makes: a bar that has not
+been reached says so at its start *and* says it does not finish in time at its end.
+
+### The boundary these scenarios are written against
+
+Unchanged from slices 04, 05 and 06, and written into `ganttShapes.ts` itself: the vendor component
+paints to a canvas jsdom does not have and its axis needs a measured width it never gets, **so an
+assertion on rendered vendor markup passes against broken code.** Nothing below asserts on `@svar-ui`
+markup.
+
+| File | Owns | New in this slice |
+|---|---|---|
+| `deliveryBarStatus.ts` | The decision. Which end of which bar crossed the target, and which bars are finished. Pure; names nothing from the library, from React or from MUI | **Yes** — a new sibling of `deliveryTeamLanes.ts` and `deliveryDependencyOverlay.ts` (D7-16) |
+| `deliveryTimelineModel.ts` | The bars. Gains `endIsObserved` beside `startIsObserved`, set where the choice between the close date and the forecast is already made (D7-15) | One field |
+| `timelineMarkers.ts` | The colours shared between what paints a mark and what names it. Gains `statusCapColors` (D7-18); its doc comment, which claims a legend that no longer exists, is corrected (D7-24) | Extended |
+| `TimelineBarContent.tsx` | What is drawn inside a row. Paints the caps on a Feature's own bar and never on a lane (D7-7) | Extended |
+| `DeliveryGanttChart.tsx` | Still the only `@svar-ui` importer. One more per-Feature map, threaded exactly as `barTeams` is (D7-23); its stale legend comment corrected | One prop |
+| `TimelineLegend.tsx` | The key. Was `TimelineTeamLegend`; entries now carry a swatch shape, so a key for caps shows caps rather than fills (D7-21) | Renamed and generalised |
+| `pagePreference.ts` | One page-wide, storage-backed boolean, with the five traps in one place. `useShowTeams` is refactored into it unchanged (D7-20) | **Yes** — extracted, not written |
+| `DeliveryTimelineTab.tsx` | Composes the caps, two switches, their gates, the second key row, and the warnings gate over `barMarks` | Extended |
+
+**Sixteen of the thirty-two scenarios drive the pure modules and the store.** Sixteen drive React
+through RTL — nine at the tab, four at the bar, three at the key. None is backend.
+
+### How a cap is asserted at all
+
+DESIGN says the cap is painted as an inset shadow (D7-13) and does not say how anything would read it
+back. It cannot, reliably: this environment resolves a shorthand `boxShadow` composed from two insets
+inconsistently, and the composed value is the one thing the assertion would be about.
+
+So the bar's box carries **`data-caps`** — `"start"`, `"end"`, `"start end"`, `"finished"`, or absent —
+naming which ends are marked. This is not a hook invented for the tests: it is exactly why
+`DeliveryGanttChart` already carries `data-axis-unit` and `data-row-count`, and the reason is written
+beside them — *"the height itself is a style this environment does not resolve, so without it nothing can
+tell a chart sized for its bars from one sized for everything drawn on it."* Same problem, same answer.
+
+**The attribute says which ends; the colour is asserted where it is decided** — in `statusCapColors`,
+against literal hex, scenarios 15 and 16. What is verified by eye and only by eye is the same list as
+every slice since 04: that the cap is legible at bar height, over the Team fills, in both themes.
+
+### Every scenario, and what would red it
+
+Slice 04's round-two review found four assertions that were structurally incapable of failing, and slice
+06 found four more, one per instrument. Naming the falsifier is a column rather than a habit. **A
+scenario with no nameable mutation is not a scenario.** This slice's own hazard is that most of its
+criteria are satisfied by *absence* — no cap, no switch, no symbol — and an absence asserted alone passes
+against code that does nothing at all. Where a row says **both halves**, the pairing is the point and is
+not a redundancy to simplify away.
+
+| # | Scenario | AC | Drives | What reds it |
+|---|---|---|---|---|
+| 1 | A bar that ends after the target is marked at its end and not at its start | AC-7.1 | Status | **Both halves.** Marking everything passes the first half alone; marking nothing passes neither. The fixture's bar starts well before the target, so a module that marks both ends unconditionally fails the second half |
+| 2 | A bar that starts after the target is marked at **both** ends | AC-7.2 (amended), D7-13 | Status | **The withdrawn precedence.** A module implementing D7-4 as originally written marks the start only, and this is the scenario that catches it. Also reds a module that marks the end only, which is what "start-late is just late" would produce |
+| 3 | A bar that ends before the target carries no marks at all, on a chart where another bar does | AC-7.4 | Status | Absence, so it is asserted **in the same call** as a late bar that is marked. Alone it passes against a module that returns an empty map |
+| 4 | A bar ending exactly on the target day is not marked; one ending the next day is | AC-7.1, D7-17 | Status | **`>=` instead of `>`.** The boundary the whole slice turns on and the quietest mutation available. Both sides of it in one scenario, so a module that never marks and a module that always marks both fail |
+| 5 | A bar starting exactly on the target day is not marked at its start, and **is** marked at its end, because it ends on a later calendar day | AC-7.2, D7-17 | Status | The same boundary at the other end, where an off-by-one is likelier because the start test is the one written second. The fixture starts the bar on the target day and ends it the next day, so "ends later" is a later *day* and not a later hour — the hour case is scenario 6's, and leaving the two entangled would let one fixture answer for both |
+| 6 | The time of day is not part of the question | D7-17 | Status | **Comparing instants.** The fixture's target is late in the UTC day and the bar ends early on the same local day. Reducing only one side, or neither, marks a bar that is not late — silently, and only for readers in some time zones. This is the scenario that would otherwise be found by a support ticket |
+| 7 | A finished bar is marked finished at both ends, whether it finished before the target, after it, or with no target set | AC-7.3 | Status | **Three cases in one table.** "Done wins" applied as a precedence over the *late* verdict rather than as a different question fails the second case; a module that consults the target before checking finishedness fails the third |
+| 8 | With no target date, an unfinished bar carries nothing and a finished bar still carries finished | AC-7.11 | Status | **Both halves, and AC-7.11 has no falsifier without the pairing** — a module returning an empty map whenever the target is absent passes the first half and is wrong |
+| 9 | Two bars with different verdicts are both in the result, each under its own Feature | — | Status | Returning the first match, or keying the map on the array index — which is right until the board is re-ordered and then silently wrong for every reader |
+| 10 | A bar with nothing to say is absent from the map rather than present with an empty entry | — | Status | An empty entry, which the bar would render as a mark with nothing behind it — the lesson `barMarksFor` already learned one slice ago and wrote down |
+| 11 | A closed Feature's bar ends at the day it closed and is flagged observed | AC-7.3, D7-15 | Model | **Both halves.** The flag set without the date following it, or the date without the flag — which is today's behaviour and is exactly the seam this field closes |
+| 12 | An open Feature's bar ends at the forecast for the selected probability and is not flagged | D7-15 | Model | Flagging unconditionally. **Vacuously green on the date half** — that is shipped behaviour — and listed as such below; the flag half is what carries it |
+| 13 | A Feature with an observed start and no close date has its start flagged and its end not | D7-15 | Model | Copying one flag onto the other, which is the single likeliest way to add the second one. Asserted against a Feature where the two genuinely differ |
+| 14 | A closed Feature whose completion forecast runs into the future still ends at the close date | — | Model | A regression guard on shipped behaviour, **vacuously green on arrival** and listed as such. It is here because `endIsObserved` is being threaded through the exact branch that decides it |
+| 15 | The three marks have three different colours | AC-7.7 | Colours | One colour for all three, or two of the three sharing. Asserted as three mutual differences rather than against values, so it cannot be satisfied by reading the constant back out |
+| 16 | The colours are the forecast palette, by literal value | D7-14 | Colours | **Pinned to literal hex, not to `appColors.forecast.*`** — comparing the function's output against the constant it returns is the same reduction on both sides and could not fail. This is the assertion that would catch a re-theme quietly changing what the chart means |
+| 17 | The "ends after the target" colour is **deliberately the same** as the target band's | D7-14 | Colours | Nothing, and that is the point: it is an accepted risk written as an executable assertion, so the next person to notice the clash and "fix" one of the two is told by a red test that it was a decision, with the fallback named beside it |
+| 18 | A bar renders exactly the ends it was given — none, start, end, both, or finished | AC-7.1, AC-7.2, AC-7.3, AC-7.4 | Bar (RTL) | **Five cases in one table**, read off `data-caps`. A component that renders a cap whenever it has any status fails four of them |
+| 19 | A Team's lane never renders caps, on a Feature whose own bar does | AC-7.6, D7-7 | Bar (RTL) | Threading the caps into the lane branch — one line, and the natural mistake, since the lane and the bar share a renderer. Asserted with the Feature's bar capped in the same render, so it cannot pass against a component that caps nothing |
+| 20 | A capped bar keeps its Team's fill | AC-7.5 | Bar (RTL) | **Both halves, and this is the slice's central promise.** The fill must still be the Team's *and* the caps must be present. Either alone passes against a component that honours one and drops the other, which is precisely the failure D7-1 exists to prevent |
+| 21 | A capped bar is still clickable and its hover text is what it was | — | Bar (RTL) | Caps rendered as an element over the button, swallowing the click; or the hover text rebuilt to mention them. The reader loses the dialog and nothing says so |
+| 22 | The key names all three marks, in words a reader can act on | AC-7.7 | Key (RTL) | Naming two of three. The three sentences are asserted **against literals**, because StrykerJS does not mutate copy and a loose match would never be challenged — the same reason slice 06 pinned its un-nameable-Team sentence |
+| 23 | A status entry's swatch is a cap and a Team's is a fill | AC-7.7, D7-21 | Key (RTL) | One shape for both, which tells the reader the mark on the bar is a fill when it is not. Asserted as a difference between the two kinds in one render |
+| 24 | The Team key renders what it rendered before the rename | — | Key (RTL) | The generalisation losing a Team, its name or its colour. **Vacuously green on arrival** and listed as such; it is the guard on a refactor of shipped code |
+| 25 | The three preferences are independent | D7-20 | Store | **The refactor's own hazard.** A factory that closes over one module-level variable rather than one per key gives all three switches one value — every switch on the page moving together, which looks deliberate. Asserted by setting one and reading all three |
+| 26 | A stored `"false"` does not read as true | D7-20 | Store | Coercing instead of comparing. The trap `useShowTeams` documents, now reachable in three places instead of one; the text `"false"` is truthy, so a coerced read turns a preference on and can never turn it off again |
+| 27 | Storage that throws on read leaves the preference off and the page standing; storage that throws on write keeps the choice for this visit | D7-20 | Store | An unguarded access, which takes the whole Portfolio accordion down in private browsing. **Spied on the `localStorage` object, never on `Storage.prototype`** — prototype spies install, report themselves installed and intercept nothing in this environment, and three tests elsewhere in this repository are green because of it |
+| 28 | Two switches for the same preference on one page agree | D7-20 | Store | Per-component state, which is the bug slice 06 shipped and fixed. Asserted by rendering two and toggling one |
+| 29 | On a first visit nothing is capped, and turning the switch on caps what should be capped | AC-7.8 | Tab (RTL) | **Both halves.** Default-on fails the first; a switch wired to nothing fails the second. The fixture's Delivery has a bar that crosses the target, so "nothing is capped" is a choice rather than an absence of data |
+| 30 | The status switch is offered on a Delivery that could carry a mark, absent on one that could not, **and its presence does not change between 70 and 95** | AC-7.8 (amended), D7-19 | Tab (RTL) | **Three halves, and the third is the amendment.** A gate computed from the caps currently produced passes the first two and fails the third: the fixture's Delivery is late at 95 and clean at 70, so a per-probability gate makes the control appear and vanish as the reader works the buttons |
+| 31 | Warnings off by default removes the symbol and its sentences from the hover, and leaves the dialog's Warnings column alone | AC-7.9 | Tab (RTL) | **Three halves.** A switch that hides the symbol and leaves the sentences in the hover text is a switch that did not work; and gating the dialog column on it would break fifteen other screens that have no timeline. The third half is **vacuously green on arrival** and listed as such |
+| 32 | The warnings switch is offered on a Delivery where some Feature carries a warning or a dependency, absent on one where none does, **and its presence does not change between 70 and 95** | AC-7.9 (amended) | Tab (RTL) | **Three halves, mirroring scenario 30.** No gate at all passes the first and fails the second — a control that does nothing when used, which is what slice 06 ruled out. A gate computed from the marks currently produced passes the first two and fails the third: a Feature's un-laned-Team note moves with the probability, so a gate that counts marks rather than asking what the Features carry makes this switch flicker while the one beside it does not |
+
+### Upstream findings
+
+Three things the scenarios could not be written against as the prior waves left them.
+
+1. **`data-caps` is a component change DESIGN did not name.** Its component table says the caps are
+   painted as inset shadows and stops there. Asserting that from jsdom is unreliable for a composed
+   shorthand, and the file family already solved this once — `data-axis-unit` and `data-row-count` exist
+   for the same reason and say so in place. The attribute is added to `TimelineBarContent`'s row box and
+   belongs in DESIGN's table.
+
+2. **AC-7.11 is unfalsifiable as written.** *"A Delivery with no target date … its finished Features still
+   carry 'done' and no bar carries either late colour"* is satisfied by a module that returns nothing at
+   all whenever the target is absent. Scenario 8 pairs the two halves in one call, which is what makes the
+   criterion able to fail. No wording change is needed; the pairing is a note for whoever reads the
+   criterion next.
+
+3. **The warnings switch had no visibility gate anywhere.** D7-19 settles the gate for `Show status` and
+   AC-7.9 said nothing about one for `Show warnings`, so as specified it is present-and-inert on a
+   Delivery where no Feature has a warning or a dependency — the shape slice 06 ruled out in as many
+   words and made AC-6.1's second clause about. **Settled here, by applying the rule the maintainer
+   already set** rather than by inventing one: offered when any Feature in this Delivery has a warning
+   sentence or carries any dependency at all. Both inputs are independent of the selected probability,
+   so the gate is stable for the same reason D7-19's is. Leaving the third switch on the row to behave
+   differently from the other two is what would have needed arguing for. Recorded as item 9 in
+   `design/upstream-changes.md`; scenario 32 asserts it.
+
+### Vacuously green on arrival
+
+Five of the thirty-two pass against today's code, and each is listed rather than left to be discovered
+as a scenario that never went red.
+
+| # | Why it passes today |
+|---|---|
+| 12 (date half) | An open Feature's bar already ends at the forecast. Only the `endIsObserved` half can fail |
+| 14 | A closed Feature already ends at its close date — slice 04 shipped it. The guard is here because this slice threads a new field through that exact branch |
+| 24 | The Team key already renders name and colour. It is the refactor guard, not a new claim |
+| 31 (third half) | The dialog's Warnings column is already independent of anything on the chart |
+| 17 | Asserts a collision that already exists. It cannot fail until someone changes one of the two colours, which is precisely when it should |
+
+### Test placement
+
+Beside the modules, as `*.test.ts` and `*.test.tsx` in
+`Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/` — the convention
+every file in that folder already follows. New files: `deliveryBarStatus.test.ts`,
+`pagePreference.test.ts`, `TimelineLegend.test.tsx` (renamed from `TimelineTeamLegend.test.tsx`).
+Extended: `deliveryTimelineModel.test.ts`, `TimelineBarContent.test.tsx`, `DeliveryTimelineTab.test.tsx`.
+
+Two rules from `docs/ci-learnings.md` apply directly and are called out because both fail in a way that
+reads as "the thing was never rendered":
+
+- **A MUI `Switch` is `role="switch"`, not `role="checkbox"`.** Three switches make three chances to get
+  this wrong.
+- **RTL name matchers are unanchored.** `/status/i` will match a label containing "status" anywhere;
+  the switches are found by `toHaveAccessibleName`, not by substring.
+
+No scaffolds in the Mandate 7 sense: this is TypeScript with `it.skip`, and the modules that do not yet
+exist are created in DELIVER's first step. The scenarios above are authored here and unskipped there, one
+at a time, per ADR-025.
+
+### Outcomes registry
+
+**Registration deferred to DELIVER**, the same call slices 01, 05 and 06 made and for the same reason.
+`buildDeliveryBarCaps` is a new typed contract worth a row of kind `specification`: *given a Delivery's
+placed bars and its target date, decides which end of each bar falls past that date and which bars are
+finished, so that no bar is marked for a date it was never measured against.* The registry rejects a row
+naming an `artifact` path that does not exist, so the row is written in the commit that creates
+`deliveryBarStatus.ts`. `nwave-ai outcomes check-delta` exits 0 against the delta as it stands; the
+`OUT-n` number is read off the registry at that moment rather than guessed here.
+
+### Review gate
+
+`@nw-acceptance-designer-reviewer` **was dispatched** over these DISTILL sections — it is the
+structural-correctness reviewer and the one the wave contract says never skips.
+
+**Verdict: `rejected_pending_revisions`** — 2 blockers, 2 high, 1 low. Four findings were acted on; one
+was acted on differently from how it asked, and one was accepted in part. Every one is dispositioned
+here, because a reviewer finding that is quietly dropped is worse than one never raised.
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| Item 9 missing from `upstream-changes.md`, though this section pointed at it | blocker | **Correct, fixed.** It had been drafted and held back while the reviewer was reading that file, and holding it was the mistake |
+| No scenario verifies *when* the warnings switch is shown | blocker | **Correct in substance, and the underlying question is now settled rather than deferred.** Scenario 32 added. The reviewer offered "add the scenario, or record the deferral"; the second was the wrong branch — the rule already exists, the maintainer set it for `Show Teams` and it was applied unchanged to `Show status`, so leaving the third switch to behave differently is what would have needed arguing for |
+| AC-7.8 exists in two incompatible forms across two documents | high | **Real risk, fixed differently.** The reviewer proposed editing the original in place. That breaks this workspace's back-propagation contract, stated at the top of `upstream-changes.md` and used by slices 05 and 06: originals are quoted, never rewritten, so a reader meets the change instead of text that looks as though it always said this. Each amended criterion now opens with a pointer to its live form, which closes the gap the reviewer found without losing the record. **Slice 06's amended criteria have the same exposure and were left alone** — they are delivered, and re-opening them to add pointers would edit history for tidiness |
+| Scenario 5's "ends later" has no referent | high | **Correct, fixed.** Rewritten to say a later calendar *day*, and to say why: the later-*hour* case is scenario 6's, and leaving them entangled lets one fixture answer for both |
+| Scenario 17's intentional collision needs saying in the test itself | low | **Accepted, wording rejected.** A comment is right — the reason cannot be read off `expect(a).toBe(b)`. The reviewer's draft cites `D7-14` twice, and an internal reference names a section of a document that gets archived, so it explains nothing to whoever opens the file cold. The comment will state the reason itself: the band and the cap are deliberately the same colour, and if they cannot be told apart the band moves |
+
+One claim in the review is inaccurate and is recorded so it is not inherited: it says the scenarios "use
+`data-caps` consistent with prior slices". No prior slice has a `data-caps`; the analogy is to
+`data-axis-unit` and `data-row-count`, which exist for a related reason and not the same one. Whether the
+attribute is needed at all is being checked in DELIVER rather than assumed — `TimelineBarContent.test.tsx`
+already reads `getComputedStyle(...).cursor` successfully, so this environment does resolve *some* emotion
+styles, and the claim above rests on a composed `boxShadow` shorthand behaving differently. If it
+resolves, the attribute comes out and the caps are asserted directly.
+
+The other three were not, and that is recorded rather than skipped. `@nw-product-owner-reviewer` over
+DISCUSS and `@nw-solution-architect-reviewer` over DESIGN both have live questions — whether US-07 still
+reads as the story it promised now that the precedence is gone, and whether accepting the amber collision
+with a named fallback is a decision or a deferral. Both were put to the maintainer directly, in this
+session, with the trade-offs on screen, which is the same review with a shorter loop.
+`@nw-platform-architect-reviewer` would have read a table of N/A.
+
+### Density and expansion
+
+`documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`. DISTILL declares no
+ask-intelligent triggers, so this pass emitted **Tier-1 `[REF]` sections only** — no Tier-2 expansions
+and no wave-end expansion menu.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DISTILL`, slice `07`, reason `wave
+declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
+
+Next: DELIVER, slice 07 (Story #6067).

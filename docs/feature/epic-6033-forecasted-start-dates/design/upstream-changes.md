@@ -240,3 +240,43 @@ wears two caps rather than the reason one colour is suppressed.
 particular is strengthened rather than qualified: with the mark at the ends, "done wins" stops being a
 precedence and becomes a statement about which question is being asked — a finished bar's ends are facts,
 so the target comparison is not asked of them at all, and both ends are simply marked as finished.
+
+---
+
+## 9. AC-7.9 — the warnings switch had no visibility gate
+
+**Raised by DISTILL, 2026-09-21**, while writing the scenarios for slice 07, and settled in the same pass
+by applying a rule the maintainer had already set rather than by inventing one.
+
+**Where**: `feature-delta.md`, DISCUSS / US-07 acceptance criteria.
+
+> **Original, verbatim (2026-09-21)**
+>
+> **AC-7.9** — A **Show warnings** switch, default off, hides every bar mark: the symbol *and* the
+> sentences it contributes to the bar's hover text. Half-hidden is a switch that reads as broken (D7-9).
+
+**Why it was incomplete.** D7-19 settles the visibility gate for `Show status` — offered when the
+Delivery could carry a mark, and not recomputed per probability — and nothing settled one for
+`Show warnings`. As specified, that switch is always present, including on a Delivery where no Feature
+has a warning and none carries a dependency. It would then be a control that does nothing when used,
+which is the shape slice 06 ruled out in as many words and made AC-6.1's second clause about: *"not a
+disabled one, and not one that does nothing when used."*
+
+**Why it is settled here rather than asked.** The rule is not new. The maintainer set it for
+`Show Teams` on 2026-09-21 — absent, never present-and-inert — and D7-19 applied it unchanged to
+`Show status`. Applying the same rule to the third switch on the same row is consistency, not a
+decision; leaving the third switch to behave differently from the other two would be the thing that
+needed arguing for. The inputs are already to hand and are both independent of the selected probability,
+so the gate is stable for the same reason D7-19's is: `featureWarningSentences` reads a Feature's own
+state and its dependency list, and `feature.dependsOn` is a property of the Feature rather than of the
+forecast.
+
+> **Proposed**
+>
+> **AC-7.9** — A **Show warnings** switch, default off, hides every bar mark: the symbol *and* the
+> sentences it contributes to the bar's hover text. Half-hidden is a switch that reads as broken (D7-9).
+> **It is absent, never present-and-inert, on a Delivery where no Feature has anything to be marked for**
+> — none carries a warning and none carries a dependency — and, like the status switch, **its presence
+> does not change when the probability changes.**
+
+Scenario 31 covers what the switch does; **scenario 32 covers when it is offered.**
