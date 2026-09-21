@@ -112,39 +112,54 @@ export function buildDeliveryTeamLanes(
 		teamNamer(teams, terms),
 	);
 
-	// One map over every Team that carries a colour anywhere on the chart — the Teams with rows of
-	// their own and the Teams whose single-Feature bar wears their colour instead. Built over both
-	// together, because a Team commonly does both: one colour on the Feature it shares and another
-	// on the Feature it has to itself would make the chart unreadable in precisely the way the
-	// colours exist to prevent.
-	const colourOf = teamColours([...lanes, ...soleTeams.values()]);
+	// Every Team that carries a colour anywhere on the chart: the Teams with lanes of their own and
+	// the Teams whose single-Feature bar wears their colour instead. Named once and used for both
+	// the map and the key, because they have to be the same set - a Team commonly does both, and
+	// two sets built separately would give it one colour on the Feature it shares and another on
+	// the Feature it has to itself.
+	const colourCarriers = [...lanes, ...soleTeams.values()];
+	const colourOf = teamColourLookup(colourCarriers);
 
 	return {
-		// Field by field rather than spread-and-add. A spread would carry `isNamed` out with it,
-		// and a lane arriving with a field nothing outside this file has any use for is how a
-		// working note becomes part of a contract by accident.
-		lanes: lanes.map((lane) => ({
-			featureId: lane.featureId,
-			teamId: lane.teamId,
-			teamName: lane.teamName,
-			start: lane.start,
-			end: lane.end,
-			color: colourOf(lane.teamId),
-		})),
+		lanes: lanes.map((lane) => colouredLane(lane, colourOf)),
 		unlanedTeams,
-		barTeams: new Map(
-			[...soleTeams].map(([featureId, team]) => [
-				featureId,
-				withColour(team, colourOf),
-			]),
-		),
-		legend: legendOver([...lanes, ...soleTeams.values()], colourOf),
+		barTeams: colouredBarTeams(soleTeams, colourOf),
+		legend: legendOver(colourCarriers, colourOf),
 		// Offered whenever turning it on would put something on the chart that is not there now:
-		// a row, a note about a Team that has none, or a Team's name on a bar it has to itself.
+		// a lane, a note about a Team that has none, or a Team's name on a bar it has to itself.
 		canShowTeams:
 			lanes.length > 0 || unlanedTeams.size > 0 || soleTeams.size > 0,
 	};
 }
+
+/**
+ * Field by field rather than spread-and-add.
+ *
+ * A spread would carry `isNamed` out with it, and a lane arriving with a working note nothing
+ * outside this file has any use for is how such a note becomes part of a contract by accident.
+ */
+const colouredLane = (
+	lane: PendingLane,
+	colourOf: (teamId: number) => string,
+): TeamLane => ({
+	featureId: lane.featureId,
+	teamId: lane.teamId,
+	teamName: lane.teamName,
+	start: lane.start,
+	end: lane.end,
+	color: colourOf(lane.teamId),
+});
+
+const colouredBarTeams = (
+	soleTeams: Map<number, NamedTeam>,
+	colourOf: (teamId: number) => string,
+): Map<number, TeamColour> =>
+	new Map(
+		[...soleTeams].map(([featureId, team]) => [
+			featureId,
+			withColour(team, colourOf),
+		]),
+	);
 
 function gatherTeams(
 	timeline: DeliveryTimeline,
@@ -162,7 +177,12 @@ function gatherTeams(
 		const contributors = contributorsOf(bar.featureId);
 
 		if (contributors.length < MINIMUM_TEAMS_TO_SPLIT) {
-			rememberSoleTeam(soleTeams, bar.featureId, contributors, nameOf);
+			const sole = soleTeamOf(contributors, nameOf);
+
+			if (sole) {
+				soleTeams.set(bar.featureId, sole);
+			}
+
 			continue;
 		}
 
@@ -195,21 +215,17 @@ function gatherTeams(
  * Only where the Team can be named. A bar already carries its Feature's name, and adding a phrase
  * to it that amounts to "a Team we cannot name" spends the width without answering anything.
  */
-function rememberSoleTeam(
-	soleTeams: Map<number, NamedTeam>,
-	featureId: number,
+function soleTeamOf(
 	contributors: IFeatureTeamForecast[],
 	nameOf: (teamId: number) => NamedTeam,
-): void {
+): NamedTeam | undefined {
 	if (contributors.length !== 1) {
-		return;
+		return undefined;
 	}
 
 	const team = nameOf(contributors[0].teamId);
 
-	if (team.isNamed) {
-		soleTeams.set(featureId, team);
-	}
+	return team.isNamed ? team : undefined;
 }
 
 function contributorIndex(features: IFeature[]) {
@@ -324,7 +340,7 @@ const inReadingOrder = (lanes: PendingLane[]): PendingLane[] =>
  * Colour is never the only carrier. The Team's name is written along its row and in the legend, so
  * a reader who cannot tell the hues apart loses the grouping shortcut and nothing else.
  */
-function teamColours(carriers: NamedTeam[]): (teamId: number) => string {
+function teamColourLookup(carriers: NamedTeam[]): (teamId: number) => string {
 	const colors = getColorMapForKeys(carriers.map((one) => String(one.teamId)));
 
 	return (teamId: number) => colors[String(teamId)];
