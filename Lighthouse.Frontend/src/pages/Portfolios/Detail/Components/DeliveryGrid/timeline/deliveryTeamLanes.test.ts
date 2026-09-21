@@ -396,9 +396,11 @@ describe("which Teams get a lane of their own", () => {
 	});
 
 	it("tells two Teams this Portfolio cannot name apart", () => {
-		// `getColorMapForKeys` opens with `keys.filter(Boolean)`, so a name-keyed map does not
-		// collapse the unnamed Teams into one bucket — it drops them and gives them no colour at
-		// all. Asserted as a difference between the four, never against a colour value.
+		// Both Teams this Portfolio cannot name are given the same fallback phrase, so a colour map
+		// keyed on the name would collapse them into one bucket and paint two different Teams
+		// identically. (It would not drop them: the fallback is a real sentence, so it survives the
+		// helper's own `keys.filter(Boolean)`.) Asserted as a difference between the four, never
+		// against a colour value.
 		const { lanes } = lanesFor(
 			[
 				feature({
@@ -611,5 +613,99 @@ describe("the key to the colours", () => {
 
 		expect(legend).toEqual([]);
 		expect(canShowTeams).toBe(false);
+	});
+});
+
+describe("a Team's colour, once the reader has learned it", () => {
+	// Meridian resolves at 70 and not at 95, and its id sorts before the other two. That ordering
+	// is the whole fixture: the colour helper assigns by position over its sorted keys, so a key
+	// set that loses Meridian at 95 hands Zenith and Gravity the colour of their neighbour. A
+	// fixture whose dropping Team sorted last could not fail.
+	const MERIDIAN_EARLY = team(4, "Meridian");
+
+	const threeTeams = () =>
+		feature({
+			teamForecasts: [
+				forTeam(4, [[70, 11]], [[70, 13]]),
+				forTeam(
+					5,
+					[
+						[70, 12],
+						[95, 14],
+					],
+					[
+						[70, 15],
+						[95, 19],
+					],
+				),
+				forTeam(
+					6,
+					[
+						[70, 17],
+						[95, 18],
+					],
+					[
+						[70, 24],
+						[95, 29],
+					],
+				),
+			],
+		});
+
+	it("does not change when the reader moves the probability", () => {
+		const known = [MERIDIAN_EARLY, ZENITH, GRAVITY];
+
+		const colourAt = (percentile: TimelinePercentile, teamId: number) =>
+			lanesFor([threeTeams()], known, percentile).lanes.find(
+				(lane) => lane.teamId === teamId,
+			)?.color;
+
+		// Meridian has dropped off the chart by 95, and the two that remain must not inherit each
+		// other's colour. Paired with a difference, so a map answering one colour for everything
+		// cannot satisfy the invariance half.
+		expect(colourAt(95, 5)).toBe(colourAt(70, 5));
+		expect(colourAt(95, 6)).toBe(colourAt(70, 6));
+		expect(colourAt(70, 5)).not.toBe(colourAt(70, 6));
+	});
+
+	it("does not change between two Deliveries of the same Portfolio", () => {
+		// The Portfolio's own Teams are in the key set whether or not this Delivery uses them, so
+		// two Deliveries drawn for one Portfolio agree about which colour means which Team.
+		const known = [MERIDIAN_EARLY, ZENITH, GRAVITY];
+
+		const here = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+					],
+				}),
+			],
+			known,
+		);
+
+		const elsewhere = lanesFor(
+			[
+				feature({
+					id: 9,
+					name: "Whale Migration",
+					teamForecasts: [
+						forTeam(4, [[70, 11]], [[70, 13]]),
+						forTeam(5, [[70, 12]], [[70, 15]]),
+					],
+				}),
+			],
+			known,
+		);
+
+		const zenithHere = here.lanes.find((lane) => lane.teamId === 5)?.color;
+
+		expect(elsewhere.lanes.find((lane) => lane.teamId === 5)?.color).toBe(
+			zenithHere,
+		);
+		expect(here.lanes.find((lane) => lane.teamId === 6)?.color).not.toBe(
+			zenithHere,
+		);
 	});
 });

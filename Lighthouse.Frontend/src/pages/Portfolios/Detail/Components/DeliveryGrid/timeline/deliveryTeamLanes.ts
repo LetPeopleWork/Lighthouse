@@ -112,13 +112,12 @@ export function buildDeliveryTeamLanes(
 		teamNamer(teams, terms),
 	);
 
-	// Every Team that carries a colour anywhere on the chart: the Teams with lanes of their own and
-	// the Teams whose single-Feature bar wears their colour instead. Named once and used for both
-	// the map and the key, because they have to be the same set - a Team commonly does both, and
-	// two sets built separately would give it one colour on the Feature it shares and another on
-	// the Feature it has to itself.
+	const colourOf = teamColourLookup(everyTeamInReach(features, teams));
+
+	// Every Team that carries a colour on this picture: the Teams with lanes of their own and the
+	// Teams whose single-Feature bar wears their colour instead. This set is what the key to the
+	// colours lists, so it follows the probability being read - unlike the colours themselves.
 	const colourCarriers = [...lanes, ...soleTeams.values()];
-	const colourOf = teamColourLookup(colourCarriers);
 
 	return {
 		lanes: lanes.map((lane) => colouredLane(lane, colourOf)),
@@ -329,19 +328,52 @@ const inReadingOrder = (lanes: PendingLane[]): PendingLane[] =>
 	[...lanes].sort(byTeamName);
 
 /**
- * One colour per Team for the whole chart.
+ * Every Team this chart could ever have to colour: the ones its Features name, and the ones the
+ * Portfolio holds.
  *
- * Built once over every Team that carries a colour anywhere on it, because a map built per Feature
- * would paint one Team two different colours on a single screen. Keyed by the Team's id and never
- * by its name: the helper opens with `keys.filter(Boolean)`, so a Team with no resolvable name
- * would not merely share a bucket with the others — it would be dropped from the map and left with
- * no colour at all. A zero id survives that filter, since it keys as the string "0".
- *
- * Colour is never the only carrier. The Team's name is written along its row and in the legend, so
- * a reader who cannot tell the hues apart loses the grouping shortcut and nothing else.
+ * Deliberately **not** the Teams that turn out to have something drawn at the probability being
+ * read, and not the Features the timeline managed to place either - both of those move when the
+ * reader moves the control, and the colour must not.
  */
-function teamColourLookup(carriers: NamedTeam[]): (teamId: number) => string {
-	const colors = getColorMapForKeys(carriers.map((one) => String(one.teamId)));
+function everyTeamInReach(
+	features: IFeature[],
+	teams: IEntityReference[],
+): number[] {
+	const ids = new Set<number>();
+
+	for (const team of teams) {
+		ids.add(team.id);
+	}
+
+	for (const feature of features) {
+		for (const contributor of feature.teamForecasts ?? []) {
+			ids.add(contributor.teamId);
+		}
+	}
+
+	return [...ids];
+}
+
+/**
+ * One colour per Team, and the same colour whatever the reader is looking at.
+ *
+ * **The key set has to be one the probability cannot change.** The helper sorts its keys and hands
+ * out colours by position, so a set that loses a Team gives every Team after it the colour of its
+ * neighbour: move the control from 70 to 95, watch one Team stop resolving, and the rest silently
+ * swap colours under a reader the key has just taught to follow them by colour. Built over every
+ * Team in reach instead, the same map is produced at every probability - and, since the Portfolio's
+ * own Teams are always in it, across the Deliveries of one Portfolio too.
+ *
+ * Keyed by the Team's id and never by its name. Two Teams this Portfolio cannot name share one
+ * fallback phrase, so a name-keyed map would collapse them into a single bucket and paint two
+ * different Teams identically. A zero id is safe, since it keys as the string "0" and so survives
+ * the helper's own `keys.filter(Boolean)`.
+ *
+ * Colour is never the only carrier. The Team's name is written along its lane and in the key, so a
+ * reader who cannot tell the hues apart loses the grouping shortcut and nothing else.
+ */
+function teamColourLookup(teamIds: number[]): (teamId: number) => string {
+	const colors = getColorMapForKeys(teamIds.map(String));
 
 	return (teamId: number) => colors[String(teamId)];
 }
