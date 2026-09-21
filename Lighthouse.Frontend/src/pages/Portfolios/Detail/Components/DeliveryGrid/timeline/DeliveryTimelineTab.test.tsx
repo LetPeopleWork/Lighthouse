@@ -14,7 +14,7 @@ import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
-import { showTeamsStore } from "./useShowTeams";
+import { showTeamsStore } from "./timelinePreferences";
 
 const licence = vi.hoisted(() => ({
 	isPremium: true,

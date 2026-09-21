@@ -43,7 +43,7 @@ import {
 	TimelineBarMarks,
 } from "./TimelineBarContent";
 import TimelineTeamLegend from "./TimelineTeamLegend";
-import { useShowTeams } from "./useShowTeams";
+import { useShowTeams } from "./timelinePreferences";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
