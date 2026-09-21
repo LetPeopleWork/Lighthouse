@@ -853,6 +853,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								features={features}
 								targetDate={targetDate}
 								featuresTerm={featuresTerm}
+								teams={teams}
 							/>
 						)}
 						{activeTab === "notes" && (

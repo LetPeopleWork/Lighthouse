@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IEntityReference } from "../../../../../../models/EntityReference";
 import type { IFeature, IFeatureStart } from "../../../../../../models/Feature";
 import type {
 	IFeatureDependency,
@@ -10,6 +11,7 @@ import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
+import type { TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
 
@@ -36,6 +38,7 @@ vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
  */
 type GanttProps = {
 	bars: TimelineBar[];
+	lanes?: TeamLane[];
 	links?: DrawnDependency[];
 	targetDate?: Date;
 	today?: Date;
@@ -130,14 +133,33 @@ const waitingOn = (
 	isWithheld: false,
 });
 
-const renderTab = (features: IFeature[], targetDate?: Date) =>
+const renderTab = (
+	features: IFeature[],
+	targetDate?: Date,
+	teams: IEntityReference[] = [],
+) =>
 	render(
 		<DeliveryTimelineTab
 			features={features}
 			targetDate={targetDate}
 			featuresTerm="Features"
+			teams={teams}
 		/>,
 	);
+
+const forTeam = (teamId: number, startDay: number, endDay: number) => ({
+	teamId,
+	startPercentiles: [aPercentile(70, startDay), aPercentile(95, startDay + 2)],
+	completionPercentiles: [aPercentile(70, endDay), aPercentile(95, endDay + 2)],
+});
+
+const ZENITH: IEntityReference = { id: 5, name: "Zenith" };
+const GRAVITY: IEntityReference = { id: 6, name: "Gravity" };
+const MERIDIAN: IEntityReference = { id: 7, name: "Meridian" };
+
+const SHOW_TEAMS_KEY = "lighthouse:deliveryTimeline:showTeams";
+
+const showTeamsSwitch = () => screen.getByRole("switch");
 
 const markOn = (featureId: number) =>
 	within(screen.getByTestId(`timeline-bar-${featureId}`)).getByTestId(
@@ -154,6 +176,8 @@ beforeEach(() => {
 	licence.isKnown = true;
 	ganttProps.current = null;
 	terminology.overrides = {};
+	localStorage.clear();
+	vi.restoreAllMocks();
 });
 
 describe("DeliveryTimelineTab", () => {
@@ -595,5 +619,261 @@ describe("DeliveryTimelineTab", () => {
 		expect(markOn(1)).toHaveAccessibleName(
 			"Warning. No child Tickets were found for this Feature. The remaining Tickets displayed are based on the default Feature size specified in the advanced project settings.",
 		);
+	});
+});
+
+describe("showing the Teams behind a Feature's bar", () => {
+	const splittingFeature = (overrides: Partial<IFeature> = {}) =>
+		feature({
+			id: 1,
+			name: "Coral Reef Restoration",
+			teamForecasts: [forTeam(5, 12, 15), forTeam(6, 17, 24)],
+			...overrides,
+		});
+
+	it("shows which Team drives which end once the reader asks for it", async () => {
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		const beforeTheClick = ganttProps.current?.bars;
+
+		expect(ganttProps.current?.lanes ?? []).toEqual([]);
+
+		await userEvent.click(showTeamsSwitch());
+
+		// The lanes reach the chart, each written with its own Team's name and its own dates, and
+		// the Feature's own bar arrives exactly as it arrived before the click.
+		expect(
+			ganttProps.current?.lanes?.map((lane) => [
+				lane.teamName,
+				lane.start,
+				lane.end,
+			]),
+		).toEqual([
+			["Gravity", october(17), october(24)],
+			["Zenith", october(12), october(15)],
+		]);
+		expect(ganttProps.current?.bars).toEqual(beforeTheClick);
+	});
+
+	it("keeps the lanes off until they are asked for, and off again afterwards", async () => {
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		const untouched = { ...ganttProps.current };
+
+		expect(showTeamsSwitch()).not.toBeChecked();
+
+		await userEvent.click(showTeamsSwitch());
+		expect(ganttProps.current?.lanes).toHaveLength(2);
+
+		await userEvent.click(showTeamsSwitch());
+
+		// A round trip that does not return leaves the reader with a chart they cannot put back.
+		expect(ganttProps.current?.lanes ?? []).toEqual(untouched.lanes ?? []);
+		expect(ganttProps.current?.bars).toEqual(untouched.bars);
+	});
+
+	it("offers the control where something can split and withholds it entirely where nothing can", () => {
+		// Asserted with the chart rendered, so "no control" cannot pass on a blank tab.
+		renderTab([feature({ id: 1, teamForecasts: [forTeam(5, 12, 15)] })]);
+
+		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+	});
+
+	it("withholds the control for a three-Team Feature that has no bar", () => {
+		// Counted over the Features actually placed. A Team with no throughput takes the whole
+		// Feature off the chart, so there is nothing there to split.
+		renderTab(
+			[
+				feature({
+					id: 1,
+					name: "Deep Sea Mapping",
+					teamsWithoutForecast: ["Meridian"],
+					teamForecasts: [
+						forTeam(5, 12, 15),
+						forTeam(6, 17, 24),
+						forTeam(7, 11, 13),
+					],
+				}),
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(5, 12, 15)],
+				}),
+			],
+			undefined,
+			[ZENITH, GRAVITY, MERIDIAN],
+		);
+
+		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+	});
+
+	it("offers the control where a placed Feature's second Team has no dates", () => {
+		// Counted over the `teamForecasts` rows rather than over the lanes actually drawn: this
+		// Feature has two contributing Teams and will grow exactly one lane.
+		renderTab(
+			[
+				splittingFeature({
+					teamForecasts: [
+						forTeam(5, 12, 15),
+						{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
+					],
+				}),
+			],
+			undefined,
+			[ZENITH, MERIDIAN],
+		);
+
+		expect(screen.getByRole("switch")).toBeInTheDocument();
+	});
+
+	it("names the control in this instance's own word for a Team", () => {
+		const seeded = renderTab([splittingFeature()], undefined, [
+			ZENITH,
+			GRAVITY,
+		]);
+
+		expect(within(seeded.container).getByRole("switch")).toHaveAccessibleName(
+			"Show Teams",
+		);
+
+		terminology.overrides = { [TERMINOLOGY_KEYS.TEAMS]: "Squads" };
+
+		const renamed = renderTab([splittingFeature()], undefined, [
+			ZENITH,
+			GRAVITY,
+		]);
+
+		// Pinned against both literals. The label is JSX text, which a mutation run never
+		// challenges, and a hard-coded string passes the first clause and fails only the second.
+		expect(within(renamed.container).getByRole("switch")).toHaveAccessibleName(
+			"Show Squads",
+		);
+	});
+
+	it("names a Team with no lane on its Feature's bar, as a note rather than an alarm", async () => {
+		renderTab(
+			[
+				splittingFeature({
+					teamForecasts: [
+						forTeam(5, 12, 15),
+						{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
+					],
+				}),
+			],
+			undefined,
+			[ZENITH, MERIDIAN],
+		);
+
+		await userEvent.click(showTeamsSwitch());
+
+		// Asserted against the fixture's own Team name and against the mark's accessible name,
+		// whose leading word is what tells a note from a warning. Never against what the sentence
+		// helper returns, which would be the same reduction on both sides.
+		expect(markOn(1)).toHaveAccessibleName(
+			"Note. No forecast for Meridian, so it has no lane of its own.",
+		);
+		expect(
+			within(screen.getByTestId("timeline-bar-1")).getByTestId(
+				"timeline-bar-content",
+			),
+		).toHaveTextContent("Meridian");
+	});
+
+	it("finds the lanes still on for a reader who turns them on and comes back later", async () => {
+		const { unmount } = renderTab([splittingFeature()], undefined, [
+			ZENITH,
+			GRAVITY,
+		]);
+
+		await userEvent.click(showTeamsSwitch());
+
+		// The key is pinned exactly once, here. A round trip passes happily against any key at
+		// all, and a renamed key silently forgets every reader's choice.
+		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBe("true");
+
+		unmount();
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		expect(showTeamsSwitch()).toBeChecked();
+		expect(ganttProps.current?.lanes).toHaveLength(2);
+	});
+
+	it("shows no lanes to a reader who has never touched the control", () => {
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		// The house precedent for this defaults to ON and therefore compares against "false".
+		// Lifted without flipping it, an absent key reads as on and every reader who has never
+		// heard of the feature meets a chart of twenty-one rows.
+		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBeNull();
+		expect(ganttProps.current?.lanes ?? []).toEqual([]);
+	});
+
+	it("keeps the tab working, and the lanes off, when storage is blocked or corrupt", async () => {
+		vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+			throw new Error("site data is blocked");
+		});
+
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
+		expect(ganttProps.current?.lanes ?? []).toEqual([]);
+
+		vi.restoreAllMocks();
+
+		// `Boolean("false")` is true, which is how this gets written wrong everywhere: the
+		// preference would invert itself on every reload and off would become unreachable.
+		for (const stored of ["false", "maybe"]) {
+			localStorage.setItem(SHOW_TEAMS_KEY, stored);
+			renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+			expect(ganttProps.current?.lanes ?? []).toEqual([]);
+		}
+
+		localStorage.clear();
+		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+			throw new Error("site data is blocked");
+		});
+
+		const blocked = renderTab([splittingFeature()], undefined, [
+			ZENITH,
+			GRAVITY,
+		]);
+
+		// Storage that will not take the choice costs this reader the memory of it, not the view.
+		await userEvent.click(within(blocked.container).getByRole("switch"));
+
+		expect(ganttProps.current?.lanes).toHaveLength(2);
+	});
+
+	it("carries the reader's choice into the next Delivery they open", async () => {
+		const { unmount } = renderTab([splittingFeature()], undefined, [
+			ZENITH,
+			GRAVITY,
+		]);
+
+		await userEvent.click(showTeamsSwitch());
+		unmount();
+
+		// A key composed with the Delivery's id is what the nearest precedent does, and it would
+		// leave this reader turning the same control on once per Delivery. "Show me Teams" is a
+		// property of the reader.
+		renderTab(
+			[
+				splittingFeature({
+					id: 42,
+					name: "Whale Migration Study",
+					teamForecasts: [forTeam(5, 12, 15), forTeam(7, 17, 24)],
+				}),
+			],
+			undefined,
+			[ZENITH, MERIDIAN],
+		);
+
+		expect(ganttProps.current?.lanes?.map((lane) => lane.teamName)).toEqual([
+			"Meridian",
+			"Zenith",
+		]);
 	});
 });

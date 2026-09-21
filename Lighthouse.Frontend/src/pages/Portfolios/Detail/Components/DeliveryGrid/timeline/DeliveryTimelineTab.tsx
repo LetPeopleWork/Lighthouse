@@ -1,19 +1,22 @@
 import {
 	Alert,
 	Box,
+	FormControlLabel,
 	List,
 	ListItem,
 	ListItemText,
+	Switch,
 	ToggleButton,
 	ToggleButtonGroup,
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import WorkItemsDialog, {
 	type WarningsColumnDescriptor,
 } from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../../../../hooks/useLicenseRestrictions";
+import type { IEntityReference } from "../../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../../../../models/WorkItem";
@@ -26,6 +29,7 @@ import {
 } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
+import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
@@ -43,9 +47,61 @@ export interface DeliveryTimelineTabProps {
 	/** The Delivery's target, as the backend stored it. Absent when the Delivery has none. */
 	targetDate?: Date;
 	featuresTerm: string;
+	/**
+	 * The Portfolio's Teams, which is the only place a Team's name exists on this screen: a
+	 * Feature's forecast carries Team ids and no names at all.
+	 */
+	teams: IEntityReference[];
 }
 
 const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
+
+const SHOW_TEAMS_KEY = "lighthouse:deliveryTimeline:showTeams";
+
+/**
+ * Whether this reader has asked to see the Teams behind each bar, remembered for them across
+ * visits and across Deliveries.
+ *
+ * One key for the reader rather than one per Delivery: "show me Teams" is a property of the person
+ * reading, the same call column visibility already makes. Three things about how it is read are
+ * each the difference between working and quietly wrong.
+ *
+ * The stored value is **compared as a string and never coerced**. `localStorage` hands back the
+ * text "false", and that text is truthy — so a coerced read turns the preference on and then can
+ * never turn it off again, for as long as the key exists.
+ *
+ * It is read while the state is first created rather than in an effect, because an effect applies
+ * the stored value one render late. That is invisible when what changes is a colour and very
+ * visible when it is the height of a chart that roughly doubles.
+ *
+ * And every access is wrapped. Private browsing and blocked site data make these calls throw, and
+ * an unguarded read takes the whole Portfolio accordion down with it.
+ */
+function useShowTeams(): { showTeams: boolean; toggleShowTeams: () => void } {
+	const [showTeams, setShowTeams] = useState<boolean>(() => {
+		try {
+			return localStorage.getItem(SHOW_TEAMS_KEY) === "true";
+		} catch {
+			return false;
+		}
+	});
+
+	const toggleShowTeams = useCallback(() => {
+		setShowTeams((previous) => {
+			const next = !previous;
+
+			try {
+				localStorage.setItem(SHOW_TEAMS_KEY, String(next));
+			} catch {
+				// Storage that will not take the choice costs this reader the memory of it, not the view.
+			}
+
+			return next;
+		});
+	}, []);
+
+	return { showTeams, toggleShowTeams };
+}
 
 const premiumNoticeFor = (deliveryTerm: string) =>
 	`The ${deliveryTerm} timeline is a premium feature. The forecasts behind it are not — they stay in the table.`;
@@ -81,22 +137,36 @@ const warningsColumnFor = (
 	},
 });
 
+interface TeamNotes {
+	byFeature: ReadonlyMap<number, UnlanedTeam[]>;
+	/**
+	 * Whether those Teams are named along the bar as well as in its hover text. Only while the
+	 * Teams are being read: every other Team on that Feature then has a row with its name written
+	 * along it, and the one without a row is the only one a reader would have to hover to find.
+	 */
+	nameThemOnTheBar: boolean;
+}
+
 /**
- * What one bar has to say for itself: everything the Feature table would warn about, and then what
- * this chart alone knows - where a blocker it waits on ended up.
+ * What one bar has to say for itself: everything the Feature table would warn about, then what this
+ * chart alone knows - where a blocker it waits on ended up, and which of its Teams has no row.
  *
- * Both, rather than either. A bar showing only its dependencies would read as clean beside a table
- * row marked for a default size, and a bar showing only the warnings would leave a reader hunting
- * for a line that was never drawn.
+ * All of them, rather than any one. A bar showing only its dependencies would read as clean beside a
+ * table row marked for a default size; one showing only the warnings would leave a reader hunting
+ * for a line that was never drawn; and one saying nothing about a Team without a row would show
+ * fewer Teams than the Feature has and never admit it.
  */
 const barMarksFor = (
 	features: IFeature[],
 	dependencyNotes: ReadonlyMap<number, string[]>,
 	terms: FeatureWarningTerms,
+	teamNotes: TeamNotes,
 ): Map<number, BarMark> => {
 	const marks = new Map<number, BarMark>();
 
 	for (const feature of features) {
+		const unlaned = teamNotes.byFeature.get(feature.id) ?? [];
+
 		const notes: BarNote[] = [
 			...featureWarningSentences(warningInputFor(feature), terms).map(
 				(text) => ({ text, isWarning: true }),
@@ -108,12 +178,18 @@ const barMarksFor = (
 				text,
 				isWarning: false,
 			})),
+			...unlaned.map((team) => team.note),
 		];
 
 		// A bar with nothing to say stays absent rather than arriving with an empty list, which a
 		// bar would draw as a symbol with nothing behind it.
 		if (notes.length > 0) {
-			marks.set(feature.id, { notes });
+			marks.set(feature.id, {
+				notes,
+				namesOnTheBar: teamNotes.nameThemOnTheBar
+					? unlaned.map((team) => team.teamName)
+					: [],
+			});
 		}
 	}
 
@@ -124,6 +200,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	features,
 	targetDate,
 	featuresTerm,
+	teams,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
 	const { getTerm } = useTerminology();
@@ -131,6 +208,9 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const { showTeams, toggleShowTeams } = useShowTeams();
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
 	);
@@ -164,14 +244,35 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		[features, timeline, featureTerm, portfolioTerm],
 	);
 
-	const barMarks = useMemo(
+	const teamLanes = useMemo(
 		() =>
-			barMarksFor(features, marks, {
-				workItemsTerm,
-				featureTerm,
+			buildDeliveryTeamLanes(features, timeline, teams, percentile, {
+				teamTerm,
 				portfolioTerm,
 			}),
-		[features, marks, workItemsTerm, featureTerm, portfolioTerm],
+		[features, timeline, teams, percentile, teamTerm, portfolioTerm],
+	);
+
+	const barMarks = useMemo(
+		() =>
+			barMarksFor(
+				features,
+				marks,
+				{ workItemsTerm, featureTerm, portfolioTerm },
+				{
+					byFeature: teamLanes.unlanedTeams,
+					nameThemOnTheBar: showTeams,
+				},
+			),
+		[
+			features,
+			marks,
+			workItemsTerm,
+			featureTerm,
+			portfolioTerm,
+			teamLanes,
+			showTeams,
+		],
 	);
 
 	const warningsColumn = useMemo(
@@ -226,6 +327,24 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						</ToggleButton>
 					))}
 				</ToggleButtonGroup>
+
+				{/* Offered only where some Feature on the chart actually has more than one Team.
+				    A control that cannot change anything still invites the click that proves it, and
+				    a reader who gets nothing back concludes the chart is broken rather than that the
+				    question does not apply here. A switch rather than a fourth button beside the
+				    three: that group means "pick one of these", and this is on or off. */}
+				{teamLanes.canSplit && (
+					<FormControlLabel
+						control={
+							<Switch
+								size="small"
+								checked={showTeams}
+								onChange={toggleShowTeams}
+							/>
+						}
+						label={`Show ${teamsTerm}`}
+					/>
+				)}
 			</Box>
 
 			{/* Said once, above the chart, because every bar would otherwise carry the same words -
@@ -246,6 +365,9 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 					<DeliveryGanttChart
 						bars={bars}
 						links={edges}
+						// Absent rather than hidden while the switch is off, so the chart is then the
+						// same chart it was before any of this existed.
+						lanes={showTeams ? teamLanes.lanes : undefined}
 						targetDate={targetDate}
 						today={today}
 						onBarSelected={setSelectedFeatureId}
