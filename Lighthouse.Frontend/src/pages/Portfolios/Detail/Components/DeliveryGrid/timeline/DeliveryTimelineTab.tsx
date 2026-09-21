@@ -20,11 +20,16 @@ import type { IWorkItem } from "../../../../../../models/WorkItem";
 import { useTerminology } from "../../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../../utils/featureName";
 import {
+	type FeatureWarningInput,
 	type FeatureWarningTerms,
 	featureWarningSentences,
 } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
-import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
+import {
+	type BarMark,
+	type BarNote,
+	buildDependencyOverlay,
+} from "./deliveryDependencyOverlay";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
@@ -45,6 +50,14 @@ const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 const PREMIUM_NOTICE =
 	"The delivery timeline is a premium feature. The forecasts behind it are not — they stay in the table.";
 
+const warningInputFor = (feature: IFeature): FeatureWarningInput => ({
+	isDoneWithRemainingWork:
+		feature.stateCategory === "Done" &&
+		feature.getRemainingWorkForFeature() > 0,
+	isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
+	dependencies: feature.dependsOn,
+});
+
 /**
  * The same sentences the Feature table shows, asked for in the same way, so a Feature cannot read as
  * clean in one place and marked in the other. What the bar says about where a blocker was drawn stays
@@ -64,18 +77,47 @@ const warningsColumnFor = (
 			return [];
 		}
 
-		return featureWarningSentences(
-			{
-				isDoneWithRemainingWork:
-					feature.stateCategory === "Done" &&
-					feature.getRemainingWorkForFeature() > 0,
-				isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
-				dependencies: feature.dependsOn,
-			},
-			terms,
-		);
+		return featureWarningSentences(warningInputFor(feature), terms);
 	},
 });
+
+/**
+ * What one bar has to say for itself: everything the Feature table would warn about, and then what
+ * this chart alone knows - where a blocker it waits on ended up.
+ *
+ * Both, rather than either. A bar showing only its dependencies would read as clean beside a table
+ * row marked for a default size, and a bar showing only the warnings would leave a reader hunting
+ * for a line that was never drawn.
+ */
+const barMarksFor = (
+	features: IFeature[],
+	dependencyMarks: ReadonlyMap<number, BarMark>,
+	terms: FeatureWarningTerms,
+): Map<number, BarMark> => {
+	const marks = new Map<number, BarMark>();
+
+	for (const feature of features) {
+		const notes: BarNote[] = [
+			...featureWarningSentences(warningInputFor(feature), terms).map(
+				(text) => ({ text, isWarning: true }),
+			),
+			// Every dependency worth warning about is already in the sentences above, said in the
+			// words the table uses for it. What is left here is the chart's own account of a wait
+			// there is nothing wrong with, which no warning should be raised over.
+			...(dependencyMarks.get(feature.id)?.notes ?? []).filter(
+				(note) => !note.isWarning,
+			),
+		];
+
+		// A bar with nothing to say stays absent rather than arriving with an empty list, which a
+		// bar would draw as a symbol with nothing behind it.
+		if (notes.length > 0) {
+			marks.set(feature.id, { notes });
+		}
+	}
+
+	return marks;
+};
 
 const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	features,
@@ -118,6 +160,16 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				portfolioTerm,
 			}),
 		[features, timeline, featureTerm, portfolioTerm],
+	);
+
+	const barMarks = useMemo(
+		() =>
+			barMarksFor(features, marks, {
+				workItemsTerm,
+				featureTerm,
+				portfolioTerm,
+			}),
+		[features, marks, workItemsTerm, featureTerm, portfolioTerm],
 	);
 
 	const warningsColumn = useMemo(
@@ -188,7 +240,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			)}
 
 			{bars.length > 0 ? (
-				<TimelineBarMarks marks={marks}>
+				<TimelineBarMarks marks={barMarks}>
 					<DeliveryGanttChart
 						bars={bars}
 						links={edges}

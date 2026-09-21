@@ -7,9 +7,11 @@ import type {
 	NotHonouredReason,
 } from "../../../../../../models/FeatureDependency";
 import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
+import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TimelineBar } from "./deliveryTimelineModel";
+import TimelineBarContent from "./TimelineBarContent";
 
 const licence = vi.hoisted(() => ({
 	isPremium: true,
@@ -42,12 +44,50 @@ type GanttProps = {
 
 const ganttProps = vi.hoisted(() => ({ current: null as GanttProps | null }));
 
+// The bars are drawn here rather than left to the stub, because what a bar shows is decided by the
+// tab and reaches the bar only through a context - a stub that renders nothing would let the two
+// halves of that disagree unnoticed.
 vi.mock("./DeliveryGanttChart", () => ({
 	default: (props: GanttProps) => {
 		ganttProps.current = props;
-		return <div data-testid="delivery-gantt" />;
+		return (
+			<div data-testid="delivery-gantt">
+				{props.bars.map((bar) => (
+					<div
+						key={bar.featureId}
+						data-testid={`timeline-bar-${bar.featureId}`}
+					>
+						<TimelineBarContent bar={bar} />
+					</div>
+				))}
+			</div>
+		);
 	},
 }));
+
+const terminology = vi.hoisted(() => ({
+	overrides: {} as Record<string, string>,
+}));
+
+vi.mock("../../../../../../services/TerminologyContext", async (original) => {
+	const actual =
+		await original<
+			typeof import("../../../../../../services/TerminologyContext")
+		>();
+
+	return {
+		...actual,
+		useTerminology: () => {
+			const real = actual.useTerminology();
+
+			return {
+				...real,
+				getTerm: (key: string) =>
+					terminology.overrides[key] ?? real.getTerm(key),
+			};
+		},
+	};
+});
 
 const october = (day: number) => new Date(2026, 9, day);
 
@@ -99,10 +139,21 @@ const renderTab = (features: IFeature[], targetDate?: Date) =>
 		/>,
 	);
 
+const markOn = (featureId: number) =>
+	within(screen.getByTestId(`timeline-bar-${featureId}`)).getByTestId(
+		"timeline-bar-mark",
+	);
+
+// Written out rather than asked of the sentence builder the tab uses: the same call on both sides of
+// an expectation agrees with itself whatever it returns.
+const DEFAULT_SIZE_WARNING =
+	"No child Work Items were found for this Feature. The remaining Work Items displayed are based on the default Feature size specified in the advanced project settings.";
+
 beforeEach(() => {
 	licence.isPremium = true;
 	licence.isKnown = true;
 	ganttProps.current = null;
+	terminology.overrides = {};
 });
 
 describe("DeliveryTimelineTab", () => {
@@ -387,5 +438,103 @@ describe("DeliveryTimelineTab", () => {
 			"Portfolio is set to ignore dependencies.",
 		);
 		expect(ganttProps.current?.links).toEqual([]);
+	});
+
+	it("warns on the bar of a Feature the table warns about, dependency or not", () => {
+		renderTab([
+			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
+		]);
+
+		// Nothing here is about dependencies, and the reader is looking at the same Feature the
+		// table marks. A bar that stays blank is the two screens disagreeing about it.
+		expect(markOn(1)).toHaveAccessibleName(`Warning. ${DEFAULT_SIZE_WARNING}`);
+	});
+
+	it("warns on the bar of a Feature marked done with work still left", () => {
+		renderTab([
+			feature({
+				id: 1,
+				name: "Sonar Refit",
+				stateCategory: "Done",
+				getRemainingWorkForFeature: () => 3,
+			}),
+		]);
+
+		expect(markOn(1)).toHaveAccessibleName(
+			/^Warning\. This feature is marked as done/,
+		);
+	});
+
+	it("marks, without alarm, a bar whose only note is where its blocker went", () => {
+		renderTab([
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [waitingOn("OE-404", "Mineral Survey")],
+			}),
+		]);
+
+		// Nothing is wrong with this wait; its blocker is simply somewhere else. Raising a warning
+		// about it would teach the reader that the warning symbol means nothing in particular.
+		expect(markOn(2)).toHaveAccessibleName(
+			"Note. Waiting on Mineral Survey, which is not on this timeline.",
+		);
+	});
+
+	it("warns on a bar that has both a warning and a note, and says both", () => {
+		renderTab([
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				isUsingDefaultFeatureSize: true,
+				dependsOn: [waitingOn("OE-404", "Mineral Survey")],
+			}),
+		]);
+
+		expect(markOn(2)).toHaveAccessibleName(
+			`Warning. ${DEFAULT_SIZE_WARNING} Waiting on Mineral Survey, which is not on this timeline.`,
+		);
+	});
+
+	it("leaves a bar with nothing against it unmarked, and offers no all-clear", () => {
+		renderTab([feature({ id: 1, name: "Sonar Refit" })]);
+
+		const bar = within(screen.getByTestId("timeline-bar-1"));
+
+		expect(bar.queryByTestId("timeline-bar-mark")).not.toBeInTheDocument();
+		// A green check on every bar that is fine would sit on most of them, competing with the
+		// name for the only space a bar a few pixels tall has.
+		expect(bar.queryByRole("img")).not.toBeInTheDocument();
+	});
+
+	it("explains a warning that has nothing to do with dependencies on hover", async () => {
+		renderTab([
+			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
+		]);
+
+		// A symbol the hover does not account for is an alarm with no cause attached to it.
+		await userEvent.hover(
+			within(screen.getByTestId("timeline-bar-1")).getByTestId(
+				"timeline-bar-content",
+			),
+		);
+
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			DEFAULT_SIZE_WARNING,
+		);
+	});
+
+	it("warns in the words this instance uses for the things it names", () => {
+		terminology.overrides = { [TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets" };
+
+		renderTab([
+			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
+		]);
+
+		expect(markOn(1)).toHaveAccessibleName(
+			"Warning. No child Tickets were found for this Feature. The remaining Tickets displayed are based on the default Feature size specified in the advanced project settings.",
+		);
 	});
 });
