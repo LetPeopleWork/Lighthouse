@@ -302,11 +302,6 @@ namespace Lighthouse.Backend.Services.Implementation
         /// </summary>
         private string? ResolveStartValue(WriteBackMappingDefinition mapping, Feature feature)
         {
-            if (feature.StateCategory == StateCategories.Done)
-            {
-                return null;
-            }
-
             var start = feature.WhenWorkBegins;
 
             return start.Source switch
