@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDeliveryBarCaps } from "./deliveryBarStatus";
+import { buildDeliveryBarStatuses } from "./deliveryBarStatus";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 const october = (day: number, hour = 0) => new Date(2026, 9, day, hour);
@@ -23,38 +23,29 @@ const bar = (overrides: Partial<TimelineBar> = {}): TimelineBar => ({
 	...overrides,
 });
 
-const capsFor = (one: TimelineBar, targetDate?: Date) =>
-	buildDeliveryBarCaps([one], targetDate).get(one.featureId);
+const statusOf = (one: TimelineBar, targetDate?: Date) =>
+	buildDeliveryBarStatuses([one], targetDate).get(one.featureId);
 
-describe("which end of a bar crossed the target", () => {
-	it("marks the end of a bar that finishes after the date, and not its start", () => {
-		// Both halves. The second is what stops this passing against a module that marks
-		// everything it is handed: this bar begins two weeks before the date.
-		const caps = capsFor(
-			bar({ start: october(10), end: october(25) }),
-			targetOn(20),
+describe("what a bar says about the target date", () => {
+	it("says it finishes late when it ends after the date", () => {
+		expect(statusOf(bar({ end: october(25) }), targetOn(20))).toBe(
+			"endsAfterTarget",
 		);
-
-		expect(caps?.end).toBe("endsAfterTarget");
-		expect(caps?.start).toBeUndefined();
 	});
 
-	it("marks both ends of a bar that has not begun by the date", () => {
-		// The precedence this replaced would have marked the start only, on the grounds that a
-		// bar which has not been reached is not merely late. It is both, and it says both.
-		const caps = capsFor(
-			bar({ start: october(22), end: october(28) }),
-			targetOn(20),
-		);
-
-		expect(caps?.start).toBe("startsAfterTarget");
-		expect(caps?.end).toBe("endsAfterTarget");
+	it("says it was never started in time when it begins after the date", () => {
+		// Every bar that starts after the date also ends after it, so without this ranking the
+		// sharper case would never be seen at all - and it is a different conversation, about what
+		// the Delivery contains rather than about how fast anyone is going.
+		expect(
+			statusOf(bar({ start: october(22), end: october(28) }), targetOn(20)),
+		).toBe("startsAfterTarget");
 	});
 
-	it("leaves a bar that fits alone, on a chart where another does not", () => {
-		// Asserted in the same call as a bar that *is* marked. On its own an absence passes
-		// against a module that returns nothing at all.
-		const caps = buildDeliveryBarCaps(
+	it("says nothing about a bar that fits, on a chart where another does not", () => {
+		// Asserted in the same call as a bar that does have something to say. On its own an
+		// absence passes against a module that returns nothing at all.
+		const statuses = buildDeliveryBarStatuses(
 			[
 				bar({ featureId: 1, start: october(5), end: october(15) }),
 				bar({ featureId: 2, start: october(5), end: october(25) }),
@@ -62,33 +53,27 @@ describe("which end of a bar crossed the target", () => {
 			targetOn(20),
 		);
 
-		expect(caps.get(1)).toBeUndefined();
-		expect(caps.get(2)?.end).toBe("endsAfterTarget");
+		expect(statuses.get(1)).toBeUndefined();
+		expect(statuses.get(2)).toBe("endsAfterTarget");
 	});
 
 	it("treats the target day itself as in time, and the day after as not", () => {
 		// The boundary the whole slice turns on, and the quietest mutation available: `>=` for `>`
 		// moves every bar that lands exactly on the date into the late column. Both sides of it
 		// here, so a module that never marks and a module that always marks both fail.
-		expect(
-			capsFor(bar({ end: october(20) }), targetOn(20))?.end,
-		).toBeUndefined();
-		expect(capsFor(bar({ end: october(21) }), targetOn(20))?.end).toBe(
+		expect(statusOf(bar({ end: october(20) }), targetOn(20))).toBeUndefined();
+		expect(statusOf(bar({ end: october(21) }), targetOn(20))).toBe(
 			"endsAfterTarget",
 		);
 	});
 
 	it("treats a bar beginning on the target day as begun in time", () => {
 		// The same boundary at the other end, where an off-by-one is likelier because the start
-		// test is the one written second. Its end is marked, because it ends on a later day - that
-		// is a later *day* and not a later hour, which is the next test's question.
-		const caps = capsFor(
-			bar({ start: october(20), end: october(21) }),
-			targetOn(20),
-		);
-
-		expect(caps?.start).toBeUndefined();
-		expect(caps?.end).toBe("endsAfterTarget");
+		// test is the one written second. It still finishes late, because it ends on a later day -
+		// a later *day* and not a later hour, which is the next test's question.
+		expect(
+			statusOf(bar({ start: october(20), end: october(21) }), targetOn(20)),
+		).toBe("endsAfterTarget");
 	});
 
 	it("asks which day, never which hour", () => {
@@ -98,45 +83,47 @@ describe("which end of a bar crossed the target", () => {
 		// A bar ending late *on* the target day is in time. Comparing the bar's instant against the
 		// reduced target marks it, because eleven at night is after midnight.
 		expect(
-			capsFor(bar({ end: october(20, 23) }), targetOn(20))?.end,
+			statusOf(bar({ end: october(20, 23) }), targetOn(20)),
 		).toBeUndefined();
 
 		// And a bar ending at midnight on the day *after* is late. Comparing raw instants misses
 		// it: the stored target is late in the UTC day, which in this timezone is half an hour into
 		// the following local day, so the bar lands before it and reads as in time.
-		expect(capsFor(bar({ end: october(21, 0) }), targetOn(20))?.end).toBe(
+		expect(statusOf(bar({ end: october(21, 0) }), targetOn(20))).toBe(
 			"endsAfterTarget",
 		);
 	});
 });
 
 describe("a bar that has already finished", () => {
-	it("says so at both ends, whatever the date says", () => {
-		// Three cases. A module that treats "done" as a verdict that outranks "late" fails the
-		// second; one that looks at the target before asking whether the work is over fails the
-		// third.
+	it("says so whatever the date says", () => {
+		// Three cases. A module that ranks "done" below "late" fails the second; one that looks at
+		// the target before asking whether the work is over fails the third.
 		const finished = bar({ endIsObserved: true });
 
-		expect(capsFor(finished, targetOn(25))).toEqual({
-			start: "finished",
-			end: "finished",
+		expect(statusOf(finished, targetOn(25))).toBe("finished");
+		expect(statusOf(finished, targetOn(1))).toBe("finished");
+		expect(statusOf(finished, undefined)).toBe("finished");
+	});
+
+	it("says so even when it has not begun by the date either", () => {
+		// The one case where both rankings are in play at once. Finished outranks everything, so
+		// a module applying the start test first gets this wrong and only this test would know.
+		const finishedLate = bar({
+			start: october(22),
+			end: october(28),
+			endIsObserved: true,
 		});
-		expect(capsFor(finished, targetOn(1))).toEqual({
-			start: "finished",
-			end: "finished",
-		});
-		expect(capsFor(finished, undefined)).toEqual({
-			start: "finished",
-			end: "finished",
-		});
+
+		expect(statusOf(finishedLate, targetOn(20))).toBe("finished");
 	});
 });
 
 describe("a Delivery with no date to be late against", () => {
-	it("marks what has finished and nothing else", () => {
+	it("speaks for what has finished and nothing else", () => {
 		// Both halves, and the criterion has no falsifier without them: a module that returns an
 		// empty map whenever there is no target satisfies the first on its own and is wrong.
-		const caps = buildDeliveryBarCaps(
+		const statuses = buildDeliveryBarStatuses(
 			[
 				bar({ featureId: 1, start: october(30), end: october(31) }),
 				bar({ featureId: 2, endIsObserved: true }),
@@ -144,8 +131,8 @@ describe("a Delivery with no date to be late against", () => {
 			undefined,
 		);
 
-		expect(caps.get(1)).toBeUndefined();
-		expect(caps.get(2)?.end).toBe("finished");
+		expect(statuses.get(1)).toBeUndefined();
+		expect(statuses.get(2)).toBe("finished");
 	});
 });
 
@@ -153,7 +140,7 @@ describe("the shape of the answer", () => {
 	it("keeps each bar's verdict under its own Feature", () => {
 		// Keyed by Feature rather than by position, which is right until the board is re-ordered
 		// and then silently wrong for every reader.
-		const caps = buildDeliveryBarCaps(
+		const statuses = buildDeliveryBarStatuses(
 			[
 				bar({ featureId: 11, start: october(22), end: october(28) }),
 				bar({ featureId: 22, start: october(5), end: october(25) }),
@@ -162,15 +149,16 @@ describe("the shape of the answer", () => {
 			targetOn(20),
 		);
 
-		expect(caps.get(11)?.start).toBe("startsAfterTarget");
-		expect(caps.get(22)?.start).toBeUndefined();
-		expect(caps.get(33)?.start).toBe("finished");
+		expect(statuses.get(11)).toBe("startsAfterTarget");
+		expect(statuses.get(22)).toBe("endsAfterTarget");
+		expect(statuses.get(33)).toBe("finished");
 	});
 
-	it("leaves out a bar with nothing to say, rather than handing over an empty one", () => {
-		// An entry with no ends in it is drawn as a mark with nothing behind it. Paired with a bar
-		// that does belong, so this cannot pass against a module that returns an empty map.
-		const caps = buildDeliveryBarCaps(
+	it("leaves out a bar with nothing to say", () => {
+		// On track is the ordinary case, and a colour worn by nearly every bar tells the reader
+		// nothing about any of them. Paired with a bar that does belong, so this cannot pass
+		// against a module that returns an empty map.
+		const statuses = buildDeliveryBarStatuses(
 			[
 				bar({ featureId: 1, start: october(5), end: october(15) }),
 				bar({ featureId: 2, start: october(5), end: october(25) }),
@@ -178,7 +166,7 @@ describe("the shape of the answer", () => {
 			targetOn(20),
 		);
 
-		expect(caps.has(1)).toBe(false);
-		expect(caps.has(2)).toBe(true);
+		expect(statuses.has(1)).toBe(false);
+		expect(statuses.has(2)).toBe(true);
 	});
 });

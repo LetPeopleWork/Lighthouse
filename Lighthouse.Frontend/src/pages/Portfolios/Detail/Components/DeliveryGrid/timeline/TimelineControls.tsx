@@ -1,8 +1,6 @@
 import {
 	Box,
 	Divider,
-	FormControlLabel,
-	Switch,
 	ToggleButton,
 	ToggleButtonGroup,
 	Typography,
@@ -12,43 +10,51 @@ import {
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
+import type { TimelineView } from "./timelineView";
 
 const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
+const VIEW_LABEL_ID = "delivery-timeline-view";
 
 /**
- * One thing the reader can choose to be shown.
+ * One thing the chart can be asked to show, and whether this Delivery can answer it.
  *
- * `offered` is not the same as unchecked. A control the chart cannot act on is withheld entirely
- * rather than shown inert: it is still worth the click that proves it does nothing, and a reader
- * who gets nothing back concludes the chart is broken rather than that the question does not apply
- * to this Delivery.
+ * A view the chart cannot act on is left out of the group entirely rather than offered and inert.
+ * It is still worth the click that proves it does nothing, and a reader who gets nothing back
+ * concludes the chart is broken rather than that the question does not apply here.
  */
-export interface TimelineToggle {
-	id: string;
+export interface TimelineViewOption {
+	view: TimelineView;
 	label: string;
 	offered: boolean;
-	shown: boolean;
-	toggle: () => void;
 }
 
 export interface TimelineControlsProps {
 	percentile: TimelinePercentile;
 	onPercentileChosen: (chosen: TimelinePercentile) => void;
-	toggles: TimelineToggle[];
+	view: TimelineView;
+	onViewChosen: (chosen: TimelineView) => void;
+	views: TimelineViewOption[];
 }
 
 /**
- * The row above the chart: how confident to be, and what to be shown.
+ * The row above the chart: how confident to be, and what to be told.
  *
- * It wraps rather than overflows. Four controls do not fit the narrowest width a Delivery is shown
- * at, and a row the reader has to scroll sideways hides whichever control ends up last.
+ * Two groups of the same kind, because they are two questions of the same kind - pick one of these,
+ * and the picture changes. The first was here already; the second reads as its sibling rather than
+ * as a row of independent switches, which is what it looked like when each thing the chart could
+ * say had a switch of its own.
+ *
+ * It wraps rather than overflows. Two groups do not fit the narrowest width a Delivery is shown at,
+ * and a row the reader has to scroll sideways hides whichever control ends up last.
  */
 const TimelineControls: React.FC<TimelineControlsProps> = ({
 	percentile,
 	onPercentileChosen,
-	toggles,
+	view,
+	onViewChosen,
+	views,
 }) => {
-	const offered = toggles.filter((toggle) => toggle.offered);
+	const offered = views.filter((option) => option.offered);
 
 	return (
 		<Box
@@ -91,26 +97,39 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
 				))}
 			</ToggleButtonGroup>
 
-			{/* Switches rather than more buttons beside the three: that group means "pick one of
-			    these", and each of these is on or off - which is also why they are set apart from it
-			    rather than sitting flush against it as further members of it. */}
-			{offered.length > 0 && (
-				<Divider orientation="vertical" flexItem sx={{ mx: 1.5, my: 0.5 }} />
-			)}
+			{/* Offered only where there is a choice to make. With nothing this Delivery can say
+			    about its bars, the group is one button reading "Nothing" - which is not a control,
+			    it is a statement dressed as one. */}
+			{offered.length > 1 && (
+				<>
+					<Divider orientation="vertical" flexItem sx={{ mx: 1.5, my: 0.5 }} />
 
-			{offered.map((toggle) => (
-				<FormControlLabel
-					key={toggle.id}
-					control={
-						<Switch
-							size="small"
-							checked={toggle.shown}
-							onChange={toggle.toggle}
-						/>
-					}
-					label={toggle.label}
-				/>
-			))}
+					<Typography variant="body2" color="text.secondary" id={VIEW_LABEL_ID}>
+						Show
+					</Typography>
+					<ToggleButtonGroup
+						exclusive
+						size="small"
+						value={view}
+						onChange={(_, chosen: TimelineView | null) => {
+							// Clicking the active button reports null. "Nothing" is already one of
+							// the buttons, so the useful thing to do with that is nothing at all -
+							// otherwise the group would have two ways to reach one state and a
+							// reader could empty it by accident.
+							if (chosen !== null) {
+								onViewChosen(chosen);
+							}
+						}}
+						aria-labelledby={VIEW_LABEL_ID}
+					>
+						{offered.map((option) => (
+							<ToggleButton key={option.view} value={option.view}>
+								{option.label}
+							</ToggleButton>
+						))}
+					</ToggleButtonGroup>
+				</>
+			)}
 		</Box>
 	);
 };

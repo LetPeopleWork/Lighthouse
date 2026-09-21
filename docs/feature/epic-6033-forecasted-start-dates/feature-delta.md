@@ -4252,3 +4252,70 @@ and no wave-end expansion menu.
 declares no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
 
 Next: DELIVER, slice 07 (Story #6067).
+
+---
+
+## Wave: DELIVER / [REF] Slice 07 — The encoding was rebuilt after it was seen running
+
+Slice 07 shipped its first encoding, the maintainer looked at it on a real Delivery, and rejected it.
+Recorded here rather than folded in silently, because the thing that was rejected was not a detail.
+
+**The verdict**: *"I'm not convinced… It works correctly otherwise, just don't like what I see."* The
+caps were too small to carry a verdict, and the goal they were built for — Teams, status and warnings all
+legible at once — was the wrong goal. A reader asks one question at a time.
+
+### What replaced it
+
+**One choice of what the chart says about its bars — nothing, the Teams, the status, or the warnings —
+and the bar wears the answer as its whole fill.** Rendered as a second exclusive group beside Probability,
+because it is the same kind of question: pick one of these, and the picture changes.
+
+**Status is the default**, which is the largest change to what an existing reader sees that this Epic has
+made. It is defended on one ground: of the four, it is the only one whose answer is not available
+elsewhere in the product. The Teams and the warnings are both on the Feature table; whether a bar crosses
+the target date is nowhere.
+
+ADR-205 is **rewritten rather than amended** — it argued for caps in every section — and renamed to
+`adr-205-the-delivery-timeline-answers-one-question-at-a-time.md`. The cap encoding is preserved in its
+alternatives, including the one merit it had and this does not.
+
+### What survived the rework untouched
+
+`deliveryBarStatus.ts`'s comparison — calendar days, strictly after, both sides reduced — and its three
+boundary scenarios. `endIsObserved` on `TimelineBar`. The colour palette and both of its accepted
+collisions. The visibility rule that a control the chart cannot act on is absent rather than inert, and
+the rule that no control's presence moves with the probability. Everything the adversarial review found
+and everything mutation testing closed.
+
+### What the rework cost
+
+| | |
+|---|---|
+| **The precedence is back** | One bar carries one colour, so the three cases are ranked again: finished, then not-started-in-time, then finishes-late. D7-13 withdrew D7-4 on the grounds that a mark at each end had nothing to rank; that reasoning went with the caps |
+| **A bar can no longer say two things** | "Starts late, and therefore also ends late" was the one thing the caps did better. It is given up knowingly |
+| **The reader gives up simultaneity** | "Which Team is making this late" is now two looks rather than one. Accepted in as many words |
+| **Three booleans became one word** | The stored choice is a word, so a build that renames or withdraws a view leaves readers holding something it does not know. That is a new failure mode, and the store validates against the words on offer and falls back |
+| **A page-wide choice meets Deliveries that differ** | A Delivery that cannot answer the chosen view shows nothing rather than something else, and leaves the stored choice untouched so the Delivery that can honour it still does. New with either/or, and tested |
+
+### The key was kept, against the instinct to drop it
+
+The maintainer's proposal included dropping the status key as self-explanatory. It is kept, and the reason
+is a consequence of the same conversation: **`finished` is green and an on-track bar is also green.** The
+key is the only thing that tells them apart. If the two greens turn out to read cleanly apart at bar
+height, the key becomes droppable and should be dropped then.
+
+### Still to be answered by looking
+
+The two colour collisions are unchanged in substance and both are now easier, because the mark is a whole
+bar rather than four pixels:
+
+1. **Late amber against the target band's amber.** A whole bar against a tinted column reads as a bar;
+   whether that is enough is still a question for a real chart. If not, the band moves.
+2. **Finished green against the default bar green.** New with this encoding. If they do not read apart,
+   the thing to move is the default fill — it belongs to every bar on every Delivery, and `finished`
+   belongs to a case.
+
+**Mutation testing must be re-run.** Both existing reports are against the cap encoding: `deliveryBarStatus`
+now returns one verdict rather than two ends, `pagePreference` and `timelinePreferences` are gone in
+favour of `pageChoice` and `timelineView`, and `TimelineControls` and `TimelineLegend` are both rewritten.
+A score measured against code that no longer exists is worse than no score.

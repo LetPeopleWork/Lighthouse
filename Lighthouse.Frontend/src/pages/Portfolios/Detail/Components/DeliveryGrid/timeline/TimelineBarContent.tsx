@@ -4,11 +4,9 @@ import { Box, Tooltip } from "@mui/material";
 import type React from "react";
 import { createContext, useContext } from "react";
 import { getContrastText } from "../../../../../../utils/theme/colors";
-import type { BarEndCaps } from "./deliveryBarStatus";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import { barTooltip } from "./ganttShapes";
-import { STATUS_CAP_COLORS } from "./timelineMarkers";
 
 /**
  * One thing a bar has to say, and whether it is worth an alarm. Decided by whoever writes the note
@@ -89,13 +87,17 @@ export interface TimelineBarContentProps {
 	 */
 	team?: TeamColour;
 	/**
-	 * What this Feature's own bar has to say about the Delivery's target date, at whichever end
-	 * crossed it. Absent while the reader has not asked to see it, and absent for a bar that fits.
+	 * The colour this bar wears for what it has to say about the Delivery's target date. Absent
+	 * unless the reader has asked for the status, and absent for a bar that fits - a colour on every
+	 * bar tells them nothing about any of them.
 	 *
 	 * Never given to a lane. Whether the *Feature* misses the date is not a fact about one of its
 	 * Teams, and a Feature with three of them would otherwise say it four times.
+	 *
+	 * It cannot arrive alongside `team`: both are the bar's fill, and the reader is asked one
+	 * question at a time so that each answer gets the whole bar.
 	 */
-	caps?: BarEndCaps;
+	statusColor?: string;
 	/** Absent means the row is inert: no pointer, no click, and nothing promised on hover. */
 	onSelect?: (featureId: number) => void;
 }
@@ -104,7 +106,7 @@ const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 	bar,
 	lane,
 	team,
-	caps,
+	statusColor,
 	onSelect,
 }) => {
 	const marks = useContext(BarMarks);
@@ -132,8 +134,7 @@ const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 	return (
 		<RowBody
 			hoverText={barHoverText(bar, onSelect !== undefined, mark)}
-			fill={team?.color}
-			caps={caps}
+			fill={team?.color ?? statusColor}
 			onSelect={onSelect ? () => onSelect(bar.featureId) : undefined}
 		>
 			{bar.name}
@@ -180,43 +181,12 @@ const NameOnBar: React.FC<{ name: string }> = ({ name }) => (
 export const rowTextColour = (fill?: string): string =>
 	fill ? getContrastText(fill) : "inherit";
 
-/** How far into the bar a cap reaches. Wide enough to see, narrow enough not to be the bar. */
-const CAP_WIDTH_PX = 4;
-
-/**
- * The caps, as one declaration.
- *
- * Shadows rather than borders or an outline, and the choice is load-bearing: a border would change
- * the box's size and so the span the bar appears to cover, and an outline is drawn outside the box
- * where the chart's own overflow clips it away. A shadow is painted inside and costs no room.
- *
- * The sign of the offset is which end it is on. Nothing else distinguishes them.
- */
-export const capShadow = (caps?: BarEndCaps): string | undefined => {
-	const insets: string[] = [];
-
-	if (caps?.start) {
-		insets.push(
-			`inset ${CAP_WIDTH_PX}px 0 0 0 ${STATUS_CAP_COLORS[caps.start]}`,
-		);
-	}
-
-	if (caps?.end) {
-		insets.push(
-			`inset -${CAP_WIDTH_PX}px 0 0 0 ${STATUS_CAP_COLORS[caps.end]}`,
-		);
-	}
-
-	return insets.length > 0 ? insets.join(", ") : undefined;
-};
-
 const RowBody: React.FC<{
 	hoverText: React.ReactNode;
 	fill?: string;
-	caps?: BarEndCaps;
 	onSelect?: () => void;
 	children: React.ReactNode;
-}> = ({ hoverText, fill, caps, onSelect, children }) => {
+}> = ({ hoverText, fill, onSelect, children }) => {
 	const isClickable = onSelect !== undefined;
 
 	return (
@@ -238,7 +208,6 @@ const RowBody: React.FC<{
 					px: 1,
 					background: "none",
 					backgroundColor: fill,
-					boxShadow: capShadow(caps),
 					border: "none",
 					font: "inherit",
 					color: rowTextColour(fill),

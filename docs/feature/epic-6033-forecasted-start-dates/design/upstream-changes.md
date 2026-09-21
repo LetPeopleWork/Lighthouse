@@ -280,3 +280,96 @@ forecast.
 > does not change when the probability changes.**
 
 Scenario 31 covers what the switch does; **scenario 32 covers when it is offered.**
+
+---
+
+# Upstream changes owed by DELIVER — Epic 6033, slice 07 (US-07 / ADO #6067)
+
+Raised 2026-09-21, after the first encoding was built and looked at. The maintainer's verdict on seeing
+it: the marks were too small to read, and showing three things at once was the wrong goal — the reader
+asks one question at a time. What follows is what that costs the criteria, written here rather than
+edited in place.
+
+The encoding is now: **one choice of what the chart says about its bars — nothing, the Teams, the status
+or the warnings — and the bar wears the answer as its whole fill.** ADR-205 is rewritten accordingly
+rather than amended; it argued for caps throughout.
+
+---
+
+## 10. AC-7.2 and D7-4 — the precedence is reinstated
+
+**Item 5 above withdrew D7-4** on the grounds that, with a mark at each end, there was nothing for a
+ranking to rank. A whole-bar fill takes that back: one bar carries one colour, so the three cases are
+ranked again.
+
+> **Live form**
+>
+> **AC-7.2** — A Feature whose bar *starts* after the target date carries the "not started in time"
+> colour, and not the "finishes late" one. Every bar that starts after the date also ends after it, so
+> without the ranking the sharper case would never be seen — and it is a different conversation, about
+> what the Delivery contains rather than about how fast anyone is going.
+>
+> **D7-4 stands as originally written.** D7-13's withdrawal of it applied only to the cap encoding.
+
+---
+
+## 11. AC-7.5 — the whole bar, not an edge and not a cap
+
+> **Original, verbatim (2026-09-21)**
+>
+> **AC-7.5** — The status is carried by an **edge on the bar, not its fill**. With the Teams shown, a bar
+> keeps its Team colour *and* its status; neither hides the other, at any combination of the two switches.
+
+**Both halves are gone.** The status *is* the fill, and a bar never carries the Teams and the status at
+once, because the reader is asked one question at a time. What the criterion was protecting — that
+choosing one thing does not silently cost the reader another — is now served by saying so outright
+rather than by finding room for both.
+
+> **Proposed**
+>
+> **AC-7.5** — While the status is being shown, a Feature's bar wears its status as its whole fill. The
+> Teams and the status are never on the chart together: the reader chooses one, the control says which,
+> and neither is ever hidden while something claims it is showing.
+
+---
+
+## 12. AC-7.8 and AC-7.9 — one control, and the default is not "off"
+
+> **Original, verbatim (2026-09-21, as already amended)**
+>
+> **AC-7.8** — A **Show status** switch, default off. It is absent, never present-and-inert, on a
+> Delivery that could carry no status at all …
+>
+> **AC-7.9** — A **Show warnings** switch, default off, hides every bar mark … It is absent, never
+> present-and-inert, on a Delivery where no Feature has anything to be marked for …
+
+**Two switches become one group of four, and the default becomes the status rather than nothing.** The
+visibility rule survives unchanged and now governs every option; the default is a deliberate change to
+what an existing reader sees, and a larger one than either switch was on its own.
+
+> **Proposed**
+>
+> **AC-7.8** — The chart offers one choice of what it says about its bars: nothing, the Teams, the
+> status, or the warnings. **The status is what a reader who has never chosen is shown** — it is the only
+> one of the four whose answer is not available elsewhere in the product. An option this Delivery cannot
+> answer is absent, never present-and-inert, and the group is absent entirely when only "nothing" is
+> left. **No option's presence changes when the probability changes.**
+>
+> **AC-7.9** — Choosing anything other than the warnings removes every warning mark: the symbol *and* the
+> sentences it contributes to the bar's hover text. The warnings column in the list opened from a bar is
+> untouched.
+
+---
+
+## 13. AC-7.6 — unchanged in force, changed in mechanism
+
+AC-7.6 said a Team's sub-lane carries no status. It still holds, and now holds for a second reason: the
+lanes and the status are never on the chart at the same time. The criterion needs no rewording; this note
+exists so the next reader knows it is guarded twice rather than once.
+
+## Not changed
+
+**AC-7.1, AC-7.3, AC-7.4, AC-7.7 and AC-7.10 to AC-7.12 stand as written.** AC-7.7 in particular is
+strengthened: the key was arguably droppable while each mark sat at a known end of the bar, and is not
+droppable now, because a finished bar and an on-track bar are both green and nothing else tells them
+apart.

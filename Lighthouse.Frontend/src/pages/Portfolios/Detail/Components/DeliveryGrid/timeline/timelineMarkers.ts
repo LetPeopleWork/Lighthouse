@@ -62,7 +62,7 @@ export function markerLabels(
 }
 
 /**
- * The colour each end of a bar is capped in.
+ * The colour a bar wears for what it has to say about the target date.
  *
  * These are the colours this product already uses for how a forecast is going, borrowed rather than
  * invented so that the chart does not start a fourth colour vocabulary beside the likelihood chip's,
@@ -70,12 +70,16 @@ export function markerLabels(
  *
  * **"Ends after the target" is deliberately the same colour as the target column itself.** It is the
  * only one of the three that was already spoken for, and it was taken anyway rather than recolouring
- * a column that has shipped. The two are told apart by shape and position — a tinted column standing
- * up through the whole chart against a few pixels at the end of one bar — and by the key, which names
- * the cap. If they turn out not to be, the column moves to a colour nothing else uses and these stay
- * as they are.
+ * a column that has shipped. A whole bar against a tinted column reads as a bar; the two are told
+ * apart by being different shapes at different scales, and by the key. If they turn out not to be,
+ * the column moves to a colour nothing else uses and these stay as they are.
+ *
+ * **`finished` is a second green on a chart whose bars are already green.** The default fill is the
+ * product's own colour and a finished bar is this one, and whether they read apart at bar height is
+ * a question for someone looking at a real chart. If they do not, this is the one to move: the
+ * default fill belongs to every bar on every Delivery, and this one belongs to a case.
  */
-export const STATUS_CAP_COLORS: Record<BarStatusKind, string> = {
+export const STATUS_COLORS: Record<BarStatusKind, string> = {
 	finished: certainColor,
 	startsAfterTarget: riskyColor,
 	endsAfterTarget: realisticColor,

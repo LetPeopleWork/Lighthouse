@@ -10,16 +10,11 @@ import type {
 import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
-import type { BarEndCaps } from "./deliveryBarStatus";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
-import {
-	showStatusStore,
-	showTeamsStore,
-	showWarningsStore,
-} from "./timelinePreferences";
+import { timelineViewStore } from "./timelineView";
 
 const licence = vi.hoisted(() => ({
 	isPremium: true,
@@ -46,7 +41,7 @@ type GanttProps = {
 	bars: TimelineBar[];
 	lanes?: TeamLane[];
 	barTeams?: ReadonlyMap<number, TeamColour>;
-	barCaps?: ReadonlyMap<number, BarEndCaps>;
+	barStatusColors?: ReadonlyMap<number, string>;
 	links?: DrawnDependency[];
 	targetDate?: Date;
 	today?: Date;
@@ -170,9 +165,14 @@ const ZENITH: IEntityReference = { id: 5, name: "Zenith" };
 const GRAVITY: IEntityReference = { id: 6, name: "Gravity" };
 const MERIDIAN: IEntityReference = { id: 7, name: "Meridian" };
 
-const SHOW_TEAMS_KEY = "lighthouse:deliveryTimeline:showTeams";
+const VIEW_KEY = "lighthouse:deliveryTimeline:view";
 
-const showTeamsSwitch = () => screen.getByRole("switch");
+const teamsButton = () => screen.getByRole("button", { name: "Teams" });
+
+/** Asks the chart for the Teams the way a reader does, through the control. */
+const askForTheTeams = async () => {
+	await userEvent.click(teamsButton());
+};
 
 /**
  * Breaks one of storage's own methods, and puts it back afterwards.
@@ -223,9 +223,7 @@ beforeEach(() => {
 	// Each switch's state is shared across every Delivery on the page, which means it is held
 	// outside React and outlives a test. Clearing storage alone would leave the previous test's
 	// choice standing.
-	showTeamsStore.forget();
-	showStatusStore.forget();
-	showWarningsStore.forget();
+	timelineViewStore.forget();
 	vi.restoreAllMocks();
 });
 
@@ -525,7 +523,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar of a Feature the table warns about, dependency or not", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
@@ -537,7 +535,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar of a Feature marked done with work still left", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({
@@ -554,7 +552,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar in the words of the reason the forecast gives", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
@@ -575,7 +573,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar of a Feature whose blocker sits below it, and still draws the line", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
@@ -603,7 +601,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("marks, without alarm, a bar whose only note is where its blocker went", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({
@@ -622,7 +620,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on a bar that has both a warning and a note, and says both", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({
@@ -640,7 +638,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("leaves a bar with nothing against it unmarked, and offers no all-clear", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([feature({ id: 1, name: "Sonar Refit" })]);
 
@@ -656,7 +654,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("explains a warning that has nothing to do with dependencies on hover", async () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		renderTab([
 			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
@@ -675,7 +673,7 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns in the words this instance uses for the things it names", () => {
-		showWarningsStore.set(true);
+		timelineViewStore.set("warnings");
 
 		terminology.overrides = { [TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets" };
 
@@ -705,7 +703,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		expect(ganttProps.current?.lanes ?? []).toEqual([]);
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		// The lanes reach the chart, each written with its own Team's name and its own dates, and
 		// the Feature's own bar arrives exactly as it arrived before the click.
@@ -727,12 +725,15 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		const untouched = { ...ganttProps.current };
 
-		expect(showTeamsSwitch()).not.toBeChecked();
+		expect(teamsButton()).toHaveAttribute("aria-pressed", "false");
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 		expect(ganttProps.current?.lanes).toHaveLength(2);
 
-		await userEvent.click(showTeamsSwitch());
+		// Asking for nothing is how the reader gets back, now that the views are one choice rather
+		// than three switches: clicking the Teams again would report an empty group, which the
+		// control ignores so that the chart can never end up showing something no button claims.
+		await userEvent.click(screen.getByRole("button", { name: "Nothing" }));
 
 		// A round trip that does not return leaves the reader with a chart they cannot put back.
 		expect(ganttProps.current?.lanes ?? []).toEqual(untouched.lanes ?? []);
@@ -745,7 +746,9 @@ describe("showing the Teams behind a Feature's bar", () => {
 		renderTab([feature({ id: 1, teamForecasts: [forTeam(5, 12, 15)] })]);
 
 		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
-		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Teams" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("offers the control for a Delivery whose Features each have one Team", () => {
@@ -769,7 +772,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			[ZENITH, GRAVITY],
 		);
 
-		expect(screen.getByRole("switch")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Teams" })).toBeInTheDocument();
 		expect(ganttProps.current?.lanes ?? []).toEqual([]);
 	});
 
@@ -796,7 +799,9 @@ describe("showing the Teams behind a Feature's bar", () => {
 		);
 
 		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
-		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Teams" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("offers the control where a placed Feature's second Team has no dates", () => {
@@ -815,7 +820,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			[ZENITH, MERIDIAN],
 		);
 
-		expect(screen.getByRole("switch")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Teams" })).toBeInTheDocument();
 	});
 
 	it("names the control in this instance's own word for a Team", () => {
@@ -824,9 +829,9 @@ describe("showing the Teams behind a Feature's bar", () => {
 			GRAVITY,
 		]);
 
-		expect(within(seeded.container).getByRole("switch")).toHaveAccessibleName(
-			"Show Teams",
-		);
+		expect(
+			within(seeded.container).getByRole("button", { name: "Teams" }),
+		).toHaveAccessibleName("Teams");
 
 		terminology.overrides = { [TERMINOLOGY_KEYS.TEAMS]: "Squads" };
 
@@ -837,14 +842,12 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		// Pinned against both literals. The label is JSX text, which a mutation run never
 		// challenges, and a hard-coded string passes the first clause and fails only the second.
-		expect(within(renamed.container).getByRole("switch")).toHaveAccessibleName(
-			"Show Squads",
-		);
+		expect(
+			within(renamed.container).getByRole("button", { name: "Squads" }),
+		).toHaveAccessibleName("Squads");
 	});
 
 	it("says nothing about a missing lane on a chart that has no lanes", async () => {
-		showWarningsStore.set(true);
-
 		// With the switch off there is no split, so there is nothing for a Team to be missing
 		// from. A note about a lane on a chart without lanes names something the reader cannot
 		// see, and breaks the one promise the switch makes: off is the chart exactly as it was.
@@ -866,14 +869,12 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		// Paired with the same bar once the Teams are shown, so this cannot pass against a tab
 		// that never says anything about an un-laned Team at all.
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		expect(markOn(1)).toHaveAccessibleName(/Meridian/);
 	});
 
 	it("names a Team with no lane on its Feature's bar, as a note rather than an alarm", async () => {
-		showWarningsStore.set(true);
-
 		renderTab(
 			[
 				splittingFeature({
@@ -887,7 +888,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			[ZENITH, MERIDIAN],
 		);
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		// Asserted against the fixture's own Team name and against the mark's accessible name,
 		// whose leading word is what tells a note from a warning. Never against what the sentence
@@ -908,16 +909,16 @@ describe("showing the Teams behind a Feature's bar", () => {
 			GRAVITY,
 		]);
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		// The key is pinned exactly once, here. A round trip passes happily against any key at
 		// all, and a renamed key silently forgets every reader's choice.
-		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBe("true");
+		expect(localStorage.getItem(VIEW_KEY)).toBe("teams");
 
 		unmount();
 		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
 
-		expect(showTeamsSwitch()).toBeChecked();
+		expect(teamsButton()).toHaveAttribute("aria-pressed", "true");
 		expect(ganttProps.current?.lanes).toHaveLength(2);
 	});
 
@@ -927,17 +928,17 @@ describe("showing the Teams behind a Feature's bar", () => {
 		// The house precedent for this defaults to ON and therefore compares against "false".
 		// Lifted without flipping it, an absent key reads as on and every reader who has never
 		// heard of the feature meets a chart of twenty-one rows.
-		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBeNull();
+		expect(localStorage.getItem(VIEW_KEY)).toBeNull();
 		expect(ganttProps.current?.lanes ?? []).toEqual([]);
 	});
 
 	it("keeps the tab working, and the lanes off, when storage is blocked or corrupt", async () => {
-		// Stored as on **before** the read is broken. Against an absent key this asserts nothing:
-		// no lanes is what an unset preference produces anyway, so a guard that never ran and a
-		// reader who never chose are indistinguishable. With the choice stored, a read that got
+		// The Teams are stored **before** the read is broken. Against an absent key this asserts
+		// nothing: no lanes is what an unset choice produces anyway, so a guard that never ran and
+		// a reader who never chose are indistinguishable. With the choice stored, a read that got
 		// through would put two lanes on the chart.
-		localStorage.setItem(SHOW_TEAMS_KEY, "true");
-		showTeamsStore.forget();
+		localStorage.setItem(VIEW_KEY, "teams");
+		timelineViewStore.forget();
 		breakStorage("getItem");
 
 		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
@@ -947,20 +948,21 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		repairStorage();
 		localStorage.clear();
-		showTeamsStore.forget();
+		timelineViewStore.forget();
 
-		// `Boolean("false")` is true, which is how this gets written wrong everywhere: the
-		// preference would invert itself on every reload and off would become unreachable.
-		for (const stored of ["false", "maybe"]) {
-			localStorage.setItem(SHOW_TEAMS_KEY, stored);
-			showTeamsStore.forget();
+		// A word this version does not offer, and a word from a version that did. Handed back as
+		// it stands, either selects a button the group does not have - and the reader is left
+		// looking at a control with nothing pressed on a chart that is showing something.
+		for (const stored of ["showTeams", "sub-lanes"]) {
+			localStorage.setItem(VIEW_KEY, stored);
+			timelineViewStore.forget();
 			renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
 
 			expect(ganttProps.current?.lanes ?? []).toEqual([]);
 		}
 
 		localStorage.clear();
-		showTeamsStore.forget();
+		timelineViewStore.forget();
 		breakStorage("setItem");
 
 		const blocked = renderTab([splittingFeature()], undefined, [
@@ -969,15 +971,17 @@ describe("showing the Teams behind a Feature's bar", () => {
 		]);
 
 		// Storage that will not take the choice costs this reader the memory of it, not the view.
-		await userEvent.click(within(blocked.container).getByRole("switch"));
+		await userEvent.click(
+			within(blocked.container).getByRole("button", { name: "Teams" }),
+		);
 
 		expect(ganttProps.current?.lanes).toHaveLength(2);
-		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBeNull();
+		expect(localStorage.getItem(VIEW_KEY)).toBeNull();
 	});
 
-	it("moves every switch on the page together, not just the one clicked", async () => {
-		// A Portfolio opens several Deliveries at once, each with a switch of its own. Held in
-		// component state they each get a truth of their own: flick one and the others sit there
+	it("moves every control on the page together, not just the one clicked", async () => {
+		// A Portfolio opens several Deliveries at once, each with a control of its own. Held in
+		// component state they each get a truth of their own: move one and the others sit there
 		// contradicting it, and storage agrees with none of them.
 		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
 		renderTab(
@@ -991,15 +995,15 @@ describe("showing the Teams behind a Feature's bar", () => {
 			[ZENITH, GRAVITY],
 		);
 
-		const [first, second] = screen.getAllByRole("switch");
+		const [first, second] = screen.getAllByRole("button", { name: "Teams" });
 
-		expect(second).not.toBeChecked();
+		expect(second).toHaveAttribute("aria-pressed", "false");
 
 		await userEvent.click(first);
 
-		expect(first).toBeChecked();
-		expect(second).toBeChecked();
-		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBe("true");
+		expect(first).toHaveAttribute("aria-pressed", "true");
+		expect(second).toHaveAttribute("aria-pressed", "true");
+		expect(localStorage.getItem(VIEW_KEY)).toBe("teams");
 	});
 
 	it("carries the reader's choice into the next Delivery they open", async () => {
@@ -1008,7 +1012,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			GRAVITY,
 		]);
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 		unmount();
 
 		// A key composed with the Delivery's id is what the nearest precedent does, and it would
@@ -1046,7 +1050,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			[ZENITH, GRAVITY, MERIDIAN],
 		);
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		// No extra row for it - with one Team the earliest and the latest are that Team, so a row
 		// would be a second bar drawn where the first one is. What it gets instead is the Team.
@@ -1076,7 +1080,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		const before = ganttProps.current?.bars;
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		// Both halves. The Team has to have arrived, or this passes against a switch that does
 		// nothing at all; and the bar has to be the bar it was, which is the whole guarantee.
@@ -1091,7 +1095,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			screen.queryByTestId("timeline-team-legend"),
 		).not.toBeInTheDocument();
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		// Every Team carrying a colour, named in full. A row is only as wide as its Team's span,
 		// so the names written along the rows are routinely cut to a few characters and this is
@@ -1117,7 +1121,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 			[MERIDIAN],
 		);
 
-		await userEvent.click(showTeamsSwitch());
+		await askForTheTeams();
 
 		expect(ganttProps.current?.lanes ?? []).toEqual([]);
 		expect(screen.getByTestId("timeline-team-legend")).toHaveTextContent(
@@ -1127,26 +1131,22 @@ describe("showing the Teams behind a Feature's bar", () => {
 });
 
 describe("a Team the split cannot give a row to", () => {
-	it("is named on the bar for a reader who has touched nothing but the Teams switch", async () => {
-		// The promise the split is built on: it never shows fewer Teams than the Feature has. That
-		// naming used to travel with the bar's other marks, which are now behind a switch of their
-		// own - so a first-time reader turning the Teams on saw one Team and was told nothing about
-		// the other, silently.
-		renderTab(
-			[
-				feature({
-					id: 1,
-					teamForecasts: [
-						forTeam(5, 12, 15),
-						{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
-					],
-				}),
+	const aFeatureWithAnUnnameableTeam = () =>
+		feature({
+			id: 1,
+			teamForecasts: [
+				forTeam(5, 12, 15),
+				{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
 			],
-			undefined,
-			[ZENITH, MERIDIAN],
-		);
+		});
 
-		await userEvent.click(screen.getByRole("switch", { name: "Show Teams" }));
+	it("is named on the bar for a reader who has asked for the Teams and nothing else", async () => {
+		// The promise the split is built on: it never shows fewer Teams than the Feature has. That
+		// naming once travelled with the bar's warnings, which meant a reader looking at the Teams
+		// was told about one of them and left to guess at the other.
+		renderTab([aFeatureWithAnUnnameableTeam()], undefined, [ZENITH, MERIDIAN]);
+
+		await askForTheTeams();
 
 		// Both halves. The lane is what proves the split ran at all; the name is what the split
 		// promised. Either alone passes against a chart that does one and not the other.
@@ -1154,28 +1154,20 @@ describe("a Team the split cannot give a row to", () => {
 		expect(screen.getByTestId("timeline-bar-1")).toHaveTextContent("Meridian");
 	});
 
-	it("is still named when the reader has quietened the warnings", async () => {
-		// Which Team is which is not a warning, and a reader who has asked for less alarm has not
-		// asked to be shown fewer Teams than the Feature has.
-		showWarningsStore.set(false);
+	it("says nothing about it when the reader is looking at something else", async () => {
+		// A sentence about a missing lane, on a chart that has no lanes, names something the reader
+		// cannot see. Paired with the test above, so neither passes against a chart that never
+		// names the Team at all.
+		renderTab([aFeatureWithAnUnnameableTeam()], undefined, [ZENITH, MERIDIAN]);
 
-		renderTab(
-			[
-				feature({
-					id: 1,
-					teamForecasts: [
-						forTeam(5, 12, 15),
-						{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
-					],
-				}),
-			],
-			undefined,
-			[ZENITH, MERIDIAN],
-		);
-
-		await userEvent.click(screen.getByRole("switch", { name: "Show Teams" }));
-
+		await askForTheTeams();
 		expect(screen.getByTestId("timeline-bar-1")).toHaveTextContent("Meridian");
+
+		await userEvent.click(screen.getByRole("button", { name: "Nothing" }));
+
+		expect(screen.getByTestId("timeline-bar-1")).not.toHaveTextContent(
+			"Meridian",
+		);
 	});
 });
 
@@ -1183,109 +1175,105 @@ describe("saying which Features are finished and which are late", () => {
 	// This Feature's bar ends on the 21st at 70 and on the 24th at 95.
 	//
 	// Two dates, because the two questions here need different ones. Due on the 20th it is late
-	// whichever probability is selected, which is what a test about *marking* wants. Due on the
+	// whichever probability is selected, which is what a test about the colouring wants. Due on the
 	// 22nd it is in time at 70 and late at 95 - the only shape in which "the control does not come
 	// and go" can fail, and therefore the only one in which it is worth asserting.
 	const DUE_ON_THE_TWENTIETH = new Date(Date.UTC(2026, 9, 20, 22, 30));
 	const DUE_ON_THE_TWENTY_SECOND = new Date(Date.UTC(2026, 9, 22, 22, 30));
 
-	const statusSwitch = () =>
-		screen.queryByRole("switch", { name: "Show status" });
+	const statusButton = () => screen.queryByRole("button", { name: "Status" });
 
-	it("shows a first-time reader no marks, and marks once asked", async () => {
-		// Both halves. Default-on fails the first; a switch wired to nothing fails the second. The
-		// Delivery is one whose work does run past the date, so an unmarked chart is a choice
-		// rather than an absence of anything to say.
+	const AMBER = "#ff9800";
+
+	it("colours the late bars for a reader who has chosen nothing", async () => {
+		// The status is what a first-time reader is shown, so this needs no arranging - which is
+		// the whole claim. Paired with a reader who asks for nothing, or it passes against a chart
+		// that colours regardless.
 		renderTab([feature()], DUE_ON_THE_TWENTIETH);
 
-		expect(ganttProps.current?.barCaps).toBeUndefined();
+		expect(ganttProps.current?.barStatusColors?.get(1)).toBe(AMBER);
 
-		await userEvent.click(statusSwitch() as HTMLElement);
+		await userEvent.click(screen.getByRole("button", { name: "Nothing" }));
 
-		expect(ganttProps.current?.barCaps?.get(1)?.end).toBe("endsAfterTarget");
+		expect(ganttProps.current?.barStatusColors).toBeUndefined();
 	});
 
 	it("keeps the control still while the reader works the probability buttons", async () => {
-		// Three halves, and the third is the one nobody writes by accident. Which bars cross the
-		// date is exactly what these buttons change, so a control offered on the strength of the
-		// marks currently drawn would appear at 95 and be gone again at 70 - under the reader's
-		// hand, while they are comparing the two.
+		// Which bars cross the date is exactly what these buttons change, so a control offered on
+		// the strength of the colouring currently drawn would appear at 95 and be gone again at 70
+		// - under the reader's hand, while they are comparing the two.
 		renderTab([feature()], DUE_ON_THE_TWENTY_SECOND);
 
-		expect(statusSwitch()).toBeInTheDocument();
+		expect(statusButton()).toBeInTheDocument();
 
 		await userEvent.click(screen.getByRole("button", { name: "95%" }));
-		expect(statusSwitch()).toBeInTheDocument();
+		expect(statusButton()).toBeInTheDocument();
 
 		await userEvent.click(screen.getByRole("button", { name: "70%" }));
-		expect(statusSwitch()).toBeInTheDocument();
+		expect(statusButton()).toBeInTheDocument();
 	});
 
-	it("withholds the control from a Delivery with nothing it could ever mark", () => {
-		// No date to be late against and nothing finished. A switch here would be one that does
-		// nothing when used, and a reader who gets nothing back concludes the chart is broken
-		// rather than that the question does not apply.
+	it("withholds the view from a Delivery with nothing it could ever say", () => {
+		// No date to be late against and nothing finished. A button here would do nothing when
+		// used, and a reader who gets nothing back concludes the chart is broken rather than that
+		// the question does not apply.
 		renderTab([feature()], undefined);
 
-		expect(statusSwitch()).not.toBeInTheDocument();
+		expect(statusButton()).not.toBeInTheDocument();
 	});
 
-	it("offers the control for a Delivery with no date but finished work in it", () => {
+	it("offers the view for a Delivery with no date but finished work in it", () => {
 		// Paired with the test above, which is what stops that one passing against a tab that
-		// never offers the control at all. Finished is not a verdict about a date, so it survives
-		// the date being absent.
+		// never offers the view at all. Finished is not a verdict about a date, so it survives the
+		// date being absent.
 		renderTab([feature({ closedDate: october(9) })], undefined);
 
-		expect(statusSwitch()).toBeInTheDocument();
+		expect(statusButton()).toBeInTheDocument();
 	});
 
-	it("withholds the control when the only finished Feature has no bar", () => {
-		// Finished work is the one thing that makes the control worth offering on a Delivery with
-		// no date. A finished Feature no bar can be drawn for is not that: nothing on the chart
-		// would ever be marked, so the switch would do nothing when used.
-		renderTab(
-			[
-				feature({ id: 1 }),
-				feature({
-					id: 2,
-					closedDate: october(9),
-					teamsWithoutForecast: ["Meridian"],
-				}),
-			],
-			undefined,
-		);
+	it("falls back to nothing on a Delivery that cannot answer what the reader asked", () => {
+		// The choice is one value for the whole page. A reader who asked for the Teams and then
+		// opens a Delivery whose Features have one Team each is shown a plain chart rather than
+		// something they did not ask for - and their choice survives for the Delivery that can
+		// honour it.
+		timelineViewStore.set("teams");
 
-		expect(statusSwitch()).not.toBeInTheDocument();
-	});
-
-	it("names each mark beside the chart once the marks are being shown", async () => {
-		// A cap carries no name, so a colour at the end of a bar says nothing at all to a reader
-		// who has not been told what it means. Pinned against the words themselves: mutation
-		// testing does not change copy, so a looser match would never be challenged.
 		renderTab([feature()], DUE_ON_THE_TWENTIETH);
 
-		expect(
-			screen.queryByTestId("timeline-status-legend"),
-		).not.toBeInTheDocument();
+		expect(ganttProps.current?.lanes).toBeUndefined();
+		expect(ganttProps.current?.barStatusColors).toBeUndefined();
+		expect(timelineViewStore.read()).toBe("teams");
+	});
 
-		await userEvent.click(statusSwitch() as HTMLElement);
+	it("names each colour beside the chart while the status is being shown", async () => {
+		// A colour on a bar says nothing by itself to a reader who has not been told what it
+		// means, and with a finished bar and an on-track bar both green it is this that tells them
+		// apart. Pinned against the words themselves: mutation testing does not change copy, so a
+		// looser match would never be challenged.
+		renderTab([feature()], DUE_ON_THE_TWENTIETH);
 
 		const key = screen.getByTestId("timeline-status-legend");
 
 		expect(key).toHaveTextContent("Finished");
 		expect(key).toHaveTextContent("Finishes after the target date");
 		expect(key).toHaveTextContent("Not even started by the target date");
+
+		await userEvent.click(screen.getByRole("button", { name: "Nothing" }));
+
+		expect(
+			screen.queryByTestId("timeline-status-legend"),
+		).not.toBeInTheDocument();
 	});
 });
 
 describe("quieting what each bar has to say", () => {
-	const warningsSwitch = () =>
-		screen.queryByRole("switch", { name: "Show warnings" });
+	const warningsButton = () =>
+		screen.queryByRole("button", { name: "Warnings" });
 
 	const markedFeature = () =>
 		feature({ id: 1, isUsingDefaultFeatureSize: true });
 
-	it("says nothing on a bar until the reader asks, then says it", async () => {
+	it("says nothing on a bar until the reader asks for the warnings", async () => {
 		// Both halves. The symbol is unconditional in the version this replaces, so the first is a
 		// deliberate change to what an existing reader sees rather than an accident.
 		renderTab([markedFeature()]);
@@ -1296,15 +1284,14 @@ describe("quieting what each bar has to say", () => {
 			),
 		).not.toBeInTheDocument();
 
-		await userEvent.click(warningsSwitch() as HTMLElement);
+		await userEvent.click(warningsButton() as HTMLElement);
 
 		expect(markOn(1)).toBeInTheDocument();
 	});
 
 	it("leaves the Feature's own warnings alone in the list opened from a bar", async () => {
 		// The column is shown by fifteen other screens that have no timeline, so gating it on a
-		// switch on this one would quieten it everywhere. Vacuously green on arrival, and here
-		// because the switch beside it is not.
+		// control on this one would quieten it everywhere.
 		renderTab([markedFeature()]);
 
 		act(() => ganttProps.current?.onBarSelected?.(1));
@@ -1314,16 +1301,15 @@ describe("quieting what each bar has to say", () => {
 		).toBeInTheDocument();
 	});
 
-	it("withholds the control from a Delivery with nothing to say about anything", () => {
+	it("withholds the view from a Delivery with nothing to say about anything", () => {
 		renderTab([feature()]);
 
-		expect(warningsSwitch()).not.toBeInTheDocument();
+		expect(warningsButton()).not.toBeInTheDocument();
 	});
 
-	it("withholds the control when the only Feature with anything to say has no bar", async () => {
-		// A Feature no bar can be drawn for cannot carry a mark, so a control offered for it does
-		// nothing when used - the thing this row promises never to do. The Teams switch already
-		// counts only what is on the chart; these two did not.
+	it("withholds the view when the only Feature with anything to say has no bar", () => {
+		// A Feature no bar can be drawn for cannot carry a mark, so a view offered for it does
+		// nothing when chosen. The Teams view already counts only what is on the chart.
 		renderTab([
 			feature({ id: 1 }),
 			feature({
@@ -1333,24 +1319,22 @@ describe("quieting what each bar has to say", () => {
 			}),
 		]);
 
-		expect(warningsSwitch()).not.toBeInTheDocument();
+		expect(warningsButton()).not.toBeInTheDocument();
 	});
 
-	it("offers the control for a Feature carrying a dependency there is nothing wrong with", async () => {
-		// A sound dependency raises no warning and still puts a note on the bar, so the control
-		// has to be offered for it. Paired with the test above, or that one passes against a tab
-		// that never offers the control.
+	it("offers the view for a Feature carrying a dependency there is nothing wrong with", async () => {
+		// A sound dependency raises no warning and still puts a note on the bar, so the view has
+		// to be offered for it. Paired with the tests above, or those pass against a tab that
+		// never offers it.
 		renderTab([
 			feature({ dependsOn: [waitingOn("OE-9", "Hull Fabrication")] }),
 		]);
 
-		expect(warningsSwitch()).toBeInTheDocument();
+		expect(warningsButton()).toBeInTheDocument();
 
-		// And it stays put across the probability buttons, for the reason the status switch does:
-		// a Team without a lane is a note that comes and goes with the probability, so a control
-		// counting the marks on the chart would flicker while the one beside it did not.
+		// And it stays put across the probability buttons, for the reason the status view does.
 		await userEvent.click(screen.getByRole("button", { name: "95%" }));
 
-		expect(warningsSwitch()).toBeInTheDocument();
+		expect(warningsButton()).toBeInTheDocument();
 	});
 });

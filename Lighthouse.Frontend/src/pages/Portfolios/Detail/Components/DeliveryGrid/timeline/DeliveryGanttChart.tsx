@@ -11,7 +11,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { BarEndCaps } from "./deliveryBarStatus";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
@@ -67,10 +66,11 @@ export interface DeliveryGanttChartProps {
 	 */
 	barTeams?: ReadonlyMap<number, TeamColour>;
 	/**
-	 * Which end of which Feature's bar runs past the target date, keyed by Feature. Absent while
-	 * the reader has not asked, and carrying only the bars that have something to say.
+	 * The colour a Feature's own bar wears for what it says about the target date, keyed by Feature.
+	 * Absent unless the reader has asked for the status, and carrying only the bars that have
+	 * something to say. Never arrives alongside `barTeams`: both are the bar's fill.
 	 */
-	barCaps?: ReadonlyMap<number, BarEndCaps>;
+	barStatusColors?: ReadonlyMap<number, string>;
 	targetDate?: Date;
 	/** Passed in rather than read here, so the chart and its legend mark the same day. */
 	today: Date;
@@ -124,7 +124,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	links,
 	lanes = NO_LANES,
 	barTeams,
-	barCaps,
+	barStatusColors,
 	targetDate,
 	today,
 	onBarSelected,
@@ -208,12 +208,12 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					bar={bar}
 					lane={content?.lane}
 					team={bar && barTeams?.get(bar.featureId)}
-					caps={bar && barCaps?.get(bar.featureId)}
+					statusColor={bar && barStatusColors?.get(bar.featureId)}
 					onSelect={onBarSelected}
 				/>
 			);
 		},
-		[contentForTask, barTeams, barCaps, onBarSelected],
+		[contentForTask, barTeams, barStatusColors, onBarSelected],
 	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;

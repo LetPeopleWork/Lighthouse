@@ -25,7 +25,7 @@ import {
 } from "../../../../../../utils/features/featureWarningSentences";
 import { cannotBeForecast } from "../../../../../../utils/forecast/cannotForecast";
 import DeliveryGanttChart from "./DeliveryGanttChart";
-import { buildDeliveryBarCaps } from "./deliveryBarStatus";
+import { buildDeliveryBarStatuses } from "./deliveryBarStatus";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
 import {
@@ -38,14 +38,10 @@ import {
 	type BarNote,
 	TimelineBarMarks,
 } from "./TimelineBarContent";
-import TimelineControls from "./TimelineControls";
+import TimelineControls, { type TimelineViewOption } from "./TimelineControls";
 import TimelineLegend, { type LegendEntry } from "./TimelineLegend";
-import { STATUS_CAP_COLORS } from "./timelineMarkers";
-import {
-	useShowStatus,
-	useShowTeams,
-	useShowWarnings,
-} from "./timelinePreferences";
+import { STATUS_COLORS } from "./timelineMarkers";
+import { type TimelineView, useTimelineView } from "./timelineView";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -63,30 +59,30 @@ export interface DeliveryTimelineTabProps {
 const NO_TEAM_NOTES: ReadonlyMap<number, UnlanedTeam[]> = new Map();
 
 /**
- * What each cap on a bar means, in the order a reader meets trouble in.
+ * What each colour on a bar means, in the order a reader meets trouble in.
  *
  * All three every time the key is shown, rather than only the ones this Delivery happens to be
  * wearing. A key that listed different things at 70 and at 95 would teach the reader a different
  * scheme each time they moved the probability, and the point of a key is that it does not move.
+ *
+ * It is not dropped as self-explanatory, and the reason is the second green: a finished bar and an
+ * on-track bar are both green, and nothing but this says which is which.
  */
 const STATUS_LEGEND: LegendEntry[] = [
 	{
 		id: "finished",
 		label: "Finished",
-		color: STATUS_CAP_COLORS.finished,
-		swatch: "capBothEnds",
+		color: STATUS_COLORS.finished,
 	},
 	{
 		id: "endsAfterTarget",
 		label: "Finishes after the target date",
-		color: STATUS_CAP_COLORS.endsAfterTarget,
-		swatch: "capEnd",
+		color: STATUS_COLORS.endsAfterTarget,
 	},
 	{
 		id: "startsAfterTarget",
 		label: "Not even started by the target date",
-		color: STATUS_CAP_COLORS.startsAfterTarget,
-		swatch: "capStart",
+		color: STATUS_COLORS.startsAfterTarget,
 	},
 ];
 
@@ -211,9 +207,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
-	const { showTeams, toggleShowTeams } = useShowTeams();
-	const { showStatus, toggleShowStatus } = useShowStatus();
-	const { showWarnings, toggleShowWarnings } = useShowWarnings();
+	const { view, chooseView } = useTimelineView();
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
 	);
@@ -257,10 +251,18 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		[features, timeline, teams, percentile, teamTerm, portfolioTerm],
 	);
 
-	const barCaps = useMemo(
-		() => buildDeliveryBarCaps(bars, targetDate),
-		[bars, targetDate],
-	);
+	const barStatusColors = useMemo(() => {
+		const colours = new Map<number, string>();
+
+		for (const [featureId, status] of buildDeliveryBarStatuses(
+			bars,
+			targetDate,
+		)) {
+			colours.set(featureId, STATUS_COLORS[status]);
+		}
+
+		return colours;
+	}, [bars, targetDate]);
 
 	// The Features a bar can be drawn for at all.
 	//
@@ -300,6 +302,28 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		[placeable, workItemsTerm, featureTerm, portfolioTerm],
 	);
 
+	const offeredViews: TimelineViewOption[] = [
+		{ view: "none", label: "Nothing", offered: true },
+		{
+			view: "teams",
+			label: teamsTerm,
+			offered: teamsOnTheChart.canShowTeams,
+		},
+		{ view: "status", label: "Status", offered: canShowStatus },
+		{ view: "warnings", label: "Warnings", offered: canShowWarnings },
+	];
+
+	// What this Delivery is actually showing, which is not always what the reader asked for. The
+	// choice is one value for the whole page and the Deliveries on it differ: someone who asked for
+	// the Teams and then opens one whose Features have a single Team each is shown nothing rather
+	// than something they did not ask for. Their choice stays in storage untouched, so the Delivery
+	// that can honour it still does.
+	const showing: TimelineView = offeredViews.some(
+		(option) => option.offered && option.view === view,
+	)
+		? view
+		: "none";
+
 	const barMarks = useMemo(
 		() =>
 			barMarksFor(
@@ -311,8 +335,8 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				// there is no split to disagree with. A sentence about a missing lane, on a chart
 				// that has no lanes, names something the reader cannot see and contradicts the
 				// one thing the switch promises: off is the chart exactly as it was.
-				showTeams ? teamsOnTheChart.unlanedTeams : NO_TEAM_NOTES,
-				showWarnings,
+				showing === "teams" ? teamsOnTheChart.unlanedTeams : NO_TEAM_NOTES,
+				showing === "warnings",
 			),
 		[
 			features,
@@ -321,8 +345,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			featureTerm,
 			portfolioTerm,
 			teamsOnTheChart,
-			showTeams,
-			showWarnings,
+			showing,
 		],
 	);
 
@@ -351,33 +374,9 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			<TimelineControls
 				percentile={percentile}
 				onPercentileChosen={setPercentile}
-				toggles={[
-					{
-						id: "teams",
-						label: `Show ${teamsTerm}`,
-						offered: teamsOnTheChart.canShowTeams,
-						shown: showTeams,
-						toggle: toggleShowTeams,
-					},
-					{
-						id: "status",
-						label: "Show status",
-						offered: canShowStatus,
-						shown: showStatus,
-						toggle: toggleShowStatus,
-					},
-					{
-						// It hides every mark a bar can carry, not only the ones drawn as an alarm -
-						// half of a symbol cannot be hidden, and one left behind reads as a switch
-						// that did not work. Named for what a reader is turning off rather than for
-						// the two kinds of note underneath it.
-						id: "warnings",
-						label: "Show warnings",
-						offered: canShowWarnings,
-						shown: showWarnings,
-						toggle: toggleShowWarnings,
-					},
-				]}
+				view={showing}
+				onViewChosen={chooseView}
+				views={offeredViews}
 			/>
 
 			{/* Said once, above the chart, because every bar would otherwise carry the same words -
@@ -397,7 +396,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			    reader has to scroll past the picture to reach is a key they read once. Deliberately
 			    not the `timeline-chart-note` slot above - that one reports a condition this Delivery
 			    happens to be in, and this is always true while the Teams are shown. */}
-			{showTeams && teamsOnTheChart.legend.length > 0 && (
+			{showing === "teams" && teamsOnTheChart.legend.length > 0 && (
 				<Box sx={{ mb: 1.5 }}>
 					<TimelineLegend
 						testId="timeline-team-legend"
@@ -405,13 +404,12 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 							id: `team:${team.teamId}`,
 							label: team.teamName,
 							color: team.color,
-							swatch: "fill" as const,
 						}))}
 					/>
 				</Box>
 			)}
 
-			{showStatus && canShowStatus && (
+			{showing === "status" && (
 				<Box sx={{ mb: 1.5 }}>
 					<TimelineLegend
 						testId="timeline-status-legend"
@@ -427,11 +425,13 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						links={edges}
 						// Absent rather than hidden while the switch is off, so the chart is then the
 						// same chart it was before any of this existed.
-						lanes={showTeams ? teamsOnTheChart.lanes : undefined}
-						barTeams={showTeams ? teamsOnTheChart.barTeams : undefined}
-						// Absent rather than empty while the reader has not asked, for the same
-						// reason the lanes are: off is the chart exactly as it was.
-						barCaps={showStatus ? barCaps : undefined}
+						lanes={showing === "teams" ? teamsOnTheChart.lanes : undefined}
+						barTeams={
+							showing === "teams" ? teamsOnTheChart.barTeams : undefined
+						}
+						// Absent rather than empty for anything the reader has not asked for, for
+						// the same reason the lanes are: unasked is the chart exactly as it was.
+						barStatusColors={showing === "status" ? barStatusColors : undefined}
 						targetDate={targetDate}
 						today={today}
 						onBarSelected={setSelectedFeatureId}

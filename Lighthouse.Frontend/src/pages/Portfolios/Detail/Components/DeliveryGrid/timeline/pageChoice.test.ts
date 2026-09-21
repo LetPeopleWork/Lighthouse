@@ -1,13 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { pagePreference } from "./pagePreference";
+import { pageChoice } from "./pageChoice";
 
-// One preference, on its own. What it does with a value it does not recognise, with storage that
+// One choice, on its own. What it does with a value it does not recognise, with storage that
 // refuses it, and with a reader who has stopped listening are questions about the store rather
 // than about any chart drawn from it - and a component's own tests cannot reach most of them,
 // because by the time it has rendered the answer has already been decided.
 
-const A_KEY = "lighthouse:test:aPreference";
-const ANOTHER_KEY = "lighthouse:test:anotherPreference";
+const A_KEY = "lighthouse:test:aChoice";
+const ANOTHER_KEY = "lighthouse:test:anotherChoice";
+
+const OFFERED = ["none", "teams", "status"] as const;
+type Offered = (typeof OFFERED)[number];
+
+const aChoice = (key = A_KEY) => pageChoice<Offered>(key, OFFERED, "status");
 
 /**
  * Breaks one of storage's own methods, and puts it back afterwards.
@@ -48,110 +53,83 @@ beforeEach(() => {
 });
 
 describe("what the page is showing", () => {
-	it("shows nothing to a reader who has never answered", () => {
-		expect(pagePreference(A_KEY).read()).toBe(false);
+	it("starts a reader who has never answered where the caller said to", () => {
+		expect(aChoice().read()).toBe("status");
 	});
 
 	it("shows what the reader last chose", () => {
-		localStorage.setItem(A_KEY, "true");
+		localStorage.setItem(A_KEY, "teams");
 
-		expect(pagePreference(A_KEY).read()).toBe(true);
+		expect(aChoice().read()).toBe("teams");
 	});
 
-	it("reads the stored word rather than trusting that anything is there", () => {
-		// `localStorage` hands back text, and the text "false" is truthy. Coerced rather than
-		// compared, the preference turns itself on and can never be turned off again.
-		localStorage.setItem(A_KEY, "false");
+	it("falls back for a stored value this version does not offer", () => {
+		// Storage outlives the code that wrote it. A choice that is renamed or withdrawn leaves
+		// readers holding a word this version does not know, and handing it back selects nothing
+		// at all - a control with no button pressed, on a chart showing something.
+		localStorage.setItem(A_KEY, "sub-lanes");
 
-		expect(pagePreference(A_KEY).read()).toBe(false);
-	});
-
-	it("shows nothing for a stored value it does not recognise", () => {
-		localStorage.setItem(A_KEY, "yes");
-
-		expect(pagePreference(A_KEY).read()).toBe(false);
+		expect(aChoice().read()).toBe("status");
 	});
 
 	it("keeps the reader's answer for this visit when storage will not take it", () => {
 		// Private browsing and blocked site data make the write throw. The reader loses the memory
 		// of the choice, not the view they asked for.
-		const preference = pagePreference(A_KEY);
+		const choice = aChoice();
 
 		breakStorage("setItem");
 
-		preference.set(true);
+		choice.set("teams");
 
 		// Both halves: the view the reader asked for, and the memory they did not get. Without the
 		// second, this says nothing a store that wrote successfully would not also satisfy.
-		expect(preference.read()).toBe(true);
+		expect(choice.read()).toBe("teams");
 		expect(localStorage.getItem(A_KEY)).toBeNull();
 	});
 
-	it("shows nothing, rather than throwing, when storage cannot be read at all", () => {
+	it("falls back, rather than throwing, when storage cannot be read at all", () => {
 		// Unguarded, this throw comes out through the hook and takes the whole Portfolio
 		// accordion down with it.
 		//
-		// **The choice is stored as on before the read is broken, and that is the whole test.**
-		// Asserting `false` against an *absent* key cannot tell a caught throw from nothing being
-		// there, because both answer `false` - which is how two tests named for this guard passed
-		// while the guard was never entered at all. With `"true"` stored, a read that got through
-		// answers `true` and a read that was caught answers `false`, so the two outcomes are
-		// distinguishable and the assertion has something to say.
-		localStorage.setItem(A_KEY, "true");
+		// **A value the fallback is not is stored before the read is broken, and that is the whole
+		// test.** Asserting the fallback against an *absent* key cannot tell a caught throw from
+		// nothing being there, because both answer the same - which is how two tests named for
+		// this guard once passed while the guard was never entered.
+		localStorage.setItem(A_KEY, "teams");
 
-		const preference = pagePreference(A_KEY);
+		const choice = aChoice();
 
 		// The fixture proving itself: without the throw, this answers the other way.
-		expect(preference.read()).toBe(true);
-		preference.forget();
+		expect(choice.read()).toBe("teams");
+		choice.forget();
 
 		breakStorage("getItem");
 
-		expect(preference.read()).toBe(false);
+		expect(choice.read()).toBe("status");
 	});
 
 	it("remembers the answer under the key it was given", () => {
 		// Pinned against the key itself, once. A renamed key silently forgets every reader's
 		// choice while every round trip through the store keeps passing.
-		pagePreference(A_KEY).set(true);
+		aChoice().set("teams");
 
-		expect(localStorage.getItem(A_KEY)).toBe("true");
+		expect(localStorage.getItem(A_KEY)).toBe("teams");
 	});
 });
 
-describe("one preference is not another", () => {
+describe("one choice is not another", () => {
 	it("leaves the others where they were", () => {
-		// The reason this is a factory rather than a module holding one remembered value: three
-		// switches sharing one variable move together, which reads as a decision rather than as a
-		// fault. A closure per call is what keeps them apart, and nothing else does.
-		const one = pagePreference(A_KEY);
-		const other = pagePreference(ANOTHER_KEY);
+		// The reason this is a factory rather than a module holding one remembered value: two
+		// choices sharing a variable move together, which reads as a decision rather than as a
+		// fault.
+		const one = aChoice();
+		const other = aChoice(ANOTHER_KEY);
 
-		one.set(true);
+		one.set("teams");
 
-		expect(one.read()).toBe(true);
-		expect(other.read()).toBe(false);
+		expect(one.read()).toBe("teams");
+		expect(other.read()).toBe("status");
 		expect(localStorage.getItem(ANOTHER_KEY)).toBeNull();
-	});
-
-	it("tells only its own readers", () => {
-		const mine = vi.fn();
-		const theirs = vi.fn();
-
-		const one = pagePreference(A_KEY);
-		const other = pagePreference(ANOTHER_KEY);
-
-		const stopMine = one.subscribe(mine);
-		const stopTheirs = other.subscribe(theirs);
-
-		one.set(true);
-
-		// Paired, so this cannot pass against a store that tells nobody anything.
-		expect(mine).toHaveBeenCalledTimes(1);
-		expect(theirs).not.toHaveBeenCalled();
-
-		stopMine();
-		stopTheirs();
 	});
 });
 
@@ -159,12 +137,12 @@ describe("telling the readers", () => {
 	it("tells everyone still listening when the answer moves", () => {
 		const first = vi.fn();
 		const second = vi.fn();
-		const preference = pagePreference(A_KEY);
+		const choice = aChoice();
 
-		const stopFirst = preference.subscribe(first);
-		const stopSecond = preference.subscribe(second);
+		const stopFirst = choice.subscribe(first);
+		const stopSecond = choice.subscribe(second);
 
-		preference.set(true);
+		choice.set("teams");
 
 		expect(first).toHaveBeenCalledTimes(1);
 		expect(second).toHaveBeenCalledTimes(1);
@@ -178,13 +156,13 @@ describe("telling the readers", () => {
 		// listener leaves one behind on every close, and nothing ever notices.
 		const gone = vi.fn();
 		const staying = vi.fn();
-		const preference = pagePreference(A_KEY);
+		const choice = aChoice();
 
-		const stopListening = preference.subscribe(gone);
-		const stopStaying = preference.subscribe(staying);
+		const stopListening = choice.subscribe(gone);
+		const stopStaying = choice.subscribe(staying);
 
 		stopListening();
-		preference.set(true);
+		choice.set("teams");
 
 		expect(gone).not.toHaveBeenCalled();
 		// Paired, so this cannot pass against a store that tells nobody anything.

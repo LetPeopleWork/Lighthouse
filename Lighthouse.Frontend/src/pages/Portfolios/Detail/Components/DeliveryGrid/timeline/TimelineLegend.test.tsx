@@ -11,7 +11,6 @@ const aTeam = (overrides: Partial<LegendEntry> = {}): LegendEntry => ({
 	id: "team:5",
 	label: "Zenith",
 	color: "#4DA98C",
-	swatch: "fill",
 	...overrides,
 });
 
@@ -87,41 +86,5 @@ describe("the key to the chart's colours", () => {
 		renderLegend([aTeam()], "timeline-team-legend");
 
 		expect(screen.getByTestId("timeline-team-legend")).toBeInTheDocument();
-	});
-});
-
-describe("a patch is painted the way the thing it stands for is painted", () => {
-	const paintingOf = (entry: LegendEntry) =>
-		getComputedStyle(
-			within(renderLegend([entry]).container).getByTestId(
-				"timeline-legend-swatch",
-			),
-		);
-
-	it("caps a patch that stands for a cap, and fills one that stands for a fill", () => {
-		// A filled square standing for a cap tells the reader to look for the wrong thing on the
-		// chart. Asserted as a difference in one render rather than against a value, because this
-		// environment resolves a shadow and does not resolve a fill.
-		expect(paintingOf(aTeam({ swatch: "capEnd" })).boxShadow).toContain(
-			"inset",
-		);
-		expect(paintingOf(aTeam({ swatch: "fill" })).boxShadow).toBe("");
-	});
-
-	it("caps the end the thing it stands for is capped at", () => {
-		// The sign of the offset is which end. A key that showed every cap at the same end would
-		// not tell "has not been reached" from "does not finish in time".
-		const atTheStart = paintingOf(aTeam({ swatch: "capStart" })).boxShadow;
-		const atTheEnd = paintingOf(aTeam({ swatch: "capEnd" })).boxShadow;
-		const atBoth = paintingOf(aTeam({ swatch: "capBothEnds" })).boxShadow;
-
-		expect(atTheStart).toContain("inset 3px");
-		expect(atTheStart).not.toContain("inset -3px");
-
-		expect(atTheEnd).toContain("inset -3px");
-		expect(atTheEnd).not.toContain("inset 3px");
-
-		expect(atBoth).toContain("inset 3px");
-		expect(atBoth).toContain("inset -3px");
 	});
 });
