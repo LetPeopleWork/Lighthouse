@@ -14,7 +14,7 @@ import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
-import { forgetShowTeams } from "./useShowTeams";
+import { showTeamsStore } from "./useShowTeams";
 
 const licence = vi.hoisted(() => ({
 	isPremium: true,
@@ -187,7 +187,7 @@ beforeEach(() => {
 	// The switch's state is shared across every Delivery on the page, which means it is held
 	// outside React and outlives a test. Clearing storage alone would leave the previous test's
 	// choice standing.
-	forgetShowTeams();
+	showTeamsStore.forget();
 	vi.restoreAllMocks();
 });
 

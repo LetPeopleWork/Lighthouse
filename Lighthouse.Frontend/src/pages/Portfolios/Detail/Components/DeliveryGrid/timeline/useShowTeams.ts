@@ -69,13 +69,25 @@ const subscribe = (listener: () => void): (() => void) => {
 };
 
 /**
- * Forgets what the page was showing, so the next reader starts where a first-time one does.
+ * The choice itself, apart from React.
  *
- * Module-level state is the whole point of this file, and it outlives any one test in a way that
- * clearing `localStorage` does not reach. Exported for that, and called nowhere in the product.
+ * It is a store rather than a hook's innards because that is what it is: one value for the whole
+ * page, several readers, and a way to be told when it moves. Exposed so it can be exercised on its
+ * own - what it does on blocked storage, on a value it does not recognise, and when a reader stops
+ * listening are each a question about the store and not about any component that draws from it.
  */
-export const forgetShowTeams = (): void => {
-	shownNow = undefined;
+export const showTeamsStore = {
+	subscribe,
+	read: currentlyShown,
+	set: show,
+	/**
+	 * Forgets what the page was showing, so the next reader starts where a first-time one does.
+	 * This value outlives anything React owns, which is the point of it and also the reason a test
+	 * clearing storage alone would inherit the previous one's choice.
+	 */
+	forget: (): void => {
+		shownNow = undefined;
+	},
 };
 
 export function useShowTeams(): {
@@ -83,13 +95,13 @@ export function useShowTeams(): {
 	toggleShowTeams: () => void;
 } {
 	const showTeams = useSyncExternalStore(
-		subscribe,
-		currentlyShown,
-		currentlyShown,
+		showTeamsStore.subscribe,
+		showTeamsStore.read,
+		showTeamsStore.read,
 	);
 
 	const toggleShowTeams = useCallback(() => {
-		show(!currentlyShown());
+		showTeamsStore.set(!showTeamsStore.read());
 	}, []);
 
 	return { showTeams, toggleShowTeams };

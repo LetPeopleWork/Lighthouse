@@ -101,7 +101,7 @@ describe("which Teams get a lane of their own", () => {
 	it("leaves a Feature one Team contributes to unsplit, beside one that does split", () => {
 		// Asserted with a splitting Feature in the same call. On its own, "no lane for this one"
 		// passes against a module that returns nothing at all.
-		const { lanes } = lanesFor(
+		const { lanes, canShowTeams } = lanesFor(
 			[
 				feature({
 					id: 1,
@@ -121,6 +121,68 @@ describe("which Teams get a lane of their own", () => {
 		);
 
 		expect(lanes.map((lane) => lane.featureId)).toEqual([2, 2]);
+		// And the control is offered, because there is something to show. Asserted here rather
+		// than only in its absent cases, which a verdict hard-wired to "nothing to show" satisfies.
+		expect(canShowTeams).toBe(true);
+	});
+
+	it("says nothing about Teams without a lane where every Team has one", () => {
+		// An empty note list left on a Feature is not nothing: it is a Feature the chart believes
+		// has something to say about a missing Team, and it turns the control on for a Delivery
+		// where nothing is missing.
+		const { unlanedTeams } = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+					],
+				}),
+			],
+			[ZENITH, GRAVITY],
+		);
+
+		expect(unlanedTeams.size).toBe(0);
+	});
+
+	it("leaves a Feature that carries no per-Team forecast at all entirely alone", () => {
+		// Every timeline fixture written before the per-Team forecasts existed is this shape, and
+		// the field is still optional on the contract for that reason. Reading it as anything but
+		// absent invents a contributing Team out of a missing field.
+		const olderShape = feature();
+		olderShape.teamForecasts = undefined;
+
+		const { lanes, unlanedTeams, barTeams, legend, canShowTeams } = lanesFor(
+			[olderShape],
+			[ZENITH, GRAVITY],
+		);
+
+		expect(lanes).toEqual([]);
+		expect(unlanedTeams.size).toBe(0);
+		expect(barTeams.size).toBe(0);
+		expect(legend).toEqual([]);
+		expect(canShowTeams).toBe(false);
+	});
+
+	it("treats a Team the Portfolio lists without a name as one it cannot name", () => {
+		// A blank name is not a name. Taken as one it is written along the lane as nothing at all,
+		// and the colour helper drops a falsy key outright, so the lane loses its colour too.
+		const { lanes } = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+					],
+				}),
+			],
+			[ZENITH, { id: 6, name: "" }],
+		);
+
+		const nameless = lanes.find((lane) => lane.teamId === 6);
+
+		expect(nameless?.teamName).toBe(OUTSIDE_THIS_PORTFOLIO);
+		expect(nameless?.color).toBeTruthy();
 	});
 
 	it("moves every lane when the probability moves, and reorders none of them", () => {
@@ -166,6 +228,31 @@ describe("which Teams get a lane of their own", () => {
 		expect(atNinetyFive.map((lane) => lane.teamId)).toEqual(
 			atSeventy.map((lane) => lane.teamId),
 		);
+	});
+
+	it("puts the unnamed Team last however early in the forecast it arrives", () => {
+		// The same rule from the other side. With the unnamed Team arriving first, a comparator
+		// that only ever answers "this one goes after" reads correctly on the fixture below and
+		// wrongly here - the two orderings only disagree when the named Team is the one being
+		// asked about.
+		const { lanes } = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(99, [[70, 11]], [[70, 13]]),
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+					],
+				}),
+			],
+			[ZENITH, GRAVITY],
+		);
+
+		expect(lanes.map((lane) => lane.teamName)).toEqual([
+			"Gravity",
+			"Zenith",
+			OUTSIDE_THIS_PORTFOLIO,
+		]);
 	});
 
 	it("reads the lanes in the Teams' own alphabetical order, with the unnamed Team last", () => {
