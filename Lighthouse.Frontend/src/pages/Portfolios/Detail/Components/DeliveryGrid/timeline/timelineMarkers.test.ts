@@ -30,6 +30,12 @@ describe("what hovering a marked column says", () => {
 		);
 	});
 
+	it("says the target is not set, rather than saying a date it does not have", () => {
+		// A Delivery with no date still draws a today column, and the label builder is asked for
+		// both. Anything invented here would be printed on a column marked for a date nobody set.
+		expect(markerLabels(undefined, new Date()).target).toBe("Target date · ");
+	});
+
 	it("names today in the reader's own day, which is the only day it has", () => {
 		const thisAfternoon = new Date(2026, 9, 20, 15, 0);
 

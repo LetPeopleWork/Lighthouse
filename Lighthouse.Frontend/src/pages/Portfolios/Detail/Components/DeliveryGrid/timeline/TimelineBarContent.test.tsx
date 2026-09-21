@@ -534,6 +534,27 @@ describe("what a bar says about the target date", () => {
 		expect(shadowIn("one-of-its-teams")).toBe("");
 	});
 
+	it("promises a Team's row nothing it cannot do", async () => {
+		// A lane opens the same Feature its bar opens, and says so on hover - but only where there
+		// is something listening. A row that offers the click and does not take it teaches the
+		// reader it is broken.
+		const onSelect = vi.fn();
+
+		renderBar({ lane: lane(), onSelect });
+
+		await userEvent.click(screen.getByRole("button"));
+
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith(7);
+	});
+
+	it("offers a Team's row no click when nothing is listening", () => {
+		// Paired with the row above, so neither passes against a component that treats every lane
+		// the same way.
+		renderBar({ lane: lane() });
+
+		expect(screen.queryByRole("button")).not.toBeInTheDocument();
+	});
+
 	it("stays clickable once it is marked", async () => {
 		// A cap drawn as an element over the button would swallow the click, and the reader would
 		// lose the dialog with nothing anywhere to say why.
