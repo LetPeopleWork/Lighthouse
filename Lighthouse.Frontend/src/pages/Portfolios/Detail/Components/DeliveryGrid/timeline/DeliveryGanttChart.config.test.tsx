@@ -1,5 +1,6 @@
 import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen } from "@testing-library/react";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DeliveryGanttChart, {
 	type DeliveryGanttChartProps,
@@ -141,10 +142,84 @@ describe("what the adapter configures the library with", () => {
 		expect(ganttConfig.current?.scales).toBeInstanceOf(Array);
 	});
 
+	describe("the content it draws inside each row the library asks about", () => {
+		// The library calls this back for every row, handing it the row's id and nothing else, so
+		// everything the adapter decides about a row is decided in here. It is exercised by calling
+		// it the way the library does rather than through a stub that re-does its work: a stub that
+		// looked the Team up itself would pass whatever this callback did or did not do.
+		const drawRow = (id: string | number) => {
+			const Template = ganttConfig.current?.taskTemplate as React.FC<{
+				data: { id?: string | number };
+			}>;
+
+			return render(
+				<ThemeProvider theme={createTheme()}>
+					<Template data={{ id }} />
+				</ThemeProvider>,
+			);
+		};
+
+		it("writes a Team's name along that Team's own row", () => {
+			renderChart({
+				bars: [bar(1, "Coral Reef")],
+				lanes: [lane(1, 5)],
+			});
+
+			// The id is the one the translation mints for that row, so this fails both on a row
+			// whose content never reaches the template and on an id the lookup cannot resolve.
+			const { container } = drawRow("1:5");
+
+			expect(container).toHaveTextContent("Zenith");
+			expect(container).not.toHaveTextContent("Coral Reef");
+		});
+
+		it("writes the one Team a Feature has to itself along the Feature's own bar", () => {
+			renderChart({
+				bars: [bar(1, "Coral Reef")],
+				barTeams: new Map([
+					[1, { teamId: 5, teamName: "Zenith", color: "#4DA98C" }],
+				]),
+			});
+
+			const { container } = drawRow(1);
+
+			expect(container).toHaveTextContent("Coral Reef");
+			expect(container).toHaveTextContent("Zenith");
+		});
+
+		it("leaves a Feature with no Team of its own carrying only its own name", () => {
+			// Paired with the case above, so neither can pass against a template that draws the
+			// Feature's name and nothing else whatever it is handed.
+			renderChart({ bars: [bar(1, "Coral Reef")] });
+
+			const { container } = drawRow(1);
+
+			expect(container).toHaveTextContent("Coral Reef");
+			expect(container).not.toHaveTextContent("Zenith");
+		});
+	});
+
 	it("hands over a task per lane as well as per bar", () => {
 		renderChart({ lanes: [lane(1, 5)] });
 
 		expect(ganttConfig.current?.tasks).toHaveLength(2);
+	});
+
+	it("sizes itself for every row it draws, not for the Features alone", () => {
+		// A height taken from the bars leaves the last Feature's Teams drawn outside the box. The
+		// height itself is a style nothing here resolves, so the row count it was computed from is
+		// carried on the element instead - and asserted against the tasks actually handed over, so
+		// the two cannot drift apart.
+		renderChart({
+			bars: [bar(1, "Coral Reef"), bar(2, "Kelp Forest")],
+			lanes: [lane(1, 5), lane(1, 6)],
+		});
+
+		expect(screen.getByTestId("delivery-gantt")).toHaveAttribute(
+			"data-row-count",
+			String((ganttConfig.current?.tasks as unknown[]).length),
+		);
+		expect(ganttConfig.current?.tasks).toHaveLength(4);
 	});
 
 	it("draws the axis around the lanes as well, not only around the bars", () => {

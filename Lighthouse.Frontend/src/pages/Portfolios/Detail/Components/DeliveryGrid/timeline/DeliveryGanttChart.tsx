@@ -212,6 +212,11 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 			data-testid="delivery-gantt"
 			data-theme-mode={isDark ? "dark" : "light"}
 			data-axis-unit={finestUnit}
+			// The number of rows the height was computed from. Carried for the same reason the axis
+			// unit is: the height itself is a style this environment does not resolve, so without it
+			// nothing can tell a chart sized for its bars from one sized for everything drawn on it -
+			// and the difference is the last Feature's Teams being drawn outside the box.
+			data-row-count={tasks.length}
 			sx={{
 				height: chartHeight(tasks.length),
 				// White on the bar in both modes, rather than whatever contrasts best with the fill.

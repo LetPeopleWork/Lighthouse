@@ -58,14 +58,16 @@ vi.mock("./DeliveryGanttChart", () => ({
 		return (
 			<div data-testid="delivery-gantt">
 				{props.bars.map((bar) => (
+					// Only the bar, and deliberately not the Team its bar wears. Resolving that here
+					// would be this stub re-doing the adapter's own work, and every assertion about
+					// it would then be reading back what the stub decided rather than what the
+					// adapter does. What the tab hands over is asserted on the props directly; what
+					// the adapter makes of them is asserted where the adapter runs.
 					<div
 						key={bar.featureId}
 						data-testid={`timeline-bar-${bar.featureId}`}
 					>
-						<TimelineBarContent
-							bar={bar}
-							team={props.barTeams?.get(bar.featureId)}
-						/>
+						<TimelineBarContent bar={bar} />
 					</div>
 				))}
 			</div>
