@@ -399,7 +399,16 @@ moving it, and the completion date alone never said so.
 - **AC-2.1** — The Feature table carries a Forecasted Start column, following the completion column's
   existing percentile presentation and the same terminology entries.
 - **AC-2.2** — A started Feature shows a single date, visibly distinguished as observed rather than
-  forecast, with no percentile attached.
+  forecast, with no percentile attached. When no start day was ever recorded for it, that single date is
+  the day the Feature was created, shown the same way.
+
+  **Amended by Bug #6054, 2026-09-21.** As shipped, this criterion read "A started Feature shows a single
+  date, visibly distinguished as observed rather than forecast, with no percentile attached", and it was
+  written on the assumption that a started Feature always has a start day to show. It does not: a work
+  tracking system with an empty started-date column maps every in-progress item to exactly the shape the
+  assumption excludes. Those Features showed the column's empty state and dropped off the Delivery
+  timeline under the untrue heading "No forecast for when work on this begins". They now show their
+  creation day, under the same observed presentation, so the criterion says so.
 - **AC-2.3** — A Feature with no start forecast shows the same empty state the completion column already
   uses for that Feature. No new empty state is invented. A Done Feature is not one of these: it shows the
   day it started.
@@ -442,7 +451,14 @@ customer's actual request, and it is answered the moment both ends of the bar ar
   tracking system on the next write-back round, in the same `yyyy-MM-dd` default and honouring a custom
   `DateFormat` exactly as the completion sources do.
 - **AC-3.3** — A Feature that has started writes its observed start date, not a forecast (D5), so the
-  Plan bar begins where work began.
+  Plan bar begins where work began. When no start day was recorded for it, it writes the day the Feature
+  was created — still something the Feature is known to have done, rather than a projection.
+
+  **Amended by Bug #6054, 2026-09-21.** As shipped, this criterion read "A Feature that has started writes
+  its observed start date, not a forecast (D5), so the Plan bar begins where work began", and a started
+  Feature with no recorded start day therefore wrote nothing, leaving whatever stale future date the work
+  tracking system already held. The creation day now stands in for the missing start, matching the
+  fallback `WorkItemBase` already uses three times over — for cycle time, work item age, and age on day.
 - **AC-3.4** — A Feature that is Done writes its observed start date. It writes nothing for a start source
   only when it has no recorded start.
 
@@ -457,12 +473,18 @@ customer's actual request, and it is answered the moment both ends of the bar ar
 - **AC-3.6** — The sources appear only under a premium licence, by the gate the mapping screen already
   has. No new gate is written (D8).
 
-**What the Bug #6054 fix leaves unfixed, on the record.** A Done or Doing Feature with no recorded start
-date resolves to nothing at all, and the write-back pipeline drops a null rather than writing a blank — it
-has no way to say "clear this field". So a wrong value already sitting in a work tracking system for such a
-Feature is never corrected: the fix stops a wrong date being written, it cannot remove one that is already
-there. Closing that gap would need a "write blank" capability the pipeline deliberately does not have. The
-bug's title promises more than its fix delivers, and this is the difference.
+**What the Bug #6054 fix leaves unfixed, on the record.** This note used to be much wider. It said that a
+Done or Doing Feature with no recorded start date resolves to nothing at all, so a wrong value already
+sitting in a work tracking system for such a Feature is never corrected — the pipeline drops a null rather
+than writing a blank, having no way to say "clear this field". The creation-day fallback added later in the
+fix has largely dissolved that: a started or finished Feature nearly always has a day to write now, so the
+stale future date does get overwritten on the next round.
+
+What is left is the Feature carrying neither a start date nor a creation date. That is rare, because a
+creation date is nearly always present, but it is real, because `CreatedDate` is nullable. For such a
+Feature the fix still only stops a wrong date being written; it cannot remove one that is already there,
+and closing even that narrow case would need the "write blank" capability the pipeline deliberately does
+not have.
 
 ---
 
