@@ -85,6 +85,13 @@ const dateAt = (
 		?.expectedDate;
 
 /**
+ * The day a Feature finished, or nothing for one still running. The field arrives as null until the
+ * Feature closes, which its type does not admit, so the check has to be made here.
+ */
+const finishedOn = (feature: IFeature): Date | undefined =>
+	feature.closedDate ?? undefined;
+
+/**
  * Every Feature in a Delivery, sorted into the ones that can be drawn and the ones that cannot.
  *
  * The split is the point. Handed something it cannot place, the timeline component draws a bar at a
@@ -125,7 +132,11 @@ export function buildDeliveryTimeline(
 			continue;
 		}
 
-		const endsOn = dateAt(feature.forecasts, percentile);
+		// Work that has finished ends where it stopped, not where it was predicted to. A closed
+		// Feature is still handed a completion forecast: one running into the future while a child
+		// of it stays open, or an empty one that resolves to today once nothing is left to simulate.
+		// Either drawn as the end of the bar reads as work that is still going and badly overdue.
+		const endsOn = finishedOn(feature) ?? dateAt(feature.forecasts, percentile);
 
 		if (!endsOn) {
 			cannotPlace(NO_END);

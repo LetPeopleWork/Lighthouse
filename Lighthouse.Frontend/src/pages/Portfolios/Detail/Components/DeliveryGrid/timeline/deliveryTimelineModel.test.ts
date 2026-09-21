@@ -27,6 +27,12 @@ const startingAround = (day: number): IFeatureStart => ({
 	percentiles: spreadFrom(day),
 });
 
+const startedOn = (day: number): IFeatureStart => ({
+	source: "Observed",
+	observedDate: october(day),
+	percentiles: [],
+});
+
 const feature = (overrides: Partial<IFeature> = {}): IFeature =>
 	({
 		id: 1,
@@ -106,40 +112,43 @@ describe("buildDeliveryTimeline", () => {
 	});
 
 	it("begins a started bar on the day it actually started", () => {
-		const bar = onlyBar([
-			feature({
-				startForecast: {
-					source: "Observed",
-					observedDate: october(3),
-					percentiles: [],
-				},
-			}),
-		]);
+		const bar = onlyBar([feature({ startForecast: startedOn(3) })]);
 
 		expect(bar.start).toEqual(october(3));
 		expect(bar.startIsObserved).toBe(true);
 		expect(bar.end).toEqual(october(21));
 	});
 
-	it("draws a finished Feature from the day it started, not from a forecast left behind", () => {
+	it("ends a finished Feature on the day it closed, not on a forecast still running", () => {
 		// A Feature can be closed while one of its children is still open, and the run that is still
-		// forecasting that child goes on writing start percentiles for the parent — percentiles
-		// sitting in a future the work is already past. The day it began is the one certain date such
-		// a Feature has, so it belongs on the chart rather than in the list of what could not be
-		// drawn, and it belongs there anchored to that day.
+		// forecasting that child goes on writing a completion date for the parent — a date in a
+		// future the work is already past. A bar drawn out to it shows finished work as still
+		// running and weeks late.
 		const finished = feature({
-			startForecast: {
-				source: "Observed",
-				observedDate: october(3),
-				percentiles: spreadFrom(25),
-			},
+			startForecast: startedOn(3),
+			closedDate: october(9),
+			forecasts: spreadFrom(20),
 		});
 
 		const bar = onlyBar([finished]);
 
 		expect(bar.start).toEqual(october(3));
-		expect(bar.startIsObserved).toBe(true);
-		expect(bar.end).toEqual(october(21));
+		expect(bar.end).toEqual(october(9));
+	});
+
+	it("places a finished Feature that has no completion forecast left to read", () => {
+		// With nothing left to simulate the forecast can be gone entirely. The day the Feature
+		// closed is an end, and one that plainly has an end does not belong in the list of what
+		// could not be drawn.
+		const finished = feature({
+			startForecast: startedOn(3),
+			closedDate: october(9),
+			forecasts: [],
+		});
+
+		const bar = onlyBar([finished]);
+
+		expect(bar.end).toEqual(october(9));
 	});
 
 	it("refuses to place a Feature with no start, rather than inventing one", () => {
