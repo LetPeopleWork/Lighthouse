@@ -69,6 +69,7 @@ describe("buildDeliveryTimeline", () => {
 		expect(bar.start).toEqual(october(11));
 		expect(bar.end).toEqual(october(21));
 		expect(bar.startIsObserved).toBe(false);
+		expect(bar.endIsObserved).toBe(false);
 	});
 
 	it("moves both ends of the bar when the percentile changes", () => {
@@ -134,6 +135,25 @@ describe("buildDeliveryTimeline", () => {
 
 		expect(bar.start).toEqual(october(3));
 		expect(bar.end).toEqual(october(9));
+		// Both halves. The date alone was already right before this flag existed, so on its own it
+		// says nothing about whether anything downstream can tell a day work stopped from a day it
+		// was predicted to.
+		expect(bar.endIsObserved).toBe(true);
+	});
+
+	it("tells the two ends apart on a Feature that has started and not finished", () => {
+		// The likeliest way to add the second flag is to set it from the first. This is the Feature
+		// where that is wrong: work began on a day somebody can point at, and when it ends is still
+		// a guess.
+		const running = feature({
+			startForecast: startedOn(3),
+			closedDate: undefined,
+		});
+
+		const bar = onlyBar([running]);
+
+		expect(bar.startIsObserved).toBe(true);
+		expect(bar.endIsObserved).toBe(false);
 	});
 
 	it("places a finished Feature that has no completion forecast left to read", () => {

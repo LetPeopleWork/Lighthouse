@@ -19,6 +19,16 @@ export interface TimelineBar {
 	end: Date;
 	/** A start that already happened is a fact; a start at a percentile is a guess. Drawn differently. */
 	startIsObserved: boolean;
+	/**
+	 * The same distinction at the other end: this bar stops where the work stopped, not where it was
+	 * predicted to.
+	 *
+	 * It is recorded here because this is where the choice is made. Without it the end means two
+	 * different things and says which to nobody, so anything downstream wanting to know has to go
+	 * back to the Feature and decide again - and two places deciding what "finished" means is how
+	 * they come to disagree.
+	 */
+	endIsObserved: boolean;
 }
 
 export interface UnplaceableFeature {
@@ -146,8 +156,8 @@ export function buildDeliveryTimeline(
 		// Feature is still handed a completion forecast: one running into the future while a child
 		// of it stays open, or an empty one that resolves to today once nothing is left to simulate.
 		// Either drawn as the end of the bar reads as work that is still going and badly overdue.
-		const endsOn =
-			finishedOn(feature) ?? forecastDateAt(feature.forecasts, percentile);
+		const observedEnd = finishedOn(feature);
+		const endsOn = observedEnd ?? forecastDateAt(feature.forecasts, percentile);
 
 		if (!endsOn) {
 			cannotPlace(NO_END);
@@ -160,6 +170,7 @@ export function buildDeliveryTimeline(
 			start: startsOn,
 			end: endsOn,
 			startIsObserved: observedStart !== undefined,
+			endIsObserved: observedEnd !== undefined,
 		});
 	}
 
