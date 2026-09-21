@@ -130,8 +130,14 @@ client reads `source` and never re-derives it (`ForecastedStartCell.tsx:47`,
 - **D1 — A Done Feature shows its real start date** on the Feature table and the Delivery timeline, not
   an empty cell. **This reverses AC-2.3** of Epic 6033, which said a done Feature shows the same empty
   state the completion column uses. Consequence: a Done Feature becomes *placeable* on the timeline,
-  drawing a bar from its real start to today, where today it is unplaceable. No test covers that
-  either way at present; one is owed.
+  where before it was not.
+
+  **This is where the bar's far end was missed.** As first written, this decision said the bar would run
+  "from its real start to today" and treated that as unremarkable. It is not — on a Gantt it is the
+  notation for work still running and badly overdue, and for a Feature closed with an open child the end
+  ran into the future instead. The second review caught it and `451e3dab3` clamps the end to the day the
+  Feature closed. Finding 1 below has the detail. `0e7740a5d` and `451e3dab3` now cover the placement and
+  the end respectively, so the test this decision said was owed exists.
 - **D2 — Ship the corrective write-back without staging.** The first round after deploy issues one
   write per already-closed Feature with a mapped `ForecastedStart*` field, replacing the stale future
   date with the real start day. It settles in a single round: `GetChangedFields` suppresses no-op
@@ -192,15 +198,17 @@ and neither may be closed incidentally.
   nothing, so the test passes — now asserting AC-3.5 rather than AC-3.4. **Done with a `StartedDate` is
   untested in both directions today and stays untested unless a test is added.**
 
-**New tests owed:**
+**New tests owed — all five written, and item 2 later reversed:**
 
 1. Done + `StartedDate` set + a surviving start forecast row → the observed day, not the forecast.
-   Closes the fixture blind spot above. (Branches B and C.)
-2. Doing + `StartedDate` null → `Unknown`, not a forecast. (Branch A.)
+   Closes the fixture blind spot above. (Branches B and C.) — written in `77e56f1e1`.
+2. Doing + `StartedDate` null → `Unknown`, not a forecast. (Branch A.) — written in `77e56f1e1`, then
+   **inverted by `4b911a644`**: that Feature now reports the day it was created. See Finding 2 below.
 3. Done + open child → the Feature table shows the observed start, not a forecast. The regression test
-   for Branch C specifically, and the one that would have caught the disproven claim.
-4. `StateCategories.Unknown` → still a forecast. Pins D4.
-5. A Done Feature is placeable on the Delivery timeline. Pins the D1 consequence.
+   for Branch C specifically, and the one that would have caught the disproven claim. — `6c32ab13c`.
+4. `StateCategories.Unknown` → still a forecast. Pins D4. — written in `77e56f1e1`.
+5. A Done Feature is placeable on the Delivery timeline. Pins the D1 consequence. — `0e7740a5d`, with
+   `451e3dab3` adding the two that pin where its bar ends.
 
 **Worth actually running, not assuming:**
 
