@@ -11,6 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
 import {
 	chartHeight,
@@ -20,6 +21,7 @@ import {
 	SCALE_HEIGHT,
 	scalesForSpan,
 	TIMELINE_SCALES,
+	toGanttLinks,
 	toGanttTasks,
 } from "./ganttShapes";
 import TimelineBarContent from "./TimelineBarContent";
@@ -41,6 +43,11 @@ import { markerColors, TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
  */
 export interface DeliveryGanttChartProps {
 	bars: TimelineBar[];
+	/**
+	 * The waits worth drawing, decided upstream. Both ends of every one of these must be among the
+	 * bars — a line to a Feature with no bar is drawn to nowhere.
+	 */
+	links?: DrawnDependency[];
 	targetDate?: Date;
 	/** Passed in rather than read here, so the chart and its legend mark the same day. */
 	today: Date;
@@ -89,6 +96,7 @@ function markerLabel(text: string) {
 
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
+	links,
 	targetDate,
 	today,
 	onBarSelected,
@@ -99,6 +107,8 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	const marks = markerColors(theme);
 
 	const tasks = useMemo(() => toGanttTasks(bars), [bars]);
+
+	const ganttLinks = useMemo(() => toGanttLinks(links ?? []), [links]);
 
 	const axisRange = useMemo(
 		() => timelineWindow(bars, targetDate, today),
@@ -207,7 +217,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					// outside their store.
 					key={finestUnit}
 					tasks={tasks}
-					links={[]}
+					links={ganttLinks}
 					scales={scales}
 					start={axisRange?.start}
 					end={axisRange?.end}

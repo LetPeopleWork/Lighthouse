@@ -1,7 +1,9 @@
 import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import DeliveryGanttChart from "./DeliveryGanttChart";
+import DeliveryGanttChart, {
+	type DeliveryGanttChartProps,
+} from "./DeliveryGanttChart";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 /**
@@ -36,7 +38,7 @@ const bar = (id: number, name: string): TimelineBar => ({
 	startIsObserved: false,
 });
 
-const renderChart = (props: Partial<{ targetDate: Date }> = {}) =>
+const renderChart = (props: Partial<DeliveryGanttChartProps> = {}) =>
 	render(
 		<ThemeProvider theme={createTheme()}>
 			<DeliveryGanttChart
@@ -75,13 +77,31 @@ describe("what the adapter configures the library with", () => {
 		expect(ganttConfig.current?.columns).toBe(false);
 	});
 
-	it("hands over one task per bar, and no dependency links", () => {
+	it("hands over one task per bar, and draws nothing between them unasked", () => {
 		renderChart();
 
 		expect(ganttConfig.current?.tasks).toHaveLength(1);
-		// Dependency arrows are a later slice. An accidental non-empty list here would draw
-		// something nobody asked for.
+		// A Delivery whose Features wait on nothing has nothing to join. An invented line here would
+		// assert a wait that the forecast never made.
 		expect(ganttConfig.current?.links).toEqual([]);
+	});
+
+	it("passes on the dependencies it was given rather than an empty list", () => {
+		// The prop existing is not the same as the prop arriving: the chart passed a hardcoded empty
+		// array to the library for two slices, and every assertion above it stayed green throughout.
+		renderChart({
+			bars: [bar(1, "Deep Sea Mapping"), bar(2, "Sonar Refit")],
+			links: [{ blockerFeatureId: 1, waitingFeatureId: 2 }],
+		});
+
+		const links = ganttConfig.current?.links as {
+			source: number;
+			target: number;
+		}[];
+
+		expect(links).toHaveLength(1);
+		expect(links[0].source).toBe(1);
+		expect(links[0].target).toBe(2);
 	});
 
 	it("reports the axis resolution it settled on", () => {

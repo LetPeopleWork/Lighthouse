@@ -8,6 +8,7 @@ import {
 	scalesForSpan,
 	THEMED_ELEMENT_SELECTOR,
 	TIMELINE_SCALES,
+	toGanttLinks,
 	toGanttTasks,
 } from "./ganttShapes";
 
@@ -287,6 +288,40 @@ describe("translating bars into the library's tasks", () => {
 
 		expect(tasks.map((task) => task.text)).toEqual(["First", "Second"]);
 		expect(toGanttTasks([])).toEqual([]);
+	});
+});
+describe("translating drawn dependencies into the library's links", () => {
+	it("runs the line from the blocker's task to the one waiting on it", () => {
+		const [link] = toGanttLinks([{ blockerFeatureId: 7, waitingFeatureId: 9 }]);
+
+		// Asserted on the object handed over, and deliberately not on what gets drawn from it. The
+		// two ends are the whole meaning of the line — swapped, it reads as the blocker waiting on
+		// the Feature it blocks, which is a plausible-looking picture of the opposite plan.
+		expect(link.source).toBe(7);
+		expect(link.target).toBe(9);
+		expect(link.id).toBeTruthy();
+	});
+
+	it("gives each line its own id when two Features wait on the same blocker", () => {
+		// Two waiters on one blocker is the ordinary shape here, and ids that collide are resolved by
+		// the library drawing a single line — so one of the two waits stops being visible.
+		const links = toGanttLinks([
+			{ blockerFeatureId: 7, waitingFeatureId: 9 },
+			{ blockerFeatureId: 7, waitingFeatureId: 11 },
+		]);
+
+		expect(links).toHaveLength(2);
+		expect(new Set(links.map((link) => link.id)).size).toBe(2);
+	});
+
+	it("keeps the order it was given, and translates nothing extra", () => {
+		const links = toGanttLinks([
+			{ blockerFeatureId: 1, waitingFeatureId: 2 },
+			{ blockerFeatureId: 3, waitingFeatureId: 4 },
+		]);
+
+		expect(links.map((link) => link.source)).toEqual([1, 3]);
+		expect(toGanttLinks([])).toEqual([]);
 	});
 });
 describe("the date axis", () => {

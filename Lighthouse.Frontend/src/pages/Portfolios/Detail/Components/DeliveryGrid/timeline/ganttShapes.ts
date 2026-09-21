@@ -1,3 +1,4 @@
+import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import { type TimelineBar, targetCalendarDate } from "./deliveryTimelineModel";
 import { TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
 
@@ -37,6 +38,27 @@ export function toGanttTasks(bars: TimelineBar[]) {
 		start: bar.start,
 		end: bar.end,
 		type: "task",
+	}));
+}
+
+/**
+ * A wait, drawn as a line from the end of the blocker's bar to the start of the one waiting.
+ *
+ * **`e2s` is the vendor's word for that, written out by hand, and nothing checks it.** A value the
+ * library does not recognise draws no line and reports no error, and there is no drawing surface
+ * here to notice the absence — the same trap as a scale format given as a string instead of a
+ * function, which shipped once. It is verified by looking at the chart, and only by looking at it.
+ *
+ * The id is built from both ends because one blocker commonly has several Features waiting on it,
+ * and links sharing an id are collapsed into a single line — one of the waits would just stop being
+ * shown.
+ */
+export function toGanttLinks(edges: DrawnDependency[]) {
+	return edges.map((edge) => ({
+		id: `${edge.blockerFeatureId}-${edge.waitingFeatureId}`,
+		source: edge.blockerFeatureId,
+		target: edge.waitingFeatureId,
+		type: "e2s",
 	}));
 }
 
