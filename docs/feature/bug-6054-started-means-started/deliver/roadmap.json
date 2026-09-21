@@ -1,0 +1,281 @@
+{
+  "roadmap": {
+    "project_id": "bug-6054-started-means-started",
+    "created_at": "2026-09-21",
+    "total_steps": 10,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Fix ADO Bug 6054 — a finished or in-progress Feature can show a forecasted start date in the future. One domain rule is missing: state decides whether work has started, and the date only fills in the value. Today Feature.WhenWorkBegins guards the observed branch conjunctively (StateCategory == Doing && StartedDate is not null), so a Doing Feature with no recorded start falls through to the forecast branch; and ResolveStartValue short-circuits on Done and returns null, which the write-back pipeline drops rather than blanks, freezing the last future date in the work tracking system forever. A third branch the original write-up missed: a Done Feature with an open child keeps its StartForecast rows, because the forecast run filters on remaining work and never on state, so the Feature table and the Delivery timeline show it a future start too. Fix at two production sites: the state-first rule in Feature.cs, and deleting the Done short-circuit in WriteBackTriggerService.cs. Acceptance: the new regression tests are RED before the fix and GREEN after; the accepted 'moved back to ToDo' finding stays open and its pin at FeatureWhenWorkBeginsTest.cs:56-64 stays GREEN; the full backend suite (minus live-connector categories) stays GREEN; the frontend suite and build stay GREEN; Stryker per-feature kill rate >= 80% on the two touched methods."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, mirroring the bug-5064 precedent for a surgical two-site fix)",
+    "reviewed_at": "2026-09-21",
+    "notes": "No architect dispatch. Rex's RCA (Phase 1 of /nw-bugfix, 2026-09-21) is the design doc, and both fix sites are prescribed down to the branch condition. Two of the RCA's load-bearing claims were verified independently by the orchestrator before this roadmap was written: (1) that claim 4 of the original write-up is disproven — ForecastService.cs:76 selects Features by team membership with no state filter, and InitializeSimulationResults filters on RemainingWorkItems > 0 only (ForecastService.cs:326), so a Done Feature with an open child does keep start rows; (2) that the test documented as pinning AC-3.4 stays green under the new rule, because its fixture chain leaves StartedDate null. Both verified against the code, not inferred. Phase 03 exists because the fix reverses two acceptance criteria of Epic 6033 and changes a visible surface, and neither the DTO seam nor the timeline consequence has a test today."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/bug-6054-started-means-started/feature-delta.md",
+    "parent_feature_delta": "docs/feature/epic-6033-forecasted-start-dates/feature-delta.md",
+    "rca_source": "Inline in /nw-bugfix Phase 1 (Rex / @nw-troubleshooter, 2026-09-21), verified by orchestrator",
+    "ado_bug": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6054"
+  },
+  "user_decisions": [
+    "D1 — a Done Feature shows its real start date on the Feature table and the Delivery timeline. Reverses AC-2.3.",
+    "D2 — ship the corrective write-back without staging. The one-off burst per closed Feature is accepted, including Jira watcher notification volume.",
+    "D3 — the residual (a Done or Doing Feature with no StartedDate keeps a stale value nothing can clear) is documented, not fixed.",
+    "D4 — StateCategories.Unknown keeps getting a forecast, and gains a test so it is a decision rather than a leftover."
+  ],
+  "out_of_scope": [
+    "A 'write blank' capability in the write-back pipeline. The no-blank policy is deliberate (WriteBackTriggerService.cs:252-261, :323-325). Without it a stale value already in the work tracking system for a Feature with no StartedDate is never corrected — this is D3, documented not fixed.",
+    "The accepted finding that a Feature moved back to ToDo still receives a forecast. The rule names Doing and Done positively so ToDo falls through unchanged; closing this incidentally is a defect, not a bonus.",
+    "The accepted finding that start percentiles are conditional on the work starting within the horizon. The fix never touches StartForecast, TotalTrials, GetProbability, or which rows enter the run.",
+    "Any change to the forecast engine. Excluding Done Features from InitializeSimulationResults would free team capacity and move every other Feature's start and completion dates on every screen.",
+    "The completion-side Done guard at WriteBackTriggerService.cs:289-292. That analogy is still sound for completion and its test at WriteBackTriggerServiceTest.cs:326-350 must stay green.",
+    "Backfilling or correcting values already written to customer work tracking systems beyond the one corrective write the next round issues on its own."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "State decides whether work has started",
+      "description": "RED then GREEN on the domain rule in Feature.WhenWorkBegins. Four tests author the rule; one line of production code satisfies it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Author RED tests for the state-first start rule",
+          "description": "Rewrite the one test that encodes the old rule and add three that encode the new one, in Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureWhenWorkBeginsTest.cs.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureWhenWorkBeginsTest.cs",
+          "scenario_name": "A Feature that is Doing or Done has started: observed date when known, nothing otherwise, never a forecast",
+          "red_to_green_tests": [
+            "FeatureWhenWorkBeginsTest :: AFeatureInFlightWithNoStartedDate_IsNotKnownRatherThanForecast",
+            "FeatureWhenWorkBeginsTest :: ADoneFeatureWithAStartedDate_ReportsTheDayItStarted",
+            "FeatureWhenWorkBeginsTest :: ADoneFeatureWithoutAStartedDate_IsNotKnown"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureWhenWorkBeginsTest.cs (edit — rewrite one test, add three)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The existing test at :42-50 is rewritten, not deleted: new name asserting Unknown, and its XML doc rewritten to state the new reason. The old doc argues for the behaviour being reversed and must not survive.",
+            "A Done Feature carrying both a StartedDate and a surviving StartForecast row reports Observed on that day. This is the fixture combination no test in the suite exercises today.",
+            "A Done Feature with no StartedDate reports Unknown; a Feature whose StateCategory is Unknown still reports Forecast, pinning D4. The D4 test is green before and after — it is a pin, not a RED.",
+            "The three RED tests fail against today's Feature.cs with Source == Forecast, and the RED output is captured in the execution log before proceeding.",
+            "The pin on the accepted ToDo-revert finding at :56-64 is not touched and stays green."
+          ],
+          "implementation_notes": "Use the file's existing fixture helpers and assertion style. No Arrange/Act/Assert comments, no dividers, no bug-number comments — the test name carries the meaning and the ADO id belongs in the commit message. Commit: `test(forecast): pin that a started feature reports its own start day (bug 6054)`"
+        },
+        {
+          "id": "01-02",
+          "name": "Apply the state-first rule in WhenWorkBegins",
+          "description": "Replace the conjunctive guard at Feature.cs:122 with a state-first rule and rewrite the XML doc above it, which states the old rule.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureWhenWorkBeginsTest.cs",
+          "scenario_name": "The three RED tests from 01-01 go green without touching the forecast branch",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs (edit — the guard at :122 and the XML doc at :109-116)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "The guard names Doing and Done positively: `if (StateCategory is StateCategories.Doing or StateCategories.Done)`, returning the observed day when StartedDate is set and FeatureStart.NotKnown otherwise.",
+            "Never written as a date-first test with state as an exclusion. Any `StartedDate is { } && StateCategory != ToDo` shape closes an accepted finding by accident and must be rejected.",
+            "Lines :127-137 — the CanBeForecast check and the null-team row lookup — are unchanged.",
+            "The XML doc is rewritten to state the new rule in plain language, without citing AC numbers or the bug id.",
+            "All three RED tests go green, the D4 pin and the ToDo-revert pin stay green, and the full backend suite passes with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Two production callers only: FeatureDto.cs:39 and WriteBackTriggerService.cs:310. Commit: `fix(forecast): a started feature reports its own start day, not a forecast (bug 6054)`"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The work tracking system receives the observed start",
+      "description": "RED then GREEN on the write-back resolver. Site 1 alone does not fix this: the resolver returns before it ever reads WhenWorkBegins.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Author RED write-back test for a closed started Feature",
+          "description": "Add the Done-with-a-StartedDate case to WriteBackTriggerServiceTest.StartDates.cs, and re-document the existing Done test that will quietly stop covering AC-3.4.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs",
+          "scenario_name": "A Done Feature writes its observed start date; a Done Feature with no start still writes nothing",
+          "red_to_green_tests": [
+            "WriteBackTriggerServiceTest.StartDates :: ResolveForecastWriteBackForPortfolio_DoneFeatureWithAStartedDate_WritesTheDayItStarted"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs (edit — add one test, re-document one)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "The new test builds a Done Feature that carries a StartedDate, and asserts the plan writes that day. It fails today because the resolver short-circuits before reading the property.",
+            "The existing test at :123-149 keeps passing but is renamed and re-documented to say it now covers a Done Feature with no start date, not AC-3.4. Leaving its AC-3.4 doc in place would assert coverage it no longer has.",
+            "The fixture must set StartedDate explicitly — the helper chain defaults it to null, which is the blind spot that let this bug ship.",
+            "The completion-side Done test at WriteBackTriggerServiceTest.cs:326-350 is not touched and stays green.",
+            "The RED output is captured in the execution log before proceeding."
+          ],
+          "implementation_notes": "Fixture chain: CreateFeatureExpectedToStartIn (:240-251) -> CreateFeatureWithForecast (WriteBackTriggerServiceTest.cs:1019-1059) -> CreateFeature (:998-1017). Commit: `test(write-back): pin that a closed feature writes the day it started (bug 6054)`"
+        },
+        {
+          "id": "02-02",
+          "name": "Write the observed start for a closed Feature",
+          "description": "Delete the Done short-circuit in ResolveStartValue so the resolver reaches WhenWorkBegins and the existing switch handles every case.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs",
+          "scenario_name": "The RED test from 02-01 goes green and no completion behaviour moves",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs (edit — remove the Done guard at :305-308)"
+          ],
+          "dependencies": ["02-01"],
+          "criteria": [
+            "The Done short-circuit at :305-308 is removed. The switch at :312-326 then resolves Observed via :318-319 and Unknown via the `_ => null` arm at :325 — no new branch is added.",
+            "The completion guard at :289-292 is left exactly as it is.",
+            "If a comment explains the removal, it says why a start differs from a completion for a closed Feature, in plain language, with no AC or bug reference.",
+            "The whole WriteBackTriggerService test suite stays green, and the full backend suite passes with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Commit: `fix(write-back): stop freezing a stale forecast on a closed feature (bug 6054)`"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "The surfaces and the record",
+      "description": "Pin the two surfaces the rule changes and correct the Epic's own record, which still asserts the behaviour this bug reverses.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Pin the DTO seam for a closed Feature with open work",
+          "description": "The Branch C regression: a Done Feature with an open child keeps forecast rows, and the API must report the observed start through them.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureDtoStartForecastTest.cs",
+          "scenario_name": "A closed Feature with an open child reports its observed start through the API, not a forecast",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureDtoStartForecastTest.cs (edit — add one test)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "The Feature is Done, carries a StartedDate, and holds a surviving StartForecast row — the combination that reaches the defect through the mapping layer rather than the model alone.",
+            "The assertion is on the DTO the API actually serves, so it covers the seam between two ends that are each already tested.",
+            "This is the test that would have caught the claim the original write-up got wrong: that the Feature table was already correct for a Done Feature.",
+            "Green after 01-02; would be red before it."
+          ],
+          "implementation_notes": "Commit: `test(api): pin the start a closed feature with open work reports (bug 6054)`"
+        },
+        {
+          "id": "03-02",
+          "name": "Pin a closed Feature as placeable on the timeline",
+          "description": "D1's visible consequence: a Done Feature stops being unplaceable and draws a bar from its real start. Nothing asserts this either way today.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.test.ts",
+          "scenario_name": "A Feature with an observed start is placeable on the Delivery timeline",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.test.ts (edit — add one test)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "The test drives the model with an observed start, as the API now reports for a closed Feature, and asserts it lands in the placeable set.",
+            "No production frontend change: every client reads `source` and never re-derives it. If the test needs a production change to pass, stop and report — that contradicts the RCA and must be resolved before proceeding.",
+            "The frontend suite, the Biome check and `pnpm build` all pass with zero warnings.",
+            "Handing the component a task it cannot place draws a bar the data does not support, so the placeable split is what this pins."
+          ],
+          "implementation_notes": "Commit: `test(timeline): pin that a started feature is placeable on the timeline (bug 6054)`"
+        },
+        {
+          "id": "03-03",
+          "name": "Amend the two reversed criteria and record the residual",
+          "description": "Correct Epic 6033's feature-delta where it still asserts the old behaviour, and check the user-facing portfolio docs for the same claim.",
+          "agent": "nw-software-crafter",
+          "scenario_name": "The Epic's own record stops asserting behaviour the product no longer has",
+          "files_to_modify": [
+            "docs/feature/epic-6033-forecasted-start-dates/feature-delta.md (edit — amend AC-2.3 and AC-3.4, note the reversal and why)",
+            "docs/portfolios/detail.md (edit only if it states the old behaviour)"
+          ],
+          "dependencies": ["02-02", "03-01", "03-02"],
+          "criteria": [
+            "AC-2.3 and AC-3.4 are amended in place with a note naming this bug as what reversed them, so the record reads correctly rather than looking like it was always this way.",
+            "The residual from D3 is written down where a reader of the Epic will find it: a stale value already in a work tracking system for a Feature with no StartedDate is never corrected.",
+            "docs/portfolios/detail.md is read and corrected only if it claims a done Feature shows no start. Terminology follows the seeded defaults — Feature, Work Item — never Epic or Story.",
+            "No screenshots are regenerated in this step; that is feature-finalization work and needs a running instance with a premium licence."
+          ],
+          "implementation_notes": "Correctness docs, not release docs — the Epic's record must not keep asserting reversed behaviour. Commit: `docs(forecast): amend the criteria this fix reverses (bug 6054)`"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "What the review found",
+      "description": "Three findings from the second adversarial pass. The first is a regression this fix introduced; the second is a rule the fix left half-made; the third corrects the record.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Stand a creation date in for a start nobody recorded",
+          "description": "A Doing or Done Feature with no StartedDate falls back to CreatedDate and reports it as Observed, matching what WorkItemBase already does three times.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureWhenWorkBeginsTest.cs",
+          "scenario_name": "A started Feature whose start day was never recorded stands its creation day in, and only reports nothing when it has neither",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs (edit — the fallback and the XML doc)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureWhenWorkBeginsTest.cs (edit — two tests invert, one added)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.StartDates.cs (edit — one test inverts)"
+          ],
+          "dependencies": ["03-03"],
+          "criteria": [
+            "WhenWorkBegins returns StartedDate ?? CreatedDate as Observed for a Doing or Done Feature, and NotKnown only when both are null. CreatedDate is nullable, so that branch stays reachable.",
+            "The two model tests asserting Unknown for a missing StartedDate invert; a new test covers both-null still reporting nothing.",
+            "The write-back test named ...ClosedFeatureThatNeverRecordedAStart_WritesNothing now writes the creation day — rename and re-document it, since its whole premise inverts.",
+            "ToDo and the unmapped Unknown state keep receiving a forecast; both existing pins stay green.",
+            "The full backend suite passes with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Precedents at WorkItemBase.cs:78, :102, :133. This largely dissolves the D3 residual, because there is now nearly always a value to write. Commit: `fix(forecast): stand a feature's creation day in for a start nobody recorded (bug 6054)`"
+        },
+        {
+          "id": "04-02",
+          "name": "End a finished Feature's bar on the day it finished",
+          "description": "The fix corrected where a bar starts and left where it ends. A finished Feature currently draws to today, or into the future when it has an open child.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.test.ts",
+          "scenario_name": "A finished Feature draws from the day it started to the day it closed",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.ts (edit — clamp the end to closedDate)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.test.ts (edit — rewrite the D1 test, which tests nothing finished)"
+          ],
+          "dependencies": ["03-03"],
+          "criteria": [
+            "A Feature carrying a closedDate ends its bar on that day rather than on its completion forecast. closedDate is already on the wire, nullable — no contract change.",
+            "The existing test named for a finished Feature is rewritten: its fixture leaves forecasts at the live default, so it asserts the default forecast and pins nothing about a finished Feature.",
+            "A finished Feature with an open child — which carries a real future completion forecast — still ends on its closed day. That is the case that draws a closed Feature finishing next month.",
+            "The frontend suite passes and the build is clean. The gantt adapter boundary test stays green.",
+            "No backend change in this step."
+          ],
+          "implementation_notes": "deliveryTimelineModel.ts:128 takes the end from feature.forecasts and the model reads neither closedDate nor stateCategory today. Commit: `fix(timeline): end a finished feature's bar on the day it finished (bug 6054)`"
+        },
+        {
+          "id": "04-03",
+          "name": "Correct the record for what changed",
+          "description": "Two more criteria the fix falsifies, and a residual note that the creation-date fallback has largely dissolved.",
+          "agent": "nw-software-crafter",
+          "scenario_name": "The record describes the product that now exists",
+          "files_to_modify": [
+            "docs/feature/epic-6033-forecasted-start-dates/feature-delta.md (edit — amend AC-2.2 and AC-3.3, revise the residual note)",
+            "docs/feature/bug-6054-started-means-started/feature-delta.md (edit — record the review findings and the decisions taken)"
+          ],
+          "dependencies": ["04-01", "04-02"],
+          "criteria": [
+            "AC-2.2 and AC-3.3 are amended the same visible way as AC-2.3 and AC-3.4 were, with the original wording quoted.",
+            "The residual note is revised: the creation-date fallback means a stale value is now corrected whenever a Feature has either date, so the gap narrows to a Feature carrying neither.",
+            "The bug's own record gains the review findings, including the two the first review missed and the three claims it fabricated.",
+            "No follow-up work items are opened — the user chose docs only.",
+            "Terminology follows the seeded defaults: Feature, Work Item, work tracking system."
+          ],
+          "implementation_notes": "F6, F7 and F9 are deliberately not acted on and not filed. Commit: `docs(forecast): correct the record for what the review found (bug 6054)`"
+        }
+      ]
+    }
+  ]
+}
