@@ -249,7 +249,9 @@
           ],
           "red_to_green_tests": [],
           "files_to_modify": [
-            "docs/feature/story-6055-activity-names-the-work/deliver/ (mutation run record, following the story-5884 and story-6049 precedent)"
+            "docs/feature/story-6055-activity-names-the-work/deliver/ (mutation run record, following the story-5884 and story-6049 precedent)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Story6055ActivityNamesTheWorkSpecifications.cs (edit — delete the now-dead `private const string Pending` at line 29; the seven attributes referencing it are gone and SonarCloud S1144 flags an unused private member as a NEW issue, which fails the gate)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/Story6055ActivityNamesTheWorkScenarios.cs (edit — the class doc-comment at line 19 still says every test carries [Ignore]; after 02-02 exactly one does, so the sentence is false and must say what is true)"
           ],
           "dependencies": ["01-02", "02-03"],
           "criteria": [
@@ -262,7 +264,7 @@
             "Survivors are either killed or argued as equivalent in the run record, one line each. An unexplained survivor is a gap, not a note.",
             "Full backend suite green with live-connector categories excluded; `pnpm test` and `pnpm build` green with zero warnings; no new SonarQube issue of any severity on either stack."
           ],
-          "implementation_notes": "Dogfood verification needs a running instance — start the backend with Lighthouse.Backend/Start-DevServer.ps1, never a bare `dotnet run`, which keeps its key ring inside the project directory where a worktree or `git clean -xfd` destroys it and leaves stored credentials unreadable. Never point a key store at data-protection-keys. If the dogfood instance is unavailable, STOP and report rather than marking AC-02.7 satisfied from the seeded scenarios — an acceptance criterion whose whole point is real data is not satisfied by a fixture. Per repo convention nothing is pushed red and the slice-boundary ritual applies: push, wait for CI green, then transition the ADO item Active → Resolved. Never Closed — Closed means released. Commit: `test(task-manager): record the mutation run for the activity rows (story 6055)`"
+          "implementation_notes": "Dogfood verification needs a running instance — start the backend with Lighthouse.Backend/Start-DevServer.ps1, never a bare `dotnet run`, which keeps its key ring inside the project directory where a worktree or `git clean -xfd` destroys it and leaves stored credentials unreadable. Never point a key store at data-protection-keys. If the dogfood instance is unavailable, STOP and report rather than marking AC-02.7 satisfied from the seeded scenarios — an acceptance criterion whose whole point is real data is not satisfied by a fixture. Per repo convention nothing is pushed red and the slice-boundary ritual applies. CORRECTED 2026-09-21: the ADO timing in the original note was wrong — it applied the Epic rule to a Story. For a Story or a Bug it is RESOLVED ON PUSH and CLOSED ON CI GREEN, two moments, never one. Only an EPIC stops at Resolved, because an Epic's Closed means released and a feedback pass comes first. #6055 is a User Story, so it closes. The orchestrator owns both transitions, not this step. Commit: `test(task-manager): record the mutation run for the activity rows (story 6055)`"
         }
       ]
     }
