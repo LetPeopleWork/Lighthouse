@@ -26,11 +26,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         public string NameOf(UpdateStatus work)
         {
-            var name = work.UpdateType switch
-            {
-                UpdateType.Team or UpdateType.TeamDelete => teamRepository.GetById(work.Id)?.Name,
-                _ => portfolioRepository.GetById(work.Id)?.Name,
-            };
+            var name = UpdateEntityKinds.Of(work.UpdateType) == UpdateEntityKind.Team
+                ? teamRepository.GetById(work.Id)?.Name
+                : portfolioRepository.GetById(work.Id)?.Name;
 
             return string.IsNullOrWhiteSpace(name) ? $"{work.UpdateType} {work.Id}" : name;
         }
