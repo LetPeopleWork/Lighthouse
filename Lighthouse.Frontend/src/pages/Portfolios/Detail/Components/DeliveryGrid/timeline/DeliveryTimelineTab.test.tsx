@@ -1072,31 +1072,9 @@ describe("showing the Teams behind a Feature's bar", () => {
 		expect(legend).toHaveTextContent("Zenith");
 	});
 
-	it("says why a Feature's bar reaches past the Teams beneath it", async () => {
-		terminology.overrides = {
-			[TERMINOLOGY_KEYS.TEAM]: "Squad",
-			[TERMINOLOGY_KEYS.TEAMS]: "Squads",
-			[TERMINOLOGY_KEYS.FEATURE]: "Deliverable",
-		};
-
-		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
-
-		expect(
-			screen.queryByTestId("timeline-team-span-note"),
-		).not.toBeInTheDocument();
-
-		await userEvent.click(showTeamsSwitch());
-
-		// Pinned against the literal and in this instance's own words. Unexplained, a bar reaching
-		// past every row beneath it reads as the chart claiming work nobody is doing.
-		expect(screen.getByTestId("timeline-team-span-note")).toHaveTextContent(
-			"A Deliverable starts when its first Squad starts and finishes when its last one finishes, so its bar reaches a little past the Squads beneath it.",
-		);
-	});
-
-	it("leaves that explanation out where nothing is split", async () => {
-		// There is no row for a bar to reach past, so the sentence would answer a question this
-		// chart does not raise.
+	it("shows the key for a Delivery whose Features each have one Team", async () => {
+		// Nothing splits here, so nothing gets a lane - and the colours still need explaining,
+		// because every bar is now wearing one.
 		renderTab(
 			[
 				feature({
@@ -1111,11 +1089,9 @@ describe("showing the Teams behind a Feature's bar", () => {
 
 		await userEvent.click(showTeamsSwitch());
 
+		expect(ganttProps.current?.lanes ?? []).toEqual([]);
 		expect(screen.getByTestId("timeline-team-legend")).toHaveTextContent(
 			"Meridian",
 		);
-		expect(
-			screen.queryByTestId("timeline-team-span-note"),
-		).not.toBeInTheDocument();
 	});
 });

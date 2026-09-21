@@ -62,20 +62,6 @@ const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 /** One empty map rather than a fresh one per render, which would re-run every memo below it. */
 const NO_TEAM_NOTES: ReadonlyMap<number, UnlanedTeam[]> = new Map();
 
-/**
- * Why a Feature's bar reaches past the rows beneath it, at both ends.
- *
- * This is the first thing a reader asks on seeing the split, and without an answer it reads as a
- * defect - the bar looks like it is claiming work nobody is doing. Said plainly, as the thing
- * rather than as the arithmetic behind it.
- */
-const barsReachPastTheirTeams = (
-	featureTerm: string,
-	teamTerm: string,
-	teamsTerm: string,
-) =>
-	`A ${featureTerm} starts when its first ${teamTerm} starts and finishes when its last one finishes, so its bar reaches a little past the ${teamsTerm} beneath it.`;
-
 const premiumNoticeFor = (deliveryTerm: string) =>
 	`The ${deliveryTerm} timeline is a premium feature. The forecasts behind it are not — they stay in the table.`;
 
@@ -343,23 +329,12 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				</Typography>
 			)}
 
-			{/* Both of these belong above the chart rather than under it: the chart can run to
-			    twenty rows, and a key a reader has to scroll past the picture to reach is a key they
-			    read once. They are deliberately not the `timeline-chart-note` slot above - that one
-			    reports a condition this Delivery happens to be in, and these two are always true
-			    while the Teams are shown. */}
+			{/* Above the chart rather than under it: the chart can run to twenty rows, and a key a
+			    reader has to scroll past the picture to reach is a key they read once. Deliberately
+			    not the `timeline-chart-note` slot above - that one reports a condition this Delivery
+			    happens to be in, and this is always true while the Teams are shown. */}
 			{showTeams && teamsOnTheChart.legend.length > 0 && (
 				<Box sx={{ mb: 1.5 }}>
-					{teamsOnTheChart.lanes.length > 0 && (
-						<Typography
-							variant="body2"
-							color="text.secondary"
-							sx={{ mb: 1 }}
-							data-testid="timeline-team-span-note"
-						>
-							{barsReachPastTheirTeams(featureTerm, teamTerm, teamsTerm)}
-						</Typography>
-					)}
 					<TimelineTeamLegend teams={teamsOnTheChart.legend} />
 				</Box>
 			)}

@@ -1,0 +1,45 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6050-slice-06.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTeamLanes.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/useShowTeams.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineTeamLegend.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineBarContent.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6050-slice-06-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6050-slice-06"
+}
