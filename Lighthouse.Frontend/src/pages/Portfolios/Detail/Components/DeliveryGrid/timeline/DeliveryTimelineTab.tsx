@@ -23,6 +23,7 @@ import {
 	type FeatureWarningTerms,
 	featureWarningSentences,
 } from "../../../../../../utils/features/featureWarningSentences";
+import { cannotBeForecast } from "../../../../../../utils/forecast/cannotForecast";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import { buildDeliveryBarCaps } from "./deliveryBarStatus";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
@@ -60,9 +61,6 @@ export interface DeliveryTimelineTabProps {
 
 /** One empty map rather than a fresh one per render, which would re-run every memo below it. */
 const NO_TEAM_NOTES: ReadonlyMap<number, UnlanedTeam[]> = new Map();
-
-/** Likewise, for the reader who has asked not to be shown what each bar has to say. */
-const NO_MARKS: ReadonlyMap<number, BarMark> = new Map();
 
 /**
  * What each cap on a bar means, in the order a reader meets trouble in.
@@ -134,29 +132,44 @@ const warningsColumnFor = (
  * table row marked for a default size; one showing only the warnings would leave a reader hunting
  * for a line that was never drawn; and one saying nothing about a Team without a row would show
  * fewer Teams than the Feature has and never admit it.
+ *
+ * **Two switches feed this, and which one owns what is the whole point of the split.** Naming a Team
+ * that got no row is part of the promise the Teams switch makes - that the split never shows fewer
+ * Teams than the Feature has - so it follows the Teams switch. Warnings and the account of where a
+ * blocker went follow the warnings switch. Carrying the Team's name inside the warnings made a
+ * reader who had turned warnings off, or who was simply seeing them off by default, get a split that
+ * quietly dropped a Team.
  */
 const barMarksFor = (
 	features: IFeature[],
 	dependencyNotes: ReadonlyMap<number, string[]>,
 	terms: FeatureWarningTerms,
 	teamsWithoutALane: ReadonlyMap<number, UnlanedTeam[]>,
+	showWarnings: boolean,
 ): Map<number, BarMark> => {
 	const marks = new Map<number, BarMark>();
 
 	for (const feature of features) {
 		const unlaned = teamsWithoutALane.get(feature.id) ?? [];
 
+		const warnings: BarNote[] = showWarnings
+			? [
+					...featureWarningSentences(warningInputFor(feature), terms).map(
+						(text) => ({ text, isWarning: true }),
+					),
+					// Every dependency worth warning about is already in the sentences above, said
+					// in the words the table uses for it. What is left here is the chart's own
+					// account of a wait there is nothing wrong with, which no warning should be
+					// raised over.
+					...(dependencyNotes.get(feature.id) ?? []).map((text) => ({
+						text,
+						isWarning: false,
+					})),
+				]
+			: [];
+
 		const notes: BarNote[] = [
-			...featureWarningSentences(warningInputFor(feature), terms).map(
-				(text) => ({ text, isWarning: true }),
-			),
-			// Every dependency worth warning about is already in the sentences above, said in the
-			// words the table uses for it. What is left here is the chart's own account of a wait
-			// there is nothing wrong with, which no warning should be raised over.
-			...(dependencyNotes.get(feature.id) ?? []).map((text) => ({
-				text,
-				isWarning: false,
-			})),
+			...warnings,
 			// Tagged with the Team it is about: two Teams this Portfolio cannot name produce the
 			// same sentence, and a list keyed on the sentence would show one of them only.
 			...unlaned.map((team) => ({
@@ -249,18 +262,34 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		[bars, targetDate],
 	);
 
-	// Both switches are offered on the strength of what this Delivery *is*, never on what is drawn
-	// at the probability currently selected. Which bars cross the target is exactly what the
-	// probability buttons change, so a control gated on the marks themselves would appear at 95 and
-	// vanish at 70 under the reader's hand - which reads as a fault in the page rather than as an
-	// answer to anything.
+	// The Features a bar can be drawn for at all.
+	//
+	// Both switches below are counted over these rather than over every Feature, because a Feature
+	// with no bar can carry no mark: counting it offers a control that does nothing when it is used,
+	// which is the one thing the row of controls promises never to do.
+	//
+	// Asked as "could this ever be placed" rather than "is it placed right now". The second reads
+	// the drawn bars, and which bars are drawn - and which of them cross the target - is exactly what
+	// the probability buttons change. A control that came and went as the reader worked those
+	// buttons would read as a fault in the page rather than as an answer to anything.
+	const placeable = useMemo(
+		() =>
+			features.filter(
+				(feature) =>
+					!cannotBeForecast({
+						teamsWithoutForecast: feature.teamsWithoutForecast ?? [],
+					}),
+			),
+		[features],
+	);
+
 	const canShowStatus =
 		targetDate !== undefined ||
-		features.some((feature) => feature.closedDate != null);
+		placeable.some((feature) => feature.closedDate != null);
 
 	const canShowWarnings = useMemo(
 		() =>
-			features.some(
+			placeable.some(
 				(feature) =>
 					featureWarningSentences(warningInputFor(feature), {
 						workItemsTerm,
@@ -268,7 +297,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						portfolioTerm,
 					}).length > 0 || (feature.dependsOn?.length ?? 0) > 0,
 			),
-		[features, workItemsTerm, featureTerm, portfolioTerm],
+		[placeable, workItemsTerm, featureTerm, portfolioTerm],
 	);
 
 	const barMarks = useMemo(
@@ -283,6 +312,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				// that has no lanes, names something the reader cannot see and contradicts the
 				// one thing the switch promises: off is the chart exactly as it was.
 				showTeams ? teamsOnTheChart.unlanedTeams : NO_TEAM_NOTES,
+				showWarnings,
 			),
 		[
 			features,
@@ -292,6 +322,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			portfolioTerm,
 			teamsOnTheChart,
 			showTeams,
+			showWarnings,
 		],
 	);
 
@@ -390,7 +421,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			)}
 
 			{bars.length > 0 ? (
-				<TimelineBarMarks marks={showWarnings ? barMarks : NO_MARKS}>
+				<TimelineBarMarks marks={barMarks}>
 					<DeliveryGanttChart
 						bars={bars}
 						links={edges}

@@ -1126,6 +1126,59 @@ describe("showing the Teams behind a Feature's bar", () => {
 	});
 });
 
+describe("a Team the split cannot give a row to", () => {
+	it("is named on the bar for a reader who has touched nothing but the Teams switch", async () => {
+		// The promise the split is built on: it never shows fewer Teams than the Feature has. That
+		// naming used to travel with the bar's other marks, which are now behind a switch of their
+		// own - so a first-time reader turning the Teams on saw one Team and was told nothing about
+		// the other, silently.
+		renderTab(
+			[
+				feature({
+					id: 1,
+					teamForecasts: [
+						forTeam(5, 12, 15),
+						{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
+					],
+				}),
+			],
+			undefined,
+			[ZENITH, MERIDIAN],
+		);
+
+		await userEvent.click(screen.getByRole("switch", { name: "Show Teams" }));
+
+		// Both halves. The lane is what proves the split ran at all; the name is what the split
+		// promised. Either alone passes against a chart that does one and not the other.
+		expect(ganttProps.current?.lanes).toHaveLength(1);
+		expect(screen.getByTestId("timeline-bar-1")).toHaveTextContent("Meridian");
+	});
+
+	it("is still named when the reader has quietened the warnings", async () => {
+		// Which Team is which is not a warning, and a reader who has asked for less alarm has not
+		// asked to be shown fewer Teams than the Feature has.
+		showWarningsStore.set(false);
+
+		renderTab(
+			[
+				feature({
+					id: 1,
+					teamForecasts: [
+						forTeam(5, 12, 15),
+						{ teamId: 7, startPercentiles: [], completionPercentiles: [] },
+					],
+				}),
+			],
+			undefined,
+			[ZENITH, MERIDIAN],
+		);
+
+		await userEvent.click(screen.getByRole("switch", { name: "Show Teams" }));
+
+		expect(screen.getByTestId("timeline-bar-1")).toHaveTextContent("Meridian");
+	});
+});
+
 describe("saying which Features are finished and which are late", () => {
 	// This Feature's bar ends on the 21st at 70 and on the 24th at 95.
 	//
@@ -1186,6 +1239,25 @@ describe("saying which Features are finished and which are late", () => {
 		expect(statusSwitch()).toBeInTheDocument();
 	});
 
+	it("withholds the control when the only finished Feature has no bar", () => {
+		// Finished work is the one thing that makes the control worth offering on a Delivery with
+		// no date. A finished Feature no bar can be drawn for is not that: nothing on the chart
+		// would ever be marked, so the switch would do nothing when used.
+		renderTab(
+			[
+				feature({ id: 1 }),
+				feature({
+					id: 2,
+					closedDate: october(9),
+					teamsWithoutForecast: ["Meridian"],
+				}),
+			],
+			undefined,
+		);
+
+		expect(statusSwitch()).not.toBeInTheDocument();
+	});
+
 	it("names each mark beside the chart once the marks are being shown", async () => {
 		// A cap carries no name, so a colour at the end of a bar says nothing at all to a reader
 		// who has not been told what it means. Pinned against the words themselves: mutation
@@ -1244,6 +1316,22 @@ describe("quieting what each bar has to say", () => {
 
 	it("withholds the control from a Delivery with nothing to say about anything", () => {
 		renderTab([feature()]);
+
+		expect(warningsSwitch()).not.toBeInTheDocument();
+	});
+
+	it("withholds the control when the only Feature with anything to say has no bar", async () => {
+		// A Feature no bar can be drawn for cannot carry a mark, so a control offered for it does
+		// nothing when used - the thing this row promises never to do. The Teams switch already
+		// counts only what is on the chart; these two did not.
+		renderTab([
+			feature({ id: 1 }),
+			feature({
+				id: 2,
+				isUsingDefaultFeatureSize: true,
+				teamsWithoutForecast: ["Meridian"],
+			}),
+		]);
 
 		expect(warningsSwitch()).not.toBeInTheDocument();
 	});

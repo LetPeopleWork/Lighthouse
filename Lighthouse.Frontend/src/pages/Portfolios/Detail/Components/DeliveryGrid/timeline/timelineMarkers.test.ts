@@ -1,7 +1,52 @@
 import { createTheme } from "@mui/material";
 import { describe, expect, it } from "vitest";
 import { appColors } from "../../../../../../utils/theme/colors";
-import { markerColors, STATUS_CAP_COLORS } from "./timelineMarkers";
+import {
+	markerColors,
+	markerLabels,
+	STATUS_CAP_COLORS,
+} from "./timelineMarkers";
+
+describe("what hovering a marked column says", () => {
+	it("names the day the column is drawn on, not the day the instant lands on", () => {
+		// The target is stored late in the UTC day. These tests run in a zone ahead of UTC, so
+		// reading it raw names tomorrow - and the label then sat on a column drawn for today,
+		// under a heading that also said today. Two of the three agreed and the one a reader
+		// hovers did not.
+		const storedLateInTheUtcDay = new Date(Date.UTC(2026, 9, 20, 22, 30));
+
+		const asTheHeadingPrintsIt = storedLateInTheUtcDay.toLocaleDateString(
+			undefined,
+			{ timeZone: "UTC" },
+		);
+
+		expect(markerLabels(storedLateInTheUtcDay, new Date()).target).toContain(
+			asTheHeadingPrintsIt,
+		);
+		// The fixture proving itself: without the reduction the label carries the other day, so
+		// this pair cannot both hold against the mistake.
+		expect(storedLateInTheUtcDay.toLocaleDateString()).not.toBe(
+			asTheHeadingPrintsIt,
+		);
+	});
+
+	it("names today in the reader's own day, which is the only day it has", () => {
+		const thisAfternoon = new Date(2026, 9, 20, 15, 0);
+
+		expect(markerLabels(undefined, thisAfternoon).today).toContain(
+			thisAfternoon.toLocaleDateString(),
+		);
+	});
+
+	it("says what each mark is, not only when it is", () => {
+		// The words are the whole of what a hovered column tells a reader who has not been told
+		// what a tinted column means.
+		const labels = markerLabels(new Date(Date.UTC(2026, 9, 20)), new Date());
+
+		expect(labels.target).toContain("Target date");
+		expect(labels.today).toContain("Today");
+	});
+});
 
 describe("the colours a cap can be", () => {
 	it("gives each of the three a colour of its own", () => {

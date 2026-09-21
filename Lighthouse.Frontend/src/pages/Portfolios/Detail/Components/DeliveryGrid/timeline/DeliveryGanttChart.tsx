@@ -28,7 +28,12 @@ import {
 	toGanttTasks,
 } from "./ganttShapes";
 import TimelineBarContent from "./TimelineBarContent";
-import { markerColors, TARGET_DAY_CLASS, TODAY_CLASS } from "./timelineMarkers";
+import {
+	markerColors,
+	markerLabels,
+	TARGET_DAY_CLASS,
+	TODAY_CLASS,
+} from "./timelineMarkers";
 
 /**
  * The one place in this application that knows a third-party Gantt exists.
@@ -80,8 +85,6 @@ const WIDTH_STEP = 24;
 // every render and invalidate everything memoised against it.
 const NO_LANES: TeamLane[] = [];
 
-const asDay = (date?: Date) => date?.toLocaleDateString() ?? "";
-
 /**
  * A hover label on a marked column, drawn as a pseudo-element on the column itself.
  *
@@ -130,6 +133,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	const isDark = theme.palette.mode === "dark";
 	const barColor = theme.palette.primary.main;
 	const marks = markerColors(theme);
+	const labels = markerLabels(targetDate, today);
 
 	const tasks = useMemo(() => toGanttTasks(bars, lanes), [bars, lanes]);
 
@@ -238,12 +242,12 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 				[`& .${TARGET_DAY_CLASS}`]: {
 					backgroundColor: alpha(marks.target, 0.22),
 					boxShadow: `inset 0 3px 0 0 ${marks.target}`,
-					...markerLabel(`Target date · ${asDay(targetDate)}`),
+					...markerLabel(labels.target),
 				},
 				[`& .${TODAY_CLASS}`]: {
 					backgroundColor: alpha(marks.today, 0.12),
 					boxShadow: `inset 3px 0 0 0 ${marks.today}`,
-					...markerLabel(`Today · ${asDay(today)}`),
+					...markerLabel(labels.today),
 				},
 			}}
 		>

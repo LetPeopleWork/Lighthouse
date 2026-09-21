@@ -5,6 +5,7 @@ import {
 	riskyColor,
 } from "../../../../../../utils/theme/colors";
 import type { BarStatusKind } from "./deliveryBarStatus";
+import { targetCalendarDate } from "./deliveryTimelineModel";
 
 /**
  * Every colour this chart uses to mean something, in one place.
@@ -33,6 +34,30 @@ export function markerColors(theme: Theme): MarkerColors {
 	return {
 		today: theme.palette.info.main,
 		target: theme.palette.warning.main,
+	};
+}
+
+/**
+ * What hovering a marked column says it is, and which day it is.
+ *
+ * **The target is reduced to its calendar day first, and that is the whole reason this is a
+ * function rather than two lines at the call site.** The stored value is an instant the product
+ * reads as a UTC day - the Delivery heading prints it with `timeZone: "UTC"`, and the column that
+ * gets tinted is chosen by the same reduction - so a target stored late in the UTC day, read raw in
+ * a zone ahead of it, names tomorrow. The label then sat on a column it disagreed with, and above a
+ * heading it disagreed with too.
+ *
+ * Today needs no such care: it is the reader's own clock and is already their own day.
+ */
+export function markerLabels(
+	targetDate: Date | undefined,
+	today: Date,
+): { target: string; today: string } {
+	const asDay = (date?: Date) => date?.toLocaleDateString() ?? "";
+
+	return {
+		target: `Target date · ${asDay(targetDate && targetCalendarDate(targetDate))}`,
+		today: `Today · ${asDay(today)}`,
 	};
 }
 
