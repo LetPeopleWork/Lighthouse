@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -11,6 +13,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class DemoDataServiceTest
     {
         private static readonly TimeZoneInfo Zurich = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
+
+        private static readonly string[] OceanExplorerReferenceIds =
+        [
+            "OE-001", "OE-002", "OE-003", "OE-004", "OE-005", "OE-006", "OE-007",
+            "OE-008", "OE-009", "OE-010", "OE-011", "OE-012", "OE-013",
+        ];
+
+        private static readonly string[] MilestoneReferenceIds =
+        [
+            "OE-001", "OE-002", "OE-003", "OE-004", "OE-005", "OE-006",
+            "OE-007", "OE-009", "OE-010", "OE-011", "OE-012",
+        ];
 
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
@@ -338,6 +352,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(recordedDays.Max(), Is.EqualTo(clock.Today));
                 Assert.That(recordedDays.Min(), Is.EqualTo(clock.Today.AddDays(-14)));
             }
+        }
+
+        /// <summary>
+        /// OE-005 waits on the Deep Water Mineral Survey, which the Milestone deliberately leaves out.
+        /// Without a Feature that is waited on from outside the Delivery, the demo data cannot show a
+        /// dependency the forecast honoured but the timeline has no bar to draw a line to.
+        /// </summary>
+        [Test]
+        public async Task LoadScenario_Dependencies_MilestoneLeavesOutTheBlockerWithoutABar()
+        {
+            var delivery = await SeedTheOnlyDeliveryOfScenarioFor("Project Ocean Explorer");
+
+            var selected = ReferenceIdsSelectedBy(delivery, OceanExplorerFeatures());
+
+            Assert.That(selected, Is.EquivalentTo(MilestoneReferenceIds));
+        }
+
+        [Test]
+        public async Task LoadScenario_WhenWillThisBeDone_BurnupDeliverySelectsEveryFeature()
+        {
+            var delivery = await SeedTheOnlyDeliveryOfScenarioFor("Project Apollo");
+
+            var selected = ReferenceIdsSelectedBy(delivery, OceanExplorerFeatures());
+
+            Assert.That(selected, Is.EquivalentTo(OceanExplorerReferenceIds));
+        }
+
+        private async Task<Delivery> SeedTheOnlyDeliveryOfScenarioFor(string portfolioName)
+        {
+            var seededDeliveries = new List<Delivery>();
+            deliveryRepoMock.Setup(x => x.Add(It.IsAny<Delivery>())).Callback((Delivery delivery) => seededDeliveries.Add(delivery));
+
+            var subject = CreateSubject();
+            var scenario = subject.GetAllScenarios().First(s => s.Projects.Contains(portfolioName));
+            await subject.LoadScenarios([scenario]);
+
+            return seededDeliveries.Single();
+        }
+
+        private static List<string> ReferenceIdsSelectedBy(Delivery delivery, IEnumerable<Feature> features)
+        {
+            var ruleSet = WorkItemRuleSetJson.Deserialize(delivery.RuleDefinitionJson);
+            Assert.That(ruleSet, Is.Not.Null);
+
+            return new RuleEvaluator<Feature>()
+                .Match(ruleSet, features, new FeatureFieldProvider())
+                .Select(feature => feature.ReferenceId)
+                .ToList();
+        }
+
+        private static List<Feature> OceanExplorerFeatures()
+        {
+            return OceanExplorerReferenceIds
+                .Select(referenceId => new Feature { ReferenceId = referenceId, Name = $"Ocean Explorer {referenceId}" })
+                .ToList();
         }
 
         private DemoDataService CreateSubject(ILighthouseClock? clock = null)

@@ -10,6 +10,9 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class DemoDataService : IDemoDataService
     {
+        private const string FeatureNameFieldKey = "feature.name";
+        private const string FeatureReferenceIdFieldKey = "feature.referenceid";
+
         private const string DemoDeliveryPortfolioName = "Project Apollo";
         private const string DemoDeliveryName = "Apollo Release";
 
@@ -19,6 +22,12 @@ namespace Lighthouse.Backend.Services.Implementation
         private const string MultiTeamDeliveryPortfolioName = "Project Ocean Explorer";
         private const string MultiTeamDeliveryName = "Ocean Explorer Milestone";
         private const int MultiTeamDeliveryDays = 60;
+
+        // Named by reference id rather than by name so that renaming an Epic in the demo data cannot
+        // silently put it back into the delivery.
+        private const string MineralSurveyReferenceId = "OE-008";
+        private const string UndependedFeatureReferenceId = "OE-013";
+
         private const int DemoBurnupDays = 14;
 
         private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
@@ -140,7 +149,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var delivery = new Delivery(MultiTeamDeliveryName, clock.TodayAsUtcMidnight.AddDays(MultiTeamDeliveryDays), portfolio.Id);
-            delivery.SelectFeaturesByRule(BuildAllFeaturesRuleDefinition(), WorkItemRuleSet.SchemaVersion);
+            delivery.SelectFeaturesByRule(BuildMultiTeamDeliveryRuleDefinition(), WorkItemRuleSet.SchemaVersion);
 
             deliveryRepository.Add(delivery);
             await deliveryRepository.Save();
@@ -148,22 +157,51 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static string BuildAllFeaturesRuleDefinition()
         {
-            var ruleSet = new WorkItemRuleSet
+            return SerializeRuleSet([EveryNamedFeature()]);
+        }
+
+        // The Deep Water Mineral Survey stays out of this delivery on purpose: another Epic here waits on
+        // it, and the forecast honours that wait, so the timeline has to show a dependency whose blocker
+        // has no bar to draw a line to. The other exclusion has no dependencies at all, so leaving it out
+        // costs nothing and keeps this reading as a selection rather than one Epic surgically removed.
+        private static string BuildMultiTeamDeliveryRuleDefinition()
+        {
+            return SerializeRuleSet(
+            [
+                EveryNamedFeature(),
+                Excluding(MineralSurveyReferenceId),
+                Excluding(UndependedFeatureReferenceId),
+            ]);
+        }
+
+        private static WorkItemRuleCondition EveryNamedFeature()
+        {
+            return new WorkItemRuleCondition
+            {
+                FieldKey = FeatureNameFieldKey,
+                Operator = RuleOperators.IsNotEmpty,
+                Value = string.Empty,
+            };
+        }
+
+        private static WorkItemRuleCondition Excluding(string referenceId)
+        {
+            return new WorkItemRuleCondition
+            {
+                FieldKey = FeatureReferenceIdFieldKey,
+                Operator = RuleOperators.NotEquals,
+                Value = referenceId,
+            };
+        }
+
+        private static string SerializeRuleSet(List<WorkItemRuleCondition> conditions)
+        {
+            return WorkItemRuleSetJson.Serialize(new WorkItemRuleSet
             {
                 Version = WorkItemRuleSet.SchemaVersion,
                 Mode = WorkItemRuleSet.ModeAnd,
-                Conditions =
-                [
-                    new WorkItemRuleCondition
-                    {
-                        FieldKey = "feature.name",
-                        Operator = RuleOperators.IsNotEmpty,
-                        Value = string.Empty,
-                    },
-                ],
-            };
-
-            return WorkItemRuleSetJson.Serialize(ruleSet);
+                Conditions = conditions,
+            });
         }
 
         private void SeedBurnupSnapshots(int deliveryId)
