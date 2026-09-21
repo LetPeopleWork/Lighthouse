@@ -2,6 +2,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { BarEndCaps } from "./deliveryBarStatus";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent, {
@@ -16,6 +17,7 @@ const bar: TimelineBar = {
 	start: new Date(2026, 9, 10),
 	end: new Date(2026, 9, 20),
 	startIsObserved: false,
+	endIsObserved: false,
 };
 
 const quietBar: TimelineBar = {
@@ -29,6 +31,7 @@ const renderBar = (
 		bar: TimelineBar;
 		lane: TeamLane;
 		team: TeamColour;
+		caps: BarEndCaps;
 		onSelect: (featureId: number) => void;
 	}>,
 ) =>
@@ -425,5 +428,121 @@ describe("TimelineBarContent", () => {
 		expect(
 			new Set([paintingOf("one-team"), paintingOf("several-teams")]).size,
 		).toBe(2);
+	});
+});
+
+describe("what a bar says about the target date", () => {
+	const shadowOn = () =>
+		getComputedStyle(screen.getByTestId("timeline-bar-content")).boxShadow;
+
+	const AMBER = "#ff9800";
+	const RED = "#f44336";
+	const GREEN = "#388e3c";
+
+	it("marks nothing on a bar that fits", () => {
+		renderBar({ bar });
+
+		// Paired with every case below, which is what stops this passing against a component that
+		// has no idea what a cap is.
+		expect(shadowOn()).toBe("");
+	});
+
+	it("marks the end that runs past the date, and only that end", () => {
+		renderBar({ bar, caps: { end: "endsAfterTarget" } });
+
+		// The sign of the offset is the whole of which end this is. A component painting both caps
+		// on the same side would satisfy a colour assertion and still be wrong.
+		expect(shadowOn()).toContain(`inset -4px 0 0 0 ${AMBER}`);
+		expect(shadowOn()).not.toContain("inset 4px");
+	});
+
+	it("marks both ends of a bar that has not been reached", () => {
+		renderBar({
+			bar,
+			caps: { start: "startsAfterTarget", end: "endsAfterTarget" },
+		});
+
+		expect(shadowOn()).toContain(`inset 4px 0 0 0 ${RED}`);
+		expect(shadowOn()).toContain(`inset -4px 0 0 0 ${AMBER}`);
+	});
+
+	it("marks both ends of a bar whose work is over", () => {
+		renderBar({ bar, caps: { start: "finished", end: "finished" } });
+
+		expect(shadowOn()).toContain(`inset 4px 0 0 0 ${GREEN}`);
+		expect(shadowOn()).toContain(`inset -4px 0 0 0 ${GREEN}`);
+	});
+
+	it("keeps the Team's colour on a bar that is also marked", () => {
+		// Both halves, and this is the promise the whole encoding exists for: the reader does not
+		// give up one answer to see the other. Either assertion alone passes against a component
+		// that honours one and drops the other.
+		//
+		// The fill is read as a difference in painting rather than as a computed background,
+		// because the row declares `background: none` before its colour and this environment
+		// resolves that pair to transparent - which is why the Team-colour test above compares
+		// paintings too.
+		render(
+			<ThemeProvider theme={createTheme()}>
+				<div data-testid="with-a-team">
+					<TimelineBarContent
+						bar={bar}
+						team={{ teamId: 42, teamName: "Meridian", color: "#4DA98C" }}
+						caps={{ end: "endsAfterTarget" }}
+					/>
+				</div>
+				<div data-testid="without-one">
+					<TimelineBarContent
+						bar={quietBar}
+						caps={{ end: "endsAfterTarget" }}
+					/>
+				</div>
+			</ThemeProvider>,
+		);
+
+		const rowIn = (testId: string) =>
+			within(screen.getByTestId(testId)).getByTestId("timeline-bar-content");
+
+		expect(rowIn("with-a-team").className).not.toBe(
+			rowIn("without-one").className,
+		);
+		expect(getComputedStyle(rowIn("with-a-team")).boxShadow).toContain(AMBER);
+		expect(rowIn("with-a-team")).toHaveTextContent("Meridian");
+	});
+
+	it("never marks a Team's own row", () => {
+		// The lane and the bar share a renderer, so threading the caps into both is one line and
+		// the natural mistake. Asserted with the Feature's bar marked in the same render, or it
+		// passes against a component that marks nothing at all.
+		render(
+			<ThemeProvider theme={createTheme()}>
+				<div data-testid="the-feature">
+					<TimelineBarContent bar={bar} caps={{ end: "endsAfterTarget" }} />
+				</div>
+				<div data-testid="one-of-its-teams">
+					<TimelineBarContent lane={lane()} caps={{ end: "endsAfterTarget" }} />
+				</div>
+			</ThemeProvider>,
+		);
+
+		const shadowIn = (testId: string) =>
+			getComputedStyle(
+				within(screen.getByTestId(testId)).getByTestId("timeline-bar-content"),
+			).boxShadow;
+
+		expect(shadowIn("the-feature")).toContain(AMBER);
+		expect(shadowIn("one-of-its-teams")).toBe("");
+	});
+
+	it("stays clickable once it is marked", async () => {
+		// A cap drawn as an element over the button would swallow the click, and the reader would
+		// lose the dialog with nothing anywhere to say why.
+		const onSelect = vi.fn();
+
+		renderBar({ bar, caps: { start: "startsAfterTarget" }, onSelect });
+
+		await userEvent.click(screen.getByRole("button"));
+
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith(7);
 	});
 });

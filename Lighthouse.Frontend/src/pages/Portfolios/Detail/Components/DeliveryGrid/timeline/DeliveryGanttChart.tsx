@@ -11,6 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import type { BarEndCaps } from "./deliveryBarStatus";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
@@ -60,6 +61,11 @@ export interface DeliveryGanttChartProps {
 	 * on. Only the bar's colour and its label change; its dates are the dates it always had.
 	 */
 	barTeams?: ReadonlyMap<number, TeamColour>;
+	/**
+	 * Which end of which Feature's bar runs past the target date, keyed by Feature. Absent while
+	 * the reader has not asked, and carrying only the bars that have something to say.
+	 */
+	barCaps?: ReadonlyMap<number, BarEndCaps>;
 	targetDate?: Date;
 	/** Passed in rather than read here, so the chart and its legend mark the same day. */
 	today: Date;
@@ -115,6 +121,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	links,
 	lanes = NO_LANES,
 	barTeams,
+	barCaps,
 	targetDate,
 	today,
 	onBarSelected,
@@ -197,11 +204,12 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 					bar={bar}
 					lane={content?.lane}
 					team={bar && barTeams?.get(bar.featureId)}
+					caps={bar && barCaps?.get(bar.featureId)}
 					onSelect={onBarSelected}
 				/>
 			);
 		},
-		[contentForTask, barTeams, onBarSelected],
+		[contentForTask, barTeams, barCaps, onBarSelected],
 	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;
@@ -225,8 +233,8 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 				...ganttColorOverrides(barColor, theme.palette.primary.contrastText),
 				// Drawn differently from each other on purpose — the target is a filled band, a date
 				// being aimed at; today is a ruled line, a position being stood on — and both in a
-				// colour the bars never use, so neither reads as another bar. The legend beside the
-				// chart names them, because a mark nobody can name is decoration.
+				// colour the bars never use, so neither reads as another bar. Hovering either one
+				// names it and gives its date, which is why neither needs a key beside the chart.
 				[`& .${TARGET_DAY_CLASS}`]: {
 					backgroundColor: alpha(marks.target, 0.22),
 					boxShadow: `inset 0 3px 0 0 ${marks.target}`,

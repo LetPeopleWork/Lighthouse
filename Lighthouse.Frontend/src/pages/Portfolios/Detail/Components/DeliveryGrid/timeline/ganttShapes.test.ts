@@ -24,6 +24,7 @@ const bar = (id: number, name: string): TimelineBar => ({
 	start: new Date(2026, 9, 10),
 	end: new Date(2026, 9, 20),
 	startIsObserved: false,
+	endIsObserved: false,
 });
 
 const BRAND_GREEN = "#30574e";
