@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowIsWaitingForNothing(UpdateType.Team, team.Id);
         }
 
-        // @driving_port @real-io @AC-02.6 — the contract guard. ADR-206 changes one field's type and is
+        // @driving_port @real-io @AC-02.6 — the contract guard. This story changes one field's type and is
         // affordable only because it changes nothing else; this is where that claim is checked, on the
         // serialised payload, where a consumer would break.
         [Test]
