@@ -547,6 +547,33 @@ describe("what a bar says about the target date", () => {
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
+	it.each([
+		{ what: "a Feature's bar", props: { bar } },
+		{ what: "a Team's row", props: { lane: lane() } },
+	])(
+		"promises a click on hover only where there is one, on $what",
+		async ({ props }) => {
+			// The hover offers "click for more details", and both rows work that out separately from
+			// whether they are actually clickable. A row that says it and does nothing teaches the
+			// reader the chart is broken; one that stays silent hides the dialog entirely.
+			const { unmount } = renderBar({ ...props, onSelect: vi.fn() });
+
+			await userEvent.hover(screen.getByTestId("timeline-bar-content"));
+			expect(await screen.findByRole("tooltip")).toHaveTextContent(
+				/click for more details/i,
+			);
+
+			unmount();
+
+			renderBar(props);
+
+			await userEvent.hover(screen.getByTestId("timeline-bar-content"));
+			expect(await screen.findByRole("tooltip")).not.toHaveTextContent(
+				/click for more details/i,
+			);
+		},
+	);
+
 	it("stays clickable once it is marked", async () => {
 		// A cap drawn as an element over the button would swallow the click, and the reader would
 		// lose the dialog with nothing anywhere to say why.

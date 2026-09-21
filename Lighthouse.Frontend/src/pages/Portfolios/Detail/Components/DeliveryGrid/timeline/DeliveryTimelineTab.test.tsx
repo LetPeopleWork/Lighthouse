@@ -1238,6 +1238,42 @@ describe("saying which Features are finished and which are late", () => {
 		expect(statusButton()).not.toBeInTheDocument();
 	});
 
+	it("counts a Feature whose beginning is a fact rather than a forecast", () => {
+		// A started Feature carries an observed date and an empty list of percentiles, so a filter
+		// asking only for percentiles would call it undrawable and withhold the view for it - and
+		// it is the one kind of Feature that certainly has a bar.
+		renderTab(
+			[
+				feature({
+					id: 1,
+					startForecast: {
+						source: "Observed",
+						observedDate: october(3),
+						percentiles: [],
+					},
+					closedDate: october(9),
+				}),
+			],
+			undefined,
+		);
+
+		expect(ganttProps.current?.bars).toHaveLength(1);
+		expect(statusButton()).toBeInTheDocument();
+	});
+
+	it("counts a finished Feature whose completion forecast is gone", () => {
+		// With nothing left to simulate the forecast list can be empty, and the day it closed is
+		// still an end. A filter asking only for forecasts would withhold the view for exactly the
+		// Features the view exists to colour.
+		renderTab(
+			[feature({ id: 1, closedDate: october(9), forecasts: [] })],
+			undefined,
+		);
+
+		expect(ganttProps.current?.bars).toHaveLength(1);
+		expect(statusButton()).toBeInTheDocument();
+	});
+
 	it("offers the view for a Delivery with no date but finished work in it", () => {
 		// Paired with the test above, which is what stops that one passing against a tab that
 		// never offers the view at all. Finished is not a verdict about a date, so it survives the
@@ -1259,6 +1295,13 @@ describe("saying which Features are finished and which are late", () => {
 		expect(ganttProps.current?.lanes).toBeUndefined();
 		expect(ganttProps.current?.barStatusColors).toBeUndefined();
 		expect(timelineViewStore.read()).toBe("teams");
+
+		// And the control says so rather than standing there with nothing pressed, which is what a
+		// fallback to anything but a real option would leave behind.
+		expect(screen.getByRole("button", { name: "Nothing" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
 	});
 
 	it("names each colour beside the chart while the status is being shown", async () => {

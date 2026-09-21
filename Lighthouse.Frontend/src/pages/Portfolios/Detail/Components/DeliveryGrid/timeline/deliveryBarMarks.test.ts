@@ -73,6 +73,37 @@ describe("what a bar has to say", () => {
 		expect(marksFor(marked, { showWarnings: false }).has(1)).toBe(false);
 	});
 
+	it("warns about work that is marked done while it still has items left", () => {
+		// Both sides of the count, because the warning turns on a comparison rather than on a flag:
+		// a Feature closed with nothing outstanding is the ordinary case and must stay quiet.
+		const done = (remaining: number) =>
+			feature({
+				stateCategory: "Done",
+				getRemainingWorkForFeature: () => remaining,
+			});
+
+		expect(
+			marksFor([done(3)], { showWarnings: true }).get(1)?.notes,
+		).toHaveLength(1);
+		expect(marksFor([done(0)], { showWarnings: true }).has(1)).toBe(false);
+	});
+
+	it("stays quiet about work still running that has items left", () => {
+		// The state is half the question. Without it every Feature in flight would be warned about
+		// for the crime of having work to do.
+		expect(
+			marksFor(
+				[
+					feature({
+						stateCategory: "Doing",
+						getRemainingWorkForFeature: () => 3,
+					}),
+				],
+				{ showWarnings: true },
+			).has(1),
+		).toBe(false);
+	});
+
 	it("marks a Feature's own warnings as worth an alarm, and the chart's own notes as not", () => {
 		// The symbol a bar draws is chosen from this, so a sound dependency raising an alarm would
 		// devalue the alarm everywhere it is right.
