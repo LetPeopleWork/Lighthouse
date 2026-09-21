@@ -121,6 +121,27 @@ describe("buildDeliveryTimeline", () => {
 		expect(bar.end).toEqual(october(21));
 	});
 
+	it("draws a finished Feature from the day it started, not from a forecast left behind", () => {
+		// A Feature can be closed while one of its children is still open, and the run that is still
+		// forecasting that child goes on writing start percentiles for the parent — percentiles
+		// sitting in a future the work is already past. The day it began is the one certain date such
+		// a Feature has, so it belongs on the chart rather than in the list of what could not be
+		// drawn, and it belongs there anchored to that day.
+		const finished = feature({
+			startForecast: {
+				source: "Observed",
+				observedDate: october(3),
+				percentiles: spreadFrom(25),
+			},
+		});
+
+		const bar = onlyBar([finished]);
+
+		expect(bar.start).toEqual(october(3));
+		expect(bar.startIsObserved).toBe(true);
+		expect(bar.end).toEqual(october(21));
+	});
+
 	it("refuses to place a Feature with no start, rather than inventing one", () => {
 		const refusal = onlyRefusal([feature({ startForecast: undefined })]);
 
