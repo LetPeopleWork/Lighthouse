@@ -116,13 +116,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// A Feature that finished without Lighthouse ever having recorded the day it began. There is no
-        /// fact to send, and a forecast of a start that has already happened would be false, so nothing is
-        /// written rather than something harmless-looking: a board has no way to say "no answer", and a
-        /// field that keeps being rewritten is a field nobody trusts.
+        /// A Feature that finished without Lighthouse ever having recorded the day it began. A forecast of
+        /// a start that has already happened would be false, so the day the Feature was created is sent
+        /// instead. Sending nothing is not the neutral choice it looks like: a resolution of nothing is
+        /// dropped rather than written as blank, so whatever the tracker already holds stays there - which
+        /// on a Feature that was open long enough to receive a forecast means a start date in the future,
+        /// sitting on finished work for good.
         /// </summary>
         [Test]
-        public void ResolveForecastWriteBackForPortfolio_ClosedFeatureThatNeverRecordedAStart_WritesNothing()
+        public void ResolveForecastWriteBackForPortfolio_ClosedFeatureThatNeverRecordedAStart_WritesTheDayItWasCreated()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -130,7 +132,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var team = new Team { Id = 1, Name = "Team 1" };
 
-            // No StartedDate: the helper leaves it unset, and that absence is the whole subject here.
+            // No StartedDate: the helper leaves it unset while still giving it a creation date, which is
+            // the pair this test is about.
             var done = CreateFeatureExpectedToStartIn("F-33", team, workingDaysUntilStart: 6, daysAt85: 20);
             done.StateCategory = StateCategories.Done;
             done.ClosedDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -144,10 +147,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            // The open Feature is here so this cannot pass because nothing resolved at all.
+            // Thirty days before the fixed clock of 2026-03-10, which is where the helper puts a creation
+            // date. The open Feature is here so this cannot pass on the closed one alone.
             AssertPlanned(plan, updates =>
-                        updates.Count == 1 &&
-                        updates[0].WorkItemId == "F-34");
+                        updates.Count == 2 &&
+                        updates.Any(update => update.WorkItemId == "F-33" && update.Value == "2026-02-08") &&
+                        updates.Any(update => update.WorkItemId == "F-34"));
         }
 
         /// <summary>

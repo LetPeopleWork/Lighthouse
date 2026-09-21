@@ -107,10 +107,17 @@ namespace Lighthouse.Backend.Models
         public bool CanBeForecast => !TeamsWithoutForecast.Any();
 
         /// <summary>
-        /// When work on this Feature begins. The state settles whether work has begun; the date only
-        /// supplies the value. A Feature being worked on, or already finished, has started - so it reports
-        /// the day it started when that day is known, and reports nothing when it is not. Never a
-        /// prediction: a prediction of when work will start is false about work that has already begun.
+        /// When work on this Feature begins. The state settles whether work has begun; the dates only
+        /// supply the value. A Feature being worked on, or already finished, has started - so it reports
+        /// the day it started, or failing that the day it was created, and reports nothing only when it
+        /// has neither. Never a prediction: a prediction of when work will start is false about work that
+        /// has already begun.
+        ///
+        /// The creation day stands in because a start date is routinely missing through no fault of the
+        /// data - a work tracking system with an empty started-date column maps every in-progress item to
+        /// one - and answering nothing there takes the Feature off the timeline under the untrue heading
+        /// that nothing can be forecast for it. It is also the stand-in this Feature's age and cycle time
+        /// are already measured from, so the two cannot end up disagreeing about the same Feature.
         ///
         /// The simulation is never told what is in flight. This is decided on the way out, so nothing
         /// about how a forecast is produced depends on it.
@@ -122,7 +129,7 @@ namespace Lighthouse.Backend.Models
             {
                 if (StateCategory is StateCategories.Doing or StateCategories.Done)
                 {
-                    return StartedDate is { } startedOn ? FeatureStart.On(startedOn) : FeatureStart.NotKnown;
+                    return (StartedDate ?? CreatedDate) is { } begunOn ? FeatureStart.On(begunOn) : FeatureStart.NotKnown;
                 }
 
                 if (!CanBeForecast)

@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private static readonly DateTime TheDayWorkBegan = new(2026, 9, 14, 0, 0, 0, DateTimeKind.Utc);
 
+        private static readonly DateTime TheDayTheFeatureWasCreated = new(2026, 8, 3, 0, 0, 0, DateTimeKind.Utc);
+
         [Test]
         public void AFeatureInFlight_ReportsTheDayItActuallyStarted()
         {
@@ -35,20 +37,29 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         /// <summary>
-        /// The state settles whether work has begun; the date only supplies the value. Several connectors
+        /// The state settles whether work has begun; the dates only supply the value. Several connectors
         /// legitimately report a Feature as in progress without ever saying when - a blank started-date
         /// cell in a CSV, an unset start date on a Linear project - and a prediction of when work will
-        /// start is simply false about a Feature somebody is already working on. Saying nothing is the
-        /// honest answer, and it is one the property already knows how to give.
+        /// start is simply false about a Feature somebody is already working on. The day the Feature was
+        /// created stands in: it is the same second-best evidence the Feature's age and cycle time are
+        /// already measured from, so the two cannot end up disagreeing about one Feature.
         /// </summary>
         [Test]
-        public void AFeatureInFlightWithNoStartedDate_HasNothingToReportRatherThanAForecast()
+        public void AFeatureInFlightWithNoStartedDate_FallsBackOnTheDayItWasCreated()
         {
             var feature = AForecastableFeature();
             feature.StateCategory = StateCategories.Doing;
             feature.StartedDate = null;
+            feature.CreatedDate = TheDayTheFeatureWasCreated;
 
-            Assert.That(feature.WhenWorkBegins.Source, Is.EqualTo(StartDateSource.Unknown));
+            var start = feature.WhenWorkBegins;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(start.Source, Is.EqualTo(StartDateSource.Observed));
+                Assert.That(start.ObservedDate, Is.EqualTo(TheDayTheFeatureWasCreated));
+                Assert.That(start.Forecast, Is.Null);
+            }
         }
 
         /// <summary>
@@ -76,16 +87,50 @@ namespace Lighthouse.Backend.Tests.Models
 
         /// <summary>
         /// Finished, with nobody having recorded the day it began. A predicted start for work that is
-        /// already over reads as a date still to come on every screen that draws it.
+        /// already over reads as a date still to come on every screen that draws it, so the day the
+        /// Feature was created stands in instead: late by however long the work sat waiting, but never
+        /// in the future, which is the error that matters here.
         /// </summary>
         [Test]
-        public void AFinishedFeatureWithNoStartedDate_HasNothingToReportRatherThanAForecast()
+        public void AFinishedFeatureWithNoStartedDate_FallsBackOnTheDayItWasCreated()
         {
             var feature = AForecastableFeature();
             feature.StateCategory = StateCategories.Done;
             feature.StartedDate = null;
+            feature.CreatedDate = TheDayTheFeatureWasCreated;
 
-            Assert.That(feature.WhenWorkBegins.Source, Is.EqualTo(StartDateSource.Unknown));
+            var start = feature.WhenWorkBegins;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(start.Source, Is.EqualTo(StartDateSource.Observed));
+                Assert.That(start.ObservedDate, Is.EqualTo(TheDayTheFeatureWasCreated));
+                Assert.That(start.Forecast, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// Neither date. Rare, since a work tracking system that reports no creation date is unusual, but
+        /// it is the one case left where a Feature somebody has started genuinely has nothing to say - and
+        /// a prediction of a start that has already happened is still the wrong thing to say instead.
+        /// </summary>
+        [Test]
+        public void AStartedFeatureWithNeitherDate_HasNothingToReportRatherThanAForecast()
+        {
+            var feature = AForecastableFeature();
+            feature.StateCategory = StateCategories.Doing;
+            feature.StartedDate = null;
+            feature.CreatedDate = null;
+
+            var start = feature.WhenWorkBegins;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.StartForecasts.Single().TotalTrials, Is.EqualTo(10), "a prediction was available to fall through to");
+                Assert.That(start.Source, Is.EqualTo(StartDateSource.Unknown));
+                Assert.That(start.ObservedDate, Is.Null);
+                Assert.That(start.Forecast, Is.Null);
+            }
         }
 
         /// <summary>
