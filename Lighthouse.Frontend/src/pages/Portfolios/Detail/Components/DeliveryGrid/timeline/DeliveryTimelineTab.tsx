@@ -29,6 +29,7 @@ import {
 	featureWarningSentences,
 } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
+import { buildDeliveryBarCaps } from "./deliveryBarStatus";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
 import {
@@ -42,8 +43,13 @@ import {
 	type BarNote,
 	TimelineBarMarks,
 } from "./TimelineBarContent";
-import TimelineTeamLegend from "./TimelineTeamLegend";
-import { useShowTeams } from "./timelinePreferences";
+import TimelineLegend, { type LegendEntry } from "./TimelineLegend";
+import { STATUS_CAP_COLORS } from "./timelineMarkers";
+import {
+	useShowStatus,
+	useShowTeams,
+	useShowWarnings,
+} from "./timelinePreferences";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -61,6 +67,37 @@ const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 
 /** One empty map rather than a fresh one per render, which would re-run every memo below it. */
 const NO_TEAM_NOTES: ReadonlyMap<number, UnlanedTeam[]> = new Map();
+
+/** Likewise, for the reader who has asked not to be shown what each bar has to say. */
+const NO_MARKS: ReadonlyMap<number, BarMark> = new Map();
+
+/**
+ * What each cap on a bar means, in the order a reader meets trouble in.
+ *
+ * All three every time the key is shown, rather than only the ones this Delivery happens to be
+ * wearing. A key that listed different things at 70 and at 95 would teach the reader a different
+ * scheme each time they moved the probability, and the point of a key is that it does not move.
+ */
+const STATUS_LEGEND: LegendEntry[] = [
+	{
+		id: "finished",
+		label: "Finished",
+		color: STATUS_CAP_COLORS.finished,
+		swatch: "capBothEnds",
+	},
+	{
+		id: "endsAfterTarget",
+		label: "Finishes after the target date",
+		color: STATUS_CAP_COLORS.endsAfterTarget,
+		swatch: "capEnd",
+	},
+	{
+		id: "startsAfterTarget",
+		label: "Not even started by the target date",
+		color: STATUS_CAP_COLORS.startsAfterTarget,
+		swatch: "capStart",
+	},
+];
 
 const premiumNoticeFor = (deliveryTerm: string) =>
 	`The ${deliveryTerm} timeline is a premium feature. The forecasts behind it are not — they stay in the table.`;
@@ -169,6 +206,8 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 	const { showTeams, toggleShowTeams } = useShowTeams();
+	const { showStatus, toggleShowStatus } = useShowStatus();
+	const { showWarnings, toggleShowWarnings } = useShowWarnings();
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
 	);
@@ -210,6 +249,33 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				portfolioTerm,
 			}),
 		[features, timeline, teams, percentile, teamTerm, portfolioTerm],
+	);
+
+	const barCaps = useMemo(
+		() => buildDeliveryBarCaps(bars, targetDate),
+		[bars, targetDate],
+	);
+
+	// Both switches are offered on the strength of what this Delivery *is*, never on what is drawn
+	// at the probability currently selected. Which bars cross the target is exactly what the
+	// probability buttons change, so a control gated on the marks themselves would appear at 95 and
+	// vanish at 70 under the reader's hand - which reads as a fault in the page rather than as an
+	// answer to anything.
+	const canShowStatus =
+		targetDate !== undefined ||
+		features.some((feature) => feature.closedDate != null);
+
+	const canShowWarnings = useMemo(
+		() =>
+			features.some(
+				(feature) =>
+					featureWarningSentences(warningInputFor(feature), {
+						workItemsTerm,
+						featureTerm,
+						portfolioTerm,
+					}).length > 0 || (feature.dependsOn?.length ?? 0) > 0,
+			),
+		[features, workItemsTerm, featureTerm, portfolioTerm],
 	);
 
 	const barMarks = useMemo(
@@ -258,7 +324,19 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 
 	return (
 		<Box sx={{ p: 2 }} data-testid="delivery-timeline-tab">
-			<Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+			{/* Wraps rather than overflows. Three switches and a three-button group do not fit the
+			    narrowest width a Delivery is shown at, and a row the reader has to scroll sideways
+			    hides whichever control ends up last. */}
+			<Box
+				sx={{
+					display: "flex",
+					flexWrap: "wrap",
+					alignItems: "center",
+					columnGap: 1,
+					rowGap: 0.5,
+					mb: 2,
+				}}
+			>
 				{/* "Probability" is what Settings already calls this number. Three buttons rather
 				    than a dropdown because the whole value here is flicking between them and
 				    watching every bar move; a dropdown hides two of the three behind a click. */}
@@ -295,24 +373,51 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				    apply. A switch rather than a fourth button beside the three: that group means
 				    "pick one of these", and this is on or off - which is also why it is set apart
 				    from them rather than sitting flush against the group as a fourth member of it. */}
+				{(teamsOnTheChart.canShowTeams || canShowStatus || canShowWarnings) && (
+					<Divider orientation="vertical" flexItem sx={{ mx: 1.5, my: 0.5 }} />
+				)}
+
 				{teamsOnTheChart.canShowTeams && (
-					<>
-						<Divider
-							orientation="vertical"
-							flexItem
-							sx={{ mx: 1.5, my: 0.5 }}
-						/>
-						<FormControlLabel
-							control={
-								<Switch
-									size="small"
-									checked={showTeams}
-									onChange={toggleShowTeams}
-								/>
-							}
-							label={`Show ${teamsTerm}`}
-						/>
-					</>
+					<FormControlLabel
+						control={
+							<Switch
+								size="small"
+								checked={showTeams}
+								onChange={toggleShowTeams}
+							/>
+						}
+						label={`Show ${teamsTerm}`}
+					/>
+				)}
+
+				{canShowStatus && (
+					<FormControlLabel
+						control={
+							<Switch
+								size="small"
+								checked={showStatus}
+								onChange={toggleShowStatus}
+							/>
+						}
+						label="Show status"
+					/>
+				)}
+
+				{/* It hides every mark a bar can carry, not only the ones drawn as an alarm - half of
+				    a symbol cannot be hidden, and a switch that leaves one on the bar reads as a
+				    switch that did not work. Named for what a reader is turning off rather than for
+				    the two kinds of note underneath it. */}
+				{canShowWarnings && (
+					<FormControlLabel
+						control={
+							<Switch
+								size="small"
+								checked={showWarnings}
+								onChange={toggleShowWarnings}
+							/>
+						}
+						label="Show warnings"
+					/>
 				)}
 			</Box>
 
@@ -335,12 +440,29 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			    happens to be in, and this is always true while the Teams are shown. */}
 			{showTeams && teamsOnTheChart.legend.length > 0 && (
 				<Box sx={{ mb: 1.5 }}>
-					<TimelineTeamLegend teams={teamsOnTheChart.legend} />
+					<TimelineLegend
+						testId="timeline-team-legend"
+						entries={teamsOnTheChart.legend.map((team) => ({
+							id: `team:${team.teamId}`,
+							label: team.teamName,
+							color: team.color,
+							swatch: "fill" as const,
+						}))}
+					/>
+				</Box>
+			)}
+
+			{showStatus && canShowStatus && (
+				<Box sx={{ mb: 1.5 }}>
+					<TimelineLegend
+						testId="timeline-status-legend"
+						entries={STATUS_LEGEND}
+					/>
 				</Box>
 			)}
 
 			{bars.length > 0 ? (
-				<TimelineBarMarks marks={barMarks}>
+				<TimelineBarMarks marks={showWarnings ? barMarks : NO_MARKS}>
 					<DeliveryGanttChart
 						bars={bars}
 						links={edges}
@@ -348,6 +470,9 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						// same chart it was before any of this existed.
 						lanes={showTeams ? teamsOnTheChart.lanes : undefined}
 						barTeams={showTeams ? teamsOnTheChart.barTeams : undefined}
+						// Absent rather than empty while the reader has not asked, for the same
+						// reason the lanes are: off is the chart exactly as it was.
+						barCaps={showStatus ? barCaps : undefined}
 						targetDate={targetDate}
 						today={today}
 						onBarSelected={setSelectedFeatureId}

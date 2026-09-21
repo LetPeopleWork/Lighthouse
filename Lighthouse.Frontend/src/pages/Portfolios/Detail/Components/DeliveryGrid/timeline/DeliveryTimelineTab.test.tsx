@@ -10,11 +10,16 @@ import type {
 import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
+import type { BarEndCaps } from "./deliveryBarStatus";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
 import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
-import { showTeamsStore } from "./timelinePreferences";
+import {
+	showStatusStore,
+	showTeamsStore,
+	showWarningsStore,
+} from "./timelinePreferences";
 
 const licence = vi.hoisted(() => ({
 	isPremium: true,
@@ -41,6 +46,7 @@ type GanttProps = {
 	bars: TimelineBar[];
 	lanes?: TeamLane[];
 	barTeams?: ReadonlyMap<number, TeamColour>;
+	barCaps?: ReadonlyMap<number, BarEndCaps>;
 	links?: DrawnDependency[];
 	targetDate?: Date;
 	today?: Date;
@@ -214,10 +220,12 @@ beforeEach(() => {
 	ganttProps.current = null;
 	terminology.overrides = {};
 	localStorage.clear();
-	// The switch's state is shared across every Delivery on the page, which means it is held
+	// Each switch's state is shared across every Delivery on the page, which means it is held
 	// outside React and outlives a test. Clearing storage alone would leave the previous test's
 	// choice standing.
 	showTeamsStore.forget();
+	showStatusStore.forget();
+	showWarningsStore.forget();
 	vi.restoreAllMocks();
 });
 
@@ -517,6 +525,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar of a Feature the table warns about, dependency or not", () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
 		]);
@@ -527,6 +537,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar of a Feature marked done with work still left", () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({
 				id: 1,
@@ -542,6 +554,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar in the words of the reason the forecast gives", () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
 			feature({
@@ -561,6 +575,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on the bar of a Feature whose blocker sits below it, and still draws the line", () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
 			feature({
@@ -587,6 +603,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("marks, without alarm, a bar whose only note is where its blocker went", () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({
 				id: 2,
@@ -604,6 +622,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns on a bar that has both a warning and a note, and says both", () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({
 				id: 2,
@@ -620,6 +640,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("leaves a bar with nothing against it unmarked, and offers no all-clear", () => {
+		showWarningsStore.set(true);
+
 		renderTab([feature({ id: 1, name: "Sonar Refit" })]);
 
 		const barElement = screen.getByTestId("timeline-bar-1");
@@ -634,6 +656,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("explains a warning that has nothing to do with dependencies on hover", async () => {
+		showWarningsStore.set(true);
+
 		renderTab([
 			feature({ id: 1, name: "Sonar Refit", isUsingDefaultFeatureSize: true }),
 		]);
@@ -651,6 +675,8 @@ describe("DeliveryTimelineTab", () => {
 	});
 
 	it("warns in the words this instance uses for the things it names", () => {
+		showWarningsStore.set(true);
+
 		terminology.overrides = { [TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets" };
 
 		renderTab([
@@ -817,6 +843,8 @@ describe("showing the Teams behind a Feature's bar", () => {
 	});
 
 	it("says nothing about a missing lane on a chart that has no lanes", async () => {
+		showWarningsStore.set(true);
+
 		// With the switch off there is no split, so there is nothing for a Team to be missing
 		// from. A note about a lane on a chart without lanes names something the reader cannot
 		// see, and breaks the one promise the switch makes: off is the chart exactly as it was.
@@ -844,6 +872,8 @@ describe("showing the Teams behind a Feature's bar", () => {
 	});
 
 	it("names a Team with no lane on its Feature's bar, as a note rather than an alarm", async () => {
+		showWarningsStore.set(true);
+
 		renderTab(
 			[
 				splittingFeature({
@@ -1093,5 +1123,146 @@ describe("showing the Teams behind a Feature's bar", () => {
 		expect(screen.getByTestId("timeline-team-legend")).toHaveTextContent(
 			"Meridian",
 		);
+	});
+});
+
+describe("saying which Features are finished and which are late", () => {
+	// This Feature's bar ends on the 21st at 70 and on the 24th at 95.
+	//
+	// Two dates, because the two questions here need different ones. Due on the 20th it is late
+	// whichever probability is selected, which is what a test about *marking* wants. Due on the
+	// 22nd it is in time at 70 and late at 95 - the only shape in which "the control does not come
+	// and go" can fail, and therefore the only one in which it is worth asserting.
+	const DUE_ON_THE_TWENTIETH = new Date(Date.UTC(2026, 9, 20, 22, 30));
+	const DUE_ON_THE_TWENTY_SECOND = new Date(Date.UTC(2026, 9, 22, 22, 30));
+
+	const statusSwitch = () =>
+		screen.queryByRole("switch", { name: "Show status" });
+
+	it("shows a first-time reader no marks, and marks once asked", async () => {
+		// Both halves. Default-on fails the first; a switch wired to nothing fails the second. The
+		// Delivery is one whose work does run past the date, so an unmarked chart is a choice
+		// rather than an absence of anything to say.
+		renderTab([feature()], DUE_ON_THE_TWENTIETH);
+
+		expect(ganttProps.current?.barCaps).toBeUndefined();
+
+		await userEvent.click(statusSwitch() as HTMLElement);
+
+		expect(ganttProps.current?.barCaps?.get(1)?.end).toBe("endsAfterTarget");
+	});
+
+	it("keeps the control still while the reader works the probability buttons", async () => {
+		// Three halves, and the third is the one nobody writes by accident. Which bars cross the
+		// date is exactly what these buttons change, so a control offered on the strength of the
+		// marks currently drawn would appear at 95 and be gone again at 70 - under the reader's
+		// hand, while they are comparing the two.
+		renderTab([feature()], DUE_ON_THE_TWENTY_SECOND);
+
+		expect(statusSwitch()).toBeInTheDocument();
+
+		await userEvent.click(screen.getByRole("button", { name: "95%" }));
+		expect(statusSwitch()).toBeInTheDocument();
+
+		await userEvent.click(screen.getByRole("button", { name: "70%" }));
+		expect(statusSwitch()).toBeInTheDocument();
+	});
+
+	it("withholds the control from a Delivery with nothing it could ever mark", () => {
+		// No date to be late against and nothing finished. A switch here would be one that does
+		// nothing when used, and a reader who gets nothing back concludes the chart is broken
+		// rather than that the question does not apply.
+		renderTab([feature()], undefined);
+
+		expect(statusSwitch()).not.toBeInTheDocument();
+	});
+
+	it("offers the control for a Delivery with no date but finished work in it", () => {
+		// Paired with the test above, which is what stops that one passing against a tab that
+		// never offers the control at all. Finished is not a verdict about a date, so it survives
+		// the date being absent.
+		renderTab([feature({ closedDate: october(9) })], undefined);
+
+		expect(statusSwitch()).toBeInTheDocument();
+	});
+
+	it("names each mark beside the chart once the marks are being shown", async () => {
+		// A cap carries no name, so a colour at the end of a bar says nothing at all to a reader
+		// who has not been told what it means. Pinned against the words themselves: mutation
+		// testing does not change copy, so a looser match would never be challenged.
+		renderTab([feature()], DUE_ON_THE_TWENTIETH);
+
+		expect(
+			screen.queryByTestId("timeline-status-legend"),
+		).not.toBeInTheDocument();
+
+		await userEvent.click(statusSwitch() as HTMLElement);
+
+		const key = screen.getByTestId("timeline-status-legend");
+
+		expect(key).toHaveTextContent("Finished");
+		expect(key).toHaveTextContent("Finishes after the target date");
+		expect(key).toHaveTextContent("Not even started by the target date");
+	});
+});
+
+describe("quieting what each bar has to say", () => {
+	const warningsSwitch = () =>
+		screen.queryByRole("switch", { name: "Show warnings" });
+
+	const markedFeature = () =>
+		feature({ id: 1, isUsingDefaultFeatureSize: true });
+
+	it("says nothing on a bar until the reader asks, then says it", async () => {
+		// Both halves. The symbol is unconditional in the version this replaces, so the first is a
+		// deliberate change to what an existing reader sees rather than an accident.
+		renderTab([markedFeature()]);
+
+		expect(
+			within(screen.getByTestId("timeline-bar-1")).queryByTestId(
+				"timeline-bar-mark",
+			),
+		).not.toBeInTheDocument();
+
+		await userEvent.click(warningsSwitch() as HTMLElement);
+
+		expect(markOn(1)).toBeInTheDocument();
+	});
+
+	it("leaves the Feature's own warnings alone in the list opened from a bar", async () => {
+		// The column is shown by fifteen other screens that have no timeline, so gating it on a
+		// switch on this one would quieten it everywhere. Vacuously green on arrival, and here
+		// because the switch beside it is not.
+		renderTab([markedFeature()]);
+
+		act(() => ganttProps.current?.onBarSelected?.(1));
+
+		expect(
+			within(await screen.findByRole("dialog")).getByText(DEFAULT_SIZE_WARNING),
+		).toBeInTheDocument();
+	});
+
+	it("withholds the control from a Delivery with nothing to say about anything", () => {
+		renderTab([feature()]);
+
+		expect(warningsSwitch()).not.toBeInTheDocument();
+	});
+
+	it("offers the control for a Feature carrying a dependency there is nothing wrong with", async () => {
+		// A sound dependency raises no warning and still puts a note on the bar, so the control
+		// has to be offered for it. Paired with the test above, or that one passes against a tab
+		// that never offers the control.
+		renderTab([
+			feature({ dependsOn: [waitingOn("OE-9", "Hull Fabrication")] }),
+		]);
+
+		expect(warningsSwitch()).toBeInTheDocument();
+
+		// And it stays put across the probability buttons, for the reason the status switch does:
+		// a Team without a lane is a note that comes and goes with the probability, so a control
+		// counting the marks on the chart would flicker while the one beside it did not.
+		await userEvent.click(screen.getByRole("button", { name: "95%" }));
+
+		expect(warningsSwitch()).toBeInTheDocument();
 	});
 });

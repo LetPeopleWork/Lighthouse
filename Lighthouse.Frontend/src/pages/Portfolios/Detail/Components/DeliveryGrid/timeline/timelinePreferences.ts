@@ -25,3 +25,29 @@ export function useShowTeams(): {
 
 	return { showTeams: shown, toggleShowTeams: toggle };
 }
+
+export const showStatusStore: PagePreference = pagePreference(
+	"lighthouse:deliveryTimeline:showStatus",
+);
+
+export function useShowStatus(): {
+	showStatus: boolean;
+	toggleShowStatus: () => void;
+} {
+	const { shown, toggle } = usePagePreference(showStatusStore);
+
+	return { showStatus: shown, toggleShowStatus: toggle };
+}
+
+export const showWarningsStore: PagePreference = pagePreference(
+	"lighthouse:deliveryTimeline:showWarnings",
+);
+
+export function useShowWarnings(): {
+	showWarnings: boolean;
+	toggleShowWarnings: () => void;
+} {
+	const { shown, toggle } = usePagePreference(showWarningsStore);
+
+	return { showWarnings: shown, toggleShowWarnings: toggle };
+}
