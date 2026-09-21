@@ -126,6 +126,28 @@ describe("which Teams get a lane of their own", () => {
 		expect(canShowTeams).toBe(true);
 	});
 
+	it("offers the control for a Feature whose Teams none of them resolve", () => {
+		// The verdict has three reasons to offer the control, and this is the only shape that
+		// rests on the middle one: nothing to draw, nothing to colour, and still two Teams to
+		// name on the bar. Every other fixture has a Team that does resolve, so the first reason
+		// carries the answer and the middle one is never what decides it.
+		const { lanes, barTeams, unlanedTeams, canShowTeams } = lanesFor(
+			[
+				feature({
+					teamForecasts: [forTeam(5, [], []), forTeam(6, [], [])],
+				}),
+			],
+			[ZENITH, GRAVITY],
+		);
+
+		expect(lanes).toEqual([]);
+		expect(barTeams.size).toBe(0);
+		expect(unlanedTeams.get(1)).toHaveLength(2);
+		// Turning it on still changes the chart - both Teams get named on the bar - so the reader
+		// is offered the switch that does it.
+		expect(canShowTeams).toBe(true);
+	});
+
 	it("says nothing about Teams without a lane where every Team has one", () => {
 		// An empty note list left on a Feature is not nothing: it is a Feature the chart believes
 		// has something to say about a missing Team, and it turns the control on for a Delivery

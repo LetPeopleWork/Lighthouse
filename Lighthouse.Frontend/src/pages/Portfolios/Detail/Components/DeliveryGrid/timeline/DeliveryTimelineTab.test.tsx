@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../../../../models/EntityReference";
 import type { IFeature, IFeatureStart } from "../../../../../../models/Feature";
 import type {
@@ -167,6 +167,36 @@ const MERIDIAN: IEntityReference = { id: 7, name: "Meridian" };
 const SHOW_TEAMS_KEY = "lighthouse:deliveryTimeline:showTeams";
 
 const showTeamsSwitch = () => screen.getByRole("switch");
+
+/**
+ * Breaks one of storage's own methods, and puts it back afterwards.
+ *
+ * **Spied on the object, not on `Storage.prototype`.** In this environment `localStorage` does not
+ * inherit from it, so a prototype spy installs cleanly and intercepts nothing - which is how the
+ * blocked-storage cases below passed without ever reaching the guards they name.
+ *
+ * Undone by hand, because `vi.restoreAllMocks()` does not put these back and a broken `setItem`
+ * left standing makes the next test throw while arranging its own fixture.
+ */
+const brokenStorage: { mockRestore: () => void }[] = [];
+
+const breakStorage = (method: "getItem" | "setItem") => {
+	const spy = vi.spyOn(localStorage, method).mockImplementation(() => {
+		throw new Error("site data is blocked");
+	});
+
+	brokenStorage.push(spy);
+
+	return spy;
+};
+
+const repairStorage = () => {
+	for (const spy of brokenStorage.splice(0)) {
+		spy.mockRestore();
+	}
+};
+
+afterEach(repairStorage);
 
 const markOn = (featureId: number) =>
 	within(screen.getByTestId(`timeline-bar-${featureId}`)).getByTestId(
@@ -872,30 +902,36 @@ describe("showing the Teams behind a Feature's bar", () => {
 	});
 
 	it("keeps the tab working, and the lanes off, when storage is blocked or corrupt", async () => {
-		vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-			throw new Error("site data is blocked");
-		});
+		// Stored as on **before** the read is broken. Against an absent key this asserts nothing:
+		// no lanes is what an unset preference produces anyway, so a guard that never ran and a
+		// reader who never chose are indistinguishable. With the choice stored, a read that got
+		// through would put two lanes on the chart.
+		localStorage.setItem(SHOW_TEAMS_KEY, "true");
+		showTeamsStore.forget();
+		breakStorage("getItem");
 
 		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
 
 		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
 		expect(ganttProps.current?.lanes ?? []).toEqual([]);
 
-		vi.restoreAllMocks();
+		repairStorage();
+		localStorage.clear();
+		showTeamsStore.forget();
 
 		// `Boolean("false")` is true, which is how this gets written wrong everywhere: the
 		// preference would invert itself on every reload and off would become unreachable.
 		for (const stored of ["false", "maybe"]) {
 			localStorage.setItem(SHOW_TEAMS_KEY, stored);
+			showTeamsStore.forget();
 			renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
 
 			expect(ganttProps.current?.lanes ?? []).toEqual([]);
 		}
 
 		localStorage.clear();
-		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-			throw new Error("site data is blocked");
-		});
+		showTeamsStore.forget();
+		breakStorage("setItem");
 
 		const blocked = renderTab([splittingFeature()], undefined, [
 			ZENITH,
@@ -906,6 +942,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 		await userEvent.click(within(blocked.container).getByRole("switch"));
 
 		expect(ganttProps.current?.lanes).toHaveLength(2);
+		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBeNull();
 	});
 
 	it("moves every switch on the page together, not just the one clicked", async () => {

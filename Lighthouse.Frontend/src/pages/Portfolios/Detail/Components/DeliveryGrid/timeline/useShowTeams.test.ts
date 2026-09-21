@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { showTeamsStore } from "./useShowTeams";
 
 // The choice, on its own. What it does with a value it does not recognise, with storage that
@@ -7,6 +7,39 @@ import { showTeamsStore } from "./useShowTeams";
 // by the time a component has rendered the answer has already been decided.
 
 const SHOW_TEAMS_KEY = "lighthouse:deliveryTimeline:showTeams";
+
+/**
+ * Breaks one of storage's own methods, and puts it back afterwards.
+ *
+ * Two things about this are the reason it exists rather than being written inline at each site.
+ *
+ * **It spies on the object, not on `Storage.prototype`.** In this environment `localStorage` does
+ * not inherit from it - `getItem` and `setItem` are its own properties - so a prototype spy
+ * installs cleanly, reports itself as installed, and intercepts nothing at all. Every
+ * blocked-storage test in this slice was written that way and passed without once reaching the
+ * guard it was named for.
+ *
+ * **And it is undone by hand.** `vi.restoreAllMocks()` does not put these back, so a broken
+ * `setItem` left standing makes the *next* test's fixture throw while it is arranging itself -
+ * which surfaces as a failure in a test that has nothing to do with storage.
+ */
+const brokenStorage: { mockRestore: () => void }[] = [];
+
+const breakStorage = (method: "getItem" | "setItem") => {
+	const spy = vi.spyOn(localStorage, method).mockImplementation(() => {
+		throw new Error("site data is blocked");
+	});
+
+	brokenStorage.push(spy);
+
+	return spy;
+};
+
+afterEach(() => {
+	for (const spy of brokenStorage.splice(0)) {
+		spy.mockRestore();
+	}
+});
 
 beforeEach(() => {
 	localStorage.clear();
@@ -42,21 +75,33 @@ describe("what the page is showing", () => {
 	it("keeps the reader's answer for this visit when storage will not take it", () => {
 		// Private browsing and blocked site data make the write throw. The reader loses the memory
 		// of the choice, not the view they asked for.
-		vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-			throw new Error("site data is blocked");
-		});
+		breakStorage("setItem");
 
 		showTeamsStore.set(true);
 
+		// Both halves: the view the reader asked for, and the memory they did not get. Without the
+		// second, this says nothing a store that wrote successfully would not also satisfy.
 		expect(showTeamsStore.read()).toBe(true);
+		expect(localStorage.getItem(SHOW_TEAMS_KEY)).toBeNull();
 	});
 
 	it("shows nothing, rather than throwing, when storage cannot be read at all", () => {
 		// Unguarded, this throw comes out through the hook and takes the whole Portfolio
 		// accordion down with it.
-		vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-			throw new Error("site data is blocked");
-		});
+		//
+		// **The choice is stored as on before the read is broken, and that is the whole test.**
+		// Asserting `false` against an *absent* key cannot tell a caught throw from nothing being
+		// there, because both answer `false` - which is how two tests named for this guard passed
+		// while the guard was never entered at all. With `"true"` stored, a read that got through
+		// answers `true` and a read that was caught answers `false`, so the two outcomes are
+		// distinguishable and the assertion has something to say.
+		localStorage.setItem(SHOW_TEAMS_KEY, "true");
+
+		// The fixture proving itself: without the throw, this answers the other way.
+		expect(showTeamsStore.read()).toBe(true);
+		showTeamsStore.forget();
+
+		breakStorage("getItem");
 
 		expect(showTeamsStore.read()).toBe(false);
 	});
