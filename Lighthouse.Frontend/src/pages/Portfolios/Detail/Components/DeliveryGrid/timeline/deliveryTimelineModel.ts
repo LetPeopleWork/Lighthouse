@@ -42,23 +42,28 @@ const shiftedByDays = (date: Date, days: number): Date => {
 };
 
 /**
- * The span of time the chart should cover: every bar, the target date and today, whichever of them
- * reaches furthest in each direction, plus a little air.
+ * The span of time the chart should cover: everything drawn on it, the target date and today,
+ * whichever of them reaches furthest in each direction, plus a little air.
  *
  * The two extra dates are the point. A Delivery whose last Feature finishes well before its target
  * has slack, and one whose work has not started yet sits entirely in the future — a window drawn
  * around the bars alone hides the first and gives the second no anchor to read against.
+ *
+ * It takes anything carrying a start and an end rather than bars specifically, because a Feature's
+ * bar is not the only thing on the chart: a Team's own forecast is not bounded by its Feature's, so
+ * a row drawn for one can reach past every bar. Handing this only the bars clips that row off the
+ * axis with no error and no gap — it is simply not there.
  */
 export function timelineWindow(
-	bars: TimelineBar[],
+	spans: { start: Date; end: Date }[],
 	targetDate?: Date,
 	today?: Date,
 ): { start: Date; end: Date } | undefined {
-	if (bars.length === 0) {
+	if (spans.length === 0) {
 		return undefined;
 	}
 
-	const moments = bars.flatMap((bar) => [bar.start, bar.end]);
+	const moments = spans.flatMap((span) => [span.start, span.end]);
 
 	for (const marked of [targetDate, today]) {
 		if (marked) {
@@ -77,7 +82,12 @@ export function timelineWindow(
 const NO_START = "No forecast for when work on this begins.";
 const NO_END = "No forecast for when work on this finishes.";
 
-const dateAt = (
+/**
+ * The date a list of percentiles gives for the probability being read, or nothing where it gives
+ * none. Exported because a Feature's own ends and each contributing Team's are the same question
+ * asked of two lists, and answering it twice is how the two come to disagree.
+ */
+export const forecastDateAt = (
 	percentiles: IWhenForecast[],
 	probability: TimelinePercentile,
 ): Date | undefined =>
@@ -125,7 +135,7 @@ export function buildDeliveryTimeline(
 		const observedStart =
 			start?.source === "Observed" ? start.observedDate : undefined;
 		const startsOn =
-			observedStart ?? dateAt(start?.percentiles ?? [], percentile);
+			observedStart ?? forecastDateAt(start?.percentiles ?? [], percentile);
 
 		if (!startsOn) {
 			cannotPlace(NO_START);
@@ -136,7 +146,8 @@ export function buildDeliveryTimeline(
 		// Feature is still handed a completion forecast: one running into the future while a child
 		// of it stays open, or an empty one that resolves to today once nothing is left to simulate.
 		// Either drawn as the end of the bar reads as work that is still going and badly overdue.
-		const endsOn = finishedOn(feature) ?? dateAt(feature.forecasts, percentile);
+		const endsOn =
+			finishedOn(feature) ?? forecastDateAt(feature.forecasts, percentile);
 
 		if (!endsOn) {
 			cannotPlace(NO_END);

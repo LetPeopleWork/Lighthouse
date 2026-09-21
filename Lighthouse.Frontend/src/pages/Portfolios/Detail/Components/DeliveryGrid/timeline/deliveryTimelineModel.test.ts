@@ -255,6 +255,21 @@ describe("timelineWindow", () => {
 	it("has no window at all when there is nothing to draw", () => {
 		expect(timelineWindow([], october(15), october(1))).toBeUndefined();
 	});
+
+	it("widens for a lane reaching past every bar rather than clipping it off the axis", () => {
+		// A Team's percentile is not bounded by its Feature's, so a lane can reach past both ends
+		// of the last bar. Clipped, it is simply not on the axis — no error, no gap, nothing to
+		// notice. Three halves: the far end, the near end, and a call with no lanes at all.
+		const bars = [bar(10, 20)];
+		const reachingLate = { start: october(12), end: october(30) };
+		const reachingEarly = { start: october(4), end: october(18) };
+
+		expect(timelineWindow([...bars, reachingLate])?.end).toEqual(
+			new Date(2026, 10, 2),
+		);
+		expect(timelineWindow([...bars, reachingEarly])?.start).toEqual(october(1));
+		expect(timelineWindow(bars)).toEqual(timelineWindow([bar(10, 20)]));
+	});
 });
 
 describe("targetCalendarDate", () => {
