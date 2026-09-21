@@ -366,3 +366,73 @@ asserted directly. That is what the file was extracted for.
 round one: what is left there is props handed to a component whose output is deliberately asserted
 nowhere. A test that killed those would be a test of somebody else's markup, going red on their
 release rather than on our defect.
+
+---
+
+# Mutation testing — Epic 6033 slice 05 (dependency lines on the timeline)
+
+Run 2026-09-21 against `main` @ `f2f67ed6b`, after the refactor, the live-review change and the
+adversarial-review fixes — frozen code, as the gate requires. **Frontend only**; the backend change
+is two demo-data rule builders and is covered by the two NUnit scenarios in step 05-07.
+
+| stack | score | killed | survived | timeout | no coverage | errors | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Frontend, all eight mutated files | 72.54 % | 523 | 184 | 0 | 14 | 0 | ~33 m |
+| **Frontend, the surface this slice owns** | **92.22 %** | 332 | 25 | 0 | 3 | 0 | — |
+
+| file | score | survived | whose code |
+| --- | --- | --- | --- |
+| `dependencySentences.ts` | 100 % | 0 | slice 05 |
+| `featureWarningSentences.ts` | 100 % | 0 | slice 05 |
+| `ganttShapes.ts` | 96.67 % | 4 | slice 05 (`toGanttLinks`) |
+| `deliveryDependencyOverlay.ts` | 93.59 % | 4 | slice 05, new |
+| `DeliveryTimelineTab.tsx` | 81.90 % | 17 | slice 05 |
+| `WorkItemsDialog.tsx` | 60.00 % | 92 | slice 04 and earlier |
+| `TimelineBarContent.tsx` | 58.00 % | 21 | slice 04 |
+| `DeliveryGanttChart.tsx` | 27.63 % | 46 | slice 04 |
+
+## Two numbers, and why the smaller one is the misleading one
+
+The 72.54 % headline is an artefact of what was put in the mutate list, not a statement about this
+slice. Three of the eight files are carried-over presentation code that slice 05 barely altered, and
+they contribute 159 of the 184 survivors between them.
+
+`WorkItemsDialog.tsx` gained **one** optional column descriptor of the five it now has; the other
+four, and the grid plumbing around them, predate this work entirely.
+
+`DeliveryGanttChart.tsx` gained **five lines** — a `links` prop, a memo and the swap of `links={[]}`
+for `links={ganttLinks}`. Not one survivor falls in them. They cluster instead at the `ResizeObserver`
+callback, at a date formatter handed to the vendor, and at the scale callback the vendor invokes —
+none of which jsdom runs. That is the same standing cost slice 04 recorded for this file, and the
+reason the adapter exists in the first place.
+
+`TimelineBarContent.tsx` is the one slice 05 genuinely shares: the note types moved into it and the
+mark symbol is new. Its survivors sit inside the two JSX return blocks, on `sx` objects and style
+strings. Killing them would mean asserting on styling values, which is precisely how slice 04 shipped
+four assertions incapable of failing — one of them asserting a CSS variable on the element under test
+rather than the element that resolves it. The score is left where it is deliberately. It rose from
+37.04 % to 58.00 % anyway, because the new mark has behaviour worth asserting and it is asserted
+through accessible names.
+
+## What the run actually found
+
+Nothing that needed fixing. That is worth stating plainly rather than dressing up: the four survivors
+in the overlay and the four in `ganttShapes` were reviewed individually and are equivalent mutants or
+styling, and the deliberately-weak edge-limit default is a survivor accepted in advance and recorded
+as such when it was written — a mutant moving the default from 40 to 41 is not killed by anything,
+because pinning that number would assert the number rather than the behaviour and would break on the
+next re-measurement.
+
+The reason this run found little is that the mutants it would have found were killed earlier, by
+hand, as the steps ran: every step named the mutation that reds each of its tests before accepting it,
+and three steps ran those mutations against their finished code and measured which tests died. The
+boundary operator in the edge limit, the source/target swap in the link mapping, the empty-reference-id
+guard and the `isWorthWarningAbout` call site were all verified that way rather than by waiting for
+Stryker.
+
+## Method note
+
+Scoped with `stryker-6049-slice-05.frontend.json` + `vitest.stryker.6049-slice-05.config.ts`, the
+latter committed here. Every path in both files was checked to exist before the run: a spec missing
+from the runner's include list makes every mutant in the code it covers survive for want of a test
+*run* rather than for want of a test, and the report cannot tell those two apart.

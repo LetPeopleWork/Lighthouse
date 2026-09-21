@@ -2,7 +2,8 @@
   "roadmap": {
     "project_id": "epic-6033-forecasted-start-dates",
     "created_at": "2026-09-21",
-    "total_steps": 7,
+    "total_steps": 9,
+    "not_a_step": "The cross-cutting refactor (commit 02b91910f) ran between 05-07 and 05-09 and is deliberately absent from this list. It has no RED phase to record - behaviour must not change and no test may be altered to accommodate it - so recording it as a TDD step would have meant inventing phases it never had. Its account is in its own commit message.",
     "goal": "Draw dependency lines on the Delivery timeline, and mark the dependencies that cannot be drawn",
     "wave": "DELIVER",
     "paradigm": "object-oriented"
@@ -151,6 +152,42 @@
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs"
           ],
           "implementation_notes": "A SIBLING of BuildAllFeaturesRuleDefinition; that one is shared with the Apollo burnup Delivery and must not be narrowed in place. Use the literal feature.referenceid because FeatureFieldProvider.FeatureReferenceIdKey is private const. RuleOperators.NotEquals is public and compares OrdinalIgnoreCase."
+        },
+        {
+          "id": "05-09",
+          "name": "The bar warns about anything worth warning about",
+          "criteria": [
+            "A Feature the Feature table warns about is warned about on its bar",
+            "A blocker merely absent from this timeline still reads as neutral",
+            "The hover explains a warning that has nothing to do with dependencies"
+          ],
+          "scenario": "From the maintainer's live review of the running chart",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.test.tsx",
+          "scenario_name": "warns on the bar of a Feature the table warns about, dependency or not",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx"
+          ],
+          "implementation_notes": "Unplanned, and the only change in this slice driven by seeing it run. The mark was reading dependency notes alone, so a Feature the table already warned about showed a neutral note or nothing at all."
+        },
+        {
+          "id": "05-10",
+          "name": "Fixes from the adversarial review",
+          "criteria": [
+            "Every sentence on a bar renders the reader's own terminology",
+            "The overlay cannot express a warning its only caller discards",
+            "No comment cites a reference a cold reader cannot open"
+          ],
+          "scenario": "One high and four low findings, each verified against the file first",
+          "test_file": "Lighthouse.Frontend/src/utils/features/featureWarningSentences.test.ts",
+          "scenario_name": "names that work in the words this instance uses",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/features/featureWarningSentences.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineBarContent.tsx",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DemoDataService.cs"
+          ],
+          "implementation_notes": "Deleting the overlay's dead warning arms outright would have been wrong rather than merely tidy: a refused dependency would have fallen through to the neutral sentence, which is a false statement on screen. The loop skips note-writing instead, after the edge push, so a positioned-below but honoured dependency still draws its line."
         }
       ]
     }
