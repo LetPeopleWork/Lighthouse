@@ -4075,18 +4075,28 @@ through RTL — nine at the tab, four at the bar, three at the key. None is back
 ### How a cap is asserted at all
 
 DESIGN says the cap is painted as an inset shadow (D7-13) and does not say how anything would read it
-back. It cannot, reliably: this environment resolves a shorthand `boxShadow` composed from two insets
-inconsistently, and the composed value is the one thing the assertion would be about.
+back. This section first claimed it could not be read back — that a composed `boxShadow` would not
+resolve here — and proposed a `data-caps` attribute on the row box, by analogy with the
+`data-axis-unit` and `data-row-count` that `DeliveryGanttChart` already carries for styles this
+environment does not resolve.
 
-So the bar's box carries **`data-caps`** — `"start"`, `"end"`, `"start end"`, `"finished"`, or absent —
-naming which ends are marked. This is not a hook invented for the tests: it is exactly why
-`DeliveryGanttChart` already carries `data-axis-unit` and `data-row-count`, and the reason is written
-beside them — *"the height itself is a style this environment does not resolve, so without it nothing can
-tell a chart sized for its bars from one sized for everything drawn on it."* Same problem, same answer.
+**That claim was asserted rather than checked, and it is wrong.** Measured on 2026-09-21 with a
+throwaway probe: an `sx` declaration of `inset 4px 0 0 0 #f44336, inset -4px 0 0 0 #ff9800` comes back
+from `getComputedStyle` verbatim, and `TimelineBarContent.test.tsx` was already reading `cursor` off a
+rendered row successfully. So **there is no `data-caps`**, and the scenarios assert the shadow itself.
 
-**The attribute says which ends; the colour is asserted where it is decided** — in `statusCapColors`,
-against literal hex, scenarios 15 and 16. What is verified by eye and only by eye is the same list as
-every slice since 04: that the cap is legible at bar height, over the Team fills, in both themes.
+That is strictly better than the attribute would have been, and not only because it leaves no production
+surface existing for the tests' benefit: the shadow carries which ends *and* which colours in one value,
+so scenario 18 asserts the thing the reader actually sees rather than a parallel claim about it that
+could drift from it. Which end is which is the sign of the offset — `inset 4px` on the start, `inset
+-4px` on the end.
+
+The colour is still asserted where it is decided as well, in `statusCapColors` against literal hex
+(scenarios 15-17), because a bar rendered with the wrong colour and a palette that returns the wrong
+colour are different faults and should not share one assertion.
+
+What is verified by eye and only by eye is the same list as every slice since 04: that the cap is legible
+at bar height, over the Team fills, in both themes.
 
 ### Every scenario, and what would red it
 
@@ -4116,7 +4126,7 @@ not a redundancy to simplify away.
 | 15 | The three marks have three different colours | AC-7.7 | Colours | One colour for all three, or two of the three sharing. Asserted as three mutual differences rather than against values, so it cannot be satisfied by reading the constant back out |
 | 16 | The colours are the forecast palette, by literal value | D7-14 | Colours | **Pinned to literal hex, not to `appColors.forecast.*`** — comparing the function's output against the constant it returns is the same reduction on both sides and could not fail. This is the assertion that would catch a re-theme quietly changing what the chart means |
 | 17 | The "ends after the target" colour is **deliberately the same** as the target band's | D7-14 | Colours | Nothing, and that is the point: it is an accepted risk written as an executable assertion, so the next person to notice the clash and "fix" one of the two is told by a red test that it was a decision, with the fallback named beside it |
-| 18 | A bar renders exactly the ends it was given — none, start, end, both, or finished | AC-7.1, AC-7.2, AC-7.3, AC-7.4 | Bar (RTL) | **Five cases in one table**, read off `data-caps`. A component that renders a cap whenever it has any status fails four of them |
+| 18 | A bar renders exactly the ends it was given — none, start, end, both, or finished | AC-7.1, AC-7.2, AC-7.3, AC-7.4 | Bar (RTL) | **Five cases in one table**, read off the rendered shadow. A component that renders a cap whenever it has any status fails four of them, and one that puts both caps on the same side fails the sign of the offset |
 | 19 | A Team's lane never renders caps, on a Feature whose own bar does | AC-7.6, D7-7 | Bar (RTL) | Threading the caps into the lane branch — one line, and the natural mistake, since the lane and the bar share a renderer. Asserted with the Feature's bar capped in the same render, so it cannot pass against a component that caps nothing |
 | 20 | A capped bar keeps its Team's fill | AC-7.5 | Bar (RTL) | **Both halves, and this is the slice's central promise.** The fill must still be the Team's *and* the caps must be present. Either alone passes against a component that honours one and drops the other, which is precisely the failure D7-1 exists to prevent |
 | 21 | A capped bar is still clickable and its hover text is what it was | — | Bar (RTL) | Caps rendered as an element over the button, swallowing the click; or the hover text rebuilt to mention them. The reader loses the dialog and nothing says so |
@@ -4136,11 +4146,10 @@ not a redundancy to simplify away.
 
 Three things the scenarios could not be written against as the prior waves left them.
 
-1. **`data-caps` is a component change DESIGN did not name.** Its component table says the caps are
-   painted as inset shadows and stops there. Asserting that from jsdom is unreliable for a composed
-   shorthand, and the file family already solved this once — `data-axis-unit` and `data-row-count` exist
-   for the same reason and say so in place. The attribute is added to `TimelineBarContent`'s row box and
-   belongs in DESIGN's table.
+1. ~~**`data-caps` is a component change DESIGN did not name.**~~ **Withdrawn, 2026-09-21.** This
+   finding claimed a composed `boxShadow` could not be read back in this environment and proposed a
+   `data-caps` attribute. A probe disproved it before any of it was written — see *How a cap is
+   asserted at all* above. DESIGN's component table needs no change, and no attribute is added.
 
 2. **AC-7.11 is unfalsifiable as written.** *"A Delivery with no target date … its finished Features still
    carry 'done' and no bar carries either late colour"* is satisfied by a module that returns nothing at
