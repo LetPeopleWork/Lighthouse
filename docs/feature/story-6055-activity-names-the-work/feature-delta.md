@@ -789,3 +789,237 @@ records how the two would compose if it ever returns.
 which is defensible, but this sentence is in the present tense in the architecture SSOT and reads as
 current state. Corrected in place with a dated status note by user decision, 2026-09-21; the analysis
 around it is left untouched.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Density**: `lean` + `ask-intelligent`; DEVOPS declares no `ask-intelligent` triggers, so no menu and
+Tier-1 `[REF]` only.
+
+**The nine interactive decisions were not asked.** Every one is already settled project-wide and this
+feature changes none of them — deployment target, orchestration, CI/CD platform, existing
+infrastructure, observability stack, deployment strategy, continuous learning, branching and mutation
+strategy are all recorded in `CLAUDE.md`, ADR-093 and the 27 workflows under `.github/workflows/`.
+Re-asking them would invite an answer that contradicts the project rather than one that informs this
+feature. They are answered from those sources below, each with its source, so the wave is run rather
+than skipped.
+
+**Prior-wave reading**
+
+✓ `docs/feature/story-6055-activity-names-the-work/feature-delta.md` — DISCUSS Outcome KPIs + all DESIGN sections
+✓ `docs/product/kpi-contracts.yaml` — 45 existing outcome entries, and the `measurement_scope` vocabulary
+✓ `.github/workflows/` — 27 workflows; `ci.yml`, `ci_verifysqlite.yml`, `ci_verifypostgres.yml`, `ci_sonar_gates.yml` are the ones this feature passes through
+✓ `docs/product/architecture/brief.md` § `story-6055-activity-names-the-work` (written this session)
+⊘ `docs/feature/story-6055-activity-names-the-work/discuss/outcome-kpis.md` — legacy path; content lives in `feature-delta.md` per the current layout contract
+⊘ `docs/feature/story-6055-activity-names-the-work/design/` — legacy path; same
+⊘ `docs/feature/story-6055-activity-names-the-work/spike/` — no spike was run
+
+**Contradictions with DESIGN: none.** DESIGN's handoff says there is nothing to deploy, instrument or
+provision, and nothing in the KPIs disputes it — no latency budget, no availability target, no
+multi-region pull. The one thing DEVOPS adds that DESIGN did not have is the **environment axes**,
+which are a test-parametrisation concern rather than an architectural one.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `docs/feature/story-6055-activity-names-the-work/environments.yaml`.
+
+| Environment | Platform | Why it exists here |
+|---|---|---|
+| `clean` | linux, macos, windows, wsl | Baseline for every row-wording and clause scenario |
+| `renamed-terminology` | linux, macos | The **only** environment that can catch a verb accidentally routed through Terminology (AC-01.3, AC-01.5) |
+| `sqlite` | linux, macos, windows | Standalone default; where the read-path scenarios run |
+| `postgres` | linux | Different `IUpdateStatusStore` implementation behind `GetAdmittedWork()` — the one place a provider could matter |
+| `screenshot-capture` | linux | The `@screenshot` run that regenerates `taskmanager.png`, with preconditions none of the others share |
+
+Two axes were considered and **deliberately excluded**: operating system (nothing here is
+platform-sensitive — integer and enum equality on the backend, string assembly on the front end) and
+premium-vs-free licence (the Task Manager is a free capability; the single premium dependency is the
+screenshot fixture, recorded as a precondition of that one environment rather than as an axis).
+
+`environments.yaml` also carries a `scenario_axes` block mapping each acceptance criterion to the
+environments worth varying it over, so DISTILL parametrises where it pays and not everywhere.
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**Platform**: GitHub Actions (existing — 27 workflows). **No pipeline change.** This feature adds no
+stage, no job, no runner and no secret. It passes through stages that already exist:
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` | Flags both `Lighthouse.Backend` and `Lighthouse.Frontend` — this feature touches both |
+| Frontend | `ci_frontend.yml` | `pnpm test`, then `pnpm build` (whose `prebuild` runs `biome check --write` — it rewrites `./src`, contrary to what CLAUDE.md's Quality Gates section says) |
+| Backend | `ci_backend.yml` | `dotnet build` zero-warning (`TreatWarningsAsErrors`), `dotnet test` |
+| Verify (SQLite) | `ci_verifysqlite.yml` | E2E against SQLite — **this is where E2E actually runs**, not `ci_e2e.yml`, which only compiles the suite |
+| Verify (Postgres) | `ci_verifypostgres.yml` | Same suite against Postgres |
+| Quality gate | `ci_sonar_gates.yml` | SonarQube Cloud; no new issue of any severity |
+
+**Trigger rules**: unchanged. Trunk-based on `main` (below), so every commit runs the full set.
+
+**One pipeline-adjacent risk worth naming**, because it is invisible locally: the analyzer rules
+`CA1861`, `CA1859`, `CA1825`, `CA2016`, `NUnit1028`, `NUnit2045` and `NUnit2056` now **fail** the build
+rather than warn. The read-path change adds a record and a comparison — `CA1859` (use the concrete
+type) and `CA1861` (no constant array as an argument) are the two most likely to fire on it.
+Pre-applied per `docs/ci-learnings.md` rather than discovered in CI.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts
+
+One row per outcome KPI, as the wave requires. **None of the four needs runtime instrumentation**, and
+that is the finding rather than an omission.
+
+| KPI | Instrument | Where it is read | Runtime instrumentation |
+|---|---|---|---|
+| KPI-1 — 5 of 5 update types render distinct text | Vitest assertion over all five `UpdateTaskType` members (AC-01.2) | CI, `ci_frontend.yml` | **None.** A regression is a red test, which is strictly better than a metric nobody watches. |
+| KPI-2 — zero rows whose clause resolves to their own entity | NUnit read-model assertions (AC-02.1/02.3/02.4) | CI, `ci_backend.yml` | **None.** Same reason. |
+| KPI-3 — zero row phrasings absent from the public docs table | Manual enumeration at DELIVER against `docs/settings/taskmanager.md` | DELIVER checklist | **None.** A prose-to-code correspondence; no runtime signal could express it. |
+| KPI-4 — zero repeat reports of duplicate-looking rows within two releases | ADO items raised against the Task Manager surface | The board | **None.** The honest instrument is the absence of a bug report, which no telemetry event can stand in for. |
+
+**Why no telemetry event is added.** The opt-in usage-data pipeline ships ten named events
+(`docs/settings/usagedata.md` is the authoritative list) and **none of them says anything about
+comprehension of a row**. An event could record that the popover was opened; it could not record that
+the reader understood what they saw, which is the entire outcome. Adding an event that answers a
+different question than the one asked is worse than adding none, because it would then be read as
+evidence. This is the `opt_in_telemetry_required` scope's own rule — *an outcome asking something none
+of those ten says stays deferred* — applied rather than worked around.
+
+**SSOT**: no entry is appended to `docs/product/kpi-contracts.yaml`. That file is the contract for
+outcomes with a *data collection* story; all four KPIs here are CI- or checklist-asserted and would
+add four rows whose `data_collection` reads "none". Recorded here instead, which is where a reader of
+this feature will look.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+**Unchanged, and this feature does not exercise the interesting parts of it.** Lighthouse ships as one
+artifact containing both the built frontend and the backend, so a browser served the new bundle always
+talks to a backend serving the new response — the `waitingBehind` type change (ADR-205) has no
+mixed-version window *within* an instance.
+
+**Rollback contract**: `git revert` of the feature commits, then the ordinary release path. No
+migration to reverse, no configuration to unset, no data written in the new shape. The rollback is
+strictly cheaper than #5877's was, because nothing here persists anything.
+
+**The one multi-version case, named rather than assumed**: during a SaaS rolling update, an old replica
+and a new replica serve different shapes of `waitingBehind` from the same route. A browser holding an
+old bundle that reaches a new replica reads an object where it expects a string and renders no clause —
+it does not crash, because the consumer is a truthy check followed by a template interpolation. The
+window is one rollout and the blast radius is one missing clause on an admin-only popover. Accepted;
+not worth an expand-contract dance for a field with one in-repo consumer.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**`per-feature`** — the project setting (`CLAUDE.md` § Mutation Testing Strategy), unchanged and not
+re-decided here. Minimum kill rate 80%.
+
+Scoping for this feature, so the run is not mistaken for a full-solution run:
+
+- **Frontend (StrykerJS)**: `ActivitySection.tsx`. Its wording branches are exactly the kind of logic
+  mutation testing is good at — a flipped ternary in `describeState` produces a plausible sentence.
+- **Backend (Stryker.NET)**: `UpdateController` and the entity-kind projection. The sameness comparison
+  is the target: a mutated `&&` to `||` in DDD-4's check is precisely AC-02.4's failure.
+- **Excluded**: the acceptance suite. Each fixture boots a web host, which took #5877's run from three
+  minutes to over eighty. Unit tests only, and the consequence written into `results.md` rather than
+  left inside the number.
+- **Run it last, on frozen code.** Any edit after the run shifts the line ranges and the score stops
+  describing what shipped.
+- Recorded under `docs/feature/story-6055-activity-names-the-work/mutation/`.
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+**Unchanged; nothing added.** Structured Serilog logging, the bounded in-process warning sink that
+`#5511` slice 06 surfaces as *Recent problems*, and the refresh history under Settings → System Info.
+
+This feature adds **no log line**. Deliberate: the read path runs on every popover open and on every
+SignalR-driven refresh of it, so a log line per queued row would be the noisiest thing in the file and
+would say only what the screen already says. The screen is the observability surface for this feature,
+which is what `#5511` built it to be.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based development on `main`** — the project rule (memory: *trunk-based on main; push directly
+to origin main; no branches/PRs*), unchanged.
+
+CI trigger alignment is therefore already correct: every commit to `main` runs the full workflow set,
+which is what trunk-based requires. This session's work sits on the worktree branch
+`worktree-wise-hugging-stardust`, currently ahead of `main`, and lands by push to `main` when the user
+says so.
+
+**Slice boundary ritual** (project rule, restated because DELIVER depends on it): a focused commit per
+step; at slice end push, wait for CI green, then move ADO Active → Resolved. Never push red — skip a
+not-yet-passing acceptance test and un-skip it to resume.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Full table in `environments.yaml`. What must keep working while this ships:
+
+| Must not break | Why it is at risk |
+|---|---|
+| Task Manager popover — Connections, Recent problems | They share the popover with the Activity section |
+| `TaskManagerIcon` Vitest suite | Addresses rows by `data-testid`, which AC-01.6 pins as a fixed point |
+| `Slice02SeeWhatIsRunning` acceptance fixtures | They fix the `/update/tasks` contract; they carry the new shape rather than being bypassed |
+| `GET /api/latest/update/status` | Separate route, separate response, untouched |
+| The cancel control on each row | Its `aria-label` is deliberately out of scope and must keep working unchanged |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites from DESIGN
+
+| DESIGN constraint | Platform answer |
+|---|---|
+| ADR-205 changes a shipped response field's type | No versioning needed within an instance (one artifact). The rolling-update window is named and accepted above. |
+| DDD-5 — the comparison lives in the backend | Nothing to enforce at the platform layer; asserted by AC-02.8 in CI. |
+| DDD-2 — exhaustive `Record` lookups | Enforced by the TypeScript compiler in `ci_frontend.yml`'s `tsc -b`. No platform mechanism required. |
+| No new driven port | No new network egress, no new credential, no firewall or secret-store change. |
+| `UpdateActivityService` not introduced (DDD-8) | No new DI registration, no new service lifetime to reason about. |
+
+---
+
+## Wave: DEVOPS / [REF] Handoff
+
+**To**: `nw-acceptance-designer` (DISTILL).
+
+**Deliverable**: `docs/feature/story-6055-activity-names-the-work/environments.yaml`, carrying the five
+environments, the `scenario_axes` mapping every acceptance criterion to the environments worth varying
+it over, and the coexistence matrix.
+
+Three things DISTILL should take from this wave specifically:
+
+1. **Parametrise `AC-01.3` over `renamed-terminology` and nothing else over it.** It is the only
+   criterion whose answer differs by environment, and the axis exists for it alone.
+2. **Do not parametrise the row-wording criteria over providers or platforms.** They are string
+   assembly in the browser. `scenario_axes` says so per criterion.
+3. **`AC-02.6`'s payload assertion is the contract guard for ADR-205**, and it is also where OQ-2 gets
+   settled — whether `WaitingBehindResponse.UpdateType` is sent in the different-entity case too.
+   DISTILL fixes that as it writes the assertion.
+
+**Per-wave peer review: skipped.** None of the triggers fires — no novel deployment target, no new
+CI/CD framework, no observability rewrite, no security-posture change. The consolidated review fires at
+end of DISTILL.
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+**None.** No DESIGN or DISCUSS assumption changed in this wave. DESIGN's handoff predicted that DEVOPS
+would have nothing to design, and it was right about infrastructure — the wave's actual contribution is
+the environment axes and the explicit finding that no KPI here warrants runtime instrumentation, both
+of which are additions rather than corrections.
+
+One **clarification** worth recording because a reader of DESIGN's handoff might expect otherwise:
+DESIGN said "nothing to deploy, instrument or provision", and that is upheld. It did not say "nothing
+for DEVOPS to do" — the environment matrix DISTILL needs is produced here and did not exist before.

@@ -1,0 +1,122 @@
+# environments.yaml — consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# story-6055-activity-names-the-work. This feature installs nothing and provisions nothing:
+# it changes what a popover row says and what one read-path field carries. The environments
+# below are therefore not deployment targets to stand up — they are the axes along which the
+# acceptance scenarios have to be parametrised, and only the ones where this feature can
+# actually behave differently.
+#
+# Two axes were considered and deliberately left OUT, because varying them would multiply
+# scenarios without varying the behaviour:
+#   - operating system. Nothing here is platform-sensitive; the backend comparison is integer
+#     and enum equality, the frontend is string assembly.
+#   - premium vs free licence. The Task Manager is a free capability (#5511 D-decision). The
+#     ONE exception is the screenshot run, which needs a premium fixture — captured below as a
+#     precondition of that environment, not as a separate axis.
+
+schema_version: 1
+feature_id: story-6055-activity-names-the-work
+updated: 2026-09-21
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance, seeded Terminology, single lane. The baseline for every row-wording
+      and clause scenario.
+    platform: [linux, macos, windows, wsl]
+    preconditions: []
+
+  - name: renamed-terminology
+    description: >
+      A tenant that has renamed Team and Portfolio under Settings → Terminology. Separates
+      the tenant's nouns from Lighthouse's own verbs, which is the one thing slice 01 can get
+      wrong in a way no other environment reveals.
+    platform: [linux, macos]
+    preconditions:
+      - "Terminology overrides set for `team` and `portfolio` (e.g. Squad / Programme)"
+
+  - name: sqlite
+    description: >
+      The standalone product's default provider. Backend acceptance scenarios for the read
+      path run here.
+    platform: [linux, macos, windows]
+    preconditions: ["SQLite provider (default)"]
+
+  - name: postgres
+    description: >
+      The multi-replica / SaaS provider. Included because the read path enumerates admitted
+      work, not because this feature's logic differs — CI already runs both and a scenario
+      that passes on one and not the other is a finding either way.
+    platform: [linux]
+    preconditions: ["PostgreSQL provider", "connection string configured"]
+
+  - name: screenshot-capture
+    description: >
+      The @screenshot E2E run that regenerates docs/assets/settings/taskmanager.png. Its own
+      environment because it has preconditions none of the others do, and because getting them
+      wrong loses images rather than failing loudly.
+    platform: [linux]
+    preconditions:
+      - "Premium licence fixture present (valid_not_expired_license.json is gitignored and ABSENT in a worktree — import it from the main checkout first)"
+      - "Target PNG deleted before the run (a diff under the pixel threshold silently keeps the old file)"
+      - "@auth excluded (its DB wipe loses other regenerated PNGs)"
+      - "A Portfolio refresh in flight, so a Refreshing row and a Forecasting row are both on screen"
+
+# Environment-sensitivity of the acceptance criteria, so DISTILL parametrises only where it pays.
+scenario_axes:
+  row_wording:
+    criteria: [AC-01.1, AC-01.2, AC-01.4, AC-01.5, AC-01.6]
+    vary_over: [clean]
+    rationale: "Pure string assembly in the browser. No backend, no provider, no licence."
+  terminology_separation:
+    criteria: [AC-01.3]
+    vary_over: [clean, renamed-terminology]
+    rationale: "The only criterion whose answer differs between the two."
+  waiting_clause:
+    criteria: [AC-02.1, AC-02.2, AC-02.3, AC-02.4, AC-02.5]
+    vary_over: [sqlite]
+    rationale: >
+      Read-path logic over enumerated admitted work. Provider-independent — the comparison
+      never reaches a database. Postgres adds cost and no coverage.
+  response_contract:
+    criteria: [AC-02.6, AC-02.8]
+    vary_over: [sqlite, postgres]
+    rationale: >
+      The one place a provider could matter: GetAdmittedWork enumerates the status store, and
+      under Redis/Postgres that is a different implementation from the in-process one.
+  production_data:
+    criteria: [AC-01.7, AC-02.7]
+    vary_over: [screenshot-capture]
+    rationale: "Both require a real refresh against a real connection on the dogfood instance."
+
+coexistence_matrix:
+  - tool: "Task Manager popover (#5511 slices 01-08)"
+    must_not_break: true
+    note: "Connections and Recent problems sections share the popover and are untouched."
+  - tool: "TaskManagerIcon Vitest suite"
+    must_not_break: true
+    note: "Addresses rows by data-testid `task-manager-row-{type}-{id}`, which AC-01.6 pins."
+  - tool: "Slice02SeeWhatIsRunning acceptance fixtures"
+    must_not_break: true
+    note: "They fix the /update/tasks contract in prose and assertions; they carry the new shape rather than being bypassed."
+  - tool: "GET /api/latest/update/status"
+    must_not_break: true
+    note: "Separate route, separate response, untouched."
+  - tool: "Cancel control on each row"
+    must_not_break: true
+    note: "Its aria-label is deliberately out of scope; it must keep working unchanged."
+
+platform_coverage:
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  macOS: [13.x, 14.x]
+  Windows: [Server 2022]
+  WSL: [WSL2]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "No installation step. Nothing to make idempotent, nothing to uninstall."
+  - "No migration. No schema change on either provider."
+  - "No configuration. Nothing new to set, nothing new to default."
+  - "No new secret, no new credential, no new gate."
+  - "Forward-only: a browser served the new bundle talks to a backend serving the new response, because both ship in one artifact."
