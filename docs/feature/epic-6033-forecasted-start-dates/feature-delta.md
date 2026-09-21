@@ -400,8 +400,14 @@ moving it, and the completion date alone never said so.
   existing percentile presentation and the same terminology entries.
 - **AC-2.2** — A started Feature shows a single date, visibly distinguished as observed rather than
   forecast, with no percentile attached.
-- **AC-2.3** — A Feature with no start forecast (no throughput, or done) shows the same empty state the
-  completion column already uses for that Feature. No new empty state is invented.
+- **AC-2.3** — A Feature with no start forecast shows the same empty state the completion column already
+  uses for that Feature. No new empty state is invented. A Done Feature is not one of these: it shows the
+  day it started.
+
+  **Amended by Bug #6054, 2026-09-21.** As shipped, this criterion read "A Feature with no start forecast
+  (no throughput, or done) shows the same empty state", and the product left a Done Feature's cell empty.
+  That was wrong. A Done Feature's start is the most certainly known date it has, so it is now shown — on
+  the Feature table and on the Delivery timeline, where a Done Feature consequently becomes placeable.
 - **AC-2.4** — The column appears without a premium licence (D8), and a test asserts it with the licence
   absent.
 - **AC-2.5** — Sorting and the existing column set are unchanged for anyone who does not look at the new
@@ -437,11 +443,26 @@ customer's actual request, and it is answered the moment both ends of the bar ar
   `DateFormat` exactly as the completion sources do.
 - **AC-3.3** — A Feature that has started writes its observed start date, not a forecast (D5), so the
   Plan bar begins where work began.
-- **AC-3.4** — A Feature that is Done writes nothing for a start source, matching `ResolveForecastValue`'s
-  existing behaviour for completion (S13).
+- **AC-3.4** — A Feature that is Done writes its observed start date. It writes nothing for a start source
+  only when it has no recorded start.
+
+  **Amended by Bug #6054, 2026-09-21.** As shipped, this criterion read "A Feature that is Done writes
+  nothing for a start source, matching `ResolveForecastValue`'s existing behaviour for completion (S13)",
+  and the code copied that shape one for one. The analogy does not hold. For a Done Feature a *completion*
+  forecast is genuinely unanswerable, whereas a *start* is the single most certainly known date the Feature
+  has; the symmetry was copied at the level of code shape rather than of the question each source answers.
+  The completion-side guard is still correct and was deliberately left in place. What the fix leaves
+  unfixed is written below these criteria.
 - **AC-3.5** — A Feature with no start forecast writes nothing rather than writing an empty or epoch date.
 - **AC-3.6** — The sources appear only under a premium licence, by the gate the mapping screen already
   has. No new gate is written (D8).
+
+**What the Bug #6054 fix leaves unfixed, on the record.** A Done or Doing Feature with no recorded start
+date resolves to nothing at all, and the write-back pipeline drops a null rather than writing a blank — it
+has no way to say "clear this field". So a wrong value already sitting in a work tracking system for such a
+Feature is never corrected: the fix stops a wrong date being written, it cannot remove one that is already
+there. Closing that gap would need a "write blank" capability the pipeline deliberately does not have. The
+bug's title promises more than its fix delivers, and this is the difference.
 
 ---
 
