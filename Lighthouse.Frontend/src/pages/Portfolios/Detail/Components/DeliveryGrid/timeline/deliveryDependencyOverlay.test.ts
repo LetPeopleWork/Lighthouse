@@ -172,4 +172,89 @@ describe("buildDependencyOverlay", () => {
 		expect(overlay.edges).toHaveLength(1);
 		expect(overlay.marks.has(7)).toBe(false);
 	});
+
+	const notesOn = (features: IFeature[]) =>
+		overlayFor(features).marks.get(7)?.notes;
+
+	const notInThisDelivery = [
+		aWaiter([
+			dependency({
+				referenceId: "OE-001",
+				name: "Hydrothermal Vent Survey",
+			}),
+		]),
+	];
+
+	const inThisDeliveryButUnplaceable = [
+		aBlocker({ forecasts: [] }),
+		aWaiter([dependency({ referenceId: "OE-001" })]),
+	];
+
+	it("marks a blocker that is not in this Delivery, and does not warn about it", () => {
+		expect(notesOn(notInThisDelivery)).toEqual([
+			{
+				text: "Waiting on Hydrothermal Vent Survey, which is not on this timeline.",
+				isWarning: false,
+			},
+		]);
+	});
+
+	it("gives a blocker in this Delivery that could not be placed its own reason", () => {
+		expect(notesOn(inThisDeliveryButUnplaceable)).toEqual([
+			{
+				text: "Waiting on Hydrothermal Vent Survey, which has no forecast to place on this timeline.",
+				isWarning: false,
+			},
+		]);
+
+		expect(notesOn(inThisDeliveryButUnplaceable)).not.toEqual(
+			notesOn(notInThisDelivery),
+		);
+	});
+
+	it("says the reason the forecast gives rather than that there is no bar", () => {
+		const notes = notesOn([
+			aBlocker({ forecasts: [] }),
+			aWaiter([
+				dependency({
+					referenceId: "OE-001",
+					notHonouredReason: "BlockerCannotBeForecast",
+				}),
+				dependency({
+					referenceId: "OE-009",
+					name: "Seamount Ridge Mapping",
+				}),
+			]),
+		]);
+
+		expect(notes).toEqual([
+			{
+				text: "Waiting on Seamount Ridge Mapping, which is not on this timeline.",
+				isWarning: false,
+			},
+		]);
+	});
+
+	it("marks a withheld blocker without naming it", () => {
+		const withheldName = "Classified Hull Retrofit";
+		const overlay = overlayFor([
+			aWaiter([
+				dependency({
+					referenceId: "",
+					name: withheldName,
+					isWithheld: true,
+				}),
+			]),
+		]);
+
+		expect(overlay.marks.get(7)?.notes).toEqual([
+			{
+				text: "Waiting on something you do not have access to.",
+				isWarning: false,
+			},
+		]);
+		expect(JSON.stringify([...overlay.marks.values()])).not.toContain(
+			withheldName,
+		);
+	});
 });
