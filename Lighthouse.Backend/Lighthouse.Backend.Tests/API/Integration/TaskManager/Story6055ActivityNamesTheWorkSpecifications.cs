@@ -26,8 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// </summary>
     public partial class Story6055ActivityNamesTheWorkTest : TaskManagerAcceptanceTest
     {
-        private const string Pending = "pending — story 6055 slice 02; un-skip as DELIVER implements it";
-
         private const string ProductionData =
             "production data — needs a real connection on the dogfood instance; run by hand at slice close";
 

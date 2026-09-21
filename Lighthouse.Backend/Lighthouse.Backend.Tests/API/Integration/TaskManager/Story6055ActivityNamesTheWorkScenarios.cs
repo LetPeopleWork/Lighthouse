@@ -16,9 +16,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// specs. AC-02.8 (the comparison happens in one place) is likewise asserted there, by handing the
     /// browser a payload whose flag and whose identity disagree and requiring the flag to win.
     ///
-    /// Pending until DELIVER: every test carries <c>[Ignore]</c>, so the suite is green at hand-off and
-    /// each is un-skipped as its step is implemented. They are RED rather than BROKEN when un-skipped —
-    /// the assertions read JSON, so nothing here fails to compile against today's response.
+    /// Seven of these run with the rest of the suite. The eighth stays ignored in CI for good: it needs
+    /// a real connection to a live instance, so it is run by hand instead of on every build.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
