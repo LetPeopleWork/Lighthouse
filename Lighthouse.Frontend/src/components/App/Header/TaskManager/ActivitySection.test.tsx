@@ -12,11 +12,6 @@ import ActivitySection from "./ActivitySection";
  * Slice 01 in full — what a row reads — plus the frontend half of slice 02: the clause that explains a
  * wait, and the promise that the browser never recomputes what the instance already decided.
  *
- * Everything here is pending (`it.skip`) until DELIVER, so the suite is green at hand-off and each is
- * un-skipped as its step lands. A skipped test is still type-checked, which is why
- * `UpdateSubscriptionService` carries the widened `waitingBehind` scaffold: these specifications
- * express the target shape today and DELIVER narrows the type as it removes the old arm.
- *
  * The backend half of slice 02 — which piece of work holds the lane, and whether it is this row's own
  * entity — lives in `Story6055ActivityNamesTheWork{Scenarios,Specifications}.cs`.
  */
@@ -119,11 +114,8 @@ describe("Activity rows say what the work is", () => {
 	});
 
 	// @AC-01.6 — the id the existing #5511 suite addresses rows by is a fixed point, so that suite keeps
-	// working across this change rather than being rewritten alongside it.
-	//
-	// Runs now rather than waiting for DELIVER: this is a pin on behaviour that already exists and must
-	// survive, not a promise about behaviour that does not. A pin that sits skipped guards nothing during
-	// the change it exists to guard.
+	// working across this change rather than being rewritten alongside it. It pins behaviour that
+	// already exists and has to survive, rather than promising behaviour that does not.
 	it("keeps the handle every other specification addresses a row by", () => {
 		renderRows([aTask({ updateType: "Forecasts", status: "Queued" })]);
 
