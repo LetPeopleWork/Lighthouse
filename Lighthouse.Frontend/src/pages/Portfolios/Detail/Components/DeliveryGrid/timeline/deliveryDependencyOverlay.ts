@@ -48,6 +48,16 @@ export interface DependencyOverlay {
 }
 
 /**
+ * How many lines the chart will draw before it gives up on lines and says it in words instead.
+ *
+ * Counted off the live instance this was sized against: 83 Features, twelve dependencies between them,
+ * and no Feature waiting on more than two others. Reaching forty would take twenty dependency-carrying
+ * Features in one Delivery, which is more than that entire instance has — so this is insurance against
+ * a chart nobody has seen yet, not a case the drawing is designed around.
+ */
+const DEFAULT_DRAWN_EDGE_LIMIT = 40;
+
+/**
  * A Feature is waiting on another Feature of this Delivery, and both of them have a bar.
  *
  * The blocker is named by its reference id and nothing else — the two names are written by different
@@ -58,6 +68,7 @@ export function buildDependencyOverlay(
 	features: IFeature[],
 	timeline: DeliveryTimeline,
 	terms: DependencyTerms,
+	drawnEdgeLimit = DEFAULT_DRAWN_EDGE_LIMIT,
 ): DependencyOverlay {
 	const edges: DrawnDependency[] = [];
 	const marks = new Map<number, BarMark>();
@@ -80,6 +91,13 @@ export function buildDependencyOverlay(
 	const couldNotBePlaced = new Set(
 		timeline.unplaceable.map((feature) => feature.featureId),
 	);
+
+	// Too many lines is a thicket, and a thicket says less than no lines at all. Decided once for the
+	// whole chart: were it decided bar by bar, a bar without lines would mean either "nothing to draw"
+	// or "too much to draw", and the reader would have no way of telling which.
+	const linesAreSuppressed =
+		countDrawableEdges(timeline, featuresById, blockersByReference, drawn) >
+		drawnEdgeLimit;
 
 	const noteOn = (featureId: number, note: BarNote) => {
 		const mark = marks.get(featureId);
@@ -116,21 +134,21 @@ export function buildDependencyOverlay(
 			continue;
 		}
 
-		// A line is drawn only where the forecast acted on the wait and both ends have a bar. A line
-		// between two bars reads as the reason one of them sits where it does, and for a wait the
-		// schedule never took, that reading is false.
-		const joinedBlocker =
-			dependency.notHonouredReason === null && blocker && drawn.has(blocker.id)
-				? blocker
-				: undefined;
+		const joinedBlocker = joinedBlockerFor(
+			dependency,
+			blockersByReference,
+			drawn,
+		);
+		const drawnBlocker = linesAreSuppressed ? undefined : joinedBlocker;
 
-		if (joinedBlocker) {
-			edges.push({ blockerFeatureId: joinedBlocker.id, waitingFeatureId });
+		if (drawnBlocker) {
+			edges.push({ blockerFeatureId: drawnBlocker.id, waitingFeatureId });
 		}
 
 		const note = noteFor(dependency, terms, {
 			waitedOn,
-			hasALine: joinedBlocker !== undefined,
+			hasALine: drawnBlocker !== undefined,
+			blockerIsDrawnHere: joinedBlocker !== undefined,
 			blockerHasNoForecast:
 				blocker !== undefined && couldNotBePlaced.has(blocker.id),
 		});
@@ -164,10 +182,52 @@ function* dependenciesOfDrawnBars(
 	}
 }
 
+/**
+ * The blocker a line would run to, or nothing at all. One is drawn only where the forecast acted on the
+ * wait and both ends have a bar: a line between two bars reads as the reason one of them sits where it
+ * does, and for a wait the schedule never took, that reading is false.
+ */
+function joinedBlockerFor(
+	dependency: IFeatureDependency,
+	blockersByReference: Map<string, IFeature>,
+	drawn: Set<number>,
+): IFeature | undefined {
+	const blocker = blockersByReference.get(dependency.referenceId);
+
+	return dependency.notHonouredReason === null &&
+		blocker &&
+		drawn.has(blocker.id)
+		? blocker
+		: undefined;
+}
+
+/** How many lines this chart would draw, which is the measure the density fallback is keyed off. */
+function countDrawableEdges(
+	timeline: DeliveryTimeline,
+	featuresById: Map<number, IFeature>,
+	blockersByReference: Map<string, IFeature>,
+	drawn: Set<number>,
+): number {
+	let count = 0;
+
+	for (const { dependency } of dependenciesOfDrawnBars(
+		timeline,
+		featuresById,
+	)) {
+		if (joinedBlockerFor(dependency, blockersByReference, drawn)) {
+			count += 1;
+		}
+	}
+
+	return count;
+}
+
 /** Where a dependency ended up on the chart, which is what decides what there is left to say. */
 interface DependencyPlacement {
 	waitedOn: string;
 	hasALine: boolean;
+	/** The blocker has a bar here, whether or not a line was actually drawn to it. */
+	blockerIsDrawnHere: boolean;
 	blockerHasNoForecast: boolean;
 }
 
@@ -198,6 +258,14 @@ function noteFor(
 			: null;
 	}
 
+	// Both bars are here and the forecast did wait, but the chart stopped drawing its lines. Said in
+	// words instead, because a bar with neither a line nor a mark reads as a bar that waits on nothing.
+	if (placement.blockerIsDrawnHere) {
+		return dependency.blockerPositionedBelow
+			? positionedBelowSentence(placement.waitedOn, terms)
+			: waitingSentence(placement.waitedOn);
+	}
+
 	if (dependency.isWithheld) {
 		return withheldSentence(terms);
 	}
@@ -206,3 +274,9 @@ function noteFor(
 		? noForecastToPlaceSentence(placement.waitedOn)
 		: notOnThisTimelineSentence(placement.waitedOn);
 }
+
+/**
+ * What a bar waits on, said plainly. Names no obstacle, because there is none — this is the sentence
+ * for a wait the forecast honoured whose line the chart simply did not draw.
+ */
+const waitingSentence = (waitedOn: string): string => `Waiting on ${waitedOn}.`;

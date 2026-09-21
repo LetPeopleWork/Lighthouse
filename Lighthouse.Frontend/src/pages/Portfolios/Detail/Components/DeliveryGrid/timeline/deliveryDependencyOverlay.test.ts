@@ -385,4 +385,78 @@ describe("buildDependencyOverlay", () => {
 			},
 		]);
 	});
+
+	/** Two Features waiting on one blocker, nothing wrong with either wait: exactly two drawn edges. */
+	const twoDrawnEdges = () => [
+		aBlocker(),
+		aWaiter([dependency({ referenceId: "OE-001" })]),
+		aWaiter([dependency({ referenceId: "OE-001" })], {
+			id: 9,
+			referenceId: "OE-005",
+			name: "Trench Sediment Sampling",
+		}),
+	];
+
+	// The limit is an argument precisely so this branch can be reached with two edges rather than with a
+	// forty-bar fixture, which is the kind nobody maintains and everybody eventually stops running.
+	const overlayWithEdgeLimit = (features: IFeature[], drawnEdgeLimit: number) =>
+		buildDependencyOverlay(
+			features,
+			buildDeliveryTimeline(features, DEFAULT_TIMELINE_PERCENTILE),
+			terms,
+			drawnEdgeLimit,
+		);
+
+	it("draws no line at all past the limit, and marks every waiting bar instead", () => {
+		const overlay = overlayWithEdgeLimit(twoDrawnEdges(), 1);
+
+		expect(overlay.edges).toEqual([]);
+		expect(overlay.marks.get(7)?.notes).toEqual([
+			{ text: "Waiting on Hydrothermal Vent Survey.", isWarning: false },
+		]);
+		expect(overlay.marks.get(9)?.notes).toEqual([
+			{ text: "Waiting on Hydrothermal Vent Survey.", isWarning: false },
+		]);
+	});
+
+	it("still draws the lines when the count reaches the limit exactly", () => {
+		const overlay = overlayWithEdgeLimit(twoDrawnEdges(), 2);
+
+		expect(overlay.edges).toHaveLength(2);
+		expect(overlay.marks.size).toBe(0);
+	});
+
+	it("leaves a sound dependency neutral and a warned one warned when it degrades", () => {
+		const overlay = overlayWithEdgeLimit(
+			[
+				aBlocker(),
+				aWaiter([dependency({ referenceId: "OE-001" })]),
+				aWaiter(
+					[dependency({ referenceId: "OE-001", blockerPositionedBelow: true })],
+					{ id: 9, referenceId: "OE-005", name: "Trench Sediment Sampling" },
+				),
+			],
+			1,
+		);
+
+		expect(overlay.edges).toEqual([]);
+		expect(overlay.marks.get(7)?.notes).toEqual([
+			{ text: "Waiting on Hydrothermal Vent Survey.", isWarning: false },
+		]);
+		expect(overlay.marks.get(9)?.notes).toEqual([
+			{
+				text: "This Feature depends on Hydrothermal Vent Survey, which sits below it in the order.",
+				isWarning: true,
+			},
+		]);
+	});
+
+	// Deliberately weak, and left that way on purpose: it pins that a usable default exists, not what it
+	// is. The number was reasoned from a count of one real instance and will change when that is counted
+	// again; a test that asserts it would then fail without anything having gone wrong.
+	it("draws an ordinary Delivery's lines without being told a limit", () => {
+		const overlay = overlayFor(twoDrawnEdges());
+
+		expect(overlay.edges).toHaveLength(2);
+	});
 });
