@@ -126,18 +126,23 @@ const barHoverText = (
 	bar: TimelineBar,
 	isClickable: boolean,
 	mark?: BarMark,
-): React.ReactNode =>
-	mark ? (
+): React.ReactNode => {
+	const span = barTooltip(bar, isClickable);
+
+	if (!mark) {
+		return span;
+	}
+
+	return (
 		<>
-			{barTooltip(bar, isClickable)}
+			{span}
 			<Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2 }}>
 				{mark.notes.map((note) => (
 					<li key={note.text}>{note.text}</li>
 				))}
 			</Box>
 		</>
-	) : (
-		barTooltip(bar, isClickable)
 	);
+};
 
 export default TimelineBarContent;

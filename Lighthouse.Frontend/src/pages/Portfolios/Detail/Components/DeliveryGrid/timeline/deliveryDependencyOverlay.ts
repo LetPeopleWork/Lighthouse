@@ -10,7 +10,8 @@ import {
 	notOnThisTimelineSentence,
 	positionedBelowSentence,
 	reasonSentence,
-	withheldName,
+	waitedOnName,
+	waitingSentence,
 	withheldSentence,
 } from "../../../../../../utils/dependencies/dependencySentences";
 import type { DeliveryTimeline } from "./deliveryTimelineModel";
@@ -70,61 +71,28 @@ export function buildDependencyOverlay(
 	terms: DependencyTerms,
 	drawnEdgeLimit = DEFAULT_DRAWN_EDGE_LIMIT,
 ): DependencyOverlay {
-	const edges: DrawnDependency[] = [];
-	const marks = new Map<number, BarMark>();
-	let chartNote: string | null = null;
-
-	const featuresById = new Map<number, IFeature>(
-		features.map((feature) => [feature.id, feature]),
-	);
-
-	const blockersByReference = new Map<string, IFeature>();
-	for (const feature of features) {
-		// A dependency the reader may not see arrives with an empty reference id. Admitting "" as a key
-		// here would join every one of them to whichever Feature happens to carry an empty one.
-		if (feature.referenceId) {
-			blockersByReference.set(feature.referenceId, feature);
-		}
-	}
-
-	const drawn = new Set(timeline.bars.map((bar) => bar.featureId));
-	const couldNotBePlaced = new Set(
-		timeline.unplaceable.map((feature) => feature.featureId),
-	);
+	const delivery = indexDelivery(features, timeline);
+	const barDependencies = [...dependenciesOfDrawnBars(timeline, delivery)];
 
 	// Too many lines is a thicket, and a thicket says less than no lines at all. Decided once for the
 	// whole chart: were it decided bar by bar, a bar without lines would mean either "nothing to draw"
 	// or "too much to draw", and the reader would have no way of telling which.
 	const linesAreSuppressed =
-		countDrawableEdges(timeline, featuresById, blockersByReference, drawn) >
-		drawnEdgeLimit;
+		barDependencies.filter((barDependency) =>
+			joinedBlockerFor(barDependency, delivery),
+		).length > drawnEdgeLimit;
 
-	const noteOn = (featureId: number, note: BarNote) => {
-		const mark = marks.get(featureId);
+	const edges: DrawnDependency[] = [];
+	const marks = new Map<number, BarMark>();
+	let chartNote: string | null = null;
 
-		if (mark) {
-			mark.notes.push(note);
-			return;
-		}
-
-		marks.set(featureId, { notes: [note] });
-	};
-
-	for (const { waitingFeatureId, dependency } of dependenciesOfDrawnBars(
-		timeline,
-		featuresById,
-	)) {
-		// Matched as written. Reference ids arrive already normalised, and folding case here in case
-		// they did not would hide the day they stop being — a match that fails is silent, and every
-		// dependency in the Delivery would read as one pointing outside it.
-		const blocker = blockersByReference.get(dependency.referenceId);
+	for (const barDependency of barDependencies) {
+		const { waitingFeatureId, dependency, blocker } = barDependency;
 
 		// Where the Feature waited on is one of this Delivery's own, it is called what the board calls
 		// it: the dependency entry's copy of that name was written elsewhere and drifts, and a reader
 		// matching a sentence against the chart has only what the chart says.
-		const waitedOn = dependency.isWithheld
-			? withheldName(terms)
-			: (blocker?.name ?? dependency.name);
+		const waitedOn = waitedOnName(dependency, terms, blocker?.name);
 
 		// Every edge of a Portfolio that has set its dependencies aside comes back saying the same
 		// thing, so a mark per bar would put identical words on every bar and teach the reader that
@@ -134,11 +102,7 @@ export function buildDependencyOverlay(
 			continue;
 		}
 
-		const joinedBlocker = joinedBlockerFor(
-			dependency,
-			blockersByReference,
-			drawn,
-		);
+		const joinedBlocker = joinedBlockerFor(barDependency, delivery);
 		const drawnBlocker = linesAreSuppressed ? undefined : joinedBlocker;
 
 		if (drawnBlocker) {
@@ -150,11 +114,11 @@ export function buildDependencyOverlay(
 			hasALine: drawnBlocker !== undefined,
 			blockerIsDrawnHere: joinedBlocker !== undefined,
 			blockerHasNoForecast:
-				blocker !== undefined && couldNotBePlaced.has(blocker.id),
+				blocker !== undefined && delivery.unplaceable.has(blocker.id),
 		});
 
 		if (note) {
-			noteOn(waitingFeatureId, {
+			addNote(marks, waitingFeatureId, {
 				text: note,
 				isWarning: isWorthWarningAbout(dependency),
 			});
@@ -164,6 +128,54 @@ export function buildDependencyOverlay(
 	return { edges, marks, chartNote };
 }
 
+/** The Features of this Delivery, indexed every way the overlay has to ask about them. */
+interface DeliveryIndex {
+	byId: Map<number, IFeature>;
+	/**
+	 * Keyed as the reference id is written. Those ids arrive already normalised, and folding case here
+	 * in case they did not would hide the day they stop being — a match that fails is silent, and every
+	 * dependency in the Delivery would read as one pointing outside it.
+	 *
+	 * A dependency the reader may not see arrives with an empty reference id, and it is left out
+	 * entirely: admitting "" as a key would join every one of them to whichever Feature happens to
+	 * carry an empty one.
+	 */
+	byReferenceId: Map<string, IFeature>;
+	/** Which Features the timeline placed and which it could not, named as the timeline names them. */
+	drawn: Set<number>;
+	unplaceable: Set<number>;
+}
+
+function indexDelivery(
+	features: IFeature[],
+	timeline: DeliveryTimeline,
+): DeliveryIndex {
+	const byReferenceId = new Map<string, IFeature>();
+
+	for (const feature of features) {
+		if (feature.referenceId) {
+			byReferenceId.set(feature.referenceId, feature);
+		}
+	}
+
+	return {
+		byId: new Map(features.map((feature) => [feature.id, feature])),
+		byReferenceId,
+		drawn: new Set(timeline.bars.map((bar) => bar.featureId)),
+		unplaceable: new Set(
+			timeline.unplaceable.map((feature) => feature.featureId),
+		),
+	};
+}
+
+/** One dependency of one drawn bar, already resolved against the Delivery it was declared in. */
+interface BarDependency {
+	waitingFeatureId: number;
+	dependency: IFeatureDependency;
+	/** The Feature this Delivery holds under that reference id, or nothing where it holds none. */
+	blocker?: IFeature;
+}
+
 /**
  * Every dependency of every Feature the timeline managed to place, in board order, each paired with
  * the bar that would carry a mark about it. Walking the bars rather than the Features leaves out
@@ -171,13 +183,17 @@ export function buildDependencyOverlay(
  */
 function* dependenciesOfDrawnBars(
 	timeline: DeliveryTimeline,
-	featuresById: Map<number, IFeature>,
-): Generator<{ waitingFeatureId: number; dependency: IFeatureDependency }> {
+	delivery: DeliveryIndex,
+): Generator<BarDependency> {
 	for (const bar of timeline.bars) {
-		const waiting = featuresById.get(bar.featureId);
+		const waiting = delivery.byId.get(bar.featureId);
 
 		for (const dependency of waiting?.dependsOn ?? []) {
-			yield { waitingFeatureId: bar.featureId, dependency };
+			yield {
+				waitingFeatureId: bar.featureId,
+				dependency,
+				blocker: delivery.byReferenceId.get(dependency.referenceId),
+			};
 		}
 	}
 }
@@ -188,38 +204,29 @@ function* dependenciesOfDrawnBars(
  * does, and for a wait the schedule never took, that reading is false.
  */
 function joinedBlockerFor(
-	dependency: IFeatureDependency,
-	blockersByReference: Map<string, IFeature>,
-	drawn: Set<number>,
+	{ dependency, blocker }: BarDependency,
+	delivery: DeliveryIndex,
 ): IFeature | undefined {
-	const blocker = blockersByReference.get(dependency.referenceId);
-
 	return dependency.notHonouredReason === null &&
 		blocker &&
-		drawn.has(blocker.id)
+		delivery.drawn.has(blocker.id)
 		? blocker
 		: undefined;
 }
 
-/** How many lines this chart would draw, which is the measure the density fallback is keyed off. */
-function countDrawableEdges(
-	timeline: DeliveryTimeline,
-	featuresById: Map<number, IFeature>,
-	blockersByReference: Map<string, IFeature>,
-	drawn: Set<number>,
-): number {
-	let count = 0;
+function addNote(
+	marks: Map<number, BarMark>,
+	featureId: number,
+	note: BarNote,
+): void {
+	const mark = marks.get(featureId);
 
-	for (const { dependency } of dependenciesOfDrawnBars(
-		timeline,
-		featuresById,
-	)) {
-		if (joinedBlockerFor(dependency, blockersByReference, drawn)) {
-			count += 1;
-		}
+	if (mark) {
+		mark.notes.push(note);
+		return;
 	}
 
-	return count;
+	marks.set(featureId, { notes: [note] });
 }
 
 /** Where a dependency ended up on the chart, which is what decides what there is left to say. */
@@ -274,9 +281,3 @@ function noteFor(
 		? noForecastToPlaceSentence(placement.waitedOn)
 		: notOnThisTimelineSentence(placement.waitedOn);
 }
-
-/**
- * What a bar waits on, said plainly. Names no obstacle, because there is none — this is the sentence
- * for a wait the forecast honoured whose line the chart simply did not draw.
- */
-const waitingSentence = (waitedOn: string): string => `Waiting on ${waitedOn}.`;

@@ -10,14 +10,19 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useMemo, useState } from "react";
-import WorkItemsDialog from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import WorkItemsDialog, {
+	type WarningsColumnDescriptor,
+} from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../../../../hooks/useLicenseRestrictions";
 import type { IFeature } from "../../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../../../../models/WorkItem";
 import { useTerminology } from "../../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../../utils/featureName";
-import { featureWarningSentences } from "../../../../../../utils/features/featureWarningSentences";
+import {
+	type FeatureWarningTerms,
+	featureWarningSentences,
+} from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import {
@@ -39,6 +44,38 @@ const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 
 const PREMIUM_NOTICE =
 	"The delivery timeline is a premium feature. The forecasts behind it are not — they stay in the table.";
+
+/**
+ * The same sentences the Feature table shows, asked for in the same way, so a Feature cannot read as
+ * clean in one place and marked in the other. What the bar says about where a blocker was drawn stays
+ * on the bar: this column is shown by fifteen other screens that have no timeline, and a sound
+ * dependency listed under a heading that says "Warnings" is a false alarm on every one of them.
+ */
+const warningsColumnFor = (
+	features: IFeature[],
+	terms: FeatureWarningTerms,
+): WarningsColumnDescriptor => ({
+	headerName: "Warnings",
+	description: `What is worth checking about this ${terms.featureTerm}`,
+	warningsFor: (item: IWorkItem) => {
+		const feature = features.find((candidate) => candidate.id === item.id);
+
+		if (!feature) {
+			return [];
+		}
+
+		return featureWarningSentences(
+			{
+				isDoneWithRemainingWork:
+					feature.stateCategory === "Done" &&
+					feature.getRemainingWorkForFeature() > 0,
+				isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
+				dependencies: feature.dependsOn,
+			},
+			terms,
+		);
+	},
+});
 
 const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	features,
@@ -83,32 +120,13 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		[features, timeline, featureTerm, portfolioTerm],
 	);
 
-	// The same sentences the Feature table shows, asked for in the same way, so a Feature cannot
-	// read as clean in one place and marked in the other. What the bar says about where a blocker
-	// was drawn stays on the bar: this column is shown by fifteen other screens that have no
-	// timeline, and a sound dependency listed under a heading that says "Warnings" is a false alarm
-	// on every one of them.
 	const warningsColumn = useMemo(
-		() => ({
-			headerName: "Warnings",
-			description: `What is worth checking about this ${featureTerm}`,
-			warningsFor: (item: IWorkItem) => {
-				const feature = features.find((candidate) => candidate.id === item.id);
-
-				return feature
-					? featureWarningSentences(
-							{
-								isDoneWithRemainingWork:
-									feature.stateCategory === "Done" &&
-									feature.getRemainingWorkForFeature() > 0,
-								isUsingDefaultFeatureSize: feature.isUsingDefaultFeatureSize,
-								dependencies: feature.dependsOn,
-							},
-							{ workItemsTerm, featureTerm, portfolioTerm },
-						)
-					: [];
-			},
-		}),
+		() =>
+			warningsColumnFor(features, {
+				workItemsTerm,
+				featureTerm,
+				portfolioTerm,
+			}),
 		[features, workItemsTerm, featureTerm, portfolioTerm],
 	);
 

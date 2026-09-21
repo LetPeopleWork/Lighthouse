@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation
         // Named by reference id rather than by name so that renaming an Epic in the demo data cannot
         // silently put it back into the delivery.
         private const string MineralSurveyReferenceId = "OE-008";
-        private const string UndependedFeatureReferenceId = "OE-013";
+        private const string CommunicationNetworkReferenceId = "OE-013";
 
         private const int DemoBurnupDays = 14;
 
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation
             [
                 EveryNamedFeature(),
                 Excluding(MineralSurveyReferenceId),
-                Excluding(UndependedFeatureReferenceId),
+                Excluding(CommunicationNetworkReferenceId),
             ]);
         }
 

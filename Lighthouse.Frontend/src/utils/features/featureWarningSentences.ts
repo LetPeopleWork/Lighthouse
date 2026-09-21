@@ -6,7 +6,7 @@ import {
 	type DependencyTerms,
 	positionedBelowSentence,
 	reasonSentence,
-	withheldName,
+	waitedOnName,
 } from "../dependencies/dependencySentences";
 
 export const DONE_WITH_REMAINING_WORK_WARNING =
@@ -55,9 +55,7 @@ const sentenceFor = (
 	dependency: IFeatureDependency,
 	terms: DependencyTerms,
 ): string => {
-	const waitedOn = dependency.isWithheld
-		? withheldName(terms)
-		: dependency.name;
+	const waitedOn = waitedOnName(dependency, terms);
 
 	if (dependency.notHonouredReason) {
 		return reasonSentence(dependency.notHonouredReason, waitedOn, terms);
