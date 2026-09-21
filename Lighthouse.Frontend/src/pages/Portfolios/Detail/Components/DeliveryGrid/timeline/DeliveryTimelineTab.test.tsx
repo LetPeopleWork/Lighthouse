@@ -1274,11 +1274,18 @@ describe("saying which Features are finished and which are late", () => {
 		expect(statusButton()).toBeInTheDocument();
 	});
 
-	it("offers the view for a Delivery with no date but finished work in it", () => {
+	it("offers the view for a Delivery with no date where only some of the work is finished", () => {
 		// Paired with the test above, which is what stops that one passing against a tab that
 		// never offers the view at all. Finished is not a verdict about a date, so it survives the
 		// date being absent.
-		renderTab([feature({ closedDate: october(9) })], undefined);
+		//
+		// One of the two is still running, deliberately: a Delivery is worth colouring the moment
+		// *any* of it is done, and asking whether *all* of it is would withhold the view from every
+		// Delivery anyone is still working on - which is all of them.
+		renderTab(
+			[feature({ id: 1, closedDate: october(9) }), feature({ id: 2 })],
+			undefined,
+		);
 
 		expect(statusButton()).toBeInTheDocument();
 	});
@@ -1302,6 +1309,33 @@ describe("saying which Features are finished and which are late", () => {
 			"aria-pressed",
 			"true",
 		);
+	});
+
+	it("keeps the Teams' key and the Teams' colours off a chart showing the status", async () => {
+		// Both belong to the Teams and are drawn from the same choice, so a comparison written the
+		// wrong way round puts a key for Teams above a chart coloured by status - two colour
+		// schemes on screen at once, which is the whole thing the single choice exists to prevent.
+		renderTab(
+			[
+				feature({
+					id: 1,
+					teamForecasts: [forTeam(5, 12, 15), forTeam(6, 17, 24)],
+				}),
+			],
+			DUE_ON_THE_TWENTIETH,
+			[ZENITH, GRAVITY],
+		);
+
+		expect(
+			screen.queryByTestId("timeline-team-legend"),
+		).not.toBeInTheDocument();
+		expect(ganttProps.current?.barTeams).toBeUndefined();
+
+		// Paired, so neither assertion passes against a tab that never draws them at all.
+		await askForTheTeams();
+
+		expect(screen.getByTestId("timeline-team-legend")).toBeInTheDocument();
+		expect(ganttProps.current?.barTeams).toBeDefined();
 	});
 
 	it("names each colour beside the chart while the status is being shown", async () => {
