@@ -34,13 +34,13 @@ GR-043,API response caching,Implementation,Bug,,{-5},,,{-6}
 GR-045,Input validation fixes,Waiting for Verification,Bug,,{-3},,,{-2}
 GR-047,Mobile navigation menu,Implementation,User Story,,{-8},,,{-6}
 GR-049,System health monitoring,Implementation,User Story,,{-6},,,{-2}
-GR-051,Advanced reporting module,Analyzing,User Story,,{-4},,,
-GR-052,Real-time chat integration,Analyzing,User Story,,{-3},,,
-GR-053,Document collaboration,Analyzing,User Story,,{-3},,,
-GR-054,Workflow designer,Analyzing,User Story,,{-2},,,
-GR-055,API versioning system,Analyzing,User Story,,{-2},,,
-GR-056,Automated deployment,Analyzing,User Story,,{-1},,,
-GR-057,Security scanner integration,Analyzing,Bug,,{-1},,,
+GR-051,Advanced reporting module,Analysing,User Story,,{-4},,,
+GR-052,Real-time chat integration,Analysing,User Story,,{-3},,,
+GR-053,Document collaboration,Analysing,User Story,,{-3},,,
+GR-054,Workflow designer,Analysing,User Story,,{-2},,,
+GR-055,API versioning system,Analysing,User Story,,{-2},,,
+GR-056,Automated deployment,Analysing,User Story,,{-1},,,
+GR-057,Security scanner integration,Analysing,Bug,,{-1},,,
 GR-058,User activity tracking,Next,User Story,,{0},,,{-6}
 GR-059,Advanced search filters,Next,User Story,,{-3},,,{-2}
 GR-063,Activity timeline view,Analysing,User Story,,{0},,,{-6}
