@@ -1,6 +1,7 @@
 import {
 	Alert,
 	Box,
+	Divider,
 	FormControlLabel,
 	List,
 	ListItem,
@@ -29,7 +30,11 @@ import {
 } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
-import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
+import {
+	buildDeliveryTeamLanes,
+	type TeamColour,
+	type UnlanedTeam,
+} from "./deliveryTeamLanes";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
@@ -102,6 +107,20 @@ function useShowTeams(): { showTeams: boolean; toggleShowTeams: () => void } {
 
 	return { showTeams, toggleShowTeams };
 }
+
+/**
+ * Why a Feature's bar reaches past the rows beneath it, at both ends.
+ *
+ * This is the first thing a reader asks on seeing the split, and without an answer it reads as a
+ * defect - the bar looks like it is claiming work nobody is doing. Said plainly, as the thing
+ * rather than as the arithmetic behind it.
+ */
+const barsReachPastTheirTeams = (
+	featureTerm: string,
+	teamTerm: string,
+	teamsTerm: string,
+) =>
+	`A ${featureTerm} starts when its first ${teamTerm} starts and finishes when its last one finishes, so its bar reaches a little past the ${teamsTerm} beneath it.`;
 
 const premiumNoticeFor = (deliveryTerm: string) =>
 	`The ${deliveryTerm} timeline is a premium feature. The forecasts behind it are not — they stay in the table.`;
@@ -195,6 +214,43 @@ const barMarksFor = (
 
 	return marks;
 };
+
+/**
+ * Which colour stands for which Team.
+ *
+ * Not decoration, and not redundant with the names written along the rows: a row is only as wide as
+ * its Team's span, so at the widths this chart actually gets those names are routinely cut to a few
+ * characters. Here every Team is named in full, once, at a width nothing competes for.
+ */
+const TeamLegend: React.FC<{ teams: TeamColour[] }> = ({ teams }) => (
+	<Box
+		data-testid="timeline-team-legend"
+		sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5 }}
+	>
+		{teams.map((team) => (
+			<Box
+				key={team.teamId}
+				sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+			>
+				{/* The name beside it carries the meaning, so the patch itself is shown to the eye
+				    and hidden from anything reading the page aloud. */}
+				<Box
+					aria-hidden="true"
+					sx={{
+						width: 12,
+						height: 12,
+						borderRadius: 0.5,
+						flexShrink: 0,
+						backgroundColor: team.color,
+					}}
+				/>
+				<Typography variant="caption" color="text.secondary">
+					{team.teamName}
+				</Typography>
+			</Box>
+		))}
+	</Box>
+);
 
 const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	features,
@@ -328,22 +384,30 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 					))}
 				</ToggleButtonGroup>
 
-				{/* Offered only where some Feature on the chart actually has more than one Team.
-				    A control that cannot change anything still invites the click that proves it, and
-				    a reader who gets nothing back concludes the chart is broken rather than that the
-				    question does not apply here. A switch rather than a fourth button beside the
-				    three: that group means "pick one of these", and this is on or off. */}
-				{teamLanes.canSplit && (
-					<FormControlLabel
-						control={
-							<Switch
-								size="small"
-								checked={showTeams}
-								onChange={toggleShowTeams}
-							/>
-						}
-						label={`Show ${teamsTerm}`}
-					/>
+				{/* Offered only where showing the Teams would actually change something here. A
+				    control that cannot is still worth the click that proves it, and a reader who gets
+				    nothing back concludes the chart is broken rather than that the question does not
+				    apply. A switch rather than a fourth button beside the three: that group means
+				    "pick one of these", and this is on or off - which is also why it is set apart
+				    from them rather than sitting flush against the group as a fourth member of it. */}
+				{teamLanes.canShowTeams && (
+					<>
+						<Divider
+							orientation="vertical"
+							flexItem
+							sx={{ mx: 1.5, my: 0.5 }}
+						/>
+						<FormControlLabel
+							control={
+								<Switch
+									size="small"
+									checked={showTeams}
+									onChange={toggleShowTeams}
+								/>
+							}
+							label={`Show ${teamsTerm}`}
+						/>
+					</>
 				)}
 			</Box>
 
@@ -360,6 +424,27 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				</Typography>
 			)}
 
+			{/* Both of these belong above the chart rather than under it: the chart can run to
+			    twenty rows, and a key a reader has to scroll past the picture to reach is a key they
+			    read once. They are deliberately not the `timeline-chart-note` slot above - that one
+			    reports a condition this Delivery happens to be in, and these two are always true
+			    while the Teams are shown. */}
+			{showTeams && teamLanes.legend.length > 0 && (
+				<Box sx={{ mb: 1.5 }}>
+					{teamLanes.lanes.length > 0 && (
+						<Typography
+							variant="body2"
+							color="text.secondary"
+							sx={{ mb: 1 }}
+							data-testid="timeline-team-span-note"
+						>
+							{barsReachPastTheirTeams(featureTerm, teamTerm, teamsTerm)}
+						</Typography>
+					)}
+					<TeamLegend teams={teamLanes.legend} />
+				</Box>
+			)}
+
 			{bars.length > 0 ? (
 				<TimelineBarMarks marks={barMarks}>
 					<DeliveryGanttChart
@@ -368,6 +453,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						// Absent rather than hidden while the switch is off, so the chart is then the
 						// same chart it was before any of this existed.
 						lanes={showTeams ? teamLanes.lanes : undefined}
+						barTeams={showTeams ? teamLanes.barTeams : undefined}
 						targetDate={targetDate}
 						today={today}
 						onBarSelected={setSelectedFeatureId}

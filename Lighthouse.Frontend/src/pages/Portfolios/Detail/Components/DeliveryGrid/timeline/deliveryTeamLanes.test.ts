@@ -474,3 +474,142 @@ describe("which Teams get a lane of their own", () => {
 		]);
 	});
 });
+
+describe("the one Team a Feature has to itself", () => {
+	it("puts that Team on the Feature's own bar instead of giving it a row", () => {
+		// With one Team the earliest and the latest across the Teams are that Team, so a row of
+		// its own would be a second bar drawn exactly where the first one is. What the bar is
+		// missing is which Team, not the span.
+		const { lanes, barTeams } = lanesFor(
+			[
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(5, [[70, 12]], [[70, 15]])],
+				}),
+			],
+			[ZENITH],
+		);
+
+		expect(lanes).toEqual([]);
+		expect(barTeams.get(2)?.teamName).toBe("Zenith");
+		expect(barTeams.get(2)?.color).toBeTruthy();
+	});
+
+	it("leaves a Feature several Teams work on wearing its own colour", () => {
+		// Dark means several Teams and coloured means this one Team, so a multi-Team Feature
+		// taking one of its Teams' colours would say something false at a glance.
+		const { barTeams } = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+					],
+				}),
+			],
+			[ZENITH, GRAVITY],
+		);
+
+		expect(barTeams.size).toBe(0);
+	});
+
+	it("says nothing on the bar of a Feature whose one Team it cannot name", () => {
+		// A bar already carries its Feature's name. Adding a phrase to it that amounts to "a Team
+		// we cannot name" spends the width without answering the question the reader asked.
+		const { barTeams, canShowTeams } = lanesFor(
+			[
+				feature({
+					id: 2,
+					teamForecasts: [forTeam(404, [[70, 12]], [[70, 15]])],
+				}),
+			],
+			[ZENITH],
+		);
+
+		expect(barTeams.size).toBe(0);
+		expect(canShowTeams).toBe(false);
+	});
+
+	it("gives one Team one colour whether it has a row or a bar to itself", () => {
+		// The trap this exists for: colouring the rows from one map and the single-Team bars from
+		// a second one built over its own key set. Nothing about either map looks wrong on its
+		// own, and the same Team then wears two colours on one screen.
+		//
+		// The shared Team is deliberately the one that does NOT sort first. The helper hands the
+		// first key the same colour whatever else is in the set, so a shared Team sorting first
+		// would come out identical from both maps by coincidence and this could not fail.
+		const { lanes, barTeams } = lanesFor(
+			[
+				feature({
+					id: 1,
+					name: "Coral Reef",
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+					],
+				}),
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(6, [[70, 12]], [[70, 15]])],
+				}),
+			],
+			[ZENITH, GRAVITY],
+		);
+
+		const gravitysRow = lanes.find((lane) => lane.teamId === 6)?.color;
+
+		expect(barTeams.get(2)?.color).toBe(gravitysRow);
+		// Paired with a Team that must differ, so a map answering one colour for everything fails.
+		expect(lanes.find((lane) => lane.teamId === 5)?.color).not.toBe(
+			gravitysRow,
+		);
+	});
+});
+
+describe("the key to the colours", () => {
+	it("names every Team carrying a colour, once each, in the order the rows read", () => {
+		const { legend } = lanesFor(
+			[
+				feature({
+					id: 1,
+					name: "Coral Reef",
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						forTeam(6, [[70, 17]], [[70, 24]]),
+						forTeam(99, [[70, 11]], [[70, 13]]),
+					],
+				}),
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(5, [[70, 12]], [[70, 15]])],
+				}),
+				feature({
+					id: 3,
+					name: "Whale Migration",
+					teamForecasts: [forTeam(7, [[70, 12]], [[70, 15]])],
+				}),
+			],
+			[ZENITH, GRAVITY, MERIDIAN],
+		);
+
+		// Zenith has both a row and a bar to itself and is listed once; Meridian only ever wears a
+		// bar and is listed all the same; the unnamed Team reads last, as its row does.
+		expect(legend.map((team) => team.teamName)).toEqual([
+			"Gravity",
+			"Meridian",
+			"Zenith",
+			OUTSIDE_THIS_PORTFOLIO,
+		]);
+		expect(new Set(legend.map((team) => team.color)).size).toBe(4);
+	});
+
+	it("is empty where no Team carries a colour", () => {
+		const { legend, canShowTeams } = lanesFor([feature()], [ZENITH]);
+
+		expect(legend).toEqual([]);
+		expect(canShowTeams).toBe(false);
+	});
+});

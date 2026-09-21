@@ -51,12 +51,26 @@ export interface UnlanedTeam {
 	note: UnlanedTeamNote;
 }
 
+/** A Team and the colour that stands for it everywhere on this chart. */
+export interface TeamColour {
+	teamId: number;
+	teamName: string;
+	color: string;
+}
+
 export interface DeliveryTeamLanes {
 	lanes: TeamLane[];
 	/** The Teams with nothing to draw, keyed by the Feature whose bar has to name them. */
 	unlanedTeams: Map<number, UnlanedTeam[]>;
-	/** Whether anything on this chart splits at all, which is what decides if a control is offered. */
-	canSplit: boolean;
+	/**
+	 * The one Team a Feature's own bar wears, for the Features only one Team works on. Its dates
+	 * are untouched; what it gains is the Team's colour and the Team's name.
+	 */
+	barTeams: Map<number, TeamColour>;
+	/** Every Team carrying a colour on the chart, once each, in the order the rows read. */
+	legend: TeamColour[];
+	/** Whether showing the Teams would change anything at all here, which is what offers the control. */
+	canShowTeams: boolean;
 }
 
 export interface TeamLaneTerms {
@@ -67,12 +81,16 @@ export interface TeamLaneTerms {
 /** One Team is a bar. Two are a question about which of them drives which end. */
 const MINIMUM_TEAMS_TO_SPLIT = 2;
 
-/** A lane before it has been given its place in the reading order and its colour. */
-interface PendingLane {
-	featureId: number;
+/** A Team, as this Portfolio can or cannot name it, before it has been given a colour. */
+interface NamedTeam {
 	teamId: number;
 	teamName: string;
 	isNamed: boolean;
+}
+
+/** A row before it has been given its place in the reading order and its colour. */
+interface PendingLane extends NamedTeam {
+	featureId: number;
 	start: Date;
 	end: Date;
 }
@@ -87,26 +105,63 @@ export function buildDeliveryTeamLanes(
 	percentile: TimelinePercentile,
 	terms: TeamLaneTerms,
 ): DeliveryTeamLanes {
-	const contributorsOf = contributorIndex(features);
-	const nameOf = teamNamer(teams, terms);
+	const { lanes, unlanedTeams, soleTeams } = gatherTeams(
+		timeline,
+		contributorIndex(features),
+		percentile,
+		teamNamer(teams, terms),
+	);
 
+	// One map over every Team that carries a colour anywhere on the chart — the Teams with rows of
+	// their own and the Teams whose single-Feature bar wears their colour instead. Built over both
+	// together, because a Team commonly does both: one colour on the Feature it shares and another
+	// on the Feature it has to itself would make the chart unreadable in precisely the way the
+	// colours exist to prevent.
+	const colourOf = teamColours([...lanes, ...soleTeams.values()]);
+
+	return {
+		lanes: lanes.map((lane) => ({
+			featureId: lane.featureId,
+			teamId: lane.teamId,
+			teamName: lane.teamName,
+			start: lane.start,
+			end: lane.end,
+			color: colourOf(lane.teamId),
+		})),
+		unlanedTeams,
+		barTeams: new Map(
+			[...soleTeams].map(([featureId, team]) => [
+				featureId,
+				withColour(team, colourOf),
+			]),
+		),
+		legend: legendOver([...lanes, ...soleTeams.values()], colourOf),
+		// Offered whenever turning it on would put something on the chart that is not there now:
+		// a row, a note about a Team that has none, or a Team's name on a bar it has to itself.
+		canShowTeams:
+			lanes.length > 0 || unlanedTeams.size > 0 || soleTeams.size > 0,
+	};
+}
+
+function gatherTeams(
+	timeline: DeliveryTimeline,
+	contributorsOf: (featureId: number) => IFeatureTeamForecast[],
+	percentile: TimelinePercentile,
+	nameOf: (teamId: number) => NamedTeam,
+) {
 	const grouped: PendingLane[][] = [];
 	const unlanedTeams = new Map<number, UnlanedTeam[]>();
-	let canSplit = false;
+	const soleTeams = new Map<number, NamedTeam>();
 
-	// Walked in the order the timeline placed them, which is the board's own order: a lane sits
+	// Walked in the order the timeline placed them, which is the board's own order: a row sits
 	// directly under its Feature, so re-sorting anything here separates the two.
 	for (const bar of timeline.bars) {
 		const contributors = contributorsOf(bar.featureId);
 
 		if (contributors.length < MINIMUM_TEAMS_TO_SPLIT) {
+			rememberSoleTeam(soleTeams, bar.featureId, contributors, nameOf);
 			continue;
 		}
-
-		// Counted off the forecast rows rather than off the lanes that end up drawn. A Feature
-		// whose second Team has no dates still has two Teams, and the reader still has a question
-		// the control answers.
-		canSplit = true;
 
 		const split = splitByForecast(
 			bar.featureId,
@@ -122,7 +177,36 @@ export function buildDeliveryTeamLanes(
 		}
 	}
 
-	return { lanes: coloured(grouped.flat()), unlanedTeams, canSplit };
+	return { lanes: grouped.flat(), unlanedTeams, soleTeams };
+}
+
+/**
+ * A Feature only one Team works on is never split into rows, and the reason is geometric rather
+ * than a matter of taste: with one Team, the earliest and the latest across the Teams are that
+ * Team, so a row of its own would be a second bar drawn exactly where the first one is.
+ *
+ * What such a bar is missing is not the span, it is *which Team* — which a bar never carries. So
+ * the bar wears that Team's colour and its name instead, and a reader who asks to see the Teams is
+ * answered on every Feature rather than on half of them.
+ *
+ * Only where the Team can be named. A bar already carries its Feature's name, and adding a phrase
+ * to it that amounts to "a Team we cannot name" spends the width without answering anything.
+ */
+function rememberSoleTeam(
+	soleTeams: Map<number, NamedTeam>,
+	featureId: number,
+	contributors: IFeatureTeamForecast[],
+	nameOf: (teamId: number) => NamedTeam,
+): void {
+	if (contributors.length !== 1) {
+		return;
+	}
+
+	const team = nameOf(contributors[0].teamId);
+
+	if (team.isNamed) {
+		soleTeams.set(featureId, team);
+	}
 }
 
 function contributorIndex(features: IFeature[]) {
@@ -153,10 +237,14 @@ function teamNamer(teams: IEntityReference[], terms: TeamLaneTerms) {
 
 	const outsider = `A ${terms.teamTerm} from outside this ${terms.portfolioTerm}`;
 
-	return (teamId: number) => {
+	return (teamId: number): NamedTeam => {
 		const name = namesById.get(teamId);
 
-		return { teamName: name ?? outsider, isNamed: name !== undefined };
+		return {
+			teamId,
+			teamName: name ?? outsider,
+			isNamed: name !== undefined,
+		};
 	};
 }
 
@@ -172,7 +260,7 @@ function splitByForecast(
 	featureId: number,
 	contributors: IFeatureTeamForecast[],
 	percentile: TimelinePercentile,
-	nameOf: (teamId: number) => { teamName: string; isNamed: boolean },
+	nameOf: (teamId: number) => NamedTeam,
 ): { laned: PendingLane[]; unlaned: UnlanedTeam[] } {
 	const laned: PendingLane[] = [];
 	const unlaned: UnlanedTeam[] = [];
@@ -206,39 +294,65 @@ function splitByForecast(
 /**
  * Alphabetically by Team, with the Teams this Portfolio cannot name last.
  *
- * By name and never by date, so that moving the probability moves every lane without any of them
- * changing rows — a reader following one Team down the chart keeps it in the same place.
+ * By name and never by date, so that moving the probability moves every row without any of them
+ * changing places — a reader following one Team down the chart keeps it where it was.
  */
-const inReadingOrder = (lanes: PendingLane[]): PendingLane[] =>
-	[...lanes].sort((left, right) => {
-		if (left.isNamed !== right.isNamed) {
-			return left.isNamed ? -1 : 1;
-		}
+const byTeamName = (left: NamedTeam, right: NamedTeam): number => {
+	if (left.isNamed !== right.isNamed) {
+		return left.isNamed ? -1 : 1;
+	}
 
-		return left.teamName.localeCompare(right.teamName);
-	});
+	return left.teamName.localeCompare(right.teamName);
+};
+
+const inReadingOrder = (lanes: PendingLane[]): PendingLane[] =>
+	[...lanes].sort(byTeamName);
 
 /**
  * One colour per Team for the whole chart.
  *
- * Built once over every Team with a lane anywhere on it, because a map built per Feature would
- * paint one Team two different colours on a single screen. Keyed by the Team's id and never by its
- * name: the helper opens with `keys.filter(Boolean)`, so a Team with no resolvable name would not
- * merely share a bucket with the others — it would be dropped from the map and left with no colour
- * at all. A zero id survives that filter, since it keys as the string "0".
+ * Built once over every Team that carries a colour anywhere on it, because a map built per Feature
+ * would paint one Team two different colours on a single screen. Keyed by the Team's id and never
+ * by its name: the helper opens with `keys.filter(Boolean)`, so a Team with no resolvable name
+ * would not merely share a bucket with the others — it would be dropped from the map and left with
+ * no colour at all. A zero id survives that filter, since it keys as the string "0".
  *
- * Colour is never the only carrier. The Team's name is written along its lane, so a reader who
- * cannot tell the hues apart loses the grouping shortcut and nothing else.
+ * Colour is never the only carrier. The Team's name is written along its row and in the legend, so
+ * a reader who cannot tell the hues apart loses the grouping shortcut and nothing else.
  */
-function coloured(lanes: PendingLane[]): TeamLane[] {
-	const colors = getColorMapForKeys(lanes.map((lane) => String(lane.teamId)));
+function teamColours(carriers: NamedTeam[]): (teamId: number) => string {
+	const colors = getColorMapForKeys(carriers.map((one) => String(one.teamId)));
 
-	return lanes.map((lane) => ({
-		featureId: lane.featureId,
-		teamId: lane.teamId,
-		teamName: lane.teamName,
-		start: lane.start,
-		end: lane.end,
-		color: colors[String(lane.teamId)],
-	}));
+	return (teamId: number) => colors[String(teamId)];
+}
+
+const withColour = (
+	team: NamedTeam,
+	colourOf: (teamId: number) => string,
+): TeamColour => ({
+	teamId: team.teamId,
+	teamName: team.teamName,
+	color: colourOf(team.teamId),
+});
+
+/**
+ * Every Team carrying a colour, once each.
+ *
+ * It earns its space rather than decorating: a row is only as wide as its Team's span, so at the
+ * widths this chart actually gets, a Team's name along its row is routinely cut to a few
+ * characters. The legend is then the only place a colour can be read back to a Team at all.
+ */
+function legendOver(
+	carriers: NamedTeam[],
+	colourOf: (teamId: number) => string,
+): TeamColour[] {
+	const byId = new Map<number, NamedTeam>();
+
+	for (const carrier of carriers) {
+		byId.set(carrier.teamId, carrier);
+	}
+
+	return [...byId.values()]
+		.sort(byTeamName)
+		.map((team) => withColour(team, colourOf));
 }

@@ -11,7 +11,7 @@ import { WhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import { TERMINOLOGY_KEYS } from "../../../../../../models/TerminologyKeys";
 import DeliveryTimelineTab from "./DeliveryTimelineTab";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
-import type { TeamLane } from "./deliveryTeamLanes";
+import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent from "./TimelineBarContent";
 
@@ -39,6 +39,7 @@ vi.mock("../../../../../../hooks/useLicenseRestrictions", () => ({
 type GanttProps = {
 	bars: TimelineBar[];
 	lanes?: TeamLane[];
+	barTeams?: ReadonlyMap<number, TeamColour>;
 	links?: DrawnDependency[];
 	targetDate?: Date;
 	today?: Date;
@@ -60,7 +61,10 @@ vi.mock("./DeliveryGanttChart", () => ({
 						key={bar.featureId}
 						data-testid={`timeline-bar-${bar.featureId}`}
 					>
-						<TimelineBarContent bar={bar} />
+						<TimelineBarContent
+							bar={bar}
+							team={props.barTeams?.get(bar.featureId)}
+						/>
 					</div>
 				))}
 			</div>
@@ -672,17 +676,44 @@ describe("showing the Teams behind a Feature's bar", () => {
 		expect(ganttProps.current?.bars).toEqual(untouched.bars);
 	});
 
-	it("offers the control where something can split and withholds it entirely where nothing can", () => {
-		// Asserted with the chart rendered, so "no control" cannot pass on a blank tab.
+	it("withholds the control entirely where no Team on the chart can be named", () => {
+		// Asserted with the chart rendered, so "no control" cannot pass on a blank tab. This
+		// Delivery holds no Team names at all, so there is nothing the switch could show.
 		renderTab([feature({ id: 1, teamForecasts: [forTeam(5, 12, 15)] })]);
 
 		expect(screen.getByTestId("delivery-gantt")).toBeInTheDocument();
 		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
 	});
 
+	it("offers the control for a Delivery whose Features each have one Team", () => {
+		// Nothing here splits, and the switch still does real work: it answers which Team is on
+		// each bar, which the bar never says. Gating this on a Feature having two or more Teams
+		// hides a control that would have been useful on every row.
+		renderTab(
+			[
+				feature({
+					id: 1,
+					name: "Coral Reef",
+					teamForecasts: [forTeam(5, 12, 15)],
+				}),
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(6, 12, 15)],
+				}),
+			],
+			undefined,
+			[ZENITH, GRAVITY],
+		);
+
+		expect(screen.getByRole("switch")).toBeInTheDocument();
+		expect(ganttProps.current?.lanes ?? []).toEqual([]);
+	});
+
 	it("withholds the control for a three-Team Feature that has no bar", () => {
 		// Counted over the Features actually placed. A Team with no throughput takes the whole
-		// Feature off the chart, so there is nothing there to split.
+		// Feature off the chart, so nothing about its three Teams can be shown. The Feature that
+		// does have a bar carries no Team at all, so it offers no reason of its own.
 		renderTab(
 			[
 				feature({
@@ -695,11 +726,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 						forTeam(7, 11, 13),
 					],
 				}),
-				feature({
-					id: 2,
-					name: "Kelp Forest",
-					teamForecasts: [forTeam(5, 12, 15)],
-				}),
+				feature({ id: 2, name: "Kelp Forest", teamForecasts: [] }),
 			],
 			undefined,
 			[ZENITH, GRAVITY, MERIDIAN],
@@ -875,5 +902,122 @@ describe("showing the Teams behind a Feature's bar", () => {
 			"Meridian",
 			"Zenith",
 		]);
+	});
+
+	it("names the one Team on a Feature only one Team works on, without adding a row", async () => {
+		renderTab(
+			[
+				splittingFeature(),
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(7, 12, 15)],
+				}),
+			],
+			undefined,
+			[ZENITH, GRAVITY, MERIDIAN],
+		);
+
+		await userEvent.click(showTeamsSwitch());
+
+		// No extra row for it - with one Team the earliest and the latest are that Team, so a row
+		// would be a second bar drawn where the first one is. What it gets instead is the Team.
+		expect(
+			ganttProps.current?.lanes?.filter((lane) => lane.featureId === 2),
+		).toEqual([]);
+		expect(ganttProps.current?.barTeams?.get(2)?.teamName).toBe("Meridian");
+		// And the Feature two Teams work on keeps the default colour, so dark reads as "several"
+		// and coloured reads as "this one".
+		expect(ganttProps.current?.barTeams?.has(1)).toBe(false);
+	});
+
+	it("leaves a single-Team Feature's dates exactly where they were when the Teams appear", async () => {
+		// Its bar now changes appearance with the switch, which is new. Its span must not, and
+		// that is the guarantee worth a test of its own rather than one inherited from the split.
+		renderTab(
+			[
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(7, 12, 15)],
+				}),
+			],
+			undefined,
+			[MERIDIAN],
+		);
+
+		const before = ganttProps.current?.bars;
+
+		await userEvent.click(showTeamsSwitch());
+
+		// Both halves. The Team has to have arrived, or this passes against a switch that does
+		// nothing at all; and the bar has to be the bar it was, which is the whole guarantee.
+		expect(ganttProps.current?.barTeams?.get(2)?.teamName).toBe("Meridian");
+		expect(ganttProps.current?.bars).toEqual(before);
+	});
+
+	it("shows a key to the colours only once the Teams are being shown", async () => {
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		expect(
+			screen.queryByTestId("timeline-team-legend"),
+		).not.toBeInTheDocument();
+
+		await userEvent.click(showTeamsSwitch());
+
+		// Every Team carrying a colour, named in full. A row is only as wide as its Team's span,
+		// so the names written along the rows are routinely cut to a few characters and this is
+		// the only place the colour can be read back to a Team.
+		const legend = screen.getByTestId("timeline-team-legend");
+
+		expect(legend).toHaveTextContent("Gravity");
+		expect(legend).toHaveTextContent("Zenith");
+	});
+
+	it("says why a Feature's bar reaches past the Teams beneath it", async () => {
+		terminology.overrides = {
+			[TERMINOLOGY_KEYS.TEAM]: "Squad",
+			[TERMINOLOGY_KEYS.TEAMS]: "Squads",
+			[TERMINOLOGY_KEYS.FEATURE]: "Deliverable",
+		};
+
+		renderTab([splittingFeature()], undefined, [ZENITH, GRAVITY]);
+
+		expect(
+			screen.queryByTestId("timeline-team-span-note"),
+		).not.toBeInTheDocument();
+
+		await userEvent.click(showTeamsSwitch());
+
+		// Pinned against the literal and in this instance's own words. Unexplained, a bar reaching
+		// past every row beneath it reads as the chart claiming work nobody is doing.
+		expect(screen.getByTestId("timeline-team-span-note")).toHaveTextContent(
+			"A Deliverable starts when its first Squad starts and finishes when its last one finishes, so its bar reaches a little past the Squads beneath it.",
+		);
+	});
+
+	it("leaves that explanation out where nothing is split", async () => {
+		// There is no row for a bar to reach past, so the sentence would answer a question this
+		// chart does not raise.
+		renderTab(
+			[
+				feature({
+					id: 2,
+					name: "Kelp Forest",
+					teamForecasts: [forTeam(7, 12, 15)],
+				}),
+			],
+			undefined,
+			[MERIDIAN],
+		);
+
+		await userEvent.click(showTeamsSwitch());
+
+		expect(screen.getByTestId("timeline-team-legend")).toHaveTextContent(
+			"Meridian",
+		);
+		expect(
+			screen.queryByTestId("timeline-team-span-note"),
+		).not.toBeInTheDocument();
 	});
 });

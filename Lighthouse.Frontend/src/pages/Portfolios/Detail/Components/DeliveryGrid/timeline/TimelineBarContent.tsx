@@ -3,7 +3,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
 import { createContext, useContext } from "react";
-import type { TeamLane } from "./deliveryTeamLanes";
+import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import { barTooltip } from "./ganttShapes";
 
@@ -69,6 +69,13 @@ export interface TimelineBarContentProps {
 	 * it — repeated down a three-lane Feature it would wear the same symbol four times.
 	 */
 	lane?: TeamLane;
+	/**
+	 * The one Team that works on this Feature, where it has exactly one. Such a Feature is never
+	 * split - with a single Team the earliest and the latest across the Teams are that Team, so a
+	 * row of its own would be a second bar drawn where the first one already is. Its bar carries
+	 * the Team's colour and name instead, which is the part a bar never had.
+	 */
+	team?: TeamColour;
 	/** Absent means the row is inert: no pointer, no click, and nothing promised on hover. */
 	onSelect?: (featureId: number) => void;
 }
@@ -76,6 +83,7 @@ export interface TimelineBarContentProps {
 const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 	bar,
 	lane,
+	team,
 	onSelect,
 }) => {
 	const marks = useContext(BarMarks);
@@ -103,18 +111,34 @@ const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 	return (
 		<RowBody
 			hoverText={barHoverText(bar, onSelect !== undefined, mark)}
+			fill={team?.color}
 			onSelect={onSelect ? () => onSelect(bar.featureId) : undefined}
 		>
 			{bar.name}
+			{team && <NameOnBar name={team.teamName} />}
 			{mark?.namesOnTheBar?.map((name) => (
-				<Box component="span" key={name} sx={{ ml: 0.5, flexShrink: 0 }}>
-					{name}
-				</Box>
+				<NameOnBar key={name} name={name} />
 			))}
 			{mark && <BarMarkSymbol mark={mark} />}
 		</RowBody>
 	);
 };
+
+/**
+ * A Team's name written along a bar beside the Feature's own - the one Team that works on it, or a
+ * Team that has no row of its own.
+ *
+ * The separator is drawn rather than written, so what a screen reader reads out is the name and not
+ * a piece of punctuation.
+ */
+const NameOnBar: React.FC<{ name: string }> = ({ name }) => (
+	<Box
+		component="span"
+		sx={{ ml: 0.5, flexShrink: 0, "&::before": { content: '"· "' } }}
+	>
+		{name}
+	</Box>
+);
 
 /**
  * The box a row of this chart is drawn in, whichever kind of row it is.

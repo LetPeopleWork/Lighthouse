@@ -2,7 +2,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { TeamLane } from "./deliveryTeamLanes";
+import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import TimelineBarContent, {
 	type BarMark,
@@ -27,6 +27,7 @@ const renderBar = (
 	props: Partial<{
 		bar: TimelineBar;
 		lane: TeamLane;
+		team: TeamColour;
 		onSelect: (featureId: number) => void;
 	}>,
 ) =>
@@ -319,5 +320,49 @@ describe("TimelineBarContent", () => {
 		expect(
 			within(screen.getByTestId("timeline-bar-content")).getByText("Meridian"),
 		).toBeInTheDocument();
+	});
+
+	it("names the one Team a Feature has to itself along its own bar", () => {
+		// Such a Feature never gets a row of its own, so if its bar does not say which Team it is,
+		// nothing on the chart does - which is half the chart answering the switch and half not.
+		renderBar({
+			bar,
+			team: { teamId: 42, teamName: "Meridian", color: "#4DA98C" },
+		});
+
+		const content = screen.getByTestId("timeline-bar-content");
+
+		// The Feature's own name stays: the Team is added to the bar, it does not replace it. The
+		// Team is matched exactly rather than as a substring, so a name only ever read out to a
+		// screen reader would not satisfy it.
+		expect(content).toHaveTextContent("Sonar Refit");
+		expect(within(content).getByText("Meridian")).toBeInTheDocument();
+	});
+
+	it("paints a Feature with one Team differently from one with several", () => {
+		// A bar wearing its Team's colour and a bar keeping the default is how a reader tells "this
+		// one Team" from "several Teams" at a glance. Asserted as a difference rather than against
+		// a colour, for the same reason as the rows: this environment resolves neither.
+		render(
+			<ThemeProvider theme={createTheme()}>
+				<div data-testid="one-team">
+					<TimelineBarContent
+						bar={bar}
+						team={{ teamId: 42, teamName: "Meridian", color: "#4DA98C" }}
+					/>
+				</div>
+				<div data-testid="several-teams">
+					<TimelineBarContent bar={quietBar} />
+				</div>
+			</ThemeProvider>,
+		);
+
+		const paintingOf = (testId: string) =>
+			within(screen.getByTestId(testId)).getByTestId("timeline-bar-content")
+				.className;
+
+		expect(
+			new Set([paintingOf("one-team"), paintingOf("several-teams")]).size,
+		).toBe(2);
 	});
 });

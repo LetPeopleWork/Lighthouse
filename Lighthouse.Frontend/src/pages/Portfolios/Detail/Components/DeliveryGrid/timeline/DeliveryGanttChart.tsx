@@ -12,7 +12,7 @@ import {
 	useState,
 } from "react";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
-import type { TeamLane } from "./deliveryTeamLanes";
+import type { TeamColour, TeamLane } from "./deliveryTeamLanes";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
 import {
 	chartHeight,
@@ -55,6 +55,11 @@ export interface DeliveryGanttChartProps {
 	 * hidden when the reader has not asked for them, so the chart is then exactly the chart it was.
 	 */
 	lanes?: TeamLane[];
+	/**
+	 * The one Team a Feature's own bar wears, keyed by Feature, for the Features a single Team works
+	 * on. Only the bar's colour and its label change; its dates are the dates it always had.
+	 */
+	barTeams?: ReadonlyMap<number, TeamColour>;
 	targetDate?: Date;
 	/** Passed in rather than read here, so the chart and its legend mark the same day. */
 	today: Date;
@@ -109,6 +114,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
 	links,
 	lanes = NO_LANES,
+	barTeams,
 	targetDate,
 	today,
 	onBarSelected,
@@ -184,16 +190,18 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	const BarContent = useCallback(
 		({ data }: { data: { id?: string | number } }) => {
 			const content = contentForTask(data.id);
+			const bar = content?.bar;
 
 			return (
 				<TimelineBarContent
-					bar={content?.bar}
+					bar={bar}
 					lane={content?.lane}
+					team={bar && barTeams?.get(bar.featureId)}
 					onSelect={onBarSelected}
 				/>
 			);
 		},
-		[contentForTask, onBarSelected],
+		[contentForTask, barTeams, onBarSelected],
 	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;
