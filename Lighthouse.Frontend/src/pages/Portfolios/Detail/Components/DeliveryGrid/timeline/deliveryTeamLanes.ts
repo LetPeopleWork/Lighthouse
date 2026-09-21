@@ -120,6 +120,9 @@ export function buildDeliveryTeamLanes(
 	const colourOf = teamColours([...lanes, ...soleTeams.values()]);
 
 	return {
+		// Field by field rather than spread-and-add. A spread would carry `isNamed` out with it,
+		// and a lane arriving with a field nothing outside this file has any use for is how a
+		// working note becomes part of a contract by accident.
 		lanes: lanes.map((lane) => ({
 			featureId: lane.featureId,
 			teamId: lane.teamId,
@@ -219,7 +222,8 @@ function contributorIndex(features: IFeature[]) {
 }
 
 /**
- * What to write on a Team's lane.
+ * What a Team is called wherever this chart names one - along its own lane, on the bar of a Feature
+ * it has to itself, and in the key to the colours.
  *
  * The names available are the *Portfolio's* Teams, and a Feature can sit in several Portfolios, so
  * a Team on its forecast need not be one this Portfolio lists. Dropping that lane would recreate

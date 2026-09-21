@@ -274,10 +274,11 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		null,
 	);
 
-	// One reading of the clock, handed to both the legend and the chart, so they cannot disagree
-	// about which day today is. Fixed for as long as the tab is open: a fresh Date on every render
-	// is a fresh identity and would invalidate everything memoised against it, and the cost is only
-	// that a tab left open across midnight keeps yesterday's marker until something redraws it.
+	// One reading of the clock for the whole tab, so nothing that marks today can disagree with
+	// anything else about which day it is. Fixed for as long as the tab is open: a fresh Date on
+	// every render is a fresh identity and would invalidate everything memoised against it, and the
+	// cost is only that a tab left open across midnight keeps yesterday's marker until something
+	// redraws it.
 	const today = useMemo(() => new Date(), []);
 
 	// Held by id rather than by object, so the dialog follows a refreshed Feature instead of
@@ -300,7 +301,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		[features, timeline, featureTerm, portfolioTerm],
 	);
 
-	const teamLanes = useMemo(
+	const teamsOnTheChart = useMemo(
 		() =>
 			buildDeliveryTeamLanes(features, timeline, teams, percentile, {
 				teamTerm,
@@ -316,7 +317,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				marks,
 				{ workItemsTerm, featureTerm, portfolioTerm },
 				{
-					byFeature: teamLanes.unlanedTeams,
+					byFeature: teamsOnTheChart.unlanedTeams,
 					nameThemOnTheBar: showTeams,
 				},
 			),
@@ -326,7 +327,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			workItemsTerm,
 			featureTerm,
 			portfolioTerm,
-			teamLanes,
+			teamsOnTheChart,
 			showTeams,
 		],
 	);
@@ -390,7 +391,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 				    apply. A switch rather than a fourth button beside the three: that group means
 				    "pick one of these", and this is on or off - which is also why it is set apart
 				    from them rather than sitting flush against the group as a fourth member of it. */}
-				{teamLanes.canShowTeams && (
+				{teamsOnTheChart.canShowTeams && (
 					<>
 						<Divider
 							orientation="vertical"
@@ -429,9 +430,9 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 			    read once. They are deliberately not the `timeline-chart-note` slot above - that one
 			    reports a condition this Delivery happens to be in, and these two are always true
 			    while the Teams are shown. */}
-			{showTeams && teamLanes.legend.length > 0 && (
+			{showTeams && teamsOnTheChart.legend.length > 0 && (
 				<Box sx={{ mb: 1.5 }}>
-					{teamLanes.lanes.length > 0 && (
+					{teamsOnTheChart.lanes.length > 0 && (
 						<Typography
 							variant="body2"
 							color="text.secondary"
@@ -441,7 +442,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 							{barsReachPastTheirTeams(featureTerm, teamTerm, teamsTerm)}
 						</Typography>
 					)}
-					<TeamLegend teams={teamLanes.legend} />
+					<TeamLegend teams={teamsOnTheChart.legend} />
 				</Box>
 			)}
 
@@ -452,8 +453,8 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 						links={edges}
 						// Absent rather than hidden while the switch is off, so the chart is then the
 						// same chart it was before any of this existed.
-						lanes={showTeams ? teamLanes.lanes : undefined}
-						barTeams={showTeams ? teamLanes.barTeams : undefined}
+						lanes={showTeams ? teamsOnTheChart.lanes : undefined}
+						barTeams={showTeams ? teamsOnTheChart.barTeams : undefined}
 						targetDate={targetDate}
 						today={today}
 						onBarSelected={setSelectedFeatureId}

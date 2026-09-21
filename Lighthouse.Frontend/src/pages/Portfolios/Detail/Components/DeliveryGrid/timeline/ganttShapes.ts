@@ -20,9 +20,18 @@ export const ROW_HEIGHT = 38;
 export const SCALE_HEIGHT = 30;
 const CHART_PADDING = 20;
 
-/** A chart with nothing to draw still needs a row's height, or it collapses to its axis alone. */
-export function chartHeight(barCount: number): number {
-	return Math.max(barCount, 1) * ROW_HEIGHT + SCALE_HEIGHT + CHART_PADDING;
+/**
+ * How tall the chart has to be to hold what it is drawing.
+ *
+ * Counted in rows rather than in Features: a Feature the Teams are shown for occupies a row for
+ * itself and one for each Team, so a height taken from the number of bars leaves the Teams of the
+ * last Feature drawn outside the box.
+ *
+ * A chart with nothing to draw still gets a row's height, or it collapses onto its axis and the
+ * tab reads as broken rather than as empty.
+ */
+export function chartHeight(rowCount: number): number {
+	return Math.max(rowCount, 1) * ROW_HEIGHT + SCALE_HEIGHT + CHART_PADDING;
 }
 
 /** A lane's id, kept apart from every Feature's so no two rows on the chart can collide. */
