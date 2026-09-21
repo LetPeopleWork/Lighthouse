@@ -17,8 +17,8 @@ namespace Lighthouse.Backend.Services.Implementation
         private const string DemoDeliveryName = "Apollo Release";
 
         // The Dependencies scenario is the only one where a delivery spans several teams, so it is the
-        // only one that shows the joint rollup doing anything (ADR-113). One contributing team has no
-        // throughput, so the delivery reports "cannot forecast" until that team is dealt with.
+        // only one that shows a delivery date rolled up from more than one of them. One contributing
+        // team has no throughput, so the delivery reports "cannot forecast" until that team is dealt with.
         private const string MultiTeamDeliveryPortfolioName = "Project Ocean Explorer";
         private const string MultiTeamDeliveryName = "Ocean Explorer Milestone";
         private const int MultiTeamDeliveryDays = 60;
@@ -36,8 +36,8 @@ namespace Lighthouse.Backend.Services.Implementation
         private static readonly int[] BurnupDoneWorkByElapsedDay = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 32, 34, 36, 37];
         private static readonly int[] BurnupEstimatedItemCountByElapsedDay = [22, 21, 20, 19, 18, 28, 27, 26, 25, 16, 18, 20, 22, 24, 25];
 
-        // Epic #5585: the three epics' sizes add up to BurnupTotalWorkByElapsedDay for the same day, so the
-        // stacked bars top out where the burnup's total line sits. Heat Shield Testing carries the portfolio
+        // The three epics' sizes add up to BurnupTotalWorkByElapsedDay for the same day, so the stacked
+        // bars top out where the burnup's total line sits. Heat Shield Testing carries the portfolio
         // default size until it is broken down on day 9 and turns out smaller - that is the day-9 dip.
         private const int HeatShieldBreakdownElapsedDay = 9;
 
@@ -397,7 +397,8 @@ namespace Lighthouse.Backend.Services.Implementation
             projectDependencies.Teams.Add(DemoTeamNames.OldItems);
 
             // Shares the first Epic with two teams that can be forecast, so that Epic shows what happens
-            // when one contributing team has no throughput at all (ADR-112).
+            // when one contributing team has no throughput at all: no honest date, rather than a date
+            // computed from the teams that do have one.
             projectDependencies.Teams.Add(DemoTeamNames.NoThroughput);
 
             // Shares the second Epic, with just enough history to forecast but not enough to trust -

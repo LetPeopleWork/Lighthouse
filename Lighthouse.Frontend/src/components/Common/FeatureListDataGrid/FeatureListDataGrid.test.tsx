@@ -340,7 +340,7 @@ describe("FeatureListDataGrid", () => {
 
 		const warningIcon = await screen.findByTestId("warnings");
 		expect(warningIcon.getAttribute("aria-label")).toContain(
-			"marked as done but still has remaining work items",
+			"marked as done but still has remaining",
 		);
 	});
 

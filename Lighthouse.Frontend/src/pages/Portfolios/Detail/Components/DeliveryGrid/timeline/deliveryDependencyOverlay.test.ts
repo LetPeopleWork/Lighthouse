@@ -83,17 +83,6 @@ const aWaiter = (
 	});
 
 describe("buildDependencyOverlay", () => {
-	it("connects a Feature to the blocker it is waiting on in this Delivery", () => {
-		const overlay = overlayFor([
-			aBlocker(),
-			aWaiter([dependency({ referenceId: "OE-001" })]),
-		]);
-
-		expect(overlay.edges).toEqual([
-			{ blockerFeatureId: 3, waitingFeatureId: 7 },
-		]);
-	});
-
 	it("finds the blocker by its reference id even when the names disagree", () => {
 		const overlay = overlayFor([
 			aBlocker({ name: "Hydrothermal Vent Survey" }),
@@ -187,8 +176,7 @@ describe("buildDependencyOverlay", () => {
 		expect(overlay.marks.has(7)).toBe(false);
 	});
 
-	const notesOn = (features: IFeature[]) =>
-		overlayFor(features).marks.get(7)?.notes;
+	const notesOn = (features: IFeature[]) => overlayFor(features).marks.get(7);
 
 	const notInThisDelivery = [
 		aWaiter([
@@ -204,21 +192,15 @@ describe("buildDependencyOverlay", () => {
 		aWaiter([dependency({ referenceId: "OE-001" })]),
 	];
 
-	it("marks a blocker that is not in this Delivery, and does not warn about it", () => {
+	it("marks a blocker that is not in this Delivery", () => {
 		expect(notesOn(notInThisDelivery)).toEqual([
-			{
-				text: "Waiting on Hydrothermal Vent Survey, which is not on this timeline.",
-				isWarning: false,
-			},
+			"Waiting on Hydrothermal Vent Survey, which is not on this timeline.",
 		]);
 	});
 
 	it("gives a blocker in this Delivery that could not be placed its own reason", () => {
 		expect(notesOn(inThisDeliveryButUnplaceable)).toEqual([
-			{
-				text: "Waiting on Hydrothermal Vent Survey, which has no forecast to place on this timeline.",
-				isWarning: false,
-			},
+			"Waiting on Hydrothermal Vent Survey, which has no forecast to place on this timeline.",
 		]);
 
 		expect(notesOn(inThisDeliveryButUnplaceable)).not.toEqual(
@@ -226,7 +208,10 @@ describe("buildDependencyOverlay", () => {
 		);
 	});
 
-	it("says the reason the forecast gives rather than that there is no bar", () => {
+	// The refusal is what moved the dates, and the Feature's warnings say so in that reason's own
+	// words. Repeating it here in words chosen for the chart is how one Feature comes to be
+	// described two ways; the chart says only the half nobody else can see.
+	it("leaves a refused dependency to the warnings and still speaks for the sound one", () => {
 		const notes = notesOn([
 			aBlocker({ forecasts: [] }),
 			aWaiter([
@@ -242,14 +227,7 @@ describe("buildDependencyOverlay", () => {
 		]);
 
 		expect(notes).toEqual([
-			{
-				text: "Hydrothermal Vent Survey has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
-				isWarning: true,
-			},
-			{
-				text: "Waiting on Seamount Ridge Mapping, which is not on this timeline.",
-				isWarning: false,
-			},
+			"Waiting on Seamount Ridge Mapping, which is not on this timeline.",
 		]);
 	});
 
@@ -265,11 +243,8 @@ describe("buildDependencyOverlay", () => {
 			]),
 		]);
 
-		expect(overlay.marks.get(7)?.notes).toEqual([
-			{
-				text: "Waiting on a Feature you do not have access to.",
-				isWarning: false,
-			},
+		expect(overlay.marks.get(7)).toEqual([
+			"Waiting on a Feature you do not have access to.",
 		]);
 		expect(JSON.stringify([...overlay.marks.values()])).not.toContain(
 			withheldName,
@@ -290,27 +265,19 @@ describe("buildDependencyOverlay", () => {
 			renamedTerms,
 		);
 
-		expect(overlay.marks.get(7)?.notes[0].text).toContain("Initiative");
+		expect(overlay.marks.get(7)?.[0]).toContain("Initiative");
 	});
 
-	// One sentence serving all three reasons tells the reader only that something is wrong, which is the
-	// one thing they could already see.
+	// A refusal moves the dates, so the reader has to be told about it - but by the Feature's own
+	// warnings, in that reason's words, on every screen that shows them. All the chart owes them is
+	// an honest absence of a line.
 	it.each([
-		[
-			"InALoop" as const,
-			"This Feature and Hydrothermal Vent Survey are waiting on each other. That dependency is not included in the forecast.",
-		],
-		[
-			"BlockerCannotBeForecast" as const,
-			"Hydrothermal Vent Survey has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
-		],
-		[
-			"OutsideThisPortfolio" as const,
-			"This Feature depends on Hydrothermal Vent Survey, which is in no Portfolio they share. That dependency is not included in the forecast.",
-		],
+		"InALoop" as const,
+		"BlockerCannotBeForecast" as const,
+		"OutsideThisPortfolio" as const,
 	])(
-		"draws no line for %s and warns the waiting bar in that reason's own words",
-		(reason, sentence) => {
+		"draws no line for %s, and says nothing the warnings already say",
+		(reason) => {
 			const overlay = overlayFor([
 				aBlocker(),
 				aWaiter([
@@ -319,9 +286,7 @@ describe("buildDependencyOverlay", () => {
 			]);
 
 			expect(overlay.edges).toEqual([]);
-			expect(overlay.marks.get(7)?.notes).toEqual([
-				{ text: sentence, isWarning: true },
-			]);
+			expect(overlay.marks.has(7)).toBe(false);
 		},
 	);
 
@@ -367,7 +332,9 @@ describe("buildDependencyOverlay", () => {
 		expect(overlay.chartNote).toBeNull();
 	});
 
-	it("draws the line to a blocker that sits below, and marks the bar as well", () => {
+	// The forecast did wait, so the line is the truth about the dates and it is drawn. That the order
+	// contradicts the wait is the Feature's business, and its warnings are where that is said.
+	it("draws the line to a blocker that sits below, and leaves the warning to the Feature", () => {
 		const overlay = overlayFor([
 			aBlocker(),
 			aWaiter([
@@ -378,12 +345,7 @@ describe("buildDependencyOverlay", () => {
 		expect(overlay.edges).toEqual([
 			{ blockerFeatureId: 3, waitingFeatureId: 7 },
 		]);
-		expect(overlay.marks.get(7)?.notes).toEqual([
-			{
-				text: "This Feature depends on Hydrothermal Vent Survey, which sits below it in the order.",
-				isWarning: true,
-			},
-		]);
+		expect(overlay.marks.has(7)).toBe(false);
 	});
 
 	/** Two Features waiting on one blocker, nothing wrong with either wait: exactly two drawn edges. */
@@ -411,11 +373,11 @@ describe("buildDependencyOverlay", () => {
 		const overlay = overlayWithEdgeLimit(twoDrawnEdges(), 1);
 
 		expect(overlay.edges).toEqual([]);
-		expect(overlay.marks.get(7)?.notes).toEqual([
-			{ text: "Waiting on Hydrothermal Vent Survey.", isWarning: false },
+		expect(overlay.marks.get(7)).toEqual([
+			"Waiting on Hydrothermal Vent Survey.",
 		]);
-		expect(overlay.marks.get(9)?.notes).toEqual([
-			{ text: "Waiting on Hydrothermal Vent Survey.", isWarning: false },
+		expect(overlay.marks.get(9)).toEqual([
+			"Waiting on Hydrothermal Vent Survey.",
 		]);
 	});
 
@@ -426,7 +388,7 @@ describe("buildDependencyOverlay", () => {
 		expect(overlay.marks.size).toBe(0);
 	});
 
-	it("leaves a sound dependency neutral and a warned one warned when it degrades", () => {
+	it("speaks for a sound dependency when the lines go, and still not for a warned one", () => {
 		const overlay = overlayWithEdgeLimit(
 			[
 				aBlocker(),
@@ -440,15 +402,12 @@ describe("buildDependencyOverlay", () => {
 		);
 
 		expect(overlay.edges).toEqual([]);
-		expect(overlay.marks.get(7)?.notes).toEqual([
-			{ text: "Waiting on Hydrothermal Vent Survey.", isWarning: false },
+		expect(overlay.marks.get(7)).toEqual([
+			"Waiting on Hydrothermal Vent Survey.",
 		]);
-		expect(overlay.marks.get(9)?.notes).toEqual([
-			{
-				text: "This Feature depends on Hydrothermal Vent Survey, which sits below it in the order.",
-				isWarning: true,
-			},
-		]);
+		// Its line is gone too, but what the reader needs to know about this one is that the order
+		// contradicts the wait - which the Feature's warnings say whether the chart draws or not.
+		expect(overlay.marks.has(9)).toBe(false);
 	});
 
 	// Deliberately weak, and left that way on purpose: it pins that a usable default exists, not what it

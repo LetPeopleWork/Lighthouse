@@ -9,9 +9,6 @@ import {
 	waitedOnName,
 } from "../dependencies/dependencySentences";
 
-export const DONE_WITH_REMAINING_WORK_WARNING =
-	"This feature is marked as done but still has remaining work items. Please verify if all work has been completed.";
-
 export type FeatureWarningInput = {
 	isDoneWithRemainingWork: boolean;
 	isUsingDefaultFeatureSize: boolean;
@@ -35,10 +32,11 @@ export function featureWarningSentences(
 	}: FeatureWarningInput,
 	{ workItemsTerm, featureTerm, portfolioTerm }: FeatureWarningTerms,
 ): string[] {
+	const doneWithRemainingWorkWarning = `This ${featureTerm} is marked as done but still has remaining ${workItemsTerm}. Please verify if all work has been completed.`;
 	const defaultSizeWarning = `No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`;
 
 	return [
-		...(isDoneWithRemainingWork ? [DONE_WITH_REMAINING_WORK_WARNING] : []),
+		...(isDoneWithRemainingWork ? [doneWithRemainingWorkWarning] : []),
 		...(isUsingDefaultFeatureSize ? [defaultSizeWarning] : []),
 		// Having a dependency is not a warning; only one with something wrong with it is.
 		...dependencies

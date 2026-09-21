@@ -3,9 +3,22 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
 import { createContext, useContext } from "react";
-import type { BarMark } from "./deliveryDependencyOverlay";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import { barTooltip } from "./ganttShapes";
+
+/**
+ * One thing a bar has to say, and whether it is worth an alarm. Decided by whoever writes the note
+ * rather than here, so a Feature cannot read as clean on this chart and marked in the Feature table.
+ */
+export interface BarNote {
+	text: string;
+	isWarning: boolean;
+}
+
+/** Everything one bar has to say for itself. */
+export interface BarMark {
+	notes: BarNote[];
+}
 
 const BarMarks = createContext<ReadonlyMap<number, BarMark>>(new Map());
 

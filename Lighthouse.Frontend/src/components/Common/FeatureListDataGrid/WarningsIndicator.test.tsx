@@ -46,7 +46,7 @@ const whatItSays = (): string =>
 	screen.getByTestId("warnings").getAttribute("aria-label") ?? "";
 
 const DONE_WITH_WORK_LEFT =
-	"This feature is marked as done but still has remaining work items. Please verify if all work has been completed.";
+	"This Feature is marked as done but still has remaining Work Items. Please verify if all work has been completed.";
 
 const NO_CHILDREN_FOUND =
 	"No child Work Items were found for this Feature. The remaining Work Items displayed are based on the default Feature size specified in the advanced project settings.";

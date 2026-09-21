@@ -25,18 +25,18 @@ import {
 	featureWarningSentences,
 } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
-import {
-	type BarMark,
-	type BarNote,
-	buildDependencyOverlay,
-} from "./deliveryDependencyOverlay";
+import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
 	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
-import { TimelineBarMarks } from "./TimelineBarContent";
+import {
+	type BarMark,
+	type BarNote,
+	TimelineBarMarks,
+} from "./TimelineBarContent";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -47,8 +47,8 @@ export interface DeliveryTimelineTabProps {
 
 const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 
-const PREMIUM_NOTICE =
-	"The delivery timeline is a premium feature. The forecasts behind it are not — they stay in the table.";
+const premiumNoticeFor = (deliveryTerm: string) =>
+	`The ${deliveryTerm} timeline is a premium feature. The forecasts behind it are not — they stay in the table.`;
 
 const warningInputFor = (feature: IFeature): FeatureWarningInput => ({
 	isDoneWithRemainingWork:
@@ -91,7 +91,7 @@ const warningsColumnFor = (
  */
 const barMarksFor = (
 	features: IFeature[],
-	dependencyMarks: ReadonlyMap<number, BarMark>,
+	dependencyNotes: ReadonlyMap<number, string[]>,
 	terms: FeatureWarningTerms,
 ): Map<number, BarMark> => {
 	const marks = new Map<number, BarMark>();
@@ -104,9 +104,10 @@ const barMarksFor = (
 			// Every dependency worth warning about is already in the sentences above, said in the
 			// words the table uses for it. What is left here is the chart's own account of a wait
 			// there is nothing wrong with, which no warning should be raised over.
-			...(dependencyMarks.get(feature.id)?.notes ?? []).filter(
-				(note) => !note.isWarning,
-			),
+			...(dependencyNotes.get(feature.id) ?? []).map((text) => ({
+				text,
+				isWarning: false,
+			})),
 		];
 
 		// A bar with nothing to say stays absent rather than arriving with an empty list, which a
@@ -129,6 +130,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 	const [percentile, setPercentile] = useState<TimelinePercentile>(
 		DEFAULT_TIMELINE_PERCENTILE,
 	);
@@ -186,7 +188,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 		return (
 			<Box sx={{ p: 2 }}>
 				<Alert severity="info" data-testid="premium-feature-notice">
-					{PREMIUM_NOTICE}
+					{premiumNoticeFor(deliveryTerm)}
 				</Alert>
 			</Box>
 		);

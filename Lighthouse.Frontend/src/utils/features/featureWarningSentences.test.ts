@@ -38,7 +38,22 @@ describe("featureWarningSentences", () => {
 		);
 
 		expect(warnings).toEqual([
-			"This feature is marked as done but still has remaining work items. Please verify if all work has been completed.",
+			"This Feature is marked as done but still has remaining Work Items. Please verify if all work has been completed.",
+		]);
+	});
+
+	it("names that work in the words this instance uses for the things it names", () => {
+		const warnings = featureWarningSentences(
+			{ ...NOTHING_WRONG, isDoneWithRemainingWork: true },
+			{
+				workItemsTerm: "Tickets",
+				featureTerm: "Initiative",
+				portfolioTerm: "Stream",
+			},
+		);
+
+		expect(warnings).toEqual([
+			"This Initiative is marked as done but still has remaining Tickets. Please verify if all work has been completed.",
 		]);
 	});
 

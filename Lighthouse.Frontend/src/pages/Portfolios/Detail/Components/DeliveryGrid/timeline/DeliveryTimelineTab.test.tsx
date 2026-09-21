@@ -237,6 +237,17 @@ describe("DeliveryTimelineTab", () => {
 		expect(screen.queryByTestId("delivery-gantt")).not.toBeInTheDocument();
 	});
 
+	it("offers the premium notice in the word this instance uses for a Delivery", () => {
+		licence.isPremium = false;
+		terminology.overrides = { [TERMINOLOGY_KEYS.DELIVERY]: "Launch" };
+
+		renderTab([feature()]);
+
+		expect(screen.getByTestId("premium-feature-notice")).toHaveTextContent(
+			"The Launch timeline is a premium feature",
+		);
+	});
+
 	it("withholds the chart while the licence is still unknown", () => {
 		// The hook answers null until the licence has been fetched. Reading through it without a
 		// guard throws and takes the whole tab down; treating unknown as licensed would show a
@@ -461,8 +472,53 @@ describe("DeliveryTimelineTab", () => {
 		]);
 
 		expect(markOn(1)).toHaveAccessibleName(
-			/^Warning\. This feature is marked as done/,
+			/^Warning\. This Feature is marked as done/,
 		);
+	});
+
+	it("warns on the bar in the words of the reason the forecast gives", () => {
+		renderTab([
+			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [waitingOn("OE-001", "Hull Fabrication", "InALoop")],
+			}),
+		]);
+
+		// The refusal moved the dates, and the bar is the picture of those dates. A bar that says
+		// nothing about it leaves the reader looking for a line that was deliberately not drawn.
+		expect(markOn(2)).toHaveAccessibleName(
+			"Warning. This Feature and Hull Fabrication are waiting on each other. That dependency is not included in the forecast.",
+		);
+		expect(ganttProps.current?.links).toEqual([]);
+	});
+
+	it("warns on the bar of a Feature whose blocker sits below it, and still draws the line", () => {
+		renderTab([
+			feature({ id: 1, name: "Hull Fabrication", referenceId: "OE-001" }),
+			feature({
+				id: 2,
+				name: "Sonar Refit",
+				referenceId: "OE-002",
+				dependsOn: [
+					{
+						...waitingOn("OE-001", "Hull Fabrication"),
+						blockerPositionedBelow: true,
+					},
+				],
+			}),
+		]);
+
+		// The forecast did wait, so the line is the truth about the dates. What the order says about
+		// it is a warning, and it is said once, in the words the table uses.
+		expect(markOn(2)).toHaveAccessibleName(
+			"Warning. This Feature depends on Hull Fabrication, which sits below it in the order.",
+		);
+		expect(ganttProps.current?.links).toEqual([
+			{ blockerFeatureId: 1, waitingFeatureId: 2 },
+		]);
 	});
 
 	it("marks, without alarm, a bar whose only note is where its blocker went", () => {
@@ -501,12 +557,15 @@ describe("DeliveryTimelineTab", () => {
 	it("leaves a bar with nothing against it unmarked, and offers no all-clear", () => {
 		renderTab([feature({ id: 1, name: "Sonar Refit" })]);
 
-		const bar = within(screen.getByTestId("timeline-bar-1"));
+		const barElement = screen.getByTestId("timeline-bar-1");
 
-		expect(bar.queryByTestId("timeline-bar-mark")).not.toBeInTheDocument();
+		expect(
+			within(barElement).queryByTestId("timeline-bar-mark"),
+		).not.toBeInTheDocument();
 		// A green check on every bar that is fine would sit on most of them, competing with the
-		// name for the only space a bar a few pixels tall has.
-		expect(bar.queryByRole("img")).not.toBeInTheDocument();
+		// name for the only space a bar a few pixels tall has. Asked of the markup rather than by
+		// role: a decorative icon is hidden from the accessibility tree and would pass a role query.
+		expect(barElement.querySelector("svg")).toBeNull();
 	});
 
 	it("explains a warning that has nothing to do with dependencies on hover", async () => {

@@ -2,9 +2,11 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { BarMark } from "./deliveryDependencyOverlay";
 import type { TimelineBar } from "./deliveryTimelineModel";
-import TimelineBarContent, { TimelineBarMarks } from "./TimelineBarContent";
+import TimelineBarContent, {
+	type BarMark,
+	TimelineBarMarks,
+} from "./TimelineBarContent";
 
 const bar: TimelineBar = {
 	featureId: 7,
@@ -153,13 +155,16 @@ describe("TimelineBarContent", () => {
 			),
 		).toBeInTheDocument();
 
-		const quiet = within(screen.getByTestId("has-nothing-to-say"));
+		const quietBarElement = screen.getByTestId("has-nothing-to-say");
 
-		expect(quiet.queryByTestId("timeline-bar-mark")).not.toBeInTheDocument();
+		expect(
+			within(quietBarElement).queryByTestId("timeline-bar-mark"),
+		).not.toBeInTheDocument();
 		// The Feature table answers "nothing wrong here" with a green check. In a bar a few pixels
 		// tall that check competes with the name for the only space there is, and it is shown on
-		// every bar that is fine, which is most of them.
-		expect(quiet.queryByRole("img")).not.toBeInTheDocument();
+		// every bar that is fine, which is most of them. Asked of the markup rather than by role:
+		// a decorative icon is hidden from the accessibility tree and would pass a role query.
+		expect(quietBarElement.querySelector("svg")).toBeNull();
 	});
 
 	it("reads its notes out on hover, where the symbol alone cannot", async () => {
