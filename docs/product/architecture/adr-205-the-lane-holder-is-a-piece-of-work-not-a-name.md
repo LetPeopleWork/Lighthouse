@@ -82,6 +82,32 @@ this repository would make the same change expensive.
 **Neutral.** `IsSameEntity` is computed per queued row against one selected holder, so the cost is a
 comparison, not a lookup.
 
+### What "every other field" means, and what it does not
+
+The acceptance criterion guarding this change reads *every field other than `WaitingBehind`* keeps its
+name, type and meaning. The exemption is the point of the decision rather than a hole in the guard:
+`WaitingBehind` is the field being changed, and a guard covering it would forbid the change it exists
+to make safe. The five stable fields — `UpdateType`, `Id`, `Name`, `Status`, `ElapsedMs` — are what the
+guard is for, and they are asserted on the serialised payload.
+
+### Compatibility, stated rather than assumed
+
+Lighthouse ships the built frontend and the backend as one artifact, so within an instance a browser
+served the new bundle always reaches a backend serving the new response. There is no mixed-version
+window there.
+
+There is one during a SaaS rolling update, where an old bundle can reach a new replica. It reads an
+object where it expects a string and renders no clause; it does not throw, because the consumer is a
+truthy check followed by an interpolation. One rollout, one missing clause, on an admin-only popover.
+Accepted rather than absorbed by an expand-contract dance, and recorded in this feature's DEVOPS
+sections alongside the rollback contract.
+
+**The grep is the evidence, so it has a shelf life.** "Six files, one repository, no external consumer"
+was true on 2026-09-21. `lighthouse-clients` is a separate repository and can gain a consumer without
+this one noticing. Re-run the search for the route, `getRunningTasks` and `UpdateTask` before the
+release that carries this change. If a consumer has appeared, this decision needs revisiting — not
+reversing, but paying for properly with a transitional shape or a version.
+
 ## Relationship to #5877
 
 #5877's per-type lanes shipped on 2026-09-19 and were reverted the same day (`f216ef558`) because

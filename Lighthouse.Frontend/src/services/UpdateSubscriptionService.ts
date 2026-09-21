@@ -24,14 +24,34 @@ export interface IGlobalUpdateStatus {
  */
 export type UpdateTaskType = UpdateType | "TeamDelete" | "PortfolioDelete";
 
+/**
+ * What is holding the lane a queued piece of work is waiting in, described rather than named.
+ *
+ * A name alone cannot answer the question, because two pieces of work can be about one entity: every
+ * Portfolio refresh ends by triggering a forecast of the same Portfolio, and a row told it was waiting
+ * behind its own name is the whole of ADO #6055. `isSameEntity` is decided by the instance, which is
+ * the only place holding both sides of it; this browser words it and never recomputes it.
+ */
+export interface IWaitingBehind {
+	name: string;
+	updateType: UpdateTaskType;
+	isSameEntity: boolean;
+}
+
 /** One piece of work the instance has admitted: what it is, what it is called, and where it has got to. */
 export interface IUpdateTask {
 	updateType: UpdateTaskType;
 	id: number;
 	name: string;
 	status: UpdateProgress;
-	/** The entity holding the lane this one is waiting for. Absent for work that is running. */
-	waitingBehind?: string | null;
+	/**
+	 * What this one is waiting for. Absent for work that is running, and for work whose lane is free.
+	 *
+	 * The bare `string` arm is a DISTILL scaffold (story 6055 slice 02) and is the shape the instance
+	 * still sends: it lets the pending specifications express the target object while every already-green
+	 * test keeps compiling. DELIVER narrows this to `IWaitingBehind | null` and the arm goes.
+	 */
+	waitingBehind?: string | IWaitingBehind | null;
 	/**
 	 * How long the work has been in the state `status` names, measured by the instance. Running counts
 	 * from when it started, waiting from when it was admitted, so one number reads correctly either way.

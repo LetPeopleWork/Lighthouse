@@ -349,10 +349,10 @@ same-day.
 
 | # | KPI | Target | Measurement |
 |---|---|---|---|
-| KPI-1 | Distinct rendered text per update type, for one shared entity id | **5 of 5 distinct** | AC-01.2, asserted in the Vitest suite over all five `UpdateTaskType` members. A regression here is a red test, not a second bug report. |
+| KPI-1 | Distinct rendered text per update type, for one shared entity id | **5 of 5 distinct** | AC-01.2 — *"gives every kind of work its own phrase"* in `ActivitySection.test.tsx`, which renders all five `UpdateTaskType` members against one entity id and counts distinct strings. A regression here is a red test, not a second bug report. |
 | KPI-2 | Rows whose `waitingBehind` clause resolves to the row's own entity | **0** | AC-02.1/02.3/02.4. Asserted in the read-model tests over the same-entity pairs the single lane makes reachable. |
 | KPI-3 | Row phrasings the public docs table does not list | **0** | At DELIVER: enumerate the strings the component can emit (5 verb-kind forms × 4 states) and check each against `docs/settings/taskmanager.md`'s table (D7). |
-| KPI-4 | Repeat reports of duplicate-looking Activity rows, within two releases of the fix | **0** | ADO items raised against the Task Manager surface. The weakest of the four — absence of reports is not proof of comprehension — kept because it is the actual outcome and KPI-1/2 are only its proxies. |
+| KPI-4 | Repeat reports of duplicate-looking Activity rows | **0** | See below. |
 
 ---
 
@@ -544,6 +544,22 @@ DESIGN decision here was built on the false claim.
 | DDD-6 | The activity noun (*refresh* / *forecast* / *removal*) is derived in the browser from the holder's `UpdateType` | Locked |
 | DDD-7 | No new component, no new service, no new endpoint, no schema change | Locked |
 | DDD-8 | `UpdateActivityService` is not introduced for this feature | Locked — see Reuse Analysis |
+| DDD-9 | The update-type → entity-kind projection is one named, total helper, used by both readers | Locked — raised by DESIGN review, 2026-09-21 |
+
+### DDD-9 — the projection gets a name before it gets a second caller
+
+Two places need to answer "which entity is this piece of work about": `UpdateTaskNaming.NameOf`, which
+uses it to choose a repository, and the sameness comparison DDD-4 introduces. Today there is one, and
+it is an anonymous `switch` arm inside `NameOf`.
+
+This was an open question for DELIVER — a helper, an extension method, or a private controller method —
+and it is closed here instead. The defect this whole story exists to fix is a type-dispatch that was
+duplicated and then absorbed a `default:` arm, and deferring *where* a newly-shared dispatch lives is
+how that happens again. The second caller arrives in this story; the name has to arrive with it.
+
+So: a total function over `UpdateType` returning an entity kind, in the `Update` namespace beside
+`UpdateTaskNaming`, called by both. Total for the same reason DDD-2 is on the frontend — a sixth update
+type should not be able to join an existing arm unnoticed. The exact signature stays DELIVER's.
 
 ### DDD-2 — why a `Record`, not a `switch`
 
@@ -714,6 +730,7 @@ outcomes; the registry tracks none for this surface).
 | DDD-6 | Activity noun derived in the browser from the holder's `UpdateType` |
 | DDD-7 | No new component, service, endpoint or schema change |
 | DDD-8 | `UpdateActivityService` not introduced; ADR-181 §3 divergence recorded, not closed |
+| DDD-9 | The update-type → entity-kind projection is one named, total helper used by both readers |
 
 ---
 
@@ -721,8 +738,8 @@ outcomes; the registry tracks none for this surface).
 
 | # | Question | Deferred to | Why it is safe to defer |
 |---|---|---|---|
-| OQ-1 | Where the (entity kind, id) projection lives — a helper beside `UpdateTaskNaming`, an extension on `UpdateType`, or a private method on the controller | DELIVER | Three shapes of the same three-line function. None changes a contract or a test. |
-| OQ-2 | Whether `WaitingBehindResponse.UpdateType` is sent in the different-entity case too, or only when `IsSameEntity` | DISTILL | The browser only reads it in the self case today. Sending it always is simpler to specify and costs nothing; DISTILL fixes it as it writes AC-02.6's payload assertion. |
+| ~~OQ-1~~ | ~~Where the (entity kind, id) projection lives~~ | **CLOSED** | Reopened and decided by DESIGN review, 2026-09-21: deferring where a newly-shared dispatch lives is how the defect recurs. Now DDD-9. |
+| ~~OQ-2~~ | ~~Whether `WaitingBehindResponse.UpdateType` is sent in the different-entity case too~~ | **CLOSED** | Settled in DISTILL: sent always. A payload whose field set depends on its own contents is harder to specify and consume, for no gain. |
 | OQ-3 | Whether the docs table lists all twenty phrasings (5 verb-kind forms × 4 states) or the pattern plus examples | DELIVER | A prose judgement made with the rendered page in front of you. KPI-3 measures coverage either way. |
 
 **Not open**: ADR-181's `UpdateActivityService` divergence (DDD-8 — recorded, deliberately not closed
@@ -798,12 +815,24 @@ around it is left untouched.
 Tier-1 `[REF]` only.
 
 **The nine interactive decisions were not asked.** Every one is already settled project-wide and this
-feature changes none of them — deployment target, orchestration, CI/CD platform, existing
-infrastructure, observability stack, deployment strategy, continuous learning, branching and mutation
-strategy are all recorded in `CLAUDE.md`, ADR-093 and the 27 workflows under `.github/workflows/`.
-Re-asking them would invite an answer that contradicts the project rather than one that informs this
-feature. They are answered from those sources below, each with its source, so the wave is run rather
+feature changes none of them. Re-asking would invite an answer that contradicts the project rather than
+one that informs this feature — so each is answered here from its source, and the wave is run rather
 than skipped.
+
+| # | Decision | Project answer | Source |
+|---|---|---|---|
+| 1 | Deployment target | Hybrid — self-hosted standalone container / Tauri desktop, **and** multi-tenant Kubernetes SaaS | `docs/product/architecture/brief.md` § Deployment Architecture; `platform-operator` persona |
+| 2 | Container orchestration | Both — single container for the standalone product, Kubernetes for the SaaS fleet | epic-5305 / epic-5306 sections of `brief.md` |
+| 3 | CI/CD platform | GitHub Actions | 27 workflows under `.github/workflows/` |
+| 4 | Existing infrastructure | Yes, both — brownfield infra and brownfield CI/CD | same |
+| 5 | Observability and logging | Structured Serilog + the bounded in-process warning sink surfaced as *Recent problems* | ADR-185; #5511 slice 06 |
+| 6 | Deployment strategy | Tenant-Zero canary → promote, expand-only migration guard, rollback = git revert + helm rollback | ADR-093 |
+| 7 | Continuous learning | **Canary analysis and progressive rollout only.** Tenant Zero is the canary and promotion is the gate (ADR-093); `OptionalFeature` toggles exist for opt-in capabilities. There is **no A/B testing framework** and none is proposed. **This feature uses none of them** — a wording correction has nothing to flag or roll out progressively, and gating it would mean shipping two readings of the same row. | ADR-093; `OptionalFeature` |
+| 8 | Git branching strategy | Trunk-based on `main`, no branches or PRs | `CLAUDE.md`; project rule |
+| 9 | Mutation testing strategy | `per-feature`, kill rate ≥ 80% | `CLAUDE.md` § Mutation Testing Strategy |
+
+Decision 7 is spelled out because it was the one a reviewer could not verify from the text — it was
+named in a list and never defined, which is the silent-N/A this project's own rule forbids.
 
 **Prior-wave reading**
 
@@ -838,6 +867,13 @@ Two axes were considered and **deliberately excluded**: operating system (nothin
 platform-sensitive — integer and enum equality on the backend, string assembly on the front end) and
 premium-vs-free licence (the Task Manager is a free capability; the single premium dependency is the
 screenshot fixture, recorded as a precondition of that one environment rather than as an axis).
+
+**And one exclusion worth stating here rather than only in the YAML**, because it is the first question
+a reader of this table asks: the row-wording criteria (AC-01.1, AC-01.2, AC-01.4, AC-01.5, AC-01.6) are
+**not** parametrised over `sqlite` or `postgres`. They are string assembly in the browser against a
+payload the test supplies directly — no backend, no provider, no database. Running them twice would
+double the cost and prove the same thing twice. Only `AC-02.6` and `AC-02.8` cross both providers, and
+only because `GetAdmittedWork()` has a different store implementation behind it.
 
 `environments.yaml` also carries a `scenario_axes` block mapping each acceptance criterion to the
 environments worth varying it over, so DISTILL parametrises where it pays and not everywhere.
@@ -880,6 +916,28 @@ that is the finding rather than an omission.
 | KPI-3 — zero row phrasings absent from the public docs table | Manual enumeration at DELIVER against `docs/settings/taskmanager.md` | DELIVER checklist | **None.** A prose-to-code correspondence; no runtime signal could express it. |
 | KPI-4 — zero repeat reports of duplicate-looking rows within two releases | ADO items raised against the Task Manager surface | The board | **None.** The honest instrument is the absence of a bug report, which no telemetry event can stand in for. |
 
+### KPI-4, made checkable
+
+The first three are asserted by a test or a checklist and need no elaboration. KPI-4 is the only one
+whose instrument is a human, so it gets a query rather than an intention:
+
+- **Instrument**: ADO work items in project `Lighthouse`, of type Bug or User Story, created after the
+  release that carries this change, whose title or description names the Activity list, the Task
+  Manager popover, or duplicate/repeated rows.
+- **Window**: from that release to the second release after it — two release boundaries, not two
+  calendar months, because exposure is what matters and releases are what create it.
+- **Target**: zero. **One is a signal, not noise**: this defect was reported once by the maintainer on
+  his own instance, so a second report from anyone means the new wording failed for a reader it was
+  written for.
+- **Who checks**: whoever runs `/release` for the second of those two releases, as part of the
+  release-notes pass that already reads the board.
+
+**Why it is kept rather than dropped for being soft.** KPI-1 and KPI-2 are proxies — they prove the
+strings differ and that no row names itself. Neither proves a reader *understood*, which is the whole
+outcome. Dropping the only KPI that points at the outcome because it is harder to measure would leave
+three KPIs that can all pass while the feature fails. The honest move is to make it checkable, not to
+remove it.
+
 **Why no telemetry event is added.** The opt-in usage-data pipeline ships ten named events
 (`docs/settings/usagedata.md` is the authoritative list) and **none of them says anything about
 comprehension of a row**. An event could record that the popover was opened; it could not record that
@@ -908,10 +966,19 @@ strictly cheaper than #5877's was, because nothing here persists anything.
 
 **The one multi-version case, named rather than assumed**: during a SaaS rolling update, an old replica
 and a new replica serve different shapes of `waitingBehind` from the same route. A browser holding an
-old bundle that reaches a new replica reads an object where it expects a string and renders no clause —
-it does not crash, because the consumer is a truthy check followed by a template interpolation. The
-window is one rollout and the blast radius is one missing clause on an admin-only popover. Accepted;
-not worth an expand-contract dance for a field with one in-repo consumer.
+old bundle that reaches a new replica reads an object where it expects a string and renders
+`[object Object]` after "Queued behind" — it does not crash, because the consumer is a truthy check
+followed by a template interpolation.
+
+**How long**: bounded by the Kubernetes rolling update, not by how long a browser tab stays open. Old
+and new replicas coexist only while pods are being replaced — minutes, and the canary → promote flow of
+ADR-093 means Tenant Zero crosses it before any other tenant does. A tab opened before the rollout and
+left open afterwards is served the new bundle on its next full load; until then it is one admin
+re-reading a popover.
+
+**Blast radius**: one clause on one row of one System-Administrator-only popover, for the length of one
+rollout. No data is written in either shape, so nothing outlives the window. Accepted; not worth an
+expand-contract dance for a field with one in-repo consumer.
 
 ---
 
@@ -944,6 +1011,19 @@ This feature adds **no log line**. Deliberate: the read path runs on every popov
 SignalR-driven refresh of it, so a log line per queued row would be the noisiest thing in the file and
 would say only what the screen already says. The screen is the observability surface for this feature,
 which is what `#5511` built it to be.
+
+**What *Recent problems* will and will not catch.** The in-process warning sink surfaces anything logged
+at Warning or above. Nothing on this path logs: the sameness comparison cannot fail (it is enum and
+integer equality over data already in hand), and `NameOf` already has a fallback for an entity that has
+gone rather than throwing. So a wrong *word* — the failure mode this story is about — produces no
+warning and will not appear there, by construction.
+
+That is the honest cost of the choice, stated rather than left to be discovered: **if an operator reports
+a confusing row in production, there is no log trail.** What there is instead is a screenshot, which is
+what #6055 itself arrived as, and a test suite that pins all five phrasings. For a defect whose entire
+symptom is visible on screen, a log line would be a second copy of the evidence rather than new evidence.
+If that turns out to be wrong — if a reader reports a row nobody can reproduce — the answer is a
+screenshot in the ADO item, not instrumentation on a hot read path.
 
 ---
 
@@ -1023,3 +1103,352 @@ of which are additions rather than corrections.
 One **clarification** worth recording because a reader of DESIGN's handoff might expect otherwise:
 DESIGN said "nothing to deploy, instrument or provision", and that is upheld. It did not say "nothing
 for DEVOPS to do" — the environment matrix DISTILL needs is produced here and did not exist before.
+
+---
+
+## Wave: DISTILL / [REF] Reconciliation and Prior-Wave Reading
+
+**Density**: `lean` + `ask-intelligent`; DISTILL declares no `ask-intelligent` triggers, so no menu and
+Tier-1 `[REF]` only.
+
+**Wave-decision reconciliation: PASSED — 0 contradictions.** Every DISCUSS decision was checked against
+DESIGN and DEVOPS. DESIGN refined two (D2's lookup shape, AC-02.6's scope) and corrected one premise
+(#5877's status), all recorded under DESIGN's Changed Assumptions with the original quoted — a
+refinement with provenance is not a contradiction. DEVOPS changed nothing.
+
+**Language: C# + TypeScript, not the skill's Python examples.** `Lighthouse.Backend.Tests.csproj` →
+NUnit 4.6 + Moq (the project convention; the polyglot matrix's C# row names xUnit/FsCheck, and the
+repo wins). `package.json` → Vitest + React Testing Library. Skip markers are `[Ignore(reason)]` and
+`it.skip`. No pytest-bdd, no `.feature` files, no Hypothesis, no `__SCAFFOLD__` marker — the ATDD
+policy already records that the Python-pilot artifacts do not apply in this repository.
+
+**Prior-wave reading**
+
+✓ `docs/architecture/atdd-infrastructure-policy.md` — the three port tables; `--policy=inherit`
+✓ `docs/product/journeys/story-6055-activity-names-the-work.yaml`
+✓ `docs/product/architecture/brief.md` § this feature, § `epic-5511-task-manager`, § `story-5877-…`
+✓ `docs/product/architecture/adr-205-…` and `adr-181-…`
+✓ `docs/product/kpi-contracts.yaml` — 45 entries; none for this surface
+✓ `docs/feature/story-6055-activity-names-the-work/feature-delta.md` — DISCUSS + DESIGN + DEVOPS
+✓ `docs/feature/story-6055-activity-names-the-work/environments.yaml` — five environments, `scenario_axes`
+✓ `Slice02SeeWhatIsRunning{Scenarios,Specifications}.cs` and `TaskManagerAcceptanceTest.cs` — the idiom
+✓ `TaskManagerIcon.test.tsx` — the frontend render idiom
+⊘ `docs/feature/…/spike/findings.md` (no spike was run)
+⊘ `.nwave/des-config.json` (absent; `.nwave/local-config.json` holds only `enabled_for_repo`)
+
+**Deliverable type: `application`.** Resolved by the documented precedence — no project
+`des-config.json`, no `defaults.deliverable_type` in `~/.nwave/global-config.json`, so root-only FS
+detection. No `@nw-plugin-validator`, no `@nw-skill-reviewer`.
+
+**Infrastructure policy: inherited, no new row.** Every port this feature touches is already in the
+policy: the HTTP API via `WebApplicationFactory<Program>`, the React component tree via Vitest + RTL
+with `TerminologyContext` provided, `IUpdateStatusStore` real and never mocked, `ILighthouseClock`
+faked. Nothing to append.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List
+
+Fifteen specifications across two files. Ten pending, two pins that run from now on, three carried by
+other suites or by hand.
+
+### Backend — `Story6055ActivityNamesTheWork{Scenarios,Specifications}.cs`
+
+Categories `acceptance` / `story-6055-activity-names-the-work` / `slice-02`.
+
+| Scenario | Tags | AC |
+|---|---|---|
+| A queued forecast does not say it is waiting behind its own portfolio | `@driving_port @real-io` | 02.1 |
+| A queued team still learns the name of the portfolio holding the lane | `@driving_port @real-io` | 02.2 |
+| A queued removal behind its own refresh names the refresh | `@driving_port @real-io` | 02.3 |
+| A queued refresh behind its own removal names the removal | `@driving_port @real-io` | 02.3 |
+| A team queued behind a portfolio with the same id is not waiting behind itself | `@driving_port @real-io @error` | 02.4 |
+| Work that is waiting for nothing says nothing | `@driving_port @real-io` | 02.5 |
+| Every other field of a task row is what it has always been | `@driving_port @real-io` | 02.6 |
+| On a real instance a triggered forecast does not name its own portfolio | `@driving_port @real-io @production-data` | 02.7 |
+
+### Frontend — `TaskManager/ActivitySection.test.tsx`
+
+| Specification | Tags | AC | State |
+|---|---|---|---|
+| tells a portfolio refresh apart from the forecast it triggers | `@in-memory` | 01.1 | pending |
+| gives every kind of work its own phrase | `@in-memory` | 01.2 | pending |
+| uses the tenant's noun and Lighthouse's own verb | `@in-memory` | 01.3, 01.5 | pending |
+| says a removal is a removal without also appending one | `@in-memory` | 01.4 | pending |
+| keeps the handle every other specification addresses a row by | `@in-memory @pin` | 01.6 | **runs now** |
+| says a forecast is behind its own portfolio's refresh | `@in-memory` | 02.1 | pending |
+| says a refresh is behind its own portfolio's removal | `@in-memory` | 02.3 | pending |
+| still names a different entity that is holding the lane | `@in-memory` | 02.2 | pending |
+| says nothing extra when the row is waiting for nothing | `@in-memory @pin` | 02.5 | **runs now** |
+| trusts the instance's verdict rather than recomputing it | `@in-memory` | 02.8 | pending |
+
+**Error-path share: 4 of 15 (27%), below the 40% target, and the shortfall is real rather than
+excused.** This feature has almost no error surface: no input to validate, no dependency to be
+unavailable, no operation to cancel midway. The four that exist — the id collision, the contradictory
+payload, the free lane, and the holder-activity mirror — are the adversarial cases that matter, and
+each is written to fail a specific plausible wrong implementation. Manufacturing six more to reach a
+ratio would be decoration.
+
+**AC-01.7 is not a test.** It is the dogfood screenshot that becomes
+`docs/assets/settings/taskmanager.png`, carried on the DELIVER checklist with its preconditions in
+`environments.yaml`.
+
+---
+
+## Wave: DISTILL / [REF] Walking Skeleton
+
+**Inherited, not written.** `A_refresh_that_is_running_is_listed_by_name` (#5511 slice 02) is the
+`@walking_skeleton @driving_port` scenario for this surface and is green. It closes the end-to-end loop
+— production composition root, real EF, real status store, real HTTP — and this story changes what a
+row *says*, not whether the loop closes. A second skeleton over the same path would assert the same
+wiring twice and add a second thing to keep current.
+
+Per the Architecture of Reference this is strategy **C**'s successor: port class implies treatment, and
+the mechanism for each port is the policy's, inherited unchanged.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `IUpdateStatusStore` (in-process) | YES | Every backend scenario admits through the real store and reads back over HTTP |
+| `IRepository<Team>` / `IPortfolioRepository` via `UpdateTaskNaming` | YES | The holder's name in AC-02.2 is resolved from a really-seeded portfolio |
+| `IWorkTrackingConnector` | N/A — faked by policy | Driven external; this feature never reaches it |
+| `IUpdateStatusStore` (Redis) | NO — and deliberately | See below |
+
+**The one uncovered row, argued rather than hidden.** The Redis store is in the policy under
+`Testcontainers.Redis`, `[Category("requires-docker")]`. It is not exercised here because this feature
+changes what the controller does with what the store returns, not what the store returns:
+`GetAdmittedWork()` is called identically and its result is shaped identically. A Redis scenario would
+re-assert #5511's enumeration contract under a new story's number. DEVOPS's `scenario_axes` reaches the
+same conclusion from the other direction and routes AC-02.6 over `sqlite` and `postgres` only.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Entry point in DESIGN | Exercised how | Scenario |
+|---|---|---|
+| `GET /api/latest/update/tasks` | Real HTTP through `WebApplicationFactory<Program>`, System-Administrator client | All eight backend scenarios |
+| Header → Task Manager popover, Activity section | Real component tree, RTL, `TerminologyContext` provided | All ten frontend specifications |
+| CLI / MCP | N/A — DESIGN records none | — |
+
+Zero uncovered entry points. Neither half is entered from a service function: the backend goes over the
+wire and the frontend renders the shipped component.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+**One, and it is a type rather than a stub.** `Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts`
+gains the exported `IWaitingBehind` interface, and `IUpdateTask.waitingBehind` is widened to
+`string | IWaitingBehind | null`.
+
+The widening is the scaffold. The ATDD policy records that in this repository *a skipped test is still
+type-checked*, so a pending specification expressing the target payload cannot compile against
+`string | null` — and narrowing straight to `IWaitingBehind | null` would red every already-green
+`TaskManagerIcon` test that builds a task with a string. The union carries both until DELIVER removes
+the old arm, and the comment on the field says exactly that so it is not mistaken for a permanent shape.
+
+No `__SCAFFOLD__` marker and no AssertionError stubs: nothing this feature needs is missing from the
+production tree. `ActivitySection` and `UpdateController` both exist and both compile.
+
+**Detection for DELIVER**: `grep -n "string | IWaitingBehind" Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts`
+— zero matches when the story is done.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+| File | Precedent |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/TaskManager/Story6055ActivityNamesTheWork{Scenarios,Specifications}.cs` | The partial-class scenarios/specifications split every `Slice0N…` pair in that directory uses; inherits `TaskManagerAcceptanceTest` for the host, the clock and the seeding |
+| `Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.test.tsx` | Colocated `*.test.tsx` beside the component, as `TaskManagerIcon.test.tsx` and `WidgetShell.test.tsx` are |
+
+**A new pair rather than an extension of #5511's slice-02 file**, which refines what the DESIGN Reuse
+Analysis said. The reasoning there was "the new shape belongs in them, not in a parallel fixture", and
+half of that holds: `Slice02`'s own `ThenTheQueuedRowSaysItIsWaitingBehind` reads `waitingBehind` as a
+string and **must** be updated by DELIVER or it breaks. That is the extension. But #6055's own
+scenarios are a different story's audit trail, and folding them into #5511's file would leave neither
+readable. `SeededPortfolio` is duplicated for the same reason — it is private to that fixture, and a
+two-field record is cheaper to repeat than a shared type coupling two stories' fixtures.
+
+---
+
+## Wave: DISTILL / [REF] Existing Specifications This Story Must Update
+
+Grepped 2026-09-21, not inferred. These are green today and **will break** when DELIVER narrows the
+type and changes the renderer. They are the price of ADR-205 and they are named here so DELIVER budgets
+for them rather than meeting them as a surprise mid-slice.
+
+| File | Line | What breaks |
+|---|---|---|
+| `Slice02SeeWhatIsRunningSpecifications.cs` | 219-226 | `ThenTheQueuedRowSaysItIsWaitingBehind` reads `Text(row, "waitingBehind")` — a string where the response now sends an object |
+| `TaskManagerIcon.test.tsx` | 87 | `aQueuedPortfolio` builds `waitingBehind: "Lagunitas"`; a type error once the scaffold's `string` arm goes |
+| `TaskManagerIcon.test.tsx` | 349 | *"says what a waiting refresh is waiting behind"* — asserts the old clause |
+| `TaskManagerIcon.test.tsx` | 602, 609 | *"still says what a waiting refresh is waiting behind"* — asserts `/queued behind Lagunitas/i`; it is #5511 slice-07A's guard that the clause survived a redesign, and it has to survive this one too |
+| `TaskManagerIcon.test.tsx` | 476-483 | *"does not claim a queued refresh is behind anything when nothing is running"* — passes `waitingBehind: null`, so it survives unchanged. Listed because it looks like it should break and does not. |
+
+Four of the five are **updates, not deletions**. Each asserts something that stays true — a queued row
+names what holds its lane — in a payload shape that changes. An update that quietly weakens one of them
+into something the new shape satisfies trivially would lose #5511's and #5877's guard at the same time.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN's driving ports**: `GET /api/latest/update/tasks` and the Activity section. Both exercised.
+- **DEVOPS's environment matrix**: `scenario_axes` maps each AC to the environments worth varying it
+  over. Followed exactly — the row-wording specifications are not parametrised over providers or
+  platforms, and `renamed-terminology` is exercised by AC-01.3 alone.
+- **ADR-205's payload**: `{ name, updateType, isSameEntity }`, fixed in the Specifications' doc-comment
+  so DELIVER builds to a written contract rather than to a reading of the tests.
+- **OQ-2 settled**: `updateType` is sent in **both** cases, not only the self-reference. AC-02.2 asserts
+  the name and AC-02.1/02.3 assert the activity; sending one field conditionally would make the payload
+  shape depend on its own contents for no gain.
+
+---
+
+## Wave: DISTILL / [REF] Outcome Registration
+
+**Skipped, correctly.** The registry tracks new typed contract surfaces — a rule module, a CLI
+subcommand, a public service operation, a system-wide invariant. This feature introduces none: it
+changes the type of one field on an existing response and the wording of one component. `check-delta`
+returned exit `0` against this delta at DESIGN.
+
+The nearest candidate is "a queued row never names its own entity", which is an invariant — but an
+invariant over one response field on one admin-only endpoint, asserted by AC-02.1/02.3/02.4 and by
+`ThenNoRowNamesItsOwnEntityAsWhatItIsWaitingFor`. Registering it would put a row in the SSOT that no
+later feature could collide with.
+
+---
+
+## Wave: DISTILL / [REF] Self-Review
+
+| # | Check | Result |
+|---|---|---|
+| 1 | WS strategy declared | Inherited from #5511; Architecture of Reference + policy, not a per-feature A/B/C/D choice |
+| 2 | WS scenarios tagged | `@real-io` backend, `@in-memory` frontend |
+| 3 | Every driven adapter has a `@real-io` scenario | Two yes, one N/A by policy, one argued in Adapter Coverage |
+| 4 | In-memory doubles: what they cannot model | The frontend specifications cannot model the read path, which is why AC-02.1–02.5 are asserted on both sides |
+| 5 | Container preference | N/A — no Redis or Postgres container needed (Adapter Coverage) |
+| 6 | Production modules imported by tests have scaffolds | One type scaffold; nothing else is missing |
+| 7 | Scaffold marker | N/A for this repo per the ATDD policy; the grep line above replaces it |
+| 8 | Scaffold methods raise assertion errors | N/A — no stub methods |
+| 9 | Tests RED not BROKEN | Verified by running. `red-classification.md` |
+| 10 | Driving adapter covered via its own protocol | HTTP and real component render |
+| 11 | `@real-io @adapter-integration` per driven adapter | See Adapter Coverage |
+| 12–15 | pytest-bdd specifics (`capsys`, `sys.path`, `des.adapters` imports, timing budgets) | N/A — not a Python project |
+
+**One finding the self-review did not catch and running the tests did**: AC-01.1 as first written
+compared two rows with different statuses, so it passed against the bug. Recorded in
+`red-classification.md` and fixed. Reading a specification is not the same as running it.
+
+---
+
+## Wave: DISTILL / [REF] Changed Assumptions
+
+### 1. DESIGN Reuse Analysis — where #6055's backend scenarios live
+
+> **Original** (`feature-delta.md`, Wave: DESIGN, Reuse Analysis): "`Slice02SeeWhatIsRunning*`
+> fixtures — **EXTEND** — They already fix the `/update/tasks` contract in prose and assertions; the new
+> shape belongs in them, not in a parallel fixture."
+
+**New**: the *contract update* belongs in them and DELIVER must make it —
+`ThenTheQueuedRowSaysItIsWaitingBehind` reads `waitingBehind` as a string and breaks otherwise.
+#6055's own scenarios live in their own pair inheriting the same base. **Rationale**: a story's
+scenarios are its audit trail; folding two stories into one file leaves neither readable, and the
+fixture being reused is `TaskManagerAcceptanceTest`, which both inherit.
+
+### 2. DESIGN OQ-2 — when the holder's `updateType` is sent
+
+> **Original** (`feature-delta.md`, Wave: DESIGN, Open Questions, OQ-2): "Whether
+> `WaitingBehindResponse.UpdateType` is sent in the different-entity case too, or only when
+> `IsSameEntity`."
+
+**New**: always. **Rationale**: a payload whose field set depends on its own contents is harder to
+specify and to consume, and the alternative buys nothing — the browser reads the field only in the self
+case either way. Settled here because DISTILL is where the assertion gets written, which is what DESIGN
+said would settle it.
+
+---
+
+## Wave: DISTILL / [REF] Final Wave Review Gate
+
+Four reviewers dispatched in parallel against the full four-wave delta, 2026-09-21. Deliverable type
+`application`, so no `@nw-plugin-validator` and no `@nw-skill-reviewer`.
+
+| Reviewer | Scope | Verdict | Findings |
+|---|---|---|---|
+| Eclipse — `nw-product-owner-reviewer` | DISCUSS | **approved** | 0 |
+| Atlas — `nw-solution-architect-reviewer` | DESIGN + ADR-205 | **conditionally approved** | 1 high, 3 medium |
+| Forge — `nw-platform-architect-reviewer` | DEVOPS + `environments.yaml` | **rejected** (iteration 1) → **conditionally approved** (iteration 2) | 1 blocker, 1 critical, 1 high, 1 medium, 2 low — all six resolved and re-verified |
+| Sentinel — `nw-acceptance-designer-reviewer` | DISTILL + both test files + the component | **conditionally approved** | 1 high, 1 low |
+
+Zero cross-wave contradictions. Sentinel never skips and did not.
+
+### What changed because of the review
+
+Two findings changed the work rather than the prose.
+
+**DDD-9 exists because Atlas argued for it.** Where the update-type → entity-kind projection lives was
+OQ-1, deferred to DELIVER as "three shapes of the same three-line function". Atlas's counter: the defect
+this story fixes *is* a type-dispatch that was duplicated and then grew a `default:` arm, so deferring
+where a newly-*shared* dispatch lives is how it recurs. That is a better reading of this story's own
+evidence than the one that deferred it. The second caller arrives here, so the name arrives with it.
+
+**Decision 7 was a silent N/A and the wave claimed not to have any.** Forge found "continuous learning"
+named in a list of nine settled decisions and never defined anywhere — no answer, no source. The wave's
+own framing was that every decision is answered from its source rather than asked, and one was not. All
+nine are now a table with an answer and a citation each.
+
+### Findings accepted without change, and why
+
+| Finding | Reviewer | Why it stands |
+|---|---|---|
+| Error-path share 27% against a 40% target | Sentinel (high), also raised at DISTILL self-review | Sentinel's own recommendation is to accept: the feature has no validation, no external dependency and no cancellation path, and the four cases that exist each fail a specific plausible wrong implementation. Manufacturing six more would be decoration. |
+| `ActivitySection.tsx` still renders `waitingBehind` as a string | Sentinel (low) | This is the handoff boundary, not a gap. The pending specifications describe the target; DELIVER implements it. |
+| OQ-2 unresolved | Atlas (medium) | Already settled in DISTILL before the review ran — `updateType` is sent in both cases. Atlas's scope was DESIGN, so it could not see the resolution. |
+
+### One finding argued back rather than complied with
+
+Forge called KPI-4 an unmeasured aspiration and offered "define a mechanism or drop the outcome". Its
+evidence was the sentence *"The honest instrument is the absence of a bug report"* — which is this
+delta's own caveat about the KPI's weakness, quoted as proof of its absence. The row already named an
+instrument (ADO items), a target (zero) and a window (two releases).
+
+The window and the query were genuinely vague, so both are now concrete. The KPI is **not** dropped:
+KPI-1 and KPI-2 prove the strings differ and that no row names itself, and neither proves a reader
+understood — which is the outcome. Removing the only KPI pointing at the outcome because it is the
+hardest to measure would leave three that can all pass while the feature fails.
+
+### A caution about one of the approvals
+
+Eclipse returned `approved` with zero findings, and its report quotes elevator-pitch text that does not
+appear in this file — paraphrases presented as citations. The underlying judgement looks sound (the
+pitches are complete and do carry Before / After / Decision-enabled), but an approval whose evidence is
+partly invented carries less weight than its verdict suggests. Recorded rather than smoothed over,
+because this repository has met that failure mode before.
+
+### The one rejection, and its second pass
+
+DEVOPS was rejected on iteration 1. Six findings, all addressed, and Forge re-reviewed the revised
+sections rather than the fix list: **conditionally approved, zero findings, all six verified in situ
+with line numbers.** One revision cycle of the two the gate allows.
+
+Its remaining condition is that DISTILL's parametrisation follows `scenario_axes` — AC-01.3 over
+`renamed-terminology` alone, AC-02.6 and AC-02.8 over both providers. It does; that is what the DISTILL
+Handoff section already instructs, and the specifications are written that way.
+
+### Gate status
+
+| | |
+|---|---|
+| Eclipse (DISCUSS) | approved |
+| Atlas (DESIGN) | conditionally approved — conditions applied |
+| Forge (DEVOPS) | conditionally approved on iteration 2 — conditions applied |
+| Sentinel (DISTILL) | conditionally approved — conditions accepted with reasons |
+
+Zero blockers outstanding. Every condition is either applied in this delta or carried into DELIVER as a
+named action item. **DELIVER handoff is unblocked.**
