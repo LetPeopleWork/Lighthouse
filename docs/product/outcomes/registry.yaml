@@ -58,9 +58,12 @@ outcomes:
       and the words this instance uses for a Team and a Portfolio
   output:
     shape: one row per contributing Team whose own start and completion both resolve
-      at that probability, each carrying the Team's name and a colour stable across
-      the whole chart; one named note per contributing Team that resolves at neither;
-      and whether anything on this chart splits at all
+      at that probability, each carrying the Team's name and a colour that does not
+      change with the probability; one named note per contributing Team that does not
+      resolve at both ends, including one that resolves at exactly one of them; the
+      single Team a Feature has to itself, for its own bar to wear; every Team carrying
+      a colour, for the key beside the chart; and whether showing the Teams would change
+      anything here at all
   keywords:
   - team-lanes
   - delivery-timeline

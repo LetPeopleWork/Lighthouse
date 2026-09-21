@@ -833,7 +833,7 @@ describe("showing the Teams behind a Feature's bar", () => {
 		// whose leading word is what tells a note from a warning. Never against what the sentence
 		// helper returns, which would be the same reduction on both sides.
 		expect(markOn(1)).toHaveAccessibleName(
-			"Note. No forecast for Meridian, so it has no lane of its own.",
+			"Note. No forecast for Meridian, so it is not shown separately.",
 		);
 		expect(
 			within(screen.getByTestId("timeline-bar-1")).getByTestId(

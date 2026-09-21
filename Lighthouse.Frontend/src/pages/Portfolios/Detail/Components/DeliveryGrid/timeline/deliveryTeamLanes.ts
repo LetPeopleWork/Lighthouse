@@ -102,8 +102,11 @@ interface PendingLane extends NamedTeam {
 	end: Date;
 }
 
+// "Lane" is what this code calls a row and what the design documents call one. It is not a word
+// the product uses anywhere a reader can see - the switch offers to show Teams, and the sentence
+// above the chart talks about the Teams beneath a bar - so it stays out of the sentence too.
 const noLaneSentence = (teamName: string) =>
-	`No forecast for ${teamName}, so it has no lane of its own.`;
+	`No forecast for ${teamName}, so it is not shown separately.`;
 
 export function buildDeliveryTeamLanes(
 	features: IFeature[],

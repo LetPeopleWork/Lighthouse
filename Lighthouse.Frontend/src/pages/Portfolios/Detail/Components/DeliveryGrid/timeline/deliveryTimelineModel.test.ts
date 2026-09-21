@@ -268,7 +268,12 @@ describe("timelineWindow", () => {
 			new Date(2026, 10, 2),
 		);
 		expect(timelineWindow([...bars, reachingEarly])?.start).toEqual(october(1));
-		expect(timelineWindow(bars)).toEqual(timelineWindow([bar(10, 20)]));
+		// Pinned to the days themselves rather than to a second call on the same input, which is
+		// satisfied by a function that ignores what it is handed.
+		expect(timelineWindow(bars)).toEqual({
+			start: october(7),
+			end: october(23),
+		});
 	});
 });
 
