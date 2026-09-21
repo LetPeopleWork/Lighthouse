@@ -12,7 +12,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import WorkItemsDialog, {
 	type WarningsColumnDescriptor,
 } from "../../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
@@ -30,11 +30,7 @@ import {
 } from "../../../../../../utils/features/featureWarningSentences";
 import DeliveryGanttChart from "./DeliveryGanttChart";
 import { buildDependencyOverlay } from "./deliveryDependencyOverlay";
-import {
-	buildDeliveryTeamLanes,
-	type TeamColour,
-	type UnlanedTeam,
-} from "./deliveryTeamLanes";
+import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
@@ -46,6 +42,8 @@ import {
 	type BarNote,
 	TimelineBarMarks,
 } from "./TimelineBarContent";
+import TimelineTeamLegend from "./TimelineTeamLegend";
+import { useShowTeams } from "./useShowTeams";
 
 export interface DeliveryTimelineTabProps {
 	features: IFeature[];
@@ -60,53 +58,6 @@ export interface DeliveryTimelineTabProps {
 }
 
 const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
-
-const SHOW_TEAMS_KEY = "lighthouse:deliveryTimeline:showTeams";
-
-/**
- * Whether this reader has asked to see the Teams behind each bar, remembered for them across
- * visits and across Deliveries.
- *
- * One key for the reader rather than one per Delivery: "show me Teams" is a property of the person
- * reading, the same call column visibility already makes. Three things about how it is read are
- * each the difference between working and quietly wrong.
- *
- * The stored value is **compared as a string and never coerced**. `localStorage` hands back the
- * text "false", and that text is truthy — so a coerced read turns the preference on and then can
- * never turn it off again, for as long as the key exists.
- *
- * It is read while the state is first created rather than in an effect, because an effect applies
- * the stored value one render late. That is invisible when what changes is a colour and very
- * visible when it is the height of a chart that roughly doubles.
- *
- * And every access is wrapped. Private browsing and blocked site data make these calls throw, and
- * an unguarded read takes the whole Portfolio accordion down with it.
- */
-function useShowTeams(): { showTeams: boolean; toggleShowTeams: () => void } {
-	const [showTeams, setShowTeams] = useState<boolean>(() => {
-		try {
-			return localStorage.getItem(SHOW_TEAMS_KEY) === "true";
-		} catch {
-			return false;
-		}
-	});
-
-	const toggleShowTeams = useCallback(() => {
-		setShowTeams((previous) => {
-			const next = !previous;
-
-			try {
-				localStorage.setItem(SHOW_TEAMS_KEY, String(next));
-			} catch {
-				// Storage that will not take the choice costs this reader the memory of it, not the view.
-			}
-
-			return next;
-		});
-	}, []);
-
-	return { showTeams, toggleShowTeams };
-}
 
 /**
  * Why a Feature's bar reaches past the rows beneath it, at both ends.
@@ -214,43 +165,6 @@ const barMarksFor = (
 
 	return marks;
 };
-
-/**
- * Which colour stands for which Team.
- *
- * Not decoration, and not redundant with the names written along the rows: a row is only as wide as
- * its Team's span, so at the widths this chart actually gets those names are routinely cut to a few
- * characters. Here every Team is named in full, once, at a width nothing competes for.
- */
-const TeamLegend: React.FC<{ teams: TeamColour[] }> = ({ teams }) => (
-	<Box
-		data-testid="timeline-team-legend"
-		sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5 }}
-	>
-		{teams.map((team) => (
-			<Box
-				key={team.teamId}
-				sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-			>
-				{/* The name beside it carries the meaning, so the patch itself is shown to the eye
-				    and hidden from anything reading the page aloud. */}
-				<Box
-					aria-hidden="true"
-					sx={{
-						width: 12,
-						height: 12,
-						borderRadius: 0.5,
-						flexShrink: 0,
-						backgroundColor: team.color,
-					}}
-				/>
-				<Typography variant="caption" color="text.secondary">
-					{team.teamName}
-				</Typography>
-			</Box>
-		))}
-	</Box>
-);
 
 const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 	features,
@@ -442,7 +356,7 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 							{barsReachPastTheirTeams(featureTerm, teamTerm, teamsTerm)}
 						</Typography>
 					)}
-					<TeamLegend teams={teamsOnTheChart.legend} />
+					<TimelineTeamLegend teams={teamsOnTheChart.legend} />
 				</Box>
 			)}
 
