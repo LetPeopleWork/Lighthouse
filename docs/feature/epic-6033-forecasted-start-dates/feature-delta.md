@@ -3686,3 +3686,297 @@ No trigger fired. **Tier-1 `[REF]` sections only**, no menu offered.
 ask-intelligent trigger fired`, expansions emitted `0`, menu emitted `false`.
 
 Next: DESIGN, slice 07 (Story #6067).
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Prior Wave Consultation
+
+Read 2026-09-21 before any decision below. Scope: **application / components**, frontend only.
+Mode: **propose**.
+
+| File | State |
+|---|---|
+| `docs/product/architecture/brief.md` | ✓ — the Delivery Timeline tab is `CREATE NEW` at line 8533, `DeliveryMetricsTab` `EXTEND` at 8560. Nothing below tab grain is recorded there, and this slice adds nothing that belongs at that grain |
+| `docs/product/architecture/adr-199 … adr-204` | ✓ — 203 governs a drawn dependency line, 204 the Team lanes and the untouched summary bar. Neither is reversed here |
+| `docs/product/journeys/epic-6033-forecasted-start-dates.yaml` | ✓ — amended by this slice's DISCUSS pass |
+| `feature-delta.md`, DISCUSS slice 07 | ✓ — US-07, AC-7.1 … AC-7.12, D7-1 … D7-12 |
+| `docs/product/outcomes/registry.yaml` | ✓ — OUT-3 is slice 06's `deliveryTeamLanes.ts`. Slice 07's candidate does not collide with it |
+| `docs/feature/…/spike/findings.md` | ⊘ not found — no spike was run for this slice |
+| `docs/feature/…/discover/`, `diverge/` | ⊘ not found — never existed for this Epic |
+
+Codebase read before designing: `deliveryTimelineModel.ts`, `TimelineBarContent.tsx`,
+`DeliveryTimelineTab.tsx`, `DeliveryGanttChart.tsx`, `ganttShapes.ts`, `timelineMarkers.ts`,
+`TimelineTeamLegend.tsx`, `useShowTeams.ts`, `utils/theme/colors.ts`, `main.tsx`.
+
+**No contradiction with DISCUSS**, but two of its criteria are amended by what the code turned out to
+say — both recorded under Changed Assumptions rather than edited away.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — What the Palette Collided With
+
+DISCUSS decided (D7-10) that the three colours come from the existing forecast palette and left the exact
+tokens here. Reading them made the problem concrete.
+
+`main.tsx` wires the MUI palette straight from `appColors`:
+
+| Token | Value | Already painting |
+|---|---|---|
+| `theme.palette.warning.main` = `appColors.status.warning` | `#ff9800` | the **target-date band** (`markerColors().target`) and the **warning symbol** on a bar (`BarMarkSymbol`) |
+| `appColors.forecast.realistic` | `#ff9800` | — the story's "finish late" orange. **The same string** |
+| `theme.palette.info.main` | `#29b6f6` | the today column |
+| `theme.palette.primary.main` / `.light` | `#30574e` / `#59B5A7` | every bar's default fill |
+| `appColors.forecast.certain` / `.confident` | `#388e3c` / `#4caf50` | — the story's "done" green, one family away from the fill it sits on |
+| `appColors.forecast.risky` | `#f44336` | — nothing. The only one of the three that is free |
+
+So two of the three requested colours were already spoken for on this chart, and the maintainer chose to
+**take the forecast palette anyway** (D7-14) rather than recolour the shipped target band.
+
+**The geometry makes the amber case worse, and this is the slice's headline risk.** A bar that finishes
+late ends, by definition, to the right of the target column — usually just to the right of it. Its amber
+mark therefore lands beside an amber band more often than not. That is the *common* case for the mark,
+not an edge case. The pre-committed response, so it is not re-argued under time pressure: if the two
+cannot be told apart when looked at, the band moves to a neutral blue-grey and the forecast palette stays
+as it is. That reverses a slice 04 decision and costs a docs screenshot, and it is cheaper than a mark
+nobody can read.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — The Encoding: a Cap on the End That Crossed
+
+DISCUSS specified one status per bar with a precedence: done over start-late over finish-late (D7-4). The
+geometry offers something simpler, and the maintainer took it.
+
+**Each end of a bar answers for itself.** A cap on the start end says this has not begun by the target; a
+cap on the end end says it does not finish by it. A bar can wear both, and then it is saying two true
+things rather than being ranked. The mark sits where the fault is.
+
+```
+                    target
+  ┃████████████┃      │        finished — green at both ends
+                      │
+     ███████████████┃██        ends after the target — amber, right end only
+                      │
+                      │  ┃██████┃   starts after it, and so ends after it too
+                      │            — red at the start, amber at the end
+                      │
+        █████████     │        on track — nothing
+```
+
+The precedence disappears with it. There is no case where two rules compete for one mark, because there
+is no longer one mark. **Done is the exception and stays whole**: a finished Feature is green at both
+ends whatever the target says, because its bar already ends at the day it closed rather than at a
+forecast, so the target comparison is not a question anyone is asking about it (D7-3, unchanged).
+
+### The rule, as it will be written
+
+```
+capsFor(bar, target):
+  if bar.endIsObserved          → { start: finished,          end: finished }
+  if target is absent           → { }
+  else                          → { start: bar.start > target ? startsAfterTarget : none,
+                                    end:   bar.end   > target ? endsAfterTarget   : none }
+```
+
+Two things about the comparison are decided here rather than discovered later:
+
+- **Both sides are reduced to calendar days before comparing.** `targetCalendarDate()` already does it for
+  the target — it is a stored instant the product reads as a UTC day — and a bar's ends come from
+  `expectedDate`, which carries a time. Comparing instants would make a bar due at 09:00 on the target day
+  late by fifteen hours, silently and only for some readers.
+- **Strictly after, not on.** A bar ending *on* the target day is on track. This is the boundary the
+  whole slice turns on and the one a mutation survives most quietly, so a scenario pins each side of it.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Component Decomposition
+
+```mermaid
+flowchart TB
+  subgraph tab["DeliveryTimelineTab — composes, owns the preferences"]
+    prefs["pagePreference factory<br/>showTeams · showStatus · showWarnings"]
+  end
+
+  subgraph pure["Pure, no library, no MUI"]
+    model["deliveryTimelineModel.ts<br/>bars + unplaceable<br/><b>+ endIsObserved</b>"]
+    status["<b>deliveryBarStatus.ts (NEW)</b><br/>bars + target → caps per Feature"]
+    lanes["deliveryTeamLanes.ts"]
+    deps["deliveryDependencyOverlay.ts"]
+  end
+
+  subgraph adapter["Adapter — knows the vendor's shapes, imports none of it"]
+    shapes["ganttShapes.ts"]
+    marks["timelineMarkers.ts<br/><b>+ statusCapColors</b>"]
+  end
+
+  subgraph view["View"]
+    chart["DeliveryGanttChart.tsx<br/><i>the only @svar-ui importer</i>"]
+    bar["TimelineBarContent.tsx<br/><b>+ caps on RowBody</b>"]
+    legend["<b>TimelineLegend.tsx</b><br/>was TimelineTeamLegend"]
+  end
+
+  tab --> model --> status
+  tab --> lanes
+  tab --> deps
+  tab --> chart
+  tab --> legend
+  chart --> shapes
+  chart --> marks
+  chart --> bar
+  bar --> marks
+  legend --> marks
+
+  style status fill:#4DA98C,color:#222
+```
+
+System Context and Container diagrams are **not redrawn**. They live in
+`docs/product/architecture/c4-diagrams.md`, this slice adds no container, no process and no external
+system, and six slices of this Epic have emitted no C4 into the feature workspace. The component view
+above is the one that carries information, because it is what makes the severability claim checkable:
+remove the one shaded box and one prop, and the chart is the chart slice 06 shipped.
+
+| Component | Path (under `…/DeliveryGrid/timeline/`) | Change |
+|---|---|---|
+| `deliveryBarStatus.ts` | new | **CREATE NEW** — pure. `buildDeliveryBarCaps(bars, targetDate?)` → `ReadonlyMap<number, BarEndCaps>` |
+| `deliveryTimelineModel.ts` | existing | **EXTEND** — `endIsObserved` on `TimelineBar`, set where `finishedOn(feature)` is already computed |
+| `timelineMarkers.ts` | existing | **EXTEND** — `statusCapColors(theme)` beside `markerColors(theme)`; its stale "shared with the legend" comment corrected |
+| `TimelineBarContent.tsx` | existing | **EXTEND** — optional `caps` prop; `RowBody` paints them as inset shadows. A lane never receives them |
+| `DeliveryGanttChart.tsx` | existing | **EXTEND** — `barCaps?: ReadonlyMap<number, BarEndCaps>`, threaded exactly as `barTeams` is; stale legend comment corrected |
+| `TimelineTeamLegend.tsx` → `TimelineLegend.tsx` | existing | **EXTEND + rename** — entries carry a swatch shape, so a key for caps shows caps |
+| `useShowTeams.ts` → `pagePreference.ts` + three hooks | existing | **EXTEND** — one store factory, three preferences |
+| `DeliveryTimelineTab.tsx` | existing | **EXTEND** — two switches, two gates, the caps memo, the second key row, and the warnings gate over `barMarks` |
+
+One new file. Everything else extends something already there.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `buildDeliveryTeamLanes` / `buildDependencyOverlay` | `deliveryTeamLanes.ts`, `deliveryDependencyOverlay.ts` | Both are "pure module, takes the built timeline, returns something to draw on it" | **CREATE NEW** (`deliveryBarStatus.ts`) | Same *shape*, different *knowledge* — one knows Teams, one knows dependencies, this one knows a date. Folding a third question into either would couple the status to data it does not need and break AC-7.12, which is severability as a criterion. Matching their shape is the reuse; sharing their body would be the repetition |
+| `TimelineBar.startIsObserved` | `deliveryTimelineModel.ts` | A fact-versus-forecast flag decided where the bar is built | **EXTEND** | `buildDeliveryTimeline` already chooses `finishedOn(feature) ?? forecastDateAt(…)` for the end and tells nobody which it picked, so the end already means two things and nothing downstream can tell them apart. Re-reading `closedDate` in the status module would be a second place deciding what "finished" means — the seam where two tested ends disagree. One field, set where the decision is already made |
+| `markerColors(theme)` | `timelineMarkers.ts` | "The colours shared between what paints a mark and what names it" | **EXTEND** | Exactly the contract needed, and it is 23 lines. A second colour module beside it would be two answers to one question. Its doc comment already claims to be shared with a legend that no longer exists — the extension makes the claim true again |
+| `TimelineTeamLegend` | `TimelineTeamLegend.tsx` | Swatch plus caption, above the chart | **EXTEND + rename** | ~20 lines to take a swatch shape versus a new 45-line file that would drift from it. A filled square would misrepresent a cap, so the shape has to be a parameter either way |
+| `useShowTeams` | `useShowTeams.ts` | Page-wide, storage-backed boolean with `useSyncExternalStore` | **EXTEND** | It carries five traps in one place — string comparison not coercion, read before first paint, every access guarded, manual notify because `storage` does not fire same-document, one value per page not per component. Copying it twice more makes three places to get each of the five right. The factory is the same code with the key as an argument |
+| `barTeams` threading | `DeliveryGanttChart.tsx` | Per-Feature map handed to the bar template | **EXTEND** | `caps` is the same shape as `barTeams` and travels the same path. No new mechanism, no new vendor vocabulary, and the adapter-boundary enforcement test is untouched |
+| `FeatureLikelihoodChip` / `ForecastLevel` | `components/Common/Forecasts/` | Green/amber/red against a target date | **NEITHER** — borrow the colours only | D7-2 settled that the timeline reads its own geometry rather than the chip's four-level ladder. Taking the ladder would tie the chart's marks to thresholds that do not move with the probability selector |
+
+**Zero unjustified CREATE NEW.** The single new file is justified by severability, which is an
+acceptance criterion rather than a preference.
+
+### Outcome collision check
+
+Slice 07's candidate — *given a Delivery's placed bars and its target date, decides which end of each bar
+is past that date, and which bars are finished* — was checked against the registry. **No collision**:
+OUT-1 and OUT-2 are backend forecast contracts, OUT-3 is `deliveryTeamLanes.ts` and answers about Teams,
+not about a date. Registration is **deferred to DELIVER**, the same call slices 01, 05 and 06 made and
+for the same reason: the registry rejects a row naming an `artifact` path that does not exist yet, so the
+row is written in the commit that creates `deliveryBarStatus.ts`. The `OUT-n` number is read off the file
+at that moment rather than guessed here.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Ports, Technology and Topology
+
+**Driving port**: Portfolio → Delivery → Timeline tab. The same one slices 04-06 use; no new surface.
+
+**Driven ports**: none. No HTTP call, no backend change, no new DTO field. The only side effect in the
+whole slice is `localStorage`, reached through the preference store that already exists and is already
+guarded.
+
+**Technology**: nothing new. No npm dependency is added, no `@svar-ui` import moves, `toGanttTasks` and
+`toGanttLinks` are untouched, and the vendor vocabulary written out by hand in `ganttShapes.ts` gains no
+word. `ganttAdapterBoundary.enforcement.test.ts` should pass unmodified; if it does not, something has
+gone in the wrong file.
+
+**How a cap is drawn**: `boxShadow: inset` on the existing `RowBody` box, one inset per end, composed into
+the single declaration. Not `border`, which changes the box's size and so the bar's apparent span. Not
+`outline`, which the library's own overflow clips. `boxShadow` is already the idiom for the target and
+today marks a few lines away, so the file gains no new technique.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Decisions Table
+
+| # | Decision |
+|---|---|
+| D7-13 | **A cap on the end that crossed, not a ring round the bar.** Each end answers for itself; a bar may wear both. **D7-4's precedence is withdrawn** — with no single mark there is nothing for two rules to compete over |
+| D7-14 | **The forecast palette as the story asked**, collision with the target band accepted on the record. Named fallback if the two cannot be told apart: the band moves to blue-grey, not the cap |
+| D7-15 | **`endIsObserved` joins `startIsObserved` on `TimelineBar`.** "Finished" reads off the same decision that drew the bar's end, rather than a second reading of `closedDate` that is free to disagree with it |
+| D7-16 | **The status lives in its own pure module.** Severability becomes structural: delete one file and one prop |
+| D7-17 | **Compared as calendar days, strictly after.** A bar ending on the target day is on track. Both sides reduced first, because the target is a UTC day and a bar's end carries a time |
+| D7-18 | **One function gives the cap colours to both the bar and the key**, so the two cannot disagree — the contract `markerColors` was written for, now actually used by two callers |
+| D7-19 | **The switch's visibility is a property of the Delivery, not of the selected probability**: offered when the Delivery has a target date or any bar is finished. Gating on "any cap right now" would make the control appear and vanish under the reader's hand as they move the probability. **Amends AC-7.8** |
+| D7-20 | **One store factory, three preferences.** `useShowTeams` is refactored into it with no behaviour change, in its own commit before any feature commit |
+| D7-21 | **`TimelineTeamLegend` becomes `TimelineLegend`**, its entries carrying a swatch shape. A filled square would tell the reader the mark is a fill |
+| D7-22 | **The control row wraps rather than overflows.** Three switches and a three-button group do not fit the narrowest width the Delivery view supports, and AC-4.8 forbids the horizontal scroll |
+| D7-23 | **No new dependency and no new vendor word.** The caps travel the path `barTeams` already travels |
+| D7-24 | **Two stale comments are corrected in passing**: `timelineMarkers.ts` claims to be shared with a legend that was replaced by hover labels, and `DeliveryGanttChart.tsx` says "the legend beside the chart names them" of markers nothing names any more |
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Changed Assumptions and Back-Propagation
+
+Two DISCUSS criteria and one decision are changed by what the code and the geometry turned out to say.
+Written as amendments so a reader meets the change rather than text that looks as though it always said
+this.
+
+1. **AC-7.2 said**: *"A Feature whose bar starts after the target date carries the 'starts late' colour
+   **instead**. One status per bar, and the start test wins."*
+   **Now**: each end carries its own mark, and a bar that starts after the target wears a start mark *and*
+   an end mark. **Why**: the precedence existed only because one bar could hold one colour. Once the mark
+   moved to the ends, the ranking had nothing to rank — and "starts late, and therefore also ends late" is
+   what is true, said plainly, where each half of it happened.
+
+2. **D7-4 said**: *"Start-late wins over finish-late … without a precedence the red case never appears."*
+   **Withdrawn.** The observation behind it still holds — every start-late bar is also finish-late — but
+   it is now the reason a bar wears two caps rather than the reason one colour is suppressed.
+
+3. **AC-7.8 said**: *"absent, never present-and-inert, when no bar on this chart would carry a status."*
+   **Now**: offered when *this Delivery* could carry one — it has a target date, or something in it is
+   finished — and not recomputed per probability. **Why**: the naive reading makes the control appear at
+   P95 and vanish at P70, because that is exactly when bars cross the target. A switch that comes and goes
+   while the reader is working the probability buttons reads as a fault in the page.
+
+4. **AC-7.5 said** the status is carried by "an edge on the bar". **Narrowed**: a cap at the end or ends
+   concerned, not a full outline. The guarantee it was written for is unchanged and is what matters — the
+   fill stays the Team's, and neither switch costs the reader the other answer.
+
+Nothing in D1-D16 is reversed. ADR-203 and ADR-204 are untouched: no dependency line changes, and a
+Feature's own task object is still byte-identical with lanes on and off, because the caps are painted by
+the bar's template and never enter `toGanttTasks`.
+
+Recorded for the product owner in `docs/feature/epic-6033-forecasted-start-dates/design/upstream-changes.md`.
+
+---
+
+## Wave: DESIGN / [REF] Slice 07 — Open Questions Carried Forward
+
+1. **The amber cap against the amber band, at the geometry where it actually lands.** Top risk, named
+   above, with its fallback pre-committed. Decided by looking, not by a test — this environment mocks the
+   vendor stylesheet away, which is the same reason the axis format and the link routing have always been
+   verified by a person or not at all.
+2. **A 4px cap over a pastel Team fill.** Smaller than the ring DISCUSS imagined, so the contrast question
+   AC-7.10 asks is sharper than it was. Slice 06's review found white-on-pastel at ~1.4:1 on this chart
+   with one colour on one fill.
+3. **The label on the warnings switch** — still open from DISCUSS, still DESIGN-adjacent rather than
+   settled. It hides dependency notes as well as warnings.
+4. **Whether `useShowTeams`'s own tests survive the refactor intact.** They were only recently made able
+   to fail — `Storage.prototype` spies are inert in this environment — so moving them to the factory is
+   the kind of move that silently restores a vacuous test. The refactor commit has to leave the same
+   assertions running against the same object.
+5. **Slice 06's open question (1)** is unchanged and unsettled: hidden by default now, no more decided.
+
+---
+
+## Wave: DESIGN / Slice 07 — Density and Expansion
+
+`documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`. DESIGN declares no
+ask-intelligent triggers, so this pass emitted **Tier-1 `[REF]` sections only** — no Tier-2 expansions and
+no wave-end menu.
+
+**Shared-contract event: `expansion.no_trigger.skip`** — wave `DESIGN`, slice `07`, reason `wave declares
+no ask-intelligent triggers`, expansions emitted `0`, menu emitted `false`.
+
+Next: DEVOPS, slice 07 (Story #6067).

@@ -138,3 +138,105 @@ to be read as a defect, and step 5 of the DESIGN walkthrough is where it is judg
 by the design: with lanes emitted as flat tasks and the switch off meaning *absent* rather than
 *collapsed*, the Feature's task object is byte-identical whether lanes are shown or not. The
 criterion holds by construction and is assertable with no drawing surface.
+
+---
+
+# Upstream changes owed by DESIGN — Epic 6033, slice 07 (US-07 / ADO #6067)
+
+Raised 2026-09-21 by the DESIGN pass for slice 07. Same contract as the slice 06 record above: changes
+to **DISCUSS** artifacts found by reading the code and the geometry, written here rather than edited in
+place, for whoever amends US-07.
+
+Full reasoning: `feature-delta.md`, `## Wave: DESIGN / [REF] Slice 07 — Changed Assumptions and
+Back-Propagation`.
+
+---
+
+## 5. AC-7.2 — the precedence has nothing left to rank
+
+**Where**: `feature-delta.md`, DISCUSS / US-07 acceptance criteria.
+
+> **Original, verbatim (2026-09-21)**
+>
+> **AC-7.2** — A Feature whose bar *starts* after the target date carries the "starts late" colour
+> instead. One status per bar, and the start test wins: a Feature that has not begun by the target cannot
+> finish by it, so saying only "finishes late" about it would be true and useless (D7-4).
+
+**Why it will not do.** The precedence existed only because the mark was one thing wearing one colour.
+The maintainer chose, on 2026-09-21, to put the mark on **the end that crossed the target** — a cap at
+the start end, a cap at the end end, either or both. There is then nothing for a ranking to rank: each
+end answers for itself, and a bar that starts after the target says so at its start *and* says it does
+not finish in time at its end. Both statements are true and neither suppresses the other.
+
+The criterion's purpose survives — the "has not even been reached" case must be visible as its own
+thing, not folded into ordinary lateness — and is better served, because it is now visible *together*
+with what it implies rather than instead of it.
+
+> **Proposed**
+>
+> **AC-7.2** — A Feature whose bar *starts* after the target date is marked at its start end, and — since
+> such a bar also ends after the target — at its end end as well. The two marks are different, and a
+> reader can tell the "not reached in time" case from ordinary lateness without counting anything.
+
+---
+
+## 6. AC-7.5 — narrowed from an edge to a cap
+
+> **Original, verbatim (2026-09-21)**
+>
+> **AC-7.5** — The status is carried by an **edge on the bar, not its fill**. With the Teams shown, a bar
+> keeps its Team colour *and* its status; neither hides the other, at any combination of the two switches
+> (D7-1).
+
+**Why it is narrowed.** "An edge" admitted a full outline round the bar, which is what DISCUSS pictured.
+The encoding chosen is narrower and says more: only the end or ends concerned are capped. The guarantee
+the criterion was written for is untouched, and it is the half that matters.
+
+> **Proposed**
+>
+> **AC-7.5** — The status is carried by a cap at the end or ends concerned, **never by the bar's fill**.
+> With the Teams shown, a bar keeps its Team colour *and* its status; neither hides the other, at any
+> combination of the two switches (D7-1, D7-13).
+
+---
+
+## 7. AC-7.8 — the gate must not move with the probability
+
+> **Original, verbatim (2026-09-21)**
+>
+> **AC-7.8** — A **Show status** switch, default off. It is **absent, never present-and-inert**, when no
+> bar on this chart would carry a status — the rule `canShowTeams` already established.
+
+**Why it will not do.** Read literally, "no bar would carry a status" is evaluated against the bars as
+currently drawn — and which bars cross the target is exactly what the probability selector changes. The
+switch would therefore be absent at P70 and present at P95 on the same Delivery, appearing and vanishing
+under the reader's hand as they work the three buttons. That reads as a fault in the page, and it is the
+opposite of what `canShowTeams` achieves, whose condition is a property of the data and does not move.
+
+> **Proposed**
+>
+> **AC-7.8** — A **Show status** switch, default off. It is **absent, never present-and-inert**, on a
+> Delivery that could carry no status at all — one with no target date and nothing finished in it. **Its
+> presence does not change when the probability changes**: a control that came and went as the reader
+> moved between 70, 85 and 95 would read as a fault rather than as an answer.
+
+---
+
+## 8. D7-4 — withdrawn
+
+> **Original, verbatim (2026-09-21)**
+>
+> **D7-4** — **Start-late wins over finish-late.** Every start-late Feature is also finish-late, so
+> without a precedence the red case never appears.
+
+**Withdrawn**, and replaced by **D7-13**. The observation is still true and is now the reason such a bar
+wears two caps rather than the reason one colour is suppressed.
+
+---
+
+## Not changed
+
+**AC-7.1, AC-7.3, AC-7.4, AC-7.6, AC-7.7 and AC-7.9 to AC-7.12 stand exactly as written.** AC-7.3 in
+particular is strengthened rather than qualified: with the mark at the ends, "done wins" stops being a
+precedence and becomes a statement about which question is being asked — a finished bar's ends are facts,
+so the target comparison is not asked of them at all, and both ends are simply marked as finished.
