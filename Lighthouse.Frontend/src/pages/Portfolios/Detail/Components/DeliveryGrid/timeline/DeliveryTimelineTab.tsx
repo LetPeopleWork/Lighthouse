@@ -1,14 +1,9 @@
 import {
 	Alert,
 	Box,
-	Divider,
-	FormControlLabel,
 	List,
 	ListItem,
 	ListItemText,
-	Switch,
-	ToggleButton,
-	ToggleButtonGroup,
 	Typography,
 } from "@mui/material";
 import type React from "react";
@@ -35,7 +30,6 @@ import { buildDeliveryTeamLanes, type UnlanedTeam } from "./deliveryTeamLanes";
 import {
 	buildDeliveryTimeline,
 	DEFAULT_TIMELINE_PERCENTILE,
-	TIMELINE_PERCENTILES,
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
 import {
@@ -43,6 +37,7 @@ import {
 	type BarNote,
 	TimelineBarMarks,
 } from "./TimelineBarContent";
+import TimelineControls from "./TimelineControls";
 import TimelineLegend, { type LegendEntry } from "./TimelineLegend";
 import { STATUS_CAP_COLORS } from "./timelineMarkers";
 import {
@@ -62,8 +57,6 @@ export interface DeliveryTimelineTabProps {
 	 */
 	teams: IEntityReference[];
 }
-
-const PROBABILITY_LABEL_ID = "delivery-timeline-probability";
 
 /** One empty map rather than a fresh one per render, which would re-run every memo below it. */
 const NO_TEAM_NOTES: ReadonlyMap<number, UnlanedTeam[]> = new Map();
@@ -324,102 +317,37 @@ const DeliveryTimelineTab: React.FC<DeliveryTimelineTabProps> = ({
 
 	return (
 		<Box sx={{ p: 2 }} data-testid="delivery-timeline-tab">
-			{/* Wraps rather than overflows. Three switches and a three-button group do not fit the
-			    narrowest width a Delivery is shown at, and a row the reader has to scroll sideways
-			    hides whichever control ends up last. */}
-			<Box
-				sx={{
-					display: "flex",
-					flexWrap: "wrap",
-					alignItems: "center",
-					columnGap: 1,
-					rowGap: 0.5,
-					mb: 2,
-				}}
-			>
-				{/* "Probability" is what Settings already calls this number. Three buttons rather
-				    than a dropdown because the whole value here is flicking between them and
-				    watching every bar move; a dropdown hides two of the three behind a click. */}
-				<Typography
-					variant="body2"
-					color="text.secondary"
-					id={PROBABILITY_LABEL_ID}
-				>
-					Probability
-				</Typography>
-				<ToggleButtonGroup
-					exclusive
-					size="small"
-					value={percentile}
-					onChange={(_, chosen: TimelinePercentile | null) => {
-						// Null arrives when the active button is clicked again. A timeline with no
-						// percentile selected would have nothing to draw, so the choice stands.
-						if (chosen !== null) {
-							setPercentile(chosen);
-						}
-					}}
-					aria-labelledby={PROBABILITY_LABEL_ID}
-				>
-					{TIMELINE_PERCENTILES.map((option) => (
-						<ToggleButton key={option} value={option}>
-							{`${option}%`}
-						</ToggleButton>
-					))}
-				</ToggleButtonGroup>
-
-				{/* Offered only where showing the Teams would actually change something here. A
-				    control that cannot is still worth the click that proves it, and a reader who gets
-				    nothing back concludes the chart is broken rather than that the question does not
-				    apply. A switch rather than a fourth button beside the three: that group means
-				    "pick one of these", and this is on or off - which is also why it is set apart
-				    from them rather than sitting flush against the group as a fourth member of it. */}
-				{(teamsOnTheChart.canShowTeams || canShowStatus || canShowWarnings) && (
-					<Divider orientation="vertical" flexItem sx={{ mx: 1.5, my: 0.5 }} />
-				)}
-
-				{teamsOnTheChart.canShowTeams && (
-					<FormControlLabel
-						control={
-							<Switch
-								size="small"
-								checked={showTeams}
-								onChange={toggleShowTeams}
-							/>
-						}
-						label={`Show ${teamsTerm}`}
-					/>
-				)}
-
-				{canShowStatus && (
-					<FormControlLabel
-						control={
-							<Switch
-								size="small"
-								checked={showStatus}
-								onChange={toggleShowStatus}
-							/>
-						}
-						label="Show status"
-					/>
-				)}
-
-				{/* It hides every mark a bar can carry, not only the ones drawn as an alarm - half of
-				    a symbol cannot be hidden, and a switch that leaves one on the bar reads as a
-				    switch that did not work. Named for what a reader is turning off rather than for
-				    the two kinds of note underneath it. */}
-				{canShowWarnings && (
-					<FormControlLabel
-						control={
-							<Switch
-								size="small"
-								checked={showWarnings}
-								onChange={toggleShowWarnings}
-							/>
-						}
-						label="Show warnings"
-					/>
-				)}
-			</Box>
+			<TimelineControls
+				percentile={percentile}
+				onPercentileChosen={setPercentile}
+				toggles={[
+					{
+						id: "teams",
+						label: `Show ${teamsTerm}`,
+						offered: teamsOnTheChart.canShowTeams,
+						shown: showTeams,
+						toggle: toggleShowTeams,
+					},
+					{
+						id: "status",
+						label: "Show status",
+						offered: canShowStatus,
+						shown: showStatus,
+						toggle: toggleShowStatus,
+					},
+					{
+						// It hides every mark a bar can carry, not only the ones drawn as an alarm -
+						// half of a symbol cannot be hidden, and one left behind reads as a switch
+						// that did not work. Named for what a reader is turning off rather than for
+						// the two kinds of note underneath it.
+						id: "warnings",
+						label: "Show warnings",
+						offered: canShowWarnings,
+						shown: showWarnings,
+						toggle: toggleShowWarnings,
+					},
+				]}
+			/>
 
 			{/* Said once, above the chart, because every bar would otherwise carry the same words -
 			    and a reader who is told nothing sees a chart whose lines silently vanished. */}
