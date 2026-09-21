@@ -499,3 +499,293 @@ Open for DESIGN, in order of consequence:
 
 Carried forward, not dropped: the stop-button wording on delete rows, and the `"{UpdateType} {Id}"`
 fallback name — both in Out of Scope with their reasons, both still true after this story ships.
+
+---
+
+## Wave: DESIGN / [REF] Scope, Mode and Density
+
+**Scope**: Application / components (`nw-solution-architect`). System, domain and platform scopes were
+offered and each has nothing to decide here: no distributed-systems question, no new bounded context,
+no deployment change. **Mode**: propose. **Density**: `lean` + `ask-intelligent`; DESIGN declares no
+`ask-intelligent` triggers, so no menu and Tier-1 `[REF]` only.
+
+Designed directly rather than by dispatching a subagent: the decisive evidence is a reverted commit
+(`53aa75a1b`) and a stale SSOT claim, neither of which survives a fresh agent's context, and a subagent
+reading this 500-line delta would truncate it.
+
+**Prior-wave reading**
+
+✓ `docs/product/architecture/brief.md` (§ `epic-5511-task-manager` :7010, § `story-5877-update-queue-lanes` :7684)
+✓ `docs/product/architecture/adr-181-update-activity-is-a-read-through-the-status-store.md`
+✓ `docs/product/journeys/story-6055-activity-names-the-work.yaml`
+✓ `docs/feature/story-6055-activity-names-the-work/feature-delta.md` (DISCUSS sections above)
+✓ `docs/feature/story-6055-activity-names-the-work/slices/slice-01`, `slice-02`
+✓ `.nwave/local-config.json` — no `rigor` block, so standard defaults; no `des-config.json` in this repo
+⊘ `docs/feature/story-6055-activity-names-the-work/spike/findings.md` (no spike was run)
+⊘ `docs/product/architecture/c4-diagrams.md` (not a separate file in this repo; C4 lives in `brief.md`)
+
+**Contradiction found and resolved — the SSOT was wrong.** `brief.md:7693` states in the present tense:
+*"The update queue now has three lanes, each a channel with one reader."* It has one
+(`UpdateQueueService.cs:11`). The lanes were reverted on 2026-09-19 and the revert did not touch the
+brief. Corrected as part of this feature by user decision, 2026-09-21 — see SSOT Updates below. No
+DESIGN decision here was built on the false claim.
+
+---
+
+## Wave: DESIGN / [REF] DDD List
+
+| # | Decision | Verdict |
+|---|---|---|
+| DDD-1 | The row's phrase is one total function over `UpdateTaskType`, returning verb + kind + name | Locked |
+| DDD-2 | Both lookups are `Record<UpdateTaskType, …>`, not `switch` with `default:` | Locked — refines DISCUSS D2 |
+| DDD-3 | `waitingBehind` carries the holder as a described piece of work (ADR-205) | Locked |
+| DDD-4 | "Same entity" is (entity kind, id), never id alone | Locked |
+| DDD-5 | The sameness comparison lives in `UpdateController`'s read path; nothing compares in the browser | Locked |
+| DDD-6 | The activity noun (*refresh* / *forecast* / *removal*) is derived in the browser from the holder's `UpdateType` | Locked |
+| DDD-7 | No new component, no new service, no new endpoint, no schema change | Locked |
+| DDD-8 | `UpdateActivityService` is not introduced for this feature | Locked — see Reuse Analysis |
+
+### DDD-2 — why a `Record`, not a `switch`
+
+The defect is a `default:` arm silently absorbing three of five update types (S1). A `switch` with a
+`default:` cannot express D2's "total function" claim, and a `switch` without one relies on the
+project's `noImplicitReturns` setting to catch a missing member. `Record<UpdateTaskType, string>` makes
+a missing member a compile error unconditionally, which is the property the journey's error path
+promises: *a new update type is a compile-time decision rather than a silent sixth tenant of the
+default arm.*
+
+This applies to the **entity-kind** lookup too, which DISCUSS D2 had left as "stays two-armed". That
+was a statement about which terms are used, and it is preserved — `Team`/`TeamDelete` still map to the
+Team term and the other three to the Portfolio term. What changes is that the mapping is now written
+out per member instead of falling through. Recorded under Changed Assumptions.
+
+### DDD-4 — the criterion that fails the plausible wrong implementation
+
+`Team` 3 and `Features` 3 are two entities sharing an integer. An implementation comparing
+`work.Id == holder.Id` passes every other acceptance criterion in slice 02 and fails AC-02.4 alone.
+The entity-kind projection already exists in `UpdateTaskNaming.NameOf`, which switches on the type only
+to choose between `teamRepository` and `portfolioRepository` — the same two-way split, already written,
+already tested.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `ActivitySection` | `Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.tsx` | **Modified.** `useKindOf` becomes `useDescribeWork`; `isDelete`/`(removal)` removed; `describeState` gains the self-reference branch. |
+| `UpdateSubscriptionService` | `Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts` | **Modified.** `IUpdateTask.waitingBehind` changes from `string \| null` to `IWaitingBehind \| null`; new exported interface. |
+| `UpdateController` | `Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs` | **Modified.** Holder selection unchanged; the projection into the response gains the sameness comparison. New nested record `WaitingBehindResponse`. |
+| `UpdateTaskNaming` | `…/BackgroundServices/Update/UpdateTaskNaming.cs` | **Unchanged.** Reused as-is for the holder's name. |
+| `AdmittedWorkOrdering` | `…/BackgroundServices/Update/AdmittedWorkOrdering.cs` | **Unchanged.** |
+| `UpdateQueueService` | `…/BackgroundServices/Update/UpdateQueueService.cs` | **Unchanged.** One lane in, one lane out. |
+| `docs/settings/taskmanager.md` | `docs/settings/taskmanager.md` | **Modified.** Row-wording table (slice 01). |
+| `docs/assets/settings/taskmanager.png` | generated | **Regenerated** from `Screenshots.spec.ts:136-138`. |
+
+No new file on either side. The two new types are nested in files that already exist.
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Change |
+|---|---|
+| `GET /api/latest/update/tasks` (+ `/api/v1/…`) | `waitingBehind` changes from `string?` to an object (ADR-205). `updateType`, `id`, `name`, `status`, `elapsedMs` unchanged. Still `[RbacGuard(SystemAdmin)]`. |
+| `GET /api/latest/update/status` | **Unchanged.** |
+| `POST /api/latest/update/tasks/{updateType}/{id}/cancel` | **Unchanged.** |
+| Header → Task Manager popover, Activity section | Rows lead with the work; the queued clause gains the self case. |
+| CLI / MCP | **None.** Grep across `lighthouse-clients`, 2026-09-21: no consumer of the route, `getRunningTasks` or `UpdateTask`. |
+
+---
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+**None added, none changed.** The read path touches `IRepository<Team>` and `IPortfolioRepository`
+through `UpdateTaskNaming`, exactly as it does today, and `IUpdateStatusStore` through
+`GetAdmittedWork()`. No new outbound effect: the sameness comparison is arithmetic over data already in
+hand, so ADR-181's accepted cost — one repository lookup per row per popover open — does not rise.
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+Nothing pinned that is not already pinned. Backend C# .NET 10 / ASP.NET Core, `System.Text.Json` with
+the existing enum-as-string converter (the browser's `UpdateTaskType` is a string union, and the
+`Slice02` specification fixes that contract in prose at its line 22). Frontend React 18 + TypeScript,
+MUI, Vitest + React Testing Library. Paradigm unchanged: OOP backend, functional-leaning React.
+
+The one language-level choice is DDD-2's `Record<UpdateTaskType, …>` over `switch`, which is a
+TypeScript exhaustiveness property rather than a dependency.
+
+---
+
+## Wave: DESIGN / [REF] C4 — Container and Component
+
+**System Context: unchanged.** No actor, no external system and no trust boundary moves. The existing
+context diagram in `brief.md` stands; redrawing it would produce a byte-identical picture, and a second
+copy is a second thing to keep current.
+
+**Container view, scoped to the affected path.** The only container-level fact this feature touches is
+which side of the browser/API boundary decides what.
+
+```mermaid
+flowchart LR
+    subgraph Browser["SPA — React 18 + TS"]
+        AS["ActivitySection<br/>chooses every word"]
+        TC["TerminologyContext<br/>tenant's nouns"]
+    end
+    subgraph API["Lighthouse Backend — ASP.NET Core"]
+        UC["UpdateController<br/>GET /update/tasks<br/>decides who holds the lane<br/>and whether it is you"]
+        UTN["UpdateTaskNaming<br/>resolves display names"]
+        USS["IUpdateStatusStore<br/>admitted work"]
+    end
+    DB[("Team + Portfolio<br/>repositories")]
+
+    AS -->|"GET /api/latest/update/tasks<br/>SystemAdmin"| UC
+    TC -.->|"team / portfolio terms"| AS
+    UC --> USS
+    UC --> UTN
+    UTN --> DB
+
+    classDef changed fill:#fde68a,stroke:#b45309,color:#1f2937
+    class AS,UC changed
+```
+
+Shaded: the two components this feature modifies. The line that matters is the one crossing the
+boundary — it carries *facts* (name, type, is-same-entity) and never a rendered clause, which is what
+keeps Terminology on the browser's side and the comparison on the backend's.
+
+**Component view of the one decision** — how a queued row's clause is chosen.
+
+```mermaid
+flowchart TD
+    A["GetTasks: admitted work,<br/>Queued or InProgress"] --> B{"status == InProgress?"}
+    B -->|yes| C["holder candidate"]
+    B -->|no| D["queued row"]
+    C --> E["holdingTheLane<br/>(first InProgress — unchanged)"]
+    D --> F{"holder exists?"}
+    F -->|no| G["waitingBehind = null"]
+    F -->|yes| H{"entityKindOf(holder.Type) == entityKindOf(row.Type)<br/>AND holder.Id == row.Id ?"}
+    H -->|yes| I["WaitingBehindResponse<br/>(name, holder.Type, IsSameEntity = true)"]
+    H -->|no| J["WaitingBehindResponse<br/>(name, holder.Type, IsSameEntity = false)"]
+
+    G --> K["browser: 'Queued'"]
+    I --> L["browser: 'Queued behind its own refresh'<br/>noun from holder.Type"]
+    J --> M["browser: 'Queued behind Ocean Explorer'"]
+
+    classDef new fill:#fde68a,stroke:#b45309,color:#1f2937
+    class H,I,J new
+```
+
+Node `H` is DDD-4 and it is the only genuinely new logic in the feature. Everything else is wording.
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `useKindOf` | `ActivitySection.tsx:34-46` | Decides the row's noun from the update type | **EXTEND** | Becomes `useDescribeWork`, returning the whole phrase instead of one word. The terminology hook, the two-way mapping and the call site all stay; the `default:` arm is replaced by an exhaustive map. A parallel `useVerbOf` beside it would leave two functions switching on the same enum in the same file — the arrangement that produced this bug. |
+| `describeState` | `ActivitySection.tsx:73-86` | Words the status clause, including `Queued behind …` | **EXTEND** | One new branch inside the existing `waiting` case. It already owns every status phrase; a second describer would split one sentence across two functions. |
+| `activityOf` / `RowActivity` | `ActivitySection.tsx:56-71` | Decides what the row is doing | **UNCHANGED** | Orthogonal — it answers running/waiting/stopping, not what the work is. Its own comment warns against deciding one thing twice; this feature adds no second decider. |
+| `UpdateTaskNaming.NameOf` | `UpdateTaskNaming.cs` | Resolves the holder's display name; already projects update type → entity kind to pick a repository | **EXTEND (reuse as-is)** | Called unchanged for the holder's name. Its repository switch is the same (entity kind, id) projection DDD-4 needs, so the projection is lifted to a named helper both can use rather than written twice. |
+| `UpdateController.GetTasks` holder selection | `UpdateController.cs:61-62` | Picks the single running row | **EXTEND** | The selection is correct for a one-lane queue and is not touched. Only the projection into the response changes. |
+| `AdmittedWorkOrdering` | `AdmittedWorkOrdering.cs` | Orders the rows | **UNCHANGED** | Reading order, not wait semantics. Its own doc-comment already says so. |
+| `UpdateActivityService` (ADR-181 §3) | not present in the tree | Would own read-path enrichment | **CREATE NEW — rejected (DDD-8)** | ADR-181 proposed it; the shipped code does the enrichment in the controller via `IUpdateTaskNaming`. Introducing it now is a refactor of #5511's surface wearing a wording story's number. Left as a known divergence between ADR-181 and the code, named here rather than fixed silently. |
+| `TERMINOLOGY_KEYS` / `useTerminology` | `TerminologyKeys.ts`, `TerminologyContext` | Tenant nouns | **REUSE AS-IS** | No new key. *Forecast* is not configurable (S12), so the verbs need no entry. |
+| `Slice02SeeWhatIsRunning*` fixtures | `…/Integration/TaskManager/` | Assert the `/update/tasks` contract | **EXTEND** | They already fix this contract in prose and assertions; the new shape belongs in them, not in a parallel fixture. |
+
+**Zero unjustified `CREATE NEW`.** The one `CREATE NEW` considered is explicitly rejected.
+
+**Outcome collision check**: `nwave-ai outcomes check-delta` → exit `0` (0 collisions across 0
+outcomes; the registry tracks none for this surface).
+
+---
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| ID | Decision |
+|---|---|
+| DDD-1 | One total phrase function per row: verb + tenant noun + name |
+| DDD-2 | `Record<UpdateTaskType, …>` for both lookups; no `default:` arm |
+| DDD-3 | `WaitingBehind` becomes `WaitingBehindResponse?` — name, update type, is-same-entity (ADR-205) |
+| DDD-4 | Sameness is (entity kind, id) |
+| DDD-5 | The comparison lives in `UpdateController`; the browser never compares |
+| DDD-6 | Activity noun derived in the browser from the holder's `UpdateType` |
+| DDD-7 | No new component, service, endpoint or schema change |
+| DDD-8 | `UpdateActivityService` not introduced; ADR-181 §3 divergence recorded, not closed |
+
+---
+
+## Wave: DESIGN / [REF] Open Questions
+
+| # | Question | Deferred to | Why it is safe to defer |
+|---|---|---|---|
+| OQ-1 | Where the (entity kind, id) projection lives — a helper beside `UpdateTaskNaming`, an extension on `UpdateType`, or a private method on the controller | DELIVER | Three shapes of the same three-line function. None changes a contract or a test. |
+| OQ-2 | Whether `WaitingBehindResponse.UpdateType` is sent in the different-entity case too, or only when `IsSameEntity` | DISTILL | The browser only reads it in the self case today. Sending it always is simpler to specify and costs nothing; DISTILL fixes it as it writes AC-02.6's payload assertion. |
+| OQ-3 | Whether the docs table lists all twenty phrasings (5 verb-kind forms × 4 states) or the pattern plus examples | DELIVER | A prose judgement made with the rendered page in front of you. KPI-3 measures coverage either way. |
+
+**Not open**: ADR-181's `UpdateActivityService` divergence (DDD-8 — recorded, deliberately not closed
+here), and #5877's Feature-ownership question, which is that story's and is shelved.
+
+---
+
+## Wave: DESIGN / [REF] Handoff
+
+**To**: `nw-platform-architect` (DEVOPS). Nothing to deploy, instrument or provision. No new endpoint,
+no schema change, no configuration, no migration, no metric. The Outcome KPIs in the DISCUSS sections
+above are all test-asserted or read at DELIVER; none needs production instrumentation.
+
+**Per-wave peer review: skipped.** No contested ADR, no novel pattern, no unverified performance
+budget, no security-boundary change — the route's `SystemAdmin` guard is untouched. The consolidated
+review fires at end of DISTILL.
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+### 1. DISCUSS D2 — the entity-kind lookup
+
+> **Original** (`feature-delta.md`, Wave: DISCUSS, D2): "The entity-kind lookup stays two-armed and
+> stays terminology-driven (S12)."
+
+**New**: the mapping it expresses is unchanged — `Team`/`TeamDelete` → Team term, the other three →
+Portfolio term — but it is written as an exhaustive `Record<UpdateTaskType, TerminologyKey>` rather
+than a two-arm `switch`. **Rationale**: the defect being fixed is a `default:` arm absorbing three
+members unnoticed. Leaving the same construct in place for the lookup that caused it would fix the
+symptom and keep the mechanism (DDD-2).
+
+### 2. DISCUSS AC-02.6 — the contract guard
+
+> **Original** (`feature-delta.md`, Wave: DISCUSS, AC-02.6): "Whatever the response gains to express
+> D4, every field of `UpdateTaskResponse` that exists today keeps its name, type and meaning."
+
+**New**: every field **other than `WaitingBehind`** keeps its name, type and meaning. `WaitingBehind`
+keeps its name and its meaning and changes its type, from `string?` to `WaitingBehindResponse?`.
+**Rationale**: as written the criterion forbade changing the one field the story is about. Its purpose
+was to guard against collateral damage to the other five, and it now says that. The change is
+affordable because the grep behind S9 is part of the decision: six files, one repository, no external
+consumer (ADR-205).
+
+### 3. DISCUSS D5 and Pre-requisites — #5877's status
+
+> **Original** (`feature-delta.md`, Wave: DISCUSS, Pre-requisites): "The revert is the live risk to
+> this story's schedule. If #5877 returns while #6055 is in flight, both touch `UpdateController`'s
+> `waitingBehind` resolution."
+
+**New**: #5877 is **shelved** (user decision, 2026-09-21). The rebase risk is not live, slice 02 needs
+no sequencing against it, and the self-reference case is permanently reachable rather than temporarily
+so — which raises slice 02's value rather than lowering it. **Rationale**: the DISCUSS text was written
+before the question was asked. D5's prohibition on re-landing any of #5877 still stands, and ADR-205
+records how the two would compose if it ever returns.
+
+### 4. SSOT `brief.md` — the queue's lane count
+
+> **Original** (`docs/product/architecture/brief.md:7693`): "The update queue now has **three** lanes,
+> each a channel with one reader."
+
+**New**: one lane. **Rationale**: the statement was true between `a6ae6d1b2` and `f216ef558` on
+2026-09-19 and has been false since. The revert deliberately kept #5877's DISCUSS and DESIGN analysis,
+which is defensible, but this sentence is in the present tense in the architecture SSOT and reads as
+current state. Corrected in place with a dated status note by user decision, 2026-09-21; the analysis
+around it is left untouched.

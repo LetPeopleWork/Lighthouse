@@ -7690,6 +7690,26 @@ Architect: Morgan (Solution Architect), interaction mode = PROPOSE
 Scope: Application / components
 Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
 
+> **STATUS: REVERTED AND SHELVED — 2026-09-19, confirmed shelved 2026-09-21.**
+>
+> **The queue has one lane.** Everything below describes an architecture that shipped on 2026-09-19 and
+> was backed out the same day in `f216ef558`, reverting `86d796171..7a4a09089`. Read it as design
+> analysis, not as a description of the running system.
+>
+> Cause of the revert: with a lane each, a Portfolio refresh overlaps the Team refreshes feeding it, and
+> `WorkItemService.RefreshRemainingWork` rebuilds every Feature's team work from a snapshot another lane
+> is allowed to be rewriting. On the Dependencies demo scenario, teams holding 10/0/10/4/4 Features
+> dropped to all but one holding none — Feature ownership destroyed, and the forecast then ran over the
+> single team that survived. A data-correctness regression on every instance.
+>
+> The lanes are re-landable once that ownership question has an answer: either the Portfolio refresh
+> waits for the Team refreshes feeding it, or the remaining-work pass stops rebuilding ownership from a
+> snapshot. Until then `UpdateQueueService` is one `Channel.CreateUnbounded` with one reader, and the
+> `epic-5511-task-manager` section and the ADR-027 diagrams above are **current**, not historical.
+>
+> Status note added by `story-6055-activity-names-the-work`, which designs against the one-lane queue
+> and re-lands none of this.
+
 **The single-lane property documented above stops being true.** The `epic-5511-task-manager` section
 and the ADR-027 diagrams earlier in this file describe `UpdateQueueService` as a single-reader channel.
 That was accurate when each was written and is historical from here; those sections are not edited in
@@ -8601,3 +8621,119 @@ No C4 diagram is added. At System Context and Container level nothing about this
 new actor, no new container, no new integration. The component-level change is the table above.
 
 Feature delta: `docs/feature/epic-6033-forecasted-start-dates/feature-delta.md`.
+
+---
+
+## Application Architecture — story-6055-activity-names-the-work
+
+Feature: story-6055-activity-names-the-work (ADO User Story #6055, "Activity shows Portfolios twice")
+Wave: DESIGN
+Date: 2026-09-21
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Scope: Application / components
+Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
+
+The Task Manager's Activity list names the entity a piece of work is *about* and never the work itself.
+Three of the five `UpdateTaskType` members — `Features`, `Forecasts`, `PortfolioDelete` — render one
+word, because the row's kind lookup has two arms and a `default:`. Since `PortfolioUpdater` ends every
+run by triggering a forecast of the same portfolio, and a Team refresh triggers one for every portfolio
+it feeds, two rows naming one Portfolio identically is the ordinary case rather than an edge. The
+queued one then reads *Queued behind &lt;its own name&gt;*.
+
+### Architectural Pattern
+
+Unchanged. This is a read-path and presentation change inside the shape ADR-181 established: the task
+list is a read through `IUpdateStatusStore`, enriched with display names on the read path, rendered by
+a browser that owns every word.
+
+### Key invariants introduced
+
+- **A row's phrase is one total function over `UpdateTaskType`.** Verb, then tenant noun, then name —
+  *Refreshing Portfolio 'Ocean Explorer'*. Both the verb map and the entity-kind map are
+  `Record<UpdateTaskType, …>`, so a sixth update type is a compile error rather than a silent sixth
+  tenant of a `default:` arm. That arm is the defect this feature exists to remove, so it does not
+  survive in either lookup.
+- **The verb is Lighthouse's own word; the noun is the tenant's.** *Refreshing*, *Forecasting* and
+  *Removing* are not in `TERMINOLOGY_KEYS` and are never looked up. Team and Portfolio still are.
+- **A row never names itself as what it waits for.** Where the lane holder is the row's own entity the
+  clause names the holder's activity — *Queued behind its own refresh* — and where it is a different
+  entity the clause is unchanged.
+- **Sameness is (entity kind, id), never id alone.** `Team` 3 queued while `Features` 3 runs is not a
+  self-reference. Two entities sharing an integer.
+- **One decider, on the read path.** The backend selects the lane holder, resolves its name and decides
+  sameness. The browser compares nothing.
+- **Nothing here touches the queue.** One lane in, one lane out.
+
+### Driving Ports (HTTP)
+
+| Route | Change |
+|---|---|
+| `GET /api/v1/update/tasks`, `GET /api/latest/update/tasks` | `waitingBehind` changes from `string?` to an object carrying the holder's `name`, `updateType` and `isSameEntity` (ADR-205). `updateType`, `id`, `name`, `status` and `elapsedMs` are unchanged. `[RbacGuard(SystemAdmin)]` unchanged. |
+| `GET /api/latest/update/status` | Unchanged. |
+| `POST /api/latest/update/tasks/{updateType}/{id}/cancel` | Unchanged. |
+
+No route added, no route removed, no guard moved.
+
+### Driven Ports
+
+**None added, none changed.** `IUpdateStatusStore.GetAdmittedWork()` and the two repositories reached
+through `UpdateTaskNaming` are called exactly as today. The sameness comparison is arithmetic over data
+already in hand, so ADR-181's accepted cost — one repository lookup per row per popover open — does not
+rise.
+
+### Component Decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `ActivitySection` | `Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.tsx` | `useKindOf` → `useDescribeWork`; the `(removal)` suffix removed; `describeState` gains the self-reference branch |
+| `UpdateSubscriptionService` | `Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts` | `IUpdateTask.waitingBehind` retyped; new exported `IWaitingBehind` |
+| `UpdateController` | `Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs` | Holder selection unchanged; projection gains the sameness comparison; nested `WaitingBehindResponse` record |
+| `UpdateTaskNaming`, `AdmittedWorkOrdering`, `UpdateQueueService` | `…/BackgroundServices/Update/` | Unchanged |
+
+No new file on either side.
+
+### Reuse Analysis
+
+Full table in `docs/feature/story-6055-activity-names-the-work/feature-delta.md`. Zero unjustified
+`CREATE NEW`. The one `CREATE NEW` considered — reviving ADR-181's proposed `UpdateActivityService`,
+which the shipped code never built — is **rejected**: introducing it here would be a refactor of
+#5511's surface wearing a wording story's number. The divergence between ADR-181 §3 and the code is
+recorded rather than closed.
+
+`UpdateTaskNaming.NameOf` already projects update type → entity kind to choose a repository. That is
+the same projection the sameness comparison needs, so it is lifted to a named helper both use rather
+than written a second time.
+
+### Quality Attribute Strategies
+
+| Attribute | Strategy |
+|---|---|
+| Comprehensibility | The driver. Every decision is judged by whether an operator reads the row correctly on a glance, which is what `job-operator-see-what-lighthouse-is-doing-right-now` asks for. |
+| Maintainability | Exhaustive maps over both lookups, so the defect class cannot recur by omission. One decider for sameness. |
+| Testability | Unchanged surfaces: the `TaskManagerIcon` Vitest suite addresses rows by a `data-testid` this feature preserves; the `Slice02SeeWhatIsRunning` fixtures already fix this contract. |
+| Performance | No new query, no new round-trip. |
+| Compatibility | A shipped field changes type. Affordable only because the grep is part of the decision: six files, one repository, no CLI, no MCP, no E2E consumer. |
+
+### ADR References (this feature)
+
+- [ADR-205](./adr-205-the-lane-holder-is-a-piece-of-work-not-a-name.md): the lane holder on a queued row
+  is a described piece of work, not a name. PROPOSED.
+- [ADR-181](./adr-181-update-activity-is-a-read-through-the-status-store.md): the read-path shape this
+  feature works inside. Unchanged; its §3 `UpdateActivityService` remains unbuilt, now recorded.
+
+### Architectural Enforcement (this feature)
+
+- `Record<UpdateTaskType, …>` over `switch`/`default:` — enforced by the TypeScript compiler, which is
+  the point: a new update type cannot reach the screen without someone choosing its verb and its noun.
+- Terminology stays in the browser — enforced by the response carrying facts (`name`, `updateType`,
+  `isSameEntity`) and never a rendered clause.
+- The sameness comparison stays in the backend — asserted by AC-02.8, which requires the read model's
+  tests to be the only ones that can make AC-02.1 through AC-02.4 fail.
+
+### Relationship to story-5877-update-queue-lanes
+
+#5877 is **reverted and shelved** (see the status note on its section above). Its own fix to this same
+field (`53aa75a1b`) resolved the holder *per lane* and needed no contract change; it went out with the
+revert. The two are orthogonal — #5877 asks *which* running thing holds your lane, this asks *whether*
+the holder is you — and ADR-205 records how they would compose if the lanes ever return. Nothing in
+this feature re-lands any of #5877 or depends on lanes existing.
