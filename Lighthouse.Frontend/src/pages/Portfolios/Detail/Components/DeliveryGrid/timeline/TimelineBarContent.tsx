@@ -3,6 +3,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip } from "@mui/material";
 import type React from "react";
 import { createContext, useContext } from "react";
+import type { TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 import { barTooltip } from "./ganttShapes";
 
@@ -18,6 +19,15 @@ export interface BarNote {
 /** Everything one bar has to say for itself. */
 export interface BarMark {
 	notes: BarNote[];
+	/**
+	 * Names written along the bar rather than left to the symbol and its hover text.
+	 *
+	 * A name reachable only by hovering does not answer the question the split exists for, which is
+	 * seeing which Team it is without opening anything. So while the Teams are being read, the one
+	 * Team without a row of its own is named where all the others already are. With the Teams
+	 * hidden the bar is back to competing with its own Feature name, and the symbol carries it.
+	 */
+	namesOnTheBar?: string[];
 }
 
 const BarMarks = createContext<ReadonlyMap<number, BarMark>>(new Map());
@@ -52,15 +62,35 @@ export const TimelineBarMarks: React.FC<{
  */
 export interface TimelineBarContentProps {
 	bar?: TimelineBar;
-	/** Absent means the bar is inert: no pointer, no click, and nothing promised on hover. */
+	/**
+	 * One Team's own row beneath the Feature's bar. It carries that Team's name and that Team's
+	 * fill, opens the same Feature the bar opens, and never repeats the Feature's mark: every mark
+	 * this chart can raise is a statement about the Feature, true once, where the reader looks for
+	 * it — repeated down a three-lane Feature it would wear the same symbol four times.
+	 */
+	lane?: TeamLane;
+	/** Absent means the row is inert: no pointer, no click, and nothing promised on hover. */
 	onSelect?: (featureId: number) => void;
 }
 
 const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 	bar,
+	lane,
 	onSelect,
 }) => {
 	const marks = useContext(BarMarks);
+
+	if (lane) {
+		return (
+			<RowBody
+				hoverText={barTooltip(lane, onSelect !== undefined)}
+				fill={lane.color}
+				onSelect={onSelect ? () => onSelect(lane.featureId) : undefined}
+			>
+				{lane.teamName}
+			</RowBody>
+		);
+	}
 
 	// The chart asked for a bar we do not have. Rendering an empty one would put a nameless
 	// clickable box on the timeline; rendering nothing leaves the chart's own bar as it was.
@@ -68,16 +98,47 @@ const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 		return null;
 	}
 
-	const isClickable = onSelect !== undefined;
 	const mark = marks.get(bar.featureId);
 
 	return (
-		<Tooltip title={barHoverText(bar, isClickable, mark)} followCursor>
+		<RowBody
+			hoverText={barHoverText(bar, onSelect !== undefined, mark)}
+			onSelect={onSelect ? () => onSelect(bar.featureId) : undefined}
+		>
+			{bar.name}
+			{mark?.namesOnTheBar?.map((name) => (
+				<Box component="span" key={name} sx={{ ml: 0.5, flexShrink: 0 }}>
+					{name}
+				</Box>
+			))}
+			{mark && <BarMarkSymbol mark={mark} />}
+		</RowBody>
+	);
+};
+
+/**
+ * The box a row of this chart is drawn in, whichever kind of row it is.
+ *
+ * The fill is painted here, over the library's own bar element, which keeps its border and its
+ * default fill underneath — so a rim of that default may show at the edges. Nothing in a test can
+ * see it: this environment mocks the library's stylesheet away, which is the same reason the axis
+ * format and the link routing are checked by a person or not at all.
+ */
+const RowBody: React.FC<{
+	hoverText: React.ReactNode;
+	fill?: string;
+	onSelect?: () => void;
+	children: React.ReactNode;
+}> = ({ hoverText, fill, onSelect, children }) => {
+	const isClickable = onSelect !== undefined;
+
+	return (
+		<Tooltip title={hoverText} followCursor>
 			<Box
 				component={isClickable ? "button" : "div"}
 				type={isClickable ? "button" : undefined}
 				data-testid="timeline-bar-content"
-				onClick={isClickable ? () => onSelect(bar.featureId) : undefined}
+				onClick={onSelect}
 				sx={{
 					width: "100%",
 					height: "100%",
@@ -89,14 +150,14 @@ const TimelineBarContent: React.FC<TimelineBarContentProps> = ({
 					textOverflow: "ellipsis",
 					px: 1,
 					background: "none",
+					backgroundColor: fill,
 					border: "none",
 					font: "inherit",
 					color: "inherit",
 					cursor: isClickable ? "pointer" : "default",
 				}}
 			>
-				{bar.name}
-				{mark && <BarMarkSymbol mark={mark} />}
+				{children}
 			</Box>
 		</Tooltip>
 	);

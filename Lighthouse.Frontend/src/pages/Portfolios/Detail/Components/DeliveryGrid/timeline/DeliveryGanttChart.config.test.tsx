@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import DeliveryGanttChart, {
 	type DeliveryGanttChartProps,
 } from "./DeliveryGanttChart";
+import type { TeamLane } from "./deliveryTeamLanes";
 import type { TimelineBar } from "./deliveryTimelineModel";
 
 /**
@@ -36,6 +37,15 @@ const bar = (id: number, name: string): TimelineBar => ({
 	start: new Date(2026, 9, 10),
 	end: new Date(2026, 9, 20),
 	startIsObserved: false,
+});
+
+const lane = (featureId: number, teamId: number): TeamLane => ({
+	featureId,
+	teamId,
+	teamName: "Zenith",
+	start: new Date(2026, 9, 12),
+	end: new Date(2026, 9, 18),
+	color: "#4DA98C",
 });
 
 const renderChart = (props: Partial<DeliveryGanttChartProps> = {}) =>
@@ -129,5 +139,31 @@ describe("what the adapter configures the library with", () => {
 		expect(typeof ganttConfig.current?.taskTemplate).toBe("function");
 		expect(typeof ganttConfig.current?.highlightTime).toBe("function");
 		expect(ganttConfig.current?.scales).toBeInstanceOf(Array);
+	});
+
+	it("hands over a task per lane as well as per bar", () => {
+		renderChart({ lanes: [lane(1, 5)] });
+
+		expect(ganttConfig.current?.tasks).toHaveLength(2);
+	});
+
+	it("draws the axis around the lanes as well, not only around the bars", () => {
+		// The window function widening its parameter is the cheap half and it fixes nothing on its
+		// own: the type widens for free and the behaviour does not. Until this call site is handed
+		// the lanes, a lane reaching past every bar is clipped off the axis in complete silence —
+		// no error, no gap, and nothing drawn in this environment to make the absence visible. So
+		// the check has to be made where the window and the drawing can disagree, which is here.
+		const reachesPastEveryBar = {
+			...lane(1, 5),
+			end: new Date(2026, 10, 20),
+		};
+
+		renderChart({ lanes: [reachesPastEveryBar] });
+
+		const axisEnd = ganttConfig.current?.end as Date;
+
+		expect(axisEnd.getTime()).toBeGreaterThan(
+			reachesPastEveryBar.end.getTime(),
+		);
 	});
 });

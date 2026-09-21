@@ -12,6 +12,7 @@ import {
 	useState,
 } from "react";
 import type { DrawnDependency } from "./deliveryDependencyOverlay";
+import type { TeamLane } from "./deliveryTeamLanes";
 import { type TimelineBar, timelineWindow } from "./deliveryTimelineModel";
 import {
 	chartHeight,
@@ -21,6 +22,7 @@ import {
 	SCALE_HEIGHT,
 	scalesForSpan,
 	TIMELINE_SCALES,
+	taskContentLookup,
 	toGanttLinks,
 	toGanttTasks,
 } from "./ganttShapes";
@@ -48,6 +50,11 @@ export interface DeliveryGanttChartProps {
 	 * bars — a line to a Feature with no bar is drawn to nowhere.
 	 */
 	links?: DrawnDependency[];
+	/**
+	 * One row per contributing Team, drawn beneath the Feature it belongs to. Absent rather than
+	 * hidden when the reader has not asked for them, so the chart is then exactly the chart it was.
+	 */
+	lanes?: TeamLane[];
 	targetDate?: Date;
 	/** Passed in rather than read here, so the chart and its legend mark the same day. */
 	today: Date;
@@ -57,6 +64,10 @@ export interface DeliveryGanttChartProps {
 
 /** How far apart two measurements have to be before the axis is re-ruled. */
 const WIDTH_STEP = 24;
+
+// One array rather than a default written at the destructuring, which would be a fresh identity on
+// every render and invalidate everything memoised against it.
+const NO_LANES: TeamLane[] = [];
 
 const asDay = (date?: Date) => date?.toLocaleDateString() ?? "";
 
@@ -97,6 +108,7 @@ function markerLabel(text: string) {
 const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	bars,
 	links,
+	lanes = NO_LANES,
 	targetDate,
 	today,
 	onBarSelected,
@@ -106,13 +118,16 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 	const barColor = theme.palette.primary.main;
 	const marks = markerColors(theme);
 
-	const tasks = useMemo(() => toGanttTasks(bars), [bars]);
+	const tasks = useMemo(() => toGanttTasks(bars, lanes), [bars, lanes]);
 
 	const ganttLinks = useMemo(() => toGanttLinks(links ?? []), [links]);
 
+	// Measured over the list the chart is actually handed, not over the bars. A Team's own forecast
+	// is not bounded by its Feature's, so a lane can reach past every bar — and taken from the bars
+	// alone the axis would simply stop short of it, with nothing drawn out there to notice missing.
 	const axisRange = useMemo(
-		() => timelineWindow(bars, targetDate, today),
-		[bars, targetDate, today],
+		() => timelineWindow(tasks, targetDate, today),
+		[tasks, targetDate, today],
 	);
 
 	// Measured rather than assumed, so the axis re-rules itself when the window changes. Only the
@@ -161,19 +176,24 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 		[targetDate, today, finestUnit],
 	);
 
-	const barsById = useMemo(
-		() => new Map(bars.map((bar) => [bar.featureId, bar])),
-		[bars],
+	const contentForTask = useMemo(
+		() => taskContentLookup(bars, lanes),
+		[bars, lanes],
 	);
 
 	const BarContent = useCallback(
-		({ data }: { data: { id?: string | number } }) => (
-			<TimelineBarContent
-				bar={barsById.get(Number(data.id))}
-				onSelect={onBarSelected}
-			/>
-		),
-		[barsById, onBarSelected],
+		({ data }: { data: { id?: string | number } }) => {
+			const content = contentForTask(data.id);
+
+			return (
+				<TimelineBarContent
+					bar={content?.bar}
+					lane={content?.lane}
+					onSelect={onBarSelected}
+				/>
+			);
+		},
+		[contentForTask, onBarSelected],
 	);
 
 	const GanttTheme = isDark ? WillowDark : Willow;
@@ -185,7 +205,7 @@ const DeliveryGanttChart: React.FC<DeliveryGanttChartProps> = ({
 			data-theme-mode={isDark ? "dark" : "light"}
 			data-axis-unit={finestUnit}
 			sx={{
-				height: chartHeight(bars.length),
+				height: chartHeight(tasks.length),
 				// White on the bar in both modes, rather than whatever contrasts best with the fill.
 				// The two modes use different greens, so computing it per mode made the label flip
 				// from white to near-black between them — the same bar reading as two components.
