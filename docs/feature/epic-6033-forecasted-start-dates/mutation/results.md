@@ -442,58 +442,62 @@ from the runner's include list makes every mutant in the code it covers survive 
 # Mutation testing — Epic 6033 slice 06 (Teams on the Delivery timeline)
 
 Run 2026-09-21 against `main`, after the refactor pass, the live-review changes and the
-adversarial-review fixes — frozen code, as the gate requires. **Frontend only**; slice 06 changes no
-backend file at all.
+adversarial-review fixes. **Frontend only**; slice 06 changes no backend file at all.
 
-The figures below are the **second** run. A first run at 77.85 % found two of the three files this
-slice created barely tested at all — the colour key at 20.00 % and the preference store at 59.09 %,
-both reachable only through the tab that composes them. Those gaps were closed and the code frozen
-again. What that run found is kept in *Closed by this pass* below rather than overwritten, because a
-score that moved says more than a score that was always there.
+**The figures below are the third run**, and the slice was mutated three times. What moved between
+them is the useful part of this record:
+
+| run | headline | what it found |
+| --- | --- | --- |
+| one | 77.85 % | two of the three files this slice created were barely tested — the colour key at 20.00 % and the preference store at 59.09 %, both reachable only through the tab that composes them |
+| two | 79.60 % | those gaps closed; two survivors left that were **tests unable to fail** rather than untested code |
+| **three** | **80.06 %** | those two closed. `useShowTeams.ts` went to **zero** no-coverage mutants, which is the evidence its storage guard is now actually entered rather than merely named |
+
+Each run was against frozen code, as the gate requires. **Frontend only**; slice 06 changes no
+backend file at all.
 
 | stack | score | killed | survived | no coverage | timeout | errors | wall clock |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Frontend, all eight mutated files | 79.60 % | 511 | 116 | 15 | 0 | 0 | 8 m 39 s |
-| **Frontend, the surface this slice owns** | **89.94 %** | 438 | 43 | 6 | 0 | 0 | — |
+| **Frontend, all eight mutated files** | **80.06 %** | 514 | 115 | 13 | 0 | 0 | 8 m 37 s |
+| Frontend, the surface this slice owns | 90.55 % | 441 | 42 | 4 | 0 | 0 | — |
 | Slice 04's two carried-over files | 47.10 % | 73 | 73 | 9 | 0 | 0 | — |
 
-The two rows reconcile against the headline without rerunning anything: 438 + 73 = 511 killed, and
-43 + 73 = 116 survived. That is the whole of the arithmetic, and it is written out because a split
-that cannot be checked is a convenient number rather than a credible one.
+The two rows reconcile against the headline without rerunning anything: 441 + 73 = 514 killed,
+42 + 73 = 115 survived, 4 + 9 = 13 uncovered. That arithmetic is written out because a split that
+cannot be checked is a convenient number rather than a credible one.
 
 | file | score | killed | survived | no cov | whose code |
 | --- | --- | --- | --- | --- | --- |
 | `deliveryTimelineModel.ts` | 98.48 % | 65 | 1 | 0 | slice 04, one parameter widened by slice 06 |
-| `deliveryTeamLanes.ts` | 96.23 % | 102 | 3 | 1 | **slice 06, new** (was 92.45 %) |
+| `deliveryTeamLanes.ts` | 97.17 % | 103 | 2 | 1 | **slice 06, new** (92.45 → 96.23 → 97.17) |
+| `useShowTeams.ts` | 95.65 % | 22 | 1 | 0 | **slice 06, new** (59.09 → 86.96 → 95.65; uncovered 2 → 0) |
 | `ganttShapes.ts` | 95.14 % | 137 | 6 | 1 | slice 04 and 05, extended by slice 06 |
-| `useShowTeams.ts` | 86.96 % | 20 | 1 | 2 | **slice 06, new** (was 59.09 %) |
 | `DeliveryTimelineTab.tsx` | 80.43 % | 111 | 25 | 2 | slice 04 and 05, extended by slice 06 |
 | `TimelineBarContent.tsx` | 64.86 % | 48 | 26 | 0 | slice 04 (was 58.00 % at slice 05) |
 | `DeliveryGanttChart.tsx` | 30.86 % | 25 | 47 | 9 | slice 04 (was 27.63 % at slice 05) |
 | `TimelineTeamLegend.tsx` | 30.00 % | 3 | 7 | 0 | **slice 06, new** (was 20.00 %) |
 
-## The gate verdict, stated plainly
+## The gate verdict
 
-**The headline is 79.60 %, which is below the 80 % gate. The surface this slice owns is 89.94 %,
-which is above it.** Both numbers are true and the second is the one to judge the slice by — but it
-is not the headline and is not presented as one.
+**The headline is 80.06 % and clears the 80 % gate on its own.** No attribution argument is needed
+to pass, and none is being made.
 
-The reading follows the precedent slice 05 set and recorded: 72.54 % headline against 92.22 % owned,
-with `DeliveryGanttChart.tsx` attributed to slice 04 at 27.63 %. The mutate list is chosen per slice
-and necessarily includes files the slice touched without owning, because the tool mutates whole
-files; a headline computed over that list measures the list as much as the work.
+The owned surface is 90.55 %, and it is worth stating for a different reason than the one it would
+have served at 79.60 %: it is the sharper measurement of this slice's own work, not the number that
+rescues it. The split is kept because it is the honest way to read a mutate list that necessarily
+includes files the slice touched without owning — the tool mutates whole files — and because the
+arithmetic above lets a reader check it rather than take it.
 
-What makes the split honest here rather than convenient is that it is checkable — the arithmetic
-above reconciles to the headline exactly — and that **the two carried-over files both improved**:
-`TimelineBarContent.tsx` from 58.00 % to 64.86 % and `DeliveryGanttChart.tsx` from 27.63 % to
-30.86 %, because closing the adapter's bar-content seam put tests through code that previously had
-none. A slice that leaned on attribution while making the attributed files worse would be a
-different claim.
+Slice 05 recorded the same shape from the other side: 72.54 % headline against 92.22 % owned, with
+`DeliveryGanttChart.tsx` attributed to slice 04 at 27.63 %. There the split was load-bearing. Here it
+is explanatory.
 
-Neither is chased to 80. What remains in them is `sx` blocks, a `ResizeObserver` callback, a date
-formatter handed to the vendor and the scale callback the vendor invokes — none of which this
-environment runs, and asserting on them is how this Epic already shipped four assertions incapable
-of failing.
+**The two carried-over files both improved under this slice** — `TimelineBarContent.tsx` from 58.00 %
+to 64.86 % and `DeliveryGanttChart.tsx` from 27.63 % to 30.86 % — because closing the adapter's
+bar-content seam put tests through code that previously had none. Neither is chased to 80. What
+remains in them is `sx` blocks, a `ResizeObserver` callback, a date formatter handed to the vendor
+and the scale callback the vendor invokes, none of which this environment runs; asserting on them is
+how this Epic already shipped assertions incapable of failing.
 
 ## `TimelineTeamLegend.tsx` reads 30 %, and that is the right number
 
@@ -512,7 +516,7 @@ when the Portfolio can name neither Team. What is not covered is how it is arran
 A reader meeting 30 % here should read it as a file that is nine-tenths layout, not as a file that
 is nine-tenths untested.
 
-## Closed by this pass
+## Closed after run one
 
 Each mutation below was re-applied by hand against the finished code and watched to fail.
 
@@ -535,10 +539,24 @@ spec missing from the runner's include list makes every mutant in the code it co
 want of a test *run* rather than for want of a test, and the report cannot tell those two apart —
 which is exactly what a new spec file would have hit here.
 
-## What survives now, triaged one by one against the second run's list
+## Closed after run two
 
-Re-read from the new report rather than carried over: the line numbers moved when `useShowTeams.ts`
-was reshaped, and one survivor turned out not to be the mutation the first pass had assumed.
+Run two left two survivors that were **not** untested code. Both were tests that could not fail, and
+both are now able to. Test-only; no production file was touched to close either.
+
+| file | mutation | what was wrong, and what now kills it |
+| --- | --- | --- |
+| `deliveryTeamLanes.ts` | the **middle** operand of the control's verdict, `unlanedTeams.size > 0`, forced to `false` | Run one's fix was reported as closing this and did not: the mutant's own span covers one operand of three, not the whole expression, and the first pass read it as the whole. The middle one decides the answer on exactly one shape — a Feature two Teams work on where *neither* resolves at the probability being read: nothing to draw, nothing to colour, two Teams still to name on the bar. Every other fixture has a Team that does resolve, so the first operand carried the verdict. That fixture now exists |
+| `useShowTeams.ts` | the `catch` around the stored read | Two tests named this guard, mocked the read to throw, and asserted the answer was `false` — which an absent key also answers, so neither could tell a caught throw from nothing being there. Probing it found the guard was not merely under-asserted but **never entered at all**; see the section below. The fixture now stores the choice as *on* before breaking the read, so a read that got through answers `true` and a caught one answers `false` |
+
+The correction on the first row is the more useful half of this record. A survivor reported closed
+and not closed is worse than one left open, because nothing looks at it again — and what caught it
+was re-reading the report's own mutant spans rather than trusting the previous pass's summary.
+
+## What survives now, triaged one by one against the third run's list
+
+Re-read from the third report rather than carried over. What is left is four mutants, and every one
+of them is equivalent, unreachable, or styling.
 
 **Accepted — equivalent or unreachable.**
 
@@ -550,34 +568,70 @@ was reshaped, and one survivor turned out not to be the mutation the first pass 
 | `TimelineTeamLegend.tsx` | seven `sx` layout mutants | Styling — see the section above |
 | `TimelineBarContent.tsx`, `DeliveryGanttChart.tsx` | 73 between them | Slice 04's code — see the section above |
 
-**Two are real, and are recorded here rather than fixed**, because the code is frozen against these
-numbers and closing either means another run. Neither is a defect in shipped behaviour; both are
-tests that do not cover what they appear to.
+Nothing else is outstanding. Every survivor in the third run is in the table above.
 
-**1. `deliveryTeamLanes.ts:140` — the middle operand of the control's verdict.** The first pass
-mis-read this as the whole expression and reported it closed; the report's own span says otherwise.
-What is mutated is `unlanedTeams.size > 0` alone, inside
-`lanes.length > 0 || unlanedTeams.size > 0 || soleTeams.size > 0`. It only changes the answer when a
-Delivery has **no lanes and no single-Team bars but does have a Team with nothing to draw** — that
-is, a placed Feature two Teams work on where *neither* resolves at the probability being read. Every
-fixture that gets close has one Team that does resolve, so the first operand carries the verdict and
-the middle one is never load-bearing. The missing test is one Feature, two Teams, both with empty
-percentiles: nothing to draw, two Teams to name, and the control must still be offered because
-turning it on does change the chart.
+## The finding worth carrying past this slice: a mock that never mocked anything
 
-**2. `useShowTeams.ts:42-43` — the `catch` around the stored read, reported as never executed.**
-Two tests claim to cover it: the store's own "shows nothing, rather than throwing, when storage
-cannot be read at all", and the tab's blocked-storage case. Both mock `Storage.prototype.getItem`
-to throw and then assert the answer is `false`. **That assertion is true either way** — an absent
-key also reads as `false` — so if the spy does not reach the call, the test passes for the wrong
-reason and nothing says so. The report recording the `catch` as uncovered is the evidence that this
-is what is happening. It is the same shape of not-really-asserting this Epic has paid for three
-times, and it is worth fixing properly rather than quickly: the honest assertion distinguishes
-*threw and was caught* from *was absent*, which means the fixture has to store `"true"` first and
-then make the read throw, so that an uncaught throw and a swallowed one give different answers.
+Closing the storage guard turned up something that is not about slice 06 at all, and it is the most
+transferable thing this work produced.
 
-Both are listed for a decision rather than actioned. The shipped behaviour is right in both cases —
-the guard exists and works; it is the test that cannot tell.
+**In this test environment, `localStorage` does not inherit from `Storage.prototype`.** Its
+`getItem` and `setItem` are own properties of the object. So `vi.spyOn(Storage.prototype, "getItem")`
+installs cleanly, reports itself as installed, and **intercepts nothing**. Probed directly, twice,
+independently:
+
+```
+inherits=false  ownGetItem=true  protoSpyIntercepted=false  objectSpyIntercepted=true
+```
+
+The consequence is sharper than "those tests were weak". A test written this way names a guard,
+arranges for the guard to be needed, and then never reaches it — while passing. And it passes for a
+second reason that hides the first: the assertion is almost always *"the default is still in
+effect"*, which an absent key satisfies anyway. Two independent reasons to be green, neither of them
+the one the test claims.
+
+**Every other use of the idiom in this repository was then read**, rather than inferred from the
+grep. There are four, in three features, and they do not all fail the same way:
+
+| where | what it claims | verdict |
+| --- | --- | --- |
+| `hooks/useAgingBackground.test.ts:75` | "still draws a chart when the browser refuses to say what was stored" — asserts `background` is `"off"` | **Cannot fail.** The spy never intercepts, and `"off"` is what an absent key gives anyway |
+| `hooks/useAgingBackground.test.ts:93` | "still applies a choice the browser refuses to remember" — asserts `background` is `"pace"` after choosing it | **Cannot fail.** The spy never intercepts, and the state would move to `"pace"` whether or not the write threw |
+| `components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx:1786` | "opens anyway when the browser will not remember anything" — asserts the dialog and its Enlarge button render | **Cannot fail.** The spy never intercepts, and the dialog renders with no stored key at all |
+| `services/UsageData/usageDataEvents.test.ts:162` | "keeps what it noticed in memory, writing to neither browser store" — `expect(writes).not.toHaveBeenCalled()` | **The spy assertion cannot fail** — a spy that intercepts nothing records nothing, so `not.toHaveBeenCalled()` is true by construction. **But the test is not vacuous**: its siblings assert `localStorage.length` is 1 and `sessionStorage.length` is 0, and those *would* catch a real write. The claim is protected; the line that looks like it protects it is not |
+
+That last row is why the others were read rather than assumed from a grep. Three tests are green for
+a reason unrelated to what they assert; the fourth asserts the same thing twice, once uselessly and
+once properly, and is fine. A finding stated as "four broken tests" would have been wrong in a way
+that costs someone an afternoon.
+
+**Fixing the three is outside this slice.** They belong to two other features, they are green today,
+and changing them means understanding what each was protecting — its own blast radius and its own
+review. This is a verified finding recorded where the next person will look, not a task left
+half-done. The fix, when someone takes it, has two parts and neither is sufficient alone: spy the
+**object**, and arrange a fixture where *caught* and *absent* give **different** answers. The second
+part is the one that is easy to skip, and skipping it leaves a test that still cannot fail.
+
+## Four assertions in this slice could not fail, and four different instruments found them
+
+Worth stating plainly, because it is the most useful sentence here for whoever reads it next.
+
+| what could not fail | found by |
+| --- | --- |
+| a bar's name checked with `toHaveTextContent`, satisfied by the accessible title inside an icon | measuring the RED classification before writing the code |
+| `expect(timelineWindow(bars)).toEqual(timelineWindow([bar(10, 20)]))`, where `bars` *was* `[bar(10, 20)]` | the adversarial review |
+| a colour test whose shared Team sorted first, so two separately-built maps agreed by coincidence | sabotaging the code to prove the test could fail |
+| blocked-storage tests aimed at a prototype the object does not inherit from | **mutation testing** |
+
+The last one is the one to dwell on. It survived a four-reviewer wave gate, an adversarial review
+with execution tools, a falsifier column written specifically to catch this class, and my own
+hand-sabotage of neighbouring tests. Every one of those instruments reads the test and believes it,
+and **no reading of that test could have revealed the problem** — the mock was correct-looking,
+correctly typed, and pointed at the wrong object. Only running the code with the guard removed and
+finding that nothing noticed could tell.
+
+That is what mutation testing is for, and it is the argument for keeping it as a gate rather than a
+formality: it is the only instrument here that does not take the test's word for what it tests.
 
 ## Not mutated
 
