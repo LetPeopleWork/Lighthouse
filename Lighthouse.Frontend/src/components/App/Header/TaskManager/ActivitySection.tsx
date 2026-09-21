@@ -5,7 +5,10 @@ import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import {
+	TERMINOLOGY_KEYS,
+	type TerminologyKey,
+} from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import type {
 	IUpdateTask,
@@ -28,21 +31,36 @@ export const taskKey = (task: IUpdateTask): string =>
 	`${task.updateType}-${task.id}`;
 
 /**
- * What an operator is told a piece of work is. The update type is the instance's own vocabulary; this
- * is the reader's, so a tenant who renamed Team to Squad never meets the seeded default here.
+ * What Lighthouse is doing, and what it is doing it to. Two vocabularies in one sentence: the thing is
+ * named in the reader's words, so a tenant who renamed Team to Squad never meets the seeded default
+ * here, while the doing is named in Lighthouse's own and is deliberately never looked up - renaming a
+ * Portfolio changes what is being worked on, not what is happening to it.
+ *
+ * Both tables spell out every update type instead of falling through a catch-all. A catch-all is what
+ * put a Portfolio refresh and the forecast it triggers in the same words, and it would do it again to
+ * the next kind of work someone adds; written out, that work cannot be added without being described.
  */
+const WORK_VERBS: Record<UpdateTaskType, string> = {
+	Team: "Refreshing",
+	Features: "Refreshing",
+	Forecasts: "Forecasting",
+	TeamDelete: "Removing",
+	PortfolioDelete: "Removing",
+};
+
+const WORK_SUBJECT_TERMS: Record<UpdateTaskType, TerminologyKey> = {
+	Team: TERMINOLOGY_KEYS.TEAM,
+	TeamDelete: TERMINOLOGY_KEYS.TEAM,
+	Features: TERMINOLOGY_KEYS.PORTFOLIO,
+	Forecasts: TERMINOLOGY_KEYS.PORTFOLIO,
+	PortfolioDelete: TERMINOLOGY_KEYS.PORTFOLIO,
+};
+
 const useKindOf = () => {
 	const { getTerm } = useTerminology();
 
-	return (updateType: UpdateTaskType): string => {
-		switch (updateType) {
-			case "Team":
-			case "TeamDelete":
-				return getTerm(TERMINOLOGY_KEYS.TEAM);
-			default:
-				return getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
-		}
-	};
+	return (updateType: UpdateTaskType): string =>
+		getTerm(WORK_SUBJECT_TERMS[updateType]);
 };
 
 /**
@@ -112,9 +130,6 @@ const RowProgress = ({ activity }: { activity: RowActivity }) => {
 	}
 };
 
-const isDelete = (updateType: UpdateTaskType): boolean =>
-	updateType === "TeamDelete" || updateType === "PortfolioDelete";
-
 interface ActivitySectionProps {
 	tasks: IUpdateTask[];
 	/**
@@ -159,9 +174,8 @@ const ActivitySection = ({
 					variant="body2"
 					sx={{ flexGrow: 1 }}
 				>
-					{kindOf(task.updateType)} '{task.name}'
-					{isDelete(task.updateType) ? " (removal)" : ""} —{" "}
-					{describeState(task, activity)}
+					{WORK_VERBS[task.updateType]} {kindOf(task.updateType)} '{task.name}'{" "}
+					— {describeState(task, activity)}
 				</Typography>
 
 				<Tooltip title={`Stop refreshing ${task.name}`}>

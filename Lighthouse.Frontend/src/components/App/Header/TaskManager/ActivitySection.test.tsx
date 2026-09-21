@@ -65,7 +65,7 @@ describe("Activity rows say what the work is", () => {
 	// Both rows are given the SAME status deliberately. With one running and one queued they differ in
 	// their last word whatever the lookup does, so the assertion passes against the very bug it is meant
 	// to catch — which is what it did when this was first written.
-	it.skip("tells a portfolio refresh apart from the forecast it triggers", () => {
+	it("tells a portfolio refresh apart from the forecast it triggers", () => {
 		renderRows([
 			aTask({ updateType: "Features", status: "Queued" }),
 			aTask({ updateType: "Forecasts", status: "Queued" }),
@@ -76,7 +76,7 @@ describe("Activity rows say what the work is", () => {
 
 	// @AC-01.2 — five members, five answers. The lookup that caused #6055 had a default arm absorbing
 	// three of them, so the promise is about the whole enum rather than about the pair that was reported.
-	it.skip("gives every kind of work its own phrase", () => {
+	it("gives every kind of work its own phrase", () => {
 		renderRows(
 			EVERY_UPDATE_TYPE.map((updateType) =>
 				aTask({ updateType, status: "InProgress" }),
@@ -92,7 +92,7 @@ describe("Activity rows say what the work is", () => {
 
 	// @AC-01.3 @AC-01.5 — the row is one sentence built from two vocabularies. The noun is whatever the
 	// tenant renamed it to; the verb is Lighthouse's own word and is never looked up.
-	it.skip("uses the tenant's noun and Lighthouse's own verb", () => {
+	it("uses the tenant's noun and Lighthouse's own verb", () => {
 		mockGetTerm.mockImplementation((key: string) =>
 			key === "team" ? "Squad" : "Programme",
 		);
@@ -109,7 +109,7 @@ describe("Activity rows say what the work is", () => {
 
 	// @AC-01.4 — the suffix is replaced, not joined. Two ways of saying one thing in one column is how
 	// they come to disagree.
-	it.skip("says a removal is a removal without also appending one", () => {
+	it("says a removal is a removal without also appending one", () => {
 		renderRows([
 			aTask({ updateType: "PortfolioDelete", status: "InProgress" }),
 		]);

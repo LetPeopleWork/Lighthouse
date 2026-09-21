@@ -416,7 +416,7 @@ describe("TaskManagerIcon", () => {
 
 		const row = await screen.findByTestId("task-manager-row-TeamDelete-9");
 		expect(row).toHaveTextContent(/Petaluma/);
-		expect(row).toHaveTextContent(/removal/i);
+		expect(row).toHaveTextContent(/Removing/);
 	});
 
 	// A removal is still a removal of that kind of thing, so it is named in the reader's words too.
@@ -449,7 +449,7 @@ describe("TaskManagerIcon", () => {
 
 		expect(
 			await screen.findByTestId("task-manager-row-Team-7"),
-		).not.toHaveTextContent(/removal/i);
+		).not.toHaveTextContent(/Removing/);
 	});
 
 	// A portfolio removal reads the same way a team one does; the list would otherwise be honest about
@@ -468,7 +468,7 @@ describe("TaskManagerIcon", () => {
 
 		const row = await screen.findByTestId("task-manager-row-PortfolioDelete-4");
 		expect(row).toHaveTextContent(/Q3 Platform/);
-		expect(row).toHaveTextContent(/removal/i);
+		expect(row).toHaveTextContent(/Removing/);
 	});
 
 	// The first thing in an empty queue is waiting for its turn, not behind anything. Saying "behind"
