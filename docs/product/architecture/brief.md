@@ -8775,14 +8775,15 @@ The design's answer is to make the mistake **non-representable** rather than to 
 
 | # | Invariant | How it is held |
 |---|---|---|
-| I1 | **No response field can name or rank a winning sampling window.** | `soundWindowDays` is an `int[]` produced by *filtering* the fixed ascending ladder `[14,30,60,90]`. Filtering an ordered constant cannot yield a different order, and no per-window score exists to sort by. Enforced by a test asserting `soundWindowDays` is always a subsequence of `sampledWindowDays` in that order. |
-| I2 | **No field asserts something the check did not examine.** | No `lowerBound`/`upperBound` pair (a bounds pair claims an interval; on a non-contiguous sound set that claim is false). No boolean for the current setting's standing — it is `Inside \| Outside \| NotDetermined`, because `Team.ThroughputHistory` is a free integer and may be off-ladder. |
+| I1 | **No response field can name or rank a winning sampling window.** | `soundWindowDays` is an `int[]` produced by *filtering* `sampledWindowDays`, which is a **fixed ascending sequence for any given run** — the standard ladder `[14,30,60,90]` union the Team's own `ThroughputHistory`, sorted. Filtering an ascending sequence cannot yield a different order, and **no per-window score exists anywhere in the response to sort by.** Enforced by three assertions: the ladder's composition, the subsequence-in-order check, and the absence of any per-window scalar. |
+| I2 | **No field asserts something the check did not examine.** | No `lowerBound`/`upperBound` pair (a bounds pair claims an interval; on a non-contiguous sound set that claim is false). No boolean for the current setting's standing — it is `Inside \| Outside \| NotDetermined`, where `NotDetermined` means the Team's own window was swept but none of its cells could be evaluated. |
 | I3 | **The feature has no write path, and cannot acquire one by mistake.** | `ForecastRealityCheckService` takes the resolved `Team` as a *parameter* and is never injected with `IRepository<Team>`. It holds no reference to any `Save`/`Update`/`Add`. Enforced by ArchUnitNET. |
-| I4 | **The printed denominator reports what was evaluated, never what was attempted.** | `scoresEvaluated = runsEvaluated × levelsPerRun`, with `runsAttempted` (always 16) carried separately for the "2 of the 16 could not run" copy. |
-| I5 | **`cells` always has sixteen entries.** An unevaluable cell is present with its reason, never omitted. | A missing cell reads as "that one was fine" — ADR-194's exact finding. |
+| I4 | **The printed denominator reports what was evaluated, never what was attempted.** | `scoresEvaluated = runsEvaluated × levelsPerRun`, with `runsAttempted` (16 or 20) carried separately for the "2 of the 16 could not run" copy. The denominator copy is a **template**, not a fixed string — §4.2 requires the artifact to state its denominator, not to state *sixteen*. |
+| I5 | **`cells` is always complete** — `sampledWindowDays.length × sampledHorizonDays.length` entries, **16 or 20**. An unevaluable cell is present with its reason, never omitted. | A missing cell reads as "that one was fine" — ADR-194's exact finding. |
 | I6 | **The response carries facts, never a rendered clause.** | Every user-facing string here contains a renameable term (Team, Work Item, throughput). Sentences are composed in the client from facts plus `useTerminology()`, per the `story-6055-activity-names-the-work` rule in this brief. |
-| I7 | **The forecast engine does not change.** | `IForecastService.HowMany` is called sixteen times with different inputs and is otherwise untouched; existing forecast assertions must pass unmodified. |
+| I7 | **The forecast engine does not change.** | `IForecastService.HowMany` is called once per cell with different inputs and is otherwise untouched; existing forecast assertions must pass unmodified. |
 | I8 | **The sufficiency bar is composed with, not duplicated.** | `ForecastDataSufficiencyPolicy.HasEnoughData` is called per cell on that cell's own `RunChartData`. `MinimumActiveDays` is echoed into the response and never re-declared. The file is byte-unchanged. |
+| I9 | **The Team's own sampling window is always one of the windows swept.** | `sampledWindowDays = sort(standardWindowDays ∪ {ThroughputHistory})`, so "is your setting sound" is a membership test over cells that were actually run rather than an inference about an untested value. Sixteen cells on the standard ladder, twenty off it. Added 2026-09-22 by the maintainer's reversal of the original recommendation. |
 
 ### Component decomposition
 
@@ -8791,7 +8792,7 @@ The design's answer is to make the mistake **non-representable** rather than to 
 | Component | Verdict | Responsibility | Contract shape |
 |---|---|---|---|
 | `ForecastController.RunRealityCheck` | EXTEND | Driving adapter. Resolves the Team via the shipped `GetEntityByIdAnExecuteAction`, maps `applyFilterOverride` via the existing private `MapOverrideToFilterMode`, returns the envelope. **No input validation** — the body carries no dates, so there is nothing to validate. | Adapter |
-| `IForecastRealityCheckService` / `ForecastRealityCheckService` | CREATE NEW | Builds the sixteen `(horizon, window)` pairs from today; reads history per cell and actuals per horizon; runs `HowMany`; assembles the envelope. | Bounded-change, **empty mutation set** (I3) |
+| `IForecastRealityCheckService` / `ForecastRealityCheckService` | CREATE NEW | Builds the `(horizon, window)` pairs from today — sixteen, or twenty when the Team's own window is off the standard ladder (I9); reads history per cell and actuals per horizon; runs `HowMany`; assembles the envelope. | Bounded-change, **empty mutation set** (I3) |
 | `RealityCheckVerdictPolicy` | CREATE NEW | Pure static, beside `ForecastDataSufficiencyPolicy`: `Held`, `ExpectedHeldCount`, `CellOutcome`, `SoundWindows`, `Determination`, `CurrentSettingStanding`. | **Pure function (return-only)** — no DI, no clock, no I/O; today arrives as a parameter |
 | `RealityCheckInputDto` + result DTO family | CREATE NEW | The wire contract. `BacktestResultDto` cannot be extended: it models one scored period and one history window in four get-only constructor-set properties, and widening it would change the shipped `POST backtest/{teamId}` contract three frontend components consume. | Data |
 
@@ -8866,25 +8867,43 @@ obvious reuses:
   Team's *configured* window. A cell needs an arbitrary window, so the sweep computes its own dates.
   Recorded so nobody "reuses" it into a bug.
 
-### Performance — the one open risk, and where the cost actually is
+### Performance — resolved by measurement, and where the cost actually is
 
-**R-1 is unresolved and is not designed around.** Does a sixteen-run sweep fit a request budget of median
-≤ 5 s and max ≤ 10 s over twelve samples? It is the first task of the first slice, before any UI.
+**R-1 asked whether a sixteen-run sweep fits a request budget of median ≤ 5 s and max ≤ 10 s. It does, with
+room.** `RealityCheckWallClockProbe` measures **701 ms cold / 612 ms warm** on a Team with 615 closed Work
+Items, **885 ms** at 5,000 and **1,745 ms** at 20,000 — and **exactly twenty queries at every volume, not
+growing with Team size.** Warm cost is flat at ~615 ms because the cache holds projected run charts rather
+than Work Items. The floor is the Monte Carlo itself (~615 ms for sixteen runs at 10,000 trials), so only
+the cold query path scales, and the median budget would not be threatened until roughly **80,000 closed
+Work Items on one Team**.
 
-What DESIGN adds is the shape of the cost, read from the tree.
+**The twenty-cell case (an off-ladder Team, I9) is extrapolated rather than measured: ~870 ms cold**, with
+24 queries. The probe exercises sixteen cells; extending it to twenty is recommended, chiefly to confirm
+the query count — 24 assumes the fifth window misses the cache exactly once and adds no actual-completed
+read, and an implementation that read the actual per cell would show 25.
+
+**What the number is not**: SQLite, in-process, one machine, no Kestrel, no serialisation, no concurrent
+load. It measures the sweep's own cost, which is what R-1 asked. A loaded production instance will be
+slower, so AC-1.1 stays in the first slice — but as a confirmation on real hardware, not as a gate that
+could change the design.
+
+The cost analysis below was written before the measurement and is kept because the measurement confirmed
+it exactly. Read from the tree:
 `TeamMetricsService.GetThroughputForTeam` caches under `Throughput_{start}_{end}` — **window-dependent** —
 but on a miss its lambda runs
 `workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == Done)`, whose
-predicate is **window-independent**. Only the projection differs. A cold-cache sweep therefore issues up
-to **twenty identical "all closed items for this Team" queries**: sixteen distinct history windows plus
-four distinct scored periods. `GetBlackoutAwareThroughputForTeam` layers a second cache key and one
+predicate is **window-independent**. Only the projection differs. A cold-cache sweep therefore issues one
+identical "all closed items for this Team" query per distinct window plus one per distinct scored period:
+**twenty for a sixteen-cell sweep** (16 history windows + 4 scored periods) and **twenty-four for a
+twenty-cell one**. `GetBlackoutAwareThroughputForTeam` layers a second cache key and one
 `GetEffectiveBlackoutDays` over each.
 
-Two facts soften it, both worth measuring rather than trusting: the four actual-completed reads are per
-**horizon**, shared four ways — an implementation reading them per cell is already 25% over — and no work
-tracking system is contacted at any point, so the cost is database plus CPU.
+Two facts soften it: the actual-completed reads are per **horizon**, shared four or five ways — an
+implementation reading them per cell is already 25% over, 30% on an off-ladder Team — and no work tracking
+system is contacted at any point, so the cost is database plus CPU.
 
-**Probe instruction: run it cold as well as warm, and count queries, not only wall clock.**
+**The probe instruction was: run it cold as well as warm, and count queries, not only wall clock.** That
+is what was done, and the prediction came back exact rather than approximate.
 
 **If the budget is missed — Contingency A, not B.**
 
@@ -8907,7 +8926,7 @@ poll changes the transport and not one response field.
 | Attribute | Strategy |
 |---|---|
 | Functional suitability | The honesty requirements are structural, not asserted: I1, I2, I4, I5. |
-| Performance | The only open risk. Sixteen `HowMany` runs plus up to twenty cold-cache reads, in-request, no external call. Measured before any UI (see above). |
+| Performance | **Measured, not open.** 701 ms cold median against a 5,000 ms budget on a real Team; twenty queries, flat in Team size; Monte Carlo floor dominates. An off-ladder Team adds four cells — extrapolated ~870 ms. See above. |
 | Reliability | No write path, so no partial-failure state. A degenerate forecast degrades one cell to unevaluable rather than failing the sweep. |
 | Security | One permission, `TeamRead`, byte-identical to the shipped backtest. The surface added is one read endpoint over data the same principal can already read. |
 | Maintainability | Every rule in one pure static policy, testable without a database or a Monte Carlo run. |
@@ -8932,8 +8951,11 @@ Style: hexagonal. Tools: **ArchUnitNET** (five `*ArchUnitTest` classes already e
 - **E3** — no `DateTime.UtcNow` / `DateTime.Today` anywhere in the feature; the anchor comes from
   `ILighthouseClock`. Already covered by the shipped `CalendarDayAnchorSeamArchUnitTest`.
 - **E4** — `ForecastDataSufficiencyPolicy.cs` byte-unchanged before and after (I8).
-- **E5** — `soundWindowDays` is always a subsequence of `sampledWindowDays` in that order, so a sort by any
-  score fails the test (I1).
+- **E5** — three assertions holding I1: `sampledWindowDays` equals `standardWindowDays` union the Team's
+  `ThroughputHistory`, sorted ascending with no duplicates; `soundWindowDays` is always a subsequence of
+  it **in that order**, so a sort by any score fails; and **no property anywhere in the response carries a
+  per-window scalar**. The third is what actually holds the invariant — the second is unbreakable only
+  while there is nothing to sort by.
 - **E6** — sufficiency reason, cell outcome, determination and level reading render through exhaustive
   `Record<Enum, …>` maps with no `default:`, so a new member cannot reach the screen without someone
   writing its copy — the `story-6055` idiom.
@@ -8947,10 +8969,10 @@ Style: hexagonal. Tools: **ArchUnitNET** (five `*ArchUnitTest` classes already e
   are written down now. **Accepted.** The premise — that no `Report` concept exists — was confirmed by
   `grep` over this file, not assumed: four occurrences in 8 747 lines, all ordinary English.
 - [ADR-208](./adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md): a level
-  *holds* iff `actual >= value(P)`, and its nominal rate is `P`, not `100 − P`. **PROPOSED — it corrects
-  two acceptance criteria the maintainer locked**, so it waits for them. The engine sorts descending
-  ("at least N items"), which makes the upstream expected-count arithmetic wrong at three of the four
-  levels; the 50% row is identical under both formulas, which is why it survived review.
+  *holds* iff `actual >= value(P)`, and its nominal rate is `P`, not `100 − P`. **Accepted 2026-09-22**,
+  verified against `HowManyForecast`'s descending comparer before ratification. The engine sorts
+  descending ("at least N items"), which made the upstream expected-count arithmetic wrong at three of the
+  four levels; the 50% row is identical under both formulas, which is why it survived review.
 - [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md): governs the unevaluable
   rendering and supplies the grammar-overclaim precedent. Not amended.
 - [ADR-039](./adr-039-forecast-data-sufficiency-backend-signal.md): the sufficiency bar this composes
@@ -8963,11 +8985,28 @@ Style: hexagonal. Tools: **ArchUnitNET** (five `*ArchUnitTest` classes already e
 
 ### Open items carried into DISTILL
 
-1. **ADR-208 is PROPOSED.** AC-1.6 and AC-2.4 currently specify arithmetic it says is wrong. **They must
-   not be turned into acceptance tests until the maintainer answers.**
-2. **R-1 is unresolved** and closes inside the first slice, before any UI.
-3. A Team with an off-ladder `ThroughputHistory` (e.g. 45) is checked against 14/30/60/90, none of which
-   is theirs. Recommended answer: say so via `currentSettingWasTested: false` rather than widening the
-   sweep, which would make the locked 16-run denominator Team-dependent.
-4. The recorded CLI/MCP precondition assumes the response carries a verdict sentence. It cannot (I6), so
-   the precondition needs rewriting — the answer it reached (no CLI/MCP exposure) is unchanged.
+**Nothing blocks DISTILL.** The four items this section originally carried are all closed; two unrelated
+items are noted below rather than forced to read resolved.
+
+| Was | Now |
+|---|---|
+| ADR-208 is PROPOSED; AC-1.6 and AC-2.4 must not become tests yet | **Closed.** ADR-208 **Accepted** 2026-09-22. Both ACs are settled and testable directly. |
+| R-1 is unresolved | **Closed by measurement** — 701 ms cold / 612 ms warm on a real Team against a 5,000 ms budget; twenty queries, not growing with Team size. AC-1.1 stays in slice 01 but is now a confirmation on real hardware, not a gate that could change the design. |
+| An off-ladder Team is checked against a ladder that is not its own | **Closed — reversed by the maintainer.** The Team's own window is now swept as a fifth window (I9): 16 cells on-ladder, 20 off it. The cost objection was measured away and the denominator objection confused §4.2's principle with the constant 16. |
+| The CLI/MCP precondition assumes the response carries a sentence | **Closed — rewritten.** It now turns on the *client* composing the artifact from facts and resolving terminology itself. The answer (no CLI/MCP in this Epic) is unchanged. |
+
+**Two things a later reader should still know:**
+
+1. **ADR-195 still needs its status note.** R-1 resolving in favour of the in-request shape means this
+   feature never touches the update queue, so the staleness cannot mislead *this* Epic — only the next
+   reader of that ADR.
+2. **A Team with `UseFixedDatesForThroughput = true` has no rolling sampling window at all**, so there is
+   nothing of its own to sweep and the feature's premise does not describe it. Specified behaviour: sweep
+   the standard four windows, sixteen cells, `currentSettingWasTested: false` with its reason. Whether
+   such a Team should see the control at all is a product question; the specified behaviour ships
+   correctly either way. This was latent until the Team's own setting became load-bearing.
+
+**For the acceptance designer**: every Team in the worked examples is on the ladder, so a suite written
+from them alone would exercise only the sixteen-cell path. The twenty-cell path, the hole-in-the-middle
+sound set (an off-ladder window unsound while its neighbours are sound) and the fixed-dates Team all need
+coverage.

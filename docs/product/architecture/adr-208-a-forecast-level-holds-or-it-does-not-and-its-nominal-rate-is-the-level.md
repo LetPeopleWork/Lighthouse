@@ -172,7 +172,8 @@ context and no place to record it.
 
 - **Two locked acceptance criteria change.** AC-1.6 and AC-2.4 say "beaten"; they must say "held", and
   their expected-count formula changes. The journey's worked example and its TUI mockup change with them.
-  DISCUSS is reopened on this one point, which is why this ADR is PROPOSED rather than Accepted.
+  DISCUSS was reopened on this one point, which is why this ADR was raised as PROPOSED; the maintainer
+  accepted it on 2026-09-22.
 - The corrected numbers read less dramatically at 70% and 85%, where "held in 12 of 14, about 12 expected"
   is a calm result. That is the honest reading and the calm case is the modal one throughout this feature,
   but it is a change in the artifact's tone at two of its four levels.

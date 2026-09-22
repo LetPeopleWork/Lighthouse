@@ -182,21 +182,56 @@ The nominal-rate roll-up (§4.3) is then four lines of text below the panels, no
     95%   beaten in 0   (about 1 expected)    never beaten — this is over-forecasting, not excellence
 ```
 
+> **SUPERSEDED 2026-09-22 by [ADR-208](../../product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md)
+> (Accepted). The verdicts in the right-hand column are right; the expected counts are wrong.**
+>
+> The engine sorts its simulation results descending ("at least N items"), so a level's nominal rate is
+> **`P`**, not `100 − P`. Out of fourteen evaluable checks the 85% row expects about **12**, not 2, and the
+> 95% row about **13**, not 1. The 50% row is identical under both formulas, which is exactly why the error
+> survived review.
+>
+> The word **"beaten" is retired** — in English a forecast can be beaten *by* the Team or beat the Team,
+> and those are opposite events. The measurement is **held**: `actual >= value(P)`. The 95% reading stands
+> and gets *stronger*: held in 0 of 14 against about 13 expected is a dramatic signal, where the old
+> arithmetic made it read as unremarkable.
+>
+> This block is left as written so the correction is legible. **AC-1.6 and AC-2.4 carry the corrected
+> version and are what DISTILL tests against.**
+
 ### D3 — The denominator states two numbers and discloses the correlation between them
 
 §4.2 required the artifact to print its own denominator. With D1 the honest denominator is no longer one
 number, and saying "64 configurations were checked" would be dishonest in a *new* direction: the four
 levels of one cell are read off **the same simulation** and are perfectly correlated by construction.
 
-The permanent copy therefore states both numbers and their relationship:
+The permanent copy therefore states both numbers and their relationship. **It is a template, not a fixed
+string** — see the amendment below:
 
-> *"16 forecast runs were checked, each read at 4 confidence levels — 64 scores in all. The four levels
-> of a single run come from the same simulation, so they are not independent of one another. And each run
-> covers a different stretch of real time — every one ends today and reaches back by its own length — so
-> they are not repeated trials of one experiment and should not be ranked against each other."*
+> *"${runCount} forecast runs were checked, each read at ${levelCount} confidence levels — ${scoreCount}
+> scores in all. The ${levelCount} levels of a single run come from the same simulation, so they are not
+> independent of one another. And each run covers a different stretch of real time — every one ends today
+> and reaches back by its own length — so they are not repeated trials of one experiment and should not be
+> ranked against each other."*
 
 This is a **better** disclosure than the one §4.2 asked for, and it exists only because U2 forced the
 question. It is recorded as an improvement the override produced, not as a concession to it.
+
+> **AMENDED 2026-09-22 (DESIGN, maintainer decision on OQ-2).** This decision originally rendered the
+> template with the constants **16 runs / 4 levels / 64 scores**, and those constants were carried
+> downstream as though they were the requirement. **They were not.** The honesty requirement §4.2 is
+> *state your denominator* — say what was actually checked — and a report reading *"20 forecast runs were
+> checked, each read at 4 confidence levels — 80 scores in all"* satisfies it exactly as well.
+>
+> The sweep is now **16 cells for a Team whose sampling window is on the standard 14/30/60/90 ladder and
+> 20 for a Team whose window is off it**, because the off-ladder Team's own setting is tested as a fifth
+> window (DES-13). So `${runCount}` is 16 or 20, and `${scoreCount}` is 64 or 80.
+>
+> **The principle is locked; the constants never were.** The correlation sentence and the
+> non-comparability sentence are unchanged, and neither depends on the count.
+>
+> Everything below this line that says "sixteen" and is a *worked example on a named Team* is correct as
+> written — Ocean Explorer sits at 30 and Coastal Survey and Deep Current at ladder values, so all three
+> genuinely run sixteen cells. Statements of the *general contract* have been amended to say 16 or 20.
 
 ### D4 — Two findings, no buttons. The check reports; the human acts
 
@@ -222,8 +257,8 @@ human choose which to quote.**
 
 1. **A button would contradict §4.1.** The verdict names a region. A button must write one number.
    `Apply 60 days` names a winner inside a range the artifact has just said is undifferentiated — which
-   is precisely the selection-bias claim Bailey et al. say a sixteen-cell search against months of
-   history cannot support. It would undo the feature's central honesty discipline in the single
+   is precisely the selection-bias claim Bailey et al. say a sixteen- or twenty-cell search against
+   months of history cannot support. It would undo the feature's central honesty discipline in the single
    interaction the user is most likely to trust.
 2. **The control is already on screen.** Verified: `ThroughputQuickSetting` sits in
    `QuickSettingsBar` inside `DetailHeader`'s `quickSettingsContent` (`TeamDetail.tsx:402-405`) — the page
@@ -475,11 +510,11 @@ Scenario: The artifact states what it checked and why the checks cannot be ranke
   And the statement that each run covers a different stretch of real time ending today is on screen
   And neither statement is hidden behind a tooltip or a disclosure
 
-Scenario: A confidence level that was never beaten is called over-forecasting
-  Given Ocean Explorer's 95% forecast was not beaten in any of the evaluable checks
+Scenario: A confidence level that never held is called over-forecasting
+  Given Ocean Explorer's 95% forecast was not reached in any of the evaluable checks
   When Maria reads the verdict
   Then the 95% level is described as over-forecasting rather than as excellent
-  And the nominal rate it was expected to be beaten at is stated alongside it
+  And the number of checks its nominal rate expected it to hold in is stated alongside it
 
 Scenario: A period whose own history is too thin is excluded and named
   Given Coastal Survey's 14-day sampling windows hold fewer than 5 days with a completed Work Item
@@ -495,27 +530,33 @@ Scenario: Reading the check needs read rights on the Team and nothing more
 
 #### Acceptance Criteria
 
-- **AC-1.1 (R-1, measurement gate — runs before any other work in this slice)** — a sixteen-run reality
-  check on a Team holding at least twelve months of Work Items completes on the development instance with
-  a **median at most 5 seconds and a maximum at most 10 seconds across twelve samples**, alongside the
-  measured median of a single shipped `POST /api/latest/forecast/backtest/{teamId}` on the same Team as a
-  baseline. Both numbers are written into the slice brief. **If the budget is missed, the slice stops and
-  the fallback (`UpdateQueueService`, with the ADR-195 single-lane caveat) is re-scoped before any UI is
-  written.**
+- **AC-1.1 (R-1, measurement gate — runs before any other work in this slice)** — a full reality check
+  (**sixteen runs for a Team on the standard sampling-window ladder, twenty for a Team whose own window is
+  off it** — DES-13) on a Team holding at least twelve months of Work Items completes on the development
+  instance with a **median at most 5 seconds and a maximum at most 10 seconds across twelve samples**,
+  alongside the measured median of a single shipped `POST /api/latest/forecast/backtest/{teamId}` on the
+  same Team as a baseline. Both numbers are written into the slice brief. **If the budget is missed, the
+  slice stops and the fallback (`UpdateQueueService`, with the ADR-195 single-lane caveat) is re-scoped
+  before any UI is written.**
+  **RESOLVED 2026-09-22 by measurement for the sixteen-cell case** — see "R-1, measured" at the foot of
+  this document. The twenty-cell case is extrapolated, not measured.
 - **AC-1.2** — `POST /api/latest/forecast/reality-check/{teamId}`, and the `/api/v1/…` twin, accept a body
   of at most `{ "applyFilterOverride": true | false | null }` and return the verdict, the denominator, the
-  confidence levels used, and sixteen cells each carrying its real start and end date, its four forecast
-  values, the Team's actual completed count, a coverage state per confidence level, and a sufficiency
-  state. **The body accepts no dates**, and the response carries no field naming a single winning
-  sampling window.
+  confidence levels used, the sampling-window ladder actually swept, and **one cell per
+  (horizon × sampling window) pair — sixteen on the standard ladder, twenty when the Team's own window is
+  off it** — each carrying its real start and end date, its four forecast values, the Team's actual
+  completed count, a coverage state per confidence level, and a sufficiency state. **The body accepts no
+  dates**, and the response carries no field naming a single winning sampling window.
 - **AC-1.3 (RBAC)** — the endpoint is guarded by
   `[RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]`, identical to the shipped
   backtest. A user with Team read but not Team write receives the full result. No new
   `RbacGuardRequirement` member is introduced and no new permission is added.
 - **AC-1.4 (honesty §4.1 — region, never a winner)** — the verdict names a *range* of sampling windows
-  that behaved alike and states whether the Team's current setting is inside it. For a Team where all four
-  windows behave alike, the sentence reads that the current setting is fine. No response field and no
-  rendered string names one window as best.
+  that behaved alike and states whether the Team's current setting is inside it. For a Team where every
+  swept window behaves alike, the sentence reads that the current setting is fine. No response field and
+  no rendered string names one window as best. **The Team's own sampling window is always one of the
+  windows swept** (DES-13), so "is your setting inside the sound region" is a membership test over cells
+  that were actually run.
 - **AC-1.5 (honesty §4.2 — denominator and non-comparability, per D3)** — permanently on screen, never
   behind a tooltip or a disclosure: the number of runs, the number of scores, the statement that the four
   levels of one run come from the same simulation and are therefore not independent, and the statement
@@ -523,7 +564,9 @@ Scenario: Reading the check needs read rights on the Team and nothing more
   others.
 - **AC-1.6 (honesty §4.3 — coverage against a nominal rate, per D1)** — the verdict reports, for each of
   the four confidence levels, how many of the evaluable checks the forecast held in, and prints the level
-  as a number. A level not beaten in any evaluable check is described as over-forecasting rather than as
+  as a number, together with the count its nominal rate expects — `evaluated × P/100` (ADR-208, Accepted;
+  "held" replaces "beaten", and the expected count is `P`, not `100 − P`). A level that **held in none** of
+  the evaluable checks is described as over-forecasting rather than as
   excellent.
 - **AC-1.7 (C5 / D9)** — a cell whose own history window holds fewer than five distinct days with at
   least one completed Work Item is marked unevaluable by `ForecastDataSufficiencyPolicy.HasEnoughData`
@@ -570,20 +613,21 @@ and it is resolved inside this slice.
 **Slice**: 02
 
 As a forecaster who is about to repeat this verdict to someone who will push back, I want to see the
-sixteen checks themselves — each one's forecast range with the Team's actual marked against it — so that
+checks themselves — each one's forecast range with the Team's actual marked against it — so that
 I am repeating something I have looked at rather than something I was told.
 
 #### Elevator Pitch
 
-Before: the verdict is a sentence you either believe or you do not, and the sixteen checks behind it exist
+Before: the verdict is a sentence you either believe or you do not, and the checks behind it exist
 only inside the response.
 
-After: click **Show the evidence** under the verdict and four panels appear, one per sampling window, each
+After: click **Show the evidence** under the verdict and a panel appears per sampling window checked —
+four for Ocean Explorer, five for a Team whose own window is off the standard ladder — each
 with a row per horizon drawn as a forecast band with a mark showing where the Team's actual landed — plus
-four lines saying how often each confidence level was beaten and how often it should have been.
+four lines saying how often each confidence level held and how often it should have.
 
 Decision enabled: whether the sentence is solid enough to repeat to a stakeholder — and, on seeing a 95%
-band never beaten across sixteen checks, that "never beaten" is a symptom rather than a score.
+band that never held across the checks, that "never held" is a symptom rather than a score.
 
 #### Domain Examples
 
@@ -627,10 +671,10 @@ Scenario: A check that could not run says so where the picture would be
   Then that row states it could not be checked and why
   And it does not render as an empty or a calm result
 
-Scenario: Each confidence level reports how often it was beaten against how often it should have been
+Scenario: Each confidence level reports how often it held against how often it should have
   Given twelve of Coastal Survey's sixteen checks could be run
   When Maria reads the lines below the panels
-  Then each of the four confidence levels reports how many of the twelve it was beaten in
+  Then each of the four confidence levels reports how many of the twelve it held in
   And each states the number of times its nominal rate would expect
 
 Scenario: The non-comparability statement is visible whether or not the evidence is expanded
@@ -641,16 +685,25 @@ Scenario: The non-comparability statement is visible whether or not the evidence
 
 #### Acceptance Criteria
 
-- **AC-2.1 (D2)** — expanding the evidence reveals exactly four panels, one per sampling window, titled by
-  window length. No per-confidence-level panel is added and no confidence-level control is rendered.
+- **AC-2.1 (D2, amended by DES-13)** — expanding the evidence reveals **exactly one panel per sampling
+  window swept — four on the standard ladder, five when the Team's own window is off it** — titled by
+  window length and ordered by window length ascending. No per-confidence-level panel is added and no
+  confidence-level control is rendered.
+  **This is the one place where "four panels stay four" genuinely changes.** D2's rule was never about the
+  number four; it was that the *confidence level* must not become an axis. A fifth panel is a fifth
+  sampling window, which is the axis the panels already carry. The confidence dimension still costs zero
+  panels and zero controls.
 - **AC-2.2 (D2)** — each panel carries one row per horizon. The row draws the forecast as a band spanning
   the four confidence levels, with a single mark at the Team's actual completed count. The mark's position
   within the band is what reports which levels held.
 - **AC-2.3 (ADR-194 / D9)** — an unevaluable row renders its reason in words where the band would be. It is
   visually distinct from every evaluable outcome and is never left blank. A panel whose rows are all
   unevaluable still renders, rather than being omitted.
-- **AC-2.4 (honesty §4.3)** — below the panels, one line per confidence level: the count of evaluable
-  checks it was beaten in, the count its nominal rate expects, and a plain reading of the two together.
+- **AC-2.4 (honesty §4.3, amended by ADR-208)** — below the panels, one line per confidence level: the
+  count of evaluable checks in which that level **held** (`actual >= value(P)`), the count its nominal
+  rate expects (`evaluated × P/100`), and a plain reading of the two together. A level that held in none
+  of them is over-forecasting; a level that held in all of them where far fewer were expected is
+  under-forecasting.
 - **AC-2.5** — the AC-1.5 denominator and non-comparability copy is on screen whether or not the evidence
   is expanded.
 - **AC-2.6** — no charting package is added. The panels build on `@mui/x-charts` 9.0.1 or on plain layout.
@@ -736,8 +789,9 @@ Scenario: The one-pager credits the source method and names where we departed fr
 #### Acceptance Criteria
 
 - **AC-3.1** — the copy control produces a Markdown one-pager holding the verdict sentence, the AC-1.5
-  denominator and non-comparability paragraph, all sixteen rows with their real date spans and outcomes,
-  every unevaluable row with its reason, and the nominal-rate table.
+  denominator and non-comparability paragraph, **every row that was run** — sixteen on the standard
+  ladder, twenty when the Team's own window is off it — with its real date span and outcome, every
+  unevaluable row with its reason, and the nominal-rate table.
 - **AC-3.2 (ADR-172 / ADR-162)** — the one-pager is built in the client. No server-side document renderer
   is added and no new endpoint is introduced.
 - **AC-3.3 (C6)** — every configurable term renders from the instance's terminology. The words "Epic",
@@ -807,7 +861,7 @@ Dropped on 2026-09-22: near-zero cost was the wrong axis to judge it on, because
   unreadable at real data. Pass.
 - **Synthetic data only?** Slices 01 and 02 are dogfooded against this project's own Lighthouse instance
   with real history, per `recommendation.md` §5.5. Pass.
-- **Two slices identical but for scale?** 02 and 03 both render the sixteen cells, but one is on screen and
+- **Two slices identical but for scale?** 02 and 03 both render the same cells, but one is on screen and
   one is a portable document for a different persona. Not merged, deliberately. Pass.
 - **Is any slice left with no user-visible value?** Re-checked after Apply was dropped. Slice 01 ships a
   sentence, 02 the evidence view, 03 the one-pager. None is `@infrastructure`-only. Pass.
@@ -885,10 +939,37 @@ all three, and an agent reading the raw cells and reporting "the 60-day window i
 mode, automated and at scale. Shipping the grid to a machine consumer before the honest reading exists
 would undo the mitigation the recommendation is conditional on.
 
-**The precondition that reverses this**: AC-1.2 puts the verdict *sentence* in the response as a field. An
-MCP tool that surfaces the sentence, the denominator statement and the nominal-rate lines — and does not
-expose the cell grid — is both honest and cheap, and becomes a candidate once slice 02 has been dogfooded
-and the sentence has proven it reads well. Recorded as a follow-up, not scheduled.
+**The precondition that reverses this** — **REWRITTEN 2026-09-22 (DESIGN, OQ-4). The original version was
+built on a premise DESIGN found to be false.**
+
+It used to read: *"AC-1.2 puts the verdict sentence in the response as a field. An MCP tool that surfaces
+the sentence … is both honest and cheap."* **The response cannot carry a sentence.** Every user-facing
+string in this feature contains at least one renameable term — Team, Work Item, throughput — and the
+standing architectural rule is facts on the wire, never a rendered clause. A sentence composed on the
+server would hard-code one instance's vocabulary into every other instance's output. So there is no
+sentence sitting in the response for a tool to pick up; the client builds it.
+
+**The answer is unchanged, and now better supported.** A tool that returns the score set as JSON strips
+all three honesty requirements at once, and an agent reading the raw cells and reporting *"the 60-day
+window is best"* is the §4.1 failure mode, automated and at scale.
+
+**What would actually have to be true for a later MCP tool to be safe**, stated so that nobody builds it
+on the old premise:
+
+1. **The tool composes the artifact from facts, exactly as the browser client does** — the verdict
+   sentence, the denominator statement with its correlation clause, the non-comparability statement and
+   the nominal-rate lines. It does not ask the server for prose, because the server has none to give.
+2. **It resolves the instance's terminology itself**, from the same source the browser reads. A tool that
+   says "Work Item" to an instance that says "Ticket" has already broken C6.
+3. **It does not expose the cell grid as its primary output.** The grid may be available on request; it
+   must not be what the tool returns by default, because the grid without the reading is the thing that
+   produces "the 60-day window is best".
+4. **Slice 02 has been dogfooded and the sentence has proven it reads well**, which was the original and
+   still-correct gate.
+
+The cost of (1) and (2) is a second implementation of the composition logic, which is the real reason this
+is not cheap — and a reason to factor the client's composer so that a future tool can share it rather than
+reimplement it. Recorded as a follow-up, not scheduled.
 
 ### Website marketing surface — real, secondary, and declared
 
@@ -938,7 +1019,7 @@ estimates, so nothing below may be reported downstream as a measured baseline.
 | **O4 — do not rank incomparable windows** | Every reader of the artifact | Reads the denominator and the non-comparability statement | 100% of rendered results, collapsed and expanded | AC-1.5 and AC-2.5, asserted | 0 — nothing in the product says it today |
 | **O4b — no winner is ever named** | The verdict | Names a region, never a single best window | 0 response fields and 0 rendered strings naming one window as best | AC-1.4, asserted | N/A — the surface does not exist |
 | **O6 — no unsupportable cell is read as a result** | Every unevaluable cell | Says why it could not be checked, visibly distinct from a calm result | 100% of unevaluable cells; 0 blank | AC-1.7, AC-2.3, asserted | Shipped guard covers the Team-level case; the per-cell case does not exist |
-| **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports beaten-count against expected-count, with never-beaten called over-forecasting | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
+| **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports held-count against expected-count (`evaluated × P/100`, per ADR-208), with always-held called over-forecasting | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
 | **O2 — Teams whose window has been checked** | Teams on the dev and demo instances | Have been through a reality check at least once | At least 3 within 30 days of release | Dogfooding record in the slice briefs; usage data only if consent exists | 0 |
 | **O5 — the answer travels** | A forecaster answering a sceptic | Pastes a one-pager instead of describing a screen | At least 1 one-pager shared externally within 60 days | Manual — the maintainer's own use, and any community mention | 0 |
 | **No write path exists** | The feature | Mutates a Team setting | 0 endpoints, 0 controls | AC-1.9, asserted; and the absence of any write in the driving-ports table | N/A — the previous plan had one |
@@ -1166,6 +1247,16 @@ class "the response ranks the sampling windows" is non-representable, not merely
 No `recommendedWindow`, no `bestWindow`, no `windowScore`, no ordering field. This is the pressure that
 produced the Apply button and got it removed; the design refuses it at the type rather than in a review.
 
+> **RE-CHECKED 2026-09-22 against DES-13, and it holds.** Adding the Team's own window makes the ladder
+> **Team-dependent** but not **unordered**: `sampledWindowDays` is still a fixed ascending sequence for
+> any given run, and `soundWindowDays` is still a filter of it. Filtering an ascending sequence cannot
+> produce a different order however the sequence was computed. And the fifth window adds **no scalar** —
+> there is still no per-window score anywhere in the response, so there is still nothing to sort by.
+>
+> **The bug class stays non-representable.** The one thing that would break it is a per-window score, and
+> nothing in DES-13 introduces one. Stated affirmatively rather than left to be assumed, because the
+> instruction was to say so loudly if it broke.
+
 ### DES-3 — Bounds are derived in the client, because a bounds pair is a field that can lie
 
 The verdict reads *"anything between 30 and 90 days"*, so bounds are needed. They are **not** response
@@ -1176,6 +1267,16 @@ is non-contiguous — `{14, 60, 90}` with 30 unsound — the pair `14…90` clai
 found the opposite. That is the §4.1 failure in miniature, in a field nobody would think to look at. A
 *set* cannot make that claim. The client renders "anything between X and Y" only when the set is a
 contiguous run of the sampled ladder, and lists the members otherwise.
+
+> **DES-13 makes this rule carry more weight, not less.** An off-ladder Team's own window sits *between*
+> two standard ones — 45 falls between 30 and 60 — so the sound set can now have a hole exactly where the
+> user is standing: `{14, 30, 60, 90}` sound, 45 not. That is a sharp and genuinely useful finding
+> (*"the windows either side of yours behaved fine; yours did not"*), and a bounds pair would have erased
+> it by reporting `14–90` and calling the user's setting inside. The contiguity rule catches it: the set
+> is non-contiguous, so the client lists members instead of naming a range.
+>
+> Before DES-13 this was a rare shape. Now it is the characteristic shape of the case the fifth window
+> exists to detect.
 
 ### DES-4 — The current setting's standing is a tri-state, not a boolean
 
@@ -1193,9 +1294,42 @@ currentSettingWasTested : bool
 currentSettingStanding  : Inside | Outside | NotDetermined
 ```
 
-`NotDetermined` covers both the no-evidence case and the off-ladder-plus-non-contiguous case. The
-orchestrator's "a range plus a boolean" is right in spirit — no winner — but the boolean cannot carry the
-un-tested-value case, so it is widened by one member rather than forced.
+The orchestrator's "a range plus a boolean" is right in spirit — no winner — but a boolean cannot carry
+the case where the check has nothing to say, so it is widened by one member rather than forced.
+
+> **NARROWED 2026-09-22 by DES-13 — the tri-state survives, its `NotDetermined` member does not mean what
+> it meant.** When this was written, `NotDetermined` covered two things: a Team whose cells were all
+> unevaluable, **and** a Team whose sampling window was off the ladder and therefore never checked. The
+> second case no longer exists — an off-ladder window is now swept as a fifth window, so it gets a real
+> answer like any other.
+>
+> `NotDetermined` now means exactly one thing: **the cells for the Team's own sampling window could not be
+> evaluated**, because that window's history failed the shipped ≥5-active-days sufficiency bar (or
+> produced a degenerate forecast, DES-9). The check ran; it could not conclude. That is a narrower and
+> more useful state than the one it replaces.
+
+**`currentSettingStanding` is now a set-membership test, not an interval test.** Because the Team's own
+window is always in `sampledWindowDays`:
+
+- `Inside` ⟺ `currentSettingDays ∈ soundWindowDays`
+- `Outside` ⟺ the Team's window was evaluated and is not in `soundWindowDays`
+- `NotDetermined` ⟺ the Team's window was swept but none of its cells could be evaluated
+
+No contiguity reasoning is needed to decide the standing, which is a simplification DESIGN did not
+anticipate when it recommended against the fifth window. Contiguity is still needed to *render the
+sentence* — see DES-3.
+
+**`currentSettingWasTested` is now `true` for almost every Team, and the exceptions are worth naming
+explicitly rather than leaving as "whatever is left".** It is `false` only when there is no rolling
+sampling window to test:
+
+| Case | Why `false` |
+|---|---|
+| `Team.UseFixedDatesForThroughput == true` | The Team samples a fixed date range, so `ThroughputHistory` does not drive its forecasts at all and there is no "current sampling window" to check. See DES-13 and OQ-6. |
+| `ThroughputHistory <= 0` | Not reachable through the UI, but the field is a plain `int` on the entity with no domain guard, so the sweep must not construct a window from it. |
+
+In every other case — any Team whose forecasts are driven by a positive rolling window, on-ladder or
+off — it is `true`, and `currentSettingStanding` carries a real answer.
 
 ### DES-5 — Effect isolation: the sweep service is never given anything that can write a Team
 
@@ -1251,7 +1385,7 @@ reused as code.** The mechanism is the ungated `navigator.clipboard.writeText` a
 `SystemInfoDisplay.tsx:21` and `ApiKeysSettings.tsx:222`. AC-3.2 is satisfied and strengthened; ADR-172
 and ADR-162 are cited for their shape, not imported.
 
-### DES-8 — CORRECTION: "beaten" is retired; a level *holds*, and its nominal rate is the level ([ADR-208](../../product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md), **PROPOSED**)
+### DES-8 — CORRECTION: "beaten" is retired; a level *holds*, and its nominal rate is the level ([ADR-208](../../product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md), **ACCEPTED**)
 
 Reading the nominal-rate requirement against the engine shows three DISCUSS artifacts describing the same
 measurement in mutually incompatible ways.
@@ -1274,9 +1408,10 @@ Settled: `Held(cell, P) ⟺ actual >= value(P)` and `ExpectedHeldCount(P) = eval
 "beaten" is retired from response fields, UI copy, docs, the one-pager and the launch post, because in
 English a forecast can be beaten by the Team or beat the Team and the two readings are opposites.
 
-**This changes AC-1.6 and AC-2.4 and the journey's worked example, so the ADR is PROPOSED and the
-maintainer is asked.** It is raised as Open Question OQ-1. Note that the correction *strengthens* §4.3:
-under the old arithmetic the never-held case — the feature's headline lesson — read as unremarkable.
+**This changes AC-1.6 and AC-2.4 and the journey's worked example, so the ADR was raised as PROPOSED and
+the maintainer was asked** (OQ-1). **Accepted 2026-09-22**, after the claim was verified against
+`HowManyForecast`'s descending comparer. Note that the correction *strengthens* §4.3: under the old
+arithmetic the never-held case — the feature's headline lesson — read as unremarkable.
 
 ### DES-9 — CORRECTION: a degenerate forecast is a second, independent reason a cell is unevaluable
 
@@ -1301,15 +1436,90 @@ exhaustive `Record<…>` on the TypeScript side — the enforcement idiom `story
 brief — makes it a compile error to add a state without writing its copy. That is the mechanism which
 keeps the journey's named failure mode *"an unevaluable row renders as an empty band"* from recurring.
 
-### DES-11 — The sampled ladder is fixed and printed, not derived from the Team
+### DES-11 — The sampled ladder is printed, not assumed — **second paragraph REVERSED by DES-13**
 
-The response carries `sampledWindowDays: [14, 30, 60, 90]` and `sampledHorizonDays: [7, 14, 28, 56]`
-explicitly rather than leaving the client to assume them. Two reasons: AC-1.5 requires the artifact to
-state what it checked, and a future run over a different ladder needs no contract change.
+The response carries `sampledWindowDays` and `sampledHorizonDays: [7, 14, 28, 56]` explicitly rather than
+leaving the client to assume them. Two reasons: AC-1.5 requires the artifact to state what it checked, and
+a run over a different ladder needs no contract change. **That half stands, and DES-13 is what makes it
+load-bearing rather than merely tidy** — the window ladder is now Team-dependent, so a client that assumed
+`[14, 30, 60, 90]` would be wrong for every off-ladder Team.
 
-The ladder is **not** widened to include the Team's own setting when that setting is off-ladder. That
-would make the denominator Team-dependent, and the denominator copy is locked at 16 runs / 4 levels / 64
-scores. The off-ladder case is handled honestly by DES-4 instead. Raised as OQ-2.
+> **REVERSED 2026-09-22 by the maintainer (OQ-2).** This decision originally continued: *"The ladder is
+> **not** widened to include the Team's own setting when that setting is off-ladder. That would make the
+> denominator Team-dependent, and the denominator copy is locked at 16 runs / 4 levels / 64 scores."*
+>
+> **Both halves of that reasoning were wrong, and one of them was mine.**
+>
+> The cost objection is **measured away**: the sweep runs 701 ms cold against a 5,000 ms budget, and the
+> Monte Carlo floor (~615 ms) dominates, so four more cells cost roughly 150 ms more. When this was
+> written the cost was unknown and caution was correct; it is not unknown now.
+>
+> The denominator objection **confused a principle with a constant**. §4.2 requires the artifact to state
+> its denominator, not to state *sixteen*. A Team-dependent denominator that says what it actually ran is
+> exactly as honest — arguably more so, since it reports the check the user got rather than a check a
+> different Team got.
+>
+> **See DES-13.** This section is left standing rather than deleted so the reversal is legible.
+
+### DES-13 — The Team's own sampling window is always swept. Sixteen cells on-ladder, twenty off it
+
+**The maintainer's decision, 2026-09-22, against DESIGN's recommendation on OQ-2.**
+
+`sampledWindowDays` is the standard ladder `[14, 30, 60, 90]` **union the Team's own
+`ThroughputHistory`, sorted ascending.** For a Team at 30 that is four windows and sixteen cells. For a
+Team at 45 it is `[14, 30, 45, 60, 90]` — five windows and **twenty cells, eighty scores**.
+
+**The substantive reason, which outranks both of DESIGN's objections**: the Team's own setting is the
+single most decision-relevant cell in the entire report. *"We checked four windows and could not determine
+anything about yours"* invites the obvious reply, and the check can answer it for about 150 ms.
+
+**Why DESIGN got this wrong**, recorded rather than quietly fixed:
+
+1. **The cost was unknown when DES-4 and DES-11 were written**, so caution was the correct posture. R-1
+   resolved by measurement afterwards. Caution that survives its own evidence is just a habit.
+2. **The dispatch listed "the denominator copy states 16 runs / 4 levels / 64 scores" among the LOCKED
+   constraints, and DESIGN treated the constant as the requirement.** The requirement is §4.2 — *state
+   your denominator*. This is a general failure mode worth naming beside R-9: **a constant quoted inside
+   a locked principle acquires the principle's authority without earning it.**
+
+#### What this does *not* change
+
+- **DES-2 still holds, and this was checked rather than assumed.** `soundWindowDays` is still produced by
+  filtering `sampledWindowDays`, which is still a **fixed ascending sequence for any given run** — it is
+  merely computed per Team instead of per product. Filtering an ascending sequence still cannot yield a
+  different order, and **there is still no per-window score anywhere in the response to sort by.** "The
+  response ranks the sampling windows" remains non-representable. The fifth window changes the ladder's
+  length, not its orderedness, and adds no scalar.
+- Today as the END anchor; cells not comparable; the region never a winner; all four confidence levels as
+  one band with one mark; sufficiency composing with the shipped ≥5-active-days rule with no second bar;
+  ADR-194 governing the unevaluable render; **no Apply, no write path**; the three-way verdict never
+  attributed to Brown; ADR-207 and ADR-208.
+
+#### What it does change, beyond the count
+
+- **A fifth *panel* in the evidence view** for an off-ladder Team (AC-2.1). This is the one place "four
+  panels stay four" genuinely moves. D2's rule was that the *confidence level* must not become an axis;
+  the panel axis has always been the sampling window, and it just got one more value.
+- **`currentSettingStanding` becomes a set-membership test rather than an interval test**, which is a
+  simplification DESIGN did not anticipate — see DES-4.
+- **DES-3's contiguity rule gets more load, not less** — see DES-3.
+- The cold query count rises from 20 to 24 for an off-ladder Team (20 history windows + 4 scored periods).
+
+#### The case neither of us anticipated: a Team with no rolling sampling window at all
+
+`Team.UseFixedDatesForThroughput` (`Team.cs:11`, default `false`) switches a Team from a rolling window to
+a fixed `ThroughputHistoryStartDate`/`ThroughputHistoryEndDate` pair. `TeamMetricsService`'s
+`ComputeBlackoutAwareThroughput` branches on it, and `Team.GetThroughputSettings` does too.
+
+**For such a Team, `ThroughputHistory` does not drive its forecasts at all** — so there is no "the Team's
+own sampling window" to add as a fifth window, and the feature's whole premise (*"the sampling window
+behind every forecast this Team publishes"*) does not describe it.
+
+Under the old decision this was latent, because the sweep ignored the Team's setting anyway. **Making the
+Team's setting load-bearing is what surfaced it.** It is handled, not designed around: a fixed-dates Team
+sweeps the standard four windows, sixteen cells, and `currentSettingWasTested` is `false` with its reason.
+Raised as **OQ-6**, because whether such a Team should see this feature at all is a product question
+rather than an architectural one.
 
 ### DES-12 — The transport can change without the contract changing, which is what R-1 is allowed to cost
 
@@ -1322,9 +1532,12 @@ status field, no `isComplete` flag ships now.
 
 ## Wave: DESIGN / [REF] The R-1 Budget — the cost finding, and what changes if it fails
 
-R-1 stays **OPEN**. Nothing below resolves it; AC-1.1 does, as the first task of slice 01. What DESIGN
-adds is the specific shape of the cost, which makes the probe cheaper to run and its result easier to act
-on.
+> **This section was written while R-1 was open, and is kept for its cost analysis, which the measurement
+> then confirmed exactly. R-1 is now RESOLVED — see "R-1, measured" at the foot of this document.** The
+> paragraphs below predict the query count; the measurement found precisely that count.
+
+What DESIGN adds is the specific shape of the cost, which made the probe cheaper to run and its result
+easier to act on.
 
 ### Where the cost actually is
 
@@ -1335,16 +1548,20 @@ an `IQueryable` from `RepositoryBase:61`, materialised inside the run-chart proj
 `GetBlackoutAwareThroughputForTeam` layers a second cache key over the same window and adds one
 `GetEffectiveBlackoutDays` call.
 
-**The cache key is window-dependent; the repository query is not.** The predicate is identical for all
-sixteen history windows — only the projection differs. A cold-cache sweep therefore issues up to
-**twenty** identical "all closed items for this Team" queries: sixteen distinct history windows plus four
-distinct scored periods.
+**The cache key is window-dependent; the repository query is not.** The predicate is identical for every
+history window — only the projection differs. A cold-cache sweep therefore issues one identical "all
+closed items for this Team" query per distinct window, plus one per distinct scored period:
+
+| Team | History windows | Scored periods | Cold queries |
+|---|---|---|---|
+| On the standard ladder (16 cells) | 16 | 4 | **20** |
+| Off-ladder, fifth window swept (20 cells) | 20 | 4 | **24** (DES-13) |
 
 Two facts soften it, and both are worth measuring rather than trusting:
 
-- The four **scored periods** are per *horizon*, not per cell, so they are four reads shared four ways —
-  not sixteen. Any implementation that reads the actual per cell has already made the sweep 25% more
-  expensive than it needs to be.
+- The **scored periods** are per *horizon*, not per cell, so they are four reads shared four or five ways
+  — not sixteen or twenty. Any implementation that reads the actual per cell has already made the sweep
+  25% more expensive than it needs to be, and 30% on an off-ladder Team.
 - No work tracking system is contacted at any point. The cost is database plus CPU, which is why
   `RunBacktest` gets away with being a non-async action today.
 
@@ -1354,7 +1571,7 @@ warm**, and the cold number is the one that decides.
 ### If the budget is missed
 
 **Contingency A — preferred. Read the closed-item set once per request.** The sweep reads the Team's
-closed work items once and projects all twenty run charts in memory. It touches no forecast-engine code,
+closed work items once and projects all twenty (or twenty-four) run charts in memory. It touches no forecast-engine code,
 adds no dependency, changes no response field and introduces no queue. It costs a read path that does not
 go through `GetThroughputForTeam`'s per-window repository call.
 
@@ -1431,7 +1648,7 @@ L3 earns its place on a complex subsystem, and this is not one.
 | Component | Verdict | Responsibility | Contract shape |
 |---|---|---|---|
 | `ForecastController.RunRealityCheck` | **EXTEND** | Driving adapter. Resolves the Team via the shipped `GetEntityByIdAnExecuteAction` helper, maps `applyFilterOverride` to a `ThroughputFilterMode` via the existing private `MapOverrideToFilterMode`, calls the sweep, returns the envelope. **No input validation**: the body carries no dates, so there is nothing to validate. | Adapter; no logic |
-| `IForecastRealityCheckService` / `ForecastRealityCheckService` | **CREATE NEW** | Builds the sixteen `(horizon, window)` pairs from today; reads history and actuals; runs `HowMany`; assembles the envelope. Holds no write surface (DES-5). | Bounded-change, empty mutation set. Returns a value; writes nothing outside the metrics cache its collaborators own |
+| `IForecastRealityCheckService` / `ForecastRealityCheckService` | **CREATE NEW** | Builds the `(horizon, window)` pairs from today — sixteen, or twenty when the Team's own window is off the standard ladder (DES-13); reads history per cell and actuals per horizon; runs `HowMany`; assembles the envelope. Holds no write surface (DES-5). | Bounded-change, empty mutation set. Returns a value; writes nothing outside the metrics cache its collaborators own |
 | `RealityCheckVerdictPolicy` | **CREATE NEW** | Pure static. `Held`, `ExpectedHeldCount`, `CellOutcome`, `SoundWindows`, `Determination`, `CurrentSettingStanding`. Owns every rule ADR-208 settles. | **Pure function (return-only).** No DI, no clock, no I/O; today arrives as a parameter |
 | `RealityCheckInputDto` + the result DTO family | **CREATE NEW** | The wire contract. See the contract section. | Data |
 
@@ -1459,10 +1676,10 @@ valid justifications and none is used.
 | 1 | `ForecastController` (two-route class attribute, `api/v1` + `api/latest`) | **EXTEND** | One added action. The dual-route attribute is on the class, so the `/api/v1/…` twin is free — verified in the source, not assumed. | Adapter; the added action declares no mutation |
 | 2 | `ForecastController.MapOverrideToFilterMode` | **EXTEND (reuse as-is)** | Already private static and exactly the mapping `applyFilterOverride` needs. | Pure |
 | 3 | `ForecastController.GetEntityByIdAnExecuteAction` | **EXTEND (reuse as-is)** | The shipped Team-resolution + 404 path, used by `RunBacktest`. Reusing it is what lets the sweep service avoid `IRepository<Team>` entirely (DES-5). | Read-only resolution |
-| 4 | `IForecastService.HowMany` | **NO CHANGE** | Called sixteen times with different inputs. AC asserts the engine does not change; the existing forecast assertions must pass unmodified before and after. | Pure over `(RunChartData, days)` |
+| 4 | `IForecastService.HowMany` | **NO CHANGE** | Called once per cell — sixteen or twenty times — with different inputs. AC asserts the engine does not change; the existing forecast assertions must pass unmodified before and after. | Pure over `(RunChartData, days)` |
 | 5 | `ITeamMetricsService.GetBlackoutAwareThroughputForTeam` | **NO CHANGE** | The history read, per cell, per its own window. | Read; memoises into the metrics cache |
-| 6 | `ITeamMetricsService.GetThroughputForTeam(team, start, end, mode)` | **NO CHANGE** | The actual-completed read, **per horizon (four reads), not per cell (sixteen)**. | Read; memoises |
-| 7 | `ITeamMetricsService.GetForecastThroughputStatus` | **NO CHANGE** | One call, for `FilterApplied` and `ExcludedSummary` on the envelope. Not called sixteen times — it reports the Team's configured window, which is not what a cell asks. | Read; memoises |
+| 6 | `ITeamMetricsService.GetThroughputForTeam(team, start, end, mode)` | **NO CHANGE** | The actual-completed read, **per horizon (four reads), not per cell**. The scored period depends only on the horizon, so the fifth sampling window adds no actual-completed read. | Read; memoises |
+| 7 | `ITeamMetricsService.GetForecastThroughputStatus` | **NO CHANGE** | One call, for `FilterApplied` and `ExcludedSummary` on the envelope. Not called per cell — it reports the Team's configured window, which is not what a cell asks. | Read; memoises |
 | 8 | `IBlackoutPeriodService.GetEffectiveBlackoutDays` / `CountWorkingDays` | **NO CHANGE** | Horizon → working days, exactly as `RunBacktest` does it. Four distinct horizons, so four calls. | Pure over the fetched periods |
 | 9 | `ForecastDataSufficiencyPolicy.HasEnoughData` | **NO CHANGE — called per cell** | C5/D9. A pure predicate over one `RunChartData`; calling it on each cell's own history needs no modification. `MinimumActiveDays` is echoed into the response, never re-declared. | Pure |
 | 10 | `ILighthouseClock.Today` / `TodayAsUtcMidnight` | **NO CHANGE** | The END anchor. Never `DateTime.UtcNow` — already enforced by the shipped `CalendarDayAnchorSeamArchUnitTest`. | Read |
@@ -1473,7 +1690,7 @@ valid justifications and none is used.
 | 15 | `UpdateQueueService` | **NOT USED** | ADR-207 §3. One channel, one reader; the reality check is a different kind of work and a human is waiting. | — |
 | 16 | `InputGroup` | **NO CHANGE** | The shipped container the card goes inside. | — |
 | 17 | `BacktestForecaster` (530 lines) | **NO CHANGE** | Sibling in the same group, untouched. The new control sits above its date pickers. | — |
-| 18 | `BacktestResultDisplay` (246 lines) | **NOT REUSED** | Two independent reasons. It is a 450 px `ChartsContainer` per result — sixteen would be ~7 200 px. And its grammar is wrong: a bar chart per cell on a shared axis is the visual claim that cells are commensurable, which D6 forbids (DES-6). | — |
+| 18 | `BacktestResultDisplay` (246 lines) | **NOT REUSED** | Two independent reasons. It is a 450 px `ChartsContainer` per result — sixteen would be ~7 200 px, twenty ~9 000 px. And its grammar is wrong: a bar chart per cell on a shared axis is the visual claim that cells are commensurable, which D6 forbids (DES-6). | — |
 | 19 | `getPercentileColor` inside `BacktestResultDisplay.tsx` | **EXTEND — lift to shared** | The 50/70/85/95 → risky/realistic/confident/certain palette must be identical across forecast surfaces. Copying it is how two surfaces end up disagreeing about what "85%" looks like. | Pure |
 | 20 | `useTerminology()` / `TERMINOLOGY_KEYS` | **NO CHANGE** | Every renameable term in every string, including the one-pager. C6. | Read |
 | 21 | `useDataGridExport` (`DataGridToolbar`) | **NOT REUSED — see DES-7** | Premium-gated at `DataGridToolbar.tsx:72-76`. This Epic is Community and slice 03 is its whole marketing surface. | — |
@@ -1534,7 +1751,8 @@ RealityCheckResultDto                    ← the whole response body; the ADR-20
   teamId                    int
   teamName                  string
   anchorDate                DateOnly     // today, instance day — the END anchor
-  sampledWindowDays         int[]        // [14, 30, 60, 90] — printed, not assumed (DES-11)
+  standardWindowDays        int[]        // [14, 30, 60, 90] — the fixed ladder every Team is checked against
+  sampledWindowDays         int[]        // standardWindowDays ∪ {ThroughputHistory}, ascending: 4 or 5 (DES-13)
   sampledHorizonDays        int[]        // [7, 14, 28, 56]
   confidenceLevels          int[]        // [50, 70, 85, 95]
   filterApplied             bool
@@ -1543,11 +1761,12 @@ RealityCheckResultDto                    ← the whole response body; the ADR-20
   denominator               DenominatorDto
   soundWindow               SoundWindowDto
   levelCoverage             LevelCoverageDto[]      // 4
-  cells                     RealityCheckCellDto[]   // 16, always — unevaluable ones included
+  cells                     RealityCheckCellDto[]   // sampledWindowDays.length × 4 — 16 or 20,
+                                                    // always complete; unevaluable ones included
 
 DenominatorDto
-  runsAttempted             int          // 16
-  runsEvaluated             int          // 16 − unevaluable
+  runsAttempted             int          // 16 or 20 — the at-a-glance discriminator (DES-13)
+  runsEvaluated             int          // runsAttempted − unevaluable
   levelsPerRun              int          // 4
   scoresEvaluated           int          // runsEvaluated × levelsPerRun — what was ACTUALLY evaluated
 
@@ -1598,8 +1817,26 @@ CellLevelOutcomeDto
 | `jobId`, `status`, `isComplete`, progress | DES-12. Nothing is queued today, and the shape survives it if something is tomorrow. |
 | Anything that mutates | DES-5. No write path exists anywhere in this feature. |
 
-`cells` always has sixteen entries. An unevaluable cell is **present with its reason**, never omitted — a
-missing cell reads as "that one was fine", which is ADR-194's exact finding.
+`cells` always has `sampledWindowDays.length × sampledHorizonDays.length` entries — **sixteen for a Team
+on the standard ladder, twenty for a Team whose own window is off it** (DES-13). It is never partial. An
+unevaluable cell is **present with its reason**, never omitted — a missing cell reads as "that one was
+fine", which is ADR-194's exact finding.
+
+### Telling a twenty-cell report from a sixteen-cell one
+
+Three facts answer it, and none requires counting `cells`:
+
+- **`denominator.runsAttempted`** is 16 or 20 — the direct discriminator, and it is already the number the
+  permanent denominator copy prints.
+- **`standardWindowDays` versus `sampledWindowDays`** says *which* ladder was swept and therefore which
+  window was added. This is why `standardWindowDays` is echoed rather than left for the client to
+  hard-code: a client that hard-coded `[14, 30, 60, 90]` could not tell the Team's own window apart from a
+  standard one, and a client that hard-coded it as a *policy constant* would be duplicating a backend
+  decision, which is the anti-pattern `minimumActiveDays` is echoed to avoid.
+- **`soundWindow.currentSettingWasTested`** says whether the Team has a rolling window at all (DES-4).
+
+**No `ladderKind` enum.** It would be derivable from the two arrays and could therefore drift from them;
+two arrays of facts cannot disagree with each other.
 
 ---
 
@@ -1635,7 +1872,7 @@ Tools: **ArchUnitNET** (backend, already in the tree) and the **TypeScript compi
 | E2 | `RealityCheckVerdictPolicy` is `static`, has no constructor dependencies and references no type in `Services.Implementation` — the pure-function contract shape, checkable. | ArchUnitNET |
 | E3 | Nothing in the feature reads `DateTime.UtcNow` / `DateTime.Today`; the anchor arrives from `ILighthouseClock`. | The shipped `CalendarDayAnchorSeamArchUnitTest`, which already covers the assembly |
 | E4 | `ForecastDataSufficiencyPolicy.cs` is byte-unchanged before and after the Epic. | Reviewable in the diff; asserted by AC-1.7's existing tests passing untouched |
-| E5 | **No response field names a single winning window.** A test asserts `soundWindowDays` is always a subsequence of `sampledWindowDays` in that exact order, so a sort by any score fails it. | NUnit, over the DTO |
+| E5 | **No response field names a single winning window.** Three assertions over the DTO, widened because DES-13 made the ladder Team-dependent: (a) `sampledWindowDays` equals `standardWindowDays` union the Team's `ThroughputHistory`, sorted ascending, with no duplicates; (b) `soundWindowDays` is always a subsequence of `sampledWindowDays` **in that exact order**, so a sort by any score fails it; (c) **no property anywhere in the response carries a per-window scalar.** (c) is what actually holds the invariant — (b) is unbreakable only for as long as there is nothing to sort by. | NUnit, over the DTO |
 | E6 | Sufficiency, cell outcome, determination and level reading are rendered through exhaustive `Record<Enum, …>` maps with no `default:` branch, so a new member cannot reach the screen without someone writing its copy. | TypeScript compiler — the `story-6055` idiom already in this brief |
 | E7 | No user-facing string hard-codes a renameable term. | Vitest, and the shipped terminology test conventions |
 
@@ -1650,7 +1887,7 @@ code, not a comment.
 | Attribute (ISO 25010) | Strategy |
 |---|---|
 | **Functional suitability** | The three honesty requirements are structural, not asserted: no rankable field exists (DES-2), no bounds field can lie (DES-3), no boolean can over-claim (DES-4), and the denominator reports what was evaluated rather than attempted. |
-| **Performance efficiency** | The open risk, and the only one. Sixteen `HowMany` runs plus up to twenty cold-cache run-chart reads, in-request, no external call. R-1 / AC-1.1 measures it cold **and** warm before any UI is written. Budget: median ≤ 5 s, max ≤ 10 s over twelve samples. |
+| **Performance efficiency** | **Measured, not open.** Sixteen `HowMany` runs plus twenty cold-cache run-chart reads: **701 ms cold median** against a 5,000 ms budget on a real Team, with the Monte Carlo floor (~615 ms) dominating. An off-ladder Team adds four cells and four queries — extrapolated ~870 ms, still about five times inside budget. See "R-1, measured". |
 | **Reliability** | No write path, so no partial-failure state to recover from. A failed request leaves nothing behind. A degenerate forecast degrades one cell to unevaluable rather than failing the sweep (DES-9). |
 | **Security** | One permission, `TeamRead`, byte-identical to the shipped backtest. No new `RbacGuardRequirement`, no new permission, no new scope, no differential rendering. The attack surface added is one read endpoint over data the same principal can already read. |
 | **Maintainability** | Every rule in one pure static policy, testable without a database or a Monte Carlo run. Five CREATE NEW components against nineteen reused. |
@@ -1669,14 +1906,31 @@ click and an answer in seconds; buying performance headroom by queueing it costs
 ## Wave: DESIGN / [REF] Open Questions
 
 Interaction mode is Propose, so each carries a recommendation and the work is not blocked on an answer.
+**Status column added 2026-09-22 as the maintainer worked through them.**
 
-| # | Question | Recommendation |
-|---|---|---|
-| **OQ-1** | **ADR-208 changes AC-1.6 and AC-2.4 and the journey's worked example.** "Beaten" becomes "held" and the expected count becomes `evaluated × P/100`. Accept? | **Accept.** The current arithmetic is wrong at three of four levels and wrong by an order of magnitude at the one the feature exists to teach. The correction strengthens §4.3. ADR-208 is PROPOSED pending this. |
-| **OQ-2** | A Team whose `ThroughputHistory` is off-ladder (say 45) is checked against 14/30/60/90, none of which is theirs. Widen the sweep to five windows, or tell them plainly? | **Tell them plainly** — DES-4's `currentSettingWasTested: false`. Widening makes the denominator Team-dependent and the 16/4/64 copy is locked. The two seeded defaults (30 and 90) are both on the ladder, so the case is real but uncommon. |
-| **OQ-3** | **ADR-195 is stale** — it reads `Accepted` with three lanes; the lanes were reverted (`f216ef558`) and only this brief records it. Correct its status? | **Yes, separately.** Not this Epic's work, but this Epic is the second feature in a row to be misled by an ADR describing a deleted mechanism (ADR-127 was the first). One line of status note. |
-| **OQ-4** | The verdict sentence cannot come from the server (DES-1), which contradicts the recorded D12 MCP precondition. Rewrite the precondition? | **Yes.** The answer (no CLI/MCP in this Epic) is unchanged and better supported. The precondition as written would need an MCP tool to re-implement the copy, which is the §4.1 risk D12 exists to avoid. |
-| **OQ-5** | Should the sweep's cost finding (up to twenty identical closed-item queries on a cold cache) be probed before slice 01 starts, or as its first task? | **As its first task, unchanged.** AC-1.1 already requires it. DESIGN only sharpens what to measure: run it cold, and count the queries, not just the wall clock. |
+| # | Question | Recommendation | Status |
+|---|---|---|---|
+| **OQ-1** | **ADR-208 changes AC-1.6 and AC-2.4 and the journey's worked example.** "Beaten" becomes "held" and the expected count becomes `evaluated × P/100`. Accept? | **Accept.** The current arithmetic is wrong at three of four levels and wrong by an order of magnitude at the one the feature exists to teach. The correction strengthens §4.3. ADR-208 is PROPOSED pending this. | **ACCEPTED** 2026-09-22. ADR-208 status is now `Accepted`, verified against `HowManyForecast`'s descending comparer before ratification. Closed — do not reopen. |
+| **OQ-2** | A Team whose `ThroughputHistory` is off-ladder (say 45) is checked against 14/30/60/90, none of which is theirs. Widen the sweep to five windows, or tell them plainly? | ~~**Tell them plainly** — DES-4's `currentSettingWasTested: false`. Widening makes the denominator Team-dependent and the 16/4/64 copy is locked.~~ | **RESOLVED 2026-09-22 AGAINST this recommendation — widen the sweep.** Both objections failed: the cost was measured away (701 ms against a 5,000 ms budget, Monte Carlo floor dominating), and the denominator objection confused §4.2's principle (*state your denominator*) with the constant 16 that the dispatch happened to quote beside it. The Team's own setting is the most decision-relevant cell in the report. **See DES-13.** |
+| **OQ-3** | **ADR-195 is stale** — it reads `Accepted` with three lanes; the lanes were reverted (`f216ef558`) and only this brief records it. Correct its status? | **Yes, separately.** Not this Epic's work, but this Epic is the second feature in a row to be misled by an ADR describing a deleted mechanism (ADR-127 was the first). One line of status note. | Open. Note that R-1 resolving in favour of the in-request shape means **this Epic never touches the queue**, so the staleness no longer endangers this feature — only the next one to read that ADR. |
+| **OQ-4** | The verdict sentence cannot come from the server (DES-1), which contradicts the recorded D12 MCP precondition. Rewrite the precondition? | **Yes.** The answer (no CLI/MCP in this Epic) is unchanged and better supported. The precondition as written would need an MCP tool to re-implement the copy, which is the §4.1 risk D12 exists to avoid. | **CLOSED 2026-09-22 — rewritten as recommended.** The precondition now turns on the *client* composing the sentence from facts rather than the server shipping one. The answer (no CLI/MCP in this Epic) is unchanged and better supported. See the amended DISCUSS checklist entry above. |
+| **OQ-5** | Should the sweep's cost finding (up to twenty identical closed-item queries on a cold cache) be probed before slice 01 starts, or as its first task? | **As its first task, unchanged.** AC-1.1 already requires it. DESIGN only sharpens what to measure: run it cold, and count the queries, not just the wall clock. | **CLOSED 2026-09-22 — overtaken by events, resolved by measurement.** It was probed ahead of both options. `RealityCheckWallClockProbe` does exactly the sharpened thing — cold and warm, counting executed commands rather than only wall clock — and **the prediction was exact, not approximate: twenty queries, at every data volume and on every run, with the count not growing with Team size.** See "R-1, measured". |
+| **OQ-6** *(new, 2026-09-22 — see below)* | **A Team with `UseFixedDatesForThroughput = true` has no rolling sampling window at all** — `ThroughputHistory` does not drive its forecasts, so there is nothing of its own to sweep as a fifth window, and the feature's premise (*"the sampling window behind every forecast this Team publishes"*) does not describe it. Should such a Team see the check at all? | **Run it, and say so.** Sweep the standard four windows, sixteen cells, with `currentSettingWasTested: false` and a reason. The sixteen cells are still a true statement about how that Team's history would have forecast; only the "is *your* setting sound" clause is inapplicable. **Hiding the button would be worse** — a fixed-dates Team is exactly the kind that has stopped thinking about its sampling configuration. | **Open — product question, not architectural.** Surfaced by DES-13; latent before it. |
+
+### Where this stands after the 2026-09-22 pass
+
+**Nothing is open that blocks DISTILL, and no architectural question remains undecided.** OQ-1, OQ-2,
+OQ-4 and OQ-5 are closed. Two items are carried, and neither is a blocker — stated rather than forced to
+read RESOLVED:
+
+- **OQ-3 is another document's bookkeeping.** ADR-195 needs a status note. R-1 resolved in favour of the
+  in-request shape, so this Epic never touches the update queue and the staleness cannot mislead this
+  feature. It can still mislead the next reader of that ADR, which is why it stays on the list.
+- **OQ-6 is a product question with a safe default already designed in.** A fixed-dates Team gets the
+  standard sixteen cells and `currentSettingWasTested: false`. That behaviour is specified, testable and
+  ships correctly whatever the maintainer later decides about whether to show the control at all. It is
+  open in the sense that someone may want a different product answer, not in the sense that anything is
+  unspecified.
 
 ---
 
@@ -1693,11 +1947,17 @@ Recorded plainly rather than corrected silently.
    marketing surface (DES-7).
 5. **The response cannot carry a verdict sentence**, so the D12 MCP precondition does not hold as written
    (DES-1, OQ-4).
-6. **A boolean cannot express the off-ladder current setting** (DES-4).
+6. **A boolean cannot express the off-ladder current setting** (DES-4). Still true, but the case it
+   described was **removed** rather than reported: DES-13 sweeps the Team's own window, so the tri-state
+   now carries a narrower and better-defined meaning.
 7. **ADR-195 is stale**, which makes the recorded R-1 fallback look safer than it is (OQ-3).
+8. **A Team can have no rolling sampling window at all.** `Team.UseFixedDatesForThroughput` switches it
+   to a fixed date pair, so `ThroughputHistory` is inert for its forecasts and the feature's premise does
+   not describe it. Latent until DES-13 made the Team's own setting load-bearing. **Found 2026-09-22,
+   raised as OQ-6.**
 
-None of these reopens a locked decision. Items 1 and 2 change two acceptance criteria and are escalated
-rather than applied.
+None of these reopens a locked decision. Items 1 and 2 changed two acceptance criteria, were escalated as
+OQ-1, and were **accepted** — ADR-208 is now `Accepted`.
 
 ---
 
@@ -1710,17 +1970,30 @@ because the feature contacts no third party. The CI gates are the project's stan
 
 **To DISTILL (`nw-acceptance-designer`)** — the response contract above is the test surface. The three
 honesty requirements are testable as structural properties rather than as copy checks: E5 (no rankable
-field), the denominator identity `scoresEvaluated = runsEvaluated × levelsPerRun`, and the sixteen-cell
-invariant (`cells.length == 16` always, unevaluable included). **AC-1.6 and AC-2.4 should not be turned
-into acceptance tests until OQ-1 is answered** — they currently specify arithmetic ADR-208 says is wrong.
+field and no per-window scalar), the denominator identity
+`scoresEvaluated = runsEvaluated × levelsPerRun`, and the completeness invariant
+(`cells.length == sampledWindowDays.length × sampledHorizonDays.length` always — **16 or 20**, unevaluable
+included).
+
+**Both cell counts need coverage, and the off-ladder case is the one that will be forgotten.** Every Team
+in the domain examples sits on the ladder, so a suite written from the worked examples alone would test
+only the sixteen-cell path. At minimum: an on-ladder Team (16 cells, 4 panels), an off-ladder Team
+(20 cells, 5 panels, the Team's window in sorted position), a Team whose own window is sound while its
+neighbours are not and vice versa (DES-3's hole-in-the-middle case), and a fixed-dates Team
+(`currentSettingWasTested: false`, OQ-6).
+
+**AC-1.6 and AC-2.4 are settled** — ADR-208 is `Accepted`, so they specify "held" with
+`expectedHeldCount = evaluated × P/100` and can be turned into acceptance tests directly.
 
 **Paradigm**: object-oriented, per this project's `CLAUDE.md`. `@nw-software-crafter` implements. Not
 re-asked and not rewritten.
 
 **Peer review**: not run. The skill's triggers were evaluated — no contested ADR (ADR-207 ratifies a
-locked decision; ADR-208 is escalated to the maintainer rather than contested), no novel pattern (one
-controller action and a pure policy in a shipped hexagon), no security boundary change (one reused guard,
-no write path). The mandatory consolidated review fires at the end of DISTILL.
+locked decision; ADR-208 was escalated to the maintainer rather than contested, and was accepted), no
+novel pattern (one controller action and a pure policy in a shipped hexagon), no security boundary change
+(one reused guard, no write path). Re-evaluated after the OQ-2 reversal: a decision reversed **by the
+maintainer** is a decision taken, not a contested one, and DES-13 introduces no new pattern — it changes
+the length of an array. The mandatory consolidated review fires at the end of DISTILL.
 
 ---
 
@@ -1753,12 +2026,48 @@ Budget was median ≤ 5,000 ms and max ≤ 10,000 ms. A realistic Team lands sev
    ~1,130 ms at 615 / 5,000 / 20,000 items. Extrapolated, the 5,000 ms median budget would not be
    threatened until somewhere near **80,000 closed Work Items on a single Team**.
 
-**Consequences.** AC-1.1 is answered rather than pending, and the R-1 probe is no longer the gate on
-slice 01 — though the AC stays, because the number belongs to this machine and a second opinion on real
-hardware costs nothing. **Contingency A is not needed**; it remains the right fix if a Team ever does
-approach that size, since reading the closed-item set once and projecting it twenty ways collapses the
-only cost that scales. **Contingency B is dead**: the queue is not used, so ADR-195's staleness never
-mattered to this feature after all.
+**Consequences.** AC-1.1 is answered rather than pending. **The AC stays in slice 01, but it has changed
+character: it is a confirmation on real hardware, no longer a gate that could change the design.** The
+measurement below is SQLite, in-process, one machine — see "What the number is not" — so a second opinion
+on a loaded instance costs nothing and is worth having; it just cannot send the design back to the drawing
+board the way the original gate could have. **Contingency A is not needed**; it remains the right fix if a
+Team ever does approach that size, since reading the closed-item set once and projecting it twenty ways
+collapses the only cost that scales. **Contingency B is dead**: the queue is not used, so ADR-195's
+staleness never mattered to this feature after all.
+
+### The twenty-cell case — extrapolated, not measured
+
+**DES-13 (the maintainer's OQ-2 decision) makes the sweep twenty cells for a Team whose sampling window is
+off the standard ladder.** The table above measures **sixteen**, and `RealityCheckWallClockProbe`
+exercises sixteen. The twenty-cell figures below are arithmetic on the measured parts, and are labelled as
+such wherever they appear:
+
+| | 16 cells (measured) | 20 cells (extrapolated) |
+|---|---|---|
+| Monte Carlo floor | ~615 ms | ~770 ms (× 20/16) |
+| Cold query path, 615 items | ~85 ms | ~102 ms (24 queries rather than 20) |
+| **Cold median** | **701 ms** | **~870 ms** |
+
+Still roughly **five times inside** the 5,000 ms median budget. The Monte Carlo dominates and scales
+linearly in cell count, so the extrapolation is on the safe, well-understood part of the cost; the query
+path is the part that scales with Team size, and it grows by four queries rather than by a factor.
+
+**Should the probe gain a twenty-cell case? Yes — recommended, not done here.** DESIGN does not change the
+probe. Two reasons it is worth adding:
+
+1. **It is the only part of the sweep nobody has run.** Extrapolating a Monte Carlo cost linearly is
+   reasonable and almost certainly right, but "almost certainly right" is what the probe exists to replace
+   — the sixteen-cell prediction was also reasonable, and the value of measuring it was that it came back
+   *exact* rather than approximate.
+2. **It would confirm the query count, which is the claim most likely to be wrong.** Twenty-four assumes
+   the fifth window misses the cache exactly once and adds no actual-completed read. That follows from the
+   scored period depending only on the horizon, and it is easy to get wrong in implementation — an
+   implementation that reads the actual per cell would show 25 rather than 24, and the probe would catch
+   it immediately.
+
+The cheapest form is a second case on the existing probe with a Team whose `ThroughputHistory` is
+off-ladder — 45 is the worked example throughout this document — asserting both the wall clock and a query
+count of 24.
 
 **What the number is not.** SQLite, in-process, one machine, no Kestrel, no serialisation, no concurrent
 load. It measures the sweep's own cost, which is what R-1 asked — a loaded production instance will be
