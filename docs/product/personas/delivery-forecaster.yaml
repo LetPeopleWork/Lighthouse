@@ -32,6 +32,7 @@ primary_jobs:
   - job-forecaster-share-a-delivery-outside-lighthouse  # epic-5698-deliveries-as-durable-records (2026-08-21, #4309): header + Feature grid out in one paste
   - job-forecaster-bind-a-delivery-to-the-release-it-tracks  # epic-5565-delivery-date-sync (2026-08-22, #5565): point a Delivery at the Release it already tracks instead of re-typing its date and scope
   - job-forecaster-trust-the-delivery-date-without-rechecking-jira  # epic-5565-delivery-date-sync (2026-08-22, #5565): the bound date follows the work tracking system, so a likelihood is never measured against a stale target
+  - job-forecaster-check-the-forecast-against-what-happened  # epic-4172-forecast-backtest-sweep (2026-09-22, #4172): replay the forecast against this Team's own completed history and find out whether the configuration behind it was ever sound. Created in DIVERGE, linked here in DISCUSS
 
 goals:
   - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work

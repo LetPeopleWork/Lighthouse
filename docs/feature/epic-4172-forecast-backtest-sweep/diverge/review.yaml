@@ -1,0 +1,165 @@
+schema_version: 1
+feature: epic-4172-forecast-backtest-sweep
+wave: DIVERGE
+reviewer: nw-diverger-reviewer (Prism)
+reviewed_by_request_of: nw-diverger (Flux)
+date: 2026-09-22
+iterations: 1
+max_iterations: 2
+
+overall_verdict: APPROVED
+blocking_issues: 0
+revisions_required: none
+
+artifacts_reviewed:
+  - docs/feature/epic-4172-forecast-backtest-sweep/diverge/job-analysis.md
+  - docs/feature/epic-4172-forecast-backtest-sweep/diverge/competitive-research.md
+  - docs/feature/epic-4172-forecast-backtest-sweep/diverge/options-raw.md
+  - docs/feature/epic-4172-forecast-backtest-sweep/diverge/taste-evaluation.md
+  - docs/feature/epic-4172-forecast-backtest-sweep/recommendation.md
+  - docs/product/jobs.yaml (lines 7338-7432, the appended job)
+
+dimensions:
+  - name: JTBD rigor
+    verdict: PASSED
+    note: >
+      Job at strategic level; 5-Whys documented; six clean ODI statements against a
+      minimum of three.
+  - name: Research evidence quality
+    verdict: PASSED
+    note: >
+      Mirror sourcing disclosed rather than hidden; competitors cited by name; three
+      independent corroborations of the source method. The need for a direct human
+      read of the Medium article is carried forward as an open risk.
+  - name: Option structural diversity
+    verdict: PASSED
+    note: >
+      Six options pass the three-point diversity test. The E1-vs-M1 thinness was
+      acknowledged in the artifact rather than found by the reviewer, and the pair was
+      judged genuinely distinct on mechanism, assumption and cost.
+  - name: Taste-evaluation correctness
+    verdict: PASSED
+    note: >
+      Weights justified from the ODI table rather than asserted. The winner's weakness
+      (HONESTY 3 on the 30%-weighted criterion) is flagged in the artifact and mitigated
+      by concrete cited requirements rather than by re-weighting. Near-tie of 0.20
+      across the top three disclosed.
+  - name: Recommendation coherence
+    verdict: PASSED
+    note: >
+      Traceable job -> research -> scores. The dissent is treated as serious (4.15 vs
+      4.30). Concrete enough to write stories against: endpoint, surface, entity
+      decision and a six-slice shape are all named.
+
+adversarial_questions_put_to_the_reviewer:
+  - question: Is the winner's selection derivable from the matrix, or retroactive justification?
+    finding: >
+      DERIVABLE. The weakness is acknowledged up front, not discovered by the reviewer,
+      and the three honesty requirements are front-loaded into slices 02 and 04 as
+      conditions rather than appended as decoration. If they are dropped, the ranking
+      inverts and the artifact says so.
+  - question: Are E1 and M1 two options or one option twice?
+    finding: >
+      TWO. Distinct on mechanism (rendered data vs a server-authored claim), on
+      assumption (evidence read vs evidence unread), and marginally on cost. Thin, and
+      declared thin in options-raw.md itself.
+  - question: Does folding losing options into the winner make the scoring decorative?
+    finding: >
+      LEGITIMATE SYNTHESIS. The absorbed elements enter as build conditions in numbered
+      slices, not as post-hoc rationalisation.
+  - question: Are the ODI scores reverse-engineered to justify the 30% HONESTY weight?
+    finding: >
+      FORWARD-REASONED. O4 outranks O1 because its satisfaction is lower, not because
+      its importance was inflated, and every row carries a stated basis.
+  - question: Is the mirror provenance adequately disclosed and consistently applied?
+    finding: ADEQUATE. Confidence is split by claim type and the direct-read action is carried as an open risk.
+  - question: Is the recommendation concrete enough for immediate story writing?
+    finding: >
+      YES. Endpoint, guard, surface, in-flight state, visual form, apply path, the
+      no-entity decision and a six-slice carpaccio shape are all named.
+
+# Recorded in full because a reviewer's own accuracy is not exempt from review, and
+# because a downstream wave that quotes these numbers would be quoting fabrications.
+reviewer_report_defects_found_by_flux:
+  - severity: material
+    issue: >
+      The review states "Satisfaction(O4)=1.5 < Satisfaction(O1)=2.5, even though
+      Importance(O1)=8.8 > Importance(O4)=8.2". Three of those four figures are not in
+      job-analysis.md. The actual table reads O4 importance 8.2 / satisfaction 1.5 and
+      O1 importance 7.8 / satisfaction 2.4. The reviewer's CONCLUSION (forward-reasoned,
+      driven by the satisfaction gap) is correct and survives on the real numbers; its
+      arithmetic citation was invented.
+    action: >
+      Conclusion accepted, numbers rejected. DISCUSS must quote job-analysis.md §7, never
+      this review.
+  - severity: minor
+    issue: >
+      The review renumbers the open risks. It reports "R-3 flags ADR-127 unverified" and
+      "R-4 flags percentile logic unverified". The actual numbering in recommendation.md
+      §7 is R-2 = ADR-127, R-3 = which percentile, R-4 = the three-way verdict departure.
+      There is no risk about "percentile recommendation logic in the codebase".
+    action: Use recommendation.md §7 as the authoritative risk register.
+  - severity: minor
+    issue: The review says "15+ competitors cited". Ten named products are cited.
+    action: No effect on the verdict.
+
+# The reviewer raised ADR-127 as a live risk. It had already been resolved in-wave,
+# after the artifacts the reviewer read were written, and resolved AGAINST the
+# dissenting option rather than for it.
+risk_resolved_in_wave_after_review_dispatch:
+  id: R-2
+  question: Has Story #5627 (ADR-127's team-settings advisory channel) shipped?
+  answer: >
+    NO - and the situation is stronger than "not yet". Story #5612 DELETED the advisory
+    channel outright. ValidationAdvisory.tsx is absent from the entire frontend, and two
+    comments in the tree record the deletion and the reasoning:
+    ConnectionValidationResult.test.ts:23-26 and ServiceNowBoardVerdict.cs:37-41, the
+    latter building a later rung explicitly "rather than reviving them".
+  consequence: >
+    Closes the only branch in which the dissenting option R1 overtook the recommendation.
+    R1's score was deliberately LEFT UNCHANGED at 4.15 rather than lowered, because
+    marking a losing option down on a fact discovered after scoring would flatter the
+    winner.
+  side_finding: >
+    ADR-127 is STALE - it describes a mechanism no longer in the tree and carries no note
+    saying so. Worth a status correction in its own right, independently of this Epic.
+
+open_risks_carried_to_discuss:
+  - id: R-1
+    item: Does the sixteen-cell run fit an acceptable request budget?
+    status: open
+    cost: one hour, slice 01, before any UI is written
+    note: The recommendation's load-bearing assumption. Strong evidence, still an inference.
+  - id: R-2
+    item: Has Story #5627 shipped?
+    status: RESOLVED in-wave - see above
+  - id: R-3
+    item: Which percentile does a cell score against?
+    status: open
+    cost: a decision; recommended 85th, printed on the artifact
+  - id: R-4
+    item: Is the three-way under/over/within verdict kept, given it departs from the source method?
+    status: open
+    cost: a decision
+  - id: R-5
+    item: Confirm the source article from medium.com directly
+    status: open
+    cost: one human page-load, before anything is quoted publicly
+  - id: R-6
+    item: ThroughputHistory defaults disagree - entity 30, create wizard and edit screen 90
+    status: open
+    cost: its own ADO item; do not fold into this Epic
+  - id: R-7
+    item: Rolling-origin evaluation as a later slice
+    status: recorded, not scheduled
+
+reviewer_closing_instruction_accepted: >
+  Encode the three honesty requirements - region-not-winner, denominator plus
+  non-comparability disclosure, and coverage against a printed nominal percentile - in
+  the Definition of Done for slices 02 and 04. They are what hold the recommendation's
+  weakest score, and they are the condition on which the decision stands.
+
+handoff:
+  to: nw-product-owner (Luna)
+  wave: DISCUSS
+  approved: true

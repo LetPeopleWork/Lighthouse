@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-21
+updated: 2026-09-22
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -54,6 +54,7 @@ feature_context:
   - story-5877-update-queue-lanes
   - parent-from-issue-links
   - story-6055-activity-names-the-work
+  - epic-4172-forecast-backtest-sweep
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7335,3 +7336,116 @@ jobs:
         that both hold a premium licence and use Jira Plans. Current satisfaction 2 — half the bar
         already arrives automatically via Epic 5565, so a Plan today is half-maintained rather than
         wholly manual. Gap 1, the narrowest here, and the cheapest to close.
+
+  - id: job-forecaster-check-the-forecast-against-what-happened
+    title: Check that the configuration behind my forecasts fits how my Team actually delivers
+    persona: delivery-forecaster
+    feature_context: epic-4172-forecast-backtest-sweep
+    created: 2026-09-22
+    note: >
+      NEW in epic-4172-forecast-backtest-sweep (ADO Epic #4172, working title "The Full Monte", tag
+      Community, priority 2). Source method: Nick Brown (ASOS), "The Full Monte".
+      HONEST FRAMING, deliberately modelled on job-assess-forecasting-flow-maturity rather than on the
+      acute-pain jobs around it. The business-primary objective is to demonstrate the method — the Epic
+      is tagged Community for the stated reason that it "should convince people of the method, so they
+      flock to use the tool" — and the forecaster's own job is genuine but LIGHT. Nobody is blocked by a
+      mis-set throughput window; they simply do not know it is mis-set, because Lighthouse has no
+      feedback loop on its own output. There is NO named customer asking for this, unlike
+      filter-forecast-throughput (Liz / JLP, Epic 4896) or forecast-minimum-data-guard (Liz). That
+      absence is recorded rather than papered over, and it is why importance is 3 and not 5.
+      SECONDARY PERSONA: forecasting-prospect — the same artifact read by someone who does not yet use
+      the product. Recorded here rather than given a job of its own, because a separate job for a
+      marketing read would be exactly the inflation this note exists to avoid.
+      COMPOSES WITH, NEVER REPLACES, the shipped data-sufficiency bar from forecast-minimum-data-guard
+      (at least 5 distinct days with at least 1 completed work item). The new wrinkle is that each
+      checked period carries its OWN history window, so sufficiency becomes a per-period property and one
+      artifact can hold both answerable and unanswerable results at once. ADR-194's finding applies
+      directly: on this product's charts an unpainted region already means "too little history", so an
+      unevaluated result and a calm result must never render alike.
+      NOT THIS PERSONA: flow-coach (their jobs are diagnostic — stuck items, blocked duration, pace
+      outliers — and forecast-model calibration is not among them); config-admin (owns the setting, but
+      owning a field is not knowing what to put in it).
+      DISCUSS 2026-09-22 — shipped as "Forecast Reality Check" (internal codename "The Full Monte",
+      attributed to Nick Brown). Four decisions worth recording on the job itself, because they change
+      what serving it means. (1) The check scores ALL FOUR confidence levels (50/70/85/95) rather than a
+      single fixed one: the source study found the percentile carried the entire signal (68% → 84% → 90%
+      correct-rate) while the history window carried none (19-23% incorrect across four lengths), so a
+      sweep of windows alone would have swept the null axis. All four are already returned by every
+      forecast run, so this is free. (2) THERE IS NO TEAM SETTING FOR THE FORECAST CONFIDENCE LEVEL —
+      confirmed by search, not assumed. Team has no percentile field; ServiceLevelExpectationProbability
+      is a cycle-time SLE bounding how long one Work Item may take. So the job's "adjust" step is served
+      in two different ways: the sampling window is a setting and gets a control, and the confidence
+      level is a choice of which number to say out loud and gets none. Whether a per-Team default
+      confidence level SHOULD exist is a separate product question with its own ADO item; it was not
+      invented here. (3) The three-way under/over/within verdict is KEPT and is a deliberate departure
+      from the source, which scored one-sided — it must never be attributed to Nick Brown. (4) Nothing
+      is persisted; the result is a response, not a record (ADR-207).
+    job_story: >
+      When I am about to publish a forecast from a Team whose sampling configuration I set once and have
+      never checked,
+      I want evidence from that Team's own completed history about whether that configuration would have
+      got the last few periods right,
+      so I can either stand behind the number or change the configuration before anyone anchors on it.
+    dimensions:
+      functional: >
+        Replay the forecast against the Team's own completed history without having to supply the dates,
+        read how far off it was, and be told which RANGE of throughput sampling windows would have
+        behaved about the same — never which single one is best — and, separately, which confidence
+        levels actually held up. The result must be honest about the fact that each checked period is a
+        different stretch of real time and therefore not a repeated trial of one experiment. The setting
+        the answer points at is Team.ThroughputHistory (days, entity default 30), which every forecast
+        surface samples from. CORRECTED IN DISCUSS (2026-09-22): this previously read "be told which
+        throughput sampling window would have fitted best", which names a winner — the exact reading the
+        feature's highest-scoring outcome statement (O4, 14.9) exists to prevent.
+      emotional: >
+        Move from unexamined confidence ("Monte Carlo is a sound method, so this is probably fine — I
+        left the window at whatever the default was") to examined confidence ("I have checked this
+        against what my Team actually did, and I can say what I checked and what it showed").
+      social: >
+        Answer "how do you know this is right?" with a reproducible check on this Team's own history
+        rather than with the name of a methodology. And, for the prospect reading the same artifact:
+        be shown on recognisable data that the method held up.
+    forces:
+      push: >
+        Lighthouse issues a forecast and then never revisits it. Nothing anywhere in the product says
+        "the number you gave six weeks ago turned out to be high, low, or right", so the forecast is
+        unfalsifiable in normal use and the sampling window that drives every forecast surface is set
+        once and never questioned. The product does not even agree with itself about the right value:
+        the entity defaults ThroughputHistory to 30 while the create-Team wizard and the edit screen
+        both seed 90.
+      pull: >
+        The single-shot backtest already ships and already works (POST /api/forecast/backtest/{teamId}),
+        the forecast engine and blackout-aware working-day counting are shipped, and the control that
+        writes the recommended value — ThroughputQuickSetting in the Team detail header — is already on
+        the page. What is missing is being told which question to ask.
+      anxiety: >
+        "Will a grid of results invite me to compare things that are not comparable?" (The real hazard.
+        Because every checked period ends today and reaches backward by its own length, each one covers a
+        DIFFERENT stretch of real time; they are not repeated trials and must not be ranked as though
+        they were. Treated as a first-class design constraint, not a caption.)
+        "Will it tell me something for a period whose history cannot support it?" (Mitigated by composing
+        with the shipped 5-active-days guard, and by giving an unevaluated result a visual treatment
+        distinct from every outcome — ADR-194.)
+        "Is this just a demo?" (Answered by making the recommendation actionable against a real setting
+        the user already owns, rather than by ending at a picture.)
+      habit: >
+        Forecasters accept the default and never look; or they run the shipped single-shot backtest,
+        which demands four dates and therefore requires them to already suspect the answer; or they trust
+        the method by reputation. Nobody does the sweep by hand, because sixteen manual Monte Carlo runs
+        is not a thing a person does on a Tuesday — which is why this creates a capability rather than
+        saving an effort.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 — HONESTLY conversion-weighted, following the job-assess-forecasting-flow-maturity
+        precedent. A mis-set sampling window silently biases every forecast the Team publishes, which is
+        real harm; but it is unfelt harm, no customer has asked, and nobody is blocked. Inflating this to
+        4 or 5 would not survive contact with the evidence. Current satisfaction 1 — the single-shot
+        backtest exists but cannot be used to answer this question without already knowing the answer,
+        and no surface anywhere closes the loop on a published forecast. Gap 2 — a genuine missing
+        capability with no manual equivalent, held to 2 rather than 3 because the forecast engine, the
+        backtest endpoint, the data-sufficiency guard and the settings control that applies the answer
+        are all already shipped; what is missing is the orchestration, the honest reading, and the
+        recommendation.

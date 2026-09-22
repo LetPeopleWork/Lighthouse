@@ -1,0 +1,327 @@
+schema_version: 1
+feature_id: epic-4172-forecast-backtest-sweep
+updated: 2026-09-22
+ado: "#4172"
+note: >
+  User-facing feature name is "Forecast Reality Check" (shortens to "Reality Check" in-app). The internal
+  codename "The Full Monte" stays in the commit scope, the ADO Epic title and the launch post, always with
+  attribution to Nick Brown (ASOS), whose article the method comes from. The engineering slug is unchanged.
+  C6 extended: "throughput" is itself a user-renameable term, so it cannot appear in a feature name — it
+  would render as the user's own word.
+
+journeys:
+
+  - name: check-the-forecast-against-what-happened
+    goal: >
+      A delivery-forecaster who is about to publish a forecast presses one button on the Team's Forecast
+      tab and, without typing a single date, gets one sentence back: whether the sampling window behind
+      every forecast this Team produces is sound, and which of the four confidence levels actually held up
+      against what the Team really delivered. If the window is outside the sound range they change it from
+      where they are standing; if it is inside — the usual case — they are told so plainly, and the thing
+      they take away is which number to quote rather than which setting to change.
+    persona: delivery-forecaster
+    secondary_persona: forecasting-prospect
+    job: job-forecaster-check-the-forecast-against-what-happened
+
+    emotional_arc:
+      start: >
+        Unexamined confidence, with a thread of unease underneath it. "Monte Carlo is a sound method, so
+        this is probably fine — I left the sampling window at whatever the default was, and I have never
+        had a reason to look at it." The unease is that there has never been a way to look.
+      middle: >
+        Braced, for about four seconds. "Am I about to find out I have been publishing biased numbers all
+        year?" This is the peak tension of the journey and it is short by design — the synchronous shape
+        exists so that the braced moment does not become a braced afternoon.
+      end: >
+        Examined confidence, in one of two shapes, and both are a good ending. Either "I checked this
+        against what my Team actually did, my setting is fine, and I now know which of the four numbers
+        has been holding up" — or "my window was wrong, I changed it in one press, and I can say what I
+        checked and what it showed." The failure mode this arc must avoid is a third shape: a shrug. The
+        null result must land as an answer, never as an absence.
+
+    design_decisions_resolved:
+      - id: D1
+        question: Which confidence levels does the check score against?
+        decision: >
+          All four — 50, 70, 85 and 95 — scored and shown side by side, with the level printed. Overrides
+          the DIVERGE recommendation of a single fixed 85th. It is free: CreateForecastDtos(50, 70, 85, 95)
+          already runs on every backtest, so scoring three would mean filtering output. It matches every
+          neighbouring forecast surface, which shows four. And the 95th is the teaching cell — a 95%
+          forecast beaten zero times across sixteen checks is the clearest instance of "never beaten means
+          over-forecasting, not excellence". Brown's published figures are for 50/70/85 and all three are
+          present, so comparability is preserved; the 95th is an addition, not a substitution.
+      - id: D2
+        question: How does the evidence view carry the confidence dimension without becoming unreadable?
+        decision: >
+          The confidence level is a POSITION, not a fifth panel. A Monte Carlo How-Many forecast read at
+          four percentiles is one distribution, not four forecasts, so the row draws it as a band spanning
+          the four levels with a single mark where the Team's actual landed. Where the mark falls IS the
+          per-level verdict. Four panels stay four; the confidence dimension costs zero panels and zero
+          controls. Rejected: 4x4x4 as sixty-four plotted marks; a per-level panel set; a confidence
+          selector.
+      - id: D3
+        question: What is the denominator the artifact prints about itself?
+        decision: >
+          Two numbers and the relationship between them. "16 forecast runs were checked, each read at 4
+          confidence levels — 64 scores in all. The four levels of a single run come from the same
+          simulation, so they are not independent of one another. And each run covers a different stretch
+          of real time — every one ends today and reaches back by its own length — so they are not
+          repeated trials of one experiment and should not be ranked against each other." Saying only "64
+          configurations" would be dishonest in a new direction, because four of every sixty-four share
+          one simulation by construction.
+      - id: D4
+        question: The Apply control writes the sampling window, the axis with no signal. Is there a setting on the axis that has signal?
+        decision: >
+          NO — confirmed by searching the tree, not assumed. Team carries no percentile field.
+          ServiceLevelExpectationProbability exists on the base class but is a cycle-time SLE consumed only
+          by TeamMetricsService.GetSleRiskForTeam, bounding how long one Work Item may take; it has nothing
+          to do with which percentile a How-Many forecast is quoted at. Forecast percentiles are the fixed
+          set 50/70/85/95 at every call site. So the artifact states the asymmetry as permanent copy: the
+          sampling window is a setting and has a control; the confidence level is not a setting but a
+          choice of which number to say out loud, and there is no button for it because there is nothing to
+          press. Two verdicts, one button. Whether a per-Team default confidence level SHOULD exist is
+          escalated as its own ADO item and is not decided here.
+      - id: D5
+        question: When does the Apply control appear?
+        decision: >
+          Only when the Team's current ThroughputHistory falls outside the sound region. In the modal case
+          — every window behaving alike, the current setting inside the range — there is nothing to apply,
+          and rendering a disabled or no-op button would contradict the sentence beside it.
+      - id: D6
+        question: What anchors the checked periods?
+        decision: >
+          Today is the END anchor. Every cell ends today and reaches backward by its horizon; its history
+          window sits immediately before it. No date picker anywhere, which is what makes one click viable.
+          Load-bearing consequence: each horizon scores a DIFFERENT stretch of real time, so the cells are
+          not repeated trials and must never be ranked against one another.
+      - id: D7
+        question: Is the three-way under/over/within verdict kept, given it departs from the source method?
+        decision: >
+          Kept. Brown scored one-sided — over-delivery counted as correct. The trichotomy is arguably more
+          honest (a forecast never beaten is over-forecasting) and matches weather verification's symmetric
+          treatment of conditional bias. It must NEVER be described as "what Nick Brown did"; wherever the
+          source method is credited, the departure is stated in the same place.
+      - id: D8
+        question: Is anything stored?
+        decision: >
+          Nothing. No entity, no table, no migration, no UpdateType member, no queue work, no notification
+          seam. The result is a response, not a record. ADR-207 (a DESIGN-wave deliverable) records the
+          position, the accepted consequence, the named revisit trigger (the second Report kind, not a
+          date), and the six questions the eventual Report ADR must answer.
+      - id: D9
+        question: What happens to a checked period whose own history is too thin?
+        decision: >
+          ForecastDataSufficiencyPolicy.HasEnoughData (MinimumActiveDays = 5) is called on that cell's own
+          RunChartData, unchanged. No second bar is invented. Because each cell carries its own history
+          window, sufficiency varies WITHIN one report. ADR-194 governs the rendering: on this product's
+          charts a blank region already means "too little history", so a calm result and an unevaluable one
+          must never render alike, and "leave it empty" is the option that ADR already ruled out.
+
+    steps:
+
+      - id: 1
+        name: Notice the question exists
+        surface: Team → Forecast tab → "Forecast Backtesting" group
+        what_they_see: >
+          A single button labelled for the check, inside the InputGroup that already holds the shipped
+          single-shot backtest, above its date pickers. No dialog, no configuration, no dates.
+        emotional_state:
+          entry: Unexamined confidence — they came to this tab to read a forecast, not to question one
+          exit: Curious, faintly wary — "I did not know I could ask that"
+        shared_artifacts:
+          - name: team_throughput_history
+            source: Team.ThroughputHistory (entity, Lighthouse.Backend/Models/Team.cs:17)
+            displayed_as: "${currentSamplingWindow}"
+            consumers: [the verdict sentence, the apply control's condition, ThroughputQuickSetting]
+        integration_checkpoint: >
+          The button reads the Team's current sampling window from the same field every forecast surface
+          samples from. If it reads from anywhere else, the verdict is about a different setting than the
+          one the user owns.
+        failure_modes:
+          - The Team has no work tracking system connection, so there is nothing to replay
+          - The button is placed below the shipped date pickers and reads as a variant of them
+
+      - id: 2
+        name: Press it, and wait a beat
+        surface: the same group
+        what_they_see: >
+          The button becomes a spinner in place. Measured expectation is seconds. No notification, because
+          there is nothing to notify about — removing the asynchrony is what buys that.
+        emotional_state:
+          entry: Curious
+          exit: Braced — the peak tension of the journey, and deliberately short
+        integration_checkpoint: >
+          The sixteen runs complete inside the request. This is the feature's load-bearing assumption and
+          is measured before any UI is built (R-1 / AC-1.1). If the budget is missed, the whole shape
+          changes.
+        failure_modes:
+          - The run exceeds the request budget and the synchronous shape fails (R-1, open)
+          - Sixteen different history windows all miss the metrics cache, so the cost is the uncached one
+          - The user navigates away mid-run and returns to a surface that has forgotten it
+
+      - id: 3
+        name: Read the sentence
+        surface: a result card in the same group
+        what_they_see: >
+          One sentence with two clauses, plus permanent copy beneath it. First clause, a REGION of sampling
+          windows that behaved alike and whether the current setting is inside it — never a winner. Second
+          clause, how each of the four confidence levels fared against its own nominal rate, with any level
+          never beaten called over-forecasting rather than excellent. Then the denominator paragraph, on
+          screen, not in a tooltip. Any checks that could not run are named with their reason.
+        tui_mockup: |
+          +-- Forecast Reality Check -------------------------------------------+
+          | Anything between ${regionLow} and ${regionHigh} days would have      |
+          | behaved about the same for ${teamName}. Your current                 |
+          | ${currentSamplingWindow} is inside that range — this setting is fine.|
+          |                                                                      |
+          | At 85% the forecast held in 3 of 4 checks; at 95% it held in 4 of 4  |
+          | and was never beaten, which is over-forecasting rather than          |
+          | excellence; at 70% in 2 of 4; at 50% in 1 of 4.                      |
+          |                                                                      |
+          | ${runCount} forecast runs were checked, each read at                 |
+          | ${levelCount} confidence levels — ${scoreCount} scores in all. The   |
+          | four levels of a single run come from the same simulation, so they   |
+          | are not independent of one another. Each run covers a different      |
+          | stretch of real time — every one ends today and reaches back by its  |
+          | own length — so they are not repeated trials of one experiment and   |
+          | should not be ranked against each other.                             |
+          |                                                                      |
+          | 2 of the 16 checks could not run: their 14-day sampling windows hold |
+          | fewer than 5 days with completed ${workItemsTerm}.                   |
+          |                                                                      |
+          | [ Show the evidence ]                                                |
+          +----------------------------------------------------------------------+
+        emotional_state:
+          entry: Braced
+          exit: >
+            Relieved, or usefully alarmed. Either way informed — and critically, the null result reads as
+            an answer ("this setting is fine") rather than as a shrug
+        shared_artifacts:
+          - name: minimum_active_days
+            source: ForecastDataSufficiencyPolicy.MinimumActiveDays (= 5)
+            displayed_as: "${minimumActiveDays}"
+            consumers: [the unevaluable-cell sentence, each unevaluable row in the evidence view, the exported one-pager]
+          - name: work_items_term
+            source: TerminologySeeder.cs / the instance's Terminology settings
+            displayed_as: "${workItemsTerm}"
+            consumers: [every string in the feature, the docs page, the exported one-pager]
+          - name: confidence_levels
+            source: CreateForecastDtos(50, 70, 85, 95) at the call site
+            displayed_as: ["${levelCount}", "${scoreCount}"]
+            consumers: [the verdict's second clause, the nominal-rate lines, the denominator paragraph, the export]
+        integration_checkpoint: >
+          runCount x levelCount must equal scoreCount, and scoreCount must be what was ACTUALLY evaluated,
+          not what was attempted. A report with four unevaluable cells prints twelve runs, not sixteen.
+        failure_modes:
+          - The verdict names a single best window, breaking honesty requirement 4.1
+          - The denominator is rendered behind a tooltip or a disclosure, breaking 4.2
+          - An unevaluable cell is silently dropped from the counts without being named
+          - Every cell is unevaluable, and the sentence has nothing to say — needs its own copy
+
+      - id: 4
+        name: Look at the evidence
+        surface: the same card, expanded
+        what_they_see: >
+          Four panels, one per sampling window. Inside each, one row per horizon, drawn as a forecast band
+          spanning the four confidence levels with a single mark where the Team's actual completed count
+          landed. A row that could not be checked says so in words where the band would be. Below the
+          panels, four lines: per confidence level, how many evaluable checks it was beaten in against how
+          many its nominal rate expects.
+        tui_mockup: |
+          +-- Sampling window: 30 days ------------------------------------------+
+          |                      95     85     70     50                         |
+          |   8 weeks   |-------+------+------+------|          * 42             |
+          |   4 weeks   |-----+-----+-----+-----|   * 19                         |
+          |   2 weeks   not enough history in this window — 3 days with completed |
+          |             ${workItemsTerm}, ${minimumActiveDays} needed             |
+          |   1 week    |---+---+---+---|           * 6                          |
+          +----------------------------------------------------------------------+
+          Across the 14 checks that could be run:
+            50%   beaten in 9   (about 7 expected)   about right
+            70%   beaten in 5   (about 4 expected)   about right
+            85%   beaten in 1   (about 2 expected)   about right
+            95%   beaten in 0   (about 1 expected)   never beaten — over-forecasting, not excellence
+        emotional_state:
+          entry: Interested, and slightly sceptical of the sentence
+          exit: >
+            Convinced by something they looked at rather than something they were told. This is the step
+            that earns the recommendation's weakest score on its highest-weighted criterion
+        integration_checkpoint: >
+          Every row in every panel corresponds to exactly one cell in the response, and an unevaluable row
+          renders visibly differently from every evaluable outcome — never blank (ADR-194).
+        failure_modes:
+          - Four bands of four levels, four to a panel, turn out to be unreadable at real data
+          - An unevaluable row renders as an empty band and is read as a calm result
+          - A panel with no evaluable rows is omitted, which reads as "this window was fine"
+          - The rendering drifts toward a matrix or a ranked list, which D6 forbids
+
+      - id: 5
+        name: Act on it, or learn there is nothing to act on
+        surface: the verdict card, and the Team detail header's ThroughputQuickSetting
+        what_they_see: >
+          When the current sampling window is outside the sound region, a control naming the value it would
+          set. Pressing it opens the shipped ThroughputQuickSetting pre-filled; the write happens only on
+          save, through that control's existing validation. When the window is inside the region, no
+          control at all, and the sentence says the setting is fine. Alongside, permanently: the sampling
+          window is a setting and has a control; the confidence level is not a setting but a choice of
+          which number to say out loud, so it has none.
+        emotional_state:
+          entry: Decided
+          exit: >
+            Examined confidence. In the common case the takeaway is a behaviour change — start quoting the
+            85th — rather than a settings change, and the copy makes that feel like the point rather than
+            like a missing feature
+        shared_artifacts:
+          - name: team_throughput_history
+            source: Team.ThroughputHistory
+            displayed_as: "${recommendedSamplingWindow}"
+            consumers: [the apply control's label, ThroughputQuickSetting's pre-filled value]
+        integration_checkpoint: >
+          The value the control pre-fills is the same value the verdict named, and it is written by the
+          shipped control's own endpoint. No new write path exists anywhere in this feature.
+        failure_modes:
+          - A user without Team write rights is offered the control
+          - The control appears when the current setting is already inside the region, contradicting the sentence
+          - Opening the header control pre-filled needs lifted state or a contract change, so Apply is not near-free after all and should be cut
+
+    integration_validation:
+      shared_artifact_consistency:
+        - artifact: team_throughput_history
+          must_match_across: [1, 3, 5]
+          failure_message: >
+            The verdict is about a different sampling window than the one the Team actually uses, or the
+            apply control pre-fills a value the verdict did not name.
+        - artifact: minimum_active_days
+          must_match_across: [3, 4]
+          failure_message: >
+            A second data-sufficiency threshold has been invented. C5 forbids it — compose with
+            ForecastDataSufficiencyPolicy.MinimumActiveDays, unchanged.
+        - artifact: confidence_levels
+          must_match_across: [3, 4]
+          failure_message: >
+            The printed denominator does not match what was actually evaluated, which is exactly the
+            selection-bias disclosure honesty requirement 4.2 exists to prevent.
+        - artifact: work_items_term
+          must_match_across: [1, 3, 4, 5]
+          failure_message: >
+            A user-facing string hard-codes "Work Item" or "throughput" instead of rendering the
+            instance's configured term.
+
+    out_of_scope:
+      - Any Report entity, table, migration, UpdateType member or notification seam — declined, not deferred (D8)
+      - A per-Team default forecast confidence level — escalated as its own ADO item, not invented here (D4)
+      - The ThroughputHistory 30-vs-90 default disagreement — its own ADO item
+      - Rolling-origin evaluation — D6 is not reopened; recorded as a later candidate
+      - Scheduling, continuous checking, auto-adjustment — C2, on demand only
+      - The forecast-throughput filter as a sweep dimension — C3, it is a config option of the run
+      - CLI or MCP client exposure — declined, with the precondition for later recorded in feature-delta.md
+      - "ADR-127's team-settings advisory channel — Story #5612 deleted it; the ADR carries no note saying so"
+
+changelog:
+  - date: 2026-09-22
+    feature: epic-4172-forecast-backtest-sweep
+    change: >
+      Created in the DISCUSS wave. Carries the DIVERGE recommendation (M1, "Forecast Reality Check") plus
+      four user decisions taken after it: all four confidence levels rather than one fixed 85th (D1), the
+      three-way verdict kept and the departure from the source owned out loud (D7), today as the end anchor
+      (D6), and no Report abstraction (D8).
