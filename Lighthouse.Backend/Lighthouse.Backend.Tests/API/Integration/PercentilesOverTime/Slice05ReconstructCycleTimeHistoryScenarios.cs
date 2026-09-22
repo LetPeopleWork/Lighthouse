@@ -127,7 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @regression @driving_port @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_quiet_day_is_left_blank_by_the_daily_recording_too()
         {
             var teamId = GivenATeamStillBeingRefreshed();

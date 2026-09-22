@@ -37,16 +37,10 @@ namespace Lighthouse.Backend.Services.Implementation
 
             foreach (var horizon in HorizonsFor(metricType))
             {
-                var readings = ComputeDay(day, horizon, readPercentiles);
-                var stored = StoredRow(ownerId, ownerType, metricType, horizon, day);
-
-                if (stored == null)
-                {
-                    snapshotRepository.Add(NewRow(ownerId, ownerType, metricType, horizon, day, readings));
-                    continue;
-                }
-
-                Apply(readings, stored);
+                WriteUnlessThereWasNothingToReport(
+                    ownerId, ownerType, metricType, horizon, day,
+                    ComputeDay(day, horizon, readPercentiles),
+                    StoredRow(ownerId, ownerType, metricType, horizon, day));
             }
         }
 
@@ -68,19 +62,36 @@ namespace Lighthouse.Backend.Services.Implementation
                     continue;
                 }
 
-                var readings = ComputeDay(day, horizon, readPercentiles);
-
-                // A day on which nothing finished has no cycle time to report, and four zeros are not
-                // a measurement of a quiet period - they are a floor the team never stood on. Worked
-                // out across a thin stretch of history they line up into one, which is a more
-                // confident falsehood than the gap it would be replacing. The day is left with no row.
-                if (readings.AreEmpty)
-                {
-                    continue;
-                }
-
-                snapshotRepository.Add(NewRow(ownerId, ownerType, metricType, horizon, day, readings));
+                WriteUnlessThereWasNothingToReport(
+                    ownerId, ownerType, metricType, horizon, day,
+                    ComputeDay(day, horizon, readPercentiles),
+                    stored: null);
             }
+        }
+
+        // Both the day written as it happens and a day worked out afterwards pass through here. The two
+        // must not be able to disagree about what a quiet day is worth: a day that already carries a row
+        // is never rewritten, so whichever of them reached it first would settle it permanently.
+        private void WriteUnlessThereWasNothingToReport(
+            int ownerId, OwnerType ownerType, MetricType metricType, int horizon, DateOnly day,
+            PercentileReadings readings, PercentilesOverTimeSnapshot? stored)
+        {
+            // A day on which nothing finished has no cycle time to report, and four zeros are not a
+            // measurement of a quiet period - they are a floor the team never stood on. Worked out
+            // across a thin stretch of history they line up into one, which is a more confident
+            // falsehood than the gap it would be replacing. The day is left with no row.
+            if (readings.AreEmpty)
+            {
+                return;
+            }
+
+            if (stored == null)
+            {
+                snapshotRepository.Add(NewRow(ownerId, ownerType, metricType, horizon, day, readings));
+                return;
+            }
+
+            Apply(readings, stored);
         }
 
         public async Task SaveFilledDay()
