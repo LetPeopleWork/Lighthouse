@@ -1,10 +1,12 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class OverTimeGapReconciler(ILighthouseClock clock, IOverTimeHistoryFiller filler) : IOverTimeGapReconciler
+    public class OverTimeGapReconciler(
+        ILighthouseClock clock, IOverTimeHistoryFiller filler, ReconstructionMemo memo) : IOverTimeGapReconciler
     {
         /// <summary>
         /// The most days one visit asks for. A year-wide picker then fills over successive loads
@@ -30,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var missing = DaysWithoutAReading(from.Value, to ?? clock.Today, daysAlreadyHeld);
+            var missing = DaysWithoutAReading(ownerId, ownerType, metricType, from.Value, to ?? clock.Today, daysAlreadyHeld);
             if (missing.Count == 0)
             {
                 return;
@@ -39,18 +41,29 @@ namespace Lighthouse.Backend.Services.Implementation
             filler.AskFor(new OverTimeFillRequest(ownerId, ownerType, metricType, missing));
         }
 
-        private static List<DateOnly> DaysWithoutAReading(
-            DateOnly from, DateOnly to, IReadOnlyList<PercentilesOverTimeSnapshot> daysAlreadyHeld)
+        private List<DateOnly> DaysWithoutAReading(
+            int ownerId,
+            OwnerType ownerType,
+            MetricType metricType,
+            DateOnly from,
+            DateOnly to,
+            IReadOnlyList<PercentilesOverTimeSnapshot> daysAlreadyHeld)
         {
             var held = daysAlreadyHeld.Select(day => day.RecordedAt).ToHashSet();
             var missing = new List<DateOnly>();
 
             for (var day = from; day <= to && missing.Count < MostDaysOneVisitAsksFor; day = day.AddDays(1))
             {
-                if (!held.Contains(day))
+                // A day an earlier pass established cannot be written is left out, or it is asked for
+                // again on every load for as long as the instance runs and looking at a settled period
+                // never gets any cheaper. This is a dictionary lookup and nothing else - whatever it
+                // took to find that out was paid once, in a pass, off this thread.
+                if (held.Contains(day) || memo.NoPassCanWrite(ownerId, ownerType, metricType, day))
                 {
-                    missing.Add(day);
+                    continue;
                 }
+
+                missing.Add(day);
             }
 
             return missing;

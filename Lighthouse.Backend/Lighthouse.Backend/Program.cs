@@ -1359,6 +1359,14 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IOverTimeHistoryFiller>(services => services.GetRequiredService<OverTimeHistoryFiller>());
             builder.Services.AddSingleton<IOverTimeHistoryFillActivity>(services => services.GetRequiredService<OverTimeHistoryFiller>());
             builder.Services.AddHostedService(services => services.GetRequiredService<OverTimeHistoryFiller>());
+
+            // Outlives any one pass, so it is a singleton, and it forgets an owner the moment that
+            // owner's items change - which is why it also stands as a handler for the two refresh
+            // events. Holding nothing a correct answer depends on, it can be lost at any time.
+            builder.Services.AddSingleton<ReconstructionMemo>();
+            builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
+            builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
+
             builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();

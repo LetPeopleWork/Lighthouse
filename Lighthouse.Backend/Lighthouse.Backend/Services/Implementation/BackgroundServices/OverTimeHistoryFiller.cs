@@ -132,6 +132,38 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
             var writer = services.GetRequiredService<IPercentileSnapshotWriter>();
             var maintenance = services.GetRequiredService<DatabaseMaintenanceGate>();
+            var memo = services.GetRequiredService<ReconstructionMemo>();
+
+            try
+            {
+                await WalkAsync(writer, maintenance, memo, request, target, cancellationToken);
+            }
+            finally
+            {
+                // The readings above warmed the shared metrics cache under the same (owner, window)
+                // keys the widgets read. Leaving them behind would serve the UI values computed for a
+                // day that is not the one it is asking about. Once per pass and for the whole owner:
+                // the metrics services evict by owner and nothing finer, so the live entries go with
+                // the ninety historical ones, and the dashboard pays one recompute for a pass nobody
+                // asked it for. That is the accepted price of not adding a per-key eviction for this.
+                target.InvalidateReadCache();
+            }
+        }
+
+        private async Task WalkAsync(
+            IPercentileSnapshotWriter writer,
+            DatabaseMaintenanceGate maintenance,
+            ReconstructionMemo memo,
+            OverTimeFillRequest request,
+            PassTarget target,
+            CancellationToken cancellationToken)
+        {
+            // Where the owner's history begins is a property of its stored items, so working it out
+            // means a query over them. That is why it happens here rather than where the missing days
+            // were noticed: a chart load may cost a scan of the rows it already holds and no more.
+            var earliestDayTheItemsSupport = target.EarliestDayTheItemsSupport();
+            memo.TheWalkReachesBackNoFurtherThan(
+                request.OwnerId, request.OwnerType, request.MetricType, earliestDayTheItemsSupport);
 
             foreach (var day in request.CandidateDays)
             {
@@ -151,21 +183,26 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                     break;
                 }
 
-                // Past the owner's last observation its items are frozen at the break, so a reading
-                // there would draw a confident line over a period in which nothing was watched.
-                if (day > target.LastObservedOn || cancellationToken.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested ||
+                    IsOutsideWhatTheStoredItemsSupport(day, earliestDayTheItemsSupport, target.LastObservedOn))
                 {
                     continue;
                 }
 
-                await FillOneDayAsync(writer, request, day, target);
+                await FillOneDayAsync(writer, memo, request, day, target);
             }
-
-            // The readings above warmed the shared metrics cache under the same (owner, window) keys
-            // the widgets read. Leaving them behind would serve the UI values computed for a day that
-            // is not the one it is asking about.
-            target.InvalidateReadCache();
         }
+
+        /// <summary>
+        /// Nothing was stored before the owner's first finished item, and past its last observation
+        /// its items are frozen at the break. A reading at either end would draw a confident line over
+        /// a period the stored data says nothing about - and because items age out past the owner's
+        /// cutoff, a walk of a fixed width regardless of the data reaches further into that with every
+        /// day that passes.
+        /// </summary>
+        private static bool IsOutsideWhatTheStoredItemsSupport(
+            DateOnly day, DateOnly? earliestDayTheItemsSupport, DateOnly lastObservedOn)
+            => earliestDayTheItemsSupport is null || day < earliestDayTheItemsSupport || day > lastObservedOn;
 
         /// <summary>
         /// One day, written on its own. A day that cannot be written is one day: the pass carries on
@@ -173,15 +210,24 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// Abandoning the walk here would cost the other eighty-nine days over a single bad one.
         /// </summary>
         private async Task FillOneDayAsync(
-            IPercentileSnapshotWriter writer, OverTimeFillRequest request, DateOnly day, PassTarget target)
+            IPercentileSnapshotWriter writer, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, PassTarget target)
         {
             try
             {
                 writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, request.MetricType, day, target.ReadPercentiles);
                 await writer.SaveFilledDay();
+
+                // Worked out once is worked out for good: the reading follows from the owner's stored
+                // items, and those change only when the owner is refreshed - which is the event that
+                // forgets this again. The day the walk declined to write is the case this exists for,
+                // because left unremembered it is found missing by every later chart load, each of
+                // which starts another pass that declines it again.
+                memo.TheWalkHasAlreadyWorkedOut(request.OwnerId, request.OwnerType, request.MetricType, day);
             }
             catch (Exception failure)
             {
+                // Deliberately not remembered: a day lost to a fault is worth another try, unlike one
+                // the walk declined on the merits.
                 logger.LogError(
                     failure,
                     "Over-time reconstruction could not write {Day} for {OwnerType} {OwnerId} ({MetricFamily}); the rest of the pass continues",
@@ -211,6 +257,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
 
             var metrics = services.GetRequiredService<ITeamMetricsService>();
+            var workItems = services.GetRequiredService<IWorkItemRepository>();
+            var clock = services.GetRequiredService<ILighthouseClock>();
 
             Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles =
                 metricType == MetricType.WorkItemAge
@@ -220,7 +268,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             return new PassTarget(
                 DateOnly.FromDateTime(team.UpdateTime),
                 readPercentiles,
-                () => metrics.InvalidateTeamMetrics(team));
+                () => metrics.InvalidateTeamMetrics(team),
+                () => EarliestFinishedDay(
+                    clock,
+                    workItems.GetAllByPredicate(item => item.TeamId == teamId && item.ClosedDate != null)
+                        .Select(item => item.ClosedDate)));
         }
 
         private static PassTarget? PortfolioTarget(IServiceProvider services, int portfolioId, MetricType metricType)
@@ -232,6 +284,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
 
             var metrics = services.GetRequiredService<IPortfolioMetricsService>();
+            var deliveries = services.GetRequiredService<IRepository<Feature>>();
+            var clock = services.GetRequiredService<ILighthouseClock>();
 
             Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles =
                 metricType == MetricType.WorkItemAge
@@ -241,7 +295,25 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             return new PassTarget(
                 DateOnly.FromDateTime(portfolio.UpdateTime),
                 readPercentiles,
-                () => metrics.InvalidatePortfolioMetrics(portfolio));
+                () => metrics.InvalidatePortfolioMetrics(portfolio),
+                () => EarliestFinishedDay(
+                    clock,
+                    deliveries
+                        .GetAllByPredicate(delivery =>
+                            delivery.ClosedDate != null && delivery.Portfolios.Any(owner => owner.Id == portfolioId))
+                        .Select(delivery => delivery.ClosedDate)));
+        }
+
+        /// <summary>
+        /// The first day the owner's stored items can support a reading, or null when nothing has ever
+        /// finished. Asked of the database as one aggregate rather than by loading the items, because
+        /// an owner with a long history has a lot of them and only the earliest one is wanted.
+        /// </summary>
+        private static DateOnly? EarliestFinishedDay(ILighthouseClock clock, IQueryable<DateTime?> finishedInstants)
+        {
+            var earliest = finishedInstants.Min();
+
+            return earliest is null ? null : clock.ToInstanceDay(earliest.Value);
         }
 
         private void Forget((int OwnerId, OwnerType OwnerType, MetricType MetricType) key)
@@ -255,6 +327,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         private sealed record PassTarget(
             DateOnly LastObservedOn,
             Func<DateTime, DateTime, IEnumerable<PercentileValue>> ReadPercentiles,
-            Action InvalidateReadCache);
+            Action InvalidateReadCache,
+            Func<DateOnly?> EarliestDayTheItemsSupport);
     }
 }

@@ -69,6 +69,16 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 var readings = ComputeDay(day, horizon, readPercentiles);
+
+                // A day on which nothing finished has no cycle time to report, and four zeros are not
+                // a measurement of a quiet period - they are a floor the team never stood on. Worked
+                // out across a thin stretch of history they line up into one, which is a more
+                // confident falsehood than the gap it would be replacing. The day is left with no row.
+                if (readings.AreEmpty)
+                {
+                    continue;
+                }
+
                 snapshotRepository.Add(NewRow(ownerId, ownerType, metricType, horizon, day, readings));
             }
         }
@@ -184,6 +194,9 @@ namespace Lighthouse.Backend.Services.Implementation
             return percentiles.FirstOrDefault(value => value.Percentile == percentile)?.Value ?? 0;
         }
 
-        private sealed record PercentileReadings(int P50, int P70, int P85, int P95);
+        private sealed record PercentileReadings(int P50, int P70, int P85, int P95)
+        {
+            public bool AreEmpty => P50 == 0 && P70 == 0 && P85 == 0 && P95 == 0;
+        }
     }
 }

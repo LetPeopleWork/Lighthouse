@@ -71,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @boundary @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task The_trend_reaches_back_only_as_far_as_the_team_has_finished_anything()
         {
             var earliestFinishedDay = TodayDay.AddDays(-40);
@@ -105,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -146,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -161,7 +158,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Looking_at_the_same_period_twice_costs_nothing_the_second_time()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -357,7 +353,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @demo @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Backdated_demonstration_values_are_stepped_over_rather_than_corrected()
         {
             var teamId = GivenATeamStillBeingRefreshed();
