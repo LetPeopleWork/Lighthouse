@@ -68,8 +68,11 @@ export const sleRiskEvidenceDisclosure = ({
 	// A team whose history is thin at a given age is the case this sentence exists for, so the
 	// singular is not a rare path — it is the one a reader most needs to see.
 	if (finishedItemsStillOpenAtThisAge === 1) {
+		// Presence, not equality. There is one item, so any miss at all is that item's - and a
+		// version that tested for exactly one would answer "It did not miss" to a two, which is the
+		// opposite of the truth rather than a blank.
 		const verdict =
-			finishedItemsThatWentOnToMiss === 1 ? "It missed" : "It did not miss";
+			finishedItemsThatWentOnToMiss > 0 ? "It missed" : "It did not miss";
 
 		return `1 ${workItemTerm} the team finished was still open at this age. ${verdict} the ${target}.`;
 	}

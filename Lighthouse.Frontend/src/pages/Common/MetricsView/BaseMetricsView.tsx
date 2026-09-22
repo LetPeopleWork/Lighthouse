@@ -527,6 +527,13 @@ type ViewDataInputs = {
 	readonly wipOverTimeData: RunChartData | null;
 	readonly allFeaturesForSizeChart: IFeature[];
 	readonly serviceLevelExpectation: IPercentileValue | null;
+	/**
+	 * The team's target in days, taken from the team rather than from the percentile above. That one
+	 * is withheld unless a probability is set too, and the risk column does not need a probability -
+	 * the endpoint answers on the range alone, so reading the range off it would blank the column
+	 * for a team that has one.
+	 */
+	readonly sleRangeInDays: number | undefined;
 	readonly percentilesScopeDefinitionId: number | null;
 	readonly namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
@@ -578,7 +585,7 @@ export function buildViewData(
 		workItemTerm: terms.workItem,
 		workItemsTerm: terms.workItems,
 		sleTerm: terms.sle,
-		sleRangeInDays: inputs.serviceLevelExpectation?.value,
+		sleRangeInDays: inputs.sleRangeInDays,
 	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,
@@ -930,6 +937,7 @@ function buildWidgetNodes(ctx: {
 	workItemAgePercentilesValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
 	serviceLevelExpectation: IPercentileValue | null;
+	sleRangeInDays: number | undefined;
 	cycleTimeData: IWorkItem[];
 	namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
 	onFetchNamedCycleTimePercentiles: (
@@ -1086,6 +1094,7 @@ function buildWidgetNodes(ctx: {
 				sleRiskValues={ctx.sleRiskValues}
 				percentileValues={ctx.percentileValues}
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
+				sleRangeInDays={ctx.sleRangeInDays}
 				doingStates={ctx.doingStates}
 				stalenessThresholdDays={ctx.stalenessThresholdDays}
 				blockedStalenessThresholdDays={ctx.blockedStalenessThresholdDays}
@@ -1331,6 +1340,11 @@ export const BaseMetricsView = <
 		endDate,
 		activeFetchKeys,
 	);
+
+	const sleRangeInDays =
+		entity.serviceLevelExpectationRange > 0
+			? entity.serviceLevelExpectationRange
+			: undefined;
 
 	const namedCycleTimeDefinitions: INamedCycleTimeDefinition[] = useMemo(
 		() =>
@@ -1696,6 +1710,7 @@ export const BaseMetricsView = <
 		workItemAgePercentilesValues,
 		perStatePercentileValues,
 		serviceLevelExpectation,
+		sleRangeInDays,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
 		namedCycleTimeDefinitions,
 		onFetchNamedCycleTimePercentiles,
@@ -1773,6 +1788,9 @@ export const BaseMetricsView = <
 		featureWip,
 		predictabilityScore: predictabilityData?.predictabilityScore ?? null,
 		sle: serviceLevelExpectation,
+		// Declared once here and shared by the risk column, the aging chart's dialog and the RAG
+		// inputs below, which all have to name the same promise.
+
 		percentilesScopeDefinitionId,
 		percentileValues,
 		startedTotal: arrivalsData?.total ?? 0,
@@ -1870,6 +1888,7 @@ export const BaseMetricsView = <
 		wipOverTimeData,
 		allFeaturesForSizeChart,
 		serviceLevelExpectation,
+		sleRangeInDays,
 		percentilesScopeDefinitionId,
 		namedCycleTimeDefinitions,
 		estimationVsCycleTimeData,

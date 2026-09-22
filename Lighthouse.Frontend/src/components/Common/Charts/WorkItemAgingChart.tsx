@@ -338,6 +338,8 @@ interface WorkItemAgingChartProps {
 	sleRiskValues: ISleRisk[];
 	percentileValues: IPercentileValue[];
 	serviceLevelExpectation?: IPercentileValue | null;
+	/** The team's target in days. Separate from the percentile above, which needs a probability too. */
+	sleRangeInDays?: number;
 	doingStates: string[];
 	stalenessThresholdDays?: number;
 	blockedStalenessThresholdDays?: number;
@@ -357,6 +359,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	sleRiskValues,
 	percentileValues,
 	serviceLevelExpectation = null,
+	sleRangeInDays,
 	doingStates,
 	stalenessThresholdDays,
 	blockedStalenessThresholdDays,
@@ -440,15 +443,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				workItemTerm,
 				workItemsTerm,
 				sleTerm,
-				sleRangeInDays: serviceLevelExpectation?.value,
+				sleRangeInDays,
 			}),
-		[
-			sleRiskValues,
-			sleTerm,
-			workItemTerm,
-			workItemsTerm,
-			serviceLevelExpectation,
-		],
+		[sleRiskValues, sleTerm, workItemTerm, workItemsTerm, sleRangeInDays],
 	);
 
 	const meaningfulWorkItemAgePercentiles = useMemo(

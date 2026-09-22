@@ -2197,7 +2197,7 @@ describe("the risk beside the dot the coach clicked", () => {
 				inProgressItems={inFlight}
 				percentileValues={cycleTimePercentiles}
 				doingStates={["Analysis", "In Progress", "Review"]}
-				serviceLevelExpectation={{ percentile: 85, value: 10 }}
+				sleRangeInDays={10}
 			/>,
 		);
 

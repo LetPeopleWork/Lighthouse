@@ -110,6 +110,22 @@ describe("building the risk column", () => {
 		expect(withoutTarget).toBeUndefined();
 	});
 
+	test("treats a zero range as no target rather than as a target of zero", () => {
+		// A range of zero IS how the absence is stored on the team, so it reaches here as a number
+		// rather than as nothing. Letting it through would draw a column promising "the 0 day SLE".
+		const withZeroRange = buildSleRiskColumnDescriptor({
+			answers: [answer("ZEN-412", 86)],
+			headerName: "SLE Risk",
+			description: "how likely this one is to miss",
+			workItemTerm: "Work Item",
+			workItemsTerm: "Work Items",
+			sleTerm: "SLE",
+			sleRangeInDays: 0,
+		});
+
+		expect(withZeroRange).toBeUndefined();
+	});
+
 	test("carries the percentage as the column's value, so the export reads as the column does", () => {
 		const descriptor = descriptorFor([answer("ZEN-412", 86)]);
 
@@ -301,6 +317,31 @@ describe("what a risk rests on", () => {
 				sleTerm: "Goal",
 			}),
 		).toContain("21 day Goal");
+
+		// A one-day target reads "1 day", never "1 days".
+		expect(
+			sleRiskEvidenceDisclosure({ ...evidence(9, 6), sleRangeInDays: 1 }),
+		).toContain("the 1 day SLE.");
+	});
+
+	test("counts a single miss among several, and the smallest plural", () => {
+		// One is the value the singular arm tests for, so a plural row carrying exactly one miss is
+		// where a branch written as equality rather than as presence would go wrong. Two is the
+		// smallest N that takes the plural arm at all.
+		expect(sleRiskEvidenceDisclosure(evidence(9, 1))).toBe(
+			"9 Work Items the team finished were still open at this age. 1 of them missed the 10 day SLE.",
+		);
+		expect(sleRiskEvidenceDisclosure(evidence(2, 2))).toBe(
+			"2 Work Items the team finished were still open at this age. 2 of them missed the 10 day SLE.",
+		);
+	});
+
+	test("does not tell one item it met a target it missed", () => {
+		// The singular arm asks whether there was a miss, not whether there was exactly one. Nothing
+		// the backend produces can hand it a two - both counts are taken from one list at one age,
+		// so the misses are a subset of the total - but a version written as equality would answer
+		// "It did not miss" to a two, which is the opposite of the truth rather than a blank.
+		expect(sleRiskEvidenceDisclosure(evidence(1, 2))).toContain("It missed");
 	});
 
 	test("spells out a clean history rather than leaving a bare zero", () => {

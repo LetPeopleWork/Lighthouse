@@ -31,15 +31,12 @@
             // Ahead of the counting because it needs no history to be true. An item already open
             // longer than the target cannot finish inside it, so this is a definitional answer
             // rather than an empirical one - the only one of the four here that owes no evidence.
-            //
-            // Strictly greater. An item at four days against a four-day target can still close
-            // today and meet "four days or less", so the target day itself stays computed.
-            if (ageInDays > targetRangeInDays)
+            if (IsPastTarget(ageInDays, targetRangeInDays))
             {
                 return CertainRisk;
             }
 
-            var comparableItems = closedCycleTimes.Count(cycleTime => cycleTime >= ageInDays);
+            var comparableItems = FinishedItemsStillOpenAtThisAge(ageInDays, closedCycleTimes);
 
             // Nothing the team finished ever ran this long, and the item is still inside its target.
             // A share of an empty set is undefined, so this is a choice rather than arithmetic: zero
@@ -98,12 +95,26 @@
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ageInDays);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetRangeInDays);
 
-            if (ageInDays > targetRangeInDays)
+            if (IsPastTarget(ageInDays, targetRangeInDays))
             {
                 return null;
             }
 
             return Breaches(targetRangeInDays, closedCycleTimes);
+        }
+
+        /// <summary>
+        /// Where the history stops being consulted. Both answers here turn on it and they must turn
+        /// on it together: the day the risk becomes certain is the day the evidence behind it stops
+        /// existing, and a version of this rule that drifted between them would put a share beside a
+        /// hundred it had nothing to do with.
+        ///
+        /// Strictly greater. An item at four days against a four-day target can still close today
+        /// and meet "four days or less", so the target day itself stays computed.
+        /// </summary>
+        private static bool IsPastTarget(int ageInDays, int targetRangeInDays)
+        {
+            return ageInDays > targetRangeInDays;
         }
 
         /// <summary>

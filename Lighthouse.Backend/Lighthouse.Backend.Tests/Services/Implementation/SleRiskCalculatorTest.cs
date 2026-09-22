@@ -172,6 +172,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void For_PastTheTargetAndNoHistorySupplied_StillRefuses()
+        {
+            // The certainty rule answers without reading the history, so it is the one path that
+            // would happily answer over a history that is not there. Without the guard this returns
+            // 100 for a caller that supplied nothing, which is a confident answer to a question
+            // nobody could have asked.
+            Assert.That(() => SleRiskCalculator.For(11, 10, null!),
+                Throws.TypeOf<ArgumentNullException>());
+        }
+
+        [Test]
         public void For_NoHistorySupplied_Refuses()
         {
             Assert.That(() => SleRiskCalculator.For(5, 10, null!), Throws.ArgumentNullException);
@@ -233,6 +244,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(stillOpen, Is.EqualTo(18),
                 "Eleven days or more: eleven, thirteen, fifteen, eighteen, twenty-two and thirty, three times each.");
+        }
+
+        [Test]
+        public void FinishedItemsStillOpenAtThisAge_NoHistorySupplied_RefusesInItsOwnName()
+        {
+            // The parameter name is the assertion, not the exception type. Counting over a null
+            // sequence throws ArgumentNullException anyway - LINQ raises it for "source" - so a test
+            // that only checked the type would pass with the guard deleted and report a method that
+            // validates nothing as one that does.
+            Assert.That(() => SleRiskCalculator.FinishedItemsStillOpenAtThisAge(5, null!),
+                Throws.TypeOf<ArgumentNullException>()
+                    .With.Property(nameof(ArgumentNullException.ParamName)).EqualTo("closedCycleTimes"));
         }
 
         [TestCase(0)]
@@ -311,22 +334,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(missed, Is.EqualTo(5));
         }
 
-        [TestCase(2)]
-        [TestCase(5)]
-        [TestCase(9)]
-        [TestCase(10)]
-        public void FinishedItemsThatWentOnToMiss_OverTheCountBesideIt_RoundsToTheRiskItself(int ageInDays)
+        // Worked by hand off the distribution, which is the point. Deriving the expectation in the
+        // test would divide the same two counts by the same rule the implementation uses and agree
+        // with itself - every row here is a number a reader can check on paper, and 18/21 reading
+        // as 86 is the tooltip's whole promise.
+        [TestCase(2, 57, 18, 32)]
+        [TestCase(5, 39, 18, 46)]
+        [TestCase(9, 21, 18, 86)]
+        [TestCase(10, 18, 18, 100)]
+        public void TheTwoCountsAndTheRisk_AreOneAnswerAboutOneHistory(
+            int ageInDays, int expectedStillOpen, int expectedMissed, int expectedRisk)
         {
-            // The whole reason the tooltip may state both numbers. A reader who divides one by the
-            // other must land on the percentage printed above them, so the two counts and the risk
-            // are read off one rule rather than three - which is how a tooltip and a cell come to
-            // disagree about the same item.
-            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(ageInDays, 10, SixtyFinishedItems);
-            var stillOpen = SleRiskCalculator.FinishedItemsStillOpenAtThisAge(ageInDays, SixtyFinishedItems);
-
-            var shareFromTheCounts = (int)Math.Round(100.0 * missed!.Value / stillOpen, MidpointRounding.AwayFromZero);
-
-            Assert.That(shareFromTheCounts, Is.EqualTo(SleRiskCalculator.For(ageInDays, 10, SixtyFinishedItems)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(SleRiskCalculator.FinishedItemsStillOpenAtThisAge(ageInDays, SixtyFinishedItems),
+                    Is.EqualTo(expectedStillOpen), "the count the tooltip states first");
+                Assert.That(SleRiskCalculator.FinishedItemsThatWentOnToMiss(ageInDays, 10, SixtyFinishedItems),
+                    Is.EqualTo(expectedMissed), "the count the tooltip states second");
+                Assert.That(SleRiskCalculator.For(ageInDays, 10, SixtyFinishedItems),
+                    Is.EqualTo(expectedRisk), "the percentage printed above them both");
+            }
         }
 
         [TestCase(0)]
@@ -346,10 +373,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void FinishedItemsThatWentOnToMiss_NoHistorySupplied_Refuses()
+        public void FinishedItemsThatWentOnToMiss_NoHistorySupplied_RefusesInItsOwnName()
         {
+            // Same reason as the count beside it: LINQ would raise ArgumentNullException for
+            // "source" all by itself, so only the parameter name tells a guard apart from its
+            // absence.
             Assert.That(() => SleRiskCalculator.FinishedItemsThatWentOnToMiss(5, 10, null!),
-                Throws.TypeOf<ArgumentNullException>());
+                Throws.TypeOf<ArgumentNullException>()
+                    .With.Property(nameof(ArgumentNullException.ParamName)).EqualTo("closedCycleTimes"));
         }
     }
 }

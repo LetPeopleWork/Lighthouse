@@ -1,0 +1,18 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.stryker.story6069.ts",
+    "related": false
+  },
+  "mutate": ["src/utils/charts/sleRisk.ts"],
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "reporters": ["html", "json", "progress"],
+  "jsonReporter": { "fileName": "stryker-sle-risk-story6069.json" },
+  "tempDirName": ".stryker-tmp-sle-risk-story6069",
+  "thresholds": { "high": 80, "low": 70, "break": 0 }
+}

@@ -6859,7 +6859,11 @@ describe("which lists carry the risk column", () => {
 			allFeaturesForSizeChart: [],
 			// A published target, because the risk column needs one to name. A team without one has
 			// no promise for anything to be at risk of breaking, and gets no column at all.
+			//
+			// The range is passed separately from the percentile on purpose: a team can set a range
+			// without a probability, and the endpoint answers on the range alone.
 			serviceLevelExpectation: { percentile: 85, value: 10 },
+			sleRangeInDays: 10,
 			percentilesScopeDefinitionId: null,
 			namedCycleTimeDefinitions: [],
 			estimationVsCycleTimeData: null,
