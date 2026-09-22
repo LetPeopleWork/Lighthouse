@@ -8,15 +8,15 @@ namespace Lighthouse.Backend.Services.Interfaces
 
     public interface IPortfolioMetricsService
     {
-        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetWipProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetWipProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
         RunChartData GetThroughputForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetArrivalsForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
-        ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
         ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 

@@ -1023,6 +1023,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        /// <summary>
+        /// The window a chart covers and the day the question is asked about are two different things,
+        /// and it takes both of them to identify the answer: a reference stretch out of reach of the
+        /// finished work the team still keeps today can be well inside what it kept a month ago. Ask
+        /// about the same window as of two different days and two different charts are owed.
+        /// </summary>
+        [Test]
+        public void GetThroughputProcessBehaviourChart_SameWindowAskedAboutTwoDifferentDays_DoesNotHandBackOneAnswerForTheOther()
+        {
+            testTeam.DoneItemsCutoffDays = 100;
+            testTeam.ProcessBehaviourChartBaselineStartDate = TestToday.AmbientAsUtcMidnight.AddDays(-120);
+            testTeam.ProcessBehaviourChartBaselineEndDate = TestToday.AmbientAsUtcMidnight.AddDays(-100);
+
+            var displayStart = TestToday.AmbientAsUtcMidnight.AddDays(-60);
+            var displayEnd = TestToday.AmbientAsUtcMidnight.AddDays(-40);
+
+            var askedAboutToday = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
+            var askedAboutAMonthAgo = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd, TestToday.Ambient.AddDays(-30));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(askedAboutToday.Status, Is.EqualTo(BaselineStatus.BaselineInvalid),
+                    "Measured from today the team no longer keeps finished work reaching back to the stretch it pinned.");
+                Assert.That(askedAboutAMonthAgo.Status, Is.EqualTo(BaselineStatus.Ready),
+                    "Measured from a month ago it did, so the same window asked about that day has limits to report.");
+            }
+        }
+
         [Test]
         public void GetThroughputProcessBehaviourChart_ValidBaseline_ReturnsReadyStatus()
         {

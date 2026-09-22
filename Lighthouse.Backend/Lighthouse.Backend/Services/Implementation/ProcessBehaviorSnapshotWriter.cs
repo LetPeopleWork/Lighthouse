@@ -42,11 +42,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return
             [
-                new(ProcessBehaviorMetricType.Throughput, lookbackDays, (startDate, endDate) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)),
-                new(ProcessBehaviorMetricType.WorkItemAge, lookbackDays, (startDate, endDate) => teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate)),
-                new(ProcessBehaviorMetricType.Wip, lookbackDays, (startDate, endDate) => teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate)),
-                new(ProcessBehaviorMetricType.CycleTime, lookbackDays, (startDate, endDate) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)),
-                new(ProcessBehaviorMetricType.Arrivals, lookbackDays, (startDate, endDate) => teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate)),
+                new(ProcessBehaviorMetricType.Throughput, lookbackDays, (startDate, endDate, asOf) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.WorkItemAge, lookbackDays, (startDate, endDate, asOf) => teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.Wip, lookbackDays, (startDate, endDate, asOf) => teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.CycleTime, lookbackDays, (startDate, endDate, asOf) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.Arrivals, lookbackDays, (startDate, endDate, asOf) => teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate, asOf)),
             ];
         }
 
@@ -54,12 +54,12 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             return
             [
-                new(ProcessBehaviorMetricType.Throughput, PortfolioLookbackDays, (startDate, endDate) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate)),
-                new(ProcessBehaviorMetricType.WorkItemAge, PortfolioLookbackDays, (startDate, endDate) => portfolioMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate)),
-                new(ProcessBehaviorMetricType.Wip, PortfolioLookbackDays, (startDate, endDate) => portfolioMetricsService.GetWipProcessBehaviourChart(portfolio, startDate, endDate)),
-                new(ProcessBehaviorMetricType.CycleTime, PortfolioLookbackDays, (startDate, endDate) => portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate)),
-                new(ProcessBehaviorMetricType.Arrivals, PortfolioLookbackDays, (startDate, endDate) => portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate)),
-                new(ProcessBehaviorMetricType.FeatureSize, PortfolioLookbackDays, (startDate, endDate) => portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate)),
+                new(ProcessBehaviorMetricType.Throughput, PortfolioLookbackDays, (startDate, endDate, asOf) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.WorkItemAge, PortfolioLookbackDays, (startDate, endDate, asOf) => portfolioMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.Wip, PortfolioLookbackDays, (startDate, endDate, asOf) => portfolioMetricsService.GetWipProcessBehaviourChart(portfolio, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.CycleTime, PortfolioLookbackDays, (startDate, endDate, asOf) => portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.Arrivals, PortfolioLookbackDays, (startDate, endDate, asOf) => portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate, asOf)),
+                new(ProcessBehaviorMetricType.FeatureSize, PortfolioLookbackDays, (startDate, endDate, asOf) => portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate, asOf)),
             ];
         }
 
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             WriteUnlessTheChartHasNoProcessToShow(
-                ownerId, ownerType, family, day, InstanceCalendar.AsUtcMidnight(day), stored: null);
+                ownerId, ownerType, family, day, InstanceCalendar.AsUtcMidnight(day), stored: null, asOf: day);
         }
 
         public async Task SaveFilledDay()
@@ -138,9 +138,10 @@ namespace Lighthouse.Backend.Services.Implementation
             ProcessBehaviorFamilyReader family,
             DateOnly day,
             DateTime windowEnd,
-            ProcessBehaviorSnapshot? stored)
+            ProcessBehaviorSnapshot? stored,
+            DateOnly? asOf = null)
         {
-            var chart = family.ReadChart(windowEnd.AddDays(-family.LookbackDays), windowEnd);
+            var chart = family.ReadChart(windowEnd.AddDays(-family.LookbackDays), windowEnd, asOf);
 
             // Honesty gate: ProcessBehaviourChart.NotReady returns Average = UNPL = LNPL = 0.
             // Persisting that triple would draw three flat lines pinned at zero — a process the

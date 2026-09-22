@@ -8,11 +8,15 @@ namespace Lighthouse.Backend.Services.Interfaces
     /// day: which chart to read, and how far back the window that day covers reaches. The span travels
     /// with the family so that a day filled in behind the series cannot pick a different window from
     /// the one the live recording used.
+    ///
+    /// The chart is read as of a given day, not as of now. Whether the owner's pinned reference stretch
+    /// is still in reach of the data it keeps is judged from that day, so a day rebuilt behind the
+    /// series asks the question its own calendar would have asked. A null day means today.
     /// </summary>
     public sealed record ProcessBehaviorFamilyReader(
         ProcessBehaviorMetricType MetricType,
         int LookbackDays,
-        Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart);
+        Func<DateTime, DateTime, DateOnly?, ProcessBehaviourChart> ReadChart);
 
     /// <summary>
     /// Computes one calendar day of process-behaviour limits for one owner and one family and stages

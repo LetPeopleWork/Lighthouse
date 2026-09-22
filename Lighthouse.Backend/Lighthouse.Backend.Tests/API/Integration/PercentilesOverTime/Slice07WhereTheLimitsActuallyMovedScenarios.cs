@@ -148,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-03 @driving_port @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart()
         {
             var teamId = GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
@@ -164,7 +163,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-03 @driving_port @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too()
         {
             var portfolioId = GivenAPortfolioStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
@@ -190,7 +188,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-03 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history()
         {
             var teamId = GivenATeamStillBeingRefreshed();

@@ -175,48 +175,48 @@ namespace Lighthouse.Backend.Services.Implementation
                 ApplyForecastFilter(team, unfiltered, mode).Throughput, logger);
         }
 
-        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(team, $"ThroughputProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"ThroughputProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildThroughputProcessBehaviourChart(team, startDate, endDate,
-                    (s, e) => GetThroughputForTeam(team, s, e));
+                    (s, e) => GetThroughputForTeam(team, s, e), asOf);
             }, logger);
         }
 
-        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode)
+        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(team, $"ThroughputProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{mode}", () =>
+            return GetFromCacheIfExists(team, $"ThroughputProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_{mode}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildThroughputProcessBehaviourChart(team, startDate, endDate,
-                    (s, e) => ApplyForecastFilter(team, GetThroughputForTeam(team, s, e), mode).Throughput);
+                    (s, e) => ApplyForecastFilter(team, GetThroughputForTeam(team, s, e), mode).Throughput, asOf);
             }, logger);
         }
 
-        public ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(team, $"WipProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"WipProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
-                    (s, e) => GetWorkInProgressOverTimeForTeam(team, s, e));
+                    (s, e) => GetWorkInProgressOverTimeForTeam(team, s, e), asOf);
             }, logger);
         }
 
-        public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(team, $"TotalWorkItemAgeProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"TotalWorkItemAgeProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate,
-                    (s, e) => GetTotalWorkItemAgeOverTimeForTeam(team, s, e));
+                    (s, e) => GetTotalWorkItemAgeOverTimeForTeam(team, s, e), asOf);
             }, logger);
         }
 
-        public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(team, $"CycleTimeProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"CycleTimeProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildCycleTimeProcessBehaviourChart(team, startDate, endDate,
-                    (s, e) => GetClosedItemsForTeam(team, s, e));
+                    (s, e) => GetClosedItemsForTeam(team, s, e), asOf);
             }, logger);
         }
 
@@ -231,12 +231,12 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(team, $"ArrivalsProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(team, $"ArrivalsProcessBehaviour_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
              {
                  return BuildDailyRunChartProcessBehaviourChart(team, startDate, endDate,
-                     (s, e) => GetStartedItemsForTeam(team, s, e));
+                     (s, e) => GetStartedItemsForTeam(team, s, e), asOf);
              }, logger);
         }
 

@@ -563,20 +563,30 @@ namespace Lighthouse.Backend.Services.Implementation
             return new ForecastPredictabilityScore(howManyForecast);
         }
 
+        /// <summary>
+        /// The day a process-behaviour question is asked about is part of what makes the answer, because
+        /// whether a pinned reference stretch is still in reach is judged from it. Two reads of the same
+        /// display window as of two different days are therefore two different charts, and the cache has
+        /// to be able to tell them apart.
+        /// </summary>
+        protected string AsOfCacheKeyPart(DateOnly? asOf) => $"_asOf-{asOf ?? Clock.Today:yyyy-MM-dd}";
+
         protected ProcessBehaviourChart BuildThroughputProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
-            Func<DateTime, DateTime, RunChartData> getThroughput)
+            Func<DateTime, DateTime, RunChartData> getThroughput,
+            DateOnly? asOf = null)
         {
-            return BuildDailyRunChartProcessBehaviourChart(owner, displayStart, displayEnd, getThroughput);
+            return BuildDailyRunChartProcessBehaviourChart(owner, displayStart, displayEnd, getThroughput, asOf);
         }
 
         protected ProcessBehaviourChart BuildDailyRunChartProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
-            Func<DateTime, DateTime, RunChartData> getRunChartData)
+            Func<DateTime, DateTime, RunChartData> getRunChartData,
+            DateOnly? asOf = null)
         {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
@@ -588,7 +598,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 baselineEnd = displayEnd;
             }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, Clock.Today);
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, asOf ?? Clock.Today);
             if (!validation.IsValid)
             {
                 return new ProcessBehaviourChart
@@ -630,7 +640,8 @@ namespace Lighthouse.Backend.Services.Implementation
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
-            Func<DateTime, DateTime, (int[] Values, int[][] WorkItemIdsPerDay)> getDailyValues)
+            Func<DateTime, DateTime, (int[] Values, int[][] WorkItemIdsPerDay)> getDailyValues,
+            DateOnly? asOf = null)
         {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
@@ -642,7 +653,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 baselineEnd = displayEnd;
             }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, Clock.Today);
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, asOf ?? Clock.Today);
             if (!validation.IsValid)
             {
                 return new ProcessBehaviourChart
@@ -692,7 +703,8 @@ namespace Lighthouse.Backend.Services.Implementation
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
-            Func<DateTime, DateTime, IEnumerable<WorkItemBase>> getClosedItems)
+            Func<DateTime, DateTime, IEnumerable<WorkItemBase>> getClosedItems,
+            DateOnly? asOf = null)
         {
             var baselineStart = owner.ProcessBehaviourChartBaselineStartDate;
             var baselineEnd = owner.ProcessBehaviourChartBaselineEndDate;
@@ -704,7 +716,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 baselineEnd = displayEnd;
             }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, Clock.Today);
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, asOf ?? Clock.Today);
             if (!validation.IsValid)
             {
                 return new ProcessBehaviourChart

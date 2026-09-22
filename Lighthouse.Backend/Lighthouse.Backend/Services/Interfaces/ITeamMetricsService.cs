@@ -18,15 +18,15 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         ForecastThroughputStatus GetForecastThroughputStatus(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
 
-        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode);
+        ProcessBehaviourChart GetThroughputProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, ThroughputFilterMode mode, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetWipProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
-        ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
         RunChartData GetThroughputForTeam(Team team, DateTime startDate, DateTime endDate);
 
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         RunChartData GetStartedItemsForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate);
+        ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Team team, DateTime startDate, DateTime endDate, DateOnly? asOf = null);
 
         RunChartData GetCreatedItemsForTeam(Team team, IEnumerable<string> workItemTypes, DateTime startDate, DateTime endDate);
 

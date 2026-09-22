@@ -32,47 +32,47 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(portfolio, $"ThroughputProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"ThroughputProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildThroughputProcessBehaviourChart(portfolio, startDate, endDate,
-                    (s, e) => GetThroughputForPortfolio(portfolio, s, e));
+                    (s, e) => GetThroughputForPortfolio(portfolio, s, e), asOf);
             }, logger);
         }
 
-        public ProcessBehaviourChart GetWipProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetWipProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(portfolio, $"WipProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"WipProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
             {
                 return BuildDailyRunChartProcessBehaviourChart(portfolio, startDate, endDate,
-                    (s, e) => GetFeaturesInProgressOverTimeForPortfolio(portfolio, s, e));
+                    (s, e) => GetFeaturesInProgressOverTimeForPortfolio(portfolio, s, e), asOf);
             }, logger);
         }
 
-        public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetTotalWorkItemAgeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(portfolio, $"TotalWorkItemAgeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"TotalWorkItemAgeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
              {
                  return BuildTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate,
-                     (s, e) => GetTotalWorkItemAgeOverTime(portfolio, s, e));
+                     (s, e) => GetTotalWorkItemAgeOverTime(portfolio, s, e), asOf);
              }, logger);
         }
 
-        public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetCycleTimeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
-            return GetFromCacheIfExists(portfolio, $"CycleTimeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"CycleTimeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
              {
                  return BuildCycleTimeProcessBehaviourChart(portfolio, startDate, endDate,
-                     (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e));
+                     (s, e) => GetFeaturesClosedInDateRange(portfolio, s, e), asOf);
              }, logger);
         }
 
-        public ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetFeatureSizeProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
             logger.LogDebug("Getting Feature Size Process Behaviour Chart for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(portfolio, $"FeatureSizeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            return GetFromCacheIfExists(portfolio, $"FeatureSizeProcessBehaviourChart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{AsOfCacheKeyPart(asOf)}", () =>
              {
                  var baselineStart = portfolio.ProcessBehaviourChartBaselineStartDate;
                  var baselineEnd = portfolio.ProcessBehaviourChartBaselineEndDate;
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Implementation
                      baselineEnd = endDate;
                  }
 
-                 var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays, Clock.Today);
+                 var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays, asOf ?? Clock.Today);
                  if (!validation.IsValid)
                  {
                      return new ProcessBehaviourChart
@@ -207,10 +207,10 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetStartedItemsForPortfolio(portfolio, startDate, endDate);
         }
 
-        public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public ProcessBehaviourChart GetArrivalsProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate, DateOnly? asOf = null)
         {
             return BuildDailyRunChartProcessBehaviourChart(portfolio, startDate, endDate,
-                (s, e) => GetArrivalsForPortfolio(portfolio, s, e));
+                (s, e) => GetArrivalsForPortfolio(portfolio, s, e), asOf);
         }
 
         public ForecastPredictabilityScore GetMultiItemForecastPredictabilityScoreForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
