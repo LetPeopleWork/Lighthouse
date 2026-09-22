@@ -1312,6 +1312,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IPercentilesOverTimeSnapshotRepository, PercentilesOverTimeSnapshotRepository>();
             builder.Services.AddScoped<IPercentileSnapshotWriter, PercentileSnapshotWriter>();
             builder.Services.AddScoped<IProcessBehaviorSnapshotRepository, ProcessBehaviorSnapshotRepository>();
+            builder.Services.AddScoped<IProcessBehaviorSnapshotWriter, ProcessBehaviorSnapshotWriter>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();

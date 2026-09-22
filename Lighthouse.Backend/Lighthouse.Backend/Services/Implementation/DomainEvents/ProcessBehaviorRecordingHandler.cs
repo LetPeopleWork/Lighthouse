@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -14,19 +13,12 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
     {
         private const string MetricFamily = "ProcessBehavior";
 
-        // PortfolioMetricsView hard-codes defaultDateRange={90}.
-        private const int PortfolioLookbackDays = 90;
-
-        // TeamMetricsView falls back to a 30-day range when the team pins fixed throughput dates,
-        // because a fixed past window is not an as-of-today window.
-        private const int FixedDatesTeamLookbackDays = 30;
-
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IPortfolioMetricsService portfolioMetricsService;
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IProcessBehaviorSnapshotRepository snapshotRepository;
-        private readonly ILighthouseClock clock;
+        private readonly IProcessBehaviorSnapshotWriter snapshotWriter;
         private readonly ILogger<ProcessBehaviorRecordingHandler> logger;
 
         public ProcessBehaviorRecordingHandler(
@@ -35,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<Team> teamRepository,
             IRepository<Portfolio> portfolioRepository,
             IProcessBehaviorSnapshotRepository snapshotRepository,
-            ILighthouseClock clock,
+            IProcessBehaviorSnapshotWriter snapshotWriter,
             ILogger<ProcessBehaviorRecordingHandler> logger)
         {
             this.teamMetricsService = teamMetricsService;
@@ -43,7 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
             this.snapshotRepository = snapshotRepository;
-            this.clock = clock;
+            this.snapshotWriter = snapshotWriter;
             this.logger = logger;
         }
 
@@ -58,8 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             await RecordAsync(
                 domainEvent.TeamId,
                 OwnerType.Team,
-                LookbackDaysFor(team),
-                TeamReaders(team),
+                snapshotWriter.FamiliesFor(team),
                 () => teamMetricsService.InvalidateTeamMetrics(team));
         }
 
@@ -74,71 +65,21 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             await RecordAsync(
                 domainEvent.PortfolioId,
                 OwnerType.Portfolio,
-                PortfolioLookbackDays,
-                PortfolioReaders(portfolio),
+                snapshotWriter.FamiliesFor(portfolio),
                 () => portfolioMetricsService.InvalidatePortfolioMetrics(portfolio));
-        }
-
-        // Five families for a team, six for a portfolio. The asymmetry is structural, not a filter:
-        // Feature Size is a portfolio concept (D8) and there is no team-side read method to call.
-        // Dropping a line here is a silent capability loss, so the recorder tests assert the exact
-        // family SET each scope produces.
-        private (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[] TeamReaders(Team team)
-        {
-            return
-            [
-                (ProcessBehaviorMetricType.Throughput, (startDate, endDate) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)),
-                (ProcessBehaviorMetricType.WorkItemAge, (startDate, endDate) => teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate)),
-                (ProcessBehaviorMetricType.Wip, (startDate, endDate) => teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate)),
-                (ProcessBehaviorMetricType.CycleTime, (startDate, endDate) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)),
-                (ProcessBehaviorMetricType.Arrivals, (startDate, endDate) => teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate)),
-            ];
-        }
-
-        private (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[] PortfolioReaders(Portfolio portfolio)
-        {
-            return
-            [
-                (ProcessBehaviorMetricType.Throughput, (startDate, endDate) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate)),
-                (ProcessBehaviorMetricType.WorkItemAge, (startDate, endDate) => portfolioMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate)),
-                (ProcessBehaviorMetricType.Wip, (startDate, endDate) => portfolioMetricsService.GetWipProcessBehaviourChart(portfolio, startDate, endDate)),
-                (ProcessBehaviorMetricType.CycleTime, (startDate, endDate) => portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate)),
-                (ProcessBehaviorMetricType.Arrivals, (startDate, endDate) => portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate)),
-                (ProcessBehaviorMetricType.FeatureSize, (startDate, endDate) => portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate)),
-            ];
-        }
-
-        // The day grain is an as-of-today window that mirrors the point-in-time throughputPbc widget,
-        // so the recorded triple equals what the user sees today: BaseMetricsView asks for
-        // [today - defaultDateRange, today], and TeamMetricsView derives that range from the span of
-        // the team's own throughput history window (its fixed-dates branch falls back to 30 days).
-        private static int LookbackDaysFor(Team team)
-        {
-            if (team.UseFixedDatesForThroughput)
-            {
-                return FixedDatesTeamLookbackDays;
-            }
-
-            // Bug #5567: only the SPAN of the rolling window is wanted, never its position on the
-            // calendar, and Team.GetThroughputSettings makes that span ThroughputHistory - 1.
-            return team.ThroughputHistory - 1;
         }
 
         private async Task RecordAsync(
             int ownerId,
             OwnerType ownerType,
-            int lookbackDays,
-            (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[] readers,
+            IReadOnlyList<ProcessBehaviorFamilyReader> families,
             Action invalidateReadCache)
         {
             try
             {
-                var endDate = clock.TodayAsUtcMidnight;
-                var startDate = endDate.AddDays(-lookbackDays);
-
-                foreach (var reader in readers)
+                foreach (var family in families)
                 {
-                    RecordMetricType(ownerId, ownerType, reader.MetricType, startDate, endDate, reader.ReadChart);
+                    RecordFamily(ownerId, ownerType, family);
                 }
 
                 await snapshotRepository.Save();
@@ -157,77 +98,17 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
         }
 
-        private void RecordMetricType(
-            int ownerId,
-            OwnerType ownerType,
-            ProcessBehaviorMetricType metricType,
-            DateTime startDate,
-            DateTime endDate,
-            Func<DateTime, DateTime, ProcessBehaviourChart> readChart)
+        private void RecordFamily(int ownerId, OwnerType ownerType, ProcessBehaviorFamilyReader family)
         {
             try
             {
-                var chart = readChart(startDate, endDate);
-
-                // Honesty gate: ProcessBehaviourChart.NotReady returns Average = UNPL = LNPL = 0.
-                // Persisting that triple would draw three flat lines pinned at zero — a process the
-                // owner never had. An absent row is the honest empty state.
-                if (chart.Status != BaselineStatus.Ready)
-                {
-                    return;
-                }
-
-                // A Ready chart can still carry a fully collapsed band: XmRCalculator.Calculate returns
-                // Average = UNPL = LNPL = 0 for an empty or all-zero baseline, and every chart builder
-                // still stamps Status = Ready for it. Persisting that triple has the same effect as
-                // persisting NotReady, so it is refused here too. LowerNaturalProcessLimit is
-                // deliberately NOT part of the predicate — the calculator clamps a negative lower limit
-                // to zero for zero-bounded data, so a real, busy process routinely reports Lnpl == 0.
-                if (chart.Average == 0 && chart.UpperNaturalProcessLimit == 0)
-                {
-                    return;
-                }
-
-                // Bug #5567: from the seam, never by re-reducing endDate.
-                UpsertSnapshot(ownerId, ownerType, metricType, clock.Today, chart);
+                snapshotWriter.RecordToday(ownerId, ownerType, family);
             }
             catch (Exception exception)
             {
+                // Contained per family so a failing family never discards the rows its siblings
+                // already staged — the caller's single Save() still persists them.
                 LogRecordingFailure(exception, ownerType, ownerId);
-            }
-        }
-
-        private void UpsertSnapshot(
-            int ownerId,
-            OwnerType ownerType,
-            ProcessBehaviorMetricType metricType,
-            DateOnly recordedAt,
-            ProcessBehaviourChart chart)
-        {
-            var existing = snapshotRepository.GetByPredicate(
-                s => s.OwnerId == ownerId &&
-                     s.OwnerType == ownerType &&
-                     s.MetricType == metricType &&
-                     s.RecordedAt == recordedAt);
-
-            if (existing != null)
-            {
-                existing.Unpl = chart.UpperNaturalProcessLimit;
-                existing.Average = chart.Average;
-                existing.Lnpl = chart.LowerNaturalProcessLimit;
-            }
-            else
-            {
-                snapshotRepository.Add(new ProcessBehaviorSnapshot
-                {
-                    OwnerId = ownerId,
-                    OwnerType = ownerType,
-                    MetricType = metricType,
-                    RecordedAt = recordedAt,
-                    Unpl = chart.UpperNaturalProcessLimit,
-                    Average = chart.Average,
-                    Lnpl = chart.LowerNaturalProcessLimit,
-                });
             }
         }
 

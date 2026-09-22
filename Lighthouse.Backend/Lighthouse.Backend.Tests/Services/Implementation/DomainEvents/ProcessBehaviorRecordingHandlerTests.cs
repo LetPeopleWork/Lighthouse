@@ -3,6 +3,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -35,8 +36,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         // falls back to a plain 30-day window ending today.
         private const int FixedDatesTeamLookbackDays = 30;
 
-        // The families each scope records. Feature Size is portfolio-only (D8) — there is no
-        // team-side Feature Size read method to call, so the asymmetry is structural, not a filter.
+        // The families each scope records. Feature Size is portfolio-only — there is no team-side
+        // Feature Size read method to call, so the asymmetry is structural, not a filter.
         private static readonly ProcessBehaviorMetricType[] TeamFamilies =
         [
             ProcessBehaviorMetricType.Throughput,
@@ -129,7 +130,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 snapshotRepo,
-                Clock,
+                new ProcessBehaviorSnapshotWriter(
+                    teamMetricsServiceMock.Object, portfolioMetricsServiceMock.Object, snapshotRepo, Clock),
                 handlerLoggerMock.Object);
         }
 

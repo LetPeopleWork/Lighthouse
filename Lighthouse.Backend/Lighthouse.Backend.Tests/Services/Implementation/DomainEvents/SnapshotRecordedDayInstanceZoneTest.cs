@@ -339,13 +339,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Returns(chart);
 
             using var context = CreateContext();
+            var snapshotRepository = new ProcessBehaviorSnapshotRepository(context, Mock.Of<ILogger<ProcessBehaviorSnapshotRepository>>());
             var handler = new ProcessBehaviorRecordingHandler(
                 teamMetricsServiceMock.Object,
                 portfolioMetricsServiceMock.Object,
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
-                new ProcessBehaviorSnapshotRepository(context, Mock.Of<ILogger<ProcessBehaviorSnapshotRepository>>()),
-                clock,
+                snapshotRepository,
+                new ProcessBehaviorSnapshotWriter(
+                    teamMetricsServiceMock.Object, portfolioMetricsServiceMock.Object, snapshotRepository, clock),
                 Mock.Of<ILogger<ProcessBehaviorRecordingHandler>>());
 
             await handler.HandleAsync(new TeamDataRefreshed(TeamId), CancellationToken.None);

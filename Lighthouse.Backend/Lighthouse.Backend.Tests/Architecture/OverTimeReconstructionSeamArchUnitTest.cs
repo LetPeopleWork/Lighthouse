@@ -49,6 +49,22 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         private static readonly string[] CycleTimeHorizonListSpellings = ["[30, 60, 90]", "[30,60,90]"];
 
+        /// <summary>
+        /// The one type allowed to decide a process-behaviour day. Both write policies live on it, so
+        /// a day filled in behind the series and a day recorded this afternoon run the same computation.
+        /// </summary>
+        private const string TheProcessBehaviorWriter = "Services/Implementation/ProcessBehaviorSnapshotWriter.cs";
+
+        private static readonly string[] FilesAllowedToDeclareTheProcessBehaviorFamilies = [TheProcessBehaviorWriter];
+
+        /// <summary>
+        /// Feature Size is the one process-behaviour family a portfolio has and a team does not, so
+        /// naming it is something only code assembling the portfolio family set ever does. The other
+        /// five are spelled out elsewhere for unrelated reasons - a controller query default, the demo
+        /// synthesiser - and a rule built on those would be a list of exemptions instead of a rule.
+        /// </summary>
+        private const string ThePortfolioOnlyFamilySpelling = "ProcessBehaviorMetricType.FeatureSize";
+
         private static readonly string[] DirectoriesThatAreNotSource = ["/obj/", "/bin/", "/StrykerOutput"];
 
         [Test]
@@ -81,6 +97,44 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(source, Does.Contain("void FillDayIfAbsent("),
                     "Filling a day leaves a day that already carries a value alone, because that value " +
                     "was measured when the day was current and a recomputation from today's data is worse.");
+
+                Assert.That(source, Does.Not.Contain("bool overwrite"),
+                    "The two policies differ in what they do to a day that already has a value, and that " +
+                    "difference is the whole point. Behind a boolean, a call site no longer says which one " +
+                    "it meant.");
+            }
+        }
+
+        [Test]
+        public void TheProcessBehaviorFamilySets_AreDeclaredOnlyWhereTheyAreAllowedToBe()
+        {
+            var declarations = ProductionSourceFiles()
+                .Where(file => file.Source.Contains(ThePortfolioOnlyFamilySpelling, StringComparison.Ordinal))
+                .Select(file => file.RelativePath)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+
+            Assert.That(declarations, Is.EqualTo(FilesAllowedToDeclareTheProcessBehaviorFamilies.OrderBy(path => path, StringComparer.Ordinal).ToList()),
+                "Which families a scope records is one decision, and a stretch rebuilt from history has to " +
+                "cover the same families as the days recorded live, or a family goes missing from part of " +
+                $"the chart with nothing to show for it. A copy outside {TheProcessBehaviorWriter} can be " +
+                "changed without the other moving. Take the family set from the writer instead. Declared " +
+                "in: " + string.Join(", ", declarations));
+        }
+
+        [Test]
+        public void TheProcessBehaviorWriter_OffersBothWritePoliciesUnderTheirOwnNames()
+        {
+            var source = ProductionSourceOf(TheProcessBehaviorWriter);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(source, Does.Contain("void RecordToday("),
+                    "Recording today overwrites, because today's limits keep moving until the day ends.");
+
+                Assert.That(source, Does.Contain("void FillDayIfAbsent("),
+                    "Filling a day leaves a day that already carries limits alone, because those limits " +
+                    "were measured when the day was current and a recomputation from today's data is worse.");
 
                 Assert.That(source, Does.Not.Contain("bool overwrite"),
                     "The two policies differ in what they do to a day that already has a value, and that " +
