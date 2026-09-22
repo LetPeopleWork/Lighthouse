@@ -242,3 +242,73 @@ Every dependency here can lie. Each claim below has a probe that makes it answer
   reverted.** Read alongside `brief.md`'s story-5877 note before believing the lane count.
 - [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md) — what a pass actually does
   once it has a day.
+
+
+## Amendment (DEVOPS, 2026-09-22) — `HasActiveWork()` was a safety property, not a cost; the gate is taught directly
+
+**Status**: Accepted. The Decision — the filler is its own component and does not join
+`IUpdateQueueService` — is **unchanged**, and the three other reasons for it still hold. This amendment
+corrects one reason in the rejection above and adds the obligation that correction creates.
+
+### What the rejection got wrong
+
+The rejection of `IUpdateQueueService` lists, among "two further costs":
+
+> *"an admitted key keeps `HasActiveWork()` true, which is what holds database maintenance off."*
+
+Factually correct, and wrongly classified. Being visible to `HasActiveWork()` is not a **cost** of joining
+the queue — it is a **safety property** the queue happens to carry, and it is the only thing that stops
+`DatabaseMaintenanceGate` granting `CreateBackup`, `RestoreBackup` or `ClearDatabase` while background work
+is writing. Declining the queue discarded the property along with the mechanism, and nothing replaced it.
+
+### The consequence this ADR shipped without noticing
+
+A pass runs entirely outside `IUpdateStatusStore`, so `HasActiveWork()` is `false` throughout and the gate
+grants itself:
+
+- **`RestoreBackup` mid-pass** — the filler holds a scoped `DbContext` writing snapshot rows while the
+  database is replaced underneath it. Unambiguously bad.
+- **`ClearDatabase` mid-pass** — the same shape.
+- **`CreateBackup` mid-pass** — least severe: fill-if-absent (ADR-208) makes each day an independent row,
+  so a captured window is partially filled but never torn. Still a backup taken at a moment the operator
+  did not choose.
+
+This class of bug is already documented in the codebase. `IUpdateStatusStore.CancelIfStillWaiting`'s XML
+doc warns that marking running work cancelled *"takes it out of `HasActiveWork` while it is still talking
+to a tracker, and everything that waits for this instance to go idle stops waiting — including the gate
+that holds database maintenance off."* Work that runs while invisible to `HasActiveWork()` is a known
+hazard here, and this ADR created a second instance of it.
+
+### Decision (additive)
+
+**The gate learns about the filler directly, and the filler defers to the gate. Both directions.** One
+direction alone leaves the check-then-act race that same XML doc warns about.
+
+1. `DatabaseMaintenanceGate` consults a pass-in-flight predicate owned by the filler, alongside
+   `statusStore.HasActiveWork()`. **No `UpdateKey`, no `UpdateType`, no task row, and no change to
+   `IUpdateStatusStore`** — so none of the four reasons for staying out of the queue is weakened. The gate
+   is the component that needs to know; it is the component taught.
+2. The filler checks for an active maintenance operation before each day and abandons the pass if it finds
+   one.
+
+Presence and admission are **not** separable through the existing store: every `IUpdateStatusStore` method
+is keyed on `UpdateKey`, which requires an `UpdateType` member — exactly the user-visible cancellable task
+row rejected above. "Just register presence" is unavailable without reopening that rejection, which is why
+the gate gains a second signal rather than the filler gaining a key.
+
+### Why abandoning is free, and why that is specific to this component
+
+The filler is the only background work in the system that is safely abandonable at any instant: each day is
+an independent fill-if-absent write, already-written days stay, and the walk is resumable by construction
+because a read will happen again. No other queue participant has that property — which is a further reason
+the queue's heavier machinery was the wrong fit. Abandoning costs at most one wasted partial pass.
+
+### Consequence for the wall-clock budget
+
+This ADR left the per-pass budget's value open. It now has a principled bound rather than an arbitrary one:
+**the budget is the longest a `RestoreBackup` may be held waiting.** An operator who clicks Restore should
+not wait on a history backfill, which makes the budget a small number of seconds measured against operator
+patience rather than a throughput knob.
+
+Full reasoning and the gates it adds: `docs/feature/story-6053-reconstruct-over-time-history/feature-delta.md`
+→ "Wave: DEVOPS / [REF] Production readiness".

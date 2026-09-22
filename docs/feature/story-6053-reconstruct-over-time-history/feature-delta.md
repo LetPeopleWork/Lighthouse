@@ -1083,3 +1083,162 @@ The behaviour each AC means, for the acceptance-designer to assert instead of th
 - **AC3** — a reconstructed day's baseline validity is decided as of **that day**, not as of today, and
   the test says which outcome is expected and why. An owner with a pinned baseline gets flat limits
   across the window; an empty series is a failure, not an acceptable reading.
+
+
+---
+
+## Wave: DEVOPS / [REF] Scope of this wave
+
+Run **thin and scoped**, by decision (2026-09-22), not as a full checklist. DESIGN establishes no new
+infrastructure, so most of the standard wave is genuinely N/A and is recorded as such rather than
+skipped. Three items are real; one of them is a safety property DESIGN removed while citing it.
+
+| Standard DEVOPS concern | Verdict |
+|---|---|
+| Deployment strategy | **N/A** — no new deployable unit, no config, no env var, no chart change. Ships inside the existing backend image. |
+| Environment matrix | **N/A** — no environment-specific behaviour. The filler runs identically on SQLite and Postgres. |
+| CI/CD pipeline | **N/A** — no new job, no new gate. Existing `ci.yml` covers it; `Program.cs` IS touched for DI registration, which forces the full backend Integration suite on CI (known, expected, not a change to the pipeline). |
+| Branching strategy | **N/A** — trunk-based on `main`, unchanged. |
+| Coexistence matrix | **N/A** — no contract change, no client version gate; `lighthouse-clients` needs no work. |
+| Mutation testing | **Inherited, not new** — per-feature Stryker at ≥80%, run last on frozen code. The extracted writers (DDD-10) are the high-value target. |
+| Contract testing (Pact) | **N/A** — no external integration. Already recorded at DESIGN. |
+| **Observability** | **REAL** — see below. A new background component with no dispatcher and no operator surface. |
+| **Production readiness** | **REAL** — see below. The maintenance-gate coupling. |
+| **Monitoring contracts** | **PARTIAL** — most DISCUSS KPIs are measurable only by observation; no telemetry until Epic 5015. |
+
+---
+
+## Wave: DEVOPS / [REF] Production readiness — the maintenance-gate coupling
+
+**This is the finding of this wave, and it is a defect in DESIGN's reasoning, not a gap in its coverage.**
+
+`DatabaseMaintenanceGate` guards three operations: `CreateBackup`, `RestoreBackup`, `ClearDatabase`. It
+refuses all three while background work is in flight, and says so:
+
+> *"A background update is currently in progress. Database operations cannot start until background work
+> completes."*
+
+It learns that from one signal: `statusStore.HasActiveWork()`.
+
+DESIGN listed that signal as a **cost** of admitting the filler to the update queue — *"an admitted key
+keeps `HasActiveWork()` true, which gates DB maintenance"*. That is factually right and was one of four
+sound reasons to reject the queue (DDD-4, ADR-207 §2). But the conclusion drawn from it is wrong in one
+direction: being visible to that gate is not a cost of the queue, it is a **safety property** the queue
+happens to carry. DESIGN discarded the property along with the mechanism.
+
+**The consequence, concretely.** The filler runs outside `IUpdateStatusStore`, so `HasActiveWork()` is
+false during a pass and the gate grants itself:
+
+- `RestoreBackup` mid-pass — the filler holds a scoped `DbContext` writing snapshot rows while the
+  database is replaced underneath it. Unambiguously bad.
+- `ClearDatabase` mid-pass — same shape.
+- `CreateBackup` mid-pass — least severe, because fill-if-absent makes each day an independent row, so a
+  captured window is partially-filled but never torn. Still a backup taken at a moment the operator did
+  not choose.
+
+**The codebase has already been burned by this exact class of bug.** `IUpdateStatusStore`'s own XML doc on
+`CancelIfStillWaiting` warns that marking running work cancelled *"takes it out of `HasActiveWork` while it
+is still talking to a tracker, and everything that waits for this instance to go idle stops waiting —
+including the gate that holds database maintenance off."* Work that is running but invisible to
+`HasActiveWork()` is a known hazard here, documented in the interface itself.
+
+**Presence and admission are not separable through the existing interface.** Every `IUpdateStatusStore`
+method is keyed on `UpdateKey`, which requires an `UpdateType` member — precisely the user-visible
+cancellable Task-Manager row DESIGN rejected for good reasons. So "just register presence" is not
+available without reopening DDD-4.
+
+### DEVOPS-1 — The gate learns about the filler directly; the filler defers to the gate. Both directions.
+
+Not one or the other: a single direction leaves a check-then-act race of the kind the
+`CancelIfStillWaiting` doc already warns about.
+
+1. **Gate sees filler.** `DatabaseMaintenanceGate` consults a second signal alongside
+   `statusStore.HasActiveWork()` — a pass-in-flight predicate owned by the filler. No `UpdateKey`, no
+   `UpdateType`, no Task-Manager row, no change to `IUpdateStatusStore`. The gate is the component that
+   needs to know; teach the gate, not the queue.
+2. **Filler defers to gate.** Before each day, the filler checks whether a maintenance operation is
+   active and abandons the pass if so.
+
+**Why abandoning is free here, and why that is specific to this component.** The filler is the only
+background work in the system that is safely abandonable at any instant: fill-if-absent (DDD-9) means each
+day is independent and already-written days stay, and the walk is resumable by construction (DDD-6) because
+a read will happen again. No other queue participant has that property — which is also why the queue's
+heavier machinery was the wrong fit in the first place. Abandoning costs at most one wasted partial pass.
+
+### DEVOPS-2 — OQ-3's wall-clock budget now has a principled bound instead of an arbitrary one
+
+DESIGN left the budget's value open. DEVOPS-1 supplies the constraint that fixes it: **the budget is the
+longest a `RestoreBackup` may be held waiting.** An operator who clicks Restore should not wait on a
+history backfill. That makes the budget a small number of seconds chosen against operator patience, not a
+throughput knob — and it gives the constant a reason a reader can check, rather than a value to argue about.
+
+---
+
+## Wave: DEVOPS / [REF] Observability stack
+
+### DEVOPS-3 — The pass-failed template is pinned here, not left as a "shape"
+
+DESIGN specifies `ILogger<T>` emitting a *"structured pass-failed signal, per family, mirroring the
+recorders' template shape"*. A shape is not a template, and ADR-107's slice-02 amendment went out of its way
+to pin the recorders' exact string precisely because operator alerting keys on `MetricFamily`, and a
+per-metric-type value *"would fragment one alert into several."* Leaving the filler's template unpinned
+re-opens the drift that amendment closed.
+
+```
+Level:    Error
+Template: "Over-time reconstruction pass failed for {OwnerType} {OwnerId} ({MetricFamily})"
+Props:    OwnerType, OwnerId, MetricFamily, Exception
+```
+
+`MetricFamily` carries the same two family values the recorders use — `"Percentiles"` and
+`"ProcessBehavior"` — so an operator alert grouping on that property covers recording and reconstruction
+together. The verb differs (`reconstruction pass` vs `snapshot recording`) so the two are distinguishable in
+a log search without being separate alerts.
+
+Containment mirrors DDD-11: a failing family is logged and skipped; the surviving family's staged rows still
+persist through the shared save.
+
+### DEVOPS-4 — The filler is deliberately invisible on the operator surface, and that is the answer
+
+No Task-Manager row (DDD-4), no progress bar, no cancel button. On a standalone instance a 90-day pass
+surfaces nothing but log lines. **Stated as a decision rather than inherited as a side effect of rejecting
+the queue:**
+
+- D3 says the user is never blocked and never asked to wait. A progress surface would contradict that by
+  inviting them to watch.
+- The work is not cancellable-by-design — abandoning is free and automatic (DEVOPS-1), so a cancel button
+  would offer control over something that needs none.
+- A failed pass is not actionable by the user. It retries on the next read.
+
+The operator-facing signal is the log line in DEVOPS-3 and nothing else. If that proves too quiet in
+practice, the cheap escalation is a health-check contribution — **not** a Task-Manager row, which would drag
+`UpdateType`, the three `satisfies Record<UpdateTaskType,…>` tables and the hand-maintained TS union back in.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
+
+| DISCUSS KPI | Instrument | Honest status |
+|---|---|---|
+| Dated span grows from 4 days to the cap | Direct observation on the restored dev DB | Measurable now, manually |
+| Reconstructed == recorded on days with both | SPIKE-01 diff | **Done** — 4/4, mechanism only |
+| Added latency < 50 ms on a gap-discovering request | Backend integration assertion | Assertable in test; **not** instrumented in production |
+| Zero all-zero percentile rows written | Assertion over the snapshot table | Assertable in test |
+| Zero rows past an owner's `UpdateTime` | Assertion over the snapshot table | Assertable in test |
+| No recurrence of the reported confusion | Community channels | Qualitative; **no telemetry until Epic 5015** |
+
+**No new production instrumentation is added by this story.** Recorded plainly: five of six KPIs are
+test-time assertions, and the sixth is qualitative. An instance that silently stops reconstructing would be
+noticed by a user seeing a thin chart, not by a monitor. Accepted for a free-tier read-path feature whose
+failure mode is "the chart is as sparse as it is today" — i.e. the status quo, not a regression.
+
+---
+
+## Wave: DEVOPS / [REF] Gates added by this wave
+
+- **G-5 — DEVOPS-1 lands in slice 01, not later.** It is a safety property, and slice 01 is the first slice
+  that writes a row. A later slice would ship a window in which `RestoreBackup` can run mid-pass.
+- **G-6 — A test asserts the gate refuses maintenance while a pass is in flight**, and that the filler
+  abandons when maintenance is already active. Both directions, because one direction leaves the race.
+- **G-7 — OQ-3's budget is set against the DEVOPS-2 bound** (operator patience on Restore) and the reason is
+  written where the constant is, in plain language.
