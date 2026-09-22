@@ -36,6 +36,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
+        /// <summary>
+        /// A stretch where each item took three weeks rather than two days. Without it no look-back can be
+        /// told from another: a team that worked at one steady pace reads the same over thirty days as
+        /// over ninety, so a reading worked out over the wrong period comes out right anyway.
+        /// </summary>
+        private void GivenTheTeamTookWeeksOverEachItemFrom(int teamId, DateOnly from, DateOnly to)
+        {
+            for (var day = from; day <= to; day = day.AddDays(1))
+            {
+                SeedItemFinishedOn(teamId, $"{teamId}-slow-{day:yyyyMMdd}", day.AddDays(-20), day);
+            }
+        }
+
         private void GivenThePortfolioFinishedOneDeliveryADayFrom(int portfolioId, DateOnly from, DateOnly to)
         {
             for (var day = from; day <= to; day = day.AddDays(1))
@@ -118,6 +131,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                         $"The {span.Tab} tab does not. Missing: {string.Join(", ", expected.Except(span.Days))}.");
                 }
             }
+        }
+
+        private void ThenTheLongerLookBackReadsHigherOn(int teamId, DateOnly day, int shorter, int longer)
+        {
+            var overTheShorterOne = TheCycleTimeReadOn(teamId, day, shorter);
+            var overTheLongerOne = TheCycleTimeReadOn(teamId, day, longer);
+
+            Assert.That(overTheLongerOne.P85, Is.GreaterThan(overTheShorterOne.P85),
+                $"On {day:yyyy-MM-dd} the team's last {longer} days still contain the slow stretch and its last " +
+                $"{shorter} do not, so the two look-backs cannot report the same figure. Both came out at " +
+                $"{overTheShorterOne.P85}, which means they summarised one and the same stretch of work - whatever " +
+                "period each row is filed under, only one period was ever measured.");
+        }
+
+        private RecordedPercentileDay TheCycleTimeReadOn(int teamId, DateOnly day, int horizon)
+        {
+            var held = PercentileDaysHeldFor(teamId, OwnerType.Team, MetricType.CycleTime, horizon)
+                .SingleOrDefault(candidate => candidate.RecordedAt == day);
+
+            Assert.That(held, Is.Not.Default,
+                $"The cycle time tab over {horizon} days holds nothing for {day:yyyy-MM-dd}, so there is no reading to compare.");
+
+            return held;
         }
 
         private void ThenTheItemCountsTowardsThatDayAtTheAgeItHadThen(int teamId, DateOnly day, int expectedAge)

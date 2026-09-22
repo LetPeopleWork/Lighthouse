@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         [TestCase(30)]
         [TestCase(60)]
         [TestCase(90)]
-        [Ignore(Pending)]
         public async Task Each_cycle_time_look_back_fills_in_over_its_own_period(int horizon)
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -36,6 +35,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             await WhenTheChartHasFinishedFillingIn();
 
             ThenTheTabCoversEveryDayFrom(teamId, OwnerType.Team, MetricType.CycleTime, horizon, TodayDay.AddDays(-30), TodayDay);
+        }
+
+        /// <summary>
+        /// Which days a look-back covers cannot tell one look-back from another. A fill that worked every
+        /// row out over the same period and filed them under three different ones would cover the same
+        /// days and be indistinguishable on the tab - and sixty and ninety would be wrong by exactly the
+        /// amount nobody is looking at.
+        ///
+        /// What separates them is the stretch of work each one summarises. So this asks a team whose pace
+        /// changed - slow until a month ago, quick since - what each look-back makes of the same day. The
+        /// thirty-day one has moved past the slow stretch. The ninety-day one is still inside it, and must
+        /// read higher for it.
+        /// </summary>
+        // @driving_port @us-02 @real-io @contract-shape:pure-function
+        [Test]
+        public async Task A_longer_look_back_still_carries_a_slow_stretch_the_shorter_one_has_left_behind()
+        {
+            var teamId = GivenATeamStillBeingRefreshed();
+            GivenTheTeamTookWeeksOverEachItemFrom(teamId, TodayDay.AddDays(-90), TodayDay.AddDays(-31));
+            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-30), TodayDay);
+
+            await WhenTheFlowCoachOpensTheCycleTimeTab(teamId, 30, TodayDay.AddDays(-2), TodayDay);
+            await WhenTheFlowCoachOpensTheCycleTimeTab(teamId, 90, TodayDay.AddDays(-2), TodayDay);
+            await WhenTheChartHasFinishedFillingIn();
+
+            ThenTheLongerLookBackReadsHigherOn(teamId, TodayDay, shorter: 30, longer: 90);
         }
 
         /// <summary>
