@@ -10,6 +10,7 @@ on:
       - "Lighthouse.Frontend/**"
       - ".github/workflows/ci*.yml"
       - ".github/actions/**"
+      - ".github/scripts/**"
       - "examples/postgres/**"
       # The image build reads all four. Without them a Dockerfile or
       # .dockerignore change reaches main without ever being built, which is how
@@ -24,7 +25,22 @@ on:
 
 jobs:
 
+  workflow-scripts:
+    name: Verify Workflow Scripts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Run workflow script tests
+        run: node --test .github/scripts/
+
   version:
+    needs: workflow-scripts
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_version.yml
     name: Version

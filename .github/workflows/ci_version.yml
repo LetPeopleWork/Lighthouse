@@ -24,62 +24,29 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const now = new Date();
-            const year = String(now.getUTCFullYear()).slice(-2);
-            const month = String(now.getUTCMonth() + 1);
-            const day = String(now.getUTCDate());
-            const datePrefix = `${year}.${month}.${day}`;
-            // Get today's date in YYYY-MM-DD format for filtering
-            const todayStart = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-            const todayStartISO = todayStart.toISOString();
-            console.log(`Generating version for date: ${datePrefix}`);
-            console.log(`Checking runs since: ${todayStartISO}`);
-            // Get all workflow runs for today
-            // Use the main CI workflow filename instead of context.workflow
-            const workflow_id = 'ci.yml';
-            const branch = context.ref.replace('refs/heads/', '');
-            let page = 1;
-            let buildCount = 0;
-            let hasMore = true;
-            while (hasMore) {
-              const runs = await github.rest.actions.listWorkflowRuns({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: workflow_id,
-                branch: branch,
-                per_page: 100,
-                page: page
+            const { generateVersion } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/generate-version.mjs`);
+
+            try {
+              const { version, fileversion } = await generateVersion({
+                // The module is handed the bare list of runs, not the Octokit envelope.
+                listRuns: async ({ branch, page }) => (await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'ci.yml',
+                  branch,
+                  per_page: 100,
+                  page,
+                })).data.workflow_runs,
+                ref: context.ref,
+                pullRequestHeadRef: context.payload.pull_request?.head?.ref,
+                now: new Date(),
+                runId: context.runId,
+                sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
               });
-              if (runs.data.workflow_runs.length === 0) {
-                hasMore = false;
-                break;
-              }
-              for (const run of runs.data.workflow_runs) {
-                const runDate = new Date(run.created_at);
-                // If run is from before today, we can stop
-                if (runDate < todayStart) {
-                  hasMore = false;
-                  break;
-                }
-                // Count runs from today (including the current one)
-                if (runDate >= todayStart) {
-                  buildCount++;
-                }
-              }
-              page++;
-              // Safety limit
-              if (page > 10) {
-                console.log('Reached page limit');
-                hasMore = false;
-              }
+
+              core.setOutput('version', version);
+              core.setOutput('fileversion', fileversion);
+              return version;
+            } catch (err) {
+              core.setFailed(err.message);
             }
-            console.log(`Found ${buildCount} builds today`);
-            // Use build number without padding
-            const buildNumber = String(buildCount);
-            const version = `v${datePrefix}.${buildNumber}`;
-            const fileversion = `${datePrefix}.${buildNumber}`;
-            console.log(`Generated version: ${version}`);
-            console.log(`Generated fileversion: ${fileversion}`);
-            core.setOutput('version', version);
-            core.setOutput('fileversion', fileversion);
-            return version;
