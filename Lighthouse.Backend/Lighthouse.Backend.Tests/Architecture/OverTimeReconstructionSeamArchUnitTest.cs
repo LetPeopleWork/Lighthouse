@@ -72,6 +72,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         private const string ThePortfolioOnlyFamilySpelling = "ProcessBehaviorMetricType.FeatureSize";
 
+        /// <summary>A chart being built, as it is spelled where one is built.</summary>
+        private const string AChartBeingBuilt = "new ProcessBehaviourChart";
+
+        /// <summary>
+        /// How many places build a chart carrying a status other than Ready: the NotReady factory, and
+        /// the five refusals the two metrics services hand back when a baseline cannot be used. Pinned
+        /// so that the scan going blind - the type renamed, the code moved out of this tree - reads as
+        /// a failure rather than as an empty list of offenders, which is what a rule of this shape
+        /// otherwise quietly degrades into. A seventh place is welcome; it just has to be argued for
+        /// here rather than appear.
+        /// </summary>
+        private const int PlacesThatBuildAChartWithoutAReadyStatus = 6;
+
         private static readonly string[] DirectoriesThatAreNotSource = ["/obj/", "/bin/", "/StrykerOutput"];
 
         [Test]
@@ -150,6 +163,53 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
+        /// <summary>
+        /// A chart that is not ready reports no centre and no upper limit. That convention is what makes
+        /// the two honesty gates in the process-behaviour writer interchangeable today: the gate that
+        /// refuses a chart on its status refuses nothing the gate that refuses a collapsed band would
+        /// not also refuse, which is why no scenario can tell them apart and why removing the status
+        /// gate on its own breaks no test.
+        ///
+        /// Nothing in the type requires it. A builder that one day hands back a live band alongside a
+        /// status of "not ready" would make that status gate the only thing standing between the band
+        /// and the stored chart, and the gate would go from redundant to load-bearing with no test
+        /// noticing. No acceptance scenario can pin this, because the object it would need - not ready,
+        /// and carrying a band - is precisely the one the product deliberately never constructs and
+        /// nothing a test can run will produce. So it is read off the source, as the rules above are,
+        /// and for the same reason: a literal in an object initialiser is not a reference to anything a
+        /// dependency rule could follow.
+        /// </summary>
+        [Test]
+        public void AChartThatIsNotReady_ReportsNoCentreAndNoUpperLimit()
+        {
+            var builtWithoutAReadyStatus = ProductionSourceFiles()
+                .SelectMany(file => ChartsBuiltIn(file.Source).Select(chart => new { file.RelativePath, Chart = chart }))
+                .Where(built => !built.Chart.Contains("Status = BaselineStatus.Ready", StringComparison.Ordinal))
+                .ToList();
+
+            var carryingABandAnyway = builtWithoutAReadyStatus
+                .Where(built => !built.Chart.Contains("Average = 0,", StringComparison.Ordinal)
+                             || !built.Chart.Contains("UpperNaturalProcessLimit = 0,", StringComparison.Ordinal))
+                .Select(built => built.RelativePath)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(builtWithoutAReadyStatus, Has.Count.EqualTo(PlacesThatBuildAChartWithoutAReadyStatus),
+                    $"{builtWithoutAReadyStatus.Count} places build a chart without a ready status, and " +
+                    $"{PlacesThatBuildAChartWithoutAReadyStatus} were expected. Fewer usually means the scan has gone blind - a " +
+                    "rename, a move - and a rule scanning for nothing reports no offenders forever. More means a new refusal " +
+                    "arrived: check it leaves the band empty and say so here.");
+
+                Assert.That(carryingABandAnyway, Is.Empty,
+                    "A chart that is not ready must report an average and an upper limit of zero. The process-behaviour writer " +
+                    "refuses to store a collapsed band, and that refusal is the only one either of its honesty gates can be shown " +
+                    "to make - a chart that is not ready but carries a band would walk straight past it and be stored as limits " +
+                    "the owner never had. Carrying one anyway: " + string.Join(", ", carryingABandAnyway));
+            }
+        }
+
         [Test]
         public void TheDemoSynthesiserExemption_StillDescribesRealCode()
         {
@@ -225,6 +285,58 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(files, Is.Not.Empty, "Found no production sources to scan; the scan is anchored at the wrong directory.");
 
             return files;
+        }
+
+        /// <summary>
+        /// Every object initialiser in this source that builds a chart, as text. Anything that is not
+        /// followed by an initialiser is skipped: the data-point record's name begins the same way, and
+        /// a construction that sets nothing declares no band either way.
+        /// </summary>
+        private static IEnumerable<string> ChartsBuiltIn(string source)
+        {
+            var at = source.IndexOf(AChartBeingBuilt, StringComparison.Ordinal);
+
+            while (at >= 0)
+            {
+                var opening = at + AChartBeingBuilt.Length;
+                while (opening < source.Length && char.IsWhiteSpace(source[opening]))
+                {
+                    opening++;
+                }
+
+                if (opening < source.Length && source[opening] == '{')
+                {
+                    yield return InitialiserStartingAt(source, opening);
+                }
+
+                at = source.IndexOf(AChartBeingBuilt, at + AChartBeingBuilt.Length, StringComparison.Ordinal);
+            }
+        }
+
+        private static string InitialiserStartingAt(string source, int opening)
+        {
+            var depth = 0;
+
+            for (var i = opening; i < source.Length; i++)
+            {
+                if (source[i] == '{')
+                {
+                    depth++;
+                }
+                else if (source[i] == '}')
+                {
+                    depth--;
+
+                    if (depth == 0)
+                    {
+                        return source[opening..(i + 1)];
+                    }
+                }
+            }
+
+            Assert.Fail("A chart initialiser runs to the end of its file without closing, so the scan cannot read what it sets.");
+
+            return string.Empty;
         }
 
         private static string ProductionSourceOf(string relativePath)

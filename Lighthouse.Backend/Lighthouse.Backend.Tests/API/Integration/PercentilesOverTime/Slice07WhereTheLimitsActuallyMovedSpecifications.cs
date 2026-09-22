@@ -33,11 +33,41 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ProcessBehaviorMetricType.FeatureSize,
         ];
 
+        /// <summary>
+        /// How long the lead in the two pinned-stretch scenarios keeps finished work for. Not the
+        /// product default of a year, and the gap is the entire scenario rather than colour.
+        ///
+        /// Those scenarios pin a stretch starting 240 days back and ask about a period 60 to 30 days
+        /// back. Keeping finished work for 220 days means that, measured from today, the owner no
+        /// longer reaches the stretch it pinned - so limits drawn from it are judged unusable and the
+        /// chart comes back empty. Measured from any day in the period under review, the same 220 days
+        /// reaches between 280 and 250 days back, and the stretch sits comfortably inside.
+        ///
+        /// That disagreement between the two possible anchors is the only thing that can tell a chart
+        /// judged as of today from one judged as of the day being rebuilt. Widen this back to the
+        /// default year "for realism" and both anchors agree the stretch is in reach, both give the
+        /// same answer, and the scenarios pass whichever anchor the product uses - which is exactly
+        /// how the first version of these two came to assert nothing at all. The relation is not left
+        /// to this number on its own either: the guard below reads both settings back off the owner
+        /// and fails the scenario the moment they stop disagreeing.
+        ///
+        /// A lead who narrows how long finished work is kept to below the reach of a stretch they
+        /// pinned is also the person this defect bites. The settings screen offers the number, and
+        /// shorter than a year is an ordinary choice.
+        /// </summary>
+        private const int DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach = 220;
+
         // --- Given ---
 
         private int GivenATeamStillBeingRefreshed() => SeedTeamObservedUntil(TodayDay);
 
         private int GivenAPortfolioStillBeingRefreshed() => SeedPortfolioObservedUntil(TodayDay);
+
+        private int GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(int days)
+            => SeedTeamObservedUntil(TodayDay, doneItemsCutoffDays: days);
+
+        private int GivenAPortfolioStillBeingRefreshedThatKeepsFinishedWorkFor(int days)
+            => SeedPortfolioObservedUntil(TodayDay, doneItemsCutoffDays: days);
 
         private int GivenATeamLastObservedOn(DateOnly lastObservedOn) => SeedTeamObservedUntil(lastObservedOn);
 
@@ -81,6 +111,52 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private void GivenThePortfolioPinnedTheStretchItsLimitsAreDrawnFrom(int portfolioId, DateOnly from, DateOnly to)
             => PinThePortfoliosBaselineTo(portfolioId, from, to);
+
+        /// <summary>
+        /// The arrangement the two pinned-stretch scenarios turn on, stated as something the scenario
+        /// checks rather than left to the numbers it happened to seed: the pinned stretch has fallen
+        /// outside what the owner still keeps when that is measured from today, and is still inside it
+        /// when measured from any day in the period under review.
+        ///
+        /// Only while both hold do the two candidate anchors give different answers, and only then can
+        /// the scenario tell which one the product used. Seed a wider retention window and the scenario
+        /// silently stops testing anything; this fails instead, and says which half went.
+        /// </summary>
+        private void GivenTheTeamsStretchIsOutOfReachTodayAndInReachOverThePeriod(int teamId, DateOnly lastDayUnderReview)
+        {
+            var (stretchStartsOn, daysFinishedWorkIsKeptFor) = HowTheTeamsStretchAndRetentionStand(teamId);
+
+            TheStretchIsOutOfReachTodayAndInReachAsOf(stretchStartsOn, daysFinishedWorkIsKeptFor, lastDayUnderReview);
+        }
+
+        private void GivenThePortfoliosStretchIsOutOfReachTodayAndInReachOverThePeriod(int portfolioId, DateOnly lastDayUnderReview)
+        {
+            var (stretchStartsOn, daysFinishedWorkIsKeptFor) = HowThePortfoliosStretchAndRetentionStand(portfolioId);
+
+            TheStretchIsOutOfReachTodayAndInReachAsOf(stretchStartsOn, daysFinishedWorkIsKeptFor, lastDayUnderReview);
+        }
+
+        private static void TheStretchIsOutOfReachTodayAndInReachAsOf(
+            DateOnly stretchStartsOn, int daysFinishedWorkIsKeptFor, DateOnly lastDayUnderReview)
+        {
+            var reachFromToday = TodayDay.AddDays(-daysFinishedWorkIsKeptFor);
+            var reachFromTheLastDayUnderReview = lastDayUnderReview.AddDays(-daysFinishedWorkIsKeptFor);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stretchStartsOn, Is.LessThan(reachFromToday),
+                    $"Measured from today the owner still keeps finished work back to {reachFromToday:yyyy-MM-dd}, which reaches " +
+                    $"the stretch pinned at {stretchStartsOn:yyyy-MM-dd}. Judged from today or judged from the day being rebuilt, " +
+                    "the answer is then the same one, and this scenario passes whichever the product asks - which is the failure " +
+                    "mode it exists to catch, not a detail of the seed.");
+
+                Assert.That(stretchStartsOn, Is.GreaterThanOrEqualTo(reachFromTheLastDayUnderReview),
+                    $"Measured from {lastDayUnderReview:yyyy-MM-dd}, the last day under review, the owner keeps finished work only " +
+                    $"back to {reachFromTheLastDayUnderReview:yyyy-MM-dd}, which does not reach the stretch pinned at " +
+                    $"{stretchStartsOn:yyyy-MM-dd}. The stretch is then out of reach from every angle, reporting nothing is the " +
+                    "honest answer, and steady limits are not what should come back.");
+            }
+        }
 
         /// <summary>
         /// A reference stretch that reaches back further than the owner keeps finished work. Nothing can

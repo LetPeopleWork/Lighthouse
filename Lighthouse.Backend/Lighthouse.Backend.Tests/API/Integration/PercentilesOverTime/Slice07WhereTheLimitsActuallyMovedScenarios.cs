@@ -67,10 +67,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// <summary>
         /// A reference stretch the team no longer keeps any finished work from cannot produce limits.
         /// The honest answer is no line, not a line at zero.
+        ///
+        /// Named for the stretch rather than for the period, because the stretch is the mechanism: the
+        /// team pinned one reaching back further than it keeps finished work, so the limits are judged
+        /// undrawable before any day's data is looked at. The earlier name claimed this was a period
+        /// with nothing in it, which is a different refusal and belongs to the scenario below it.
+        ///
+        /// What this pins is the pair of honesty gates in the writer, not either one on its own. Every
+        /// chart the status gate would refuse already satisfies the collapsed-band gate as well:
+        /// ProcessBehaviourChart.NotReady hard-codes average, upper and lower limits to zero, and so
+        /// does every other place a chart is built with a status other than Ready. Take the status gate
+        /// away on its own and nothing here changes, because the band gate catches the same charts and
+        /// this scenario stays green. Take the band gate away on its own and it fails; take both and it
+        /// fails. So read it as "a stretch nothing can be drawn from gets no limits written", which is
+        /// the promise, and not as a test of the status gate, which nothing observable separates. What
+        /// keeps the status gate honest is the source-level invariant in
+        /// OverTimeReconstructionSeamArchUnitTest - the one asserting that a chart which is not Ready
+        /// carries no band - because that invariant is the reason the redundancy holds at all.
         /// </summary>
         // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        public async Task A_period_with_nothing_to_draw_limits_from_reports_no_limits()
+        public async Task A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits()
         {
             var teamId = GivenATeamStillBeingRefreshed();
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-200), TodayDay);
@@ -104,15 +121,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// today, so a lead who fixed the reference stretch could ask about a past period and be told
         /// nothing - which reads as "your data did not support it" and is false. A fixed reference
         /// stretch produces limits that do not move; that is the reading, and an empty chart is not.
+        ///
+        /// The lead here keeps finished work for less long than the stretch they pinned reaches back,
+        /// which is what makes "judged against today" and "judged against the day being rebuilt" two
+        /// different answers rather than the same one twice. Equal-length retention would leave the
+        /// scenario unable to fail; the guard below says so out loud rather than leaving it to be
+        /// noticed.
         /// </summary>
         // @us-03 @driving_port @real-io @contract-shape:bounded-change
         [Test]
         [Ignore(Pending)]
         public async Task A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart()
         {
-            var teamId = GivenATeamStillBeingRefreshed();
+            var teamId = GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-250), TodayDay);
             GivenTheTeamPinnedTheStretchItsLimitsAreDrawnFrom(teamId, TodayDay.AddDays(-240), TodayDay.AddDays(-150));
+            GivenTheTeamsStretchIsOutOfReachTodayAndInReachOverThePeriod(teamId, TodayDay.AddDays(-30));
 
             await WhenTheDeliveryLeadOpensTheTeamLimits(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-60), TodayDay.AddDays(-30));
             await WhenTheChartHasFinishedFillingIn();
@@ -125,9 +149,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         [Ignore(Pending)]
         public async Task A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too()
         {
-            var portfolioId = GivenAPortfolioStillBeingRefreshed();
+            var portfolioId = GivenAPortfolioStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
             GivenThePortfolioFinishedOneDeliveryADayFrom(portfolioId, TodayDay.AddDays(-250), TodayDay);
             GivenThePortfolioPinnedTheStretchItsLimitsAreDrawnFrom(portfolioId, TodayDay.AddDays(-240), TodayDay.AddDays(-150));
+            GivenThePortfoliosStretchIsOutOfReachTodayAndInReachOverThePeriod(portfolioId, TodayDay.AddDays(-30));
 
             await WhenTheDeliveryLeadOpensThePortfolioLimits(portfolioId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-60), TodayDay.AddDays(-30));
             await WhenTheChartHasFinishedFillingIn();
