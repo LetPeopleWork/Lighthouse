@@ -1036,7 +1036,7 @@ mandatory consolidated review fires at the end of DISTILL.
 
 | # | Risk | Disposition |
 |---|---|---|
-| **R-1** | Does a sixteen-run sweep fit a request budget? | **OPEN, load-bearing.** AC-1.1, first task of slice 01. Evidence is strong — `RunBacktest` is already synchronous and every `TeamMetricsService` read goes through `GetFromCacheIfExists` over Work Items already in the database with no work tracking system contacted — but it is an inference. Fallback: `UpdateQueueService`, with the ADR-195 single-lane caveat |
+| **R-1** | Does a sixteen-run sweep fit a request budget? | **RESOLVED 2026-09-22 by measurement — yes, with room.** 701 ms cold median on a real-sized Team against a 5000 ms budget. See "R-1, measured" below. No fallback needed; `UpdateQueueService` is not used and the ADR-195 caveat is moot |
 | **R-3** | Which confidence level does a cell score against? | **RESOLVED by U2 and D1** — all four, 50/70/85/95, printed |
 | **R-4** | Is the three-way verdict kept? | **RESOLVED by U3 and D7** — kept, and the departure from Brown is owned out loud in an AC |
 | **R-5** | The source article was read via a readmedium.com mirror | **Carried to DELIVER** as a hard gate on the launch post. Arithmetic-reconciled and corroborated, but one human page-load is wanted before anything is quoted publicly |
@@ -1721,3 +1721,45 @@ re-asked and not rewritten.
 locked decision; ADR-208 is escalated to the maintainer rather than contested), no novel pattern (one
 controller action and a pure policy in a shipped hexagon), no security boundary change (one reused guard,
 no write path). The mandatory consolidated review fires at the end of DISTILL.
+
+---
+
+## Wave: DESIGN / [REF] R-1, measured
+
+**Resolved 2026-09-22. The sweep fits a request, and the cost DESIGN feared is real in count but small
+in time.** Measured by `RealityCheckWallClockProbe`, which runs the sixteen end-anchored cells through
+the real `TeamMetricsService` and `ForecastService` over a SQLite database, counting executed commands
+as well as wall clock.
+
+| Closed Work Items | Cold median | Cold max | Warm median | Queries |
+|---|---|---|---|---|
+| 615 — a real Team in this product's own dev database | **701 ms** | 800 ms | 612 ms | **20** |
+| 5,000 | **885 ms** | 923 ms | 619 ms | **20** |
+| 20,000 | **1,745 ms** | 1,785 ms | 619 ms | **20** |
+
+Budget was median ≤ 5,000 ms and max ≤ 10,000 ms. A realistic Team lands seven times inside the median.
+
+**Four things the measurement settles that the reasoning could not.**
+
+1. **The query prediction was exact.** DESIGN reasoned "up to twenty"; it is twenty, at every volume and
+   on every run. Sixteen sampling windows and four scored periods, each missing the cache, each running
+   the same window-independent predicate. The count does **not** grow with Team size.
+2. **The queries are not where the time goes.** Cold minus warm is ~85 ms at 615 items. The floor is the
+   Monte Carlo — sixteen runs at 10,000 trials, about **615 ms**, and irreducible without changing the
+   trial count.
+3. **Warm cost is flat at ~615 ms regardless of Team size**, because the cache holds projected run
+   charts rather than Work Items. A second click costs the same on any Team.
+4. **Only the cold cost scales with Team size**, roughly linearly in the query path: ~85 ms, ~270 ms,
+   ~1,130 ms at 615 / 5,000 / 20,000 items. Extrapolated, the 5,000 ms median budget would not be
+   threatened until somewhere near **80,000 closed Work Items on a single Team**.
+
+**Consequences.** AC-1.1 is answered rather than pending, and the R-1 probe is no longer the gate on
+slice 01 — though the AC stays, because the number belongs to this machine and a second opinion on real
+hardware costs nothing. **Contingency A is not needed**; it remains the right fix if a Team ever does
+approach that size, since reading the closed-item set once and projecting it twenty ways collapses the
+only cost that scales. **Contingency B is dead**: the queue is not used, so ADR-195's staleness never
+mattered to this feature after all.
+
+**What the number is not.** SQLite, in-process, one machine, no Kestrel, no serialisation, no concurrent
+load. It measures the sweep's own cost, which is what R-1 asked — a loaded production instance will be
+slower, and the 20,000-item row has less headroom than it looks.
