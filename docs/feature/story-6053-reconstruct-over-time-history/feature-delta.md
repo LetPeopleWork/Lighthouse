@@ -810,6 +810,36 @@ Both are covered by "some days in this range have no recorded or reconstructible
 `hasHistory`-style boolean reopens the envelope question ADR-108 has now rejected twice and must be
 re-decided there, not slipped in.
 
+**DDD-17 — The filler is visible to `DatabaseMaintenanceGate`, and the contract is named here rather
+than left to DELIVER.** *(Added 2026-09-22 by the Final Wave Review Gate. Two reviewers reached this
+independently: the DEVOPS reviewer as a CRITICAL, the DESIGN reviewer as a HIGH. DDD-4 correctly
+rejects `IUpdateQueueService`, but it listed `HasActiveWork()` visibility as a **cost** of joining the
+queue when it is a **safety property** the queue carried — and nothing replaced it. DEVOPS-1 supplies
+the mechanism; this decision supplies the contract, because "a pass-in-flight predicate owned by the
+filler" names a mechanism and no interface, and a half-wired single-direction implementation is the
+exact race the item exists to close.)*
+
+Both directions are required. One alone leaves the check-then-act window that
+`IUpdateStatusStore.CancelIfStillWaiting`'s own doc warns about.
+
+| Direction | Contract | Owner |
+|---|---|---|
+| **Gate sees filler** | `DatabaseMaintenanceGate` takes a second, narrow dependency exposing one read-only member — is a pass in flight right now? — and consults it in `HasActiveBackgroundWork()` alongside `statusStore.HasActiveWork()`. The gate's existing `BlockedReason` gains a case naming the filler so an operator is told *what* is holding the operation, not just that something is. | The filler owns the implementation; the gate owns the call. |
+| **Filler defers to gate** | Before each day, the filler asks the gate whether a maintenance operation is active and abandons the pass if so. It does **not** acquire the gate — it never becomes a maintenance operation itself. | The filler. |
+
+**Boundaries this must not cross.** The narrow interface carries **no `UpdateKey`, no `UpdateType`, no
+task-manager row, and no change to `IUpdateStatusStore`** — otherwise DDD-4's four reasons for staying
+out of the queue are reopened one by one. It is a single-member capability, not a second status store.
+
+**Testability is part of the contract, not an afterthought.** The predicate must be readable from the
+acceptance harness via DI, because the test host strips every `IHostedService`
+(`TestWebApplicationFactory` calls `RemoveAll<IHostedService>()`), so a filler registered only as a
+hosted service is invisible to every acceptance test and the gate scenario cannot be written at all.
+Register the concrete filler as a **singleton** and add the hosted service as a **factory over it**.
+
+Lands in slice 01 (gate G-5) and is asserted in both directions (gate G-6). It is a safety property,
+and slice 01 is the first slice that writes a row.
+
 ---
 
 ## Wave: DESIGN / [REF] Component decomposition
@@ -867,7 +897,7 @@ and the filler's.
 | `ILighthouseClock` | existing | out | `Today` / `TodayAsUtcMidnight`. The as-of day comes from the seam, never by re-reducing an end date. |
 | `IServiceScopeFactory` | ASP.NET Core DI | out | One scope, one `DbContext`, per pass. |
 | `IOverTimeGapReconciler` | in-process | out from the read | **Restricted capability**: one void method, no repository. |
-| `ILogger<T>` | Serilog | out | Structured pass-failed signal, per family, mirroring the recorders' template shape. |
+| `ILogger<T>` | Serilog | out | Pass-failed signal, per family. Template **pinned, not shaped**: `"Over-time reconstruction pass failed for {OwnerType} {OwnerId} ({MetricFamily})"`, props `OwnerType, OwnerId, MetricFamily, Exception`. `MetricFamily` carries the recorders' own two values so one operator alert grouping covers recording and reconstruction; the differing verb keeps them separable in a search. Pinned here rather than at DEVOPS because ADR-107's amendment fixed the recorders' exact string for this reason, and a "shape" reopens the fragmentation it closed. See DEVOPS-3. |
 
 No new external integration ⇒ **contract testing (Pact) N/A**, recorded rather than silently skipped.
 
@@ -900,6 +930,7 @@ No new technology, no proprietary component, nothing outside the shipped stack.
 | 8 | One writer, two named operations | a second entry point on the handler; a separate service with duplicated family tables; a `WritePolicy` flag | DDD-9/10, ADR-208 §1 |
 | 9 | As-of day threaded, defaulting to today | leave it today-anchored (silent empty series); refuse pinned-baseline owners (fallback, kept); change `BaselineValidationService` itself | DDD-12, ADR-208 §2 |
 | 10 | Absence gate on both paths | gate reconstruction only, as D7's literal text says | DDD-13, ADR-208 §3 |
+| 11 | Filler visible to the maintenance gate, both directions, contract named | leave it to DELIVER (half-wired single direction); admit an `UpdateKey` to the status store (reopens all four DDD-4 reasons); gate-checks-only or filler-checks-only (check-then-act race) | DDD-17, ADR-207 DEVOPS amendment |
 
 ---
 
@@ -1097,7 +1128,7 @@ skipped. Three items are real; one of them is a safety property DESIGN removed w
 |---|---|
 | Deployment strategy | **N/A** — no new deployable unit, no config, no env var, no chart change. Ships inside the existing backend image. |
 | Environment matrix | **N/A** — no environment-specific behaviour. The filler runs identically on SQLite and Postgres. |
-| CI/CD pipeline | **N/A** — no new job, no new gate. Existing `ci.yml` covers it; `Program.cs` IS touched for DI registration, which forces the full backend Integration suite on CI (known, expected, not a change to the pipeline). |
+| CI/CD pipeline | **N/A for pipeline configuration** — no new job, no new gate, no change to `ci.yml`. But stated precisely rather than waved through: `Program.cs` IS touched for DI registration, and that **changes test-inclusion scope** by forcing the full backend Integration suite to run. That is a real effect on what CI executes, not nothing; it is expected, it needs no pipeline edit, and it raises flake exposure through the live-connector categories. *(Wording corrected 2026-09-22 — the review found the original "not a change to the pipeline" rationalised a change in inclusion scope as no change at all.)* |
 | Branching strategy | **N/A** — trunk-based on `main`, unchanged. |
 | Coexistence matrix | **N/A** — no contract change, no client version gate; `lighthouse-clients` needs no work. |
 | Mutation testing | **Inherited, not new** — per-feature Stryker at ≥80%, run last on frozen code. The extracted writers (DDD-10) are the high-value target. |
@@ -1242,3 +1273,312 @@ failure mode is "the chart is as sparse as it is today" — i.e. the status quo,
   abandons when maintenance is already active. Both directions, because one direction leaves the race.
 - **G-7 — OQ-3's budget is set against the DEVOPS-2 bound** (operator patience on Restore) and the reason is
   written where the constant is, in plain language.
+
+### G-8 — OQ-3's number, and the honest problem with measuring it
+
+*(Added 2026-09-22 by the Final Wave Review Gate. The DEVOPS reviewer asked for the budget to be measured on
+a 50k+ work-item instance before slice 03 adds the PBC families. The request is right; the instance does not
+exist here, and a gate nobody can pass is not a gate.)*
+
+**What we have**: 621 work items on one ADO-backed team. SPIKE-01 measured ~15 ms/day for the four percentile
+series and stated plainly that it could not extrapolate — cost is driven by a per-day scan of closed items, so
+a large instance scales worse by an unknown factor. The 5-6 s (90 days, all families) and 20-25 s (365 days)
+figures are arithmetic on that base, not measurements.
+
+**What the gate actually requires**, in order:
+
+1. **Measure on the largest instance genuinely available** at slice 01, and record `n` alongside the timing so
+   a later reader can scale it. If that is still ~600 items, say so rather than presenting the number as a
+   production budget.
+2. **Set the constant from the DEVOPS-2 bound, not from the measurement** — the budget is the longest a
+   `RestoreBackup` may be held waiting, which is a question about operator patience and does not move with
+   instance size. The measurement tells us how much history fits inside that budget; it does not set it.
+3. **The budget must be enforced, not assumed.** If a pass exceeds it, the pass abandons — that is safe by
+   construction (each day is an independent write and the walk resumes on the next read). A large instance
+   then fills more slowly instead of holding maintenance longer, which is the correct failure direction and
+   removes the dependency on having measured a large instance at all.
+
+**Consequence worth stating**: point 3 is what makes the unmeasured large-instance case tolerable. Without an
+enforced budget, a slow instance converts directly into a long maintenance block. With it, the unknown scaling
+factor changes only how many passes a full window takes. Any DELIVER decision that drops the enforcement
+re-opens this gate.
+
+### G-9 — The no-instrumentation acceptance is scoped, not blanket
+
+The monitoring table accepts zero production instrumentation because the failure mode is "the chart stays as
+sparse as it is today". That holds for a self-hosted, free-tier, read-path feature. It is **not** a claim about
+a multi-tenant deployment, where a filler dead on some fraction of scopes could go unnoticed for weeks with no
+user positioned to report it.
+
+Recorded so the acceptance is not later quoted out of its scope: if Epic 5015's telemetry lands before this
+ships broadly, the one signal worth adding is a **failure-only** count per owner per day — emitted on failure,
+never as a zero-valued heartbeat, so it costs nothing on a healthy instance.
+
+### G-10 — Confirm a pass is not mistaken for a slow dashboard
+
+DEVOPS-4 argues the filler should stay invisible. The risk that argument carries: a multi-second background
+operation triggered *by a dashboard load* is the obvious suspect if anyone reports the dashboard feeling slow,
+and with no signal there is nothing to correlate against.
+
+At slice 04, dogfood on the restored dev DB and confirm that a pass in flight does not produce user-visible
+slowness on the page that triggered it. If it does, the escalation is the **health-check contribution** named
+in DEVOPS-4 — not a Task-Manager row, which drags `UpdateType`, the three `satisfies Record<UpdateTaskType,…>`
+tables and the hand-maintained TS union back in, reopening DDD-4.
+
+---
+
+## Wave: DISTILL / [REF] Scope of this wave
+
+Density: Tier-1. Acceptance designer: Quinn. Date: 2026-09-22.
+Wave-decision reconciliation ran before any scenario was written: **0 contradictions**.
+Deliverable type resolves to `application`, so no plugin or skill verification routing applies.
+
+The story has no walking skeleton, and that is inherited rather than decided here: DISCUSS chose
+Strategy B (extend the existing vertical) because every layer this story touches already ships and is
+under test. Slice 01 is the thinnest end-to-end proof, not a skeleton.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/`, continuing the
+numbering Epic 5427 left at Slice04. This story's four slices become Slice05-Slice08. The epic's
+Slice01-Slice04 fixtures are untouched.
+
+| File | Holds |
+|---|---|
+| `ReconstructOverTimeHistoryAcceptanceTest.cs` | Story-wide harness: real ASP.NET host, real SQLite **file**, real EF, real DI; the instance clock and the licence port are the only substitutions |
+| `Slice05ReconstructCycleTimeHistory{Scenarios,Specifications}.cs` | Story slice 01 - cycle time over thirty days, team scope, every mechanism |
+| `Slice06EveryPercentileTabSpansTheSamePeriod{Scenarios,Specifications}.cs` | Story slice 02 - the other two look-backs, work item age, portfolio scope |
+| `Slice07WhereTheLimitsActuallyMoved{Scenarios,Specifications}.cs` | Story slice 03 - natural process limits, both scopes, the fixed-reference-stretch hazard |
+| `Slice08NothingToShow{Scenarios,Specifications}.cs` | Story slice 04 - the empty states, behind the endpoint |
+
+A separate harness from Epic 5427's rather than an extension of it. These scenarios turn on which day
+the instance believes it is - how far back the walk reaches, which days sit after the last
+observation, where the cap falls - so the clock is pinned at 2026-09-22. Pinning it inside the epic's
+harness would move every one of that harness's expectations.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+40 test methods, 42 executed cases. **1 green, 41 pending.** Every pending one carries
+`[Ignore("Pending: reconstruction of missing over-time days is not built yet ...")]`, so the suite is
+green at hand-off and the crafter un-skips one at a time.
+
+Tags are carried as a `// @tag` comment line above each `[Test]`, matching the directory's house
+style. Every scenario carries a `@contract-shape:` tag; the shorthand below is `pure`, `bounded`,
+`preserving`.
+
+### Slice05 - the trend a team's data already supports (17)
+
+| Scenario | Tags | State |
+|---|---|---|
+| `The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded` | `@driving_port @us-01 @real-io` `bounded` | pending |
+| `The_flow_coach_reads_across_the_stretch_the_instance_was_switched_off` | `@driving_port @us-01 @real-io` `bounded` | pending |
+| `A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped` | `@us-01 @error @real-io` `preserving` | pending |
+| `The_trend_reaches_back_only_as_far_as_the_team_has_finished_anything` | `@us-01 @boundary @real-io` `preserving` | pending |
+| `A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once` | `@us-01 @boundary @real-io` `bounded` | pending |
+| `A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero` | `@us-01 @error @real-io` `preserving` | pending |
+| `A_quiet_day_is_left_blank_by_the_daily_recording_too` | `@us-01 @regression @driving_port @real-io` `preserving` | pending |
+| `A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at` | `@us-01 @real-io` `preserving` | pending |
+| `Looking_at_the_same_period_twice_costs_nothing_the_second_time` | `@us-01 @real-io` `preserving` | pending |
+| `A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched` | `@us-01 @fidelity @real-io` `pure` | pending |
+| `Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits` | `@driving_port @us-01 @real-io` `preserving` | **green** |
+| `The_days_the_first_visit_could_not_show_are_there_on_the_next_one` | `@us-01 @real-io` `bounded` | pending |
+| `An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in` | `@us-01 @maintenance @real-io` `pure` | pending |
+| `The_chart_stops_filling_itself_in_while_the_operator_is_restoring_the_database` | `@us-01 @maintenance @real-io` `preserving` | pending |
+| `Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two` | `@us-01 @concurrency @real-io @sqlite` `bounded` | pending |
+| `A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one` | `@us-01 @concurrency @real-io @sqlite` `bounded` | pending |
+| `Backdated_demonstration_values_are_stepped_over_rather_than_corrected` | `@us-01 @demo @real-io` `preserving` | pending |
+
+### Slice06 - every tab spans the same period (8 methods, 10 cases)
+
+| Scenario | Tags | State |
+|---|---|---|
+| `Each_cycle_time_look_back_fills_in_over_its_own_period` (30, 60, 90) | `@driving_port @us-02 @real-io` `bounded` | pending |
+| `An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then` | `@driving_port @us-02 @real-io` `pure` | pending |
+| `An_age_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched` | `@us-02 @fidelity @real-io` `pure` | pending |
+| `A_portfolio_fills_in_its_delivery_cycle_time_the_same_way_a_team_does` | `@driving_port @us-02 @real-io` `bounded` | pending |
+| `A_portfolio_fills_in_its_delivery_age_tab_too` | `@driving_port @us-02 @real-io` `bounded` | pending |
+| `Flicking_between_tabs_does_not_start_the_filling_over_again` | `@us-02 @real-io` `preserving` | pending |
+| `Every_tab_covers_the_same_period_once_the_chart_has_filled_in` | `@driving_port @us-02 @real-io` `bounded` | pending |
+| `The_age_tab_stops_where_the_team_stopped_being_watched_and_stays_blank_when_nothing_was_in_flight` | `@us-02 @error @real-io` `preserving` | pending |
+
+### Slice07 - where the limits actually moved (10)
+
+| Scenario | Tags | State |
+|---|---|---|
+| `A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer` | `@driving_port @us-03 @real-io` `bounded` | pending |
+| `A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer` | `@driving_port @us-03 @real-io` `bounded` | pending |
+| `How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team` | `@us-03 @real-io` `bounded` | pending |
+| `A_period_with_nothing_to_draw_limits_from_reports_no_limits` | `@us-03 @error @real-io` `preserving` | pending |
+| `A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one` | `@us-03 @error @real-io` `preserving` | pending |
+| `A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart` | `@us-03 @driving_port @real-io` `bounded` | pending |
+| `A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too` | `@us-03 @driving_port @real-io` `bounded` | pending |
+| `A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history` | `@us-03 @real-io` `bounded` | pending |
+| `Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched` | `@us-03 @fidelity @real-io` `pure` | pending |
+| `Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing` | `@us-03 @error @real-io` `preserving` | pending |
+
+### Slice08 - nothing to show (5)
+
+| Scenario | Tags | State |
+|---|---|---|
+| `A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented` | `@driving_port @us-04 @error @real-io` `preserving` | pending |
+| `A_team_with_nothing_in_it_at_all_stays_empty_and_nothing_is_invented` | `@driving_port @us-04 @error @real-io` `preserving` | pending |
+| `A_team_nobody_is_syncing_any_more_stays_empty_for_the_period_since_it_stopped` | `@driving_port @us-04 @error @real-io` `preserving` | pending |
+| `A_period_that_reaches_further_back_than_the_team_does_still_returns_the_part_it_covers` | `@driving_port @us-04 @boundary @real-io` `bounded` | pending |
+| `The_limits_chart_stays_empty_for_a_period_that_predates_everything_the_team_holds` | `@driving_port @us-04 @error @real-io` `preserving` | pending |
+
+Error and edge scenarios are 17 of 40 (43%).
+
+## Wave: DISTILL / [REF] DISCUSS scenario coverage
+
+Every Gherkin scenario in the DISCUSS expansion has an executable counterpart. The two placeholders
+are resolved: `<cap>` is **90 days per pass**, and the `Scenario Outline` over chart status is
+expressed as two named scenarios driven through their real causes (a reference stretch with nothing
+behind it; a period in which nothing finished) rather than by asserting an internal status value.
+
+| DISCUSS scenario | Acceptance test |
+|---|---|
+| A leading gap before the first recorded day is filled | `The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded` |
+| An interior gap left by an instance that was not running is filled | `The_flow_coach_reads_across_the_stretch_the_instance_was_switched_off` |
+| Days after the last successful fetch are never reconstructed | `A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped` |
+| The walk back stops where the stored data stops | `The_trend_reaches_back_only_as_far_as_the_team_has_finished_anything` |
+| The walk back stops at the configured cap (`<cap>` = 90) | `A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once` |
+| A day with no closed items produces no row rather than four zeros | `A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero` |
+| A day the recorder genuinely wrote is never rewritten | `A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at` |
+| Requesting the same range twice reconstructs nothing the second time | `Looking_at_the_same_period_twice_costs_nothing_the_second_time` |
+| The request that discovers a gap is not slowed by it | `Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits` + `The_days_the_first_visit_could_not_show_are_there_on_the_next_one` |
+| A reconstructed day matches what the recorder wrote for that same day | `A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched` |
+| Work item age reconstructs as of the reconstructed day | `An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then` |
+| Outline: a chart that is not ready yields no row (NotReady) | `A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one` |
+| Outline: a chart that is not ready yields no row (BaselineInvalid) | `A_period_with_nothing_to_draw_limits_from_reports_no_limits` |
+| A collapsed limit band yields no row | `A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one` (second assertion) |
+| An owner with a pinned baseline still produces a series | `A_team_that_fixed_the_stretch_...` + `A_portfolio_that_fixed_the_stretch_...` |
+| An owner with no pinned baseline gets per-day limits | `A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history` |
+| Feature Size reconstructs only at Portfolio scope | `How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team` |
+| A range entirely before the data floor says so | `A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented` |
+| A fresh owner is not promised a forward-only fill | `A_team_with_nothing_in_it_at_all_stays_empty_and_nothing_is_invented` |
+
+Added beyond the DISCUSS set, each from a named gate or decision: the forward recorder's own quiet-day
+behaviour (DDD-13), the two directions of the maintenance coupling (G-5, G-6), the two concurrency
+probes (G-1, G-2), the demo-row interaction (DDD-15), the three cycle-time look-backs and portfolio
+scope (US-02), and the exact family set per scope (US-03 AC1).
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+Every driven adapter this story touches is exercised with real I/O. There are no in-memory doubles in
+this suite at all: the harness runs the production composition root over a real SQLite file.
+
+| Driven adapter | Real-I/O scenario |
+|---|---|
+| `IPercentilesOverTimeSnapshotRepository` (EF / SQLite) | every Slice05 and Slice06 scenario |
+| `IProcessBehaviorSnapshotRepository` (EF / SQLite) | every Slice07 scenario |
+| `IWorkItemRepository` (EF / SQLite) | every scenario that seeds finished or in-flight items |
+| `IRepository<Feature>` (EF / SQLite) | the two portfolio scenarios in Slice06, all portfolio scenarios in Slice07 |
+| `ITeamMetricsService` / `IPortfolioMetricsService` | exercised through the fill; pinned by the three fidelity scenarios |
+| `ILighthouseClock` | substituted (non-deterministic port), pinned at 2026-09-22 |
+| `ILicenseService` | substituted (external port), premium granted |
+| `DatabaseMaintenanceGate` | the two maintenance scenarios in Slice05 |
+| Unique index on both snapshot tables | `Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two` |
+
+No new external integration, so contract testing stays N/A as DESIGN recorded.
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+| Endpoint from DESIGN | Exercised over real HTTP by |
+|---|---|
+| `GET .../teams/{id}/metrics/percentiles-over-time` | Slice05 (all), Slice06, Slice08 |
+| `GET .../portfolios/{id}/metrics/percentiles-over-time` | Slice06 portfolio scenarios |
+| `GET .../teams/{id}/metrics/process-behavior-over-time` | Slice07 team scenarios, Slice08 |
+| `GET .../portfolios/{id}/metrics/process-behavior-over-time` | Slice07 portfolio scenarios |
+| `TeamDataRefreshed` / `PortfolioFeaturesRefreshed` (the write path) | the forward-recorder regression, the three fidelity scenarios, the concurrency scenario |
+
+No scenario calls a query, a reconciler or a snapshot repository to *make* filling happen. Opening the
+chart is what starts it, which is the story's central claim; reaching past the endpoint to start it
+would test a mechanism the product does not expose.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+No production scaffold files are created - this is brownfield and every type the scenarios touch
+already ships. Three seams the product does not have yet are declared on the test side instead, each
+throwing an NUnit assertion naming exactly what is missing, so that an un-skipped scenario is RED for
+the right reason and never passes vacuously:
+
+| Seam (in `ReconstructOverTimeHistoryAcceptanceTest`) | Replaced at DELIVER by |
+|---|---|
+| `TheReconstructionPassRunsToCompletion()` | awaiting the filler's drain |
+| `AReconstructionPassHeldInFlight()` | holding a pass open and releasing it on dispose |
+| `TwoReconstructionPassesRunAtTheSameInstant(...)` | two passes from two scopes against the same file |
+
+These matter more than the usual scaffold. Nine of the pending scenarios assert that **nothing** was
+written; without a seam that fails until the filler exists, all nine would pass against a product in
+which nothing writes rows at all.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+- **P-1. The filler must survive the test host, and must be drainable.** `TestWebApplicationFactory`
+  calls `services.RemoveAll<IHostedService>()`, so a filler registered only as a hosted service is
+  absent from every acceptance test. Register the concrete type as a singleton and add the hosted
+  service as a factory over it, and give it a drain that processes what is queued and returns when the
+  queue is empty. Without this the background half of the story is unobservable from an acceptance
+  test and the crafter will be tempted to sleep.
+- **P-2. The pass-in-flight predicate must be readable from the same singleton**, because
+  `An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in` asserts the gate consults
+  it while a pass is open.
+- **P-3. The three fidelity scenarios move the instance clock and then move it back.** They depend on
+  `ILighthouseClock` being the only source of "what day is it" on both the recording and the filling
+  path. Any place that re-derives today from `DateTime.UtcNow` will make them fail for a reason that
+  looks like a fidelity divergence and is not.
+- **P-4. G-1 and G-2 run here, not in the unit suite.** See the finding below.
+- **P-5. The empty-state wording is not asserted anywhere yet.** See the gap below.
+
+## Wave: DISTILL / [REF] Findings
+
+**F-1 - The SQLite constraint (G-2) forced no design change; the harness already satisfies it.**
+`TestWebApplicationFactory` runs each test against a real SQLite **file**
+(`DataSource=IntegrationTests_*.db;Pooling=False`) with `EnsureCreated()`, and both snapshot tables
+declare their natural key as a unique index in the model - so the index genuinely exists in the test
+database and a duplicate insert genuinely fails. The concurrency scenarios are therefore placed in
+this acceptance directory and nowhere else. The constraint DEVOPS named is real but applies to the
+unit suite, which uses `Microsoft.EntityFrameworkCore.InMemory`: a collision test written there would
+pass against an implementation with no backstop at all. Recorded as a placement rule rather than a
+design change.
+
+**F-2 - The latency budget is asserted as a property, not as a stopwatch.** DEVOPS lists "added
+latency < 50 ms on a gap-discovering request" as a backend integration assertion. A comparative
+wall-clock assertion under a parallel CI run is a flake generator, so
+`Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits` pins the
+property the budget stands for instead - the response carries only what was already persisted, and the
+request thread writes nothing. The 50 ms figure stays a dogfood measurement on the restored dev
+database, which is where DISCUSS said it would be measured. Flagged so nobody records it as covered by
+CI when it is not.
+
+**F-3 - AT gap, in delivery scope, deliberately unfilled: the empty-state wording.** Slice 04's whole
+point is that the words cannot be chosen until slices 01-03 settle which states remain reachable, so
+authoring frontend tests against wording now would be fixture theatre. Slice08 pins the **states**
+behind the endpoint; the crafter writes the widget tests in
+`Lighthouse.Frontend/src/pages/Common/MetricsView/` at slice 04, covering three states the widget must
+tell apart: the period predates everything the owner holds; the owner holds nothing at all; the owner
+stopped being synced. Carried as an obligation rather than left implicit.
+
+**F-4 - Two upstream acceptance criteria name symbols that DESIGN moves.** US-03 AC1 and AC3 are
+phrased against `TeamReaders`/`PortfolioReaders` and `BaselineValidationService.Validate`, and DDD-10
+and DDD-12 move both. The tests assert the behaviour instead, exactly as the DESIGN handoff note asked:
+the family **set** per scope (five for a team, six for a portfolio), and that a fixed reference stretch
+produces steady limits rather than an empty chart. No test names either symbol.
+
+**F-5 - Nothing contradicts an upstream decision.** The reconciliation gate found zero contradictions,
+and writing the scenarios surfaced none. FLAG-1 through FLAG-4 in the DESIGN section are already
+resolved or already routed elsewhere.
+
+## Wave: DISTILL / [REF] Outcomes registry
+
+**Not registered, and the reason rather than a silent skip.** The registry's three existing rows are
+each a named module with a stable input and output shape that callers can be held to
+(`paceBands.ts`, `dateWindow.ts`, `deliveryTeamLanes.ts`). The nearest candidate this story offers is
+the gap predicate - given a requested period, the days already held, the owner's last observation and
+the memo, which days are missing - and it is a genuine specification in shape. But DESIGN deliberately
+places it behind a port with one void method and no exposed result (DDD-3: the read path may ask, only
+the filler may write), so there is no output shape for a caller to depend on and nothing for a later
+feature to collide with.
+
+Re-evaluate at DELIVER **if** the crafter extracts that predicate as a pure function with a returned
+result. If it stays void-returning behind the port, it correctly has no row.

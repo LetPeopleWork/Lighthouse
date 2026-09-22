@@ -38,9 +38,20 @@ Write nothing. Persist findings to `docs/feature/story-6053-reconstruct-over-tim
 - Gap detection over the requested range: leading and interior days with no row (D5).
 - Walk-back terminating at the data floor, under a cap (D4).
 - Floor at the owner's `UpdateTime` — no day after it is reconstructed (D5).
-- Absence gate — never persist `P50=P70=P85=P95=0` (D7).
+- Absence gate — never persist `P50=P70=P85=P95=0`, **on both the reconstruction path and the forward
+  recorder** (D7 as answered by DDD-13). Gating only reconstruction would make D6 false: a day's row would
+  depend on which path reached it first, and fill-if-absent makes the recorder's all-zero row permanent.
+  **This half is a behaviour change to shipped code** — the daily recorder stops writing all-zero percentile
+  rows — so it needs a release-notes line and a `docs/metrics/predictability.md` update. Rows already
+  written stay; no repair migration.
 - Idempotency — a day already carrying a row is never rewritten.
 - Non-blocking: the series read enqueues and returns what exists now (D2 + D3).
+- **The maintenance-gate coupling, both directions (DEVOPS-1, gate G-5).** `DatabaseMaintenanceGate`
+  consults a pass-in-flight predicate owned by the filler alongside `statusStore.HasActiveWork()`, and the
+  filler abandons its pass when a maintenance operation is already active. **Added 2026-09-22 after DEVOPS**:
+  this is a safety property, not a feature, and slice 01 is the first slice that writes a row — deferring it
+  would ship a window in which `RestoreBackup` can run mid-pass and replace the database under a filler
+  holding an open context.
 
 ## OUT of scope
 
@@ -48,11 +59,6 @@ Write nothing. Persist findings to `docs/feature/story-6053-reconstruct-over-tim
 - Every PBC family → slice 03.
 - Empty-state copy and docs → slice 04.
 - Marking reconstructed points (D6 says no — SPIKE-01 confirmed it for the mechanism, so this stays out).
-- ~~Gating the *forward* recorder's zero-write path.~~ **Moved IN scope by DDD-13 (2026-09-22).** Gating
-  only reconstruction would make D6 false: a day's row would depend on which path reached it first, and
-  fill-if-absent makes the recorder's all-zero row permanent. Both paths share one gate. This is a
-  behaviour change to shipped code — it needs a release-notes line and a `docs/metrics/predictability.md`
-  update. Rows already written stay; no repair migration.
 - The ADR-108 / ADR-109 amendments themselves (written at finalization, not mid-slice).
 
 ## Learning hypothesis
