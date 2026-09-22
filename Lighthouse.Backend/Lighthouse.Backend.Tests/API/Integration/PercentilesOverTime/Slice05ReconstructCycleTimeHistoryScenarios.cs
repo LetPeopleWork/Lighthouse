@@ -297,6 +297,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         /// <summary>
+        /// A day lost to another copy costs that day, and only that day. The pass is stopped at the
+        /// instant it has worked its first day out and is about to write it, another copy records that
+        /// same day, and the pass is let go into a refusal it did not see coming - with eighty-nine days
+        /// of the window still ahead of it.
+        ///
+        /// One pass rather than two, and that is the whole reason this scenario exists next to the one
+        /// above it. With two copies walking the same window, whatever one abandons the other writes, so
+        /// the chart comes out whole whether the refusal was absorbed or took the rest of the walk down
+        /// with it. Only a single walk with nobody behind it leaves a hole that can be seen.
+        /// </summary>
+        // @us-01 @concurrency @real-io @sqlite @contract-shape:bounded-change
+        [Test]
+        public async Task A_day_another_copy_records_mid_pass_costs_that_day_and_not_the_rest_of_the_window()
+        {
+            var teamId = GivenATeamStillBeingRefreshed();
+            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-120), TodayDay);
+
+            var firstDayOfAPassWideWindow = TodayDay.AddDays(1 - ReconstructionCapInDays);
+            await WhenTheFlowCoachOpensTheCycleTimeTrend(teamId, firstDayOfAPassWideWindow, TodayDay);
+            var takenByTheOtherCopy = await WhenAnotherCopyRecordsTheDayThisPassIsAboutToWrite(teamId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheRestOfTheWindowWasStillFilledIn(teamId, firstDayOfAPassWideWindow, TodayDay, takenByTheOtherCopy.RecordedAt);
+                ThenTheDayStillReadsExactlyAsRecorded(teamId, takenByTheOtherCopy);
+            }
+        }
+
+        /// <summary>
         /// Filling in history and a routine refresh can land on the database at the same moment. Neither
         /// may lose its writes to the other, and nothing may end up on the chart twice.
         /// </summary>

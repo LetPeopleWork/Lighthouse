@@ -73,6 +73,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private FillPause fillPause = null!;
 
+        private StagedDayPause stagedDayPause = null!;
+
         /// <summary>
         /// The period of the last trend a scenario opened. A second replica standing in for another copy
         /// of the application is a replica whose user opened the same chart, so it walks the same days -
@@ -96,6 +98,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         {
             rootFactory = new TestWebApplicationFactory<Program>();
             fillPause = new FillPause();
+            stagedDayPause = new StagedDayPause();
 
             Factory = TestWebApplicationFactory<Program>
                 .WithTestAuthentication(rootFactory)
@@ -112,12 +115,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                         services.RemoveAll<ILicenseService>();
                         services.AddSingleton(license.Object);
 
-                        // The real writer, behind a latch a scenario can close. Nothing is intercepted
-                        // until a scenario asks for a pass to be held, so every other scenario runs the
-                        // shipped write path unchanged.
+                        // The real writer, behind two latches a scenario can close - one at the point a
+                        // day is worked out, one at the point it is committed. Nothing is intercepted
+                        // until a scenario arms one, so every other scenario runs the shipped write path
+                        // unchanged.
                         services.RemoveAll<IPercentileSnapshotWriter>();
                         services.AddScoped<IPercentileSnapshotWriter>(provider => new PausableFillWriter(
-                            ActivatorUtilities.CreateInstance<PercentileSnapshotWriter>(provider), fillPause));
+                            ActivatorUtilities.CreateInstance<PercentileSnapshotWriter>(provider), fillPause, stagedDayPause));
                     });
                 });
 
@@ -479,6 +483,50 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         /// <summary>
+        /// Runs one pass to the end while another writer takes one of its days out from under it. The
+        /// pass is held at the moment it has worked a day out and has not yet committed it,
+        /// <paramref name="takeTheDay"/> writes that same day from a connection of its own, and only
+        /// then is the pass let go - so its insert meets a row that was not there when it looked. The
+        /// day it was holding is handed back, because that is the day the other writer was told to take.
+        ///
+        /// Holding the pass where <see cref="AReconstructionPassHeldInFlight"/> holds it would not do:
+        /// there the pass has not yet looked to see whether the day is missing, so it would find the
+        /// other writer's row, step over it, and the refusal this exists to produce would never happen.
+        ///
+        /// One pass, not two. Two replicas walking the same window cannot show this at all - whatever
+        /// one abandons the other writes, so the window comes out whole either way and a pass that gives
+        /// up on its first refusal is indistinguishable from one that carries on.
+        /// </summary>
+        protected async Task<DateOnly> TheReconstructionPassRunsWhileAnotherWriterTakesADayFromUnderIt(Action<DateOnly> takeTheDay)
+        {
+            var filler = ThisReplicasFiller;
+            stagedDayPause.Arm();
+
+            var pass = Task.Run(() => filler.DrainAsync(CancellationToken.None));
+
+            var dayBeingCommitted = stagedDayPause.WaitUntilADayIsWorkedOutButNotCommitted(LongEnoughThatSomethingIsWrong);
+
+            Assert.That(dayBeingCommitted, Is.Not.Null,
+                "No pass reached the point of committing a day, so there is nothing for another writer to " +
+                "take. Either nothing was queued for this owner or the pass finished before it could be " +
+                "caught - and a scenario that then watches a pass meet a day someone else took is watching " +
+                "neither of those things happen.");
+
+            takeTheDay(dayBeingCommitted!.Value);
+
+            stagedDayPause.Release();
+
+            var finished = await Task.WhenAny(pass, Task.Delay(LongEnoughThatSomethingIsWrong));
+
+            Assert.That(finished, Is.SameAs(pass),
+                $"The pass never finished after {dayBeingCommitted:yyyy-MM-dd} was taken from under it.");
+
+            await pass;
+
+            return dayBeingCommitted.Value;
+        }
+
+        /// <summary>
         /// Runs two passes over the same owner at the same instant, one per replica.
         ///
         /// The second replica is a second filler instance rather than a second ask on this one, and the
@@ -673,8 +721,56 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         /// <summary>
-        /// The shipped writer with the latch in front of the gap-filling path only. Recording today goes
-        /// straight through, which is what lets a scenario run a refresh against a fill that is parked.
+        /// A latch across the moment a pass has worked a day out and is about to commit it. That gap is
+        /// the only place another writer can take the day away: before it, the pass has not yet looked
+        /// to see whether the day is missing and would simply step over the other writer's row.
+        ///
+        /// Closed only while a scenario is holding a pass, and only the first day to arrive is caught.
+        /// The day it caught is readable, so the scenario knows which one to take.
+        /// </summary>
+        private sealed class StagedDayPause
+        {
+            private readonly ManualResetEventSlim released = new(false);
+
+            private readonly ManualResetEventSlim reached = new(false);
+
+            private int closed;
+
+            private DateOnly dayHeld;
+
+            public void Arm()
+            {
+                released.Reset();
+                reached.Reset();
+                Volatile.Write(ref closed, 1);
+            }
+
+            public DateOnly? WaitUntilADayIsWorkedOutButNotCommitted(TimeSpan timeout)
+                => reached.Wait(timeout) ? dayHeld : null;
+
+            public void Release()
+            {
+                Volatile.Write(ref closed, 0);
+                released.Set();
+            }
+
+            public void ParkIfClosed(DateOnly day, TimeSpan timeout)
+            {
+                if (Interlocked.CompareExchange(ref closed, 0, 1) != 1)
+                {
+                    return;
+                }
+
+                dayHeld = day;
+                reached.Set();
+                released.Wait(timeout);
+            }
+        }
+
+        /// <summary>
+        /// The shipped writer with the latches in front of the gap-filling path only. Recording today
+        /// goes straight through, which is what lets a scenario run a refresh against a fill that is
+        /// parked.
         /// </summary>
         private sealed class PausableFillWriter : IPercentileSnapshotWriter
         {
@@ -682,10 +778,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             private readonly FillPause pause;
 
-            public PausableFillWriter(IPercentileSnapshotWriter shipped, FillPause pause)
+            private readonly StagedDayPause commitPause;
+
+            private DateOnly dayLastWorkedOut;
+
+            public PausableFillWriter(IPercentileSnapshotWriter shipped, FillPause pause, StagedDayPause commitPause)
             {
                 this.shipped = shipped;
                 this.pause = pause;
+                this.commitPause = commitPause;
             }
 
             public void RecordToday(
@@ -703,10 +804,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
             {
                 pause.ParkIfClosed(LongEnoughThatSomethingIsWrong);
+                dayLastWorkedOut = day;
                 shipped.FillDayIfAbsent(ownerId, ownerType, metricType, day, readPercentiles);
             }
 
-            public Task SaveFilledDay() => shipped.SaveFilledDay();
+            public Task SaveFilledDay()
+            {
+                commitPause.ParkIfClosed(dayLastWorkedOut, LongEnoughThatSomethingIsWrong);
+                return shipped.SaveFilledDay();
+            }
         }
 
         private sealed class HeldPass : IDisposable

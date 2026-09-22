@@ -21,6 +21,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private const string RestoreOperationId = "restore-under-test";
 
+        /// <summary>
+        /// Every trailing window a cycle-time day is written under. A copy of the application that
+        /// takes a day takes all of them, so a scenario standing in for one has to write all of them
+        /// too - a day half-written would be a state no copy of the application can produce.
+        /// </summary>
+        private static readonly int[] EveryCycleTimeHorizon = [30, 60, 90];
+
+        /// <summary>
+        /// What another copy leaves on a day it took. Nothing this team's items could produce - they
+        /// each take two days - so the scenario can tell whose row is on the chart at the end.
+        /// </summary>
+        private static readonly RecordedPercentileDay AsTheOtherCopyRecordsIt = new(default, 41, 43, 47, 53);
+
         // --- Given ---
 
         private int GivenATeamStillBeingRefreshed() => SeedTeamObservedUntil(TodayDay);
@@ -90,6 +103,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         private Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
 
         private Task WhenTheTeamsRefreshRuns(int teamId) => TheTeamsRefreshCompletes(teamId);
+
+        /// <summary>
+        /// Lets the pass get as far as having worked a day out, has another copy of the application
+        /// record that same day on its own connection, and only then lets the pass carry on into the
+        /// refusal. The day the other copy took is handed back so the scenario can say what became of
+        /// it.
+        /// </summary>
+        private async Task<RecordedPercentileDay> WhenAnotherCopyRecordsTheDayThisPassIsAboutToWrite(int teamId)
+        {
+            var takenByTheOtherCopy = default(RecordedPercentileDay);
+
+            await TheReconstructionPassRunsWhileAnotherWriterTakesADayFromUnderIt(
+                day => takenByTheOtherCopy = AnotherCopyOfTheApplicationRecords(teamId, day));
+
+            return takenByTheOtherCopy;
+        }
+
+        private RecordedPercentileDay AnotherCopyOfTheApplicationRecords(int teamId, DateOnly day)
+        {
+            foreach (var horizon in EveryCycleTimeHorizon)
+            {
+                SeedRecordedPercentileDay(
+                    teamId, OwnerType.Team, MetricType.CycleTime, horizon, day,
+                    AsTheOtherCopyRecordsIt.P50, AsTheOtherCopyRecordsIt.P70, AsTheOtherCopyRecordsIt.P85, AsTheOtherCopyRecordsIt.P95);
+            }
+
+            return AsTheOtherCopyRecordsIt with { RecordedAt = day };
+        }
 
         // --- Then ---
 
@@ -187,6 +228,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             Assert.That(held, Is.EqualTo(1),
                 $"Two fills of {day:yyyy-MM-dd} at the same instant must still leave one point on the chart, not two stacked on " +
                 "the same date.");
+        }
+
+        private void ThenTheRestOfTheWindowWasStillFilledIn(int teamId, DateOnly from, DateOnly to, DateOnly dayTheOtherCopyTook)
+        {
+            var missing = EveryDayFrom(from, to).Except(DaysHeldFor(teamId)).ToList();
+
+            Assert.That(missing, Is.Empty,
+                $"Another copy recorded {dayTheOtherCopyTook:yyyy-MM-dd} while this pass was about to write it, so this pass was " +
+                "refused that one day. One day is one day: the eighty-nine behind it were never in question, and a pass that walks " +
+                "away from all of them over a single refusal leaves the chart a gap nobody can see the cause of. Left unwritten: " +
+                $"{string.Join(", ", missing)}.");
         }
 
         private void ThenTheTrendIsUnchangedSince(int teamId, IReadOnlyList<DateOnly> before)
