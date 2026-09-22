@@ -17,5 +17,7 @@ jobs:
         with:
           node-version: '24'
 
+      # Node 24 cannot take a directory here — it tries to load the path as a
+      # module and dies with MODULE_NOT_FOUND. Naming the files survives that.
       - name: Run workflow script tests
-        run: node --test .github/scripts/
+        run: node --test .github/scripts/*.test.mjs
