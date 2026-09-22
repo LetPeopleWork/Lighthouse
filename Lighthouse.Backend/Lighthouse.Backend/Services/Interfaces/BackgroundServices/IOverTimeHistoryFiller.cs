@@ -7,19 +7,26 @@ namespace Lighthouse.Backend.Services.Interfaces.BackgroundServices
     /// somewhere other than the request that noticed them. The days are candidates rather than
     /// instructions: the pass still drops any that fall past the owner's last observation, which it
     /// can only know once it has loaded the owner.
+    ///
+    /// The ask names no metric because a pass covers every chart the owner has - percentiles and
+    /// process limits alike. Naming one would let the two fill at different moments, which is the
+    /// defect this whole seam exists to prevent: a lead comparing the limits chart against the
+    /// percentile tabs would be comparing two different stretches of history.
     /// </summary>
     public sealed record OverTimeFillRequest(
         int OwnerId,
         OwnerType OwnerType,
-        MetricType MetricType,
         IReadOnlyList<DateOnly> CandidateDays)
     {
         /// <summary>
         /// What makes two asks the same ask. Opening the same chart three times while the first walk
         /// is still running must not queue the same walk three times.
+        ///
+        /// The owner and nothing finer, which is only safe because a pass covers all of that owner's
+        /// charts. Collapse the key without widening the pass and an ask gets dropped while work it
+        /// covers is still outstanding - the family it named would then never be filled at all.
         /// </summary>
-        public (int OwnerId, OwnerType OwnerType, MetricType MetricType) Key
-            => (OwnerId, OwnerType, MetricType);
+        public (int OwnerId, OwnerType OwnerType) Key => (OwnerId, OwnerType);
     }
 
     /// <summary>

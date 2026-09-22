@@ -31,17 +31,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private const int MostDaysRememberedPerOwner = 512;
 
-        private readonly Dictionary<(int OwnerId, OwnerType OwnerType, MetricType MetricType), OwnerNotes> byOwner = [];
+        private readonly Dictionary<(int OwnerId, OwnerType OwnerType), OwnerNotes> byOwner = [];
 
         /// <summary>
         /// Whether a pass has already established that this day cannot be written. Answered from a
         /// dictionary and nothing else: the caller is a read somebody is waiting on.
         /// </summary>
-        public bool NoPassCanWrite(int ownerId, OwnerType ownerType, MetricType metricType, DateOnly day)
+        public bool NoPassCanWrite(int ownerId, OwnerType ownerType, DateOnly day)
         {
             lock (byOwner)
             {
-                return byOwner.TryGetValue((ownerId, ownerType, metricType), out var notes) && notes.RulesOut(day);
+                return byOwner.TryGetValue((ownerId, ownerType), out var notes) && notes.RulesOut(day);
             }
         }
 
@@ -50,19 +50,24 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// rules out every day rather than none.
         /// </summary>
         public void TheWalkReachesBackNoFurtherThan(
-            int ownerId, OwnerType ownerType, MetricType metricType, DateOnly? earliestDayTheItemsSupport)
+            int ownerId, OwnerType ownerType, DateOnly? earliestDayTheItemsSupport)
         {
             lock (byOwner)
             {
-                NotesFor((ownerId, ownerType, metricType)).ReachesBackNoFurtherThan(earliestDayTheItemsSupport);
+                NotesFor((ownerId, ownerType)).ReachesBackNoFurtherThan(earliestDayTheItemsSupport);
             }
         }
 
-        public void TheWalkHasAlreadyWorkedOut(int ownerId, OwnerType ownerType, MetricType metricType, DateOnly day)
+        /// <summary>
+        /// A day nothing more can be got out of. Only a day every one of the owner's charts has been
+        /// through counts: written down after some of them, the rest are never asked for again and the
+        /// families that never got their turn become permanently unfillable.
+        /// </summary>
+        public void TheWalkHasAlreadyWorkedOut(int ownerId, OwnerType ownerType, DateOnly day)
         {
             lock (byOwner)
             {
-                NotesFor((ownerId, ownerType, metricType)).AlreadyWorkedOut(day);
+                NotesFor((ownerId, ownerType)).AlreadyWorkedOut(day);
             }
         }
 
@@ -82,14 +87,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         {
             lock (byOwner)
             {
-                foreach (var key in byOwner.Keys.Where(key => key.OwnerId == ownerId && key.OwnerType == ownerType).ToList())
-                {
-                    byOwner.Remove(key);
-                }
+                byOwner.Remove((ownerId, ownerType));
             }
         }
 
-        private OwnerNotes NotesFor((int OwnerId, OwnerType OwnerType, MetricType MetricType) key)
+        private OwnerNotes NotesFor((int OwnerId, OwnerType OwnerType) key)
         {
             if (byOwner.TryGetValue(key, out var notes))
             {

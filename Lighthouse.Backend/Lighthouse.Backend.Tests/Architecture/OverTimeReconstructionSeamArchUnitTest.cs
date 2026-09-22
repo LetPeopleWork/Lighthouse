@@ -37,11 +37,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] TheReadPath =
         [
             "Services/Implementation/GapAskingPercentilesOverTimeSeriesQuery.cs",
+            "Services/Implementation/GapAskingProcessBehaviorSeriesQuery.cs",
             "Services/Implementation/OverTimeGapReconciler.cs",
         ];
 
-        /// <summary>The two ways a percentile day gets written.</summary>
-        private static readonly string[] TheWriteSide = ["IPercentileSnapshotWriter", "IPercentilesOverTimeSnapshotRepository"];
+        /// <summary>Every way an over-time day gets written, percentile and process limit alike.</summary>
+        private static readonly string[] TheWriteSide =
+        [
+            "IPercentileSnapshotWriter",
+            "IPercentilesOverTimeSnapshotRepository",
+            "IProcessBehaviorSnapshotWriter",
+            "IProcessBehaviorSnapshotRepository",
+        ];
 
         /// <summary>
         /// The cycle-time trailing windows, spelled as they appear in a collection expression. Written
@@ -164,7 +171,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// request thread" unavailable rather than merely untested.
         /// </summary>
         [Test]
-        public void TheReadPath_CannotWriteAPercentileDay()
+        public void TheReadPath_CannotWriteAnOverTimeDay()
         {
             using (Assert.EnterMultipleScope())
             {

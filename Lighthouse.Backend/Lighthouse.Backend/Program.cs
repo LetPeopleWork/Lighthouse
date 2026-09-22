@@ -1368,7 +1368,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(services => services.GetRequiredService<ReconstructionMemo>());
 
-            builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
+            builder.Services.AddScoped<ProcessBehaviorSeriesQuery>();
+            builder.Services.AddScoped<IProcessBehaviorSeriesQuery, GapAskingProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();
             builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();

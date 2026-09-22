@@ -43,5 +43,12 @@ namespace Lighthouse.Backend.Services.Interfaces
         /// that already carries limits untouched.
         /// </summary>
         void FillDayIfAbsent(int ownerId, OwnerType ownerType, ProcessBehaviorFamilyReader family, DateOnly day);
+
+        /// <summary>
+        /// Commits the day's staged rows, accepting that another copy of the application may have
+        /// recorded the same day in the meantime: a row refused because it is already stored is a day
+        /// that is now present either way, which is what was wanted. Anything else is thrown on.
+        /// </summary>
+        Task SaveFilledDay();
     }
 }

@@ -29,10 +29,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// </summary>
         private const int MostOwnersWaitingAtOnce = 256;
 
-        // Operator alerting groups on the metric family rather than the metric type, so every failure
-        // reported from a percentile pass carries the same value here. A per-type value would split
-        // one alert into several.
-        private const string MetricFamily = "Percentiles";
+        // Operator alerting groups on the work rather than on the chart, and one pass covers every
+        // chart an owner has, so every failure reported from a pass carries the same value here. A
+        // per-chart value would split one alert into several.
+        private const string MetricFamily = "OverTime";
 
         /// <summary>
         /// The longest one pass may keep going. This is not a throughput figure and does not move with
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         private readonly Channel<OverTimeFillRequest> waiting = Channel.CreateBounded<OverTimeFillRequest>(
             new BoundedChannelOptions(MostOwnersWaitingAtOnce) { FullMode = BoundedChannelFullMode.DropWrite });
 
-        private readonly HashSet<(int OwnerId, OwnerType OwnerType, MetricType MetricType)> alreadyAsked = [];
+        private readonly HashSet<(int OwnerId, OwnerType OwnerType)> alreadyAsked = [];
 
         private readonly IServiceScopeFactory scopeFactory;
         private readonly ILogger<OverTimeHistoryFiller> logger;
@@ -159,13 +159,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 return;
             }
 
-            var writer = services.GetRequiredService<IPercentileSnapshotWriter>();
+            var writers = new OverTimeWriters(
+                services.GetRequiredService<IPercentileSnapshotWriter>(),
+                services.GetRequiredService<IProcessBehaviorSnapshotWriter>());
             var maintenance = services.GetRequiredService<DatabaseMaintenanceGate>();
             var memo = services.GetRequiredService<ReconstructionMemo>();
 
             try
             {
-                await WalkAsync(writer, maintenance, memo, request, target, cancellationToken);
+                await WalkAsync(writers, maintenance, memo, request, target, cancellationToken);
             }
             finally
             {
@@ -180,7 +182,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         }
 
         private async Task WalkAsync(
-            IPercentileSnapshotWriter writer,
+            OverTimeWriters writers,
             DatabaseMaintenanceGate maintenance,
             ReconstructionMemo memo,
             OverTimeFillRequest request,
@@ -192,7 +194,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             // were noticed: a chart load may cost a scan of the rows it already holds and no more.
             var earliestDayTheItemsSupport = target.EarliestDayTheItemsSupport();
             memo.TheWalkReachesBackNoFurtherThan(
-                request.OwnerId, request.OwnerType, request.MetricType, earliestDayTheItemsSupport);
+                request.OwnerId, request.OwnerType, earliestDayTheItemsSupport);
 
             var timeSpentOnThisPass = Stopwatch.StartNew();
             var daysAlreadyTried = 0;
@@ -242,7 +244,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                     continue;
                 }
 
-                await FillOneDayAsync(writer, memo, request, day, target);
+                await FillOneDayAsync(writers, memo, request, day, target);
                 daysAlreadyTried++;
             }
         }
@@ -259,29 +261,71 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             => earliestDayTheItemsSupport is null || day < earliestDayTheItemsSupport || day > lastObservedOn;
 
         /// <summary>
-        /// One day, written on its own. A day that cannot be written is one day: the pass carries on
-        /// to the next, and the day it skipped is simply still missing when the next chart load looks.
-        /// Abandoning the walk here would cost the other eighty-nine days over a single bad one.
+        /// One day of every chart the owner has, written on its own. A day that cannot be written is
+        /// one day: the pass carries on to the next, and the day it skipped is simply still missing
+        /// when the next chart load looks. Abandoning the walk here would cost the other eighty-nine
+        /// days over a single bad one.
+        ///
+        /// The two kinds of chart are staged and committed separately so that a fault in one leaves
+        /// the other's rows written rather than discarding them - but the day is only settled once
+        /// both got through, because a day remembered as settled is never offered to a pass again.
         /// </summary>
         private async Task FillOneDayAsync(
-            IPercentileSnapshotWriter writer, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, PassTarget target)
+            OverTimeWriters writers, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, PassTarget target)
         {
-            try
-            {
-                writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, request.MetricType, day, target.ReadPercentiles);
-                await writer.SaveFilledDay();
+            var percentilesAreDone = await FillOneDayOfAsync(
+                writers.Percentiles,
+                request,
+                day,
+                writer =>
+                {
+                    foreach (var family in target.PercentileFamilies)
+                    {
+                        writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, family.MetricType, day, family.ReadPercentiles);
+                    }
+                },
+                writer => writer.SaveFilledDay());
 
-                // Worked out once is worked out for good: the reading follows from the owner's stored
-                // items, and those change only when the owner is refreshed - which is the event that
-                // forgets this again. The day the walk declined to write is the case this exists for,
-                // because left unremembered it is found missing by every later chart load, each of
-                // which starts another pass that declines it again.
-                memo.TheWalkHasAlreadyWorkedOut(request.OwnerId, request.OwnerType, request.MetricType, day);
-            }
-            catch (Exception failure)
+            var limitsAreDone = await FillOneDayOfAsync(
+                writers.ProcessBehavior,
+                request,
+                day,
+                writer =>
+                {
+                    foreach (var family in target.ProcessBehaviorFamilies)
+                    {
+                        writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, family, day);
+                    }
+                },
+                writer => writer.SaveFilledDay());
+
+            if (!percentilesAreDone || !limitsAreDone)
             {
                 // Deliberately not remembered: a day lost to a fault is worth another try, unlike one
                 // the walk declined on the merits.
+                return;
+            }
+
+            // Worked out once is worked out for good: the reading follows from the owner's stored
+            // items, and those change only when the owner is refreshed - which is the event that
+            // forgets this again. The day the walk declined to write is the case this exists for,
+            // because left unremembered it is found missing by every later chart load, each of
+            // which starts another pass that declines it again.
+            memo.TheWalkHasAlreadyWorkedOut(request.OwnerId, request.OwnerType, day);
+        }
+
+        private async Task<bool> FillOneDayOfAsync<TWriter>(
+            TWriter writer, OverTimeFillRequest request, DateOnly day, Action<TWriter> stageEveryFamily, Func<TWriter, Task> commit)
+        {
+            try
+            {
+                stageEveryFamily(writer);
+                await commit(writer);
+
+                return true;
+            }
+            catch (Exception failure)
+            {
                 logger.LogError(
                     failure,
                     "Over-time reconstruction could not write {Day} for {OwnerType} {OwnerId} ({MetricFamily}); the rest of the pass continues",
@@ -289,6 +333,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                     request.OwnerType,
                     request.OwnerId,
                     MetricFamily);
+
+                return false;
             }
         }
 
@@ -296,13 +342,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         {
             return request.OwnerType switch
             {
-                OwnerType.Team => TeamTarget(services, request.OwnerId, request.MetricType),
-                OwnerType.Portfolio => PortfolioTarget(services, request.OwnerId, request.MetricType),
+                OwnerType.Team => TeamTarget(services, request.OwnerId),
+                OwnerType.Portfolio => PortfolioTarget(services, request.OwnerId),
                 _ => null,
             };
         }
 
-        private static PassTarget? TeamTarget(IServiceProvider services, int teamId, MetricType metricType)
+        private static PassTarget? TeamTarget(IServiceProvider services, int teamId)
         {
             var team = services.GetRequiredService<IRepository<Team>>().GetById(teamId);
             if (team is null)
@@ -314,14 +360,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var workItems = services.GetRequiredService<IWorkItemRepository>();
             var clock = services.GetRequiredService<ILighthouseClock>();
 
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles =
-                metricType == MetricType.WorkItemAge
-                    ? (_, windowEnd) => metrics.GetWorkItemAgePercentilesForTeam(team, windowEnd)
-                    : (windowStart, windowEnd) => metrics.GetCycleTimePercentilesForTeam(team, windowStart, windowEnd);
-
             return new PassTarget(
                 DateOnly.FromDateTime(team.UpdateTime),
-                readPercentiles,
+                [
+                    new(MetricType.CycleTime, (windowStart, windowEnd) => metrics.GetCycleTimePercentilesForTeam(team, windowStart, windowEnd)),
+                    new(MetricType.WorkItemAge, (_, windowEnd) => metrics.GetWorkItemAgePercentilesForTeam(team, windowEnd)),
+                ],
+                services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team),
                 () => metrics.InvalidateTeamMetrics(team),
                 () => EarliestFinishedDay(
                     clock,
@@ -329,7 +374,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                         .Select(item => item.ClosedDate)));
         }
 
-        private static PassTarget? PortfolioTarget(IServiceProvider services, int portfolioId, MetricType metricType)
+        private static PassTarget? PortfolioTarget(IServiceProvider services, int portfolioId)
         {
             var portfolio = services.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId);
             if (portfolio is null)
@@ -341,14 +386,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var deliveries = services.GetRequiredService<IRepository<Feature>>();
             var clock = services.GetRequiredService<ILighthouseClock>();
 
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles =
-                metricType == MetricType.WorkItemAge
-                    ? (_, windowEnd) => metrics.GetWorkItemAgePercentilesForPortfolio(portfolio, windowEnd)
-                    : (windowStart, windowEnd) => metrics.GetCycleTimePercentilesForPortfolio(portfolio, windowStart, windowEnd);
-
             return new PassTarget(
                 DateOnly.FromDateTime(portfolio.UpdateTime),
-                readPercentiles,
+                [
+                    new(MetricType.CycleTime, (windowStart, windowEnd) => metrics.GetCycleTimePercentilesForPortfolio(portfolio, windowStart, windowEnd)),
+                    new(MetricType.WorkItemAge, (_, windowEnd) => metrics.GetWorkItemAgePercentilesForPortfolio(portfolio, windowEnd)),
+                ],
+                services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio),
                 () => metrics.InvalidatePortfolioMetrics(portfolio),
                 () => EarliestFinishedDay(
                     clock,
@@ -370,7 +414,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             return earliest is null ? null : clock.ToInstanceDay(earliest.Value);
         }
 
-        private void Forget((int OwnerId, OwnerType OwnerType, MetricType MetricType) key)
+        private void Forget((int OwnerId, OwnerType OwnerType) key)
         {
             lock (alreadyAsked)
             {
@@ -378,10 +422,36 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
         }
 
+        /// <summary>
+        /// Everything one pass needs about one owner: how far forward its observations reach, every
+        /// chart it has, and how to find where its stored items begin.
+        ///
+        /// Every chart rather than the one that was opened, because two asks for the same owner are
+        /// the same ask. Narrow this to one family and the other families' asks are dropped while the
+        /// work they cover is still outstanding, and the charts they belong to never fill at all.
+        ///
+        /// The process-behaviour families are the writer's own list rather than a copy made here. A
+        /// copy is a second place the set can be changed, and the two then disagree about what a scope
+        /// records without anything saying so.
+        /// </summary>
         private sealed record PassTarget(
             DateOnly LastObservedOn,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> ReadPercentiles,
+            IReadOnlyList<PercentileFamilyReader> PercentileFamilies,
+            IReadOnlyList<ProcessBehaviorFamilyReader> ProcessBehaviorFamilies,
             Action InvalidateReadCache,
             Func<DateOnly?> EarliestDayTheItemsSupport);
+
+        /// <summary>One percentile family of one owner, together with the chart to read it from.</summary>
+        private sealed record PercentileFamilyReader(
+            MetricType MetricType,
+            Func<DateTime, DateTime, IEnumerable<PercentileValue>> ReadPercentiles);
+
+        /// <summary>
+        /// The two write policies a pass commits through. Held together because a day is one day
+        /// across both of them: the pass writes each family's row and only then counts the day done.
+        /// </summary>
+        private sealed record OverTimeWriters(
+            IPercentileSnapshotWriter Percentiles,
+            IProcessBehaviorSnapshotWriter ProcessBehavior);
     }
 }

@@ -90,6 +90,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         private (DateOnly From, DateOnly To)? periodLastOpened;
 
+        /// <summary>
+        /// The team the current scenario's sized deliveries are broken down for, once one has been
+        /// needed. Cleared per scenario alongside the database it lives in: the fixture is one object
+        /// for the whole class, so an id kept from the previous scenario would name a row that the
+        /// next scenario's fresh database does not have.
+        /// </summary>
+        private int? teamTheDeliveriesAreBrokenDownFor;
+
         protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
         protected HttpClient Client { get; private set; } = null!;
@@ -106,6 +114,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             rootFactory = new TestWebApplicationFactory<Program>();
             fillPause = new FillPause();
             stagedDayPause = new StagedDayPause();
+            teamTheDeliveriesAreBrokenDownFor = null;
 
             Factory = TestWebApplicationFactory<Program>
                 .WithTestAuthentication(rootFactory)
@@ -350,8 +359,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             repository.Save().GetAwaiter().GetResult();
         }
 
+        /// <summary>A delivery this portfolio finished, of no particular size.</summary>
         protected void SeedDeliveryFinishedOn(int portfolioId, string referenceId, DateOnly startedOn, DateOnly closedOn)
+            => SeedFinishedDelivery(portfolioId, referenceId, startedOn, closedOn, brokenDownIntoItems: null);
+
+        /// <summary>
+        /// A delivery this portfolio finished, of a stated size. How big a delivery is, is how much
+        /// work it was broken down into for the teams doing it - so a delivery with no breakdown has a
+        /// size of zero, and a portfolio whose deliveries all have one genuinely has no size process to
+        /// report. Scenarios that read "how big are deliveries getting" have to seed through here; the
+        /// plain seeder above leaves that question with no honest answer.
+        /// </summary>
+        protected void SeedSizedDeliveryFinishedOn(int portfolioId, string referenceId, DateOnly startedOn, DateOnly closedOn, int brokenDownIntoItems)
+            => SeedFinishedDelivery(portfolioId, referenceId, startedOn, closedOn, brokenDownIntoItems);
+
+        private void SeedFinishedDelivery(int portfolioId, string referenceId, DateOnly startedOn, DateOnly closedOn, int? brokenDownIntoItems)
         {
+            var doneByTeamId = brokenDownIntoItems.HasValue ? TheTeamTheDeliveriesAreBrokenDownFor() : (int?)null;
+
             using var scope = Factory.Services.CreateScope();
             var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
             var repository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
@@ -370,8 +395,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             };
             delivery.Portfolios.Add(portfolio);
 
+            if (doneByTeamId.HasValue)
+            {
+                var doneBy = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(doneByTeamId.Value)!;
+
+                // Nothing left to do: the delivery is finished. Only the total is what its size is read
+                // from, and a delivery still carrying remaining work would additionally need a forecast
+                // before the rest of the product would treat it as answerable.
+                delivery.AddOrUpdateWorkForTeam(doneBy, 0, brokenDownIntoItems!.Value);
+            }
+
             repository.Add(delivery);
             repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// The team a sized delivery's work is broken down for. One team for the whole scenario, made
+        /// on first use, because which team does the work never matters to anything asked here - only
+        /// that a breakdown needs one to belong to.
+        ///
+        /// No chart is ever opened for it, so no reconstruction pass is ever queued for it and it holds
+        /// no over-time rows of its own. A scenario that asserts a team reports no delivery sizes is
+        /// asserting that about the team it actually read, not about this one.
+        /// </summary>
+        private int TheTeamTheDeliveriesAreBrokenDownFor()
+        {
+            teamTheDeliveriesAreBrokenDownFor ??= SeedTeamObservedUntil(TodayDay);
+
+            return teamTheDeliveriesAreBrokenDownFor.Value;
         }
 
         /// <summary>
@@ -598,7 +649,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 Factory.Services.GetRequiredService<ILogger<OverTimeHistoryFiller>>());
 
             otherReplica.AskFor(new OverTimeFillRequest(
-                ownerId, ownerType, MetricType.CycleTime, DaysCarryingNoReadingYet(ownerId, ownerType, MetricType.CycleTime)));
+                ownerId, ownerType, DaysCarryingNoReadingYet(ownerId, ownerType, MetricType.CycleTime)));
 
             await Task.WhenAll(
                 Task.Run(() => thisReplica.DrainAsync(CancellationToken.None)),
@@ -623,7 +674,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 budget);
 
             passOnABudget.AskFor(new OverTimeFillRequest(
-                ownerId, ownerType, metricType, DaysCarryingNoReadingYet(ownerId, ownerType, metricType)));
+                ownerId, ownerType, DaysCarryingNoReadingYet(ownerId, ownerType, metricType)));
 
             await passOnABudget.DrainAsync(CancellationToken.None);
         }

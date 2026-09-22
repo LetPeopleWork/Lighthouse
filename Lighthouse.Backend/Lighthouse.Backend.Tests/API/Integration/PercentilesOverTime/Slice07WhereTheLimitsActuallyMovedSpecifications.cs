@@ -49,13 +49,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
+        /// <summary>
+        /// Every delivery carries a size, and no two consecutive ones carry the same size. Both halves
+        /// are load-bearing for this slice: a portfolio whose deliveries have no size has no size
+        /// process to report and the size chart correctly says so, and a run of identically sized
+        /// deliveries has a centre but no spread, which is not the chart a lead reads "did the limits
+        /// move" off.
+        /// </summary>
         private void GivenThePortfolioFinishedOneDeliveryADayFrom(int portfolioId, DateOnly from, DateOnly to)
         {
             for (var day = from; day <= to; day = day.AddDays(1))
             {
-                SeedDeliveryFinishedOn(portfolioId, $"{portfolioId}-{day:yyyyMMdd}", day.AddDays(-4), day);
+                SeedSizedDeliveryFinishedOn(portfolioId, $"{portfolioId}-{day:yyyyMMdd}", day.AddDays(-4), day, HowBigTheDeliveryFinishedOnWas(day));
             }
         }
+
+        /// <summary>
+        /// How much work the delivery that finished on <paramref name="day"/> was broken down into.
+        /// Deliveries vary in size; the arithmetic only has to make them vary in a way that does not
+        /// depend on when the suite runs.
+        /// </summary>
+        private static int HowBigTheDeliveryFinishedOnWas(DateOnly day) => 3 + (day.DayNumber % 5);
 
         /// <summary>
         /// The lead has fixed the stretch the limits are drawn from, rather than letting it follow the
@@ -133,6 +147,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 "A portfolio reports six behaviours when it records today, so it must fill in all six for past days too.");
         }
 
+        /// <summary>
+        /// Only the first half turns on what was seeded: seed deliveries with no size and it fails, seed
+        /// them with one and it passes. The second half cannot be made to fail by any arrangement - a
+        /// team's family set is built without a delivery-size reader because there is no team-side
+        /// method to read one from, so no amount of seeded data produces the row it looks for. It is
+        /// kept because it still fails on the one edit that would break the promise - a delivery-size
+        /// reader added to the team's family set - and it says in the scenario's own words what that
+        /// set is for. Read it as the statement, not as the proof; the proof is the recorder's
+        /// family-set assertion, which names the whole set rather than one absent member.
+        /// </summary>
         private void ThenDeliverySizeIsReportedForThePortfolioAndNotForTheTeam(int teamId, int portfolioId)
         {
             using (Assert.EnterMultipleScope())

@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @driving_port @us-03 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @driving_port @us-03 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer()
         {
             var portfolioId = GivenAPortfolioStillBeingRefreshed();
@@ -52,7 +50,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-03 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team()
         {
             var teamId = GivenATeamStillBeingRefreshed();

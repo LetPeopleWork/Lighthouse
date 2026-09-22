@@ -18,10 +18,9 @@ namespace Lighthouse.Backend.Services.Implementation
         public void AskForTheDaysThatAreMissing(
             int ownerId,
             OwnerType ownerType,
-            MetricType metricType,
             DateOnly? from,
             DateOnly? to,
-            IReadOnlyList<PercentilesOverTimeSnapshot> daysAlreadyHeld)
+            IReadOnlyList<DateOnly> daysAlreadyHeld)
         {
             // A request with no start bound is asking for the whole history. Where that history begins
             // is a property of the owner's stored items, and finding it out means a query on the thread
@@ -32,24 +31,29 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var missing = DaysWithoutAReading(ownerId, ownerType, metricType, from.Value, to ?? clock.Today, daysAlreadyHeld);
+            var missing = DaysWithoutAReading(ownerId, ownerType, from.Value, to ?? clock.Today, daysAlreadyHeld);
             if (missing.Count == 0)
             {
                 return;
             }
 
-            filler.AskFor(new OverTimeFillRequest(ownerId, ownerType, metricType, missing));
+            filler.AskFor(new OverTimeFillRequest(ownerId, ownerType, missing));
         }
 
+        /// <summary>
+        /// The days come from whichever chart noticed them, and the pass they are handed to fills every
+        /// chart the owner has. That is deliberate and self-correcting: a day the other chart already
+        /// holds is stepped over by the writer, and a day only the other chart is missing is noticed the
+        /// next time that chart is opened.
+        /// </summary>
         private List<DateOnly> DaysWithoutAReading(
             int ownerId,
             OwnerType ownerType,
-            MetricType metricType,
             DateOnly from,
             DateOnly to,
-            IReadOnlyList<PercentilesOverTimeSnapshot> daysAlreadyHeld)
+            IReadOnlyList<DateOnly> daysAlreadyHeld)
         {
-            var held = daysAlreadyHeld.Select(day => day.RecordedAt).ToHashSet();
+            var held = daysAlreadyHeld.ToHashSet();
             var missing = new List<DateOnly>();
 
             for (var day = from; day <= to && missing.Count < MostDaysOneVisitAsksFor; day = day.AddDays(1))
@@ -58,7 +62,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 // again on every load for as long as the instance runs and looking at a settled period
                 // never gets any cheaper. This is a dictionary lookup and nothing else - whatever it
                 // took to find that out was paid once, in a pass, off this thread.
-                if (held.Contains(day) || memo.NoPassCanWrite(ownerId, ownerType, metricType, day))
+                if (held.Contains(day) || memo.NoPassCanWrite(ownerId, ownerType, day))
                 {
                     continue;
                 }

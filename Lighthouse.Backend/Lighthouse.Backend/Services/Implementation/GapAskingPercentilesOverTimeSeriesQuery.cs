@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var held = servedFromWhatIsStored.GetSeries(ownerId, ownerType, metricType, horizon, from, to);
 
-            reconciler.AskForTheDaysThatAreMissing(ownerId, ownerType, metricType, from, to, held);
+            reconciler.AskForTheDaysThatAreMissing(ownerId, ownerType, from, to, [.. held.Select(day => day.RecordedAt)]);
 
             return held;
         }
