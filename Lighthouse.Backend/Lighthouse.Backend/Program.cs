@@ -1357,6 +1357,7 @@ namespace Lighthouse.Backend
             // test can observe this at all, since a test host runs no background work.
             builder.Services.AddSingleton<OverTimeHistoryFiller>();
             builder.Services.AddSingleton<IOverTimeHistoryFiller>(services => services.GetRequiredService<OverTimeHistoryFiller>());
+            builder.Services.AddSingleton<IOverTimeHistoryFillActivity>(services => services.GetRequiredService<OverTimeHistoryFiller>());
             builder.Services.AddHostedService(services => services.GetRequiredService<OverTimeHistoryFiller>());
             builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();

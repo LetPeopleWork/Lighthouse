@@ -22,7 +22,17 @@ namespace Lighthouse.Backend.Services.Interfaces.BackgroundServices
             => (OwnerId, OwnerType, MetricType);
     }
 
-    public interface IOverTimeHistoryFiller
+    /// <summary>
+    /// Whether history is being filled in at this instant, and nothing else. The database maintenance
+    /// gate needs that one fact before it lets an operator swap the database file out from under an
+    /// open write, and must not be able to reach past it into starting, stopping or queueing a fill.
+    /// </summary>
+    public interface IOverTimeHistoryFillActivity
+    {
+        bool HasPassInFlight { get; }
+    }
+
+    public interface IOverTimeHistoryFiller : IOverTimeHistoryFillActivity
     {
         /// <summary>
         /// Takes the ask and returns immediately. Never throws and never blocks: the caller is a read
@@ -37,11 +47,5 @@ namespace Lighthouse.Backend.Services.Interfaces.BackgroundServices
         /// can have exactly that instead of sleeping.
         /// </summary>
         Task DrainAsync(CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Whether a pass is writing at this instant. The database maintenance gate consults it before
-        /// letting an operator swap the file out from under an open transaction.
-        /// </summary>
-        bool HasPassInFlight { get; }
     }
 }

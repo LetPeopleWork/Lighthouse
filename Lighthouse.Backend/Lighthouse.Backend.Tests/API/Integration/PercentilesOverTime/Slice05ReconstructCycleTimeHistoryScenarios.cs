@@ -241,7 +241,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @maintenance @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -264,7 +263,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @maintenance @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task The_chart_stops_filling_itself_in_while_the_operator_is_restoring_the_database()
         {
             var teamId = GivenATeamStillBeingRefreshed();

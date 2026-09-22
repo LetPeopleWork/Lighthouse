@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -130,9 +131,26 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
 
             var writer = services.GetRequiredService<IPercentileSnapshotWriter>();
+            var maintenance = services.GetRequiredService<DatabaseMaintenanceGate>();
 
             foreach (var day in request.CandidateDays)
             {
+                // A backup, restore or clear replaces the database file, so writing into it while one
+                // runs is what this stands down for. Asked once per day rather than once per pass
+                // because a pass outlives the moment it started: the operator may press the button
+                // halfway through the walk. Giving up mid-walk costs nothing here - the days already
+                // written stay written, and the next chart load asks for whatever is still missing.
+                if (maintenance.IsMaintenanceOperationActive)
+                {
+                    logger.LogInformation(
+                        "Over-time reconstruction stood down for {OwnerType} {OwnerId} ({MetricFamily}); a database maintenance operation is running",
+                        request.OwnerType,
+                        request.OwnerId,
+                        MetricFamily);
+
+                    break;
+                }
+
                 // Past the owner's last observation its items are frozen at the break, so a reading
                 // there would draw a confident line over a period in which nothing was watched.
                 if (day > target.LastObservedOn || cancellationToken.IsCancellationRequested)
