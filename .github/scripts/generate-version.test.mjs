@@ -63,7 +63,7 @@ test('counts the current run on a push to main', async () => {
 	assert.equal(result.fileversion, '26.9.22.4');
 });
 
-test('does not report zero when the API serves a stale page', { skip: 'RED until step 01-02 — Bug #6068' }, async () => {
+test('does not report zero when the API serves a stale page', async () => {
 	const outcome = await settle(
 		generateVersion({
 			listRuns: async ({ page }) => (page === 1 ? STALE_PAGE : []),
@@ -82,7 +82,7 @@ test('does not report zero when the API serves a stale page', { skip: 'RED until
 	);
 });
 
-test('derives the branch from the head ref on a pull_request', { skip: 'RED until step 01-02 — Bug #6068' }, async () => {
+test('derives the branch from the head ref on a pull_request', async () => {
 	const queriedBranches = [];
 
 	const result = await generateVersion({
@@ -110,7 +110,7 @@ test('derives the branch from the head ref on a pull_request', { skip: 'RED unti
 	);
 });
 
-test('retries until the current run becomes visible', { skip: 'RED until step 01-02 — Bug #6068' }, async () => {
+test('retries until the current run becomes visible', async () => {
 	let calls = 0;
 
 	const outcome = await settle(
@@ -148,7 +148,7 @@ test('retries until the current run becomes visible', { skip: 'RED until step 01
 	);
 });
 
-test('fails loudly rather than emitting a .0 version', { skip: 'RED until step 01-02 — Bug #6068' }, async () => {
+test('fails loudly rather than emitting a .0 version', async () => {
 	const outcome = await settle(
 		generateVersion({
 			listRuns: async () => STALE_PAGE,
