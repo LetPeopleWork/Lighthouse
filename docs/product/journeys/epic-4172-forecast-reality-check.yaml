@@ -16,9 +16,11 @@ journeys:
       A delivery-forecaster who is about to publish a forecast presses one button on the Team's Forecast
       tab and, without typing a single date, gets one sentence back: whether the sampling window behind
       every forecast this Team produces is sound, and which of the four confidence levels actually held up
-      against what the Team really delivered. If the window is outside the sound range they change it from
-      where they are standing; if it is inside — the usual case — they are told so plainly, and the thing
-      they take away is which number to quote rather than which setting to change.
+      against what the Team really delivered. They leave with two findings and act on both themselves: if
+      the window is outside the sound range they change it using the throughput control already visible in
+      the Team header on the same screen; if it is inside — the usual case — they are told so plainly, and
+      the thing they take away is which number to quote rather than which setting to change. The check
+      reports; it never writes.
     persona: delivery-forecaster
     secondary_persona: forecasting-prospect
     job: job-forecaster-check-the-forecast-against-what-happened
@@ -35,9 +37,9 @@ journeys:
       end: >
         Examined confidence, in one of two shapes, and both are a good ending. Either "I checked this
         against what my Team actually did, my setting is fine, and I now know which of the four numbers
-        has been holding up" — or "my window was wrong, I changed it in one press, and I can say what I
-        checked and what it showed." The failure mode this arc must avoid is a third shape: a shrug. The
-        null result must land as an answer, never as an absence.
+        has been holding up" — or "my window was wrong, so I changed it, and I can say what I checked and
+        what it showed." The failure mode this arc must avoid is a third shape: a shrug. The null result
+        must land as an answer, never as an absence.
 
     design_decisions_resolved:
       - id: D1
@@ -70,23 +72,32 @@ journeys:
           configurations" would be dishonest in a new direction, because four of every sixty-four share
           one simulation by construction.
       - id: D4
-        question: The Apply control writes the sampling window, the axis with no signal. Is there a setting on the axis that has signal?
+        question: Does the check offer any control that changes a Team setting?
         decision: >
-          NO — confirmed by searching the tree, not assumed. Team carries no percentile field.
-          ServiceLevelExpectationProbability exists on the base class but is a cycle-time SLE consumed only
-          by TeamMetricsService.GetSleRiskForTeam, bounding how long one Work Item may take; it has nothing
-          to do with which percentile a How-Many forecast is quoted at. Forecast percentiles are the fixed
-          set 50/70/85/95 at every call site. So the artifact states the asymmetry as permanent copy: the
-          sampling window is a setting and has a control; the confidence level is not a setting but a
-          choice of which number to say out loud, and there is no button for it because there is nothing to
-          press. Two verdicts, one button. Whether a per-Team default confidence level SHOULD exist is
-          escalated as its own ADO item and is not decided here.
+          NO — none, on either axis. REWRITTEN 2026-09-22 when the maintainer dropped the Apply control
+          entirely (removed, not deferred). Two reasons, in order of weight. FIRST, a button contradicts
+          honesty requirement 4.1: the verdict names a REGION, but a button must write ONE number, so
+          "Apply 60 days" names a winner inside a range the artifact has just called undifferentiated —
+          the exact claim Bailey et al. say a sixteen-cell search against months of history cannot support.
+          It would undo the feature's central honesty discipline in the single interaction the user is most
+          likely to trust. SECOND, the control is already on screen: ThroughputQuickSetting sits in
+          QuickSettingsBar inside DetailHeader's quickSettingsContent (TeamDetail.tsx:402-405), the page
+          shell, so it renders on every Team tab including the Forecast tab where the check lives.
+          THE UNDERLYING FACT IS UNCHANGED and was established by search, not assumption: Team carries no
+          percentile field, and ServiceLevelExpectationProbability is a cycle-time SLE consumed only by
+          TeamMetricsService.GetSleRiskForTeam, bounding how long one Work Item may take rather than which
+          percentile a How-Many forecast is quoted at. So the artifact states TWO FINDINGS — the sampling
+          window is a setting on this Team, the confidence level is a choice of which number to quote — and
+          the human acts on both. Whether a per-Team default confidence level SHOULD exist was raised as a
+          candidate ADO item and DECLINED by the maintainer on 2026-09-22, which makes the asymmetry
+          permanent by decision rather than by oversight.
       - id: D5
-        question: When does the Apply control appear?
+        question: "DELETED 2026-09-22 — previously: when does the Apply control appear?"
         decision: >
-          Only when the Team's current ThroughputHistory falls outside the sound region. In the modal case
-          — every window behaving alike, the current setting inside the range — there is nothing to apply,
-          and rendering a disabled or no-op button would contradict the sentence beside it.
+          DELETED with the Apply control. The conditional-button logic, the "what do we render when there
+          is nothing to apply" case and the no-op-button reasoning all went with it. The number is left as
+          a tombstone rather than renumbered, because D6-D9 are cross-referenced from feature-delta.md, the
+          slice briefs and wave-decisions.md.
       - id: D6
         question: What anchors the checked periods?
         decision: >
@@ -256,41 +267,39 @@ journeys:
           - The rendering drifts toward a matrix or a ranked list, which D6 forbids
 
       - id: 5
-        name: Act on it, or learn there is nothing to act on
-        surface: the verdict card, and the Team detail header's ThroughputQuickSetting
+        name: Take the two findings away
+        surface: the verdict card
         what_they_see: >
-          When the current sampling window is outside the sound region, a control naming the value it would
-          set. Pressing it opens the shipped ThroughputQuickSetting pre-filled; the write happens only on
-          save, through that control's existing validation. When the window is inside the region, no
-          control at all, and the sentence says the setting is fine. Alongside, permanently: the sampling
-          window is a setting and has a control; the confidence level is not a setting but a choice of
-          which number to say out loud, so it has none.
+          REWRITTEN 2026-09-22 when Apply was dropped; this step previously offered a control. It now
+          offers none. Permanently on the card, beside the verdict: the sampling window is a setting on
+          this Team, and this check found it barely matters across the range tested; the confidence level
+          is not a setting — it is which of the four numbers you say out loud in the room — and this check
+          found it matters enormously. Two findings, stated as findings. The check reports; it never
+          writes. A user who does want to change the sampling window uses the throughput control already
+          visible in the Team header on the same screen, which is not part of this feature.
         emotional_state:
           entry: Decided
           exit: >
             Examined confidence. In the common case the takeaway is a behaviour change — start quoting the
             85th — rather than a settings change, and the copy makes that feel like the point rather than
-            like a missing feature
-        shared_artifacts:
-          - name: team_throughput_history
-            source: Team.ThroughputHistory
-            displayed_as: "${recommendedSamplingWindow}"
-            consumers: [the apply control's label, ThroughputQuickSetting's pre-filled value]
+            like a missing feature. In the minority case the user changes the setting themselves, which is
+            two clicks away and was never the scarce part of the job
         integration_checkpoint: >
-          The value the control pre-fills is the same value the verdict named, and it is written by the
-          shipped control's own endpoint. No new write path exists anywhere in this feature.
+          NO WRITE PATH EXISTS ANYWHERE IN THIS FEATURE. If any surface here gains a control that mutates a
+          Team setting, Apply has been reintroduced and D4 has been violated.
         failure_modes:
-          - A user without Team write rights is offered the control
-          - The control appears when the current setting is already inside the region, contradicting the sentence
-          - Opening the header control pre-filled needs lifted state or a contract change, so Apply is not near-free after all and should be cut
+          - A control that writes a Team setting is reintroduced as an obvious usability improvement, quietly re-breaking 4.1
+          - The two-findings copy is trimmed to one finding, losing the confidence-level half that carries the signal
+          - The copy reads as an apology for a missing button rather than as two findings
 
     integration_validation:
       shared_artifact_consistency:
         - artifact: team_throughput_history
-          must_match_across: [1, 3, 5]
+          must_match_across: [1, 3]
           failure_message: >
-            The verdict is about a different sampling window than the one the Team actually uses, or the
-            apply control pre-fills a value the verdict did not name.
+            The verdict is about a different sampling window than the one the Team actually uses.
+            (Step 5 was a third consumer until 2026-09-22, when the apply control that pre-filled it
+            was dropped.)
         - artifact: minimum_active_days
           must_match_across: [3, 4]
           failure_message: >
@@ -309,13 +318,14 @@ journeys:
 
     out_of_scope:
       - Any Report entity, table, migration, UpdateType member or notification seam — declined, not deferred (D8)
-      - A per-Team default forecast confidence level — escalated as its own ADO item, not invented here (D4)
-      - The ThroughputHistory 30-vs-90 default disagreement — its own ADO item
+      - Any control that writes a Team setting, i.e. the Apply button — DECLINED 2026-09-22, not deferred (D4). DESIGN must not reintroduce it as an obvious improvement
+      - A per-Team default forecast confidence level — raised as a candidate and DECLINED by the maintainer 2026-09-22 (D4), so the window/level asymmetry is permanent by decision
+      - "The ThroughputHistory 30-vs-90 default disagreement — tracked as Bug #6071"
       - Rolling-origin evaluation — D6 is not reopened; recorded as a later candidate
       - Scheduling, continuous checking, auto-adjustment — C2, on demand only
       - The forecast-throughput filter as a sweep dimension — C3, it is a config option of the run
       - CLI or MCP client exposure — declined, with the precondition for later recorded in feature-delta.md
-      - "ADR-127's team-settings advisory channel — Story #5612 deleted it; the ADR carries no note saying so"
+      - "ADR-127's team-settings advisory channel — Story #5612 deleted it. ADR-127 now carries a SUPERSEDED-BY-EVENTS status note recording that; read the corrected ADR"
 
 changelog:
   - date: 2026-09-22
@@ -325,3 +335,15 @@ changelog:
       four user decisions taken after it: all four confidence levels rather than one fixed 85th (D1), the
       three-way verdict kept and the departure from the source owned out loud (D7), today as the end anchor
       (D6), and no Report abstraction (D8).
+  - date: 2026-09-22
+    feature: epic-4172-forecast-backtest-sweep
+    change: >
+      REVISED the same day, after the first DISCUSS pass was committed. The maintainer dropped the Apply
+      control entirely — removed, not deferred — because it structurally contradicted honesty requirement
+      4.1: the verdict names a region, but a button must write one number, so "Apply 60 days" names a
+      winner. D4 rewritten from "two verdicts, one button" to "two findings, no buttons"; D5 deleted and
+      tombstoned; step 5 rewritten from "act on it" to "take the two findings away"; the apply-control
+      shared artifact and its failure modes removed; team_throughput_history now spans steps 1 and 3
+      rather than 1, 3 and 5. THE FEATURE IS NOW READ-ONLY END TO END, with no write path at all. The
+      three honesty requirements, all four confidence levels, the end anchor and the no-Report position
+      are unchanged — dropping Apply strengthens 4.1 rather than relaxing it.

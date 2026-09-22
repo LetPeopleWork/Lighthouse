@@ -64,13 +64,21 @@ putting it behind one is how it becomes unusable.
   (`TeamForecastView.tsx:438-460`), above the shipped date pickers. One button; the button becomes a
   spinner in place; the result replaces the previous one. No notification, because it is on screen.
 - Unevaluable cells named in the sentence with their reason.
+- **The two-findings copy (AC-1.9), folded in here on 2026-09-22 when the Apply slice was removed.** The
+  artifact reports the sampling window as a setting on this Team and the confidence level as a choice of
+  which number to quote — two findings the human acts on. **The feature renders no control that writes a
+  Team setting.**
 
 ## OUT of scope
 
 - **The evidence view.** Slice 02. The endpoint returns every cell, but this slice speaks only the
   sentence.
-- **Apply.** Slice 03. The verdict names a value; nothing writes it.
-- **The one-pager.** Slice 04.
+- **Any control that writes a Team setting.** Not deferred — **declined** (D4, 2026-09-22). A button must
+  write one number, which names a winner inside a range the verdict has just called undifferentiated, and
+  that contradicts §4.1. The throughput control is in any case already on screen: `ThroughputQuickSetting`
+  sits in `QuickSettingsBar` inside `DetailHeader`'s `quickSettingsContent` (`TeamDetail.tsx:402-405`), so
+  it renders on every Team tab including this one. **The user acts; the feature does not act for them.**
+- **The one-pager.** Slice 03.
 - **Any entity, table, migration or `UpdateType` member.** D8. A migration appearing in this slice is a
   signal D8 was violated.
 - **Any change to the forecast engine.** Asserted: the existing forecast assertions pass unchanged.
@@ -101,7 +109,8 @@ exists. No further forecasting work is required anywhere in this Epic.
 
 ## Acceptance criteria
 
-AC-1.1 through AC-1.8, in `feature-delta.md` under US-01. AC-1.1 gates the rest of the slice.
+AC-1.1 through AC-1.9, in `feature-delta.md` under US-01. AC-1.1 gates the rest of the slice. AC-1.9
+arrived here on 2026-09-22 from the deleted Apply story.
 
 ## Notes for the implementer
 
@@ -114,6 +123,7 @@ AC-1.1 through AC-1.8, in `feature-delta.md` under US-01. AC-1.1 gates the rest 
   of work, and ADR-207 carries this as an explicit forward-compatibility constraint.
 - The response must carry no field naming a single winning window. If a `recommendedWindow` field feels
   natural, that is §4.1 reasserting itself and the answer is a *range* plus a boolean for whether the
-  current setting is inside it.
+  current setting is inside it. **This is exactly the pressure that produced the Apply button and got it
+  removed** — a single recommended value is the thing the data cannot support.
 - Dogfood against this project's own Lighthouse instance with real history before the slice closes. Its
   data is real; the checked-in `.db` is not.

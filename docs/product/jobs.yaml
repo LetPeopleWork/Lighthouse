@@ -7373,13 +7373,20 @@ jobs:
       sweep of windows alone would have swept the null axis. All four are already returned by every
       forecast run, so this is free. (2) THERE IS NO TEAM SETTING FOR THE FORECAST CONFIDENCE LEVEL —
       confirmed by search, not assumed. Team has no percentile field; ServiceLevelExpectationProbability
-      is a cycle-time SLE bounding how long one Work Item may take. So the job's "adjust" step is served
-      in two different ways: the sampling window is a setting and gets a control, and the confidence
-      level is a choice of which number to say out loud and gets none. Whether a per-Team default
-      confidence level SHOULD exist is a separate product question with its own ADO item; it was not
-      invented here. (3) The three-way under/over/within verdict is KEPT and is a deliberate departure
-      from the source, which scored one-sided — it must never be attributed to Nick Brown. (4) Nothing
-      is persisted; the result is a response, not a record (ADR-207).
+      is a cycle-time SLE bounding how long one Work Item may take. REVISED LATER THE SAME DAY: the
+      feature offers NO control on either axis. An Apply button was planned and then dropped, because
+      the verdict names a REGION of sound sampling windows while a button must write ONE number — so
+      "Apply 60 days" names a winner the data cannot support, undoing the artifact's central honesty
+      discipline in the interaction the user trusts most. The control it would have been a shortcut to
+      is in any case already on screen (ThroughputQuickSetting renders in the Team header on every tab).
+      So the job's "adjust" step is served by REPORTING two findings and letting the human act on both:
+      the sampling window is a setting on the Team, the confidence level is a choice of which number to
+      say out loud. THE CHECK REPORTS; IT NEVER WRITES. Whether a per-Team default confidence level
+      should exist was raised and DECLINED by the maintainer on 2026-09-22, so the asymmetry between the
+      two axes is permanent by decision rather than by oversight. (3) The three-way under/over/within
+      verdict is KEPT and is a deliberate departure from the source, which scored one-sided — it must
+      never be attributed to Nick Brown. (4) Nothing is persisted; the result is a response, not a
+      record (ADR-207).
     job_story: >
       When I am about to publish a forecast from a Team whose sampling configuration I set once and have
       never checked,

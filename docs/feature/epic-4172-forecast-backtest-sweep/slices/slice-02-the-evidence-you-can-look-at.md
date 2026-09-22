@@ -41,8 +41,8 @@ one is the third, and deferring it past second is how "evidence on request" quie
 ## OUT of scope
 
 - Any change to slice 01's computation. This slice consumes the response and computes nothing.
-- Apply. Slice 03.
-- The export. Slice 04.
+- **Any control that writes a Team setting.** Declined, not deferred (D4, 2026-09-22).
+- The export. Slice 03.
 - **Any new charting dependency.** `@mui/x-charts` 9.0.1 is what is installed; there is no
   `@mui/x-charts-pro` and therefore no Heatmap component — which is moot, because a heatmap is forbidden
   on its own merits (below).

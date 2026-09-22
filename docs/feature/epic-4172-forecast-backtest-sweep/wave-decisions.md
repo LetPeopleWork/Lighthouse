@@ -215,6 +215,12 @@ the feature: nobody currently knows which value is right.
 **Predecessor**: DIVERGE (complete, peer-approved). **Successor**: DESIGN (`nw-solution-architect`).
 **Density**: lean, `expansion_prompt: ask-intelligent`.
 
+> **This section records the FIRST DISCUSS pass and is partly superseded.** The maintainer dropped the
+> Apply control later the same day. Where this section says Apply ships, that a slice 03 carries it, that
+> there are four slices, or that the per-Team confidence level is "escalated as its own ADO item", read
+> **DISCUSS — revision, 2026-09-22** at the foot of this file instead. It is left unedited rather than
+> rewritten so the decision history stays legible.
+
 ### Artifacts produced
 
 | Path (relative to the feature workspace) | What it holds |
@@ -306,3 +312,195 @@ concept already exists in `brief.md`; `ctx_search` skips that file for size, so 
 absent by search.
 
 **R-1 remains the single open unknown and is closed inside slice 01 before any UI is written.**
+
+---
+
+## DISCUSS — revision, 2026-09-22
+
+Taken after the first DISCUSS pass was committed (`5ca5cd257`). Planning only; no implementation.
+
+### DR-1 — Apply is dropped from the feature. Removed, not deferred
+
+**The maintainer's decision, and the reasoning is theirs, in their order of weight:**
+
+1. **Apply structurally contradicts honesty requirement §4.1.** The verdict says *"anything between 30 and
+   90 days would have behaved about the same."* An Apply button must write **one** number, so
+   `Apply 60 days` names a winner — precisely the claim the Bailey et al. reasoning says a sixteen-cell
+   search against months of history cannot support, and precisely the thing the region language exists to
+   prevent. **The button would quietly undo the feature's central honesty discipline in the single
+   interaction the user is most likely to trust.**
+2. **The control is already on screen.** Verified in the tree: `ThroughputQuickSetting` sits in
+   `QuickSettingsBar` inside `DetailHeader`'s `quickSettingsContent` (`TeamDetail.tsx:402-405`) — the page
+   shell, so it renders on **every** Team tab including the Forecast tab where the check lives. A user
+   reading "your 14 days is outside the sound range" already has the throughput control visible on the
+   same screen. Apply was a shortcut to something already in front of them, bought at the cost of point 1.
+
+**This tension was present from DIVERGE onward and nobody caught it.** Apply scored 5/5 on
+DECISION-CHANGING, and that score obscured what it was costing on HONESTY — the higher-weighted criterion,
+and the one the whole recommendation was made conditional on. Carried forward as **R-9**, because the
+failure mode is general rather than specific to this button: *a criterion scored in isolation can hide
+what it costs on a higher-weighted one.*
+
+**For DESIGN: do not reintroduce Apply as an obvious improvement.** It was considered, it scored well, and
+it was removed on purpose. It is listed under Out of Scope as declined rather than deferred, in
+`feature-delta.md`, the journey YAML and every slice brief that could plausibly host it.
+
+#### A consequence the revision brief did not anticipate: the winning margin moves
+
+**M1 won the DIVERGE matrix at 4.30 partly *because of* Apply.** `recommendation.md` §2 gives its
+DECISION-CHANGING score as **5**, justified explicitly: *"it is the only option that puts the named change
+**and the control that makes it** in the first interaction"*. §3 repeats it — *"it names the change and
+pre-fills the control, and a human presses the button."* Remove the control and that justification is
+half gone.
+
+The runner-up, **R1 · "Your setting, on trial", scored 4.15 — a gap of 0.15.** Dropping Apply plausibly
+closes or reverses it on the matrix as written, and `taste-evaluation.md` §6 already showed the top three
+sit within 0.20 and that one point on HONESTY reorders them.
+
+**This does not reopen the decision, for two reasons that are on the record and unchanged:**
+
+1. **R1 is not available.** Its surface was ADR-127's advisory channel, which Story #5612 deleted;
+   `ValidationAdvisory.tsx` is absent from the frontend and a later rung was built *"rather than reviving
+   them"*. DIVERGE ran that check explicitly and it went against the dissent. **The branch in which R1
+   overtakes does not exist**, whatever the arithmetic now says.
+2. **The trade was HONESTY-positive**, and HONESTY is the higher-weighted criterion (30%) against
+   DECISION-CHANGING (15%). M1's known weakness was HONESTY 3, and the recommendation was made
+   *conditional* on the three §4 requirements being built. Removing the one element that contradicted
+   §4.1 moves the score in the direction the conditional was about.
+
+**But it should be said plainly rather than discovered later**: the feature as now planned is no longer
+the M1 that scored 4.30. It is M1 minus its DECISION-CHANGING justification and plus a HONESTY point —
+which is, as it happens, close to **E1 · "Sweep in a breath" (4.10)**, the third-place option whose
+description was *"M1's evidence view, promoted to the default"* and whose recorded trade-off was precisely
+*"it names a window but defers Apply — the user reads an answer and then has to go and act on it
+somewhere else."* **That is now an accurate description of what this Epic builds.** E1's hire criterion —
+*"a user who wants to look at the data themselves and distrusts a tool that summarises"* — is worth
+keeping in view during DESIGN, because it is closer to the real audience than M1's was.
+
+No re-scoring is performed here; DIVERGE is closed and retroactive adjustment would flatter the outcome.
+This is recorded so nobody reads "M1, 4.30" downstream and assumes the thing they are building is what
+earned it.
+
+### DR-2 — D4 rewritten, D5 deleted
+
+**D4** was *"Two verdicts, one button"*; it is now *"Two findings, no buttons. The check reports; the human
+acts."* The asymmetry it existed to explain is gone — neither axis has a control — so the copy states two
+findings plainly instead of apologising for a missing button. The substance is unchanged and still rests on
+the same verified fact: the sampling window is a Team setting, the confidence level is not.
+
+**D5** (*"Apply appears only when the current window is outside the sound region"*) is **deleted**. The
+conditional-button logic, the "what do we render when there is nothing to apply" case and the no-op-button
+reasoning went with it.
+
+**D5's number is left as a tombstone rather than renumbered.** D6-D13 are cross-referenced from the journey
+YAML, the slice briefs and this file; shifting them silently would break every reference for no gain.
+
+### DR-3 — Re-sliced to three. The `@infrastructure` gate re-checked
+
+| | Before | After |
+|---|---|---|
+| Stories | US-01 … US-04 | US-01 … US-03 |
+| Slices | 4 | **3** |
+| Estimate | ~20h | **~17h** |
+
+- **US-03 (Apply) is deleted.** Nothing user-visible survived, so it collapsed rather than shrinking — it
+  was not left as an `@infrastructure` husk.
+- **The one piece worth keeping** — the copy naming the sampling window a setting and the confidence level
+  a reading — **moved into US-01 as AC-1.9**, where the verdict sentence already lives. US-01 goes from 8
+  ACs to 9; the sizing note is updated rather than gamed.
+- **US-04 (the export one-pager) is promoted to US-03**, ACs relabelled AC-4.x → AC-3.x, slice 04 → slice
+  03. Renumbered rather than left with a gap because no ADO items exist yet and nothing external
+  references the old numbers.
+- **`@infrastructure`-only hard gate re-checked and passes**: slice 01 ships a sentence, slice 02 the
+  evidence view, slice 03 the one-pager.
+
+### DR-4 — The feature is now read-only end to end
+
+Worth stating rather than letting it disappear into the diff. The RBAC answer previously had two halves — a
+read endpoint plus a write that borrowed `canUpdateTeamData` through the shipped `ThroughputQuickSetting`.
+**The second half is gone.** No write endpoint, no borrowed write path, no control anywhere in the feature
+that mutates a Team.
+
+Consequences, all simplifications: a single permission (Team read) governs the whole feature; there is no
+differential rendering by permission, because there is no control to show or hide; and the standing rule
+that all UI gating derives from `useRbac()` with no direct fetch of `/api/latest/authorization/my-summary`
+still holds, with this feature adding no new gating and therefore no new way to break it.
+
+A new DoD item makes it enforceable: **if any slice introduces an endpoint or control that mutates a Team
+setting, Apply has been reintroduced and D4 has been violated.**
+
+**One wrinkle found while verifying the maintainer's point 2, not previously noted anywhere**: the Team
+header's `QuickSettingsBar` is itself wrapped in `showWriteControls ?`, so a **read-only user sees no
+throughput control on the page at all**. This does not break the decision — it makes the read-only path
+cleaner, since for such a user the check is purely informational and there is no control anywhere to be
+inconsistent with. It does mean "the control is already on screen" is true *for users who can act on it*,
+which is the only audience the argument needs.
+
+### DR-5 — Per-Team default confidence level: DECLINED
+
+The previous pass escalated *"should Lighthouse gain a per-Team default forecast confidence level?"* (R-8 /
+D4) as a candidate ADO item. **The maintainer declined to raise one, 2026-09-22.**
+
+Recorded here as considered-and-declined **so a later wave does not re-raise it as though it were
+unconsidered.** The consequence, stated plainly: the window/level asymmetry — one axis is a setting, the
+other is a reading the human makes — is now **permanent by decision rather than by oversight.**
+
+### DR-6 — Reference corrections
+
+| Item | Was | Now |
+|---|---|---|
+| R-6 / D13 — `ThroughputHistory` 30-vs-90 default disagreement | "raise as its own ADO item" | **Bug #6071**, raised. Still out of scope for this Epic |
+| ADR-127 — the deleted team-settings advisory channel | A standing caution: the ADR describes a mechanism no longer in the tree and carries no note saying so | **Discharged.** ADR-127 now carries a SUPERSEDED-BY-EVENTS status note recording that Story #5612 deleted the channel. Still do not reach for that mechanism — but read the corrected ADR rather than our caution |
+
+### Unchanged by this revision
+
+All three honesty requirements (§4.1 region-not-winner, §4.2 denominator and non-comparability, §4.3
+coverage against a printed nominal rate) stand as hard ACs. **Dropping Apply strengthens §4.1 rather than
+relaxing it.** Also unchanged: all four confidence levels side by side (D1); today as the end anchor with
+no date picker (D6); cells not comparable; per-cell sufficiency composing with the shipped ≥5-active-days
+rule (D9); one-click synchronous trigger; no new entity; small multiples (D2); no Report abstraction and
+ADR-207 as a DESIGN deliverable (D8); the name (D10); and **R-1 as the single open unknown, still closing
+first inside slice 01.**
+
+### Files touched by the revision
+
+`feature-delta.md` · `slices/slice-01-…md` · `slices/slice-02-…md` ·
+**`slices/slice-03-the-answer-travels.md` (new)** · `docs/product/journeys/epic-4172-forecast-reality-check.yaml` ·
+`docs/product/jobs.yaml` (the DISCUSS note's control clause corrected) · this file.
+
+**Two files need `git rm`** — they carry tombstones because the revising agent could not delete files:
+`slices/slice-03-change-it-here-or-be-told-there-is-nothing-to-change.md` (the deleted Apply slice) and
+`slices/slice-04-the-answer-travels.md` (renumbered to 03).
+
+### Gates, re-validated
+
+| Gate | Verdict |
+|---|---|
+| Scope assessment | **PASS** — 3 stories, 2 modules, ~17h |
+| `@infrastructure`-only slice gate | **PASS** — re-checked after the removal; every slice carries a user-visible story |
+| Anti-pattern detection | **PASS** — no story was hollowed out; the Apply story was removed whole |
+| Definition of Ready (9 items) | **PASS** — re-validated. The removal broke no item; the single qualification is now US-01 at 9 ACs |
+| Per-wave peer review | **Still not run.** The revision resolved ambiguity rather than creating it; the mandatory consolidated review fires at the end of DISTILL |
+| Tier-2 expansion | **No trigger fired** on re-evaluation — every count moved down or held |
+
+---
+
+## ADO work items — created 2026-09-22
+
+Created after the Apply revision, so the board mirrors the three-slice plan rather than the four-slice
+first pass. All three are children of Epic #4172, state `New`, priority 2.
+
+| Story | Slice | ADO |
+|---|---|---|
+| US-01 — one sentence that says whether the configuration behind my forecasts is sound | `slice-01-one-sentence-about-your-sampling-window.md` | [#6072](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6072) |
+| US-02 — the evidence, when the sentence is not enough | `slice-02-the-evidence-you-can-look-at.md` | [#6073](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6073) |
+| US-03 — the answer travels to the person who asked the question (**severable**) | `slice-03-the-answer-travels.md` | [#6074](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6074) |
+
+**Epic #4172 deliberately left in `Planned`.** This is planning for a later release; no implementation is
+authorised and no story has been started.
+
+Raised separately and **not** children of this Epic, because neither is caused by it:
+[Bug #6071](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6071) — the `ThroughputHistory`
+30-vs-90 default disagreement (DV-10 / R-6). The per-Team default forecast confidence level was
+**declined** as an item by the maintainer on 2026-09-22 (DR-3), which makes the window/level asymmetry
+permanent by decision rather than by oversight.

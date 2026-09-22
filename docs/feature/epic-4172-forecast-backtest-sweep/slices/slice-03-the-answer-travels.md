@@ -1,9 +1,14 @@
-# Slice 04 — The answer travels — SEVERABLE
+# Slice 03 — The answer travels — SEVERABLE
 
-**Feature**: epic-4172-forecast-backtest-sweep · **ADO**: to create under Epic #4172 · **Story**: US-04
+**Feature**: epic-4172-forecast-backtest-sweep · **ADO**: to create under Epic #4172 · **Story**: US-03
 **Estimate**: ~4h · **Job**: `job-forecaster-check-the-forecast-against-what-happened`
 **Persona**: `forecasting-prospect` primary · **Depends on**: slices 01 and 02
 **Severable** — if dropped, the feature still ships.
+
+> **This was slice 04 until 2026-09-22.** The Apply slice that sat between 02 and this one was removed
+> entirely — not deferred — when the maintainer dropped the Apply control, and this slice moved up to fill
+> the gap. See `feature-delta.md` D4 for the reasoning. Nothing about this slice's content changed; only
+> its number and its AC labels (AC-4.x became AC-3.x).
 
 **Reference class**: ADR-172 (a Delivery exports one settled table the caller builds) and ADR-162 (the
 export header block as a generic toolbar input). Both are **client-side**; there is no server-side
@@ -46,6 +51,8 @@ conditional on — are all built by slice 02.
 
 - **Any server-side rendering, any new endpoint, any stored artifact.** D8. The emailable Report is what
   ADR-207 explicitly does not build.
+- **Any control that writes a Team setting.** D4 — the feature is read-only end to end, and an export
+  slice is not where that gets quietly reversed.
 - Emailing, scheduling or sharing by link. C2, and the parked constellation (#4753, #4755) stays parked.
 - PDF or image export. Markdown, and optionally CSV for the sixteen rows, per the ADR-172 precedent.
 
@@ -63,7 +70,7 @@ a slice rather than as an abstraction — which is precisely the distinction ADR
 
 ## Acceptance criteria
 
-AC-4.1 through AC-4.4, in `feature-delta.md` under US-04.
+AC-3.1 through AC-3.4, in `feature-delta.md` under US-03.
 
 ## Notes for the implementer
 

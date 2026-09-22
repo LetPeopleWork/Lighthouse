@@ -19,6 +19,15 @@ inflating it. Source method: Nick Brown (ASOS), *The Full Monte*, ASOS Tech Blog
 > them side by side. That restores the axis Brown's study found carried the entire signal, and it
 > changes the feature's headline. See D1-D4.
 
+> **REVISED 2026-09-22, after the first DISCUSS pass was committed (`5ca5cd257`).** The maintainer
+> **dropped the Apply control entirely** — removed from the feature, not deferred. It structurally
+> contradicted honesty requirement §4.1: the verdict names a *region* ("anything between 30 and 90 days"),
+> but a button must write **one** number, so `Apply 60 days` names a winner — the exact claim the Bailey
+> et al. reasoning says the data cannot support. The tension was present from DIVERGE onward and nobody
+> caught it; scoring Apply 5/5 on DECISION-CHANGING obscured what it cost on HONESTY, the
+> higher-weighted criterion. **D4 is rewritten, D5 is deleted, US-03 is gone and the export story is
+> promoted into its place, and the feature is now read-only end to end.** Everything else stands.
+
 ---
 
 ## Wave: DISCUSS / [REF] Prior Wave Consultation
@@ -189,49 +198,60 @@ The permanent copy therefore states both numbers and their relationship:
 This is a **better** disclosure than the one §4.2 asked for, and it exists only because U2 forced the
 question. It is recorded as an improvement the override produced, not as a concession to it.
 
-### D4 — Two verdicts, one button. The sampling window is a setting; the confidence level is not
+### D4 — Two findings, no buttons. The check reports; the human acts
 
-**This resolves the coherence problem U2 raised, and it was resolved by searching the codebase rather
-than by assuming.**
+**Rewritten 2026-09-22 when Apply was dropped.** The earlier version explained why only *one* of the two
+axes had a control. Neither does now, so the asymmetry no longer needs explaining — and the copy gets
+simpler and more direct as a result.
 
-The question was: *if the signal is on the confidence-level axis, is there a Team setting to act on?*
+The check reports two findings, and the user acts on both themselves:
 
-**There is not.** S7 records the search. `Team` carries no percentile field.
-`ServiceLevelExpectationProbability` exists on the base class but is a cycle-time SLE consumed only by
-`GetSleRiskForTeam` — it bounds how long one Work Item may take, and has nothing to do with which
-percentile a How-Many forecast is quoted at. Forecast percentiles are the fixed set 50/70/85/95,
-hard-coded at every call site. **The product shows all four and lets the human choose which to say out
-loud.**
+> *The sampling window is a setting on this Team, and this check found it barely matters across the range
+> tested — anything between 30 and 90 days would have behaved about the same.*
+> *The confidence level is not a setting. It is which of the four numbers you say out loud in the room,
+> and this check found it matters enormously.*
 
-That is not a gap to be filled here. It is the honest shape of the feature, and it is what the artifact
-must say:
+The underlying fact is unchanged and was established by searching the tree rather than by assuming. S7
+records it: `Team` carries no percentile field. `ServiceLevelExpectationProbability` exists on the base
+class but is a cycle-time SLE consumed only by `GetSleRiskForTeam` — it bounds how long one Work Item may
+take, and has nothing to do with which percentile a How-Many forecast is quoted at. Forecast percentiles
+are the fixed set 50/70/85/95, hard-coded at every call site. **The product shows all four and lets the
+human choose which to quote.**
 
-> *The sampling window is a setting. It has a control, and this check found it barely matters in this
-> range.*
-> *The confidence level is not a setting — it is which of the four numbers you say out loud in the room.
-> This check found it matters enormously. There is no button for it, because there is nothing to press.*
+**Why no control for the sampling window either.** Two reasons, in the maintainer's order of weight:
 
-So: **two verdicts in one sentence, one Apply button, and permanent copy saying why there is only one.**
-Far from being an incoherence, this is the strongest thing the feature says — it is a *behaviour*
-recommendation, which is exactly what a Community feature meant to convince people of a method should
-produce.
+1. **A button would contradict §4.1.** The verdict names a region. A button must write one number.
+   `Apply 60 days` names a winner inside a range the artifact has just said is undifferentiated — which
+   is precisely the selection-bias claim Bailey et al. say a sixteen-cell search against months of
+   history cannot support. It would undo the feature's central honesty discipline in the single
+   interaction the user is most likely to trust.
+2. **The control is already on screen.** Verified: `ThroughputQuickSetting` sits in
+   `QuickSettingsBar` inside `DetailHeader`'s `quickSettingsContent` (`TeamDetail.tsx:402-405`) — the page
+   shell, so it renders on **every** Team tab including the Forecast tab where the check lives. A user
+   reading "your 14 days is outside the sound range" already has the throughput control visible on the
+   same screen. Apply was a shortcut to something already in front of them, bought at the cost of point 1.
 
-**Named residual, escalated rather than resolved here**: *should Lighthouse gain a per-Team default
-forecast confidence level?* That is a real product question with real consequences across every forecast
-surface, and this feature's evidence is exactly what would justify opening it. **It gets its own ADO
-item. It is not folded into this Epic, and no setting is invented in DISCUSS.**
+**One wrinkle worth recording, found while verifying point 2**: that header block is wrapped in
+`showWriteControls ?`, so a read-only user sees no throughput control at all. That does not break
+anything — it makes the read-only path cleaner, because for such a user the check is purely informational
+and there is no control anywhere to be inconsistent with. It does mean "the control is already on screen"
+is true *for users who can act on it*, which is the only audience the argument needs.
 
-### D5 — Apply appears only when the current window is outside the sound region
+**Residual — DECLINED by the maintainer, 2026-09-22**: *should Lighthouse gain a per-Team default forecast
+confidence level?* It was raised as a candidate ADO item and the maintainer declined to raise one.
+**Recorded as considered-and-declined so a later wave does not re-raise it as though it were an
+oversight.** The consequence is that the window/level asymmetry — one axis is a setting, the other is a
+reading — is now **permanent by decision rather than by accident.**
 
-Corollary of §4.1 and of O3 scoring 9.7 (over-served). When the check returns the modal answer — every
-window behaves alike, yours is inside the region — there is nothing to apply, and rendering a disabled
-or no-op button would contradict the sentence beside it. In that case no control appears and the sentence
-says the current setting is fine.
+### D5 — deleted
 
-The button is therefore present only in the minority case where the window genuinely is wrong, which is
-the only case where it matters. That is also the answer to "you showed the axis that matters and gave a
-button for the one that does not": the button is for the axis that has a setting, and it only shows up
-when that setting is actually wrong.
+**D5 previously read "Apply appears only when the current window is outside the sound region".** It was
+deleted on 2026-09-22 when Apply was dropped: the conditional-button logic, the "what do we render when
+there is nothing to apply" case and the no-op-button reasoning all went with it.
+
+**The number is left as a tombstone rather than renumbered**, because D6-D13 are cross-referenced from the
+journey YAML, the slice briefs and `wave-decisions.md`, and silently shifting them would break every one
+of those references for no gain.
 
 ### D6 — Today is the end anchor. No date picker anywhere
 
@@ -254,7 +274,7 @@ matches weather verification's symmetric treatment of conditional bias.
 
 **It must never be described as "what Nick Brown did."** Wherever the source method is credited — the
 UI, the docs, the launch post, the exported one-pager — the departure is stated in the same place.
-AC-1.8 and AC-4.4 make this testable.
+AC-1.8 and AC-3.4 make this testable.
 
 ### D8 — No Report abstraction. ADR-207 is a DESIGN deliverable
 
@@ -311,37 +331,40 @@ What Flux was protecting is preserved in full:
   because they *are* the UI.
 
 The endpoint and the verdict logic become precursor commits inside slice 01 rather than slices of their
-own. Four slices result, every one of them user-visible. See the story map.
+own. **Three slices result** (four, until Apply was dropped on 2026-09-22 and its slice collapsed), every
+one of them user-visible. The `@infrastructure`-only hard gate was re-checked after that removal: slice 01
+ships a sentence, slice 02 ships the evidence view, slice 03 ships the one-pager. No slice is left whose
+only content is copy or plumbing. See the story map.
 
 ### D12 — No CLI / MCP client exposure in this Epic
 
 Answered explicitly rather than skipped; see the project checklist below.
 
-### D13 — R-6 is out of scope and gets its own ADO item
+### D13 — R-6 is out of scope and is now Bug #6071
 
 `Team.ThroughputHistory` defaults to **30** (`Team.cs:17`) while `CreateTeamWizard.tsx:35` and
-`EditTeam.tsx:80` both seed **90**. Independently verified. **Do not fold into this Epic.** It is
-recorded here because it was found while researching this feature, and because it is incidentally an
-argument *for* the feature: nobody currently knows which value is right.
+`EditTeam.tsx:80` both seed **90**. Independently verified. **Do not fold into this Epic** — it is now
+tracked as **Bug #6071**. It is recorded here because it was found while researching this feature, and
+because it is incidentally an argument *for* the feature: nobody currently knows which value is right.
 
 ---
 
 ## Wave: DISCUSS / [REF] Scope Assessment
 
-**PASS — right-sized. 4 stories, 2 modules, ~20h (≈3 days).** Assessed before journey visualisation, per
-the early gate.
+**PASS — right-sized. 3 stories, 2 modules, ~17h (≈2.5 days).** Assessed before journey visualisation, per
+the early gate; re-checked 2026-09-22 after Apply was dropped (was 4 stories / ~20h).
 
 Oversized signals checked:
 
 | Signal | Present |
 |---|---|
-| More than 10 user stories | No — 4 |
-| More than 3 bounded contexts or modules | No — 2 (backend forecasting/API; Team Forecast UI). Slice 04's export is client-side within the second |
+| More than 10 user stories | No — 3 |
+| More than 3 bounded contexts or modules | No — 2 (backend forecasting/API; Team Forecast UI). Slice 03's export is client-side within the second |
 | Walking skeleton needs more than 5 integration points | N/A — no walking skeleton (brownfield, Strategy B) |
-| Estimated effort over 2 weeks | No — ~20h |
-| Multiple independent user outcomes that could ship separately | One outcome, one job. Slice 04 is severable but serves the same job through a secondary persona |
+| Estimated effort over 2 weeks | No — ~17h |
+| Multiple independent user outcomes that could ship separately | One outcome, one job. Slice 03 is severable but serves the same job through a secondary persona |
 
-No split required. Slice 04 is severable on its own merits, not because the feature is oversized.
+No split required. Slice 03 is severable on its own merits, not because the feature is oversized.
 
 ---
 
@@ -349,8 +372,9 @@ No split required. Slice 04 is severable on its own merits, not because the feat
 
 **Strategy B — extend an existing end-to-end path. No walking skeleton is built.** Decision 2, confirmed
 against the tree: the endpoint pattern (S1), the forecast engine, the blackout-aware working-day counting,
-the data-sufficiency guard (S4), the Team Forecast surface (S8) and the settings control that applies the
-answer (S9) are all shipped. Slice 01 runs a second kind of request down a path that already exists.
+the data-sufficiency guard (S4) and the Team Forecast surface (S8) are all shipped. Slice 01 runs a second
+kind of request down a path that already exists. **The feature adds no write path at all** — since Apply
+was dropped it is read-only end to end.
 
 Nothing in this feature uses a configurable or environment-switching strategy, so the strategy-D
 expansion trigger does not fire.
@@ -364,8 +388,9 @@ expansion trigger does not fire.
 | HTTP | `POST /api/latest/forecast/reality-check/{teamId}` and `POST /api/v1/forecast/reality-check/{teamId}` | 01 |
 | UI | Team → Forecast tab → "Forecast Backtesting" group → the check button and its verdict sentence | 01 |
 | UI | the same group → "Show the evidence" → four small-multiple panels and the nominal-rate lines | 02 |
-| UI | Team detail header → `ThroughputQuickSetting`, opened pre-filled | 03 |
-| Clipboard | "Copy as Markdown" from the verdict card | 04 |
+| Clipboard | "Copy as Markdown" from the verdict card | 03 |
+
+**There is no driving port that writes.** The feature is read-only end to end.
 
 ---
 
@@ -405,7 +430,7 @@ Maria Santos runs delivery for **Ocean Explorer**, a Team with fourteen months o
 `ThroughputHistory` left at the entity default of 30 days. She presses the button on a Tuesday. All
 sixteen cells evaluate. Every sampling window behaves alike: the region is *all of them*. The sentence
 reads *"Anything between 14 and 90 days would have behaved about the same for Ocean Explorer. Your
-current 30 is inside that range — this setting is fine."* No Apply control appears (D5). The second
+current 30 is inside that range — this setting is fine."* The second
 clause reads *"At 85% the forecast held in 4 of 4 checks; at 95% it held in 4 of 4 and was never beaten,
 which is over-forecasting rather than excellence; at 50% it held in 1 of 4."* Maria keeps her setting and
 starts quoting the 85th instead of the 70th.
@@ -423,8 +448,9 @@ words where the band would be — never blank (D9, ADR-194).
 **Deep Current** has `ThroughputHistory` at 14 days after somebody set it during a spike three quarters
 ago. The 14-day window over-forecast in three of its four checks; 30, 60 and 90 all behaved alike. The
 sentence reads *"Anything between 30 and 90 days would have behaved about the same for Deep Current. Your
-current 14 is not inside that range — it over-forecast in 3 of its 4 checks."* This is the minority case,
-and it is the one where slice 03's Apply control appears.
+current 14 is not inside that range — it over-forecast in 3 of its 4 checks."* This is the minority case.
+Maria changes the setting herself using the throughput control already visible in the Team header on the
+same screen (D4); the feature writes nothing on her behalf.
 
 #### UAT Scenarios (BDD)
 
@@ -506,9 +532,14 @@ Scenario: Reading the check needs read rights on the Team and nothing more
 - **AC-1.8 (D7)** — no response field, UI string, doc page or launch-post sentence attributes the
   three-way under / over / within-range verdict to Nick Brown. Wherever the source method is credited, the
   departure is stated in the same place.
+- **AC-1.9 (D4 — moved here 2026-09-22 when Apply was dropped)** — permanent copy reports the two findings
+  as two findings: that the sampling window is a setting on this Team, and that the confidence level is
+  not a setting but a choice of which number to quote. **The feature renders no control that writes any
+  Team setting**, and no string offers to change one.
 
-> **Sizing note, stated rather than gamed**: US-01 carries 8 acceptance criteria against a 3-7 band.
-> AC-1.1 is a measurement gate rather than a behaviour, so the story is seven behaviours and a probe.
+> **Sizing note, stated rather than gamed**: US-01 carries 9 acceptance criteria against a 3-7 band.
+> AC-1.1 is a measurement gate rather than a behaviour, so the story is eight behaviours and a probe, and
+> AC-1.9 arrived by absorbing the copy from the deleted Apply story rather than by the story growing.
 > The precedent is `epic-6033` US-01, which carried ten and passed DoR. The story remains demonstrable in
 > one session and estimated at one day.
 
@@ -637,112 +668,11 @@ Slice 01 (the response shape). No external dependency.
 
 ---
 
-### US-03 — Change the setting where I am standing, or be told there is nothing to change
-
-**Job**: `job-forecaster-check-the-forecast-against-what-happened`
-**Persona**: `delivery-forecaster`
-**Slice**: 03
-
-As a forecaster looking at evidence that my sampling window is outside the sound range, I want to change
-it from here in one press, so that the setting actually gets changed at the moment I have the reason in
-front of me rather than at a settings visit I never make.
-
-#### Elevator Pitch
-
-Before: the verdict names a sound range, and acting on it means remembering the number, leaving the
-Forecast tab, finding the Team header control, and typing it.
-
-After: when the current window falls outside the sound range, an **Apply 60 days** control appears beside
-the verdict; pressing it opens the Team header's throughput quick setting pre-filled with 60, and saving
-writes it through the control that already does that job. When the window is already inside the range, no
-control appears and the sentence says the setting is fine.
-
-Decision enabled: change the setting now, in one press, while the evidence is on screen — and, separately,
-understand from the copy why the confidence level that carries the real signal has no button.
-
-#### Domain Examples
-
-##### 1 — Happy path: the window is wrong and gets fixed
-
-Deep Current sits at 14 days, outside the 30-90 sound range. **Apply 60 days** appears. Maria presses it;
-the header quick setting opens pre-filled with 60; she saves; `throughputHistory` is written through the
-shipped control's own validation. Nothing new writes to the Team.
-
-##### 2 — The modal case: nothing to apply
-
-Ocean Explorer's current 30 is inside the sound range. No control is rendered. The sentence reads *"Your
-current 30 is inside that range — this setting is fine."* Maria's takeaway is a behaviour change, not a
-settings change: start quoting the 85th.
-
-##### 3 — Boundary: read-only user
-
-Tom Becker can read Ocean Explorer but not change it. He sees the verdict and the full evidence. He does
-not see the Apply control. The gating comes from `useRbac()`.
-
-#### UAT Scenarios (BDD)
-
-```gherkin
-Scenario: Applying the recommendation opens the control that already writes it
-  Given Deep Current's sampling window of 14 days is outside the sound range of 30 to 90
-  And Maria Santos can change Deep Current's settings
-  When Maria presses the apply control beside the verdict
-  Then the Team header's throughput quick setting opens pre-filled with the recommended value
-  And nothing is written until Maria saves it there
-
-Scenario: A sound setting offers nothing to apply
-  Given Ocean Explorer's current sampling window of 30 days is inside the sound range
-  When Maria reads the verdict
-  Then no apply control is offered
-  And the verdict states that her current setting is fine
-
-Scenario: The artifact says why the confidence level has no button
-  Given Maria has run the reality check on any Team
-  When she reads the result
-  Then it states that the sampling window is a setting and the confidence level is a choice of which number to quote
-  And it states that there is therefore no control for the confidence level
-
-Scenario: Someone who cannot change the Team is not offered the control
-  Given Tom Becker can read Deep Current but cannot change its settings
-  And Deep Current's window is outside the sound range
-  When Tom reads the verdict
-  Then he sees the full verdict and evidence
-  And no apply control is offered to him
-```
-
-#### Acceptance Criteria
-
-- **AC-3.1 (D5)** — an apply control appears beside the verdict only when the Team's current
-  `ThroughputHistory` falls outside the sound range, and it names the value it would set.
-- **AC-3.2** — pressing it opens the shipped `ThroughputQuickSetting` in the Team detail header,
-  pre-filled with that value. The write occurs only on the user's save, through that control's existing
-  validation and existing endpoint. **No new write endpoint and no new write path is added.**
-- **AC-3.3 (D5)** — when the current window is inside the sound range, no apply control is rendered and
-  the verdict states that the current setting is fine.
-- **AC-3.4 (D4)** — permanent copy states that the sampling window is a setting with a control, that the
-  confidence level is not a setting but a choice of which number to quote, and that there is therefore no
-  control for it.
-- **AC-3.5 (RBAC)** — a user with Team read but not Team write sees the verdict and the evidence and is
-  not offered the apply control. The gating derives from the `useRbac()` hook; **no component fetches
-  `/api/latest/authorization/my-summary` directly.**
-
-#### Technical Notes
-
-`ThroughputQuickSetting` (S9) is in `QuickSettingsBar` in the Team detail header and is present on every
-Team tab, so no navigation is required. The write path is `canUpdateTeamData`, already in place. This is a
-pre-filled open of a shipped control, not new machinery — which is the only reason Apply is in the MVP at
-all, given O3 scored 9.7 (over-served).
-
-#### Dependencies
-
-Slice 01 (the recommended value and the region). `ThroughputQuickSetting` (shipped, S9).
-
----
-
-### US-04 — The answer travels to the person who asked the question
+### US-03 — The answer travels to the person who asked the question
 
 **Job**: `job-forecaster-check-the-forecast-against-what-happened`
 **Persona**: `forecasting-prospect` (primary for this story; `delivery-forecaster` produces it)
-**Slice**: 04 — **severable**
+**Slice**: 03 — **severable**
 
 As a forecaster who was asked "how do you know this is right?" by someone who is not in the room, I want
 to paste the whole check into a message, so that the answer is something they can check rather than
@@ -805,14 +735,14 @@ Scenario: The one-pager credits the source method and names where we departed fr
 
 #### Acceptance Criteria
 
-- **AC-4.1** — the copy control produces a Markdown one-pager holding the verdict sentence, the AC-1.5
+- **AC-3.1** — the copy control produces a Markdown one-pager holding the verdict sentence, the AC-1.5
   denominator and non-comparability paragraph, all sixteen rows with their real date spans and outcomes,
   every unevaluable row with its reason, and the nominal-rate table.
-- **AC-4.2 (ADR-172 / ADR-162)** — the one-pager is built in the client. No server-side document renderer
+- **AC-3.2 (ADR-172 / ADR-162)** — the one-pager is built in the client. No server-side document renderer
   is added and no new endpoint is introduced.
-- **AC-4.3 (C6)** — every configurable term renders from the instance's terminology. The words "Epic",
+- **AC-3.3 (C6)** — every configurable term renders from the instance's terminology. The words "Epic",
   "Initiative" and "Story" do not appear. "Throughput" appears only as that instance's configured term.
-- **AC-4.4 (D7)** — the one-pager credits Nick Brown's method and states, in the same paragraph, that the
+- **AC-3.4 (D7)** — the one-pager credits Nick Brown's method and states, in the same paragraph, that the
   three-way under / over / within-range verdict is this product's departure from it.
 
 #### Technical Notes
@@ -829,14 +759,17 @@ Slices 01 and 02 (the verdict and the cell detail). Severable — if dropped, th
 
 ## Wave: DISCUSS / [REF] Story Map and Slices
 
-**Backbone**: press it → read the sentence → look at the evidence → act on it → send it to someone else.
+**Backbone**: press it → read the sentence → look at the evidence → send it to someone else.
+
+*(The backbone previously had a fifth step, "act on it". It was removed with Apply on 2026-09-22 — the
+user still acts, using the throughput control already on the page, but the feature does not do it for
+them.)*
 
 | Slice | Story | Ships | Estimate |
 |---|---|---|---|
 | 01 | US-01 | R-1 measurement, the endpoint, the verdict logic with all three honesty requirements, and the sentence and button on the Forecast tab | ~1h probe + ~7h |
 | 02 | US-02 | Four small-multiple panels, the unevaluable-row state, the nominal-rate lines | ~6h |
-| 03 | US-03 | Apply, conditional on the window being outside the region, plus the "why no button for the level" copy | ~3h |
-| 04 | US-04 | The Markdown one-pager — **severable** | ~4h |
+| 03 | US-03 | The Markdown one-pager — **severable** | ~4h |
 
 **Walking skeleton**: none. Strategy B, brownfield — see the strategy section.
 
@@ -853,28 +786,31 @@ Slices 01 and 02 (the verdict and the cell detail). Severable — if dropped, th
    because a verdict nobody can act on is still worth more than evidence nobody has a verdict for; but not
    later than second, because deferring it is exactly how the recommendation degrades into the "black box"
    exposure §3 names.
-3. **Slice 03 third — it is real but it optimises an already-cheap step.** O3 scored 9.7, over-served.
-   Changing `ThroughputHistory` is one number in a control the user already owns; Apply ships only because
-   `ThroughputQuickSetting` already exists and the cost is near zero. It is also the slice most likely to
-   be cut under pressure without harm.
-4. **Slice 04 last and severable — it serves the declared secondary objective.** C1 makes conversion an
+3. **Slice 03 last and severable — it serves the declared secondary objective.** C1 makes conversion an
    honest secondary, the Epic is tagged Community for that reason, and this is the whole of the marketing
    surface. Last because a one-pager of a verdict that has not been dogfooded is a liability rather than an
    asset.
+
+*(A slice between 02 and 03 previously carried Apply, on the reasoning that O3 scored 9.7 — over-served —
+but that Apply shipped anyway because `ThroughputQuickSetting` already existed and the cost was near zero.
+Dropped on 2026-09-22: near-zero cost was the wrong axis to judge it on, because what it actually cost was
+§4.1. See D4.)*
 
 ### Carpaccio taste tests
 
 - **Four or more new components in one slice?** Slice 01 adds one endpoint, one verdict calculation and
   one card. Slice 02 adds one panel component. Pass.
-- **Every slice depending on a new abstraction?** Slices 02-04 all consume slice 01's response, which is
-  why it ships first. Nothing depends on an abstraction built speculatively. Pass.
+- **Every slice depending on a new abstraction?** Slices 02 and 03 both consume slice 01's response, which
+  is why it ships first. Nothing depends on an abstraction built speculatively. Pass.
 - **Does any slice disprove a pre-commitment?** Slice 01 disproves the synchronous premise if AC-1.1 fails
   — the whole recommendation rests on it. Slice 02 disproves D2 if four bands per panel turn out to be
   unreadable at real data. Pass.
 - **Synthetic data only?** Slices 01 and 02 are dogfooded against this project's own Lighthouse instance
   with real history, per `recommendation.md` §5.5. Pass.
-- **Two slices identical but for scale?** 02 and 04 both render the sixteen cells, but one is on screen and
+- **Two slices identical but for scale?** 02 and 03 both render the sixteen cells, but one is on screen and
   one is a portable document for a different persona. Not merged, deliberately. Pass.
+- **Is any slice left with no user-visible value?** Re-checked after Apply was dropped. Slice 01 ships a
+  sentence, 02 the evidence view, 03 the one-pager. None is `@infrastructure`-only. Pass.
 
 ---
 
@@ -882,10 +818,14 @@ Slices 01 and 02 (the verdict and the cell detail). Severable — if dropped, th
 
 - **Any Report entity, table, migration, `UpdateType` member, queue work or notification seam.** Declined,
   not deferred (D8). ADR-207 records why and what the second Report must decide.
-- **A per-Team default forecast confidence level.** **Escalated, not declined** (D4). Real product
-  question, its own ADO item, and this feature's evidence is what would justify opening it. No setting is
-  invented here.
-- **The `ThroughputHistory` 30-vs-90 default disagreement** (D13). Its own ADO item.
+- **Any control that writes a Team setting — the Apply button.** **Declined 2026-09-22, not deferred**
+  (D4). It contradicted §4.1 by naming one number inside a range the artifact had just called
+  undifferentiated, and the control it was a shortcut to is already on the same screen. **DESIGN should
+  not reintroduce it as an obvious improvement.**
+- **A per-Team default forecast confidence level.** **Raised as a candidate and DECLINED by the maintainer,
+  2026-09-22** (D4). Recorded so a later wave does not re-raise it as though unconsidered. The
+  window/level asymmetry is permanent by decision.
+- **The `ThroughputHistory` 30-vs-90 default disagreement** (D13). Tracked as **Bug #6071**.
 - **Rolling-origin evaluation** (R-7). C4/D6 is not reopened. Recorded as the strongest candidate for a
   later slice if the honesty mitigations prove insufficient in use.
 - **Scheduling, continuous checking or auto-adjustment** (C2). On demand only. The auto-adjusting future
@@ -898,9 +838,9 @@ Slices 01 and 02 (the verdict and the cell detail). Severable — if dropped, th
 - **CLI or MCP client exposure** (D12). See the checklist below for the explicit answer and the
   precondition that would reverse it.
 - **ADR-127's team-settings advisory channel.** Story #5612 deleted it; `ValidationAdvisory.tsx` is absent
-  from the frontend and a later rung was built *"rather than reviving them"*. **ADR-127 carries no note
-  saying so — do not reach for that mechanism.** A status correction on ADR-127 is worth its own item,
-  independently of this Epic.
+  from the frontend and a later rung was built *"rather than reviving them"*. **Do not reach for that
+  mechanism.** ADR-127 now carries a SUPERSEDED-BY-EVENTS status note recording the deletion, so the
+  standing caution this document used to raise is discharged — read the corrected ADR.
 
 ---
 
@@ -908,18 +848,31 @@ Slices 01 and 02 (the verdict and the cell detail). Severable — if dropped, th
 
 No silent N/A — every item answered.
 
-### RBAC impact — no new surface
+### RBAC impact — no new surface, and now read-only end to end
 
-**Confirmed against the tree.** The read endpoint reuses
+**Confirmed against the tree.** The one endpoint reuses
 `[RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]`, byte-identical to the shipped
 `POST backtest/{teamId}` (S1). No new `RbacGuardRequirement` member, no new permission, no new scope.
 
-Applying the recommendation introduces **no write path of its own** — it opens the shipped
-`ThroughputQuickSetting`, whose write already goes through `canUpdateTeamData` (AC-3.2).
+**Simplified 2026-09-22 by dropping Apply, and worth stating rather than letting it disappear: the feature
+now has no write path at all.** It reads, it renders, it copies to the clipboard. Previously the RBAC
+answer had two halves — a read endpoint plus a write that borrowed `canUpdateTeamData` through the shipped
+`ThroughputQuickSetting`. The second half is gone. There is no write endpoint, no borrowed write path, and
+no control anywhere in the feature that mutates a Team.
 
-UI gating: all of it derives from the `useRbac()` hook. **No component fetches
-`/api/latest/authorization/my-summary` directly** — AC-3.5 asserts this, and it is the project's standing
-architecture rule.
+Consequences, all simplifications:
+
+- **A single permission governs the whole feature**: Team read. Anyone who can see the Team's Forecast tab
+  can run the check and read every part of the result.
+- **There is no differential rendering by permission** — no control to show or hide, so no
+  read-versus-write branch in this feature's UI at all.
+- The project's standing rule still holds and is unchanged: all UI gating derives from the `useRbac()`
+  hook, and **no component fetches `/api/latest/authorization/my-summary` directly.** This feature adds no
+  new gating, so it adds no new opportunity to break that rule.
+
+*(One observation recorded under D4: the Team header's `QuickSettingsBar` is itself wrapped in
+`showWriteControls ?`, so a read-only user sees no throughput control on the page either. That is existing
+behaviour this feature neither uses nor changes.)*
 
 ### Lighthouse-Clients CLI / MCP versioning — deliberately no, with the precondition for later
 
@@ -943,9 +896,9 @@ C1 (free / Community tier) makes conversion an honest secondary objective, and t
 Community for the stated reason that it "should convince people of the method, so they flock to use the
 tool". O5 scores 11.6, under-served. So the marketing surface is answered rather than waved at:
 
-- **The carrier is slice 04's one-pager.** `recommendation.md` §5.5 named it as a candidate, and this wave
-  commits to it as slice 04 (severable). It is the only thing in the feature that travels, and it is the
-  whole of the MARKETING criterion.
+- **The carrier is slice 03's one-pager.** `recommendation.md` §5.5 named it as a candidate, and this wave
+  commits to it as slice 03 (severable; it was slice 04 until Apply was dropped on 2026-09-22). It is the
+  only thing in the feature that travels, and it is the whole of the MARKETING criterion.
 - **The launch post** carries the internal codename "The Full Monte" **with attribution to Nick Brown**,
   which is what converts a borrowed article title into a citation. It states the U3 departure in the same
   place (D7, AC-1.8).
@@ -988,8 +941,14 @@ estimates, so nothing below may be reported downstream as a measured baseline.
 | **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports beaten-count against expected-count, with never-beaten called over-forecasting | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
 | **O2 — Teams whose window has been checked** | Teams on the dev and demo instances | Have been through a reality check at least once | At least 3 within 30 days of release | Dogfooding record in the slice briefs; usage data only if consent exists | 0 |
 | **O5 — the answer travels** | A forecaster answering a sceptic | Pastes a one-pager instead of describing a screen | At least 1 one-pager shared externally within 60 days | Manual — the maintainer's own use, and any community mention | 0 |
+| **No write path exists** | The feature | Mutates a Team setting | 0 endpoints, 0 controls | AC-1.9, asserted; and the absence of any write in the driving-ports table | N/A — the previous plan had one |
 | **Engine drift introduced** | The shipped forecast engine | Changes | 0 | Existing forecast assertions unchanged before and after slice 01 | N/A |
 | **Mutation kill rate** | Both stacks | Stryker.NET and StrykerJS, acceptance suite excluded | At least 80% | Per-feature run on frozen code | Project standard |
+
+**O3 is deliberately unserved and carries no KPI.** It scored 9.7 — over-served — and dropping Apply
+makes that explicit rather than merely weighted: the feature now optimises the diagnosis and does nothing
+at all about the keystroke. No KPI measuring apply-usage or click-through survives, because there is
+nothing to click; none is left in the table pointing at something unreportable.
 
 ---
 
@@ -1002,7 +961,7 @@ estimates, so nothing below may be reported downstream as a measured baseline.
 | P3 | A shipped data-sufficiency bar exists and is callable per cell | **Confirmed** — `ForecastDataSufficiencyPolicy.HasEnoughData`, a pure function over `RunChartData`, `MinimumActiveDays = 5` (S4) |
 | P4 | Today-anchored, reach-back-by-length windowing is the product's existing shape | **Confirmed** — `Team.GetThroughputSettings` (S6) |
 | P5 | A surface exists on the Forecast tab to host the control | **Confirmed** — `InputGroup title="Forecast Backtesting"` (S8) |
-| P6 | A shipped control writes `throughputHistory` from every Team tab | **Confirmed** — `ThroughputQuickSetting` in `QuickSettingsBar` (S9) |
+| P6 | ~~A shipped control writes `throughputHistory` from every Team tab~~ | **No longer a pre-requisite — Apply was dropped 2026-09-22.** Retained as context only: `ThroughputQuickSetting` does sit in `QuickSettingsBar` inside `DetailHeader`'s `quickSettingsContent` (`TeamDetail.tsx:402-405`), so it renders on every Team tab. That is now the *argument for* not building Apply (D4), not a dependency of it |
 | P7 | There is a Team setting for the forecast confidence level | **Confirmed ABSENT** — searched; `Team` has no percentile field and `ServiceLevelExpectationProbability` is a cycle-time SLE (S7). **This is a finding, not a blocker** — see D4 |
 | P8 | A sixteen-run sweep fits a request budget | **OPEN — the only one.** AC-1.1, resolved as the first task of slice 01 |
 | P9 | A client-side export precedent exists | **Confirmed** — ADR-172 and ADR-162, both client-side |
@@ -1017,21 +976,23 @@ P8 is the single open pre-requisite and is closed inside slice 01 before any UI 
 |---|---|---|---|
 | 1 | Problem statement clear, in domain language | **PASS** | Each story opens from the forecaster's pain — a setting made once, never checked, driving every published number. No solution language. The SSOT job states it at strategic level |
 | 2 | User / persona identified with specific characteristics | **PASS** | `delivery-forecaster` primary and `forecasting-prospect` secondary, both SSOT personas with full profiles. `flow-coach` and `config-admin` explicitly excluded with reasons |
-| 3 | 3+ domain examples with real data | **PASS** | Three per story, twelve total. Real personas (Maria Santos, Tom Becker), real Teams (Ocean Explorer, Coastal Survey, Deep Current), real numbers (30, 14, 60, 90 days; 42 items; 3 of 5 days). No `user123` |
-| 4 | UAT in Given/When/Then, 3-7 scenarios | **PASS** | 6 / 5 / 4 / 4 across US-01 to US-04. All within band |
-| 5 | AC derived from UAT | **PASS** | 8 / 6 / 5 / 4. Each traces to a scenario or to a named honesty requirement, and each asserts an observable output |
-| 6 | Right-sized, 1-3 days, 3-7 scenarios | **PASS with a stated qualification** | Four slices at ~8h / ~6h / ~3h / ~4h, each demonstrable in one session. **US-01 carries 8 ACs against the 3-7 band**; AC-1.1 is a measurement gate rather than a behaviour, so the story is seven behaviours plus a probe. Stated rather than gamed; the `epic-6033` US-01 precedent carried ten |
+| 3 | 3+ domain examples with real data | **PASS** | Three per story, nine total. Real personas (Maria Santos, Tom Becker), real Teams (Ocean Explorer, Coastal Survey, Deep Current), real numbers (30, 14, 60, 90 days; 42 items; 3 of 5 days). No `user123` |
+| 4 | UAT in Given/When/Then, 3-7 scenarios | **PASS** | 6 / 5 / 4 across US-01 to US-03. All within band |
+| 5 | AC derived from UAT | **PASS** | 9 / 6 / 4. Each traces to a scenario or to a named honesty requirement, and each asserts an observable output |
+| 6 | Right-sized, 1-3 days, 3-7 scenarios | **PASS with a stated qualification** | Three slices at ~8h / ~6h / ~4h, each demonstrable in one session. **US-01 carries 9 ACs against the 3-7 band**; AC-1.1 is a measurement gate rather than a behaviour and AC-1.9 was absorbed from the deleted Apply story, so the story is eight behaviours plus a probe. Stated rather than gamed; the `epic-6033` US-01 precedent carried ten |
 | 7 | Technical notes identify constraints and dependencies | **PASS** | Per story. The surface inventory gives every line the feature touches. C1-C6 honoured and none reopened |
-| 8 | Dependencies resolved or tracked | **PASS** | P1-P9. Eight confirmed, P7 confirmed absent as a finding that drives D4, **P8 open and closed inside slice 01 by AC-1.1** before any UI |
-| 9 | Outcome KPIs defined with measurable targets | **PASS** | Nine KPIs with who / does what / by how much / measured by / baseline. All declared as hypotheses, none as measured |
+| 8 | Dependencies resolved or tracked | **PASS** | P1-P9. Seven confirmed, P6 retired with Apply, P7 confirmed absent as a finding that drives D4, **P8 open and closed inside slice 01 by AC-1.1** before any UI |
+| 9 | Outcome KPIs defined with measurable targets | **PASS** | Ten KPIs with who / does what / by how much / measured by / baseline. All declared as hypotheses, none as measured. O3 carries none, deliberately and on the record |
 
-Job traceability: **all four stories carry `job_id: job-forecaster-check-the-forecast-against-what-happened`**, an existing SSOT entry. No story is `@infrastructure`, and all four carry an Elevator Pitch with a real entry point and concrete output.
+Job traceability: **all three stories carry `job_id: job-forecaster-check-the-forecast-against-what-happened`**, an existing SSOT entry. No story is `@infrastructure`, and all three carry an Elevator Pitch with a real entry point and concrete output.
 
-### DoR: PASS
+### DoR: PASS — re-validated 2026-09-22 after Apply was dropped
 
-The one qualification — US-01 at eight ACs — is recorded rather than engineered away. No genuine
-ambiguity surfaced, so the optional per-wave peer review is not run; the mandatory consolidated review
-fires at the end of DISTILL.
+The one qualification — US-01 at nine ACs — is recorded rather than engineered away. The removal of Apply
+did not break any DoR item: it removed a story rather than hollowing one out, the `@infrastructure`-only
+slice gate was re-checked and passes, and the only AC worth keeping from the deleted story was folded into
+US-01 as AC-1.9. No genuine ambiguity surfaced, so the optional per-wave peer review is still not run; the
+mandatory consolidated review fires at the end of DISTILL.
 
 ---
 
@@ -1050,9 +1011,12 @@ fires at the end of DISTILL.
 9. Docs page and two per-theme screenshots at feature finalization, in configurable terminology.
 10. **R-5 discharged before anything from the source article is quoted publicly.**
 11. ADR-207 written in the DESIGN wave, deciding more than "not yet".
-12. Two separate ADO items raised: the `ThroughputHistory` 30-vs-90 default disagreement (D13), and the
-    per-Team default confidence level question (D4). Neither folded into #4172.
-13. ADO Epic #4172 and its child Stories transitioned; **the Epic stops at Resolved, never Closed.**
+12. **Bug #6071** (the `ThroughputHistory` 30-vs-90 default disagreement, D13) stays out of this Epic. The
+    per-Team default confidence level question was **declined** by the maintainer on 2026-09-22 and no item
+    is owed for it (D4).
+13. **No write path ships.** If any slice introduces an endpoint or a control that mutates a Team setting,
+    Apply has been reintroduced and D4 has been violated.
+14. ADO Epic #4172 and its child Stories transitioned; **the Epic stops at Resolved, never Closed.**
 
 ---
 
@@ -1063,7 +1027,8 @@ fires at the end of DISTILL.
 | `docs/product/jobs.yaml` | `job-forecaster-check-the-forecast-against-what-happened` — `dimensions.functional` corrected (it said the answer names the window that "would have fitted best", which D1/§4.1 forbid), and a DISCUSS note appended recording D1, D3, D4 and the absent percentile setting. Patched by anchor; the file was not rewritten |
 | `docs/product/personas/delivery-forecaster.yaml` | The SSOT job appended to `primary_jobs`. DIVERGE created the job but did not link it from the persona |
 | `docs/product/personas/forecasting-prospect.yaml` | The same job appended to `primary_jobs`, marked as the secondary read |
-| `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Created — one journey, five steps, emotional arc, per-step failure modes, shared-artifact registry and integration validation |
+| `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Created — one journey, emotional arc, per-step failure modes, shared-artifact registry and integration validation. **Revised 2026-09-22**: D4 rewritten, D5 deleted, the fifth step rewritten from "act on it" to "take the two findings away", and the apply-control artifacts and failure modes removed |
+| `docs/product/jobs.yaml` *(second patch, 2026-09-22)* | The DISCUSS note's clause saying the sampling window "gets a control" corrected — neither axis does — and the per-Team confidence level recorded as **declined** rather than as an owed ADO item |
 
 ---
 
@@ -1075,10 +1040,11 @@ fires at the end of DISTILL.
 | **R-3** | Which confidence level does a cell score against? | **RESOLVED by U2 and D1** — all four, 50/70/85/95, printed |
 | **R-4** | Is the three-way verdict kept? | **RESOLVED by U3 and D7** — kept, and the departure from Brown is owned out loud in an AC |
 | **R-5** | The source article was read via a readmedium.com mirror | **Carried to DELIVER** as a hard gate on the launch post. Arithmetic-reconciled and corroborated, but one human page-load is wanted before anything is quoted publicly |
-| **R-6** | `ThroughputHistory` defaults to 30 on the entity and 90 in two UIs | **Out of scope, own ADO item** (D13). Found while researching this Epic; independently verified |
+| **R-6** | `ThroughputHistory` defaults to 30 on the entity and 90 in two UIs | **CLOSED as out of scope — now Bug #6071** (D13). Found while researching this Epic; independently verified |
 | **R-7** | Rolling-origin evaluation is what every adjacent field does by default | Recorded, not scheduled. D6 is not reopened |
-| **R-8** *(new, this wave)* | There is no Team setting for the forecast confidence level (S7, P7) | **Resolved as a design finding, not a gap** (D4). The question of whether one should exist is escalated as its own ADO item |
-| **Standing** | ADR-127 describes a team-settings advisory channel that no longer exists in the tree, and carries no note saying so | **Do not reach for that mechanism.** Story #5612 deleted it. A status correction on ADR-127 is worth its own item |
+| **R-8** | There is no Team setting for the forecast confidence level (S7, P7) | **CLOSED.** Resolved as a design finding, not a gap (D4). The follow-on question — should one exist — was **declined by the maintainer on 2026-09-22**, making the window/level asymmetry permanent by decision |
+| **R-9** *(new, 2026-09-22)* | **Apply was scored 5/5 on DECISION-CHANGING in DIVERGE and shipped through the first DISCUSS pass before anyone noticed it contradicted §4.1.** | **CLOSED by removal** (D4). Recorded as a risk rather than only as a decision because the failure mode is general: a criterion scored in isolation can hide what it costs on a higher-weighted one. The same check is worth running on anything DESIGN adds |
+| **Standing** | ADR-127 describes a team-settings advisory channel that no longer exists in the tree | **DISCHARGED.** ADR-127 now carries a SUPERSEDED-BY-EVENTS status note recording that Story #5612 deleted the channel. Still do not reach for that mechanism — but read the corrected ADR rather than this row |
 
 ---
 
@@ -1090,7 +1056,7 @@ above.
 | Trigger | Fired | Why |
 |---|---|---|
 | AC ambiguity across 2 or more stories | No | Every AC names an observable output and a surface |
-| Cross-context complexity (3+ contexts or technologies) | No | Two — backend forecasting/API and the Team Forecast UI. Slice 04's export is client-side inside the second |
+| Cross-context complexity (3+ contexts or technologies) | No | Two — backend forecasting/API and the Team Forecast UI. Slice 03's export is client-side inside the second |
 | Multi-stakeholder (3+ personas) | No | Two — `delivery-forecaster` and `forecasting-prospect`. Two more are named only to be excluded |
 | Compliance or regulatory | No | No regulated data; the endpoint is read-only over data already in the instance |
 | Walking-skeleton strategy = D (configurable) | No | Strategy B |
@@ -1105,3 +1071,7 @@ by §4.1, and the four-panels-per-level explosion by D2's argument that a distri
 is one object. Re-rendering that reasoning in a separate section would duplicate D2.
 
 Telemetry: no triggered ids, so no `choice` records.
+
+**Re-evaluated 2026-09-22** after Apply was dropped. Every count moved the same direction — 3 stories
+instead of 4, 2 contexts unchanged, 2 personas unchanged, and the feature is now read-only — so no trigger
+that was cold has warmed. No expansion is offered on the revision either.
