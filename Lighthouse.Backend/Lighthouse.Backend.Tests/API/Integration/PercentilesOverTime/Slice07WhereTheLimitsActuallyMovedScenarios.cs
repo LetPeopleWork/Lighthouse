@@ -70,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_period_with_nothing_to_draw_limits_from_reports_no_limits()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -85,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one()
         {
             var teamId = GivenATeamStillBeingRefreshed();
