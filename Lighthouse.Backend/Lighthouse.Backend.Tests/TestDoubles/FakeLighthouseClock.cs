@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.TestDoubles
     /// </summary>
     public sealed class FakeLighthouseClock : ILighthouseClock
     {
-        private readonly FakeTimeProvider timeProvider;
+        private FakeTimeProvider timeProvider;
 
         private LighthouseClock clock;
 
@@ -32,7 +32,16 @@ namespace Lighthouse.Backend.Tests.TestDoubles
 
         public DateOnly ToInstanceDay(DateTime utcInstant) => clock.ToInstanceDay(utcInstant);
 
-        public void SetInstant(DateTimeOffset instant) => timeProvider.SetUtcNow(instant);
+        /// <summary>
+        /// A scenario that checks a day worked out afterwards against the day that was watched has to put
+        /// the instance back on the earlier day first, and the underlying time provider throws rather than
+        /// be moved backwards. So the provider is replaced instead of advanced.
+        /// </summary>
+        public void SetInstant(DateTimeOffset instant)
+        {
+            timeProvider = new FakeTimeProvider(instant);
+            clock = new LighthouseClock(clock.Zone, timeProvider);
+        }
 
         public void SetZone(TimeZoneInfo zone) => clock = new LighthouseClock(zone, timeProvider);
     }

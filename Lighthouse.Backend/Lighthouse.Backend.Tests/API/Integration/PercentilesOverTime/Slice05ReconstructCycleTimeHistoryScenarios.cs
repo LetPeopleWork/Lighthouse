@@ -12,10 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// Driving port: the shipped percentiles-over-time read endpoint. Nothing here reaches for a filler or
     /// a reconciler to start the work - opening the chart is what starts it, which is the whole claim.
     ///
-    /// Every scenario but the last is pending: the behaviour does not exist yet. The one that runs pins a
-    /// property that must survive this story rather than arrive with it - opening a chart writes nothing
-    /// while the reader waits.
-    ///
     /// Step definitions live in Slice05ReconstructCycleTimeHistorySpecifications.cs (same partial class).
     /// </summary>
     [TestFixture]
@@ -24,8 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-05")]
     public partial class Slice05ReconstructCycleTimeHistoryTest
     {
-        private const string Pending = "Pending: reconstruction of missing over-time days is not built yet (story 6053, slice 01).";
-
         // @driving_port @us-01 @real-io @contract-shape:bounded-change
         [Test]
         public async Task The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded()
@@ -208,7 +202,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @fidelity @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched()
         {
             var teamId = GivenATeamStillBeingRefreshed();
