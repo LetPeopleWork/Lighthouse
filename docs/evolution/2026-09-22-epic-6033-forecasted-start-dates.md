@@ -154,9 +154,9 @@ scenario, and their absence had falsified slice 05's own worked example.
 
 ## Carries forward
 
-- **ADRs 199–205 still read `Proposed — awaiting maintainer ratification`** although every one of them
-  shipped. ADR-204's title still says *one switch*; slice 07 replaced that switch, and ADR-205 is what
-  now governs the control.
+- **ADR-204's title still says *one switch*** — a control slice 07 replaced. All seven ADRs (199–205) are
+  now Accepted, and 204 carries a dated amendment saying its control, and only its control, is superseded
+  by ADR-205. The title is left as written because renaming a file breaks every link to it.
 - **ADR-156 (per-trial completion recording) stays deferred.** It was not un-deferred by this Epic.
 - **Two unmapped states in the demo CSVs** vanish silently: `Analyzing` (against the configured
   `Analysing`) ×6 in `Team Gravity.csv`, `Nebula` ×1 in `Team Zenith.csv`. Unrepaired, undecided.

@@ -8590,6 +8590,14 @@ mapping screen's existing endpoints carry the four new value sources.
   reports its observed date, and the rule lives on `Feature` because two consumers need it
 - [ADR-202](./adr-202-the-run-forecasts-the-board-as-configured.md) — in-flight Features are not seeded
   into the WIP slots; the resulting oddness is documented rather than corrected
+- [ADR-203](./adr-203-a-drawn-dependency-line-means-the-forecast-acted-on-it.md) — a line is drawn only
+  where the forecast acted on the wait and both ends have a bar; every other wait is said in words
+- [ADR-204](./adr-204-one-switch-turns-a-delivery-into-team-lanes-and-the-summary-bar-never-moves.md) —
+  Team rows are flat ordinary bars beneath a Feature, and the Feature's own task object is byte-identical
+  with them shown and hidden. Its control is superseded by ADR-205
+- [ADR-205](./adr-205-the-delivery-timeline-answers-one-question-at-a-time.md) — one exclusive choice,
+  `Show [Nothing][Teams][Status][Warnings]`, default Status; the bar wears the answer whole, so the
+  finished / not-started-by-target / finishes-late verdicts are ranked rather than combined
 
 Consumed unchanged: [ADR-110](./adr-110-multi-team-forecast-joint-probability.md),
 [ADR-111](./adr-111-aggregate-forecast-field-provenance.md),

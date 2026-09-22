@@ -1,6 +1,6 @@
 # ADR-203: A drawn dependency line means the forecast acted on that edge; everything else is said in words
 
-- **Status**: Proposed (2026-09-21, DESIGN) — awaiting maintainer ratification
+- **Status**: Accepted (maintainer, 2026-09-22 — ratified at the Epic's close-out). Implemented by slice 05 (ADO User Story #6049).
 - **Date**: 2026-09-21
 - **Feature**: epic-6033-forecasted-start-dates (ADO Epic #6033, slice 05 / User Story #6049)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

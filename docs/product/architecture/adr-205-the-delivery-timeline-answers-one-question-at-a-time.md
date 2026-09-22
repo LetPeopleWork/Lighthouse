@@ -1,6 +1,6 @@
 # ADR-205: The Delivery timeline answers one question at a time, and the bar wears the answer
 
-- **Status**: Proposed (2026-09-21, DESIGN; rewritten the same day after the first encoding was seen running) — awaiting maintainer ratification
+- **Status**: Accepted (maintainer, 2026-09-22 — ratified at the Epic's close-out; written 2026-09-21 and rewritten the same day after the first encoding was seen running). Implemented by slice 07 (ADO User Story #6067).
 - **Date**: 2026-09-21
 - **Feature**: epic-6033-forecasted-start-dates (ADO Epic #6033, slice 07 / User Story #6067)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

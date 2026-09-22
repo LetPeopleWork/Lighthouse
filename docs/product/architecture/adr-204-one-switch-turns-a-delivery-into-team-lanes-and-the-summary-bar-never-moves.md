@@ -1,9 +1,18 @@
 # ADR-204: One switch turns a Delivery into team lanes, and the summary bar never moves
 
-- **Status**: Proposed (2026-09-21, DESIGN) — awaiting maintainer ratification
+- **Status**: Accepted (maintainer, 2026-09-22 — ratified at the Epic's close-out). Implemented by slice 06 (ADO User Story #6050). **Its control — and only its control — is superseded by [ADR-205](./adr-205-the-delivery-timeline-answers-one-question-at-a-time.md).**
 - **Date**: 2026-09-21
 - **Feature**: epic-6033-forecasted-start-dates (ADO Epic #6033, slice 06 / User Story #6050)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
+
+> **Amended 2026-09-22 — the switch became one option in a group.** Slice 07 asks the reader one question
+> at a time, so what shipped is `Show [Nothing][Teams][Status][Warnings]`, exclusive, defaulting to
+> Status. Read every "switch" below as the **Teams** option, and "off" as any other option being chosen —
+> including the title, which names a control that no longer exists in that shape. Everything this ADR
+> decides about the lanes themselves is unchanged and shipped: flat rows rather than hierarchy, the
+> summary bar that never moves, the visibility gate that hides the control where it would do nothing, the
+> naming of a Team that gets no row, and the choice being remembered once per browser rather than per
+> Delivery.
 
 ## Context
 
