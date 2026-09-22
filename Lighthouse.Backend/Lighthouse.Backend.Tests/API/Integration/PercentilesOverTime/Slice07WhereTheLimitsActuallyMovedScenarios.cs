@@ -126,7 +126,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// which is what makes "judged against today" and "judged against the day being rebuilt" two
         /// different answers rather than the same one twice. Equal-length retention would leave the
         /// scenario unable to fail; the guard below says so out loud rather than leaving it to be
-        /// noticed.
+        /// noticed. The team is also finishing more work every month, so a stretch that followed the
+        /// window would give a different reading on every day of the period - which is what makes
+        /// "the limits did not move" a claim about the pinned stretch rather than about flat data.
+        ///
+        /// For whoever makes this pass: the two assertions below fail to two different edits, and
+        /// running one sabotage proves one half only.
+        ///
+        /// Judging validity against Clock.Today rather than against the day being rebuilt puts the
+        /// pinned stretch back outside the retention window, the chart comes back unusable, no rows
+        /// are written, and the FIRST assertion fails on an empty series. That is the half this slice
+        /// is about.
+        ///
+        /// It does NOT move the limits, and expecting it to would mislead: with a stretch pinned, the
+        /// average and the limits are computed from that fixed stretch alone and do not depend on the
+        /// display window at all, so re-anchoring the window changes nothing about the stored triple.
+        /// The SECOND assertion answers a different question - that the limits came from the pinned
+        /// stretch and not from a rolling one - and the edit that fails it is ignoring the pin, that
+        /// is, feeding the display window in as the baseline. With this seed that makes the limits
+        /// climb day by day and the distinct count goes above one.
         /// </summary>
         // @us-03 @driving_port @real-io @contract-shape:bounded-change
         [Test]
@@ -134,7 +152,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         public async Task A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart()
         {
             var teamId = GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
-            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-250), TodayDay);
+            GivenTheTeamFinishedMoreEachMonthFrom(teamId, TodayDay.AddDays(-250), TodayDay);
             GivenTheTeamPinnedTheStretchItsLimitsAreDrawnFrom(teamId, TodayDay.AddDays(-240), TodayDay.AddDays(-150));
             GivenTheTeamsStretchIsOutOfReachTodayAndInReachOverThePeriod(teamId, TodayDay.AddDays(-30));
 
@@ -150,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         public async Task A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too()
         {
             var portfolioId = GivenAPortfolioStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
-            GivenThePortfolioFinishedOneDeliveryADayFrom(portfolioId, TodayDay.AddDays(-250), TodayDay);
+            GivenThePortfolioFinishedMoreDeliveriesEachMonthFrom(portfolioId, TodayDay.AddDays(-250), TodayDay);
             GivenThePortfolioPinnedTheStretchItsLimitsAreDrawnFrom(portfolioId, TodayDay.AddDays(-240), TodayDay.AddDays(-150));
             GivenThePortfoliosStretchIsOutOfReachTodayAndInReachOverThePeriod(portfolioId, TodayDay.AddDays(-30));
 
@@ -164,6 +182,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// The other half. A team that has not fixed the stretch draws each day's limits from that day's
         /// own recent history, so the lines are free to move - which is what makes "did the limits move"
         /// answerable at all.
+        ///
+        /// This team is finishing more work every month, so the lines must actually climb over the
+        /// period, and the Then says so. With a flat series they could not have moved whatever the
+        /// implementation did, and this scenario would have agreed with the fixed-stretch one above
+        /// instead of reading differently from it.
         /// </summary>
         // @us-03 @real-io @contract-shape:bounded-change
         [Test]
@@ -171,7 +194,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         public async Task A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history()
         {
             var teamId = GivenATeamStillBeingRefreshed();
-            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-200), TodayDay);
+            GivenTheTeamFinishedMoreEachMonthFrom(teamId, TodayDay.AddDays(-200), TodayDay);
 
             await WhenTheDeliveryLeadOpensTheTeamLimits(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-60), TodayDay.AddDays(-30));
             await WhenTheChartHasFinishedFillingIn();

@@ -352,7 +352,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             using var scope = Factory.Services.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
 
-            repository.Add(new WorkItem
+            repository.Add(FinishedItem(teamId, referenceId, startedOn, closedOn));
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// However many items the team finished on each day of a span, in a single write. The seeder
+        /// above commits per item, which is right for the handful a scenario usually names; a scenario
+        /// that needs a throughput which varies day to day needs a thousand or so, and a commit each
+        /// would be most of what it spends its time on.
+        /// </summary>
+        protected void SeedItemsFinishedOn(int teamId, DateOnly from, DateOnly to, Func<DateOnly, int> howManyFinishedOn)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+
+            for (var day = from; day <= to; day = day.AddDays(1))
+            {
+                var finishedThatDay = howManyFinishedOn(day);
+
+                for (var nth = 0; nth < finishedThatDay; nth++)
+                {
+                    repository.Add(FinishedItem(teamId, $"{teamId}-{day:yyyyMMdd}-{nth}", day.AddDays(-1), day));
+                }
+            }
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        private static WorkItem FinishedItem(int teamId, string referenceId, DateOnly startedOn, DateOnly closedOn)
+        {
+            return new WorkItem
             {
                 TeamId = teamId,
                 ReferenceId = referenceId,
@@ -364,9 +395,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 StartedDate = startedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
                 ClosedDate = closedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
                 Order = referenceId,
-            });
-
-            repository.Save().GetAwaiter().GetResult();
+            };
         }
 
         protected void SeedItemStillInProgressSince(int teamId, string referenceId, DateOnly startedOn)
@@ -405,6 +434,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         protected void SeedSizedDeliveryFinishedOn(int portfolioId, string referenceId, DateOnly startedOn, DateOnly closedOn, int brokenDownIntoItems)
             => SeedFinishedDelivery(portfolioId, referenceId, startedOn, closedOn, brokenDownIntoItems);
 
+        /// <summary>
+        /// However many sized deliveries the portfolio finished on each day of a span, in a single
+        /// write. Same reason as the batched item seeder above: a varying daily count needs hundreds of
+        /// rows, and a commit each would be most of the scenario's runtime.
+        /// </summary>
+        protected void SeedSizedDeliveriesFinishedOn(
+            int portfolioId, DateOnly from, DateOnly to, Func<DateOnly, int> howManyFinishedOn, Func<DateOnly, int> howBigEachWas)
+        {
+            var doneByTeamId = TheTeamTheDeliveriesAreBrokenDownFor();
+
+            using var scope = Factory.Services.CreateScope();
+            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
+            var doneBy = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(doneByTeamId)!;
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+
+            for (var day = from; day <= to; day = day.AddDays(1))
+            {
+                var finishedThatDay = howManyFinishedOn(day);
+
+                for (var nth = 0; nth < finishedThatDay; nth++)
+                {
+                    repository.Add(FinishedDelivery(
+                        portfolio, doneBy, $"{portfolioId}-{day:yyyyMMdd}-{nth}", day.AddDays(-4), day, howBigEachWas(day)));
+                }
+            }
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
         private void SeedFinishedDelivery(int portfolioId, string referenceId, DateOnly startedOn, DateOnly closedOn, int? brokenDownIntoItems)
         {
             var doneByTeamId = brokenDownIntoItems.HasValue ? TheTeamTheDeliveriesAreBrokenDownFor() : (int?)null;
@@ -413,6 +471,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
             var repository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
 
+            var doneBy = doneByTeamId.HasValue
+                ? scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(doneByTeamId.Value)!
+                : null;
+
+            var delivery = FinishedDelivery(portfolio, doneBy, referenceId, startedOn, closedOn, brokenDownIntoItems);
+
+            repository.Add(delivery);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        private static Feature FinishedDelivery(
+            Portfolio portfolio, Team? doneBy, string referenceId, DateOnly startedOn, DateOnly closedOn, int? brokenDownIntoItems)
+        {
             var delivery = new Feature
             {
                 ReferenceId = referenceId,
@@ -427,18 +498,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             };
             delivery.Portfolios.Add(portfolio);
 
-            if (doneByTeamId.HasValue)
+            if (doneBy != null)
             {
-                var doneBy = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(doneByTeamId.Value)!;
-
                 // Nothing left to do: the delivery is finished. Only the total is what its size is read
                 // from, and a delivery still carrying remaining work would additionally need a forecast
                 // before the rest of the product would treat it as answerable.
                 delivery.AddOrUpdateWorkForTeam(doneBy, 0, brokenDownIntoItems!.Value);
             }
 
-            repository.Add(delivery);
-            repository.Save().GetAwaiter().GetResult();
+            return delivery;
         }
 
         /// <summary>

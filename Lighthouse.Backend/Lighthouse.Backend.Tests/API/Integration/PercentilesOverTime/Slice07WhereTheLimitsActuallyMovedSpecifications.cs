@@ -95,11 +95,65 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         /// <summary>
+        /// A team that has been getting faster: quiet at the weekend, one more item a day than it was
+        /// managing a month before. Kept apart from the steady seeder above rather than replacing it,
+        /// because several scenarios turn on the flat series - one of them specifically on the
+        /// collapsed band a stretch with nothing in it produces.
+        /// </summary>
+        private void GivenTheTeamFinishedMoreEachMonthFrom(int teamId, DateOnly from, DateOnly to)
+            => SeedItemsFinishedOn(teamId, from, to, HowManyItemsTheTeamFinishedOn);
+
+        private void GivenThePortfolioFinishedMoreDeliveriesEachMonthFrom(int portfolioId, DateOnly from, DateOnly to)
+            => SeedSizedDeliveriesFinishedOn(portfolioId, from, to, HowManyDeliveriesThePortfolioFinishedOn, HowBigTheDeliveryFinishedOnWas);
+
+        /// <summary>
         /// How much work the delivery that finished on <paramref name="day"/> was broken down into.
         /// Deliveries vary in size; the arithmetic only has to make them vary in a way that does not
         /// depend on when the suite runs.
         /// </summary>
         private static int HowBigTheDeliveryFinishedOnWas(DateOnly day) => 3 + (day.DayNumber % 5);
+
+        /// <summary>
+        /// An owner that is getting faster: nothing finished at the weekend, and on a weekday one more
+        /// than it was managing a month earlier.
+        ///
+        /// Both halves are load-bearing, and for different reasons. The quiet weekend gives the band a
+        /// width - limits are drawn from how much the count moves day to day, so an owner that finishes
+        /// the same amount every day has a centre and no spread at all, and every day's limits come out
+        /// identical no matter which stretch they were drawn from. The speeding up is what makes a
+        /// rolling stretch and a fixed one give different answers: a stretch that follows the window
+        /// climbs with the owner, a stretch that was pinned does not.
+        ///
+        /// Without both, the two scenarios that read "did the limits move" agree with each other
+        /// instead of telling the reader apart, which is what one item a day did here before.
+        /// </summary>
+        private static int HowMuchAnOwnerThatIsSpeedingUpFinishedOn(DateOnly day, int atTheStart)
+        {
+            if (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            {
+                return 0;
+            }
+
+            var daysAgo = TodayDay.DayNumber - day.DayNumber;
+
+            return atTheStart + (Math.Max(0, DaysAgoTheOwnerStartedSpeedingUp - daysAgo) / DaysBetweenFinishingOneMore);
+        }
+
+        /// <summary>
+        /// How far back the speeding up began, and how long the owner takes to finish one more a day.
+        /// A month between steps is what carries the average of a thirty-day stretch past a whole item
+        /// within the period these scenarios review - a gentler climb rounds to the same limits on
+        /// every day of it, and the assertion that they moved would be vacuous again in a new costume.
+        /// Checked before it was relied on, not assumed.
+        /// </summary>
+        private const int DaysAgoTheOwnerStartedSpeedingUp = 300;
+
+        private const int DaysBetweenFinishingOneMore = 30;
+
+        /// <summary>A team finishes more items than a portfolio finishes deliveries, so it starts higher.</summary>
+        private static int HowManyItemsTheTeamFinishedOn(DateOnly day) => HowMuchAnOwnerThatIsSpeedingUpFinishedOn(day, atTheStart: 2);
+
+        private static int HowManyDeliveriesThePortfolioFinishedOn(DateOnly day) => HowMuchAnOwnerThatIsSpeedingUpFinishedOn(day, atTheStart: 1);
 
         /// <summary>
         /// The lead has fixed the stretch the limits are drawn from, rather than letting it follow the
@@ -286,15 +340,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
+        /// <summary>
+        /// The second assertion is the one that earns the name. Until it was added this checked only
+        /// that days were present, so it agreed with its sibling - the fixed-stretch reading - instead
+        /// of telling the two apart, and would have passed against an implementation that drew every
+        /// day from one fixed window. That it can fail is shown by pinning a stretch for this same
+        /// team, which collapses the period to a single triple.
+        /// </summary>
         private void ThenTheLimitsAreFreeToMoveAcross(int teamId, ProcessBehaviorMetricType behaviour, DateOnly from, DateOnly to)
         {
             var reported = LimitDaysHeldFor(teamId, OwnerType.Team, behaviour)
                 .Where(day => day.RecordedAt >= from && day.RecordedAt <= to)
                 .ToList();
 
-            Assert.That(reported, Is.Not.Empty,
-                "Without a fixed reference stretch each day draws its limits from its own recent history, so the days must be " +
-                "there to be compared at all.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reported, Is.Not.Empty,
+                    "Without a fixed reference stretch each day draws its limits from its own recent history, so the days must be " +
+                    "there to be compared at all.");
+
+                Assert.That(reported.Select(day => (day.Unpl, day.Average, day.Lnpl)).Distinct().Count(), Is.GreaterThan(1),
+                    "The team never fixed the stretch its limits are drawn from, so each day draws them from its own recent " +
+                    "history - and this team was finishing more every month, so the lines have to have moved over the period. " +
+                    "One triple repeated across every day of it is the reading a fixed stretch gives, which is a different " +
+                    "scenario and a different answer. Reported: " +
+                    string.Join(", ", reported.Select(day => $"{day.RecordedAt:yyyy-MM-dd} {day.Lnpl}/{day.Average}/{day.Unpl}")));
+            }
         }
 
         private void ThenTheLimitsCameBackTheSameAsWhenTheyWereWatched(int teamId, ProcessBehaviorMetricType behaviour, RecordedLimitDay asWatched)
