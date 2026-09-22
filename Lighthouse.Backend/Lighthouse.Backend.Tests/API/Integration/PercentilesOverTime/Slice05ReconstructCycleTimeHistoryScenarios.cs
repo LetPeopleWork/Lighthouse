@@ -85,7 +85,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @boundary @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -100,6 +99,36 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             await WhenTheChartHasFinishedFillingIn();
 
             ThenOpeningTheTrendAgainKeepsFillingItIn(teamId, heldAfterTheFirstVisit);
+        }
+
+        /// <summary>
+        /// The cap above bounds how much a pass takes on; this bounds how long it may hold on to it. The
+        /// two are not the same promise, and only this one is felt by an operator: a restore is refused
+        /// for as long as a pass is running, so a pass that would not stop is someone standing at a
+        /// button that does nothing.
+        ///
+        /// The budget is pulled down to something a test can reach. What it is pulled down from is a
+        /// question about how long a person will wait, not about how fast this instance writes, so the
+        /// scenario says nothing about the shipped value - only that a pass which reaches its budget
+        /// gives the rest of the window back, and that the window is still there to be had next time.
+        /// </summary>
+        // @us-01 @boundary @real-io @contract-shape:bounded-change
+        [Test]
+        public async Task A_pass_that_runs_past_its_budget_stops_early_and_picks_up_on_the_next_visit()
+        {
+            var teamId = GivenATeamStillBeingRefreshed();
+            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-200), TodayDay);
+
+            await WhenTheFlowCoachOpensTheCycleTimeTrend(teamId, TodayDay.AddDays(-200), TodayDay);
+            await WhenTheFillingInGetsLessTimeThanOnePassNeeds(teamId);
+
+            ThenTheChartGainedFewerDaysThanThePassHadTakenOn(teamId);
+
+            var heldWhenTheBudgetRanOut = DaysHeldFor(teamId).Count;
+            await WhenTheFlowCoachOpensTheCycleTimeTrend(teamId, TodayDay.AddDays(-200), TodayDay);
+            await WhenTheChartHasFinishedFillingIn();
+
+            ThenOpeningTheTrendAgainKeepsFillingItIn(teamId, heldWhenTheBudgetRanOut);
         }
 
         // @us-01 @error @real-io @contract-shape:unbounded-preservation

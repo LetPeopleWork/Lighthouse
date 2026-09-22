@@ -105,6 +105,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         private Task WhenTheTeamsRefreshRuns(int teamId) => TheTeamsRefreshCompletes(teamId);
 
         /// <summary>
+        /// A single tick is less than one day's reading costs, whatever the machine, so the pass is over
+        /// its budget from the moment it has written anything. Asking for zero would be a different
+        /// scenario: a budget that can stop a pass before it has written a day is one that never gets a
+        /// window finished, however often the chart is opened.
+        /// </summary>
+        private Task WhenTheFillingInGetsLessTimeThanOnePassNeeds(int teamId)
+            => AReconstructionPassRunsOnABudgetOf(TimeSpan.FromTicks(1), teamId, OwnerType.Team, MetricType.CycleTime);
+
+        /// <summary>
         /// Lets the pass get as far as having worked a day out, has another copy of the application
         /// record that same day on its own connection, and only then lets the pass carry on into the
         /// refusal. The day the other copy took is handed back so the scenario can say what became of
@@ -169,6 +178,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             Assert.That(added, Is.GreaterThan(0).And.LessThanOrEqualTo(ReconstructionCapInDays),
                 $"One fill covers at most {ReconstructionCapInDays} days so a year-wide range fills over successive loads " +
                 $"rather than in one unbounded walk. Added in one go: {added}.");
+        }
+
+        private void ThenTheChartGainedFewerDaysThanThePassHadTakenOn(int teamId)
+        {
+            var written = DaysHeldFor(teamId).Count;
+
+            Assert.That(written, Is.GreaterThan(0).And.LessThan(ReconstructionCapInDays),
+                $"The pass was handed a window it could not finish inside its budget, so it had to stop part-way through and " +
+                $"leave the rest. Writing all {ReconstructionCapInDays} days anyway means the budget is a note in the source " +
+                $"rather than something a pass obeys - and an operator waiting on a restore is held for however long the walk " +
+                $"happens to take. Written in the one pass: {written}.");
         }
 
         private void ThenOpeningTheTrendAgainKeepsFillingItIn(int teamId, int heldAfterTheFirstFill)

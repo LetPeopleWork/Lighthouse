@@ -67,6 +67,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         private static readonly TimeSpan LongEnoughThatSomethingIsWrong = TimeSpan.FromSeconds(60);
 
+        /// <summary>
+        /// The wall-clock budget a pass runs to in this host. Comfortably past the longest a scenario can
+        /// hold one parked, so the only thing that ever stops a pass here is the thing the scenario is
+        /// about.
+        /// </summary>
+        private static readonly TimeSpan LongerThanAnyScenarioHoldsAPass = TimeSpan.FromMinutes(5);
+
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
         private FakeLighthouseClock instanceClock = null!;
@@ -114,6 +121,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                         license.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
                         services.RemoveAll<ILicenseService>();
                         services.AddSingleton(license.Object);
+
+                        // A pass here is given far longer than the shipped budget allows, for the same
+                        // reason the clock above is pinned: scenarios below park a pass on a latch and
+                        // hold it there while they arrange something on another connection, and how long
+                        // that takes is a property of the machine the suite runs on. Left at the shipped
+                        // value, a loaded runner would hand a held pass a budget it had already spent
+                        // while parked, and the scenario would watch it stand down over the wait rather
+                        // than over the thing it was arranging. That the budget is obeyed at all is
+                        // pinned by the scenario that hands a pass a budget of its own.
+                        services.RemoveAll<OverTimeHistoryFiller>();
+                        services.AddSingleton(provider => new OverTimeHistoryFiller(
+                            provider.GetRequiredService<IServiceScopeFactory>(),
+                            provider.GetRequiredService<ILogger<OverTimeHistoryFiller>>(),
+                            LongerThanAnyScenarioHoldsAPass));
 
                         // The real writer, behind two latches a scenario can close - one at the point a
                         // day is worked out, one at the point it is committed. Nothing is intercepted
@@ -553,6 +574,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             await Task.WhenAll(
                 Task.Run(() => thisReplica.DrainAsync(CancellationToken.None)),
                 Task.Run(() => otherReplica.DrainAsync(CancellationToken.None)));
+        }
+
+        /// <summary>
+        /// Runs one pass, on a budget, over the same days the chart the scenario just opened is missing.
+        /// A filler of its own rather than the registered one, because the budget a shipped pass runs to
+        /// is measured in seconds a test cannot afford to spend waiting - and a budget nothing in the
+        /// suite can reach is one nobody can show is enforced at all.
+        ///
+        /// Everything else about the pass is the shipped one: the same walk, the same writer, the same
+        /// database. Only how long it is allowed to keep going differs.
+        /// </summary>
+        protected async Task AReconstructionPassRunsOnABudgetOf(
+            TimeSpan budget, int ownerId, OwnerType ownerType, MetricType metricType)
+        {
+            using var passOnABudget = new OverTimeHistoryFiller(
+                Factory.Services.GetRequiredService<IServiceScopeFactory>(),
+                Factory.Services.GetRequiredService<ILogger<OverTimeHistoryFiller>>(),
+                budget);
+
+            passOnABudget.AskFor(new OverTimeFillRequest(
+                ownerId, ownerType, metricType, DaysCarryingNoReadingYet(ownerId, ownerType, metricType)));
+
+            await passOnABudget.DrainAsync(CancellationToken.None);
         }
 
         private OverTimeHistoryFiller ThisReplicasFiller

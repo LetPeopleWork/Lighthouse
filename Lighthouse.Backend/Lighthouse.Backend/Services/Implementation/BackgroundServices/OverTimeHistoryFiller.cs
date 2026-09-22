@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Channels;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
@@ -33,6 +34,21 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         // one alert into several.
         private const string MetricFamily = "Percentiles";
 
+        /// <summary>
+        /// The longest one pass may keep going. This is not a throughput figure and does not move with
+        /// the size of the instance: for as long as a pass is running, an operator who clicks Restore is
+        /// refused, so this is how long someone may be left pressing a button that does nothing before
+        /// the answer changes. Ten seconds is about as long as anyone waits at a control before deciding
+        /// it is broken.
+        ///
+        /// A pass that reaches it hands the rest of its window back instead of finishing it, and loses
+        /// nothing by that: every day already written stays written, and the next chart load asks for
+        /// whatever is still missing. So an instance with a lot of history fills its charts in over more
+        /// visits rather than holding the operator for longer - which is the direction this is meant to
+        /// give way in.
+        /// </summary>
+        private static readonly TimeSpan LongestOnePassMayRun = TimeSpan.FromSeconds(10);
+
         private readonly Channel<OverTimeFillRequest> waiting = Channel.CreateBounded<OverTimeFillRequest>(
             new BoundedChannelOptions(MostOwnersWaitingAtOnce) { FullMode = BoundedChannelFullMode.DropWrite });
 
@@ -40,13 +56,26 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private readonly IServiceScopeFactory scopeFactory;
         private readonly ILogger<OverTimeHistoryFiller> logger;
+        private readonly TimeSpan longestThisPassMayRun;
 
         private int passesRunning;
 
         public OverTimeHistoryFiller(IServiceScopeFactory scopeFactory, ILogger<OverTimeHistoryFiller> logger)
+            : this(scopeFactory, logger, LongestOnePassMayRun)
+        {
+        }
+
+        /// <summary>
+        /// The same filler on a budget of the caller's choosing. Ten seconds of real waiting is not
+        /// something a test can afford to spend, and a budget nothing in the suite can reach is one
+        /// nobody can show is actually enforced.
+        /// </summary>
+        internal OverTimeHistoryFiller(
+            IServiceScopeFactory scopeFactory, ILogger<OverTimeHistoryFiller> logger, TimeSpan longestThisPassMayRun)
         {
             this.scopeFactory = scopeFactory;
             this.logger = logger;
+            this.longestThisPassMayRun = longestThisPassMayRun;
         }
 
         public bool HasPassInFlight => Volatile.Read(ref passesRunning) > 0;
@@ -165,6 +194,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             memo.TheWalkReachesBackNoFurtherThan(
                 request.OwnerId, request.OwnerType, request.MetricType, earliestDayTheItemsSupport);
 
+            var timeSpentOnThisPass = Stopwatch.StartNew();
+            var daysAlreadyTried = 0;
+
             foreach (var day in request.CandidateDays)
             {
                 // A backup, restore or clear replaces the database file, so writing into it while one
@@ -183,6 +215,27 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                     break;
                 }
 
+                // The other thing that stops a pass short, and it stops it for the operator's sake
+                // rather than the database's: a restore is refused for as long as a pass is running, so
+                // how long a pass may run is how long someone can be left at a button that does nothing.
+                // The rest of the window is given back rather than hurried, and asked for again on the
+                // next chart load.
+                //
+                // Never before the pass has tried a day. A budget short enough to stop a pass at nothing
+                // would be a pass that never finishes a window however many times the chart is opened,
+                // which is not a slower fill but no fill at all.
+                if (daysAlreadyTried > 0 && timeSpentOnThisPass.Elapsed >= longestThisPassMayRun)
+                {
+                    logger.LogInformation(
+                        "Over-time reconstruction gave the rest of the window back for {OwnerType} {OwnerId} ({MetricFamily}) after {DaysDone} days; the next chart load asks for what is left",
+                        request.OwnerType,
+                        request.OwnerId,
+                        MetricFamily,
+                        daysAlreadyTried);
+
+                    break;
+                }
+
                 if (cancellationToken.IsCancellationRequested ||
                     IsOutsideWhatTheStoredItemsSupport(day, earliestDayTheItemsSupport, target.LastObservedOn))
                 {
@@ -190,6 +243,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 }
 
                 await FillOneDayAsync(writer, memo, request, day, target);
+                daysAlreadyTried++;
             }
         }
 
