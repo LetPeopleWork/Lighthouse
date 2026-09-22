@@ -1,6 +1,18 @@
 # ADR-127: The advisory channel reaches team settings — where a user learns their kind of work yields no time-in-state
 
-- **Status**: **Accepted as design, delivery split out** (maintainer, 2026-08-01). The decisions below
+- **Status**: **SUPERSEDED BY EVENTS — the mechanism this ADR builds on no longer exists** (2026-09-22).
+  Story [#5612](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5612) deleted the advisory
+  channel itself: `ConnectionValidationResult.SuccessWith` and the `Advisory` / `AdvisoryCode` pair it wrote
+  to are gone, and `ValidationAdvisory.tsx` is absent from the frontend entirely. The reason is recorded at
+  `ConnectionValidationResult.test.ts:23` — *"the only advisory any connector ever returned was withdrawn as
+  unactionable at connection scope, so a field nothing writes was deleted rather than kept for a caller that
+  might one day appear"* — and `ServiceNowBoardVerdict.cs:39` records that a later rung was built *"rather
+  than reviving them"*. **Decisions 1 and 2 below cannot be implemented as written**: they reuse three parts
+  that the Context table names as already shipped and that no longer exist. Anyone reaching for this ADR
+  should read #5612 first and decide whether the channel is worth rebuilding before treating any decision
+  here as live. The open objection against decision 1 is moot while the channel is absent. Found during Epic
+  #4172's DIVERGE wave, which reached for this mechanism and did not find it.
+- **Original status, retained for the record**: **Accepted as design, delivery split out** (maintainer, 2026-08-01). The decisions below
   stand; they ship under their own story **[#5627](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5627)**, not inside #5610. Decision 3 is what
   forces the split: once the advisory belongs to team settings rather than the picker, it shares no
   code with the board picker, so bundling it would only enlarge #5610's slice 02 and muddy its
