@@ -504,3 +504,146 @@ Raised separately and **not** children of this Epic, because neither is caused b
 30-vs-90 default disagreement (DV-10 / R-6). The per-Team default forecast confidence level was
 **declined** as an item by the maintainer on 2026-09-22 (DR-3), which makes the window/level asymmetry
 permanent by decision rather than by oversight.
+
+---
+
+## DESIGN
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-09-22 · **Interaction mode**: Propose
+(autonomous — the maintainer stepped away; options weighed and called, questions recorded rather than
+blocked on)
+**Predecessor**: DISCUSS (complete, including the 2026-09-22 revision DR-1…DR-6).
+**Successor**: DEVOPS — **held.** This is planning for a later release; no implementation is authorised.
+**Design scope**: **Application / components**, determined on evidence. DISCUSS locked no entity, no
+table, no migration, no `UpdateType` member, no queue work, no bounded context and no infrastructure
+change, which rules out system, domain and platform scope.
+
+### Artifacts produced
+
+| Path | What it holds |
+|---|---|
+| `feature-delta.md` (appended, not rewritten) | Prior-wave consultation, DES-1…DES-12, the R-1 cost finding and its two contingencies, C4 L1 + L2, component decomposition, the 24-row Reuse Analysis, driving/driven ports, the full response contract, technology choices, architecture enforcement, quality attributes, OQ-1…OQ-5, what DESIGN found wrong upstream, the handoff |
+| `docs/product/architecture/adr-207-a-report-is-a-response-not-a-record.md` | **NEW.** The no-Report position. Accepted |
+| `docs/product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md` | **NEW.** The held/nominal-rate measurement definition. **PROPOSED — needs the maintainer** |
+| `docs/product/architecture/brief.md` | `## Application Architecture — epic-4172-forecast-backtest-sweep` appended by anchored patch |
+| `wave-decisions.md` | this section |
+
+**No SSOT change** beyond the brief and the two ADRs. The journey YAML and `jobs.yaml` are untouched —
+the corrections DESIGN found are escalated as OQ-1 rather than applied, because they change acceptance
+criteria the maintainer locked.
+
+### The two verification notes DIVERGE and DISCUSS handed forward — both discharged
+
+- **"Confirm no `Report` concept exists in `brief.md`."** `ctx_search` skips that file for size, so it was
+  done with `grep`: **four** case-sensitive `Report` matches in 8 747 lines, all ordinary English (a
+  mutation report, a field report, "report success", a readability report). No entity, aggregate, table,
+  store, repository, kind or payload. The 206 ADR titles contain none. **Confirmed absent.**
+- **"Next free number is ADR-207."** Re-verified by listing: 206 files, highest `adr-206`, no `adr-207`.
+  **Confirmed.** ADR-208 is taken in the same wave for the measurement decision.
+
+### Decisions taken in this wave
+
+Full text in `feature-delta.md` under Design Decisions. In brief:
+
+- **[DES-1]** The response is one **self-describing envelope**, discharging ADR-207's
+  no-hard-coded-Team constraint without returning a list of one. It carries **facts, never a rendered
+  sentence** — the standing `story-6055` rule in the brief is that terminology stays in the browser, and
+  every string here contains a renameable term.
+- **[DES-2]** **No `recommendedWindow`, and no way to add one by accident.** The sound region is an
+  `int[]` filtered from the fixed ascending ladder, so it cannot carry an order that is not the ladder's,
+  and no per-window score exists to sort by. The bug class "the response ranks the windows" is
+  non-representable rather than untested.
+- **[DES-3]** **Bounds are derived in the client.** A `lowerBound`/`upperBound` pair asserts that
+  everything between them is sound; on a non-contiguous set that is a lie in a field nobody inspects. A
+  set cannot lie.
+- **[DES-4]** The current setting's standing is a **tri-state**, not a boolean. `Team.ThroughputHistory`
+  is a free integer, and a boolean would force the artifact to answer for a value it never checked.
+- **[DES-5]** **Effect isolation.** The sweep service takes the resolved `Team` as a parameter and is
+  never injected with `IRepository<Team>`, so it structurally cannot write a Team setting. DoD item 13
+  becomes an ArchUnit rule instead of a review promise.
+- **[DES-6]** **No charting component** — and the reason is grammar, not cost. A shared axis is the visual
+  claim that two rows are commensurable, which D6 forbids. Each row is normalised to its own extent.
+- **[DES-7]** **The export precedent is premium-gated.** `useDataGridExport` refuses without a licence
+  (`DataGridToolbar.tsx:72-76`). This is a Community feature whose slice 03 *is* the marketing surface, so
+  ADR-172/ADR-162 are followed in placement (client-side) and not reused as code.
+- **[DES-8]** **CORRECTION → ADR-208 (PROPOSED).** "Beaten" is retired. A level *holds* iff
+  `actual >= value(P)`, and its nominal rate is `P`, not `100 − P`.
+- **[DES-9]** **CORRECTION.** `GetProbability` returns `-1`, so a degenerate forecast is a **second**
+  unevaluable reason. Not a second sufficiency threshold — `MinimumActiveDays` is untouched.
+- **[DES-10]** Cell outcome and sufficiency are closed enums rendered through exhaustive `Record<…>` maps,
+  so a new state cannot reach the screen without someone writing its copy.
+- **[DES-11]** The sampled ladder is **fixed and printed**, not widened to include an off-ladder Team
+  setting — which would make the locked 16/4/64 denominator Team-dependent.
+- **[DES-12]** The contract survives R-1 failing: no job id, no status, no progress field, so moving to a
+  `202 Accepted` later changes the transport and not one response field.
+
+### R-1: still open, and now sharper
+
+**Not resolved. Not assumed away.** It remains the first task of slice 01, before any UI.
+
+DESIGN adds the shape of the cost, read from the tree. `GetThroughputForTeam` caches per window, but its
+repository predicate is **window-independent** — the same "all closed items for this Team" query runs on
+every miss. A cold sweep issues up to **twenty** identical queries (sixteen history windows + four scored
+periods). Two mitigating facts: the four actual-completed reads are per *horizon*, shared four ways, so an
+implementation reading them per cell is already 25% over; and no work tracking system is contacted at any
+point.
+
+**Probe instruction sharpened: run it cold as well as warm, and count queries, not only wall clock.**
+
+**If it fails — Contingency A, not B.** A is a request-scoped single read of the closed-item set, with the
+run charts projected in memory: no engine change, no new dependency, no response-field change.
+B is the `UpdateQueueService` fallback DISCUSS named, and it is worse than the record suggests, because
+the ADR the record rests on describes lanes that no longer exist — see OQ-3 below.
+
+### Found and escalated, not folded in
+
+| # | Item | Disposition |
+|---|---|---|
+| **OQ-1** | **ADR-208 changes AC-1.6 and AC-2.4 and the journey's worked example.** The mockup's expected counts use `(100 − P)`; the engine's descending "at least N items" ordering makes the correct figure `P`. Three of four rows are wrong; the 95% row — the feature's headline lesson — by an order of magnitude. The 50% row is identical under both formulas, which is why it survived review | **Recommended: accept.** ADR-208 is PROPOSED pending the maintainer. The correction *strengthens* §4.3: under the old arithmetic the never-held case read as unremarkable |
+| **OQ-2** | A Team with an off-ladder `ThroughputHistory` (e.g. 45) is checked against 14/30/60/90, none of which is theirs | **Recommended: tell them plainly** via `currentSettingWasTested: false`. Widening the sweep to five windows would make the locked 16/4/64 denominator Team-dependent |
+| **OQ-3** | **ADR-195 is stale.** It reads `Accepted` with three lanes and a Forecast lane; the lanes shipped and were reverted (`f216ef558`), and only the `story-5877-update-queue-lanes` brief section records that. Anyone evaluating the R-1 queue fallback from the ADR will conclude a calibration run gets its own lane. **False at HEAD** — one channel, one sequential reader | **Own status correction, not this Epic's work.** This is the second feature running to be misled by an ADR describing a deleted mechanism; ADR-127 was the first, and it got exactly this fix |
+| **OQ-4** | The D12 MCP precondition says "AC-1.2 puts the verdict sentence in the response as a field". It cannot — terminology stays in the browser | **Rewrite the precondition.** The answer (no CLI/MCP in this Epic) is unchanged and better supported |
+| **OQ-5** | Should the cost finding be probed before slice 01 or as its first task? | **As its first task, unchanged.** AC-1.1 already requires it |
+
+### Locked decisions honoured, none reopened
+
+Synchronous one-click with no configuration dialog and no date picker · today as the END anchor · cells
+not comparable and the verdict naming a region, never a winner · all four levels side by side as one band
+with one mark · four panels stay four · the 16/4/64 denominator with its correlation disclosure · per-cell
+sufficiency composing with `MinimumActiveDays = 5`, no second bar · ADR-194 governing the unevaluable
+rendering · **no Apply, no write path, read-only end to end** · the three-way verdict never attributed to
+Nick Brown · configurable terminology throughout · the name.
+
+**Apply was not reintroduced, and the design makes reintroducing it fail a build** (DES-5, enforcement
+rule E1).
+
+### Gates
+
+| Gate | Verdict |
+|---|---|
+| Design scope determined on evidence | **PASS** — application/components; system, domain and platform ruled out by what DISCUSS locked |
+| Reuse Analysis (hard gate) | **PASS** — 24 overlapping components, 19 reused or extended, 5 CREATE NEW each justified by impossibility or unacceptable coupling. No justification is "it's complex" or "too many dependencies" |
+| C4 diagrams | **PASS** — System Context (L1) and Container (L2) in Mermaid, every arrow verb-labelled. L3 deliberately omitted: seven boxes, and the decomposition table carries more |
+| ADR quality | **PASS** — ADR-207 carries three alternatives with rejection rationale; ADR-208 carries three. Both carry context, decision, consequences and relationships |
+| Outcome Collision Check | **RUN** — `0 outcomes checked, 0 collisions found across 0 outcomes`. The delta's KPIs are a prose table rather than registry-shaped blocks, so the checker had nothing to match. Recorded as a clean run with a caveat, not as a pass |
+| Architecture enforcement recommended | **PASS** — ArchUnitNET (already in the tree, five existing `*ArchUnitTest` classes) plus the TypeScript compiler; seven named rules E1–E7 |
+| Dependency-inversion compliance | **PASS** — one driving adapter, five existing driven ports, no new port and no new adapter |
+| External integrations / contract tests | **N/A, explicitly** — the feature contacts no third party and reads only data already in the instance. No contract-test annotation is owed |
+| Simplest-solution check | **PASS** — no new container, no new dependency, no migration, no queue. Three backend types and four frontend components |
+| Per-wave peer review | **Not run.** Triggers evaluated: no contested ADR (207 ratifies a locked decision; 208 is escalated rather than contested), no novel pattern, no security boundary change. The mandatory consolidated review fires at the end of DISTILL |
+
+### Handoff
+
+**DEVOPS**: almost nothing. No container, no dependency, no migration, no queue, no external integration,
+no configuration, no secret. **No contract tests owed.**
+
+**DISTILL** (`nw-acceptance-designer`): the response contract is the test surface, and the three honesty
+requirements are testable as structural properties — no rankable field (E5), the denominator identity
+`scoresEvaluated = runsEvaluated × levelsPerRun`, and `cells.length == 16` always. **AC-1.6 and AC-2.4
+must not be turned into acceptance tests until OQ-1 is answered**; they currently specify arithmetic
+ADR-208 says is wrong.
+
+**Paradigm**: object-oriented, per this project's `CLAUDE.md`. `@nw-software-crafter` implements.
+
+**Epic #4172 stays in `Planned`, and its three Stories stay `New`.** DESIGN is planning; no
+implementation is authorised and no story has been started.

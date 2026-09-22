@@ -1075,3 +1075,649 @@ Telemetry: no triggered ids, so no `choice` records.
 **Re-evaluated 2026-09-22** after Apply was dropped. Every count moved the same direction — 3 stories
 instead of 4, 2 contexts unchanged, 2 personas unchanged, and the feature is now read-only — so no trigger
 that was cold has warmed. No expansion is offered on the revision either.
+
+---
+
+## Wave: DESIGN / [REF] Prior Wave Consultation
+
+Agent: Morgan (`nw-solution-architect`) · Date: 2026-09-22 · Interaction mode: **Propose** (the
+maintainer stepped away; options are weighed and called here, and everything that would have been a
+question is in Open Questions below). Design scope: **Application / components** — determined on
+evidence, not defaulted: DISCUSS locked no new entity, no table, no migration, no `UpdateType` member, no
+queue work, no bounded context and no infrastructure change, which rules out system, domain and platform
+scope.
+
+| Source | State |
+|---|---|
+| `feature-delta.md` (1 077 lines, DISCUSS) | ✓ read whole, in four pages |
+| `wave-decisions.md` (506 lines) | ✓ read whole — DV-1…DV-10, DISCUSS, **DR-1…DR-6**, the ADO mapping |
+| `slices/slice-01-…md` | ✓ read whole — the R-1 probe and the implementer notes |
+| `slices/slice-02-…md`, `slices/slice-03-…md` | ✓ read whole |
+| `recommendation.md` §7, §8, §9 | ✓ read — the ADR-207 framing and the nine ADRs it touches |
+| `docs/product/journeys/epic-4172-forecast-reality-check.yaml` (349 lines) | ✓ read whole — five steps, nine resolved decisions, shared-artifact registry, integration validation |
+| `docs/product/architecture/brief.md` (872 KB, 8 747 lines) | ✓ heading map read; **body searched with `grep`, not `ctx_search`**, which skips the file for size |
+| `docs/product/architecture/` ADR inventory | ✓ 206 files, highest `adr-206`, **no `adr-207`** — re-verified by listing, not assumed |
+| ADR-194, ADR-195 | ✓ read directly |
+| `docs/product/vision.md`, `docs/project-brief.md`, `docs/stakeholders.yaml` | ⊘ do not exist |
+| `spike/findings.md` | ⊘ no SPIKE was run. R-1 is deliberately unresolved and stays that way |
+
+Code read directly on 2026-09-22: `ForecastController.cs` (whole), `BacktestResultDto.cs`,
+`ForecastDataSufficiencyPolicy.cs`, `ForecastBase.cs` (whole), `TeamMetricsService.cs:90-175`,
+`BaseMetricsService.cs:915-960`, `RepositoryBase.GetAllByPredicate`, `TeamForecastView.tsx:400-465`,
+`BacktestResultDisplay.tsx` (whole), `DataGridToolbar.tsx:35-125`. Nothing below rests on an inference
+about the codebase that was not checked against the tree.
+
+### The `Report` question DIVERGE escalated — answered
+
+**Confirmed absent.** `grep` over `brief.md` returns **four** case-sensitive occurrences of `Report` in
+8 747 lines, every one of them ordinary English: a mutation report, a field report, surfaces that "report
+success", a readability report. `grep -iE 'report (entity|abstraction|aggregate|table|record|store|
+repository|kind|type)'` returns nothing. The 206 ADR titles contain none. **There is no `Report` concept
+in this product**, which is what makes ADR-207 a decision rather than an observation.
+
+### Outcome Collision Check
+
+`nwave-ai outcomes check-delta docs/feature/epic-4172-forecast-backtest-sweep/feature-delta.md` was run
+after the Reuse Analysis and returned **`0 outcomes checked, 0 collisions found across 0 outcomes`**. The
+delta's Outcome KPIs are written as a prose table rather than as registry-shaped `outcome:` blocks, so the
+checker had nothing to match against `docs/product/outcomes/registry.yaml`. **No collision, and no
+evidence of one either** — recorded as a clean run with a caveat rather than as a pass.
+
+---
+
+## Wave: DESIGN / [REF] Design Decisions
+
+Numbered `DES-n` so they cannot be confused with DISCUSS's `D1-D13`. Nothing in the locked set is
+reopened; `DES-8` and `DES-9` are corrections to DISCUSS and are flagged as such.
+
+### DES-1 — The response is one self-describing envelope, and it carries facts, never a rendered sentence
+
+`RealityCheckResultDto` is a complete, self-contained object about one subject. Every fact about the
+checked Team lives inside it; nothing about the Team is flattened onto the top level of the response.
+That is ADR-207's forward-compatibility constraint discharged **without** returning a list of one, which
+would be speculative generality and which this project's SOLUTION EFFICIENCY rule rejects at its first
+step.
+
+**The response carries no verdict sentence.** This corrects an assumption carried in the DISCUSS
+checklist, which states that "AC-1.2 puts the verdict *sentence* in the response as a field". It cannot:
+`story-6055-activity-names-the-work` establishes the standing rule in this brief — *"Terminology stays in
+the browser — enforced by the response carrying facts and never a rendered clause"* — and every
+user-facing string in this feature contains at least one renameable term (Team, Work Item, throughput). A
+sentence composed on the server would hard-code one instance's vocabulary into every other instance's
+screen. The sentence is composed in the client from the facts plus `useTerminology()`.
+
+Consequence for the recorded CLI/MCP precondition (D12): it does not hold as written. An MCP tool cannot
+"surface the sentence" for free, because there is no sentence to surface. It would have to compose one,
+which means either re-implementing the copy or hard-coding terminology. **D12's answer — no CLI/MCP
+exposure — is unchanged and if anything better supported.** The precondition needs rewriting before
+anyone acts on it.
+
+### DES-2 — No `recommendedWindow`. The sound region is a *set*, and the set cannot be ordered by a score
+
+The hardest pressure in this feature is the field that names a winner. It is resisted structurally rather
+than by convention.
+
+`SoundWindowDto.soundWindowDays` is an `int[]` **derived by filtering the fixed ascending sampled ladder
+`[14, 30, 60, 90]`**. Filtering an ordered constant cannot produce an order that is not the constant's
+order, so the array's sequence is the window lengths ascending and there is no representable way for it
+to carry a ranking. There is no score per window in the response, so nothing exists to sort by. **The bug
+class "the response ranks the sampling windows" is non-representable, not merely untested.**
+
+No `recommendedWindow`, no `bestWindow`, no `windowScore`, no ordering field. This is the pressure that
+produced the Apply button and got it removed; the design refuses it at the type rather than in a review.
+
+### DES-3 — Bounds are derived in the client, because a bounds pair is a field that can lie
+
+The verdict reads *"anything between 30 and 90 days"*, so bounds are needed. They are **not** response
+fields.
+
+A `lowerBoundDays`/`upperBoundDays` pair asserts that everything between them is sound. If the sound set
+is non-contiguous — `{14, 60, 90}` with 30 unsound — the pair `14…90` claims 30 was sound when the check
+found the opposite. That is the §4.1 failure in miniature, in a field nobody would think to look at. A
+*set* cannot make that claim. The client renders "anything between X and Y" only when the set is a
+contiguous run of the sampled ladder, and lists the members otherwise.
+
+### DES-4 — The current setting's standing is a tri-state, not a boolean
+
+`Team.ThroughputHistory` is a free integer. The entity defaults to 30 and two UIs seed 90 (Bug #6071), and
+both are ladder values — but nothing stops a Team sitting at 45, and a Team at 45 is checked against 14,
+30, 60 and 90, none of which is theirs.
+
+A boolean "is the current setting inside the sound range" must answer `true` or `false` for a value the
+check never examined. **A boolean here makes the artifact assert something it did not check** — the exact
+discipline the feature exists to keep. So:
+
+```
+currentSettingDays      : int
+currentSettingWasTested : bool
+currentSettingStanding  : Inside | Outside | NotDetermined
+```
+
+`NotDetermined` covers both the no-evidence case and the off-ladder-plus-non-contiguous case. The
+orchestrator's "a range plus a boolean" is right in spirit — no winner — but the boolean cannot carry the
+un-tested-value case, so it is widened by one member rather than forced.
+
+### DES-5 — Effect isolation: the sweep service is never given anything that can write a Team
+
+The Definition of Done's item 13 — *"if any slice introduces an endpoint or a control that mutates a Team
+setting, Apply has been reintroduced and D4 has been violated"* — is made structural rather than
+asserted.
+
+`ForecastRealityCheckService` **takes the resolved `Team` as a method parameter and is never injected
+with `IRepository<Team>`.** The controller resolves the Team through the existing
+`GetEntityByIdAnExecuteAction` helper, exactly as `RunBacktest` does. The service therefore holds no
+reference to anything with a `Save`, `Update` or `Add` on it, and cannot write a Team setting even by
+mistake. Its four dependencies are all read surfaces.
+
+**Contract shape: bounded-change with an empty mutation set — in practice, pure over its inputs.** The
+service returns a value and performs no write of any kind. The only state it touches is the metrics cache,
+which `ITeamMetricsService` owns and which is a read-through memo rather than a mutation the caller
+declares.
+
+`RealityCheckVerdictPolicy` is a **pure-function (return-only)** static class: values in, values out, no
+DI, no clock, no I/O. Today's date arrives as a parameter, never as a `DateTime.UtcNow` read — which is
+what the shipped `CalendarDayAnchorSeamArchUnitTest` already enforces across this codebase.
+
+### DES-6 — No charting component, and the reason is grammar rather than cost
+
+`@mui/x-charts` 9.0.1 is the only charts package installed and there is no `@mui/x-charts-pro`, so no
+Heatmap exists. AC-2.6 is satisfied trivially. But the substantive reason stands on its own:
+
+**A chart axis is a shared coordinate system, and these rows do not share one.** Inside one panel the four
+horizons are 1, 2, 4 and 8 weeks, so their item counts differ by roughly 8×. A shared axis would squash
+the 1-week row to a sliver and — far worse — would invite exactly the cross-row comparison D6 forbids,
+because a shared axis *is* the visual claim that two rows are commensurable. ADR-194's precedent is
+precisely refusing a rendering whose grammar overclaims.
+
+So **each row is normalised to its own extent**, and the mark's position *within its own band* is the
+whole of its meaning, which is what D2 asks for. The row spans
+`[min(value95, actual), max(value50, actual)]` with padding, so a mark outside the band — which is the
+`OverForecast` and `UnderForecast` cases — is always visible. Implementation is plain MUI `Box` with
+positioned ticks; no SVG library, no new dependency.
+
+### DES-7 — `useDataGridExport` is not the export path, because it is premium-gated
+
+The slice 03 brief names ADR-172 and ADR-162 as the export precedent. **The shipped code behind that
+precedent refuses to run without a premium licence**: `useDataGridExport`'s copy handler opens with
+`if (!canUsePremiumFeatures) { console.warn("Copy to clipboard requires premium license"); return; }`
+(`DataGridToolbar.tsx:72-76`), and the CSV handler does the same.
+
+This Epic is **C1 — free / Community**, and slice 03 is the entire marketing surface, aimed at a persona
+who does not yet use the product. Reusing that hook would premium-gate the one thing built to convince
+non-customers.
+
+**The precedent is followed in *placement* — client-side, no server renderer, no new endpoint — and not
+reused as code.** The mechanism is the ungated `navigator.clipboard.writeText` already used at
+`SystemInfoDisplay.tsx:21` and `ApiKeysSettings.tsx:222`. AC-3.2 is satisfied and strengthened; ADR-172
+and ADR-162 are cited for their shape, not imported.
+
+### DES-8 — CORRECTION: "beaten" is retired; a level *holds*, and its nominal rate is the level ([ADR-208](../../product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md), **PROPOSED**)
+
+Reading the nominal-rate requirement against the engine shows three DISCUSS artifacts describing the same
+measurement in mutually incompatible ways.
+
+`ForecastBase` sorts simulation results **descending** ("at least N items"), so
+`value(95) <= value(85) <= value(70) <= value(50)` and each means *"in P% of simulated futures the Team
+completed at least `value(P)`"*. Therefore:
+
+- The mockup's expected counts are `evaluated × (100 − P)/100`, which is the rate of the *complement*
+  event.
+- The mockup's own reading of the 95% row — *"never beaten — over-forecasting, not excellence"* — is only
+  true under the opposite convention.
+- D2's *"a mark to the left of the 85th means the 85% forecast held"* is inverted: left is the smaller
+  count, so a mark left of the 85th tick is that level **failing**.
+
+**The 50% row is identical under both formulas, which is why it survived review.** The other three are
+wrong by a factor of two or more; at the 95% level, by an order of magnitude.
+
+Settled: `Held(cell, P) ⟺ actual >= value(P)` and `ExpectedHeldCount(P) = evaluated × P/100`. The word
+"beaten" is retired from response fields, UI copy, docs, the one-pager and the launch post, because in
+English a forecast can be beaten by the Team or beat the Team and the two readings are opposites.
+
+**This changes AC-1.6 and AC-2.4 and the journey's worked example, so the ADR is PROPOSED and the
+maintainer is asked.** It is raised as Open Question OQ-1. Note that the correction *strengthens* §4.3:
+under the old arithmetic the never-held case — the feature's headline lesson — read as unremarkable.
+
+### DES-9 — CORRECTION: a degenerate forecast is a second, independent reason a cell is unevaluable
+
+`ForecastBase.GetProbability` returns **`-1`** when no simulation key reaches the threshold. A cell can
+clear `ForecastDataSufficiencyPolicy.HasEnoughData` and still produce one. DISCUSS's model has exactly one
+unevaluable reason (thin history); the engine has two.
+
+A cell carrying any sentinel value is reported unevaluable with its own reason and excluded from every
+count, rendered under ADR-194 like the other unevaluable state. **This is not a second sufficiency
+threshold** — `MinimumActiveDays` is untouched and C5/D9 hold. It is a second reason the same
+unevaluable state is reached, and `SufficiencyReason` is an enum precisely so a third cannot be added
+silently.
+
+### DES-10 — The two-sided cell verdict is a first-class enum, and the unevaluable states are members of the same closed set
+
+`CellOutcome` is `{ OverForecast, WithinBand, UnderForecast }`, named from the forecast's point of view
+because that is what the user is judging. `actual < value(95)` is `OverForecast`, matching the wording
+DISCUSS already used for Deep Current.
+
+Sufficiency is a separate closed set, `{ Sufficient, TooFewActiveDays, DegenerateForecast }`, so an
+exhaustive `Record<…>` on the TypeScript side — the enforcement idiom `story-6055` established in this
+brief — makes it a compile error to add a state without writing its copy. That is the mechanism which
+keeps the journey's named failure mode *"an unevaluable row renders as an empty band"* from recurring.
+
+### DES-11 — The sampled ladder is fixed and printed, not derived from the Team
+
+The response carries `sampledWindowDays: [14, 30, 60, 90]` and `sampledHorizonDays: [7, 14, 28, 56]`
+explicitly rather than leaving the client to assume them. Two reasons: AC-1.5 requires the artifact to
+state what it checked, and a future run over a different ladder needs no contract change.
+
+The ladder is **not** widened to include the Team's own setting when that setting is off-ladder. That
+would make the denominator Team-dependent, and the denominator copy is locked at 16 runs / 4 levels / 64
+scores. The off-ladder case is handled honestly by DES-4 instead. Raised as OQ-2.
+
+### DES-12 — The transport can change without the contract changing, which is what R-1 is allowed to cost
+
+`RealityCheckResultDto` is a complete result with no partial, streaming or progress semantics. If R-1
+fails, the endpoint returns `202 Accepted` and the same body arrives by poll or push later. **The response
+shape does not change.** That is stated as a property of the design rather than built for: no job id, no
+status field, no `isComplete` flag ships now.
+
+---
+
+## Wave: DESIGN / [REF] The R-1 Budget — the cost finding, and what changes if it fails
+
+R-1 stays **OPEN**. Nothing below resolves it; AC-1.1 does, as the first task of slice 01. What DESIGN
+adds is the specific shape of the cost, which makes the probe cheaper to run and its result easier to act
+on.
+
+### Where the cost actually is
+
+Read from the tree: `TeamMetricsService.GetThroughputForTeam` caches under
+`Throughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}`, and on a miss its lambda runs
+`workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == Done)` —
+an `IQueryable` from `RepositoryBase:61`, materialised inside the run-chart projection.
+`GetBlackoutAwareThroughputForTeam` layers a second cache key over the same window and adds one
+`GetEffectiveBlackoutDays` call.
+
+**The cache key is window-dependent; the repository query is not.** The predicate is identical for all
+sixteen history windows — only the projection differs. A cold-cache sweep therefore issues up to
+**twenty** identical "all closed items for this Team" queries: sixteen distinct history windows plus four
+distinct scored periods.
+
+Two facts soften it, and both are worth measuring rather than trusting:
+
+- The four **scored periods** are per *horizon*, not per cell, so they are four reads shared four ways —
+  not sixteen. Any implementation that reads the actual per cell has already made the sweep 25% more
+  expensive than it needs to be.
+- No work tracking system is contacted at any point. The cost is database plus CPU, which is why
+  `RunBacktest` gets away with being a non-async action today.
+
+This is the concrete form of the slice brief's failure mode 2. **The probe must be run cold as well as
+warm**, and the cold number is the one that decides.
+
+### If the budget is missed
+
+**Contingency A — preferred. Read the closed-item set once per request.** The sweep reads the Team's
+closed work items once and projects all twenty run charts in memory. It touches no forecast-engine code,
+adds no dependency, changes no response field and introduces no queue. It costs a read path that does not
+go through `GetThroughputForTeam`'s per-window repository call.
+
+**Contingency B — the `UpdateQueueService` fallback named in DISCUSS. Re-examined, and worse than it
+looks.** DISCUSS carries the ADR-195 caveat correctly, but **ADR-195 itself carries no revert note.** It
+still reads `Accepted`, with three lanes and a Forecast lane among them. The lanes shipped and were
+reverted the same day (`f216ef558`); this brief's own `story-5877-update-queue-lanes` section records
+that, and the ADR does not. Anyone who reads ADR-195 to evaluate this fallback will conclude a calibration
+run gets its own lane and cannot be starved by a Portfolio refresh. **That is false at HEAD** — one
+channel, one sequential reader. The field report's 3h38m starvation applies in full, on a button a human
+is watching.
+
+**Recommendation: if R-1 fails, take Contingency A. Contingency B is a last resort and needs the ADR-195
+status correction first.** Recorded as OQ-3.
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — Forecast Reality Check (Epic #4172)
+  Person(forecaster, "Delivery Forecaster", "About to publish a forecast; needs Team read")
+  Person(prospect, "Forecasting Prospect", "Reads the pasted one-pager; never opens the product")
+  System(lighthouse, "Lighthouse", "Flow metrics and Monte Carlo forecasting")
+  System_Ext(tracker, "Work Tracking System", "Jira / ADO / Linear / ServiceNow")
+  System_Ext(chat, "Chat or wiki", "Slack, Confluence, email")
+  Rel(forecaster, lighthouse, "Runs the reality check on a Team through")
+  Rel(lighthouse, forecaster, "Answers with a verdict, the evidence and its own denominator")
+  Rel(forecaster, chat, "Pastes the Markdown one-pager into")
+  Rel(prospect, chat, "Reads the one-pager in")
+  Rel(tracker, lighthouse, "Supplies work items to, on a schedule this feature never triggers")
+  UpdateRelStyle(tracker, lighthouse, $offsetY="-30")
+```
+
+The reality check **never contacts the work tracking system**. It replays work items already in the
+Lighthouse database. That is the single most important edge on this diagram and the reason the
+synchronous shape is plausible at all.
+
+## Wave: DESIGN / [REF] C4 — Container (L2)
+
+```mermaid
+C4Container
+  title Container Diagram — Forecast Reality Check
+  Person(forecaster, "Delivery Forecaster")
+  Container_Boundary(lh, "Lighthouse") {
+    Container(spa, "React SPA", "React 18 + TypeScript + MUI", "Team Forecast tab; composes every sentence from facts and the instance's terminology")
+    Container(api, "ASP.NET Core Backend", ".NET 10", "ForecastController, the sweep service and the verdict policy")
+    ContainerDb(db, "Relational store", "SQLite / PostgreSQL", "Work items, Teams, blackout periods")
+    Container(cache, "Metrics cache", "In-process, keyed by entity and window", "Read-through memo over run charts")
+  }
+  Rel(forecaster, spa, "Presses Run reality check on")
+  Rel(spa, api, "POSTs to forecast/reality-check/{teamId} over", "HTTPS/JSON, TeamRead")
+  Rel(api, spa, "Returns one self-describing result envelope to")
+  Rel(api, cache, "Reads throughput run charts through")
+  Rel(cache, db, "Queries the Team's closed work items from, on a miss")
+  Rel(api, db, "Reads the Team and its blackout periods from")
+  UpdateRelStyle(cache, db, $offsetX="-40")
+```
+
+**No new container.** No queue, no store, no external call, no migration. The feature adds one route to a
+container that exists and one card to a page that exists.
+
+A component diagram (L3) is **not** drawn. The backend addition is three types and the frontend addition
+is four; the decomposition table below carries more information than a diagram of seven boxes would.
+L3 earns its place on a complex subsystem, and this is not one.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+### Backend — `Lighthouse.Backend`
+
+| Component | Verdict | Responsibility | Contract shape |
+|---|---|---|---|
+| `ForecastController.RunRealityCheck` | **EXTEND** | Driving adapter. Resolves the Team via the shipped `GetEntityByIdAnExecuteAction` helper, maps `applyFilterOverride` to a `ThroughputFilterMode` via the existing private `MapOverrideToFilterMode`, calls the sweep, returns the envelope. **No input validation**: the body carries no dates, so there is nothing to validate. | Adapter; no logic |
+| `IForecastRealityCheckService` / `ForecastRealityCheckService` | **CREATE NEW** | Builds the sixteen `(horizon, window)` pairs from today; reads history and actuals; runs `HowMany`; assembles the envelope. Holds no write surface (DES-5). | Bounded-change, empty mutation set. Returns a value; writes nothing outside the metrics cache its collaborators own |
+| `RealityCheckVerdictPolicy` | **CREATE NEW** | Pure static. `Held`, `ExpectedHeldCount`, `CellOutcome`, `SoundWindows`, `Determination`, `CurrentSettingStanding`. Owns every rule ADR-208 settles. | **Pure function (return-only).** No DI, no clock, no I/O; today arrives as a parameter |
+| `RealityCheckInputDto` + the result DTO family | **CREATE NEW** | The wire contract. See the contract section. | Data |
+
+### Frontend — `Lighthouse.Frontend/src`
+
+| Component | Verdict | Responsibility | Slice |
+|---|---|---|---|
+| `ForecastRealityCheck` | **CREATE NEW** | Container inside the shipped `InputGroup title="Forecast Backtesting"`, above `<BacktestForecaster>`. Button → spinner in place → result. No dialog, no dates. | 01 |
+| `RealityCheckVerdict` | **CREATE NEW** | Both verdict clauses, the denominator paragraph, the named unevaluable cells, the two-findings copy. Composes every string from facts plus `useTerminology()`. | 01 |
+| `RealityCheckEvidence` | **CREATE NEW** | Four panels, one per sampling window; the nominal-rate lines below them. | 02 |
+| `RealityCheckBandRow` | **CREATE NEW** | One horizon row: the band, four level ticks, one actual mark — or the unevaluable words where the band would be. Self-normalised extent (DES-6). | 02 |
+| `realityCheckToMarkdown` | **CREATE NEW** | Pure function, facts + terminology → the one-pager string. No component, no hook, so it is directly testable. | 03 |
+| `forecastService.runRealityCheck` | **EXTEND** | One method on the existing forecast API client, beside `runBacktest`. | 01 |
+| `getPercentileColor` | **EXTEND** | Currently module-private in `BacktestResultDisplay.tsx`. Lifted to a shared helper so the band's four ticks colour identically to every other forecast surface. A second copy would drift. | 02 |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis (MANDATORY HARD GATE)
+
+Every overlapping existing component, classified. "It's complex" and "too many dependencies" are not
+valid justifications and none is used.
+
+| # | Existing component | Verdict | Justification | Contract shape / universe |
+|---|---|---|---|---|
+| 1 | `ForecastController` (two-route class attribute, `api/v1` + `api/latest`) | **EXTEND** | One added action. The dual-route attribute is on the class, so the `/api/v1/…` twin is free — verified in the source, not assumed. | Adapter; the added action declares no mutation |
+| 2 | `ForecastController.MapOverrideToFilterMode` | **EXTEND (reuse as-is)** | Already private static and exactly the mapping `applyFilterOverride` needs. | Pure |
+| 3 | `ForecastController.GetEntityByIdAnExecuteAction` | **EXTEND (reuse as-is)** | The shipped Team-resolution + 404 path, used by `RunBacktest`. Reusing it is what lets the sweep service avoid `IRepository<Team>` entirely (DES-5). | Read-only resolution |
+| 4 | `IForecastService.HowMany` | **NO CHANGE** | Called sixteen times with different inputs. AC asserts the engine does not change; the existing forecast assertions must pass unmodified before and after. | Pure over `(RunChartData, days)` |
+| 5 | `ITeamMetricsService.GetBlackoutAwareThroughputForTeam` | **NO CHANGE** | The history read, per cell, per its own window. | Read; memoises into the metrics cache |
+| 6 | `ITeamMetricsService.GetThroughputForTeam(team, start, end, mode)` | **NO CHANGE** | The actual-completed read, **per horizon (four reads), not per cell (sixteen)**. | Read; memoises |
+| 7 | `ITeamMetricsService.GetForecastThroughputStatus` | **NO CHANGE** | One call, for `FilterApplied` and `ExcludedSummary` on the envelope. Not called sixteen times — it reports the Team's configured window, which is not what a cell asks. | Read; memoises |
+| 8 | `IBlackoutPeriodService.GetEffectiveBlackoutDays` / `CountWorkingDays` | **NO CHANGE** | Horizon → working days, exactly as `RunBacktest` does it. Four distinct horizons, so four calls. | Pure over the fetched periods |
+| 9 | `ForecastDataSufficiencyPolicy.HasEnoughData` | **NO CHANGE — called per cell** | C5/D9. A pure predicate over one `RunChartData`; calling it on each cell's own history needs no modification. `MinimumActiveDays` is echoed into the response, never re-declared. | Pure |
+| 10 | `ILighthouseClock.Today` / `TodayAsUtcMidnight` | **NO CHANGE** | The END anchor. Never `DateTime.UtcNow` — already enforced by the shipped `CalendarDayAnchorSeamArchUnitTest`. | Read |
+| 11 | `Team.GetThroughputSettings(today)` | **NO CHANGE, and not called** | Confirms the today-anchored reach-back shape the sweep uses, but it answers for the Team's *configured* window. A cell needs an arbitrary window, so the sweep computes its own dates. Recorded so nobody "reuses" it into a bug. | Pure |
+| 12 | `BacktestResultDto` | **CREATE NEW instead** | Cannot be extended. It models exactly one scored period and one history window in four get-only constructor-set `DateOnly` properties. A sweep of sixteen is not that object with more fields, and widening it would change the shipped `POST backtest/{teamId}` contract that three frontend components consume. | — |
+| 13 | `ValidateBacktestInput` | **NOT REUSED, and nothing replaces it** | D6 makes three of its four rules vacuous; the fourth (a 14-day minimum) survives as a property of the 2-week horizon rather than as input validation. The request body carries no dates, so there is nothing to validate. | — |
+| 14 | `ForecastDataSufficiencyPolicy` as the home for the verdict rules | **CREATE NEW (`RealityCheckVerdictPolicy`) instead** | Adding to that file would modify a file AC-1.7 asserts is unchanged, and it is a single-predicate policy that C5/D9 explicitly forbid touching. The new policy sits beside it in the same namespace, same pure-static shape. | Pure |
+| 15 | `UpdateQueueService` | **NOT USED** | ADR-207 §3. One channel, one reader; the reality check is a different kind of work and a human is waiting. | — |
+| 16 | `InputGroup` | **NO CHANGE** | The shipped container the card goes inside. | — |
+| 17 | `BacktestForecaster` (530 lines) | **NO CHANGE** | Sibling in the same group, untouched. The new control sits above its date pickers. | — |
+| 18 | `BacktestResultDisplay` (246 lines) | **NOT REUSED** | Two independent reasons. It is a 450 px `ChartsContainer` per result — sixteen would be ~7 200 px. And its grammar is wrong: a bar chart per cell on a shared axis is the visual claim that cells are commensurable, which D6 forbids (DES-6). | — |
+| 19 | `getPercentileColor` inside `BacktestResultDisplay.tsx` | **EXTEND — lift to shared** | The 50/70/85/95 → risky/realistic/confident/certain palette must be identical across forecast surfaces. Copying it is how two surfaces end up disagreeing about what "85%" looks like. | Pure |
+| 20 | `useTerminology()` / `TERMINOLOGY_KEYS` | **NO CHANGE** | Every renameable term in every string, including the one-pager. C6. | Read |
+| 21 | `useDataGridExport` (`DataGridToolbar`) | **NOT REUSED — see DES-7** | Premium-gated at `DataGridToolbar.tsx:72-76`. This Epic is Community and slice 03 is its whole marketing surface. | — |
+| 22 | `navigator.clipboard.writeText` precedent (`SystemInfoDisplay.tsx:21`, `ApiKeysSettings.tsx:222`) | **REUSE the pattern** | Ungated, already in the tree twice, does exactly what a Markdown one-pager needs. | — |
+| 23 | `ThroughputQuickSetting` / `QuickSettingsBar` | **NOT TOUCHED — deliberately** | D4. It is the argument for *not* building Apply, not a dependency. Naming it here so a later reader does not read its absence as an oversight. | — |
+| 24 | `useRbac()` | **NO CHANGE** | The feature adds no gating, because with no write path there is no control to show or hide. | Read |
+
+**Summary: 24 overlapping components. 19 reused unchanged or extended; 5 CREATE NEW, each justified above
+by an impossibility or an unacceptable coupling, none by complexity.** This is a reuse-heavy feature and
+the analysis reflects that.
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Surface | Guard | Slice |
+|---|---|---|---|
+| HTTP | `POST /api/latest/forecast/reality-check/{teamId}` and `POST /api/v1/forecast/reality-check/{teamId}` | `[RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]` | 01 |
+| UI | Team → Forecast tab → "Forecast Backtesting" → **Run reality check** + the verdict card | `useRbac()` — no new gating | 01 |
+| UI | the same card → **Show the evidence** | — | 02 |
+| Clipboard | the same card → **Copy as Markdown** | — | 03 |
+
+**No driving port writes.** Read-only end to end. Route style is kebab-case, this codebase's convention
+(`my-summary`, `group-mappings`, `system-admins`).
+
+### Request
+
+```
+POST  { "applyFilterOverride": true | false | null }
+```
+
+At most that. **No dates, ever** — D6, and it is what makes one click viable. Absent or `null` means
+`ThroughputFilterMode.RespectTeamSetting`.
+
+## Wave: DESIGN / [REF] Driven Ports
+
+| Port | Adapter | New? |
+|---|---|---|
+| `ITeamMetricsService` | `TeamMetricsService` | No |
+| `IForecastService` | `ForecastService` | No |
+| `IBlackoutPeriodService` | `BlackoutPeriodService` | No |
+| `IRepository<Team>` | EF repository — **held by the controller, never by the sweep service** (DES-5) | No |
+| `ILighthouseClock` | Instance clock | No |
+
+**No new driven port. No new adapter. No external integration, therefore no contract-testing annotation
+is owed** — the feature contacts no third party and reads no data it did not already have. That is an
+explicit answer, not a silent N/A.
+
+---
+
+## Wave: DESIGN / [REF] The Response Contract
+
+One envelope. Field names are the contract; C# properties are `PascalCase` and serialise `camelCase` as
+everywhere else in this API.
+
+```
+RealityCheckResultDto                    ← the whole response body; the ADR-207 envelope
+  teamId                    int
+  teamName                  string
+  anchorDate                DateOnly     // today, instance day — the END anchor
+  sampledWindowDays         int[]        // [14, 30, 60, 90] — printed, not assumed (DES-11)
+  sampledHorizonDays        int[]        // [7, 14, 28, 56]
+  confidenceLevels          int[]        // [50, 70, 85, 95]
+  filterApplied             bool
+  excludedSummary           string?
+  minimumActiveDays         int          // echoed from ForecastDataSufficiencyPolicy, never re-declared
+  denominator               DenominatorDto
+  soundWindow               SoundWindowDto
+  levelCoverage             LevelCoverageDto[]      // 4
+  cells                     RealityCheckCellDto[]   // 16, always — unevaluable ones included
+
+DenominatorDto
+  runsAttempted             int          // 16
+  runsEvaluated             int          // 16 − unevaluable
+  levelsPerRun              int          // 4
+  scoresEvaluated           int          // runsEvaluated × levelsPerRun — what was ACTUALLY evaluated
+
+SoundWindowDto                            // DES-2, DES-3, DES-4
+  soundWindowDays           int[]        // filtered from sampledWindowDays; its order IS that order
+  determination             AllWindowsAlike | SomeWindowsSound | NoWindowSound | NotEnoughEvidence
+  currentSettingDays        int
+  currentSettingWasTested   bool
+  currentSettingStanding    Inside | Outside | NotDetermined
+
+LevelCoverageDto                          // DES-8 / ADR-208
+  confidenceLevel           int
+  heldCount                 int
+  expectedHeldCount         double       // runsEvaluated × confidenceLevel / 100
+  reading                   AboutRight | NeverHeld | AlwaysHeld
+
+RealityCheckCellDto
+  horizonDays               int
+  samplingWindowDays        int
+  scoredPeriodStart         DateOnly     // anchorDate − horizonDays
+  scoredPeriodEnd           DateOnly     // anchorDate
+  historyWindowStart        DateOnly     // scoredPeriodStart − samplingWindowDays
+  historyWindowEnd          DateOnly     // scoredPeriodStart
+  sufficiency               SufficiencyDto
+  forecast                  ForecastDto[]?           // 4 when evaluable, null otherwise
+  actualCompleted           int?
+  outcome                   OverForecast | WithinBand | UnderForecast | null
+  levelOutcomes             CellLevelOutcomeDto[]?   // 4 when evaluable
+
+SufficiencyDto
+  isSufficient              bool
+  reason                    Sufficient | TooFewActiveDays | DegenerateForecast   // DES-9
+  daysWithCompletedWork     int
+
+CellLevelOutcomeDto
+  confidenceLevel           int
+  forecastValue             int
+  held                      bool
+```
+
+### What is deliberately absent, and why
+
+| Absent | Why |
+|---|---|
+| `recommendedWindow`, `bestWindow`, `windowScore`, any per-window score | DES-2. Nothing exists to rank by, so no ranking is representable. |
+| `lowerBoundDays` / `upperBoundDays` | DES-3. A bounds pair can assert an interval the check never examined; a set cannot. |
+| `verdictSentence` or any rendered clause | DES-1. Terminology stays in the browser. |
+| `jobId`, `status`, `isComplete`, progress | DES-12. Nothing is queued today, and the shape survives it if something is tomorrow. |
+| Anything that mutates | DES-5. No write path exists anywhere in this feature. |
+
+`cells` always has sixteen entries. An unevaluable cell is **present with its reason**, never omitted — a
+missing cell reads as "that one was fine", which is ADR-194's exact finding.
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+Everything is already installed. Nothing is added. Recorded per the wave's requirement rather than waved
+at.
+
+| Choice | Version | Licence | Why, and what was rejected |
+|---|---|---|---|
+| ASP.NET Core / .NET | 10 | MIT | The backend. No alternative considered; this is a delta on a shipped controller. |
+| React + TypeScript | 18 | MIT | The frontend, unchanged. |
+| MUI (`@mui/material`) | installed | MIT | The card, the panels, the band rows. Plain `Box` layout. |
+| `@mui/x-charts` | 9.0.1 | MIT | **Present, deliberately not used for the band** (DES-6). |
+| `@mui/x-charts-pro` | — | commercial | **Not installed and not added.** A Heatmap is forbidden on its own merits (ADR-194's grammar-overclaim precedent) before licence or cost enters it. |
+| Clipboard | `navigator.clipboard.writeText` | platform | DES-7. Rejected: `useDataGridExport`, premium-gated. |
+| NUnit 4.6 + Moq + EF InMemory + `WebApplicationFactory` | installed | MIT | Backend tests. |
+| Vitest + React Testing Library | installed | MIT | Frontend tests. |
+| ArchUnitNET | installed | Apache 2.0 | The enforcement tool for the rules below. Five `*ArchUnitTest` classes already exist under `Lighthouse.Backend.Tests/Architecture/`. |
+
+**No proprietary technology is introduced.** No new package of any kind is added to either stack.
+
+---
+
+## Wave: DESIGN / [REF] Architecture Enforcement
+
+Style: **Hexagonal (ports and adapters)**, the project's shipped pattern. Language: C# and TypeScript.
+Tools: **ArchUnitNET** (backend, already in the tree) and the **TypeScript compiler** (frontend).
+
+| # | Rule | Enforced by |
+|---|---|---|
+| E1 | **No type in the reality-check namespace references `IRepository<Team>`, `IWorkItemRepository` or any `Save`/`Update`/`Add` member.** This is DES-5 and DoD item 13 made structural — the feature cannot write a Team setting. | ArchUnitNET, new `RealityCheckReadOnlyArchUnitTest` |
+| E2 | `RealityCheckVerdictPolicy` is `static`, has no constructor dependencies and references no type in `Services.Implementation` — the pure-function contract shape, checkable. | ArchUnitNET |
+| E3 | Nothing in the feature reads `DateTime.UtcNow` / `DateTime.Today`; the anchor arrives from `ILighthouseClock`. | The shipped `CalendarDayAnchorSeamArchUnitTest`, which already covers the assembly |
+| E4 | `ForecastDataSufficiencyPolicy.cs` is byte-unchanged before and after the Epic. | Reviewable in the diff; asserted by AC-1.7's existing tests passing untouched |
+| E5 | **No response field names a single winning window.** A test asserts `soundWindowDays` is always a subsequence of `sampledWindowDays` in that exact order, so a sort by any score fails it. | NUnit, over the DTO |
+| E6 | Sufficiency, cell outcome, determination and level reading are rendered through exhaustive `Record<Enum, …>` maps with no `default:` branch, so a new member cannot reach the screen without someone writing its copy. | TypeScript compiler — the `story-6055` idiom already in this brief |
+| E7 | No user-facing string hard-codes a renameable term. | Vitest, and the shipped terminology test conventions |
+
+**Note for the crafter**: this codebase's ArchUnit tests can key on a comment marker, and a marker is
+executable — stripping one as an "internal reference" reds the suite. Any marker E1 or E2 introduces is
+code, not a comment.
+
+---
+
+## Wave: DESIGN / [REF] Quality Attribute Strategies
+
+| Attribute (ISO 25010) | Strategy |
+|---|---|
+| **Functional suitability** | The three honesty requirements are structural, not asserted: no rankable field exists (DES-2), no bounds field can lie (DES-3), no boolean can over-claim (DES-4), and the denominator reports what was evaluated rather than attempted. |
+| **Performance efficiency** | The open risk, and the only one. Sixteen `HowMany` runs plus up to twenty cold-cache run-chart reads, in-request, no external call. R-1 / AC-1.1 measures it cold **and** warm before any UI is written. Budget: median ≤ 5 s, max ≤ 10 s over twelve samples. |
+| **Reliability** | No write path, so no partial-failure state to recover from. A failed request leaves nothing behind. A degenerate forecast degrades one cell to unevaluable rather than failing the sweep (DES-9). |
+| **Security** | One permission, `TeamRead`, byte-identical to the shipped backtest. No new `RbacGuardRequirement`, no new permission, no new scope, no differential rendering. The attack surface added is one read endpoint over data the same principal can already read. |
+| **Maintainability** | Every rule in one pure static policy, testable without a database or a Monte Carlo run. Five CREATE NEW components against nineteen reused. |
+| **Testability** | The policy is pure, so the verdict rules are value-in/value-out assertions. The sweep service takes the `Team` as a parameter, so it needs no repository double. The band row takes facts as props. |
+| **Usability** | One click, no dialog, no dates. The unevaluable state is visually distinct and never blank (ADR-194). The null result reads as an answer, which is the journey's stated failure mode to avoid. |
+| **Compatibility** | Additive only. One new route; no shipped contract changes. No CLI, no MCP, no client version bump (D12). |
+| **Portability** | No provider-specific SQL, no migration, nothing that differs between SQLite and PostgreSQL. |
+
+**Trade-off point**: performance against the synchronous shape. The whole feature's value rests on one
+click and an answer in seconds; buying performance headroom by queueing it costs the interaction that
+*is* the feature. That is why R-1 gates the slice rather than being designed around, and why Contingency A
+(make it cheaper) is preferred over Contingency B (make it asynchronous).
+
+---
+
+## Wave: DESIGN / [REF] Open Questions
+
+Interaction mode is Propose, so each carries a recommendation and the work is not blocked on an answer.
+
+| # | Question | Recommendation |
+|---|---|---|
+| **OQ-1** | **ADR-208 changes AC-1.6 and AC-2.4 and the journey's worked example.** "Beaten" becomes "held" and the expected count becomes `evaluated × P/100`. Accept? | **Accept.** The current arithmetic is wrong at three of four levels and wrong by an order of magnitude at the one the feature exists to teach. The correction strengthens §4.3. ADR-208 is PROPOSED pending this. |
+| **OQ-2** | A Team whose `ThroughputHistory` is off-ladder (say 45) is checked against 14/30/60/90, none of which is theirs. Widen the sweep to five windows, or tell them plainly? | **Tell them plainly** — DES-4's `currentSettingWasTested: false`. Widening makes the denominator Team-dependent and the 16/4/64 copy is locked. The two seeded defaults (30 and 90) are both on the ladder, so the case is real but uncommon. |
+| **OQ-3** | **ADR-195 is stale** — it reads `Accepted` with three lanes; the lanes were reverted (`f216ef558`) and only this brief records it. Correct its status? | **Yes, separately.** Not this Epic's work, but this Epic is the second feature in a row to be misled by an ADR describing a deleted mechanism (ADR-127 was the first). One line of status note. |
+| **OQ-4** | The verdict sentence cannot come from the server (DES-1), which contradicts the recorded D12 MCP precondition. Rewrite the precondition? | **Yes.** The answer (no CLI/MCP in this Epic) is unchanged and better supported. The precondition as written would need an MCP tool to re-implement the copy, which is the §4.1 risk D12 exists to avoid. |
+| **OQ-5** | Should the sweep's cost finding (up to twenty identical closed-item queries on a cold cache) be probed before slice 01 starts, or as its first task? | **As its first task, unchanged.** AC-1.1 already requires it. DESIGN only sharpens what to measure: run it cold, and count the queries, not just the wall clock. |
+
+---
+
+## Wave: DESIGN / [REF] What DESIGN Found Wrong in the DISCUSS Plan
+
+Recorded plainly rather than corrected silently.
+
+1. **The nominal-rate arithmetic is wrong at three of the four levels** (DES-8 / ADR-208), and the one row
+   that would have exposed it is the one row where both formulas agree.
+2. **"Beaten" is used for two opposite events** across D2, the mockup and the elevator pitch.
+3. **The engine has a second unevaluable case** — `GetProbability` returns `-1` — that DISCUSS's one-reason
+   model cannot express (DES-9).
+4. **The export precedent is premium-gated**, so reusing it would paywall the Community feature's entire
+   marketing surface (DES-7).
+5. **The response cannot carry a verdict sentence**, so the D12 MCP precondition does not hold as written
+   (DES-1, OQ-4).
+6. **A boolean cannot express the off-ladder current setting** (DES-4).
+7. **ADR-195 is stale**, which makes the recorded R-1 fallback look safer than it is (OQ-3).
+
+None of these reopens a locked decision. Items 1 and 2 change two acceptance criteria and are escalated
+rather than applied.
+
+---
+
+## Wave: DESIGN / [REF] Handoff
+
+**To DEVOPS (`nw-platform-architect`)** — and the honest answer is that there is almost nothing to hand
+over. No new container, no new dependency, no migration, no queue, no external integration, no new
+configuration, no new secret, no infrastructure change of any kind. **No contract tests are owed**,
+because the feature contacts no third party. The CI gates are the project's standing ones.
+
+**To DISTILL (`nw-acceptance-designer`)** — the response contract above is the test surface. The three
+honesty requirements are testable as structural properties rather than as copy checks: E5 (no rankable
+field), the denominator identity `scoresEvaluated = runsEvaluated × levelsPerRun`, and the sixteen-cell
+invariant (`cells.length == 16` always, unevaluable included). **AC-1.6 and AC-2.4 should not be turned
+into acceptance tests until OQ-1 is answered** — they currently specify arithmetic ADR-208 says is wrong.
+
+**Paradigm**: object-oriented, per this project's `CLAUDE.md`. `@nw-software-crafter` implements. Not
+re-asked and not rewritten.
+
+**Peer review**: not run. The skill's triggers were evaluated — no contested ADR (ADR-207 ratifies a
+locked decision; ADR-208 is escalated to the maintainer rather than contested), no novel pattern (one
+controller action and a pure policy in a shipped hexagon), no security boundary change (one reused guard,
+no write path). The mandatory consolidated review fires at the end of DISTILL.
