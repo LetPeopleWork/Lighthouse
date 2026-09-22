@@ -17,18 +17,12 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         // handler reports carries "Percentiles". The ProcessBehavior family ships its own recorder.
         private const string MetricFamily = "Percentiles";
 
-        private static readonly int[] CycleTimeHorizons = [30, 60, 90];
-
-        // Work item age is measured as-of-today: it has no horizon dimension, so it runs the same
-        // recording pass exactly once under the horizon-less sentinel.
-        private static readonly int[] WorkItemAgeHorizons = [PercentilesOverTimeSnapshot.NoHorizon];
-
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IPortfolioMetricsService portfolioMetricsService;
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IPercentilesOverTimeSnapshotRepository snapshotRepository;
-        private readonly ILighthouseClock clock;
+        private readonly IPercentileSnapshotWriter snapshotWriter;
         private readonly ILogger<PercentilesOverTimeRecordingHandler> logger;
 
         public PercentilesOverTimeRecordingHandler(
@@ -37,7 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<Team> teamRepository,
             IRepository<Portfolio> portfolioRepository,
             IPercentilesOverTimeSnapshotRepository snapshotRepository,
-            ILighthouseClock clock,
+            IPercentileSnapshotWriter snapshotWriter,
             ILogger<PercentilesOverTimeRecordingHandler> logger)
         {
             this.teamMetricsService = teamMetricsService;
@@ -45,7 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
             this.snapshotRepository = snapshotRepository;
-            this.clock = clock;
+            this.snapshotWriter = snapshotWriter;
             this.logger = logger;
         }
 
@@ -90,12 +84,10 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         {
             try
             {
-                var endDate = clock.TodayAsUtcMidnight;
-
                 // Both families share this one pass — a second recorder would double the refresh cost
                 // and drift from the cycle-time rows it is meant to sit beside.
-                RecordFamily(ownerId, ownerType, MetricType.CycleTime, CycleTimeHorizons, endDate, readCycleTimePercentiles);
-                RecordFamily(ownerId, ownerType, MetricType.WorkItemAge, WorkItemAgeHorizons, endDate, readWorkItemAgePercentiles);
+                RecordFamily(ownerId, ownerType, MetricType.CycleTime, readCycleTimePercentiles);
+                RecordFamily(ownerId, ownerType, MetricType.WorkItemAge, readWorkItemAgePercentiles);
 
                 await snapshotRepository.Save();
             }
@@ -119,21 +111,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             int ownerId,
             OwnerType ownerType,
             MetricType metricType,
-            int[] horizons,
-            DateTime endDate,
             Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
         {
-            // Bug #5567: from the seam, not by re-reducing endDate - a derived reduction is the
-            // same defect one call deeper.
-            var recordedAt = clock.Today;
-
             try
             {
-                foreach (var horizon in horizons)
-                {
-                    var percentiles = readPercentiles(endDate.AddDays(-horizon), endDate).ToList();
-                    UpsertSnapshot(ownerId, ownerType, metricType, horizon, recordedAt, percentiles);
-                }
+                snapshotWriter.RecordToday(ownerId, ownerType, metricType, readPercentiles);
             }
             catch (Exception exception)
             {
@@ -151,55 +133,6 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 ownerType,
                 ownerId,
                 MetricFamily);
-        }
-
-        private void UpsertSnapshot(
-            int ownerId,
-            OwnerType ownerType,
-            MetricType metricType,
-            int horizon,
-            DateOnly recordedAt,
-            List<PercentileValue> percentiles)
-        {
-            var existing = snapshotRepository.GetByPredicate(
-                s => s.OwnerId == ownerId &&
-                     s.OwnerType == ownerType &&
-                     s.MetricType == metricType &&
-                     s.Horizon == horizon &&
-                     s.RecordedAt == recordedAt);
-
-            var p50 = ValueFor(percentiles, 50);
-            var p70 = ValueFor(percentiles, 70);
-            var p85 = ValueFor(percentiles, 85);
-            var p95 = ValueFor(percentiles, 95);
-
-            if (existing != null)
-            {
-                existing.P50 = p50;
-                existing.P70 = p70;
-                existing.P85 = p85;
-                existing.P95 = p95;
-            }
-            else
-            {
-                snapshotRepository.Add(new PercentilesOverTimeSnapshot
-                {
-                    OwnerId = ownerId,
-                    OwnerType = ownerType,
-                    MetricType = metricType,
-                    Horizon = horizon,
-                    RecordedAt = recordedAt,
-                    P50 = p50,
-                    P70 = p70,
-                    P85 = p85,
-                    P95 = p95,
-                });
-            }
-        }
-
-        private static int ValueFor(List<PercentileValue> percentiles, int percentile)
-        {
-            return percentiles.FirstOrDefault(p => p.Percentile == percentile)?.Value ?? 0;
         }
     }
 }

@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -309,13 +310,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Returns(percentiles);
 
             using var context = CreateContext();
+            var snapshotRepository = new PercentilesOverTimeSnapshotRepository(context, Mock.Of<ILogger<PercentilesOverTimeSnapshotRepository>>());
             var handler = new PercentilesOverTimeRecordingHandler(
                 teamMetricsServiceMock.Object,
                 portfolioMetricsServiceMock.Object,
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
-                new PercentilesOverTimeSnapshotRepository(context, Mock.Of<ILogger<PercentilesOverTimeSnapshotRepository>>()),
-                clock,
+                snapshotRepository,
+                new PercentileSnapshotWriter(snapshotRepository, clock),
                 Mock.Of<ILogger<PercentilesOverTimeRecordingHandler>>());
 
             await handler.HandleAsync(new TeamDataRefreshed(TeamId), CancellationToken.None);

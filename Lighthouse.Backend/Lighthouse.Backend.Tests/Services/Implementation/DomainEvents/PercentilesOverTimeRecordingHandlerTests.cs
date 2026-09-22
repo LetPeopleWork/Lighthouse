@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -73,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 snapshotRepo,
-                Clock,
+                new PercentileSnapshotWriter(snapshotRepo, Clock),
                 handlerLoggerMock.Object);
         }
 
