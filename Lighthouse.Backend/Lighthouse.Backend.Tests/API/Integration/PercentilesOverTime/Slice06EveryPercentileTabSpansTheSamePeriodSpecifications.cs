@@ -28,6 +28,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private int GivenAPortfolioStillBeingRefreshed() => SeedPortfolioObservedUntil(TodayDay);
 
+        private int GivenATeamLastObservedOn(DateOnly lastObservedOn) => SeedTeamObservedUntil(lastObservedOn);
+
+        private int GivenAPortfolioLastObservedOn(DateOnly lastObservedOn) => SeedPortfolioObservedUntil(lastObservedOn);
+
         private void GivenTheTeamFinishedOneItemADayFrom(int teamId, DateOnly from, DateOnly to)
         {
             for (var day = from; day <= to; day = day.AddDays(1))
@@ -67,6 +71,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private void GivenAnItemStillInFlightSince(int teamId, string referenceId, DateOnly startedOn)
             => SeedItemStillInProgressSince(teamId, referenceId, startedOn);
+
+        private void GivenADeliveryStillInFlightSince(int portfolioId, string referenceId, DateOnly startedOn)
+            => SeedDeliveryStillInProgressSince(portfolioId, referenceId, startedOn);
 
         private async Task<RecordedPercentileDay> GivenAWorkItemAgeDayTheRecorderWroteAndThenLost(int teamId, DateOnly day)
         {
@@ -201,16 +208,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 $"Written anyway: {string.Join(", ", beyond)}.");
         }
 
-        private void ThenNoDayOnThatTabReadsAsFourZeroes(int ownerId, OwnerType ownerType, MetricType metricType, int horizon)
+        /// <summary>
+        /// Days on which the owner had nothing running. They are not days the fill missed: there was
+        /// nothing to measure, and the only honest reading of that is no reading at all. Stated as the
+        /// absence of a row rather than as the absence of four zeroes, because a reading of four zeroes is
+        /// only one of the ways a day with nothing in it can be reported as though it had something.
+        /// </summary>
+        private void ThenThoseDaysAreLeftBlank(int ownerId, OwnerType ownerType, MetricType metricType, int horizon, DateOnly from, DateOnly to)
         {
-            var zeroes = PercentileDaysHeldFor(ownerId, ownerType, metricType, horizon)
-                .Where(day => day is { P50: 0, P70: 0, P85: 0, P95: 0 })
+            var written = PercentileDaysHeldFor(ownerId, ownerType, metricType, horizon)
                 .Select(day => day.RecordedAt)
+                .Where(day => day >= from && day <= to)
                 .ToList();
 
-            Assert.That(zeroes, Is.Empty,
-                $"A day with nothing to measure has no percentile to report, and four zeros draw a floor nobody had. " +
-                $"Written anyway on the {metricType} tab: {string.Join(", ", zeroes)}.");
+            Assert.That(written, Is.Empty,
+                $"Nothing was in flight between {from:yyyy-MM-dd} and {to:yyyy-MM-dd}, so those days have no age to report " +
+                $"and a reading there draws a floor nobody stood on. Written anyway on the {metricType} tab: " +
+                $"{string.Join(", ", written)}.");
         }
 
         // --- Shared observation helpers ---

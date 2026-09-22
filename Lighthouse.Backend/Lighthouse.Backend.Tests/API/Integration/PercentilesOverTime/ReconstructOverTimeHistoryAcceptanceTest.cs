@@ -374,6 +374,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             repository.Save().GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// A delivery that has started and not finished, which is what a portfolio needs before any day
+        /// has an age to report: age is a reading of what was running on the day itself, and a delivery
+        /// that closed on that day was no longer running by it.
+        /// </summary>
+        protected void SeedDeliveryStillInProgressSince(int portfolioId, string referenceId, DateOnly startedOn)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+
+            var delivery = new Feature
+            {
+                ReferenceId = referenceId,
+                Name = $"Delivery {referenceId}",
+                Type = "Epic",
+                State = DoingState,
+                StateCategory = StateCategories.Doing,
+                CreatedDate = startedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                StartedDate = startedOn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                ClosedDate = null,
+                Order = referenceId,
+            };
+            delivery.Portfolios.Add(portfolio);
+
+            repository.Add(delivery);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
         protected void SeedRecordedPercentileDay(int ownerId, OwnerType ownerType, MetricType metricType, int horizon, DateOnly recordedOn, int p50, int p70, int p85, int p95)
         {
             using var scope = Factory.Services.CreateScope();

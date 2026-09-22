@@ -10,7 +10,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// long each tab happened to be recorded for.
     ///
     /// Driving port: the shipped percentiles-over-time read endpoint, on both the team and the portfolio
-    /// route. All pending - the behaviour arrives with this story.
+    /// route. The two scenarios still marked pending are waiting on the part of the behaviour that keeps
+    /// one owner's tabs from filling each other's work in again.
     ///
     /// Step definitions live in Slice06EveryPercentileTabSpansTheSamePeriodSpecifications.cs.
     /// </summary>
@@ -23,31 +24,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         private const string Pending = "Pending: reconstruction of missing over-time days is not built yet (story 6053, slice 02).";
 
         /// <summary>
-        /// The behaviour this one is about is built and the portfolio cycle time scenario below shows it
-        /// working. What it cannot pass on is its own arrangement: it seeds deliveries that each start
-        /// four days before they finish and nothing that is still running, so on the last day of the
-        /// window there is no delivery in flight to have an age at all. A day with nothing to measure is
-        /// deliberately left without a row rather than reported as four zeroes, so that day stays blank
-        /// and the "every day is covered" assertion cannot hold. The team scenario of the same shape
-        /// further down seeds an item that is still running for exactly this reason; this one needs the
-        /// same, which is a change to the scenario rather than to the code.
+        /// Coverage and nothing else: the period asked for comes back whole. What each look-back makes of
+        /// a day is a different question, and the scenario below is the one that asks it.
+        ///
+        /// Sixty days rather than thirty or ninety because the other scenarios in this file already open
+        /// those two, so taking the one nobody else opens leaves all three exercised somewhere.
         /// </summary>
-        private const string NothingIsInFlightOnTheLastDay =
-            "Pending an arrangement fix: the last day of the window has no delivery in flight, so it correctly has no row to find (story 6053, slice 02).";
-
         // @driving_port @us-02 @real-io @contract-shape:bounded-change
-        [TestCase(30)]
-        [TestCase(60)]
-        [TestCase(90)]
-        public async Task Each_cycle_time_look_back_fills_in_over_its_own_period(int horizon)
+        [Test]
+        public async Task A_look_back_fills_in_every_day_of_the_period_asked_for()
         {
+            const int overSixtyDays = 60;
+
             var teamId = GivenATeamStillBeingRefreshed();
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-200), TodayDay);
 
-            await WhenTheFlowCoachOpensTheCycleTimeTab(teamId, horizon, TodayDay.AddDays(-30), TodayDay);
+            await WhenTheFlowCoachOpensTheCycleTimeTab(teamId, overSixtyDays, TodayDay.AddDays(-30), TodayDay);
             await WhenTheChartHasFinishedFillingIn();
 
-            ThenTheTabCoversEveryDayFrom(teamId, OwnerType.Team, MetricType.CycleTime, horizon, TodayDay.AddDays(-30), TodayDay);
+            ThenTheTabCoversEveryDayFrom(teamId, OwnerType.Team, MetricType.CycleTime, overSixtyDays, TodayDay.AddDays(-30), TodayDay);
         }
 
         /// <summary>
@@ -123,13 +118,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheTabCoversEveryDayFrom(portfolioId, OwnerType.Portfolio, MetricType.CycleTime, 30, TodayDay.AddDays(-30), TodayDay);
         }
 
+        /// <summary>
+        /// Age reads what was running on the day itself, so a day needs something running on it before it
+        /// has anything to say - and a delivery that closed on that day was no longer running by it. The
+        /// finished deliveries alone therefore leave the last day of the window with nothing to measure,
+        /// which is correctly left blank rather than drawn at zero. One delivery still in flight is what
+        /// gives every day of the period something to report, the same way the team scenarios seed one.
+        /// </summary>
         // @driving_port @us-02 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(NothingIsInFlightOnTheLastDay)]
         public async Task A_portfolio_fills_in_its_delivery_age_tab_too()
         {
             var portfolioId = GivenAPortfolioStillBeingRefreshed();
             GivenThePortfolioFinishedOneDeliveryADayFrom(portfolioId, TodayDay.AddDays(-120), TodayDay);
+            GivenADeliveryStillInFlightSince(portfolioId, "in-flight-throughout", TodayDay.AddDays(-150));
 
             await WhenTheFlowCoachOpensThePortfolioWorkItemAgeTab(portfolioId, TodayDay.AddDays(-30), TodayDay);
             await WhenTheChartHasFinishedFillingIn();
@@ -182,13 +184,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenEveryTabCoversTheSamePeriod(teamId, TodayDay.AddDays(-30), TodayDay);
         }
 
+        /// <summary>
+        /// Past its last observation a team's items are frozen at the break: whatever was open then still
+        /// reads as open, and a walk that carries on ages it by a day for every day since - a confidently
+        /// rising line over a period nobody watched. That is why one item is left open at the break here.
+        /// Without it the days past the break have nothing in flight and so nothing to write either, and
+        /// the tab would stop in the right place whether the break were honoured or ignored.
+        ///
+        /// Stating the whole span rather than only where it ends also says the fill reached the break. A
+        /// pass that wrote nothing at all stops in the right place too.
+        /// </summary>
         // @us-02 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        public async Task The_age_tab_stops_where_the_team_stopped_being_watched_and_stays_blank_when_nothing_was_in_flight()
+        public async Task The_age_tab_stops_where_the_team_stopped_being_watched()
         {
             var lastObservedOn = TodayDay.AddDays(-60);
-            var teamId = SeedTeamObservedUntil(lastObservedOn);
+            var teamId = GivenATeamLastObservedOn(lastObservedOn);
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-120), lastObservedOn);
+            GivenAnItemStillInFlightSince(teamId, "open-at-the-break", TodayDay.AddDays(-100));
 
             await WhenTheFlowCoachOpensTheWorkItemAgeTab(teamId, TodayDay.AddDays(-90), TodayDay);
             await WhenTheChartHasFinishedFillingIn();
@@ -196,7 +209,54 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             using (Assert.EnterMultipleScope())
             {
                 ThenTheTabStopsOn(teamId, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, lastObservedOn);
-                ThenNoDayOnThatTabReadsAsFourZeroes(teamId, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon);
+                ThenTheTabCoversEveryDayFrom(teamId, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, TodayDay.AddDays(-90), lastObservedOn);
+            }
+        }
+
+        /// <summary>
+        /// The portfolio half of the same break, and the half nothing was watching: every other portfolio
+        /// scenario here is of a portfolio still being refreshed, where its last observation and today are
+        /// one and the same day, so a reading anchored to today rather than to the break looks identical.
+        /// </summary>
+        // @us-02 @error @real-io @contract-shape:unbounded-preservation
+        [Test]
+        public async Task The_portfolio_age_tab_stops_where_the_portfolio_stopped_being_watched()
+        {
+            var lastObservedOn = TodayDay.AddDays(-60);
+            var portfolioId = GivenAPortfolioLastObservedOn(lastObservedOn);
+            GivenThePortfolioFinishedOneDeliveryADayFrom(portfolioId, TodayDay.AddDays(-120), lastObservedOn);
+            GivenADeliveryStillInFlightSince(portfolioId, "open-at-the-break", TodayDay.AddDays(-100));
+
+            await WhenTheFlowCoachOpensThePortfolioWorkItemAgeTab(portfolioId, TodayDay.AddDays(-90), TodayDay);
+            await WhenTheChartHasFinishedFillingIn();
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheTabStopsOn(portfolioId, OwnerType.Portfolio, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, lastObservedOn);
+                ThenTheTabCoversEveryDayFrom(portfolioId, OwnerType.Portfolio, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, TodayDay.AddDays(-90), lastObservedOn);
+            }
+        }
+
+        /// <summary>
+        /// A day the team had nothing running has no age to report, and four zeroes there would draw a
+        /// floor the team never stood on - worked out across a thin stretch of history they line up into a
+        /// confident falsehood. The team here finished an item a day for a stretch and then nothing, so the
+        /// days after that stretch are genuinely quiet and the tab must end where the work did.
+        /// </summary>
+        // @us-02 @error @real-io @contract-shape:unbounded-preservation
+        [Test]
+        public async Task A_day_the_team_had_nothing_in_flight_is_left_blank_rather_than_drawn_at_zero()
+        {
+            var teamId = GivenATeamStillBeingRefreshed();
+            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-25), TodayDay.AddDays(-20));
+
+            await WhenTheFlowCoachOpensTheWorkItemAgeTab(teamId, TodayDay.AddDays(-25), TodayDay);
+            await WhenTheChartHasFinishedFillingIn();
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheTabCoversEveryDayFrom(teamId, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, TodayDay.AddDays(-25), TodayDay.AddDays(-21));
+                ThenThoseDaysAreLeftBlank(teamId, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, TodayDay.AddDays(-20), TodayDay);
             }
         }
     }
