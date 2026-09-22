@@ -68,6 +68,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsAnswerRestsOn(past, 12);
         }
 
+        // @driving_port @real-io — ADO Story #6069. The count beside the number tells a reader how
+        // much evidence there was; it does not tell them how much of it missed, and working that out
+        // means multiplying the percentage by the count in their head. This says it outright.
+        //
+        // The pair is again the point, and for the same reason as the scenario above. The younger
+        // item's answer was counted, so the share can be stated and a reader can check the percentage
+        // by dividing it. The older one is past the target and was never counted at all, so it
+        // reports nothing rather than a number that would look like the working behind its hundred.
+        [Test]
+        [Category("story-6069")]
+        public async Task The_risk_carries_how_much_of_that_work_went_on_to_miss()
+        {
+            var team = GivenATeamThatPromisesTenDays();
+            GivenTheTeamHasFinishedSeveralOfEach(3, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 9, 11, 13, 15, 18, 22, 30);
+            var young = GivenAnItemOpenFor(5);
+            var past = GivenAnItemOpenFor(14);
+
+            await WhenTheRiskIsAskedFor(team);
+
+            // Thirty-nine were still open on day five; the six of the twenty that ran past ten days,
+            // three times over, are eighteen of them. Eighteen in thirty-nine is the 46% above.
+            ThenTheItemsAnswerRestsOn(young, 39);
+            ThenTheItemsAnswerAlsoSaysHowManyMissed(young, 18);
+
+            ThenTheItemsChanceOfMissingIs(past, 100);
+            ThenTheItemsAnswerOwesNoEvidence(past);
+        }
+
         // @driving_port @real-io @AC-01.2 — the same distribution read at three more ages. Written as
         // one scenario per age rather than a loop so a failure names the age it failed at.
         [TestCase(2, 32)]

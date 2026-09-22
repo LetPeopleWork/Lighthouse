@@ -31,10 +31,12 @@ const answer = (
 	referenceId: string,
 	risk: number,
 	finishedItemsStillOpenAtThisAge = 4,
+	finishedItemsThatWentOnToMiss: number | null = 3,
 ): ISleRisk => ({
 	referenceId,
 	risk,
 	finishedItemsStillOpenAtThisAge,
+	finishedItemsThatWentOnToMiss,
 });
 
 const descriptorFor = (answers: ISleRisk[]) =>
@@ -44,7 +46,23 @@ const descriptorFor = (answers: ISleRisk[]) =>
 		description: "how likely this one is to miss",
 		workItemTerm: "Work Item",
 		workItemsTerm: "Work Items",
+		sleTerm: "SLE",
+		sleRangeInDays: 10,
 	});
+
+const evidence = (
+	finishedItemsStillOpenAtThisAge: number,
+	finishedItemsThatWentOnToMiss: number | null,
+	workItemTerm = "Work Item",
+	workItemsTerm = "Work Items",
+) => ({
+	finishedItemsStillOpenAtThisAge,
+	finishedItemsThatWentOnToMiss,
+	sleRangeInDays: 10,
+	workItemTerm,
+	workItemsTerm,
+	sleTerm: "SLE",
+});
 
 describe("the risk column's wording", () => {
 	test("names the target with whatever the team calls it", () => {
@@ -53,9 +71,9 @@ describe("the risk column's wording", () => {
 		);
 	});
 
-	test("says what the number is a share of, in the team's own word for one piece of work", () => {
-		expect(sleRiskColumnDescription("Ticket")).toBe(
-			"Of every Ticket still open at this age across the team's configured history, the share that went on to miss the target",
+	test("says what the number is a share of, in the team's own words", () => {
+		expect(sleRiskColumnDescription("Ticket", "Goal")).toBe(
+			"Of every Ticket still open at this age across the team's configured history, the share that went on to miss the Goal",
 		);
 	});
 
@@ -63,7 +81,7 @@ describe("the risk column's wording", () => {
 		// The wording is the whole of the disclosure. The evidence is the team's configured history
 		// and the answer is about today, so a reader who moves the range and sees nothing change has
 		// been told why before they file it as a bug.
-		expect(sleRiskColumnDescription("Work Item")).toContain(
+		expect(sleRiskColumnDescription("Work Item", "SLE")).toContain(
 			"the team's configured history",
 		);
 	});
@@ -74,6 +92,22 @@ describe("building the risk column", () => {
 		// A team with no published target is the only way this arrives empty, and there is then no
 		// promise for anything to be at risk of breaking.
 		expect(descriptorFor([])).toBeUndefined();
+	});
+
+	test("offers nothing when there is no target to name, whatever the answers say", () => {
+		// The two inputs agree in practice - the endpoint returns nothing for a team without a
+		// target - so this pins the half that would otherwise go untested and draw "the 0 day SLE".
+		const withoutTarget = buildSleRiskColumnDescriptor({
+			answers: [answer("ZEN-412", 86)],
+			headerName: "SLE Risk",
+			description: "how likely this one is to miss",
+			workItemTerm: "Work Item",
+			workItemsTerm: "Work Items",
+			sleTerm: "SLE",
+			sleRangeInDays: undefined,
+		});
+
+		expect(withoutTarget).toBeUndefined();
 	});
 
 	test("carries the percentage as the column's value, so the export reads as the column does", () => {
@@ -247,55 +281,92 @@ describe("counting what is at risk", () => {
 });
 
 describe("what a risk rests on", () => {
-	test("counts the finished work that ran at least this long, in the team's own word for it", () => {
-		expect(sleRiskEvidenceDisclosure(4, "Work Item", "Work Items")).toBe(
-			"4 Work Items the team finished were still open at this age.",
+	test("states how much of that work missed, so nobody multiplies the percentage by the count", () => {
+		// The reason this story exists. A reader given "9" and "67%" has to work out that six of the
+		// nine missed, and the arithmetic they do in their head is the arithmetic the sentence owes
+		// them.
+		expect(sleRiskEvidenceDisclosure(evidence(9, 6))).toBe(
+			"9 Work Items the team finished were still open at this age. 6 of them missed the 10 day SLE.",
 		);
-		expect(sleRiskEvidenceDisclosure(4, "Ticket", "Tickets")).toBe(
-			"4 Tickets the team finished were still open at this age.",
+		expect(sleRiskEvidenceDisclosure(evidence(9, 6, "Ticket", "Tickets"))).toBe(
+			"9 Tickets the team finished were still open at this age. 6 of them missed the 10 day SLE.",
+		);
+	});
+
+	test("names the target with whatever the team calls it, and however long they set it", () => {
+		expect(
+			sleRiskEvidenceDisclosure({
+				...evidence(9, 6),
+				sleRangeInDays: 21,
+				sleTerm: "Goal",
+			}),
+		).toContain("21 day Goal");
+	});
+
+	test("spells out a clean history rather than leaving a bare zero", () => {
+		// "0 of them missed" reads as a placeholder for a number nobody worked out. This team has
+		// evidence and all of it met the target, which is worth saying in words.
+		expect(sleRiskEvidenceDisclosure(evidence(9, 0))).toBe(
+			"9 Work Items the team finished were still open at this age. None of them missed the 10 day SLE.",
 		);
 	});
 
 	test("speaks of one finished item in the singular", () => {
-		expect(sleRiskEvidenceDisclosure(1, "Work Item", "Work Items")).toBe(
-			"1 Work Item the team finished was still open at this age.",
+		expect(sleRiskEvidenceDisclosure(evidence(1, 1))).toBe(
+			"1 Work Item the team finished was still open at this age. It missed the 10 day SLE.",
+		);
+		expect(sleRiskEvidenceDisclosure(evidence(1, 0))).toBe(
+			"1 Work Item the team finished was still open at this age. It did not miss the 10 day SLE.",
 		);
 	});
 
 	test("says a thin history said nothing rather than saying nothing", () => {
 		// This is what the withdrawn "beyond history" sentinel used to carry, returned as evidence
 		// beside the answer instead of as a substitute for it.
-		expect(sleRiskEvidenceDisclosure(0, "Work Item", "Work Items")).toBe(
+		expect(sleRiskEvidenceDisclosure(evidence(0, 0))).toBe(
 			"No Work Item the team finished was ever still open this long.",
+		);
+	});
+
+	test("explains a certain item by the promise it broke, not by a history it never read", () => {
+		// The trap this branch exists for. An item past its target reads 100% because being past the
+		// target settles it, and the count beside it is often zero because nothing the team finished
+		// ever ran that long. Stating a share there would invite a reader to divide it out and
+		// believe the emptiness produced the hundred. The backend withholds the second count on
+		// exactly that branch, and the absence is what this sentence reads.
+		expect(sleRiskEvidenceDisclosure(evidence(0, null))).toBe(
+			"Already past the 10 day SLE.",
+		);
+		expect(sleRiskEvidenceDisclosure(evidence(18, null))).toBe(
+			"Already past the 10 day SLE.",
 		);
 	});
 
 	// The invariance test below compares two disclosures against each other, which is satisfied by
 	// two of anything — including two undefineds. This is what stops it being vacuous: the real
 	// descriptor hands back the real sentence for a row the answers do mention.
-	test("hands a row's own count to the sentence", () => {
-		const descriptor = descriptorFor([answer("ZEN-412", 86, 4)]);
+	test("hands a row's own counts to the sentence", () => {
+		const descriptor = descriptorFor([answer("ZEN-412", 86, 7, 6)]);
 
 		expect(descriptor?.disclosureFor(zenithItem("ZEN-412"))).toBe(
-			"4 Work Items the team finished were still open at this age.",
+			"7 Work Items the team finished were still open at this age. 6 of them missed the 10 day SLE.",
 		);
 	});
 
-	// The trap. An item past its target reads 100% because being past the target settles it — the
-	// history was never consulted — and its count is often zero, because nothing the team finished
-	// ever ran that long. So the cell shows 100% beside "no finished work ran this long", and a
-	// reader must not be able to conclude the first followed from the second.
+	// The sentence may now differ between a certain item and a safe one, but only because the
+	// backend hands it different evidence — never because it looked at the percentage. Two rows
+	// carrying the same counts and opposite risks must still read identically.
 	//
 	// Asserted as invariance rather than by banning words like "computed" or "based on". A negative
 	// assertion over an open set of words goes stale the moment the wording is edited, and passes
 	// for a sentence that implies the derivation without using any of them. This one fails the
 	// instant a risk-aware branch appears, which is the only way the implication can get in.
-	test("says the same about a certain item as about a safe one", () => {
-		const certain = descriptorFor([answer("ZEN-412", 100, 0)]);
-		const safe = descriptorFor([answer("ZEN-412", 0, 0)]);
+	test("reads the evidence and never the risk", () => {
+		const certain = descriptorFor([answer("ZEN-412", 100, 9, 9)]);
+		const unremarkable = descriptorFor([answer("ZEN-412", 33, 9, 9)]);
 
 		expect(certain?.disclosureFor(zenithItem("ZEN-412"))).toBe(
-			safe?.disclosureFor(zenithItem("ZEN-412")),
+			unremarkable?.disclosureFor(zenithItem("ZEN-412")),
 		);
 	});
 

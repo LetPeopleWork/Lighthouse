@@ -2185,16 +2185,19 @@ describe("the risk beside the dot the coach clicked", () => {
 						referenceId: "ZEN-412",
 						risk: 86,
 						finishedItemsStillOpenAtThisAge: 7,
+						finishedItemsThatWentOnToMiss: 6,
 					},
 					{
 						referenceId: "ZEN-419",
 						risk: 12,
 						finishedItemsStillOpenAtThisAge: 7,
+						finishedItemsThatWentOnToMiss: 1,
 					},
 				]}
 				inProgressItems={inFlight}
 				percentileValues={cycleTimePercentiles}
 				doingStates={["Analysis", "In Progress", "Review"]}
+				serviceLevelExpectation={{ percentile: 85, value: 10 }}
 			/>,
 		);
 

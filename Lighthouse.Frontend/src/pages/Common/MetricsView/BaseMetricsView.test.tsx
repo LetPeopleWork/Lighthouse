@@ -6844,6 +6844,7 @@ describe("which lists carry the risk column", () => {
 			referenceId: string;
 			risk: number;
 			finishedItemsStillOpenAtThisAge: number;
+			finishedItemsThatWentOnToMiss: number | null;
 		}[],
 	) =>
 		buildViewData({
@@ -6856,7 +6857,9 @@ describe("which lists carry the risk column", () => {
 			throughputData: null,
 			wipOverTimeData: null,
 			allFeaturesForSizeChart: [],
-			serviceLevelExpectation: null,
+			// A published target, because the risk column needs one to name. A team without one has
+			// no promise for anything to be at risk of breaking, and gets no column at all.
+			serviceLevelExpectation: { percentile: 85, value: 10 },
 			percentilesScopeDefinitionId: null,
 			namedCycleTimeDefinitions: [],
 			estimationVsCycleTimeData: null,
@@ -6880,8 +6883,18 @@ describe("which lists carry the risk column", () => {
 
 	const builtWithRisk = () =>
 		viewDataWith([
-			{ referenceId: "ZEN-1", risk: 86, finishedItemsStillOpenAtThisAge: 7 },
-			{ referenceId: "ZEN-2", risk: 12, finishedItemsStillOpenAtThisAge: 7 },
+			{
+				referenceId: "ZEN-1",
+				risk: 86,
+				finishedItemsStillOpenAtThisAge: 7,
+				finishedItemsThatWentOnToMiss: 6,
+			},
+			{
+				referenceId: "ZEN-2",
+				risk: 12,
+				finishedItemsStillOpenAtThisAge: 7,
+				finishedItemsThatWentOnToMiss: 1,
+			},
 		]);
 
 	it.each(LISTS_WHAT_IS_IN_FLIGHT_TODAY)(

@@ -51,12 +51,7 @@
                 return 0;
             }
 
-            // Only one clause, and the missing one is worth explaining. Every breach is necessarily
-            // comparable: the certainty rule above means the age is at most the target by the time
-            // we get here, so an item that ran longer than the target also ran at least as long as
-            // the item being asked about. Testing for it again would read as a second condition
-            // where there is only one.
-            var breaches = closedCycleTimes.Count(cycleTime => cycleTime > targetRangeInDays);
+            var breaches = Breaches(targetRangeInDays, closedCycleTimes);
 
             // Away from zero rather than to even, so a risk that sits exactly between two whole
             // percentages is reported as the worse of the two. The alternative rounds half of those
@@ -81,6 +76,43 @@
             // At least as long, not longer: an item that finished on exactly this day was still open
             // when the day began, and it is one of the items the answer was computed over.
             return closedCycleTimes.Count(cycleTime => cycleTime >= ageInDays);
+        }
+
+        /// <summary>
+        /// How much of that same finished work went on to take longer than the target, or nothing at
+        /// all for an item already past it.
+        ///
+        /// Null is the whole point of the method. An item past its target is told it is certain to
+        /// miss without a single finished item being looked at, so there is no share to report there
+        /// - and reporting a number anyway would invite a reader to divide it by the count beside it
+        /// and believe the result explains the hundred.
+        ///
+        /// Below the target it needs no clause about the age, and that is worth stating because its
+        /// absence looks like a bug. Every breach is necessarily one of the items still open at this
+        /// age: the age is at most the target here, so work that ran longer than the target also ran
+        /// at least as long as the item being asked about.
+        /// </summary>
+        public static int? FinishedItemsThatWentOnToMiss(int ageInDays, int targetRangeInDays, IReadOnlyList<int> closedCycleTimes)
+        {
+            ArgumentNullException.ThrowIfNull(closedCycleTimes);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ageInDays);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetRangeInDays);
+
+            if (ageInDays > targetRangeInDays)
+            {
+                return null;
+            }
+
+            return Breaches(targetRangeInDays, closedCycleTimes);
+        }
+
+        /// <summary>
+        /// Read once and shared, so the percentage and the count a reader divides to check it can
+        /// never come from two different rules.
+        /// </summary>
+        private static int Breaches(int targetRangeInDays, IReadOnlyList<int> closedCycleTimes)
+        {
+            return closedCycleTimes.Count(cycleTime => cycleTime > targetRangeInDays);
         }
     }
 }

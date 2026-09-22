@@ -14,6 +14,14 @@ export const SleRiskSchema = z.object({
 	 * otherwise, and the first moves by fifty points when one more item closes.
 	 */
 	finishedItemsStillOpenAtThisAge: z.number(),
+	/**
+	 * How much of that same finished work went on to miss the target, so a reader is told the share
+	 * outright instead of multiplying the percentage by the count beside it.
+	 *
+	 * Null for an item already past its target. The risk there is certain by definition and no
+	 * finished item was consulted to reach it, so there is no share that would explain it.
+	 */
+	finishedItemsThatWentOnToMiss: z.number().nullable(),
 });
 
 export type ISleRisk = z.infer<typeof SleRiskSchema>;

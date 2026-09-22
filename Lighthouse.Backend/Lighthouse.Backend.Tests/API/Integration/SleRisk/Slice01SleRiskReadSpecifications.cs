@@ -255,6 +255,43 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
         }
 
         /// <summary>
+        /// How much of that same finished work went on to miss the target, which is the number a
+        /// reader would otherwise have to get by multiplying the percentage by the count beside it.
+        /// </summary>
+        private void ThenTheItemsAnswerAlsoSaysHowManyMissed(string referenceId, int expectedCount)
+        {
+            var entry = TheEntryFor(referenceId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entry.TryGetProperty("finishedItemsThatWentOnToMiss", out var missed), Is.True,
+                    $"Every entry says how much of its evidence missed. Got: {body}");
+                Assert.That(missed.ValueKind, Is.Not.EqualTo(JsonValueKind.Null),
+                    $"{referenceId} is inside its target, so its answer was counted and can be shown. Got: {body}");
+                Assert.That(missed.GetInt32(), Is.EqualTo(expectedCount),
+                    $"{referenceId} should say {expectedCount} of its evidence missed. Body: {body}");
+            }
+        }
+
+        /// <summary>
+        /// The other half, and the one that matters. An item past its target is told it is certain to
+        /// miss without a single finished item being looked at, so there is no share to report — and
+        /// a number there would invite a reader to divide it out and believe it explains the hundred.
+        /// </summary>
+        private void ThenTheItemsAnswerOwesNoEvidence(string referenceId)
+        {
+            var entry = TheEntryFor(referenceId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entry.TryGetProperty("finishedItemsThatWentOnToMiss", out var missed), Is.True,
+                    $"The field is always there; what changes is whether it holds a number. Got: {body}");
+                Assert.That(missed.ValueKind, Is.EqualTo(JsonValueKind.Null),
+                    $"{referenceId} is past its target, so nothing was counted to reach its answer. Body: {body}");
+            }
+        }
+
+        /// <summary>
         /// Drives the write-back's resolution beside the read, in one scope on one day, and compares
         /// the two against each other rather than each against an expectation. An expectation both
         /// could satisfy while disagreeing is exactly what let 27% and 18 ship together.

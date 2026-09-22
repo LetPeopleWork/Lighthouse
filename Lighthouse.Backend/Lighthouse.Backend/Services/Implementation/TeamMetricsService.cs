@@ -393,7 +393,8 @@ namespace Lighthouse.Backend.Services.Implementation
                     .Select(item => new SleRiskDto(
                         item.ReferenceId,
                         SleRiskCalculator.For(item.Age, team.ServiceLevelExpectationRange, cycleTimes),
-                        SleRiskCalculator.FinishedItemsStillOpenAtThisAge(item.Age, cycleTimes)))
+                        SleRiskCalculator.FinishedItemsStillOpenAtThisAge(item.Age, cycleTimes),
+                        SleRiskCalculator.FinishedItemsThatWentOnToMiss(item.Age, team.ServiceLevelExpectationRange, cycleTimes)))
                     .ToList();
             }, logger);
         }

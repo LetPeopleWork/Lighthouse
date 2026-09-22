@@ -11,30 +11,56 @@ import { PACE_BAND_COLORS_LOW_TO_HIGH } from "./paceBands";
  * that history holds little at a given age the answer moves sharply, so the wording says what it
  * rests on rather than leaving a reader to assume a smooth curve.
  */
-export const sleRiskColumnDescription = (workItemTerm: string): string =>
-	`Of every ${workItemTerm} still open at this age across the team's configured history, the share that went on to miss the target`;
+export const sleRiskColumnDescription = (
+	workItemTerm: string,
+	sleTerm: string,
+): string =>
+	`Of every ${workItemTerm} still open at this age across the team's configured history, the share that went on to miss the ${sleTerm}`;
 
 /** The header follows whatever the team calls its target. */
 export const sleRiskColumnHeaderName = (sleTerm: string): string =>
 	`${sleTerm} Risk`;
 
+export interface SleRiskEvidence {
+	readonly finishedItemsStillOpenAtThisAge: number;
+	/** Absent for an item past its target, where nothing was counted to reach the answer. */
+	readonly finishedItemsThatWentOnToMiss: number | null;
+	readonly sleRangeInDays: number;
+	readonly workItemTerm: string;
+	readonly workItemsTerm: string;
+	readonly sleTerm: string;
+}
+
 /**
  * What an item's number rests on, as a sentence about the team's history.
  *
- * It takes no risk, and that is the design rather than an omission. An item past its target reads
- * 100 because being past the target settles it — the history was never consulted — and that item's
- * count is often zero, because nothing the team finished ever ran that long. A sentence that could
- * see the risk could be written to explain it, and would then be telling a reader that the 100 came
- * from the emptiness. Having no risk to branch on makes that impossible rather than merely absent.
+ * It states both counts because a reader who is given only the total and a percentage has to
+ * multiply them to learn the thing they came for — how much of that work actually missed.
  *
- * So it states a fact that is true beside every answer: how much finished work was still open at
- * this age. It makes no claim about the derivation, so it cannot be wrong about one.
+ * It never looks at the risk, and that is the design rather than an omission. What it branches on
+ * is whether the history was consulted at all, which the backend says by withholding the second
+ * count. An item past its target reads 100 because being past the target settles it, and the total
+ * beside it is often zero because nothing the team finished ever ran that long; a sentence that
+ * could see the risk could be written to explain it, and would then be telling a reader the 100
+ * came from the emptiness. Having no risk to branch on makes that impossible rather than merely
+ * absent.
  */
-export const sleRiskEvidenceDisclosure = (
-	finishedItemsStillOpenAtThisAge: number,
-	workItemTerm: string,
-	workItemsTerm: string,
-): string => {
+export const sleRiskEvidenceDisclosure = ({
+	finishedItemsStillOpenAtThisAge,
+	finishedItemsThatWentOnToMiss,
+	sleRangeInDays,
+	workItemTerm,
+	workItemsTerm,
+	sleTerm,
+}: SleRiskEvidence): string => {
+	const target = `${sleRangeInDays} day ${sleTerm}`;
+
+	// Nothing was counted, so there is no evidence to state — only the promise this item has
+	// already broken, which is the whole of why its number is what it is.
+	if (finishedItemsThatWentOnToMiss === null) {
+		return `Already past the ${target}.`;
+	}
+
 	if (finishedItemsStillOpenAtThisAge === 0) {
 		return `No ${workItemTerm} the team finished was ever still open this long.`;
 	}
@@ -42,10 +68,20 @@ export const sleRiskEvidenceDisclosure = (
 	// A team whose history is thin at a given age is the case this sentence exists for, so the
 	// singular is not a rare path — it is the one a reader most needs to see.
 	if (finishedItemsStillOpenAtThisAge === 1) {
-		return `1 ${workItemTerm} the team finished was still open at this age.`;
+		const verdict =
+			finishedItemsThatWentOnToMiss === 1 ? "It missed" : "It did not miss";
+
+		return `1 ${workItemTerm} the team finished was still open at this age. ${verdict} the ${target}.`;
 	}
 
-	return `${finishedItemsStillOpenAtThisAge} ${workItemsTerm} the team finished were still open at this age.`;
+	// Spelled out rather than left as a bare 0, which reads as a placeholder for a number nobody
+	// managed to work out.
+	const howMany =
+		finishedItemsThatWentOnToMiss === 0
+			? "None"
+			: `${finishedItemsThatWentOnToMiss}`;
+
+	return `${finishedItemsStillOpenAtThisAge} ${workItemsTerm} the team finished were still open at this age. ${howMany} of them missed the ${target}.`;
 };
 
 /**
@@ -79,6 +115,9 @@ export interface SleRiskColumnInputs {
 	readonly description: string;
 	readonly workItemTerm: string;
 	readonly workItemsTerm: string;
+	readonly sleTerm: string;
+	/** The team's published target, which the disclosure names. Absent when they published none. */
+	readonly sleRangeInDays: number | undefined;
 }
 
 /**
@@ -120,6 +159,10 @@ export const sleRiskColorFor = (
  * is no promise for anything to be at risk of breaking and the column would be a row of blanks. An
  * empty answer from the backend is exactly that case: it lists every in-flight item otherwise, even
  * the ones it cannot answer for.
+ *
+ * The range is checked as well as the answers. They are two readings of the same fact and they
+ * agree in practice, but the disclosure now says the target out loud, and a column that drew
+ * "the 0 day SLE" would be worse than no column at all.
  */
 export const buildSleRiskColumnDescriptor = ({
 	answers,
@@ -127,8 +170,14 @@ export const buildSleRiskColumnDescriptor = ({
 	description,
 	workItemTerm,
 	workItemsTerm,
+	sleTerm,
+	sleRangeInDays,
 }: SleRiskColumnInputs): SleRiskColumnDescriptor | undefined => {
-	if (answers.length === 0) {
+	if (
+		answers.length === 0 ||
+		sleRangeInDays === undefined ||
+		sleRangeInDays <= 0
+	) {
 		return undefined;
 	}
 
@@ -156,11 +205,15 @@ export const buildSleRiskColumnDescriptor = ({
 
 			return answer === undefined
 				? undefined
-				: sleRiskEvidenceDisclosure(
-						answer.finishedItemsStillOpenAtThisAge,
+				: sleRiskEvidenceDisclosure({
+						finishedItemsStillOpenAtThisAge:
+							answer.finishedItemsStillOpenAtThisAge,
+						finishedItemsThatWentOnToMiss: answer.finishedItemsThatWentOnToMiss,
+						sleRangeInDays,
 						workItemTerm,
 						workItemsTerm,
-					);
+						sleTerm,
+					});
 		},
 	};
 };

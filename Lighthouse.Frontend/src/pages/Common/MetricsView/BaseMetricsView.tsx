@@ -574,9 +574,11 @@ export function buildViewData(
 	const sleRiskColumn = buildSleRiskColumnDescriptor({
 		answers: inputs.sleRiskValues,
 		headerName: sleRiskColumnHeaderName(terms.sle),
-		description: sleRiskColumnDescription(terms.workItem),
+		description: sleRiskColumnDescription(terms.workItem, terms.sle),
 		workItemTerm: terms.workItem,
 		workItemsTerm: terms.workItems,
+		sleTerm: terms.sle,
+		sleRangeInDays: inputs.serviceLevelExpectation?.value,
 	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,

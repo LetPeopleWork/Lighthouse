@@ -258,5 +258,98 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(stillOpen, Is.EqualTo(10),
                 "Five items finished on exactly the sixth day and five on the seventh.");
         }
+
+        // --- How much of that evidence went on to miss, which is the number the tooltip states ---
+
+        [Test]
+        public void FinishedItemsThatWentOnToMiss_WorkTheTeamFinishedThatRanPastTheTarget_IsCounted()
+        {
+            // Six of the twenty distinct durations ran past ten days, three times over.
+            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(9, 10, SixtyFinishedItems);
+
+            Assert.That(missed, Is.EqualTo(18));
+        }
+
+        [Test]
+        public void FinishedItemsThatWentOnToMiss_ItemPastTheTarget_HasNothingToReport()
+        {
+            // The discriminating one, and the mirror image of the count beside it. That count keeps
+            // describing the history past the target because it never claimed to explain anything.
+            // This one does claim to, so past the target it must say nothing at all - the risk there
+            // is certain by definition and no finished item was ever looked at to reach it.
+            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(11, 10, SixtyFinishedItems);
+
+            Assert.That(missed, Is.Null);
+        }
+
+        [Test]
+        public void FinishedItemsThatWentOnToMiss_ItemExactlyOnTheTargetDay_IsStillAnswered()
+        {
+            // The target day itself is computed from the history, so it owes the same evidence as any
+            // earlier day. One day later is where the answer stops.
+            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(10, 10, SixtyFinishedItems);
+
+            Assert.That(missed, Is.EqualTo(18));
+        }
+
+        [Test]
+        public void FinishedItemsThatWentOnToMiss_NothingTheTeamFinishedEverRanPastTheTarget_IsZeroRatherThanNothing()
+        {
+            // Zero and "nothing to report" are different answers and the tooltip says different
+            // things about them: this team has evidence, and all of it met the target.
+            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(3, 7, WorkThatFinishedOnTheTargetDay);
+
+            Assert.That(missed, Is.Zero);
+        }
+
+        [Test]
+        public void FinishedItemsThatWentOnToMiss_WorkThatFinishedOnExactlyTheTargetDay_IsNotAMiss()
+        {
+            // Five items took exactly six days against a six-day target and met it; five took seven.
+            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(6, 6, WorkThatFinishedOnTheTargetDay);
+
+            Assert.That(missed, Is.EqualTo(5));
+        }
+
+        [TestCase(2)]
+        [TestCase(5)]
+        [TestCase(9)]
+        [TestCase(10)]
+        public void FinishedItemsThatWentOnToMiss_OverTheCountBesideIt_RoundsToTheRiskItself(int ageInDays)
+        {
+            // The whole reason the tooltip may state both numbers. A reader who divides one by the
+            // other must land on the percentage printed above them, so the two counts and the risk
+            // are read off one rule rather than three - which is how a tooltip and a cell come to
+            // disagree about the same item.
+            var missed = SleRiskCalculator.FinishedItemsThatWentOnToMiss(ageInDays, 10, SixtyFinishedItems);
+            var stillOpen = SleRiskCalculator.FinishedItemsStillOpenAtThisAge(ageInDays, SixtyFinishedItems);
+
+            var shareFromTheCounts = (int)Math.Round(100.0 * missed!.Value / stillOpen, MidpointRounding.AwayFromZero);
+
+            Assert.That(shareFromTheCounts, Is.EqualTo(SleRiskCalculator.For(ageInDays, 10, SixtyFinishedItems)));
+        }
+
+        [TestCase(0)]
+        [TestCase(-3)]
+        public void FinishedItemsThatWentOnToMiss_AgeThatCannotBeRead_Refuses(int ageInDays)
+        {
+            Assert.That(() => SleRiskCalculator.FinishedItemsThatWentOnToMiss(ageInDays, 10, SixtyFinishedItems),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void FinishedItemsThatWentOnToMiss_NoTargetPublished_Refuses(int targetRangeInDays)
+        {
+            Assert.That(() => SleRiskCalculator.FinishedItemsThatWentOnToMiss(5, targetRangeInDays, SixtyFinishedItems),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void FinishedItemsThatWentOnToMiss_NoHistorySupplied_Refuses()
+        {
+            Assert.That(() => SleRiskCalculator.FinishedItemsThatWentOnToMiss(5, 10, null!),
+                Throws.TypeOf<ArgumentNullException>());
+        }
     }
 }

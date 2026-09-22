@@ -20,5 +20,13 @@ namespace Lighthouse.Backend.Models.Metrics
     /// would have to say "none" there - indistinguishable from a team whose history really does hold
     /// nothing that ran this long.
     /// </param>
-    public sealed record SleRiskDto(string ReferenceId, int Risk, int FinishedItemsStillOpenAtThisAge);
+    /// <param name="FinishedItemsThatWentOnToMiss">
+    /// How much of that same finished work went on to miss the target, so a reader is told the share
+    /// outright rather than having to multiply the percentage by the count beside it.
+    ///
+    /// Null for an item already past its target, where the risk is certain by definition and the
+    /// history was never consulted. A number there would look like the evidence behind the hundred
+    /// and would not be it.
+    /// </param>
+    public sealed record SleRiskDto(string ReferenceId, int Risk, int FinishedItemsStillOpenAtThisAge, int? FinishedItemsThatWentOnToMiss);
 }

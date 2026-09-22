@@ -914,7 +914,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 // Write-back sends the risk and nothing else, so the disclosure's count is a value
                 // these tests are indifferent to. Written as a constant rather than varied, because
                 // varying it here would suggest it changes something that it does not.
-                .Returns(answers.Select(a => new SleRiskDto(a.ReferenceId, a.Risk, 4)).ToList());
+                .Returns(answers.Select(a => new SleRiskDto(a.ReferenceId, a.Risk, 4, 3)).ToList());
         }
 
         private static void AssertPlanned(
