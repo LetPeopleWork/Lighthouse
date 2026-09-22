@@ -1,0 +1,179 @@
+schema_version: 1
+feature_id: story-6053-reconstruct-over-time-history
+updated: 2026-09-22
+note: >
+  User Story 6053 "Back propagate missing PBC and Percentiles over Time values" (Steve Pereira, community).
+  Epic 5427 shipped the two over-time widgets with a strictly forward-only recorder (D5, ADR-107): the series
+  starts the day recording begins. On a real instance that produces a near-empty chart - the dev database holds
+  4 recorded days spanning 17 calendar days against a year of stored work items, and the portfolio holds exactly
+  3, which is Steve's reported "only 3 entries" literally reproduced. Every recorded day there is a weekend or a
+  Monday: the recorder only ran when the instance happened to be up, which on a standalone install is the normal
+  case rather than an edge case. This story adds a SECOND path - reconstruction - that recomputes a missing day
+  from stored work-item history using the identical service call the recorder uses, with the window shifted
+  (D1). It is not the demo handler's synthesis: ADR-109 rightly rejected fabricating values, and that rejection
+  is narrowed here to synthesis rather than overturned. The recorder stays forward-only. Triggered lazily when a
+  series read finds a gap in its requested range (D2, amends ADR-108's "never a recompute trigger"), executed in
+  the background so no read ever blocks (D3), walking back to the data floor under a cap (D4), filling leading
+  and interior gaps but never past the owner's last successful fetch (D5), with no visual distinction between a
+  reconstructed and a recorded point (D6, contingent on SPIKE-01's fidelity measurement). See feature-delta.md
+  for the full DISCUSS record.
+
+journeys:
+
+  - name: read-the-trend-my-data-already-supports
+    goal: >
+      A flow coach who installed Lighthouse recently - or who runs it on a laptop rather than a server - opens
+      the Percentiles Over Time widget and reads a real trend across the period under review, instead of the
+      three or four points the recorder happened to catch, because the stored work-item history already
+      supports every day in between.
+    persona: "flow-coach (also: delivery-lead-rte - same barrier on the PBC branch, see the second journey)"
+
+    emotional_arc:
+      start: Suspicious - "three dots. Is this widget broken, or is my data broken?"
+      middle: Reassured - "it filled in. Those are the days my items already cover, computed the same way
+        today's number is."
+      end: Confident - "I can run a flow review on the instance I have, not the one I will have in two months."
+
+    steps:
+      - id: step-open-a-nearly-empty-over-time-chart
+        action: >
+          Flow coach opens Team -> Metrics -> Predictability -> Percentiles Over Time on an instance that has
+          been running intermittently, and sees a handful of points
+        expected_output: >
+          The widget renders whatever the recorder captured - on the dev database, 4 dated points spanning 17
+          calendar days, with a 13-day interior gap invisible because the x-axis is ordinal (scaleType "point")
+          and spaces recorded days evenly regardless of their dates. Nothing is broken; there is simply almost
+          nothing to draw.
+        emotional_state: Suspicious - "why only three entries?"
+        shared_artifacts:
+          - PercentilesOverTimeSnapshot rows (existing; written forward-only by PercentilesOverTimeRecordingHandler)
+          - selected dashboard date range (existing MetricsView ctx.startDate/ctx.endDate)
+
+      - id: step-the-read-notices-the-gap
+        action: >
+          The series read for that range detects days inside it that carry no snapshot row
+        expected_output: >
+          Reconstruction for those days is enqueued and the request returns the series as it stands now, within
+          today's latency envelope. The read never computes a gap inline, however large (D3). Days after the
+          owner's UpdateTime are excluded, so an owner that stopped refreshing gains no fabricated continuation
+          (D5).
+        emotional_state: Unaware - the coach sees an ordinary chart load, not a job starting
+        shared_artifacts:
+          - requested date range (the gap is defined relative to it, per D2)
+          - owner UpdateTime (existing; the trailing-gap floor)
+
+      - id: step-days-are-recomputed-not-invented
+        action: >
+          Each missing day D is recomputed by calling the same metrics service the recorder calls, with the
+          window shifted to (D - horizon, D), and persisted with RecordedAt = D
+        expected_output: >
+          A reconstructed day carries the value the recorder would have written on that day. The walk stops at
+          the data floor - bounded by DoneItemsCutoffDays and the earliest stored item - so it can never reach
+          pre-Lighthouse time, and a day whose percentiles would all be zero is left absent rather than written
+          as a false floor of zeros (D7).
+        emotional_state: Trusting - "these are computed from my items, not made up"
+        shared_artifacts:
+          - stored WorkItems (existing; ClosedDate / StartedDate are what makes a past day computable)
+          - data floor (derived; max of earliest stored item and today - DoneItemsCutoffDays)
+
+      - id: step-read-the-filled-trend
+        action: >
+          Coach reloads or returns to the widget and reads the percentile trend over the review period
+        expected_output: >
+          A continuous dated line across the capped window, with weekends and instance-downtime filled in, and
+          no empty run before the first recorded day. A reconstructed point is indistinguishable from a recorded
+          one, because it is the same computation (D6).
+        emotional_state: Confident - "the spread has tightened; I can show that"
+        shared_artifacts:
+          - percentilesOverTime series (existing endpoint, now denser)
+
+  - name: read-the-limit-history-my-data-already-supports
+    goal: >
+      A delivery lead opens the PBC Over Time widget and reads how UNPL, Average and LNPL have moved across the
+      review period, on an instance too young or too intermittently run to have recorded that history.
+    persona: "delivery-lead-rte"
+
+    emotional_arc:
+      start: Blocked - "three points. I cannot tell a process shift from a single odd week with this."
+      middle: Assessing - "the limits are there now, across the whole period I care about."
+      end: Grounded - "I can say whether the limits genuinely moved, with the history to back it."
+
+    steps:
+      - id: step-open-a-nearly-empty-pbc-over-time
+        action: >
+          Delivery lead opens Predictability -> PBC Over Time and finds three dated points
+        expected_output: >
+          UNPL/Average/LNPL render for whatever days were recorded - on the dev database, 3 for the portfolio.
+          Enough to draw a line, not enough to read a shift.
+        emotional_state: Blocked - "this cannot answer the question I opened it for"
+        shared_artifacts:
+          - ProcessBehaviorSnapshot rows (existing; written forward-only by ProcessBehaviorRecordingHandler)
+
+      - id: step-limits-are-recomputed-per-day
+        action: >
+          Missing days are reconstructed per metric type, each from its own per-day window mirroring
+          LookbackDaysFor (ThroughputHistory - 1 rolling, 30 fixed-dates, 90 portfolio)
+        expected_output: >
+          The recorder's existing honesty gates apply unchanged to reconstructed days: a chart that is not
+          BaselineStatus.Ready yields no row, and so does one whose Average and UpperNaturalProcessLimit are
+          both zero. Absence stays the honest empty state rather than three flat lines pinned at zero.
+        emotional_state: Unaware - the lead sees a chart, not a computation
+        shared_artifacts:
+          - per-day PBC window (derived from the owner's own lookback setting)
+          - BaselineValidationService verdict (existing; anchored to today, which is the hazard slice 03 confronts)
+
+      - id: step-toggle-every-type-over-the-same-span
+        action: >
+          Lead toggles Throughput, WIA, WIP, Cycle Time, Arrivals and (portfolio-only) Feature Size
+        expected_output: >
+          Every type spans the same dated window, so comparing which behaviour's limits drifted is a comparison
+          of trends rather than of how long each happened to be recorded.
+        emotional_state: Grounded - "throughput limits widened; the others held"
+        shared_artifacts:
+          - pbcOverTime series (existing endpoint, now denser)
+
+    error_paths_summary:
+      - >-
+        Range entirely before the data floor: no reconstruction is possible and none is attempted. The widget
+        must say so in terms distinct from "no snapshots recorded yet" (slice 04) - the forward-only copy
+        becomes false once reconstruction exists (D8).
+      - >-
+        Owner that stopped refreshing (revoked token, deleted project, team dropped from the refresh): days
+        after UpdateTime are never reconstructed. Its items are frozen at the break, so reconstructing would
+        compute steadily rising work item age and WIP off items only believed to be open - a confident trend for
+        a period in which nothing was observed. Refused by the UpdateTime floor (D5).
+      - >-
+        Day with no closed items: percentiles would compute as four zeros (BuildPercentiles over an empty list,
+        then ValueFor ?? 0). No row is written; absence is honest, a zero floor is not (D7). The same zero-write
+        path exists in the forward recorder today and is NOT changed by this story.
+      - >-
+        Configuration changed since the reconstructed day (state mappings, cycle-time definitions, blocked
+        rules, blackout config, team membership) or items deleted / re-parented: the reconstruction reflects
+        TODAY's configuration and item set, so it may differ from what the recorder would actually have written
+        that day. With D6 drawing no distinction, that difference is invisible. This is the accepted residual
+        risk, and SPIKE-01 measures its size against the 4 days the dev instance genuinely recorded before D6 is
+        confirmed.
+      - >-
+        Owner with a pinned ProcessBehaviourChartBaselineStartDate/EndDate: BaselineValidationService validates
+        against Clock.Today, not against the reconstructed day, so a BaselineInvalid chart hits the Status gate
+        and the whole reconstruction quietly produces nothing. Slice 03 exists to decide and assert this
+        explicitly rather than inherit it.
+      - >-
+        Repeated reads over the same range: reconstruction is idempotent per (owner, type, horizon, day), so a
+        day already carrying a row - recorded or reconstructed - is never rewritten and no duplicate points
+        appear.
+      - >-
+        Demo owners: DemoPercentilesBackfillHandler backdates SYNTHETIC values into the same two tables
+        reconstruction now writes to. The interaction is a Definition-of-Done item, decided at finalization, not
+        discovered in production.
+
+    success_signal:
+      - >-
+        On the restored dev database, the team Percentiles Over Time widget spans the capped window instead of
+        4 dated points, and the portfolio PBC Over Time widget spans it instead of 3 (measurable today).
+      - >-
+        Reconstructed values equal recorded values on all 4 days where both exist (SPIKE-01; the gate on D6).
+      - Zero all-zero percentile rows written by reconstruction, and zero rows past any owner's UpdateTime.
+      - >-
+        No further "why does my chart only have N entries" reports from the community after release -
+        qualitative, no telemetry until Epic 5015.

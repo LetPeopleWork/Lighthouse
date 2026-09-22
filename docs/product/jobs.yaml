@@ -55,6 +55,7 @@ feature_context:
   - parent-from-issue-links
   - story-6055-activity-names-the-work
   - epic-4172-forecast-backtest-sweep
+  - story-6053-reconstruct-over-time-history
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7456,3 +7457,70 @@ jobs:
         backtest endpoint, the data-sufficiency guard and the settings control that applies the answer
         are all already shipped; what is missing is the orchestration, the honest reading, and the
         recommendation.
+
+  - id: job-flow-coach-see-the-trend-my-data-already-supports
+    title: See the over-time trend my stored data already supports, not just the days that were recorded
+    persona: flow-coach
+    feature_context: story-6053-reconstruct-over-time-history
+    created: 2026-09-22
+    note: >
+      User Story 6053 (Steve Pereira, community). Epic 5427 built the two over-time widgets on a strictly
+      forward-only recorder (D5, ADR-107), so the series starts the day recording begins. That is honest but it
+      makes both epic-5427 jobs - job-flow-coach-see-predictability-trend and
+      job-delivery-lead-see-process-stability-trend - unreachable on a young or intermittently-run instance.
+      Measured on the dev database 2026-09-22: 4 recorded days spanning 17 calendar days (every one a weekend or
+      a Monday - the recorder only ran when the laptop was up), portfolio exactly 3, against 615 work items with
+      ClosedDate spanning a full year. This job is the barrier, not a new capability: the chart should show what
+      the stored items can already support. Served by RECONSTRUCTION (recompute a missing day with the recorder's
+      own service call, window shifted) and explicitly NOT by synthesis - ADR-109's rejection of fabricated
+      history stands and is narrowed to synthesis rather than overturned.
+    job_story: >
+      When I open an over-time chart on an instance that holds months of work-item history but only a handful of
+      recorded snapshots,
+      I want the chart to show the trend my data already supports,
+      so I can read predictability from day one instead of waiting weeks for the recorder to accrue what could
+      have been computed all along.
+    dimensions:
+      functional: >
+        Days inside the requested range that carry no snapshot row are recomputed from stored work items using
+        the same service call the forward recorder uses, with the window shifted to that day, and persisted so
+        the chart plots them alongside recorded days. Leading gaps (recording started after the data) and
+        interior gaps (instance off, weekend, no refresh ran) are filled on one path; days after the owner's last
+        successful fetch are not, because the items are frozen at the break and reconstructing them would assert
+        a trend nobody observed. The walk stops at the data floor, so it cannot reach pre-Lighthouse time, and a
+        day whose percentiles would all be zero is left absent rather than drawn as a false floor.
+      emotional: >
+        Move from "three dots - is this widget broken, or is my data broken?" to trusting the chart is showing
+        everything it honestly can. The expensive failure today is not the wait; it is concluding a shipped
+        feature is broken and never opening it again.
+      social: >
+        Be the coach who runs a real flow review in the first week of adopting Lighthouse, rather than promising
+        the team the charts will be useful in a couple of months.
+    forces:
+      push: >
+        An instance carrying a year of item history renders 3-4 points, which users read as a defect rather than
+        as a design property. Reported directly: "Any ideas why the PBC would only have 3 entries? Same thing for
+        the 'Percentiles Over Time' chart". The forward-only design is correct and invisible; the confusion it
+        causes is neither.
+      pull: >
+        Open the widget and see the trend the stored data already supports - no waiting, no export, no
+        explanation needed.
+      anxiety: >
+        Is a reconstructed number as trustworthy as a recorded one? (Mitigated: it is the identical computation,
+        and a pre-slice spike diffs reconstructed against recorded on the four days where both exist before the
+        no-distinction decision is confirmed.) Will the first load be slow? (No: the read enqueues and returns
+        what exists; reconstruction runs in the background and never blocks a request.)
+      habit: >
+        Users currently wait for the chart to fill, or assume it is broken and stop opening it. Eased because
+        nothing about how the widget is read changes - the same toggles, the same colours, the same axis, just
+        more of it.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - it gates both epic-5427 jobs, and it is the difference between a shipped feature being
+        usable on adoption or two months later. Current satisfaction: 1 - the capability exists and is
+        effectively unreachable on a real instance; the dev database shows 4 usable days out of ~365
+        reconstructible ones. Gap: 3 - large, and unusually cheap to close because every metric the recorder
+        writes is already computed from a (startDate, endDate) window, so a past day is the same call shifted.
