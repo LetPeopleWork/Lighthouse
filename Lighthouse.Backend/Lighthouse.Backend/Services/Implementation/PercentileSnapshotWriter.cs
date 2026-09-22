@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -69,6 +70,49 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 var readings = ComputeDay(day, horizon, readPercentiles);
                 snapshotRepository.Add(NewRow(ownerId, ownerType, metricType, horizon, day, readings));
+            }
+        }
+
+        public async Task SaveFilledDay()
+        {
+            // Every iteration that absorbs a refusal drops at least one staged row, and there are
+            // finitely many, so the loop runs at most once per row this day carries.
+            while (true)
+            {
+                try
+                {
+                    await snapshotRepository.Save();
+                    return;
+                }
+                catch (DbUpdateException refused)
+                {
+                    var somebodyElseGotThereFirst = EveryRefusedRowIsAlreadyStored(refused);
+
+                    // Dropped either way. A refused row left staged would be retried on the next
+                    // day's save and fail again, so one bad day would take the rest of the walk.
+                    DropFromTheStagingArea(refused);
+
+                    if (!somebodyElseGotThereFirst)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private bool EveryRefusedRowIsAlreadyStored(DbUpdateException refused)
+        {
+            return refused.Entries.Count > 0 && refused.Entries.All(entry =>
+                entry.State == EntityState.Added &&
+                entry.Entity is PercentilesOverTimeSnapshot row &&
+                StoredRow(row.OwnerId, row.OwnerType, row.MetricType, row.Horizon ?? PercentilesOverTimeSnapshot.NoHorizon, row.RecordedAt) != null);
+        }
+
+        private static void DropFromTheStagingArea(DbUpdateException refused)
+        {
+            foreach (var entry in refused.Entries)
+            {
+                entry.State = EntityState.Detached;
             }
         }
 

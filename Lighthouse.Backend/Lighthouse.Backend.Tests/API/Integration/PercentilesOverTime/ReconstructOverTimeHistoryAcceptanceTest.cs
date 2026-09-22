@@ -3,10 +3,13 @@ using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -16,6 +19,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
@@ -57,21 +61,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         protected static readonly DateTimeOffset Today = new(2026, 9, 22, 9, 0, 0, TimeSpan.Zero);
 
         /// <summary>
-        /// The seam these scenarios need and the product does not have yet. Spelled out rather than left
-        /// as a bare failure, because the shape of the seam is the handoff: the pass must be awaitable
-        /// from a test, or every "the gap fills" scenario has to sleep and every "nothing was written"
-        /// scenario passes for the wrong reason.
+        /// How long a scenario waits for a pass to reach the point of writing, and how long a held pass
+        /// has to finish once released. Generous on purpose: this is a deadlock guard, not a timing
+        /// assertion, and a value tight enough to be interesting would fail on a loaded runner.
         /// </summary>
-        private const string MissingFillerSeam =
-            "The over-time history filler does not exist yet. It must be registered as a singleton that " +
-            "survives the test host's removal of hosted services (register the concrete type as a " +
-            "singleton, then add the hosted service as a factory over it), and it must expose a drain " +
-            "that processes everything already queued and returns when the queue is empty, plus a " +
-            "pass-in-flight predicate the database maintenance gate can consult.";
+        private static readonly TimeSpan LongEnoughThatSomethingIsWrong = TimeSpan.FromSeconds(60);
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
         private FakeLighthouseClock instanceClock = null!;
+
+        private FillPause fillPause = null!;
+
+        /// <summary>
+        /// The period of the last trend a scenario opened. A second replica standing in for another copy
+        /// of the application is a replica whose user opened the same chart, so it walks the same days -
+        /// give it a different span and the two walks run sixty days apart and never meet, which looks
+        /// like a race and is not one.
+        /// </summary>
+        private (DateOnly From, DateOnly To)? periodLastOpened;
 
         protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
@@ -87,6 +95,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         public void Init()
         {
             rootFactory = new TestWebApplicationFactory<Program>();
+            fillPause = new FillPause();
 
             Factory = TestWebApplicationFactory<Program>
                 .WithTestAuthentication(rootFactory)
@@ -102,6 +111,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                         license.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
                         services.RemoveAll<ILicenseService>();
                         services.AddSingleton(license.Object);
+
+                        // The real writer, behind a latch a scenario can close. Nothing is intercepted
+                        // until a scenario asks for a pass to be held, so every other scenario runs the
+                        // shipped write path unchanged.
+                        services.RemoveAll<IPercentileSnapshotWriter>();
+                        services.AddScoped<IPercentileSnapshotWriter>(provider => new PausableFillWriter(
+                            ActivatorUtilities.CreateInstance<PercentileSnapshotWriter>(provider), fillPause));
                     });
                 });
 
@@ -377,6 +393,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         protected async Task<SeriesResponse> ReadTeamPercentileTrend(int teamId, MetricType metricType, int? horizon, DateOnly? from = null, DateOnly? to = null)
         {
+            RememberThePeriodOpened(from, to);
             Client.AsTeamAdmin(teamId);
             var query = $"?metricType={metricType}{HorizonPart(horizon)}{RangePart(from, to)}";
             return await Read($"/api/latest/teams/{teamId}/metrics/percentiles-over-time{query}");
@@ -384,6 +401,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         protected async Task<SeriesResponse> ReadPortfolioPercentileTrend(int portfolioId, MetricType metricType, int? horizon, DateOnly? from = null, DateOnly? to = null)
         {
+            RememberThePeriodOpened(from, to);
             Client.AsPortfolioAdmin(portfolioId);
             var query = $"?metricType={metricType}{HorizonPart(horizon)}{RangePart(from, to)}";
             return await Read($"/api/latest/portfolios/{portfolioId}/metrics/percentiles-over-time{query}");
@@ -423,22 +441,111 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// filler registered only as one would not be here to ask.
         /// </summary>
         protected Task TheReconstructionPassRunsToCompletion()
-            => Factory.Services.GetRequiredService<OverTimeHistoryFiller>().DrainAsync(CancellationToken.None);
+            => ThisReplicasFiller.DrainAsync(CancellationToken.None);
 
         /// <summary>
-        /// SCAFFOLD: holds a pass open so a scenario can observe the system while one is running, and
-        /// releases it when disposed.
+        /// Holds a pass genuinely open: a real pass is started, it reaches the point at which it is
+        /// about to write its first day, and it waits there until this handle is disposed. Both the
+        /// latch closing and the filler reporting a pass in flight are asserted before the scenario is
+        /// allowed to continue, because a handle that quietly held nothing would make every scenario
+        /// that observes the system "while a pass runs" pass without observing anything.
+        ///
+        /// It parks before the pass has staged anything, so the pass holds no database lock while it
+        /// waits - a scenario is free to write from another connection in the meantime, which is the
+        /// whole point of holding it.
         /// </summary>
-        protected static IDisposable AReconstructionPassHeldInFlight()
-            => throw new AssertionException(MissingFillerSeam);
+        protected IDisposable AReconstructionPassHeldInFlight()
+        {
+            var filler = ThisReplicasFiller;
+            fillPause.Arm();
+
+            var heldPass = Task.Run(() => filler.DrainAsync(CancellationToken.None));
+
+            var parked = fillPause.WaitUntilAPassIsParked(LongEnoughThatSomethingIsWrong);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parked, Is.True,
+                    "No pass reached the point of writing a day, so nothing is being held. Either nothing " +
+                    "was queued for this owner or the pass finished before it could be caught - and a " +
+                    "scenario that then observes 'the system while a pass runs' is observing an idle one.");
+
+                Assert.That(filler.HasPassInFlight, Is.True,
+                    "A pass is parked mid-walk and the filler still reports none in flight. Every gate that " +
+                    "consults it would let an operator swap the database file out from under an open write.");
+            }
+
+            return new HeldPass(fillPause, heldPass);
+        }
 
         /// <summary>
-        /// SCAFFOLD: runs two passes over the same owner at the same instant, from two scopes, the way
-        /// two replicas of the application would. Both writing the same day must leave one row, not two,
-        /// and neither may fail the pass.
+        /// Runs two passes over the same owner at the same instant, one per replica.
+        ///
+        /// The second replica is a second filler instance rather than a second ask on this one, and the
+        /// distinction is the whole scenario: one instance keeps a set of the owners it is already
+        /// working on and collapses a second ask into the first, so a single instance cannot produce two
+        /// simultaneous passes for one owner however it is asked. That set is a within-process
+        /// optimisation. Across processes there is no such set, and the unique natural key is the only
+        /// thing standing between two replicas and two points on the same date.
+        ///
+        /// This replica's pass is the one the chart load queued; the other stands in for a copy of the
+        /// application whose own chart load happened somewhere this test host cannot see.
         /// </summary>
-        protected static Task TwoReconstructionPassesRunAtTheSameInstant(int ownerId, OwnerType ownerType)
-            => throw new AssertionException(MissingFillerSeam);
+        protected async Task TwoReconstructionPassesRunAtTheSameInstant(int ownerId, OwnerType ownerType)
+        {
+            var thisReplica = ThisReplicasFiller;
+
+            using var otherReplica = new OverTimeHistoryFiller(
+                Factory.Services.GetRequiredService<IServiceScopeFactory>(),
+                Factory.Services.GetRequiredService<ILogger<OverTimeHistoryFiller>>());
+
+            otherReplica.AskFor(new OverTimeFillRequest(
+                ownerId, ownerType, MetricType.CycleTime, DaysCarryingNoReadingYet(ownerId, ownerType, MetricType.CycleTime)));
+
+            await Task.WhenAll(
+                Task.Run(() => thisReplica.DrainAsync(CancellationToken.None)),
+                Task.Run(() => otherReplica.DrainAsync(CancellationToken.None)));
+        }
+
+        private OverTimeHistoryFiller ThisReplicasFiller
+            => Factory.Services.GetRequiredService<OverTimeHistoryFiller>();
+
+        private void RememberThePeriodOpened(DateOnly? from, DateOnly? to)
+        {
+            if (from.HasValue && to.HasValue)
+            {
+                periodLastOpened = (from.Value, to.Value);
+            }
+        }
+
+        /// <summary>
+        /// What a replica opening the same chart would find missing: the same period this scenario just
+        /// opened, minus whatever already carries a reading. Same period on purpose - two replicas walking
+        /// different spans pass each other rather than contend, and the scenario would then be watching
+        /// two passes that never touch the same day.
+        /// </summary>
+        private List<DateOnly> DaysCarryingNoReadingYet(int ownerId, OwnerType ownerType, MetricType metricType)
+        {
+            var period = periodLastOpened ?? (From: TodayDay.AddDays(1 - ReconstructionCapInDays), To: TodayDay);
+
+            using var scope = Factory.Services.CreateScope();
+            var held = scope.ServiceProvider.GetRequiredService<IPercentilesOverTimeSnapshotRepository>()
+                .GetAll()
+                .Where(snapshot => snapshot.OwnerId == ownerId && snapshot.OwnerType == ownerType && snapshot.MetricType == metricType)
+                .Select(snapshot => snapshot.RecordedAt)
+                .ToHashSet();
+
+            var missing = new List<DateOnly>();
+            for (var day = period.From; day <= period.To && missing.Count < ReconstructionCapInDays; day = day.AddDays(1))
+            {
+                if (!held.Contains(day))
+                {
+                    missing.Add(day);
+                }
+            }
+
+            return missing;
+        }
 
         // --- Observing what the chart holds ---
 
@@ -519,6 +626,108 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         {
             var range = from.HasValue ? $"&startDate={from.Value:yyyy-MM-dd}" : string.Empty;
             return to.HasValue ? $"{range}&endDate={to.Value:yyyy-MM-dd}" : range;
+        }
+
+        /// <summary>
+        /// A latch across the one point every reconstruction pass has to go through to write a day.
+        /// Closed only while a scenario is holding a pass, and only the first pass to arrive is caught -
+        /// a latch that caught every day would never let the walk finish.
+        /// </summary>
+        private sealed class FillPause
+        {
+            private readonly ManualResetEventSlim released = new(false);
+
+            private readonly ManualResetEventSlim reached = new(false);
+
+            private int closed;
+
+            public void Arm()
+            {
+                released.Reset();
+                reached.Reset();
+                Volatile.Write(ref closed, 1);
+            }
+
+            public bool WaitUntilAPassIsParked(TimeSpan timeout) => reached.Wait(timeout);
+
+            public void Release()
+            {
+                Volatile.Write(ref closed, 0);
+                released.Set();
+            }
+
+            /// <summary>
+            /// Opens the latch as it passes through it, so the pass that got here is the only one held
+            /// and a release that arrives first leaves the walk untouched.
+            /// </summary>
+            public void ParkIfClosed(TimeSpan timeout)
+            {
+                if (Interlocked.CompareExchange(ref closed, 0, 1) != 1)
+                {
+                    return;
+                }
+
+                reached.Set();
+                released.Wait(timeout);
+            }
+        }
+
+        /// <summary>
+        /// The shipped writer with the latch in front of the gap-filling path only. Recording today goes
+        /// straight through, which is what lets a scenario run a refresh against a fill that is parked.
+        /// </summary>
+        private sealed class PausableFillWriter : IPercentileSnapshotWriter
+        {
+            private readonly IPercentileSnapshotWriter shipped;
+
+            private readonly FillPause pause;
+
+            public PausableFillWriter(IPercentileSnapshotWriter shipped, FillPause pause)
+            {
+                this.shipped = shipped;
+                this.pause = pause;
+            }
+
+            public void RecordToday(
+                int ownerId,
+                OwnerType ownerType,
+                MetricType metricType,
+                Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
+                => shipped.RecordToday(ownerId, ownerType, metricType, readPercentiles);
+
+            public void FillDayIfAbsent(
+                int ownerId,
+                OwnerType ownerType,
+                MetricType metricType,
+                DateOnly day,
+                Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
+            {
+                pause.ParkIfClosed(LongEnoughThatSomethingIsWrong);
+                shipped.FillDayIfAbsent(ownerId, ownerType, metricType, day, readPercentiles);
+            }
+
+            public Task SaveFilledDay() => shipped.SaveFilledDay();
+        }
+
+        private sealed class HeldPass : IDisposable
+        {
+            private readonly FillPause pause;
+
+            private readonly Task pass;
+
+            public HeldPass(FillPause pause, Task pass)
+            {
+                this.pause = pause;
+                this.pass = pass;
+            }
+
+            public void Dispose()
+            {
+                pause.Release();
+
+                Assert.That(pass.Wait(LongEnoughThatSomethingIsWrong), Is.True,
+                    "The pass that was being held never finished after it was let go.");
+            }
         }
     }
 }

@@ -121,7 +121,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
         }
 
-        private static async Task FillAsync(IServiceProvider services, OverTimeFillRequest request, CancellationToken cancellationToken)
+        private async Task FillAsync(IServiceProvider services, OverTimeFillRequest request, CancellationToken cancellationToken)
         {
             var target = TargetFor(services, request);
             if (target is null)
@@ -140,15 +140,38 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                     continue;
                 }
 
-                writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, request.MetricType, day, target.ReadPercentiles);
+                await FillOneDayAsync(writer, request, day, target);
             }
-
-            await services.GetRequiredService<IPercentilesOverTimeSnapshotRepository>().Save();
 
             // The readings above warmed the shared metrics cache under the same (owner, window) keys
             // the widgets read. Leaving them behind would serve the UI values computed for a day that
             // is not the one it is asking about.
             target.InvalidateReadCache();
+        }
+
+        /// <summary>
+        /// One day, written on its own. A day that cannot be written is one day: the pass carries on
+        /// to the next, and the day it skipped is simply still missing when the next chart load looks.
+        /// Abandoning the walk here would cost the other eighty-nine days over a single bad one.
+        /// </summary>
+        private async Task FillOneDayAsync(
+            IPercentileSnapshotWriter writer, OverTimeFillRequest request, DateOnly day, PassTarget target)
+        {
+            try
+            {
+                writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, request.MetricType, day, target.ReadPercentiles);
+                await writer.SaveFilledDay();
+            }
+            catch (Exception failure)
+            {
+                logger.LogError(
+                    failure,
+                    "Over-time reconstruction could not write {Day} for {OwnerType} {OwnerId} ({MetricFamily}); the rest of the pass continues",
+                    day,
+                    request.OwnerType,
+                    request.OwnerId,
+                    MetricFamily);
+            }
         }
 
         private static PassTarget? TargetFor(IServiceProvider services, OverTimeFillRequest request)

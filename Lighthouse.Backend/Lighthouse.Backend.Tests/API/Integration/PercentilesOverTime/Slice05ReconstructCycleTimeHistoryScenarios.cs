@@ -285,7 +285,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @concurrency @real-io @sqlite @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -303,7 +302,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-01 @concurrency @real-io @sqlite @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one()
         {
             var teamId = GivenATeamStillBeingRefreshed();
