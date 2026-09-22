@@ -2486,6 +2486,52 @@ it. `des-commit`'s lock does not help: it serialises commits, and this was one c
 `TaskStop` every running agent the moment a pull, merge or rebase is reported, before looking at
 anything else.
 
+### U-38 — The two honesty gates are not separately observable, and the invariant that makes one of them redundant is unguarded
+
+03-03 asked for each gate to be proved load-bearing on its own. That turns out to be impossible, and the
+reason is worth writing down because it changes what the second gate is for.
+
+`ProcessBehaviourChart.NotReady` hard-codes `Average = UpperNaturalProcessLimit = LowerNaturalProcessLimit = 0`,
+and so does every other construction site that stamps a non-`Ready` status - `BaseMetricsService.cs:596`,
+`:650`, `:712` and `PortfolioMetricsService.cs:92`, `:122`, verified by reading all five. So **every chart
+the status gate would refuse already satisfies the collapsed-band gate's predicate.** Removing the status
+gate alone changes no observable outcome anywhere in the product.
+
+The crafter established this by running three sabotages rather than the two it was asked for, which is
+the right call: two would have shown scenario 1 passing with the status gate deleted and forced a report
+of "this scenario is vacuous", which would have been false.
+
+| sabotage | `A_period_with_nothing_to_draw_limits_from_reports_no_limits` | `A_stretch_in_which_the_team_finished_nothing...` |
+|---|---|---|
+| status gate removed | passes - the band gate absorbs it | - |
+| band gate removed | passes | **fails, 11 rows** |
+| both removed | **fails, 31 rows** | - |
+
+Both scenarios are falsifiable, so neither joins U-16/19/22/26/28/33. But they are falsifiable at
+different grains: scenario 2 pins the band gate individually, scenario 1 pins **the pair**. Its name
+claims the not-ready cause and it cannot actually isolate it.
+
+**The status gate is not dead code.** It is a cheaper, intention-revealing early exit, and it becomes
+independently load-bearing the moment any non-`Ready` path returns a live band. What makes it redundant
+today is an invariant nobody asserts anywhere: *every non-`Ready` construction site zeroes the triple*.
+If a future path stamps `InsufficientData` with a real average, the band gate stops catching it and the
+status gate becomes the only defence - with no test that would notice if it were removed.
+
+**Two follow-ups, both for the acceptance designer, both deferred to the hold rather than done now:**
+
+1. Guard the invariant directly - a structural or unit-level assertion that every non-`Ready` chart
+   construction carries `Average == 0 && UpperNaturalProcessLimit == 0`. That is the thing the status
+   gate's redundancy actually rests on, and it is the honest instrument. An acceptance scenario cannot
+   do it: pinning the status gate would need a chart that is `NotReady` with a live band, which the
+   product deliberately never produces.
+2. Say so in scenario 1's own docstring. `ThenDeliverySizeIsReportedForThePortfolioAndNotForTheTeam`
+   already carries an honest note about the half of it that cannot fail; this scenario deserves the
+   same, so nobody later cites it as evidence that the status gate specifically works.
+
+Neither is a correctness defect today, which is why they wait. Item 1 should land **before** the Stryker
+run at 04-04, because the status gate will otherwise show up as a surviving mutant with no explanation
+attached to it.
+
 ### Open, carried forward
 
 - **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with
