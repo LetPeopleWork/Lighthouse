@@ -50,12 +50,12 @@ function ChoiceGroup<T extends string | number>({
 	chosen,
 	options,
 	onChosen,
-}: {
+}: Readonly<{
 	name: string;
 	chosen: T;
 	options: { value: T; label: string }[];
 	onChosen: (next: T) => void;
-}) {
+}>) {
 	const labelId = useId();
 
 	return (
