@@ -39,8 +39,8 @@ export async function generateVersion({
 	// listing knows about; the head ref is.
 	const branch = pullRequestHeadRef ?? ref.replace('refs/heads/', '');
 
-	const retryDelaysMs = [2000, 4000, 8000, 16000, 32000];
-	const maxAttempts = retryDelaysMs.length;
+	const delaysBetweenAttemptsMs = [2000, 4000, 8000, 16000];
+	const maxAttempts = delaysBetweenAttemptsMs.length + 1;
 
 	let buildCount = 0;
 
@@ -69,7 +69,7 @@ export async function generateVersion({
 			);
 		}
 
-		await sleep(retryDelaysMs[attempt - 1]);
+		await sleep(delaysBetweenAttemptsMs[attempt - 1]);
 	}
 
 	console.log(`Found ${buildCount} builds today`);
@@ -82,6 +82,8 @@ export async function generateVersion({
 
 	return { version, fileversion, buildCount };
 }
+
+const MAX_RUN_LIST_PAGES = 10;
 
 async function countBuildsToday({ listRuns, branch, todayStart, runId }) {
 	let page = 1;
@@ -109,14 +111,12 @@ async function countBuildsToday({ listRuns, branch, todayStart, runId }) {
 				break;
 			}
 
-			if (runDate >= todayStart) {
-				buildCount++;
-			}
+			buildCount++;
 		}
 
 		page++;
 
-		if (page > 10) {
+		if (page > MAX_RUN_LIST_PAGES) {
 			console.log('Reached page limit');
 			hasMore = false;
 		}
