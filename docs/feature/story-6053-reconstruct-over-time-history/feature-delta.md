@@ -152,7 +152,14 @@ a confident, plausible trend for a period in which nothing was observed. ADR-108
 names this owner as a live state, not a hypothetical. The floor is
 `WorkTrackingSystemOptionsOwner.UpdateTime`.
 
-### D6 - No distinction between a reconstructed point and a recorded one. **(contingent on SPIKE-01)**
+### D6 - No distinction between a reconstructed point and a recorded one. **(CONFIRMED by SPIKE-01, with one half still open)**
+
+> **SPIKE-01 verdict, 2026-09-22** (`spike/findings.md`): all 4 recorded days reproduce exactly, so the
+> mechanism holds and D6 stands. But the confirmation is narrower than the decision. The four days carry
+> low-cardinality values (every percentile is 1 or 2) and three share the same tuple, so the probe
+> discriminates weakly; and crucially **no configuration changed on that instance in the 17 days covered**,
+> so the config-drift risk described below was not exercised at all. The *mechanism* is proven. Fidelity
+> *across a configuration change* is not, and stays open for DESIGN rather than closed by the spike.
 
 No flag is persisted, no dashed segment, no tooltip difference. The justification is D1: a reconstructed value
 *is* the value that day's computation would have produced, so drawing a distinction would assert a difference
