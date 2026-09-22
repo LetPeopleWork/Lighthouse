@@ -1,0 +1,817 @@
+{
+  "roadmap": {
+    "project_id": "story-6053-reconstruct-over-time-history",
+    "created_at": "2026-09-22",
+    "total_steps": 21,
+    "total_phases": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6053 — an over-time chart shows the trend the instance's stored work items already support, instead of the handful of days the forward-only recorder happened to catch (4 recorded days against ~365 reconstructible ones on the dev database). A series read detects the days it is missing inside the window it was asked for and asks for them; a filler of this feature's own computes each missing day with the recorder's own code and a shifted window, writes it only if absent, and never touches the request thread. Four phases mirroring the four story slices: 01 cycle time at thirty days, team scope, where every mechanism is established (the decorator seam, the filler and its registration shape, the maintenance-gate coupling in both directions, the data floor, the last-observation ceiling, the absence gate on BOTH write paths, the ninety-day cap with an enforced wall-clock budget, and the unique-index collision backstop on a real SQLite file); 02 the other two look-backs, work item age at the NoHorizon sentinel, and portfolio scope; 03 the process-behaviour families at both scopes with the today-anchored baseline threaded to an explicit as-of day; 04 the honest empty states, the widget copy, and the metrics documentation. Done when: all 41 pending acceptance cases across Slice05-Slice08 are un-ignored and green, the one already-green pin stays green, the backend builds with zero warnings and the suite is green with the live-connector categories excluded, `pnpm test` and `pnpm build` are clean, SonarQube Cloud reports no new issue of any severity, and Stryker kill rate is >= 80% on the changed backend surface run last on frozen code.",
+    "paradigm_note": "The Hypothesis + state-delta property-based unit mandate from nw-roadmap does not apply here, and its omission is a decision rather than an oversight. This repository is C# .NET 10 + NUnit 4.6 + Moq on the backend and TypeScript + Vitest + React Testing Library on the frontend; there is no pytest, no pytest-bdd, no .feature file and no Hypothesis, and DISTILL recorded the same reconciliation for this story. The crafter authors NO backend tests: all 40 acceptance methods were written by Quinn at DISTILL and sit behind [Ignore(Pending)]. The crafter's RED phase is REMOVING an [Ignore] attribute and watching the named method fail for the right reason; its GREEN phase is production code. The single deliberate exception is F-3: the three empty-state widget tests in Lighthouse.Frontend/src/pages/Common/MetricsView/ are the crafter's to author at 04-02, because DISTILL could not choose the words before phases 01-03 settled which states remain reachable."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-solution-architect (Morgan), from DISCUSS + DESIGN + DEVOPS + DISTILL of feature-delta.md",
+    "reviewed_at": "2026-09-22",
+    "notes": "Every one of the 40 DISTILL acceptance methods is mapped to exactly one step; no scenario is orphaned and none is claimed twice. The mapping is: phase 01 covers all 17 Slice05 methods (16 un-ignored plus the one already-green pin, which is named at 01-02 because that is the step that could break it); phase 02 all 8 Slice06 methods (10 executed cases — Each_cycle_time_look_back_fills_in_over_its_own_period carries [TestCase(30)], [TestCase(60)], [TestCase(90)]); phase 03 all 10 Slice07 methods; phase 04 all 5 Slice08 methods. Six claims were checked against the code rather than inferred. (1) ReconstructOverTimeHistoryAcceptanceTest.cs:424-440 holds three scaffold seams that THROW AssertionException today — TheReconstructionPassRunsToCompletion, AReconstructionPassHeldInFlight and TwoReconstructionPassesRunAtTheSameInstant — and their replacement is assigned to 01-02 and 01-03 respectively, so no later step inherits a throwing seam. (2) TestWebApplicationFactory strips IHostedService, which is why the filler's registration shape is a first-step obligation and not a detail. (3) DatabaseMaintenanceGate.cs learns about background work from exactly one private method, HasActiveBackgroundWork(), which returns statusStore.HasActiveWork() and nothing else — so the second signal has one insertion point and the blocked-reason message has two sites that must agree. (4) BaselineValidationService is a STATIC class and Validate is called from BaseMetricsService.cs:591, :645 and :707 plus four controllers (TeamController, TeamsController, PortfolioController, PortfoliosController); the as-of parameter must therefore be additive with a default or seven call sites change, which is what DDD-12 says and why 03-04 owns it. (5) ADR-107, ADR-108 and ADR-109 ALREADY carry their story-6053 amendments (adr-107:93, adr-108:177, adr-109:106), so DoD 6 is a verification at 04-04 and not a writing task. (6) docs/metrics/predictability.md exists and is the file 04-03 edits.",
+    "review": "Reviewed 2026-09-22. Four blockers raised; one upheld after verification against source. UPHELD: the wall-clock budget had no test that could fail — now declared at 01-07. PARTIAL: 04-04's ADR-presence criterion could not fail and is reframed as a divergence check. REJECTED, with evidence: (a) 'the three seams are never established' — they exist at ReconstructOverTimeHistoryAcceptanceTest.cs:424/431/439, throw AssertionException, and are committed; a throwing seam IS the RED state, so the finding inverts RED/GREEN; (b) 'phase 04 mapping is ambiguous' — measured ownership is 04-01:5, 04-02:0, 04-03:0, 04-04:1, the finding read scenario_name (a label) as the ownership set; (c) 'mutation may run before tests are authored' — Stryker is at 04-04 and the chain is strictly linear; (d) '01-06 has no dependencies' — it declares ['01-05'], and every step in the roadmap has a predecessor. The recommendation to re-run DISTILL/DESIGN was not followed: three of four blockers were factually incorrect and the fourth was a one-line omission."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6053-reconstruct-over-time-history/feature-delta.md",
+    "slice_01": "docs/feature/story-6053-reconstruct-over-time-history/slices/slice-01-the-trend-my-data-already-supports.md",
+    "slice_02": "docs/feature/story-6053-reconstruct-over-time-history/slices/slice-02-every-tab-spans-the-same-period.md",
+    "slice_03": "docs/feature/story-6053-reconstruct-over-time-history/slices/slice-03-where-the-limits-actually-moved.md",
+    "slice_04": "docs/feature/story-6053-reconstruct-over-time-history/slices/slice-04-say-the-true-thing-when-empty.md",
+    "spike": "docs/feature/story-6053-reconstruct-over-time-history/spike/findings.md",
+    "adr": "docs/product/architecture/adr-207-read-triggered-reconstruction-on-its-own-filler.md and adr-208-a-past-day-is-computed-by-the-recorders-own-code.md; amendments already landed in adr-107, adr-108 and adr-109; cross-refs adr-106 (unique natural key, NoHorizon sentinel) and adr-195 (describes a REVERTED three-lane queue — read the story-5877 note in brief.md before believing the lane count)",
+    "architecture_brief": "docs/product/architecture/brief.md, section 'Application Architecture — story-6053-reconstruct-over-time-history'",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6053"
+  },
+  "user_decisions": [
+    "D1 — reconstruct, never synthesize. A missing day D is the recorder's own service call with the window shifted to (D − horizon, D), stamped RecordedAt = D. DemoPercentilesBackfillHandler invents values and stays demo-only and untouched.",
+    "D2 — the trigger is the series read detecting a gap in the window it was asked for. The endpoints stay read-only in their RESPONSE and acquire the right to ask.",
+    "D3 — the read never blocks on reconstruction. It enqueues and returns the series as it stands; the chart fills on a later load.",
+    "D4 / DDD-6 — the walk stops at the data floor, and at a cap of 90 days PER PASS (not 90 days of reach) plus a wall-clock budget. A year-wide picker fills across successive loads.",
+    "D5 — leading and interior gaps are filled on one code path with no gap taxonomy; the ceiling is the owner's UpdateTime, because a broken-connection owner's items are frozen at the break.",
+    "D6 — no flag, no dashed segment, no tooltip difference between a reconstructed point and a recorded one. Confirmed for the mechanism by SPIKE-01 (4/4); fidelity across a CONFIGURATION change remains unprobed and is carried as OQ-1.",
+    "D7 / DDD-13 — never write an all-zero percentile row, on BOTH the reconstruction path and the shipped forward recorder. The second half is a behaviour change to shipped code, accepted in the open; rows already written stay, with no repair migration.",
+    "DDD-1 — the unit of reconstruction is (owner, window), never (owner, family, day). One ask per owner per read covering every family for that scope, which is what makes 'switching tabs does not re-trigger' structural.",
+    "DDD-2 / DDD-3 — the trigger lives in a decorator over each series query port. IOverTimeGapReconciler has one void method and holds no repository, so 'a GET wrote to the database on the request thread' is not representable from the read side.",
+    "DDD-4 — the carrier is a filler of this feature's own, not IUpdateQueueService. The queue is one channel with one reader (ADR-195's three lanes shipped and were reverted with story-5877), a new UpdateType is a user-visible cancellable Task-Manager row, and an admitted key holds database maintenance off.",
+    "DDD-9 / DDD-10 — one day-writer per table with two NAMED operations, RecordToday (overwrites) and FillDayIfAbsent (writes only if absent), never one operation with a mode flag. The family descriptors move into the writer so the family set is one list rather than an agreement between two.",
+    "DDD-12 — every today-anchor on the process-behaviour path becomes an explicit as-of day defaulting to Clock.Today. Additive, so the forward recorder and all six point-in-time widgets stay byte-identical. A pinned-baseline owner's correct series is flat limits, NOT an empty one.",
+    "DDD-17 / DEVOPS-1 / G-5 / G-6 — the maintenance gate and the filler see each other in BOTH directions, and it lands in phase 01 because phase 01 is the first thing that writes a row. One direction alone leaves the check-then-act race IUpdateStatusStore.CancelIfStillWaiting's own doc warns about.",
+    "DEVOPS-2 / G-7 / G-8 — the wall-clock budget is the longest a RestoreBackup may be held waiting, which is a question about operator patience and does not move with instance size. It must be ENFORCED: a pass that exceeds it abandons.",
+    "DEVOPS-3 — the pass-failed log template is pinned, not shaped: Error, \"Over-time reconstruction pass failed for {OwnerType} {OwnerId} ({MetricFamily})\", props OwnerType, OwnerId, MetricFamily, Exception, with MetricFamily carrying the recorders' own two values.",
+    "DEVOPS-4 — the filler is deliberately invisible on the operator surface. No Task-Manager row, no progress bar, no cancel button; the log line is the only operator signal."
+  ],
+  "out_of_scope": [
+    "Marking reconstructed points — D6 says no distinction. Reopens only on evidence of divergence, which SPIKE-01 did not find for the mechanism.",
+    "Trailing-gap fill for owners that have stopped refreshing. The UpdateTime ceiling refuses it, and that refusal is itself under test.",
+    "Orphaned snapshot rows from deleted owners (the dev DB carries 7 percentile rows and 4 PBC rows for an owner id that exists in neither Teams nor Portfolios). A real defect found while measuring this story; it belongs in its own bug.",
+    "Changing the chart x-axis from scaleType \"point\" to a time scale. Genuinely attractive and much cheaper, but it changes the shape of every existing over-time chart and answers a different question.",
+    "Reconstructing BlockedCountSnapshot or DeliveryMetricSnapshot. The same argument may apply to both; neither was reported and neither is in this work item.",
+    "Backfilling metrics that are structurally forward-only, such as the feature-size fields from Epic 5585.",
+    "Any new table, route, DTO, request or response field, EF migration, RBAC gate, external integration or technology. The design establishes none, which is why there is no coexistence matrix and no client version gate.",
+    "Adding a hasHistory-style boolean or any other discriminated-envelope field to the series response. ADR-108 has rejected that twice; it must be re-decided there, not slipped in through an empty-state fix.",
+    "Admitting the filler to IUpdateStatusStore, giving it an UpdateKey or an UpdateType, or adding a Task-Manager row. Every one of these reopens all four of DDD-4's reasons.",
+    "Re-landing story-5877's per-type update-queue lanes, or correcting ADR-195/196/197's Accepted status. The ADRs describe a reverted design; correcting them belongs to whoever reopens #5877.",
+    "Closing ADR-108's known defect — the owner whose snapshots all predate a window that still ends today. Reconstruction makes it rarer, not gone; it stays the follow-up ADR-108 already names.",
+    "A repair migration for all-zero percentile rows already written by the forward recorder. Expand-only: they stay."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The trend a team's data already supports",
+      "description": "Story slice 01, Slice05 tests: cycle time at thirty days, team scope. The decisive phase — it establishes every mechanism the other three reuse. The reconstruction seam (decorator over the query port, void-returning reconciler, a filler of this feature's own), the registration shape that makes the filler observable from an acceptance test at all, the maintenance-gate coupling in both directions, the data floor and the last-observation ceiling, the absence gate on BOTH write paths, the ninety-day cap with an enforced wall-clock budget, and the unique-index collision backstop proven against a real SQLite file. If this phase is right, phases 02 and 03 are parameter and family additions rather than new mechanisms; that is the slice's stated learning hypothesis.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The percentile day-writer is extracted, and the handler delegates to it",
+          "description": "Move the per-day percentile computation and the family descriptors out of PercentilesOverTimeRecordingHandler into a shared writer offering two named operations, so reconstruction and daily recording compute a day through ONE code path. Behaviour-preserving: the handler keeps its event shape, its containment, its log template and its cache guard, and every shipped percentile acceptance test stays green without being edited.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice01PercentilesOverTimeScenarios.cs",
+          "scenario_name": "The_flow_coach_reads_a_dated_cycle_time_percentiles_trend_for_a_team",
+          "unskips": [
+            "None, and deliberately. This is a behaviour-preserving extraction under specifications that are already green; the scenarios it enables are un-ignored by 01-02 and later. Stated here rather than omitted so its absence is a decision and not an oversight."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPercentileSnapshotWriter.cs (new — RecordToday and FillDayIfAbsent; the exact signatures are DELIVER's call, the two-named-operations shape is not)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileSnapshotWriter.cs (new — owns CycleTimeHorizons, WorkItemAgeHorizons, the per-day computation and the persist)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs (edit — delegates the computation; keeps the event subscription, the per-family containment, the log template and the cache guard)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit — register the writer)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs (new — the horizon lists exist in exactly one type)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Two operations with two names, never one with a mode flag. RecordToday overwrites, because today's value legitimately changes as the day goes on; FillDayIfAbsent writes only when no row exists, because a day already carrying a value was observed and recomputing it is not an improvement. A boolean parameter is where a reader stops being able to tell which policy a call site meant, and that is exactly the distinction this story turns on.",
+            "The horizon lists — CycleTimeHorizons and WorkItemAgeHorizons — live in the writer and nowhere else. The ArchUnit test asserts this structurally, so a second copy appearing later is a build failure rather than a drift nobody notices.",
+            "The handler's observable behaviour is unchanged in this step. No absence gate yet — that is 01-06, and merging it here would hide a behaviour change to shipped code inside a refactor.",
+            "Every shipped percentile acceptance test stays green WITHOUT being edited: Slice01PercentilesOverTimeScenarios.cs and Slice02WorkItemAgePercentilesScenarios.cs in full. If one needs editing, the extraction was not behaviour-preserving and the edit is the evidence, not the fix.",
+            "The pass-failed log template on the handler side is untouched. ADR-107's amendment pinned the recorders' exact string because operator alerting keys on MetricFamily; reshaping it here would fragment one alert into several.",
+            "`dotnet build` zero warnings and `dotnet test` green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Editing Program.cs forces the full backend Integration suite to run in CI, which raises flake exposure through the live-connector categories. That is expected and needs no pipeline edit, but budget for it. Run the suite locally with --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". Comments: if the two write policies need one, say why a day already carrying a value is left alone in plain language — never cite D7, DDD-9 or ADR-208, which name sections of documents a cold reader cannot open. Commit: `refactor(metrics): one writer computes a percentile day, whichever path asks (story 6053)`"
+        },
+        {
+          "id": "01-02",
+          "name": "Opening the chart asks for the days it is missing, and something else fills them",
+          "description": "The whole seam in one step, because its parts cannot be split without the suite going red: a decorator over IPercentilesOverTimeSeriesQuery that delegates the read and then asks; a void-returning reconciler that clamps the window and scans the rows already materialised; and a filler that walks the missing days off the request thread. Registration shape is a first-class obligation here, not a detail — the test host removes every hosted service, so a filler registered only as one is invisible to every scenario in this phase.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded",
+          "unskips": [
+            "[Ignore(Pending)] removed :: The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded — the leading gap, the literal complaint",
+            "[Ignore(Pending)] removed :: The_flow_coach_reads_across_the_stretch_the_instance_was_switched_off — the interior gap, which the measured evidence says is the dominant one",
+            "[Ignore(Pending)] removed :: The_days_the_first_visit_could_not_show_are_there_on_the_next_one — the first visit answers with what is there, the second shows the rest",
+            "[Ignore(Pending)] removed :: A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped — the last-observation ceiling",
+            "Already green, must STAY green :: Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits — the one pin in this fixture, and the one this step is most capable of breaking. It is the property the story must not cost, and it is mapped to this step for that reason."
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: The_flow_coach_reads_across_the_stretch_the_instance_was_switched_off",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: The_days_the_first_visit_could_not_show_are_there_on_the_next_one",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IOverTimeGapReconciler.cs (new — ONE method, returns void, takes the rows and the window; holds no repository)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeGapReconciler.cs (new — clamp, scan, ask)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/GapAskingPercentilesOverTimeSeriesQuery.cs (new — registered AS IPercentilesOverTimeSeriesQuery, delegates to the shipped implementation, then asks, then returns the rows untouched)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/BackgroundServices/IOverTimeHistoryFiller.cs (new — enqueue, DrainAsync, and the pass-in-flight predicate)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (new — one bounded channel, one reader, a per-key in-flight set, one DI scope per pass, drain on shutdown)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit — the decorator registered as the interface; the filler registered as a SINGLETON with the hosted service added as a factory over it)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs (edit — replace the throwing TheReconstructionPassRunsToCompletion seam at :424 with a call to the filler's drain; leave the other two seams throwing, they belong to 01-03)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs (edit — no snapshot repository is reachable from a controller action)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "ACCEPTANCE CRITERION, explicit and structural: the filler is registered as a SINGLETON of its concrete type, and the IHostedService is registered as a FACTORY over that same instance. TestWebApplicationFactory calls services.RemoveAll<IHostedService>(); a filler registered only as a hosted service is absent from every test in this phase, and the crafter's temptation at that point is to sleep. Verify by resolving the filler from Factory.Services inside a scenario — if that throws, the shape is wrong and nothing downstream in this phase can be trusted.",
+            "The drain processes everything already queued and returns when the queue is empty. It does not sleep, it does not poll on a timer, and it does not return while a pass is still writing. Nine pending scenarios in this story assert that NOTHING was written; against a drain that returns early, all nine pass for the wrong reason.",
+            "The reconciler's method returns void and its implementation holds no snapshot repository. The ArchUnit test asserts that nothing reachable from a controller action depends on a snapshot repository, so 'a GET wrote to the database on the request thread' is structurally unavailable rather than a thing the tests happen not to catch.",
+            "The shipped PercentilesOverTimeSeriesQuery keeps its signature AND its body. The decorator is registered as the interface; the two controllers are byte-identical and are not edited.",
+            "Gap detection runs over rows already materialised plus a dictionary lookup. NO additional query runs on the request thread — in particular the data floor is NOT resolved here, because resolving it means touching WorkItems and the budget is 50 ms over today's p95.",
+            "The ceiling is min(window end, DateOnly(owner.UpdateTime)) and it is free, because the owner is already loaded. A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped is what proves it: an owner whose connection broke has items frozen at the break, and filling the days since would draw a confident trend for a period in which nothing was observed.",
+            "The pin is captured BEFORE and AFTER: run Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits on unmodified main, then again at the end of this step. It must be green both times. A pass that writes on the request thread turns the feature into the problem it was meant to fix.",
+            "The RED run is captured before any production edit. Each of the four named methods must fail for the reason the seam names, not because the harness could not start."
+          ],
+          "implementation_notes": "The filler is the update-queue PATTERN, not the class: a bounded channel, a single reader, a per-key in-flight set that collapses concurrent asks, one DI scope per pass so each pass gets its own DbContext, and a drain on shutdown. It must not touch IUpdateQueueService, IUpdateStatusStore, IUpdateExecutionLock or UpdateKey — every one of those reopens a reason the queue was rejected. The pass-failed log line is pinned and not negotiable: Error level, template \"Over-time reconstruction pass failed for {OwnerType} {OwnerId} ({MetricFamily})\", properties OwnerType, OwnerId, MetricFamily, Exception, with MetricFamily carrying \"Percentiles\" so one operator alert grouping covers recording and reconstruction together. A failing family is logged and skipped; the surviving family's staged rows still persist. Program.cs is touched again here — the full backend Integration suite runs in CI as a result. Commit: `feat(metrics): a chart that is missing days asks for them and keeps answering (story 6053)`"
+        },
+        {
+          "id": "01-03",
+          "name": "Two writers, one row — and the database has the last word",
+          "description": "Prove the collision backstop against a real SQLite file before the filler is expensive to change. Two passes writing the same day leave one row, and a refresh landing mid-fill loses nothing and duplicates nothing. This runs early on purpose: at the end of the phase the answer could only produce a bug, whereas here it can still change the design.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two",
+          "unskips": [
+            "[Ignore(Pending)] removed :: Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two — the replica race, against the real unique index",
+            "[Ignore(Pending)] removed :: A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one — the recorder and the filler on the database at the same moment"
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileSnapshotWriter.cs (edit — a unique-constraint violation is absorbed PER DAY and the pass continues)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — the in-flight key set collapses concurrent asks; a per-day failure does not abort the pass)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs (edit — replace the throwing AReconstructionPassHeldInFlight seam at :431 and the throwing TwoReconstructionPassesRunAtTheSameInstant seam at :439)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "Idempotency is three layers and they are all present, because each catches what the others cannot: the in-flight key set collapses two asks in one process, fill-if-absent refuses to overwrite a day that already has a value, and the unique natural key on the table is the backstop when two processes get past both. Two replicas can both run a pass — that is wasted CPU, never a duplicate row and never a wrong value.",
+            "The unique-constraint violation is absorbed PER DAY, not per pass. A collision on one day must not abandon the other eighty-nine; that is the difference between a race that costs nothing and a race that costs a window.",
+            "These scenarios run against the real SQLite FILE the harness already uses, and nowhere else. Microsoft.EntityFrameworkCore.InMemory does not enforce unique indexes, so the same test written in the unit suite would pass against an implementation with NO backstop whatsoever. If a version of this check appears under the unit suite, delete it — it is worse than no test.",
+            "AReconstructionPassHeldInFlight() holds a pass genuinely open and releases it on Dispose. Both this step and 01-04 depend on it, so it is implemented here; a version that merely returns a no-op disposable makes 01-04's gate scenarios pass vacuously.",
+            "No SQLITE_BUSY surfaces while a fill and a refresh write concurrently. The 10 000 ms busy_timeout is a ceiling, not a guarantee, and this is the step where that distinction is checked rather than assumed.",
+            "A_refresh_landing_mid_fill asserts BOTH that every day in the window is present and that every day is held exactly once. Neither half alone would catch a writer that wins by overwriting."
+          ],
+          "implementation_notes": "Do not reach for a distributed lock or IUpdateExecutionLock. The unique index already makes duplicate work harmless, and buying a cross-replica lock against a harmless duplicate costs an UpdateKey and therefore an UpdateType that must never be admitted — an invariant with nothing enforcing it. If this step finds SQLITE_BUSY under realistic contention, STOP and report rather than widening the timeout: that is the finding the gate exists to surface, and it can still change the design at this point in the phase. Commit: `feat(metrics): two fills of the same day leave one point (story 6053)`"
+        },
+        {
+          "id": "01-04",
+          "name": "The gate and the filler see each other, in both directions",
+          "description": "The operator cannot start a database restore while days are being written, and the filler stands down when a maintenance operation is already running. Both directions, because one alone leaves a check-then-act window — the hazard IUpdateStatusStore's own doc warns about, in a codebase that has already been burned by it.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in",
+          "unskips": [
+            "[Ignore(Pending)] removed :: An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in — the gate learns about the filler",
+            "[Ignore(Pending)] removed :: The_chart_stops_filling_itself_in_while_the_operator_is_restoring_the_database — the filler defers to the gate"
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: The_chart_stops_filling_itself_in_while_the_operator_is_restoring_the_database"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/BackgroundServices/IOverTimeHistoryFiller.cs (edit — or a narrower single-member capability interface if the crafter prefers; the gate must depend on ONE read-only member and nothing else)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseMaintenanceGate.cs (edit — a second constructor dependency; HasActiveBackgroundWork() consults it alongside statusStore.HasActiveWork(); the blocked-reason message gains a case naming the filler)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — before each day, ask the gate whether a maintenance operation is active and abandon the pass if so)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit — wire the second dependency into the gate)"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "The gate's new dependency exposes exactly ONE read-only member: is a pass in flight right now. It carries no UpdateKey, no UpdateType, no Task-Manager row, and it changes IUpdateStatusStore not at all. It is a single-member capability, not a second status store — anything wider reopens, one by one, the four reasons the update queue was rejected.",
+            "The blocked reason names the filler in its own case, so an operator is told WHAT is holding the operation rather than only that something is. DatabaseMaintenanceGate produces that message at two sites — the BlockedReason property and the TryAcquire early return — and both must agree; a message that differs by entry point is how an operator learns to distrust it.",
+            "The filler checks BEFORE EACH DAY, not once at the start of the pass. Abandoning mid-pass is free here and nowhere else in the system: each day is an independent write, already-written days stay, and the walk resumes because a read will happen again. That property is what makes per-day checking affordable, and it is specific to this component.",
+            "The filler NEVER acquires the gate. It defers to a maintenance operation; it does not become one. If it acquired the gate it would block backup and restore outright, which is a strictly worse failure than the one being fixed.",
+            "Both scenarios are un-ignored together. Shipping one direction is the check-then-act race the item exists to close, and a half-wired implementation would make the gate scenario green while the window stays open.",
+            "The existing DatabaseMaintenanceGate tests stay green. A gate that refuses maintenance when nothing is running is a worse bug than one that permits it, because nobody can clear it.",
+            "ThenStartingADatabaseRestoreIsAllowedAgain() must pass after the held pass disposes. A predicate that latches true is indistinguishable from a broken gate to the operator standing in front of it."
+          ],
+          "implementation_notes": "This is the finding of the DEVOPS wave and the reason it ran at all: the design listed visibility to this gate as a COST of joining the update queue when it is a safety PROPERTY the queue happened to carry, and discarded the property along with the mechanism. Without it the gate grants itself RestoreBackup mid-pass and the database is replaced under a filler holding an open scoped context. Comments: DatabaseMaintenanceGate is a file a reviewer reads under pressure — if the second signal warrants a line, say that history fill writes to the database without going through the update queue, in plain language, and never write DEVOPS-1 or DDD-17. Commit: `feat(metrics): database maintenance and history fill stand out of each other's way (story 6053)`"
+        },
+        {
+          "id": "01-05",
+          "name": "How far back it goes, what it refuses to write, and what it leaves alone",
+          "description": "The three honesty properties of the walk, plus the memo that makes it converge. The walk stops where the stored items stop; a stretch in which the team finished nothing stays blank rather than reading zero; and a day that already carries a value — recorded, reconstructed or backdated by the demo loader — is left exactly as it is.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero",
+          "unskips": [
+            "[Ignore(Pending)] removed :: The_trend_reaches_back_only_as_far_as_the_team_has_finished_anything — the data floor, resolved inside the pass",
+            "[Ignore(Pending)] removed :: A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero — the absence gate on the reconstruction path",
+            "[Ignore(Pending)] removed :: A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at — fill-if-absent, never update-in-place",
+            "[Ignore(Pending)] removed :: Looking_at_the_same_period_twice_costs_nothing_the_second_time — convergence, which is what the memo buys",
+            "[Ignore(Pending)] removed :: Backdated_demonstration_values_are_stepped_over_rather_than_corrected — a demo instance's invented rows survive a pass"
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: The_trend_reaches_back_only_as_far_as_the_team_has_finished_anything",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: Looking_at_the_same_period_twice_costs_nothing_the_second_time",
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: Backdated_demonstration_values_are_stepped_over_rather_than_corrected"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — resolve the data floor from the earliest stored item, inside the pass; record the floor and the refused days)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/ReconstructionMemo.cs (new — per-owner resolved floor and refused days; in-memory, bounded, invalidated by the refresh events)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeGapReconciler.cs (edit — the predicate subtracts the memo)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileSnapshotWriter.cs (edit — FillDayIfAbsent refuses a day whose four percentiles are all zero)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "The absence gate's predicate is all four percentiles zero, and the day is left with NO ROW. Four zeros are not a measurement of a quiet period; reconstructed across a thin stretch of history they paint a floor of zeros, which replaces 'only three entries' with a more confident lie than the bug being fixed.",
+            "The data floor is resolved INSIDE the pass and never on the request thread, because resolving it means touching WorkItems. The read path's job is a scan of rows it already has plus a dictionary lookup, and that is the only reason the added-latency budget survives.",
+            "The walk terminates at the floor rather than emitting progressively thinner days at the old end. Items age past DoneItemsCutoffDays, so a fixed window regardless of data produces points that are confidently wrong, which is worse than absent.",
+            "A day that already carries a row is never rewritten, whoever put it there — the recorder, an earlier pass, or the demo loader's backdated synthetic values. The demo scenario is the sharp case: those values are not observations and are also not this story's to correct.",
+            "The memo is optimisation ONLY, never correctness. Losing it to a restart costs one wasted pass and nothing else; it is invalidated by TeamDataRefreshed and PortfolioFeaturesRefreshed; and no assertion anywhere may depend on its contents. If a scenario only passes because the memo is warm, the predicate underneath it is wrong.",
+            "Looking_at_the_same_period_twice must show the second visit enqueuing nothing. Without the memo a permanently unfillable day — before the floor, or refused by the absence gate — is re-detected on every read forever, which is the one thing that would stop the cost converging to zero.",
+            "invalidateReadCache() runs ONCE per pass, in a finally. A pass warms up to ninety historical cache entries per family that no UI will read; discarding the live entries alongside them costs the dashboard one recompute, and that is the accepted price.",
+            "ThenNoDayReadsAsFourZeroes asserts over the whole table, not the requested window. A gate that only holds inside the window is not a gate."
+          ],
+          "implementation_notes": "If ITeamMetricsService turns out to expose per-key cache eviction, use it and say so; if it does not, invalidate the whole owner and do NOT add the capability for this story. That was left open at DESIGN and this is the step that closes it either way. Comments: FillDayIfAbsent's refusal is the one place in this story where a comment probably earns its place — write the reason (a day on which nothing finished has no cycle time, and writing four zeros would draw a floor that was never measured) and never the reference. Commit: `feat(metrics): the fill stops where the data stops and refuses to invent a zero (story 6053)`"
+        },
+        {
+          "id": "01-06",
+          "name": "The daily recording stops writing a quiet day as four zeros",
+          "description": "The other half of the absence gate, and a behaviour change to a shipped feature rather than a new capability. The forward recorder has always written P50=P70=P85=P95=0 for a day on which nothing finished; it stops. Its own step because it changes what already-running code does, and because it carries its own regression scenario.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "A_quiet_day_is_left_blank_by_the_daily_recording_too",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_quiet_day_is_left_blank_by_the_daily_recording_too — driven through the real refresh event, not through a read"
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_quiet_day_is_left_blank_by_the_daily_recording_too"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileSnapshotWriter.cs (edit — RecordToday applies the same absence rule FillDayIfAbsent already does; one rule, one place)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/ (edit — any existing unit or integration test that pins the recorder writing an all-zero row is UPDATED to assert absence, never deleted; find them before editing the writer)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "The rule lives in ONE place in the writer and both operations obey it. Two copies is how the two paths come to disagree, and this story's whole premise is that a reconstructed point and a recorded point are the same thing.",
+            "This is why both paths are gated rather than only the new one: if only reconstruction refused the zero row, a day's reading would depend on which path reached it first — and because a day already carrying a row is never rewritten, the first one there wins permanently. 'A reconstructed point is the recorded point' would carry a standing invisible exception.",
+            "Before editing, grep the backend test tree for existing assertions that the recorder writes a zero row, and enumerate them in the commit body. Each one is UPDATED to assert absence, with its claim surviving word for word; none is deleted. A test deleted because it broke is a claim silently withdrawn.",
+            "Rows already written stay. No repair migration, no cleanup pass, nothing retroactive — migrations in this repository are expand-only per release, and this is not the release to break that.",
+            "The scenario is driven through WhenTheTeamsRefreshRuns, which publishes the real TeamDataRefreshed event through the real dispatcher. Asserting this by calling the writer directly would prove the writer and not the recorder.",
+            "The behaviour change is recorded for the release notes and for docs/metrics/predictability.md. The documentation edit itself belongs to 04-03 — note the obligation here so it cannot be lost between phases.",
+            "Full backend suite green with the live-connector categories excluded, and zero new SonarQube issues."
+          ],
+          "implementation_notes": "Users on a quiet instance will see a shipped chart lose points it used to have. That is the intended outcome — those points were never measurements — but it is user-visible and it goes in the release notes as such, in the customer's terms (the chart stops drawing a zero on days when nothing finished) rather than as an internal note about a gate. Commit: `fix(metrics): a day when nothing finished is left blank, not recorded as zero (story 6053)`"
+        },
+        {
+          "id": "01-07",
+          "name": "Ninety days a pass, and a budget that is actually enforced",
+          "description": "The cap is ninety days PER PASS, not ninety days of reach: a year-wide picker fills across successive visits because the walk is resumable by construction. Alongside it, a wall-clock budget that a pass which exceeds it ABANDONS — not a documented intention, an enforced one.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once — asserts both halves: one visit gains at most one pass worth of days, and the next visit keeps going",
+            "AUTHORED BY THE CRAFTER (not un-ignored — this test does not exist yet) :: A_pass_that_runs_past_its_budget_stops_early_and_picks_up_on_the_next_visit — set the wall-clock budget deliberately small, assert the pass writes fewer days than the 90-day cap allows AND that a second visit continues from where it stopped."
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — the ninety-day cap and the wall-clock budget, both as constants in the filler)",
+            "docs/feature/story-6053-reconstruct-over-time-history/deliver/ (the budget measurement record: the value chosen, the reason, the timing observed, and n alongside it)"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "criteria": [
+            "ACCEPTANCE CRITERION, explicit and load-bearing: the wall-clock budget is ENFORCED. A pass that reaches it stops mid-walk and returns; it does not finish the window and it does not log-and-continue. Any implementation that treats the budget as advisory reopens this gate, because an unenforced budget converts a slow instance directly into a long maintenance block.",
+            "Abandoning on the budget is safe by construction and the criterion above depends on that being true: every day already written stays, and the next chart load asks again. A large instance therefore fills more SLOWLY rather than holding maintenance LONGER, which is the correct failure direction and removes the dependency on ever having measured a large instance.",
+            "The budget's value is set from what it bounds — the longest an operator clicking Restore may be held waiting — and not from a throughput measurement. That is a question about operator patience and it does not move with instance size. The measurement tells us how much history fits inside the budget; it does not choose it.",
+            "The reason is written where the constant is, in plain language, so a reader can check the number against its justification rather than argue about it. Never write the gate identifier or the ADR number there.",
+            "Measure on the largest instance genuinely available and record n ALONGSIDE the timing. If that is still ~600 work items, say so in the record rather than presenting the figure as a production budget. The available fixture measured ~15 ms per day for the four percentile series and could not extrapolate; the 5-6 s and 20-25 s figures are arithmetic on that base, not measurements, and must not be recorded as though they were.",
+            "Both constants live in the filler. Neither becomes an AppSettings row: a knob invites tuning and there is nothing here a user can usefully tune.",
+            "ThenTheChartGainedAtMostOnePassWorthOfDays and ThenOpeningTheTrendAgainKeepsFillingItIn both hold. The first alone would pass against a filler that stops permanently at ninety days, which would be a new bug wearing the cap's clothes.",
+            "LOAD-BEARING: deleting the budget enforcement must turn this test RED. Before implementing, confirm the new test fails with the budget removed — a budget nobody can violate is not enforced. This is the second of exactly two places in this roadmap where the crafter authors a test rather than un-ignoring one; the other is the widget copy step."
+          ],
+          "implementation_notes": "If the budget measurement on the available instance turns out materially worse than the SPIKE arithmetic suggested, that does NOT change the constant — it changes how many passes a full window takes, which is the point of making the walk resumable. Report the number, do not tune the budget to make a large window fit inside one pass. Commit: `feat(metrics): a fill covers ninety days at most and stops when its time is up (story 6053)` The budget's VALUE stays open (OQ-3) and is set against operator patience on a database restore, not against a throughput measurement. What this step pins is that the budget is obeyed at all."
+        },
+        {
+          "id": "01-08",
+          "name": "A day worked out afterwards reads the same as the day that was watched",
+          "description": "The standing version of the probe that decided the story was worth building, plus the phase's dogfood moment on the restored development database. If a reconstructed day stops equalling a recorded one, the chart is drawing two different readings as one line and the premise of the whole story is gone.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs",
+          "scenario_name": "A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched — the recorder writes a day for real, the day is lost, reconstruction produces it again, and the two are compared",
+            "Confirm at the end of this step: Slice05ReconstructCycleTimeHistoryScenarios.cs carries ZERO remaining [Ignore(Pending)] attributes, and all 17 methods run."
+          ],
+          "red_to_green_tests": [
+            "Slice05ReconstructCycleTimeHistoryScenarios.cs :: A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileSnapshotWriter.cs (edit only if the comparison fails — the fix belongs in the shared path, never in a reconstruction-only branch)",
+            "docs/feature/story-6053-reconstruct-over-time-history/deliver/ (the dogfood record: the dated span before and after on the restored development database, and the measured added latency)"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "criteria": [
+            "The scenario moves the instance clock forward and back. It depends on ILighthouseClock being the ONLY source of 'what day is it' on both the recording path and the filling path — any place that re-derives today from DateTime.UtcNow makes this fail in a way that looks exactly like a fidelity divergence and is not. If it fails, find the re-derivation before doubting the computation.",
+            "Equality holds because there is ONE code path, not because two paths were tested into agreement. If making this green requires a branch that behaves differently under reconstruction, the extraction in 01-01 did not go far enough and the branch is the evidence.",
+            "Dogfood on the restored development database, the same day: start the backend with Lighthouse.Backend/Start-DevServer.ps1 — never a bare `dotnet run`, which keeps its key ring inside the project directory where a worktree or `git clean -xfd` destroys it and leaves stored credentials unreadable. Open the team Predictability tab and read the CT-30 line across the window that previously held four points, including the thirteen-day interior gap.",
+            "Confirm on the dogfood instance that no row exists for any day after the team's UpdateTime, and no row exists with all four percentiles zero. These were counted KPIs before the story and they are countable after it.",
+            "Measure the added latency on a request that discovers a gap against one that does not, on the restored database, and record it. Under fifty milliseconds is the target. This is deliberately NOT a CI assertion — a comparative wall-clock assertion under a parallel run is a flake generator, which is why the CI scenario pins the property the budget stands for instead. Record the measurement so nobody later files it as covered by CI when it is not.",
+            "All 17 Slice05 methods run and are green, with no [Ignore] left in the fixture and none added.",
+            "Full backend suite green with the live-connector categories excluded; `dotnet build` zero warnings; no new SonarQube issue of any severity."
+          ],
+          "implementation_notes": "The measured probe that justified this story scored 4 of 4 on the mechanism, and its own findings record why that is weaker evidence than it looks: every percentile on the available owner is 1 or 2, three of the four days share the same tuple, and no configuration changed in the seventeen days covered. So this scenario proves the mechanism and not fidelity across a configuration change, which has no probe at all and is carried as a named risk into 04-03's documentation sentence. Do not let a green run here be recorded as closing that. Commit: `test(metrics): a reconstructed day stays equal to the day that was recorded (story 6053)`"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Every tab spans the same period",
+      "description": "Story slice 02, Slice06 tests: the other two cycle-time look-backs, work item age at the NoHorizon sentinel, and portfolio scope. Two of the three are genuinely the phase-01 seam with a parameter moved; work item age is not — it takes no start date, and its as-of correctness comes from a different path entirely. Because the unit of reconstruction is (owner, window) and covers every family at once, 'every tab spans the same period' is structural here rather than a behaviour to chase.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Each cycle-time look-back fills in over its own period",
+          "description": "Sixty and ninety days join thirty. The horizon list in the writer drives the pass, so a look-back is added to one list rather than to a walk, and the three cases of one parameterised scenario prove each window is its own.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs",
+          "scenario_name": "Each_cycle_time_look_back_fills_in_over_its_own_period",
+          "unskips": [
+            "[Ignore(Pending)] removed :: Each_cycle_time_look_back_fills_in_over_its_own_period — three executed cases, [TestCase(30)], [TestCase(60)] and [TestCase(90)]"
+          ],
+          "red_to_green_tests": [
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: Each_cycle_time_look_back_fills_in_over_its_own_period(30)",
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: Each_cycle_time_look_back_fills_in_over_its_own_period(60)",
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: Each_cycle_time_look_back_fills_in_over_its_own_period(90)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — the pass iterates the writer's horizon list rather than a single horizon)"
+          ],
+          "dependencies": [
+            "01-08"
+          ],
+          "criteria": [
+            "Each horizon computes over ITS OWN window, (D − horizon, D). A single shared window that happens to make thirty days pass would make sixty and ninety silently wrong by exactly the amount nobody looks at.",
+            "The horizons come from the writer's list, unchanged since 01-01. Adding a look-back must be an edit to that one list; if the filler carries its own copy, the two will disagree the first time one changes.",
+            "The three cases assert three distinct windows, not three passes. One pass covers all of them, which is what keeps the tabs consistent and what makes 02-04's cross-tab assertion structural.",
+            "Everything phase 01 established holds for the two new horizons without being re-implemented: the absence gate, the UpdateTime ceiling, the data floor, fill-if-absent and the ninety-day cap. If any of them needs a per-horizon special case, the seam is not what phase 01 claimed it was — report that rather than adding the case.",
+            "Full backend suite green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "This is the step that tests slice 02's own doubt: the brief flags that CT-60/90 may be phase 01 at a different scale and says the slices should be merged at DELIVER if the difference turns out cosmetic. It is cosmetic for these two, which is why they are one small step here and work item age is a separate one. Commit: `feat(metrics): every cycle-time look-back fills in over its own window (story 6053)`"
+        },
+        {
+          "id": "02-02",
+          "name": "An item counts towards a past day at the age it had reached by then",
+          "description": "Work item age at the NoHorizon sentinel, and the genuinely different path in this story: it takes no start date, and its as-of correctness comes from the in-progress snapshot filtering by what was in flight on that day and projecting each item's age on that day. This step proves the past-day correctness, the equality with a recorded day, and the two ways an age tab is legitimately blank.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs",
+          "scenario_name": "An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then",
+          "unskips": [
+            "[Ignore(Pending)] removed :: An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then — an item started before and closed after the reconstructed day counts, at its age on that day",
+            "[Ignore(Pending)] removed :: An_age_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched — the age half of the fidelity probe, which is the slice's learning hypothesis",
+            "[Ignore(Pending)] removed :: The_age_tab_stops_where_the_team_stopped_being_watched_and_stays_blank_when_nothing_was_in_flight — the ceiling and the absence gate, on the age family"
+          ],
+          "red_to_green_tests": [
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then",
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: An_age_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched",
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: The_age_tab_stops_where_the_team_stopped_being_watched_and_stays_blank_when_nothing_was_in_flight"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — the age family uses the as-of call, which takes the day and no window)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentileSnapshotWriter.cs (edit only if needed — the age family already writes at the NoHorizon sentinel on the forward path, and reconstruction must reuse that, not invent a second sentinel)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "The age family is written at the SAME NoHorizon sentinel the forward recorder uses. A second sentinel value, or a horizon of 0 written some other way, would split one series into two that the read path silently merges.",
+            "A reconstructed age day is computed as of THAT day: the in-progress set is what was in flight then, and each item contributes the age it had reached by then — not zero, and not its age today. The scenario seeds an item started before and closed after the reconstructed day precisely because that item is the one a today-anchored implementation gets wrong.",
+            "The fidelity scenario is the slice's learning hypothesis and it is load-bearing: if a reconstructed age day disagrees with a recorded one while cycle time agrees, the as-of path does not hold as far back as reconstruction reaches. In that case age must be EXCLUDED from reconstruction and reported, not silently left wrong. Do not paper over a divergence with a tolerance.",
+            "Blank-when-nothing-was-in-flight is the absence gate doing its job on this family, and it is a real state rather than an error: a day with nothing in progress has no ages, and four zeros would assert that everything in flight was brand new.",
+            "The ceiling still holds on this family. An owner past its last observation has items Lighthouse only BELIEVES are still open, and reconstructing the days since would compute a steadily rising age off them — the single most convincing wrong chart this story could produce.",
+            "Full backend suite green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "The as-of correctness of this path exists because of an earlier fix and is not an accident of the API shape — the in-progress snapshot filters by whether an item was in progress on the given day and projects the age on that day. Before assuming it holds, confirm the projection is reached on the reconstruction call and not short-circuited by a today-anchored cache key. Commit: `feat(metrics): work item age fills in at the age items had reached on that day (story 6053)`"
+        },
+        {
+          "id": "02-03",
+          "name": "A portfolio fills in the same way a team does",
+          "description": "Portfolio scope, through the portfolio metrics service with the portfolio family set and its own cache keys. A different service rather than a different mechanism — but different enough that the family set and the invalidation both have to be right independently.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs",
+          "scenario_name": "A_portfolio_fills_in_its_delivery_cycle_time_the_same_way_a_team_does",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_portfolio_fills_in_its_delivery_cycle_time_the_same_way_a_team_does",
+            "[Ignore(Pending)] removed :: A_portfolio_fills_in_its_delivery_age_tab_too"
+          ],
+          "red_to_green_tests": [
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: A_portfolio_fills_in_its_delivery_cycle_time_the_same_way_a_team_does",
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: A_portfolio_fills_in_its_delivery_age_tab_too"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — resolve the owner's scope and dispatch to the portfolio metrics service with the portfolio family set)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeGapReconciler.cs (edit — the ask carries the owner's scope; the clamp reads the portfolio's own UpdateTime)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "The scope is resolved once, where the pass starts, and carried. Two places deciding whether an owner is a team or a portfolio is the drift this design spent a whole decision avoiding elsewhere.",
+            "The portfolio's own UpdateTime is the ceiling for a portfolio pass, not the team's. An owner-type mix-up here produces a plausible series for a period in which the portfolio was not observed.",
+            "The data floor for a portfolio is resolved from what a portfolio holds. If the floor query is written against team work items only, a portfolio's walk will stop at the wrong day and the failure will look like sparse data.",
+            "Cache invalidation after a portfolio pass targets the portfolio's keys. Invalidating the team cache after a portfolio pass costs a recompute and leaves the portfolio's warmed historical entries in place, which is exactly backwards.",
+            "Everything phase 01 established holds at portfolio scope without a per-scope special case: absence gate, ceiling, floor, fill-if-absent, cap, budget, gate coupling.",
+            "Full backend suite green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Multi-team Features exist only in the demo data — the development instance has exactly one Team — so a portfolio scenario that depends on cross-team composition cannot be dogfooded on the dev database. The acceptance scenarios seed their own deliveries, so this is a note about the dogfood step in 02-04 and not about these two. Commit: `feat(metrics): a portfolio fills in its history the same way a team does (story 6053)`"
+        },
+        {
+          "id": "02-04",
+          "name": "Every tab covers the same period, and flicking between them starts nothing",
+          "description": "The headline of this slice, and the assertion that can only be made once every family fills. Because one ask covers the whole family set for a scope, a reader on the age tab has already paid for the cycle-time tabs — so no tab can contradict another about how much history exists, and switching tabs cannot start a second pass.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs",
+          "scenario_name": "Every_tab_covers_the_same_period_once_the_chart_has_filled_in",
+          "unskips": [
+            "[Ignore(Pending)] removed :: Every_tab_covers_the_same_period_once_the_chart_has_filled_in",
+            "[Ignore(Pending)] removed :: Flicking_between_tabs_does_not_start_the_filling_over_again",
+            "Confirm at the end of this step: Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs carries ZERO remaining [Ignore(Pending)] attributes — 8 methods, 10 executed cases."
+          ],
+          "red_to_green_tests": [
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: Every_tab_covers_the_same_period_once_the_chart_has_filled_in",
+            "Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs :: Flicking_between_tabs_does_not_start_the_filling_over_again"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeGapReconciler.cs (edit only if needed — the ask key must be (owner, window) and must NOT carry the family or the horizon the read happened to be for)",
+            "docs/feature/story-6053-reconstruct-over-time-history/deliver/ (the dogfood record: the dated span of all four tabs at team scope and all four at portfolio scope)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "The ask key is (owner, window) and carries no family and no horizon. If the key varied by family, two tabs would fill at different times and to different depths — and the cross-tab comparison the combined widget exists for only works when both tabs span the same period.",
+            "Flicking between tabs enqueues nothing the second time, and this is structural rather than a dedupe that happens to fire: both tabs produce the SAME key, so the in-flight set and the memo see one ask. If the scenario only passes because the second ask was deduped by timing, the key is wrong.",
+            "A reader on one tab pays for the others, deliberately. That cost is the price of the tabs never contradicting each other, and it is the reason the unit of work is what it is.",
+            "Dogfood on the restored development database: toggle all four tabs at team scope and all four at portfolio scope, and confirm the x-axis span matches across every one. This is the slice's whole user-visible claim and it is not asserted anywhere in CI at the widget level.",
+            "Full backend suite green with the live-connector categories excluded; `dotnet build` zero warnings; no new SonarQube issue."
+          ],
+          "implementation_notes": "If the dogfood shows the tabs spanning different windows while CI is green, the difference is almost certainly the memo or the cache rather than the walk — check whether a pass invalidated only the family it was reading for. Commit: `feat(metrics): every percentile tab spans the same period (story 6053)`"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Where the limits actually moved",
+      "description": "Story slice 03, Slice07 tests: the process-behaviour families at both scopes. A different table, a different set of honesty gates, and the one hazard in this story that fails silently — the baseline check is anchored to today, so reconstructing a past day asks today's question about that day. A pinned-baseline owner can go invalid, hit the not-ready gate, and produce nothing that looks exactly like 'the data didn't support it'. The phase ends with a test that says which behaviour is intended rather than inheriting one.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The process-behaviour day-writer is extracted, and the handler delegates to it",
+          "description": "The second half of the extraction: the per-day limit computation, the reader tuples per scope, the lookback spans and the two existing honesty gates move out of ProcessBehaviorRecordingHandler into a shared writer with the same two named operations the percentile writer has. Behaviour-preserving; every shipped process-behaviour acceptance test stays green without being edited.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03ThroughputProcessBehaviorScenarios.cs",
+          "scenario_name": "The_delivery_lead_reads_the_dated_throughput_limits_a_team_has_recorded",
+          "unskips": [
+            "None, and deliberately — a behaviour-preserving extraction under specifications that are already green. The scenarios it enables are un-ignored by 03-02 onwards."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IProcessBehaviorSnapshotWriter.cs (new — RecordToday and FillDayIfAbsent, the same two named operations)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSnapshotWriter.cs (new — owns the team and portfolio reader sets, the lookback span per owner kind, and the two honesty gates)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs (edit — delegates the computation; keeps the event subscription, the containment, the log template and the cache guard)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit — register the writer)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/OverTimeReconstructionSeamArchUnitTest.cs (edit — the reader tuples exist in exactly one type)"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "criteria": [
+            "The family sets per scope live in the writer and nowhere else, and the ArchUnit test says so. This is what turns 'the reconstructed set matches the recorded set exactly' from an agreement between two lists into an assertion about one — the drift that has already been recorded happening once in this area, where an owner-scoped guard silently made a whole metric family a permanent no-op while fresh-owner unit tests stayed green.",
+            "The lookback span per day comes from the writer too, per owner kind, and is not recomputed by the filler.",
+            "The two existing gates move WITH the computation and are not reimplemented: a chart that is not ready yields no row, and a chart whose average and upper limit are both zero yields no row. The lower limit is deliberately NOT part of the second predicate — a real, busy process routinely reports a lower limit of zero because the calculator clamps there, and adding it would suppress healthy days.",
+            "Observable behaviour is unchanged in this step. No as-of threading yet — that is 03-04, where a test can actually distinguish it.",
+            "Every shipped process-behaviour acceptance test stays green WITHOUT being edited: Slice03ThroughputProcessBehaviorScenarios.cs and Slice04ProcessBehaviorMetricTypesScenarios.cs in full, including the parameterised per-family portfolio scenario.",
+            "`dotnet build` zero warnings and `dotnet test` green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Program.cs is touched again, which forces the full backend Integration suite in CI. Commit: `refactor(metrics): one writer computes a process-behaviour day, whichever path asks (story 6053)`"
+        },
+        {
+          "id": "03-02",
+          "name": "Every behaviour a scope reports is filled in, and not one fewer",
+          "description": "The process-behaviour families join the pass: five for a team, six for a portfolio. The set is asserted as a set, so dropping one is a failure rather than a silent capability loss — and delivery size stays portfolio-only, present at one scope and absent at the other.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs",
+          "scenario_name": "A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer — the five-family set at team scope",
+            "[Ignore(Pending)] removed :: A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer — the six-family set at portfolio scope",
+            "[Ignore(Pending)] removed :: How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team — present at one scope, absent at the other, in one scenario"
+          ],
+          "red_to_green_tests": [
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer",
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer",
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit — the pass covers the process-behaviour families for the scope alongside the percentile families, in the same pass and under the same cap and budget)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/GapAskingProcessBehaviorSeriesQuery.cs (new — decorates the process-behaviour series query; delegates, then asks, then returns the rows untouched)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit — register the second decorator as the interface)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "The family set is asserted as a SET, in both directions. A test that checks five families are present would still pass if a sixth appeared; a test that checks the set is exactly the five catches both the drop and the addition. The scenarios are written that way and must not be weakened to make an intermediate state green.",
+            "The set the pass fills comes from the writer's list — the same list the recorder uses. If the filler carries its own enumeration, the assertion becomes an agreement between two lists again and the whole point of 03-01 is lost.",
+            "Delivery size is portfolio-only, and the single scenario asserts both halves: nothing is written at team scope, rows are written at portfolio scope. Two separate tests would let the absent half quietly pass for the wrong reason.",
+            "The process-behaviour families share the pass with the percentile families and the SAME (owner, window) key. A second ask key for limits would mean the two charts fill at different times, which is the defect this story's unit of work exists to prevent.",
+            "The ninety-day cap and the wall-clock budget now bound a pass covering five or six more families. The budget is unchanged — it bounds how long an operator waits, not how much work fits — so a pass will reach the budget sooner and cover fewer days, which is the correct and intended consequence.",
+            "The process-behaviour decorator holds no snapshot repository, and the ArchUnit assertion extends to the process-behaviour controller actions.",
+            "Full backend suite green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Re-measure the pass against the budget after the families are added, and record the new numbers alongside n — a pass that covered ninety days of percentiles will not cover ninety days of everything. That is expected and needs no tuning; what it needs is a recorded figure so the next reader is not surprised. Commit: `feat(metrics): the limits chart fills in every behaviour its scope reports (story 6053)`"
+        },
+        {
+          "id": "03-03",
+          "name": "The honesty gates decide a reconstructed day too",
+          "description": "A reference stretch with nothing behind it, and a period in which nothing finished. Both are real causes rather than internal status values, and both must yield no row — the same refusal the recorder already applies to its own family, now applied to a day computed afterwards.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs",
+          "scenario_name": "A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_period_with_nothing_to_draw_limits_from_reports_no_limits — the not-ready cause",
+            "[Ignore(Pending)] removed :: A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one — carries the collapsed-band assertion as its second half"
+          ],
+          "red_to_green_tests": [
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_period_with_nothing_to_draw_limits_from_reports_no_limits",
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSnapshotWriter.cs (edit — FillDayIfAbsent applies the two gates unchanged before persisting)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/ReconstructionMemo.cs (edit — a refused limit day is remembered per family, so it is not re-attempted on every read)"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "The gates are applied UNCHANGED. This story does not invent a process-behaviour absence rule; it reuses the one the recorder already applies, which is the whole reason the extraction in 03-01 came first.",
+            "Neither scenario asserts an internal status value. Both are driven through their real causes — a reference stretch with nothing behind it, and a period in which the team finished nothing — because a test that seeds a status is testing the gate against itself.",
+            "The collapsed-band predicate is average zero AND upper limit zero. The lower limit stays out of it: a real, busy process routinely reports a lower limit of zero, and including it would refuse days that are perfectly good.",
+            "A refused day is recorded in the memo per family, not per owner. Refusing the whole owner because one family had nothing to draw from would stop four healthy families filling.",
+            "The memo remains optimisation-only: clearing it must change performance and nothing observable. If clearing it changes which rows exist, a correctness decision has leaked into it.",
+            "Full backend suite green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Both of these scenarios assert that NOTHING was written, which is the class the drain seam exists to protect: if the drain returns before the pass has tried, they pass against a product that never writes anything at all. Confirm they FAIL before the gates are wired and pass after — a scenario in this class that was green before the production edit proves nothing. Commit: `feat(metrics): a day with nothing to draw limits from reports none (story 6053)`"
+        },
+        {
+          "id": "03-04",
+          "name": "A fixed reference stretch reads steady limits, not an empty chart",
+          "description": "The hazard this slice exists to confront. The baseline check is anchored to today on all three chart builders and on the delivery-size chart, so reconstructing a past day validates it against today's calendar — and when that goes wrong it goes wrong silently, producing an empty series that is indistinguishable from honest sparsity. The anchor becomes an explicit as-of day with today as its default, so every existing caller stays byte-identical and reconstruction can ask the right question.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs",
+          "scenario_name": "A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart — the pinned-baseline case at team scope, which is the only test here that CAN fail on the anchor",
+            "[Ignore(Pending)] removed :: A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too — the same at portfolio scope",
+            "[Ignore(Pending)] removed :: A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history — the contrast case, which passes either way and is named so nobody mistakes it for evidence"
+          ],
+          "red_to_green_tests": [
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart",
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too",
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaselineValidationService.cs (edit — the anchor becomes a parameter; the class stays static and its semantics are untouched)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs (edit — the three builders at the Validate call sites :591, :645 and :707 and the cutoff, each taking an as-of day that DEFAULTS to Clock.Today)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs (edit — the delivery-size chart, same additive parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit — pass the as-of day through where the team builders are entered)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSnapshotWriter.cs (edit — FillDayIfAbsent passes the reconstructed day; RecordToday passes the default)"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "criteria": [
+            "The parameter is ADDITIVE with a default of today. The four controller call sites that also validate a baseline — team create, team update, portfolio create, portfolio update — must not change at all, and neither must the six point-in-time chart endpoints. If any of them needs an edit, the default is in the wrong place.",
+            "The pinned-baseline scenarios are the ONLY tests here that can fail on the anchor, and that is why they are the acceptance cover for this change. A test in which today's anchor and the reconstructed day's anchor agree cannot fail; the no-pinned-baseline case is included precisely so nobody records it as evidence that the threading works.",
+            "A pinned-baseline owner's correct series is FLAT LIMITS across the reconstructed window — a fixed reference stretch does not move, so unmoving limits are the right reading. An empty series is a FAILURE, not an acceptable outcome, and the scenario says so.",
+            "The baseline feature's semantics are unchanged: what a pinned reference stretch means, how it is validated and what a user sets are all exactly as they were. Only the day the question is asked about becomes choosable. The slice brief's out-of-scope line was corrected for exactly this distinction and the correction is already in the brief — confirm it reads that way before starting.",
+            "The cutoff that bounds how far back finished items are considered is threaded too, not only the baseline check. Half-threading leaves the same silent failure one layer down.",
+            "NAMED FALLBACK, available and bounded: if the threading reaches further than this step can carry, refuse process-behaviour reconstruction for pinned-baseline owners WITH EXPLICIT COPY. Never silently produce nothing — that is the exact failure mode this step exists to remove, and shipping it under a different cause would be worse than not shipping the step.",
+            "Full backend suite green with the live-connector categories excluded; `dotnet build` zero warnings; no new SonarQube issue."
+          ],
+          "implementation_notes": "Before editing, enumerate every Validate call site — three in BaseMetricsService and four in controllers — and confirm each compiles unchanged after the parameter is added. Comments: if the as-of parameter warrants a line, say that a reconstructed day's reference stretch is judged as of that day rather than today, in plain language, and never write DDD-12 or FLAG-1. Commit: `feat(metrics): a past day's limits are judged as of that day (story 6053)`"
+        },
+        {
+          "id": "03-05",
+          "name": "Limits stop where the team stopped, and a day worked out afterwards reads the same",
+          "description": "The phase's two closing properties — the last-observation ceiling on the limits table, and the process-behaviour half of the fidelity probe — plus the dogfood pass across every family at both scopes.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs",
+          "scenario_name": "Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched",
+          "unskips": [
+            "[Ignore(Pending)] removed :: Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched — the fidelity probe on the limits table",
+            "[Ignore(Pending)] removed :: Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing — the ceiling and idempotency together",
+            "Confirm at the end of this step: Slice07WhereTheLimitsActuallyMovedScenarios.cs carries ZERO remaining [Ignore(Pending)] attributes — 10 methods."
+          ],
+          "red_to_green_tests": [
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched",
+            "Slice07WhereTheLimitsActuallyMovedScenarios.cs :: Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSnapshotWriter.cs (edit only if the comparison fails — the fix belongs in the shared path, never in a reconstruction-only branch)",
+            "docs/feature/story-6053-reconstruct-over-time-history/deliver/ (the dogfood record: all six families at portfolio scope and all five at team scope, before and after)"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "criteria": [
+            "The fidelity scenario moves the instance clock and moves it back, exactly as its percentile counterpart does, and depends on the clock seam being the only source of today on both paths.",
+            "Equality holds because one writer computes both, not because two implementations were tested into agreement. A reconstruction-only branch introduced to make this green is the signal that the extraction did not go far enough.",
+            "The ceiling scenario also asserts that a SECOND look changes nothing. Together those two halves catch the implementation that respects the ceiling on the first pass and then re-attempts the refused days on every subsequent read — a convergence bug that looks like correctness until someone watches the log.",
+            "Dogfood on the restored development database: toggle every process-behaviour type at both scopes and read three dated limit lines on each — five families for the team, six for the portfolio. Record the dated span before and after.",
+            "All 10 Slice07 methods run and are green, with no [Ignore] left in the fixture and none added.",
+            "Full backend suite green with the live-connector categories excluded; `dotnet build` zero warnings; no new SonarQube issue."
+          ],
+          "implementation_notes": "The development instance has exactly one Team, so the portfolio dogfood here is limited to what that instance can show; note what was and was not exercised rather than reporting a clean sweep. Start the backend with Start-DevServer.ps1. Commit: `test(metrics): reconstructed limits stay equal to the limits that were recorded (story 6053)`"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Say the true thing when there is still nothing to show",
+      "description": "Story slice 04, Slice08 tests, plus the frontend copy and the documentation. The existing empty-state sentence — that the chart builds forward from today and nothing has been recorded yet — becomes false in two new ways once reconstruction exists. This phase pins the states behind the endpoint first, then chooses words for them, then updates the documentation whose meaning this story changed, then freezes the code and mutates it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The empty states are reachable, distinguishable, and nothing is invented to fill them",
+          "description": "Behind the endpoint, before any words are chosen: a period that predates everything the owner holds, an owner that holds nothing at all, an owner nobody is syncing any more, and a period that reaches further back than the owner does but still returns the part it covers. Each must be reachable and each must leave the tables exactly as it found them.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice08NothingToShowScenarios.cs",
+          "scenario_name": "A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented",
+          "unskips": [
+            "[Ignore(Pending)] removed :: A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented",
+            "[Ignore(Pending)] removed :: A_team_with_nothing_in_it_at_all_stays_empty_and_nothing_is_invented",
+            "[Ignore(Pending)] removed :: A_team_nobody_is_syncing_any_more_stays_empty_for_the_period_since_it_stopped",
+            "[Ignore(Pending)] removed :: A_period_that_reaches_further_back_than_the_team_does_still_returns_the_part_it_covers",
+            "[Ignore(Pending)] removed :: The_limits_chart_stays_empty_for_a_period_that_predates_everything_the_team_holds",
+            "Confirm at the end of this step: Slice08NothingToShowScenarios.cs carries ZERO remaining [Ignore(Pending)] attributes — 5 methods."
+          ],
+          "red_to_green_tests": [
+            "Slice08NothingToShowScenarios.cs :: A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented",
+            "Slice08NothingToShowScenarios.cs :: A_team_with_nothing_in_it_at_all_stays_empty_and_nothing_is_invented",
+            "Slice08NothingToShowScenarios.cs :: A_team_nobody_is_syncing_any_more_stays_empty_for_the_period_since_it_stopped",
+            "Slice08NothingToShowScenarios.cs :: A_period_that_reaches_further_back_than_the_team_does_still_returns_the_part_it_covers",
+            "Slice08NothingToShowScenarios.cs :: The_limits_chart_stays_empty_for_a_period_that_predates_everything_the_team_holds"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (edit only where a state proves unreachable or something IS invented — most of these should already hold after phases 01-03, and the honest outcome of this step may be zero production edits)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeGapReconciler.cs (edit only if the partial-coverage case returns nothing where it should return the part it covers)"
+          ],
+          "dependencies": [
+            "03-05"
+          ],
+          "criteria": [
+            "Each scenario is captured RED before any production edit. Several of these may already pass after phases 01-03 — if one does, record that it passed on first un-ignore rather than editing something to claim credit. A scenario that was already satisfied is a good outcome and a dishonest one to disguise.",
+            "ThenNothingWasInventedToFillIt compares everything BOTH charts hold, before and after. That is the assertion these five exist for: an empty period must leave the tables exactly as it found them, and a filler that writes a placeholder row to remember it tried would fail here and nowhere else.",
+            "Asking for more than can be answered must not turn into answering nothing. The partial-coverage scenario is the boundary: a period reaching four hundred days back on an owner holding forty still returns those forty.",
+            "The three distinguishable states are confirmed to BE distinguishable from what the endpoint returns plus what the widget already knows. If they are not, say so here — the honest alternatives are a response field, which would reopen a rejection the contract ADR has made twice and must be re-decided there, or one vaguer message true of all three. The second is preferable to a precise message that is sometimes false, and 04-02 depends on knowing which.",
+            "Full backend suite green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "These scenarios pin the STATES, not the words. Do not add copy, a response field or a discriminator here — 04-02 owns the words and it owns them on the client side. Commit: `feat(metrics): an empty period stays empty and nothing is invented to fill it (story 6053)`"
+        },
+        {
+          "id": "04-02",
+          "name": "The widget says the true thing",
+          "description": "The revised empty-state copy on both over-time widgets, with the tests the crafter authors — the one place in this story where test authoring is the crafter's, because DISTILL could not choose the words before the states were settled. Copy only: no new prop, no new fetch, no chart-geometry change.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx",
+          "scenario_name": "The empty state names the reason the chart is empty",
+          "unskips": [
+            "None to un-ignore — these tests do not exist yet. This is the deliberate, recorded exception to the crafter-authors-no-tests rule: DISTILL left this gap unfilled on purpose because authoring copy tests before the states were known would have been fixture theatre. The obligation is explicit, not implicit."
+          ],
+          "red_to_green_tests": [
+            "PercentilesOverTimeWidget.test.tsx :: the period predates everything this owner holds",
+            "PercentilesOverTimeWidget.test.tsx :: this owner holds nothing at all",
+            "PercentilesOverTimeWidget.test.tsx :: this owner stopped being synced",
+            "PbcOverTimeWidget.test.tsx :: the same three states on the limits chart"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx (edit — empty-state copy only)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx (edit — empty-state copy only)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx (edit — three new state tests, authored here)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.test.tsx (edit — the same three)"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "criteria": [
+            "The old sentence — that the chart builds forward from today and no snapshots have been recorded yet — no longer appears where it is now false. It was true when a series could only grow forwards; it is a live example of copy outliving the thing it described, which is the whole reason this step is last rather than first.",
+            "One sentence true of both new states is ACCEPTABLE and is the intended answer: some days in this range have no recorded or reconstructible value. Three precise messages, one of which is sometimes false, is worse than one vaguer message that is always true.",
+            "No hasHistory-style boolean, no new response field, no discriminated envelope. That question belongs to the contract ADR, which has rejected it twice; reopening it through an empty-state fix is how a rejected decision gets made by accident.",
+            "No new prop, no new fetch, no chart-geometry change. The widget already knows the range it asked for.",
+            "The existing range-end rule — a range ending today or later reads the forward-only copy, a range ending earlier reads the in-range copy — is re-evaluated against the new state set and is either KEPT WITH A STATED REASON or replaced. Leaving it to drift unexamined is what produced the copy being replaced.",
+            "Every configurable term renders as the tenant's word via the terminology lookup, never as a literal. The seeded defaults are Feature/Features and Work Item/Work Items; never Epic, Initiative or Story, which name a heading a Jira or Linear reader never sees.",
+            "Accessible-name matchers are anchored. React Testing Library's name matchers are unanchored, so a regex for a phrase will also match a sentence that negates it — use toHaveAccessibleName or an anchored pattern for anything whose meaning turns on a negation.",
+            "`pnpm test` green; `pnpm build` green with zero errors and zero warnings. The prebuild hook runs Biome with --write against ./src, so re-check `git diff` after building. Remove any */docs symlink before building, or that same pass reformats the documentation tree."
+          ],
+          "implementation_notes": "Write the copy against the states 04-01 actually confirmed reachable, not against the three the slice brief predicted — if one of them turned out unreachable, saying so is better copy than covering it. Vitest evaluates the body of a skipped describe, so a scaffold call hoisted into one turns a pending suite into a failed suite; do not leave a describe.skip behind. Commit: `feat(metrics): an empty over-time chart says why it is empty (story 6053)`"
+        },
+        {
+          "id": "04-03",
+          "name": "The documentation says what the charts now do",
+          "description": "The predictability page carries two notes this story falsifies and one property it makes user-visible, plus the sentence that is the only mitigation for the open half of the fidelity question. Screenshots regenerated where the old copy is visible, and the dogfood check that a fill in flight is not mistaken for a slow dashboard.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+          "scenario_name": "Take @screenshot of the Predictability tab",
+          "unskips": [
+            "None — this step ships prose and images. Its verification is a reader's, and the two dogfood checks below."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/metrics/predictability.md (edit — the forward-only note, the note that the demonstration data backdates throughput only, the two filtering rows, and the absence rule now being user-visible)",
+            "docs/assets/ (regenerate only the shots in which the old empty-state copy is visible)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "The forward-only note is corrected. It describes a property the product no longer has, and leaving it is how a reader concludes the documentation is unreliable about everything else on the page.",
+            "The note that the demonstration data backdates throughput only changes meaning: real owners now get backdated days for every family, and the demonstration handler's synthetic rows are stepped over rather than corrected. Say both.",
+            "The absence rule is now user-visible and belongs on this page: a day on which nothing finished draws no point rather than a point at zero, on BOTH the daily recording and the fill. Name it as a change, because a reader of a quiet instance will see points disappear from a chart they already had.",
+            "REQUIRED and not optional: one sentence recording that a day worked out afterwards is computed against TODAY's configuration — state mappings, cycle-time definitions, blocked rules, blackout configuration and the current item set — so where those have changed since, or an item was deleted or re-parented, a filled-in day may differ from what would have been recorded then. This has no probe and no flag; the sentence is the entire mitigation. Closing the story without it leaves 'no probe exists' and 'nobody wrote it down' collapsed into one state, and they are different states.",
+            "Every configurable term renders as the seeded default — Feature/Features, Work Item/Work Items, Team, Portfolio — never Epic, Initiative or Story. A literal value in a work-tracking-system filter is the exception and stays as written.",
+            "Any screenshot showing the old copy is DELETED before the regeneration run. A diff under the pixel threshold silently keeps the old image, so a run that passed without an `rm` first proves nothing. Run @screenshot with @auth EXCLUDED — the auth specs wipe the database, which reds the premium tests and permanently loses PNGs already regenerated — and import the gitignored premium licence fixture from the main checkout first.",
+            "DOGFOOD, on the restored development database: confirm a fill in flight does not make the page that triggered it feel slow. A multi-second background operation triggered BY a dashboard load is the obvious suspect the first time anyone reports slowness, and there is no signal to correlate against. If it is noticeable, the escalation is a health-check contribution and NOT a Task-Manager row, which would drag the update type, its three lookup tables and the hand-maintained union back in.",
+            "DOGFOOD: create a fresh owner with nothing in it and read its widget; then select a period before the data floor on an owner with history and read that. The copy must differ between the two."
+          ],
+          "implementation_notes": "Documentation lands at feature finalization, and the unit is the FEATURE rather than the slice — which is why all of it is here rather than smeared across four phases. Keep the root architecture document current if this story changed a concept it names. Commit: `docs(metrics): the over-time charts fill in the days they can (story 6053)`"
+        },
+        {
+          "id": "04-04",
+          "name": "Freeze it, mutate it, and check nothing was left pending",
+          "description": "The closing gate: every pending marker gone across four fixtures, Stryker on frozen code against the changed surface, the amendments confirmed rather than assumed, and the counted outcomes measured on the development database.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs",
+          "scenario_name": "Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits",
+          "unskips": [
+            "None remaining, and that is the assertion. Confirm ZERO [Ignore(Pending)] attributes across Slice05ReconstructCycleTimeHistoryScenarios.cs, Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs, Slice07WhereTheLimitsActuallyMovedScenarios.cs and Slice08NothingToShowScenarios.cs — 40 methods, 42 executed cases, all running."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs (edit — delete the now-dead `private const string Pending` if no attribute references it; an unused private member is a NEW SonarCloud issue and fails the gate. Also fix the class doc-comment, which says every scenario but the last is pending)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs (edit — same)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs (edit — same)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice08NothingToShowScenarios.cs (edit — same; its doc-comment also says the widget tests are written once the earlier slices settle, which 04-02 has now done)",
+            "docs/feature/story-6053-reconstruct-over-time-history/deliver/ (the mutation run record, one line per survivor)"
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "criteria": [
+            "Zero [Ignore(Pending)] across the four fixtures, and the Pending constants deleted where nothing references them. An unused private member is a new SonarCloud issue and the gate fails on new violations even where existing debt remains.",
+            "Each fixture's class doc-comment is checked against what is true after the story. Two of them describe a state that has passed, and a comment that is now false is worse than none.",
+            "Stryker.NET on the changed backend surface — the two extracted writers above all, which DEVOPS named the high-value target — at >= 80% kill rate. Stryker EXCLUDES the acceptance suite: including it turns three minutes into eighty. Background the run; a sixty-minute job cap will otherwise kill it.",
+            "The mutation run happens on FROZEN code. Any edit afterwards staleness-shifts the line ranges and invalidates the report — identical tests have scored 73% and 94% on the same surface for no reason but a shifted range. If something must change, re-run.",
+            "Every survivor is either killed or argued as equivalent, one line each in the record. An unexplained survivor is a gap, not a note.",
+            "The counted outcomes, measured on the restored development database and recorded: the dated span grew from four days to the capped window; zero rows carry four zero percentiles; zero rows exist for any day after an owner's last observation; the added latency on a gap-discovering request is under fifty milliseconds.",
+            "Full backend suite green with the live-connector categories excluded; `dotnet build` zero warnings; `pnpm test` and `pnpm build` green with zero warnings; no new SonarQube issue of any severity on either stack.",
+            "The ADR-107/108/109 amendments were written during their own waves and are already in source, so their presence is not a test. What IS checked here: each amendment still describes what actually shipped. If implementation diverged from an amendment, correct the ADR now rather than leaving the record wrong."
+          ],
+          "implementation_notes": "Run the backend suite with the connector categories excluded — those tests talk to real Azure DevOps, Jira, Linear and ServiceNow instances and throw rather than skip when a credential is missing, and the Linear key is shared with CI, so a local loop can rate-limit the next CI build in a way only one of the resulting failures names. Known-environmental signatures that are not regressions: exactly two Licensing failures in a worktree on the gitignored licence fixture; exactly ten failures in the ReleaseServiceTest unit class under load, which go green run alone; and the AgeInStatePercentiles cleanup contention, which is a concurrent fixture rather than a regression. ADO: a Story is RESOLVED ON PUSH and CLOSED ON CI GREEN — two moments, never one. Only an Epic stops at Resolved. The orchestrator owns both transitions, not this step. Commit: `test(metrics): record the mutation run for over-time reconstruction (story 6053)`"
+        }
+      ]
+    }
+  ]
+}

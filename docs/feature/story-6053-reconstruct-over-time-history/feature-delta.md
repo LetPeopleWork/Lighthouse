@@ -1327,6 +1327,9 @@ tables and the hand-maintained TS union back in, reopening DDD-4.
 
 ---
 
+
+---
+
 ## Wave: DISTILL / [REF] Scope of this wave
 
 Density: Tier-1. Acceptance designer: Quinn. Date: 2026-09-22.
@@ -1582,3 +1585,355 @@ feature to collide with.
 
 Re-evaluate at DELIVER **if** the crafter extracts that predicate as a pure function with a returned
 result. If it stays void-returning behind the port, it correctly has no row.
+
+---
+
+## Wave: DELIVER / [REF] Roadmap gaps resolved before dispatch
+
+The roadmap author raised ten under-specifications. Three would have stopped or misled the crafter and are
+decided here; the rest are acknowledged with an owner so none is silently dropped.
+
+### R-1 — The replica race is modelled with a second filler instance. *(resolves gap 1)*
+
+`Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two` cannot be driven by asking one
+endpoint twice: DDD-8's per-key in-flight set exists precisely to collapse two concurrent asks **inside one
+process**, so a single filler can never produce two simultaneous passes for one key. That is the design
+working, not a defect.
+
+**Resolution: construct a second filler instance in the harness.** A second replica *is* a second process
+with its own in-flight set, so a second instance is a faithful model of it — not a shortcut. This does not
+violate DISTILL's "no scenario reaches past the endpoint to start filling": that rule protects the *first*
+replica's path, which still goes through the endpoint. The second instance stands in for a process whose
+endpoint is not in this test host at all.
+
+What the scenario proves is therefore unchanged and worth stating: the in-flight set is a **within-process
+optimisation**, and the unique index is the **only** cross-process backstop. Collapse them and the test
+proves nothing about replicas.
+
+### R-2 — The budget needs a test that fails when enforcement is dropped. *(resolves gap 2)*
+
+Gate G-8 makes enforcement load-bearing — a pass that exceeds its wall-clock budget abandons — and calls any
+DELIVER decision that drops it a gate reopening. But the roadmap author is right that as written, deleting
+the budget entirely leaves all 42 cases green. A criterion nobody can fail is not a gate.
+
+**Resolution: step 01-07 must add an acceptance test that pins enforcement**, by setting the budget
+deliberately small and asserting the pass stops before finishing the window and resumes on the next visit.
+Without it, the one property that makes the unmeasured large-instance case tolerable is untested.
+
+### R-3 — Two components are pre-authorised so the design-compliance gate does not false-positive. *(resolves gap 5)*
+
+The component-decomposition table predates DDD-17 and the reconciliation memo, so two files the crafter must
+create are absent from it and would be flagged as unauthorised new components:
+
+| Component | Why it is authorised |
+|---|---|
+| The gate's narrow pass-in-flight capability | DDD-17 names the contract but no component. Preferred shape is a single read-only member on the filler's own interface; a separate one-member interface is the crafter's call if the gate should not see the filler whole. |
+| The reconciliation memo's refresh-event subscription | DDD-7 says the memo is invalidated by `TeamDataRefreshed` / `PortfolioFeaturesRefreshed`, which implies a subscriber the table never named. |
+
+Both are **authorised additions**, not drift. Anything else new still trips the gate.
+
+### Acknowledged, with owners
+
+| Gap | Disposition |
+|---|---|
+| 3 — DDD-14 cache invalidation has no coverage; OQ-2 unobservable | Accepted. Implemented on trust at 01-02; OQ-2 stays open. Worth a test only if the cache exposes per-key eviction. |
+| 4 — pinned log template and per-family containment unasserted | Real. An implementation that aborts the whole pass on one family's failure passes everything today. Crafter adds a containment assertion at 01-05 if cheap; otherwise it is recorded as untested rather than assumed. |
+| 6 — `DatabaseMaintenanceGate` builds its blocked reason at two sites | Criterion at 01-04: **both** sites learn the new case, or an operator gets different text depending on entry point. |
+| 7 — some Slice08 scenarios may pass on first un-ignore | Criterion at 04-01: capture RED first and record honestly if one passed immediately, rather than assuming production edits were needed. |
+| 8 — DDD-13's release-notes line has no owner step | Carried at 01-06 and again at 04-03. Release notes are cut at `/release`, outside this roadmap. |
+| 9 — G-10 has no threshold | Left as written. A dogfood observation, not a measurement. |
+| 10 — no `environments.yaml`; F-2 stands | Correct. The 50 ms figure is a dogfood measurement, never a CI assertion. |
+
+**Corrected, not a gap**: ADR-107, ADR-108 and ADR-109 already carry their story-6053 amendments — they were
+written during those waves, not deferred. Slice 01's brief says "written at finalization", which is now
+stale. DoD item 6 is a **verification** at 04-04, not a writing task.
+
+---
+
+## Wave: DELIVER / [WHY] Upstream issues found while implementing
+
+Back-propagated per the wave contract. Both were found by the crafter at step 01-02, both contradict text
+this session wrote, and both were verified against source before being accepted.
+
+### U-1 — DDD-5's "the ceiling is free, because the owner is already loaded" is **false**
+
+DESIGN said the `UpdateTime` ceiling costs nothing on the read path because the owner is already in hand.
+It is not. `TeamRepository.GetById` (line 27) delegates to its own `GetAll()` (line 16), which carries three
+`.Include(...)`s — a real round trip with joins, not a change-tracker hit.
+
+That makes DDD-5 self-contradictory as written: applying the ceiling in the reconciler would satisfy the
+ceiling rule by violating the "no additional query on the request thread" rule the same decision sets, with
+a 50 ms budget.
+
+**Resolution, applied at 01-02**: the ceiling moved into the pass, where the owner genuinely *is* already
+loaded because the pass must load it to compute percentiles at all. The rule itself is unchanged —
+`min(window end, DateOnly(owner.UpdateTime))` — only where it is evaluated. `A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped`
+passes, so the behaviour is intact.
+
+**This made the design better rather than merely fixing it.** The reconciler now holds **no repository at
+all**, which is a stronger property than DDD-3's "holds no snapshot repository" and matches what the
+component table always said it should be.
+
+### U-2 — The ArchUnit rule as briefed would fail on unmodified `main`
+
+The brief asked for "no snapshot repository reachable from a controller action". But the shipped
+`PercentilesOverTimeSeriesQuery` takes `IPercentilesOverTimeSnapshotRepository` in its constructor and is
+reachable from both controller actions — **that is the read itself**. A literal transitive rule is red before
+this story starts.
+
+**Resolution**: the enforceable rule carrying the actual intent — neither of the two types this story
+inserts between the endpoint and the shipped read may so much as name `IPercentileSnapshotWriter` or
+`IPercentilesOverTimeSnapshotRepository`, plus a pin on the reconciler port's `void` return. Recorded
+because a reviewer reading the brief will expect the broader rule and should know it was **rejected on
+evidence**, not quietly dropped.
+
+### U-3 — A latent flake the current design closes, which a future change could reopen
+
+`ThenNothingWasWrittenWhileTheReaderWaited` reads the row count immediately after the HTTP response. Two
+things make that deterministic today: the test host removes every hosted service, so nothing pumps the queue
+unless a scenario drains it; and a pass stages rows and calls `Save()` once at the end, while the observation
+helpers read from a fresh scope.
+
+**Start the reader in the test host, or make the pass save per-day, and the pin becomes flaky.** Written down
+here rather than left to be discovered in CI.
+
+### Boundary deviations, accepted
+
+| Step | Files outside `files_to_modify` | Why accepted |
+|---|---|---|
+| 01-01 | two shipped unit-test files constructing the handler directly | Constructor change breaks compilation. A **real** `PercentileSnapshotWriter` was substituted, not a mock, so every assertion still runs end to end. No assertion touched. |
+| 01-02 | four `Slice0{5,6,7,8}…Specifications.cs` | The drain seam had to stop being `static` to reach `Factory`; the one word `static` changed in each caller. The boundary rule and the task were in direct conflict — there is no way to keep a static seam that resolves from DI. |
+
+### U-4 — The gate's knowledge of the filler is an OPTIONAL dependency, and that is a silent-failure shape
+
+Step 01-04 wired the maintenance gate to the filler as `IOverTimeHistoryFillActivity? historyFill = null`
+— optional, with a null default — because `DatabaseMaintenanceGateTest.cs` constructs the gate directly
+and was not in the step's scope. A required parameter would have broken its compilation.
+
+Behaviour is correct today: the registration exists at `Program.cs:1360` and all the scenarios pass.
+**The problem is the failure mode.** Delete that one registration line and the gate silently reverts to
+not knowing about the filler — which is precisely the defect this step exists to fix — and **nothing
+fails**. The tests construct the gate themselves, so they never exercise the container wiring.
+
+An optional dependency is the wrong shape for a safety property. Two ways to close it, in preference
+order:
+
+1. Make the parameter **required** and update `DatabaseMaintenanceGateTest.cs` to pass it. Needs that
+   file in scope; it is a mechanical change to 22 constructor calls.
+2. If the parameter must stay optional, add a **startup/DI assertion** that the gate resolved from the
+   real container actually has the capability — so removing the registration reds a test rather than
+   quietly widening the window.
+
+**Carried into the adversarial review as a named item rather than left to be noticed.** The crafter
+flagged it as the place a reviewer would push back, and it was right to.
+
+### U-5 — The filler must NOT consult the gate's general `IsBlocked`
+
+Recorded because it is a trap that fails silently and completely, and it was not in the step brief.
+
+After 01-04, `IsBlocked` routes through `WhatIsHoldingTheDatabase()`, which now includes "a history fill
+is in flight". A filler that consulted `IsBlocked` before each day would therefore **see itself**, decide
+maintenance was active, and abandon every pass on its first day. Every test would still pass — the fill
+simply never happens.
+
+The filler consults the narrow `IsMaintenanceOperationActive` (`ActiveOperationId != null`) instead. The
+asymmetry is load-bearing: the gate asks a broad question, the filler asks a narrow one, and swapping
+either for the other breaks the feature invisibly.
+
+### OQ-2 — CLOSED at step 01-05: there is no per-key cache eviction, and none was added
+
+DESIGN left this open: use per-key eviction if the metrics cache exposes it, otherwise invalidate the
+whole owner. Verified — `ITeamMetricsService` exposes exactly one eviction member,
+`void InvalidateTeamMetrics(Team team)`, and `IPortfolioMetricsService` mirrors it. **No per-key
+capability exists, and one was deliberately not added for this story.**
+
+So DDD-14's accepted cost stands as written: a pass discards the live dashboard entries alongside the
+ninety historical ones it warmed, costing one recompute. `InvalidateReadCache()` now runs once per pass
+in a `finally` around the walk, so it fires on the maintenance `break`, on the floor-is-null early
+return, and on an exception alike — strictly more reliable than before.
+
+### U-6 — AT GAP: the memo's convergence claim is not demonstrated by the test named for it
+
+Criterion 6 of step 01-05 says `Looking_at_the_same_period_twice_costs_nothing_the_second_time` proves
+the memo makes cost converge. It does not. That scenario seeds items across the whole window, so every
+day is written on the first visit and the second visit enqueues nothing **because the days are already
+held** — `daysAlreadyHeld` alone gets there, and the memo contributes nothing.
+
+The memo only bites where a day is *permanently unfillable* — before the floor, or refused by the
+absence gate — and **no scenario covers a second visit over such a stretch**. Remove the memo entirely
+and every test still passes.
+
+This is the criterion-5 trap read in reverse. The memo is correctly *untestable by state assertion*
+(no assertion may depend on its contents), so its convergence claim needs a **cost** observation —
+an enqueue count — not a state observation.
+
+**Routed to `nw-acceptance-designer`**: "a second visit over a stretch the absence gate refused enqueues
+nothing". Tracked for the phase-01 close-out. Lower stakes than the absorption gap — the memo is
+optimisation-only, so an untested claim means possibly-wasted work rather than wrong data — but without
+it the memo could be entirely broken and nothing would notice.
+
+### U-7 — The memo stores "days already worked out", not "days refused", and the reason is an ArchUnit pin
+
+The step asked for refused days. Learning that a day was *refused* requires the writer to say so, and
+the only channels are `FillDayIfAbsent`'s signature or its interface — but
+`OverTimeReconstructionSeamArchUnitTest` asserts the writer's source literally contains
+`"void FillDayIfAbsent("`. Changing the return type would red that test.
+
+"Already worked out" is a strict superset of "refused" and rests on a stronger argument: the reading is
+a pure function of the owner's stored items, and those change only on refresh — which is exactly what
+invalidates the memo. So re-walking an already-walked day before the next refresh is provably wasted.
+**Days lost to a genuine fault are deliberately NOT memoised** — the record happens inside the `try`,
+after `SaveFilledDay`, so the catch path leaves them retryable. That distinction is the difference
+between an optimisation and a data-loss bug.
+
+### U-8 — Refusal granularity is per (day, horizon), not per day
+
+Not in any brief, and invisible to the assertions, which read horizon 30. A day whose 30-day window is
+empty but whose 90-day window is not gets **a row at horizon 90 and none at horizon 30**. That is the
+honest behaviour — each horizon is its own question — but it is not what "the day is left blank"
+suggests, and anyone reasoning about the table should know it.
+
+### U-9 — Three of step 01-05's five scenarios were already green at RED
+
+`A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at`,
+`Looking_at_the_same_period_twice_costs_nothing_the_second_time` and
+`Backdated_demonstration_values_are_stepped_over_rather_than_corrected` all passed before the step began
+— they pin fill-if-absent and convergence, which shipped in 01-02/01-03. The step's effective RED
+surface was **two** scenarios, not five.
+
+Not a defect: they stand as regression guards over the new floor/gate/memo code, and the crafter neither
+weakened nor touched them. But it is evidence the roadmap reviewer's bundling concern had a real basis,
+just not the one it argued — the problem was not incoherence, it was that the bundle's advertised scope
+overstated what was actually being driven. Worth weighing when the slice is audited.
+
+### U-10 — RULING: the ninety-day cap stays in the reconciler. Step 01-07's criterion 6 was wrong.
+
+Criterion 6 said "both constants live in the filler". The cap does not, and should not.
+`OverTimeGapReconciler.MostDaysOneVisitAsksFor = 90` was introduced at step 01-02 (commit `0e6a89dc2`)
+with its own justification comment, and the cap scenario **passed before 01-07 wrote a line of
+production code**.
+
+Satisfying the criterion literally needed one of two bad things: edit the reconciler (outside the step's
+`files_to_modify`, forbidden by its boundary rules), or plant a second literal `90` in the filler
+expressing the same knowledge as the first — **with nothing in the suite able to tell the two copies
+apart.** That is precisely the drift the horizon-list ArchUnit test exists to prevent, reintroduced by
+hand one file over.
+
+**Ruling: leave it.** The division is also the right one on its merits: the reconciler decides how many
+days one visit *asks for*; the filler fills what it is handed and owns how long it may take doing so.
+Two different questions, two different owners, one copy of each number.
+
+The criterion came from a roadmap written before 01-02 existed. No follow-up step is needed.
+
+### U-11 — The shipped budget value is not exercised by the acceptance suite, and that is deliberate
+
+Step 01-07 had to give the test host its own budget (`LongerThanAnyScenarioHoldsAPass`, 5 minutes),
+because the harness parks a pass on a latch to arrange competing writes and **parked wall-clock counts
+against the budget**. On a loaded runner the pass stood down over the *wait* rather than over the
+refusal the scenario is about — which is how the AT-gap scenario from 01-03 went red at 15 s and green
+when run alone. That is a harness defect introduced by this step, not contention, and the crafter said
+so rather than filing it under the known flakes.
+
+The fix mirrors what the fixture already does for `ILighthouseClock`. **No assertion was weakened — the
+failing assertion is byte-identical.**
+
+**The consequence, stated rather than buried: the shipped `10 s` value is never exercised.** What the
+suite proves is that *a* budget is obeyed, via the authored scenario handing a pass a budget of its own.
+A regression that changed the production constant would not be caught. Accepted, because a value cannot
+be meaningfully asserted — only the mechanism can — and forward progress is separately guaranteed by the
+check being `daysAlreadyTried > 0 && elapsed >= budget`, so even a pathological budget still advances one
+day per visit rather than none.
+
+### U-12 — The budget measurement, and what it does not support
+
+`deliver/budget-measurement.md`. **43 days in 1 second (~23 ms/day), n = 201 work items on one team**,
+Debug build, real host / real EF / real SQLite file.
+
+Consistent with SPIKE-01's ~15 ms/day on 621 items — same order, and the difference is unsurprising
+between a Debug acceptance host and a direct service call. The record explicitly **supersedes** the
+5-6 s and 20-25 s figures from SPIKE-01 as arithmetic on a base rather than measurements, and states
+that nothing here supports extrapolation.
+
+The finding that matters: **on a fixture this size the cap binds and the budget is never reached.** The
+budget exists entirely for the instance we cannot see. A slower real instance changes the number of
+visits, not the constant — which is the property that made the unmeasurable large instance tolerable in
+the first place.
+
+### PHASE 01 COMPLETE — 2026-09-22
+
+Eight steps plus one escalated acceptance test. `Slice05ReconstructCycleTimeHistoryScenarios.cs` carries
+**19 methods, all green, zero `[Ignore]`**. Full backend suite **7268 passed, 0 failed**. The roadmap said
+17 methods; the fixture holds 19.
+
+**The dogfood is the story working.** On the restored development database, the CT-30 line over
+2026-09-05 → 2026-09-22 went from **4 points to 18** — the thirteen-day interior gap (2026-09-06 → 09-18),
+previously drawn as one straight segment with nothing saying it was a gap, is filled. Widened to
+2026-05-01 → 2026-09-22 it settles at **145 points, one per day**. Filled days read p50 1 / p70 1 /
+p85 2 / p95 2, matching the recorded days either side.
+
+**Added latency: +0.12 ms** (means, 8 samples each side, warmed) against a 50 ms target — roughly 200×
+under. Recorded in `deliver/dogfood-phase-01.md` with an explicit paragraph that it is **not** a CI
+assertion and must not later be filed as one.
+
+### U-13 — KPI 2 is NOT satisfied as literally worded, and the wording was the error
+
+Criterion 4 of step 01-08 said: *"no row exists with all four percentiles zero"*. On the dogfood instance
+**7 such rows exist, before and after.** The crafter refused to round that down, and was right to.
+
+All seven belong to **owner id 2 — a team/portfolio that no longer exists on the instance** — all dated
+2026-09-19, all written by the *pre-story* recorder. Reconstruction never rewrites an existing day, so
+nothing in this story removes them, and no step here claims to.
+
+What the run does establish is the delta: **36 → 464 rows, and none of the 428 added is all-zero.**
+
+So the KPI should have read *"no NEW all-zero row is written"*, which passes cleanly. As written it
+demanded a data cleanup this story never scoped. **The seven rows belong to the orphaned-snapshot defect
+already logged at DISCUSS** (snapshot rows survive owner deletion) — that bug owns both the orphans and
+their zero values. Recorded here as failed-as-worded rather than quietly reinterpreted.
+
+### U-14 — `FakeLighthouseClock` could not do what its own doc comment claims, and a crafter repaired it
+
+Step 01-08's RED was **not** a fidelity divergence and **not** a `DateTime.UtcNow` re-derivation — the two
+failure modes the step warned about. It was a third:
+
+```
+ArgumentOutOfRangeException : Cannot go back in time. Current time is 9/22/2026 9:00:00 AM +00:00.
+  at FakeTimeProvider.SetUtcNow(DateTimeOffset)
+  at FakeLighthouseClock.SetInstant(DateTimeOffset)
+```
+
+`FakeTimeProvider.SetUtcNow` throws rather than rewind, so "let the recorder write a day for real on an
+earlier day" could never be staged at all. `ILighthouseClock` **is** the sole source of "what day is it"
+on both paths; the double simply could not move backwards.
+
+**The judgement call, made visible rather than buried**: the crafter repaired the double (replace the
+provider rather than advance it) instead of escalating. No assertion, scenario or acceptance-test text was
+altered — the change is confined to a shared test double's ability to do the thing its own doc comment
+says it does, and Slices 06/07 carry the same dependency, so escalating would have stalled on a capability
+gap containing no design decision. `FakeLighthouseClock.cs` is outside the step's `files_to_modify` and is
+used across the suite, so if the boundary reading is that even a double is acceptance-designer territory,
+this is the edit to revisit.
+
+**After the repair the scenario went green immediately with no production edit**, so there was never a
+business-logic RED. The DES phase is logged EXECUTED/PASS because the phase was performed and diagnosed —
+**it must not be read as "the assertion failed and implementation fixed it."** For a verification step,
+no-RED is the correct outcome: it means the mechanism already worked.
+
+### U-15 — Operational: the dev key store must match the restored database
+
+`Start-DevServer.ps1`'s default store `~/.config/Lighthouse/dev-keys` does **not** match the restored
+development database — startup aborts with the `FATAL: stored credentials … cannot be read` signature.
+The matching ring is `Lighthouse.Backend/Lighthouse.Backend/dev-keys` (key `k-2026-08-31-01`); passing
+`-KeyStorePath` to it starts cleanly. Nothing was deleted or re-keyed. Worth knowing before the next
+dogfood, because the failure looks like data corruption and is not.
+
+### Open, carried forward
+
+- **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with
+  two event-handler registrations cannot work without it — the memo would have been dead code. Three
+  registration lines added. Same standing hazard applies: it pulls the full backend Integration suite
+  into the next CI run.
+- **The demo synthesiser still declares its own horizon lists** (`DemoPercentilesBackfillHandler.cs:33,35`).
+  "The horizon lists live in the writer and nowhere else" was already false when 01-01 started and that file
+  was not in scope. Contained by an ArchUnit allowlist pinned to exactly two named files, so a *third* copy
+  fails the build. Folding it in is a two-field change that needs the file in a step's scope.
