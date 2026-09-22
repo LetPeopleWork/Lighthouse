@@ -111,6 +111,33 @@ will block it unless the prompt carries `<!-- DES-ENFORCEMENT : exempt -->`.
   about a reconstructed day matching a watched one when the state mapping or cycle-time definition has
   since changed. Do not let a green suite be recorded as closing this. It belongs in 04-03's docs.
 
+## A pull landed mid-step on 2026-09-22 — read this before trusting any commit around `f43eef492`
+
+`origin/main` was pulled into this branch while step 03-03's crafter was running. The crafter reached
+its commit step before the two conflicts were resolved, and `des-commit` committed the half-finished
+merge: commit `6cf949717` recorded `origin/main` as merged while its tree carried **none** of the eight
+incoming commits. Pushing it would have deleted twenty-four files from the remote with no warning,
+because `git merge-base --is-ancestor` was satisfied.
+
+It was reset away and the merge redone deliberately as **`f43eef492`**, keeping both sides of all three
+append-versus-append conflicts (the feature list and the job registry in `docs/product/jobs.yaml`, and
+one `## Application Architecture` section in `docs/product/architecture/brief.md`). Three tags mark the
+reachable points and should be left in place until the story is pushed:
+
+| Tag | Points at |
+|---|---|
+| `rescue/pre-pull-local` | `49dd9f3d5` — the local tip before the pull |
+| `rescue/origin-tip` | `b07ce5d95` — everything the pull brought down |
+| `rescue/bad-merge` | `6cf949717` — the merge that merged nothing |
+
+**Step 03-03 is unstarted.** The crafter was stopped before reporting any of its verifications, so
+nothing it found is trustworthy, and the two-line un-skip it had committed went with the reset.
+
+The full account is U-37 in `feature-delta.md`. The operational rule it produced: **`TaskStop` every
+running agent the moment a pull, merge or rebase is mentioned**, before looking at anything else. The
+window is seconds wide and nothing tells the agent the repository moved. A merge that merged nothing
+looks entirely normal in `git log`; the tell is `git diff --stat <sha>^1 <sha>` being implausibly small.
+
 ## STANDING INSTRUCTION — HOLD AFTER 04-02 (revised 2026-09-22)
 
 The user asked to **stop after step 04-03** so they can check the behaviour in the live view before

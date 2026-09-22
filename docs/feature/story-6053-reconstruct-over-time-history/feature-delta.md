@@ -2449,6 +2449,43 @@ instrumented task, never a text edit.
 Related: 02-03 carries duplicate GREEN and COMMIT entries (one SKIPPED, one EXECUTED) from the same
 class of interruption.
 
+### U-37 — A pull landed mid-step and the running crafter committed the conflicted merge, recording it as done while carrying none of it
+
+A `git pull` was run while step 03-03's crafter was working. It brought eight commits down from
+`origin/main` and left two conflicts, in `docs/product/architecture/brief.md` and
+`docs/product/jobs.yaml`. Before anyone resolved them the crafter reached its commit step, and
+`des-commit` committed into the half-finished merge.
+
+The commit it produced, `6cf949717`, had two parents - the local tip and the origin tip - and the
+message `feat(metrics): a day with nothing to draw limits from reports none`. Its diff against the
+first parent was **one file, two deletions**: the two `[Ignore(Pending)]` attributes the crafter had
+removed. Twenty-four files and roughly 6,100 lines of the incoming work were absent from the tree,
+while `git merge-base --is-ancestor origin/main HEAD` answered **yes**.
+
+That combination is the dangerous part. Git was satisfied the incoming commits were incorporated, so no
+later merge would offer them again and nothing would warn; the next push would have deleted all of them
+from the remote. The conflicted paths even still showed `UU`, so the working tree looked mid-merge while
+the history said merged - the two halves of the state disagreeing with each other.
+
+It was recovered by tagging all three reachable points (`rescue/pre-pull-local`, `rescue/origin-tip`,
+`rescue/bad-merge`), resetting to the local tip, and redoing the merge deliberately as `f43eef492`. All
+three conflict hunks were append-versus-append - the feature list and the job registry each gained one
+entry from either side, and `brief.md` gained one Application Architecture section from either side,
+the incoming one opening by declaring itself additive to every prior delta - so all three were resolved
+by keeping both sides, and the result was verified by parsing the YAML and checking both headings
+rather than by eye.
+
+**What this costs the story:** step 03-03 is unstarted again. The crafter was stopped before it
+reported any of its four verifications, so nothing it found is trustworthy and the step re-runs from
+the beginning. The post-merge suite baseline also had to be re-measured, because the incoming commits
+add backend tests of their own and the previous 7284/0/13 no longer describes the tree.
+
+**The durable lesson is about timing, not about git.** The window between a pull landing and an agent
+committing is seconds wide, and nothing in the agent's world tells it the repository moved underneath
+it. `des-commit`'s lock does not help: it serialises commits, and this was one commit. The rule is to
+`TaskStop` every running agent the moment a pull, merge or rebase is reported, before looking at
+anything else.
+
 ### Open, carried forward
 
 - **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with
