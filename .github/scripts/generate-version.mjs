@@ -99,12 +99,16 @@ async function countBuildsToday({ listRuns, branch, todayStart, runId }) {
 			break;
 		}
 
+		// Looking for the current run and counting today's builds read the same page for
+		// different reasons, so they cannot share one cursor. Counting stops at midnight; a
+		// re-run keeps the creation time of the run it repeats, so the run asking for its own
+		// number can sit below that line and still prove the page is current.
+		if (runs.some((candidate) => String(candidate.id) === String(runId))) {
+			sawCurrentRun = true;
+		}
+
 		for (const run of runs) {
 			const runDate = new Date(run.created_at);
-
-			if (String(run.id) === String(runId)) {
-				sawCurrentRun = true;
-			}
 
 			if (runDate < todayStart) {
 				hasMore = false;

@@ -22,6 +22,17 @@ const EARLIER_DAYS_RUNS = [
 
 const FRESH_PAGE = [...TODAYS_RUNS, ...EARLIER_DAYS_RUNS];
 
+// A re-run keeps the `created_at` of the run it repeats, so the run asking for its own
+// number can sit below runs that are newer than it — even below midnight.
+const RE_RUN_ID = 900;
+const PAGE_WITH_RE_RUN = [
+	run(1003, '2026-09-22T18:00:00Z'),
+	run(1002, '2026-09-22T17:00:00Z'),
+	run(1001, '2026-09-22T16:00:00Z'),
+	run(901, '2026-09-21T00:00:00Z'),
+	run(RE_RUN_ID, '2026-09-20T00:00:00Z'),
+];
+
 // The page GitHub intermittently serves instead: a snapshot weeks out of date, whose newest
 // entry already predates midnight and which does not contain the run that is asking for it.
 const STALE_PAGE = [
@@ -169,4 +180,30 @@ test('fails loudly rather than emitting a .0 version', async () => {
 		!String(outcome.value?.version).endsWith('.0'),
 		`a .0 version must never be returned; got ${outcome.value?.version}`,
 	);
+});
+
+test("counts today's builds when the current run is a re-run from an earlier day", async () => {
+	const outcome = await settle(
+		generateVersion({
+			listRuns: async ({ page }) => (page === 1 ? PAGE_WITH_RE_RUN : []),
+			ref: 'refs/heads/main',
+			pullRequestHeadRef: undefined,
+			now: NOW,
+			runId: RE_RUN_ID,
+			sleep: noSleep,
+		}),
+	);
+
+	assert.equal(
+		outcome.rejected,
+		false,
+		`a page holding the current run is fresh evidence wherever the run sits in it; instead it ${describeOutcome(outcome)}`,
+	);
+	assert.equal(
+		outcome.value.buildCount,
+		3,
+		`expected the three runs from today; got buildCount=${outcome.value.buildCount}`,
+	);
+	assert.equal(outcome.value.version, 'v26.9.22.3');
+	assert.equal(outcome.value.fileversion, '26.9.22.3');
 });
