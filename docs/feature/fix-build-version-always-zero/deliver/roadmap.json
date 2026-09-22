@@ -1,0 +1,170 @@
+{
+  "roadmap": {
+    "project_id": "fix-build-version-always-zero",
+    "created_at": "2026-09-22",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Fix ADO Bug #6068. The calver build counter in .github/workflows/ci_version.yml emits v<YY>.<M>.<D>.0 on roughly 1 in 7 push runs to main, because github.rest.actions.listWorkflowRuns intermittently returns a stale page whose newest run already predates today's midnight, so the counting loop breaks on its first iteration with buildCount === 0. A second, deterministic defect makes every pull_request run emit .0, because context.ref.replace('refs/heads/','') leaves the literal refs/pull/<N>/merge, which matches no branch. Both are fixed by asserting the one invariant the script can check: the current run is itself a ci.yml run created today, so it MUST appear in the result set. The logic is extracted to a testable ES module first, because it is currently an inline YAML string with no test harness and no regression test can bind to it."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-09-22",
+    "notes": "Three-step roadmap for a CI defect whose fix is fully specified by the corrected RCA (docs/feature/fix-build-version-always-zero/rca.md section 0) and approved by the maintainer. Step 01-01 extracts the CURRENT buggy logic verbatim and writes the regression tests, which go RED — the bug surviving extraction is what proves the extraction faithful. Step 01-02 applies the fix and turns them GREEN. Step 01-03 wires the workflow to the module and runs the tests in CI. No solution-architect dispatch: /nw-bugfix prescribes a minimal roadmap and the RCA already specifies the fix at diff level, so re-deriving it would add no information. Prior-wave artifacts (feature-delta.md, DISTILL .feature files) do not exist for this bugfix — the RCA is the authoritative input, per /nw-bugfix Phase 3."
+  },
+  "ssot_inputs": {
+    "rca": "docs/feature/fix-build-version-always-zero/rca.md",
+    "ado_work_item": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6068",
+    "architecture_brief": "docs/product/architecture/brief.md (consulted: zero matches for ci_version / calver / fileversion / build version — this change is entirely outside the application architecture SSOT, so no component-inventory update is owed)"
+  },
+  "out_of_scope": [
+    "Root cause C — concurrent main runs read the same count and collide (v26.9.21.3 emitted at 05:42:03 AND 05:42:08; .7 at 05:49:44 AND 05:50:54). This is a reservation-vs-read defect that needs a maintainer decision on the versioning scheme (run_number in the 4th segment, abandoning 'Nth build of the day', versus restoring a tag-based reservation). Adding a concurrency: group does NOT fix it — serialising the query does not help when both runs read the same 'runs that exist' value. Raise as a separate ADO item.",
+    "Fix 4 from the RCA — rewriting todayStart as new Date(Date.UTC(...)). Not in the approved scope, and a provable no-op on hosted runners, which are UTC. Latent only for a non-UTC self-hosted runner. Leave the existing expression byte-for-byte when extracting.",
+    "Reverting bd8a2db60 — the maintainer's 'undo whatever changed this' was investigated and priced in RCA section 7. That commit also rewrote ci_changes.yml, rewired 72 lines of ci.yml and moved release tagging, with eight months of CI stacked on top, and its pre-change PR behaviour was a bare github.run_number, not calver. It is also not the cause of the reported intermittent defect. Forward fix only.",
+    "Mutation testing — CLAUDE.md sets per-feature strategy, but that names Stryker.NET for the C# backend and StrykerJS for the React frontend. Neither is configured for a standalone ES module under .github/scripts/, and wiring a third Stryker runner for ~60 lines of CI glue is disproportionate. Explicitly N/A with reason, not a silent skip. The test suite instead pins behaviour directly via injected stubs, which is the same property mutation testing would be probing.",
+    "Backfilling or re-tagging any release that already shipped with a .0 version. No such release exists (gh release list shows none, and the remote carries no such tag)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Make the calver build counter trustworthy",
+      "description": "Extract the counting logic to a testable module with the bug intact (RED), fix it (GREEN), then wire the workflow to the module and run the tests in CI.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Extract counting logic verbatim and pin the two defects with failing tests",
+          "description": "TDD execution.\n\n**RED phase** — Two new files.\n\n(a) `.github/scripts/generate-version.mjs`. Move the counting logic out of the inline `script:` block in `.github/workflows/ci_version.yml` (lines 26-85) into an exported pure function with ALL I/O injected:\n\n```js\nexport async function generateVersion({ listRuns, ref, pullRequestHeadRef, now, runId, sleep })\n```\n\nIt returns `{ version, fileversion, buildCount }`. `listRuns` is an async function taking `{ branch, page }` and returning an array of run objects shaped `{ id, created_at }` — the real caller wraps `github.rest.actions.listWorkflowRuns`. `sleep` is injected so tests never actually wait.\n\nThis step is a FAITHFUL extraction: copy the existing date-prefix computation, the `todayStart` expression (leave it as the local-timezone `new Date(y, m, d)` — see out_of_scope), the branch derivation `ref.replace('refs/heads/', '')`, the pagination loop with its 10-page safety limit, the `runDate < todayStart` break and the `buildCount++`, and the `v${datePrefix}.${buildNumber}` formatting. Do NOT fix anything in this step. The bug must survive extraction — that is what proves the extraction faithful. Do not use `runId` or `pullRequestHeadRef` yet; accept them in the signature so step 01-02 has somewhere to put the fix.\n\n(b) `.github/scripts/generate-version.test.mjs` using `node:test` + `node:assert/strict`. Five tests:\n\n1. `counts the current run on a push to main` — `listRuns` returns a fresh page containing `runId` plus 3 earlier runs from today and several from previous days. Expect `buildCount === 4` and `version === 'v26.9.22.4'`. **This one PASSES against the unfixed code — it is the regression pin that proves the fix does not break the working path.**\n2. `does not report zero when the API serves a stale page` — `listRuns` returns a page whose newest run is 16 days old and which does NOT contain `runId` (the observed failure: total_count drifted and workflow_runs[0].created_at came back as 2026-09-05 while today was 2026-09-22). Expect the call to REJECT rather than return a version. **RED** — unfixed code returns buildCount 0 and `v26.9.22.0`.\n3. `derives the branch from the head ref on a pull_request` — `ref` is `'refs/pull/1777/merge'`, `pullRequestHeadRef` is `'dependabot/x'`. The stub returns runs ONLY when queried with `branch === 'dependabot/x'` and `[]` for anything else — exactly what the real API does. Expect `buildCount >= 1` and a version not ending in `.0`. **RED** — unfixed code queries `'refs/pull/1777/merge'`, gets `[]`, returns 0.\n4. `retries until the current run becomes visible` — stub serves the stale page on calls 1 and 2 and a fresh page containing `runId` on call 3. Expect the correct count, and assert the stub was called 3 times so the retry is real and not incidental. **RED** — unfixed code never retries.\n5. `fails loudly rather than emitting a .0 version` — stub is permanently stale. Assert it rejects, and assert that no return value ending in `.0` is ever produced. **RED**.\n\nRun `node --test .github/scripts/` and CONFIRM test 1 passes and tests 2-5 fail, each for the stated reason, BEFORE writing any fix. Paste that output into the commit body.\n\n**GREEN phase** — none in this step. Tests 2-5 stay RED; that is the deliverable. Do not touch `ci_version.yml` yet.\n\n**COMMIT phase** — `test(ci): pin the calver build-counter defects with failing tests`. Body records the RED output and cites Bug #6068.\n\n**COMMIT MUST BE GREEN — project rule.** This repository never commits or pushes a red suite (see CLAUDE.md quality gates and the green-before-push convention). So the RED state is *demonstrated and recorded*, then parked:\n\n1. Write all 5 tests with NO skip markers.\n2. Run `node --test .github/scripts/` and capture the output verbatim. It MUST show test 1 passing and tests 2-5 failing. Verify each failure's message matches its stated cause — a test failing on a typo or a bad import is NOT a RED state, it is a broken test.\n3. Paste that captured output into the commit body. This is the evidence the bug survived extraction; it is the whole point of this step.\n4. ONLY THEN mark tests 2-5 skipped, e.g. `test('...', { skip: 'RED until step 01-02 — Bug #6068' }, async () => {...})`. Do not alter a single line of their bodies while doing so.\n5. Re-run `node --test .github/scripts/`. It must now report 1 passing, 4 skipped, 0 failing.\n6. Commit in that state.\n\nStep 01-02 removes those skip markers. Parking them is what keeps the tree green between the two commits without weakening the RED evidence.",
+          "test_file": ".github/scripts/generate-version.test.mjs",
+          "scenario_name": "Regression pin for Bug #6068 — stale-page zero (intermittent, main) and pull_request ref mismatch (deterministic)",
+          "red_to_green_tests": [
+            "counts the current run on a push to main (regression pin — passes pre-fix)",
+            "does not report zero when the API serves a stale page (RED)",
+            "derives the branch from the head ref on a pull_request (RED)",
+            "retries until the current run becomes visible (RED)",
+            "fails loudly rather than emitting a .0 version (RED)"
+          ],
+          "files_to_modify": [
+            ".github/scripts/generate-version.mjs",
+            ".github/scripts/generate-version.test.mjs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "`.github/scripts/generate-version.mjs` exists and exports `generateVersion({ listRuns, ref, pullRequestHeadRef, now, runId, sleep })`.",
+            "The extracted logic is behaviourally identical to the inline block in ci_version.yml — same date prefix, same todayStart expression, same branch derivation, same pagination and break condition, same version string format.",
+            "`.github/scripts/generate-version.test.mjs` exists with exactly the five named tests.",
+            "RED EVIDENCE: with no skip markers, `node --test .github/scripts/` reported 1 passing and 4 failing, and that raw output is pasted in the commit body.",
+            "Each of the 4 failures was verified to fail for its stated reason — asserted on the actual returned value (e.g. buildCount 0 / a version ending in `.0`), not merely that something threw. A failure from an import error, typo or bad stub does NOT count as RED.",
+            "COMMITTED STATE IS GREEN: tests 2-5 carry a skip marker naming step 01-02, their bodies otherwise unmodified, and `node --test .github/scripts/` reports 1 passing, 4 skipped, 0 failing.",
+            "ci_version.yml is NOT modified in this step.",
+            "Commit follows conventional commits with scope `ci`."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            ".github/scripts/generate-version.mjs (new — buggy logic, faithfully extracted)",
+            ".github/scripts/generate-version.test.mjs (new — 1 green pin, 4 RED)"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Assert the current run is visible, retry, and fail loudly",
+          "description": "TDD execution — turn tests 2-5 GREEN.\n\n**GREEN phase** — Two files. First, in `.github/scripts/generate-version.test.mjs`, remove the skip markers that step 01-01 put on tests 2-5. Change NOTHING else in that file — no assertion, no stub, no test 1. Then edit `.github/scripts/generate-version.mjs`. Three changes:\n\n1. **Branch fallback.** Derive the branch as `pullRequestHeadRef ?? ref.replace('refs/heads/', '')`. On a push `pullRequestHeadRef` is undefined and the expression is byte-for-byte the current behaviour, so the working path is untouched.\n\n2. **Current-run visibility check.** While paginating, record whether any returned run has `id === runId` (compare loosely — the API returns a number, `context.runId` is a number, but be defensive about string/number mismatch). After the loop, if the current run was NOT seen, the listing is stale or the branch filter matched nothing — the count is meaningless. Retry the whole listing from page 1 with backoff. Use at least 5 attempts with a growing delay via the injected `sleep` (e.g. 2s, 4s, 8s, 16s, 32s), because the observed staleness lasted across consecutive calls.\n\n3. **Fail loudly.** If the current run is still not visible after the final attempt, THROW with a diagnostic naming `buildCount`, the `branch` actually queried, `ref`, and `runId`. Never return a version. The caller maps this to `core.setFailed`. Rationale for failing rather than defaulting to 1: a wrong version can overwrite an already-pushed and cosign-signed ghcr.io tag, so a red build is strictly cheaper than a silently wrong version. This is the maintainer's explicit choice.\n\nDo NOT change the date-prefix computation, the `todayStart` expression, the 10-page safety limit, or the version string format.\n\n**Verification** — `node --test .github/scripts/` must report all 5 passing. Test 1 (the regression pin) must STILL pass, unmodified — if it needed changing, the fix altered the working path and is wrong.\n\n**COMMIT phase** — `fix(ci): count builds only when the current run is visible`. Body cites Bug #6068, states the two defects fixed, and records the full green test output.",
+          "test_file": ".github/scripts/generate-version.test.mjs",
+          "scenario_name": "Same five scenarios — all green after the fix",
+          "red_to_green_tests": [
+            "does not report zero when the API serves a stale page",
+            "derives the branch from the head ref on a pull_request",
+            "retries until the current run becomes visible",
+            "fails loudly rather than emitting a .0 version"
+          ],
+          "files_to_modify": [
+            ".github/scripts/generate-version.mjs",
+            ".github/scripts/generate-version.test.mjs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "All 5 tests in generate-version.test.mjs pass — 5 passing, 0 skipped, 0 failing.",
+            "The ONLY change to generate-version.test.mjs is the removal of the skip markers from tests 2-5. `git diff` on that file shows no other edit: test 1 is untouched, and no assertion, stub or expected value anywhere was weakened to make a test pass.",
+            "Branch derivation is `pullRequestHeadRef ?? ref.replace('refs/heads/', '')` — the push path is byte-for-byte unchanged.",
+            "The function retries at least 5 times with backoff via the injected `sleep` before giving up.",
+            "On persistent staleness the function THROWS; it never returns a version ending in `.0`.",
+            "The thrown message names buildCount, the queried branch, ref, and runId.",
+            "The date prefix, todayStart expression, 10-page limit and version format are unchanged.",
+            "Commit follows conventional commits with scope `ci`."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            ".github/scripts/generate-version.mjs (modified — branch fallback, run-visibility retry, loud failure)"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Wire the workflow to the module and run the tests in CI",
+          "description": "TDD execution — integration step.\n\n**GREEN phase** — Two edits.\n\n1. **`.github/workflows/ci_version.yml`** — replace the inline counting logic in the `generate_version` step with a thin adapter. The job already runs `actions/checkout` (fetch-depth 0) at the top, so the module is on disk. Keep `actions/github-script` and its pinned version. The script body becomes roughly:\n\n```js\nconst { generateVersion } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/generate-version.mjs`);\ntry {\n  const { version, fileversion } = await generateVersion({\n    listRuns: async ({ branch, page }) => (await github.rest.actions.listWorkflowRuns({\n      owner: context.repo.owner, repo: context.repo.repo,\n      workflow_id: 'ci.yml', branch, per_page: 100, page,\n    })).data.workflow_runs,\n    ref: context.ref,\n    pullRequestHeadRef: context.payload.pull_request?.head?.ref,\n    now: new Date(),\n    runId: context.runId,\n    sleep: (ms) => new Promise(r => setTimeout(r, ms)),\n  });\n  core.setOutput('version', version);\n  core.setOutput('fileversion', fileversion);\n  return version;\n} catch (err) {\n  core.setFailed(err.message);\n}\n```\n\nPreserve the existing `console.log` lines so the job log keeps the same shape operators already recognise (`Generating version for date:`, `Checking runs since:`, `Found N builds today`, `Generated version:`, `Generated fileversion:`) — move them into the module if that is cleaner, but they must still appear. The workflow's `outputs:` block and the `workflow_call` contract must NOT change: `version` and `fileversion` are consumed by ci_docker.yml, ci_release.yml and all three standalone packagers.\n\n2. **`.github/workflows/ci.yml`** — run the module's tests in CI. EXTEND an existing workflow; do NOT add a new workflow file. Add a small job that checks out, sets up node, and runs `node --test .github/scripts/`. It needs no build and should be fast. Wire it so a failure fails the overall build.\n\n**Verification** — `node --test .github/scripts/` still green. Validate both YAML files parse. Confirm by reading the diff that the `outputs:` contract of ci_version.yml is unchanged.\n\n**COMMIT phase** — `refactor(ci): call the extracted version generator from the workflow`. Body notes the workflow_call contract is unchanged.\n\n**NOTE for the orchestrator, not the crafter:** the real-world fix cannot be proven locally — it only exercises on a GitHub runner, and the defect is intermittent at roughly 1 run in 7. Do not claim it is verified in production. It ships and is observed.",
+          "test_file": ".github/scripts/generate-version.test.mjs",
+          "scenario_name": "Workflow delegates to the tested module; tests gate the build",
+          "red_to_green_tests": [
+            "all five module tests remain green after the workflow is rewired"
+          ],
+          "files_to_modify": [
+            ".github/workflows/ci_version.yml",
+            ".github/workflows/ci.yml"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "ci_version.yml imports generate-version.mjs and no longer contains the counting loop inline.",
+            "The `workflow_call` outputs block still exposes exactly `version` and `fileversion` with the same meaning — no consumer of these outputs needs changing.",
+            "A thrown error from the module reaches `core.setFailed`, so the job goes red rather than emitting a version.",
+            "The five log lines operators recognise still appear in the job output.",
+            "ci.yml gained a job that runs `node --test .github/scripts/` and whose failure fails the build. No new workflow file was created.",
+            "Both modified YAML files parse cleanly.",
+            "`node --test .github/scripts/` is green.",
+            "Commit follows conventional commits with scope `ci`.",
+            "VERIFICATION LIMIT (state this in the commit body, do not overclaim): these tests prove the module's retry and branch-fallback logic against injected stubs. They do NOT reproduce the intermittent GitHub API staleness, which only occurs on a real runner at roughly 1 run in 7. The fix is proven in logic and observed in production, never 'verified' locally."
+          ],
+          "estimated_hours": 0.75,
+          "deliverables": [
+            ".github/workflows/ci_version.yml (modified — thin adapter over the module)",
+            ".github/workflows/ci.yml (modified — +1 job running the module tests)"
+          ]
+        },
+        {
+          "id": "01-04",
+          "name": "Detect the current run anywhere on the page, not only where the count reaches",
+          "description": "TDD execution — fixes a false-positive build failure found by probing the committed module.\n\n**The defect.** `countBuildsToday` breaks out of the per-page loop at the first run older than `todayStart`. `sawCurrentRun` is only evaluated on runs the loop actually reaches, so a current run sitting *below* a newer pre-midnight run is never examined — the function concludes the listing is stale and `generateVersion` throws. This happens on a **re-run of an older workflow run**: a re-run keeps its original `created_at`, so it is not at the top of the listing.\n\nProbed against the committed module with `now = 2026-09-22T10:00:00Z`, `ref = refs/heads/main`:\n\n| Scenario | Current run | Result |\n|---|---|---|\n| normal push today | id 999 created today, newest | OK `v26.9.22.4` |\n| re-run of yesterday's NEWEST run | id 201 created 09-21T18:00Z, the first pre-midnight entry | OK `v26.9.22.3` |\n| **re-run of a 2-day-old run** | **id 101 created 09-20T08:00Z, below run 201** | **THROWS** |\n| first run of the day, alone | id 999 created today | OK `v26.9.22.1` |\n| stale page (Bug #6068) | id 999 absent entirely | THROWS — correct |\n\nOnly the third row is wrong. The listing there is perfectly fresh and contains the current run; the function simply never looked at it.\n\n**RED phase** — add ONE test to `.github/scripts/generate-version.test.mjs`, alongside the existing five, which must all keep passing untouched:\n\n`counts today's builds when the current run is a re-run from an earlier day` — `listRuns` returns, in descending `created_at` order: three runs from today, then a run from yesterday, then the current run from two days ago. `runId` is the two-day-old run. Expect it to RESOLVE with `buildCount === 3` and a version of `v26.9.22.3` — NOT to throw. Run `node --test '.github/scripts/'` and confirm this new test fails against the current module while the other five still pass.\n\n**GREEN phase** — in `.github/scripts/generate-version.mjs`, make the freshness check independent of the counting loop's break: for each page fetched, test whether the page contains `runId` at all, rather than only testing the runs the counting loop walks past. Keep the same loose `String(a) === String(b)` comparison. Do NOT change the counting itself — the break stays exactly where it is, and `buildCount` must be identical in every scenario. This is a strictly wider freshness check: a page containing the current run is fresh with respect to that run no matter where the run sits.\n\n**Verification** — all 6 tests pass. Re-run the probe script at `/tmp/claude-1000/-storage-repos-Lighthouse/1994d44c-2593-4990-b6a5-c549bc202fa0/scratchpad/probe-rerun.mjs` with `node` and confirm rows A, B, D are unchanged, E still throws (that is Bug #6068 being caught), and C now resolves to `v26.9.22.3`.\n\n**COMMIT phase** — `fix(ci): look for the current run across the whole page`.",
+          "test_file": ".github/scripts/generate-version.test.mjs",
+          "scenario_name": "Re-run of an older workflow run must not be mistaken for a stale listing",
+          "red_to_green_tests": [
+            "counts today's builds when the current run is a re-run from an earlier day"
+          ],
+          "files_to_modify": [
+            ".github/scripts/generate-version.mjs",
+            ".github/scripts/generate-version.test.mjs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "A sixth test exists covering a re-run whose created_at places it below a newer pre-midnight run.",
+            "That test was confirmed FAILING against the unmodified module before the fix, and the failure was a thrown 'Refusing to emit a version', not an import or stub error.",
+            "After the fix all 6 tests pass.",
+            "The five pre-existing tests are byte-unchanged — `git diff` on the test file shows only the added test.",
+            "The freshness check tests each fetched page for runId independently of the counting loop's break.",
+            "The counting logic is unchanged: the break stays put and buildCount is identical in every probed scenario.",
+            "Probe re-run confirms A/B/D unchanged, E still throws, C now resolves.",
+            "Conventional commit, scope `ci`."
+          ],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            ".github/scripts/generate-version.mjs (modified — page-wide freshness check)",
+            ".github/scripts/generate-version.test.mjs (modified — +1 test)"
+          ]
+        }
+      ]
+    }
+  ]
+}
