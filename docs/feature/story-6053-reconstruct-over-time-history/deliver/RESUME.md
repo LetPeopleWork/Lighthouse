@@ -111,6 +111,67 @@ will block it unless the prompt carries `<!-- DES-ENFORCEMENT : exempt -->`.
   about a reconstructed day matching a watched one when the state mapping or cycle-time definition has
   since changed. Do not let a green suite be recorded as closing this. It belongs in 04-03's docs.
 
+## WHERE THIS STANDS — end of 2026-09-22 (read this first)
+
+**Stopped after 03-04 at the user's request.** Resume at **03-05**.
+
+Suite at last green: **7287 passed, 0 failed, 11 skipped, total 7298** (backend, standard filter).
+Frontend: **5698 passed, 392 files**. Both are the baselines to beat.
+
+Slice07 carries **2 remaining `[Ignore(Pending)]`** - the fidelity scenario and the last-observed
+(ceiling) scenario, both belonging to 03-05.
+
+### What phase 03 cost, and what it bought
+
+03-04 took a crafter halt, two acceptance-designer passes and four commits before a line of production
+code was written, because **its own designated acceptance cover could not fail**. The scenarios seeded
+the product's default retention window, which is wide enough that today and the day being rebuilt reach
+the same verdict. Implementing against that would have produced a green step, a satisfied criterion 3,
+and a shipped bug.
+
+That makes **nine** scenarios in this story found to assert something unfalsifiable: U-16, U-19, U-22,
+U-26, U-28, U-33, U-39 and the pair at U-41. The first seven were caught by sabotaging production code;
+the last two by modelling the fixture against `XmRCalculator` and noticing the arrangement made the
+outcome inevitable. **The second route is cheaper and catches a class the first cannot** - sabotage
+proves a test *can* fail, never that it fails *for the reason its name claims*.
+
+### The defences that now exist, and must not be removed
+
+1. **A self-enforcing arrangement.** The two pinned-stretch scenarios call a Given that reads both
+   settings back off the owner and fails if they ever stop disagreeing. Put the default retention window
+   back and they fail **in the Given**, before reaching the product. This is the first thing in the
+   story that defends against the vacuous-assertion pattern structurally rather than by someone noticing.
+2. **`AChartThatIsNotReady_ReportsNoCentreAndNoUpperLimit`** in `OverTimeReconstructionSeamArchUnitTest`.
+   Pins the invariant the status gate's redundancy rests on, and pins the **count** of construction
+   sites (6) as well as their content - a scan that silently finds nothing reports no offenders forever,
+   the same failure shape as the defect this story fixes.
+3. **Two seeders, both load-bearing.** The flat one (one item a day) is what
+   `A_stretch_in_which_the_team_finished_nothing...` needs for its collapsed band; the varying one
+   (quiet weekends, one more item each month) is what makes a pinned stretch and a rolling one give
+   different answers. **Unifying them silently disarms the collapsed-band cover.** The note saying so
+   sits where someone would make that change.
+
+### The trap worth carrying to other stories
+
+**A periodic fixture whose period divides the analysis window produces a constant statistic, and
+therefore an assertion about change that cannot fail.** `3 + (day.DayNumber % 5)` over a 30-day window
+holds six whole cycles, so the sum never moves. Caught by modelling before writing. A pure trend fails
+differently: the moving range collapses and the band has no width at all.
+
+### Open, not blocking 03-05
+
+- **U-40(b) the chart cache key** - eleven process-behaviour keys are `$"...Chart_{start}_{end}"` with
+  no anchor. 03-04 was told to fix it and pin it; confirm it did.
+- **U-42** - the two assertions in `ThenTheLimitsHoldSteadyAcross` fail to two *different* edits.
+  Re-anchoring the window does NOT move the limits: with a pin, the band comes from the pinned stretch
+  alone. Both forms are in the scenario's docstring.
+- **U-27 risk, live at 03-05**: `ThenTheLimitsStopOn` is used by a scenario seeding only finished items
+  ending at the break - the identical vacuous shape U-26 disproved. **Check whether anything would be
+  written past the ceiling at all before trusting it.**
+- **My dogfood, still outstanding**: all four percentile tabs plus every process-behaviour family at
+  both scopes on the restored dev database. Deferred to the live check.
+- `MEMORY.md` compaction, hook-requested.
+
 ## A pull landed mid-step on 2026-09-22 — read this before trusting any commit around `f43eef492`
 
 `origin/main` was pulled into this branch while step 03-03's crafter was running. The crafter reached
@@ -137,6 +198,12 @@ The full account is U-37 in `feature-delta.md`. The operational rule it produced
 running agent the moment a pull, merge or rebase is mentioned**, before looking at anything else. The
 window is seconds wide and nothing tells the agent the repository moved. A merge that merged nothing
 looks entirely normal in `git log`; the tell is `git diff --stat <sha>^1 <sha>` being implausibly small.
+
+## STANDING INSTRUCTION — HOLD AFTER 04-02, and a separate stop after 03-04
+
+**2026-09-22, end of day: "Stop once next step is done, we wrap up for today."** The session stopped
+after 03-04. That is a stopping point, not the hold - the hold below is still the standing instruction
+for when work resumes.
 
 ## STANDING INSTRUCTION — HOLD AFTER 04-02 (revised 2026-09-22)
 

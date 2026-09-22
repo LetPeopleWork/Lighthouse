@@ -2673,6 +2673,38 @@ Had my wording gone into the scenario unaltered, the next agent would have looke
 cannot occur - and might have recorded one sabotage as proving both halves. Both forms are now in the
 docstring, with a note that neither is run-verified while the scenarios are red.
 
+### U-43 — 03-04 landed, and what it cost is the point worth keeping
+
+The step is done: a past day's reference stretch is judged as of that day, threaded end to end, named
+fallback not needed. Both halves of the acceptance assertion were proved by **separate** sabotages -
+judging against `Clock.Today` empties the series and fails the first; ignoring the pin and feeding the
+display window in as the baseline leaves five distinct readings at team scope and four at portfolio, and
+fails the second. The corrected model at U-42 is now confirmed by a run rather than by argument.
+
+**The latent cache bug was real and is closed.** Every cached process-behaviour chart method keyed only
+on `(start, end)`, so once the anchor varied a controller read and a reconstruction read would serve
+each other's chart. The anchor is now in the key and a test pins it: remove it and the same window asked
+about two different days hands back one answer for the other. One correction to the orchestrator's brief
+- portfolio Arrivals is not cached at all and needed threading without a key change, so the eleventh
+cached method is the team `ThroughputFilterMode` overload. Same count, different membership.
+
+**Criterion 5 cost nothing.** The done-items cutoff is computed inside `Validate` as
+`today.AddDays(-doneItemsCutoffDays)`, so threading the anchor threaded the cutoff with it. There was no
+second place where the cutoff bounds a read, and therefore no way to half-thread it.
+
+**What the step actually cost: a crafter halt, two acceptance-designer passes and four commits before a
+line of production code.** All of it because the scenarios nominated as the step's own acceptance cover
+could not fail. That is the finding to carry, not the threading, which was small and went in cleanly
+once there was something real to satisfy.
+
+The general shape, now seen nine times in this story: **an assertion about absence, sameness or change
+passes for free unless the arrangement makes it contingent on the rule under test.** Seven were caught
+by sabotaging production code, two by modelling the fixture against the calculator. The second route is
+cheaper and catches a class the first cannot - sabotage proves a test *can* fail, never that it fails
+*for the reason its name claims*. `A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits`
+is the standing example: falsifiable throughout, and for years it would have been cited as evidence for
+a mechanism it never exercised.
+
 ### Open, carried forward
 
 - **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with
