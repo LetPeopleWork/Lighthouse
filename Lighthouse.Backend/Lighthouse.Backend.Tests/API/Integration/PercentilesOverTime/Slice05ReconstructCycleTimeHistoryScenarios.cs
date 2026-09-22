@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @driving_port @us-01 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -43,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @driving_port @us-01 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task The_flow_coach_reads_across_the_stretch_the_instance_was_switched_off()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -59,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped()
         {
             var lastObservedOn = TodayDay.AddDays(-60);
@@ -225,7 +222,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-01 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task The_days_the_first_visit_could_not_show_are_there_on_the_next_one()
         {
             var teamId = GivenATeamStillBeingRefreshed();

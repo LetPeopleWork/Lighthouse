@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         private Task<SeriesResponse> WhenTheDeliveryLeadOpensTheLimits(int teamId, DateOnly from, DateOnly to)
             => ReadTeamLimitTrend(teamId, ProcessBehaviorMetricType.Throughput, from, to);
 
-        private static Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
+        private Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
 
         // --- Then ---
 

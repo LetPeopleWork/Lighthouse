@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
-        private static Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
+        private Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
 
         // --- Then ---
 

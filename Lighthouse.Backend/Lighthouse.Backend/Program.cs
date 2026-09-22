@@ -72,6 +72,7 @@ using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
@@ -1344,7 +1345,19 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<Lighthouse.Backend.Cache.Cache<string, object>>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
-            builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, PercentilesOverTimeSeriesQuery>();
+            // The shipped read is registered as itself and wrapped: the interface resolves to the
+            // wrapper, so opening a chart both answers from what is stored and mentions which days of
+            // the window were missing. Both controllers keep asking for the interface and are unaware.
+            builder.Services.AddScoped<PercentilesOverTimeSeriesQuery>();
+            builder.Services.AddScoped<IOverTimeGapReconciler, OverTimeGapReconciler>();
+            builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, GapAskingPercentilesOverTimeSeriesQuery>();
+
+            // Registered as itself as well as as the background job, because emptying the queue is
+            // something a caller can ask for at a moment of its choosing - which is the only way a
+            // test can observe this at all, since a test host runs no background work.
+            builder.Services.AddSingleton<OverTimeHistoryFiller>();
+            builder.Services.AddSingleton<IOverTimeHistoryFiller>(services => services.GetRequiredService<OverTimeHistoryFiller>());
+            builder.Services.AddHostedService(services => services.GetRequiredService<OverTimeHistoryFiller>());
             builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();

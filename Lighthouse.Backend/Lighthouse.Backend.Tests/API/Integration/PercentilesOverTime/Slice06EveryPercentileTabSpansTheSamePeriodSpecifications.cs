@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         private Task<SeriesResponse> WhenTheFlowCoachOpensThePortfolioWorkItemAgeTab(int portfolioId, DateOnly from, DateOnly to)
             => ReadPortfolioPercentileTrend(portfolioId, MetricType.WorkItemAge, NoHorizon, from, to);
 
-        private static Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
+        private Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
 
         // --- Then ---
 

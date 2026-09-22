@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         private Task<SeriesResponse> WhenTheFlowCoachOpensTheCycleTimeTrend(int teamId, DateOnly from, DateOnly to)
             => ReadTeamPercentileTrend(teamId, MetricType.CycleTime, ThirtyDays, from, to);
 
-        private static Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
+        private Task WhenTheChartHasFinishedFillingIn() => TheReconstructionPassRunsToCompletion();
 
         private Task WhenTheTeamsRefreshRuns(int teamId) => TheTeamsRefreshCompletes(teamId);
 

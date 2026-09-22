@@ -30,6 +30,19 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] FilesAllowedToDeclareTheHorizons = [TheWriter, TheDemoSynthesiser];
 
+        /// <summary>The port a chart load asks through, and the thing it asks.</summary>
+        private const string TheGapReconcilerPort = "Services/Interfaces/IOverTimeGapReconciler.cs";
+
+        /// <summary>Everything a chart load runs through on the thread the reader is waiting on.</summary>
+        private static readonly string[] TheReadPath =
+        [
+            "Services/Implementation/GapAskingPercentilesOverTimeSeriesQuery.cs",
+            "Services/Implementation/OverTimeGapReconciler.cs",
+        ];
+
+        /// <summary>The two ways a percentile day gets written.</summary>
+        private static readonly string[] TheWriteSide = ["IPercentileSnapshotWriter", "IPercentilesOverTimeSnapshotRepository"];
+
         /// <summary>
         /// The cycle-time trailing windows, spelled as they appear in a collection expression. Written
         /// out in the two spacings C# formatting produces, so a copy does not slip through on a comma.
@@ -87,6 +100,51 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"{TheDemoSynthesiser} is the one file exempted from the rule above but no longer declares " +
                 "the horizons. Remove its exemption, so it cannot go on excusing a copy that moves into " +
                 "this file later.");
+        }
+
+        /// <summary>
+        /// Opening a chart must not be able to write a day while the person who opened it waits. The
+        /// shipped read does reach the snapshot table - that is the read. What is ruled out is the
+        /// write: the types this story puts between the endpoint and that read may not so much as
+        /// name the writer or the snapshot store, which leaves "a GET wrote to the database on the
+        /// request thread" unavailable rather than merely untested.
+        /// </summary>
+        [Test]
+        public void TheReadPath_CannotWriteAPercentileDay()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var path in TheReadPath)
+                {
+                    var source = ProductionSourceOf(path);
+
+                    foreach (var writeSide in TheWriteSide)
+                    {
+                        Assert.That(source, Does.Not.Contain(writeSide),
+                            $"{path} runs while a reader waits, so it may not reach {writeSide}. Hand the " +
+                            "missing days to the filler and let a pass with its own scope write them.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// The ask gives the reader nothing to wait on. A result here is something a caller would
+        /// eventually be tempted to await, and awaiting it is the defect this whole seam avoids.
+        /// </summary>
+        [Test]
+        public void AskingForTheMissingDays_HandsBackNothing()
+        {
+            var source = ProductionSourceOf(TheGapReconcilerPort);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(source, Does.Contain("void AskForTheDaysThatAreMissing("),
+                    "The one operation on this port returns void.");
+
+                Assert.That(source, Does.Not.Contain("Task"),
+                    "A Task here is a handle on the filling in, and a reader handed one waits for it.");
+            }
         }
 
         private static List<SourceFile> ProductionSourceFiles()

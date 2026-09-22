@@ -3,6 +3,7 @@ using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -416,13 +417,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         // --- The background pass ---
 
         /// <summary>
-        /// SCAFFOLD: waits for everything the reads above asked for to be written, so a scenario can
-        /// state what the chart holds afterwards without sleeping. Fails until the filler exists - which
-        /// is deliberate: without it, every scenario whose outcome is "no row was written" would pass
-        /// against a product in which nothing writes rows at all.
+        /// Waits for everything the reads above asked for to be written, so a scenario can state what
+        /// the chart holds afterwards without sleeping. Resolving the filler from the host is also how
+        /// a scenario proves the registration shape: the test host removes every hosted service, so a
+        /// filler registered only as one would not be here to ask.
         /// </summary>
-        protected static Task TheReconstructionPassRunsToCompletion()
-            => throw new AssertionException(MissingFillerSeam);
+        protected Task TheReconstructionPassRunsToCompletion()
+            => Factory.Services.GetRequiredService<OverTimeHistoryFiller>().DrainAsync(CancellationToken.None);
 
         /// <summary>
         /// SCAFFOLD: holds a pass open so a scenario can observe the system while one is running, and
