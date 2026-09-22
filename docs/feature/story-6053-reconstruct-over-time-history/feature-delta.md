@@ -2532,6 +2532,78 @@ Neither is a correctness defect today, which is why they wait. Item 1 should lan
 run at 04-04, because the status gate will otherwise show up as a surviving mutant with no explanation
 attached to it.
 
+### U-39 — 03-04 halted at the RED gate: the step's own designated acceptance cover cannot fail
+
+The seventh vacuous scenario, and the worst-placed one. 03-04's criterion 2 nominates the two
+pinned-baseline scenarios as the *only* tests that can fail on the anchor, and therefore as the step's
+entire acceptance cover. Both pass against unmodified production code.
+
+The arithmetic, verified on disk rather than argued:
+
+| | |
+|---|---|
+| seeded cutoff | `SeedTeamObservedUntil(..., doneItemsCutoffDays = 365)`, matching `Team.cs:21` and `Portfolio.cs:33` |
+| pinned baseline | `(today-240, today-150)` |
+| window asked about | `(today-60, today-30)` |
+| as of **today** | `cutoffDate = today-365`; `today-240 >= today-365` -> **valid** |
+| as of **any day in the window** | `cutoffDate ∈ [today-425, today-395]`; `today-240 >= that` -> **valid** |
+
+Both anchors return the same verdict, so the scenario is blind to which one is used. The future-end
+branch is never in play either - the baseline ends at `today-150`, comfortably before both anchors.
+
+The crafter proved the scenarios are otherwise well-formed rather than asserting it: with the seeded
+cutoff temporarily set to 220 and nothing else touched, exactly those two fail, and they fail saying the
+right thing - "A fixed reference stretch still describes a process. Reporting nothing at all reads as
+'your data did not support it', which is a different and false statement." The experiment was reverted
+and no production file was edited.
+
+**The cutoff band that gives this step cover, given the dates already in the scenarios:** invalid as of
+today needs `C < 240`; valid as of the latest reconstructed day needs `C >= 210`. So **C ∈ [210, 240)**.
+
+**What made it subtle is that the harness is faithful.** 365 is the product default, so a
+default-configured owner genuinely cannot hit this hazard. It bites owners who *narrow* the cutoff - the
+settings UI test uses 180 - or who pin a baseline reaching further back than their cutoff does. A
+reviewer seeing 365 would reasonably read it as realism and never notice it disarmed the test.
+
+**Narrowing the fixture's cutoff is faithful, and this was checked rather than assumed.**
+`DoneItemsCutoffDays` never prunes stored items and never filters the metrics read - every use outside
+the connector fetch query and this one advisory validation is DTO and settings plumbing, and the metrics
+services contain no cutoff filtering at all. An owner who narrows their cutoff keeps the items already
+stored, so the pinned stretch still has real data behind it and flat limits is the correct reading. Had
+the cutoff actually pruned items, re-seeding would have made the assertion false and the whole step
+would have needed rethinking.
+
+### U-40 — Three findings from the halted 03-04 that the re-dispatch must carry
+
+**a) `files_to_modify` is incomplete and the threading cannot compile without the additions.**
+`Services/Interfaces/ITeamMetricsService.cs`, `Services/Interfaces/IPortfolioMetricsService.cs` and
+`Services/Interfaces/IProcessBehaviorSnapshotWriter.cs` all have to change. The crafter flagged this
+instead of improvising past it, which is the right call. **Approved for the re-dispatch.**
+
+**b) The chart cache is not keyed by the anchor, and 03-04 is what makes that a bug.** All eleven
+process-behaviour cache keys are `$"...Chart_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}"` -
+`PortfolioMetricsService.cs:37,46,55,64,75` and `TeamMetricsService.cs:180,189,198,207,216,236`. Today
+every caller passes the same anchor, so the omission is invisible. The moment `asOf` varies while
+`(start, end)` does not, a controller read and a reconstruction read serve each other's chart. The
+anchor must go into the key, and a test should pin it.
+
+**c) 03-03's `A_period_with_nothing_to_draw_limits_from_reports_no_limits` is misnamed.** It refuses
+through the **cutoff-window branch**, not through having nothing to draw from: baseline
+`(today-900, today-800)` against `cutoffDate = today-365`. Threading the anchor does not rescue the
+name either - as of any reconstructed day the cutoff reaches at most `today-425`, and `today-900` is
+still below it. The assertion is sound and the scenario should be kept; the name simply describes a
+mechanism it does not exercise.
+
+**Threading design, worked out before halting, so it is not re-derived:** `BaselineValidationService`
+needs no edit - it already takes the anchor. Additive `DateOnly? asOf = null` on the three
+`Build*ProcessBehaviourChart` methods and on the public chart methods of both metrics interfaces,
+resolved as `asOf ?? Clock.Today`; nullable because `Clock.Today` is not a compile-time constant.
+`ProcessBehaviorFamilyReader.ReadChart` widens to carry it. **`FillDayIfAbsent`'s signature does not
+change**, so the ArchUnit literal `"void FillDayIfAbsent("` survives untouched. `RecordToday` omits the
+argument rather than passing `clock.Today` - that is what it means, and it also keeps the existing Moq
+setups in `ProcessBehaviorRecordingHandlerTests` and `SnapshotRecordedDayInstanceZoneTest` matching,
+which would otherwise force edits to test files outside the step's boundary.
+
 ### Open, carried forward
 
 - **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with
