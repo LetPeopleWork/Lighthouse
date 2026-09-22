@@ -70,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-02 @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -85,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-02 @fidelity @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task An_age_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -174,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-02 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task The_age_tab_stops_where_the_team_stopped_being_watched_and_stays_blank_when_nothing_was_in_flight()
         {
             var lastObservedOn = TodayDay.AddDays(-60);
