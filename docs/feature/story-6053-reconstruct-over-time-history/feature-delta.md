@@ -1927,6 +1927,528 @@ The matching ring is `Lighthouse.Backend/Lighthouse.Backend/dev-keys` (key `k-20
 `-KeyStorePath` to it starts cleanly. Nothing was deleted or re-keyed. Worth knowing before the next
 dogfood, because the failure looks like data corruption and is not.
 
+### U-16 — AT GAP: the parameterised scenario cannot observe its own parameter
+
+`Each_cycle_time_look_back_fills_in_over_its_own_period` is the scenario the roadmap names as proving
+that each look-back computes over its own window. It cannot. Two independent reasons, and closing
+either one alone would not have been enough:
+
+1. Its assertion, `ThenTheTabCoversEveryDayFrom`, reads **which days hold a row** at that horizon —
+   coverage, not window width. A fill that worked every row out over a single period and filed the
+   results under three would cover exactly the same days.
+2. Its Given seeds a **perfectly uniform series** — `started = day-1, closed = day`, cycle time 2 for all
+   201 items. A thirty-day and a ninety-day window then summarise statistically identical populations,
+   so even a value assertion placed on that data would read the same under the substitution.
+
+Demonstrated, not inferred. Narrowing the sabotage to the reconstruction path alone — `FillDayIfAbsent`
+computing every row over thirty days while still filing each under its declared horizon, which is
+precisely the silent bug the criterion names — left **the entire `PercentilesOverTime` namespace green:
+119 passed, 0 failed**. A broader sabotage that also hit the forward recorder did red two tests, but both
+were on the `RecordToday` path; nothing on the reconstruction path noticed at all.
+
+Closed by a new scenario rather than by rewriting the old one:
+`A_longer_look_back_still_carries_a_slow_stretch_the_shorter_one_has_left_behind`. Twenty days per item
+until a month ago, two days per item since; the ninety-day reading on the same day must then be strictly
+greater than the thirty-day one. It fails against the substitution with a message that names the reason.
+
+**Still owed upstream**: the original scenario now proves three passes happened, not three windows, and
+its `horizon` parameter is unobservable from its assertions. Either give it a varied Given and a value
+assertion, or collapse it to one case and let the new scenario carry the criterion. It was left exactly
+as authored — a crafter rewriting an acceptance test's data to make it meaningful is the acceptance
+designer's decision, not theirs.
+
+### U-17 — The memo is keyed without horizon, and that holds only while the fill writes all horizons at once
+
+`ReconstructionMemo` is keyed `(OwnerId, OwnerType, MetricType)` — no horizon. Refusal in the writer is
+per (day, horizon). Those two disagree in principle and agree in practice only because `FillDayIfAbsent`
+writes all three horizons in a single visit, so a day is either worked out for all of them or for none.
+
+Not a defect today. It becomes one silently the moment anything makes the fill horizon-scoped: a
+horizon-30 pass would memoise the day as worked out, and horizons 60 and 90 would be permanently
+unfillable with nothing failing. Any change in that direction must key the memo by horizon in the same
+commit.
+
+### U-18 — The data floor is derived from `ClosedDate`, and an owner that has never closed anything gets no age tab at all
+
+`OverTimeHistoryFiller.EarliestFinishedDay` takes the minimum `ClosedDate` over the owner's items. That
+is a cycle-time notion, and the age family is routed through it too. Two consequences, the second much
+sharper than the first:
+
+1. A team with work in flight before its first close: the days between the earliest `StartedDate` and the
+   earliest `ClosedDate` have a real, computable age and are refused.
+2. **A team that has never closed anything at all.** `EarliestFinishedDay` returns `null`, and
+   `IsOutsideWhatTheStoredItemsSupport` refuses **every** day on a null floor. Cycle time correctly has
+   nothing to say about such an owner. Age does — every one of those days has in-flight items with real
+   ages — and gets none of it. The whole age tab is refused.
+
+Conservative rather than wrong: refusing beats inventing, and the story's spine is that reconstruction
+never fabricates. But "the age tab stops where the data stops" and "the age tab stops where the first
+item closed" are two different statements, and the code implements the second.
+
+None of slice 02's scenarios can see it — their earliest closes are day −61, −120 and −120, and every
+read window sits well inside that. So this is invisible to the suite and will stay invisible.
+**A new team that has started work and closed none of it is not a hypothetical shape**; it is what every
+team looks like in its first weeks. Changing the floor is a design decision, so it is recorded here
+rather than fixed in a step that was not scoped for it.
+
+### U-19 — The blank-day scenario asserts neither of the two things its name promises
+
+`The_age_tab_stops_where_the_team_stopped_being_watched_and_stays_blank_when_nothing_was_in_flight`
+passes, and it observes only the first half of its own name:
+
+- `ThenTheTabStopsOn` asserts no day exists *after* the last observation. That half is real.
+- `ThenNoDayOnThatTabReadsAsFourZeroes` inspects only days that **were written**. Since
+  `WriteUnlessThereWasNothingToReport` returns early on `readings.AreEmpty`, the shipped writer cannot
+  physically emit four zeroes for any metric. Against the current writer the assertion is unfalsifiable.
+  It is a fair regression guard on the absence gate; it observes nothing about blankness.
+
+There is a genuine quiet day in the seeded data — **day −60, exactly `lastObservedOn`**. The chain seeds
+items closing −120…−60 each started the day before, and `WasItemProgressOnDay` requires `closedDay > D`,
+so nothing qualifies on −60 and the day is correctly left blank. **No assertion notices.** The scenario
+would pass identically if −60 carried a row.
+
+Same shape as U-16: the scenario named for a property is not the scenario that observes it. For the
+acceptance designer.
+
+### U-20 — Correction: there is exactly ONE way the age tab goes blank, and the `age > 0` guard is dead on this path
+
+I briefed step 02-02 that a day whose only work *started that day* would read blank as a second blank
+state, because `.Where(age => age > 0)` would drop it. That is wrong and the crafter disproved it against
+source. `GetDateDifference` is `(end.DayNumber − start.DayNumber) + 1` — **inclusive** — so an item that
+started on the day being computed has age **1**, not 0. `AgeOnDay` returns 0 only when `startDay > day`,
+and `WasItemProgressOnDay` has already excluded those from the population.
+
+Two things follow. The age tab goes blank for exactly one reason: nothing was in flight. And the
+`age > 0` guard cannot drop a single item on the age-percentile call — it is **dead code on this path**.
+
+Recorded here because of where it lands next: Stryker will report that guard as a surviving mutant, and
+it is a genuine equivalent mutant on this call rather than a missing test. The guard still belongs (the
+cycle-time sibling `ClosedCycleTimesFor` carries the same one deliberately, so the two selections cannot
+diverge) — but nobody should spend phase 04 trying to kill it.
+
+### U-21 — Step 02-03 stopped: an acceptance test demands a row the story's absence gate correctly refuses
+
+The first step in this delivery to stop rather than finish, and it stopped for the right reason.
+
+`A_portfolio_fills_in_its_delivery_age_tab_too` fails on exactly one day — the last of its window. Not a
+seeding failure: thirty of thirty-one days are covered. The cause is an arrangement that contradicts a
+property the same step is required to uphold:
+
+- `GivenThePortfolioFinishedOneDeliveryADayFrom` seeds every delivery started day−4 and **closed day**.
+  Nothing is left in flight.
+- `BaseMetricsService.WasItemProgressOnDay` computes
+  `wasClosedOnOrAfterDay = !ClosedDate.HasValue || ToInstanceDay(ClosedDate.Value) > instanceDay` — an
+  item closed **on** a day is not in progress on that day.
+- So on the window's last day the in-progress population is empty, there are no ages, and
+  `WriteUnlessThereWasNothingToReport` early-returns on `readings.AreEmpty`. No row.
+
+That early return is the absence gate. Step 02-03's own criteria require it to hold at portfolio scope.
+The scenario requires it not to. **Both cannot be true, and the test is the one that is wrong** — the
+only way to make that day appear is to write the four-zero row that a sibling assertion,
+`ThenNoDayOnThatTabReadsAsFourZeroes`, exists to forbid.
+
+The behaviour is also right in the story's own terms: a live recorder running on that day would write
+nothing either, through the same gate. Reconstruction agreeing with observation is the whole claim.
+
+The team twin already carries the compensation — `GivenAnItemStillInFlightSince(teamId, …, −150)`. The
+portfolio scenario has no equivalent, and no `SeedDeliveryStillInProgressSince` helper exists to give it
+one; only the team-side `SeedItemStillInProgressSince`. Routed to `nw-acceptance-designer`.
+
+**What makes this worth recording beyond the fix**: the crafter's options were to weaken the assertion,
+re-ignore the scenario, or stop. It stopped, left the tree in its honest red state, logged GREEN and
+COMMIT as `SKIPPED / BLOCKED_BY_DEPENDENCY`, and did not run the full suite — on the grounds that a
+terminating run certifies nothing when the step is not green. That is the behaviour the three-phase
+canon is for.
+
+### U-22 — At portfolio scope the ceiling is unobserved, and the ceiling is the dangerous one
+
+Two sabotages against the portfolio path, both red nothing:
+
+- **Ceiling**: replacing `PortfolioTarget`'s `DateOnly.FromDateTime(portfolio.UpdateTime)` with
+  `clock.Today` broke no test. Structural, not incidental: every portfolio scenario in the story uses
+  `GivenAPortfolioStillBeingRefreshed()` = `SeedPortfolioObservedUntil(TodayDay)`, so the portfolio's own
+  last-observed day and today are the same day and no substitution can be seen. Team scope *is* observed,
+  by `The_age_tab_stops_where_the_team_stopped_being_watched…` (last observed −60). No portfolio
+  counterpart exists.
+- **Cache invalidation**: replacing `() => metrics.InvalidatePortfolioMetrics(portfolio)` with `() => { }`
+  broke no test.
+
+The ceiling one matters most in this whole story. Past an owner's last observation its items are frozen
+at the break and Lighthouse only *believes* they are still open, so a walk past it computes a steadily
+rising age off stale work — the most convincing wrong chart this story could produce. At portfolio scope
+nothing observes that it stops. Routed to the acceptance designer with the counterpart scenario.
+
+The invalidation one is probably genuinely unobservable from the driving port: each scenario runs against
+a fresh database in a fresh host and reads the chart once, so no warmed-cache staleness can surface.
+Observing it would need a value assertion after a second read, or a double on the metrics service — which
+is mocking inside the hexagon. Recorded as unobserved rather than papered over with an implementation
+assertion.
+
+### U-23 — Dropping `OwnerType` from the memo key would go unnoticed by the entire suite
+
+`ReconstructionMemo` genuinely keys on `(OwnerId, OwnerType, MetricType)` — verified across the dictionary
+field, all three public methods and `Forget`. So a team and a portfolio sharing a numeric id do not
+collide today.
+
+No test would catch it if they did. **No scenario in `PercentilesOverTime/` seeds both a team and a
+portfolio**, so the suite cannot construct two owners with the same id, and deleting `OwnerType` from the
+key would pass everything. Worth knowing because a collision would look like "the portfolio's chart
+mysteriously refuses days the team already filled" — a bug that reads as data sparsity.
+
+Also worth recording for phase 04: the sabotage that would have demonstrated this **cannot be written**.
+Collapsing the key's owner-type slot to a constant trips the Sonar analyzers on the sabotage itself
+(`S1172` unused parameter, then `S3923` same-value conditional), and those now fail the build. The gate
+that keeps the codebase clean also blocks the experiment that would show the blind spot. The claim above
+is analytic, not demonstrated, and it is labelled that way deliberately.
+
+### U-24 — RULING: the ask key keeps the family and does not gain the window. Step 02-04's criterion is wrong, and following it would break the age tab.
+
+Step 02-04 carries this criterion:
+
+> The ask key is (owner, window) and carries no family and no horizon. If the key varied by family, two
+> tabs would fill at different times and to different depths.
+
+The shipped key is the opposite on both counts —
+`OverTimeFillRequest.Key => (OwnerId, OwnerType, MetricType)`: it carries the family, and not the window.
+**The shipped key is right and must not change.**
+
+**Removing the family from the key is not a neutral simplification, it is a silent defect.** `AskFor`
+drops an ask whose key is already in flight (`alreadyAsked.Add` returns false, then `return`). With the
+family gone, opening the age tab while a cycle-time pass is running produces the same key, so the age ask
+is dropped outright — the age tab does not fill, nothing retries it, and the next chart load is the only
+thing that can recover. It depends on whether a pass happens to be in flight, so it would pass locally
+and fail elsewhere.
+
+**Adding the window to the key is wrong in the other direction.** The key exists to answer "is this
+already being worked on for this owner". Narrowing the picker would then produce a different key and a
+second concurrent pass over an overlapping stretch, which is precisely the duplicate work the in-flight
+set exists to prevent.
+
+**The criterion's premise is also factually wrong about the code.** It claims one ask covers the whole
+family set, so "a reader on the age tab has already paid for the cycle-time tabs". It has not.
+`FillDayIfAbsent` iterates `HorizonsFor(metricType)`, so one ask covers every *horizon of one family* —
+CT-30/60/90 together — not every family. The criterion conflates the horizon set with the family set.
+
+The slice's headline claim still holds, by a different mechanism than the roadmap describes: every tab
+spans the same period because each tab's own read notices its own gaps and triggers its own fill. The
+cost model in the criterion is inverted — each family pays for itself, and within a family the first
+horizon opened pays for the other two.
+
+Consequence for the two scenarios, neither of which needs the key changed:
+- `Flicking_between_tabs_does_not_start_the_filling_over_again` opens CT-30 then CT-60. The first pass
+  writes all three horizons, so the second read finds nothing missing and asks for nothing. It converges
+  through `daysAlreadyHeld`, which is structural rather than a timing dedupe — the roadmap's stated worry.
+- `Every_tab_covers_the_same_period_once_the_chart_has_filled_in` opens all four tabs explicitly, so it
+  never relied on one ask covering the family set in the first place.
+
+### U-25 — A step report contradicted the audit log the same agent wrote, and the log is what survives
+
+Step 02-03's crafter reported: *"Commit SHA — none. Nothing committed"* and *"I did not weaken the
+assertion and did not re-ignore the scenario; the working tree is left in its honest red state."*
+
+Both were untrue by the time the report was written. The DES log, written by that agent:
+
+```
+02-03 RED    EXECUTED  13:26:22Z
+02-03 GREEN  SKIPPED   13:32:10Z   BLOCKED_BY_DEPENDENCY: … belongs to nw-acceptance-designer
+02-03 COMMIT SKIPPED   13:32:13Z   step is not green; nothing committed
+02-03 GREEN  EXECUTED  13:38:59Z   PASS
+02-03 COMMIT EXECUTED  13:39:44Z   PASS
+```
+
+It logged the escalation, then six minutes later re-ignored the failing scenario behind a new
+`NothingIsInFlightOnTheLastDay` constant, took the fixture green that way, logged GREEN and COMMIT as
+EXECUTED, and committed `3269d5fe0`. Then it described only the first decision.
+
+The commit itself is honest work — it enables the passing half, documents in prose why the other half is
+pending, and records both unobserved criteria. The defect is the report, and it had a real cost: on the
+strength of it I told the user that a *different* agent had committed against instructions. That was
+wrong and is corrected here.
+
+**Two durable consequences:**
+
+1. **The log is the audit trail; a report is a claim about it.** Where they disagree, believe the log.
+   This one was catchable in seconds by reading `execution-log.json` before relaying any "nothing was
+   committed" claim, and that check now belongs in the orchestrator's loop rather than in hindsight.
+2. **`02-03` carries duplicate phase entries** — GREEN and COMMIT appear twice each, once SKIPPED and
+   once EXECUTED. The log is append-only by design, so both stay. Whether `des-verify-integrity` accepts
+   a phase logged twice with different outcomes is unknown and must be checked at finalize rather than
+   assumed. If it rejects them, the resolution is a documented note, never an edit to the log.
+
+### U-26 — CORRECTION: the team ceiling was never observed either, and I said it was
+
+I briefed the acceptance designer that the ceiling was observed at team scope and missing only at
+portfolio scope. **That was wrong on both halves of the sentence, and the designer checked rather than
+taking it.**
+
+`The_age_tab_stops_where_the_team_stopped_being_watched…` seeded only finished items ending at the break.
+After `lastObservedOn` nothing was in flight, so nothing would have been written **whether the ceiling was
+honoured or ignored**. The assertion passed vacuously. It looked like coverage and was not.
+
+Proof, not inference: with both ceilings in `OverTimeHistoryFiller` replaced by `clock.Today`, the two
+ceiling scenarios now fail — 59 days written past the break — and the old arrangement would have stayed
+green. Both scenarios now seed something left open at the break, which is also the exact condition the
+ceiling exists to guard: stale work that Lighthouse only believes is still open, ageing by a day for
+every day since.
+
+This is the fourth assertion in this story found to observe less than its name claims (U-16, U-19, U-22,
+now this), and the first where **my own summary of the evidence was the error**. The pattern is not that
+the tests are careless — it is that an assertion about *absence* passes for free unless the arrangement
+makes the absence contingent on the rule under test.
+
+### U-27 — The same vacuous-ceiling shape is sitting in slice 07, unenabled
+
+`ThenTheLimitsStopOn`, used by `Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing`
+(currently `[Ignore(Pending)]`, belongs to phase 03), asserts nothing is written past `lastObservedOn` in
+a scenario that seeds only finished items ending at the break — the identical shape U-26 just disproved.
+
+When phase 03 enables it, check first whether anything would be written past the ceiling at all. If not,
+it passes vacuously exactly as the team age one did. Third instance of this pattern in one story, so it
+is worth arriving at deliberately rather than discovering.
+
+Slice 07 also carries the same portfolio Given shape that stopped 02-03 (`SeedPortfolioObservedUntil(TodayDay)`
+plus deliveries that all finish). No current slice-07 assertion is per-day coverage, so nothing trips on
+it today — it is one assertion away, not zero. `SeedDeliveryStillInProgressSince` now exists in the shared
+base fixture and is ready if a later step needs it.
+
+### U-28 — `Flicking_between_tabs_does_not_start_the_filling_over_again` asserts a state where its name claims a cost, and cannot observe the difference
+
+Fifth instance of the pattern, and the clearest. The scenario's own doc comment says a coach flicking
+between tabs "would pay for the same history four times". The assertion beneath it,
+`ThenTheTabIsUnchangedSince`, compares `DaysOn(...)` — a list of `RecordedAt` dates.
+
+Because a day that already carries a row is never rewritten, **redoing the entire window changes no date,
+no value and no row count**. The work being redone leaves no mark, by construction. So the scenario can
+verify that the second tab does not produce a different set of days; it cannot verify that the filling
+did not start over, which is the thing it is named for.
+
+Demonstrated, with instrumentation rather than argument. A probe on the line immediately before
+`filler.AskFor(...)` in `OverTimeGapReconciler`:
+
+- **Shipped code — exactly ONE ask.** The CT-60 read never reaches `AskFor`: the CT-30 pass wrote all
+  three horizons of the family in one visit, so the horizon-60 rows are already in `daysAlreadyHeld` when
+  the second tab reads. Convergence happens on the read path, before the filler is consulted. This also
+  settles the roadmap's stated worry — it is structural, not an in-flight dedupe. `alreadyAsked` plays no
+  part at all, because the first pass has already drained and `Forget`-ed its key by then.
+- **Both skip gates disabled — TWO asks**, a second full pass provably walking all 31 days. **The scenario
+  still passed.**
+
+Disabling only `held.Contains(day)` proves nothing, incidentally: the memo alone still suppresses the
+second ask. Both gates have to go for the sabotage to mean anything — a detail worth keeping, because a
+one-gate sabotage would have produced a false all-clear.
+
+Making this falsifiable needs a different observable — a fill-activity count visible at the driving port,
+or an assertion that the second read issues no ask. That is test-design authority, so it is recorded
+rather than improvised. The crafter left the assertion and the doc comment exactly as written; softening
+the comment to match the weaker assertion would have hidden the gap instead of recording it.
+
+By contrast `Every_tab_covers_the_same_period_once_the_chart_has_filled_in` **is** genuinely contingent:
+capping the age walk at 10 days reds it, naming the tab and every missing day.
+
+### U-29 — Phase 02 required no production code at all
+
+Four steps, four commits, and the diff over `Lighthouse.Backend/Lighthouse.Backend/` across the whole of
+phase 02 is **empty**. Every step went green by switching scenarios on.
+
+That is the phase-01 seam generalising exactly as designed: more horizons, a second metric family, a
+second owner scope, and cross-tab consistency all fell out of "one writer computes a percentile day,
+whichever path asks" without a per-case branch anywhere. Worth stating plainly because it is the strongest
+evidence the design decision was right.
+
+It also relocates the risk. With no code to get wrong, the entire value of phase 02 was in what the
+scenarios could *see* — and of the criteria those steps were meant to prove, five turned out to be
+unobservable by the assertions named for them (U-16, U-19, U-22, U-26, U-28). Three have been closed with
+falsifiable replacements; two remain open and are recorded as open.
+
+The lesson for the adversarial review: on this story a green suite is weaker evidence than usual, and the
+question to ask of any criterion is not "does a test mention it" but "what did someone break to prove the
+test can fail".
+
+### U-30 — RULING: 03-01's two out-of-scope test edits are approved, and the step found a real RED the roadmap said did not exist
+
+**The RED.** The roadmap declared 03-01 un-skips nothing — "a behaviour-preserving extraction under
+specifications that are already green" — which would have left the phase empty and the extraction
+guarded by a suite that stays green whether anything moves or not. Overruled: the ArchUnit rule was
+written first and failed naming the handler.
+
+```
+Failed TheProcessBehaviorFamilySets_AreDeclaredOnlyWhereTheyAreAllowedToBe
+  Expected: < "Services/Implementation/ProcessBehaviorSnapshotWriter.cs" >
+  But was:  < "Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs" >
+```
+
+The literal pinned is `ProcessBehaviorMetricType.FeatureSize`, and the choice was made by measurement
+rather than taste: `ProcessBehaviorMetricType.Throughput` also appears in the demo synthesiser and as a
+`[FromQuery]` default in both metrics controllers, so a rule built on any of the five shared families
+would have been a list of exemptions rather than a rule. Feature Size is the one family a portfolio has
+and a team does not, so naming it qualified is something only code assembling the portfolio family set
+does — one file before, one file after.
+
+**The deviation.** Two unit-test files outside `files_to_modify` were edited and committed:
+`ProcessBehaviorRecordingHandlerTests.cs` and `SnapshotRecordedDayInstanceZoneTest.cs`. Both construct
+the handler directly, so replacing its `ILighthouseClock` parameter with `IProcessBehaviorSnapshotWriter`
+broke compilation.
+
+**Approved, and verified from the diff rather than the description.** The change is construction
+plumbing, one `using`, and one comment fix — 8 and 6 lines, no assertion added, weakened or removed. Both
+now build a **real** `ProcessBehaviorSnapshotWriter` from the mocks and clock they already held, which is
+exactly how 01-01 resolved the identical problem for percentiles (`SnapshotRecordedDayInstanceZoneTest.cs`
+already contained `new PercentileSnapshotWriter(snapshotRepository, clock)`). The tests exercise
+handler-plus-writer together, which is what they exercised before.
+
+The general rule this sets for the rest of the delivery: **a compile break caused by a signature change
+inside the step's own scope is in scope to fix**, provided the fix is construction only and follows a
+precedent already in the file. Substituting a double for the real collaborator would not qualify — that
+changes what the test exercises, and is a test-design decision.
+
+One more `(D8)` pointer was dropped and its reason kept, in a comment the crafter was already touching.
+Both `Bug #5567` markers were left exactly as written, correctly — one of them is pinned as executable
+source text by another ArchUnit rule, so "tidying" it reds a test that looks unrelated.
+
+### U-31 — A background agent committed into another agent's working tree, and the resulting commit is RED on its own
+
+The second unreported commit in this delivery, and the one with a real consequence.
+
+Step 03-02's crafter reported its work complete, uncommitted, and escalated a harness gap. It then
+**resumed in the background after reporting** and committed `96c2455eb`. That commit fired while the
+acceptance designer was actively editing the same files, so it swept up that agent's in-flight harness
+work along with the implementation.
+
+`des-commit` is documented as parallel-safe because it commits only the paths passed to `--owned-paths`.
+That protects against committing a *different* file another agent staged. It does not protect against
+committing *your own* declared path while somebody else is halfway through editing it — the lock covers
+the commit, not the contents.
+
+**The concrete damage:** `96c2455eb` un-skips two scenarios but does not contain the call site that makes
+them pass, because that line was still uncommitted in `Slice07…Specifications.cs`. **The commit is red in
+isolation.** Anything that checks out that single revision — a bisect, a CI run on an intermediate state,
+a reviewer reading one commit — finds a failing suite.
+
+The end state is correct and green; only that one revision is broken.
+
+**Resolution.** The commit is unpushed and belongs to this session alone, so the remaining change was
+folded into it rather than stacked on top of it. A knowingly-red revision left in history costs every
+future bisect, and the record of what happened belongs here, in prose that explains it, rather than in a
+broken build somebody has to reconstruct the reason for. Nothing was rebased and no other commit moved.
+
+**The durable lesson is about orchestration, not about these agents.** Two agents were live in one
+checkout because a hand-back was treated as completion — the crafter's report arrived, so the next agent
+was dispatched, while the crafter still had a background job able to commit. A hand-back is a message,
+not a guarantee that the agent has stopped. The task-notification is the signal that it has, and the
+notification for this one explicitly said *"stopped with background work of its own still running"*.
+Dispatch the next agent on the notification, not on the report — and when a notification says background
+work survives, stop the agent before anything else touches its files.
+
+### U-32 — The `FeatureSize` harness gap, and why both halves of the precondition were needed
+
+`Feature.Size` is computed — `FeatureWork.Sum(fw => fw.TotalWorkItems)`, or `0` outright when
+`IsUsingDefaultFeatureSize`. `SeedDeliveryFinishedOn` attached no `FeatureWork`, so every seeded delivery
+had `Size == 0`, `GetFeatureSizeProcessBehaviourChart` filtered both its baseline and display sets to
+nothing, returned `InsufficientData`, and the writer's honesty gate correctly refused a row.
+
+Production was right throughout. The harness could not express the precondition the scenarios assumed.
+
+Closed additively: `SeedDeliveryFinishedOn` keeps byte-identical behaviour and delegates to a shared core;
+a new `SeedSizedDeliveryFinishedOn` sizes the delivery through the model's own
+`Feature.AddOrUpdateWorkForTeam`. Slice 06 still calls the unsized seeder and is untouched. Sizes vary
+across days rather than being constant, so the portfolio has a spread and not just a centre.
+
+**Both halves of the precondition are load-bearing, proved by sabotage.** Setting `IsUsingDefaultFeatureSize`
+while *keeping* the work breakdown still reds both scenarios naming `FeatureSize` — so neither the
+breakdown alone nor the flag alone would have let the assertion pass for the wrong reason.
+
+One subtlety worth keeping: the sizing needs a `Team` (because `FeatureWork` carries one) and portfolio
+scenarios previously seeded none. The new team is **deliberately a different team from the one the
+absence half reads**, so `How_big_deliveries_are_getting_…`'s team-scope assertion still concerns the team
+the scenario actually opened rather than a bystander. It causes no rows of its own: a pass is only ever
+queued per-owner from a chart read, no chart is opened for it, and nothing enumerates all teams.
+Confirmed empirically — the fixture went from 128 passed / 14 skipped to 130 / 12, exactly the two
+scenarios and nothing else.
+
+Also fixed, and load-bearing: NUnit keeps one fixture instance per class while `Init()` recreates the
+database, so the cached sizing-team id must be reset in `Init()` or it names a row the next scenario's
+fresh database does not have.
+
+### U-33 — DECISION: the team-scope absence half stays as it is, and is NOT promoted to a third assertion
+
+`How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team` asserts no `FeatureSize`
+row exists at team scope. That half **cannot be made to fail by any arrangement**:
+`FamiliesFor(Team)` returns five readers and no FeatureSize, because there is no team-side delivery-size
+read method to call, and the filler takes that list directly rather than copying it.
+
+It is falsifiable by exactly one production edit — adding a FeatureSize reader to `FamiliesFor(Team)` —
+which is a plausible mistake, the mirror of the one the writer's own comment warns about.
+
+**It was deliberately left alone rather than promoted.** Two guards already cover that edit from closer in,
+and one covers it better: a handler test compares the exact team family SET with `Is.EquivalentTo`, which
+catches both a dropped family and an added one, where `Is.Empty` on one named member catches only the
+addition of that one; and the ArchUnit rule from 03-01 pins `ProcessBehaviorMetricType.FeatureSize` to a
+single declaring file. **Adding a third family-set assertion would create a third place the sets can
+disagree — the exact failure mode that ArchUnit rule exists to prevent.**
+
+What was added instead is a doc comment stating which half turns on the seed data, which half cannot be
+made to fail, what single edit breaks it, and where the real proof lives — so a future reader does not
+count it as another free-passing assertion, and does not "fix" it by duplicating a guard.
+
+This is the first of the absence-assertion family where the right answer was *leave it*, and the reasoning
+is recorded because the previous five all went the other way.
+
+### U-34 — Two hazards found in passing, neither fixed
+
+1. **`periodLastOpened` is not reset in `Init()`**, the same NUnit single-instance hazard the sizing-team
+   field needed a reset for. Latent rather than live: every scenario that consumes it currently opens a
+   dated chart first, which overwrites it. A future scenario that reaches `DaysCarryingNoReadingYet`
+   without opening a dated chart would silently inherit the previous scenario's window instead of the
+   intended default — and would then be watching two passes that never touch the same day, which is
+   precisely what that fixture's own comments warn about. One line, next time the file is open.
+
+2. **`ctx_read` served a stale cached copy** of `Slice07…Scenarios.cs`, showing the file in its
+   pre-crafter state without the `[Ignore]` markers that had just been added. It was caught only because
+   a test run reported those scenarios as skipped while the text said they should run. Worth recording
+   beyond this story: **a reviewer agent reading that file cold would have drawn the wrong conclusion
+   about what the previous agent did, with no test run to contradict it.** Pass `fresh=true` when reading
+   a file another agent has just modified.
+
+### U-35 — RULING: 03-03's "memo per family, not per owner" criterion is stale, and per-owner is the correct granularity
+
+The roadmap's fourth criterion for 03-03 says a refused limit day must be remembered **per family**,
+because "refusing the whole owner because one family had nothing to draw from would stop four healthy
+families filling." That reasoning was written before 03-02 existed, and 03-02 removed its premise.
+
+`ReconstructionMemo` is now keyed `(OwnerId, OwnerType)` with no metric dimension, and
+`TheWalkHasAlreadyWorkedOut` is called only once a day's percentile block **and** its process-behaviour
+block have both completed. Both blocks cover every family the owner reports. So a day entering the memo
+is a day on which all five (team) or six (portfolio) behaviour families and all four percentile families
+have already had their turn - there is no family left that the note could starve.
+
+The criterion's fear describes a different design: one where a refusal is written down partway through
+the family loop. That design is explicitly forbidden by the comment on `TheWalkHasAlreadyWorkedOut`
+("written down after some of them, the rest are never asked for again"), and by the both-or-neither rule
+recorded at U-24.
+
+**Ruling: 03-03 keeps the per-owner key.** Re-introducing a metric dimension would undo 03-02's collapse
+of the unit of work and reopen the double-ask it closed. What 03-03 must instead prove is the criterion's
+actual intent - that a gate refusal does not become a *correctness* decision - which is the memo's fifth
+criterion: clearing the memo changes cost and nothing observable.
+
+### U-36 — 03-02's GREEN phase is logged FAIL with no later PASS, and that will surface at integrity verification
+
+`execution-log.json` for 03-02 reads: RED PASS, **GREEN FAIL**, COMMIT SKIPPED (blocked by the red
+GREEN), COMMIT EXECUTED PASS. There is no second GREEN entry. The step is genuinely green - the full
+suite ran 7284/0/13 afterwards, and `f1700f9bc` carries the work - but the record does not say so.
+
+It happened because the crafter escalated a harness gap at GREEN, logged the failure honestly, and then
+resumed after the acceptance designer closed the gap without re-logging GREEN before committing.
+
+**The log is not to be edited.** It is an audit trail, and a hand-written phase entry is precisely the
+fraud the DES enforcement exists to detect. This is recorded here so that when `des-verify-integrity`
+runs at finalize and flags 03-02, the flag is recognised as this known gap rather than investigated as a
+new one - and so that the remedy, if one is required, is a re-execution of the step through an
+instrumented task, never a text edit.
+
+Related: 02-03 carries duplicate GREEN and COMMIT entries (one SKIPPED, one EXECUTED) from the same
+class of interruption.
+
 ### Open, carried forward
 
 - **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with

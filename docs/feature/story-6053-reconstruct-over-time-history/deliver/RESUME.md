@@ -111,11 +111,35 @@ will block it unless the prompt carries `<!-- DES-ENFORCEMENT : exempt -->`.
   about a reconstructed day matching a watched one when the state mapping or cycle-time definition has
   since changed. Do not let a green suite be recorded as closing this. It belongs in 04-03's docs.
 
+## STANDING INSTRUCTION — HOLD AFTER 04-02 (revised 2026-09-22)
+
+The user asked to **stop after step 04-03** so they can check the behaviour in the live view before
+anything else runs. Two separate holds, both still in force:
+
+1. **HOLD BEFORE PUSH** — nothing is pushed until the user reviews. Unchanged since the start.
+2. **HOLD BEFORE refactor / adversarial review / mutation.** Step **04-04 IS the mutation step**
+   ("Freeze it, mutate it, and check nothing was left pending"), so the hold point is **after 04-03**,
+   not after phase 04.
+
+Run: 02-04 → 03-01…03-05 → 04-01 → 04-02, then **STOP**.
+Do NOT run: **04-03 (docs)**, 04-04, the L1-L6 refactor pass, the adversarial review, Stryker.
+
+**Revision (the user's words): "go on and run through everything including 04-02. then I wanna verify
+(docs and gates after)."** The hold moved one step earlier: 04-03 is the documentation step, and docs
+wait for the user's confirmation in their own environment - the standing rule, now applied to the whole
+step rather than only to its screenshots. So 04-02 (the frontend widget test) is the last step before
+the hold, and 04-03 runs afterwards together with the remaining gates.
+
+When 04-03 does run, it still splits in two: the correctness prose can be written from the code, but the
+Playwright screenshot regeneration needs a live instance with a premium licence - the very instance the
+user is looking at during the hold. Regenerating them is a separate decision from writing the prose.
+
 ## Remaining plan
 
-Phase 02 (4 steps) → phase 03 (5) → phase 04 (4), then **refactor (L1-L6) → adversarial review →
-mutation (Stryker, ≥80%)**. Mutation runs **LAST on frozen code** — any edit afterwards shifts line
-ranges and invalidates the score. Then DES integrity verification, then finalize **without pushing**.
+Phase 02 (4 steps) → phase 03 (5) → phase 04 steps 01-02, then **HOLD for the user's live check**.
+Afterwards, and only on their word: **refactor (L1-L6) → adversarial review → mutation (Stryker, ≥80%,
+step 04-04)**. Mutation runs **LAST on frozen code** — any edit afterwards shifts line ranges and
+invalidates the score. Then DES integrity verification, then finalize **without pushing**.
 
 Full per-step detail is in `deliver/roadmap.json`. Every finding so far is in `feature-delta.md` under
 `## Wave: DELIVER / [WHY] Upstream issues found while implementing` (U-1…U-9) and
