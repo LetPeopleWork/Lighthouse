@@ -1,6 +1,19 @@
 # ADR-195: The update queue is three lanes, one channel and one reader each, keyed by update type
 
-**Status**: Accepted (DESIGN, 2026-09-18; interaction mode PROPOSE)
+**Status**: **SUPERSEDED BY EVENTS — the three lanes shipped and were reverted the same day** (2026-09-22).
+Commit `f216ef558` (*"revert(update-queue): back out the lanes — concurrent refreshes lose feature
+ownership"*) backed the mechanism out entirely, deleting the whole `UpdateQueueLanes` test tree along with
+it. The update queue at HEAD is **not** three lanes with one channel each, and nothing in this file
+describes live code.
+
+Only the `story-5877` section of `docs/product/architecture/brief.md` recorded the reversal, so this ADR
+went on reading `Accepted` for four days. Anyone sizing a queued workload against it concludes their work
+gets a lane of its own — false at HEAD. Epic #4172's DESIGN wave reached for exactly that conclusion when
+costing a fallback, which is how this surfaced.
+
+Read `f216ef558` and the brief's `story-5877` section before treating any decision below as live.
+
+**Original status, retained for the record**: Accepted (DESIGN, 2026-09-18; interaction mode PROPOSE)
 **Date**: 2026-09-18
 **Feature**: story-5877-update-queue-lanes (ADO User Story #5877, slice 01)
 **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
