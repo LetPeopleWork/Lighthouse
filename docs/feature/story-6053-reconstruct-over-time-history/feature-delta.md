@@ -2604,6 +2604,75 @@ argument rather than passing `clock.Today` - that is what it means, and it also 
 setups in `ProcessBehaviorRecordingHandlerTests` and `SnapshotRecordedDayInstanceZoneTest` matching,
 which would otherwise force edits to test files outside the step's boundary.
 
+### U-41 — Instances eight and nine of the house pattern, found by reading the calculator rather than by sabotage
+
+Both came from one seeding decision, and both were in the scenarios that were supposed to prove 03-04.
+
+`GivenTheTeamFinishedOneItemADayFrom` seeds exactly one item per day, so daily throughput is the
+constant series `1,1,1,...`. `XmRCalculator.Calculate` derives the average and both limits from the
+baseline values alone, and a constant series collapses the moving range to zero - every window, rolling
+or pinned, yields the same triple.
+
+**(a) The second half of `ThenTheLimitsHoldSteadyAcross` could not fail.**
+`Distinct().Count() == 1` reads as "the pinned stretch was respected", but under a flat series it is
+satisfied by an implementation that ignores the pin entirely and recomputes a rolling window per day.
+Only the `Is.Not.Empty` half was load-bearing - which is, precisely, the half that failed in the
+crafter's run. So 03-04's criterion 3, *a pinned-baseline owner's correct series is flat limits*, had no
+falsifiable test at all.
+
+**(b) `A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history` asserted
+nothing about its own name.** `ThenTheLimitsAreFreeToMoveAcross` checked only `Is.Not.Empty`. Under the
+flat seed the limits are provably identical on every day, so "free to move" was not merely unasserted -
+it was **false of the data the scenario seeds**. It passed identically against an implementation drawing
+every day from one fixed window, which is the very thing its sibling exists to distinguish it from. The
+two scenarios agreed with each other instead of discriminating.
+
+**Both are now fixed by a second seeder, deliberately alongside the flat one rather than replacing it.**
+The new owner finishes nothing at weekends and finishes one more item per month as time passes. Each
+half is load-bearing for a different reason and the code says which: the quiet weekend gives the band
+its **width** (limits are drawn from day-to-day movement, so a flat owner has a centre and no spread),
+and the monthly climb is what makes a rolling stretch and a pinned one give **different** answers.
+
+**The trap that nearly recurred, and the general form worth remembering.** The first pattern tried was
+`3 + (day.DayNumber % 5)`, copied from the delivery-size seeder. Period 5 divides the 30-day window, so
+every rolling window holds six whole cycles, the sum never changes, and exactly one triple comes out -
+vacuous again in a new costume. It was caught by modelling the pattern against `XmRCalculator` before
+writing any C#. **A periodic fixture whose period divides the analysis window produces a constant
+statistic, and therefore an assertion about change that cannot fail.** A pure trend fails differently:
+the moving range collapses to a fraction and the band has no width at all.
+
+The tuning was then verified rather than hoped for - the model predicted five distinct triples over the
+period and the product stored exactly those five.
+
+**The flat seeder is now load-bearing, not merely incumbent.**
+`A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one` depends on
+the collapsed band the constant series produces. Unifying the two seeders would silently disarm that
+scenario's collapsed-band cover. The new seeder's docstring says so at the point where someone would
+make that change.
+
+### U-42 — CORRECTION: the sabotage I specified for 03-04 was wrong, and the two assertions fail to two different edits
+
+I briefed the acceptance designer that 03-04's falsifying sabotage was "make the writer pass
+`Clock.Today` instead of the reconstructed day, and the limits should start moving". **That is wrong**,
+and the designer checked it against the code rather than writing it down as given.
+
+With a stretch pinned, `BuildDailyRunChartProcessBehaviourChart` computes the band from the baseline
+window alone - `getRunChartData(baselineStart, baselineEnd)` feeds `XmRCalculator`, while the display
+window feeds only the data points and the special-cause classification. Re-anchoring the display window
+therefore leaves the stored triple **identical**. What that sabotage actually does is fail validation
+again, write no rows, and kill the FIRST assertion on an empty series.
+
+So the two halves answer two different questions and fail to two different edits:
+
+| assertion | what it answers | the edit that fails it |
+|---|---|---|
+| `Is.Not.Empty` | the stretch was judged as of the day being rebuilt | judge it against `Clock.Today` instead |
+| `Distinct().Count() == 1` | the limits came from the pinned stretch, not a rolling one | ignore the pin, feed the display window in as the baseline |
+
+Had my wording gone into the scenario unaltered, the next agent would have looked for movement that
+cannot occur - and might have recorded one sabotage as proving both halves. Both forms are now in the
+docstring, with a note that neither is run-verified while the scenarios are red.
+
 ### Open, carried forward
 
 - **`Program.cs` was missing from step 01-05's `files_to_modify`**, though a DI-registered singleton with
