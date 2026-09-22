@@ -10,8 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// long each tab happened to be recorded for.
     ///
     /// Driving port: the shipped percentiles-over-time read endpoint, on both the team and the portfolio
-    /// route. The two scenarios still marked pending are waiting on the part of the behaviour that keeps
-    /// one owner's tabs from filling each other's work in again.
+    /// route.
     ///
     /// Step definitions live in Slice06EveryPercentileTabSpansTheSamePeriodSpecifications.cs.
     /// </summary>
@@ -21,8 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-06")]
     public partial class Slice06EveryPercentileTabSpansTheSamePeriodTest
     {
-        private const string Pending = "Pending: reconstruction of missing over-time days is not built yet (story 6053, slice 02).";
-
         /// <summary>
         /// Coverage and nothing else: the period asked for comes back whole. What each look-back makes of
         /// a day is a different question, and the scenario below is the one that asks it.
@@ -146,7 +143,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-02 @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Flicking_between_tabs_does_not_start_the_filling_over_again()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -168,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-02 @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task Every_tab_covers_the_same_period_once_the_chart_has_filled_in()
         {
             var teamId = GivenATeamStillBeingRefreshed();
