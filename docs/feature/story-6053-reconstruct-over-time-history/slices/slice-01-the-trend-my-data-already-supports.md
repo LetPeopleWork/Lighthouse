@@ -47,8 +47,12 @@ Write nothing. Persist findings to `docs/feature/story-6053-reconstruct-over-tim
 - CT-60, CT-90, work-item age, portfolio scope → slice 02.
 - Every PBC family → slice 03.
 - Empty-state copy and docs → slice 04.
-- Marking reconstructed points (D6 says no — unless SPIKE-01 withdraws it).
-- Gating the *forward* recorder's zero-write path.
+- Marking reconstructed points (D6 says no — SPIKE-01 confirmed it for the mechanism, so this stays out).
+- ~~Gating the *forward* recorder's zero-write path.~~ **Moved IN scope by DDD-13 (2026-09-22).** Gating
+  only reconstruction would make D6 false: a day's row would depend on which path reached it first, and
+  fill-if-absent makes the recorder's all-zero row permanent. Both paths share one gate. This is a
+  behaviour change to shipped code — it needs a release-notes line and a `docs/metrics/predictability.md`
+  update. Rows already written stay; no repair migration.
 - The ADR-108 / ADR-109 amendments themselves (written at finalization, not mid-slice).
 
 ## Learning hypothesis

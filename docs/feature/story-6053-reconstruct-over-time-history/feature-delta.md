@@ -189,8 +189,16 @@ if (chart.Status != BaselineStatus.Ready) return;
 if (chart.Average == 0 && chart.UpperNaturalProcessLimit == 0) return;
 ```
 
-Scope note: the same zero-write path exists in the *forward* recorder today. This story gates the reconstruction
-path. Whether to gate the forward recorder too is left to DESIGN as an adjacent question, not assumed.
+Scope note: the same zero-write path exists in the *forward* recorder today. DISCUSS left "gate that one too?"
+as an adjacent question for DESIGN rather than assuming either answer.
+
+> **DESIGN answered it: yes, both paths (DDD-13, 2026-09-22).** Gating only reconstruction would make D6
+> false — a day's row would depend on which path reached it first, and fill-if-absent (DDD-9) makes the
+> recorder's all-zero row permanent, so "a reconstructed point *is* the recorded point" would carry a
+> standing invisible exception. **Consequence, accepted rather than buried: the forward recorder stops
+> writing all-zero percentile rows, which is a behaviour change to a shipped feature.** Rows already written
+> stay; no repair migration (expand-only). Carried in the ADR-107 amendment, the release notes and
+> `docs/metrics/predictability.md`.
 
 ### D8 - The forward-only empty-state copy becomes false and must be revised.
 
@@ -702,3 +710,376 @@ difference invisible and unrecoverable after the fact. Accepted deliberately, me
 | **Revise the copy in slice 04** (chosen) | The reachable empty states are not knowable until slices 01–03 exist, so the copy is written last, against the states that actually remain |
 | Leave the forward-only copy | **Rejected.** It becomes false in two new ways once reconstruction exists. The current copy is itself an example of this failure — written when forward-only was the only possibility, and now outlived by it |
 | Write the new copy first | **Rejected** for the reason the chosen option gives: it would be guessing at which states survive, which is how the current copy got stale |
+
+---
+
+## Wave: DESIGN / [REF] Design decisions
+
+Interaction mode: **PROPOSE**. Date: 2026-09-22. Architect: Morgan. Density: Tier-1.
+D1–D8 are locked upstream and are not re-opened here. Two contradictions found against them are
+flagged under Open questions rather than worked around.
+
+**DDD-1 — The unit of reconstruction is `(owner, window)`, never `(owner, family, day)`.**
+One ask per owner per read; the pass covers every percentile family and every PBC family for that
+scope. A reader on the WIA tab pays for the cycle-time tabs too, deliberately: US-02 exists because
+the tabs must not contradict each other about how much history exists, and a family-keyed unit would
+fill them at different times and to different depths. US-02 AC5 ("switching tabs does not trigger a
+second reconstruction") becomes structural — both tabs produce the same key.
+
+**DDD-2 — The trigger lives in a decorator over each series query port, not on the controller and not
+inside the query.** `PercentilesOverTimeSeriesQuery` / `ProcessBehaviorSeriesQuery` keep their
+signatures and their bodies. Two new decorating implementations are registered as the interfaces; each
+delegates the read, then hands the rows and the requested window to the reconciler, then returns the
+rows untouched. The controller would be four call sites and a controller that computes; the inner
+query would be a component whose name stops describing it.
+
+**DDD-3 — The read path may ask; only the filler may write.** `IOverTimeGapReconciler` has one method,
+returns nothing, and holds no repository. Nothing reachable from a controller action depends on a
+snapshot repository. "A GET wrote to the database on the request thread" is not representable from the
+read side, rather than being a thing the tests happen not to catch.
+
+**DDD-4 — The carrier is a filler of this feature's own, not `IUpdateQueueService`.** A hosted service
+with one bounded channel, one reader, a per-key in-flight set, a scope per pass and a drain on
+shutdown — the `UpdateQueueService` *pattern*, not the class. The queue is a single sequential lane in
+shipped code (ADR-195's three lanes were reverted with story-5877), so enqueuing a multi-second
+cosmetic backfill there would put it in front of every entity refresh. Full evidence in ADR-207.
+
+**DDD-5 — Gap detection on the read path is a predicate over rows already materialised.** No extra
+query runs on the read path. The ceiling is `min(window end, DateOnly(owner.UpdateTime))` — free,
+because the owner is already loaded. The **floor is not resolved on the read path**; it is resolved in
+the pass, because resolving it means touching `WorkItems` and the budget is 50 ms.
+
+**DDD-6 — D4's cap is locked at 90 days *per pass*, not 90 days of reach.** A pass writes at most 90
+days and stops at a wall-clock budget, the floor, or the ceiling. A year-wide picker fills in
+successive loads. The walk is **resumable by construction**, which is the honest answer to SPIKE-01's
+stated inability to extrapolate cost to a large instance. A constant in the filler, not an
+`AppSettings` row.
+
+**DDD-7 — Convergence is designed, and the reconciliation memo is what makes it so.** Once a window is
+dense the predicate is false and the cost is zero. The thing that would stop it converging is a
+permanently unfillable day — before the floor, refused by the absence gate, or PBC-not-`Ready` — which
+would otherwise be re-detected on every read forever. The filler keeps an in-memory per-owner memo of
+the resolved floor and the refused days; the predicate subtracts it. The memo is **optimisation only,
+never correctness**: invalidated by `TeamDataRefreshed` / `PortfolioFeaturesRefreshed`, and losing it
+to a restart costs one wasted pass.
+
+**DDD-8 — Idempotency is three layers, deliberately not one.** Enqueue: the in-flight key set collapses
+concurrent asks. Write: **fill-if-absent**, never update-in-place (US-01 AC8). Collision: the ADR-106
+unique index, whose violation is absorbed **per day** and the pass continues. Two replicas can both run
+a pass — that is wasted CPU, never a duplicate row and never a wrong value.
+
+**DDD-9 — One day-writer per table, two named operations.** `RecordToday` (overwrite — today's value
+legitimately changes) and `FillDayIfAbsent` (write only if absent). Two operations, **not** one with a
+mode flag: the two policies are two statements about time, and a boolean is where a reader stops being
+able to tell which one a call site meant.
+
+**DDD-10 — The family descriptors move into the shared writer.** `CycleTimeHorizons`,
+`WorkItemAgeHorizons`, `TeamReaders`/`PortfolioReaders`, `LookbackDaysFor`. One list per scope, so US-03
+AC1's "matches `TeamReaders`/`PortfolioReaders` exactly" becomes an assertion about one list rather than
+an agreement between two — the failure mode ADR-109's slice-02 amendment already recorded happening.
+
+**DDD-11 — D1 and D6 are made structural, not tested-for.** Because there is one code path, a
+reconstructed value cannot drift from a recorded one by an edit to one side. SPIKE-01's 4/4 becomes a
+standing regression test, not the guarantee.
+
+**DDD-12 — Every today-anchor on the PBC path becomes an explicit as-of day, defaulting to
+`Clock.Today`.** Threaded to `BaselineValidationService.Validate` and to the `DoneItemsCutoffDays`
+cutoff. Forward recorder and all six point-in-time PBC widgets pass the default and are byte-identical.
+Reconstruction passes D. A pinned-baseline owner's correct series is **flat limits, not an empty one**
+(US-03 AC3/AC4). Named fallback if this reaches further than slice 03's budget: refuse PBC
+reconstruction for pinned-baseline owners with explicit copy — never silently produce nothing.
+
+**DDD-13 — The absence gate applies to BOTH paths.** This answers the adjacent question DISCUSS left
+open (D7 scope note). Gating only reconstruction would make D6 false: a day's row would depend on which
+path reached it first, and fill-if-absent makes the recorder's all-zero row permanent. Predicate: all
+four percentiles zero. **This is a behaviour change to a shipped feature** — release notes and
+`docs/metrics/predictability.md`. Rows already written stay; no repair migration (expand-only).
+
+**DDD-14 — `invalidateReadCache()` runs once per pass, in a `finally`.** A pass warms up to 90
+historical `(owner, window)` cache entries per family that no UI will read. Accepted cost: it also
+discards the live entries the dashboard is using, costing one recompute. See Open questions for the
+cheaper alternative that depends on a capability the cache may not have.
+
+**DDD-15 — The demo backfill is not touched, and the two paths are reconciled by fill-if-absent.**
+`DemoPercentilesBackfillHandler` backdates `RecordedAt < today`; the filler steps over those rows
+rather than correcting them. DoD 9 answered by decision, not discovered at DELIVER.
+
+**DDD-16 — Slice 04 separates the new empty states with one true sentence, not a response field.**
+Reconstruction adds two reachable empty states (window before the floor; ask enqueued but unfinished).
+Both are covered by "some days in this range have no recorded or reconstructible value". Adding a
+`hasHistory`-style boolean reopens the envelope question ADR-108 has now rejected twice and must be
+re-decided there, not slipped in.
+
+---
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path / symbol | Change | Responsibility |
+|---|---|---|---|
+| `GapAskingPercentilesOverTimeSeriesQuery` | `Services/Implementation/` | **NEW** | Decorates `IPercentilesOverTimeSeriesQuery`; delegates, then asks. Holds no repository. |
+| `GapAskingProcessBehaviorSeriesQuery` | `Services/Implementation/` | **NEW** | Same, for the PBC family. |
+| `IOverTimeGapReconciler` + impl | `Services/{Interfaces,Implementation}/` | **NEW** | The predicate (clamp, scan, memo subtraction) and the ask. Returns `void`. |
+| `IOverTimeHistoryFiller` + `OverTimeHistoryFiller` | `Services/{Interfaces,Implementation}/BackgroundServices/` | **NEW** | Bounded channel, single reader, in-flight key set, DI scope per pass, `DrainAsync`. |
+| `ReconstructionMemo` | beside the filler | **NEW** | Per-owner resolved floor + refused days. In-memory, bounded, event-invalidated. |
+| `IPercentileSnapshotWriter` + impl | `Services/{Interfaces,Implementation}/` | **NEW (by extraction)** | `RecordToday` / `FillDayIfAbsent`; owns `CycleTimeHorizons`, `WorkItemAgeHorizons`, the absence gate, the upsert. |
+| `IProcessBehaviorSnapshotWriter` + impl | `Services/{Interfaces,Implementation}/` | **NEW (by extraction)** | Same shape; owns `TeamReaders`/`PortfolioReaders`, `LookbackDaysFor`, the `Ready` + collapsed-band gates. |
+| `PercentilesOverTimeRecordingHandler` | `.../DomainEvents/` | **EXTEND** | Keeps the event shape, containment, log template, cache guard. Delegates computation to the writer. |
+| `ProcessBehaviorRecordingHandler` | `.../DomainEvents/` | **EXTEND** | Same. |
+| PBC chart builders (4) + `GetFeatureSizeProcessBehaviourChart` | `Services/Implementation/.../Metrics` | **EXTEND** | Additive as-of-day parameter defaulting to `Clock.Today`. |
+| `PercentilesOverTimeWidget.tsx`, `PbcOverTimeWidget.tsx` | `Frontend/.../MetricsView/` | **EXTEND (slice 04)** | Revised empty-state copy. No new props, no new fetch. |
+| `docs/metrics/predictability.md` | docs | **EXTEND (slice 04)** | Forward-only note and demo-Throughput-only note both change meaning; absence gate is now user-visible. |
+| `Program.cs` composition root | backend | **EXTEND** | Register the two decorators as the interfaces, the reconciler, the filler as a hosted service. |
+
+Nothing here is a new table, a new route, a new DTO, a new EF migration, a new RBAC gate or a new
+external integration.
+
+---
+
+## Wave: DESIGN / [REF] Driving ports
+
+Unchanged in shape; both acquire the right to *ask*, never to write.
+
+```
+GET .../teams/{id}/metrics/percentiles-over-time?horizon=&metricType=&startDate=&endDate=
+GET .../teams/{id}/metrics/process-behavior-over-time?type=&startDate=&endDate=
+GET .../portfolios/{id}/metrics/percentiles-over-time?...
+GET .../portfolios/{id}/metrics/process-behavior-over-time?...
+```
+
+No new route, no request-shape change, no response-DTO change. Therefore **no CLI/MCP client version
+gate, no RBAC change, no migration** — and, separately from compatibility, the reachability question
+epic 5427 learned to ask at slice 04: `lighthouse-clients` `5bcb2a6` already exposes both endpoints,
+and this story changes neither their request nor their response, so **no client work is required**.
+
+The response stays read-only. Writes reach the tables only through the ADR-107 handlers' driven ports
+and the filler's.
+
+---
+
+## Wave: DESIGN / [REF] Driven ports and adapters
+
+| Port | Adapter | Direction | Notes |
+|---|---|---|---|
+| `IPercentilesOverTimeSnapshotRepository` | `RepositoryBase<T>` / EF Core | out | Read `GetSeries`; write `Add` + `Save`. Unique natural key is the concurrency backstop. |
+| `IProcessBehaviorSnapshotRepository` | `RepositoryBase<T>` / EF Core | out | Same. |
+| `ITeamMetricsService` / `IPortfolioMetricsService` | existing | out | Called with a **shifted window**; this is the whole of D1. Warms cache entries the pass must invalidate. |
+| `IWorkItemRepository` | existing | out | Earliest stored item day → the data floor. Read **in the pass only**. |
+| `ILighthouseClock` | existing | out | `Today` / `TodayAsUtcMidnight`. The as-of day comes from the seam, never by re-reducing an end date. |
+| `IServiceScopeFactory` | ASP.NET Core DI | out | One scope, one `DbContext`, per pass. |
+| `IOverTimeGapReconciler` | in-process | out from the read | **Restricted capability**: one void method, no repository. |
+| `ILogger<T>` | Serilog | out | Structured pass-failed signal, per family, mirroring the recorders' template shape. |
+
+No new external integration ⇒ **contract testing (Pact) N/A**, recorded rather than silently skipped.
+
+---
+
+## Wave: DESIGN / [REF] Technology choices
+
+| Choice | Technology | License | Rationale |
+|---|---|---|---|
+| Background carrier | `System.Threading.Channels` + `BackgroundService` | MIT (.NET runtime) | Already the codebase's queue idiom; zero new dependency. |
+| Dedupe / memo | `ConcurrentDictionary` | MIT | In-process, bounded, no persistence needed because both are optimisation-only. |
+| Persistence | EF Core, existing tables | MIT | No migration; ADR-106 shape unchanged. |
+| Enforcement | NUnit ArchUnit-style tests in `Lighthouse.Backend.Tests/Architecture` | MIT | The dependency rules in DDD-3 and DDD-10 are executable, not prose. |
+
+No new technology, no proprietary component, nothing outside the shipped stack.
+
+---
+
+## Wave: DESIGN / [REF] Decisions
+
+| # | Decision | Alternatives rejected | Where |
+|---|---|---|---|
+| 1 | Trigger in a decorator over each query port | controller (4 sites, computes); inside the query (name lies) | DDD-2, ADR-207 §1 |
+| 2 | Own filler, not `IUpdateQueueService` | the queue (single lane, reverted lanes, operator-task surface); `IUpdateExecutionLock` alone (unenforced invariant); scheduler; inline; `Task.Run` | DDD-4, ADR-207 §2 |
+| 3 | Unit = `(owner, window)`, all families | per-family, per-day | DDD-1, ADR-207 §3 |
+| 4 | Predicate over materialised rows; floor resolved in the pass | `SELECT DISTINCT RecordedAt` on the read path | DDD-5, ADR-207 §4 |
+| 5 | Cap = 90 days **per pass**, plus a wall-clock budget | 90 days of reach; uncapped; `AppSettings` knob | DDD-6, ADR-207 §5 |
+| 6 | Reconciliation memo, optimisation-only | marker rows (needs a table + migration, pollutes the series); nothing (never converges) | DDD-7, ADR-207 §6 |
+| 7 | Fill-if-absent + unique index + in-flight set | upsert (breaks US-01 AC8); a distributed lock | DDD-8, ADR-207 §7 |
+| 8 | One writer, two named operations | a second entry point on the handler; a separate service with duplicated family tables; a `WritePolicy` flag | DDD-9/10, ADR-208 §1 |
+| 9 | As-of day threaded, defaulting to today | leave it today-anchored (silent empty series); refuse pinned-baseline owners (fallback, kept); change `BaselineValidationService` itself | DDD-12, ADR-208 §2 |
+| 10 | Absence gate on both paths | gate reconstruction only, as D7's literal text says | DDD-13, ADR-208 §3 |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+**HARD GATE.** Every component with overlap is classified, with evidence, contract shape, mutation
+universe, and the mechanism that will assert the shape.
+
+| Existing component | Overlap | Verdict | Evidence | Contract shape | Universe | Assertion mechanism |
+|---|---|---|---|---|---|---|
+| `IPercentilesOverTimeSeriesQuery` / impl | reads the series this story triggers on | **EXTEND by decoration** — interface and impl unchanged, wrapped | Both controllers already converge here; two seams beat four call sites | pure-function (return-only) on the inner impl | none | ArchUnit: no snapshot repository reachable from a controller action |
+| `IProcessBehaviorSeriesQuery` / impl | same | **EXTEND by decoration** | same | pure-function | none | same |
+| `TeamMetricsController` / `PortfolioMetricsController` | hold the endpoints | **NO CHANGE** | the decorator is registered as the interface; the actions are byte-identical | pure-function | none | existing controller tests; command-count assertion on the read path |
+| `IUpdateQueueService` | generic background execution, dedupe, drain, cross-replica lock | **CREATE NEW (pattern reuse)** | `UpdateQueueService.cs` holds **one** `Channel<Func<Task>>` and one reader; ADR-195's three lanes were shipped and **reverted** (brief.md story-5877 note); ADR-195's own Context records 3h38m of team-refresh starvation behind one held item; a new `UpdateType` is a cancellable Task-Manager row needing three `satisfies Record<UpdateTaskType,…>` tables plus a hand-maintained TS union; an admitted key keeps `HasActiveWork()` true, which gates DB maintenance | bounded-change (writes only snapshot rows for days it declared missing) | the clamped window × the family set for the scope | per-day unique-index violation absorbed; pass-level assertion that no day outside the clamp was written |
+| `IUpdateExecutionLock` | cross-replica single-flight | **CREATE NEW / not reused** | keyed by `UpdateKey` ⇒ needs an `UpdateType` member that must never be admitted — an invariant with nothing enforcing it, bought against duplicate work the unique index already makes harmless | n/a | n/a | n/a |
+| `PercentilesOverTimeRecordingHandler` | computes and writes a day | **EXTEND by extraction** | holds `CycleTimeHorizons`/`WorkItemAgeHorizons` and the upsert that reconstruction needs; one code path is what makes D1/D6 structural | bounded-change (one day, declared families) | `(owner, family, today)` | ArchUnit: no horizon list outside the writer |
+| `ProcessBehaviorRecordingHandler` | same, PBC | **EXTEND by extraction** | holds `TeamReaders`/`PortfolioReaders`/`LookbackDaysFor`; US-03 AC1 asserts the sets match "exactly", which duplication would turn into an agreement between two lists | bounded-change | `(owner, family, today)` | ArchUnit: no reader tuple outside the writer; family-set equality test per scope |
+| `DemoPercentilesBackfillHandler` | writes backdated rows to the same tables | **NO CHANGE** | synthesis, demo-gated; fill-if-absent means the filler steps over its rows — the interaction is decided (DoD 9), not discovered | bounded-change, demo-gated | demo owners only | existing demo-gate AT; a new test that a demo owner's backdated rows survive a pass |
+| `ITeamMetricsService` / `IPortfolioMetricsService` | the shifted-window computation | **EXTEND (read only)** | D1 *is* these calls with the window moved; no method added for percentiles | pure-function as called (returns values) | none | fidelity test against a genuinely recorded day |
+| PBC chart builders + `BaselineValidationService` | today-anchored validity | **EXTEND (additive parameter, default = today)** | the anchor must be *chooseable*, not *different*; every existing caller stays byte-identical | pure-function | none | test where today's anchor and D's anchor disagree — one where they agree cannot fail |
+| `BlockedCountSnapshot` / `DeliveryMetricSnapshot` reconstruction | the same argument may apply | **OUT OF SCOPE** | neither reported, neither in the work item (DISCUSS out-of-scope) | n/a | n/a | n/a |
+| `PercentilesOverTimeWidget.tsx` / `PbcOverTimeWidget.tsx` | render the series | **EXTEND (copy only, slice 04)** | no new prop, no new fetch, no chart-geometry change | pure-function (render) | none | RTL copy tests per empty state |
+
+**Contract-shape note for the crafter.** The filler is the only **unbounded-preservation** risk in this
+design, and it is contained: it must write nothing outside the clamped window, nothing for a day that
+already has a row, and nothing for a day the gates refuse. Those three are assertions over the table
+after a pass, not comments.
+
+---
+
+## Wave: DESIGN / [REF] C4
+
+### Level 1 — System Context (no delta)
+
+```mermaid
+C4Context
+  title System Context — Lighthouse (no delta for story 6053)
+  Person(coach, "Flow coach / delivery lead", "Reads over-time trends in a flow review")
+  System(lh, "Lighthouse", "Forecasting and flow metrics")
+  System_Ext(tracker, "Work tracking system", "ADO / Jira / Linear / ServiceNow")
+  Rel(coach, lh, "Opens the Predictability tab of")
+  Rel(lh, tracker, "Fetches work items from")
+  UpdateRelStyle(coach, lh, $offsetY="-20")
+```
+
+The connector is **never** asked for trend data. Reconstruction reads only work items Lighthouse
+already stored, which is why it is connector-independent by construction — though SPIKE-01 records
+that only ADO owners were measured.
+
+### Level 2 — Container (delta)
+
+```mermaid
+C4Container
+  title Container Diagram — story 6053 delta (new elements marked NEW)
+  Person(coach, "Flow coach")
+  Container_Boundary(be, "Lighthouse backend (modular monolith, ports-and-adapters)") {
+    Container(ctrl, "Metrics controllers", "ASP.NET Core", "Serves the two over-time series endpoints")
+    Container(deco, "Gap-asking query decorators", "C# — NEW", "Delegates the read, then asks for missing days")
+    Container(query, "Series query ports", "C#", "Reads persisted rows, unchanged")
+    Container(recon, "Gap reconciler", "C# — NEW", "Clamps the window, scans for holes, subtracts the memo")
+    Container(filler, "Over-time history filler", "C# hosted service — NEW", "Runs one pass per owner off the request path")
+    Container(memo, "Reconciliation memo", "in-memory — NEW", "Remembers the floor and the refused days")
+    Container(writer, "Snapshot day-writers", "C# — NEW by extraction", "RecordToday and FillDayIfAbsent, one absence rule")
+    Container(handlers, "Recording handlers", "C#", "Record today on the refresh events, unchanged in trigger")
+    Container(metrics, "Metrics services", "C#", "Computes percentiles and PBC limits for a window")
+    ContainerDb(snap, "Snapshot tables", "SQLite / PostgreSQL", "PercentilesOverTimeSnapshot, ProcessBehaviorSnapshot")
+    ContainerDb(items, "WorkItems", "SQLite / PostgreSQL", "Stored item history")
+  }
+  Container(ui, "Predictability widgets", "React + TypeScript", "Plots the dated series")
+
+  Rel(coach, ui, "Opens")
+  Rel(ui, ctrl, "Requests a dated series from")
+  Rel(ctrl, deco, "Reads the series through")
+  Rel(deco, query, "Delegates the read to")
+  Rel(query, snap, "Selects persisted rows from")
+  Rel(deco, recon, "Hands the rows and the window to")
+  Rel(recon, memo, "Subtracts refused days using")
+  Rel(recon, filler, "Asks for a pass on")
+  Rel(filler, items, "Resolves the data floor from")
+  Rel(filler, writer, "Fills each missing day through")
+  Rel(handlers, writer, "Records today through")
+  Rel(writer, metrics, "Computes the day's values with")
+  Rel(metrics, items, "Reads stored items from")
+  Rel(writer, snap, "Persists rows into")
+  Rel(filler, memo, "Records the floor and the refusals in")
+```
+
+Level 3 is **not** produced: the delta is seven components in one bounded context, well under the
+threshold, and the Container diagram already names every arrow.
+
+---
+
+## Wave: DESIGN / [REF] Open questions
+
+| # | Question | Status | Who resolves |
+|---|---|---|---|
+| **OQ-1** | **Fidelity across a configuration change** — the open half of D6. Reconstruction runs against today's state mappings, cycle-time definitions, blocked rules, blackout config and item set. SPIKE-01 could not exercise it (nothing changed in the 17 days covered) and no probe exists. | **OPEN, carried as a named risk.** The cheap mitigation is a sentence in `docs/metrics/predictability.md`, not a flag — D6 rejected the flag. | slice 04 (docs); re-open D6 only on evidence |
+| **OQ-2** | **Per-key cache eviction.** DDD-14 invalidates the owner's whole metrics cache after a pass, costing the dashboard one recompute. Evicting only the historical keys the pass warmed is cheaper — if `ITeamMetricsService` exposes it. | **OPEN.** Default to whole-owner invalidation if it does not; do not add the capability for this. | slice 01 |
+| **OQ-3** | **Wall-clock budget value.** DDD-6 locks 90 days per pass but not the seconds. SPIKE-01's figures are from 621 items on SQLite on a laptop and explicitly do not extrapolate. | **OPEN.** Pick a value in slice 01 and re-measure on the largest instance available before slice 03 adds the PBC families. | slice 01, revisited slice 03 |
+| **OQ-4** | **Non-ADO connectors are unmeasured.** Reconstruction reads stored items rather than the connector, so independence is plausible by construction — but the Jira connection in the dev DB has no owner attached and there is no Linear or ServiceNow data at all. | **OPEN, low risk, unmeasured.** | opportunistic |
+| **OQ-5** | **A wide cycle-time distribution is unmeasured.** The only available owner closes most items the same day, so every percentile is 1 or 2 and a subtly-wrong reconstruction would still score 4/4. | **OPEN.** Re-run the fidelity probe if a team spread across 1–40 days becomes available. | opportunistic |
+
+### Flagged against the locked decisions
+
+**FLAG-1 — DDD-12 collides with slice 03's out-of-scope line.** Slice 03 lists "Changing
+`BaselineValidationService` itself, or the baseline feature's semantics" as OUT. The today-anchored
+hazard the same slice exists to confront **cannot** be answered without either changing the anchor —
+which changes `Validate`'s call signature, additively — or refusing PBC reconstruction for
+pinned-baseline owners. DESIGN chooses the first and keeps the second as the named fallback. Neither is
+"leave it and accept a silent empty series", which is the only option consistent with the out-of-scope
+line as written. **The slice brief needs updating, not the decision.**
+
+**FLAG-2 — D7's literal scope makes D6 false.** D7 gates the reconstruction path and explicitly leaves
+the forward recorder to DESIGN. Gating only one path means a day's row depends on which path reached it
+first, and fill-if-absent (US-01 AC8) makes the recorder's all-zero row permanent — so "a reconstructed
+point *is* the recorded point" would have a standing, invisible exception. DDD-13 gates both. This is a
+**behaviour change to shipped code** and is called out as such in the release notes, the metrics docs
+and ADR-107's amendment; it is not folded in quietly.
+
+**FLAG-3 — ADR numbering.** The DESIGN brief named ADR-113 as the next free number. It is not: ADRs run
+to **206**. This story's are **ADR-207** and **ADR-208**.
+
+**FLAG-4 — ADR-195/196/197 describe a reverted design.** They still read `Status: Accepted` and describe
+a three-lane update queue that is not in the code; only the story-5877 note at the end of `brief.md`
+says otherwise. ADR-207 records the discrepancy because its own reasoning depends on the lane count.
+Correcting those three ADRs' status is outside this story and belongs to whoever re-opens #5877.
+
+### Note for the crafter
+
+Per `CLAUDE.md`: **no internal reference may appear in a code comment.** `D5`, `DDD-7`, `ADR-207`,
+`US-01 AC8` and friends name sections of documents a cold reader cannot open. Where a comment is
+genuinely needed, write the reason itself — "a day already carrying a row is left as it is, because a
+recorded value is what was actually observed and a recomputation of it is not an improvement" — not the
+pointer to it.
+
+---
+
+## Wave: DESIGN / [REF] Gates before DELIVER
+
+Peer review (solution-architect-reviewer, 2026-09-22, iteration 1): **APPROVED**, 0 critical, 0 high,
+2 medium. It verified the three load-bearing claims ADR-207 rests on against the code — one channel and
+one reader in `UpdateQueueService`, the three `Record<UpdateTaskType, …>` tables in
+`ActivitySection.tsx`, and the story-5877 revert — and confirmed both flags as genuine rather than
+manufactured. The two medium items are landed below rather than left in a review transcript.
+
+**G-1 — The SQLite concurrent-write probe runs before the filler is expensive to change.**
+ADR-207's Earned Trust table calls for an integration test driving concurrent saves from the filler and
+the update queue against a real SQLite file with the production PRAGMAs, asserting no `SQLITE_BUSY`.
+ADR-195 already described the 10 000 ms `busy_timeout` as "a ceiling, not a guarantee", and the
+reporting deployment for that ADR was on SQLite. Run it in **slice 01**, early enough that the answer
+can still change the design — not at the end, where it can only produce a bug.
+
+**G-2 — The replica-race probe runs on a real SQLite file, never on `InMemory`.**
+`Microsoft.EntityFrameworkCore.InMemory` does not enforce unique indexes, so the collision backstop the
+whole concurrency story rests on is invisible to the unit suite and would pass against an
+implementation that has none.
+
+**G-3 — D6's open half is carried explicitly into DELIVER, not quietly.**
+Fidelity across a configuration change has no probe (OQ-1). The mitigation is a sentence in
+`docs/metrics/predictability.md` — D6 rejected the flag — and it ships with slice 04. DELIVER must not
+close the story with that sentence unwritten; "no probe exists" and "nobody wrote it down" are
+different states.
+
+**G-4 — Slice 03's out-of-scope line is corrected before slice 03 is finalised.**
+See FLAG-1. Threading the as-of day is additive with a default, so no existing caller changes, but the
+slice brief as written forbids it and the hazard cannot otherwise be answered.
+
+### Handoff note for DISTILL — two ACs name internals
+
+US-03 AC1 and AC3 (feature-delta lines 319 and 323) are phrased against internal symbols —
+`ProcessBehaviorRecordingHandler`'s `TeamReaders`/`PortfolioReaders`, and
+`BaselineValidationService.Validate`. They are left as written because the DISCUSS record is locked,
+but DDD-10 moves both symbols, so an acceptance test written literally against those names will drift
+the moment the extraction lands.
+
+The behaviour each AC means, for the acceptance-designer to assert instead of the name:
+
+- **AC1** — every family recorded on a refresh at a given scope is also reconstructed at that scope:
+  five for a team, six for a portfolio, Feature Size portfolio-only. Assert the **set**, so dropping one
+  is a failure rather than a silent capability loss.
+- **AC3** — a reconstructed day's baseline validity is decided as of **that day**, not as of today, and
+  the test says which outcome is expected and why. An owner with a pinned baseline gets flat limits
+  across the window; an empty series is a failure, not an acceptable reading.

@@ -102,3 +102,58 @@ screenshot environment is already Throughput-backfilled, so an owner-scoped or t
 make each newly-added family a permanent no-op while unit tests — which seed fresh owners — stay green.
 Key the guard on `(owner, metricType)` and add a regression test that seeds an owner already backfilled
 with Throughput and asserts the new family still lands.
+
+## Amendment (story-6053, 2026-09-22) — the rejection of real-tenant backfill narrows to *synthesis*
+
+**Status**: Accepted. Narrows one rejected alternative. The demo gate, the demo-only backdating, the
+per-family idempotency guard and the slice-04 Throughput-only scope are all unchanged, and this handler
+is not touched by story 6053.
+
+The Alternatives section rejects:
+
+> **Backfill real tenants too**: would fabricate historical percentiles that were never actually
+> measured — dishonest, and a direct violation of the forward-only D5 decision. **Rejected.**
+
+That rejection is **correct and it stands — for synthesis**, which is what this handler does and all it
+has ever done. `DemoPercentilesBackfillHandler` invents values from a deterministic wave
+(`4 + (dayIndex % 5) + horizon / 30`). Shipping that to a real tenant would put a fabricated trend in
+front of a delivery decision, and nothing in story 6053 makes that less true.
+
+**Recomputation is a different act, and the sentence above was not aimed at it.** Both recorders
+already take a window:
+
+```csharp
+teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate)
+teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)
+```
+
+A missing day `D` is the identical call with the window shifted to `(D − horizon, D)`, stamped
+`RecordedAt = D`. The value is not invented to fill a hole; it is the value that day's computation
+produces from items Lighthouse already stored. SPIKE-01 reproduced all four days the recorder genuinely
+wrote on the dev instance, exactly — the mechanism holds. (Its own caveats are recorded in
+`docs/feature/story-6053-reconstruct-over-time-history/spike/findings.md`: a near-degenerate
+distribution, effectively two distinct observations, and no configuration change in the covered
+period. The last of those is the open half of D6.)
+
+So the rejection reads, from this amendment on:
+
+> **Synthesise history for real tenants**: would fabricate historical percentiles that were never
+> measured — dishonest, and a direct violation of the forward-only D5 decision. **Rejected, and this
+> handler remains demo-only.**
+> **Recompute history for real tenants** from stored work items: not synthesis, and permitted — see
+> [ADR-207](./adr-207-read-triggered-reconstruction-on-its-own-filler.md) and
+> [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md). The forward-only recorder
+> of ADR-107 is unchanged; reconstruction is a second, separate path with its own trigger.
+
+**How the two coexist on a demo instance, decided rather than discovered** (DoD 9). This handler
+backdates rows with `RecordedAt < today`. Reconstruction writes **fill-if-absent** (ADR-208), so it
+steps over every backdated synthetic row instead of correcting it: the two never double-write and never
+fight. A demo instance therefore keeps the synthetic Throughput series the slice-04 amendment above
+describes, and gains reconstructed rows only on the days and families this handler leaves empty — which
+after slice 04 is the five non-Throughput PBC families. The screenshot fixtures are unaffected in the
+days they already cover.
+
+The one thing to watch when this handler *is* eventually extended: a synthetic row and a reconstructed
+row are then both candidates for the same day, and fill-if-absent means whichever path runs first wins
+silently. On a demo connection that is acceptable — both are demo data — but it is not a property to
+carry anywhere near a real tenant.

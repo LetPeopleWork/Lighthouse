@@ -21,9 +21,20 @@ the capped window, for every metric type the toggle offers — not the three poi
 ## OUT of scope
 
 - Empty-state copy and docs → slice 04.
-- Changing `BaselineValidationService` itself, or the baseline feature's semantics.
-- Reconciling `DemoPercentilesBackfillHandler`'s synthetic Throughput backdating with reconstruction — a DoD
-  item, settled at finalization once all three reconstruction slices exist.
+- Changing the baseline feature's **semantics** — what a pinned baseline means, how it is validated, or what
+  a user sets. Unchanged.
+- Reconciling `DemoPercentilesBackfillHandler`'s synthetic Throughput backdating with reconstruction —
+  **answered at DESIGN by DDD-15** (fill-if-absent: the filler steps over backdated demo rows rather than
+  correcting them), so this is no longer an open DoD item to settle at finalization.
+
+> **Corrected 2026-09-22 after DESIGN (FLAG-1).** This brief originally read "Changing
+> `BaselineValidationService` itself, or the baseline feature's semantics" — forbidding the very change the
+> slice needs. DDD-12 threads an explicit as-of day through `Validate(...)` and the `DoneItemsCutoffDays`
+> cutoff, defaulting to `Clock.Today` so the forward recorder and all six point-in-time PBC widgets stay
+> byte-identical. That is an **additive signature change**, not a semantic one. The original line left only
+> "accept a silent empty series", which AC3 below rules out — the brief was wrong, not the decision.
+> DDD-12's named fallback if this over-runs the slice budget: refuse PBC reconstruction for pinned-baseline
+> owners **with explicit copy**, never silently produce nothing.
 
 ## The hazard this slice exists to confront
 

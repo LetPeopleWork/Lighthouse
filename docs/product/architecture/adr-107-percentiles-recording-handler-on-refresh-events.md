@@ -89,3 +89,45 @@ the family, so a per-metric-type value would fragment one alert into several. Th
 Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (the horizon sentinel
 the WIA pass writes), [ADR-109](./adr-109-demo-percentiles-backfill-handler.md) (the demo backfill,
 whose idempotency guard had to become per-family for the same reason).
+
+## Amendment (story-6053, 2026-09-22) — the "separate scheduled/background recorder" rejection is reconciled with a second, read-triggered write path
+
+**Status**: Accepted. Reconciles one rejected alternative with a later decision, and records where the
+per-day computation moves to. The recording handlers' trigger, placement, idempotency, forward-only
+scope and failure isolation are all **unchanged**.
+
+Story 6053 adds a background process that writes into the same two tables these handlers write into.
+Read against the Alternatives section, that looks like a contradiction:
+
+> **Separate scheduled/background recorder**: duplicates the refresh trigger, drifts from the D5
+> "record on refresh" contract, and adds a scheduler with no independent-trigger justification.
+> **Rejected.**
+
+**It is not one, and the reason is the clause that rejection turns on.** Each of the three complaints
+is about a *scheduler* — something that fires on a clock and does the recorder's job again:
+
+| The rejection's complaint | Does reconstruction do it? |
+|---|---|
+| "duplicates the refresh trigger" | **No.** Its trigger is a series read finding a gap in the window it was asked for ([ADR-207](./adr-207-read-triggered-reconstruction-on-its-own-filler.md)). No refresh is involved, and no owner nobody looks at is ever touched. |
+| "drifts from the D5 record-on-refresh contract" | **No.** D5 is untouched: these handlers still record today, on the refresh events, and nothing else does. Reconstruction never writes today; it only fills days in the past that have no row. |
+| "adds a scheduler with no independent-trigger justification" | **The trigger is the independent one.** That clause asks for a reason to run other than "a refresh happened". Story 6053 has it: a user opened a window whose days are missing. A periodic backfiller — which has no such reason — is rejected again in ADR-207 on these same terms. |
+
+So this ADR's rejection stands as written, and applies to exactly what it names. A future reader
+finding a background writer on these tables should read it as bounded by "scheduled", not by
+"background".
+
+**Where the per-day computation goes.** [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md)
+extracts the per-day work and the family descriptors — `CycleTimeHorizons`, `WorkItemAgeHorizons`,
+`TeamReaders`/`PortfolioReaders`, `LookbackDaysFor` — out of these two handlers into a shared writer,
+so that a reconstructed day and a recorded day are the same code rather than two implementations
+agreeing. These handlers keep their `IDomainEventHandler` shape, their per-family inner `try/catch`,
+their recording-failed templates and their `finally { invalidateReadCache(); }` guard; what they lose
+is ownership of the computation, not of the moment.
+
+**One shipped behaviour changes.** The percentile path's zero-write — `BuildPercentiles` over an empty
+list yielding four zeros that `ValueFor(...) ?? 0` persists — is gated in the shared writer, so it now
+applies to **these handlers too**, not only to reconstruction. The reasoning is in ADR-208 §3: gating
+one path and not the other would make a day's row depend on which path reached it first, which is the
+one thing story 6053's D6 says cannot be true. This is the percentile equivalent of the
+`Average == 0 && Unpl == 0` gate `ProcessBehaviorRecordingHandler` has applied to its own family since
+slice 04. Rows already written stay; there is no repair migration.

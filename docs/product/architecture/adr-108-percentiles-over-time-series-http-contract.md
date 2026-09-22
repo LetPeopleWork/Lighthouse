@@ -173,3 +173,63 @@ service method is shaped that way), serialised through the existing `getDateForm
 hooks' caches re-key from selection-alone to selection-plus-range. Therefore: **no CLI/MCP client
 version gate** (no client consumes these two endpoints), no RBAC change, no migration — same conclusion
 as the original Consequences.
+
+## Amendment (story-6053, 2026-09-22) — the endpoints stay read-only in their response, and acquire the right to ask for missing days
+
+**Status**: Accepted. Amends the slice-03b amendment's "**Still read-only**" paragraph. The endpoint
+count, the request shapes, the response DTOs, the empty-state predicate and every rejected alternative
+are unchanged. Driven by story 6053, D2.
+
+The slice-03b amendment locked this property verbatim:
+
+> **Still read-only.** The window is a filter on persisted rows, never a recompute trigger… the widget
+> re-plots the days the pipeline recorded, it never triggers a recompute.
+
+**That sentence no longer holds, and it is replaced by a narrower one.**
+
+> **Read-only in the response.** The response is still a dated series of persisted rows and nothing
+> else — no envelope, no discriminator, no field added. A request whose window contains days with no
+> row may additionally *ask* for those days to be reconstructed. The ask is asynchronous, it never
+> changes what this request returns, and it never makes this request slower.
+
+What changed is the world, not the contract. The forward-only recorder ADR-107 describes only writes a
+day when the instance happens to be up; on a standalone install that produces four dated points across
+a year of stored work items. Story 6053 adds a second write path that **recomputes** a missing day from
+stored items using the recorder's own call with the window shifted — not the synthesis ADR-109
+rightly refuses. See [ADR-207](./adr-207-read-triggered-reconstruction-on-its-own-filler.md) for the
+trigger and the carrier, [ADR-208](./adr-208-a-past-day-is-computed-by-the-recorders-own-code.md) for
+what a reconstructed day is computed from.
+
+**Where the trigger sits, and what it may do.** Not on the controller and not in
+`PercentilesOverTimeSeriesQuery` / `ProcessBehaviorSeriesQuery`. Both query ports keep their read-only
+signatures and their existing implementations, and each gains a decorating implementation registered as
+the interface, which delegates the read and then hands the rows and the requested window to a
+reconciler port. That port returns nothing and holds no repository, so **nothing reachable from a
+controller action can write a snapshot row** — the effect available to a read is "ask", never "write".
+
+**Three properties this amendment does not give up.**
+
+1. *No new route, no new response DTO, no request-shape change.* Additive to the wire in the strictest
+   sense: additive by nothing. Therefore no CLI/MCP client version gate, no RBAC change, no migration —
+   the same conclusion the original Consequences reached, reached again for a different reason.
+2. *The latency envelope.* Gap detection is a scan over the rows this request already materialised plus
+   a dictionary lookup. No additional query runs on the read path; in particular the data floor is
+   resolved inside the background pass, never here. The story's KPI is < 50 ms over today's p95 for a
+   gap-discovering request.
+3. *No envelope.* The original rejection of a discriminated envelope stands, and so does D10's
+   client-side empty-state disambiguation.
+
+**The empty-state predicate is revisited, not replaced.** Reconstruction adds two reachable empty
+states the slice-03b table does not name: a window entirely before the data floor, and a window whose
+reconstruction has been asked for but has not finished. Slice 04 resolves them with a sentence true of
+both — "some days in this range have no recorded or reconstructible value" — rather than by adding the
+"has any history" signal this ADR already rejected twice. A precise sentence that is sometimes false is
+worse than a vaguer one that is always true, which is the lesson the superseded forward-only copy
+taught. If slice 04 finds the two states genuinely must be separated, the cheapest honest addition is a
+boolean on the response, and that **reopens the envelope question and must be re-decided here** — it
+may not be slipped in as a field.
+
+**The known defect recorded in the slice-03b amendment** — an owner whose snapshots all predate a
+window that still ends today reading the forward-only copy — becomes **rarer, not closed**. An owner
+past its `UpdateTime` floor still reaches it, because reconstruction refuses the trailing gap by
+design. It stays the tracked follow-up.
