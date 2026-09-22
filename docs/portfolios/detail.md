@@ -88,6 +88,18 @@ For each Feature you will see the forecasted completion date. You'll get four di
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved. If a single item is planned to be done by one team, but this is far down their priority, this will mean that the feature completion will be moving backwards. Lighthouse cares about delivering complete features. You may be able to use such scenarios to kick off a discussion about how work or teams are sliced (as less dependencies mean more effective delivery).
 
+### Forecasted Start
+
+Beside the completion dates, the **Forecasted Start** column answers the other half of the question: the day work on a feature is forecast to *begin*. It reads exactly like the completion column — the same four probabilities, on the same scale — because it comes from the same simulation.
+
+A start date far out is Lighthouse telling you about the queue rather than about the feature. Nothing starts until the teams that will work it are free of everything ordered above it, so the column is the quickest way to see what a long order is actually costing the things at the bottom of it.
+
+A feature that has **already started** shows the day it actually started, at all four probabilities. A date that has happened is a fact, and no probability moves it.
+
+A feature no involved team can be forecast for says so here, exactly as the completion column does.
+
+The column appears wherever features are listed — this page, the [Team](../teams/detail.html#features) page, the [Features page](../features/features.html) and inside a delivery — and it needs no licence. It can also be written back into your work tracking system; see [Data Sync Mappings](../settings/worktrackingsystems.html#data-sync-mappings).
+
 ## Feature WIP
 [Lighthouse forecasts](../../concepts/howlighthouseforecasts.html) are based on the [Order](#feature-order) and the [Feature WIP](../teams/edit.html#feature-wip) of each involved team. You can change this via the [settings of a team](../teams/edit.html#feature-wip) or by using the Quick Settings bar in the portfolio header. Changing Feature WIP will automatically reforecast the completion dates.
 
@@ -371,6 +383,57 @@ Switching from 70% to 95% and watching whether the last bar still lands before y
 ### The target date
 
 Where a delivery has a target date, that day is shaded on the axis. The shading uses the same date shown in the delivery's heading.
+
+### What the bars can tell you
+
+Next to the probability buttons is a second group of buttons, **Show**, offering **Nothing**, your word for teams, **Status** and **Warnings**. One at a time, deliberately: each of them wants the bar's own colour, and a chart answering two questions at once would have to say one of them in something smaller and dimmer.
+
+**Status is what you get if you have never chosen.** Of the four it is the only answer you cannot get anywhere else — which teams work a feature, and what is worth checking about it, are both on the Features table above; whether a bar crosses the target date is not.
+
+A button is offered only where this delivery can answer it. A delivery with no target date and nothing finished has nothing to say about status, so *Status* is absent rather than offered and inert. Where only one of the four applies, the group goes away entirely — a lone button reading *Nothing* is a statement dressed up as a control.
+
+Your choice is remembered, and it is one choice for the page rather than one per delivery. Open another delivery that cannot honour it — you asked for teams, and every feature there has only one — and that delivery shows nothing extra rather than something you did not ask for. Your choice is left untouched, so the delivery that *can* honour it still does.
+
+### Status: how each bar stands against the target date
+
+Each bar takes one colour, and the key above the chart names all three every time, whichever ones this delivery happens to be wearing:
+
+- **Finished** — the work stopped. That bar already ends on the day it stopped rather than on a forecast, so whether it beat the target is not a prediction anyone is making, and Lighthouse does not grade it either way.
+- **Not even started by the target date** — the sharpest case, and it outranks merely finishing late. Every bar that starts after the date also ends after it, so without the ranking you would never see this one; and it is a different conversation, about what the delivery contains rather than about how fast anyone is going.
+- **Finishes after the target date** — everything else that crosses the line.
+
+A bar that is on track keeps the ordinary colour and says nothing. A colour worn by nearly every bar tells you nothing about any of them.
+
+The comparison is day against day: a bar ending *on* the target date is on track, not late by a few hours.
+
+A delivery with no target date can still say what is finished. That is the one verdict it can reach on its own.
+
+### Teams: who works each bar
+
+This splits a feature worked by several teams into a row per team, drawn beneath the feature's own bar, each row carrying that team's own dates, colour and name. The feature's bar itself never moves: it still spans the whole of the work, from the first day any team starts to the last day any team finishes.
+
+A feature only one team works keeps its single bar and wears that team's colour and name, so the view answers *which team* on every row rather than only on the split ones. A key above the chart names every team on the chart, and a team keeps the same colour as you move the probability buttons.
+
+A team whose part cannot be forecast gets no row of its own — there are no dates to draw one from — and is named on the feature's bar instead, with the reason. The split never shows fewer teams than the feature has.
+
+{: .note}
+> Every row is a forecast, including under a bar that begins on a day work really started. Lighthouse records the day the *feature* started, not the day each team joined it.
+
+### Warnings: what is worth checking
+
+This puts the same sentences the [Warnings](../features/features.html#warnings) column carries onto the bars themselves, so a feature cannot read as clean on the chart and flagged in the table. A bar with something to say carries a symbol — an amber triangle where something is wrong, an information mark where it is merely worth knowing — and hovering it reads out every reason at once.
+
+It also carries the one thing only this chart knows: what a feature is waiting on where no line was drawn for the wait.
+
+### Dependencies between bars
+
+Where one feature in the delivery waits on another and the forecast took that wait into account, a line joins the two bars. That is all a line means, and it means nothing else: the reason this bar sits where it does.
+
+Every other wait is said in words on the bar, under **Show → Warnings**, rather than drawn — a line would claim something that is not true. That covers a feature waited on that is **not on this timeline**, one that is here but has **no bar to join to**, and a wait Lighthouse **could not take into account** at all: the two are in no portfolio they share, they are waiting on each other, nothing has been measured to forecast the other from, or this instance has no premium licence. Those last ones also appear in the [Warnings](../features/features.html#warnings) column, in the same words.
+
+Where a portfolio has [set its dependencies aside](./edit.html#ignore-dependencies), that is said once above the chart rather than on every bar.
+
+A delivery whose features wait on each other more than about forty times draws no lines at all and says every wait in words instead. Past that many, lines are a thicket, and a thicket tells you less than none would.
 
 ### Features already under way
 

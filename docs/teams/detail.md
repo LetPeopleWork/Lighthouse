@@ -75,6 +75,8 @@ For each Feature you will see the forecasted completion date. You'll get [four d
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved, not just the one you are currently looking at.
 
+Beside them, the **Forecasted Start** column says when work on each feature is forecast to *begin*, at the same four probabilities — or the day it actually started, for a feature already under way. See [Forecasted Start](../portfolios/detail.html#forecasted-start).
+
 # Forecasts
 It shows you all things related to forecasting for this specific team.
 

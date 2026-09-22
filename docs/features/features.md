@@ -76,6 +76,7 @@ If you move a Feature up and a lower one is still forecast to finish first, that
 - **Completed Features are hidden by default.** The *Hide Completed Features* toggle reveals them. Turning it off does not renumber anything: every position stays exactly as it was, and the hidden Features simply reappear in their places.
 - **Portfolio membership** is shown per row. A Feature that belongs to several Portfolios appears once and lists all of them.
 - **Sorting** the grid by any other column leaves the positions untouched, so you can sort by name or state and still read where each Feature really sits.
+- **Forecasted Start** and **Forecasted Completion** say when work on a Feature is expected to begin and to end, each at four probabilities. A Feature that has already started shows the day it started. See [Forecasted Start](../portfolios/detail.html#forecasted-start).
 
 ## Dependencies
 

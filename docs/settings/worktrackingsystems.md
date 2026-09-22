@@ -77,7 +77,18 @@ For each connection you can configure one or more *Mappings*. Each mapping defin
 | `ForecastPercentile70` | Portfolio | 70th percentile forecast completion date for each feature |
 | `ForecastPercentile85` | Portfolio | 85th percentile forecast completion date for each feature |
 | `ForecastPercentile95` | Portfolio | 95th percentile forecast completion date for each feature |
+| `ForecastedStartPercentile50` | Portfolio | 50th percentile forecast start date for each feature |
+| `ForecastedStartPercentile70` | Portfolio | 70th percentile forecast start date for each feature |
+| `ForecastedStartPercentile85` | Portfolio | 85th percentile forecast start date for each feature |
+| `ForecastedStartPercentile95` | Portfolio | 95th percentile forecast start date for each feature |
 | `SLE Risk` | Team | The chance each in-progress work item has of missing the team's SLE, as a whole number (`86`, not `86%`) |
+
+#### About the Forecasted Start sources
+
+These write the day work on a feature is forecast to *begin* — the same date the [Forecasted Start](../portfolios/detail.html#forecasted-start) column shows.
+
+- **A feature that has already started writes the day it actually started**, whichever percentile the mapping names. A date that has happened is not a forecast, so all four say the same thing about it.
+- **A feature nothing can be said about gets no write at all** — the field is left exactly as it was. Writing anything there would fill it with today's date, in the same shape a real answer arrives in.
 
 #### About `SLE Risk`
 
