@@ -6,7 +6,10 @@
 
 A System Admin decides whether this instance fills in past days. The switch is off on fresh and upgraded
 instances alike. Switching it on takes effect at the next chart open, with no restart. Switching it off keeps
-what was filled and starts nothing new. An empty chart's sentence is true in both positions.
+what was filled and starts nothing new. An empty chart reads one sentence that is true in both positions.
+
+**Decided by the user, 2026-09-24:** one empty sentence in both modes, so the widgets never learn the mode;
+loading demo data does not switch the fill on; the row carries the Preview flag.
 
 ## Why here: after 04-02, before 04-03 and 04-04
 
@@ -17,12 +20,15 @@ what was filled and starts nothing new. An empty chart's sentence is true in bot
 
 ## IN scope
 
-- A new key in `OptionalFeatureKeys` and a new seeded row: off, not premium, and "Preview" if the user agrees
-  (US-05 open question 3). The default applier is enough, because switching it has no side effect.
+- A new key in `OptionalFeatureKeys` and a new seeded row: off, not premium, `IsPreview = true` (#6083 drops the
+  flag via the seeder). The default applier is enough, because switching it has no side effect.
 - One gate at the one place fills start (`OverTimeGapReconciler`), covering UI and Lighthouse-Clients reads alike.
   It reads the switch each time it is used, so switching needs no restart.
-- Both widgets read the mode and choose a sentence. The off sentence lives next to the existing one in
-  `overTimeEmptyState.ts`. When the mode cannot be read, the widgets fall back to the off sentence.
+- The copy change, frontend only: `overTimeEmptyState.ts` gets *"Nothing to show for the selected range. Days
+  appear here as Lighthouse records them."*, replacing the 04-02 sentence. No optional-feature read in the
+  frontend, so the switch is backend-only and #6084 touches only the backend. The widget tests and the E2E page
+  objects/spec that pin the 04-02 sentence change with it.
+- Demo data leaves the switch alone; demo instances show only what the synthesiser writes.
 - Off-state acceptance tests, backend and frontend. Every existing reconstruction fixture, E2E over-time spec and
   `@screenshot` shot that expects filled days switches the fill on in its own arrangement.
 - The ADR-207 amendment: the switch, where the gate sits, and that switching off keeps what was filled.
@@ -53,9 +59,9 @@ doc says "off means off".
 3. With the switch on, the existing reconstruction scenarios pass unchanged. Switching it on needs no restart.
 4. After switching off, filled days still plot and no new fill starts. A pass already running when the switch
    goes off may finish; that is DESIGN's call, and the test states which way it went.
-5. On, an empty chart shows today's sentence unchanged. Off, it shows *"Nothing to show for the selected range.
-   Lighthouse adds a day here only when it is running on that day; this instance is not set to fill in past
-   days."* When the mode cannot be read, it shows the off sentence.
+5. On or off, every empty chart reads *"Nothing to show for the selected range. Days appear here as Lighthouse
+   records them."* The widgets make no optional-feature read. Accepted cost: on an opted-in instance, the first
+   open of a fillable period gives no hint to look again.
 6. Only a System Admin can change the switch, through the existing guard on the optional-features write. Reads
    stay ungated beyond sign-in. The switch is not premium.
 7. Unaffected by the switch: the recorder writes no all-zero rows, past-day limits are judged as of that day, and
@@ -65,8 +71,7 @@ doc says "off means off".
 
 ## Dependencies
 
-Slices 01–04 (DELIVER through 04-02, done). The US-05 open questions each carry a recommended answer. Question 1
-(how the widgets learn the mode) should be settled before the frontend half starts.
+Slices 01–04 (DELIVER through 04-02, done). No open questions: all three were decided by the user on 2026-09-24.
 
 ## Dogfood moment (same day, restored dev database)
 
@@ -75,7 +80,8 @@ predates the switch, so first start seeds it off, which is the upgraded-instance
 
 1. Switch off: open team 1 Percentiles Over Time for the last 90 days, and portfolio 1 PBC Over Time. Count
    `PercentilesOverTimeSnapshots` / `ProcessBehaviorSnapshots` before and after. Expect no change (36 / 42).
-2. Select 2024-01-01..2024-06-30 and read the off sentence on both charts.
+2. Select 2024-01-01..2024-06-30 and read the one empty sentence on both charts; check the Behaviour Settings
+   row shows the Preview chip.
 3. Switch it on under Settings -> Configuration -> Behaviour Settings, without restarting. Reopen the charts:
    the row counts grow and the line fills in on a later visit.
 4. Switch it off. The filled days still plot, and a new range such as 2026-03-01..2026-05-31 writes nothing.

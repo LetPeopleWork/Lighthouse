@@ -258,12 +258,12 @@ Every item answered; none skipped.
 | Item | Answer | Evidence |
 |---|---|---|
 | **RBAC - who may toggle** | System Admin only, through the guard every optional feature already has; no new permission. The UI list lives on the Settings **Configuration** tab, which only System Admins see. The premium check does not apply (the row is not premium) | `API/OptionalFeaturesController.cs:39-40` (`[RbacGuard(RbacGuardRequirement.SystemAdmin)]` on the write), `:53` (licence check only when `IsPremium`); `Lighthouse.Frontend/src/pages/Settings/Settings.tsx:89,91-98` (`"20"` = Configuration tab hosting `SystemSettingsTab`, in `systemAdminTabValues`) |
-| **RBAC - reads** | Stay ungated beyond sign-in. The two series endpoints keep the `MetricsController` gate (Epic 5427 D3); the optional-features GETs carry no guard beyond the authenticated-user fallback, so any signed-in viewer's widget can read the mode. A viewer opening a chart on an opted-in instance still starts a fill, exactly as today | `OptionalFeaturesController.cs:19-37` (GETs, no `RbacGuard`); `Program.cs:843-844` (fallback policy `RequireAuthenticatedUser`) |
+| **RBAC - reads** | Stay ungated beyond sign-in. The two series endpoints keep the `MetricsController` gate (Epic 5427 D3); the frontend never reads the switch (one empty sentence for both modes, US-05 AC5), so no new read is exposed. A viewer opening a chart on an opted-in instance still starts a fill, exactly as today | `OptionalFeaturesController.cs:19-37` (GETs, no `RbacGuard`); `Program.cs:843-844` (fallback policy `RequireAuthenticatedUser`) |
 | **Lighthouse-Clients CLI/MCP** | Contracts unchanged, so **no version gate**. The clients do not read or expose optional features at all. But they do call both series endpoints, and a client read with a start date goes through the same read path, so on an opted-in instance it starts a fill like the UI does. Their copy states the series is forward-only and "never backfills" - true on a default (off) instance, false on an opted-in one. Rewrite it to be true in both modes at this story's finalization (DoD 14) | `lighthouse-clients/packages/client/src/index.ts:2477,2495,2512,2529` (both endpoints, both scopes), `:1037` (JSDoc "never backfills"); `packages/mcp-core/src/index.ts:863,878,893,908` (tool descriptions "forward-only ... never backfills"); `packages/cli/src/index.ts:1540`; `skill/SKILL.md:354`. No match for optional features anywhere in the clients repo. CHANGELOG entries are history and stay |
 | **Website marketing surface** | **N/A until #6083, because** off by default means no instance's out-of-the-box behaviour changes, so there is no default behaviour to advertise; a claim like "the charts fill in from your history" would describe a setting, not the product. Revisit when #6083 flips the default. **Not verified**: the website repo sits outside this session's tool root; grep `/storage/repos/website/src` for "forward-only", "backfill" and the two chart names before finalizing, in case an existing claim already says the charts never backfill | - |
 | **Premium or free** | **Free.** The charts are free-tier (Epic 5427 D3); a premium switch would put the only route to a free chart's full trend behind a licence | `Models/OptionalFeatures/OptionalFeature.cs:17` (`IsPremium`, default false) |
-| **Preview marker** | Exists today: `IsPreview` on the model, rendered in the list as a "Preview" chip whose tooltip reads "This feature is in preview and may change or be removed in future versions". Precedent: delta sync shipped off and flagged preview. **Recommended: flag it preview** - it says "early adopters, this may change" in the place the admin decides, and the seeder refreshes the flag on every upgrade, so #6083 can drop it along with the default flip at no migration cost. US-05 open question 3 | `OptionalFeature.cs:19`; `pages/Settings/System/BehaviourSettingsTable.tsx:57-67`; `Models/OptionalFeatures/OptionalFeatureKeys.cs:13-18` (delta sync "ships dark - off by default and flagged as a preview"); `Services/Implementation/Seeding/OptionalFeatureSeeder.cs:121` (`existing.IsPreview = feature.IsPreview`) |
-| **Terminology** | The row's description names work items through the `{{workItems}}` placeholder the list already resolves; the off-state sentence names no configurable term at all | `OptionalFeatureSeeder.cs` delta-sync row uses `{{workItems}}`; `BehaviourSettingsTable.tsx` resolves it via `resolveTerms` |
+| **Preview marker** | Exists today: `IsPreview` on the model, rendered in the list as a "Preview" chip whose tooltip reads "This feature is in preview and may change or be removed in future versions". Precedent: delta sync shipped off and flagged preview. **Decided by the user, 2026-09-24: `IsPreview = true`.** It says "early adopters, this may change" in the place the admin decides; the seeder refreshes the flag on every upgrade, so #6083 drops it together with the default flip, with no migration | `OptionalFeature.cs:19`; `pages/Settings/System/BehaviourSettingsTable.tsx:57-67`; `Models/OptionalFeatures/OptionalFeatureKeys.cs:13-18` (delta sync "ships dark - off by default and flagged as a preview"); `Services/Implementation/Seeding/OptionalFeatureSeeder.cs:121` (`existing.IsPreview = feature.IsPreview`) |
+| **Terminology** | The row's description names work items through the `{{workItems}}` placeholder the list already resolves; the empty-state sentence names no configurable term at all | `OptionalFeatureSeeder.cs` delta-sync row uses `{{workItems}}`; `BehaviourSettingsTable.tsx` resolves it via `resolveTerms` |
 
 Backend paths are under `Lighthouse.Backend/Lighthouse.Backend/`; frontend under `Lighthouse.Frontend/src/`.
 
@@ -435,12 +435,11 @@ Before: after this story, every instance that upgrades starts working out past d
 time anyone opens an over-time chart - and nobody on that instance chose it.
 After: open **Settings -> Configuration (`?tab=system`) -> Behaviour Settings** -> sees a row "Fill in past days
 on over-time charts", switched off; switch it on -> the next time anyone opens **Predictability -> Percentiles
-Over Time** or **PBC Over Time**, the days the chart is missing start filling in, and an empty chart's sentence
-changes from the off wording to the fill wording.
+Over Time** or **PBC Over Time**, the days the chart is missing start filling in.
 Decision enabled: whether this instance takes the filled trend now, as an early adopter, or keeps only what the
 daily recording wrote until the fill has earned its default (#6083).
 
-**Proposed row text** (seeded; wording is DESIGN's to polish): name *"Fill in past days on over-time charts"*;
+**Proposed row text** (seeded, flagged Preview; wording is DESIGN's to polish): name *"Fill in past days on over-time charts"*;
 description *"While this is on, opening Percentiles Over Time or PBC Over Time works out the days the chart is
 missing from the {{workItems}} Lighthouse already stores, in the background, and keeps them. Turning it off stops
 further filling; days already filled stay."*
@@ -454,13 +453,13 @@ further filling; days already filled stay."*
    visit shows a continuous line (phase 01's dogfood saw 36 -> 464 rows).
 2. *Edge - an upgraded community instance.* Steve Pereira's instance has Portfolio 1 with exactly 3 recorded
    days. The upgrade leaves the switch off: his PBC Over Time still shows 3 points, and a range before the first
-   of them reads the off sentence, which says this instance does not fill in past days - not that they will.
+   of them reads the empty sentence and stays empty, because nothing records days there.
 3. *Boundary - switched off again.* On the dev instance the fill has already filled team 1 from 2026-06-24 to
    2026-09-04. Benjamin switches it off. Those days still plot and cannot be told apart from recorded ones;
-   opening 2026-03-01..2026-05-31 writes nothing and reads the off sentence.
+   opening 2026-03-01..2026-05-31 writes nothing and reads the empty sentence.
 4. *Error - someone without the role.* On an RBAC-enabled instance Maria Santos, a flow coach with no System
    Admin role, sees no Configuration tab; a direct write to the setting is refused and it stays as it was. Her
-   charts still open and read the mode correctly.
+   charts still open as before.
 
 **Acceptance criteria**
 
@@ -478,15 +477,16 @@ further filling; days already filled stay."*
    once it is off. A fill already running at that moment may finish (it is bounded by the per-pass cap and time
    budget); whether it instead stops at the next day is DESIGN's call. Switching it on again fills the remaining
    gaps and rewrites nothing (US-01 AC8).
-5. **The empty chart tells the truth in each mode.** On: today's sentence, unchanged - *"Nothing to show for the
-   selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay
-   empty."* Off: *"Nothing to show for the selected range. Lighthouse adds a day here only when it is running on
-   that day; this instance is not set to fill in past days."* It stays true after the switch goes from on to off
-   (it speaks about what happens now, not about days filled earlier), and it names no configurable term. Both
-   widgets choose by the stored switch, not by a new field on the series response. If the mode cannot be read,
-   they show the off sentence: it promises nothing that might not happen.
-6. **Who may switch it.** Only a System Admin can change it; the charts and the mode stay readable by anyone who
-   can open the charts. It is not premium - the charts are free-tier, so the switch is too.
+5. **One empty sentence, true in both modes** *(decided by the user, 2026-09-24)*. Every empty over-time chart
+   reads *"Nothing to show for the selected range. Days appear here as Lighthouse records them."* - on or off,
+   in every empty state. It replaces the 04-02 sentence ("...Days the stored history covers can fill in on a
+   later visit..."), which was false with the switch off. It is true in both modes because filled days are
+   written into the same store as recorded ones (D6). The widgets never learn the mode: no new request and no
+   optional-feature read in the frontend, so the switch is backend-only and #6084 touches only the backend.
+   **Accepted cost:** on an opted-in instance, the first open of a period that can be filled shows this sentence
+   with no hint to look again shortly. Accepted because the admin opted into a preview deliberately.
+6. **Who may switch it.** Only a System Admin can change it; the charts stay readable by anyone who can open
+   them. It is not premium - the charts are free-tier, so the switch is too.
 7. **Unaffected by the switch, in either position:** the recorder does not write all-zero percentile rows (D7);
    the shared computation that judges a past day's process limits as of that day stays in use; loading demo data
    still writes the synthesiser's backdated rows (DDD-15).
@@ -499,29 +499,26 @@ further filling; days already filled stay."*
 - Reading the switch on the read path is one row lookup by key per series request. DDD-5 budgeted the read path
   at no extra query, so DESIGN decides whether that lookup is acceptable or cached. "No restart" requires it to be
   read per use, not once at start-up - the pattern delta sync already follows (`WorkItemService.cs:241`).
-- The frontend holds **no app-wide copy** of the optional features: only the Settings tab fetches the list
-  (`SystemSettingsTab.tsx:33-34`), and manual ordering reads its own row by key on mount
-  (`hooks/useFeatureOrdering.ts:49-63`). "Read the mode without a new request" is therefore not available as
-  things stand - see open question 1. The copy has one source: `pages/Common/MetricsView/overTimeEmptyState.ts:13`.
-- New key in `OptionalFeatureKeys`, new row in `OptionalFeatureSeeder`; toggling needs no side effect, so the
-  default applier `OptionalFeatureApplierRegistry.ApplierFor` falls back to is enough.
+- Frontend change is copy only: the sentence has one source, `pages/Common/MetricsView/overTimeEmptyState.ts:13`.
+  No optional-feature read is added there (AC5). The widget tests and the E2E page objects/spec that pin the
+  04-02 sentence (commit `86b8148c0`) change with it.
+- New key in `OptionalFeatureKeys`, new row in `OptionalFeatureSeeder` (off, not premium, `IsPreview = true`);
+  toggling needs no side effect, so the default applier `OptionalFeatureApplierRegistry.ApplierFor` falls back
+  to is enough.
 - Every existing reconstruction acceptance fixture, and the E2E over-time specs and `@screenshot` shots that
   expect filled days, must switch the fill on in their own arrangement, or they go red for the wrong reason.
 
 **Dependencies**: US-01..US-04, built through DELIVER 04-02. #6083 and #6084 depend on this story, not the
 other way round.
 
-#### Open questions for the user (US-05)
+#### Decisions (the user, 2026-09-24) - formerly open questions
 
-1. **How the widgets learn the mode.** The brief said "from the optional features the app already loads"; the
-   app does not load them outside Settings. *Recommended:* one small read of this one setting by key, once per
-   Predictability view and shared by both widgets - the pattern manual ordering already uses. The alternative, an
-   app-wide provider that loads the list once, is a larger change for a switch planned to disappear at #6084.
-2. **Should loading demo data switch the fill on?** With it off (the default), demo instances show only what the
-   synthesiser writes, as before this story. *Recommended:* no - loading demo data should not change an
-   instance-wide setting behind the admin's back; the E2E and screenshot fixtures switch it on explicitly.
-3. **Flag the row "Preview"?** *Recommended:* yes (Project checklist, preview row); #6083 removes the flag when
-   it flips the default.
+1. **How the widgets learn the mode: not needed.** One empty sentence is true in both modes (AC5), so the
+   widgets never read the switch.
+2. **Loading demo data does NOT switch the fill on.** With it off, demo instances show only what the synthesiser
+   writes. E2E and screenshot fixtures switch it on explicitly.
+3. **The row carries the Preview flag** (`IsPreview = true`). #6083 drops it via the seeder when it flips the
+   default; no migration.
 
 ---
 
@@ -545,8 +542,8 @@ other way round.
     row only - no EF migration - and an upgrade never overwrites a stored on/off value.
 11. Off-state acceptance tests exist and **can fail**: with the switch off, opening either chart writes no row,
     asserted on the snapshot tables against an arrangement where the same open with the switch on does write
-    rows (otherwise "nothing was written" passes for free - the pattern this story has hit ten times). Both
-    off-state sentences are asserted in the widget tests.
+    rows (otherwise "nothing was written" passes for free - the pattern this story has hit ten times). The
+    widget tests assert the one empty sentence (US-05 AC5) and that the widgets make no optional-feature read.
 12. Every existing reconstruction acceptance fixture, E2E over-time spec and `@screenshot` shot that expects
     filled days switches the fill on in its own arrangement, visibly.
 13. ADR-207 carries an amendment recording the switch, where the gate sits, and that switching off keeps what
@@ -577,11 +574,12 @@ other way round.
 - **#6083 - switch the default to on**, once there is first positive feedback from an opted-in instance (Outcome
   KPIs). Its own ADO item, deliberately unparented.
 - **#6084 - remove the switch** so the fill is always on, once we are certain it stays. Its own ADO item,
-  deliberately unparented. Until then the switch and the off-state sentence are ordinary shipped code, tested
+  deliberately unparented. Until then the switch is ordinary shipped backend code, tested
   and mutated like any other.
 - **A switch per Team or Portfolio** - rejected (D9 alternatives): more surface for a temporary switch.
 - **Showing that a fill is running** (a progress indicator, "filling N days") - the read never waits (D3) and the
-  on-mode sentence already says a later visit may show more; a live indicator would need the response field
+  first open of a fillable period showing the empty sentence with no hint to look again is an accepted cost for
+  an admin who opted into a preview (US-05 AC5); a live indicator would need the response field
   ADR-108 has rejected twice.
 - **Removing filled days when the switch goes off** - nothing marks them (D6), so there is nothing to remove
   them by; a purge would need exactly the per-row marker D6 refused.
@@ -628,10 +626,10 @@ to set on SPIKE-01's cost measurement rather than guessed here.
 | 2 | Persona with specific characteristics | **PASS** | `config-admin`, a System Admin deciding whether this instance adopts a new behaviour; `flow-coach` as the one served |
 | 3 | 3+ domain examples with real data | **PASS** | Four: restored dev instance (36 rows, 4 recorded days), Steve Pereira's 3-day Portfolio 1, switched off after filling 2026-06-24..09-04, Maria Santos without the role |
 | 4 | UAT in Given/When/Then, 3-7 scenarios | **PASS** | Seven scenarios under Gherkin -> "Choose whether the over-time charts fill in the past" |
-| 5 | AC derived from UAT | **PASS** | AC1-AC7 each map to one scenario (defaults; off writes nothing; on without restart; off after on; sentence per mode; role; unaffected) |
+| 5 | AC derived from UAT | **PASS** | AC1-AC7 each map to one scenario (defaults; off writes nothing; on without restart; off after on; one sentence in both modes; role; unaffected) |
 | 6 | Right-sized | **PASS** | <= 1 day, 7 scenarios, one demo in one session (slice 05 dogfood) |
-| 7 | Technical notes | **PASS** | Gate location and its single entry point, read-path lookup vs DDD-5, frontend mode read, seeder rule, fixtures to switch on |
-| 8 | Dependencies resolved or tracked | **PASS, with three questions carried** | US-01..US-04 built; #6083/#6084 tracked out of scope; US-05 open questions 1-3 each carry a recommended answer, none blocks starting the slice |
+| 7 | Technical notes | **PASS** | Gate location and its single entry point, read-path lookup vs DDD-5, copy-only frontend change, seeder rule, fixtures to switch on |
+| 8 | Dependencies resolved or tracked | **PASS - the three questions decided by the user, 2026-09-24** | US-01..US-04 built; #6083/#6084 tracked out of scope; US-05 "Decisions": mode read not needed (one sentence), demo does not switch it on, `IsPreview = true` |
 | 9 | Outcome KPIs, measurable | **PASS** | "Rows the fill writes with the switch off = 0" (measurable); "first positive feedback from an opted-in instance" (qualitative trigger for #6083) |
 
 ---
@@ -645,7 +643,7 @@ to set on SPIKE-01's cost measurement rather than guessed here.
 | **02** | CT-60/90 + WIA + portfolio scope | WIA is a genuinely different reconstruction path (as-of, not windowed); portfolio is a different service |
 | **03** | PBC families, both scopes | Different table, different honesty gate, and the today-anchored baseline hazard |
 | **04** | Honest empty-state copy + docs | Depends on knowing which empty states actually exist, which only slices 01-03 settle |
-| **05** | The opt-in switch: instance-wide, seeded off, a second empty sentence for the off state (US-05, D9) | Added 2026-09-24 after the user's live check. Runs **before** roadmap 04-03 (docs), so the docs, ADR-207 and release notes describe the fill as opt-in from the start instead of being rewritten, and **before** 04-04 (mutation testing), so the gate - a one-line condition a mutant can simply delete - sits inside the frozen, mutated code |
+| **05** | The opt-in switch: instance-wide, seeded off, flagged Preview; one empty sentence true in both modes (US-05, D9) | Added 2026-09-24 after the user's live check. Runs **before** roadmap 04-03 (docs), so the docs, ADR-207 and release notes describe the fill as opt-in from the start instead of being rewritten, and **before** 04-04 (mutation testing), so the gate - a one-line condition a mutant can simply delete - sits inside the frozen, mutated code |
 
 **Order rationale**: learning leverage first (SPIKE-01 can withdraw D6 before anything is built), then the
 dependency chain (01 establishes the path 02 and 03 reuse), then the copy that can only be written once the
@@ -680,11 +678,12 @@ a second, separate path.
 
 Amendment 2026-09-24 (D9, the opt-in switch):
 
-- **US-04's copy decision now holds per mode.** One sentence true of every empty state (DDD-16, U-47) stays the
-  rule *within* each mode: on, the four empty states still cannot be told apart and today's sentence is kept
-  unchanged; off, there is one reason only - nothing was recorded for that range and nothing will be filled - and
-  a second sentence says so (US-05 AC5). The mode is instance state the client reads, not a field on the series
-  response, so ADR-108's twice-rejected envelope stays rejected.
+- **US-04's copy decision is superseded** *(the user, 2026-09-24)*: one sentence across every empty state
+  (DDD-16, U-47) **and** both modes - *"Nothing to show for the selected range. Days appear here as Lighthouse
+  records them."* It replaces the 04-02 sentence, which promised a fill that does not happen with the switch off.
+  The widgets never learn the mode, so no response field and no client read of the switch: ADR-108's
+  twice-rejected envelope stays rejected, and #6084 touches only the backend. Accepted cost: on an opted-in
+  instance, the first open of a fillable period gives no hint to look again (US-05 AC5).
 - **D2 and D3 hold only where the switch is on.** With it off, the series read is again a pure filter on
   persisted rows - the ADR-108 slice-03b sentence D2 overturned becomes true again on that instance.
 - **ADR-207 gains an amendment** for the switch and its placement (DoD 13).
@@ -891,21 +890,21 @@ Feature: Choose whether the over-time charts fill in the past
     Then those days still plot, and nothing distinguishes them from recorded days
     And opening 2026-03-01 to 2026-05-31 writes nothing
 
-  Scenario Outline: An empty chart says what is true in each mode
+  Scenario Outline: An empty chart says the same true thing in either mode
     Given the fill is switched <mode>
     When Maria opens <chart> for 2024-01-01 to 2024-06-30, a period no stored history covers
-    Then the chart reads "<sentence>"
+    Then the chart reads "Nothing to show for the selected range. Days appear here as Lighthouse records them."
 
     Examples:
-      | mode | chart                 | sentence                                                                                                                                     |
-      | on   | Percentiles Over Time | Nothing to show for the selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay empty. |
-      | off  | PBC Over Time         | Nothing to show for the selected range. Lighthouse adds a day here only when it is running on that day; this instance is not set to fill in past days. |
+      | mode | chart                 |
+      | on   | Percentiles Over Time |
+      | off  | PBC Over Time         |
 
   Scenario: Only a System Admin can change the switch
     Given authorization is enabled and Maria holds no System Admin role
     When Maria tries to switch the fill on
     Then the change is refused and the fill stays off
-    And Maria can still open both charts, which read the off sentence where empty
+    And Maria can still open both charts
 
   Scenario: What ships for everyone does not depend on the switch
     Given the fill is switched off
