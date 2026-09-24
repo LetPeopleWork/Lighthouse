@@ -54,12 +54,12 @@ For normal operations, we recommend to keep the log level at *Warning* or *Infor
 At *Information*, every completed update writes a single summary line that says what it did:
 
 ```
-Update completed | Team 'Zenith' | mode=full | scanned=4013 | fetched=4013 | duration=291043ms | success=True
+Update completed | Team 'Zenith' | mode=Full | scanned=4013 | fetched=4013 | duration=291043ms | success=True
 ```
 
 | Field | Meaning |
 |-------|---------|
-| `mode` | How much had to be fetched. `full` downloads every record the query returned; `delta` downloads only the ones that changed since the last update. See [Faster Updates](configuration.html#faster-updates) |
+| `mode` | How much had to be fetched. `Full` downloads every record the query returned; `Delta` downloads only the ones that changed since the last update. See [Faster Updates](configuration.html#faster-updates) |
 | `scanned` | How many records the work tracking system returned |
 | `fetched` | How many of those were downloaded in full |
 | `duration` | How long the update took, in milliseconds |

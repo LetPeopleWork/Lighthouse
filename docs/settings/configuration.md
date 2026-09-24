@@ -74,19 +74,17 @@ The rows read in your own words. If you renamed *Feature* under [Terminology Con
 
 ### Faster Updates
 
-With *Faster Updates* off, every update asks your work tracking system for the full details of every Work Item it finds, including the ones nobody has touched in weeks. On a large query that is most of the time an update spends, and most of the load Lighthouse puts on your tracker.
+On Jira Cloud, Jira Data Center and Azure DevOps, every update runs in two steps. It first asks your work tracking system for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved. A Work Item nobody has touched in weeks is not downloaded again — and on a large query, downloading those is most of the time an update would otherwise spend, and most of the load Lighthouse would put on your tracker.
 
-With it on, an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved.
-
-- **Nothing about your data changes.** The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update, exactly as before.
-- **It applies to Jira Cloud, Jira Data Center and Azure DevOps today.** ServiceNow, Linear and CSV keep running the update they always have, whether the toggle is on or not.
+- **Nothing about your data changes.** The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update.
+- **ServiceNow, Linear and CSV always download everything.** Every update reads the full details of every Work Item they return, as it always has.
 - **A setting that changes what an update asks for costs you one full update.** Change the query, the Work Item types, the states, the state mapping, the Done cutoff or the additional fields, and the next update downloads everything again — the Work Items you already have were read under the old settings, so they cannot be trusted to still be right. The update after that is fast again.
-- **Editing a query no longer throws away what Lighthouse already stored** — and this holds whether the toggle is on or off. Before, changing anything about how a team or portfolio is fetched discarded its Work Items along with the state transitions recorded for them. Now only pointing a team or portfolio at a *different* work tracking connection does that, because that is the one edit where the same ID genuinely means a different Work Item.
-- **The toggle takes effect on the next update.** No restart.
-- **What each update did is in the log**: `Update completed | Team 'X' | mode=delta | scanned=250 | fetched=3 | …`. `scanned` is how much of the query was read, `fetched` how much was actually downloaded. Turn the toggle off and the same line reads `mode=full` with the two numbers equal — which is how you see for yourself what it is saving you.
+- **A failed first step falls back to downloading everything.** If asking for the change dates fails, the update writes a warning to the log and downloads the whole query instead, so it costs you time, never data.
+- **Editing a query does not throw away what Lighthouse already stored.** Before, changing anything about how a Team or Portfolio is fetched discarded its Work Items along with the state transitions recorded for them. Now only pointing a Team or Portfolio at a *different* work tracking connection does that, because that is the one edit where the same ID genuinely means a different Work Item.
+- **What each update did is in the log**: `Update completed | Team 'X' | mode=Delta | scanned=250 | fetched=3 | …`. `scanned` is how much of the query was read, `fetched` how much was actually downloaded. A line that reads `mode=Full` with the two numbers equal is an update that downloaded everything: the first update of a Team or Portfolio, the one after a setting that changes what an update asks for, a connector that cannot run the first step, or a first step that failed. See [What an Update Writes](systeminfo.html#what-an-update-writes).
 
 {: .note}
-Faster Updates is on by default on a new instance. An instance that upgrades keeps the answer it already gave — if you switched it off, it stays off — and you can switch it off at any time, which takes effect on the next update.
+There is no setting for this any more. An instance that had *Faster Updates* switched off uses it too after upgrading, and there is no way to turn it off.
 
 ### Feature Order (Premium)
 By default, Lighthouse forecasts your Features in the order your work tracking system gives them — the rank or backlog order they already carry there. Every refresh re-reads that order, so a rank someone changes in Azure DevOps, Jira, or Linear re-sequences your forecast without anyone on your team deciding it. On connectors that have no meaningful rank at all, such as ServiceNow, the sequence was never yours to begin with.
