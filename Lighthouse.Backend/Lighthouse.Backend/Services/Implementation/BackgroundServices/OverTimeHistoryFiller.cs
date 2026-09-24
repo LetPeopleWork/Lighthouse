@@ -316,31 +316,29 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         private async Task FillOneDayAsync(
             OverTimeWriters writers, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, PassTarget target)
         {
-            var percentilesAreDone = await FillOneDayOfAsync(
-                writers.Percentiles,
+            var percentilesAreDone = await TryWriteDayAsync(
                 request,
                 day,
-                writer =>
+                () =>
                 {
                     foreach (var family in target.PercentileFamilies)
                     {
-                        writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, family.MetricType, day, family.ReadPercentiles);
+                        writers.Percentiles.FillDayIfAbsent(request.OwnerId, request.OwnerType, family.MetricType, day, family.ReadPercentiles);
                     }
                 },
-                writer => writer.SaveFilledDay());
+                writers.Percentiles.SaveFilledDay);
 
-            var limitsAreDone = await FillOneDayOfAsync(
-                writers.ProcessBehavior,
+            var limitsAreDone = await TryWriteDayAsync(
                 request,
                 day,
-                writer =>
+                () =>
                 {
                     foreach (var family in target.ProcessBehaviorFamilies)
                     {
-                        writer.FillDayIfAbsent(request.OwnerId, request.OwnerType, family, day);
+                        writers.ProcessBehavior.FillDayIfAbsent(request.OwnerId, request.OwnerType, family, day);
                     }
                 },
-                writer => writer.SaveFilledDay());
+                writers.ProcessBehavior.SaveFilledDay);
 
             if (!percentilesAreDone || !limitsAreDone)
             {
@@ -357,13 +355,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             memo.TheWalkHasAlreadyWorkedOut(request.OwnerId, request.OwnerType, day);
         }
 
-        private async Task<bool> FillOneDayOfAsync<TWriter>(
-            TWriter writer, OverTimeFillRequest request, DateOnly day, Action<TWriter> stageEveryFamily, Func<TWriter, Task> commit)
+        private async Task<bool> TryWriteDayAsync(
+            OverTimeFillRequest request, DateOnly day, Action stageEveryFamily, Func<Task> commit)
         {
             try
             {
-                stageEveryFamily(writer);
-                await commit(writer);
+                stageEveryFamily();
+                await commit();
 
                 return true;
             }
