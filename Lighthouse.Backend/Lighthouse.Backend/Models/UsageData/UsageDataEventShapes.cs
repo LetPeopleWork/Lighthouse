@@ -48,16 +48,14 @@ namespace Lighthouse.Backend.Models.UsageData
         private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhichSettingWasSwitched =
             FrozenSet.ToFrozenSet([UsageDataEventName.OptionalFeatureToggled]);
 
-        public static bool Fits(
-            UsageDataEventName name,
-            UsageDataRouteKey? route,
-            UsageDataWorkTrackingSystem? system,
-            UsageDataOptionalFeature? setting,
-            bool? enabled)
+        public static bool Fits(UsageDataEventReported reported)
         {
-            return NamesItsPage(name, route)
-                && NamesAKindOfSystemExactlyWhenItShould(name, system)
-                && NamesASwitchedSettingExactlyWhenItShould(name, setting, enabled);
+            var name = reported.Name;
+
+            return NamesItsPage(name, reported.Route)
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichKindOfSystem, name, reported.WorkTrackingSystem)
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichSettingWasSwitched, name, reported.OptionalFeature)
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhichSettingWasSwitched, name, reported.Enabled);
         }
 
         private static bool NamesItsPage(UsageDataEventName name, UsageDataRouteKey? route)
@@ -73,31 +71,16 @@ namespace Lighthouse.Backend.Models.UsageData
         }
 
         /// <summary>
-        /// Both ways round, deliberately. An event that should name a kind and does not is refused,
-        /// and so is one that names a kind it has no business naming - without the second half the
-        /// declaration would be advice rather than a boundary.
+        /// Both ways round, deliberately. An event declared to carry a part and arriving without it is
+        /// refused, and so is one carrying a part it has no business carrying - without the second
+        /// half the declaration would be advice rather than a boundary. Each part is judged on its
+        /// own, so a setting switch arriving with only one of its two parts is refused too.
         /// </summary>
-        private static bool NamesAKindOfSystemExactlyWhenItShould(
-            UsageDataEventName name, UsageDataWorkTrackingSystem? system)
+        private static bool IsCarriedExactlyWhenDeclared<TPart>(
+            FrozenSet<UsageDataEventName> eventsThatCarryIt, UsageDataEventName name, TPart? part)
+            where TPart : struct
         {
-            return EventsThatSayWhichKindOfSystem.Contains(name) == (system is not null);
-        }
-
-        /// <summary>
-        /// Both ways round and both parts at once. The event that says a setting was switched must
-        /// carry the setting and the direction; every other event must carry neither. Half of a
-        /// switch is refused on either side, because read straight it would be counted as something
-        /// nobody reported.
-        /// </summary>
-        private static bool NamesASwitchedSettingExactlyWhenItShould(
-            UsageDataEventName name, UsageDataOptionalFeature? setting, bool? enabled)
-        {
-            if (EventsThatSayWhichSettingWasSwitched.Contains(name))
-            {
-                return setting is not null && enabled is not null;
-            }
-
-            return setting is null && enabled is null;
+            return eventsThatCarryIt.Contains(name) == part.HasValue;
         }
     }
 }

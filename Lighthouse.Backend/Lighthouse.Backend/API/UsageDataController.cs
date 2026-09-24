@@ -178,12 +178,12 @@ namespace Lighthouse.Backend.API
         /// somebody opened and must name one of this product's own; the rest happen on no particular
         /// page and must name none, and the same holds for which kind of system was connected and
         /// which setting was switched. A part on an event that has no business carrying it is
-        /// refused rather than ignored -
-        /// whoever sent it believed it would be counted, and a message half accepted is the one
-        /// nobody notices.
+        /// refused rather than ignored - whoever sent it believed it would be counted, and a message
+        /// half accepted is the one nobody notices.
         ///
-        /// Reading and checking are one act here rather than two passes, so there is no arrangement
-        /// in which something got past the check and was then read as a zero anyway.
+        /// Reading and checking are one act here rather than two passes, and the shape is judged on
+        /// the very event handed on, so there is no arrangement in which something got past the
+        /// check and was then read as a zero anyway.
         /// </summary>
         private static UsageDataEventReported? AsTakenIn(UsageDataEventDto? reported)
         {
@@ -192,15 +192,13 @@ namespace Lighthouse.Backend.API
                 || (reported.Route is { } named && !Enum.IsDefined(named))
                 || (reported.WorkTrackingSystem is { } system && !Enum.IsDefined(system))
                 || (reported.OptionalFeature is { } setting && !Enum.IsDefined(setting))
-                || !UsageDataEventShapes.Fits(
-                    name, reported.Route, reported.WorkTrackingSystem, reported.OptionalFeature, reported.Enabled)
                 || reported.OffsetMs is not { } offset || offset < 0
                 || reported.Sequence is not { } sequence || sequence < 0)
             {
                 return null;
             }
 
-            return new UsageDataEventReported(
+            var taken = new UsageDataEventReported(
                 name,
                 reported.Route,
                 reported.WorkTrackingSystem,
@@ -208,6 +206,8 @@ namespace Lighthouse.Backend.API
                 reported.Enabled,
                 offset,
                 sequence);
+
+            return UsageDataEventShapes.Fits(taken) ? taken : null;
         }
     }
 }
