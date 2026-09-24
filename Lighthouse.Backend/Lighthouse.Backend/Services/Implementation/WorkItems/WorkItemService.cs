@@ -13,7 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkItems
 {
-#pragma warning disable S107
+#pragma warning disable S107 // Every parameter is a distinct store or port the refresh drives; bundling them into a parameter object would only hide the arity, not the coupling.
     public class WorkItemService(
         ILogger<WorkItemService> logger,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
@@ -848,9 +848,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// The portfolio half of the same decision, mirroring the team path deliberately rather than
-        /// sharing it: a Feature is not a Work Item, and merging the two routines would mean refactoring
-        /// the shipped team path inside a change about portfolios. It scans unconditionally for the same
-        /// reason the team path does: a scan that fails or is refused downloads every Feature.
+        /// sharing it: a Feature is not a Work Item, so the two download different records into different
+        /// shapes. It scans unconditionally for the same reason the team path does: a scan that fails or is
+        /// refused downloads every Feature.
         /// </summary>
         private async Task<RemoteFeatureFetch> ResolveRemoteFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures, bool fetchShapeChanged)
         {

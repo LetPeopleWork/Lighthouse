@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// change stamp" - with nothing to compare against, a delta would silently skip records.
         /// </param>
         /// <param name="fetchShapeChanged">
-        /// Whether what the query asks the tracker for changed since the last cycle (slice 05). A wider
+        /// Whether what the query asks the tracker for changed since the last cycle. A wider
         /// fetch has to re-download records whose timestamps did not move.
         /// </param>
         public static SyncMode Resolve(

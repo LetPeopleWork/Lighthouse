@@ -8,9 +8,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// only when it changes what is fetched. Driving ports: the Settings screen's own save endpoint, and
     /// the scheduled refresh. US-05, AC-5.1 … AC-5.6, plus amendment A2.
     ///
-    /// This slice is a correctness gate over everything delta has shipped, not an optimisation. Until it
-    /// lands, an operator on an opted-in instance can widen a query and get no refetch at all, because
-    /// <c>fetchShapeChanged</c> is hard-coded false in three places.
+    /// This slice is a correctness gate over everything delta has shipped, not an optimisation. Without
+    /// it, widening a query gets no refetch at all: a record whose remote stamp did not move is skipped
+    /// even when the query now asks the tracker for more of it.
     ///
     /// Two things here are wider than the brief, and both are why the fixture is shaped as it is:
     ///

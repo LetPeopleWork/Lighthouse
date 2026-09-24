@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     /// <summary>
-    /// Epic #5687 D8: an update is Full or Delta, never partial, and every ambiguity resolves to Full.
+    /// An update is Full or Delta, never partial, and every ambiguity resolves to Full.
     /// The resolver is a total function of what the refresh already holds, so each branch is asserted
     /// directly rather than through a refresh that happens to exercise it.
     /// </summary>
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// DDD-5: one mode decision, so a portfolio's stored Features get the same answer as a team's
+        /// One mode decision, so a portfolio's stored Features get the same answer as a team's
         /// stored work items - <see cref="Feature"/> is a sibling of <see cref="WorkItem"/>, not a subtype,
         /// and only the shared base carries the stamp the decision reads.
         /// </summary>
@@ -92,7 +92,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         /// <summary>
         /// Defaults are the one combination that resolves to Delta, so each test names only the single
-        /// input it is about - five bools at a call site say nothing about which one the test is asserting.
+        /// input it is about - a row of positional bools at a call site says nothing about which one the
+        /// test is asserting.
         /// </summary>
         private static SyncMode Resolve(
             bool trackerCanBeScanned = true,
