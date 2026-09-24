@@ -400,8 +400,7 @@ describe("PercentilesOverTimeWidget", () => {
 		consoleError.mockRestore();
 	});
 
-	// Skipped until the empty-chart sentence becomes the one pinned above; un-skip with that change.
-	it.skip.each([
+	it.each([
 		{ range: "ending today", startDate: RANGE_START, endDate: RANGE_END },
 		{
 			range: "ending in the past",
@@ -429,8 +428,7 @@ describe("PercentilesOverTimeWidget", () => {
 		},
 	);
 
-	// Skipped until the empty-chart sentence becomes the one pinned above; un-skip with that change.
-	it.skip("exports the empty copy verbatim so the end-to-end test asserts the shipped string", () => {
+	it("exports the empty copy verbatim so the end-to-end test asserts the shipped string", () => {
 		expect(PERCENTILES_OVER_TIME_EMPTY_COPY).toBe(HONEST_EMPTY_COPY);
 	});
 
@@ -727,8 +725,7 @@ describe("PercentilesOverTimeWidget", () => {
 		).toBeInTheDocument();
 	});
 
-	// Skipped until the empty-chart sentence becomes the one pinned above; un-skip with that change.
-	it.skip("shows the same honest empty copy on the Age tab when no age values exist", async () => {
+	it("shows the same honest empty copy on the Age tab when no age values exist", async () => {
 		const getPercentilesOverTime = vi
 			.fn()
 			.mockImplementation((_ownerId: number, selection: string | number) =>

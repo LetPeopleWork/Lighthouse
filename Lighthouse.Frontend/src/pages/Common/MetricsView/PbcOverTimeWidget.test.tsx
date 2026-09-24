@@ -269,8 +269,7 @@ describe("PbcOverTimeWidget", () => {
 		expect(screen.queryByTestId("pbc-over-time-empty")).not.toBeInTheDocument();
 	});
 
-	// Skipped until the empty-chart sentence becomes the one pinned above; un-skip with that change.
-	it.skip.each([
+	it.each([
 		{ range: "ending today", startDate: RANGE_START, endDate: RANGE_END },
 		{
 			range: "ending in the past",
@@ -291,8 +290,7 @@ describe("PbcOverTimeWidget", () => {
 		},
 	);
 
-	// Skipped until the empty-chart sentence becomes the one pinned above; un-skip with that change.
-	it.skip("exports the empty copy verbatim so the end-to-end test asserts the shipped string", () => {
+	it("exports the empty copy verbatim so the end-to-end test asserts the shipped string", () => {
 		expect(PBC_OVER_TIME_EMPTY_COPY).toBe(HONEST_EMPTY_COPY);
 	});
 
@@ -556,8 +554,7 @@ describe("PbcOverTimeWidget", () => {
 		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2);
 	});
 
-	// Skipped until the empty-chart sentence becomes the one pinned above; un-skip with that change.
-	it.skip("shows the same honest empty copy for a family with nothing to show", async () => {
+	it("shows the same honest empty copy for a family with nothing to show", async () => {
 		const getProcessBehaviorOverTime = vi
 			.fn()
 			.mockImplementation((_ownerId: number, metricType: string) =>
