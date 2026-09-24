@@ -87,6 +87,65 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] DirectoriesThatAreNotSource = ["/obj/", "/bin/", "/StrykerOutput"];
 
+        /// <summary>
+        /// The one place a fill may start. A chart load that finds days missing asks through it, and the
+        /// switch that decides whether this instance fills in past days is read there, so this is also the
+        /// one place switching off has to reach.
+        /// </summary>
+        private const string TheReconciler = "Services/Implementation/OverTimeGapReconciler.cs";
+
+        private static readonly string[] TheOnlyPlaceAFillStarts = [TheReconciler];
+
+        /// <summary>A request to the filler for days, as it is spelled where one is made rather than where it is declared.</summary>
+        private const string AskingTheFillerForDays = ".AskFor(";
+
+        private const string TheKeyList = "Models/OptionalFeatures/OptionalFeatureKeys.cs";
+
+        private const string TheOptionalFeatureSeeder = "Services/Implementation/Seeding/OptionalFeatureSeeder.cs";
+
+        /// <summary>The port every question about the fill switch is asked through.</summary>
+        private const string TheFillSwitchPort = "IOverTimeHistoryFillSwitch";
+
+        /// <summary>The switch's key, as the constant that names it and as the stored value itself.</summary>
+        private static readonly string[] TheFillSwitchKeySpellings = ["OverTimeHistoryFillKey", "\"OverTimeHistoryFill\""];
+
+        /// <summary>
+        /// Everything the fill switch must not govern, each shipped on for everyone: the daily recording and
+        /// its refusal to store an empty reading, the writers both paths share, judging a past day's limits
+        /// as of that day, the demo synthesiser's backdated rows, the note of days already worked out - whose
+        /// refresh handlers must keep forgetting while the fill is off, or it goes stale - and the
+        /// maintenance gate, which would read a pass finishing after "off" as idle and grant a restore
+        /// underneath it.
+        /// </summary>
+        private static readonly string[] WhatTheFillSwitchDoesNotGovern =
+        [
+            "Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs",
+            "Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs",
+            TheWriter,
+            TheProcessBehaviorWriter,
+            "Services/Implementation/BaselineValidationService.cs",
+            TheDemoSynthesiser,
+            "Services/Implementation/BackgroundServices/ReconstructionMemo.cs",
+            "Services/Implementation/DatabaseManagement/DatabaseMaintenanceGate.cs",
+        ];
+
+        private const string FrontendSourceDirectory = "Lighthouse.Frontend/src";
+
+        /// <summary>
+        /// A key the frontend genuinely names, because the settings page switches it. The scan for the fill
+        /// switch's key runs the same search for this one first, so a scan that can no longer read the
+        /// frontend fails instead of reporting that nothing names anything.
+        /// </summary>
+        private const string AKeyTheFrontendDoesName = "\"FeatureOrdering\"";
+
+        /// <summary>
+        /// Fewer frontend sources than this and the scan is pointed at the wrong place. Well under the real
+        /// count on purpose: the frontend grows every week, and this only has to tell a tree from nothing.
+        /// </summary>
+        private const int FewestFrontendSourcesARealTreeHas = 400;
+
+        private static readonly string[] FrontendSourceExtensions = [".ts", ".tsx"];
+
         [Test]
         public void TheCycleTimeHorizonList_IsDeclaredOnlyWhereItIsAllowedToBe()
         {
@@ -266,6 +325,162 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(source, Does.Not.Contain("Task"),
                     "A Task here is a handle on the filling in, and a reader handed one waits for it.");
             }
+        }
+
+        /// <summary>
+        /// Switching the fill off is one condition only while there is one place a fill can start. A second
+        /// caller of the filler's ask - a refresh handler, a startup job, the demo loader - would start fills
+        /// the switch never sees, and no off-state scenario would notice unless it happened to open a chart
+        /// through that door.
+        /// </summary>
+        [Test]
+        public void OnlyTheReconciler_AsksTheFillerForDays()
+        {
+            var askers = ProductionSourceFiles()
+                .Where(file => file.Source.Contains(AskingTheFillerForDays, StringComparison.Ordinal))
+                .Select(file => file.RelativePath)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+
+            Assert.That(askers, Is.EqualTo(TheOnlyPlaceAFillStarts),
+                $"Only {TheReconciler} may ask the filler for days, because that is where the fill switch is read. Ask " +
+                "through it, or read the switch at the new door too and say why here. Asking from: " + string.Join(", ", askers));
+        }
+
+        /// <summary>
+        /// The key is named by the list of keys, by the seeder that adds the row, and by the switch that
+        /// reads it - nowhere else. Anything else naming it is either a second reader, which is a second
+        /// place switching off has to reach, or a writer, like a demo loader switching it on, which the
+        /// product decided against.
+        /// </summary>
+        [Test]
+        [Ignore("Pending: the opt-in switch for filling in past days is not built yet (story 6053, slice 05) - un-ignore in DELIVER")]
+        public void TheFillSwitchKey_IsNamedOnlyByTheKeyList_TheSeeder_AndTheSwitch()
+        {
+            var files = ProductionSourceFiles();
+
+            var implementations = files
+                .Where(file => DeclaresAClassImplementing(file.Source, TheFillSwitchPort))
+                .Select(file => file.RelativePath)
+                .ToList();
+
+            var naming = files
+                .Where(file => TheFillSwitchKeySpellings.Any(spelling => file.Source.Contains(spelling, StringComparison.Ordinal)))
+                .Select(file => file.RelativePath)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+
+            var allowed = implementations
+                .Append(TheKeyList)
+                .Append(TheOptionalFeatureSeeder)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(implementations, Has.Count.EqualTo(1),
+                    $"Exactly one class answers {TheFillSwitchPort}. Found: {string.Join(", ", implementations)}");
+
+                Assert.That(naming, Is.EqualTo(allowed),
+                    "The fill switch's key may be named only where it is declared, seeded and read. Named in: " + string.Join(", ", naming));
+            }
+        }
+
+        /// <summary>
+        /// The widgets never learn whether the fill is on: one empty-chart sentence is true either way, so
+        /// the switch stays a backend matter and removing it later touches the backend alone. Read off the
+        /// source because a component that fetched the setting would pass every widget test that did not
+        /// happen to mock that fetch.
+        /// </summary>
+        [Test]
+        public void TheFrontend_NeverNamesTheFillSwitch()
+        {
+            var sources = FrontendSourceFiles();
+
+            var namingAKeyItDoesUse = sources
+                .Where(file => file.Source.Contains(AKeyTheFrontendDoesName, StringComparison.Ordinal))
+                .ToList();
+
+            var namingTheFillSwitch = sources
+                .Where(file => TheFillSwitchKeySpellings.Any(spelling => file.Source.Contains(spelling, StringComparison.Ordinal))
+                            || file.Source.Contains("'OverTimeHistoryFill'", StringComparison.Ordinal)
+                            || file.Source.Contains("`OverTimeHistoryFill`", StringComparison.Ordinal))
+                .Select(file => file.RelativePath)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(sources, Has.Count.GreaterThanOrEqualTo(FewestFrontendSourcesARealTreeHas),
+                    $"Only {sources.Count} frontend sources were found under {FrontendSourceDirectory}, so the scan is not reading the frontend.");
+
+                Assert.That(namingAKeyItDoesUse, Is.Not.Empty,
+                    $"The same search found no file naming {AKeyTheFrontendDoesName}, which the settings page does name - so it would " +
+                    "find nothing whatever it looked for.");
+
+                Assert.That(namingTheFillSwitch, Is.Empty,
+                    "The frontend names the fill switch. The empty-chart sentence is true whether it is on or off, so no widget " +
+                    "needs to ask: " + string.Join(", ", namingTheFillSwitch));
+            }
+        }
+
+        /// <summary>
+        /// What shipped on for everyone must not be gated later by accident. None of these may so much as
+        /// name the switch or its key.
+        /// </summary>
+        [Test]
+        public void WhatTheFillSwitchDoesNotGovern_NeverAsksIt()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var path in WhatTheFillSwitchDoesNotGovern)
+                {
+                    var source = ProductionSourceOf(path);
+
+                    foreach (var spelling in TheFillSwitchKeySpellings.Append(TheFillSwitchPort))
+                    {
+                        Assert.That(source, Does.Not.Contain(spelling),
+                            $"{path} ships on for everyone whether or not the fill is switched on, so it may not ask the switch.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Whether the source declares a class whose base list names <paramref name="port"/>. Read from each
+        /// class declaration up to its opening brace and taken after the last colon, so a class that merely
+        /// takes the port in its primary constructor is not mistaken for one that implements it.
+        /// </summary>
+        private static bool DeclaresAClassImplementing(string source, string port)
+        {
+            var at = source.IndexOf("class ", StringComparison.Ordinal);
+
+            while (at >= 0)
+            {
+                var opening = source.IndexOf('{', at);
+                var declaration = opening < 0 ? source[at..] : source[at..opening];
+                var colon = declaration.LastIndexOf(':');
+
+                if (colon >= 0 && declaration[(colon + 1)..].Split(',').Any(baseType => baseType.Trim() == port))
+                {
+                    return true;
+                }
+
+                at = source.IndexOf("class ", at + 1, StringComparison.Ordinal);
+            }
+
+            return false;
+        }
+
+        private static List<SourceFile> FrontendSourceFiles()
+        {
+            var frontendRoot = Path.Combine(
+                Directory.GetParent(ProductionRoot())!.Parent!.FullName, FrontendSourceDirectory.Replace('/', Path.DirectorySeparatorChar));
+
+            Assert.That(Directory.Exists(frontendRoot), Is.True, $"No frontend sources at {frontendRoot}; the scan is anchored at the wrong directory.");
+
+            return [.. Directory.EnumerateFiles(frontendRoot, "*.*", SearchOption.AllDirectories)
+                .Where(file => FrontendSourceExtensions.Contains(Path.GetExtension(file), StringComparer.Ordinal))
+                .Select(file => new SourceFile(Path.GetRelativePath(frontendRoot, file).Replace('\\', '/'), File.ReadAllText(file)))];
         }
 
         private static List<SourceFile> ProductionSourceFiles()

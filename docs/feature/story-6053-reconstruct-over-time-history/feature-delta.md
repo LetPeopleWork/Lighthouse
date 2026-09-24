@@ -3,7 +3,7 @@
 **ADO**: User Story [6053](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6053) — "Back propagate missing PBC and Percentiles over Time values"
 **Reported by**: Steve Pereira (community)
 **Tags**: Release Notes
-**Waves**: DISCUSS (2026-09-22; amended 2026-09-24 - the fill ships opt-in: D9, US-05, slice 05); DESIGN (2026-09-22; amended 2026-09-24 - the switch: DDD-5 and DDD-6 amended, DDD-18..DDD-20 added); DEVOPS (2026-09-22; amended 2026-09-24 - slice 05, the switch: DEVOPS-5..DEVOPS-6, G-11..G-13)
+**Waves**: DISCUSS (2026-09-22; amended 2026-09-24 - the fill ships opt-in: D9, US-05, slice 05); DESIGN (2026-09-22; amended 2026-09-24 - the switch: DDD-5 and DDD-6 amended, DDD-18..DDD-20 added); DEVOPS (2026-09-22; amended 2026-09-24 - slice 05, the switch: DEVOPS-5..DEVOPS-6, G-11..G-13); DISTILL (2026-09-22; amended 2026-09-24 - slice 05 acceptance tests: Slice09, seeder, structural, frontend copy)
 
 ---
 
@@ -2198,6 +2198,235 @@ feature to collide with.
 
 Re-evaluate at DELIVER **if** the crafter extracts that predicate as a pure function with a returned
 result. If it stays void-returning behind the port, it correctly has no row.
+
+## Wave: DISTILL / [REF] Amendment 2026-09-24 - slice 05, the fill ships opt-in
+
+Acceptance designer: Quinn. Density: Tier-1. Reconciliation across DISCUSS D9 / US-05, DESIGN DDD-5
+(amended), DDD-18..DDD-20 and DEVOPS-5/6, G-11..G-13 ran before any test was written: **0
+contradictions.** Every decision listed as decided was taken as given; none is reopened here.
+
+### [REF] Scenario list with tags - Slice09, the fill ships opt-in (9, all pending)
+
+`Slice09TheFillShipsOptIn{Scenarios,Specifications}.cs`, `[Category("slice-09")]` + the story category,
+every scenario `[Ignore(Pending)]`. Numbered Slice09 because the directory numbers fixtures, and
+Slice05-Slice08 are the story's slices 01-04.
+
+| Scenario | Tags | State |
+|---|---|---|
+| `With_the_fill_switched_off_opening_a_chart_queues_nothing_and_switching_it_on_needs_no_restart` (A) | `@driving_port @us-05 @error @real-io` `preserving` | pending |
+| `A_chart_already_filling_in_when_the_fill_is_switched_off_finishes_and_one_still_waiting_never_starts` (B) | `@us-05 @concurrency @error @real-io` `bounded` | pending |
+| `Switching_the_fill_off_keeps_every_day_it_filled_and_switching_it_back_on_fills_only_what_is_still_missing` (C) | `@driving_port @us-05 @real-io` `preserving` | pending |
+| `An_instance_that_stores_no_fill_switch_fills_nothing_until_an_admin_switches_it_on_after_the_upgrade` (D) | `@us-05 @error @upgrade @real-io` `preserving` | pending |
+| `Someone_who_is_not_a_system_admin_cannot_switch_the_fill_and_their_charts_carry_on_as_before` (E) | `@us-05 @rbac @error @real-io` `preserving` | pending |
+| `The_daily_recording_still_writes_today_with_the_fill_switched_off` (F) | `@us-05 @not-gated @regression @real-io` `bounded` | pending |
+| `A_quiet_day_is_still_left_blank_by_the_daily_recording_with_the_fill_switched_off` (G) | `@us-05 @not-gated @error @real-io` `preserving` | pending |
+| `Switching_the_fill_leaves_a_line_in_the_log_saying_which_way_it_went` (H) | `@us-05 @observability @real-io` `bounded` | pending |
+| `Opening_a_chart_that_is_missing_nothing_pays_nothing_for_the_switch_and_one_missing_days_pays_one_lookup` (I) | `@us-05 @read-cost @real-io` `pure` | pending |
+
+Error and edge scenarios: 6 of 9. All example-based (layer 3+, real host over a real SQLite file).
+
+**Also authored:**
+
+| File | Test | State |
+|---|---|---|
+| `Services/Implementation/Seeding/OptionalFeatureSeederTests.cs` | `SeedAsync_AddsTheOverTimeHistoryFill_OffInPreviewAndFree` | pending |
+| same | `SeedAsync_OverTimeHistoryFillSwitchedOnBeforeTheUpgrade_StaysOnAndIsRedescribed` | pending |
+| same | `SeedAsync_OverTimeHistoryFill_ReadsTheWayAnAdministratorSeesIt` (name + description pinned as literals, DDD-20) | pending |
+| `Architecture/OverTimeReconstructionSeamArchUnitTest.cs` | `OnlyTheReconciler_AsksTheFillerForDays` | **green** (holds today; guard) |
+| same | `TheFillSwitchKey_IsNamedOnlyByTheKeyList_TheSeeder_AndTheSwitch` (+ exactly one class implements `IOverTimeHistoryFillSwitch`) | pending |
+| same | `TheFrontend_NeverNamesTheFillSwitch` (floor of 400 sources + a positive control: the same search must find `"FeatureOrdering"`) | **green** (guard) |
+| same | `WhatTheFillSwitchDoesNotGovern_NeverAsksIt` (both recording handlers, both writers, `BaselineValidationService`, the demo synthesiser, `ReconstructionMemo`, `DatabaseMaintenanceGate`) | **green** (guard) |
+| `Lighthouse.Frontend/src/pages/Common/MetricsView/overTimeEmptyState.test.ts` | sentence pinned to the new wording; new "does not promise ... a later visit" | 2 `it.skip` |
+| `PercentilesOverTimeWidget.test.tsx`, `PbcOverTimeWidget.test.tsx` | `HONEST_EMPTY_COPY` is the new sentence; the 4 tests per file that compare it are `it.skip` / `it.skip.each`; new `never asks whether this instance fills in past days` (spies on `OptionalFeatureService.prototype`) | 8 skipped, 2 new **green** |
+
+The key-confinement scan cannot find a blind spot silently: the set it compares against is built
+from the one discovered implementation plus two named files, so an empty scan fails. The frontend
+scan counts a key the frontend genuinely names before it claims the fill key is absent. The
+frontend skips are per-test (`it.skip`), never `describe.skip`, because Vitest evaluates a skipped
+describe body.
+
+### [REF] US-05 acceptance-criteria coverage
+
+| AC | Covered by |
+|---|---|
+| 1 Off by default, fresh and upgraded; `Enabled` never overwritten | seeder tests (fresh; upgraded-and-on); D (missing row, then the upgrade seeds it **off**) |
+| 2 Off: nothing fills, either chart, either scope, then or later | A (team via percentiles, portfolio via limits - both decorators, both scopes; "later" = the drain after switching on); D; I (switch off: no ask, one lookup). A Lighthouse-Clients read is the same endpoint and needs no scenario of its own |
+| 3 On: no restart; the next open fills | A second half, B second half, C second half, D second half, E |
+| 4 Off after on: kept, nothing new, a running pass finishes; on again fills gaps and rewrites nothing | B (running finishes, waiting dropped - the test states which way it went), C |
+| 5 One sentence in both modes; widgets never read the switch | frontend skipped pins + 2 green "never asks" tests; `TheFrontend_NeverNamesTheFillSwitch` |
+| 6 System Admin only; not premium | E; seeder `IsPremium = false` (the controller's premium check is generic and already pinned by `The_setting_the_licence_has_nothing_to_say_about_is_taken_either_way`) |
+| 7 Not gated | F, G behaviourally; `WhatTheFillSwitchDoesNotGovern_NeverAsksIt` and key confinement structurally. Demo loading: structural only (see F-11) |
+| DEVOPS-6 (b) drop line at Information, G-11 | B |
+| DEVOPS-6 (c) toggle line | H |
+| DDD-5 amended read cost | I |
+| DDD-18 one `AskFor` caller; key confinement | the two ArchUnit tests |
+
+### [REF] Vacuity model - what makes each "nothing was written" able to fail
+
+The house pattern (U-16..U-47): an assertion about absence passes for free unless the arrangement
+makes it depend on the rule. Each arrangement below was modelled before it was written, then
+**run against a product with a switch row that nothing reads** (the pre-DELIVER experiment below):
+
+| Scenario | The "nothing" assertion | Fails when | Proof in the same scenario that the arrangement fills |
+|---|---|---|---|
+| A | zero rows in both tables after switch-on + drain | the gate exists only at pass start (the opens queued asks while off; the drain after switching on fills them), or nowhere | reopen + drain -> team and portfolio each cover the 31 days |
+| B | the waiting team holds nothing | the pass-start check is missing, or reads a switch cached at start-up | switch on, reopen, drain -> the waiting team covers its 31 days |
+| B | exactly one Information drop line naming the waiting team; none naming the running one | the drop is silent, raised in level, or the running pass is stopped by the switch | the running team covers all 31 days - fails if a per-day check stopped it |
+| B (G-11) | no Recent Problems entry from the filler | the drop line is raised to Warning or worse | a Warning logged by the scenario itself must appear in Recent Problems first (positive control) |
+| C | the charts hold exactly the pre-off snapshot after opening a new fillable range while off | the new range fills while off; switching off deletes | switch on, reopen the same range -> it fills, and the snapshot is still a subset (nothing rewritten) |
+| D | zero rows | a missing row reads as on | the upgrade seeds the row off; the admin switches it on; reopen -> fills |
+| E | 403 and stored value still on | the guard is removed | the refused user's own chart then fills - possible only because the switch really stayed on |
+| G | no cycle-time reading for today | the absence rule is gated off with the switch | the same refresh writes today's age reading (an item in progress), proving the recorder ran for this team |
+| I | a gap-free read touches `OptionalFeatures` zero times | the lookup is hoisted above the predicate | the same capture must have seen at least one command (not blind); the gap-finding read must see exactly one lookup and exactly one command more |
+
+### [REF] Pre-DELIVER red classification (run 2026-09-24)
+
+**As committed** every Slice09 scenario, the three seeder tests and the key-confinement test are
+`MISSING_FUNCTIONALITY`: the arrangement's first step, switching the fill through the endpoint,
+stops at "No behaviour setting is stored under 'OverTimeHistoryFill'" - the seeder row is the
+first thing DELIVER builds.
+
+**Experiment, not committed:** the nine scenarios were un-ignored against a harness that inserted an
+inert `OverTimeHistoryFill` row (so the endpoint could toggle it, while nothing in the product reads
+it - an ungated product). Result, 6 failed / 3 passed:
+
+| Scenario | Result | Failed on |
+|---|---|---|
+| A | FAIL | 246 percentile + 310 limit rows written while off; the switched-on arm passed |
+| B | FAIL | waiting team filled; no drop line. Running team covered all days; Recent Problems positive control and "no filler entry" passed |
+| C | FAIL | the new range filled while off (278 -> 548 held rows); both "still plots" assertions passed |
+| D | FAIL | 123 + 155 rows written with no row stored |
+| H | FAIL | no toggle line |
+| I | FAIL | 0 lookups where 1 is expected; **8 commands against 8** - so the "+1" is exact on this build, and the gap-free half passed (capture not blind) |
+| E, F, G | pass | they pin behaviour that already exists (the generic System Admin guard; the recorder). E was then sabotaged by deleting `[RbacGuard(SystemAdmin)]` from `UpdateOptionalFeature`: it failed on both the 403 and the stored value. F and G fail only if someone gates the recorder or its absence rule on the switch - reasoned, not run |
+
+### [REF] How the base fixture switches the fill on
+
+`ReconstructOverTimeHistoryAcceptanceTest.Init` now ends with `SwitchTheFillOnTheWayAnAdministratorWould()`:
+a `POST /api/latest/optionalfeatures/OverTimeHistoryFill` as System Admin, asserted `200 OK`, through
+the shared `TheFillIsSwitched(on)` helper the Slice09 scenarios also use (plus
+`SomeoneAsksToSwitchTheFill(on, asWhom)`, `TheStoredFillSwitch()`, `TheFillSwitchIsNotStoredAtAll()`,
+`TheInstanceIsUpgraded()` and a `ConfigureAdditionalServices` hook).
+
+**It returns early while no `OverTimeHistoryFill` row is stored.** Why that cannot mask anything:
+
+- Before DELIVER there is no row and no gate, so every Slice05-08 scenario already runs with the
+  fill at work - there is nothing to switch, and nothing is skipped.
+- Once the seeder adds the row, the early return is dead and the call is strict: any refusal fails
+  `Init` loudly.
+- The only state in which the early return changes anything is "gate built, row not seeded". There
+  the fill reads off (missing row = off) and every Slice05-08 scenario goes **red**, not green, and
+  the seeder tests say why. It can hide a pass in no state.
+- Slice09 never relies on it: its scenarios switch explicitly through the strict helper.
+
+The alternative - leave the call out and hand it to DELIVER - was rejected because the step that
+lands the gate would then red every Slice05-08 scenario at once, and the fix would sit in a harness
+that step has no other reason to touch. **Ordering this implies for DELIVER:** seed the row no later
+than the step that lands the gate (with the gate first and no row, the fill reads off and the story
+suite goes red); then delete the early return in the step that seeds the row (P-7).
+
+### [REF] Existing tests that rely on the fill, or pin what this slice changes
+
+- **Every Slice05-Slice08 scenario** drains the filler and expects rows: switched on in `Init`
+  as above. Nothing else in the backend suite drains the filler (grep: only this harness names
+  `OverTimeHistoryFiller`, `DrainAsync` on it, or `ReconstructionMemo`).
+- **Epic 5427's `PercentilesOverTimeAcceptanceTest` descendants** never drain, so they never saw
+  the fill; off is the behaviour they were written against. No change.
+- **`DemoPercentilesBackfillHandlerTests`** exercise the synthesiser, which writes directly and is
+  not gated. No change.
+- **`OptionalFeatureSeederTests.SeedAsync_CanBeCalledMultipleTimes_WithoutErrors`** pins the exact
+  key set (`DeltaSync`, `FeatureOrdering`, `UsageData`). It reds, correctly, the moment the row
+  lands; DELIVER adds `OverTimeHistoryFill` to it in that step (P-8).
+- **E2E**: `PercentilesOverTime.spec.ts`, `PbcOverTime.spec.ts`, `PredictabilityOverTime.spec.ts` and
+  the over-time shots in `Screenshots.spec.ts` rely on demo data being filled - see E2E below.
+- There is no unit test of `OverTimeGapReconciler` to change for its new constructor parameter.
+
+### [REF] Adapter coverage (delta)
+
+| Adapter / port | Real-I/O scenario |
+|---|---|
+| `IOverTimeHistoryFillSwitch` implementation (EF read of `OptionalFeatures` by key, SQLite file) | A-E, I (every read that finds days missing); D for the missing row |
+| `OptionalFeatureSeeder` (EF) | seeder tests (`IntegrationTestBase`); D (re-run as the upgrade) |
+| `OptionalFeaturesController` write + `RbacGuard` + default applier | every Slice09 scenario (System Admin), E (team admin) |
+| `ILogger<OverTimeHistoryFiller>` / `ILogger<OptionalFeaturesController>` through Serilog | B, H - captured by `CapturedLogMessages`, Warning+ also fed to the host's real `RecentProblemsSink` exactly as the shipped logger config does |
+| `IRecentProblems` | B (with positive control) |
+
+### [REF] Driving-adapter coverage (delta)
+
+| Driving adapter | Exercised by |
+|---|---|
+| `POST /api/latest/optionalfeatures/OverTimeHistoryFill` | every Slice09 scenario and every Slice05-08 `Init` (System Admin); E (team admin, refused) |
+| `GET .../teams/{id}/metrics/percentiles-over-time` | A-E, I |
+| `GET .../teams/{id}/metrics/process-behavior-over-time` | C |
+| `GET .../portfolios/{id}/metrics/process-behavior-over-time` | A |
+| `TeamDataRefreshed` | F, G |
+
+### [REF] Pre-requisites for DELIVER (slice 05)
+
+- **P-6. No new seam for Scenario B.** `AReconstructionPassHeldInFlight()` already parks a real pass
+  at its first `FillDayIfAbsent` and runs the drain on another thread; asks made while it is parked
+  queue behind it, and disposing the handle releases the pass and waits for the drain to empty the
+  queue - so the waiting owner's pass starts, reads the switch and is dropped, all inside the
+  `using`. This holds only if the pass-start check sits **before** the owner is loaded and before
+  the pass counts as in flight (DDD-19), and resolves the switch from the pass's own scope.
+- **P-7. Delete the early return in `SwitchTheFillOnTheWayAnAdministratorWould`** in the step that
+  seeds the row.
+- **P-8. Add `OverTimeHistoryFill` to `SeedAsync_CanBeCalledMultipleTimes_WithoutErrors`** in the
+  same step.
+- **P-9. The read-cost probe (I) needs no production seam.** The Slice09 host adds a
+  `DbCommandInterceptor` through `services.ConfigureDbContext<LighthouseAppContext>(...)`, test side
+  only; it was confirmed live by the experiment above. The probe counts commands whose text names
+  `OptionalFeatures`, so the switch must read that table (it does, by key) and the gap-free path
+  must not touch it at all.
+- **P-10. B's log assertions match the rendered DEVOPS-6 (b) template** by the fragment
+  `dropped a waiting pass` and `for Team {id} (`; H matches `OverTimeHistoryFill` and
+  `switched from {True|False} to {True|False}` at Information. Keep those words, or change the
+  scenario with them.
+- **P-11. Frontend:** change `OVER_TIME_EMPTY_COPY` in `overTimeEmptyState.ts`, then remove the
+  `it.skip` from the 10 skipped tests in the three files. Nothing else in `src` changes.
+
+### [REF] E2E changes - specified, not authored (DELIVER owns them; Playwright must run before commit)
+
+- New helper `Lighthouse.EndToEndTests/tests/helpers/api/optionalFeatures.ts`, beside `demo.ts` and
+  `teamMetrics.ts`: `setOptionalFeature(request, key, enabled)` - read the row
+  (`GET /api/latest/optionalfeatures/{key}`), then `POST /api/latest/optionalfeatures/{key}` with the
+  row whole and `enabled` set; assert 200.
+- Call it with `OverTimeHistoryFill`, `true` in the setup of `specs/flow/PercentilesOverTime.spec.ts`,
+  `PbcOverTime.spec.ts`, `PredictabilityOverTime.spec.ts` and of the over-time shots in
+  `specs/screenshots/Screenshots.spec.ts`, **not** through a page object; switch it back off in
+  teardown, because the setting is instance-wide and outlives the spec.
+- Update the copy constants `PERCENTILES_OVER_TIME_EMPTY_COPY`
+  (`tests/models/metrics/PercentilesOverTimeWidget.ts:16`) and `PBC_OVER_TIME_EMPTY_COPY`
+  (`tests/models/metrics/PbcOverTimeWidget.ts:53`) to the new sentence.
+- No E2E asserts the off state; the backend owns it.
+
+### [REF] Findings (slice 05)
+
+- **F-6. E, F and G are regression pins, not drivers.** They pass on first un-ignore once the row
+  exists. E was shown falsifiable by sabotaging the guard; F and G by construction (they fail if the
+  recorder or its absence rule is gated on the switch). Do not read their first-run green as a
+  sign the step is done.
+- **F-7. The G-11 assertion needed a positive control the gate note did not mention.** "No Recent
+  Problems entry" also passes if Recent Problems saw nothing at all. The scenario logs its own
+  Warning first and requires it to arrive. To make the Information drop line observable, the Slice09
+  host replaces the logger factory; it re-attaches the host's own `RecentProblemsSink` at Warning, as
+  `LoggingConfigurator` does, so G-11 still judges the real sink.
+- **F-8. H asserts the generic toggle line only for this key**, including a same-value write, which
+  pins DEVOPS-6's "no branch" claim. A mutant on the template text is killed by H; that is intended.
+- **F-9. The read-cost equation is exact on the current build:** a gap-free and a gap-finding read
+  of the same chart each sent 8 commands. "+1" is therefore a real bound, not a tolerance.
+- **F-10. The upgrade case of AC1 is covered twice, differently.** The seeder unit test covers an
+  existing row switched on; D covers an instance that stores no row at all and is then upgraded -
+  the gap DEVOPS-5 names ("before the seeder has run, a missing row reads off").
+- **F-11. Demo loading is covered structurally, not behaviourally.** The DESIGN note's third
+  not-gated item ("loading demo data still writes the synthesiser's rows and leaves the switch
+  off") has no Slice09 scenario: this harness does not load demo data, and the synthesiser writes
+  directly, not through the fill. `DemoPercentilesBackfillHandler.cs` is in the not-governed list,
+  and the key-confinement test rejects any demo loader naming the key. A behavioural scenario can be
+  added at DELIVER if the demo pipeline is reachable from this host at acceptable cost.
+- **Mandate-12 (types module, step AST, reuse ratio)** is a Python-pilot mandate; this suite follows
+  the directory's C# partial-class Scenarios/Specifications convention, whose step methods are
+  one-line delegations to the base harness. Reuse ratio not measured.
 
 ---
 

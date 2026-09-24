@@ -16,6 +16,93 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             OptionalFeatureKeys.UsageDataKey,
         ];
 
+        /// <summary>
+        /// The switch that decides whether this instance fills in past days on the over-time charts, spelled
+        /// as a caller addresses it. Written out because the product's constant does not exist until the
+        /// switch ships, and because this is the wire identity a script switching it from outside uses.
+        /// </summary>
+        private const string OverTimeHistoryFillKey = "OverTimeHistoryFill";
+
+        private const string PendingUntilTheFillSwitchShips =
+            "Pending: the opt-in switch for filling in past days is not built yet (story 6053, slice 05) - un-ignore in DELIVER";
+
+        [Test]
+        [Ignore(PendingUntilTheFillSwitchShips)]
+        public async Task SeedAsync_AddsTheOverTimeHistoryFill_OffInPreviewAndFree()
+        {
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var fill = DatabaseContext.OptionalFeatures.SingleOrDefault(feature => feature.Key == OverTimeHistoryFillKey);
+
+            Assert.That(fill, Is.Not.Null, "A fresh instance offers no switch for filling in past days, so no administrator can ever turn it on.");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fill!.Enabled, Is.False, "Filling in past days writes rows nobody can take back, so an instance only does it once an administrator has chosen to.");
+                Assert.That(fill.IsPreview, Is.True, "The fill is offered to early adopters and may still change; the list says so beside the switch.");
+                Assert.That(fill.IsPremium, Is.False, "The over-time charts are free, so the only way to fill them in cannot sit behind a licence.");
+            }
+        }
+
+        [Test]
+        [Ignore(PendingUntilTheFillSwitchShips)]
+        public async Task SeedAsync_OverTimeHistoryFillSwitchedOnBeforeTheUpgrade_StaysOnAndIsRedescribed()
+        {
+            // Arrange - an instance whose administrator already opted in, carrying an older wording and flags.
+            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
+            {
+                Id = 0,
+                Key = OverTimeHistoryFillKey,
+                Name = "An older name",
+                Description = "An older description.",
+                Enabled = true,
+                IsPreview = false,
+                IsPremium = true,
+            });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var fill = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OverTimeHistoryFillKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fill.Enabled, Is.True, "An upgrade must never switch off a fill an administrator switched on.");
+                Assert.That(fill.Name, Is.EqualTo("Fill in past days on over-time charts"), "How the setting presents itself is ours and is refreshed on every upgrade.");
+                Assert.That(fill.IsPreview, Is.True, "The preview flag is ours and is refreshed on every upgrade.");
+                Assert.That(fill.IsPremium, Is.False, "The premium flag is ours and is refreshed on every upgrade.");
+            }
+        }
+
+        // Spelled out rather than read off the seeder, because comparing a value to the constant it came from
+        // passes even when the words are blanked. These are the words an administrator decides on.
+        [Test]
+        [Ignore(PendingUntilTheFillSwitchShips)]
+        public async Task SeedAsync_OverTimeHistoryFill_ReadsTheWayAnAdministratorSeesIt()
+        {
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var fill = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OverTimeHistoryFillKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fill.Name, Is.EqualTo("Fill in past days on over-time charts"));
+                Assert.That(fill.Description, Is.EqualTo("A preview. While this is on, opening Percentiles Over Time or PBC Over Time fills in the days the chart is missing, working them out in the background from the history Lighthouse already stores. Turning it off stops any further filling; days already filled stay."));
+            }
+        }
+
         // A retired row goes whichever way the operator left it: once the switch is gone there is no
         // choice left to preserve.
         [Test]

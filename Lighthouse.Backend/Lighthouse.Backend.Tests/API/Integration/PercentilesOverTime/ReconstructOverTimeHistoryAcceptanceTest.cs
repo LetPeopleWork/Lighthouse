@@ -1,9 +1,11 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
@@ -52,6 +54,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         protected const string DoingState = "In Progress";
 
         protected const string DoneState = "Done";
+
+        /// <summary>
+        /// The switch that decides whether this instance fills in past days, spelled the way a caller
+        /// addresses it. Written out rather than read off the product's constant: this is the wire identity
+        /// an administrator's browser and a fleet operator's script both use, and a rename that kept the two
+        /// sides of the code agreeing would still strand every one of them.
+        /// </summary>
+        protected const string TheFillSwitchKey = "OverTimeHistoryFill";
 
         /// <summary>
         /// Every seeded date is expressed as a number of days before this instant. The value is
@@ -152,6 +162,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                         services.RemoveAll<IPercentileSnapshotWriter>();
                         services.AddScoped<IPercentileSnapshotWriter>(provider => new PausableFillWriter(
                             ActivatorUtilities.CreateInstance<PercentileSnapshotWriter>(provider), fillPause, stagedDayPause));
+
+                        ConfigureAdditionalServices(services);
                     });
                 });
 
@@ -166,6 +178,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+
+            SwitchTheFillOnTheWayAnAdministratorWould();
         }
 
         [TearDown]
@@ -179,6 +193,128 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             Client.Dispose();
             Factory.Dispose();
             rootFactory.Dispose();
+        }
+
+        /// <summary>
+        /// Room for a slice to add to the host before it is built - a way of watching the log or the
+        /// database that only its own scenarios need. Everything else about the host stays as above.
+        /// </summary>
+        protected virtual void ConfigureAdditionalServices(IServiceCollection services)
+        {
+            // Nothing beyond the shared host: most slices observe only what the charts hold.
+        }
+
+        // --- The fill switch ---
+
+        /// <summary>
+        /// Every scenario in the slices before the switch is about the fill doing its work, and the fill
+        /// ships switched off. They switch it on the way an administrator does, through the endpoint and
+        /// its guard, so that path runs under every one of them rather than being assumed by a row written
+        /// behind its back.
+        /// </summary>
+        private void SwitchTheFillOnTheWayAnAdministratorWould()
+        {
+            // A build that does not store the switch yet does not gate the fill either, so its scenarios
+            // already run with the fill at work and there is nothing to switch. The moment the product
+            // seeds the row, this goes through the endpoint and a refusal fails the scenario. The early
+            // return stops being needed at that point and should go with it.
+            if (TheStoredFillSwitch() is null)
+            {
+                return;
+            }
+
+            TheFillIsSwitched(on: true).GetAwaiter().GetResult();
+        }
+
+        /// <summary>How the fill switch is stored right now: on, off, or not stored at all.</summary>
+        protected bool? TheStoredFillSwitch()
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>()
+                .GetByPredicate(feature => feature.Key == TheFillSwitchKey)?.Enabled;
+        }
+
+        /// <summary>
+        /// A System Admin switches the fill, from Behaviour Settings or from a script, and the instance
+        /// takes it. A refusal here is a failure of the arrangement, not an outcome, because every step
+        /// after it would be watching the switch in the position it already had.
+        /// </summary>
+        protected async Task TheFillIsSwitched(bool on)
+        {
+            var answer = await SomeoneAsksToSwitchTheFill(on, client => client.AsSystemAdmin());
+
+            Assert.That(answer, Is.EqualTo(HttpStatusCode.OK),
+                $"A System Admin asked to switch the fill {(on ? "on" : "off")} and was answered {answer}, so the switch is " +
+                "still where it was and everything after this is watching the wrong position.");
+        }
+
+        /// <summary>
+        /// The write an administrator's browser sends, sent whole, as whoever <paramref name="asWhom"/>
+        /// makes the caller. The answer is handed back rather than judged, because who may make this
+        /// write is itself something a scenario asserts.
+        /// </summary>
+        protected async Task<HttpStatusCode> SomeoneAsksToSwitchTheFill(bool on, Func<HttpClient, HttpClient> asWhom)
+        {
+            string name;
+            string description;
+            bool isPremium;
+            bool isPreview;
+
+            using (var scope = Factory.Services.CreateScope())
+            {
+                var stored = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>()
+                    .GetByPredicate(feature => feature.Key == TheFillSwitchKey);
+
+                Assert.That(stored, Is.Not.Null,
+                    $"No behaviour setting is stored under '{TheFillSwitchKey}', so there is nothing to switch.");
+
+                (name, description, isPremium, isPreview) = (stored!.Name, stored.Description, stored.IsPremium, stored.IsPreview);
+            }
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                id = 0,
+                key = TheFillSwitchKey,
+                name,
+                description,
+                enabled = on,
+                isPremium,
+                isPreview,
+            });
+
+            using var body = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await asWhom(Client).PostAsync($"/api/latest/optionalfeatures/{TheFillSwitchKey}", body);
+
+            return response.StatusCode;
+        }
+
+        /// <summary>
+        /// The store carries no fill switch at all: an instance upgraded to this build whose seeders have
+        /// not run yet, or whose row was removed by hand. It is the one state the product can meet that
+        /// no administrator chose.
+        /// </summary>
+        protected void TheFillSwitchIsNotStoredAtAll()
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
+            var stored = repository.GetByPredicate(feature => feature.Key == TheFillSwitchKey);
+
+            Assert.That(stored, Is.Not.Null,
+                $"There is no '{TheFillSwitchKey}' row to take away, so the instance never stored one and the arrangement never happened.");
+
+            repository.Remove(stored!);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>What an upgrade is, as far as a stored setting can tell: every seeder runs again.</summary>
+        protected void TheInstanceIsUpgraded()
+        {
+            using var scope = Factory.Services.CreateScope();
+
+            foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
         }
 
         /// <summary>
