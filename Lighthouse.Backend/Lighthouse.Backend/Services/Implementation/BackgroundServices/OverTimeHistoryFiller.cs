@@ -205,20 +205,25 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 services.GetRequiredService<IProcessBehaviorSnapshotWriter>());
             var maintenance = services.GetRequiredService<DatabaseMaintenanceGate>();
             var memo = services.GetRequiredService<ReconstructionMemo>();
+            var progress = new PassProgress();
 
             try
             {
-                await WalkAsync(writers, maintenance, memo, request, target, cancellationToken);
+                await WalkAsync(writers, maintenance, memo, request, target, progress, cancellationToken);
             }
             finally
             {
-                // The readings above warmed the shared metrics cache under the same (owner, window)
-                // keys the widgets read. Leaving them behind would serve the UI values computed for a
-                // day that is not the one it is asking about. Once per pass and for the whole owner:
+                // Working a day out warms the shared metrics cache under the same (owner, window) keys
+                // the widgets read. Leaving those entries behind would serve the UI values computed for
+                // a day that is not the one it is asking about. Once per pass and for the whole owner:
                 // the metrics services evict by owner and nothing finer, so the live entries go with
-                // the ninety historical ones, and the dashboard pays one recompute for a pass nobody
-                // asked it for. That is the accepted price of not adding a per-key eviction for this.
-                target.InvalidateReadCache();
+                // the historical ones, and the dashboard pays one recompute for a pass nobody asked it
+                // for. That is the accepted price of not adding a per-key eviction for this - and a pass
+                // that worked out no day read nothing, so it does not pay it.
+                if (progress.DaysTried > 0)
+                {
+                    target.InvalidateReadCache();
+                }
             }
         }
 
@@ -228,6 +233,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             ReconstructionMemo memo,
             OverTimeFillRequest request,
             OverTimeFillTarget target,
+            PassProgress progress,
             CancellationToken cancellationToken)
         {
             // Where the owner's history begins is a property of its stored items, so working it out
@@ -238,7 +244,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 request.OwnerId, request.OwnerType, earliestDayTheItemsSupport);
 
             var timeSpentOnThisPass = Stopwatch.StartNew();
-            var daysAlreadyTried = 0;
 
             foreach (var day in request.CandidateDays)
             {
@@ -267,19 +272,19 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 // Never before the pass has tried a day. A budget short enough to stop a pass at nothing
                 // would be a pass that never finishes a window however many times the chart is opened,
                 // which is not a slower fill but no fill at all.
-                if (daysAlreadyTried > 0 && timeSpentOnThisPass.Elapsed >= longestThisPassMayRun)
+                if (progress.DaysTried > 0 && timeSpentOnThisPass.Elapsed >= longestThisPassMayRun)
                 {
                     logger.LogInformation(
                         "Over-time reconstruction gave the rest of the window back for {OwnerType} {OwnerId} ({MetricFamily}) after {DaysDone} days; the next chart load asks for what is left",
                         request.OwnerType,
                         request.OwnerId,
                         MetricFamily,
-                        daysAlreadyTried);
+                        progress.DaysTried);
 
                     break;
                 }
 
-                if (daysAlreadyTried >= MostDaysOnePassWorksOut)
+                if (progress.DaysTried >= MostDaysOnePassWorksOut)
                 {
                     break;
                 }
@@ -290,8 +295,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                     continue;
                 }
 
+                progress.TriedADay();
                 await FillOneDayAsync(writers, memo, request, day, target);
-                daysAlreadyTried++;
             }
         }
 
@@ -397,5 +402,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         private sealed record OverTimeWriters(
             IPercentileSnapshotWriter Percentiles,
             IProcessBehaviorSnapshotWriter ProcessBehavior);
+
+        /// <summary>
+        /// What one pass has got through, held outside the walk so that however the walk ends - a
+        /// check that stops it, the end of the window, or an exception - the pass still knows what it
+        /// did. A day counts as tried from the moment the pass starts working it out, because that is
+        /// when it starts reading.
+        /// </summary>
+        private sealed class PassProgress
+        {
+            public int DaysTried { get; private set; }
+
+            public void TriedADay() => DaysTried++;
+        }
     }
 }

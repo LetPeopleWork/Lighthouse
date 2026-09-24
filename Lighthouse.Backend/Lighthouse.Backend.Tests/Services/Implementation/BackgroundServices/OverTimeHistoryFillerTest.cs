@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
         /// </summary>
         private const int OwnersTheQueueHolds = 256;
 
+        private const int TeamId = 7;
+
         private static readonly DateTimeOffset Now = new(2026, 9, 22, 9, 0, 0, TimeSpan.Zero);
 
         private static readonly DateOnly Today = new(2026, 9, 22);
@@ -110,6 +112,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             teamRepositoryMock.Verify(repository => repository.GetById(turnedAway), Times.Once);
         }
+
+        /// <summary>
+        /// Emptying the owner's metrics cache makes the dashboard recompute everything it shows, which
+        /// is only worth paying for when the pass itself read through that cache - and a pass that
+        /// worked out no day read nothing.
+        /// </summary>
+        [Test]
+        public async Task APassThatWorksOutNoDay_LeavesTheOwnersCachedMetricsInPlace()
+        {
+            var team = GivenATeamLastObservedOn(Today.AddDays(-10));
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+
+            subject.AskFor(RequestFor(TeamId, Today.AddDays(-70), Today.AddDays(-1)));
+            await subject.DrainAsync(CancellationToken.None);
+
+            teamMetricsMock.Verify(metrics => metrics.InvalidateTeamMetrics(team), Times.Never);
+        }
+
+        [Test]
+        public async Task APassThatWorksOutADay_EmptiesTheOwnersCachedMetrics()
+        {
+            var team = GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+
+            subject.AskFor(RequestFor(TeamId, Today.AddDays(-1)));
+            await subject.DrainAsync(CancellationToken.None);
+
+            teamMetricsMock.Verify(metrics => metrics.InvalidateTeamMetrics(team), Times.Once);
+        }
+
+        private Team GivenATeamLastObservedOn(DateOnly day)
+        {
+            var team = new Team { Id = TeamId, UpdateTime = day.ToDateTime(new TimeOnly(9, 0), DateTimeKind.Utc) };
+            teamRepositoryMock.Setup(repository => repository.GetById(TeamId)).Returns(team);
+
+            return team;
+        }
+
+        private void GivenTheTeamFinishedAnItemOn(DateOnly day)
+            => storedItems.Add(new WorkItem { TeamId = TeamId, ClosedDate = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc) });
 
         private static OverTimeFillRequest RequestFor(int teamId, params DateOnly[] days)
             => new(teamId, OwnerType.Team, days);
