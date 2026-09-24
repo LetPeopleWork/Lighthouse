@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -54,8 +53,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             await RecordAsync(
                 domainEvent.TeamId,
                 OwnerType.Team,
-                (startDate, endDate) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate),
-                (_, endDate) => teamMetricsService.GetWorkItemAgePercentilesForTeam(team, endDate),
+                PercentileFamilies.For(team, teamMetricsService),
                 () => teamMetricsService.InvalidateTeamMetrics(team));
         }
 
@@ -70,24 +68,24 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             await RecordAsync(
                 domainEvent.PortfolioId,
                 OwnerType.Portfolio,
-                (startDate, endDate) => portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate),
-                (_, endDate) => portfolioMetricsService.GetWorkItemAgePercentilesForPortfolio(portfolio, endDate),
+                PercentileFamilies.For(portfolio, portfolioMetricsService),
                 () => portfolioMetricsService.InvalidatePortfolioMetrics(portfolio));
         }
 
         private async Task RecordAsync(
             int ownerId,
             OwnerType ownerType,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readCycleTimePercentiles,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readWorkItemAgePercentiles,
+            IReadOnlyList<PercentileFamilyReader> families,
             Action invalidateReadCache)
         {
             try
             {
-                // Both families share this one pass — a second recorder would double the refresh cost
-                // and drift from the cycle-time rows it is meant to sit beside.
-                RecordFamily(ownerId, ownerType, MetricType.CycleTime, readCycleTimePercentiles);
-                RecordFamily(ownerId, ownerType, MetricType.WorkItemAge, readWorkItemAgePercentiles);
+                // Every family shares this one pass — a recorder per family would multiply the refresh
+                // cost and drift from the cycle-time rows the others are meant to sit beside.
+                foreach (var family in families)
+                {
+                    RecordFamily(ownerId, ownerType, family);
+                }
 
                 await snapshotRepository.Save();
             }
@@ -107,15 +105,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
         }
 
-        private void RecordFamily(
-            int ownerId,
-            OwnerType ownerType,
-            MetricType metricType,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
+        private void RecordFamily(int ownerId, OwnerType ownerType, PercentileFamilyReader family)
         {
             try
             {
-                snapshotWriter.RecordToday(ownerId, ownerType, metricType, readPercentiles);
+                snapshotWriter.RecordToday(ownerId, ownerType, family.MetricType, family.ReadPercentiles);
             }
             catch (Exception exception)
             {

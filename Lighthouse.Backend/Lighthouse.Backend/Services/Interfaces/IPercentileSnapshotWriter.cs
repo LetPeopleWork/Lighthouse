@@ -4,6 +4,14 @@ using Lighthouse.Backend.Models.Metrics;
 namespace Lighthouse.Backend.Services.Interfaces
 {
     /// <summary>
+    /// One percentile family of one owner, together with the chart to read it from. The reader is
+    /// called with the window start and the window end, and returns that window's readings.
+    /// </summary>
+    public sealed record PercentileFamilyReader(
+        MetricType MetricType,
+        Func<DateTime, DateTime, IEnumerable<PercentileValue>> ReadPercentiles);
+
+    /// <summary>
     /// Computes one calendar day of percentile snapshot rows for one owner and one metric family and
     /// stages them on the snapshot store. Every path that produces a percentile day goes through here,
     /// so a day rebuilt from history and a day recorded live cannot be computed differently.

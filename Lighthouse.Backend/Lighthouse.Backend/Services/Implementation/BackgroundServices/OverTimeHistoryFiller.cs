@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
@@ -403,10 +402,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
             return new PassTarget(
                 DateOnly.FromDateTime(team.UpdateTime),
-                [
-                    new(MetricType.CycleTime, (windowStart, windowEnd) => metrics.GetCycleTimePercentilesForTeam(team, windowStart, windowEnd)),
-                    new(MetricType.WorkItemAge, (_, windowEnd) => metrics.GetWorkItemAgePercentilesForTeam(team, windowEnd)),
-                ],
+                PercentileFamilies.For(team, metrics),
                 services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team),
                 () => metrics.InvalidateTeamMetrics(team),
                 () => EarliestFinishedDay(
@@ -429,10 +425,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
             return new PassTarget(
                 DateOnly.FromDateTime(portfolio.UpdateTime),
-                [
-                    new(MetricType.CycleTime, (windowStart, windowEnd) => metrics.GetCycleTimePercentilesForPortfolio(portfolio, windowStart, windowEnd)),
-                    new(MetricType.WorkItemAge, (_, windowEnd) => metrics.GetWorkItemAgePercentilesForPortfolio(portfolio, windowEnd)),
-                ],
+                PercentileFamilies.For(portfolio, metrics),
                 services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio),
                 () => metrics.InvalidatePortfolioMetrics(portfolio),
                 () => EarliestFinishedDay(
@@ -471,8 +464,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// the same ask. Narrow this to one family and the other families' asks are dropped while the
         /// work they cover is still outstanding, and the charts they belong to never fill at all.
         ///
-        /// The process-behaviour families are the writer's own list rather than a copy made here. A
-        /// copy is a second place the set can be changed, and the two then disagree about what a scope
+        /// Both family lists are the ones the live recording uses rather than a copy made here. A copy
+        /// is a second place the set can be changed, and the two then disagree about what a scope
         /// records without anything saying so.
         /// </summary>
         private sealed record PassTarget(
@@ -481,11 +474,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             IReadOnlyList<ProcessBehaviorFamilyReader> ProcessBehaviorFamilies,
             Action InvalidateReadCache,
             Func<DateOnly?> EarliestDayTheItemsSupport);
-
-        /// <summary>One percentile family of one owner, together with the chart to read it from.</summary>
-        private sealed record PercentileFamilyReader(
-            MetricType MetricType,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> ReadPercentiles);
 
         /// <summary>
         /// The two write policies a pass commits through. Held together because a day is one day
