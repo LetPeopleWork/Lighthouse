@@ -3,6 +3,7 @@ import {
 	test,
 	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
+import { switchHistoryFill } from "../../helpers/api/optionalFeatures";
 import { formatLocalDate } from "../../helpers/dates";
 import {
 	takeDialogScreenshot,
@@ -711,11 +712,26 @@ testWithDemo(
 	},
 );
 
+// Filling in past days ships switched off. Switched on for this shot only, so the
+// over-time widgets can plot the demo owners' backdated history, and back off after.
+const testWithDemoHistoryFill = testWithDemo.extend<{ historyFill: undefined }>(
+	{
+		historyFill: [
+			async ({ request }, use) => {
+				await switchHistoryFill(request, true);
+				await use(undefined);
+				await switchHistoryFill(request, false);
+			},
+			{ auto: true },
+		],
+	},
+);
+
 // The two over-time Predictability widgets share one theme — "how has this
 // metric been trending, day by day". Demo owners carry a backdated two-week
-// history, so both render a populated chart rather than the forward-only
-// placeholder a fresh instance would show.
-testWithDemo(
+// history and filling in past days is switched on, so both render a populated
+// chart rather than the empty sentence.
+testWithDemoHistoryFill(
 	"@screenshot a flow coach reads the Percentiles Over Time trend for cycle time and work item age, then the dated Throughput process behaviour limits",
 	async ({ page, testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();
