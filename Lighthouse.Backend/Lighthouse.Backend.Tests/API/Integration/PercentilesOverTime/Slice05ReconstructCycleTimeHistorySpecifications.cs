@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private void ThenOpeningTheTrendAgainKeepsFillingItIn(int teamId, int heldAfterTheFirstFill)
         {
-            Assert.That(DaysHeldFor(teamId).Count, Is.GreaterThan(heldAfterTheFirstFill),
+            Assert.That(DaysHeldFor(teamId), Has.Count.GreaterThan(heldAfterTheFirstFill),
                 "A range wider than one fill must keep filling on the next load; stopping at the cap for good would leave the " +
                 "rest of the range permanently unreachable.");
         }
@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private void ThenNoDayWasAddedToTheTrend(int teamId, int heldBefore)
         {
-            Assert.That(DaysHeldFor(teamId).Count, Is.EqualTo(heldBefore),
+            Assert.That(DaysHeldFor(teamId), Has.Count.EqualTo(heldBefore),
                 "A fill that keeps writing while the database is being replaced underneath it is the one thing this coupling " +
                 "exists to prevent; it must stand down instead, and pick up again on the next load.");
         }
