@@ -396,3 +396,103 @@ scored; the only gap found is finding 1.
 | Solution architect | DESIGN | approved (0 findings) | Single reader, scan guards on all three paths and the seeder pattern verified in code |
 | Platform architect | DEVOPS N/A | conditionally approved (2 medium) | Applied: KPI measurement now says any instance can read it off its own log; rollback behaviour recorded under DESIGN / DEVOPS |
 | Acceptance designer | DISTILL | needs revision (1 blocker) | **Overruled.** The "blocker" asks to delete `The_setting_the_licence_has_nothing_to_say_about_is_still_not_premium` now. It is already in the disposition table for deletion in DELIVER's first step, together with the production change, and stays green until then. All structural checks passed (driving ports, tags, ignores, deletion-table completeness) |
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Three roadmap steps in one phase, in the order the DISTILL pre-requisites forced: the refresh stopped reading the
+switch before the switch was removed, because a missing row read as "off" would have turned every instance back to
+full refreshes. Step 01-01 (`1c7e88b71`) dropped the opt-in parameter and its leading `Full` branch from
+`SyncModeResolver.Resolve`, deleted `WorkItemService.TheOperatorAskedForTheCheaperRefresh()` together with the
+`IRepository<OptionalFeature>` it was the only reader of, and made the team, portfolio and parent-Feature fetch
+deciders always call their identity scan; a connector that cannot scan still answers `TrackerCanBeScanned: false`, so
+the capability gate needed no replacement. Step 01-02 (`1bd0e78c6`) moved `DeltaSyncKey` into the seeder's retired
+keys and stopped seeding it, so the row disappears at start-up whichever way it was set and never comes back. Step
+01-03 (`a226c4e96`) rewrote the user docs to describe how every update works rather than a toggle. A comments-only
+refactor (`7fe595517`) followed. Every existing test the change made wrong was deleted or edited in the same commit
+as the production change, per the DISTILL disposition table, so no commit is red. No migration, no contract change,
+no frontend production change.
+
+## Wave: DELIVER / [REF] Files modified
+
+From `git diff --name-only 716b68e8c..HEAD`, excluding `a7ee9f29b` (another feature's DISCUSS+DESIGN commit that
+landed in between). Backend paths are under `Lighthouse.Backend/`.
+
+**Production (4)**
+- `Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs`
+- `Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs`
+- `Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs`
+- `Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs`
+
+**Tests (17)**
+- `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs`, `…Specifications.cs` (un-ignored)
+- `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs`
+- `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDelta{Scenarios,Specifications}.cs`
+- `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDelta{Scenarios,Specifications}.cs`
+- `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice04JiraDataCenterDelta{Scenarios,Specifications}.cs`
+- `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprint{Scenarios,Specifications}.cs`
+- `Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusal{Scenarios,Specifications}.cs`
+- `Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs`
+- `Lighthouse.Backend.Tests/Services/Implementation/WorkItems/SyncModeResolverTest.cs`
+- `Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs`
+- `Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs`
+
+**Docs (3)**
+- `ARCHITECTURE.md` (§Background refresh)
+- `docs/settings/configuration.md` (Faster Updates section)
+- `docs/settings/systeminfo.md`
+
+## Wave: DELIVER / [REF] Scenarios green
+
+**7 of 7** `Story5913AlwaysFasterUpdatesTest` cases green, none left `[Ignore]`d: scenarios 4–6 un-ignored in 01-01,
+scenarios 1–3 (four cases, scenario 2 running once with the switch left on and once off) in 01-02. Full filtered backend suite 7243 passed / 0 failed;
+`pnpm test` 5698 passed. DES integrity: `des-verify-integrity` reports all 3 steps with complete traces (01-03's RED
+phase recorded as not applicable, a docs-only step).
+
+## Wave: DELIVER / [REF] Definition of Done check
+
+| # | DoD item | Verdict | Evidence |
+|---|----------|---------|----------|
+| 1 | `DeltaSync` row removed at start-up, never re-seeded | **Pass** | Story5913 scenarios 1–3; `OptionalFeatureSeederTests` removal cases (row `Enabled` true and false) and the never-seeded case |
+| 2 | No production code reads the flag; resolver has no opt-in parameter | **Pass** | `grep -rn "operatorAskedForTheCheaperRefresh\|TheOperatorAskedForTheCheaperRefresh" Lighthouse.Backend` → 0 matches; `SyncModeResolver` mutated whole at 100 % |
+| 3 | Meaningful Epic #5687 scenarios stay green without an opt-in; toggle tests deleted, not skipped | **Pass** | Slices 02–05 lost their opt-in step and stay green; the five toggle scenarios and `…is_still_not_premium` were deleted |
+| 4 | Behaviour-settings and usage-data fixtures have a subject that still exists | **Pass** | `NonPremiumFixture` row seeded by the fixture (DISTILL); green before and after |
+| 5 | `ARCHITECTURE.md` and `configuration.md` no longer describe an opt-in | **Pass** | Commits `1c7e88b71` (ARCHITECTURE.md) and `a226c4e96` (configuration.md, systeminfo.md) |
+| 6 | Release-notes line drafted | **Pass — drafted here, not posted.** Posting it to the ADO item is the maintainer's | Draft below |
+| 7 | `optionalfeatures.png` regenerated | **Deferred** to the `/release` update-docs pass | Regenerating needs a full frontend build served on `:5169` plus a premium licence, and `:5169` is the maintainer's dev instance. The list is one row shorter; nothing else on the screen changes |
+| 8 | `dotnet build` zero warnings + filtered `dotnet test` green; `pnpm test` + `pnpm build` green | **Pass** | 7243 / 0 backend; 5698 frontend |
+| 9 | No new SonarCloud issues; Stryker ≥ 80 % on changed lines | **Stryker pass; SonarCloud deferred** | Stryker 100 % on changed lines (`mutation/results.md`). SonarCloud is verified only by CI after push, and the push is held |
+
+**Draft release-notes line (DoD 6):**
+
+> Refreshing a large Jira or Azure DevOps board used to mean downloading every Work Item again on every refresh,
+> unless you had found the Faster Updates switch and left it on. Now every refresh of a Jira Cloud, Jira Data Center or
+> Azure DevOps connection downloads only the Work Items and Features that changed, with nothing to switch on, so you
+> can pick a refresh interval for how fresh you want your data rather than for what it costs. The switch is gone from
+> Settings → System: if you had turned Faster Updates off, your instance now uses it too.
+
+## Wave: DELIVER / [REF] Demo evidence
+
+The Elevator Pitch is exercised end to end by the Story5913 acceptance scenarios, through the real
+`GET /api/latest/optionalfeatures` endpoint (no *Faster Updates* row, fresh or upgraded, on or off), the real seeder
+re-run as an upgrade (the row never comes back), and the scheduled team and portfolio refresh on an instance that had
+it off (the next cycle scans and downloads only what moved, logging `mode=Delta`). Scenario 4 runs unlicensed. The
+live check on a real instance is the maintainer's and is **pending**.
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Result |
+|------|--------|
+| Roadmap review | Approved (nw-acceptance-designer-reviewer, 0 blocker / 0 high / 0 low) |
+| Refactor pass | Comments only (`7fe595517`) |
+| Adversarial review | Approved (nw-software-crafter-reviewer), 0 findings |
+| Mutation | 100 % on changed lines; `SyncModeResolver` 100 % whole-file; the 17 `OptionalFeatureSeeder` survivors all pre-existing (`mutation/results.md`) |
+| DES integrity | Pass — all 3 steps have complete traces |
+
+## Wave: DELIVER / [REF] KPI measurement
+
+Both OUT-5913 KPIs are measured **after release**, on real logs and a real database. `OUT-5913-delta-without-asking`
+counts `mode=Delta` against `mode=Full` on the `Update completed` line for capable connectors after the first
+post-upgrade cycle; `OUT-5913-no-resurrection` counts `DeltaSync` rows after repeated start-ups. The acceptance
+scenarios prove the mechanism; they are not the measurement. No baseline exists before release.

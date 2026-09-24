@@ -1,0 +1,179 @@
+{
+  "roadmap": {
+    "project_id": "story-5913-always-faster-updates",
+    "created_at": "2026-09-24",
+    "total_steps": 3,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #5913 — retire the Faster Updates switch and make the two-step refresh the only refresh wherever the connector can scan. Two production moves, each with the test rework it forces in the same commit: (1) the refresh stops reading the switch — SyncModeResolver.Resolve loses its opt-in parameter and leading Full branch, WorkItemService loses TheOperatorAskedForTheCheaperRefresh() and its IRepository<OptionalFeature> dependency, and all three fetch deciders (team, portfolio Features, parent Features) always scan; (2) the switch itself goes — OptionalFeatureSeeder moves DeltaSyncKey into RemoveDeprecatedFeatures and stops seeding it, so an instance that had it on or off loses the row at start-up and never gets it back. Then the user-facing docs stop describing a toggle. Done when: all seven Story5913AlwaysFasterUpdatesTest cases are un-ignored and green; `grep -rn \"operatorAskedForTheCheaperRefresh\\|TheOperatorAskedForTheCheaperRefresh\" Lighthouse.Backend` returns zero matches; `dotnet build` has zero warnings; the backend suite is green with `--filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`; `pnpm test` and `pnpm build` are green with zero warnings. Mutation testing (Stryker.NET >= 80% on the changed lines of SyncModeResolver, WorkItemService's three fetch deciders and OptionalFeatureSeeder) is a later gate the maintainer approves separately, run on frozen code after review — it is deliberately NOT a step here.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply here and its omission is deliberate, not an oversight. This repository is C# + NUnit 4.6 + Moq (backend) and TypeScript + Vitest + RTL (frontend); there is no pytest-bdd, no .feature file and no Hypothesis. DISTILL recorded it (feature-delta.md, DISTILL / Reconciliation and the mandate-compliance note under Upstream findings): layer 3+ acceptance, example-only, the one finite axis (on/off) expressed as an NUnit [TestCase]. The crafter authors NO new acceptance tests in this story — the seven Story5913 cases were written by DISTILL and sit [Ignore(PendingDeliver)]. The crafter's RED phase is un-ignoring them and watching them fail exactly as red-classification.md recorded; its GREEN phase is production code. The only tests the crafter edits or deletes are the ones DISTILL's Existing-test disposition table lists, each in the same commit as the production change that makes it wrong, so no commit is red."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (0 blocker, 0 high, 0 low)",
+    "reviewed_at": "2026-09-24",
+    "notes": "Built from feature-delta.md (DESIGN Component Decisions, DISTILL Scenario list, Existing-test disposition, Upstream findings) and red-classification.md (7/7 MISSING_FUNCTIONALITY, plus a control run showing scenarios 4-6 go green the moment the switch stops being honoured). Three claims were checked against the code rather than inferred: (1) the Story5913 specifications write the stored row with the literal \"DeltaSync\" and use none of FasterUpdatesAcceptanceTest's opt-in helpers, so those helpers can be deleted as their last callers go; (2) Slice02's AC-2.12 scenario (A_fresh_install_gets_the_cheaper_refresh_and_an_upgrade_leaves_a_choice_alone) stays TRUE after 01-01 — it asserts what the seeder writes, and the seeder does not change until 01-02 — so it and the helpers only it uses (GivenTheOperatorTurnedTheCheaperRefreshOff in Slice02, WhenTheInstanceIsUpgradedAgain, ThenTheCheaperRefreshIsOfferedAndOn, ThenTheCheaperRefreshIsStillOff, and the base's TheOperatorTurnsOffTheCheaperRefresh and TheCheaperRefreshOption) move to 01-02, not 01-01; (3) DISTILL's disposition table names WorkItemServiceTest's GetByPredicate setup (~line 1560) but not the private helper that holds it — WorkItemServiceTest.TheOperatorAskedForTheCheaperRefresh() at line 1558 — nor its two call sites at lines 1016 and 1063 (the two CheaperRefresh_CountsWhatItDownloadedAndCouldNotPlace tests). The done-when grep matches that helper, so 01-01 deletes it and both call lines. Two further gaps found and folded in: the seeder's inline comment on the UsageData row (\"Faster Updates on means faster updates\") goes stale in 01-02. (An earlier draft claimed brief.md lacked the story-5913 delta; it is present at the end of the file — the claim came from a truncated read and was removed by the orchestrator.)"
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-5913-always-faster-updates/feature-delta.md",
+    "red_classification": "docs/feature/story-5913-always-faster-updates/red-classification.md",
+    "scenarios": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs",
+    "specifications": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesSpecifications.cs",
+    "adr": "docs/product/architecture/adr-138-two-phase-incremental-work-tracking-sync.md and adr-139-incremental-sync-capability-probe-on-connector-port.md (no new ADR — this carries out the end state ADR-138 and Epic #5687 A1 already name)",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5913"
+  },
+  "user_decisions": [
+    "D1 — an instance that had Faster Updates off gets it on. The DeltaSync row is removed; a previous 'off' is no longer honoured, and the release notes say so plainly. No startup warning.",
+    "D2 — no kill switch. No config key, no environment variable, no hidden setting replaces the toggle. The only safety net is the existing one: a failed or refused identity scan downloads the whole query and logs a WARNING.",
+    "D3 — KPI-3 accepted on the dev instance's evidence (118 delta refreshes, none unsuccessful, every failed scan fell back to Full).",
+    "D4 — the removal is done by the seeder, not by a migration. DeltaSyncKey joins RemoveDeprecatedFeatures; the constant stays because the deprecated list names it. No schema change.",
+    "D5 — the `Update completed | … | mode=… | scanned=… | fetched=…` log line does not change. Only the docs' advice to 'turn the toggle off to compare' goes.",
+    "D6 — user-facing text uses the configurable terms (Work Item, Feature). No new UI strings; the change removes a row and adds none."
+  ],
+  "out_of_scope": [
+    "A kill switch in any form (D2), and a startup warning for instances that had it off (D1).",
+    "Deleting the OptionalFeatureKeys.DeltaSyncKey constant (D4). It stays, reworded.",
+    "Any change to the update log line (D5) or to SyncOutcome — including SyncOutcome.DeltaSync, which shares the name and nothing else.",
+    "Any change to the removal rule (stored − swept), staleness evaluation or the fetch fingerprint (ADR-138/140/141).",
+    "Delta refresh for ServiceNow, Linear or CSV. They answer SupportsIncrementalSync = false and keep refreshing in full.",
+    "Any frontend production change. BehaviourSettingsTable renders whatever the endpoint returns; no production file names DeltaSync. SystemSettingsTab.behaviourSettings.test.tsx was already renamed off DeltaSync at DISTILL.",
+    "Any EF migration. The seeder removes the row; the expand-only migration rule is not in play.",
+    "A new port-level acceptance scenario for 'a first refresh falls back to Full' (DISTILL Upstream finding 1). The crafter authors no tests; it stays covered by SyncModeResolverTest and exercised as a Given everywhere.",
+    "Finalize-time items, not DELIVER steps: the release-notes line on the ADO story (DoD 6, the story carries the Release Notes tag); regenerating docs/assets/settings/optionalfeatures.png (DoD 7) — the next @screenshot run shows the list one row shorter; ADO state transitions (the orchestrator's, Resolved on push, Closed on CI green — #5913 is a Story, so it does close).",
+    "Stryker mutation testing — a later gate, separately approved, on frozen code."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Every refresh that can be cheap is cheap, without anyone asking",
+      "description": "Stop reading the switch, then remove the switch, then stop documenting it. The order matters: removing the row alone would make the refresh read 'no row' as off (TheOperatorAskedForTheCheaperRefresh answers false on a missing row) and turn every instance's refresh back to Full. So the read goes first, and scenarios 4-6 prove it; the row goes second, and scenarios 1-3 prove it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A refresh never asks whether it may be cheap",
+          "description": "SyncModeResolver loses the opt-in parameter and its leading Full branch; WorkItemService loses TheOperatorAskedForTheCheaperRefresh() and the IRepository<OptionalFeature> it was the only reader of, and its three fetch deciders always call their Scan…Identities. Un-ignore Story5913 scenarios 4-6. In the same commit, delete or edit every existing test the change makes wrong, per DISTILL's disposition table, and bring ARCHITECTURE.md §Background refresh in line.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs",
+          "scenario_name": "A_team_on_an_instance_that_had_faster_updates_off_downloads_only_the_issues_that_moved_after_the_upgrade",
+          "unskips": [
+            "[Ignore(PendingDeliver)] removed :: A_team_on_an_instance_that_had_faster_updates_off_downloads_only_the_issues_that_moved_after_the_upgrade (AC-1.2, OUT-5913-delta-without-asking)",
+            "[Ignore(PendingDeliver)] removed :: A_portfolio_on_an_instance_that_had_faster_updates_off_downloads_only_the_features_that_moved_after_the_upgrade (AC-1.3)",
+            "[Ignore(PendingDeliver)] removed :: The_parent_features_on_an_instance_that_had_faster_updates_off_are_scanned_rather_than_downloaded_after_the_upgrade (AC-1.3)",
+            "NOT un-ignored here :: scenarios 1-3 (the settings list and the upgrade). They stay red after this step because the seeder still writes the row; 01-02 un-ignores them."
+          ],
+          "red_to_green_tests": [
+            "Story5913AlwaysFasterUpdatesTest :: A_team_on_an_instance_that_had_faster_updates_off_downloads_only_the_issues_that_moved_after_the_upgrade",
+            "Story5913AlwaysFasterUpdatesTest :: A_portfolio_on_an_instance_that_had_faster_updates_off_downloads_only_the_features_that_moved_after_the_upgrade",
+            "Story5913AlwaysFasterUpdatesTest :: The_parent_features_on_an_instance_that_had_faster_updates_off_are_scanned_rather_than_downloaded_after_the_upgrade"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs (edit — drop the operatorAskedForTheCheaperRefresh parameter, its <param> doc and the leading `return SyncMode.Full` branch; the remaining five branches keep their order)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs (edit — delete TheOperatorAskedForTheCheaperRefresh() and its doc comment; remove the IRepository<OptionalFeature> constructor parameter; ResolveRemoteFetch, ResolveRemoteFeatureFetch and ResolveRemoteParentFeatureFetch always scan; rewrite the three doc comments that say the opt-in gates the scan; drop the OptionalFeatures using if nothing else needs it)",
+            "ARCHITECTURE.md (edit — §Background refresh, line ~61: drop 'with the `DeltaSync` optional feature on and' and 'nobody opted in,' from the list of ambiguities that resolve to Full)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs (edit — remove three [Ignore(PendingDeliver)] markers only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs (edit — delete A_refresh_never_scans_once_the_operator_switched_it_off and Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle; remove every remaining GivenTheOperatorAskedForTheCheaperRefresh(); line; rename A_tracker_that_says_it_cannot_be_swept_is_not_scanned_even_after_an_operator_asked to drop 'even after an operator asked' and reword its header comment. KEEP A_fresh_install_gets_the_cheaper_refresh_and_an_upgrade_leaves_a_choice_alone — still true until 01-02)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs (edit — delete GivenTheOperatorAskedForTheCheaperRefresh and ThenTheTrackerWasNeverScanned; reword ThenTheTrackerWasNotScannedEvenThoughTheOperatorAsked and the class doc comment ('nobody opted in') without the opt-in. KEEP GivenTheOperatorTurnedTheCheaperRefreshOff, WhenTheInstanceIsUpgradedAgain, ThenTheCheaperRefreshIsOfferedAndOn, ThenTheCheaperRefreshIsStillOff — AC-2.12 still calls them)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs (edit — delete A_portfolio_refresh_never_scans_once_the_operator_switched_it_off and A_portfolio_refresh_switched_off_never_scans_the_parent_features_either; remove the 16 remaining GivenTheOperatorAskedForTheCheaperRefresh(); lines; reword the opt-in comment on A_portfolio_whose_tracker_refuses_to_be_scanned_still_gets_every_parent_feature)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs (edit — delete GivenTheOperatorAskedForTheCheaperRefresh, GivenTheOperatorTurnedTheCheaperRefreshOff, ThenTheTrackersFeaturesWereNeverScanned; reword ThenTheParentFeaturesWereNeverScanned's message and GivenAPortfolioWhoseTrackerRefusesToBeScanned's doc comment)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice04JiraDataCenterDeltaScenarios.cs + Slice04JiraDataCenterDeltaSpecifications.cs (edit — remove the 2 GivenTheOperatorAskedForTheCheaperRefresh(); lines and the step)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs + Slice05FetchFingerprintSpecifications.cs (edit — remove the 17 GivenTheOperatorAskedForTheCheaperRefresh(); lines and the step)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs (edit — delete TheOperatorAsksForTheCheaperRefresh, whose last callers the wrappers above were. KEEP TheOperatorTurnsOffTheCheaperRefresh, TheCheaperRefreshOption and TheInstanceIsUpgradedAgain)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/SyncModeResolverTest.cs (edit — delete Resolve_NobodyOptedIn_ResolvesToFull; drop the operatorAskedForTheCheaperRefresh parameter from the private Resolve helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs (edit — delete the optionalFeatureRepositoryMock field and its [SetUp] construction, the private TheOperatorAskedForTheCheaperRefresh() helper at ~1558, its two call lines at ~1016 and ~1063, and `.WithOptionalFeatureRepository(...)` at ~1639)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WorkItemServiceTestBuilder.cs (edit — delete WithOptionalFeatureRepository, the field it sets, and the argument the builder passes to the WorkItemService constructor)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The three Story5913 refresh scenarios are un-ignored and the RED run is captured BEFORE any production edit, and it matches red-classification.md: the team case shows ScansIssued 0 / FullDownloadsIssued 1, the portfolio case FeatureScansIssued 0 / FullFeatureDownloadsIssued 1, the parent case an empty ParentFeatureScans. A different failure (setup, fixture, licence) is a finding to report, not something to fix around.",
+            "SyncModeResolver.Resolve has no opt-in parameter, and its decision order is exactly DESIGN's Resulting Decision Table: cannot scan → Full; scan failed → Full; fetch shape changed → Full; nothing stored → Full; a stored record without a change stamp → Full; otherwise Delta. No branch is reordered, merged or added.",
+            "All three fetch deciders call their Scan…Identities unconditionally. No replacement capability gate is written: each scan already returns TrackerCanBeScanned: false for a connector that cannot scan, which is what keeps ServiceNow, Linear and CSV on Full (AC-1.4).",
+            "WorkItemService's constructor no longer takes IRepository<OptionalFeature>, and nothing else in WorkItemService reads an optional feature. Program.cs is NOT touched — DI resolves the constructor — so the full Integration suite is not forced. The S107 pragma stays; the parameter count is still above the rule's limit.",
+            "No kill switch appears in any form (D2): no config key, no environment variable, no appsetting, no hidden OptionalFeature read elsewhere.",
+            "The rewritten doc comments say why the scan always runs and why that is safe (a scan that fails or is refused downloads everything) in plain language. They cite no internal reference — no 'A1', 'D2', 'AC-1.2', 'ADR-138' as the explanation.",
+            "Every deletion and edit this step makes is one the disposition table assigns to the production change in this step — and nothing that belongs to 01-02. In particular AC-2.12 and the Slice02/base helpers only it uses are still present and green at the end of this step.",
+            "No unused private member is left behind in any touched test file: unused privates fail the build here, and SonarCloud S1144 flags any that slip through as a new issue.",
+            "ARCHITECTURE.md §Background refresh no longer describes an opt-in, in the same commit — the project keeps that document current with the change, not after it.",
+            "`grep -rn \"operatorAskedForTheCheaperRefresh\\|TheOperatorAskedForTheCheaperRefresh\" Lighthouse.Backend` returns zero matches (this includes every GivenTheOperatorAskedForTheCheaperRefresh wrapper and WorkItemServiceTest's own helper).",
+            "`dotnet build` zero warnings; the backend suite is green with the live-connector categories excluded. If any test OUTSIDE the disposition table goes red — the likely shape is a test that builds WorkItemService over an unseeded store with a connector mock that answers SupportsIncrementalSync = true, which read 'no row' as Full until now — stop and report it rather than editing it to pass; it is a gap in DISTILL's inventory, not a licence."
+          ],
+          "implementation_notes": "Un-ignore first, capture RED, then production, then the disposition edits until the filtered suite is green, then commit once. The scenarios read the literal \"DeltaSync\" rather than the constant on purpose (DISTILL / Scaffolds) — do not 'tidy' that into OptionalFeatureKeys.DeltaSyncKey. Useful targeted run while iterating: `dotnet test --filter \"FullyQualifiedName~FasterUpdates|FullyQualifiedName~BehaviourSettings|FullyQualifiedName~UsageDataVeto|FullyQualifiedName~OptionalFeatureSeeder|FullyQualifiedName~SyncModeResolver|FullyQualifiedName~WorkItemServiceTest\"` — DISTILL's baseline for the first four was 150 passed, 7 skipped; expect 4 skipped after this step, and fewer passed by the number of deleted scenarios. Then the full filtered suite before committing: `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. In a worktree, exactly 2 Licensing failures on the gitignored valid_not_expired_license.json are environmental — copy it from the main checkout. Consult docs/ci-learnings.md before editing (CA1861 on any inline new[] in an edited assertion line, NUnit2045/2056). Commit: `feat(faster-updates): every refresh that can be cheap is cheap, without an opt-in (story 5913)`"
+        },
+        {
+          "id": "01-02",
+          "name": "The switch is gone and stays gone",
+          "description": "OptionalFeatureSeeder moves DeltaSyncKey into RemoveDeprecatedFeatures and drops it from GetOptionalFeatures, so every start-up removes the row whichever way the operator left it and no start-up brings it back. Un-ignore Story5913 scenarios 1-3 (four test cases). In the same commit, delete the scenarios and helpers that asserted what the seeder used to write, invert OptionalFeatureSeederTests, and reword the two production comments that still describe a live switch.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs",
+          "scenario_name": "An_upgraded_instance_offers_no_faster_updates_switch_whichever_way_it_was_set",
+          "unskips": [
+            "[Ignore(PendingDeliver)] removed :: A_fresh_install_offers_no_faster_updates_switch (AC-1.1)",
+            "[Ignore(PendingDeliver)] removed :: An_upgraded_instance_offers_no_faster_updates_switch_whichever_way_it_was_set(On) and (Off) (AC-1.1) — one attribute, two test cases",
+            "[Ignore(PendingDeliver)] removed :: Upgrading_again_never_brings_the_faster_updates_switch_back (AC-1.5, OUT-5913-no-resurrection)"
+          ],
+          "red_to_green_tests": [
+            "Story5913AlwaysFasterUpdatesTest :: A_fresh_install_offers_no_faster_updates_switch",
+            "Story5913AlwaysFasterUpdatesTest :: An_upgraded_instance_offers_no_faster_updates_switch_whichever_way_it_was_set(On)",
+            "Story5913AlwaysFasterUpdatesTest :: An_upgraded_instance_offers_no_faster_updates_switch_whichever_way_it_was_set(Off)",
+            "Story5913AlwaysFasterUpdatesTest :: Upgrading_again_never_brings_the_faster_updates_switch_back"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs (edit — add OptionalFeatureKeys.DeltaSyncKey to RemoveDeprecatedFeatures beside the four keys already retired that way; delete the DeltaSync entry from GetOptionalFeatures; reword the inline comment on the UsageData entry, which uses '\"Faster Updates\" on means faster updates' as its example of a row that reads positively)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs (edit — DeltaSyncKey's doc comment says it 'ships dark - off by default and flagged as a preview'; it should say it names a retired row, kept only so the seeder can remove it)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs (edit — remove the last three [Ignore(PendingDeliver)] markers; the class doc comment's 'Every scenario ships [Ignore]d. DELIVER un-ignores one at a time' becomes false and must go)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesSpecifications.cs (edit — delete `private const string PendingDeliver`, which has no user left; SonarCloud S1144 flags an unused private member as a new issue)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs (edit — delete A_fresh_install_gets_the_cheaper_refresh_and_an_upgrade_leaves_a_choice_alone; Story5913 scenarios 1-3 replace it)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs (edit — delete GivenTheOperatorTurnedTheCheaperRefreshOff, WhenTheInstanceIsUpgradedAgain, ThenTheCheaperRefreshIsOfferedAndOn, ThenTheCheaperRefreshIsStillOff and what remains of the '// --- Then: the opt-in gate ---' block)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs (edit — delete TheCheaperRefreshOption, TheOperatorTurnsOffTheCheaperRefresh and the '// --- The opt-in gate ---' heading; KEEP TheInstanceIsUpgradedAgain, which the Story5913 scenarios use; drop the Models.OptionalFeatures using if nothing else needs it)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalScenarios.cs (edit — delete The_setting_the_licence_has_nothing_to_say_about_is_still_not_premium; its promise that Faster Updates never needs a licence lives on in Story5913 scenario 4, which runs unlicensed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalSpecifications.cs (edit — delete TheFasterUpdatesRow, GivenTheFasterUpdatesRowAsTheProductSeedsIt and ThenTheStoredSettingIsNotPremium, whose last caller is the scenario above)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs (edit — delete SeedAsync_AddsDeltaSync_EnabledAndNoLongerInPreview, SeedAsync_DeltaSyncLeftOffOnAnExistingInstance_StaysOff, SeedAsync_DeltaSyncEnabledByOperator_StaysEnabled, SeedAsync_DeltaSync_NamesTheThingItFetchesInTheInstancesOwnWord; add DeltaSync to the SeedAsync_RemovesDeprecatedFeatures cases with the row both Enabled = true and Enabled = false, plus a 'never seeded on an empty database' case; drop DeltaSync from SeedAsync_CanBeCalledMultipleTimes_WithoutErrors's expected keys (~line 59) and hoist that inline array into a static readonly field while the line is touched; move SeedAsync_FeatureWasRenamedOrRedescribed_RefreshesTheTextWithoutTouchingTheOperatorsChoice onto FeatureOrderingKey or UsageDataKey)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "The four Story5913 settings cases are un-ignored and the RED run is captured BEFORE the seeder edit, matching red-classification.md: the list still reads `DeltaSync, FeatureOrdering, UsageData` where `FeatureOrdering, UsageData` is expected.",
+            "The row is removed by the seeder, not by a migration (D4). No file under Migrations is created or edited, and `CreateMigration` is not run.",
+            "The row is removed whichever way the operator left it — Enabled true and Enabled false — and a later start-up never re-adds it. Scenario 3 checks the store directly as well as the endpoint, because a row the endpoint filtered out would still be a resurrection.",
+            "The upgrade takes nothing else with it: scenario 2 compares the list before and after and only DeltaSync may differ. The seeder's handling of FeatureOrdering and UsageData, including preserving an operator's choice, is unchanged.",
+            "OptionalFeatureKeys.DeltaSyncKey stays (the deprecated list names it), and its doc comment now says what it is for. The UsageData comment in the seeder no longer holds up a retired setting as its example. Both in plain language, no internal references.",
+            "OptionalFeatureSeederTests still covers every behaviour the seeder has — renaming/redescribing keeps the operator's choice, repeat calls are idempotent, deprecated keys go — with DeltaSync now one of the deprecated keys. No new inline `new[] {…}` in an assertion (CA1861).",
+            "After this step the only places the string DeltaSync survives in Lighthouse.Backend are: the constant in OptionalFeatureKeys, the deprecated list in OptionalFeatureSeeder, the removal cases in OptionalFeatureSeederTests, the Story5913 specifications' deliberate literal, and the unrelated SyncOutcome.DeltaSync factory. Anything else is a leftover.",
+            "Zero [Ignore(PendingDeliver)] remain in Story5913AlwaysFasterUpdatesScenarios.cs; all seven cases run and pass.",
+            "`dotnet build` zero warnings; backend suite green with the live-connector categories excluded; `pnpm test` and `pnpm build` green with zero warnings (the frontend has no production change, but the settings list it renders is now one row shorter — confirm nothing in the frontend suite asserts a count that included it)."
+          ],
+          "implementation_notes": "Keep the seeder's existing RemoveDeprecatedFeatures shape — one more key in the list, not a new mechanism. The rollback behaviour DESIGN recorded (a downgrade brings the row back switched ON, and the old 'off' cannot be restored) is a consequence of D1 and is not something this step compensates for. The non-premium fixture rows that three BehaviourSettings/UsageDataVeto scenarios used to borrow from DeltaSync were already moved to BehaviourSettingsAcceptanceTest.NonPremiumFixtureKey at DISTILL and stay green through this step — do not touch them. Commit: `feat(faster-updates): retire the Faster Updates switch at start-up (story 5913)`"
+        },
+        {
+          "id": "01-03",
+          "name": "The settings page describes how every update works",
+          "description": "Rewrite the 'Faster Updates' section of docs/settings/configuration.md as how every update works, with no toggle. AC-1.6's docs half; its release-notes half is a finalize item.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Story5913AlwaysFasterUpdatesScenarios.cs",
+          "scenario_name": "Upgrading_again_never_brings_the_faster_updates_switch_back",
+          "unskips": [
+            "None — this step un-skips nothing. AC-1.6 is a docs check that DISTILL recorded as not automatable. The test_file names the scenario whose behaviour the rewritten page now promises (the switch does not exist and does not come back); it must stay green, and this step changes no code that could affect it."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/settings/configuration.md (edit — the '### Faster Updates' section, ~lines 75-89)",
+            "docs/settings/systeminfo.md (edit ONLY if the casing check in the criteria finds its example and field table disagree with what the log emits)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "The section describes the two-step update as how every update works on Jira Cloud, Jira Data Center and Azure DevOps, and says ServiceNow, Linear and CSV always download everything. No toggle, no 'with it off', no 'on by default', no 'takes effect on the next update', no 'turn the toggle off to compare'.",
+            "The bullets that are still true survive: the whole query is still read so a Work Item that leaves it disappears on the next update; a setting that changes what an update asks for costs one full update; editing a query no longer throws stored data away — reworded to drop 'whether the toggle is on or off'. A failed scan still falls back to downloading everything.",
+            "The closing note is replaced with the operator-facing consequence of D1: an instance that had Faster Updates switched off now uses it too, and there is no setting to turn it off.",
+            "The log-line guidance quotes the line as the code emits it. UpdateServiceBase formats the SyncMode enum, and DISCUSS quotes `mode=Delta` from real logs, while the current page and systeminfo.md write `mode=delta` / `mode=full`. Check against a real log line and quote what is actually printed; fix systeminfo.md's example and field table in the same commit only if they are wrong.",
+            "The heading text stays 'Faster Updates' so the `configuration.html#faster-updates` anchor that systeminfo.md links to (and anything external that deep-links it) keeps resolving.",
+            "Every configurable term reads as the seeded default from TerminologySeeder.cs — Work Item/Work Items, Feature/Features, Team, Portfolio. Never Epic, Initiative or Story.",
+            "Remove any `*/docs` symlink before running a frontend build in this step, or Biome's prebuild --write pass reformats the docs tree."
+          ],
+          "implementation_notes": "docs/assets/settings/optionalfeatures.png is NOT regenerated here — it is a finalize item (DoD 7), done with the other per-feature screenshots; when it is, `rm` the old PNG first (a sub-threshold diff keeps the stale image), exclude @auth, and import the premium licence fixture from the main checkout. The historical release-notes entries that describe Faster Updates as opt-in are history and are not edited; the new release-notes line (an 'off' is now on) is drafted on the ADO story at finalize. The brief.md delta for this story already exists (section 'Application Architecture — story-5913-always-faster-updates', committed with DESIGN) and is not touched here. Commit: `docs(faster-updates): describe how every update works, not a toggle (story 5913)`"
+        }
+      ]
+    }
+  ]
+}
