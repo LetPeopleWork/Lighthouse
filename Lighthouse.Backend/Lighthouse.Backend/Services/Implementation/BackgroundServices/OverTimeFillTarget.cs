@@ -15,7 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
     ///
     /// Both family lists are the ones the live recording uses rather than a copy made here. A copy
     /// is a second place the set can be changed, and the two then disagree about what a scope
-    /// records without anything saying so.
+    /// records without anything saying so. Each family is only wrapped, so that a reading reaching
+    /// back past the work the owner still keeps comes back empty.
     /// </summary>
     internal sealed record OverTimeFillTarget(
         DateOnly LastObservedOn,
@@ -48,16 +49,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var metrics = services.GetRequiredService<ITeamMetricsService>();
             var workItems = services.GetRequiredService<IWorkItemRepository>();
             var clock = services.GetRequiredService<ILighthouseClock>();
+            var lastObservedOn = clock.ToInstanceDay(team.UpdateTime);
+            var retention = RetentionEdge.For(lastObservedOn, team);
 
             return new OverTimeFillTarget(
-                clock.ToInstanceDay(team.UpdateTime),
-                Implementation.PercentileFamilies.For(team, metrics),
-                services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team),
+                lastObservedOn,
+                [.. Implementation.PercentileFamilies.For(team, metrics).Select(retention.Guard)],
+                [.. services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team).Select(retention.Guard)],
                 () => metrics.InvalidateTeamMetrics(team),
-                () => EarliestFinishedDay(
+                () => retention.NoEarlierThanTheEdge(EarliestFinishedDay(
                     clock,
                     workItems.GetAllByPredicate(item => item.TeamId == teamId && item.ClosedDate != null)
-                        .Select(item => item.ClosedDate)));
+                        .Select(item => item.ClosedDate))));
         }
 
         private static OverTimeFillTarget? ForPortfolio(IServiceProvider services, int portfolioId)
@@ -71,18 +74,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var metrics = services.GetRequiredService<IPortfolioMetricsService>();
             var deliveries = services.GetRequiredService<IRepository<Feature>>();
             var clock = services.GetRequiredService<ILighthouseClock>();
+            var lastObservedOn = clock.ToInstanceDay(portfolio.UpdateTime);
+            var retention = RetentionEdge.For(lastObservedOn, portfolio);
 
             return new OverTimeFillTarget(
-                clock.ToInstanceDay(portfolio.UpdateTime),
-                Implementation.PercentileFamilies.For(portfolio, metrics),
-                services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio),
+                lastObservedOn,
+                [.. Implementation.PercentileFamilies.For(portfolio, metrics).Select(retention.Guard)],
+                [.. services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio).Select(retention.Guard)],
                 () => metrics.InvalidatePortfolioMetrics(portfolio),
-                () => EarliestFinishedDay(
+                () => retention.NoEarlierThanTheEdge(EarliestFinishedDay(
                     clock,
                     deliveries
                         .GetAllByPredicate(delivery =>
                             delivery.ClosedDate != null && delivery.Portfolios.Any(owner => owner.Id == portfolioId))
-                        .Select(delivery => delivery.ClosedDate)));
+                        .Select(delivery => delivery.ClosedDate))));
         }
 
         /// <summary>
