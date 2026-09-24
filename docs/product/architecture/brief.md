@@ -9010,3 +9010,20 @@ items are noted below rather than forced to read resolved.
 from them alone would exercise only the sixteen-cell path. The twenty-cell path, the hole-in-the-middle
 sound set (an off-ladder window unsound while its neighbours are sound) and the fixed-dates Team all need
 coverage.
+
+## Application Architecture — story-5913-always-faster-updates
+
+Feature: story-5913-always-faster-updates (ADO User Story #5913). Additive to the `epic-5687-faster-updates`
+section; ADR-138, ADR-139, ADR-140 and ADR-141 stand unchanged.
+
+The `DeltaSync` optional feature is retired. The two-step refresh is no longer something an instance opts
+into: `SyncModeResolver.Resolve` loses its opt-in parameter, and the team, portfolio and parent-Feature fetch
+deciders in `WorkItemService` always attempt the identity scan. Whether a refresh is cheap is now decided
+only by the connector's `SupportsIncrementalSync(connection)`, the scan's success, the fetch fingerprint and
+the stored stamps. Every ambiguous case still resolves to a full download, and removal is still
+`stored − swept`.
+
+There is deliberately no replacement switch: no config key, no environment variable. The safety net is the
+scan-failure fallback that already existed. `OptionalFeatureSeeder` removes the row on start-up, like the
+four keys it retired before, so no migration is involved. `WorkItemService` drops its
+`IRepository<OptionalFeature>` dependency, which had no other reader.
