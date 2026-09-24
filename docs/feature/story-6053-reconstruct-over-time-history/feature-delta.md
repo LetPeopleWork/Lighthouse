@@ -1199,8 +1199,8 @@ refreshes only name/description/flags on an existing one, never `Enabled` (`Opti
 `Key` (`LighthouseAppContext.cs:108`), every row carries `Id = 0`, so the switch must select by key
 (`GetByPredicate(f => f.Key == ...)`), never `GetById` - which matches every row; a duplicate key cannot
 arise from seeding (lookup by key, PK violation otherwise). The default applier suffices
-(`OptionalFeatureApplierRegistry.ApplierFor` falls back to it): toggling has no side effect - *unless*
-OQ-6 is answered yes. System Admin guard is the existing `[RbacGuard(SystemAdmin)]` on
+(`OptionalFeatureApplierRegistry.ApplierFor` falls back to it): toggling has no side effect (OQ-6 was
+decided: nothing is recorded now, #6083 settles how the default flip treats a seeded off). System Admin guard is the existing `[RbacGuard(SystemAdmin)]` on
 `OptionalFeaturesController.UpdateOptionalFeature`; not premium, so the licence check never fires.
 
 ---
@@ -1439,7 +1439,7 @@ threshold, and the Container diagram already names every arrow.
 | **OQ-3** | **Wall-clock budget value.** DDD-6 locks 90 days per pass but not the seconds. SPIKE-01's figures are from 621 items on SQLite on a laptop and explicitly do not extrapolate. | **OPEN.** Pick a value in slice 01 and re-measure on the largest instance available before slice 03 adds the PBC families. | slice 01, revisited slice 03 |
 | **OQ-4** | **Non-ADO connectors are unmeasured.** Reconstruction reads stored items rather than the connector, so independence is plausible by construction — but the Jira connection in the dev DB has no owner attached and there is no Linear or ServiceNow data at all. | **OPEN, low risk, unmeasured.** | opportunistic |
 | **OQ-5** | **A wide cycle-time distribution is unmeasured.** The only available owner closes most items the same day, so every percentile is 1 or 2 and a subtly-wrong reconstruction would still score 4/4. | **OPEN.** Re-run the fidelity probe if a team spread across 1–40 days becomes available. | opportunistic |
-| **OQ-6** | **Seeded off vs chosen off, for #6083** *(added 2026-09-24)*. The seeder never overwrites `Enabled`, so when #6083 flips the default an instance that upgraded through slice 05 and never touched the switch still holds the seeded off, indistinguishable from an admin's deliberate off - the flip would reach fresh instances only. Recording "an admin chose" at toggle time (a dedicated applier writing one key/value row, no migration) is cheap now and impossible to reconstruct later. | **OPEN - for the maintainer.** Recommendation: record it in slice 05. Until answered, DDD-20 stands (default applier, no side effect). | the maintainer, before slice 05 DELIVER |
+| **OQ-6** | **Seeded off vs chosen off, for #6083** *(added 2026-09-24)*. The seeder never overwrites `Enabled`, so when #6083 flips the default an instance that upgraded through slice 05 and never touched the switch still holds the seeded off, indistinguishable from an admin's deliberate off - the flip would reach fresh instances only. Recording "an admin chose" at toggle time (a dedicated applier writing one key/value row, no migration) is cheap now and impossible to reconstruct later. | **DECIDED by the user, 2026-09-24: decide at #6083.** Nothing is recorded in slice 05; DDD-20 stands (default applier, no side effect). #6083 chooses then between flipping fresh installs only and flipping every instance that is off, deliberate offs included. | #6083 |
 
 ### Flagged against the locked decisions
 

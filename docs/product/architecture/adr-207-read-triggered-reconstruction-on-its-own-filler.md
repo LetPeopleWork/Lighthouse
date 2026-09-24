@@ -473,7 +473,7 @@ there begins every visit with days it will refuse, rather than with the older da
 first and the most recent days arrive on later visits. Accepted rather than reversed, for the reason
 just given.
 
-### Open, for the maintainer
+### Deferred to the default flip (#6083)
 
 The seeder never overwrites an on/off value already stored, which is what keeps an admin's choice
 across upgrades. It also means that when the default later flips to on (#6083), an instance that
@@ -481,8 +481,9 @@ upgraded through this release and never touched the switch still holds the **see
 can tell that apart from an admin who deliberately switched it off. Flipping the default would then
 reach fresh instances only. Recording, at the moment an admin changes the switch, that a person chose
 (one extra key/value row written by a dedicated applier for this key, no migration) is cheap now and
-impossible to reconstruct later. Not adopted here, because it changes what #6083 means; raised with the
-maintainer.
+impossible to reconstruct later. The maintainer chose not to record it now: #6083 decides, when it
+flips the default, whether to reach fresh instances only or every instance that is off, deliberate
+offs included.
 
 ### Earned Trust — changed and added probes
 
