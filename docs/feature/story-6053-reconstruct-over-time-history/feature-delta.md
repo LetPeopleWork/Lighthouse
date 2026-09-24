@@ -3636,3 +3636,27 @@ DELIVER step:
 | H5 — Scenario B could pass without a queued ask | Already guarded: B asserts the drop's Information line exactly once for the waiting team, which only a queued ask reaching the pass-start check can produce; the ungated harness experiment made B fail. |
 | H4 — query-count probe relies on per-request scope | Accepted as is: the probe asserts a non-zero baseline and was measured 8 against 8 on the ungated harness. |
 | H6, H7, M8, M9 | Low value (source-scan spellings, a compile-time import check duplicating the frontend key scan) or already in the 05-01/05-03 criteria. Not acted on. |
+
+### U-48 — Adversarial review, 2026-09-24 (tip 05240719a): approve-with-fixes
+
+Findings the review cited with quoted code, and what is done about each:
+
+| # | Severity | Finding | Disposition |
+|---|---|---|---|
+| R1 | high | The queue is `DropWrite`, whose `TryWrite` returns **true** when full and discards the item, so the `Forget` after it never runs: past 256 waiting owners, a dropped owner keeps its in-flight key and never fills again until restart. The comment claims the opposite. | Fix now, unit test first. |
+| R2 | high | Items older than the owner's retention cutoff are deleted on sync, but the floor checks only the day, not the window behind it. A windowed family on a day within one window-width of the retention edge averages over deleted data and writes a permanent row biased low; judging limits as of that day switches off the check that would refuse it. | Fix now, scenario first: refuse a day unless its whole lookback lies inside what the retention window still holds. |
+| R3 | medium | The ceiling reduces `UpdateTime` (a UTC instant) with the UTC date, not the instance day; west of UTC it can be tomorrow, and the reconciler does not cap the range at today, so a future day can be written. Same class as Bug #5567. | Fix now: instance day for the ceiling, cap the asked range at today. |
+| R4 | medium | A pass that worked out no days still evicts the owner's whole metrics cache; with U-45 that happens on every load for an owner not synced today. | Fix now: evict only if the pass tried a day. |
+| R5 | medium | Back-to-back queued passes keep a restore refused far longer than the promised ten seconds (up to the whole queue). | Fix now: a refused maintenance request is remembered, and the filler starts no new pass while one is waiting. |
+| R6 | low | The pass queries the store before its first maintenance check. | Fix now, with R5. |
+| R7 | low | The shutdown drain ignores cancellation between requests; `DrainAsync`'s contract overstates what it waits for. | Fix now. |
+| R8 | low | A refresh mid-pass can leave a stale "already worked out" note; self-heals on the next refresh. | Defer — propose an ADO bug. |
+| R9 | low | A day that always fails logs one Error per day per load. | Fix now: aggregate per pass. |
+| R10 | low | The demo synthesiser's "backfill already ran" check (`RecordedAt < today`) is no longer true once the filler writes past days. | Defer — propose an ADO bug; only reachable when an admin switched the preview on before the demo refresh. |
+| R11 | low | Two frontend negative assertions are implied by an exact-match one. | Accept; redundant, not wrong. |
+
+Open items: **U-46** fix now (arm the floor with an item in progress since before the period). **U-45**
+bug for later, its cheap parts land with R3/R4. **U-6/U-28** test debt, observable with the existing
+store-command interceptor — propose an ADO bug. **U-4** accepted: the review showed deleting the
+registration does red `ThenStartingADatabaseRestoreIsRefused`, so the "nothing fails" note was out of
+date. **Demo horizon lists** accepted behind the ArchUnit allowlist.
