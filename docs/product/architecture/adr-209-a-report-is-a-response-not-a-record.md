@@ -1,4 +1,4 @@
-# ADR-207: A report is a response, not a record — the reality check stores nothing, and what a Report *is* gets decided when the second one arrives
+# ADR-209: A report is a response, not a record — the reality check stores nothing, and what a Report *is* gets decided when the second one arrives
 
 **Status**: Accepted (2026-09-22 — Morgan, DESIGN wave, interaction mode PROPOSE). Ratifies decision D8
 of `epic-4172-forecast-backtest-sweep`, taken in DISCUSS and confirmed from DIVERGE.

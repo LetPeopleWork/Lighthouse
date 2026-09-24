@@ -20,7 +20,7 @@ Source method: Nick Brown (ASOS), *The Full Monte*, ASOS Tech Blog, Jan 2024.
 | `diverge/competitive-research.md` | 32 external + 5 local sources; the source method reconstructed; 10 named products; 4 non-obvious categories; naming study; G2 gate |
 | `diverge/options-raw.md` | HMW, all 7 SCAMPER lenses, 4 Crazy 8s, curation to 6, diversity test, G3 gate |
 | `diverge/taste-evaluation.md` | DVF filter, locked weights with derivation, 6x5 scoring matrix, per-criterion breakdown, 3 sensitivity analyses, G4 gate |
-| `recommendation.md` | Top 3, dissenting case, decision statement, ADR-207 framing, carpaccio shape |
+| `recommendation.md` | Top 3, dissenting case, decision statement, ADR-209 framing, carpaccio shape |
 | `diverge/review.yaml` | Peer-review verdict (Prism, `nw-diverger-reviewer`) |
 | `wave-decisions.md` | this file |
 
@@ -111,18 +111,18 @@ two comments in the tree say so and say why (`ConnectionValidationResult.test.ts
 them"*. **R1's score was deliberately left at 4.15 rather than lowered** — the channel was a convenience,
 not a requirement, and marking a losing option down on a post-scoring fact would flatter the winner.
 
-### DV-7 — No Report abstraction. ADR-207 records the position, not an implementation
+### DV-7 — No Report abstraction. ADR-209 records the position, not an implementation
 
 Shape (a) on the commitment spectrum — nothing stored, no entity, no migration, no `UpdateType` member,
 no runner registry. The project's SOLUTION EFFICIENCY rule at its first step (*skip / YAGNI*).
 
-ADR-207 must nevertheless decide more than "not yet": the accepted consequence (no history, nothing to
+ADR-209 must nevertheless decide more than "not yet": the accepted consequence (no history, nothing to
 email), the named revisit trigger (**the second Report kind**, not a date), the six questions the eventual
 Report ADR will face, the runner question with the ADR-195 single-lane measurement behind it, and the
 forward-compatibility constraint that the result shape must not hard-code a single Team.
 
 Touches ADR-195, ADR-194, ADR-039, ADR-172, ADR-162, ADR-127, ADR-181/182/186, ADR-046, ADR-145.
-Next free number **ADR-207** confirmed (206 ADRs present, highest `adr-206`).
+Next free number **ADR-207** confirmed (206 ADRs present, highest `adr-206`); renumbered to 209 on 2026-09-24, because story 6053 had taken 207 and 208 in a parallel DESIGN wave.
 
 ### DV-8 — The name
 
@@ -203,7 +203,7 @@ the feature: nobody currently knows which value is right.
   ADR-020), declared in `job-analysis.md` §0. DESIGN may want the same substitution.
 - **`ctx_search` skips `brief.md`** for size, so the absence of an existing `Report` concept from the
   architecture brief could not be confirmed by search. The 206 ADR titles contain none. **DESIGN should
-  confirm before ADR-207 is written.**
+  confirm before ADR-209 is written.**
 - **`@mui/x-charts` 9.0.1 is the only charts package installed**; there is no `@mui/x-charts-pro`, so a
   Heatmap component is unavailable. A sixteen-cell matrix needs no charting component regardless.
 
@@ -261,7 +261,7 @@ Full text in `feature-delta.md` under Locked Decisions. In brief:
 - **[D5]** Apply appears only when the current window is outside the sound region.
 - **[D6]** Today is the end anchor; no date picker. Cells are not repeated trials and must not be ranked.
 - **[D7]** The three-way verdict is kept and the departure from Brown is owned out loud, in an AC.
-- **[D8]** No Report abstraction. ADR-207 is flagged as a **DESIGN-wave deliverable**; Luna does not write it.
+- **[D8]** No Report abstraction. ADR-209 is flagged as a **DESIGN-wave deliverable**; Luna does not write it.
 - **[D9]** Per-cell sufficiency reuses `ForecastDataSufficiencyPolicy.HasEnoughData` unchanged
   (`MinimumActiveDays = 5`). No second bar.
 - **[D10]** Name: user-facing **Forecast Reality Check**; internal codename **The Full Monte**, attributed.
@@ -306,7 +306,7 @@ feature is oversized.
 
 `nw-solution-architect` receives: the four user stories with their ACs, the story map and four slice
 briefs, the journey YAML with its nine resolved design decisions, the outcome KPIs, and one named
-DESIGN-wave deliverable — **ADR-207**, whose framing is in `recommendation.md` §8 and whose next-free
+DESIGN-wave deliverable — **ADR-209**, whose framing is in `recommendation.md` §8 and whose next-free
 number (207) is confirmed. DESIGN should also confirm, per Flux's verification note, that no `Report`
 concept already exists in `brief.md`; `ctx_search` skips that file for size, so it could not be confirmed
 absent by search.
@@ -459,7 +459,7 @@ coverage against a printed nominal rate) stand as hard ACs. **Dropping Apply str
 relaxing it.** Also unchanged: all four confidence levels side by side (D1); today as the end anchor with
 no date picker (D6); cells not comparable; per-cell sufficiency composing with the shipped ≥5-active-days
 rule (D9); one-click synchronous trigger; no new entity; small multiples (D2); no Report abstraction and
-ADR-207 as a DESIGN deliverable (D8); the name (D10); and **R-1 as the single open unknown, still closing
+ADR-209 as a DESIGN deliverable (D8); the name (D10); and **R-1 as the single open unknown, still closing
 first inside slice 01.**
 
 ### Files touched by the revision
@@ -523,8 +523,8 @@ change, which rules out system, domain and platform scope.
 | Path | What it holds |
 |---|---|
 | `feature-delta.md` (appended, not rewritten) | Prior-wave consultation, DES-1…DES-12, the R-1 cost finding and its two contingencies, C4 L1 + L2, component decomposition, the 24-row Reuse Analysis, driving/driven ports, the full response contract, technology choices, architecture enforcement, quality attributes, OQ-1…OQ-5, what DESIGN found wrong upstream, the handoff |
-| `docs/product/architecture/adr-207-a-report-is-a-response-not-a-record.md` | **NEW.** The no-Report position. Accepted |
-| `docs/product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md` | **NEW.** The held/nominal-rate measurement definition. Raised PROPOSED; **Accepted by the maintainer 2026-09-22** |
+| `docs/product/architecture/adr-209-a-report-is-a-response-not-a-record.md` | **NEW.** The no-Report position. Accepted |
+| `docs/product/architecture/adr-210-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md` | **NEW.** The held/nominal-rate measurement definition. Raised PROPOSED; **Accepted by the maintainer 2026-09-22** |
 | `docs/product/architecture/brief.md` | `## Application Architecture — epic-4172-forecast-backtest-sweep` appended by anchored patch |
 | `wave-decisions.md` | this section |
 
@@ -538,14 +538,14 @@ criteria the maintainer locked.
   done with `grep`: **four** case-sensitive `Report` matches in 8 747 lines, all ordinary English (a
   mutation report, a field report, "report success", a readability report). No entity, aggregate, table,
   store, repository, kind or payload. The 206 ADR titles contain none. **Confirmed absent.**
-- **"Next free number is ADR-207."** Re-verified by listing: 206 files, highest `adr-206`, no `adr-207`.
-  **Confirmed.** ADR-208 is taken in the same wave for the measurement decision.
+- **"Next free number is ADR-207."** Re-verified by listing: 206 files, highest `adr-206`, no `adr-207`. Later renumbered to 209 on 2026-09-24, because story 6053 had taken 207 and 208 in a parallel DESIGN wave; the pair is now 209 and 210.
+  **Confirmed.** ADR-210 is taken in the same wave for the measurement decision.
 
 ### Decisions taken in this wave
 
 Full text in `feature-delta.md` under Design Decisions. In brief:
 
-- **[DES-1]** The response is one **self-describing envelope**, discharging ADR-207's
+- **[DES-1]** The response is one **self-describing envelope**, discharging ADR-209's
   no-hard-coded-Team constraint without returning a list of one. It carries **facts, never a rendered
   sentence** — the standing `story-6055` rule in the brief is that terminology stays in the browser, and
   every string here contains a renameable term.
@@ -566,7 +566,7 @@ Full text in `feature-delta.md` under Design Decisions. In brief:
 - **[DES-7]** **The export precedent is premium-gated.** `useDataGridExport` refuses without a licence
   (`DataGridToolbar.tsx:72-76`). This is a Community feature whose slice 03 *is* the marketing surface, so
   ADR-172/ADR-162 are followed in placement (client-side) and not reused as code.
-- **[DES-8]** **CORRECTION → ADR-208 (raised PROPOSED, since ACCEPTED).** "Beaten" is retired. A level *holds* iff
+- **[DES-8]** **CORRECTION → ADR-210 (raised PROPOSED, since ACCEPTED).** "Beaten" is retired. A level *holds* iff
   `actual >= value(P)`, and its nominal rate is `P`, not `100 − P`.
 - **[DES-9]** **CORRECTION.** `GetProbability` returns `-1`, so a degenerate forecast is a **second**
   unevaluable reason. Not a second sufficiency threshold — `MinimumActiveDays` is untouched.
@@ -603,7 +603,7 @@ the ADR the record rests on describes lanes that no longer exist — see OQ-3 be
 
 | # | Item | Disposition |
 |---|---|---|
-| **OQ-1** | **ADR-208 changes AC-1.6 and AC-2.4 and the journey's worked example.** The mockup's expected counts use `(100 − P)`; the engine's descending "at least N items" ordering makes the correct figure `P`. Three of four rows are wrong; the 95% row — the feature's headline lesson — by an order of magnitude. The 50% row is identical under both formulas, which is why it survived review | **ACCEPTED 2026-09-22**, after verification against `HowManyForecast`'s descending comparer. ADR-208 status is `Accepted`; both ACs are settled and testable. Closed |
+| **OQ-1** | **ADR-210 changes AC-1.6 and AC-2.4 and the journey's worked example.** The mockup's expected counts use `(100 − P)`; the engine's descending "at least N items" ordering makes the correct figure `P`. Three of four rows are wrong; the 95% row — the feature's headline lesson — by an order of magnitude. The 50% row is identical under both formulas, which is why it survived review | **ACCEPTED 2026-09-22**, after verification against `HowManyForecast`'s descending comparer. ADR-210 status is `Accepted`; both ACs are settled and testable. Closed |
 | **OQ-2** | A Team with an off-ladder `ThroughputHistory` (e.g. 45) is checked against 14/30/60/90, none of which is theirs | ~~Recommended: tell them plainly via `currentSettingWasTested: false`~~ — **RESOLVED 2026-09-22 AGAINST this recommendation. See the DESIGN revision section below.** |
 | **OQ-3** | **ADR-195 is stale.** It reads `Accepted` with three lanes and a Forecast lane; the lanes shipped and were reverted (`f216ef558`), and only the `story-5877-update-queue-lanes` brief section records that. Anyone evaluating the R-1 queue fallback from the ADR will conclude a calibration run gets its own lane. **False at HEAD** — one channel, one sequential reader | **Own status correction, not this Epic's work.** This is the second feature running to be misled by an ADR describing a deleted mechanism; ADR-127 was the first, and it got exactly this fix |
 | **OQ-4** | The D12 MCP precondition says "AC-1.2 puts the verdict sentence in the response as a field". It cannot — terminology stays in the browser | **Rewrite the precondition.** The answer (no CLI/MCP in this Epic) is unchanged and better supported |
@@ -629,7 +629,7 @@ rule E1).
 | Design scope determined on evidence | **PASS** — application/components; system, domain and platform ruled out by what DISCUSS locked |
 | Reuse Analysis (hard gate) | **PASS** — 24 overlapping components, 19 reused or extended, 5 CREATE NEW each justified by impossibility or unacceptable coupling. No justification is "it's complex" or "too many dependencies" |
 | C4 diagrams | **PASS** — System Context (L1) and Container (L2) in Mermaid, every arrow verb-labelled. L3 deliberately omitted: seven boxes, and the decomposition table carries more |
-| ADR quality | **PASS** — ADR-207 carries three alternatives with rejection rationale; ADR-208 carries three. Both carry context, decision, consequences and relationships |
+| ADR quality | **PASS** — ADR-209 carries three alternatives with rejection rationale; ADR-210 carries three. Both carry context, decision, consequences and relationships |
 | Outcome Collision Check | **RUN** — `0 outcomes checked, 0 collisions found across 0 outcomes`. The delta's KPIs are a prose table rather than registry-shaped blocks, so the checker had nothing to match. Recorded as a clean run with a caveat, not as a pass |
 | Architecture enforcement recommended | **PASS** — ArchUnitNET (already in the tree, five existing `*ArchUnitTest` classes) plus the TypeScript compiler; seven named rules E1–E7 |
 | Dependency-inversion compliance | **PASS** — one driving adapter, five existing driven ports, no new port and no new adapter |
@@ -646,7 +646,7 @@ no configuration, no secret. **No contract tests owed.**
 requirements are testable as structural properties — no rankable field (E5), the denominator identity
 `scoresEvaluated = runsEvaluated × levelsPerRun`, and the completeness invariant
 `cells.length == sampledWindowDays.length × sampledHorizonDays.length` — **16 or 20** (DES-13).
-**AC-1.6 and AC-2.4 are settled**: ADR-208 is `Accepted`, so they specify "held" with
+**AC-1.6 and AC-2.4 are settled**: ADR-210 is `Accepted`, so they specify "held" with
 `expectedHeldCount = evaluated × P/100` and can be turned into acceptance tests directly.
 **Both cell counts need coverage** — every Team in the worked examples is on the ladder, so a suite
 written from them alone would exercise only the sixteen-cell path.
@@ -726,7 +726,7 @@ sampling windows" remains non-representable.* The enforcement rule E5 was widene
 Also unchanged: today as the END anchor; cells not comparable; the region never a winner; all four
 confidence levels as one band with one mark; sufficiency composing with the shipped ≥5-active-days rule
 with no second bar; ADR-194 governing the unevaluable render; **no Apply, no write path, read-only end to
-end**; the three-way verdict never attributed to Brown; terminology; the name; ADR-207 and ADR-208.
+end**; the three-way verdict never attributed to Brown; terminology; the name; ADR-209 and ADR-210.
 
 ### DR-D3 — DES-4's tri-state survives and gets sharper
 

@@ -414,7 +414,7 @@ Three answers exist and none is chosen here:
 3. **Beside it** — a second, separate channel for work that is user-initiated, short, and read-only, which
    is a different kind of work from a tracker sync.
 
-This is the sharpest thing ADR-207 has to decide, and it is a question about *this product's queue*, not
+This is the sharpest thing ADR-209 has to decide, and it is a question about *this product's queue*, not
 about report abstractions in general.
 
 ---

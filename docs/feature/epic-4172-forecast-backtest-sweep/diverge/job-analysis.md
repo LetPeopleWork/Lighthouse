@@ -36,7 +36,7 @@ Read by Flux in this phase, all at absolute paths under the worktree:
 - `Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs`
 - `Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx` (400-465), `BacktestForecaster.tsx` (signatures)
 - `docs/product/architecture/adr-194-*.md`, `adr-195-*.md` (full), `adr-172-*.md` (headings)
-- ADR index: 206 ADRs present, highest `adr-206` → **next free number is ADR-207**, confirmed.
+- ADR index: 206 ADRs present, highest `adr-206` → **next free number was ADR-207**, confirmed (renumbered to 209 on 2026-09-24, because story 6053 had taken 207 and 208 in a parallel DESIGN wave).
 
 **Skill loading**: `nw-jtbd-analysis` loaded, `nw-brainstorming` loaded, `nw-taste-evaluation` loaded.
 

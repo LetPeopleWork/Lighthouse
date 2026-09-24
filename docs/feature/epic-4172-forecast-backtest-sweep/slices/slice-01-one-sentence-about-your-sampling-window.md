@@ -120,7 +120,7 @@ arrived here on 2026-09-22 from the deleted Apply story.
   three of its four rules vacuous; the 14-day minimum survives as a property of the 2-week horizon, not as
   input validation.
 - **Do not hard-code one Team into the result shape.** "Check every Team at once" is a plausible next unit
-  of work, and ADR-207 carries this as an explicit forward-compatibility constraint.
+  of work, and ADR-209 carries this as an explicit forward-compatibility constraint.
 - The response must carry no field naming a single winning window. If a `recommendedWindow` field feels
   natural, that is §4.1 reasserting itself and the answer is a *range* plus a boolean for whether the
   current setting is inside it. **This is exactly the pressure that produced the Apply button and got it

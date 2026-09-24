@@ -7387,7 +7387,7 @@ jobs:
       two axes is permanent by decision rather than by oversight. (3) The three-way under/over/within
       verdict is KEPT and is a deliberate departure from the source, which scored one-sided — it must
       never be attributed to Nick Brown. (4) Nothing is persisted; the result is a response, not a
-      record (ADR-207).
+      record (ADR-209).
     job_story: >
       When I am about to publish a forecast from a Team whose sampling configuration I set once and have
       never checked,

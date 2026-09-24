@@ -23,7 +23,7 @@ SSOT: `docs/product/jobs.yaml` — `job-forecaster-check-the-forecast-against-wh
 > the first thing slice 01 must do; and (b) the team accepts that the *evidence-behind-a-disclosure* posture
 > is mitigated by the three named honesty requirements in §4, not merely asserted.
 >
-> **ADR-207 decides that there is no Report abstraction yet**, records why, and names the trigger for
+> **ADR-209 decides that there is no Report abstraction yet**, records why, and names the trigger for
 > revisiting it. It builds none of the parked constellation.
 
 This is not "both options are viable". It is one direction, with a named second place whose case is made
@@ -301,7 +301,7 @@ POST /api/latest/forecast/reality-check/{teamId}      (also /api/v1/…, per For
 ### 5.3 The entity
 
 **None.** No new table, no migration, no `UpdateType` member, no queue work. This is the LOAD-BEARING
-score, and it is the position ADR-207 records.
+score, and it is the position ADR-209 records.
 
 ### 5.4 The surface
 
@@ -401,13 +401,13 @@ ever rebuilt, S1's landing-position strip is the thing to build it as.**
 
 ---
 
-## 8. ADR-207 — the framing
+## 8. ADR-209 — the framing
 
-**Next free number confirmed: ADR-207** (206 ADRs in `docs/product/architecture/`, highest `adr-206`).
+**Next free number confirmed: ADR-207**, since renumbered to 209 on 2026-09-24, because story 6053 had taken 207 and 208 in a parallel DESIGN wave (206 ADRs in `docs/product/architecture/`, highest `adr-206`).
 
 ### Proposed title
 
-> **ADR-207: A report is a response, not a record — the calibration check stores nothing, and what a
+> **ADR-209: A report is a response, not a record — the calibration check stores nothing, and what a
 > Report will be is decided when the second one arrives**
 
 ### The decision it records
@@ -465,7 +465,7 @@ will find*, so that the third does not have to renegotiate it:
 
 **Verification note**: `ctx_search` skips `brief.md` for size, so no existing `Report` concept could be
 confirmed absent from the architecture brief by search. The 206 ADR titles contain none. **DESIGN should
-confirm before ADR-207 is written.**
+confirm before ADR-209 is written.**
 
 ---
 
@@ -478,7 +478,7 @@ confirm before ADR-207 is written.**
 > It answers with a plain-language verdict naming a *region* of acceptable sampling windows — able to say
 > "they all behave the same, yours is fine" — with sixteen results one click behind it as small multiples,
 > and an Apply control that pre-fills the `ThroughputQuickSetting` already in the Team detail header.
-> ADR-207 records that there is no Report abstraction yet, why, and what the second Report will have to
+> ADR-209 records that there is no Report abstraction yet, why, and what the second Report will have to
 > decide.**
 >
 > **Assuming**: (R-1) the sixteen-cell run fits an acceptable request budget — measured in slice 01 before
@@ -492,5 +492,5 @@ confirm before ADR-207 is written.**
 
 Luna has, concretely: the **name** (§5.1), the **endpoint and its guard** (§5.2), the **entity** — none,
 and why (§5.3, §8), the **surface, trigger, in-flight state, visual form and apply path** (§5.4), a
-**six-slice carpaccio shape** (§5.5), **seven open risks with costs** (§7), and the **ADR-207 framing with
+**six-slice carpaccio shape** (§5.5), **seven open risks with costs** (§7), and the **ADR-209 framing with
 the eight ADRs it touches** (§8).

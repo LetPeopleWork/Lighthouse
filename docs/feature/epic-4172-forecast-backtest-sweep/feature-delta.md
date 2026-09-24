@@ -182,7 +182,7 @@ The nominal-rate roll-up (§4.3) is then four lines of text below the panels, no
     95%   beaten in 0   (about 1 expected)    never beaten — this is over-forecasting, not excellence
 ```
 
-> **SUPERSEDED 2026-09-22 by [ADR-208](../../product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md)
+> **SUPERSEDED 2026-09-22 by [ADR-210](../../product/architecture/adr-210-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md)
 > (Accepted). The verdicts in the right-hand column are right; the expected counts are wrong.**
 >
 > The engine sorts its simulation results descending ("at least N items"), so a level's nominal rate is
@@ -311,12 +311,12 @@ matches weather verification's symmetric treatment of conditional bias.
 UI, the docs, the launch post, the exported one-pager — the departure is stated in the same place.
 AC-1.8 and AC-3.4 make this testable.
 
-### D8 — No Report abstraction. ADR-207 is a DESIGN deliverable
+### D8 — No Report abstraction. ADR-209 is a DESIGN deliverable
 
 **U1, confirmed as Flux recommended.** Nothing is stored: no entity, no table, no `UpdateType` member,
 no queue work, no notification seam. The result is a response, not a record.
 
-ADR-207 (next free number — 206 ADRs exist, highest `adr-206`) records the position, the accepted
+ADR-209 (issued as the next free number, ADR-207 — renumbered to 209 on 2026-09-24, because story 6053 had taken 207 and 208 in a parallel DESIGN wave) records the position, the accepted
 consequence ("has this Team ever been checked?" is unanswerable, and emailing needs something durable
 that does not exist), the named revisit trigger (**the second Report kind**, not a date), the six
 questions the eventual Report ADR must answer, the ADR-195 single-lane measurement behind the runner
@@ -564,7 +564,7 @@ Scenario: Reading the check needs read rights on the Team and nothing more
   others.
 - **AC-1.6 (honesty §4.3 — coverage against a nominal rate, per D1)** — the verdict reports, for each of
   the four confidence levels, how many of the evaluable checks the forecast held in, and prints the level
-  as a number, together with the count its nominal rate expects — `evaluated × P/100` (ADR-208, Accepted;
+  as a number, together with the count its nominal rate expects — `evaluated × P/100` (ADR-210, Accepted;
   "held" replaces "beaten", and the expected count is `P`, not `100 − P`). A level that **held in none** of
   the evaluable checks is described as over-forecasting rather than as
   excellent.
@@ -595,7 +595,7 @@ Scenario: Reading the check needs read rights on the Team and nothing more
 - `BacktestInputDto`'s validation (S2) is not reused as written; D6 makes three of its four rules vacuous.
 - No entity, no migration, no `UpdateType` member (D8).
 - Route style: kebab-case is this codebase's convention (`my-summary`, `group-mappings`, `system-admins`).
-- Forward-compatibility (ADR-207): the result shape must not hard-code one Team — "check every Team at
+- Forward-compatibility (ADR-209): the result shape must not hard-code one Team — "check every Team at
   once" is a plausible next unit of work and nothing here should make it expensive.
 
 #### Dependencies
@@ -699,7 +699,7 @@ Scenario: The non-comparability statement is visible whether or not the evidence
 - **AC-2.3 (ADR-194 / D9)** — an unevaluable row renders its reason in words where the band would be. It is
   visually distinct from every evaluable outcome and is never left blank. A panel whose rows are all
   unevaluable still renders, rather than being omitted.
-- **AC-2.4 (honesty §4.3, amended by ADR-208)** — below the panels, one line per confidence level: the
+- **AC-2.4 (honesty §4.3, amended by ADR-210)** — below the panels, one line per confidence level: the
   count of evaluable checks in which that level **held** (`actual >= value(P)`), the count its nominal
   rate expects (`evaluated × P/100`), and a plain reading of the two together. A level that held in none
   of them is over-forecasting; a level that held in all of them where far fewer were expected is
@@ -871,7 +871,7 @@ Dropped on 2026-09-22: near-zero cost was the wrong axis to judge it on, because
 ## Wave: DISCUSS / [REF] Out of Scope
 
 - **Any Report entity, table, migration, `UpdateType` member, queue work or notification seam.** Declined,
-  not deferred (D8). ADR-207 records why and what the second Report must decide.
+  not deferred (D8). ADR-209 records why and what the second Report must decide.
 - **Any control that writes a Team setting — the Apply button.** **Declined 2026-09-22, not deferred**
   (D4). It contradicted §4.1 by naming one number inside a range the artifact had just called
   undifferentiated, and the control it was a shortcut to is already on the same screen. **DESIGN should
@@ -1019,7 +1019,7 @@ estimates, so nothing below may be reported downstream as a measured baseline.
 | **O4 — do not rank incomparable windows** | Every reader of the artifact | Reads the denominator and the non-comparability statement | 100% of rendered results, collapsed and expanded | AC-1.5 and AC-2.5, asserted | 0 — nothing in the product says it today |
 | **O4b — no winner is ever named** | The verdict | Names a region, never a single best window | 0 response fields and 0 rendered strings naming one window as best | AC-1.4, asserted | N/A — the surface does not exist |
 | **O6 — no unsupportable cell is read as a result** | Every unevaluable cell | Says why it could not be checked, visibly distinct from a calm result | 100% of unevaluable cells; 0 blank | AC-1.7, AC-2.3, asserted | Shipped guard covers the Team-level case; the per-cell case does not exist |
-| **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports held-count against expected-count (`evaluated × P/100`, per ADR-208), with always-held called over-forecasting | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
+| **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports held-count against expected-count (`evaluated × P/100`, per ADR-210), with always-held called over-forecasting | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
 | **O2 — Teams whose window has been checked** | Teams on the dev and demo instances | Have been through a reality check at least once | At least 3 within 30 days of release | Dogfooding record in the slice briefs; usage data only if consent exists | 0 |
 | **O5 — the answer travels** | A forecaster answering a sceptic | Pastes a one-pager instead of describing a screen | At least 1 one-pager shared externally within 60 days | Manual — the maintainer's own use, and any community mention | 0 |
 | **No write path exists** | The feature | Mutates a Team setting | 0 endpoints, 0 controls | AC-1.9, asserted; and the absence of any write in the driving-ports table | N/A — the previous plan had one |
@@ -1091,7 +1091,7 @@ mandatory consolidated review fires at the end of DISTILL.
 8. **AC-1.1 measured and both numbers written into the slice 01 brief.** Not asserted, not inferred.
 9. Docs page and two per-theme screenshots at feature finalization, in configurable terminology.
 10. **R-5 discharged before anything from the source article is quoted publicly.**
-11. ADR-207 written in the DESIGN wave, deciding more than "not yet".
+11. ADR-209 written in the DESIGN wave, deciding more than "not yet".
 12. **Bug #6071** (the `ThroughputHistory` 30-vs-90 default disagreement, D13) stays out of this Epic. The
     per-Team default confidence level question was **declined** by the maintainer on 2026-09-22 and no item
     is owed for it (D4).
@@ -1174,7 +1174,7 @@ scope.
 | `wave-decisions.md` (506 lines) | ✓ read whole — DV-1…DV-10, DISCUSS, **DR-1…DR-6**, the ADO mapping |
 | `slices/slice-01-…md` | ✓ read whole — the R-1 probe and the implementer notes |
 | `slices/slice-02-…md`, `slices/slice-03-…md` | ✓ read whole |
-| `recommendation.md` §7, §8, §9 | ✓ read — the ADR-207 framing and the nine ADRs it touches |
+| `recommendation.md` §7, §8, §9 | ✓ read — the ADR-209 framing and the nine ADRs it touches |
 | `docs/product/journeys/epic-4172-forecast-reality-check.yaml` (349 lines) | ✓ read whole — five steps, nine resolved decisions, shared-artifact registry, integration validation |
 | `docs/product/architecture/brief.md` (872 KB, 8 747 lines) | ✓ heading map read; **body searched with `grep`, not `ctx_search`**, which skips the file for size |
 | `docs/product/architecture/` ADR inventory | ✓ 206 files, highest `adr-206`, **no `adr-207`** — re-verified by listing, not assumed |
@@ -1194,7 +1194,7 @@ about the codebase that was not checked against the tree.
 8 747 lines, every one of them ordinary English: a mutation report, a field report, surfaces that "report
 success", a readability report. `grep -iE 'report (entity|abstraction|aggregate|table|record|store|
 repository|kind|type)'` returns nothing. The 206 ADR titles contain none. **There is no `Report` concept
-in this product**, which is what makes ADR-207 a decision rather than an observation.
+in this product**, which is what makes ADR-209 a decision rather than an observation.
 
 ### Outcome Collision Check
 
@@ -1215,7 +1215,7 @@ reopened; `DES-8` and `DES-9` are corrections to DISCUSS and are flagged as such
 
 `RealityCheckResultDto` is a complete, self-contained object about one subject. Every fact about the
 checked Team lives inside it; nothing about the Team is flattened onto the top level of the response.
-That is ADR-207's forward-compatibility constraint discharged **without** returning a list of one, which
+That is ADR-209's forward-compatibility constraint discharged **without** returning a list of one, which
 would be speculative generality and which this project's SOLUTION EFFICIENCY rule rejects at its first
 step.
 
@@ -1385,7 +1385,7 @@ reused as code.** The mechanism is the ungated `navigator.clipboard.writeText` a
 `SystemInfoDisplay.tsx:21` and `ApiKeysSettings.tsx:222`. AC-3.2 is satisfied and strengthened; ADR-172
 and ADR-162 are cited for their shape, not imported.
 
-### DES-8 — CORRECTION: "beaten" is retired; a level *holds*, and its nominal rate is the level ([ADR-208](../../product/architecture/adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md), **ACCEPTED**)
+### DES-8 — CORRECTION: "beaten" is retired; a level *holds*, and its nominal rate is the level ([ADR-210](../../product/architecture/adr-210-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md), **ACCEPTED**)
 
 Reading the nominal-rate requirement against the engine shows three DISCUSS artifacts describing the same
 measurement in mutually incompatible ways.
@@ -1493,7 +1493,7 @@ anything about yours"* invites the obvious reply, and the check can answer it fo
 - Today as the END anchor; cells not comparable; the region never a winner; all four confidence levels as
   one band with one mark; sufficiency composing with the shipped ≥5-active-days rule with no second bar;
   ADR-194 governing the unevaluable render; **no Apply, no write path**; the three-way verdict never
-  attributed to Brown; ADR-207 and ADR-208.
+  attributed to Brown; ADR-209 and ADR-210.
 
 #### What it does change, beyond the count
 
@@ -1649,7 +1649,7 @@ L3 earns its place on a complex subsystem, and this is not one.
 |---|---|---|---|
 | `ForecastController.RunRealityCheck` | **EXTEND** | Driving adapter. Resolves the Team via the shipped `GetEntityByIdAnExecuteAction` helper, maps `applyFilterOverride` to a `ThroughputFilterMode` via the existing private `MapOverrideToFilterMode`, calls the sweep, returns the envelope. **No input validation**: the body carries no dates, so there is nothing to validate. | Adapter; no logic |
 | `IForecastRealityCheckService` / `ForecastRealityCheckService` | **CREATE NEW** | Builds the `(horizon, window)` pairs from today — sixteen, or twenty when the Team's own window is off the standard ladder (DES-13); reads history per cell and actuals per horizon; runs `HowMany`; assembles the envelope. Holds no write surface (DES-5). | Bounded-change, empty mutation set. Returns a value; writes nothing outside the metrics cache its collaborators own |
-| `RealityCheckVerdictPolicy` | **CREATE NEW** | Pure static. `Held`, `ExpectedHeldCount`, `CellOutcome`, `SoundWindows`, `Determination`, `CurrentSettingStanding`. Owns every rule ADR-208 settles. | **Pure function (return-only).** No DI, no clock, no I/O; today arrives as a parameter |
+| `RealityCheckVerdictPolicy` | **CREATE NEW** | Pure static. `Held`, `ExpectedHeldCount`, `CellOutcome`, `SoundWindows`, `Determination`, `CurrentSettingStanding`. Owns every rule ADR-210 settles. | **Pure function (return-only).** No DI, no clock, no I/O; today arrives as a parameter |
 | `RealityCheckInputDto` + the result DTO family | **CREATE NEW** | The wire contract. See the contract section. | Data |
 
 ### Frontend — `Lighthouse.Frontend/src`
@@ -1687,7 +1687,7 @@ valid justifications and none is used.
 | 12 | `BacktestResultDto` | **CREATE NEW instead** | Cannot be extended. It models exactly one scored period and one history window in four get-only constructor-set `DateOnly` properties. A sweep of sixteen is not that object with more fields, and widening it would change the shipped `POST backtest/{teamId}` contract that three frontend components consume. | — |
 | 13 | `ValidateBacktestInput` | **NOT REUSED, and nothing replaces it** | D6 makes three of its four rules vacuous; the fourth (a 14-day minimum) survives as a property of the 2-week horizon rather than as input validation. The request body carries no dates, so there is nothing to validate. | — |
 | 14 | `ForecastDataSufficiencyPolicy` as the home for the verdict rules | **CREATE NEW (`RealityCheckVerdictPolicy`) instead** | Adding to that file would modify a file AC-1.7 asserts is unchanged, and it is a single-predicate policy that C5/D9 explicitly forbid touching. The new policy sits beside it in the same namespace, same pure-static shape. | Pure |
-| 15 | `UpdateQueueService` | **NOT USED** | ADR-207 §3. One channel, one reader; the reality check is a different kind of work and a human is waiting. | — |
+| 15 | `UpdateQueueService` | **NOT USED** | ADR-209 §3. One channel, one reader; the reality check is a different kind of work and a human is waiting. | — |
 | 16 | `InputGroup` | **NO CHANGE** | The shipped container the card goes inside. | — |
 | 17 | `BacktestForecaster` (530 lines) | **NO CHANGE** | Sibling in the same group, untouched. The new control sits above its date pickers. | — |
 | 18 | `BacktestResultDisplay` (246 lines) | **NOT REUSED** | Two independent reasons. It is a 450 px `ChartsContainer` per result — sixteen would be ~7 200 px, twenty ~9 000 px. And its grammar is wrong: a bar chart per cell on a shared axis is the visual claim that cells are commensurable, which D6 forbids (DES-6). | — |
@@ -1747,7 +1747,7 @@ One envelope. Field names are the contract; C# properties are `PascalCase` and s
 everywhere else in this API.
 
 ```
-RealityCheckResultDto                    ← the whole response body; the ADR-207 envelope
+RealityCheckResultDto                    ← the whole response body; the ADR-209 envelope
   teamId                    int
   teamName                  string
   anchorDate                DateOnly     // today, instance day — the END anchor
@@ -1777,7 +1777,7 @@ SoundWindowDto                            // DES-2, DES-3, DES-4
   currentSettingWasTested   bool
   currentSettingStanding    Inside | Outside | NotDetermined
 
-LevelCoverageDto                          // DES-8 / ADR-208
+LevelCoverageDto                          // DES-8 / ADR-210
   confidenceLevel           int
   heldCount                 int
   expectedHeldCount         double       // runsEvaluated × confidenceLevel / 100
@@ -1910,7 +1910,7 @@ Interaction mode is Propose, so each carries a recommendation and the work is no
 
 | # | Question | Recommendation | Status |
 |---|---|---|---|
-| **OQ-1** | **ADR-208 changes AC-1.6 and AC-2.4 and the journey's worked example.** "Beaten" becomes "held" and the expected count becomes `evaluated × P/100`. Accept? | **Accept.** The current arithmetic is wrong at three of four levels and wrong by an order of magnitude at the one the feature exists to teach. The correction strengthens §4.3. ADR-208 is PROPOSED pending this. | **ACCEPTED** 2026-09-22. ADR-208 status is now `Accepted`, verified against `HowManyForecast`'s descending comparer before ratification. Closed — do not reopen. |
+| **OQ-1** | **ADR-210 changes AC-1.6 and AC-2.4 and the journey's worked example.** "Beaten" becomes "held" and the expected count becomes `evaluated × P/100`. Accept? | **Accept.** The current arithmetic is wrong at three of four levels and wrong by an order of magnitude at the one the feature exists to teach. The correction strengthens §4.3. ADR-210 is PROPOSED pending this. | **ACCEPTED** 2026-09-22. ADR-210 status is now `Accepted`, verified against `HowManyForecast`'s descending comparer before ratification. Closed — do not reopen. |
 | **OQ-2** | A Team whose `ThroughputHistory` is off-ladder (say 45) is checked against 14/30/60/90, none of which is theirs. Widen the sweep to five windows, or tell them plainly? | ~~**Tell them plainly** — DES-4's `currentSettingWasTested: false`. Widening makes the denominator Team-dependent and the 16/4/64 copy is locked.~~ | **RESOLVED 2026-09-22 AGAINST this recommendation — widen the sweep.** Both objections failed: the cost was measured away (701 ms against a 5,000 ms budget, Monte Carlo floor dominating), and the denominator objection confused §4.2's principle (*state your denominator*) with the constant 16 that the dispatch happened to quote beside it. The Team's own setting is the most decision-relevant cell in the report. **See DES-13.** |
 | **OQ-3** | **ADR-195 is stale** — it reads `Accepted` with three lanes; the lanes were reverted (`f216ef558`) and only this brief records it. Correct its status? | **Yes, separately.** Not this Epic's work, but this Epic is the second feature in a row to be misled by an ADR describing a deleted mechanism (ADR-127 was the first). One line of status note. | Open. Note that R-1 resolving in favour of the in-request shape means **this Epic never touches the queue**, so the staleness no longer endangers this feature — only the next one to read that ADR. |
 | **OQ-4** | The verdict sentence cannot come from the server (DES-1), which contradicts the recorded D12 MCP precondition. Rewrite the precondition? | **Yes.** The answer (no CLI/MCP in this Epic) is unchanged and better supported. The precondition as written would need an MCP tool to re-implement the copy, which is the §4.1 risk D12 exists to avoid. | **CLOSED 2026-09-22 — rewritten as recommended.** The precondition now turns on the *client* composing the sentence from facts rather than the server shipping one. The answer (no CLI/MCP in this Epic) is unchanged and better supported. See the amended DISCUSS checklist entry above. |
@@ -1938,7 +1938,7 @@ read RESOLVED:
 
 Recorded plainly rather than corrected silently.
 
-1. **The nominal-rate arithmetic is wrong at three of the four levels** (DES-8 / ADR-208), and the one row
+1. **The nominal-rate arithmetic is wrong at three of the four levels** (DES-8 / ADR-210), and the one row
    that would have exposed it is the one row where both formulas agree.
 2. **"Beaten" is used for two opposite events** across D2, the mockup and the elevator pitch.
 3. **The engine has a second unevaluable case** — `GetProbability` returns `-1` — that DISCUSS's one-reason
@@ -1957,7 +1957,7 @@ Recorded plainly rather than corrected silently.
    raised as OQ-6.**
 
 None of these reopens a locked decision. Items 1 and 2 changed two acceptance criteria, were escalated as
-OQ-1, and were **accepted** — ADR-208 is now `Accepted`.
+OQ-1, and were **accepted** — ADR-210 is now `Accepted`.
 
 ---
 
@@ -1982,14 +1982,14 @@ only the sixteen-cell path. At minimum: an on-ladder Team (16 cells, 4 panels), 
 neighbours are not and vice versa (DES-3's hole-in-the-middle case), and a fixed-dates Team
 (`currentSettingWasTested: false`, OQ-6).
 
-**AC-1.6 and AC-2.4 are settled** — ADR-208 is `Accepted`, so they specify "held" with
+**AC-1.6 and AC-2.4 are settled** — ADR-210 is `Accepted`, so they specify "held" with
 `expectedHeldCount = evaluated × P/100` and can be turned into acceptance tests directly.
 
 **Paradigm**: object-oriented, per this project's `CLAUDE.md`. `@nw-software-crafter` implements. Not
 re-asked and not rewritten.
 
-**Peer review**: not run. The skill's triggers were evaluated — no contested ADR (ADR-207 ratifies a
-locked decision; ADR-208 was escalated to the maintainer rather than contested, and was accepted), no
+**Peer review**: not run. The skill's triggers were evaluated — no contested ADR (ADR-209 ratifies a
+locked decision; ADR-210 was escalated to the maintainer rather than contested, and was accepted), no
 novel pattern (one controller action and a pure policy in a shipped hexagon), no security boundary change
 (one reused guard, no write path). Re-evaluated after the OQ-2 reversal: a decision reversed **by the
 maintainer** is a decision taken, not a contested one, and DES-13 introduces no new pattern — it changes

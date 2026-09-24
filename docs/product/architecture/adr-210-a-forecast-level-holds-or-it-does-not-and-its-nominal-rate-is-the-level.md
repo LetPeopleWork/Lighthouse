@@ -1,4 +1,4 @@
-# ADR-208: A forecast level holds or it does not, and its nominal rate is the level itself
+# ADR-210: A forecast level holds or it does not, and its nominal rate is the level itself
 
 **Status**: **Accepted** (maintainer, 2026-09-22). Raised as PROPOSED by Morgan during the DESIGN wave
 because it corrects two acceptance criteria that DISCUSS had locked (AC-1.6 and AC-2.4 of
@@ -190,5 +190,5 @@ context and no place to record it.
 |---|---|
 | [ADR-194](./adr-194-sle-risk-is-a-number-per-item-never-a-background-ladder.md) | Governs the rendering of the unevaluable cases this ADR adds one to (the degenerate forecast). Not amended. |
 | [ADR-039](./adr-039-forecast-data-sufficiency-backend-signal.md) | The sufficiency bar, composed with and unchanged. This ADR adds a second, independent reason a cell can be unevaluable; it does not add a second sufficiency threshold. |
-| [ADR-207](./adr-207-a-report-is-a-response-not-a-record.md) | The response this measurement is carried in. Nothing here is persisted. |
+| [ADR-209](./adr-209-a-report-is-a-response-not-a-record.md) | The response this measurement is carried in. Nothing here is persisted. |
 | [ADR-192](./adr-192-sle-risk-as-a-pure-conditional-over-the-cycle-time-population.md) | Precedent for settling a measurement's definition in an ADR rather than in an implementation, for the same reason: a metric whose definition drifts is a metric nobody can argue with. |

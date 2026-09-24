@@ -9003,12 +9003,12 @@ Style: hexagonal. Tools: **ArchUnitNET** (five `*ArchUnitTest` classes already e
 
 ### ADR References (this feature)
 
-- [ADR-207](./adr-207-a-report-is-a-response-not-a-record.md): a report is a response, not a record. No
+- [ADR-209](./adr-209-a-report-is-a-response-not-a-record.md): a report is a response, not a record. No
   `Report` entity, table, migration, `UpdateType` member, queue work or notification seam; the revisit
   trigger is the **second Report kind**, not a date; the six questions the eventual Report ADR must answer
   are written down now. **Accepted.** The premise — that no `Report` concept exists — was confirmed by
   `grep` over this file, not assumed: four occurrences in 8 747 lines, all ordinary English.
-- [ADR-208](./adr-208-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md): a level
+- [ADR-210](./adr-210-a-forecast-level-holds-or-it-does-not-and-its-nominal-rate-is-the-level.md): a level
   *holds* iff `actual >= value(P)`, and its nominal rate is `P`, not `100 − P`. **Accepted 2026-09-22**,
   verified against `HowManyForecast`'s descending comparer before ratification. The engine sorts
   descending ("at least N items"), which made the upstream expected-count arithmetic wrong at three of the
@@ -9030,7 +9030,7 @@ items are noted below rather than forced to read resolved.
 
 | Was | Now |
 |---|---|
-| ADR-208 is PROPOSED; AC-1.6 and AC-2.4 must not become tests yet | **Closed.** ADR-208 **Accepted** 2026-09-22. Both ACs are settled and testable directly. |
+| ADR-210 is PROPOSED; AC-1.6 and AC-2.4 must not become tests yet | **Closed.** ADR-210 **Accepted** 2026-09-22. Both ACs are settled and testable directly. |
 | R-1 is unresolved | **Closed by measurement** — 701 ms cold / 612 ms warm on a real Team against a 5,000 ms budget; twenty queries, not growing with Team size. AC-1.1 stays in slice 01 but is now a confirmation on real hardware, not a gate that could change the design. |
 | An off-ladder Team is checked against a ladder that is not its own | **Closed — reversed by the maintainer.** The Team's own window is now swept as a fifth window (I9): 16 cells on-ladder, 20 off it. The cost objection was measured away and the denominator objection confused §4.2's principle with the constant 16. |
 | The CLI/MCP precondition assumes the response carries a sentence | **Closed — rewritten.** It now turns on the *client* composing the artifact from facts and resolving terminology itself. The answer (no CLI/MCP in this Epic) is unchanged. |

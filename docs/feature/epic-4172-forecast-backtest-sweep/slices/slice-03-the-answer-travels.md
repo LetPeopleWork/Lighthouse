@@ -50,7 +50,7 @@ conditional on — are all built by slice 02.
 ## OUT of scope
 
 - **Any server-side rendering, any new endpoint, any stored artifact.** D8. The emailable Report is what
-  ADR-207 explicitly does not build.
+  ADR-209 explicitly does not build.
 - **Any control that writes a Team setting.** D4 — the feature is read-only end to end, and an export
   slice is not where that gets quietly reversed.
 - Emailing, scheduling or sharing by link. C2, and the parked constellation (#4753, #4755) stays parked.
@@ -66,7 +66,7 @@ pastes it — then the artifact is not honest outside the browser, and the right
 paragraph shorter and sharper rather than to drop it.
 
 **Confirms, if it succeeds**: O5 is served, and the honest first step toward the emailable Report exists as
-a slice rather than as an abstraction — which is precisely the distinction ADR-207 turns on.
+a slice rather than as an abstraction — which is precisely the distinction ADR-209 turns on.
 
 ## Acceptance criteria
 

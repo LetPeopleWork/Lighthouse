@@ -116,7 +116,7 @@ journeys:
         question: Is anything stored?
         decision: >
           Nothing. No entity, no table, no migration, no UpdateType member, no queue work, no notification
-          seam. The result is a response, not a record. ADR-207 (a DESIGN-wave deliverable) records the
+          seam. The result is a response, not a record. ADR-209 (a DESIGN-wave deliverable) records the
           position, the accepted consequence, the named revisit trigger (the second Report kind, not a
           date), and the six questions the eventual Report ADR must answer.
       - id: D9
