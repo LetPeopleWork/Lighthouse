@@ -23,14 +23,19 @@ The sentence: "Nothing to show for the selected range. Days the stored history c
 later visit; days it does not cover stay empty."
 
 ### Open, for after the live check
-- **Opt-in switch, decided 2026-09-24, part of THIS story (no separate ADO item):** gate the fill in
-  `OverTimeGapReconciler` behind a new instance-wide optional feature (`OptionalFeatureKeys`, seeded OFF
-  via `OptionalFeatureSeeder`). The widgets need a second empty-state sentence for the off state, read
-  from the optional features already loaded (no new fetch). Needs an ADR-207 amendment, off-state
-  acceptance tests, and the flag turned on in the existing reconstruction fixtures. Not gated: the
-  recorder no longer writing all-zero rows, the as-of threading, the shared writers. Runs before 04-03
-  so the docs describe it as opt-in. Follow-ups in ADO, unparented: #6083 default on after first
-  positive feedback, #6084 remove the switch once it stays.
+- **Opt-in switch, decided 2026-09-24, part of THIS story (no separate ADO item) = slice 05.** DISCUSS
+  amendment done (`37a490652`, `428f6e1f8`: D9, US-05, `slices/slice-05-opt-in-switch.md`). Gate the fill
+  in `OverTimeGapReconciler` behind a new instance-wide optional feature, seeded OFF, `IsPreview = true`,
+  System Admin toggles it (existing guard). **Backend-only**: the widgets never learn the mode — ONE empty
+  sentence in both modes, "Nothing to show for the selected range. Days appear here as Lighthouse records
+  them.", replacing the 04-02 sentence (widget tests + E2E constants change with it). Demo data does NOT
+  switch it on; E2E/screenshot fixtures turn it on explicitly. Not gated: the recorder no longer writing
+  all-zero rows, the as-of threading, the shared writers. Lighthouse-Clients calls both endpoints and its
+  copy says they "never backfill" — rewrite at finalization (DoD 14). Next: DESIGN amendment (ADR-207;
+  per-request switch read cost vs "no extra query on the read path"; does a running fill stop when the
+  switch goes off) → DEVOPS amendment → DISTILL off-state ATs + fixtures on → DELIVER slice 05, all
+  before 04-03 docs. Follow-ups in ADO, unparented: #6083 default on after first positive feedback, #6084
+  remove the switch once it stays.
 - **04-03 docs** must also correct ADR-207 D4 and `brief.md` on the fill order (U-46), and the two stale
   "forward-only placeholder" comments in `PbcOverTime.spec.ts:50` and `Screenshots.spec.ts:716`.
 - **Adversarial review:** U-45 (ceiling-refused days re-asked on every read — do NOT memoise them naively),
