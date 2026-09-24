@@ -764,7 +764,7 @@
             "docs/assets/ (regenerate only the shots in which the old empty-state copy is visible)"
           ],
           "dependencies": [
-            "04-02"
+            "05-03"
           ],
           "criteria": [
             "The forward-only note is corrected. It describes a property the product no longer has, and leaving it is how a reader concludes the documentation is unreliable about everything else on the page.",
@@ -810,6 +810,116 @@
             "The ADR-107/108/109 amendments were written during their own waves and are already in source, so their presence is not a test. What IS checked here: each amendment still describes what actually shipped. If implementation diverged from an amendment, correct the ADR now rather than leaving the record wrong."
           ],
           "implementation_notes": "Run the backend suite with the connector categories excluded — those tests talk to real Azure DevOps, Jira, Linear and ServiceNow instances and throw rather than skip when a credential is missing, and the Linear key is shared with CI, so a local loop can rate-limit the next CI build in a way only one of the resulting failures names. Known-environmental signatures that are not regressions: exactly two Licensing failures in a worktree on the gitignored licence fixture; exactly ten failures in the ReleaseServiceTest unit class under load, which go green run alone; and the AgeInStatePercentiles cleanup contention, which is a concurrent fixture rather than a regression. ADO: a Story is RESOLVED ON PUSH and CLOSED ON CI GREEN — two moments, never one. Only an Epic stops at Resolved. The orchestrator owns both transitions, not this step. Commit: `test(metrics): record the mutation run for over-time reconstruction (story 6053)`"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "The fill ships opt-in",
+      "description": "Slice 05, Slice09 tests: the fill sits behind an instance-wide optional feature seeded off, flagged Preview, free, toggled by a System Admin. One scoped switch read per use; the reconciler asks it only once it has found days to fill, and the filler asks it again at the start of each pass so an ask queued before the switch went off is dropped. A running pass finishes. Backend-only: the widgets never learn the mode and show one empty sentence in both. Runs before 04-03 so the docs describe the fill as opt-in, and before 04-04 so the switch is inside the frozen, mutated code.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "The fill asks whether it is switched on",
+          "description": "The switch port and its implementation, the seeded row, the reconciler's gate after gap detection, the filler's pass-start check with its drop log line, and the registration. The base fixture's switch-on becomes strict in the same step.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice09TheFillShipsOptInScenarios.cs",
+          "scenario_name": "With_the_fill_switched_off_opening_a_chart_queues_nothing_and_switching_it_on_needs_no_restart",
+          "unskips": [
+            "Slice09 :: A, B, C, D, E, F, G, I (all but the toggle-log scenario H)",
+            "OptionalFeatureSeederTests :: the three pending seeder tests",
+            "OverTimeReconstructionSeamArchUnitTest :: TheFillSwitchKey_IsNamedOnlyByTheKeyList_TheSeeder_AndTheSwitch"
+          ],
+          "red_to_green_tests": [
+            "Slice09 :: A, B, C, D, I",
+            "OptionalFeatureSeederTests :: three seeder tests",
+            "OverTimeReconstructionSeamArchUnitTest :: TheFillSwitchKey_IsNamedOnlyByTheKeyList_TheSeeder_AndTheSwitch"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/OptionalFeatures/OptionalFeatureKeys.cs (OverTimeHistoryFillKey)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs (the row: off, Preview, free, name and description per DDD-20)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IOverTimeHistoryFillSwitch.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeHistoryFillSwitch.cs (new; select by key, a missing row reads off)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OverTimeGapReconciler.cs (gate after gap detection, before AskFor)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs (pass-start check from the pass scope, before the owner is loaded and before the pass counts as in flight; Information drop line)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (register the switch, scoped)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs (delete the Init early return)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/... SeedAsync_CanBeCalledMultipleTimes_WithoutErrors (add the key to the pinned set)",
+            "the Slice09, seeder and ArchUnit test files (un-ignore only)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "Off by default on a fresh and an upgraded instance; the seeder never overwrites Enabled; no EF migration.",
+            "The switch is read per use and held nowhere; it is scoped; the filler reaches it through the pass scope and never through its constructor (it is a singleton).",
+            "The reconciler reads the switch only once it has found missing days, so a gap-free read costs no extra query and a gap-finding read exactly one (Scenario I).",
+            "A waiting ask is dropped at pass start with one Information line and no Warning; a running pass finishes.",
+            "The maintenance gate, the recorders, the writers, the memo's refresh handlers and the demo synthesiser never read the switch.",
+            "Select by key, never GetById: every optional-feature row carries Id = 0.",
+            "Every Slice05-08 scenario stays green with the fill switched on in Init, which is now strict.",
+            "E, F and G pin behaviour that already exists and will pass on first un-ignore; record that honestly.",
+            "Full backend suite green with the live-connector categories excluded; dotnet build zero warnings; no new SonarQube issue."
+          ],
+          "implementation_notes": "Program.cs is touched, which forces the full backend Integration suite in CI. Commit: `feat(metrics): the history fill asks whether it is switched on (story 6053)`"
+        },
+        {
+          "id": "05-02",
+          "name": "Switching an optional feature leaves a line in the log",
+          "description": "One generic Information line in the optional-features write, for every key, after the applier returns: which key, from what to what. No identity. Gives an instance a record of when the fill was switched on.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice09TheFillShipsOptInScenarios.cs",
+          "scenario_name": "Switching_the_fill_leaves_a_line_in_the_log_saying_which_way_it_went",
+          "unskips": [
+            "Slice09 :: H"
+          ],
+          "red_to_green_tests": [
+            "Slice09 :: H"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs (or its real path; one Information line, template: Optional feature {FeatureKey} switched from {WasEnabled} to {Enabled})",
+            "the Slice09 scenario file (un-ignore only)",
+            "the controller's existing unit test if its constructor is exercised there"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "criteria": [
+            "The line never names the fill's key constant, so the key-confinement structural test stays green.",
+            "No identity is logged.",
+            "Slice09 carries zero [Ignore(Pending)] at the end of this step.",
+            "Full backend suite green; dotnet build zero warnings."
+          ],
+          "implementation_notes": "Commit: `feat(settings): switching an optional feature is logged (story 6053)`"
+        },
+        {
+          "id": "05-03",
+          "name": "An empty chart says the same true thing in either mode",
+          "description": "The widgets' one empty sentence becomes: Nothing to show for the selected range. Days appear here as Lighthouse records them. Copy only; the widgets never read the switch. The E2E helper switches the fill on for the over-time specs and screenshots.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/overTimeEmptyState.test.ts",
+          "scenario_name": "states the one sentence that is true of every empty over-time chart",
+          "unskips": [
+            "the it.skip / it.skip.each tests in overTimeEmptyState.test.ts, PercentilesOverTimeWidget.test.tsx, PbcOverTimeWidget.test.tsx"
+          ],
+          "red_to_green_tests": [
+            "the same"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/overTimeEmptyState.ts",
+            "the three frontend test files (un-skip only)",
+            "E2E, left uncommitted for the orchestrator's Playwright run: tests/helpers/api/optionalFeatures.ts (new), setup/teardown in PercentilesOverTime.spec.ts, PbcOverTime.spec.ts, PredictabilityOverTime.spec.ts and the over-time shots in Screenshots.spec.ts, the two copy constants in the page objects"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "criteria": [
+            "No new prop, no new fetch, no optional-feature read in the frontend.",
+            "pnpm test green; pnpm build zero errors and zero warnings; check for */docs symlinks before building."
+          ],
+          "implementation_notes": "Commit (frontend only): `feat(metrics): an empty over-time chart says the same true thing whether or not the fill is on (story 6053)`"
         }
       ]
     }
