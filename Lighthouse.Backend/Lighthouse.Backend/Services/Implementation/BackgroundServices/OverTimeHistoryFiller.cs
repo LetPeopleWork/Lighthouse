@@ -21,9 +21,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
     public sealed class OverTimeHistoryFiller : BackgroundService, IOverTimeHistoryFiller
     {
         /// <summary>
-        /// How many owners may be waiting at once. Past that an ask is dropped rather than queued -
-        /// the next chart load asks again, so nothing is lost by refusing one, whereas an unbounded
-        /// queue on a read endpoint is a way to run the instance out of memory from the browser.
+        /// How many owners may be waiting at once. Past that an ask is refused rather than queued, and
+        /// its owner is at once free to be asked for again - the next chart load asks again, so nothing
+        /// is lost by refusing one, whereas an unbounded queue on a read endpoint is a way to run the
+        /// instance out of memory from the browser.
         /// </summary>
         private const int MostOwnersWaitingAtOnce = 256;
 
@@ -57,8 +58,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// </summary>
         private static readonly TimeSpan LongestOnePassMayRun = TimeSpan.FromSeconds(10);
 
+        // Wait rather than one of the drop modes, although nothing here ever waits: asks only ever go in
+        // through TryWrite, which under Wait says no when the queue is full. Under the drop modes it says
+        // yes and throws the ask away, so its owner would stay marked as already asked for and never be
+        // filled again until the process restarts.
         private readonly Channel<OverTimeFillRequest> waiting = Channel.CreateBounded<OverTimeFillRequest>(
-            new BoundedChannelOptions(MostOwnersWaitingAtOnce) { FullMode = BoundedChannelFullMode.DropWrite });
+            new BoundedChannelOptions(MostOwnersWaitingAtOnce) { FullMode = BoundedChannelFullMode.Wait });
 
         private readonly HashSet<(int OwnerId, OwnerType OwnerType)> alreadyAsked = [];
 
