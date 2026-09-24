@@ -10,11 +10,11 @@ const AGE_TOGGLE_TEST_ID = "percentiles-selection-age";
 
 /**
  * The one empty state an empty chart shows instead of a broken axis, whatever the
- * range and whatever the reason it is empty — verbatim, so a copy change here fails
- * loudly.
+ * range, whatever the reason it is empty, and whether or not filling in past days is
+ * switched on. Verbatim, so a copy change here fails loudly.
  */
 export const PERCENTILES_OVER_TIME_EMPTY_COPY =
-	"Nothing to show for the selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay empty.";
+	"Nothing to show for the selected range. Days appear here as Lighthouse records them.";
 
 /**
  * Drives the Percentiles Over Time widget (Predictability category, team +

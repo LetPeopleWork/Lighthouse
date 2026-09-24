@@ -3,6 +3,7 @@ import {
 	loadDemoScenario,
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
+import { switchHistoryFill } from "../../helpers/api/optionalFeatures";
 import { MetricsCategories } from "../../models/metrics/MetricsPage";
 import { PercentilesOverTimeWidget } from "../../models/metrics/PercentilesOverTimeWidget";
 
@@ -17,6 +18,14 @@ const HISTORY_ENDPOINT = "/metrics/percentiles-over-time";
 // Work Item Age is horizon-less: the read asks for the metric family and lets the
 // backend resolve the horizon-less sentinel.
 const AGE_METRIC_TYPE = "WorkItemAge";
+
+test.beforeEach(async ({ request }) => {
+	await switchHistoryFill(request, true);
+});
+
+test.afterEach(async ({ request }) => {
+	await switchHistoryFill(request, false);
+});
 
 test("@walking_skeleton @US-01 flow coach opens the Percentiles Over Time widget and reads a dated CT-30 trend", async ({
 	page,
@@ -44,8 +53,8 @@ test("@walking_skeleton @US-01 flow coach opens the Percentiles Over Time widget
 	const widget = new PercentilesOverTimeWidget(page);
 	await expect(widget.Widget).toBeVisible();
 
-	// The demo connection is flagged for percentile backfill, so the chart is
-	// populated — the empty-state placeholder must NOT be showing.
+	// The demo owners carry backdated history and the fill is switched on, so the
+	// chart is populated — the empty-state sentence must NOT be showing.
 	await expect(widget.emptyState).toHaveCount(0);
 
 	// CT-30 is the default horizon.

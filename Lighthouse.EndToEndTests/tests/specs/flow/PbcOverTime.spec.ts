@@ -3,6 +3,7 @@ import {
 	loadDemoScenario,
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
+import { switchHistoryFill } from "../../helpers/api/optionalFeatures";
 import { MetricsCategories } from "../../models/metrics/MetricsPage";
 import {
 	PBC_LIMIT_LINES,
@@ -26,6 +27,14 @@ const OTHER_FAMILY = "WorkItemAge" as const;
 const SOLID: number[] = [];
 const SOLID_BORDER = "solid";
 
+test.beforeEach(async ({ request }) => {
+	await switchHistoryFill(request, true);
+});
+
+test.afterEach(async ({ request }) => {
+	await switchHistoryFill(request, false);
+});
+
 test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput process behaviour limits", async ({
 	page,
 	request,
@@ -46,8 +55,8 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 	// Throughput is the family the recorder persists, and the toggle opens on it.
 	await expect.poll(() => widget.isMetricSelected("Throughput")).toBe(true);
 
-	// The demo owners are backdated over the last two weeks, so the chart is
-	// populated — the forward-only placeholder must NOT be showing.
+	// The demo owners are backdated over the last two weeks and filling in past days
+	// is switched on, so the chart is populated and the empty sentence must NOT show.
 	await expect(widget.emptyState).toHaveCount(0);
 
 	// Three dated limit lines are plotted across the recorded date range.
