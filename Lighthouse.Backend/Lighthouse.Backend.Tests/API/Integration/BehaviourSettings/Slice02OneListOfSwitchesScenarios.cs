@@ -153,17 +153,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheForecastsWereReQueuedFor(platform, times: 1);
         }
 
-        // @AC-01.9 - Faster Updates is carried across untouched. Its name, its help
+        // @AC-01.9 - a setting already in the list is carried across untouched. Its name, its help
         // text, its preview badge, its licence status and whether it is on are all somebody's decision and
         // none of them are this story's.
         [Test]
         public async Task The_setting_that_was_already_in_the_list_is_carried_across_untouched()
         {
-            var asShipped = GivenTheShippedNonPremiumSettingAsItReadsNow();
+            var nonPremiumSetting = GivenANonPremiumSettingIsAlreadyInTheList();
+            var asItWas = GivenHowTheSettingReadsNow(nonPremiumSetting);
 
             WhenTheInstanceUpgradesFrom(OrderOwnedByTheTracker);
 
-            ThenTheShippedNonPremiumSettingStillReads(asShipped);
+            ThenTheSettingStillReads(nonPremiumSetting, asItWas);
         }
 
         // @driving_port @real-io @AC-01.1 - two rows in one table have to be switchable one at a time.
@@ -177,12 +178,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             var platform = GivenAPortfolio("Platform");
             GivenFeaturesTheTrackerRankedBackwards(platform);
             GivenTheCallerAdministersTheInstance();
-            var fasterUpdatesAsItWas = GivenTheShippedNonPremiumSettingAsItReadsNow();
+            var theOtherSetting = GivenANonPremiumSettingIsAlreadyInTheList();
+            var theOtherSettingAsItWas = GivenHowTheSettingReadsNow(theOtherSetting);
 
             await WhenTheAdminHandsTheOrderOverInBehaviourSettings();
 
             ThenTheOrderingSettingReadsOn();
-            ThenTheShippedNonPremiumSettingStillReads(fasterUpdatesAsItWas);
+            ThenTheSettingStillReads(theOtherSetting, theOtherSettingAsItWas);
         }
 
         // @driving_port @real-io @AC-01.7 - the seed runs on the way out, not on the way back. A Feature
@@ -233,12 +235,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         [Test]
         public async Task The_setting_a_caller_names_is_the_setting_it_gets_back()
         {
+            var nonPremiumSetting = GivenANonPremiumSettingIsAlreadyInTheList();
             GivenTheCallerAdministersTheInstance();
 
-            var named = await WhenAnyoneReadsTheSettingCalled(ShippedNonPremiumKey);
+            var named = await WhenAnyoneReadsTheSettingCalled(nonPremiumSetting);
             var unnamed = await WhenAnyoneReadsTheSettingCalled(KeyNobodySeeded);
 
-            ThenTheSettingReadBackIsTheOneThatWasNamed(named, ShippedNonPremiumKey);
+            ThenTheSettingReadBackIsTheOneThatWasNamed(named, nonPremiumSetting);
             ThenNoSettingWasFound(unnamed);
         }
 

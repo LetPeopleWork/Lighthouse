@@ -61,15 +61,15 @@ const theOrderingSettingAsSeeded = {
 };
 
 /**
- * The row that shipped before this table existed. Its name carries no token and is read back byte for
- * byte below; its help text names a Work Item, which the instance may have renamed.
+ * A row no licence is needed for. None ships today, so the table's handling of one is held against a
+ * row of the suite's own. Its name carries no token and is read back byte for byte below; its help
+ * text names a Work Item, which the instance may have renamed.
  */
-const theShippedNonPremiumSetting = {
+const aSettingThatCostsNothing = {
 	id: 1,
-	key: "DeltaSync",
-	name: "Faster Updates",
-	description:
-		"Fetch only the {{workItems}} that changed since the last update instead of the whole query.",
+	key: "NonPremiumExample",
+	name: "An example setting",
+	description: "Lists the {{workItems}} an example setting would act on.",
 	enabled: false,
 	isPremium: false,
 	isPreview: false,
@@ -159,7 +159,7 @@ describe("Behaviour Settings", () => {
 
 		mockGetAllBlackoutPeriods.mockResolvedValue([]);
 		mockGetAllFeatures.mockResolvedValue([
-			theShippedNonPremiumSetting,
+			aSettingThatCostsNothing,
 			theOrderingSettingAsSeeded,
 		]);
 		mockGetLicenseStatus.mockResolvedValue({
@@ -179,7 +179,7 @@ describe("Behaviour Settings", () => {
 			expect(screen.getByText("Behaviour Settings")).toBeVisible();
 		});
 
-		expect(screen.getByTestId("feature-row-DeltaSync")).toBeVisible();
+		expect(screen.getByTestId("feature-row-NonPremiumExample")).toBeVisible();
 		expect(screen.getByTestId("feature-row-FeatureOrdering")).toBeVisible();
 	});
 
@@ -259,14 +259,14 @@ describe("Behaviour Settings", () => {
 
 	// Every row on this table is read through the same resolver, so an instance that renamed Work Item
 	// to Ticket must not read one row in its own words and the row beside it in ours.
-	it("reads the row that shipped first in the instance's own word too", async () => {
+	it("reads the other row in the instance's own word too", async () => {
 		givenTheInstanceCallsWorkItems("Tickets");
 
 		renderTheSystemSettings();
 
 		await waitFor(() => {
 			expect(
-				screen.getByText(/Fetch only the Tickets that changed/),
+				screen.getByText(/Lists the Tickets an example setting would act on/),
 			).toBeVisible();
 		});
 
@@ -279,20 +279,20 @@ describe("Behaviour Settings", () => {
 	// switch on the page at once, and no amount of fixing the server changes that.
 	it("switches one setting without touching the other", async () => {
 		mockGetAllFeatures.mockResolvedValue([
-			{ ...theShippedNonPremiumSetting, id: 0 },
+			{ ...aSettingThatCostsNothing, id: 0 },
 			{ ...theOrderingSettingAsSeeded, id: 0 },
 		]);
 
 		renderTheSystemSettings();
 
-		const fasterUpdates = await waitFor(
+		const theFreeSwitch = await waitFor(
 			() =>
 				screen
-					.getByTestId("DeltaSync-toggle")
+					.getByTestId("NonPremiumExample-toggle")
 					.querySelector("input") as HTMLInputElement,
 		);
 
-		await userEvent.click(fasterUpdates);
+		await userEvent.click(theFreeSwitch);
 
 		expect(
 			screen.getByTestId("FeatureOrdering-toggle").querySelector("input"),
@@ -304,41 +304,41 @@ describe("Behaviour Settings", () => {
 	// being decorative and starts being the only thing between an administrator and a switch that shows
 	// a setting they do not have.
 	it("puts the switch back when the write is refused", async () => {
-		mockGetAllFeatures.mockResolvedValue([theShippedNonPremiumSetting]);
+		mockGetAllFeatures.mockResolvedValue([aSettingThatCostsNothing]);
 		mockUpdateFeature.mockRejectedValue(new Error("refused"));
 
 		renderTheSystemSettings();
 
-		const fasterUpdates = await waitFor(
+		const theFreeSwitch = await waitFor(
 			() =>
 				screen
-					.getByTestId("DeltaSync-toggle")
+					.getByTestId("NonPremiumExample-toggle")
 					.querySelector("input") as HTMLInputElement,
 		);
 
-		await userEvent.click(fasterUpdates);
+		await userEvent.click(theFreeSwitch);
 
 		await waitFor(() => {
 			expect(
-				screen.getByTestId("DeltaSync-toggle").querySelector("input"),
+				screen.getByTestId("NonPremiumExample-toggle").querySelector("input"),
 			).not.toBeChecked();
 		});
 	});
 
-	// @AC-01.9 - Faster Updates keeps its name and its help text, and it is not premium, so the switch
-	// stays operable. It is no longer in preview, so the badge that said so must be gone.
+	// @AC-01.9 - a setting already in the list keeps its name and its help text, and it is not premium,
+	// so the switch stays operable. It is not in preview, so no badge may say it is.
 	it("shows the setting that was already in the list, without a preview badge", async () => {
 		renderTheSystemSettings();
 
 		await waitFor(() => {
-			expect(screen.getByText("Faster Updates")).toBeVisible();
+			expect(screen.getByText("An example setting")).toBeVisible();
 		});
 
 		expect(
-			screen.queryByTestId("DeltaSync-preview-indicator"),
+			screen.queryByTestId("NonPremiumExample-preview-indicator"),
 		).not.toBeInTheDocument();
 		expect(
-			screen.getByTestId("DeltaSync-toggle").querySelector("input"),
+			screen.getByTestId("NonPremiumExample-toggle").querySelector("input"),
 		).not.toBeDisabled();
 	});
 
@@ -388,11 +388,11 @@ describe("Behaviour Settings", () => {
 		renderTheSystemSettings();
 
 		await waitFor(() => {
-			expect(screen.getByTestId("feature-row-DeltaSync")).toBeVisible();
+			expect(screen.getByTestId("feature-row-NonPremiumExample")).toBeVisible();
 		});
 
 		expect(
-			screen.queryByTestId("DeltaSync-premium-indicator"),
+			screen.queryByTestId("NonPremiumExample-premium-indicator"),
 		).not.toBeInTheDocument();
 	});
 
@@ -412,8 +412,8 @@ describe("Behaviour Settings", () => {
 
 	// A row that costs nothing is operable everywhere, and that is the half of the rule nothing else
 	// asks about: every other check here either holds a licence or looks at a row that needs one. Decide
-	// reachability with an "and" instead of an "or" and Faster Updates - which has never required a
-	// licence - is greyed out on every instance that does not hold one.
+	// reachability with an "and" instead of an "or" and a setting that has never required a licence is
+	// greyed out on every instance that does not hold one.
 	it("leaves a row that costs nothing operable on an instance without a licence", async () => {
 		givenTheInstanceHasNoPremiumLicence();
 
@@ -421,7 +421,7 @@ describe("Behaviour Settings", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByTestId("DeltaSync-toggle").querySelector("input"),
+				screen.getByTestId("NonPremiumExample-toggle").querySelector("input"),
 			).not.toBeDisabled();
 		});
 	});

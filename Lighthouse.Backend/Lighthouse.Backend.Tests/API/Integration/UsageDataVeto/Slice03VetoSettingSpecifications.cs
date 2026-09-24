@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation.UsageData;
 using Lighthouse.Backend.Tests.API.Integration.BehaviourSettings;
 using NUnit.Framework;
@@ -28,12 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         /// </summary>
         private const string VetoKey = UsageDataMasterSwitch.Key;
 
-        /// <summary>
-        /// A shipped setting the licence has no opinion about. Used to hold AC-07.3: the premium branch
-        /// may not spread to a row that was never premium.
-        /// </summary>
-        private const string ShippedNonPremiumKey = OptionalFeatureKeys.DeltaSyncKey;
-
         // --- Given ---
 
         private void GivenTheCallerAdministersTheInstance() => TheCallerAdministersTheWholeInstance();
@@ -60,13 +53,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             return PremiumFixtureKey;
         }
 
-        private string GivenTheShippedSettingThatIsNotPremium()
-        {
-            Assert.That(ReadStoredOptionalFeature(ShippedNonPremiumKey).Found, Is.True,
-                $"The product seeds '{ShippedNonPremiumKey}'. Without it this scenario asserts nothing.");
-
-            return ShippedNonPremiumKey;
-        }
+        /// <summary>
+        /// A setting the licence has no opinion about, so the premium branch has a row it must not spread
+        /// to. None ships any more, so the scenario adds its own.
+        /// </summary>
+        private string GivenASettingThatIsNotPremium() => SeedTheNonPremiumFixture();
 
         // --- When ---
 

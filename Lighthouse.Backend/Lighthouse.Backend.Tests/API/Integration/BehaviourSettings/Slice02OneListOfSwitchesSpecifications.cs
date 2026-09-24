@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
 using NUnit.Framework;
@@ -16,8 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     /// </summary>
     public partial class Slice02OneListOfSwitchesTest : BehaviourSettingsAcceptanceTest
     {
-        private const string ShippedNonPremiumKey = OptionalFeatureKeys.DeltaSyncKey;
-
         private readonly record struct ListedFeature(int Id, string Name, int Position);
 
         /// <summary>
@@ -63,8 +60,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
         private void GivenTheLicenceLapses() => TheInstanceIsNotLicensedForPremium();
 
-        private (bool Found, bool Enabled, bool IsPremium, bool IsPreview, string Name, string Description) GivenTheShippedNonPremiumSettingAsItReadsNow()
-            => ReadStoredOptionalFeature(ShippedNonPremiumKey);
+        /// <summary>
+        /// A setting that was in the list before the ordering row joined it. It is not premium, so the
+        /// only thing this story may change for it is the heading above the table.
+        /// </summary>
+        private string GivenANonPremiumSettingIsAlreadyInTheList() => SeedTheNonPremiumFixture();
+
+        private (bool Found, bool Enabled, bool IsPremium, bool IsPreview, string Name, string Description) GivenHowTheSettingReadsNow(string key)
+            => ReadStoredOptionalFeature(key);
 
         // --- When ---
 
@@ -178,10 +181,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                 "The places this instance chose are its own. Nothing in the move, and nothing in the upgrade, may renumber them.");
         }
 
-        private void ThenTheShippedNonPremiumSettingStillReads((bool Found, bool Enabled, bool IsPremium, bool IsPreview, string Name, string Description) asShipped)
+        private void ThenTheSettingStillReads(string key, (bool Found, bool Enabled, bool IsPremium, bool IsPreview, string Name, string Description) asItWas)
         {
-            Assert.That(ReadStoredOptionalFeature(ShippedNonPremiumKey), Is.EqualTo(asShipped),
-                "Faster Updates is not premium, and the only thing this story changes for it is the heading above the table.");
+            Assert.That(ReadStoredOptionalFeature(key), Is.EqualTo(asItWas),
+                $"'{key}' is not premium, and the only thing this story changes for it is the heading above the table.");
         }
 
         private void ThenTheSettingReadBackIsTheOneThatWasNamed((HttpStatusCode Status, string Body) response, string namedKey)

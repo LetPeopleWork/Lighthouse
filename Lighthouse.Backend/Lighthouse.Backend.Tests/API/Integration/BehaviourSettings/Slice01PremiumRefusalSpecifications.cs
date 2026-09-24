@@ -14,10 +14,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     public partial class Slice01PremiumRefusalTest : BehaviourSettingsAcceptanceTest
     {
         /// <summary>
-        /// The shipped non-premium row, seeded by the product itself. Slice 01 must not change it and the
-        /// scenarios say so in both licence states.
+        /// The Faster Updates row as the product seeds it. Only the scenario about its own premium flag
+        /// reads it; that scenario goes when the row stops being seeded, because it has no subject left.
         /// </summary>
-        private const string ShippedNonPremiumKey = OptionalFeatureKeys.DeltaSyncKey;
+        private const string TheFasterUpdatesRow = OptionalFeatureKeys.DeltaSyncKey;
 
         /// <summary>
         /// The refusal the other door onto this setting already gives. The two doors have to answer a
@@ -34,12 +34,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             return PremiumFixtureKey;
         }
 
-        private string GivenTheShippedNonPremiumBehaviourSetting()
-        {
-            Assert.That(ReadStoredOptionalFeature(ShippedNonPremiumKey).Found, Is.True,
-                $"The product seeds '{ShippedNonPremiumKey}'. Without it this scenario asserts nothing.");
+        private string GivenANonPremiumBehaviourSetting() => SeedTheNonPremiumFixture();
 
-            return ShippedNonPremiumKey;
+        private string GivenTheFasterUpdatesRowAsTheProductSeedsIt()
+        {
+            Assert.That(ReadStoredOptionalFeature(TheFasterUpdatesRow).Found, Is.True,
+                $"The product seeds '{TheFasterUpdatesRow}'. Without it this scenario asserts nothing.");
+
+            return TheFasterUpdatesRow;
         }
 
         private void GivenTheInstanceHasNoPremiumLicence() => TheInstanceIsNotLicensedForPremium();

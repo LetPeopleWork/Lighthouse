@@ -78,36 +78,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredSettingIsOn(PremiumFixtureKey);
         }
 
-        // @driving_port @real-io @AC-02.3 - Faster Updates is not premium and must never become gated by
-        // this fix. Asserted on both licence states explicitly rather than implied by the premium cases:
-        // an inverted check refuses everything and would pass every scenario above.
+        // @driving_port @real-io @AC-02.3 - a setting that is not premium must never become gated by this
+        // fix. Asserted on both licence states explicitly rather than implied by the premium cases: an
+        // inverted check refuses everything and would pass every scenario above.
         [Test]
         [TestCase(true)]
         [TestCase(false)]
         public async Task The_setting_the_licence_has_nothing_to_say_about_is_taken_either_way(bool licensed)
         {
-            var fasterUpdates = GivenTheShippedNonPremiumBehaviourSetting();
+            var nonPremiumSetting = GivenANonPremiumBehaviourSetting();
             GivenTheInstanceLicenceState(licensed);
             GivenTheCallerAdministersTheInstance();
 
-            var response = await WhenTheAdminTurnsItOn(fasterUpdates);
+            var response = await WhenTheAdminTurnsItOn(nonPremiumSetting);
 
             ThenTheToggleWasTaken(response);
-            ThenTheStoredSettingIsOn(ShippedNonPremiumKey);
+            ThenTheStoredSettingIsOn(nonPremiumSetting);
         }
 
-        // @AC-02.3 - and it stays non-premium. A fix that gated it would still pass
-        // the two cases above on a licensed instance.
+        // @AC-02.3 - and the Faster Updates row the product seeds stays non-premium. A fix that gated it
+        // would still pass the two cases above on a licensed instance.
         [Test]
         public void The_setting_the_licence_has_nothing_to_say_about_is_still_not_premium()
         {
-            GivenTheShippedNonPremiumBehaviourSetting();
+            var fasterUpdates = GivenTheFasterUpdatesRowAsTheProductSeedsIt();
 
-            ThenTheStoredSettingIsNotPremium(ShippedNonPremiumKey);
+            ThenTheStoredSettingIsNotPremium(fasterUpdates);
         }
 
         // @driving_port @real-io @AC-02.1 - the door this setting has today already refuses correctly, and
-        // that refusal is the shipped promise (Epic #5375 AC-2.5) the whole slice order exists to protect.
+        // that refusal is the shipped promise - an unlicensed administrator cannot take over the Feature
+        // order - that the whole slice order exists to protect.
         // Nothing asserted it until now, so the criterion the sequencing defends was itself untested.
         [Test]
         public async Task The_door_this_setting_has_today_already_refuses_an_unlicensed_administrator()

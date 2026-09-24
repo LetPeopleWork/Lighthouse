@@ -160,15 +160,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
         }
 
         // @driving_port @real-io @AC-07.3 - NOT ignored. This Epic's invariant wherever the premium fix
-        // was written: Faster Updates is not premium and may not become gated by it.
+        // was written: a setting that is not premium may not become gated by it.
         [Test]
-        public async Task Faster_updates_still_toggles_on_an_instance_with_no_premium_licence()
+        public async Task A_setting_that_is_not_premium_still_toggles_on_an_instance_with_no_premium_licence()
         {
-            var shipped = GivenTheShippedSettingThatIsNotPremium();
+            var nonPremiumSetting = GivenASettingThatIsNotPremium();
             GivenTheInstanceHasNoPremiumLicence();
             GivenTheCallerAdministersTheInstance();
 
-            var response = await WhenTheAdminTurnsItOn(shipped);
+            var response = await WhenTheAdminTurnsItOn(nonPremiumSetting);
 
             ThenTheToggleWasTaken(response);
         }

@@ -49,6 +49,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         protected const string PremiumFixtureKey = "PremiumFixture";
 
         /// <summary>
+        /// A setting the licence has nothing to say about. The product ships none any more, so every
+        /// scenario that holds the non-premium half of the licence rule adds this row itself rather than
+        /// borrowing a shipped one that a later release can take away.
+        /// </summary>
+        protected const string NonPremiumFixtureKey = "NonPremiumFixture";
+
+        /// <summary>
         /// What the product writes into <c>OptionalFeature.Id</c>: the store keys these rows by their key,
         /// so nothing generates the number and every row holds zero.
         /// </summary>
@@ -210,6 +217,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
         protected void SeedPremiumOptionalFeature(string key, string name, string description)
             => SeedOptionalFeature(key, name, description, isPremium: true);
+
+        /// <summary>Adds the non-premium setting, switched off, and hands back the key it is stored under.</summary>
+        protected string SeedTheNonPremiumFixture()
+        {
+            SeedOptionalFeature(
+                NonPremiumFixtureKey,
+                "A setting that costs nothing",
+                "Exists so the half of the licence rule that lets a setting through can be exercised.",
+                isPremium: false);
+
+            return NonPremiumFixtureKey;
+        }
 
         /// <summary>
         /// A behaviour setting added by a scenario, carrying the same identity every seeded row carries.
