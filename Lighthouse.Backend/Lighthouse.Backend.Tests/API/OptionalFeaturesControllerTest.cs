@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -179,7 +180,7 @@ namespace Lighthouse.Backend.Tests.API
             // for real is what proves the controller reaches an applier at all rather than a stand-in.
             var registry = new OptionalFeatureApplierRegistry([], new DefaultOptionalFeatureApplier(repositoryMock.Object));
 
-            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object, registry);
+            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object, registry, NullLogger<OptionalFeaturesController>.Instance);
         }
     }
 }

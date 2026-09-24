@@ -25,9 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-09")]
     public partial class Slice09TheFillShipsOptInTest
     {
-        private const string Pending =
-            "Pending: the opt-in switch for filling in past days is not built yet (story 6053, slice 05) - un-ignore one at a time in DELIVER";
-
         /// <summary>
         /// The reconciler must decline to ask while the switch is off, not only the pass decline to run.
         /// A gate that existed only where a pass starts would let this scenario's opens queue their asks,
@@ -251,7 +248,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @observability @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task Switching_the_fill_leaves_a_line_in_the_log_saying_which_way_it_went()
         {
             await GivenTheFillIsSwitchedOn();

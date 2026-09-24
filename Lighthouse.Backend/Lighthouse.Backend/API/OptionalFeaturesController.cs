@@ -14,7 +14,8 @@ namespace Lighthouse.Backend.API
     public class OptionalFeaturesController(
         IRepository<OptionalFeature> repository,
         ILicenseService licenseService,
-        OptionalFeatureApplierRegistry applierRegistry) : ControllerBase
+        OptionalFeatureApplierRegistry applierRegistry,
+        ILogger<OptionalFeaturesController> logger) : ControllerBase
     {
         [HttpGet]
         public ActionResult<IEnumerable<OptionalFeature>> GetAll()
@@ -58,7 +59,11 @@ namespace Lighthouse.Backend.API
                 return StatusCode(StatusCodes.Status403Forbidden, "Access Denied: Premium Features Required");
             }
 
+            var wasEnabled = feature.Enabled;
+
             await applierRegistry.ApplierFor(feature.Key).ApplyAsync(feature, updatedFeature.Enabled);
+
+            logger.LogInformation("Optional feature {FeatureKey} switched from {WasEnabled} to {Enabled}", feature.Key, wasEnabled, feature.Enabled);
 
             return Ok(feature);
         }

@@ -19,8 +19,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
         /// <summary>
         /// The switch that decides whether this instance fills in past days on the over-time charts, spelled
-        /// as a caller addresses it. Written out because the product's constant does not exist until the
-        /// switch ships, and because this is the wire identity a script switching it from outside uses.
+        /// as a caller addresses it. Written out rather than taken from the product's constant because this
+        /// is the wire identity a script switching it from outside uses: renaming the constant's value must
+        /// fail these tests, not silently rename what they check.
         /// </summary>
         private const string OverTimeHistoryFillKey = "OverTimeHistoryFill";
 
