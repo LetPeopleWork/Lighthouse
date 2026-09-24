@@ -13,7 +13,6 @@ import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { certainColor, riskyColor } from "../../../utils/theme/colors";
 import PercentilesOverTimeWidget, {
 	PERCENTILES_OVER_TIME_EMPTY_COPY,
-	PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
 } from "./PercentilesOverTimeWidget";
 
 // Mock MUI-X LineChart (same pattern as LineRunChart.test.tsx). Expose the
@@ -63,14 +62,24 @@ vi.mock("@mui/x-charts", () => ({
 
 const OWNER_ID = 42;
 
-// The dashboard's default range always ends today (BaseMetricsView seeds endDate from
-// `new Date()`), which is the state the shipped forward-only empty-state assertions run in.
+// The dashboard's default range always ends today: BaseMetricsView seeds endDate from
+// `new Date()`, so it carries a time of day.
 const RANGE_START = new Date(2026, 6, 1);
 const RANGE_END = todayAtNoon();
 
-/** A past window: ends before today, so an empty series is an in-range emptiness (DDD-13). */
 const PAST_RANGE_START = new Date(2026, 4, 1);
 const PAST_RANGE_END = new Date(2026, 4, 15);
+
+// An empty chart cannot tell why it is empty: the same empty answer comes back when the
+// range predates everything held, when nothing is held at all, when syncing stopped before
+// the range, and when the past days are still being filled in the background. The copy has
+// to be true of all four, whichever range was asked for. Pinned as a literal so a blanked
+// or reworded constant fails here.
+const HONEST_EMPTY_COPY =
+	"Nothing to show for the selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay empty.";
+
+// The chart no longer only builds forward, so this sentence would now be false.
+const RETIRED_FORWARD_ONLY_COPY = "builds forward from today";
 
 function todayAtNoon(): Date {
 	const today = new Date();
@@ -157,7 +166,7 @@ describe("PercentilesOverTimeWidget", () => {
 			),
 		);
 
-		// The 30-day chip is the pressed toggle on first paint (AC1). Selection is
+		// The 30-day chip is the pressed toggle on first paint. Selection is
 		// set explicitly per button (not via ToggleButtonGroup injection), so the
 		// Tooltip wrapper does not cost the pressed state.
 		expect(screen.getByTestId("percentiles-horizon-30")).toHaveAttribute(
@@ -268,7 +277,7 @@ describe("PercentilesOverTimeWidget", () => {
 
 		await screen.findByTestId("mock-line-chart");
 
-		// One point per calendar day in range (AC2).
+		// One point per calendar day in range.
 		const xAxis = JSON.parse(
 			screen.getByTestId("chart-xaxis").textContent ?? "[]",
 		);
@@ -302,7 +311,7 @@ describe("PercentilesOverTimeWidget", () => {
 		expect(seriesInfo[1].data).toEqual([4, 5, 5]); // p70
 		expect(seriesInfo[2].data).toEqual([6, 7, 7]); // p85
 		expect(seriesInfo[3].data).toEqual([8, 9, 10]); // p95
-		// Red at the 50th end, green at the 95th end (D7 ramp).
+		// Red at the 50th end, green at the 95th end, as on the point-in-time chart.
 		expect(seriesInfo[0].color).toBe(riskyColor);
 		expect(seriesInfo[3].color).toBe(certainColor);
 	});
@@ -385,59 +394,35 @@ describe("PercentilesOverTimeWidget", () => {
 		consoleError.mockRestore();
 	});
 
-	it("shows the honest empty-state copy and no chart when no snapshots exist", async () => {
-		const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
-		render(
-			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
-				startDate={RANGE_START}
-				endDate={RANGE_END}
-				metricsService={createMetricsService(getPercentilesOverTime)}
-			/>,
-		);
+	it.each([
+		{ range: "ending today", startDate: RANGE_START, endDate: RANGE_END },
+		{
+			range: "ending in the past",
+			startDate: PAST_RANGE_START,
+			endDate: PAST_RANGE_END,
+		},
+	])(
+		"says only what is true of every empty chart, for a range $range, and draws no chart",
+		async ({ startDate, endDate }) => {
+			const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
+			render(
+				<PercentilesOverTimeWidget
+					ownerId={OWNER_ID}
+					startDate={startDate}
+					endDate={endDate}
+					metricsService={createMetricsService(getPercentilesOverTime)}
+				/>,
+			);
 
-		await screen.findByTestId("percentiles-over-time-empty");
-		expect(screen.getByTestId("percentiles-over-time-empty")).toHaveTextContent(
-			"builds forward from today — no snapshots recorded yet",
-		);
-		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
-	});
+			const empty = await screen.findByTestId("percentiles-over-time-empty");
+			expect(empty.textContent).toBe(HONEST_EMPTY_COPY);
+			expect(empty).not.toHaveTextContent(RETIRED_FORWARD_ONLY_COPY);
+			expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+		},
+	);
 
-	it("says the range is empty, not that nothing was ever recorded, for a window that ended before today", async () => {
-		const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
-		render(
-			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
-				startDate={PAST_RANGE_START}
-				endDate={PAST_RANGE_END}
-				metricsService={createMetricsService(getPercentilesOverTime)}
-			/>,
-		);
-
-		const empty = await screen.findByTestId("percentiles-over-time-empty");
-		expect(empty).toHaveTextContent(PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY);
-		// The forward-only sentence would be a lie about a past window on an owner
-		// that may well have history outside it (D10 / DDD-13).
-		expect(empty).not.toHaveTextContent(PERCENTILES_OVER_TIME_EMPTY_COPY);
-		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
-	});
-
-	it("keeps the forward-only copy verbatim when the window still includes today", async () => {
-		const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
-		render(
-			<PercentilesOverTimeWidget
-				ownerId={OWNER_ID}
-				startDate={RANGE_START}
-				endDate={RANGE_END}
-				metricsService={createMetricsService(getPercentilesOverTime)}
-			/>,
-		);
-
-		const empty = await screen.findByTestId("percentiles-over-time-empty");
-		expect(empty).toHaveTextContent(PERCENTILES_OVER_TIME_EMPTY_COPY);
-		expect(PERCENTILES_OVER_TIME_EMPTY_COPY).toBe(
-			"builds forward from today — no snapshots recorded yet",
-		);
+	it("exports the empty copy verbatim so the end-to-end test asserts the shipped string", () => {
+		expect(PERCENTILES_OVER_TIME_EMPTY_COPY).toBe(HONEST_EMPTY_COPY);
 	});
 
 	it("refetches instead of replaying the cached series when the range changes", async () => {
@@ -484,7 +469,7 @@ describe("PercentilesOverTimeWidget", () => {
 		);
 
 		// A range change is a cache MISS: the previous range's series must never be
-		// replayed against the new range (US-06 AC4 — the slice's likeliest bug).
+		// replayed against the new range — the likeliest bug in a per-selection cache.
 		await waitFor(() =>
 			expect(getPercentilesOverTime).toHaveBeenCalledWith(
 				OWNER_ID,
@@ -527,7 +512,7 @@ describe("PercentilesOverTimeWidget", () => {
 			),
 		);
 
-		// Switch to CT-60 → one fetch for that horizon (AC5: read-only, per horizon).
+		// Switch to CT-60 → one read-only fetch for that horizon.
 		fireEvent.click(screen.getByTestId("percentiles-horizon-60"));
 		await waitFor(() =>
 			expect(getPercentilesOverTime).toHaveBeenCalledWith(
@@ -570,7 +555,7 @@ describe("PercentilesOverTimeWidget", () => {
 			),
 		);
 
-		// [ Age | 30 days | 60 days | 90 days ] — Age leads the row (US-03 AC1).
+		// [ Age | 30 days | 60 days | 90 days ] — Age leads the row.
 		const chips = within(screen.getByRole("group")).getAllByRole("button");
 		expect(chips.map((chip) => chip.getAttribute("data-testid"))).toEqual([
 			"percentiles-selection-age",
@@ -580,7 +565,7 @@ describe("PercentilesOverTimeWidget", () => {
 		]);
 		expect(chips[0]).toHaveTextContent("Age");
 
-		// Age leads visually but 30 days stays the default selection — no slice-01
+		// Age leads visually but 30 days stays the default selection — no earlier
 		// assertion (Vitest or E2E) regresses.
 		expect(screen.getByTestId("percentiles-selection-age")).toHaveAttribute(
 			"aria-pressed",
@@ -682,7 +667,7 @@ describe("PercentilesOverTimeWidget", () => {
 		}[];
 
 		// Identical shape to the CT tabs: four percentile lines, uniform circles,
-		// red→green ramp, custom legend with the built-in one suppressed (D7).
+		// red→green ramp, custom legend with the built-in one suppressed.
 		expect(seriesInfo.map((s) => s.label)).toEqual([
 			"50th",
 			"70th",
@@ -703,7 +688,7 @@ describe("PercentilesOverTimeWidget", () => {
 		).toBeInTheDocument();
 	});
 
-	it("shows the honest forward-only empty state on the Age tab when no age snapshots exist", async () => {
+	it("shows the same honest empty copy on the Age tab when no age values exist", async () => {
 		const getPercentilesOverTime = vi
 			.fn()
 			.mockImplementation((_ownerId: number, selection: string | number) =>
@@ -722,11 +707,9 @@ describe("PercentilesOverTimeWidget", () => {
 
 		fireEvent.click(screen.getByTestId("percentiles-selection-age"));
 
-		// Never a broken axis — the same verbatim D6 copy as the cycle-time tabs.
-		await screen.findByTestId("percentiles-over-time-empty");
-		expect(screen.getByTestId("percentiles-over-time-empty")).toHaveTextContent(
-			"builds forward from today — no snapshots recorded yet",
-		);
+		// Never a broken axis — the same copy as the cycle-time tabs.
+		const empty = await screen.findByTestId("percentiles-over-time-empty");
+		expect(empty.textContent).toBe(HONEST_EMPTY_COPY);
 		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
 	});
 

@@ -7,7 +7,6 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import PbcOverTimeWidget, {
 	PBC_OVER_TIME_EMPTY_COPY,
-	PBC_OVER_TIME_RANGE_EMPTY_COPY,
 } from "./PbcOverTimeWidget";
 
 // Mock MUI-X LineChart (same pattern as PercentilesOverTimeWidget.test.tsx).
@@ -54,14 +53,24 @@ vi.mock("@mui/x-charts", () => ({
 
 const OWNER_ID = 42;
 
-// The dashboard's default range always ends today (BaseMetricsView seeds endDate from
-// `new Date()`), which is the state the shipped forward-only empty-state assertions run in.
+// The dashboard's default range always ends today: BaseMetricsView seeds endDate from
+// `new Date()`, so it carries a time of day.
 const RANGE_START = new Date(2026, 6, 1);
 const RANGE_END = todayAtNoon();
 
-/** A past window: ends before today, so an empty series is an in-range emptiness (DDD-13). */
 const PAST_RANGE_START = new Date(2026, 4, 1);
 const PAST_RANGE_END = new Date(2026, 4, 15);
+
+// An empty chart cannot tell why it is empty: the same empty answer comes back when the
+// range predates everything held, when nothing is held at all, when syncing stopped before
+// the range, and when the past days are still being filled in the background. The copy has
+// to be true of all four, whichever range was asked for. Pinned as a literal so a blanked
+// or reworded constant fails here.
+const HONEST_EMPTY_COPY =
+	"Nothing to show for the selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay empty.";
+
+// The chart no longer only builds forward, so this sentence would now be false.
+const RETIRED_FORWARD_ONLY_COPY = "builds forward from today";
 
 function todayAtNoon(): Date {
 	const today = new Date();
@@ -151,7 +160,7 @@ describe("PbcOverTimeWidget", () => {
 			),
 		);
 
-		// Throughput is the pressed toggle on first paint (Scenario 10). Selection
+		// Throughput is the pressed toggle on first paint. Selection
 		// is set explicitly per button so the Tooltip wrapper does not cost the
 		// pressed state — same accessibility surface as the percentiles widget.
 		expect(screen.getByTestId("pbc-metric-throughput")).toHaveAttribute(
@@ -224,7 +233,7 @@ describe("PbcOverTimeWidget", () => {
 			expect(s.points).toBe(3);
 			expect(s.showMark).toBe(false);
 		}
-		// Deliberate D7 deviation: over time the three limits ARE the series, so
+		// Deliberate deviation from the point-in-time chart: over time the three limits ARE the series, so
 		// colour — not a dash pattern — is what tells them apart.
 		expect(seriesInfo.map((s) => s.color)).toEqual([
 			EXPECTED_LIMIT_COLORS.unpl,
@@ -254,42 +263,28 @@ describe("PbcOverTimeWidget", () => {
 		expect(screen.queryByTestId("pbc-over-time-empty")).not.toBeInTheDocument();
 	});
 
-	it("shows the honest forward-only empty state and no chart on a fresh owner", async () => {
-		const getProcessBehaviorOverTime = vi.fn().mockResolvedValue([]);
-		renderWidget(getProcessBehaviorOverTime);
+	it.each([
+		{ range: "ending today", startDate: RANGE_START, endDate: RANGE_END },
+		{
+			range: "ending in the past",
+			startDate: PAST_RANGE_START,
+			endDate: PAST_RANGE_END,
+		},
+	])(
+		"says only what is true of every empty chart, for a range $range, and draws no axis",
+		async ({ startDate, endDate }) => {
+			const getProcessBehaviorOverTime = vi.fn().mockResolvedValue([]);
+			renderWidget(getProcessBehaviorOverTime, startDate, endDate);
 
-		await screen.findByTestId("pbc-over-time-empty");
-		expect(screen.getByTestId("pbc-over-time-empty")).toHaveTextContent(
-			PBC_OVER_TIME_EMPTY_COPY,
-		);
-		// Scenario 12 — never a broken chart: no axis is rendered at all.
-		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
-	});
+			const empty = await screen.findByTestId("pbc-over-time-empty");
+			expect(empty.textContent).toBe(HONEST_EMPTY_COPY);
+			expect(empty).not.toHaveTextContent(RETIRED_FORWARD_ONLY_COPY);
+			expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+		},
+	);
 
-	it("says the range is empty, not that nothing was ever recorded, for a window that ended before today", async () => {
-		const getProcessBehaviorOverTime = vi.fn().mockResolvedValue([]);
-		renderWidget(getProcessBehaviorOverTime, PAST_RANGE_START, PAST_RANGE_END);
-
-		const empty = await screen.findByTestId("pbc-over-time-empty");
-		expect(empty).toHaveTextContent(PBC_OVER_TIME_RANGE_EMPTY_COPY);
-		// The forward-only sentence would be a lie about a past window on an owner
-		// that may well have history outside it (D10 / DDD-13).
-		expect(empty).not.toHaveTextContent(PBC_OVER_TIME_EMPTY_COPY);
-		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
-	});
-
-	it("keeps the forward-only copy when the window still includes today", async () => {
-		const getProcessBehaviorOverTime = vi.fn().mockResolvedValue([]);
-		renderWidget(getProcessBehaviorOverTime, RANGE_START, RANGE_END);
-
-		const empty = await screen.findByTestId("pbc-over-time-empty");
-		expect(empty).toHaveTextContent(PBC_OVER_TIME_EMPTY_COPY);
-	});
-
-	it("exports the D6 empty copy verbatim so the E2E asserts the shipped string", () => {
-		expect(PBC_OVER_TIME_EMPTY_COPY).toBe(
-			"builds forward from today — no snapshots recorded yet",
-		);
+	it("exports the empty copy verbatim so the end-to-end test asserts the shipped string", () => {
+		expect(PBC_OVER_TIME_EMPTY_COPY).toBe(HONEST_EMPTY_COPY);
 	});
 
 	it("shows neither the chart nor the empty state while the series is loading", async () => {
@@ -529,7 +524,7 @@ describe("PbcOverTimeWidget", () => {
 		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2);
 	});
 
-	it("shows the honest empty copy for a family with nothing recorded yet", async () => {
+	it("shows the same honest empty copy for a family with nothing to show", async () => {
 		const getProcessBehaviorOverTime = vi
 			.fn()
 			.mockImplementation((_ownerId: number, metricType: string) =>
@@ -541,7 +536,7 @@ describe("PbcOverTimeWidget", () => {
 		fireEvent.click(screen.getByTestId("pbc-metric-arrivals"));
 
 		const empty = await screen.findByTestId("pbc-over-time-empty");
-		expect(empty).toHaveTextContent(PBC_OVER_TIME_EMPTY_COPY);
+		expect(empty.textContent).toBe(HONEST_EMPTY_COPY);
 		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
 	});
 });

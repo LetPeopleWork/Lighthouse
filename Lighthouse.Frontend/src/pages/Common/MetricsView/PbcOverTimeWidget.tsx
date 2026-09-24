@@ -22,7 +22,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { resolveOverTimeEmptyCopy } from "./overTimeEmptyState";
+import { OVER_TIME_EMPTY_COPY } from "./overTimeEmptyState";
 import { usePbcOverTime } from "./usePbcOverTime";
 
 interface PbcOverTimeWidgetProps {
@@ -30,27 +30,20 @@ interface PbcOverTimeWidgetProps {
 	metricsService: IMetricsService<IWorkItem | IFeature>;
 	startDate: Date;
 	endDate: Date;
-	/** Which families the toggle offers — Feature Size is portfolio-only (D8). */
+	/** Which families the toggle offers — a team has no feature sizes, so Feature Size is portfolio-only. */
 	ownerType: "team" | "portfolio";
 	title?: string;
 }
 
-/**
- * Re-exported so the E2E asserts the shipped string rather than a duplicated copy
- * of the prose. Which of the two sentences an empty chart shows is decided by
- * resolveOverTimeEmptyCopy (D10 / DDD-13).
- */
-export {
-	OVER_TIME_FORWARD_ONLY_EMPTY_COPY as PBC_OVER_TIME_EMPTY_COPY,
-	OVER_TIME_RANGE_EMPTY_COPY as PBC_OVER_TIME_RANGE_EMPTY_COPY,
-} from "./overTimeEmptyState";
+/** Re-exported so tests assert the shipped string rather than a duplicated copy of the prose. */
+export { OVER_TIME_EMPTY_COPY as PBC_OVER_TIME_EMPTY_COPY } from "./overTimeEmptyState";
 
 /**
  * The three limit lines, in the point-in-time chart's vocabulary
  * (average / upperNaturalProcessLimit / lowerNaturalProcessLimit) rather than
- * new names for the same concepts (D7).
+ * new names for the same concepts.
  *
- * Deliberate, user-approved deviation from D7 on the *styling*: the
+ * Deliberate, user-approved deviation from that chart on the *styling*: the
  * point-in-time chart draws its limits neutral-and-dashed because there they
  * are reference lines laid over a measured series. Over time there is no
  * measured series — the three limits ARE the series — so dashes would leave
@@ -135,9 +128,8 @@ function describeMetricType(
  * PBC Over Time widget (Predictability category, team + portfolio). Plots the
  * dated UNPL / Average / LNPL triple the recorder persisted, one point per
  * recorded day, in the point-in-time process-behaviour chart's vocabulary and
- * each limit in its own theme colour (see LIMIT_LINES for the D7 deviation).
- * A fresh owner legitimately has no history — it gets the honest forward-only
- * copy, never a fabricated or broken axis (D6).
+ * each limit in its own theme colour (see LIMIT_LINES for why).
+ * An empty series gets the shared empty copy, never a fabricated or broken axis.
  */
 const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 	ownerId,
@@ -261,7 +253,7 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 							color="text.secondary"
 							sx={{ py: 4, textAlign: "center" }}
 						>
-							{resolveOverTimeEmptyCopy(endDate)}
+							{OVER_TIME_EMPTY_COPY}
 						</Typography>
 					)
 				)}
