@@ -3,7 +3,7 @@
 **ADO**: User Story [6053](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6053) — "Back propagate missing PBC and Percentiles over Time values"
 **Reported by**: Steve Pereira (community)
 **Tags**: Release Notes
-**Waves**: DISCUSS (2026-09-22; amended 2026-09-24 - the fill ships opt-in: D9, US-05, slice 05); DESIGN (2026-09-22; amended 2026-09-24 - the switch: DDD-5 and DDD-6 amended, DDD-18..DDD-20 added)
+**Waves**: DISCUSS (2026-09-22; amended 2026-09-24 - the fill ships opt-in: D9, US-05, slice 05); DESIGN (2026-09-22; amended 2026-09-24 - the switch: DDD-5 and DDD-6 amended, DDD-18..DDD-20 added); DEVOPS (2026-09-22; amended 2026-09-24 - slice 05, the switch: DEVOPS-5..DEVOPS-6, G-11..G-13)
 
 ---
 
@@ -1589,6 +1589,20 @@ skipped. Three items are real; one of them is a safety property DESIGN removed w
 | **Production readiness** | **REAL** — see below. The maintenance-gate coupling. |
 | **Monitoring contracts** | **PARTIAL** — most DISCUSS KPIs are measurable only by observation; no telemetry until Epic 5015. |
 
+**Re-run for slice 05, the opt-in switch (slice 05, 2026-09-24).** D9 / US-05 / DDD-18..DDD-20 change the
+verdicts below and leave every other row standing. Still thin: no new deployable unit, no config key, no
+env var, no chart change, no migration, no new job.
+
+| Concern | Slice 05 verdict |
+|---|---|
+| Deployment strategy | **Ships dark.** The fill is off on every instance — fresh, upgraded, demo — until a System Admin switches it on. Release and adoption are separated by the switch, so there is no rollout ramp to design. DEVOPS-5. |
+| Production readiness | **REAL** — the rollback is "switch it off", and it does not undo data. DEVOPS-5. |
+| Observability | **REAL, small** — one new filler line, one generic toggle line, one deliberate silence on the read path. Nothing at Warning or above, so nothing reaches the Task Manager. DEVOPS-6. |
+| Monitoring contracts | Two KPIs added: one test-plus-dogfood, one qualitative by design. Table below. |
+| CI/CD pipeline | Verdict unchanged, re-stated because it recurs: `Program.cs` is touched again (DI registration of `IOverTimeHistoryFillSwitch`), so CI runs the full backend Integration suite again — expected, no pipeline edit. E2E over-time specs and `@screenshot` shots switch the fill on themselves. G-12. |
+| Coexistence matrix | Still **N/A for versioning** — no route, request, response or field changes; the clients never read optional features, so no version gate. Copy only, at finalization (DoD 14). G-13. |
+| Mutation testing | Inherited. New targets: the switch implementation (missing row = off), the reconciler's gate and the filler's pass-start check — each one `if`, which a structural test cannot see and a mutant can. |
+
 ---
 
 ## Wave: DEVOPS / [REF] Production readiness — the maintenance-gate coupling
@@ -1655,6 +1669,46 @@ longest a `RestoreBackup` may be held waiting.** An operator who clicks Restore 
 history backfill. That makes the budget a small number of seconds chosen against operator patience, not a
 throughput knob — and it gives the constant a reason a reader can check, rather than a value to argue about.
 
+### DEVOPS-5 — The switch: ships dark, "off" is the rollback, and the rollback keeps its data *(slice 05, 2026-09-24)*
+
+- **Rollout: ships dark.** Every instance comes up with the fill off (US-05 AC1); loading demo data leaves it
+  off (US-05 decision 2). Releasing slice 05 changes nothing on the over-time charts except the one
+  empty-state sentence (AC5) and the three ungated items (D9 "Not governed by the switch"). Adoption is a
+  per-instance decision by that instance's System Admin, at a time they choose, with no restart (AC3).
+- **Rollback of the behaviour: switch it off.** Takes effect at each replica's next gap-finding read and next
+  pass start; a pass already running finishes, bounded by 90 days worked out and 10 s (DDD-19). Days already
+  filled stay (AC4, D6). **Switching off does not roll back data**: the only way back to an instance's
+  pre-fill rows is a database backup taken before the switch went on. That is the one fact an operator must
+  have before switching on, so the Behaviour Settings docs say it at finalization (DoD 14): *take a backup
+  first if you might want to undo it.* Operator guidance, not a product change.
+- **Rollback of the release (downgrade to a build without slice 05).** The row stays in `OptionalFeatures`; a
+  build that does not know the key never reads it. Filled rows stay and read as recorded rows (D6). A later
+  re-upgrade keeps the stored position, because the seeder never overwrites `Enabled`. No migration either
+  way, so nothing to down-migrate.
+- **Upgrade path.** On first start, `OptionalFeatureSeeder` adds the row (off, Preview, free) if it is missing
+  and refreshes only name, description and flags on an existing row, never `Enabled` (DDD-20). Before the
+  seeder has run, a missing row reads off (DDD-18), so there is no window in which an upgraded instance fills
+  unasked.
+- **Multi-replica.** Read per use through a scoped port, never cached (DDD-5 amended, DDD-18), so each replica
+  sees a flip at its own next read; there is no cross-replica invalidation to get wrong. Each replica keeps its
+  own filler and queue, so "off" drops waiting asks on each replica independently, at their pass starts. The
+  maintenance gate is unchanged and does not read the switch (DDD-19); the per-replica reach of the gate's
+  filler signal (R-1) is neither widened nor narrowed by slice 05.
+- **What a self-hosted operator needs to know** (the docs brief for finalization):
+  1. Where: Settings → Configuration → Behaviour Settings → "Fill in past days on over-time charts", marked
+     Preview. System Admin only; free.
+  2. Off after an upgrade; nothing to do to keep today's behaviour.
+  3. On: the charts fill in the background from the next open, up to 90 days worked out per visit, oldest
+     first, so a wide range fills over several visits.
+  4. Off again: stops further filling; filled days stay and cannot be told apart from recorded ones. Back up
+     first if you might want to undo.
+  5. Filled days are worked out against today's configuration (states, cycle-time definition, blocked rules).
+     If that changed recently, the past may look different from what you remember — tell us.
+  6. It is a database row, not configuration: no env var, `appsettings` key or Helm value presets it. A fleet
+     operator switches it per instance through the UI or `POST /api/latest/optionalfeatures/OverTimeHistoryFill`
+     with a System Admin identity. Deliberate: adoption is the instance admin's decision, and the chart gains
+     no passthrough.
+
 ---
 
 ## Wave: DEVOPS / [REF] Observability stack
@@ -1697,23 +1751,93 @@ The operator-facing signal is the log line in DEVOPS-3 and nothing else. If that
 practice, the cheap escalation is a health-check contribution — **not** a Task-Manager row, which would drag
 `UpdateType`, the three `satisfies Record<UpdateTaskType,…>` tables and the hand-maintained TS union back in.
 
+### DEVOPS-6 — Around the switch: one new line, one generic line, one deliberate silence *(slice 05, 2026-09-24)*
+
+The constraint first. The Task Manager's **Recent Problems** section is fed by `RecentProblemsSink`, which
+retains every **Warning-or-worse** event in the log pipeline
+(`Services/Implementation/Logging/RecentProblemsSink.cs`). Anything at Warning or above is therefore a Task
+Manager entry. Everything below is Information or nothing: an instance that simply left the preview off shows
+nothing in the Task Manager and writes nothing about the fill to its log.
+
+| Moment | Level | Template | Where |
+|---|---|---|---|
+| (a) Reconciler found days to ask for, switch off | **none** | — | `OverTimeGapReconciler` |
+| (b) A waiting ask dropped at pass start, switch off | **Information** | `"Over-time reconstruction dropped a waiting pass for {OwnerType} {OwnerId} ({MetricFamily}); filling in past days is switched off"` | `OverTimeHistoryFiller`, at the pass-start check |
+| (c) Any optional feature switched | **Information** | `"Optional feature {FeatureKey} switched from {WasEnabled} to {Enabled}"` | `OptionalFeaturesController.UpdateOptionalFeature`, after the applier returns |
+
+`MetricFamily` in (b) is the filler's own constant, `"OverTime"` — the value every other filler line carries.
+
+**(a) — nothing, not even Debug.** It would fire on every gap-carrying read, indefinitely, on every instance
+that leaves the preview off — which is every instance by default. At Information it would be the loudest line
+in the log of an instance where nothing is wrong. At Debug it is dropped at the default level but still costs
+a logger dependency and a call per request on the read path, and all it could tell an operator — "the switch
+is off" — Behaviour Settings already shows. The reconciler stays logger-free, as it is today.
+
+**(b) — Information,** matching the filler's two existing benign stops ("stood down …", "gave the rest of the
+window back …"). One line per dropped ask, and bounded: the reconciler gates before it asks, so an ask reaches
+a pass start while off only around a flip — at most the queue (256 owners) per replica, once. It is emitted
+from the pass-start check that settles **before** the pass counts as in flight (DDD-19), and it is the only
+line that pass produces. A pass already running when the switch went off does not re-read it and finishes as
+any pass does, with nothing to say about the switch.
+
+**(c) — the existing write does not log.** `OptionalFeaturesController.UpdateOptionalFeature` and
+`DefaultOptionalFeatureApplier.ApplyAsync` store the value and return, and the row carries no timestamp. For
+this switch that silence is a real gap: filled rows are permanent and indistinguishable from recorded ones, so
+"when was the fill switched on here?" is the first question a report of an unrecognised past raises (the
+fidelity trigger in the KPIs), and today nothing on the instance answers it. The line is **generic** — in the
+controller, for every key, logging `feature.Key`:
+
+- no applier of its own is needed, so DDD-20 stands;
+- it never names `OverTimeHistoryFillKey`, so DDD-18's key-confinement test stays green;
+- it serves every other optional feature at no extra cost.
+
+Logged on every successful write, a same-value write included, so there is no branch to mutate; the previous
+value is read before the applier runs, because the applier mutates the row. **No identity is logged**: with
+authentication off every caller shares one subject, and "who" is not the application log's question. Adds
+`ILogger<OptionalFeaturesController>` (3 → 4 constructor parameters; S107's threshold is 7).
+
+**Correction to DEVOPS-3 (slice 05, 2026-09-24).** DEVOPS-3 had `MetricFamily` carry the recorders' two values
+(`"Percentiles"`, `"ProcessBehavior"`). As built, every filler line carries one value, `"OverTime"`
+(`OverTimeHistoryFiller.cs:35`), because one pass covers every family an owner has and a per-chart value would
+split one alert into several. The template text is as pinned; the property value is not. An alert grouping on
+`MetricFamily` needs **three** values to cover recording and reconstruction together. DESIGN's driven-ports
+table (`ILogger<T>` row) carries the same stale claim.
+
 ---
 
 ## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
 
 | DISCUSS KPI | Instrument | Honest status |
 |---|---|---|
-| Dated span grows from 4 days to the cap | Direct observation on the restored dev DB | Measurable now, manually |
+| Dated span grows from 4 days to the cap, **switch on** *(qualifier added slice 05, 2026-09-24)* | Direct observation on the restored dev DB | Measurable now, manually |
 | Reconstructed == recorded on days with both | SPIKE-01 diff | **Done** — 4/4, mechanism only |
 | Added latency < 50 ms on a gap-discovering request | Backend integration assertion | Assertable in test; **not** instrumented in production |
 | Zero all-zero percentile rows written | Assertion over the snapshot table | Assertable in test |
 | Zero rows past an owner's `UpdateTime` | Assertion over the snapshot table | Assertable in test |
 | No recurrence of the reported confusion | Community channels | Qualitative; **no telemetry until Epic 5015** |
+| Rows the fill writes with the switch off = 0 *(slice 05, 2026-09-24)* | (1) Backend ATs — Scenario A (off queues nothing, paired with an on-arm that writes), C (off keeps what was filled, new range writes nothing), D (missing row reads off); observable is rows held after a drain. (2) Dogfood on the restored dev DB, procedure below | Assertable in test; verified once by hand; **not** instrumented in production |
+| First positive feedback from an opted-in instance *(slice 05, 2026-09-24)* | Community channels and direct conversation, recorded by the maintainer on #6083 (instance, date, what was said) | **Qualitative, by design — no instrument.** No telemetry can count opted-in instances (Epic 5015) and none is added. A report of an unrecognised past is recorded on the same item and holds #6083 until fidelity across a configuration change is measured (D6 standing risk). DEVOPS-6 (c) gives that investigation the date the switch went on |
 
 **No new production instrumentation is added by this story.** Recorded plainly: five of six KPIs are
 test-time assertions, and the sixth is qualitative. An instance that silently stops reconstructing would be
 noticed by a user seeing a thin chart, not by a monitor. Accepted for a free-tier read-path feature whose
-failure mode is "the chart is as sparse as it is today" — i.e. the status quo, not a regression.
+failure mode is "the chart is as sparse as it is today" — i.e. the status quo, not a regression. *(Slice 05, 2026-09-24: still true — DEVOPS-6's two lines are logs,
+not instruments.)*
+
+**Dogfood: rows written with the switch off** *(slice 05, 2026-09-24)*.
+
+1. Restore the dev backup (`Restore-DbBackup.ps1`) and start with `Start-DevServer.ps1`. The backup predates
+   the switch, so first start seeds it off; confirm on Behaviour Settings or
+   `GET /api/latest/optionalfeatures/OverTimeHistoryFill` (`enabled: false`).
+2. Count rows with a day **before today** in `PercentilesOverTimeSnapshots` and in `ProcessBehaviorSnapshots`
+   (`WHERE "RecordedAt" < <today>`). Before today only: the daily recorder may legitimately write today's row
+   during the session, and that must not read as a fill. Baseline on the 2026-09-22 backup: 36 percentile rows.
+3. Open Percentiles Over Time (every tab) and PBC Over Time over a year-wide range, at team scope and at
+   portfolio scope. Wait longer than one pass budget (10 s), then open them all once more.
+4. Recount: both numbers unchanged. The day's log holds no `Over-time reconstruction` line.
+5. Contingency arm, so step 4 cannot pass for free: switch on, open team 1's Percentiles Over Time over the
+   same range, wait, recount — the count rises (phase 01 saw 36 → 464). Restore the backup again afterwards if
+   the off-state instance is still wanted.
 
 ---
 
@@ -1776,6 +1900,43 @@ At slice 04, dogfood on the restored dev DB and confirm that a pass in flight do
 slowness on the page that triggered it. If it does, the escalation is the **health-check contribution** named
 in DEVOPS-4 — not a Task-Manager row, which drags `UpdateType`, the three `satisfies Record<UpdateTaskType,…>`
 tables and the hand-maintained TS union back in, reopening DDD-4.
+
+### G-11 — Nothing about the switch reaches the Task Manager *(slice 05, 2026-09-24)*
+
+DEVOPS-6's levels are the gate: the drop line and the toggle line at Information, never Warning; the
+reconciler logs nothing. Recommended, cheap and contingent: in Scenario B (the one scenario that does drop a
+queued ask), assert that `IRecentProblems` holds no entry from the filler after the drop. It fails if the
+drop line is ever raised to Warning, and it cannot pass for free because the drop is what the scenario
+forces. (The same assertion in Scenario A or D would pass for free, because nothing is ever queued there.) Log templates are otherwise not
+asserted, as for the filler's existing lines; a Stryker survivor on a template string is equivalent by
+intent, recorded as such and not chased.
+
+### G-12 — CI and E2E: no new pipeline, but the fixtures must say "on" out loud *(slice 05, 2026-09-24)*
+
+- **Backend CI.** `Program.cs` gains the switch's DI registration, so CI runs the full backend Integration
+  suite again, with the live-connector flake exposure that brings. Expected; no pipeline edit. Constructor
+  growth stays under S107 (reconciler 3 → 4, `OptionalFeaturesController` 3 → 4).
+- **Backend ATs.** The switch-on belongs in the reconstruction base fixture's `Init`, through the driving
+  port, as DESIGN's slice-05 handoff note says; nothing to add here.
+- **E2E.** Demo data no longer implies the fill. One helper beside the existing API helpers —
+  `Lighthouse.EndToEndTests/tests/helpers/api/optionalFeatures.ts` (next to `demo.ts`, `teamMetrics.ts`) —
+  sets a key through `POST /api/latest/optionalfeatures/{key}`. It is called in the setup of the over-time
+  specs that expect filled days (`specs/flow/PercentilesOverTime.spec.ts`, `PbcOverTime.spec.ts`,
+  `PredictabilityOverTime.spec.ts`) and of the over-time shots in `specs/screenshots/Screenshots.spec.ts`;
+  not through a page object, because the switch is not what those specs are about. Switch it back off in
+  teardown: the setting is instance-wide and outlives the spec. **No E2E asserts the off state** — that lives
+  in the backend ATs (E2E stays a thin sanity check).
+- **Screenshots.** `settings/optionalfeatures.png` gains a row; regenerate it at finalization, deleting the
+  old PNG first, because a diff under the pixel threshold keeps the old image.
+
+### G-13 — Coexistence: copy, not contract *(slice 05, 2026-09-24)*
+
+No route, request, response or field changes (ADR-207, 2026-09-24 amendment, "The read contract does not
+change"); the clients read no optional features. **No version gate.** The Lighthouse-Clients "never backfills"
+copy (MCP tool descriptions, client JSDoc, CLI comment, `skill/SKILL.md`) is rewritten at this story's
+finalization to be true in both positions (DoD 14). It is copy-only, so it needs no coordinated release: it
+rides the next clients release, which still needs its manual version bump. Confirm at the slice-05 review
+that the diff touches neither series route nor any series DTO.
 
 ---
 
