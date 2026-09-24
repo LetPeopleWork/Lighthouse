@@ -1,4 +1,5 @@
 import type {
+	UsageDataOptionalFeature,
 	UsageDataRouteKey,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
@@ -16,6 +17,8 @@ export interface NoticedEvent {
 	name: UsageDataEventName;
 	route?: UsageDataRouteKey;
 	workTrackingSystem?: UsageDataWorkTrackingSystem;
+	optionalFeature?: UsageDataOptionalFeature;
+	enabled?: boolean;
 	noticedAt: number;
 }
 

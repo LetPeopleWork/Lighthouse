@@ -27,8 +27,6 @@ import SystemSettingsTab from "./SystemSettingsTab";
  * The screen flips a switch before the server has answered. The report has to wait for the answer:
  * a switch the server refused did not happen, and counting it would put a change in the numbers
  * that no instance ever made.
- *
- * Pending until the event exists. Each one is switched on by itself, as one step of the work.
  */
 
 const { reportUsage } = vi.hoisted(() => ({ reportUsage: vi.fn() }));
@@ -165,7 +163,7 @@ describe("Reporting a behaviour setting being switched", () => {
 	// @driving_port @AC-1.1 - the answer is what makes the switch real, so the report
 	// waits for it. Holding the answer back is what shows the screen is waiting rather than reporting
 	// the click.
-	it.skip("reports the ordering setting switched on once the server has accepted it", async () => {
+	it("reports the ordering setting switched on once the server has accepted it", async () => {
 		let acceptTheSwitch: () => void = () => undefined;
 		mockUpdateFeature.mockReturnValue(
 			new Promise<void>((resolve) => {
@@ -191,7 +189,7 @@ describe("Reporting a behaviour setting being switched", () => {
 
 	// @driving_port @AC-1.1 - the direction is the new state, read from the row as it was before the
 	// click. Reporting the old one would count every switch backwards.
-	it.skip("reports it switched back off as one more event", async () => {
+	it("reports it switched back off as one more event", async () => {
 		renderTheSystemSettings();
 
 		await userEvent.click(await theSwitchFor("FeatureOrdering"));
@@ -210,7 +208,7 @@ describe("Reporting a behaviour setting being switched", () => {
 	// on could never arrive, since nothing leaves from that moment, and counting only the times it
 	// was lifted would read as people forever lifting it. The ordering switch after it is the
 	// control: only one of the two was reported.
-	it.skip.each([
+	it.each([
 		[false, "on"],
 		[true, "off"],
 	])(
@@ -232,7 +230,7 @@ describe("Reporting a behaviour setting being switched", () => {
 	// @driving_port @error @AC-1.3 - a switch the server refused did not happen. The accepted switch
 	// that follows is what shows this screen reports at all; without it, a screen that never reports
 	// would pass.
-	it.skip("reports nothing for a switch the server refused", async () => {
+	it("reports nothing for a switch the server refused", async () => {
 		mockUpdateFeature.mockRejectedValueOnce(new Error("refused"));
 
 		renderTheSystemSettings();
@@ -249,7 +247,7 @@ describe("Reporting a behaviour setting being switched", () => {
 
 	// @driving_port @error @AC-1.6 - a setting usage data has no name for sends nothing rather than a
 	// guess. The ordering switch after it is the control: only one of the two was reported.
-	it.skip("reports nothing for a setting usage data has no name for", async () => {
+	it("reports nothing for a setting usage data has no name for", async () => {
 		givenTheseSettings(aSettingUsageDataHasNoNameFor, theOrderingSetting);
 
 		renderTheSystemSettings();

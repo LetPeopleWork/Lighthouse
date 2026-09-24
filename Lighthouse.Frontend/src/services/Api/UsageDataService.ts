@@ -1,6 +1,7 @@
 import type {
 	IUsageDataState,
 	UsageDataDecisionValue,
+	UsageDataOptionalFeature,
 	UsageDataRouteKey,
 	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
@@ -26,6 +27,7 @@ export const UsageDataEventName = {
 	WorkTrackingSystemConnected: "WorkTrackingSystemConnected",
 	TeamRefreshTriggered: "TeamRefreshTriggered",
 	PortfolioRefreshTriggered: "PortfolioRefreshTriggered",
+	OptionalFeatureToggled: "OptionalFeatureToggled",
 } as const;
 
 export type UsageDataEventName =
@@ -44,6 +46,10 @@ export interface IUsageDataEvent {
 	route?: UsageDataRouteKey;
 	/** Only on a connection being set up, and only ever the kind of system, never one of yours. */
 	workTrackingSystem?: UsageDataWorkTrackingSystem;
+	/** Only on a behaviour setting being switched: which one, from usage data's own list. */
+	optionalFeature?: UsageDataOptionalFeature;
+	/** Only on a behaviour setting being switched: whether it is now on. */
+	enabled?: boolean;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

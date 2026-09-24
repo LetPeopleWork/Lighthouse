@@ -7,7 +7,10 @@ import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { usageDataOptionalFeatureFor } from "../../../services/UsageData/usageDataOptionalFeatures";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BehaviourSettingsTable from "./BehaviourSettingsTable";
 import BlackoutSettings from "./BlackoutSettings";
@@ -23,6 +26,8 @@ const SystemSettingsTab: React.FC = () => {
 
 	const { optionalFeatureService, licensingService } =
 		useContext(ApiServiceContext);
+
+	const reportUsage = useUsageDataReporter();
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -57,11 +62,24 @@ const SystemSettingsTab: React.FC = () => {
 		);
 		setOptionalFeatures(updatedFeatures);
 
+		const enabled = !toggledFeature.enabled;
+
 		try {
 			await optionalFeatureService.updateFeature({
 				...toggledFeature,
-				enabled: !toggledFeature.enabled,
+				enabled,
 			});
+
+			// Reported only once the server accepted it: the switch above moved before the answer, and a
+			// refused one never happened.
+			const optionalFeature = usageDataOptionalFeatureFor(toggledFeature.key);
+			if (optionalFeature) {
+				reportUsage({
+					name: UsageDataEventName.OptionalFeatureToggled,
+					optionalFeature,
+					enabled,
+				});
+			}
 		} catch {
 			await fetchOptionalFeatures();
 		}

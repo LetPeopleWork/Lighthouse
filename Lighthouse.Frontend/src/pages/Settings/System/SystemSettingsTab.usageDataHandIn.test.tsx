@@ -30,8 +30,6 @@ import SystemSettingsTab from "./SystemSettingsTab";
  * The screen's own test replaces the reporter, and the server's scenarios post the message by hand.
  * Between the two sits everything that decides whether a switch actually leaves this browser, and
  * each side's test passes whatever happens there - so this is the one that can tell.
- *
- * Pending until the event exists.
  */
 
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
@@ -161,7 +159,7 @@ describe("A behaviour setting switch, as this browser hands it in", () => {
 
 	// @driving_port @AC-1.1 - the parts the server needs have to survive every step between the
 	// switch and the post, and nothing on the way is checked against them.
-	it.skip("hands in which setting was switched and which way", async () => {
+	it("hands in which setting was switched and which way", async () => {
 		mockOptionalFeatureService.getAllFeatures = vi
 			.fn()
 			.mockResolvedValue([theOrderingSetting]);

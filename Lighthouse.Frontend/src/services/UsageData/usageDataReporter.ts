@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import { useUsageDataConsentIfKnown } from "../../hooks/useUsageDataConsent";
-import type { UsageDataWorkTrackingSystem } from "../../models/UsageData/UsageData";
+import type {
+	UsageDataOptionalFeature,
+	UsageDataWorkTrackingSystem,
+} from "../../models/UsageData/UsageData";
 import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { UsageDataEventName } from "../Api/UsageDataService";
 import { notice } from "./usageDataBuffer";
@@ -15,6 +18,8 @@ import { notice } from "./usageDataBuffer";
 export interface UsageDataCapabilityUse {
 	name: UsageDataEventName;
 	workTrackingSystem?: UsageDataWorkTrackingSystem;
+	optionalFeature?: UsageDataOptionalFeature;
+	enabled?: boolean;
 }
 
 /**

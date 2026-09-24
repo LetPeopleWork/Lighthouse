@@ -91,6 +91,22 @@ export const UsageDataWorkTrackingSystem = {
 export type UsageDataWorkTrackingSystem =
 	(typeof UsageDataWorkTrackingSystem)[keyof typeof UsageDataWorkTrackingSystem];
 
+/**
+ * Which behaviour setting was switched, said as a choice from this list.
+ *
+ * Usage data's own list, not the keys the product stores these settings under: a setting renamed
+ * or added in storage must not start leaving this instance under a new name unannounced.
+ *
+ * The setting that stops usage data is deliberately missing. Switching it on means nothing leaves
+ * from that moment, so only ever seeing it switched off would read as people forever lifting it.
+ */
+export const UsageDataOptionalFeature = {
+	FeatureOrder: "FeatureOrder",
+} as const;
+
+export type UsageDataOptionalFeature =
+	(typeof UsageDataOptionalFeature)[keyof typeof UsageDataOptionalFeature];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 
