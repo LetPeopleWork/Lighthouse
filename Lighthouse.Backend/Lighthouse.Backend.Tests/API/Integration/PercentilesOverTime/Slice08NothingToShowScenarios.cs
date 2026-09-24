@@ -32,6 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         {
             var teamId = GivenATeamStillBeingRefreshed();
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-120), TodayDay);
+            GivenAnItemTheTeamHasHadInProgressSinceBeforeThePeriod(teamId);
             var heldBefore = EverythingTheChartsHold();
 
             var response = await WhenTheFlowCoachOpensTheCycleTimeTrend(teamId, TodayDay.AddDays(-700), TodayDay.AddDays(-500));
@@ -107,6 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         {
             var teamId = GivenATeamStillBeingRefreshed();
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-120), TodayDay);
+            GivenAnItemTheTeamHasHadInProgressSinceBeforeThePeriod(teamId);
             var heldBefore = EverythingTheChartsHold();
 
             var response = await WhenTheDeliveryLeadOpensTheLimits(teamId, TodayDay.AddDays(-700), TodayDay.AddDays(-500));

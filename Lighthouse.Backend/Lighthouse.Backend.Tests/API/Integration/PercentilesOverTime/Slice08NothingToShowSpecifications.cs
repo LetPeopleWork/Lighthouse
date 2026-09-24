@@ -33,6 +33,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
+        /// <summary>
+        /// An item started long before the period and never finished. Every day of the period then has an
+        /// age and a count of work in progress to report, so the absence gates that keep a quiet day off
+        /// the chart have nothing to refuse - and only the rule that no day before the team's first
+        /// finished item is worked out keeps the period empty.
+        /// </summary>
+        private void GivenAnItemTheTeamHasHadInProgressSinceBeforeThePeriod(int teamId)
+            => SeedItemStillInProgressSince(teamId, $"{teamId}-in-progress", TodayDay.AddDays(-800));
+
         // --- When ---
 
         private Task<SeriesResponse> WhenTheFlowCoachOpensTheCycleTimeTrend(int teamId, DateOnly from, DateOnly to)
