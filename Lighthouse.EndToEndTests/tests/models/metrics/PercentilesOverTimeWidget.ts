@@ -9,19 +9,12 @@ export const PERCENTILE_LINES = [50, 70, 85, 95] as const;
 const AGE_TOGGLE_TEST_ID = "percentiles-selection-age";
 
 /**
- * The honest forward-only empty state (D6) a fresh owner reads instead of a
- * broken axis — verbatim, so a copy change here fails loudly.
+ * The one empty state an empty chart shows instead of a broken axis, whatever the
+ * range and whatever the reason it is empty — verbatim, so a copy change here fails
+ * loudly.
  */
 export const PERCENTILES_OVER_TIME_EMPTY_COPY =
-	"builds forward from today — no snapshots recorded yet";
-
-/**
- * The other honest empty state (slice-03b, D10/DDD-13): the owner may well have
- * history, just not inside the selected window. Shown when the range ends before
- * today — verbatim, so a copy change here fails loudly.
- */
-export const PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY =
-	"no data recorded in the selected range";
+	"Nothing to show for the selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay empty.";
 
 /**
  * Drives the Percentiles Over Time widget (Predictability category, team +

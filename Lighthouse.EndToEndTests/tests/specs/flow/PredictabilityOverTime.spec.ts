@@ -13,12 +13,10 @@ import {
 import {
 	PBC_LIMIT_LINES,
 	PBC_OVER_TIME_EMPTY_COPY,
-	PBC_OVER_TIME_RANGE_EMPTY_COPY,
 	PbcOverTimeWidget,
 } from "../../models/metrics/PbcOverTimeWidget";
 import {
 	PERCENTILES_OVER_TIME_EMPTY_COPY,
-	PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
 	PercentilesOverTimeWidget,
 } from "../../models/metrics/PercentilesOverTimeWidget";
 
@@ -114,7 +112,7 @@ test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fe
 	await expect(pbc.emptyState).toHaveCount(0);
 });
 
-test("@edge @US-06 a range that ends before recording began says so on both over-time widgets, instead of blaming forward-only recording", async ({
+test("@edge @US-06 a range that ends before the demo history shows the honest empty copy on both over-time widgets", async ({
 	page,
 	request,
 	overviewPage,
@@ -133,8 +131,9 @@ test("@edge @US-06 a range that ends before recording began says so on both over
 	await expect(percentiles.Widget).toBeVisible();
 	await expect(pbc.Widget).toBeVisible();
 
-	// Entirely before the demo backfill's earliest day AND ending in the past, so
-	// the honest reading is "nothing in this range" — this owner does have history.
+	// Entirely before the demo backfill's earliest day AND ending in the past, on an
+	// owner that does have history. An empty chart cannot tell this apart from any
+	// other empty chart, so it reads the same copy as a team with nothing at all.
 	const dateRange = new MetricsDateRange(page);
 	await dateRange.applyAndWaitFor(
 		daysBeforeToday(60),
@@ -144,19 +143,19 @@ test("@edge @US-06 a range that ends before recording began says so on both over
 	await metrics.switchCategory(MetricsCategories.Predictability);
 
 	await expect(percentiles.emptyState).toHaveText(
-		PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
+		PERCENTILES_OVER_TIME_EMPTY_COPY,
 	);
 	await expect.poll(() => percentiles.countChartLines()).toBe(0);
 
-	await expect(pbc.emptyState).toHaveText(PBC_OVER_TIME_RANGE_EMPTY_COPY);
+	await expect(pbc.emptyState).toHaveText(PBC_OVER_TIME_EMPTY_COPY);
 	await expect.poll(() => pbc.countChartLines()).toBe(0);
 });
 
 // A team created but never refreshed has recorded no percentiles and no
 // process-behaviour limits at all, and it sits on a non-demo connection — only demo
-// connections get backdated snapshots (ADR-109 / DDD-4), so this is the honest
-// "fresh team" fixture for BOTH widgets.
-test("@edge @US-03 @US-04 a fresh team's over-time widgets show the honest forward-only empty state", async ({
+// connections are seeded with past days — so this is the honest "fresh team" fixture
+// for BOTH widgets.
+test("@edge @US-03 @US-04 a fresh team's over-time widgets show the honest empty state", async ({
 	page,
 	request,
 	overviewPage,
@@ -188,7 +187,7 @@ test("@edge @US-03 @US-04 a fresh team's over-time widgets show the honest forwa
 	await percentiles.selectAge();
 	await expect.poll(() => percentiles.isAgeSelected()).toBe(true);
 
-	// Honest forward-only copy, never a broken chart.
+	// The honest empty copy, never a broken chart.
 	await expect(percentiles.emptyState).toHaveText(
 		PERCENTILES_OVER_TIME_EMPTY_COPY,
 	);
@@ -201,11 +200,11 @@ test("@edge @US-03 @US-04 a fresh team's over-time widgets show the honest forwa
 	await expect.poll(() => pbc.countChartLines()).toBe(0);
 	await expect(pbc.legend).toHaveCount(0);
 
-	// Slice 04: the same honesty has to hold for a family the recorder only started
-	// persisting now. This fresh, never-refreshed team on a non-demo connection has
-	// nothing recorded for ANY family, which makes it the only deterministic place
-	// to assert the empty copy per family — on the demo team today's refresh records
-	// a row for every family.
+	// The same honesty has to hold for every family, including the ones the recorder
+	// started persisting later. This fresh, never-refreshed team on a non-demo
+	// connection has nothing recorded for ANY family, which makes it the only
+	// deterministic place to assert the empty copy per family — on the demo team
+	// today's refresh records a row for every family.
 	await pbc.selectMetric(OTHER_PBC_FAMILY);
 	await expect.poll(() => pbc.isMetricSelected(OTHER_PBC_FAMILY)).toBe(true);
 	await expect(pbc.emptyState).toHaveText(PBC_OVER_TIME_EMPTY_COPY);

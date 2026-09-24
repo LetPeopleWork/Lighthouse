@@ -46,26 +46,19 @@ export const PBC_LIMIT_LINES = ["unpl", "average", "lnpl"] as const;
 export type PbcLimitLine = (typeof PBC_LIMIT_LINES)[number];
 
 /**
- * The honest forward-only empty state (D6) a fresh owner reads instead of a
- * broken axis — verbatim, so a copy change here fails loudly.
+ * The one empty state an empty chart shows instead of a broken axis, whatever the
+ * range and whatever the reason it is empty — verbatim, so a copy change here fails
+ * loudly.
  */
 export const PBC_OVER_TIME_EMPTY_COPY =
-	"builds forward from today — no snapshots recorded yet";
-
-/**
- * The other honest empty state (slice-03b, D10/DDD-13): the owner may well have
- * history, just not inside the selected window. Shown when the range ends before
- * today — verbatim, so a copy change here fails loudly.
- */
-export const PBC_OVER_TIME_RANGE_EMPTY_COPY =
-	"no data recorded in the selected range";
+	"Nothing to show for the selected range. Days the stored history covers can fill in on a later visit; days it does not cover stay empty.";
 
 /**
  * Drives the PBC Over Time widget (Predictability category, team + portfolio).
  * The widget renders a metric-family toggle row (Throughput pressed by default)
  * above a MUI-X LineChart of the dated UNPL / Average / LNPL triple the
- * recorder persisted, one point per recorded day. A fresh owner legitimately
- * has no history and gets the forward-only copy instead of a fabricated axis.
+ * recorder persisted, one point per recorded day. An empty series gets the
+ * empty copy instead of a fabricated axis.
  */
 export class PbcOverTimeWidget {
 	private readonly widget: Locator;
