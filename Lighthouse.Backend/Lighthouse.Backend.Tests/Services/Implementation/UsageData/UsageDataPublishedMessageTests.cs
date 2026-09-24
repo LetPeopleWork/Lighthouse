@@ -238,6 +238,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                     UsageDataEventName.TeamTabOpened,
                     UsageDataRouteKey.TeamDetail_Metrics,
                     WorkTrackingSystem: null,
+                    OptionalFeature: null,
+                    Enabled: null,
                     offsetMs,
                     Sequence: 0)]);
         }

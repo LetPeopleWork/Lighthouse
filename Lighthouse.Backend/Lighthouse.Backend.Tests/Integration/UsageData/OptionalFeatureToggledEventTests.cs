@@ -149,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @error @AC-1.4
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase("refused")]
         [TestCase("never answered")]
         [TestCase("withdrew")]
@@ -182,7 +181,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         // @driving_port @real-io @error @AC-1.5
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(OnlyWhichWay, TestName = "A setting switch that does not say which setting is refused")]
         [TestCase(OnlyWhichSetting, TestName = "A setting switch that does not say which way is refused")]
         [TestCase("", TestName = "A setting switch that says neither which setting nor which way is refused")]
@@ -203,7 +201,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         // @driving_port @real-io @error @AC-1.2 @AC-1.5
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(NeverSendUsageData)]
         [TestCase("DeltaSync")]
         [TestCase(TheOrderingSettingsOwnKey)]
@@ -215,7 +212,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @error @AC-1.5
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase("\"true\"")]
         [TestCase("1")]
         [TestCase("null")]
@@ -231,7 +227,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         // @driving_port @real-io @error @AC-1.5
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCaseSource(nameof(EveryOtherEvent))]
         public async Task Any_other_event_that_says_a_setting_was_switched_is_refused(string name)
         {
@@ -240,7 +235,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @error @AC-1.5
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(OnlyWhichSetting)]
         [TestCase(OnlyWhichWay)]
         public async Task Any_other_event_carrying_either_half_of_a_setting_switch_is_refused(string whatItCarries)

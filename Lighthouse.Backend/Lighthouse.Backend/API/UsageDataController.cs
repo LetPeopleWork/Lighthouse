@@ -174,9 +174,11 @@ namespace Lighthouse.Backend.API
         /// names a real choice in every one of those lists, so reading one straight would invent an
         /// event nobody reported.
         ///
-        /// The page is the part that is not the same for every event. Two events say which page
+        /// What else a message carries is not the same for every event. Two events say which page
         /// somebody opened and must name one of this product's own; the rest happen on no particular
-        /// page and must name none, so an address on one of those is refused rather than ignored -
+        /// page and must name none, and the same holds for which kind of system was connected and
+        /// which setting was switched. A part on an event that has no business carrying it is
+        /// refused rather than ignored -
         /// whoever sent it believed it would be counted, and a message half accepted is the one
         /// nobody notices.
         ///
@@ -189,7 +191,9 @@ namespace Lighthouse.Backend.API
                 || reported.Name is not { } name || !Enum.IsDefined(name)
                 || (reported.Route is { } named && !Enum.IsDefined(named))
                 || (reported.WorkTrackingSystem is { } system && !Enum.IsDefined(system))
-                || !UsageDataEventShapes.Fits(name, reported.Route, reported.WorkTrackingSystem)
+                || (reported.OptionalFeature is { } setting && !Enum.IsDefined(setting))
+                || !UsageDataEventShapes.Fits(
+                    name, reported.Route, reported.WorkTrackingSystem, reported.OptionalFeature, reported.Enabled)
                 || reported.OffsetMs is not { } offset || offset < 0
                 || reported.Sequence is not { } sequence || sequence < 0)
             {
@@ -197,7 +201,13 @@ namespace Lighthouse.Backend.API
             }
 
             return new UsageDataEventReported(
-                name, reported.Route, reported.WorkTrackingSystem, offset, sequence);
+                name,
+                reported.Route,
+                reported.WorkTrackingSystem,
+                reported.OptionalFeature,
+                reported.Enabled,
+                offset,
+                sequence);
         }
     }
 }

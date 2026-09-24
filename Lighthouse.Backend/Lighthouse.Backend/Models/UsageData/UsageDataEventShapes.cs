@@ -4,8 +4,9 @@ namespace Lighthouse.Backend.Models.UsageData
 {
     /// <summary>
     /// What each event is allowed to carry. Two of them are about a page somebody opened and say
-    /// which one; the rest are about something somebody did, which happens on no particular page,
-    /// and they carry nothing but their name.
+    /// which one; one says which kind of work tracking system was connected; one says which setting
+    /// was switched and which way; the rest are about something somebody did, which happens on no
+    /// particular page, and they carry nothing but their name.
     ///
     /// This is a declaration rather than a rule applied at each call site, because the promise it
     /// keeps is that no address travels with an event that has no page. A rule has to be remembered
@@ -39,10 +40,24 @@ namespace Lighthouse.Backend.Models.UsageData
         private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhichKindOfSystem =
             FrozenSet.ToFrozenSet([UsageDataEventName.WorkTrackingSystemConnected]);
 
+        /// <summary>
+        /// The one event that says a setting was switched. It carries which setting and whether it is
+        /// now on or off, and only ever the two together: which setting without the direction says
+        /// nothing anybody can count, and a direction without the setting could be any switch at all.
+        /// </summary>
+        private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhichSettingWasSwitched =
+            FrozenSet.ToFrozenSet([UsageDataEventName.OptionalFeatureToggled]);
+
         public static bool Fits(
-            UsageDataEventName name, UsageDataRouteKey? route, UsageDataWorkTrackingSystem? system)
+            UsageDataEventName name,
+            UsageDataRouteKey? route,
+            UsageDataWorkTrackingSystem? system,
+            UsageDataOptionalFeature? setting,
+            bool? enabled)
         {
-            return NamesItsPage(name, route) && NamesAKindOfSystemExactlyWhenItShould(name, system);
+            return NamesItsPage(name, route)
+                && NamesAKindOfSystemExactlyWhenItShould(name, system)
+                && NamesASwitchedSettingExactlyWhenItShould(name, setting, enabled);
         }
 
         private static bool NamesItsPage(UsageDataEventName name, UsageDataRouteKey? route)
@@ -66,6 +81,23 @@ namespace Lighthouse.Backend.Models.UsageData
             UsageDataEventName name, UsageDataWorkTrackingSystem? system)
         {
             return EventsThatSayWhichKindOfSystem.Contains(name) == (system is not null);
+        }
+
+        /// <summary>
+        /// Both ways round and both parts at once. The event that says a setting was switched must
+        /// carry the setting and the direction; every other event must carry neither. Half of a
+        /// switch is refused on either side, because read straight it would be counted as something
+        /// nobody reported.
+        /// </summary>
+        private static bool NamesASwitchedSettingExactlyWhenItShould(
+            UsageDataEventName name, UsageDataOptionalFeature? setting, bool? enabled)
+        {
+            if (EventsThatSayWhichSettingWasSwitched.Contains(name))
+            {
+                return setting is not null && enabled is not null;
+            }
+
+            return setting is null && enabled is null;
         }
     }
 }

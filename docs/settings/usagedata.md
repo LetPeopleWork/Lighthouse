@@ -47,13 +47,20 @@ The complete list of events:
 | A work tracking system was connected | Somebody finished setting up a connection | Which kind it is — one of `Azure DevOps`, `Jira`, `Linear`, `CSV`, `ServiceNow`. **Never its address, never its name, never anything typed while setting it up** |
 | A Team's data was refreshed by hand | Somebody pressed refresh on a Team rather than waiting for the next automatic one | Nothing |
 | A Portfolio's data was refreshed by hand | Somebody pressed refresh on a Portfolio rather than waiting for the next automatic one | Nothing |
+| A setting was switched | Somebody switched a setting under **Settings → System** and your server accepted the change. **Never a switch your server refused** | Which setting it was — only *Let Lighthouse own the order of your Features* — and whether it is now on or off. **Never the setting's key, its name or its description** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
 
-**Eight of the ten carry nothing but the fact that they happened.** That is not a courtesy; each event
-in the code says what it is allowed to carry, and one arriving with anything else is refused rather
-than trimmed. So the two tab openings are the only events that can name a page at all.
+**Seven of the eleven carry nothing but the fact that they happened.** That is not a courtesy; each
+event in the code says what it is allowed to carry, and one arriving with anything else is refused
+rather than trimmed. So the two tab openings are the only events that can name a page at all.
+
+**Switching *Never send usage data* is never reported, in either direction.** Switching it on stops
+everything from that moment, including the message that would say so. Switching it off could only
+ever be counted one way round, and a count of the veto being lifted with no count of it being put in
+place would tell us something untrue. So that switch is not on the list of settings at all, and a
+message naming it is refused.
 
 **A tab you pass through is not recorded.** Clicking through three tabs to find the one you want
 records one opening, not three: a tab you leave within five seconds never counts. Nothing about how
@@ -65,7 +72,7 @@ Every event carries these, attached by **your** server rather than by your brows
 | Field | What it is | Example |
 |---|---|---|
 | Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
-| Which tab was opened | **Only on the two tab openings above.** One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other eight events this field is not empty — it is not there at all | `/teams/:id/metrics` |
+| Which tab was opened | **Only on the two tab openings above.** One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other nine events this field is not empty — it is not there at all | `/teams/:id/metrics` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
 | Deployment mode | How it is deployed, as one of `Standalone`, `Windows`, `Linux`, `MacOS`, `Docker`, `Kubernetes` | `Kubernetes` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |

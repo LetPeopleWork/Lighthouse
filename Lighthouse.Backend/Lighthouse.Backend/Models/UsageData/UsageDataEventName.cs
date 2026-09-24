@@ -28,5 +28,7 @@ namespace Lighthouse.Backend.Models.UsageData
         TeamRefreshTriggered = 8,
 
         PortfolioRefreshTriggered = 9,
+
+        OptionalFeatureToggled = 10,
     }
 }

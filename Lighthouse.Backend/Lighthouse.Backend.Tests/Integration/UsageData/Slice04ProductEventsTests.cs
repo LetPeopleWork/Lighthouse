@@ -29,6 +29,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string TheNameTheseTwoReplaced = "TeamOrPortfolioTabOpened";
         private const string PortfolioMetricsTab = "PortfolioDetail_Metrics";
         private const string WorkTrackingSystemConnected = "WorkTrackingSystemConnected";
+        private const string OptionalFeatureToggled = "OptionalFeatureToggled";
 
         /// <summary>
         /// The events that say somebody used something rather than that somebody looked at
@@ -49,8 +50,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// <summary>
         /// Every name this product can send. The gates are meant to hold for all of them, and
         /// nothing about an event's shape is supposed to change that - which is only worth
-        /// asserting if the awkwardly shaped ones are in the list rather than the seven that are
-        /// easy to build a message for.
+        /// asserting if the awkwardly shaped ones are in the list rather than only the ones that
+        /// carry nothing but their name.
         /// </summary>
         private static readonly string[] EveryEventThereIs =
         [
@@ -58,6 +59,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             PortfolioTabOpened,
             .. EventsThatCarryNothingButTheirName,
             WorkTrackingSystemConnected,
+            OptionalFeatureToggled,
         ];
 
         /// <summary>
@@ -365,6 +367,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             TeamTabOpened => ABatchOf(name, TeamMetricsTab),
             PortfolioTabOpened => ABatchOf(name, PortfolioMetricsTab),
             WorkTrackingSystemConnected => ABatchNamingAWorkTrackingSystem(name, "Jira"),
+            OptionalFeatureToggled => ABatchSwitchingASetting(name),
             _ => ABatchOfJustTheName(name),
         };
 
@@ -373,6 +376,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private static string ABatchNamingAWorkTrackingSystem(string name, string system)
             => $"{{\"events\":[{{\"name\":\"{name}\",\"workTrackingSystem\":\"{system}\",\"offsetMs\":0,\"sequence\":0}}]}}";
+
+        private static string ABatchSwitchingASetting(string name)
+            => $"{{\"events\":[{{\"name\":\"{name}\",\"optionalFeature\":\"FeatureOrder\",\"enabled\":true,\"offsetMs\":0,\"sequence\":0}}]}}";
 
         private static List<string> WhatTravelledWithTheFirstMessageIn(string sent)
         {
