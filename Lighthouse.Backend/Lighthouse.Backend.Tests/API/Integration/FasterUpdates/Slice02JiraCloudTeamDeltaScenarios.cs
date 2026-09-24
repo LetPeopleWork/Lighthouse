@@ -158,18 +158,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheFeatureReportsTheWorkThatIsLeft(team, remainingItems: 2);
             ThenTheTeamsDataWasAnnouncedAsRefreshed(team);
         }
-
-        // @AC-2.12 @A1 @contract-shape:unbounded-preservation
-        // A fresh install gets it. An upgrade never overrules a choice the instance already made.
-        [Test]
-        public void A_fresh_install_gets_the_cheaper_refresh_and_an_upgrade_leaves_a_choice_alone()
-        {
-            ThenTheCheaperRefreshIsOfferedAndOn();
-
-            GivenTheOperatorTurnedTheCheaperRefreshOff();
-            WhenTheInstanceIsUpgradedAgain();
-
-            ThenTheCheaperRefreshIsStillOff();
-        }
     }
 }

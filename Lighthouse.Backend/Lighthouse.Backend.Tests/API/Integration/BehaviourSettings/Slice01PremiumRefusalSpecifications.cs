@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
@@ -13,12 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     /// </summary>
     public partial class Slice01PremiumRefusalTest : BehaviourSettingsAcceptanceTest
     {
-        /// <summary>
-        /// The Faster Updates row as the product seeds it. Only the scenario about its own premium flag
-        /// reads it; that scenario goes when the row stops being seeded, because it has no subject left.
-        /// </summary>
-        private const string TheFasterUpdatesRow = OptionalFeatureKeys.DeltaSyncKey;
-
         /// <summary>
         /// The refusal the other door onto this setting already gives. The two doors have to answer a
         /// client alike, so the wording is part of the contract rather than an implementation detail -
@@ -35,14 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         }
 
         private string GivenANonPremiumBehaviourSetting() => SeedTheNonPremiumFixture();
-
-        private string GivenTheFasterUpdatesRowAsTheProductSeedsIt()
-        {
-            Assert.That(ReadStoredOptionalFeature(TheFasterUpdatesRow).Found, Is.True,
-                $"The product seeds '{TheFasterUpdatesRow}'. Without it this scenario asserts nothing.");
-
-            return TheFasterUpdatesRow;
-        }
 
         private void GivenTheInstanceHasNoPremiumLicence() => TheInstanceIsNotLicensedForPremium();
 
@@ -135,12 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             Assert.That(ReadStoredOptionalFeature(key).Enabled, Is.True,
                 $"'{key}' was accepted, so the change has to have reached the store.");
-        }
-
-        private void ThenTheStoredSettingIsNotPremium(string key)
-        {
-            Assert.That(ReadStoredOptionalFeature(key).IsPremium, Is.False,
-                $"'{key}' is not premium and this story may not make it so.");
         }
 
         private static string Summarise(JsonElement row)

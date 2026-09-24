@@ -11,9 +11,9 @@
         public const string LinearIntegrationKey = "LinearIntegration";
 
         /// <summary>
-        /// Fetching only what changed since the last update. Ships dark - off by default and flagged as a
-        /// preview - and is read per update inside that update's own scope, so switching it takes effect on
-        /// the next cycle rather than on the next restart.
+        /// The row older releases stored the Faster Updates switch under. Every refresh that can fetch only
+        /// what changed now does so, and nothing reads this row; the key is kept only so start-up can find
+        /// the row an upgraded instance still carries and remove it.
         /// </summary>
         public const string DeltaSyncKey = "DeltaSync";
 

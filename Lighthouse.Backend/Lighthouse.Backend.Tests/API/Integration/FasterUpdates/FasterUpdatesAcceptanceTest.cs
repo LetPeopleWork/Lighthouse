@@ -2,7 +2,6 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
@@ -859,33 +858,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 .GetOpenSpellsForPortfolio(portfolioId);
         }
 
-        // --- The opt-in gate (Epic #5687 A1) ---
-
-        protected OptionalFeature? TheCheaperRefreshOption()
-        {
-            using var scope = Factory.Services.CreateScope();
-            return scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>()
-                .GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-        }
-
-        /// <summary>
-        /// Turns the option off the way the Settings screen does. The seeded default is on, so a scenario
-        /// about the whole query still being fetched has to say so out loud rather than lean on the default.
-        /// </summary>
-        protected void TheOperatorTurnsOffTheCheaperRefresh()
-        {
-            using var scope = Factory.Services.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
-
-            var option = repository.GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-
-            Assert.That(option, Is.Not.Null,
-                "The cheaper refresh is not offered at all, so it cannot be switched off - it is an absent option.");
-
-            option!.Enabled = false;
-            repository.Update(option);
-            repository.Save().GetAwaiter().GetResult();
-        }
+        // --- Upgrading ---
 
         /// <summary>Re-runs the seeders, the way starting a newer build against an existing database does.</summary>
         protected void TheInstanceIsUpgradedAgain()

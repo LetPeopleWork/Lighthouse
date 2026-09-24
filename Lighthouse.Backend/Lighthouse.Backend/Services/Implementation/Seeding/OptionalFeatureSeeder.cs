@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 OptionalFeatureKeys.CycleTimeScatterPlotKey,
                 OptionalFeatureKeys.LinearIntegrationKey,
                 OptionalFeatureKeys.McpServerKey,
+                OptionalFeatureKeys.DeltaSyncKey,
             };
 
             var toRemove = await context.OptionalFeatures
@@ -53,15 +54,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 new OptionalFeature
                 {
                     Id = 0,
-                    Key = OptionalFeatureKeys.DeltaSyncKey,
-                    Name = "Faster Updates",
-                    Description = "Fetch only the {{workItems}} that changed since the last update instead of the whole query.",
-                    Enabled = true,
-                    IsPreview = false,
-                },
-                new OptionalFeature
-                {
-                    Id = 0,
                     Key = OptionalFeatureKeys.FeatureOrderingKey,
                     Name = "Let Lighthouse own the order of your {{features}}",
                     Description = "While this is on, Lighthouse forecasts your {{features}} in the order you gave them, and a refresh from your work tracking system no longer re-sequences it. Turning it off hands the order straight back to your work tracking system — the places you chose are kept, so turning it on again restores them.",
@@ -74,10 +66,10 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     Id = 0,
                     Key = OptionalFeatureKeys.UsageDataKey,
 
-                    // Phrased as the thing it does rather than as the thing it governs. Every other
-                    // row here reads positively - "Faster Updates" on means faster updates - so a
-                    // row called "Usage Data" whose on means stop is the one an administrator reads
-                    // backwards at a glance, and gets wrong in the direction that matters.
+                    // Phrased as the thing it does rather than as the thing it governs. A settings
+                    // row is read as "on means this happens", so a row called "Usage Data" whose on
+                    // means stop is the one an administrator reads backwards at a glance, and gets
+                    // wrong in the direction that matters.
                     Name = "Never send usage data",
                     Description =
                         "While this is on, Lighthouse sends no usage data from this instance and "

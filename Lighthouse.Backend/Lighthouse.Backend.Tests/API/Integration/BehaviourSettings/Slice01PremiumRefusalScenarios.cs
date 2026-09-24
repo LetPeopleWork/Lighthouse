@@ -96,16 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredSettingIsOn(nonPremiumSetting);
         }
 
-        // @AC-02.3 - and the Faster Updates row the product seeds stays non-premium. A fix that gated it
-        // would still pass the two cases above on a licensed instance.
-        [Test]
-        public void The_setting_the_licence_has_nothing_to_say_about_is_still_not_premium()
-        {
-            var fasterUpdates = GivenTheFasterUpdatesRowAsTheProductSeedsIt();
-
-            ThenTheStoredSettingIsNotPremium(fasterUpdates);
-        }
-
         // @driving_port @real-io @AC-02.1 - the door this setting has today already refuses correctly, and
         // that refusal is the shipped promise - an unlicensed administrator cannot take over the Feature
         // order - that the whole slice order exists to protect.

@@ -23,8 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             Off,
         }
 
-        private const string PendingDeliver = "Story #5913 — pending DELIVER";
-
         /// <summary>
         /// The key an older release stored the switch under, spelled out rather than read off the product's
         /// constant. The row an upgrading instance carries has this key whatever the constant says today,

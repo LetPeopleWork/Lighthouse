@@ -10,12 +10,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 {
     public class OptionalFeatureSeederTests() : IntegrationTestBase
     {
+        private static readonly string[] TheSettingsTheProductSeeds =
+        [
+            OptionalFeatureKeys.FeatureOrderingKey,
+            OptionalFeatureKeys.UsageDataKey,
+        ];
+
+        // A retired row goes whichever way the operator left it: once the switch is gone there is no
+        // choice left to preserve.
         [Test]
-        [TestCase(OptionalFeatureKeys.LighthouseChartKey)]
-        [TestCase(OptionalFeatureKeys.CycleTimeScatterPlotKey)]
-        [TestCase(OptionalFeatureKeys.LinearIntegrationKey)]
-        [TestCase(OptionalFeatureKeys.McpServerKey)]
-        public async Task SeedAsync_RemovesDeprecatedFeatures(string deprecatedKey)
+        [TestCase(OptionalFeatureKeys.LighthouseChartKey, false)]
+        [TestCase(OptionalFeatureKeys.CycleTimeScatterPlotKey, false)]
+        [TestCase(OptionalFeatureKeys.LinearIntegrationKey, false)]
+        [TestCase(OptionalFeatureKeys.McpServerKey, false)]
+        [TestCase(OptionalFeatureKeys.DeltaSyncKey, true)]
+        [TestCase(OptionalFeatureKeys.DeltaSyncKey, false)]
+        public async Task SeedAsync_RemovesDeprecatedFeatures(string deprecatedKey, bool leftEnabled)
         {
             // Arrange
             DatabaseContext.OptionalFeatures.Add(new OptionalFeature
@@ -24,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
                 Key = deprecatedKey,
                 Name = "Deprecated Feature",
                 Description = "Old feature",
-                Enabled = false,
+                Enabled = leftEnabled,
                 IsPreview = false
             });
             await DatabaseContext.SaveChangesAsync();
@@ -42,6 +52,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
+        public async Task SeedAsync_OnAnEmptyDatabase_NeverAddsTheRetiredFasterUpdatesSwitch()
+        {
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            Assert.That(DatabaseContext.OptionalFeatures.Any(f => f.Key == OptionalFeatureKeys.DeltaSyncKey), Is.False);
+        }
+
+        [Test]
         public async Task SeedAsync_CanBeCalledMultipleTimes_WithoutErrors()
         {
             var subject = CreateSubject();
@@ -54,77 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             // Assert
             var features = DatabaseContext.OptionalFeatures.ToList();
 
-            Assert.That(features.Select(feature => feature.Key), Is.EquivalentTo(new[]
-            {
-                OptionalFeatureKeys.DeltaSyncKey,
-                OptionalFeatureKeys.FeatureOrderingKey,
-                OptionalFeatureKeys.UsageDataKey,
-            }));
-        }
-
-        [Test]
-        public async Task SeedAsync_AddsDeltaSync_EnabledAndNoLongerInPreview()
-        {
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(deltaSync.Enabled, Is.True);
-                Assert.That(deltaSync.IsPreview, Is.False);
-                Assert.That(deltaSync.IsPremium, Is.False);
-            }
-        }
-
-        [Test]
-        public async Task SeedAsync_DeltaSyncLeftOffOnAnExistingInstance_StaysOff()
-        {
-            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
-            {
-                Id = 0,
-                Key = OptionalFeatureKeys.DeltaSyncKey,
-                Name = "Faster Updates",
-                Description = "An older description.",
-                Enabled = false,
-                IsPreview = true,
-            });
-            await DatabaseContext.SaveChangesAsync();
-
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(deltaSync.Enabled, Is.False, "Switching the feature on by default answers for instances that were never asked. An instance that already carries the row was asked, and its answer stands.");
-                Assert.That(deltaSync.IsPreview, Is.False, "How the feature presents itself is ours and is refreshed on every upgrade.");
-            }
-        }
-
-        [Test]
-        public async Task SeedAsync_DeltaSyncEnabledByOperator_StaysEnabled()
-        {
-            var subject = CreateSubject();
-            await subject.Seed();
-
-            DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey).Enabled = true;
-            await DatabaseContext.SaveChangesAsync();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-            Assert.That(deltaSync.Enabled, Is.True);
+            Assert.That(features.Select(feature => feature.Key), Is.EquivalentTo(TheSettingsTheProductSeeds));
         }
 
         [Test]
@@ -171,7 +123,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             DatabaseContext.OptionalFeatures.Add(new OptionalFeature
             {
                 Id = 0,
-                Key = OptionalFeatureKeys.DeltaSyncKey,
+                Key = OptionalFeatureKeys.UsageDataKey,
                 Name = "An older name",
                 Description = "An older description that named an internal work item.",
                 Enabled = true,
@@ -185,13 +137,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             await subject.Seed();
 
             // Assert
-            var deltaSync = DatabaseContext.OptionalFeatures.Single(f => f.Key == OptionalFeatureKeys.DeltaSyncKey);
+            var usageData = DatabaseContext.OptionalFeatures.Single(f => f.Key == OptionalFeatureKeys.UsageDataKey);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
-                Assert.That(deltaSync.Description, Does.Not.Contain("older description"));
-                Assert.That(deltaSync.Enabled, Is.True, "An upgrade must not switch off something the operator turned on.");
+                Assert.That(usageData.Name, Is.EqualTo("Never send usage data"));
+                Assert.That(usageData.Description, Does.Not.Contain("older description"));
+                Assert.That(usageData.IsPreview, Is.False);
+                Assert.That(usageData.Enabled, Is.True, "An upgrade must not switch off something the operator turned on.");
             }
         }
 
@@ -264,28 +217,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             {
                 Assert.That(featureOrdering.Name, Is.EqualTo("Let Lighthouse own the order of your {{features}}"));
                 Assert.That(featureOrdering.Description, Is.EqualTo("While this is on, Lighthouse forecasts your {{features}} in the order you gave them, and a refresh from your work tracking system no longer re-sequences it. Turning it off hands the order straight back to your work tracking system — the places you chose are kept, so turning it on again restores them."));
-            }
-        }
-
-        // An instance that renamed Work Item to Ticket reads its own word everywhere else on this page,
-        // so a row spelling ours out reads as the one place the product forgot. Spelled out rather than
-        // read off the seeder, because comparing a value to the constant it came from passes even when
-        // the words are blanked.
-        [Test]
-        public async Task SeedAsync_DeltaSync_NamesTheThingItFetchesInTheInstancesOwnWord()
-        {
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
-                Assert.That(deltaSync.Description, Is.EqualTo("Fetch only the {{workItems}} that changed since the last update instead of the whole query."));
             }
         }
 

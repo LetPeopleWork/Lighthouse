@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// Everything that still falls back to a full download is already asserted by the Epic #5687 slices
     /// and is not repeated here: a connector that cannot be scanned, a failed scan, a changed fetch shape,
     /// a first refresh and a stored record without a change stamp.
-    ///
-    /// Every scenario ships [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -22,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-1.1 @contract-shape:unbounded-preservation
         // A new instance never meets the switch at all.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_fresh_install_offers_no_faster_updates_switch()
         {
             var offered = await WhenTheAdminOpensTheSystemSettings();
@@ -33,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-1.1 @contract-shape:bounded-change
         // The upgrade takes the row away whichever way it was set, and takes nothing else with it.
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(HowTheOperatorLeftIt.On)]
         [TestCase(HowTheOperatorLeftIt.Off)]
         public async Task An_upgraded_instance_offers_no_faster_updates_switch_whichever_way_it_was_set(HowTheOperatorLeftIt position)
@@ -50,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-1.5 @kpi @contract-shape:unbounded-preservation
         // Every later start-up re-runs the seeders. None of them may bring the row back.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Upgrading_again_never_brings_the_faster_updates_switch_back()
         {
             GivenTheInstanceHadFasterUpdates(HowTheOperatorLeftIt.Off);

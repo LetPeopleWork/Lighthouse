@@ -161,8 +161,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void GivenTheScanFails() => TheScanFails(new InvalidOperationException(TheScansRefusal));
 
-        private void GivenTheOperatorTurnedTheCheaperRefreshOff() => TheOperatorTurnsOffTheCheaperRefresh();
-
         private StoredIssue GivenHowTheUntouchedIssueLooksNow(SeededTeam team, string referenceId)
             => TheStoredIssue(team, referenceId);
 
@@ -173,8 +171,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// reads: a Given that reads what a When assigns runs before the assignment and sees nothing.
         /// </summary>
         private Task WhenTheScheduledRefreshRuns(SeededTeam team) => TheTeamRefreshRuns(team.Id);
-
-        private void WhenTheInstanceIsUpgradedAgain() => TheInstanceIsUpgradedAgain();
 
         // --- Then: what the tracker was asked for ---
 
@@ -354,33 +350,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             => Assert.That(CapturedEvents.Of<TeamDataRefreshed>().ConvertAll(raised => raised.TeamId),
                 Does.Contain(team.Id),
                 "A cheaper cycle still has to ask for a new forecast - forecasts depend on wall clock and on other teams' data.");
-
-        // --- Then: the opt-in gate ---
-
-        private void ThenTheCheaperRefreshIsOfferedAndOn()
-        {
-            var option = TheCheaperRefreshOption();
-
-            Assert.That(option, Is.Not.Null,
-                "The cheaper refresh has to be offered, or nobody can switch it off again.");
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(option!.Enabled, Is.True,
-                    "An instance that was never asked gets the cheaper refresh.");
-                Assert.That(option.IsPreview, Is.False,
-                    "It is no longer preview scaffolding, and the screen must not still say it is.");
-            }
-        }
-
-        private void ThenTheCheaperRefreshIsStillOff()
-        {
-            var option = TheCheaperRefreshOption();
-
-            Assert.That(option, Is.Not.Null,
-                "The cheaper refresh has to be offered, or 'still off' is an absent option, not a kept choice.");
-            Assert.That(option!.Enabled, Is.False,
-                "An upgrade must not switch on something the operator left off.");
-        }
 
         // --- Reading storage and the log ---
 
