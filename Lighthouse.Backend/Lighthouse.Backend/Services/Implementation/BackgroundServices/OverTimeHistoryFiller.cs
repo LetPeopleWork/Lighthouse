@@ -4,7 +4,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 {
@@ -190,7 +189,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private async Task FillAsync(IServiceProvider services, OverTimeFillRequest request, CancellationToken cancellationToken)
         {
-            var target = TargetFor(services, request);
+            var target = OverTimeFillTarget.For(services, request);
             if (target is null)
             {
                 return;
@@ -223,7 +222,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             DatabaseMaintenanceGate maintenance,
             ReconstructionMemo memo,
             OverTimeFillRequest request,
-            PassTarget target,
+            OverTimeFillTarget target,
             CancellationToken cancellationToken)
         {
             // Where the owner's history begins is a property of its stored items, so working it out
@@ -313,7 +312,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// both got through, because a day remembered as settled is never offered to a pass again.
         /// </summary>
         private async Task FillOneDayAsync(
-            OverTimeWriters writers, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, PassTarget target)
+            OverTimeWriters writers, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, OverTimeFillTarget target)
         {
             var percentilesAreDone = await TryWriteDayAsync(
                 request,
@@ -378,76 +377,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             }
         }
 
-        private static PassTarget? TargetFor(IServiceProvider services, OverTimeFillRequest request)
-        {
-            return request.OwnerType switch
-            {
-                OwnerType.Team => TeamTarget(services, request.OwnerId),
-                OwnerType.Portfolio => PortfolioTarget(services, request.OwnerId),
-                _ => null,
-            };
-        }
-
-        private static PassTarget? TeamTarget(IServiceProvider services, int teamId)
-        {
-            var team = services.GetRequiredService<IRepository<Team>>().GetById(teamId);
-            if (team is null)
-            {
-                return null;
-            }
-
-            var metrics = services.GetRequiredService<ITeamMetricsService>();
-            var workItems = services.GetRequiredService<IWorkItemRepository>();
-            var clock = services.GetRequiredService<ILighthouseClock>();
-
-            return new PassTarget(
-                DateOnly.FromDateTime(team.UpdateTime),
-                PercentileFamilies.For(team, metrics),
-                services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team),
-                () => metrics.InvalidateTeamMetrics(team),
-                () => EarliestFinishedDay(
-                    clock,
-                    workItems.GetAllByPredicate(item => item.TeamId == teamId && item.ClosedDate != null)
-                        .Select(item => item.ClosedDate)));
-        }
-
-        private static PassTarget? PortfolioTarget(IServiceProvider services, int portfolioId)
-        {
-            var portfolio = services.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId);
-            if (portfolio is null)
-            {
-                return null;
-            }
-
-            var metrics = services.GetRequiredService<IPortfolioMetricsService>();
-            var deliveries = services.GetRequiredService<IRepository<Feature>>();
-            var clock = services.GetRequiredService<ILighthouseClock>();
-
-            return new PassTarget(
-                DateOnly.FromDateTime(portfolio.UpdateTime),
-                PercentileFamilies.For(portfolio, metrics),
-                services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio),
-                () => metrics.InvalidatePortfolioMetrics(portfolio),
-                () => EarliestFinishedDay(
-                    clock,
-                    deliveries
-                        .GetAllByPredicate(delivery =>
-                            delivery.ClosedDate != null && delivery.Portfolios.Any(owner => owner.Id == portfolioId))
-                        .Select(delivery => delivery.ClosedDate)));
-        }
-
-        /// <summary>
-        /// The first day the owner's stored items can support a reading, or null when nothing has ever
-        /// finished. Asked of the database as one aggregate rather than by loading the items, because
-        /// an owner with a long history has a lot of them and only the earliest one is wanted.
-        /// </summary>
-        private static DateOnly? EarliestFinishedDay(ILighthouseClock clock, IQueryable<DateTime?> finishedInstants)
-        {
-            var earliest = finishedInstants.Min();
-
-            return earliest is null ? null : clock.ToInstanceDay(earliest.Value);
-        }
-
         private void Forget((int OwnerId, OwnerType OwnerType) key)
         {
             lock (alreadyAsked)
@@ -455,25 +384,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 alreadyAsked.Remove(key);
             }
         }
-
-        /// <summary>
-        /// Everything one pass needs about one owner: how far forward its observations reach, every
-        /// chart it has, and how to find where its stored items begin.
-        ///
-        /// Every chart rather than the one that was opened, because two asks for the same owner are
-        /// the same ask. Narrow this to one family and the other families' asks are dropped while the
-        /// work they cover is still outstanding, and the charts they belong to never fill at all.
-        ///
-        /// Both family lists are the ones the live recording uses rather than a copy made here. A copy
-        /// is a second place the set can be changed, and the two then disagree about what a scope
-        /// records without anything saying so.
-        /// </summary>
-        private sealed record PassTarget(
-            DateOnly LastObservedOn,
-            IReadOnlyList<PercentileFamilyReader> PercentileFamilies,
-            IReadOnlyList<ProcessBehaviorFamilyReader> ProcessBehaviorFamilies,
-            Action InvalidateReadCache,
-            Func<DateOnly?> EarliestDayTheItemsSupport);
 
         /// <summary>
         /// The two write policies a pass commits through. Held together because a day is one day
