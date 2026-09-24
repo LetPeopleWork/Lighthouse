@@ -73,6 +73,8 @@ Every event carries these, attached by **your** server rather than by your brows
 |---|---|---|
 | Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
 | Which tab was opened | **Only on the two tab openings above.** One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other nine events this field is not empty — it is not there at all | `/teams/:id/metrics` |
+| Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other ten events this field is not empty — it is not there at all | `FeatureOrder` |
+| Which way it was switched | **Only on a setting being switched.** `true` when the setting is now on, `false` when it is now off. On the other ten events this field is not `false` — it is not there at all | `true`, `false` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
 | Deployment mode | How it is deployed, as one of `Standalone`, `Windows`, `Linux`, `MacOS`, `Docker`, `Kubernetes` | `Kubernetes` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |

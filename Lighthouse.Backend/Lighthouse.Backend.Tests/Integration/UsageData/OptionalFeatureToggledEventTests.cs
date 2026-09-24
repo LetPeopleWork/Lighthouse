@@ -12,17 +12,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// the code yet, and must not appear there before the usage data page describes them - so these
     /// name them as text, the whole assembly keeps building, and each scenario fails on its own
     /// assertion the moment it is un-ignored.
-    ///
-    /// Every scenario ships ignored. They are switched on one at a time, each one a single step of
-    /// the work.
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]
     [Category("optional-feature-toggled")]
     public class OptionalFeatureToggledEventTests : UsageDataCollectorObservationTest
     {
-        private const string PendingDeliver = "pending DELIVER — OptionalFeatureToggled";
-
         private const string OptionalFeatureToggled = "OptionalFeatureToggled";
 
         private const string FeatureOrder = "FeatureOrder";
@@ -85,7 +80,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @walking_skeleton @driving_port @real-io @AC-1.1
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Switching_the_feature_order_setting_on_arrives_saying_which_setting_and_that_it_is_now_on()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -115,7 +109,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @AC-1.1
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Switching_it_back_off_arrives_as_one_more_event_saying_it_is_now_off()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -250,7 +243,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         // @driving_port @real-io @AC-1.6
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Nothing_travels_with_a_setting_switch_beyond_which_setting_and_which_way()
         {
             var token = await ABrowserThatAgreedAsync();

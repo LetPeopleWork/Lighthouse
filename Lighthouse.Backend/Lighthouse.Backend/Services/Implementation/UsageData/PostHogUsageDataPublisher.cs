@@ -200,6 +200,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 new WhatEachMessageCarries(
                     TheAddressPublishedFor(reported.Route),
                     reported.WorkTrackingSystem?.ToString(),
+                    reported.OptionalFeature?.ToString(),
+                    reported.Enabled,
                     facts.Version,
                     facts.DeploymentMode.ToString(),
                     facts.LicenceTier,
@@ -228,11 +230,14 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         /// <summary>
         /// The address of the page that was opened, as this application publishes it rather than as
-        /// the browser sent it; the four facts about the instance, none of which the browser is ever
-        /// asked for; and the two instructions that keep the caller's own address out of what the
-        /// collector stores.
+        /// the browser sent it; the kind of system that was connected; which behaviour setting was
+        /// switched and which way it went; the four facts about the instance, none of which the
+        /// browser is ever asked for; and the two instructions that keep the caller's own address out
+        /// of what the collector stores.
         ///
-        /// The address is left out entirely for an event that happened on no particular page. The
+        /// The address, the kind of system, the setting and its direction are each left out entirely
+        /// on an event they do not belong to, rather than written as an empty value or as off - an
+        /// "enabled: false" on an event that switched nothing would read as a switch nobody made. The
         /// two instructions below are also empty-looking and are written anyway, on purpose: an
         /// absent instruction is one the collector does not follow, and what it would not follow is
         /// the instruction to throw away the caller's own address.
@@ -244,6 +249,12 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             [property: JsonPropertyName("work_tracking_system")]
             [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
             string? WorkTrackingSystem,
+            [property: JsonPropertyName("optional_feature")]
+            [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            string? OptionalFeature,
+            [property: JsonPropertyName("enabled")]
+            [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            bool? Enabled,
             [property: JsonPropertyName("version")] string Version,
             [property: JsonPropertyName("deployment_mode")] string DeploymentMode,
             [property: JsonPropertyName("licence_tier")] string LicenceTier,
