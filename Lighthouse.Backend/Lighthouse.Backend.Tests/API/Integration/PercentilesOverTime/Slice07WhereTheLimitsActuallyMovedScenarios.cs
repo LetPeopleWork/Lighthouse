@@ -10,7 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// toggle offers, rather than the three points the recorder happened to catch.
     ///
     /// Driving port: the shipped process-behavior-over-time read endpoint, team and portfolio routes.
-    /// All pending - the behaviour arrives with this story.
     ///
     /// Step definitions live in Slice07WhereTheLimitsActuallyMovedSpecifications.cs.
     /// </summary>
@@ -20,8 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-07")]
     public partial class Slice07WhereTheLimitsActuallyMovedTest
     {
-        private const string Pending = "Pending: reconstruction of missing over-time days is not built yet (story 6053, slice 03).";
-
         // @driving_port @us-03 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer()
@@ -201,7 +198,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-03 @fidelity @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -216,7 +212,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing()
         {
             var lastObservedOn = TodayDay.AddDays(-60);
