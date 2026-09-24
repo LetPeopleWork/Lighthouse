@@ -438,35 +438,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         /// <summary>
-        /// Where the stretch this owner's limits are drawn from begins, and how long the owner keeps
-        /// finished work for. The two together decide whether that stretch is still within reach, and
-        /// from which day the reach is measured is the question this slice exists to settle. Read back
-        /// off the owner rather than restated by the caller, so a scenario that asserts a relation
-        /// between the two cannot drift away from what was actually seeded.
+        /// Where the stretch this owner's limits are drawn from begins, how long the owner keeps
+        /// finished work for, and the day it was last refreshed. Together they decide whether that
+        /// stretch is still within reach: the refresh is what deleted anything older than the owner
+        /// keeps, and from which day the reach is measured is the question this slice exists to settle.
+        /// Read back off the owner rather than restated by the caller, so a scenario that asserts a
+        /// relation between them cannot drift away from what was actually seeded.
         /// </summary>
-        protected (DateOnly StretchStartsOn, int DaysFinishedWorkIsKeptFor) HowTheTeamsStretchAndRetentionStand(int teamId)
+        protected (DateOnly StretchStartsOn, int DaysFinishedWorkIsKeptFor, DateOnly LastRefreshedOn) HowTheTeamsStretchAndRetentionStand(int teamId)
         {
             using var scope = Factory.Services.CreateScope();
             var team = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)!;
 
-            return StretchAndRetention(team.ProcessBehaviourChartBaselineStartDate, team.DoneItemsCutoffDays);
+            return StretchAndRetention(team);
         }
 
-        protected (DateOnly StretchStartsOn, int DaysFinishedWorkIsKeptFor) HowThePortfoliosStretchAndRetentionStand(int portfolioId)
+        protected (DateOnly StretchStartsOn, int DaysFinishedWorkIsKeptFor, DateOnly LastRefreshedOn) HowThePortfoliosStretchAndRetentionStand(int portfolioId)
         {
             using var scope = Factory.Services.CreateScope();
             var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
 
-            return StretchAndRetention(portfolio.ProcessBehaviourChartBaselineStartDate, portfolio.DoneItemsCutoffDays);
+            return StretchAndRetention(portfolio);
         }
 
-        private static (DateOnly StretchStartsOn, int DaysFinishedWorkIsKeptFor) StretchAndRetention(DateTime? stretchStartsOn, int daysFinishedWorkIsKeptFor)
+        private static (DateOnly StretchStartsOn, int DaysFinishedWorkIsKeptFor, DateOnly LastRefreshedOn) StretchAndRetention(WorkTrackingSystemOptionsOwner owner)
         {
+            var stretchStartsOn = owner.ProcessBehaviourChartBaselineStartDate;
+
             Assert.That(stretchStartsOn, Is.Not.Null,
                 "No stretch is pinned on this owner, so there is no reach to judge and the arrangement the caller is about to " +
                 "assert never happened.");
 
-            return (DateOnly.FromDateTime(stretchStartsOn!.Value), daysFinishedWorkIsKeptFor);
+            return (DateOnly.FromDateTime(stretchStartsOn!.Value), owner.DoneItemsCutoffDays, DateOnly.FromDateTime(owner.UpdateTime));
         }
 
         /// <summary>

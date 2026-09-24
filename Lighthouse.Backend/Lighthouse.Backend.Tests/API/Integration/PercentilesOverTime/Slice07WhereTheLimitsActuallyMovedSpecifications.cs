@@ -54,8 +54,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// A lead who narrows how long finished work is kept to below the reach of a stretch they
         /// pinned is also the person this defect bites. The settings screen offers the number, and
         /// shorter than a year is an ordinary choice.
+        ///
+        /// The owner was last refreshed <see cref="DaysAgoThePinnedStretchOwnerWasLastRefreshed"/> days
+        /// back, not today. A refresh deletes whatever finished before the reach, so an owner refreshed
+        /// today would no longer hold any of the stretch, and steady limits drawn from it would be a
+        /// reading of a store no owner could have. Refreshed 25 days back, what it still holds reaches 245
+        /// days back and the stretch at 240 is still there - while every day under review, 60 to 30 days
+        /// back, lies on or before that refresh, since days after it are never filled in.
         /// </summary>
         private const int DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach = 220;
+
+        private const int DaysAgoThePinnedStretchOwnerWasLastRefreshed = 25;
 
         /// <summary>
         /// How long the team in the fidelity scenario keeps finished work for, bounded on both sides by
@@ -66,8 +75,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// so keeping work for at least 58 days leaves that one in reach as of the day, and working the day
         /// out over the wrong span shows up as the wrong limits rather than as none. The guard in the
         /// scenario checks both through the product's own calculation rather than trusting this arithmetic.
+        ///
+        /// The team was last refreshed <see cref="DaysAgoTheWatchedTeamWasLastRefreshed"/> days back, and
+        /// that bound is just as tight. A refresh deletes whatever finished more than 65 days before it, so
+        /// the watched day's stretch, starting 72 days back, is only still held if the refresh was at least
+        /// 7 days back - and the twice-as-long stretch, starting 101 days back, only if it was at least 36
+        /// days back, which is what keeps that wrong way a wrong reading rather than a missing one. A
+        /// refresh any earlier than the watched day, 43 days back, would leave that day unfilled because
+        /// nothing after a refresh is. Refreshed 40 days back, the team still holds work to 105 days back.
+        ///
+        /// Items keep finishing up to today even so. One of the wrong ways the guard compares against is
+        /// the stretch ending today, and without them that stretch reads nothing at all instead of a
+        /// wrong answer. Nothing the chart fills in reads past the last refresh, so they never reach it.
         /// </summary>
         private const int DaysFinishedWorkIsKeptForWhenTheWatchedDayIsOutOfReachToday = 65;
+
+        private const int DaysAgoTheWatchedTeamWasLastRefreshed = 40;
 
         /// <summary>
         /// How far back from a day its limits reach when no stretch is pinned: the team's thirty days of
@@ -85,11 +108,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private int GivenAPortfolioStillBeingRefreshed() => SeedPortfolioObservedUntil(TodayDay);
 
-        private int GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(int days)
-            => SeedTeamObservedUntil(TodayDay, doneItemsCutoffDays: days);
+        /// <summary>
+        /// An owner whose last refresh was on <paramref name="lastRefreshedOn"/> rather than today. That
+        /// refresh deleted every finished item older than the owner keeps, so what the store still holds
+        /// reaches back to <paramref name="lastRefreshedOn"/> less <paramref name="days"/> - and a scenario
+        /// that reads a stretch older than that is reading work the owner could not still have.
+        /// </summary>
+        private int GivenATeamLastRefreshedOnThatKeepsFinishedWorkFor(DateOnly lastRefreshedOn, int days)
+            => SeedTeamObservedUntil(lastRefreshedOn, doneItemsCutoffDays: days);
 
-        private int GivenAPortfolioStillBeingRefreshedThatKeepsFinishedWorkFor(int days)
-            => SeedPortfolioObservedUntil(TodayDay, doneItemsCutoffDays: days);
+        private int GivenAPortfolioLastRefreshedOnThatKeepsFinishedWorkFor(DateOnly lastRefreshedOn, int days)
+            => SeedPortfolioObservedUntil(lastRefreshedOn, doneItemsCutoffDays: days);
 
         private int GivenATeamLastObservedOn(DateOnly lastObservedOn) => SeedTeamObservedUntil(lastObservedOn);
 
@@ -197,26 +226,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// Only while both hold do the two candidate anchors give different answers, and only then can
         /// the scenario tell which one the product used. Seed a wider retention window and the scenario
         /// silently stops testing anything; this fails instead, and says which half went.
+        ///
+        /// It also checks that the arrangement could exist at all: that the owner's last refresh, which
+        /// deleted everything older than it keeps, left the stretch in the store, and that the period
+        /// under review ends no later than that refresh.
         /// </summary>
         private void GivenTheTeamsStretchIsOutOfReachTodayAndInReachOverThePeriod(int teamId, DateOnly lastDayUnderReview)
         {
-            var (stretchStartsOn, daysFinishedWorkIsKeptFor) = HowTheTeamsStretchAndRetentionStand(teamId);
+            var (stretchStartsOn, daysFinishedWorkIsKeptFor, lastRefreshedOn) = HowTheTeamsStretchAndRetentionStand(teamId);
 
-            TheStretchIsOutOfReachTodayAndInReachAsOf(stretchStartsOn, daysFinishedWorkIsKeptFor, lastDayUnderReview);
+            TheStretchIsOutOfReachTodayAndInReachAsOf(stretchStartsOn, daysFinishedWorkIsKeptFor, lastDayUnderReview, lastRefreshedOn);
         }
 
         private void GivenThePortfoliosStretchIsOutOfReachTodayAndInReachOverThePeriod(int portfolioId, DateOnly lastDayUnderReview)
         {
-            var (stretchStartsOn, daysFinishedWorkIsKeptFor) = HowThePortfoliosStretchAndRetentionStand(portfolioId);
+            var (stretchStartsOn, daysFinishedWorkIsKeptFor, lastRefreshedOn) = HowThePortfoliosStretchAndRetentionStand(portfolioId);
 
-            TheStretchIsOutOfReachTodayAndInReachAsOf(stretchStartsOn, daysFinishedWorkIsKeptFor, lastDayUnderReview);
+            TheStretchIsOutOfReachTodayAndInReachAsOf(stretchStartsOn, daysFinishedWorkIsKeptFor, lastDayUnderReview, lastRefreshedOn);
         }
 
         private static void TheStretchIsOutOfReachTodayAndInReachAsOf(
-            DateOnly stretchStartsOn, int daysFinishedWorkIsKeptFor, DateOnly lastDayUnderReview)
+            DateOnly stretchStartsOn, int daysFinishedWorkIsKeptFor, DateOnly lastDayUnderReview, DateOnly lastRefreshedOn)
         {
             var reachFromToday = TodayDay.AddDays(-daysFinishedWorkIsKeptFor);
             var reachFromTheLastDayUnderReview = lastDayUnderReview.AddDays(-daysFinishedWorkIsKeptFor);
+            var reachFromTheLastRefresh = lastRefreshedOn.AddDays(-daysFinishedWorkIsKeptFor);
 
             using (Assert.EnterMultipleScope())
             {
@@ -231,6 +265,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                     $"back to {reachFromTheLastDayUnderReview:yyyy-MM-dd}, which does not reach the stretch pinned at " +
                     $"{stretchStartsOn:yyyy-MM-dd}. The stretch is then out of reach from every angle, reporting nothing is the " +
                     "honest answer, and steady limits are not what should come back.");
+
+                Assert.That(stretchStartsOn, Is.GreaterThanOrEqualTo(reachFromTheLastRefresh),
+                    $"The owner was last refreshed on {lastRefreshedOn:yyyy-MM-dd}, and that refresh deleted every finished item " +
+                    $"older than {reachFromTheLastRefresh:yyyy-MM-dd} - which includes the start of the stretch pinned at " +
+                    $"{stretchStartsOn:yyyy-MM-dd}. No owner could still hold the work that stretch is drawn from, so steady " +
+                    "limits read from it describe a store nobody has.");
+
+                Assert.That(lastDayUnderReview, Is.LessThanOrEqualTo(lastRefreshedOn),
+                    $"Nothing was observed after {lastRefreshedOn:yyyy-MM-dd}, so days after it are never filled in, and the " +
+                    $"period under review, which runs to {lastDayUnderReview:yyyy-MM-dd}, would be partly empty for that reason alone.");
             }
         }
 

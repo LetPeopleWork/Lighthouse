@@ -123,8 +123,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// which is what makes "judged against today" and "judged against the day being rebuilt" two
         /// different answers rather than the same one twice. Equal-length retention would leave the
         /// scenario unable to fail; the guard below says so out loud rather than leaving it to be
-        /// noticed. The team is also finishing more work every month, so a stretch that followed the
-        /// window would give a different reading on every day of the period - which is what makes
+        /// noticed. The lead's last refresh was shortly after the period under review rather than today,
+        /// because a refresh today would already have deleted the stretch they pinned, and limits read from
+        /// it would describe a store nobody could have. The team is also finishing more work every month,
+        /// so a stretch that followed the window would give a different reading on every day of the
+        /// period - which is what makes
         /// "the limits did not move" a claim about the pinned stretch rather than about flat data.
         ///
         /// For whoever makes this pass: the two assertions below fail to two different edits, and
@@ -147,8 +150,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         [Test]
         public async Task A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart()
         {
-            var teamId = GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
-            GivenTheTeamFinishedMoreEachMonthFrom(teamId, TodayDay.AddDays(-250), TodayDay);
+            var lastRefreshedOn = TodayDay.AddDays(-DaysAgoThePinnedStretchOwnerWasLastRefreshed);
+            var teamId = GivenATeamLastRefreshedOnThatKeepsFinishedWorkFor(lastRefreshedOn, DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
+            GivenTheTeamFinishedMoreEachMonthFrom(teamId, TodayDay.AddDays(-250), lastRefreshedOn);
             GivenTheTeamPinnedTheStretchItsLimitsAreDrawnFrom(teamId, TodayDay.AddDays(-240), TodayDay.AddDays(-150));
             GivenTheTeamsStretchIsOutOfReachTodayAndInReachOverThePeriod(teamId, TodayDay.AddDays(-30));
 
@@ -162,8 +166,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         [Test]
         public async Task A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too()
         {
-            var portfolioId = GivenAPortfolioStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
-            GivenThePortfolioFinishedMoreDeliveriesEachMonthFrom(portfolioId, TodayDay.AddDays(-250), TodayDay);
+            var lastRefreshedOn = TodayDay.AddDays(-DaysAgoThePinnedStretchOwnerWasLastRefreshed);
+            var portfolioId = GivenAPortfolioLastRefreshedOnThatKeepsFinishedWorkFor(lastRefreshedOn, DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach);
+            GivenThePortfolioFinishedMoreDeliveriesEachMonthFrom(portfolioId, TodayDay.AddDays(-250), lastRefreshedOn);
             GivenThePortfolioPinnedTheStretchItsLimitsAreDrawnFrom(portfolioId, TodayDay.AddDays(-240), TodayDay.AddDays(-150));
             GivenThePortfoliosStretchIsOutOfReachTodayAndInReachOverThePeriod(portfolioId, TodayDay.AddDays(-30));
 
@@ -203,14 +208,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// finished every day they did not - every stretch read the same, so reconstruction anchored on
         /// today, a day early or over twice the span all passed. The team here is the one getting faster,
         /// and it keeps finished work for just long enough that the watched day's stretch is in reach as of
-        /// that day and out of reach as of today. The last Given checks that every one of those wrong
-        /// ways really does read differently, and fails before the chart is opened if one does not.
+        /// that day and out of reach as of today. It was last refreshed a little before today, so the store
+        /// still holds that stretch - a team refreshed today would already have deleted it. The last Given
+        /// checks that every one of those wrong ways really does read differently, and fails before the
+        /// chart is opened if one does not.
         /// </summary>
         // @us-03 @fidelity @real-io @contract-shape:pure-function
         [Test]
         public async Task Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched()
         {
-            var teamId = GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheWatchedDayIsOutOfReachToday);
+            var teamId = GivenATeamLastRefreshedOnThatKeepsFinishedWorkFor(
+                TodayDay.AddDays(-DaysAgoTheWatchedTeamWasLastRefreshed), DaysFinishedWorkIsKeptForWhenTheWatchedDayIsOutOfReachToday);
             GivenTheTeamFinishedMoreEachMonthFrom(teamId, TodayDay.AddDays(-200), TodayDay);
             var asWatched = await GivenALimitDayTheRecorderWroteAndThenLost(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-43));
             GivenThatDayReadsDifferentlyWhenWorkedOutAnyOtherWay(teamId, asWatched);
