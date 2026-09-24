@@ -3621,3 +3621,18 @@ synced" all return HTTP 200 with `[]`; the second and third are asked with the s
 the read never waits for the fill, the **first open of a period that can be filled also returns `[]`** —
 "not worked out yet, look again shortly" collapses with all three. No response field was added (the
 contract ADR has rejected one twice). So 04-02 writes one sentence true of all four states.
+
+### Slice 05 DISTILL review (2026-09-24) — verdict and disposition
+
+The acceptance-designer reviewer returned **rejected pending revisions** with three blockers. All three
+describe the pending state as designed, not a defect, and each is already an explicit criterion of a
+DELIVER step:
+
+| Finding | Disposition |
+|---|---|
+| B1 — Init returns early while the switch row is absent | Replacing it with a failure now would red every Slice05–08 scenario before the row exists. 05-01 seeds the row and deletes the early return in the same step (roadmap criterion). |
+| B2 — `SeedAsync_CanBeCalledMultipleTimes_WithoutErrors` pins three keys | The key constant does not exist until 05-01, so adding it now does not compile. 05-01 adds it (roadmap files_to_modify). |
+| B3 — the positive copy test is skipped | Skipped because production still carries the 04-02 sentence; 05-03 un-skips it with the copy change. |
+| H5 — Scenario B could pass without a queued ask | Already guarded: B asserts the drop's Information line exactly once for the waiting team, which only a queued ask reaching the pass-start check can produce; the ungated harness experiment made B fail. |
+| H4 — query-count probe relies on per-request scope | Accepted as is: the probe asserts a non-zero baseline and was measured 8 against 8 on the ungated harness. |
+| H6, H7, M8, M9 | Low value (source-scan spellings, a compile-time import check duplicating the frontend key scan) or already in the 05-01/05-03 criteria. Not acted on. |
