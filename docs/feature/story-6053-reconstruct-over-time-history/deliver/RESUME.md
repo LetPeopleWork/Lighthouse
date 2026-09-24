@@ -1,5 +1,42 @@
 # RESUME — story-6053 DELIVER
 
+## WHERE THIS STANDS — 2026-09-24 (read this first; supersedes the sections below)
+
+**HOLD for the user's live check.** 03-05, 04-01 and 04-02 are done. Nothing is pushed. Nothing after
+04-02 has run: not 04-03 (docs), not the L1-L6 refactor, not the adversarial review, not Stryker (04-04).
+Do not start any of them until the user has checked the behaviour and says so.
+
+| Commit | What |
+|---|---|
+| `5bb43d95d` | 03-05, both closing Slice07 scenarios un-ignored, no production change |
+| `50c94d39a` | U-44/U-45 recorded |
+| `a331f82ed` | Both fidelity scenarios (Slice05 + Slice07) re-armed by the acceptance designer; self-enforcing Givens |
+| `7d3d9962e` | 04-01, 90-day cap moved into the filler (counts worked-out days); reconciler hands over the whole gap |
+| `33b93519e` | U-46/U-47 recorded |
+| `db646c934` | 04-02, one empty-state sentence on both widgets; range-end rule removed |
+| `86b8148c0` | E2E page objects/spec expect the new sentence; 8/8 over-time specs run green locally on :5269 |
+
+Suites at this point: backend **7298 passed / 0 failed / 1 skipped** (standard filter); frontend
+**5694 passed** (4 fewer than before: the range-end-rule tests were deleted with the rule).
+
+The sentence: "Nothing to show for the selected range. Days the stored history covers can fill in on a
+later visit; days it does not cover stay empty."
+
+### Open, for after the live check
+- **04-03 docs** must also correct ADR-207 D4 and `brief.md` on the fill order (U-46), and the two stale
+  "forward-only placeholder" comments in `PbcOverTime.spec.ts:50` and `Screenshots.spec.ts:716`.
+- **Adversarial review:** U-45 (ceiling-refused days re-asked on every read — do NOT memoise them naively),
+  U-46 (predates-everything scenarios cannot catch a floor regression; arm with an item in progress since
+  before the period), U-6/U-28 (cost observables).
+- Analyzer sweep `dotnet format analyzers --severity info --verify-no-changes` was denied to a subagent;
+  the user runs it before push.
+- Delivery charts and Blocked Items Over Time still carry their own "builds forward from today" copy.
+  Not this story's charts; check whether it is still true there.
+- Live dogfood (all process-behaviour families at both scopes, fresh owner vs pre-floor period) is the
+  user's check — `dogfood-phase-03.md` records it as not performed.
+- `db646c934` lacks the Co-Authored-By/Claude-Session trailers (des-commit wrote only Step-Id/Task-Id).
+  Cosmetic; not amended.
+
 Written 2026-09-22 at the phase-01 boundary, before a deliberate session compaction. Everything needed
 to pick this up cold. Nothing here is recoverable from the commits alone.
 
