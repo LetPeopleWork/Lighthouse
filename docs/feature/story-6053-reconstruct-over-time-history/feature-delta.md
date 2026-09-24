@@ -3,7 +3,7 @@
 **ADO**: User Story [6053](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6053) — "Back propagate missing PBC and Percentiles over Time values"
 **Reported by**: Steve Pereira (community)
 **Tags**: Release Notes
-**Waves**: DISCUSS (2026-09-22; amended 2026-09-24 - the fill ships opt-in: D9, US-05, slice 05)
+**Waves**: DISCUSS (2026-09-22; amended 2026-09-24 - the fill ships opt-in: D9, US-05, slice 05); DESIGN (2026-09-22; amended 2026-09-24 - the switch: DDD-5 and DDD-6 amended, DDD-18..DDD-20 added)
 
 ---
 
@@ -1036,13 +1036,25 @@ shutdown — the `UpdateQueueService` *pattern*, not the class. The queue is a s
 shipped code (ADR-195's three lanes were reverted with story-5877), so enqueuing a multi-second
 cosmetic backfill there would put it in front of every entity refresh. Full evidence in ADR-207.
 
-**DDD-5 — Gap detection on the read path is a predicate over rows already materialised.** No extra
-query runs on the read path. The ceiling is `min(window end, DateOnly(owner.UpdateTime))` — free,
-because the owner is already loaded. The **floor is not resolved on the read path**; it is resolved in
-the pass, because resolving it means touching `WorkItems` and the budget is 50 ms.
+**DDD-5 — Gap detection on the read path is a predicate over rows already materialised.** **(AMENDED
+2026-09-24.)** ~~No extra query runs on the read path.~~ A read that finds nothing missing, or has no
+start date, makes **no** extra query. A read that **has found days to ask for** makes **exactly one**:
+the opt-in switch (DDD-18), looked up by primary key, placed after the predicate and before the ask so
+the dense steady state stays free. With the switch off and gaps present that lookup is paid on every
+such read indefinitely - accepted, a primary-key read of one row against the 50 ms budget. Read per
+use, never cached: a cache invalidated on the toggle breaks "no restart" on every other replica unless
+it also expires, and then the promise becomes "after a delay". **The floor is not resolved on the read
+path**; it is resolved in the pass, because resolving it means touching `WorkItems`. ~~The ceiling is
+`min(window end, DateOnly(owner.UpdateTime))` on the read path.~~ *As built, the reconciler receives no
+owner, so the ceiling (the owner's last observed day) is applied in the pass too; the read clamps only
+to the requested window, with `to` defaulting to today and a ten-year guard
+(`OverTimeGapReconciler.cs:20,38`; `OverTimeHistoryFiller.cs` `IsOutsideWhatTheStoredItemsSupport`).*
 
-**DDD-6 — D4's cap is locked at 90 days *per pass*, not 90 days of reach.** A pass writes at most 90
-days and stops at a wall-clock budget, the floor, or the ceiling. A year-wide picker fills in
+**DDD-6 — D4's cap is locked at 90 days *per pass*, not 90 days of reach.** **(AMENDED 2026-09-24 to
+what was built, U-46.)** A pass **works out** at most 90 days - attempted, whether or not a row
+resulted - walking the handed-over days **oldest first**; days outside the floor/ceiling are stepped
+over uncounted; it also stops at the wall-clock budget and for a maintenance operation. ~~A pass writes
+at most 90 days and stops at a wall-clock budget, the floor, or the ceiling.~~ A year-wide picker fills in
 successive loads. The walk is **resumable by construction**, which is the honest answer to SPIKE-01's
 stated inability to extrapolate cost to a large instance. A constant in the filler, not an
 `AppSettings` row.
@@ -1132,6 +1144,65 @@ Register the concrete filler as a **singleton** and add the hosted service as a 
 Lands in slice 01 (gate G-5) and is asserted in both directions (gate G-6). It is a safety property,
 and slice 01 is the first slice that writes a row.
 
+*DDD-18..DDD-20 added 2026-09-24 (DESIGN amendment for D9 / US-05 / slice 05; interaction mode PROPOSE).
+ADR-207's 2026-09-24 amendment carries the reasoning in full.*
+
+**DDD-18 — One question, asked in two places: the reconciler before it asks, and the filler before a
+pass starts.** A new narrow port, `IOverTimeHistoryFillSwitch`, one read-only member ("is filling in
+past days switched on for this instance?"), reads the optional-feature row **by key** on every call; a
+missing row reads **off**. Scoped, holds nothing between calls - the shape of `IUsageDataMasterSwitch`
+and `FeatureOrderingPolicyProvider`, with the opposite polarity for a missing row.
+(1) `OverTimeGapReconciler`, after the predicate has found days and before `filler.AskFor`
+(`OverTimeGapReconciler.cs:44`). It is the only production caller of `AskFor` (grep, 2026-09-24:
+`AskFor(` appears in production code only there and in the filler's own definition); both decorators
+reach it; no refresh handler, hosted/startup job, demo loader (`DemoPercentilesBackfillHandler` writes
+directly) or the maintenance gate starts a pass. (2) `OverTimeHistoryFiller`, at the start of each pass,
+resolved from the **pass's own scope** before the owner is loaded - never constructor-injected into the
+singleton, which would read it once at start-up. Without (2), asks queued before the switch went off
+(up to 256 owners x 10 s) would start fills after it. The reconciler gains a constructor dependency;
+the filler gains none. **Not gated, on purpose:** the recorder's absence rule (DDD-13), the as-of limits
+(DDD-12), the writers (DDD-9/10), the demo synthesiser (DDD-15), the memo's refresh-event handlers, the
+maintenance gate (DDD-17). **Enforcement:** a structural test in `OverTimeReconstructionSeamArchUnitTest`'s
+style - exactly one production file calls the filler's `AskFor` and it is `OverTimeGapReconciler.cs`;
+the new key constant appears only in `OptionalFeatureKeys`, `OptionalFeatureSeeder` and the switch's
+implementation; nothing under `Lighthouse.Frontend/src` names the key. Behaviour is pinned by the
+off-state ATs (handoff note below), because a structural test cannot see a deleted `if`.
+
+**DDD-19 — Switched off mid-flight: a running pass finishes, a waiting one is dropped, the memo and the
+maintenance gate are untouched.** A running pass finishes (bounded by 90 days worked out and 10 s); its
+rows stay. A queued pass is dropped at start: owner not loaded, nothing written, nothing computed so no
+cache invalidation, memo untouched, in-flight key released. Rejected: stop at the next day (a lookup per
+day to bring "off" forward by <= 10 s, and a third walk-exit with its own mutant; if ever adopted it must
+`break`, never `return`, so the `finally` still invalidates the read cache, and must not memo unvisited
+days); empty the queue from the settings write (reaches one replica only, couples the settings
+endpoint to the filler); let the queue drain (violates US-05 AC4 "no new fill starts once it is off").
+Memo across off -> on: nothing to do - no pass records anything while off, the refresh handlers keep
+clearing notes (and must stay ungated or the memo goes stale while off), it stays optimisation-only.
+Standing traps unchanged: the filler asks `IsMaintenanceOperationActive`, never `IsBlocked` (RESUME
+trap 1); a day not attempted - budget-abandoned or never reached - never enters the memo (trap 3). The
+gate must **not** consult the switch: a pass finishing after "off" is still writing, and a gate that
+read "off" as "idle" would grant `RestoreBackup` mid-pass. Settle the pass-start check before the pass
+counts as in flight, so a dropped ask never makes the gate report "the chart is filling in days".
+
+**DDD-20 — The switch row: seeded, no migration, no applier of its own.** Key constant
+`OptionalFeatureKeys.OverTimeHistoryFillKey = "OverTimeHistoryFill"` (the component's own name; stable
+because #6084 moves it to the seeder's deprecated-keys list, as the four retired keys were). Row:
+`Enabled = false`, `IsPreview = true`, `IsPremium = false`, `Id = 0` like every row. Name: **"Fill in
+past days on over-time charts"**. Description: **"A preview. While this is on, opening Percentiles Over
+Time or PBC Over Time fills in the days the chart is missing, working them out in the background from
+the history Lighthouse already stores. Turning it off stops any further filling; days already filled
+stay."** - names no configurable term (no `{{token}}`), says preview, says what it does, says filled
+days stay. **No EF migration**: the table, `IsPreview` and `IsPremium` columns exist (migrations
+`RenamePreviewToOptionalFeature`, `OptionalFeaturesIsPremium`); the seeder adds a missing row and
+refreshes only name/description/flags on an existing one, never `Enabled` (`OptionalFeatureSeeder.cs`
+`AddOrUpdateCurrentFeatures`), so an upgrade keeps an admin's choice. **Id=0 trap:** the primary key is
+`Key` (`LighthouseAppContext.cs:108`), every row carries `Id = 0`, so the switch must select by key
+(`GetByPredicate(f => f.Key == ...)`), never `GetById` - which matches every row; a duplicate key cannot
+arise from seeding (lookup by key, PK violation otherwise). The default applier suffices
+(`OptionalFeatureApplierRegistry.ApplierFor` falls back to it): toggling has no side effect - *unless*
+OQ-6 is answered yes. System Admin guard is the existing `[RbacGuard(SystemAdmin)]` on
+`OptionalFeaturesController.UpdateOptionalFeature`; not premium, so the licence check never fires.
+
 ---
 
 ## Wave: DESIGN / [REF] Component decomposition
@@ -1150,10 +1221,16 @@ and slice 01 is the first slice that writes a row.
 | PBC chart builders (4) + `GetFeatureSizeProcessBehaviourChart` | `Services/Implementation/.../Metrics` | **EXTEND** | Additive as-of-day parameter defaulting to `Clock.Today`. |
 | `PercentilesOverTimeWidget.tsx`, `PbcOverTimeWidget.tsx` | `Frontend/.../MetricsView/` | **EXTEND (slice 04)** | Revised empty-state copy. No new props, no new fetch. |
 | `docs/metrics/predictability.md` | docs | **EXTEND (slice 04)** | Forward-only note and demo-Throughput-only note both change meaning; absence gate is now user-visible. |
-| `Program.cs` composition root | backend | **EXTEND** | Register the two decorators as the interfaces, the reconciler, the filler as a hosted service. |
+| `Program.cs` composition root | backend | **EXTEND** | Register the two decorators as the interfaces, the reconciler, the filler as a hosted service. *(Slice 05: one more line - the switch port, scoped.)* |
+| `IOverTimeHistoryFillSwitch` + impl | `Services/{Interfaces,Implementation}/` | **NEW (slice 05)** | One read-only question: is the fill switched on for this instance? Reads the optional-feature row by key per call; missing row = off. Scoped. DDD-18. |
+| `OverTimeGapReconciler` | `Services/Implementation/` | **EXTEND (slice 05)** | Gains the switch as a constructor dependency; consults it after the predicate finds days, before `AskFor`. Still returns `void`, still holds no repository. |
+| `OverTimeHistoryFiller` | `.../BackgroundServices/` | **EXTEND (slice 05)** | Re-checks the switch at the start of each pass, from the pass's own scope, before loading the owner; a waiting ask is dropped when off. No constructor change. DDD-19. |
+| `OptionalFeatureKeys` / `OptionalFeatureSeeder` | `Models/OptionalFeatures/`, `.../Seeding/` | **EXTEND (slice 05)** | New key `OverTimeHistoryFill`; new row off, Preview, free. DDD-20. |
+| `overTimeEmptyState.ts` | `Frontend/.../MetricsView/` | **EXTEND (slice 05)** | The one empty sentence true in both positions. Copy only; no optional-feature read. |
 
 Nothing here is a new table, a new route, a new DTO, a new EF migration, a new RBAC gate or a new
-external integration.
+external integration. *(Still true after slice 05: the switch is a seeded row in an existing table,
+changed through an existing endpoint under an existing guard.)*
 
 ---
 
@@ -1176,6 +1253,16 @@ and this story changes neither their request nor their response, so **no client 
 The response stays read-only. Writes reach the tables only through the ADR-107 handlers' driven ports
 and the filler's.
 
+**Slice 05 (2026-09-24) - the switch reuses an existing driving port, unchanged:**
+
+```
+POST /api/latest/optionalfeatures/OverTimeHistoryFill   (RbacGuard SystemAdmin; body carries Enabled)
+GET  /api/latest/optionalfeatures[/OverTimeHistoryFill]  (read, ungated beyond sign-in)
+```
+
+No new route, no change to either series endpoint's request or response. The frontend widgets never
+call these; only the Behaviour Settings list does, as it already does for every row.
+
 ---
 
 ## Wave: DESIGN / [REF] Driven ports and adapters
@@ -1189,6 +1276,7 @@ and the filler's.
 | `ILighthouseClock` | existing | out | `Today` / `TodayAsUtcMidnight`. The as-of day comes from the seam, never by re-reducing an end date. |
 | `IServiceScopeFactory` | ASP.NET Core DI | out | One scope, one `DbContext`, per pass. |
 | `IOverTimeGapReconciler` | in-process | out from the read | **Restricted capability**: one void method, no repository. |
+| `IOverTimeHistoryFillSwitch` | `IRepository<OptionalFeature>` / EF Core | out (reconciler; filler per pass) | **Slice 05.** Read-only, by key (`Key` is the primary key; never `GetById`, every row is `Id = 0`). One primary-key lookup, only on a read that found days to ask for. Missing row = off. |
 | `ILogger<T>` | Serilog | out | Pass-failed signal, per family. Template **pinned, not shaped**: `"Over-time reconstruction pass failed for {OwnerType} {OwnerId} ({MetricFamily})"`, props `OwnerType, OwnerId, MetricFamily, Exception`. `MetricFamily` carries the recorders' own two values so one operator alert grouping covers recording and reconstruction; the differing verb keeps them separable in a search. Pinned here rather than at DEVOPS because ADR-107's amendment fixed the recorders' exact string for this reason, and a "shape" reopens the fragmentation it closed. See DEVOPS-3. |
 
 No new external integration ⇒ **contract testing (Pact) N/A**, recorded rather than silently skipped.
@@ -1215,7 +1303,7 @@ No new technology, no proprietary component, nothing outside the shipped stack.
 | 1 | Trigger in a decorator over each query port | controller (4 sites, computes); inside the query (name lies) | DDD-2, ADR-207 §1 |
 | 2 | Own filler, not `IUpdateQueueService` | the queue (single lane, reverted lanes, operator-task surface); `IUpdateExecutionLock` alone (unenforced invariant); scheduler; inline; `Task.Run` | DDD-4, ADR-207 §2 |
 | 3 | Unit = `(owner, window)`, all families | per-family, per-day | DDD-1, ADR-207 §3 |
-| 4 | Predicate over materialised rows; floor resolved in the pass | `SELECT DISTINCT RecordedAt` on the read path | DDD-5, ADR-207 §4 |
+| 4 | Predicate over materialised rows; floor resolved in the pass *(amended 2026-09-24: plus one switch lookup, only when days were found)* | `SELECT DISTINCT RecordedAt` on the read path | DDD-5, ADR-207 §4 |
 | 5 | Cap = 90 days **per pass**, plus a wall-clock budget | 90 days of reach; uncapped; `AppSettings` knob | DDD-6, ADR-207 §5 |
 | 6 | Reconciliation memo, optimisation-only | marker rows (needs a table + migration, pollutes the series); nothing (never converges) | DDD-7, ADR-207 §6 |
 | 7 | Fill-if-absent + unique index + in-flight set | upsert (breaks US-01 AC8); a distributed lock | DDD-8, ADR-207 §7 |
@@ -1223,6 +1311,9 @@ No new technology, no proprietary component, nothing outside the shipped stack.
 | 9 | As-of day threaded, defaulting to today | leave it today-anchored (silent empty series); refuse pinned-baseline owners (fallback, kept); change `BaselineValidationService` itself | DDD-12, ADR-208 §2 |
 | 10 | Absence gate on both paths | gate reconstruction only, as D7's literal text says | DDD-13, ADR-208 §3 |
 | 11 | Filler visible to the maintenance gate, both directions, contract named | leave it to DELIVER (half-wired single direction); admit an `UpdateKey` to the status store (reopens all four DDD-4 reasons); gate-checks-only or filler-checks-only (check-then-act race) | DDD-17, ADR-207 DEVOPS amendment |
+| 12 | Walk oldest-first, cap counts days worked out, both bounds applied in the pass (as built) | newest-first from the ceiling (as ADR-207 §5 wrote); cap on the read (first load writes nothing for a period reaching past the floor) | DDD-6 amended, U-46, ADR-207 2026-09-24 correction |
+| 13 | Opt-in switch asked in two places - reconciler before `AskFor`, filler at pass start - read per use, missing row = off | gate at pass start only (asks still queue, gate falsely reports a fill); reconciler only (queued asks run for minutes after "off"); cache with invalidation on toggle (breaks "no restart" on other replicas); read before the predicate (a query on the dense steady state) | DDD-18, DDD-5 amended, ADR-207 2026-09-24 amendment |
+| 14 | Switched off mid-flight: running pass finishes, waiting pass dropped; gate and memo unchanged | stop at the next day; empty the queue from the settings write; let the queue drain; teach the gate the switch | DDD-19, ADR-207 2026-09-24 amendment |
 
 ---
 
@@ -1245,6 +1336,9 @@ universe, and the mechanism that will assert the shape.
 | PBC chart builders + `BaselineValidationService` | today-anchored validity | **EXTEND (additive parameter, default = today)** | the anchor must be *chooseable*, not *different*; every existing caller stays byte-identical | pure-function | none | test where today's anchor and D's anchor disagree — one where they agree cannot fail |
 | `BlockedCountSnapshot` / `DeliveryMetricSnapshot` reconstruction | the same argument may apply | **OUT OF SCOPE** | neither reported, neither in the work item (DISCUSS out-of-scope) | n/a | n/a | n/a |
 | `PercentilesOverTimeWidget.tsx` / `PbcOverTimeWidget.tsx` | render the series | **EXTEND (copy only, slice 04)** | no new prop, no new fetch, no chart-geometry change | pure-function (render) | none | RTL copy tests per empty state |
+| `OptionalFeature` / `OptionalFeatureSeeder` / `OptionalFeaturesController` / `DefaultOptionalFeatureApplier` *(slice 05)* | an instance-wide on/off an admin controls, seeded, guarded, stored | **EXTEND (one key, one seeded row); controller and applier REUSED unchanged** | the list already carries two such switches read per use (`WorkItemService.cs:239-241`, `FeatureOrderingPolicyProvider.cs:17`); the seeder never overwrites `Enabled`; the write is already `[RbacGuard(SystemAdmin)]`; the registry falls back to the store-only applier | bounded-change (the seeder adds one row if missing; refreshes name/description/flags only) | the `OptionalFeatures` row keyed `OverTimeHistoryFill` | seeder unit test: fresh -> off/preview/free; existing row with `Enabled = true` survives a re-seed |
+| `IOverTimeHistoryFillSwitch` *(slice 05)* | reading that row | **CREATE NEW** | no existing port answers this key; inlining `GetByPredicate` in the reconciler and the filler would spread the key and its missing-row polarity to two places (the reason `UsageDataMasterSwitch` exists as one definition) | pure-function (return-only; one read) | none | structural test: key constant referenced only by keys, seeder, switch impl; ATs for missing-row = off |
+| `OverTimeGapReconciler` / `OverTimeHistoryFiller` *(slice 05)* | where fills enter and start | **EXTEND (one check each)** | single `AskFor` caller (`OverTimeGapReconciler.cs:44`); pass start is the only point a queued ask becomes work | reconciler: pure-function as seen from the read (returns `void`, no repository); filler: bounded-change, now **empty** universe when off | reconciler: none; filler off: no rows, no memo entry, no cache invalidation | off-state ATs over rows written after a drain, each paired with a switched-on arm that writes |
 
 **Contract-shape note for the crafter.** The filler is the only **unbounded-preservation** risk in this
 design, and it is contained: it must write nothing outside the clamped window, nothing for a day that
@@ -1310,6 +1404,27 @@ C4Container
   Rel(filler, memo, "Records the floor and the refusals in")
 ```
 
+**Slice 05 delta (2026-09-24).** Drawn on its own rather than added to the diagram above, so the
+shipped picture stays readable:
+
+```mermaid
+C4Container
+  title Container Diagram — story 6053 slice 05 delta (the opt-in switch)
+  Person(admin, "System Admin")
+  Container_Boundary(be, "Lighthouse backend") {
+    Container(settings, "Optional-features endpoint", "ASP.NET Core, existing", "Stores an admin's on/off, System Admin only")
+    Container(recon, "Gap reconciler", "C#", "Asks for missing days only when filling is on")
+    Container(filler, "Over-time history filler", "C# hosted service", "Drops a waiting pass when filling went off")
+    Container(fillswitch, "Fill switch", "C# — NEW", "Answers whether filling is on, read per use")
+    ContainerDb(opt, "OptionalFeatures", "SQLite / PostgreSQL, existing", "One row per instance-wide setting, keyed by name")
+  }
+  Rel(admin, settings, "Switches the fill on or off through")
+  Rel(settings, opt, "Stores the choice in")
+  Rel(recon, fillswitch, "Checks before asking with")
+  Rel(filler, fillswitch, "Re-checks at the start of each pass with")
+  Rel(fillswitch, opt, "Reads the row by key from")
+```
+
 Level 3 is **not** produced: the delta is seven components in one bounded context, well under the
 threshold, and the Container diagram already names every arrow.
 
@@ -1324,6 +1439,7 @@ threshold, and the Container diagram already names every arrow.
 | **OQ-3** | **Wall-clock budget value.** DDD-6 locks 90 days per pass but not the seconds. SPIKE-01's figures are from 621 items on SQLite on a laptop and explicitly do not extrapolate. | **OPEN.** Pick a value in slice 01 and re-measure on the largest instance available before slice 03 adds the PBC families. | slice 01, revisited slice 03 |
 | **OQ-4** | **Non-ADO connectors are unmeasured.** Reconstruction reads stored items rather than the connector, so independence is plausible by construction — but the Jira connection in the dev DB has no owner attached and there is no Linear or ServiceNow data at all. | **OPEN, low risk, unmeasured.** | opportunistic |
 | **OQ-5** | **A wide cycle-time distribution is unmeasured.** The only available owner closes most items the same day, so every percentile is 1 or 2 and a subtly-wrong reconstruction would still score 4/4. | **OPEN.** Re-run the fidelity probe if a team spread across 1–40 days becomes available. | opportunistic |
+| **OQ-6** | **Seeded off vs chosen off, for #6083** *(added 2026-09-24)*. The seeder never overwrites `Enabled`, so when #6083 flips the default an instance that upgraded through slice 05 and never touched the switch still holds the seeded off, indistinguishable from an admin's deliberate off - the flip would reach fresh instances only. Recording "an admin chose" at toggle time (a dedicated applier writing one key/value row, no migration) is cheap now and impossible to reconstruct later. | **OPEN - for the maintainer.** Recommendation: record it in slice 05. Until answered, DDD-20 stands (default applier, no side effect). | the maintainer, before slice 05 DELIVER |
 
 ### Flagged against the locked decisions
 
@@ -1406,6 +1522,50 @@ The behaviour each AC means, for the acceptance-designer to assert instead of th
 - **AC3** — a reconstructed day's baseline validity is decided as of **that day**, not as of today, and
   the test says which outcome is expected and why. An owner with a pinned baseline gets flat limits
   across the window; an empty series is a failure, not an acceptable reading.
+
+### Handoff note for DISTILL — slice 05, the switch (2026-09-24)
+
+The test host runs every seeder in `ReconstructOverTimeHistoryAcceptanceTest.Init`, so after this slice
+every reconstruction scenario starts with the fill **off** - and every one of them would go red for the
+wrong reason.
+
+- **Turning it on for the existing scenarios.** In the base fixture's `Init`, after the seeders, switch
+  the fill on **through the driving port** (`POST /api/latest/optionalfeatures/OverTimeHistoryFill` with
+  a System Admin identity - the test helpers already offer `AsSystemAdmin()` in
+  `AuthenticatedHttpClientExtensions`) rather than by writing the row, so the guard, the default applier
+  and "no restart" are exercised for free on every scenario. Expose one protected helper for both
+  directions; off-state scenarios call it explicitly.
+  Epic 5427's forward-only fixtures (`PercentilesOverTimeAcceptanceTest` descendants) need no change:
+  they never drain the filler, and off is the behaviour they were written against.
+- **The off-state observable must be contingent** (the house pattern, U-44/U-45: an assertion about
+  absence passes for free unless the arrangement makes it depend on the rule). Rows written after a
+  drain (`TotalPercentileDaysHeld`, `TotalLimitDaysHeld`) are the observable; each off-state assertion is
+  paired, in the same scenario, with a switched-on arm over the same arrangement that **does** write.
+- **Scenario A - off queues nothing, on needs no restart** (US-05 AC2, AC3). Off: open a fillable
+  period at team and at portfolio scope; switch **on** without reopening; drain -> no row written. Reopen;
+  drain -> rows written. The first half fails if the gate sits only at pass start; the second proves the
+  arrangement fills and that no restart was needed.
+- **Scenario B - off mid-flight** (US-05 AC4; the test must state which way it went). On; hold owner
+  A's pass in flight (`AReconstructionPassHeldInFlight`); open owner B so its ask queues; switch off;
+  release; drain -> A's pass completed its walk, **B has no rows**. Then switch on, reopen B, drain -> B
+  fills and A's already-filled days are unchanged (US-01 AC8 still holds across the flip).
+- **Scenario C - off keeps what was filled** (AC4). On, fill, off: the filled days are still returned by
+  both series endpoints, and a new fillable range writes nothing.
+- **Scenario D - a missing row reads as off.** Remove the row, open a fillable period, drain: nothing.
+- **Not gated** (AC7), each with the switch **off**: the recorder still refuses an all-zero percentile
+  row; a refresh still records today; loading demo data still writes the synthesiser's rows and leaves
+  the switch off.
+- **Seeder** (AC1, unit): fresh -> off, Preview, not premium; an existing row stored on survives a re-seed.
+- **RBAC** (AC6): a non-admin write to the key is refused and the stored value is unchanged - reuse the
+  existing `OptionalFeaturesControllerTest` shape rather than a new fixture.
+- **Structural**: the one-`AskFor`-caller test and the key-confinement test from DDD-18.
+- **Read-path query count**: ADR-207's Earned Trust table called for a command-counting probe on the
+  read path; the suite does not contain one (no `DbCommandInterceptor` in the story's tests). With the
+  equation now "gap-free: +0, gap-found: exactly +1", it is cheap and falsifiable - recommended, not
+  required for US-05.
+- **Frontend**: widget tests assert the one sentence and that the widgets make no optional-feature
+  request; the E2E over-time specs and `@screenshot` shots that expect filled days switch the fill on in
+  their setup through the API, not through a page object (the switch is not what they are about).
 
 
 ---

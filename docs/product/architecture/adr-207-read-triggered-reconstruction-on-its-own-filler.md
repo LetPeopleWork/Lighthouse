@@ -2,6 +2,7 @@
 
 **Status**: Accepted (DESIGN, 2026-09-22; interaction mode PROPOSE)
 **Date**: 2026-09-22
+**Amended**: 2026-09-22 (DEVOPS: the maintenance gate); 2026-09-24 (the fill ships behind an opt-in switch; the walk order corrected to what was built) — both at the end
 **Feature**: story-6053-reconstruct-over-time-history (ADO User Story #6053)
 **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
 
@@ -93,6 +94,10 @@ path** — in particular the data floor is not resolved there, because resolving
 
 The precise per-family gap set is computed by the pass itself, in its own scope, where it belongs.
 
+*(Amended 2026-09-24: a read that has found days to ask for now makes exactly one more query - it
+reads the instance-wide switch. A read that finds nothing missing still makes none. See the amendment
+at the end.)*
+
 ### 5. The clamp, and D4's cap
 
 | Bound | Value | Why |
@@ -108,6 +113,11 @@ the first load and the next stretch on the load after that, until the floor. Thi
 to SPIKE-01's stated inability to bound cost on a large instance: **the walk is resumable by
 construction**, because the thing that triggers it is a read that will happen again. A fixed 90-day
 *reach* would have capped depth forever for a reason that is about cost, not about truth.
+
+*(Corrected 2026-09-24: the code never walked back from the ceiling. A pass works **oldest first**,
+the cap counts days it **worked out**, not days it wrote, and both the ceiling and the floor are
+applied inside the pass, not on the read. The table row above and this paragraph describe a walk that
+was never built; the amendment at the end describes the one that was, and why.)*
 
 90 is the number because it is the portfolio dashboard's default window, it exceeds the team default
 of 30, it covers the review period both journeys describe, and it is what the story's KPI asks for
@@ -312,3 +322,175 @@ patience rather than a throughput knob.
 
 Full reasoning and the gates it adds: `docs/feature/story-6053-reconstruct-over-time-history/feature-delta.md`
 → "Wave: DEVOPS / [REF] Production readiness".
+
+
+## Amendment (2026-09-24) — the fill ships behind an instance-wide switch, off by default; and the walk as it was actually built
+
+**Status**: Accepted (DESIGN amendment, interaction mode PROPOSE). The Decision above is unchanged in
+shape: a read asks, a filler of its own answers, the unit is the owner. What changes is that on an
+instance where nobody has switched the fill on, nothing asks and nothing is answered. The second half
+of this amendment corrects §5, which described a walk the code never did.
+
+### Why there is a switch at all
+
+The maintainer decided, before the story shipped, that the fill reaches an instance only when a System
+Admin chooses it. Three reasons, all about the fill rather than about the switch:
+
+- **It writes rows it never takes back.** A filled day cannot be told apart from a recorded one, so
+  nothing could single the filled days out for removal later. Adopting it is one-way for the data.
+- **It works a past day out against today's configuration.** An instance whose state mappings,
+  cycle-time definition or blocked rules changed recently gets a past it may not recognise, and
+  fidelity across such a change is still unmeasured.
+- **It costs background work when a chart opens**, measured so far on one instance only.
+
+So the switch is one instance-wide row in the existing optional-features list (Settings →
+Configuration → Behaviour Settings): seeded **off** on fresh and upgraded instances alike, flagged
+**Preview**, not premium, changed only by a System Admin through the guard that list already has.
+Turning it off keeps every day already filled; nothing is purged. The route to "always on" is two
+planned follow-ups outside this story: switch the default to on (#6083), then remove the switch (#6084).
+
+**The switch governs the fill and nothing else.** These ship on for everyone and must not be gated
+later by accident: the recorder refusing to write an all-zero percentile row (ADR-208 §3); the shared
+computation that judges a past day's process limits as of that day (ADR-208 §2); the shared
+day-writers themselves; the demo synthesiser's backdated rows (ADR-109); the memo forgetting an owner
+when its refresh events arrive; and the database maintenance gate.
+
+### Where it gates — two checks of one question
+
+A new, narrow port answers one question — *is filling in past days switched on for this instance?* —
+by reading the optional-feature row by its key each time it is asked. A missing row reads as **off**,
+so an instance between an upgrade landing and its seeder running behaves as it did before the story.
+It is scoped, like the repository beneath it, and holds nothing between calls.
+
+1. **The reconciler, after it has found days to ask for and before it asks.** This is the one place a
+   fill enters: `OverTimeGapReconciler` is the only caller of the filler's `AskFor`, reached from both
+   series decorators, so a check there covers the UI and Lighthouse-Clients reads alike. Nothing else
+   starts a pass — no refresh-event handler, no startup job, not the demo loader (which writes its own
+   rows directly and never asks the filler), and not the maintenance gate, which only reads whether a
+   pass is running.
+2. **The filler, at the start of each pass, in the pass's own scope, before it loads the owner.** An ask
+   queued while the switch was on must not start a fill after it went off. The queue holds up to 256
+   owners and each pass may run for ten seconds, so "let the queue drain" could mean a fill carrying on
+   for many minutes after an admin said stop. The filler is a singleton, so it resolves the switch from
+   the pass's scope rather than taking it in its constructor — a switch captured there would be read
+   once, at start-up, which is exactly the restart the switch must not need.
+
+One entry point, gated, is pinned by a structural test in the style the story already uses: exactly one
+production file calls the filler's `AskFor`, and it is the reconciler; the switch's key constant is
+referenced only by the key list, the seeder and the switch's own implementation, so no caller can read
+the row directly and get its polarity wrong.
+
+### The read-path cost, and what "no restart" requires (amends §4)
+
+§4 said no extra query runs on the read path. Now:
+
+- a read that finds **nothing missing** — a dense window, or every missing day already known to be
+  unfillable — makes **no** extra query, as before;
+- a read with **no start date** asks for nothing and makes no extra query, as before;
+- a read that **has found days to ask for** makes **exactly one** extra query: the switch, looked up by
+  primary key in a table of a handful of rows.
+
+With the switch off and gaps present, that one lookup is paid on every such read, indefinitely, because
+nothing ever fills the gaps. That is accepted: a primary-key read of one small row against a budget of
+50 ms is noise, and it lands only on requests that already carry a gap.
+
+Two alternatives were rejected. **Caching the switch, invalidated when an admin changes it**, saves that
+one lookup but breaks "no restart" on every replica other than the one that served the change, unless
+the cache also expires on a timer — at which point the promise becomes "no restart, after a delay", and
+the settings write gains a side effect it otherwise does not need. **Reading the switch before the
+predicate** puts a query on every read, including the dense steady state the design converges to, which
+is the one case §6 promises costs nothing. Letting the memo remember "off" is the first alternative
+under another name.
+
+"No restart" therefore requires three things, and each is a way to break it: the switch is read per
+use, never held in a field, an options snapshot or a start-up value; the port is scoped, not a
+singleton; and the filler reaches it through the pass's scope, as above.
+
+### When the switch goes off while a fill is running or waiting
+
+- **A pass already running finishes.** It is bounded by the 90 days it may work out and its ten-second
+  budget, and the days it writes stay, as every filled day does. Stopping it at the next day instead
+  would cost a lookup per day to bring "off" forward by at most ten seconds, and would add a third
+  reason to leave the walk with its own way to go wrong. If that is ever wanted, it must leave the walk
+  with `break`, never `return`, so the cache is still invalidated for the days already written, and it
+  must not record the days it did not reach as worked out.
+- **A pass not yet started is dropped** by the check at pass start: the owner is not loaded, nothing is
+  written, nothing is computed and so no cache needs invalidating, the memo is not touched, and the
+  owner's in-flight key is released. Emptying the queue from the settings write was rejected: it
+  reaches only the replica that served the write, and it would couple the settings endpoint to the
+  filler.
+- **The memo needs nothing across an off→on flip.** While off, no pass records anything. The two
+  refresh-event handlers keep clearing an owner's notes while the switch is off, and must stay ungated —
+  otherwise the memo would still be refusing days that new items have since made computable when the
+  switch comes back on. Everything it held before stays true. It remains an optimisation only: losing
+  it still costs one wasted pass, and nothing may be asserted from it. The two silent traps from DELIVER
+  apply unchanged: the filler asks the gate `IsMaintenanceOperationActive`, never `IsBlocked` (which
+  includes the filler's own pass, so it would always stand down); and a day not attempted — abandoned by
+  the budget, or now not reached because an ask was dropped — never enters the memo as worked out.
+
+### The maintenance gate does not change
+
+The gate asks *is something writing right now?*, not *is filling allowed?*, and it must not consult
+the switch. A pass that is finishing after the switch went off is still writing, and a gate that took
+"off" to mean "nothing is writing" would hand out `RestoreBackup` in the middle of that pass — the exact
+hazard the DEVOPS amendment above closed. The filler keeps standing down per day for an active
+maintenance operation, finishing tail included. With the switch off and no pass finishing, the filler is
+never in flight, so the gate is never held by it. One refinement for the crafter: settle the pass-start
+check before the pass counts as in flight, so that a dropped ask never shows an operator "the chart is
+filling in days it was missing" on an instance where filling is off.
+
+### The read contract does not change
+
+No route, request, response or field changes. With the switch off, both series endpoints return
+exactly what they returned before this story, and on that instance a read once again never triggers a
+recomputation — ADR-108's original slice-03b property holds there. With it on, ADR-108's amendment
+("read-only **in the response**") applies. ADR-108 needs no further amendment, and the frontend never
+learns the mode: one empty-state sentence is true in both positions, because filled days live in the
+same store as recorded ones.
+
+### Correction: the walk as it was built (supersedes the walk described in §5)
+
+§5 says a pass "walks back from the window's ceiling and stops after 90 days it actually wrote", so a
+year-wide picker would get the most recent 90 days first. The code never did that. As built:
+
+- **The read hands over every missing day of the requested window, oldest first**, taken from the rows
+  the read already holds minus what the memo rules out. Its only bound is a guard of about ten years,
+  so a hand-typed range spanning centuries cannot queue centuries of days. The read loads no owner, so
+  it applies **no ceiling**.
+- **The pass works through those days oldest first.** Days before the owner's earliest finished stored
+  item (the floor) or after its last observed day (the ceiling) are stepped over and **not counted**.
+  The cap is **90 days worked out** per pass — attempted, whether or not a row resulted — plus the
+  ten-second budget and the per-day maintenance stand-down.
+
+Why the cap moved into the pass and counts days worked out: when the read chose the first 90 missing
+days itself, a period reaching back past the owner's history handed over only days before the floor —
+which only a pass can discover — and the first load wrote nothing at all, even for the part of the
+period the history covers. Why oldest first stays: for an owner nobody syncs any more, the newest days
+of a window are the ones past its last observation, refused again on every visit; a walk that starts
+there begins every visit with days it will refuse, rather than with the older days it can fill.
+
+**Accepted cost of the order:** on a range much wider than 90 fillable days, the oldest stretch fills
+first and the most recent days arrive on later visits. Accepted rather than reversed, for the reason
+just given.
+
+### Open, for the maintainer
+
+The seeder never overwrites an on/off value already stored, which is what keeps an admin's choice
+across upgrades. It also means that when the default later flips to on (#6083), an instance that
+upgraded through this release and never touched the switch still holds the **seeded** off, and nothing
+can tell that apart from an admin who deliberately switched it off. Flipping the default would then
+reach fresh instances only. Recording, at the moment an admin changes the switch, that a person chose
+(one extra key/value row written by a dedicated applier for this key, no migration) is cheap now and
+impossible to reconstruct later. Not adopted here, because it changes what #6083 means; raised with the
+maintainer.
+
+### Earned Trust — changed and added probes
+
+| Assumption | Probe |
+|---|---|
+| Off means nothing is even queued, not merely that nothing is written | Switch off; open a chart over a period the stored items can fill; switch on **without** opening it again; drain the filler: no row is written. Open it again and drain: rows are written. The second half proves the arrangement can fill, so the first half cannot pass for free, and the sequence also proves the switch needs no restart. A gate that existed only at pass start would fail the first half. |
+| An ask queued before the switch went off does not start a fill after it | Switch on; hold one owner's pass in flight; open a second owner's chart so its ask queues; switch off; release and drain: the first owner's pass completes its walk (a running pass finishes), the second owner has no rows. |
+| A missing row reads as off | Delete the row and open a fillable period: nothing is queued, nothing written. |
+| The read path makes exactly the queries it should | Count database commands for a gap-free read and for a gap-finding read: equal to before for the first, exactly one more for the second, in either switch position. This replaces the "no query it did not issue before" probe above, which the suite does not yet contain. |
+| The budget stops the walk | As above, restated: a pass works out at most 90 days, not writes at most 90. |
+| Only one place starts a fill | The structural test described under "Where it gates". |
