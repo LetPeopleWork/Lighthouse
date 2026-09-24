@@ -38,7 +38,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var missing = DaysWithoutAReading(ownerId, ownerType, from.Value, to ?? clock.Today, daysAlreadyHeld);
+            // A period may be picked to end after today, but no day after today has happened yet, so
+            // none of those days can be missing.
+            var today = clock.Today;
+            var lastDay = to is { } pickedEnd && pickedEnd < today ? pickedEnd : today;
+
+            var missing = DaysWithoutAReading(ownerId, ownerType, from.Value, lastDay, daysAlreadyHeld);
             // Asked only once days are known to be missing, so a chart that already holds its whole
             // period pays nothing for the switch. Switched off says nothing to the log: that would be a
             // line on every chart load of every instance that simply left the preview off.

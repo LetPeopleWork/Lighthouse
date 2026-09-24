@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var clock = services.GetRequiredService<ILighthouseClock>();
 
             return new OverTimeFillTarget(
-                DateOnly.FromDateTime(team.UpdateTime),
+                clock.ToInstanceDay(team.UpdateTime),
                 Implementation.PercentileFamilies.For(team, metrics),
                 services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team),
                 () => metrics.InvalidateTeamMetrics(team),
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var clock = services.GetRequiredService<ILighthouseClock>();
 
             return new OverTimeFillTarget(
-                DateOnly.FromDateTime(portfolio.UpdateTime),
+                clock.ToInstanceDay(portfolio.UpdateTime),
                 Implementation.PercentileFamilies.For(portfolio, metrics),
                 services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio),
                 () => metrics.InvalidatePortfolioMetrics(portfolio),
