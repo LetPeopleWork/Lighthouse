@@ -8,7 +8,8 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class ProcessBehaviorSnapshotWriter : IProcessBehaviorSnapshotWriter
     {
-        // PortfolioMetricsView hard-codes defaultDateRange={90}.
+        // The same 90 days the portfolio metrics page always opens on, so a recorded day's limits are
+        // the ones a reader sees there.
         private const int PortfolioLookbackDays = 90;
 
         // TeamMetricsView falls back to a 30-day range when the team pins fixed throughput dates,
@@ -65,7 +66,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public void RecordToday(int ownerId, OwnerType ownerType, ProcessBehaviorFamilyReader family)
         {
-            // Bug #5567: the day comes from the clock seam, never by re-reducing an instant here.
+            // The day comes from the clock rather than from reducing an instant here: an instant reduced
+            // without the instance's time zone lands on the wrong day around midnight.
             var day = clock.Today;
 
             WriteUnlessTheChartHasNoProcessToShow(
@@ -178,8 +180,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 return FixedDatesTeamLookbackDays;
             }
 
-            // Bug #5567: only the SPAN of the rolling window is wanted, never its position on the
-            // calendar, and Team.GetThroughputSettings makes that span ThroughputHistory - 1.
+            // Only the SPAN of the rolling window is wanted, never its position on the calendar: every
+            // day's window is placed to end on that day. Team.GetThroughputSettings makes that span
+            // ThroughputHistory - 1.
             return team.ThroughputHistory - 1;
         }
 

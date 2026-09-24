@@ -12,9 +12,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         : IDomainEventHandler<TeamDataRefreshed>,
           IDomainEventHandler<PortfolioFeaturesRefreshed>
     {
-        // The observability contract (ADR-107) keys operator alerting on the metric FAMILY, not the
-        // metric type: cycle time and work item age are both percentile readings, so every failure this
-        // handler reports carries "Percentiles". The ProcessBehavior family ships its own recorder.
+        // Operator alerting groups failures by metric FAMILY, not by metric type: cycle time and work
+        // item age are both percentile readings, so every failure this handler reports carries
+        // "Percentiles". The ProcessBehavior family ships its own recorder.
         private const string MetricFamily = "Percentiles";
 
         private readonly ITeamMetricsService teamMetricsService;
