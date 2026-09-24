@@ -113,15 +113,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         public async Task DrainAsync(CancellationToken cancellationToken)
         {
-            while (waiting.Reader.TryRead(out var request))
+            while (!cancellationToken.IsCancellationRequested && waiting.Reader.TryRead(out var request))
             {
                 await RunOnePassAsync(request, cancellationToken);
             }
         }
 
         /// <summary>
-        /// Empties the queue on the way out. A pass interrupted by shutdown loses nothing permanently,
-        /// but a day written is a day the next reader does not wait for.
+        /// Works through the queue on the way out, for as long as the host's shutdown allowance lasts.
+        /// A pass cut short by shutdown loses nothing permanently, but a day written is a day the next
+        /// reader does not wait for.
         /// </summary>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {

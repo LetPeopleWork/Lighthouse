@@ -48,10 +48,12 @@ namespace Lighthouse.Backend.Services.Interfaces.BackgroundServices
         void AskFor(OverTimeFillRequest request);
 
         /// <summary>
-        /// Works through everything waiting right now and returns once the queue is empty and no pass
-        /// is still writing. Separate from the background loop so that whoever needs the queue emptied
-        /// at a moment they choose - a test above all, since the test host runs no background work -
-        /// can have exactly that instead of sleeping.
+        /// Runs every ask waiting right now, one pass at a time on the caller, and returns once the
+        /// queue is empty or cancellation is requested; whatever is still waiting then stays queued.
+        /// It does not wait for a pass the background loop has already taken off the queue - that one
+        /// finishes on the loop. Separate from the background loop so that whoever needs the queue
+        /// emptied at a moment they choose - a test above all, since the test host runs no background
+        /// work and so every pass there runs here - can have exactly that instead of sleeping.
         /// </summary>
         Task DrainAsync(CancellationToken cancellationToken);
     }

@@ -142,6 +142,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             teamMetricsMock.Verify(metrics => metrics.InvalidateTeamMetrics(team), Times.Once);
         }
 
+        /// <summary>
+        /// Shutdown drains the queue on a token the host cancels once its shutdown allowance is spent.
+        /// Past that point every further pass is time the host no longer has.
+        /// </summary>
+        [Test]
+        public async Task ADrainToldToStopPartWay_StartsNoFurtherPass()
+        {
+            const int stillWaiting = TeamId + 1;
+            using var shutdown = new CancellationTokenSource();
+            teamRepositoryMock
+                .Setup(repository => repository.GetById(TeamId))
+                .Callback(() => shutdown.Cancel())
+                .Returns((Team?)null);
+
+            subject.AskFor(RequestFor(TeamId, Today));
+            subject.AskFor(RequestFor(stillWaiting, Today));
+            await subject.DrainAsync(shutdown.Token);
+
+            teamRepositoryMock.Verify(repository => repository.GetById(stillWaiting), Times.Never);
+        }
+
         private Team GivenATeamLastObservedOn(DateOnly day)
         {
             var team = new Team { Id = TeamId, UpdateTime = day.ToDateTime(new TimeOnly(9, 0), DateTimeKind.Utc) };
