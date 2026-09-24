@@ -4,6 +4,64 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.9.24.6
+
+## Delivery Timeline
+
+A forecast tells you *when* a Delivery will be done. It did not show you *how it gets there* — which Features get worked first, which ones sit in the queue behind them, and where the target date falls in all of that.
+
+Expand a Delivery and open its new **Timeline** tab: one bar per Feature, in board order, running from the day work on it is forecast to begin to the day it is forecast to finish. Switch between 70%, 85% and 95% and both ends of every bar move together, so each bar is always one consistent scenario. Switching to 95% and checking whether the last bar still lands before your target date is the quickest read on how much slack you really have.
+
+![The Delivery Timeline](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/deliveryTimeline.png)
+
+The bars can answer one more question at a time:
+- **Status** — which Features finish after the target date, and which ones will not even have *started* by then.
+- **Teams** — a Feature worked by several Teams splits into a row per Team, each with its own dates.
+- **Warnings** — the same warnings the Features table shows, right on the bar.
+
+Where a Feature waits on another and the forecast took that into account, a line joins the two bars. Waits the forecast could not honour are spelled out on the bar instead of drawn. Features that cannot be placed are listed beneath the chart with the reason, never silently left out.
+
+The Timeline is a premium feature. Full detail: [Delivery Timeline](https://docs.lighthouse.letpeople.work/portfolios/detail.html#delivery-timeline).
+
+## Forecasted Start Dates
+
+Lighthouse has always forecast when a Feature will be *done*. Now it also forecasts when work on it will *begin*.
+
+The new **Forecasted Start** column sits beside the completion forecast, with the same four probabilities, from the same simulation. A start date far out is Lighthouse telling you about the queue: nothing starts until the Teams working it are free of everything ordered above it. A Feature that has already started shows the day it actually started — a date that has happened is a fact, and no probability moves it.
+
+The column appears wherever Features are listed and needs no licence. Just like the completion dates, the start dates can be **written back to Jira and Azure DevOps** through [Data Sync Mappings](https://docs.lighthouse.letpeople.work/settings/worktrackingsystems.html#data-sync-mappings), so your plans in the tracker show both ends of every Feature.
+
+Full detail: [Forecasted Start](https://docs.lighthouse.letpeople.work/portfolios/detail.html#forecasted-start).
+
+## Fill in Past Days on Over-Time Charts (Preview)
+
+Percentiles Over Time and PBC Over Time only ever showed the days Lighthouse happened to record. A Team added last week, or an instance that does not run every day, got a short line or one full of holes — even though the Work Items needed to work out those days were already stored.
+
+Switch on the new **Fill in past days on over-time charts** behaviour setting, and opening either chart works out the missing days in the background from the history Lighthouse already keeps. A day nothing can be worked out for stays empty — nothing is invented to fill it.
+
+![Percentiles Over Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/percentilesOverTime.png)
+
+It is a **Preview and off by default** — a System Admin switches it on, no restart needed. A filled day is worked out against *today's* configuration, and days already filled stay when you switch it off, so take a backup first if you might want to undo it.
+
+Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts-preview).
+
+## Bugfixes and Improvements
+
+- **Faster Updates is no longer a switch.** Every refresh that can download only what changed now does, on every instance. An instance that had it turned off gets the faster refresh too.
+- **The SLE Risk tooltip says how much of the evidence missed the SLE**, and the risk column takes its target from the Team's SLE.
+- **The Task Manager's activity rows lead with the work** rather than the Team or Portfolio, and a queued row no longer names itself as the thing it is waiting for.
+- **No more Kestrel warning at startup** about the listening address being set twice.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.9.19.10...v26.9.24.6)
+
 # Lighthouse v26.9.19.10
 
 ## Display Risk of Missing your Service Level Expectation
