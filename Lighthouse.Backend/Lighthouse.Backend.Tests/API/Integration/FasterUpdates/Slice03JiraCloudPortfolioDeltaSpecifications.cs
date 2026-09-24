@@ -53,8 +53,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         /// <summary>
-        /// A Jira Data Center portfolio, in effect: the connector answers that it cannot be swept, so the
-        /// cheap path is refused per connector no matter what the instance volunteered (A1).
+        /// A Jira Data Center portfolio, in effect: the connector answers that it cannot be swept, so every
+        /// refresh of it downloads the whole query.
         /// </summary>
         private SeededPortfolio GivenAPortfolioWhoseTrackerRefusesToBeScanned() => SeedAPortfolio();
 
@@ -156,10 +156,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void GivenTheParentFeatureQueryStoppedAnsweringForIt() => OnTheTrackerTheParentFeatureIsGone(TheParentFeature);
 
-        private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
-
-        private void GivenTheOperatorTurnedTheCheaperRefreshOff() => TheOperatorTurnsOffTheCheaperRefresh();
-
         /// <summary>
         /// A Feature that has been blocked in this portfolio since before the cycle under test. A spell is
         /// what the departed-spell sweep closes for every Feature missing from the refreshed list, so an
@@ -215,11 +211,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             }
         }
 
-        private void ThenTheTrackersFeaturesWereNeverScanned()
-            => Assert.That(FeatureScansIssued, Is.Zero,
-                "Nobody asked for the cheaper refresh, so the Feature query must not be scanned at all - and slice 03 adds no "
-                + "second opt-in, so the gate the team half already has is the one that has to cover this.");
-
         private void ThenOnlyTheFeaturesThatMovedWereDownloaded(params string[] referenceIds)
         {
             Assert.That(FeaturePayloadDownloads, Has.Count.EqualTo(1),
@@ -256,9 +247,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void ThenTheParentFeaturesWereNeverScanned()
             => Assert.That(ParentFeatureScans, Is.Empty,
-                "The parent half carries no opt-in of its own - it rides the one the Feature half already reads. A scan "
-                + "issued here is a remote round trip nobody volunteered for, and it costs the same whether or not the "
-                + "answer is then used. Scans: " + RenderParentScans());
+                "The connector said its query cannot be swept, and the parent half has to take that answer just as the "
+                + "Feature half does. A scan issued here is a remote round trip against a query that cannot be enumerated "
+                + "reliably, and it costs the same whether or not the answer is then used. Scans: " + RenderParentScans());
 
         private void ThenTheParentFeaturesWereDownloaded(params string[] parentReferenceIds)
         {

@@ -68,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // The operator who had it off is the one this story is for. The instance also holds no premium
         // licence, because the cheaper refresh was never something a licence paid for.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_team_on_an_instance_that_had_faster_updates_off_downloads_only_the_issues_that_moved_after_the_upgrade()
         {
             var team = GivenAJiraCloudTeamWhoseTrackerCanBeScanned();
@@ -90,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-1.3 @contract-shape:bounded-change
         // The portfolio half read the same switch, so it has to stop needing it too.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_portfolio_on_an_instance_that_had_faster_updates_off_downloads_only_the_features_that_moved_after_the_upgrade()
         {
             var portfolio = GivenAJiraCloudPortfolioWhoseTrackerCanBeScanned();
@@ -111,7 +109,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // The parent Features decide their own mode, separately from the Features under them, so a
         // portfolio whose Features went cheap says nothing about whether its parents did.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task The_parent_features_on_an_instance_that_had_faster_updates_off_are_scanned_rather_than_downloaded_after_the_upgrade()
         {
             var portfolio = GivenAJiraCloudPortfolioWhoseTrackerCanBeScanned();

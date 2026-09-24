@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task The_first_refresh_after_an_upgrade_downloads_everything_and_remembers_when_each_issue_last_changed()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             GivenTheTeamsIssuesWereStoredBeforeThisRelease(team, "ITEM-1", "ITEM-2");
 
@@ -46,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_later_refresh_downloads_only_the_issues_that_moved()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -60,19 +58,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         // @driving_port @real-io @AC-2.2 @D2 @D8 @contract-shape:unbounded-preservation
-        // The capability is the connector's to declare and the opt-in is the instance's to give. Volunteering
-        // cannot talk a connector into a sweep it cannot enumerate reliably.
+        // Whether a query can be swept is the connector's to declare. Every refresh tries the cheap path, so
+        // this answer is the one thing keeping a sweep away from a query it cannot enumerate reliably.
         [Test]
-        public async Task A_tracker_that_says_it_cannot_be_swept_is_not_scanned_even_after_an_operator_asked()
+        public async Task A_tracker_that_says_it_cannot_be_swept_is_not_scanned()
         {
             var team = GivenATeamWhoseTrackerCannotBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
             await WhenTheScheduledRefreshRuns(team);
 
-            ThenTheTrackerWasNotScannedEvenThoughTheOperatorAsked();
+            ThenTheTrackerWasNotScanned();
             ThenTheWholeQueryWasDownloaded();
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
@@ -83,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task An_issue_that_left_the_query_is_gone_from_the_team_on_the_very_next_cycle()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -101,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task An_issue_that_did_not_move_is_left_exactly_as_it_was()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -120,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task An_issue_that_stopped_moving_still_goes_stale()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDays();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsAnIssueNobodyHasTouchedInWeeks();
             GivenThatIssueWasAlreadyStoredWithTheDayItEnteredItsState(team);
 
@@ -136,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_refresh_whose_scan_fails_downloads_everything_rather_than_half()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -155,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_cheaper_refresh_still_rolls_up_remaining_work_and_still_asks_for_a_new_forecast()
         {
             var team = GivenATeamDeliveringOneFeature();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssuesOnThatFeature();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -165,40 +157,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 2, fetched: 0);
             ThenTheFeatureReportsTheWorkThatIsLeft(team, remainingItems: 2);
             ThenTheTeamsDataWasAnnouncedAsRefreshed(team);
-        }
-
-        // @driving_port @real-io @AC-2.10 @A1 @contract-shape:unbounded-preservation
-        // Switched off means nothing is scanned - the defining claim is an absence.
-        [Test]
-        public async Task A_refresh_never_scans_once_the_operator_switched_it_off()
-        {
-            var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorTurnedTheCheaperRefreshOff();
-            GivenTheTrackerHoldsThreeIssues();
-            await GivenTheTeamHasAlreadyBeenRefreshed(team);
-
-            await WhenTheScheduledRefreshRuns(team);
-
-            ThenTheTrackerWasNeverScanned();
-            ThenTheWholeQueryWasDownloaded();
-            ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
-        }
-
-        // @driving_port @real-io @AC-2.11 @A1 @contract-shape:bounded-change
-        // The toggle is only usable if it bites today.
-        [Test]
-        public async Task Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle()
-        {
-            var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorTurnedTheCheaperRefreshOff();
-            GivenTheTrackerHoldsThreeIssues();
-            await GivenTheTeamHasAlreadyBeenRefreshed(team);
-
-            GivenTheOperatorAskedForTheCheaperRefresh();
-            await WhenTheScheduledRefreshRuns(team);
-
-            ThenTheWholeQueryWasScannedForIdentitiesOnly();
-            ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 0);
         }
 
         // @AC-2.12 @A1 @contract-shape:unbounded-preservation

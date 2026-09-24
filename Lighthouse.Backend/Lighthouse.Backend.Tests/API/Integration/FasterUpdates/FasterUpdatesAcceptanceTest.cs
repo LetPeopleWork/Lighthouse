@@ -869,38 +869,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         /// <summary>
-        /// Turns the option on the way the Settings screen does - through the repository, against a
-        /// running host. Nothing is restarted, which is the whole point of AC-2.11.
-        /// </summary>
-        protected void TheOperatorAsksForTheCheaperRefresh()
-        {
-            using var scope = Factory.Services.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
-
-            var option = repository.GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
-
-            if (option == null)
-            {
-                repository.Add(new OptionalFeature
-                {
-                    Id = 0,
-                    Key = OptionalFeatureKeys.DeltaSyncKey,
-                    Name = "Faster Updates",
-                    Description = "Download only the records that changed.",
-                    Enabled = true,
-                    IsPreview = false,
-                });
-            }
-            else
-            {
-                option.Enabled = true;
-                repository.Update(option);
-            }
-
-            repository.Save().GetAwaiter().GetResult();
-        }
-
-        /// <summary>
         /// Turns the option off the way the Settings screen does. The seeded default is on, so a scenario
         /// about the whole query still being fetched has to say so out loud rather than lean on the default.
         /// </summary>

@@ -93,8 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return (new SeededTeam(teamId, teamName, connectionId), new SeededPortfolio(portfolioId, portfolioName, connectionId));
         }
 
-        private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
-
         private void GivenTheTrackerHoldsThreeIssues()
             => TheTrackerHolds(
                 new RemoteRecord("ITEM-1", AWhileAgo),

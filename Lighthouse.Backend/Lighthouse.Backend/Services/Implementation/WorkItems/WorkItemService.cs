@@ -2,7 +2,6 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -29,7 +28,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IBlockedItemService blockedItemService,
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
         IFeatureOrdering featureOrdering,
-        IRepository<OptionalFeature> optionalFeatureRepository,
         IDependencyReconciler dependencyReconciler,
         IDependencyRefreshReporter dependencyRefreshReporter,
         UpdateCancellationContext cancellationContext)
@@ -161,21 +159,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// How much this cycle downloads, and the download itself. The opt-in gates the scan as well as the
-        /// mode decision, so an instance that never volunteered for the cheaper refresh never reaches the
-        /// tracker for one - a connector that could be swept but was not volunteered is precisely the
-        /// data-loss exposure the opt-in exists to confine.
+        /// How much this cycle downloads, and the download itself. Every refresh scans first, because the
+        /// scan is what lets it skip the records that did not move. That is safe to do unconditionally: a
+        /// connector that cannot enumerate its query reliably says so before any request is sent, and a scan
+        /// that fails or is refused downloads the whole query, exactly as if no scan had been tried.
         /// </summary>
         private async Task<RemoteFetch> ResolveRemoteFetch(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, bool fetchShapeChanged)
         {
-            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
-
-            var scan = operatorAskedForTheCheaperRefresh
-                ? await ScanRemoteIdentities(connector, team)
-                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+            var scan = await ScanRemoteIdentities(connector, team);
 
             var mode = SyncModeResolver.Resolve(
-                operatorAskedForTheCheaperRefresh,
                 scan.TrackerCanBeScanned,
                 storedWorkItems,
                 scan.Succeeded,
@@ -230,15 +223,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private sealed record RemoteFetch(List<WorkItem> WorkItems, HashSet<string> StillOnTheTracker, SyncOutcome Outcome);
 
         private sealed record IdentityScan(bool TrackerCanBeScanned, bool Succeeded, List<RemoteRecordStamp> Stamps);
-
-        /// <summary>
-        /// Read per update, inside that update's own scope - never cached in a field or at
-        /// startup, so turning the option on takes effect on the next cycle without a restart. No row means
-        /// nobody volunteered, which is the same answer as off.
-        /// </summary>
-        private bool TheOperatorAskedForTheCheaperRefresh()
-            => optionalFeatureRepository
-                .GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey)?.Enabled == true;
 
         /// <summary>The scan: the same query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteIdentities(IWorkTrackingConnector connector, Team team)
@@ -865,19 +849,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// <summary>
         /// The portfolio half of the same decision, mirroring the team path deliberately rather than
         /// sharing it: a Feature is not a Work Item, and merging the two routines would mean refactoring
-        /// the shipped team path inside a change about portfolios. The opt-in gates the scan as well as the
-        /// mode decision, so a connector nobody volunteered is never approached at all.
+        /// the shipped team path inside a change about portfolios. It scans unconditionally for the same
+        /// reason the team path does: a scan that fails or is refused downloads every Feature.
         /// </summary>
         private async Task<RemoteFeatureFetch> ResolveRemoteFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures, bool fetchShapeChanged)
         {
-            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
-
-            var scan = operatorAskedForTheCheaperRefresh
-                ? await ScanRemoteFeatureIdentities(connector, portfolio)
-                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+            var scan = await ScanRemoteFeatureIdentities(connector, portfolio);
 
             var mode = SyncModeResolver.Resolve(
-                operatorAskedForTheCheaperRefresh,
                 scan.TrackerCanBeScanned,
                 storedFeatures,
                 scan.Succeeded,
@@ -1119,14 +1098,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private async Task<List<Feature>> ResolveRemoteParentFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds, bool fetchShapeChanged)
         {
             var storedParentFeatures = TheStoredParentFeatures(parentFeatureIds);
-            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
-
-            var scan = operatorAskedForTheCheaperRefresh
-                ? await ScanRemoteParentFeatureIdentities(connector, portfolio, parentFeatureIds)
-                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+            var scan = await ScanRemoteParentFeatureIdentities(connector, portfolio, parentFeatureIds);
 
             var mode = SyncModeResolver.Resolve(
-                operatorAskedForTheCheaperRefresh,
                 scan.TrackerCanBeScanned,
                 storedParentFeatures,
                 scan.Succeeded,

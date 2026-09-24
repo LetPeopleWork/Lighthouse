@@ -43,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_query_edit_makes_the_next_refresh_download_everything_again()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -63,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task The_operator_is_told_that_a_configuration_change_is_why_everything_was_downloaded()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -83,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
             var fieldId = GivenTheConnectionDefinesAField(team);
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -104,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
             var fieldId = GivenTheConnectionDefinesAField(portfolio);
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -126,7 +122,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
             GivenTheTeamReadsTwoRawStatesAsOneMappedState(team);
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
             var history = GivenTheTeamRecordedHowItsWorkMoved(team, "ITEM-1");
@@ -150,7 +145,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
             GivenTheTeamAlsoTracksAReviewState(team);
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
             var history = GivenTheTeamRecordedHowItsWorkMoved(team, "ITEM-1");
@@ -173,7 +167,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task Adding_a_field_to_the_connection_makes_the_next_refresh_download_everything_for_the_teams_that_use_it()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
             var query = GivenWhatTheTrackerIsCurrentlyAskedFor(team);
@@ -193,7 +186,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task Re_saving_the_same_states_in_a_different_order_costs_no_download()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
             var fingerprint = TheStoredFetchFingerprintForTeam(team.Id);
@@ -215,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
             var fieldId = GivenTheConnectionDefinesAField(team);
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -234,7 +225,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
             var fieldId = GivenTheConnectionDefinesAField(portfolio);
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -253,7 +243,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task An_instance_that_upgraded_into_this_release_downloads_everything_on_its_first_refresh()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             GivenTheTeamsWorkWasStoredByAReleaseThatKnewNothingOfFingerprints(team);
 
@@ -274,7 +263,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_team_edit_does_not_cost_its_portfolio_a_full_download()
         {
             var (team, portfolio) = GivenATeamAndAPortfolioOnTheSameConnection();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
@@ -292,7 +280,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_portfolio_edit_does_not_cost_its_team_a_full_download()
         {
             var (team, portfolio) = GivenATeamAndAPortfolioOnTheSameConnection();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
@@ -313,7 +300,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_team_that_moves_to_a_different_connection_starts_from_nothing()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
             var history = GivenTheTeamRecordedHowItsWorkMoved(team, "ITEM-1");
@@ -333,7 +319,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_team_whose_query_changed_keeps_the_history_it_already_recorded()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
             var history = GivenTheTeamRecordedHowItsWorkMoved(team, "ITEM-1");
@@ -353,7 +338,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_portfolio_that_moves_to_a_different_connection_starts_from_nothing()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
             var whatItHeld = GivenThePortfolioAlreadyStoresItsFeatures(portfolio);
@@ -370,7 +354,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_portfolio_whose_query_changed_keeps_the_features_it_already_stored()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 

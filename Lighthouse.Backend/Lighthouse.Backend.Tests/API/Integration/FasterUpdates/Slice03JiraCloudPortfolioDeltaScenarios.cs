@@ -51,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task The_first_portfolio_refresh_downloads_every_feature_and_remembers_when_each_one_last_changed()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             GivenThePortfoliosFeaturesWereStoredBeforeThisRelease(portfolio, "FEAT-1", "FEAT-2");
 
@@ -68,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_later_portfolio_refresh_downloads_only_the_features_that_moved()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -89,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_that_did_not_move_is_still_part_of_the_portfolio_after_a_cheaper_refresh()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -107,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
             var blockedFeature = GivenOneFeatureHasBeenBlockedForAWhile(portfolio, "FEAT-1");
@@ -128,7 +124,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_that_left_the_query_is_gone_from_the_portfolio_on_the_very_next_cycle()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -147,7 +142,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(first);
             await GivenThePortfolioHasAlreadyBeenRefreshed(second);
@@ -173,7 +167,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(second);
 
@@ -194,7 +187,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(first);
             await GivenThePortfolioHasAlreadyBeenRefreshed(second);
@@ -216,7 +208,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task The_parent_features_survive_a_cycle_in_which_no_child_feature_moved()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -235,7 +226,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left_and_still_asks_for_a_new_forecast()
         {
             var portfolio = GivenAPortfolioDeliveredByOneTeam();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsOneFeatureWithNoWorkOnItYet();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
             ThenTheFeatureWasSizedByTheDefaultBecauseItHasNoWork();
@@ -255,7 +245,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_portfolio_refresh_whose_scan_fails_downloads_every_feature_rather_than_half()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -268,43 +257,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorIsToldTheScanFailed();
         }
 
-        // @driving_port @real-io @A1 @contract-shape:unbounded-preservation
-        // Slice 03 adds no second gate: the portfolio half is covered by the opt-in the team half already
-        // has. The defining claim is an absence.
-        [Test]
-        public async Task A_portfolio_refresh_never_scans_once_the_operator_switched_it_off()
-        {
-            var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorTurnedTheCheaperRefreshOff();
-            GivenTheTrackerHoldsThreeFeatures();
-            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
-
-            await WhenTheScheduledRefreshRuns(portfolio);
-
-            ThenTheTrackersFeaturesWereNeverScanned();
-            ThenTheWholeFeatureQueryWasDownloaded();
-            ThenTheRefreshReportedAFullUpdateOf(portfolio, scanned: 3, fetched: 3);
-        }
-
-        // @driving_port @real-io @A1 @contract-shape:unbounded-preservation
-        // The parent half of the gate above. It is a separate scenario because it is a separate decision
-        // in the code: the parent path reads the opt-in for itself, and the Feature half's scenario holds
-        // no parents at all, so nothing there says whether the parent query is left alone too.
-        [Test]
-        public async Task A_portfolio_refresh_switched_off_never_scans_the_parent_features_either()
-        {
-            var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorTurnedTheCheaperRefreshOff();
-            GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
-            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
-
-            await WhenTheScheduledRefreshRuns(portfolio);
-
-            ThenTheParentFeaturesWereNeverScanned();
-            ThenTheParentFeaturesWereDownloaded(TheParentFeature);
-            ThenTheParentFeatureIsStillStoredAndCurrent(TheParentFeature);
-        }
-
         // @driving_port @real-io @AC-3.1 @contract-shape:bounded-change
         // The other direction of the quiet-cycle scenario above: a parent whose OWN record moved has to be
         // refetched even though not one child did. Nothing on the Feature side of the cycle can report
@@ -313,7 +265,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_parent_feature_that_moved_on_the_tracker_is_refetched_by_the_cheaper_cycle()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -334,7 +285,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_parent_feature_the_sweep_did_not_answer_for_is_asked_for_rather_than_assumed_gone()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -352,7 +302,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_portfolio_refresh_whose_parent_scan_fails_downloads_every_parent_rather_than_half()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -365,13 +314,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         // @driving_port @real-io @AC-3.1 @A1 @contract-shape:unbounded-preservation
-        // The opt-in is per instance, the capability is per connector, and the parent half honours both.
-        // An operator who volunteered a Jira Data Center portfolio must still get every parent.
+        // Whether a query can be swept is per connector, and the parent half honours that answer on its own.
+        // A Jira Data Center portfolio still gets every parent, downloaded in full.
         [Test]
         public async Task A_portfolio_whose_tracker_refuses_to_be_scanned_still_gets_every_parent_feature()
         {
             var portfolio = GivenAPortfolioWhoseTrackerRefusesToBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -391,7 +339,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_that_was_blocked_when_it_left_the_query_stops_accruing_blocked_time()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(first);
             await GivenThePortfolioHasAlreadyBeenRefreshed(second);

@@ -22,14 +22,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public void Resolve_NobodyOptedIn_ResolvesToFull()
-        {
-            var mode = Resolve(operatorAskedForTheCheaperRefresh: false);
-
-            Assert.That(mode, Is.EqualTo(SyncMode.Full));
-        }
-
-        [Test]
         public void Resolve_ConnectionCannotBeScanned_ResolvesToFull()
         {
             var mode = Resolve(trackerCanBeScanned: false);
@@ -103,13 +95,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         /// input it is about - five bools at a call site say nothing about which one the test is asserting.
         /// </summary>
         private static SyncMode Resolve(
-            bool operatorAskedForTheCheaperRefresh = true,
             bool trackerCanBeScanned = true,
             IReadOnlyCollection<WorkItemBase>? storedWorkItems = null,
             bool scanSucceeded = true,
             bool fetchShapeChanged = false)
             => SyncModeResolver.Resolve(
-                operatorAskedForTheCheaperRefresh,
                 trackerCanBeScanned,
                 storedWorkItems ?? Stored(AWhileAgo, AWhileAgo),
                 scanSucceeded,

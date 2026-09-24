@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -18,8 +17,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 {
     /// <summary>
     /// The one place that knows how to construct a <see cref="WorkItemService"/>. Seven fixtures used to
-    /// spell out all thirteen constructor arguments each, so Epic #5687's single new dependency had to be
-    /// added in seven files - which is how a collaborator no test cares about becomes seven diffs.
+    /// spell out every constructor argument each, so a single new dependency had to be added in seven
+    /// files - which is how a collaborator no test cares about becomes seven diffs.
     ///
     /// A fixture names only the seams its own assertions read; everything else takes the value all seven
     /// call sites already passed verbatim. <see cref="FeatureOrderingTestHelper.FollowingTheTracker"/> in
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private IWorkItemStateTransitionRepository stateTransitionRepository = Mock.Of<IWorkItemStateTransitionRepository>();
         private IFeatureStateTransitionRepository featureStateTransitionRepository = Mock.Of<IFeatureStateTransitionRepository>();
         private IDomainEventDispatcher domainEventDispatcher = Mock.Of<IDomainEventDispatcher>();
-        private IRepository<OptionalFeature> optionalFeatureRepository = Mock.Of<IRepository<OptionalFeature>>();
 
         /// <summary>
         /// The connector the service is to talk to. Wrapping it in a factory is what every call site did by
@@ -109,16 +107,6 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return this;
         }
 
-        /// <summary>
-        /// Where the switches an operator can turn on are read from. Left unset, no switch is on, which is
-        /// what every fixture that does not mention one assumes.
-        /// </summary>
-        public WorkItemServiceTestBuilder WithOptionalFeatureRepository(IRepository<OptionalFeature> repository)
-        {
-            optionalFeatureRepository = repository;
-            return this;
-        }
-
         public WorkItemService Build()
             => new(
                 Mock.Of<ILogger<WorkItemService>>(),
@@ -134,7 +122,6 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
                 NoOpenBlockedSpells(),
                 FeatureOrderingTestHelper.FollowingTheTracker(),
-                optionalFeatureRepository,
                 new DependencyReconciler(),
                 // The real one: it only reads what the refresh already holds and writes a log line, so a
                 // fixture that faked it would be hiding the one thing it does.

@@ -9,13 +9,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     /// </summary>
     public static class SyncModeResolver
     {
-        /// <param name="operatorAskedForTheCheaperRefresh">
-        /// Whether this instance opted in to the cheaper refresh. A parameter rather than a dependency: the resolver is a
-        /// total function of what the refresh already holds, and reading the option is the caller's job so
-        /// that it happens once per update inside that update's own scope. Composes with
-        /// <paramref name="trackerCanBeScanned"/> rather than replacing it - the capability is per
-        /// connector, the opt-in is per instance.
-        /// </param>
         /// <param name="storedWorkItems">
         /// What the team or the portfolio already has. Typed as the shared base so a portfolio's stored
         /// Features reach the same decision - <see cref="Feature"/> is a sibling of <see cref="WorkItem"/>,
@@ -28,17 +21,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// fetch has to re-download records whose timestamps did not move.
         /// </param>
         public static SyncMode Resolve(
-            bool operatorAskedForTheCheaperRefresh,
             bool trackerCanBeScanned,
             IReadOnlyCollection<WorkItemBase> storedWorkItems,
             bool scanSucceeded,
             bool fetchShapeChanged)
         {
-            if (!operatorAskedForTheCheaperRefresh)
-            {
-                return SyncMode.Full;
-            }
-
             if (!trackerCanBeScanned)
             {
                 return SyncMode.Full;

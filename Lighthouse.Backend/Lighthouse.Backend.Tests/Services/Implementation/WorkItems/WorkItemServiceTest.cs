@@ -1,6 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -28,7 +27,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
         private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepositoryMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
-        private Mock<IRepository<OptionalFeature>> optionalFeatureRepositoryMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
@@ -46,7 +44,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
             featureStateTransitionRepositoryMock = new Mock<IFeatureStateTransitionRepository>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
-            optionalFeatureRepositoryMock = new Mock<IRepository<OptionalFeature>>();
 
             featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
                 .Returns(new List<FeatureStateTransition>().AsQueryable());
@@ -1013,7 +1010,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             AddStampedWorkItemForTeam(team, theRecordThatMoved, whenEveryStoredRecordLastChanged);
             AddStampedWorkItemForTeam(team, theRecordThatSatStill, whenEveryStoredRecordLastChanged);
 
-            TheOperatorAskedForTheCheaperRefresh();
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
@@ -1060,7 +1056,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 AStampedFeature(theRecordThatMoved, whenEveryStoredRecordLastChanged),
                 AStampedFeature(theRecordThatSatStill, whenEveryStoredRecordLastChanged)]);
 
-            TheOperatorAskedForTheCheaperRefresh();
             TheTrackerCanBeScanned();
 
             workTrackingConnectorMock
@@ -1555,11 +1550,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 LinksNamedMoreThanOneParent = true,
             };
 
-        private void TheOperatorAskedForTheCheaperRefresh()
-            => optionalFeatureRepositoryMock
-                .Setup(repository => repository.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>()))
-                .Returns(new OptionalFeature { Id = idCounter++, Key = OptionalFeatureKeys.DeltaSyncKey, Enabled = true });
-
         private void TheTrackerCanBeScanned()
             => workTrackingConnectorMock
                 .Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>()))
@@ -1636,7 +1626,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .WithStateTransitionRepository(stateTransitionRepositoryMock.Object)
                 .WithFeatureStateTransitionRepository(featureStateTransitionRepositoryMock.Object)
                 .WithDomainEventDispatcher(domainEventDispatcherMock.Object)
-                .WithOptionalFeatureRepository(optionalFeatureRepositoryMock.Object)
                 .Build();
         }
     }

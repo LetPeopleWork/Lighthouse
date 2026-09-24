@@ -44,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task An_issue_the_tracker_reports_twice_is_downloaded_once_and_stored_once()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -63,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         public async Task A_feature_the_tracker_reports_twice_is_downloaded_once_and_claimed_once()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsTwoFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 

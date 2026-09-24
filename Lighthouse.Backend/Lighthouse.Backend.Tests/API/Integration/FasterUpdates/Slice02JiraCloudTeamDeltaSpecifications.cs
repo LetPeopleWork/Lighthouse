@@ -15,11 +15,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// fetches only what moved.
     ///
     /// Backend-observable contract: the same query is still enumerated in full every cycle, so
-    /// <c>removed = stored − scanned</c> keeps today's meaning (D2); full payloads are downloaded only
-    /// for records whose remote change stamp differs from the stored one (D12); an untouched record is
-    /// left byte-identical; staleness is evaluated over the stored set rather than the fetched one
-    /// (D10); anything ambiguous — never scanned, no stored stamp, scan failed, nobody opted in —
-    /// resolves to a full download (D8, A1).
+    /// <c>removed = stored − scanned</c> keeps today's meaning; full payloads are downloaded only
+    /// for records whose remote change stamp differs from the stored one; an untouched record is
+    /// left byte-identical; staleness is evaluated over the stored set rather than the fetched one;
+    /// anything ambiguous — never scanned, no stored stamp, scan failed — resolves to a full download.
     ///
     /// The summary line's field names are slice 01's, asserted individually: they are what a log
     /// pipeline greps for, and only the value behind <c>mode</c> changes in this slice.
@@ -162,8 +161,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void GivenTheScanFails() => TheScanFails(new InvalidOperationException(TheScansRefusal));
 
-        private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
-
         private void GivenTheOperatorTurnedTheCheaperRefreshOff() => TheOperatorTurnsOffTheCheaperRefresh();
 
         private StoredIssue GivenHowTheUntouchedIssueLooksNow(SeededTeam team, string referenceId)
@@ -203,16 +200,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             }
         }
 
-        private void ThenTheTrackerWasNeverScanned()
-            => Assert.That(ScansIssued, Is.Zero,
-                "Nobody asked for the cheaper refresh, so the tracker must not be scanned at all - "
-                + "the removal rule this epic relies on is what makes an unasked-for scan a data-loss risk.");
-
-        private void ThenTheTrackerWasNotScannedEvenThoughTheOperatorAsked()
+        private void ThenTheTrackerWasNotScanned()
             => Assert.That(ScansIssued, Is.Zero,
                 "The per-connection probe is the connector's own answer about whether its query can be enumerated "
-                + "reliably, and no amount of volunteering overrides it - a sweep that loses an id turns "
-                + "'removed = stored - swept' into a deletion of live work (D2).");
+                + "reliably, and every refresh has to honour it - a sweep that loses an id turns "
+                + "'removed = stored - swept' into a deletion of live work.");
 
         private void ThenOnlyTheIssuesThatMovedWereDownloaded(params string[] referenceIds)
         {
