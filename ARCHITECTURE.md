@@ -149,7 +149,7 @@ sequenceDiagram
   Note over D,H: a throwing handler is logged & skipped;<br/>the committed fact survives and recovers on the next re-sync (no outbox)
 ```
 
-**Event families** (where the seam pays off): A — refresh-completed pipelines (`PortfolioFeaturesRefreshed`, `TeamDataRefreshed`); B — lifecycle (`*Created`/`*Deleted`); C — cross-aggregate triggers (e.g. team-refresh → forecast trigger, now a `TeamDataRefreshed` handler instead of a cross-module call; likewise `FeatureRankChanged` / `FeatureOrderingPolicyChanged` → a coalesced forecast recompute, ADR-133); D — work-item and feature state transitions (`WorkItemTransitioned`/`BecameStale`/`Blocked`/`Unblocked`, `FeatureBlocked`/`FeatureUnblocked` — the capture seam for blocked spells, ADR-068/104); E — connection/credential health; F — **history recorders**: handlers on the refresh events append the day's row to the forward-only snapshot tables (§6).
+**Event families** (where the seam pays off): A — refresh-completed pipelines (`PortfolioFeaturesRefreshed`, `TeamDataRefreshed`); B — lifecycle (`*Created`/`*Deleted`); C — cross-aggregate triggers (e.g. team-refresh → forecast trigger, now a `TeamDataRefreshed` handler instead of a cross-module call; likewise `FeatureRankChanged` / `FeatureOrderingPolicyChanged` → a coalesced forecast recompute, ADR-133); D — work-item and feature state transitions (`WorkItemTransitioned`/`BecameStale`/`Blocked`/`Unblocked`, `FeatureBlocked`/`FeatureUnblocked` — the capture seam for blocked spells, ADR-068/104); E — connection/credential health; F — **history recorders**: handlers on the refresh events append the day's row to the day-keyed snapshot tables (§6).
 
 > **Deliberately kept imperative.** `PortfolioUpdater.Update` is a strictly-ordered, single-scope pipeline (each step reads prior steps' results on the same tracked entity). Only genuinely *independent* reactions (e.g. metric-cache invalidation, the fire-and-forget forecast trigger) are peeled into handlers; the ordered core stays imperative because after-commit handlers run in fresh scopes (ADR-027 D2 reserves an in-transaction tier for true invariants only).
 
@@ -164,18 +164,20 @@ Not full CQRS — **command/query separation on one store** (ADR-027 D6):
 
 A separate read store was rejected: there is no read-throughput bottleneck at this scale, and a second store would fight the no-fork / standalone goals.
 
-### Over-time history is a forward-only projection, not a query over the past
+### Over-time history is a recorded projection, not a query over the past
 
 Most "how did this metric look last month?" questions cannot be answered by re-deriving from the work-item projection — the connector only ever gives us *now*, and a re-derivation would silently rewrite history whenever a rule, a mapping or a state definition changed. So each such metric gets its own **day-keyed snapshot table**, appended by a recording handler on the refresh event that produced it (§5 family F):
 
 | Table | Records | ADRs |
 |---|---|---|
 | `DeliveryMetricSnapshot` | per-delivery progress, scope, epic count & size | 048 / 049 / 050 / 121 |
-| `PercentilesOverTimeSnapshot` | cycle-time / age percentiles per owner per day | 106 / 107 / 108 |
+| `PercentilesOverTimeSnapshot` | cycle-time / age percentiles per owner per day | 106 / 107 / 108 / 207 / 208 |
 | `BlockedCountSnapshot` | how many items were blocked that day | 069 / 099 |
-| `ProcessBehaviorSnapshot` | XmR baselines & limits | 052 |
+| `ProcessBehaviorSnapshot` | XmR baselines & limits | 052 / 207 / 208 |
 
-The rules that keep this honest: **write is idempotent on the day key** (a re-run overwrites the same row, never appends a second one), **the past is never backfilled** — the only backfill handlers that exist serve demo data — and the read path serves the series straight from the table, so a stored series stays exactly what the instance actually observed at the time.
+The rules that keep this honest: **write is idempotent on the day key** (a re-run overwrites the same row, never appends a second one), **a stored day is never rewritten from the past**, and the read path serves the series straight from the table. A percentile day with nothing to measure (all four percentiles zero) is left absent by the recorder and the filler alike, rather than stored as a zero.
+
+**The one exception fills gaps, never overwrites.** For the percentile and process-behaviour tables only, an instance-wide behaviour setting (`OverTimeHistoryFill`, a Preview, seeded off) lets a series read that finds missing days in its range ask a filler of its own — not the update queue — to work those days out in the background, bounded per pass, from the stored work items and **the recorder's own computation**, and to write them **only if absent**. Days before the owner's first finished item or after its last observed sync are refused. A filled row carries no marker, so it reads as a recorded one: it is computed against *today's* configuration and item set, and switching the setting off keeps it ([ADR-207](docs/product/architecture/adr-207-read-triggered-reconstruction-on-its-own-filler.md), [ADR-208](docs/product/architecture/adr-208-a-past-day-is-computed-by-the-recorders-own-code.md)). The demo backfill handlers still write their synthetic rows; the filler steps over them.
 
 ### Some numbers are derived on read and never stored
 

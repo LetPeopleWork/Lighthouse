@@ -54,7 +54,7 @@ The goal is not to be at 100%. In fact, that's far from realistic. We believe an
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Cycle Time, Work Item Age |
-| **Affected by Filtering** | Yes — the chart plots the recorded days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. |
+| **Affected by Filtering** | Yes — the chart plots the days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. With [filling in past days](#filling-in-past-days-preview) switched on, the selected range is also the stretch whose missing days get filled in. |
 
 The percentile widgets tell you where you stand *today*. This chart tells you which way you are moving: Lighthouse records the 50th, 70th, 85th, and 95th percentile once per day and plots each as its own line, so you can see whether your percentiles are tightening, drifting apart, or holding steady.
 
@@ -77,8 +77,34 @@ The three Cycle Time horizons are recorded separately, so switching between them
 
 Work Item Age is measured as of the day it was recorded, so it carries no horizon and gets its own tab rather than a set of day options.
 
+A day with nothing to measure draws no point rather than a point at zero. On a Cycle Time tab that is a day on which no Work Item finished in the 30, 60 or 90 days leading up to it; on the Age tab, a day on which nothing was in progress. This holds for the days Lighthouse records as they happen as well as for [filled-in days](#filling-in-past-days-preview), and whether or not filling in is switched on.
+
+{: .important}
+On a quiet Team you will notice this: where the lines used to drop to zero, they now break off and pick up again once there is something to measure. Days recorded at zero by an earlier version of Lighthouse stay as they were.
+
 {: .note}
-This chart builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance therefore shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded, rather than a fabricated line. The demo data ships with a backdated history, so it is populated immediately. If you select a date range that ended before recording began, the chart says *"no data recorded in the selected range"* instead — that one is about the range you picked, not about your instance.
+When there is nothing to show for the range you picked, the chart says *"Nothing to show for the selected range. Days appear here as Lighthouse records them."* It is the same sentence whatever the reason — the range lies before anything Lighthouse holds for this Team or Portfolio, nothing has been recorded yet, syncing stopped before the range began, or the days are still being filled in — and whether filling in is switched on or off. With it on, a range that can be filled shows this sentence the first time you open it; open it again shortly.
+
+## Filling in past days (Preview)
+
+Out of the box, this chart and [PBC Over Time](#pbc-over-time) show only the days Lighthouse recorded: one point a day, from the day your instance started recording. A Team added last week, or an instance that does not run every day, leaves the line short or full of holes — even though the Work Items Lighthouse already stores say what those days looked like.
+
+Switch on **Fill in past days on over-time charts** under [Behaviour Settings](../settings/configuration.html#fill-in-past-days-on-over-time-charts-preview) and Lighthouse works those missing days out from the stored history. It is a **Preview** and it is **off by default**, on a new instance and on one that upgrades alike. Only a System Admin can switch it, and it takes effect without a restart.
+
+How the fill proceeds:
+
+- **In the background, when a chart is opened.** Opening either chart for a range with missing days starts the fill; the chart does not wait for it. What you are looking at is what was there already, and the filled days appear the next time you open the chart.
+- **A bounded amount per visit.** Each visit works out up to 90 days, oldest first, so a long range — a year, say — fills in over several visits.
+- **Every over-time chart of that Team or Portfolio at once.** A filled day covers every tab of this chart and every metric of PBC Over Time, not just the one you opened.
+- **Only where the stored history reaches.** Days before the first Work Item that Team or Portfolio finished, and days after its last successful sync, stay empty: nothing stored says what they looked like.
+- **Missing days only.** A day that was already recorded is never changed.
+
+A filled day looks exactly like a recorded one, but it is worked out afterwards, against **today's** configuration — state mappings, Cycle Time definitions, blocked rules, blackout configuration and the current set of Work Items. Where any of those changed since, or a Work Item was deleted or moved to a different parent, a filled day may differ from what would have been recorded on that day. If the past looks different from what you remember, let us know.
+
+{: .important}
+Switching the fill off stops any further filling, but **the days already filled stay**. They cannot be told apart from recorded ones, so there is no way to single them out afterwards. If you might want your unfilled history back, [take a backup](../settings/databasemanagement.html#backup) before you switch it on.
+
+The demo data ships with a backdated history, so its charts are populated as soon as it is loaded. Loading demo data does not switch the fill on. If you switch it on, the fill leaves the demo's backdated days as they are and works out only the days that are still missing.
 
 ## Status Indicator
 This widget has no status indicator. It shows a direction of travel rather than a value that is healthy or unhealthy on its own — read it alongside [Cycle Time Percentiles](flow-overview.html#cycle-time-percentiles) and [Work Item Age Percentiles](flow-overview.html#work-item-age-percentiles), which do carry one.
@@ -88,7 +114,7 @@ This widget has no status indicator. It shows a direction of travel rather than 
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Throughput, Work Item Age, Work In Progress, Cycle Time, Arrivals, and Feature Size (Portfolios only) |
-| **Affected by Filtering** | Yes — the chart plots the recorded days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. |
+| **Affected by Filtering** | Yes — the chart plots the days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. With [filling in past days](#filling-in-past-days-preview) switched on, the selected range is also the stretch whose missing days get filled in. |
 
 A [Process Behaviour Chart](#process-behaviour-charts) tells you whether a given data point is normal *for your system*. This chart tells you whether your system's idea of "normal" is itself moving: Lighthouse records the average and both natural process limits once per day and plots all three over time.
 
@@ -114,7 +140,10 @@ Use the toggle in the widget header to pick the metric family. Lighthouse record
 The limits are only as meaningful as the *baseline* they are computed from. Configure it in your Team ([Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)) or Portfolio ([Create/Edit Portfolios](../portfolios/edit.html#process-behaviour-chart-baseline)) settings. Without one, Lighthouse falls back to a rolling window ending today — so the recorded limits move as that window slides, for reasons that have nothing to do with your process. On a fixed baseline, movement in this chart is a real signal.
 
 {: .note}
-Like the other over-time charts, this one builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded. The demo data ships with a backdated history, but only for **Throughput** — so on demo data the other families also start empty and fill in from today, one day at a time. If you select a date range that ended before recording began, the chart says *"no data recorded in the selected range"* instead — that one is about the range you picked, not about your instance.
+Like [Percentiles Over Time](#percentiles-over-time), this chart shows the days Lighthouse recorded and, once [filling in past days](#filling-in-past-days-preview) is switched on (a Preview, off by default), the past days it worked out from the stored history — for every metric, on every Team and Portfolio. A filled day's limits are worked out as they stood on that day: without a fixed baseline, the rolling window ends on that day rather than today. A day on which no limits could be worked out draws no point. An empty chart says *"Nothing to show for the selected range. Days appear here as Lighthouse records them."*
+
+{: .note}
+The demo data ships with a backdated history for **Throughput** only. With filling in switched off — and loading demo data does not switch it on — the other metrics start empty on demo data and build up from today, one day at a time. With it switched on, they are filled in from the demo Work Items like any other Team's or Portfolio's, while the backdated Throughput days are left as they are.
 
 ## Status Indicator
 This widget has no status indicator. The point-in-time [Process Behaviour Charts](#process-behaviour-charts) carry the special-cause status; this chart shows how the limits behind it have moved.
