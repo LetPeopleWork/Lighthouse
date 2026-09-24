@@ -2715,3 +2715,36 @@ a mechanism it never exercised.
   "The horizon lists live in the writer and nowhere else" was already false when 01-01 started and that file
   was not in scope. Contained by an ArchUnit allowlist pinned to exactly two named files, so a *third* copy
   fails the build. Folding it in is a two-field change that needs the file in a step's scope.
+
+### U-44 — The limits fidelity scenario could not tell a day judged as of today from one judged as of itself
+
+Found at 03-05 by sabotage. `Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched`
+seeds one item a day, so every throughput window inside the seeded range yields the same triple. It
+passed with reconstruction anchored one day early, with the lookback doubled, and with reconstruction
+anchored at **today** — the exact mistake it exists to catch. Only sabotages that removed the row made
+it fail. Tenth instance of the house pattern.
+
+Both scenarios passed on first un-ignore with no production change; the recorder and reconstruction
+share one private computation in the writer, so equality is structural. The scenario was sent back to
+the acceptance designer to arm it against a varying series (and to check the percentile counterpart in
+slice 05, which uses the same seed), without touching either shared seeder.
+
+### U-45 — Days past the last-observed ceiling are re-refused on every read, and nothing can see it
+
+Also found at 03-05. The ceiling half of
+`Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing` is sound: loosening
+the ceiling wrote 17 days past the break and the scenario failed. The "second look changes nothing"
+half cannot fail — recomputing a day from the same items yields identical rows — even with both skip
+gates disabled and existing rows overwritten.
+
+Underneath it sits a real cost: a day past `LastObservedOn` hits `continue` before it is attempted, so
+it never enters the memo, and the memo's owner notes only rule out days below the floor. Every later
+read of a window that runs past the break starts a pass that refuses those days again. Data stays
+correct; the work repeats on every load, for owners nobody is syncing any more.
+
+**Do not fix it by memoising ceiling-refused days the way floor-refused ones are.** The floor is fixed;
+the ceiling moves forward the moment syncing resumes, so a memoised ceiling refusal would make those
+days permanently unfillable — the same shape as the budget-abandoned-day trap. A correct fix keys the
+refusal to the ceiling value it was refused under. Observing either needs a cost signal at the driving
+port (what the reconciler asks the filler for), the same gap as U-6 and U-28. Deferred to the
+adversarial review after the user's live check.
