@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-08")]
     public partial class Slice08NothingToShowTest
     {
-        private const string Pending = "Pending: reconstruction of missing over-time days is not built yet (story 6053, slice 04).";
-
         /// <summary>
         /// The first genuinely new empty state. The team has plenty of history, but not that far back,
         /// so the period cannot be worked out from anything - which is a different statement from
@@ -30,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -49,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_with_nothing_in_it_at_all_stays_empty_and_nothing_is_invented()
         {
             var teamId = GivenABrandNewTeamWithNothingInIt();
@@ -71,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_nobody_is_syncing_any_more_stays_empty_for_the_period_since_it_stopped()
         {
             var lastObservedOn = TodayDay.AddDays(-120);
@@ -95,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-04 @boundary @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_period_that_reaches_further_back_than_the_team_does_still_returns_the_part_it_covers()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -109,7 +103,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task The_limits_chart_stays_empty_for_a_period_that_predates_everything_the_team_holds()
         {
             var teamId = GivenATeamStillBeingRefreshed();

@@ -35,6 +35,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         private const string MetricFamily = "OverTime";
 
         /// <summary>
+        /// The most days one pass works out. A year-wide picker then fills over successive loads
+        /// rather than in one unbounded walk, and every day written stays written, so the next load
+        /// carries on from where this one stopped. Only days the pass actually works out count: one
+        /// that falls outside what the owner's stored items support is stepped over for nothing, and
+        /// counting it would let a period reaching back past the owner's history spend the whole pass
+        /// on days that can never be written, leaving out the part the history does cover.
+        /// </summary>
+        private const int MostDaysOnePassWorksOut = 90;
+
+        /// <summary>
         /// The longest one pass may keep going. This is not a throughput figure and does not move with
         /// the size of the instance: for as long as a pass is running, an operator who clicks Restore is
         /// refused, so this is how long someone may be left pressing a button that does nothing before
@@ -235,6 +245,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                         MetricFamily,
                         daysAlreadyTried);
 
+                    break;
+                }
+
+                if (daysAlreadyTried >= MostDaysOnePassWorksOut)
+                {
                     break;
                 }
 

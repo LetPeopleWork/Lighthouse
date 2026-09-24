@@ -9,11 +9,15 @@ namespace Lighthouse.Backend.Services.Implementation
         ILighthouseClock clock, IOverTimeHistoryFiller filler, ReconstructionMemo memo) : IOverTimeGapReconciler
     {
         /// <summary>
-        /// The most days one visit asks for. A year-wide picker then fills over successive loads
-        /// rather than in one unbounded walk, and every day written stays written, so the next load
-        /// carries on from where this one stopped.
+        /// The most days one visit hands over, and deliberately not the most a pass will work out.
+        /// Which of these days the owner's history can support is only known once a pass has looked,
+        /// so handing over just the first few would, for a period reaching back past where that history
+        /// begins, hand over nothing but days no pass can write - and the part of the period the history
+        /// does cover would not arrive. The pass steps over the unsupported days for free and caps the
+        /// ones it actually works out. This bound only stops a hand-typed range spanning centuries from
+        /// queueing centuries of days, so it sits well past any period someone would actually open.
         /// </summary>
-        private const int MostDaysOneVisitAsksFor = 90;
+        private const int MostDaysOneVisitHandsOver = 10 * 366;
 
         public void AskForTheDaysThatAreMissing(
             int ownerId,
@@ -56,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var held = daysAlreadyHeld.ToHashSet();
             var missing = new List<DateOnly>();
 
-            for (var day = from; day <= to && missing.Count < MostDaysOneVisitAsksFor; day = day.AddDays(1))
+            for (var day = from; day <= to && missing.Count < MostDaysOneVisitHandsOver; day = day.AddDays(1))
             {
                 // A day an earlier pass established cannot be written is left out, or it is asked for
                 // again on every load for as long as the instance runs and looking at a settled period
