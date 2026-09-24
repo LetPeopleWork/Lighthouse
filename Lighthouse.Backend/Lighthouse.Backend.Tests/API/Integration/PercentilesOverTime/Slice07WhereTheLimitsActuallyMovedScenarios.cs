@@ -196,15 +196,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheLimitsAreFreeToMoveAcross(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-60), TodayDay.AddDays(-30));
         }
 
+        /// <summary>
+        /// Worked out afterwards, a day has to be worked out the way it would have been on the day: over
+        /// the stretch that ends on it, and judged as of it rather than as of today. Equality with what the
+        /// recorder wrote only proves that if the wrong ways give a different answer, and with one item
+        /// finished every day they did not - every stretch read the same, so reconstruction anchored on
+        /// today, a day early or over twice the span all passed. The team here is the one getting faster,
+        /// and it keeps finished work for just long enough that the watched day's stretch is in reach as of
+        /// that day and out of reach as of today. The last Given checks that every one of those wrong
+        /// ways really does read differently, and fails before the chart is opened if one does not.
+        /// </summary>
         // @us-03 @fidelity @real-io @contract-shape:pure-function
         [Test]
         public async Task Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched()
         {
-            var teamId = GivenATeamStillBeingRefreshed();
-            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-200), TodayDay);
-            var asWatched = await GivenALimitDayTheRecorderWroteAndThenLost(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-15));
+            var teamId = GivenATeamStillBeingRefreshedThatKeepsFinishedWorkFor(DaysFinishedWorkIsKeptForWhenTheWatchedDayIsOutOfReachToday);
+            GivenTheTeamFinishedMoreEachMonthFrom(teamId, TodayDay.AddDays(-200), TodayDay);
+            var asWatched = await GivenALimitDayTheRecorderWroteAndThenLost(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-43));
+            GivenThatDayReadsDifferentlyWhenWorkedOutAnyOtherWay(teamId, asWatched);
 
-            await WhenTheDeliveryLeadOpensTheTeamLimits(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-30), TodayDay);
+            await WhenTheDeliveryLeadOpensTheTeamLimits(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-45), TodayDay);
             await WhenTheChartHasFinishedFillingIn();
 
             ThenTheLimitsCameBackTheSameAsWhenTheyWereWatched(teamId, ProcessBehaviorMetricType.Throughput, asWatched);

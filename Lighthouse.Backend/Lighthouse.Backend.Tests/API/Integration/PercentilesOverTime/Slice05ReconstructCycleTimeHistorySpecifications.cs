@@ -52,6 +52,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
+        /// <summary>
+        /// One item finished on each day of the span, each taking a day longer than the one finished the day
+        /// before. Kept apart from the steady seeder above, which the rest of this fixture relies on: there
+        /// every item takes two days, so every stretch of them has the same percentiles, and a day worked
+        /// out over the wrong stretch cannot be told from one worked out over the right one. Here the
+        /// percentiles of a stretch name the days it covers, so moving it by a day moves every one of them.
+        /// </summary>
+        private void GivenEachItemTheTeamFinishedTookADayLongerThanTheOneBefore(int teamId, DateOnly from, DateOnly to)
+        {
+            for (var day = from; day <= to; day = day.AddDays(1))
+            {
+                var daysTaken = 2 + (day.DayNumber - from.DayNumber);
+                SeedItemFinishedOn(teamId, $"{teamId}-{day:yyyyMMdd}", day.AddDays(1 - daysTaken), day);
+            }
+        }
+
         private RecordedPercentileDay GivenTheDayWasAlreadyRecordedAs(int teamId, DateOnly day, int p50, int p70, int p85, int p95)
         {
             SeedRecordedPercentileDay(teamId, OwnerType.Team, MetricType.CycleTime, ThirtyDays, day, p50, p70, p85, p95);
@@ -93,6 +109,44 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             TheInstanceMovesOnTo(TodayDay);
 
             return asRecorded;
+        }
+
+        /// <summary>
+        /// What makes the fidelity scenario able to fail, checked rather than assumed. Over the thirty days
+        /// ending on it, the watched day must give back exactly what the recorder wrote - otherwise this
+        /// guard has the wrong idea of the stretch and nothing it says about the others counts. Over any of
+        /// the likely wrong stretches, it must not.
+        /// </summary>
+        private void GivenThatDayReadsDifferentlyOverAnyOtherStretch(int teamId, RecordedPercentileDay asWatched)
+        {
+            var day = asWatched.RecordedAt;
+            var watched = (asWatched.P50, asWatched.P70, asWatched.P85, asWatched.P95);
+
+            var overItsOwnStretch = CycleTimePercentilesWorkedOutOver(teamId, day.AddDays(-ThirtyDays), day);
+
+            var overAWrongStretch = new Dictionary<string, (int P50, int P70, int P85, int P95)>
+            {
+                ["the thirty days ending today"] = CycleTimePercentilesWorkedOutOver(teamId, TodayDay.AddDays(-ThirtyDays), TodayDay),
+                ["the thirty days ending the day before"] = CycleTimePercentilesWorkedOutOver(teamId, day.AddDays(-ThirtyDays - 1), day.AddDays(-1)),
+                ["the thirty days ending the day after"] = CycleTimePercentilesWorkedOutOver(teamId, day.AddDays(1 - ThirtyDays), day.AddDays(1)),
+                ["the sixty days ending on the day"] = CycleTimePercentilesWorkedOutOver(teamId, day.AddDays(-2 * ThirtyDays), day),
+            };
+
+            var thatWouldGoUnnoticed = overAWrongStretch
+                .Where(reading => reading.Value == watched)
+                .Select(reading => $"{reading.Key}: {reading.Value}")
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(overItsOwnStretch, Is.EqualTo(watched),
+                    $"Over the thirty days ending on {day:yyyy-MM-dd}, the day does not give back what the recorder wrote, so the " +
+                    "stretch this guard compares against is not the one the recorder used and the readings below prove nothing.");
+
+                Assert.That(thatWouldGoUnnoticed, Is.Empty,
+                    $"Over these stretches, {day:yyyy-MM-dd} reads {watched} again, so the scenario passes whichever of them the " +
+                    "product works the day out over.");
+            }
         }
 
         // --- When ---

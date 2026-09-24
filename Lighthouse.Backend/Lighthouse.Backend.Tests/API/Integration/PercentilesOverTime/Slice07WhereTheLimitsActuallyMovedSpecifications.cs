@@ -57,6 +57,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         private const int DaysFinishedWorkIsKeptForWhenTheStretchIsOutOfReach = 220;
 
+        /// <summary>
+        /// How long the team in the fidelity scenario keeps finished work for, bounded on both sides by
+        /// what it has to catch. The watched day's limits are drawn from the thirty days ending on it, 43
+        /// days back, so that stretch starts 72 days back: keeping work for fewer than 72 days puts it out of
+        /// reach as of today, which is the only way judging the day as of today can give a different answer
+        /// from judging it as of itself. And a stretch twice as long starts 58 days before the watched day,
+        /// so keeping work for at least 58 days leaves that one in reach as of the day, and working the day
+        /// out over the wrong span shows up as the wrong limits rather than as none. The guard in the
+        /// scenario checks both through the product's own calculation rather than trusting this arithmetic.
+        /// </summary>
+        private const int DaysFinishedWorkIsKeptForWhenTheWatchedDayIsOutOfReachToday = 65;
+
+        /// <summary>
+        /// How far back from a day its limits reach when no stretch is pinned: the team's thirty days of
+        /// throughput history, the day itself included. Not taken on trust either - the guard first checks
+        /// that this stretch gives back exactly what the recorder wrote.
+        /// </summary>
+        private const int DaysTheLimitsReachBack = 29;
+
+        /// <summary>A reading of all zeros is the chart saying it could draw nothing from that stretch.</summary>
+        private static readonly (int Unpl, int Average, int Lnpl) NoReading = (0, 0, 0);
+
         // --- Given ---
 
         private int GivenATeamStillBeingRefreshed() => SeedTeamObservedUntil(TodayDay);
@@ -234,6 +256,62 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             TheInstanceMovesOnTo(TodayDay);
 
             return asRecorded;
+        }
+
+        /// <summary>
+        /// What makes the fidelity scenario able to fail, checked rather than assumed. Worked out over its
+        /// own stretch and judged as of itself, the watched day must give back exactly what the recorder
+        /// wrote - otherwise this guard has the wrong idea of the stretch, and nothing it says about the
+        /// others counts. Worked out any of the likely wrong ways, it must not.
+        ///
+        /// The limits are whole numbers, so moving a stretch by a day often moves them by less than one and
+        /// they round to the same thing. Most days in the period are like that even with this team, which
+        /// is why the watched day sits where it does and why this is checked and not left to the seed.
+        ///
+        /// Judging the day as of today while keeping its own stretch is listed apart from the rest: the day
+        /// being judged only decides whether the stretch is still in reach, never what it reads, so the one
+        /// way that mistake can show is by the day coming back with no limits at all.
+        /// </summary>
+        private void GivenThatDayReadsDifferentlyWhenWorkedOutAnyOtherWay(int teamId, RecordedLimitDay asWatched)
+        {
+            var day = asWatched.RecordedAt;
+            var watched = (asWatched.Unpl, asWatched.Average, asWatched.Lnpl);
+
+            var overItsOwnStretch = ThroughputLimitsWorkedOutOver(teamId, day.AddDays(-DaysTheLimitsReachBack), day, day);
+            var judgedAsOfToday = ThroughputLimitsWorkedOutOver(teamId, day.AddDays(-DaysTheLimitsReachBack), day, TodayDay);
+
+            var overAWrongStretch = new Dictionary<string, (int Unpl, int Average, int Lnpl)>
+            {
+                ["the stretch ending today, judged as of today"] =
+                    ThroughputLimitsWorkedOutOver(teamId, TodayDay.AddDays(-DaysTheLimitsReachBack), TodayDay, TodayDay),
+                ["the stretch ending the day before"] =
+                    ThroughputLimitsWorkedOutOver(teamId, day.AddDays(-DaysTheLimitsReachBack - 1), day.AddDays(-1), day.AddDays(-1)),
+                ["the stretch ending the day after"] =
+                    ThroughputLimitsWorkedOutOver(teamId, day.AddDays(1 - DaysTheLimitsReachBack), day.AddDays(1), day.AddDays(1)),
+                ["a stretch reaching twice as far back"] =
+                    ThroughputLimitsWorkedOutOver(teamId, day.AddDays(-2 * DaysTheLimitsReachBack), day, day),
+            };
+
+            var thatWouldGoUnnoticed = overAWrongStretch
+                .Where(reading => reading.Value == watched || reading.Value == NoReading)
+                .Select(reading => $"{reading.Key}: {reading.Value}")
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(overItsOwnStretch, Is.EqualTo(watched),
+                    $"Worked out over the {DaysTheLimitsReachBack + 1} days ending on {day:yyyy-MM-dd} and judged as of that day, " +
+                    "the day does not give back what the recorder wrote, so the stretch this guard compares against is not the " +
+                    "one the recorder used and the readings below prove nothing.");
+
+                Assert.That(judgedAsOfToday, Is.Not.EqualTo(watched),
+                    $"Judged as of today, the stretch ending on {day:yyyy-MM-dd} is still in reach of what the team keeps, so it " +
+                    "reads the same as when it was judged as of itself, and the scenario passes whichever day the product judges by.");
+
+                Assert.That(thatWouldGoUnnoticed, Is.Empty,
+                    $"Worked out these ways, {day:yyyy-MM-dd} reads {watched} again or reads nothing at all. The first passes the " +
+                    "scenario whatever the product does; the second fails it on a missing day rather than a wrong one.");
+            }
         }
 
         // --- When ---

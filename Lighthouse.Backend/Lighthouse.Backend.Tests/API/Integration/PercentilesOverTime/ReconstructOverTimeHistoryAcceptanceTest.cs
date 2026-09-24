@@ -864,6 +864,52 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             return scope.ServiceProvider.GetRequiredService<IProcessBehaviorSnapshotRepository>().GetAll().Count();
         }
 
+        // --- What a day reads when worked out some other way ---
+
+        /// <summary>
+        /// What the throughput limits read when worked out over the stretch from <paramref name="firstDay"/>
+        /// to <paramref name="lastDay"/>, judged as of <paramref name="judgedAsOf"/>. It asks the product's
+        /// own calculation directly rather than going through a chart load, because a scenario that claims
+        /// to catch a wrong way of working a day out first has to know that the wrong way gives a different
+        /// answer. A stretch judged unusable reads as all zeros, which no written day ever carries.
+        ///
+        /// The team's metrics cache is emptied afterwards. Otherwise the reading asked for here would be
+        /// served straight back to the reconstruction pass that follows, and the scenario would be holding
+        /// the recorder up against this helper rather than against reconstruction.
+        /// </summary>
+        protected (int Unpl, int Average, int Lnpl) ThroughputLimitsWorkedOutOver(int teamId, DateOnly firstDay, DateOnly lastDay, DateOnly judgedAsOf)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var team = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)!;
+            var metrics = scope.ServiceProvider.GetRequiredService<ITeamMetricsService>();
+
+            var chart = metrics.GetThroughputProcessBehaviourChart(
+                team, InstanceCalendar.AsUtcMidnight(firstDay), InstanceCalendar.AsUtcMidnight(lastDay), judgedAsOf);
+            metrics.InvalidateTeamMetrics(team);
+
+            return (chart.UpperNaturalProcessLimit, chart.Average, chart.LowerNaturalProcessLimit);
+        }
+
+        /// <summary>
+        /// The cycle-time percentiles of what the team finished from <paramref name="firstDay"/> to
+        /// <paramref name="lastDay"/>, from the product's own calculation. Same purpose, and the same
+        /// reason for emptying the cache afterwards, as the throughput reading above.
+        /// </summary>
+        protected (int P50, int P70, int P85, int P95) CycleTimePercentilesWorkedOutOver(int teamId, DateOnly firstDay, DateOnly lastDay)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var team = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)!;
+            var metrics = scope.ServiceProvider.GetRequiredService<ITeamMetricsService>();
+
+            var percentiles = metrics.GetCycleTimePercentilesForTeam(
+                team, InstanceCalendar.AsUtcMidnight(firstDay), InstanceCalendar.AsUtcMidnight(lastDay)).ToList();
+            metrics.InvalidateTeamMetrics(team);
+
+            int At(int percentile) => percentiles.SingleOrDefault(value => value.Percentile == percentile)?.Value ?? 0;
+
+            return (At(50), At(70), At(85), At(95));
+        }
+
         // --- Reading a series response ---
 
         protected static IReadOnlyList<DateOnly> DatesIn(SeriesResponse response)

@@ -199,14 +199,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// The standing version of the probe that decided this story was worth building: a day computed
         /// afterwards must equal the day that was watched. If it stops being true, the chart is drawing
         /// two different readings as one line.
+        ///
+        /// Equality only proves that if a day worked out the wrong way reads differently. When every item
+        /// took two days it did not: every stretch had the same percentiles, and reconstruction anchored on
+        /// today, a day early or over twice the span all passed. Here each item took a day longer than the
+        /// one before, so any stretch that is not the day's own reads differently, and the last Given checks
+        /// that before the chart is opened.
         /// </summary>
         // @us-01 @fidelity @real-io @contract-shape:pure-function
         [Test]
         public async Task A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched()
         {
             var teamId = GivenATeamStillBeingRefreshed();
-            GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-120), TodayDay);
+            GivenEachItemTheTeamFinishedTookADayLongerThanTheOneBefore(teamId, TodayDay.AddDays(-120), TodayDay);
             var asWatched = await GivenADayTheRecorderGenuinelyWroteAndThenLost(teamId, TodayDay.AddDays(-15));
+            GivenThatDayReadsDifferentlyOverAnyOtherStretch(teamId, asWatched);
 
             await WhenTheFlowCoachOpensTheCycleTimeTrend(teamId, TodayDay.AddDays(-30), TodayDay);
             await WhenTheChartHasFinishedFillingIn();
