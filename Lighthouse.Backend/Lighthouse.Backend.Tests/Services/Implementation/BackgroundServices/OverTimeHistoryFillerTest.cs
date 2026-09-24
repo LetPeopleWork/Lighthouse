@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
@@ -161,6 +162,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             await subject.DrainAsync(shutdown.Token);
 
             teamRepositoryMock.Verify(repository => repository.GetById(stillWaiting), Times.Never);
+        }
+
+        /// <summary>
+        /// Everything at Warning or worse lands in the Task Manager's Recent Problems. A fault that
+        /// breaks every day would otherwise put a line there per day, on every chart load.
+        /// </summary>
+        [Test]
+        public async Task DaysThatCannotBeWritten_AreReportedOnceWithTheCauseAndOnceAsATally()
+        {
+            GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+            percentileWriterMock
+                .Setup(writer => writer.SaveFilledDay())
+                .ThrowsAsync(new InvalidOperationException("the store refused the day"));
+
+            subject.AskFor(RequestFor(
+                TeamId, Today.AddDays(-5), Today.AddDays(-4), Today.AddDays(-3), Today.AddDays(-2), Today.AddDays(-1)));
+            await subject.DrainAsync(CancellationToken.None);
+
+            var problems = logger.Everything.Where(entry => entry.Level >= LogLevel.Warning).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problems, Has.Count.LessThanOrEqualTo(2),
+                    "Five failed days were reported line by line instead of once with the cause and once as a count.");
+                Assert.That(problems.Exists(entry => entry.Level == LogLevel.Error && entry.Failure is InvalidOperationException), Is.True,
+                    "The first failure lost its exception, so nobody reading the log can tell what went wrong.");
+                Assert.That(problems.Exists(entry => entry.Message.Contains("could not write 5 days", StringComparison.Ordinal)), Is.True,
+                    "No line says how many days the pass could not write.");
+            }
         }
 
         private Team GivenATeamLastObservedOn(DateOnly day)

@@ -225,6 +225,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 {
                     target.InvalidateReadCache();
                 }
+
+                ReportHowManyDaysCouldNotBeWritten(request, progress);
             }
         }
 
@@ -297,7 +299,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 }
 
                 progress.TriedADay();
-                await FillOneDayAsync(writers, memo, request, day, target);
+                await FillOneDayAsync(writers, memo, request, day, target, progress);
             }
         }
 
@@ -323,11 +325,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
         /// both got through, because a day remembered as settled is never offered to a pass again.
         /// </summary>
         private async Task FillOneDayAsync(
-            OverTimeWriters writers, ReconstructionMemo memo, OverTimeFillRequest request, DateOnly day, OverTimeFillTarget target)
+            OverTimeWriters writers,
+            ReconstructionMemo memo,
+            OverTimeFillRequest request,
+            DateOnly day,
+            OverTimeFillTarget target,
+            PassProgress progress)
         {
-            var percentilesAreDone = await TryWriteDayAsync(
-                request,
-                day,
+            var percentilesFailure = await TryWriteDayAsync(
                 () =>
                 {
                     foreach (var family in target.PercentileFamilies)
@@ -337,9 +342,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 },
                 writers.Percentiles.SaveFilledDay);
 
-            var limitsAreDone = await TryWriteDayAsync(
-                request,
-                day,
+            var limitsFailure = await TryWriteDayAsync(
                 () =>
                 {
                     foreach (var family in target.ProcessBehaviorFamilies)
@@ -349,10 +352,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 },
                 writers.ProcessBehavior.SaveFilledDay);
 
-            if (!percentilesAreDone || !limitsAreDone)
+            var failure = percentilesFailure ?? limitsFailure;
+            if (failure is not null)
             {
                 // Deliberately not remembered: a day lost to a fault is worth another try, unlike one
                 // the walk declined on the merits.
+                ReportADayThatCouldNotBeWritten(request, day, failure, progress);
                 return;
             }
 
@@ -364,28 +369,64 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             memo.TheWalkHasAlreadyWorkedOut(request.OwnerId, request.OwnerType, day);
         }
 
-        private async Task<bool> TryWriteDayAsync(
-            OverTimeFillRequest request, DateOnly day, Action stageEveryFamily, Func<Task> commit)
+        /// <summary>The fault that stopped this half of the day being written, or null once it is.</summary>
+        private static async Task<Exception?> TryWriteDayAsync(Action stageEveryFamily, Func<Task> commit)
         {
             try
             {
                 stageEveryFamily();
                 await commit();
 
-                return true;
+                return null;
             }
             catch (Exception failure)
             {
-                logger.LogError(
-                    failure,
-                    "Over-time reconstruction could not write {Day} for {OwnerType} {OwnerId} ({MetricFamily}); the rest of the pass continues",
-                    day,
-                    request.OwnerType,
-                    request.OwnerId,
-                    MetricFamily);
-
-                return false;
+                return failure;
             }
+        }
+
+        /// <summary>
+        /// A fault that breaks one day usually breaks every day of the pass, and everything at Warning
+        /// or worse lands in the Task Manager's Recent Problems - so a line per day would put up to
+        /// ninety of them there on every chart load. Only the first carries its cause; the rest are
+        /// counted and told once, when the pass ends.
+        /// </summary>
+        private void ReportADayThatCouldNotBeWritten(
+            OverTimeFillRequest request, DateOnly day, Exception failure, PassProgress progress)
+        {
+            progress.ADayCouldNotBeWritten();
+            if (progress.DaysThatCouldNotBeWritten > 1)
+            {
+                return;
+            }
+
+            logger.LogError(
+                failure,
+                "Over-time reconstruction could not write {Day} for {OwnerType} {OwnerId} ({MetricFamily}); the rest of the pass continues, and any further day it cannot write is counted rather than logged",
+                day,
+                request.OwnerType,
+                request.OwnerId,
+                MetricFamily);
+        }
+
+        /// <summary>
+        /// A Warning rather than a second Error: the first failure is already at Error with its cause,
+        /// and it is the one to act on. This line only says how far the same fault reached, and still
+        /// lands in Recent Problems beside it. A pass where only one day failed has nothing to add.
+        /// </summary>
+        private void ReportHowManyDaysCouldNotBeWritten(OverTimeFillRequest request, PassProgress progress)
+        {
+            if (progress.DaysThatCouldNotBeWritten < 2)
+            {
+                return;
+            }
+
+            logger.LogWarning(
+                "Over-time reconstruction could not write {DaysThatFailed} days for {OwnerType} {OwnerId} ({MetricFamily}) in one pass; the first was logged with its cause, and the next chart load asks for them again",
+                progress.DaysThatCouldNotBeWritten,
+                request.OwnerType,
+                request.OwnerId,
+                MetricFamily);
         }
 
         private void Forget((int OwnerId, OwnerType OwnerType) key)
@@ -405,16 +446,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             IProcessBehaviorSnapshotWriter ProcessBehavior);
 
         /// <summary>
-        /// What one pass has got through, held outside the walk so that however the walk ends - a
-        /// check that stops it, the end of the window, or an exception - the pass still knows what it
-        /// did. A day counts as tried from the moment the pass starts working it out, because that is
-        /// when it starts reading.
+        /// What one pass has got through and how many of those days it could not write, held outside
+        /// the walk so that however the walk ends - a check that stops it, the end of the window, or an
+        /// exception - the pass still knows what it did. A day counts as tried from the moment the pass
+        /// starts working it out, because that is when it starts reading.
         /// </summary>
         private sealed class PassProgress
         {
             public int DaysTried { get; private set; }
 
+            public int DaysThatCouldNotBeWritten { get; private set; }
+
             public void TriedADay() => DaysTried++;
+
+            public void ADayCouldNotBeWritten() => DaysThatCouldNotBeWritten++;
         }
     }
 }
