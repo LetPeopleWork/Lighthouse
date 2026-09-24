@@ -65,7 +65,7 @@ As the **product owner**, I want an event every time a behaviour setting is swit
 whose browser agreed to share usage data, saying which setting and which way, so I can tell a setting
 nobody touches from one people keep switching off.
 
-`job_id: OUT-usagedata-capability-use` (Epic #5733 slice 04 outcome; no `jobs.yaml` entry of its own)
+`job_id: job-maintainer-know-if-a-shipped-feature-landed` (the job Epic #5733 slice 04's events serve, `docs/product/jobs.yaml`; this story feeds its outcome `OUT-usagedata-capability-use`)
 
 #### Elevator Pitch
 Before: the census shows that people open settings pages and connect trackers, but nothing about which behaviour settings they change.
@@ -79,6 +79,7 @@ Decision enabled: whether a behaviour setting stays optional, becomes the defaul
 - **AC-1.4** A browser that refused, never answered, or withdrew sends nothing when it switches a setting. The existing gate covers this; one scenario proves the new event inherits it.
 - **AC-1.5** The backend refuses an `OptionalFeatureToggled` message missing either field, and any other event carrying either field. The whole batch is rejected, as for the connector kind.
 - **AC-1.6** Nothing else about the setting travels: not its key string, name or description. The emit-seam field list gains exactly `optional_feature` and `enabled`.
+- **AC-1.8** A setting the browser has no name for reports nothing when it is switched, and switching a setting it does name, right afterwards, still reports exactly once (E6). *(Added after the DISCUSS review; DISTILL's F5 already covers it.)*
 - **AC-1.7** `docs/settings/usagedata.md` gains the event row and the two field rows, and states plainly that switching the administrator's veto (*Never send usage data*) is never reported, in either direction (E5). `UsageDataDisclosureTest` stays green, which proves the doc and the enum agree.
 
 ## Wave: DISCUSS / [REF] Out of Scope
@@ -345,3 +346,12 @@ and the disclosure row should say that. No test depends on the sentence.
   - environment matrix: N/A, there is no DEVOPS for this feature
   - concurrency: N/A, one administrator makes one switch
   - no open specification gaps
+
+## Wave: DISTILL / [REF] Review Gate (2026-09-24)
+
+| Reviewer | Scope | Verdict | Disposition |
+|----------|-------|---------|-------------|
+| Product owner | DISCUSS | rejected (3 "blockers", 1 medium) | **Fixed:** `job_id` now names the jobs.yaml job slice 04 serves (`job-maintainer-know-if-a-shipped-feature-landed`); AC-1.8 added for E6. **Held, not defects:** the ADO item awaits the maintainer's go (creating it needs confirmation), and E5's finality awaits the maintainer's confirmation (the reversal path is written down in E5) |
+| Solution architect | DESIGN | "rejected, 12 blockers" | **Overruled.** Every "blocker" is a production change the component table *specifies* and DELIVER has not made yet: the reviewer checked the code instead of the design. Its own summary says the design is "solid and handoff-ready", confirms E5 and the both-ways shape check can be built, and finds the privacy boundaries intact |
+| Platform architect | DEVOPS N/A | approved (2 low) | Noted: CI and E2E cannot leak into the census. `PostHogUsageDataPublisher.WhereThisOneSends()` returns null for a build nobody published, and no workflow sets `UsageData__CollectorBaseUrl`. The PostHog insight for the capability-use KPI is the maintainer's to build after release |
+| Acceptance designer | DISTILL | approved (1 low) | B7/B8 rely on slice 04's cross-file control. By design, and recorded |
