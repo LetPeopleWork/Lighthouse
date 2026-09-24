@@ -42,10 +42,10 @@ type: application
 #         License 1.0 (Epic 5874). No chart values changed: the usage-data collector is baked into
 #         the published image, and the instance-wide veto over it is a Behaviour Setting row rather
 #         than a chart value.
-# 0.1.17: track the v26.9.24.6 release — a Delivery Timeline (Epic 6033), forecasted start dates
-#         in the Features table and in write-back (Epic 6033), and over-time charts that can fill in
-#         the days they missed, an opt-in Preview (Story 6053). No chart values changed: the history
-#         fill is a Behaviour Setting row, not a chart value.
+# 0.1.17: track the v26.9.24.6 release — a Delivery Timeline, forecasted start dates in the
+#         Features table and in write-back, and over-time charts that can fill in the days they
+#         missed, an opt-in Preview. No chart values changed: the history fill is a Behaviour
+#         Setting row, not a chart value.
 version: 0.1.17
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
 appVersion: "26.9.24.6"
