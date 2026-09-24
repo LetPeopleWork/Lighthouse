@@ -1,0 +1,41 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.toggle.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/services/UsageData/usageDataOptionalFeatures.ts",
+    "src/pages/Settings/System/SystemSettingsTab.tsx:65-82",
+    "src/models/UsageData/UsageData.ts:94-109",
+    "src/services/Api/UsageDataService.ts:30-30"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-toggle-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-toggle"
+}

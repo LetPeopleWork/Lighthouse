@@ -1,0 +1,225 @@
+{
+  "roadmap": {
+    "project_id": "optional-feature-toggled-usage-event",
+    "created_at": "2026-09-24",
+    "total_steps": 3,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "An eleventh usage data event, OptionalFeatureToggled (Epic #5733 vocabulary), sent when somebody switches a behaviour setting under Settings -> System and the server accepted the write. It carries which setting (optional_feature, from usage data's own closed list UsageDataOptionalFeature, which has one member: FeatureOrder) and which way (enabled, a JSON boolean). The veto (Never send usage data) is never reported in either direction, and a setting key the browser does not recognise sends nothing. The existing pipe does the rest: the browser notices, the backend checks consent and the veto, the backend forwards. Three steps. The backend goes first so that a browser never posts a name the server would refuse, because a refused message rejects the whole batch it travels in, and that batch carries other events. (1) Inbound: the server reads the event and refuses every other shape of it. (2) Outbound: the collector receives the two fields. (3) Frontend: the settings screen reports the switch after an accepted write. Done when: all 28 OptionalFeatureToggledEventTests cases are un-ignored and green; all 7 frontend cases in SystemSettingsTab.usageData.test.tsx and SystemSettingsTab.usageDataHandIn.test.tsx are un-skipped and green; `grep -rn \"PendingDeliver\\|it\\.skip\" ` over those three files returns zero matches; UsageDataDisclosureTest, UsageDataEmitSeamArchUnitTest and Slice04ProductEventsTests are green; `dotnet build` has zero warnings; the backend suite is green with `--filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`; `pnpm test` and `pnpm build` are green with zero warnings. Mutation testing is a later gate that the maintainer approves separately. It runs after review, on frozen code, and is deliberately NOT a step here: Stryker.NET >= 80% on the changed lines of UsageDataEventShapes, UsageDataController's read and PostHogUsageDataPublisher, and StrykerJS >= 80% on the SystemSettingsTab handler and the key-to-name mapping. A warning for that gate: no unit test calls UsageDataEventShapes.Fits directly. The only thing that kills its mutants is the Integration/UsageData scenarios. If the Stryker.NET run excludes the acceptance suite, as this repository's Stryker config usually does, Fits will show survivors that the suite actually kills. Either include Integration/UsageData in that run or add a Fits unit spec at that gate.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, and leaving it out is deliberate. This repository is C# + NUnit 4.6 + Moq on the backend and TypeScript + Vitest + React Testing Library on the frontend. There is no pytest-bdd, no .feature file and no Hypothesis. DISTILL recorded this in feature-delta.md under 'Completeness and mandate notes': layer-3 scenarios over real HTTP and SQLite, with the recorder below HttpClient. The input space is a one-member closed list plus a boolean, and B4-B8 enumerate it in full as [TestCase]/[TestCaseSource] rows, so a property generator would re-enumerate the same finite set. The 'exactly this changed, nothing else did' check is made through what the ports expose: the collector's message count, its exact outbound field set, and an empty collector. The crafter authors NO new acceptance tests. The 28 backend cases and 7 frontend cases were written by DISTILL and ship as [Ignore(PendingDeliver)] / it.skip. Each step's RED phase is removing those markers and watching the tests fail as red-classification.md recorded. Its GREEN phase is production code. Existing tests change only where DISTILL's Existing-test disposition table says so, each in the same commit as the production change that forces it, so no commit is red."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": null,
+    "reviewed_at": null,
+    "notes": "Built from feature-delta.md (DISCUSS E1-E7 and AC-1.1-1.7, DESIGN component table and shape table, DISTILL scenario list B1-B9 / F1-F6, test placement, existing-test disposition, upstream findings U1-U5) and red-classification.md (28/28 backend and 7/7 frontend MISSING_FUNCTIONALITY, none BROKEN). The three test files were read in full. The step cut was checked against the production code, not inferred from the design. (1) Backend split, two steps rather than one, because 9 scenarios exceed the 8-scenario sizing rule. The seam is inbound vs outbound, not 'refusals vs accepted path'. B4-B6's in-scenario control only asserts that the complete message gets a 204 and never reads the collector, so the whole refusal set goes green on the read side alone (enum, record, DTO, Fits, controller). B3 is in the first step, not the second as the suggested cut had it, because it goes green the moment the name binds (204 plus an empty collector). Un-ignored in the outbound step it would already be passing, with no RED to observe. B1, B2 and B9 are the only scenarios that read optional_feature / enabled from the recorder. After step 01-01 they fail on exactly that: the event arrives under its name without its two fields. So they are 01-02's genuine RED. 01-01 = 6 scenarios / 25 cases plus one new case in each of two existing slice-04 sweeps; 01-02 = 3 scenarios / 3 cases. (2) The emit-seam ArchUnit field list and the disclosure page's two field rows move with the publisher to 01-02. The event row, which UsageDataDisclosureTest counts against the enum, lands with the enum member in 01-01. (3) Frontend is one step: 6 specs / 7 cases, under the sizing rule. F6 (the hand-in seam) goes green with F1-F5 because usageDataEvents.asHandedIn spreads the noticed event (`...event`), so no mapping between the reporter and postEvents can drop a field at runtime. The type widenings are for tsc, not behaviour. (4) Verified: the default JsonStringEnumConverter registered in Program.cs accepts integers, so the controller's Enum.IsDefined check on the new enum is load-bearing, as it is for the two existing enums. (5) Verified: useUsageDataReporter reads useUsageDataConsentIfKnown, so SystemSettingsTab keeps rendering in its existing tests, which mount no consent provider. useUsageDataConsent would throw there. (6) Checked: neither ARCHITECTURE.md (line 254) nor brief.md lists the events, so neither changes. docs/product/kpi-contracts.yaml carries slice-04 event entries (lines ~1176, ~1201) but no entry for OUT-usagedata-setting-switches. That belongs to DISCUSS/finalize and is recorded under out_of_scope, not given a step."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/optional-feature-toggled-usage-event/feature-delta.md",
+    "red_classification": "docs/feature/optional-feature-toggled-usage-event/red-classification.md",
+    "scenarios": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs",
+    "specifications": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageData.test.tsx and Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageDataHandIn.test.tsx",
+    "adr": "none new. This is an instance of ADR-190's per-event shape (browser detects, backend forwards), and the DESIGN shape table is the design",
+    "ado_story": "none yet. Proposed: a User Story under Epic #5733, 'Usage Data :: report when a behaviour setting is switched', tagged Release Notes. Creating it needs the maintainer's confirmation"
+  },
+  "user_decisions": [
+    "E1: one event, OptionalFeatureToggled = 10 on UsageDataEventName. The direction is a property, so both directions share one name.",
+    "E2: it carries exactly two things, optional_feature and enabled. Both are declared in UsageDataEventShapes both ways round: this event is refused without them, and every other event is refused with either of them. Never the setting's key string, name or description.",
+    "E3: the list of settings is usage data's own closed enum, UsageDataOptionalFeature, with one member, FeatureOrder = 0. It is not the product's key strings. DeltaSync is absent because story #5913 retired it.",
+    "E4: reported only after the server accepted the write. Never on the click, and never when the write is refused.",
+    "E5 (amended 2026-09-24, reversible): the veto (Never send usage data, key UsageData) is not reported in either direction. It is not on the enum, and the browser's key mapping leaves it out. The disclosure page says so.",
+    "E6: a setting key the browser does not recognise sends nothing. No guess and no placeholder.",
+    "E7: the disclosure page names the setting as the settings table does, *Let Lighthouse own the order of your Features*, using the default Terminology term."
+  ],
+  "out_of_scope": [
+    "Any identity beyond the per-browser pseudonym: no instance id, no user, no customer (DISCUSS Out of Scope; ADR-191).",
+    "Reporting settings changes outside the behaviour-settings list, and reporting from the backend (API/MCP writes). The pipe is browser-detected by design.",
+    "Reporting the veto in either direction (E5). Making it reportable needs consent-refresh plumbing that this story does not build.",
+    "A PostHog insight or dashboard. Events are created on first arrival, so no DEVOPS change is needed (DESIGN: DEVOPS N/A).",
+    "Any change to Program.cs, the chart, the collector address, the consent gate, the veto gate, the daily allowance or the queue. Program.cs untouched also means CI does not force the full live-connector Integration suite.",
+    "Any EF migration. Nothing is persisted.",
+    "A separate unit spec for usageDataOptionalFeatureFor. DISTILL placed its coverage in F1-F5 through the call site. Add one at the Stryker gate only if a survivor asks for it.",
+    "A Playwright E2E. The flow is covered at the call site, the hand-in seam and the ingest endpoint, and E2E in this repository is a thin sanity layer.",
+    "Finalize-time items, not DELIVER steps: creating the ADO User Story (needs the maintainer's confirmation) and its Release Notes line; a kpi-contracts.yaml entry for OUT-usagedata-setting-switches if the maintainer wants one; ADO transitions (Resolved on push, Closed on CI green). Screenshots are N/A: no visible UI changes.",
+    "Stryker mutation testing on both stacks: a later gate, separately approved, on frozen code."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The server reads a behaviour-setting switch and forwards which setting and which way",
+      "description": "Inbound first, outbound second. 01-01 teaches the server to read OptionalFeatureToggled and to refuse every other shape of it: missing halves, settings not on the list, non-boolean directions, and the two fields on any other event. After that step the event is accepted, consent- and veto-gated, and forwarded under its name, but without its two fields, because the publisher does not know them yet. Nothing in the product sends it yet, so that intermediate state is unreachable. 01-02 teaches the publisher the two fields and widens the emit-seam field list by exactly those two names. The backend lands before the frontend on purpose: a browser posting a name the server cannot read gets its whole batch refused, and that loses every other event in the batch.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The server reads a setting switch and refuses every other shape of one",
+          "description": "UsageDataEventName gains OptionalFeatureToggled = 10, and a new enum UsageDataOptionalFeature has FeatureOrder = 0 as its only member. UsageDataEventReported and UsageDataEventDto each gain OptionalFeature? and Enabled?. UsageDataEventShapes.Fits gains a third declaration, checked both ways round for both fields together. UsageDataController's read passes the two fields through and refuses an out-of-list value of the new enum. The disclosure page gains the event row and the veto sentence in the same commit, because UsageDataDisclosureTest counts rows against the enum. Un-ignore B3-B8, and extend slice 04's two every-event sweeps with the new event.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs",
+          "scenario_name": "A_setting_switch_missing_part_of_what_it_says_is_refused",
+          "unskips": [
+            "[Ignore(PendingDeliver)] removed :: Nothing_leaves_a_browser_that_did_not_agree_when_it_switches_a_setting (B3, AC-1.4) - 3 cases: refused / never answered / withdrew",
+            "[Ignore(PendingDeliver)] removed :: A_setting_switch_missing_part_of_what_it_says_is_refused (B4, AC-1.5) - 3 cases",
+            "[Ignore(PendingDeliver)] removed :: A_setting_this_list_does_not_have_is_refused (B5, AC-1.2, AC-1.5) - 4 cases: NeverSendUsageData / DeltaSync / FeatureOrdering / UsageData",
+            "[Ignore(PendingDeliver)] removed :: A_setting_switch_that_says_something_other_than_on_or_off_is_refused (B6, AC-1.5) - 3 cases: \"true\" / 1 / null",
+            "[Ignore(PendingDeliver)] removed :: Any_other_event_that_says_a_setting_was_switched_is_refused (B7, AC-1.5) - 10 cases, one per other event name",
+            "[Ignore(PendingDeliver)] removed :: Any_other_event_carrying_either_half_of_a_setting_switch_is_refused (B8, AC-1.5) - 2 cases",
+            "EXTENDED (existing, not ignored) :: Slice04ProductEventsTests.EveryEventThereIs gains OptionalFeatureToggled, and ABatchOfWhateverShape builds it with optionalFeature FeatureOrder and enabled true. This adds one case each to Nothing_leaves_an_instance_whose_administrator_stopped_usage_data and Nothing_leaves_a_browser_that_refused. It is DISTILL's recommended extension: since U1 was resolved, nothing else covers the server's veto gate for this event.",
+            "NOT un-ignored here :: B1, B2, B9. They read optional_feature / enabled from the recorder and stay red until the publisher knows the fields (01-02)."
+          ],
+          "red_to_green_tests": [
+            "OptionalFeatureToggledEventTests :: Nothing_leaves_a_browser_that_did_not_agree_when_it_switches_a_setting(refused)",
+            "OptionalFeatureToggledEventTests :: Nothing_leaves_a_browser_that_did_not_agree_when_it_switches_a_setting(never answered)",
+            "OptionalFeatureToggledEventTests :: Nothing_leaves_a_browser_that_did_not_agree_when_it_switches_a_setting(withdrew)",
+            "OptionalFeatureToggledEventTests :: A setting switch that does not say which setting is refused",
+            "OptionalFeatureToggledEventTests :: A setting switch that does not say which way is refused",
+            "OptionalFeatureToggledEventTests :: A setting switch that says neither which setting nor which way is refused",
+            "OptionalFeatureToggledEventTests :: A_setting_this_list_does_not_have_is_refused(NeverSendUsageData)",
+            "OptionalFeatureToggledEventTests :: A_setting_this_list_does_not_have_is_refused(DeltaSync)",
+            "OptionalFeatureToggledEventTests :: A_setting_this_list_does_not_have_is_refused(FeatureOrdering)",
+            "OptionalFeatureToggledEventTests :: A_setting_this_list_does_not_have_is_refused(UsageData)",
+            "OptionalFeatureToggledEventTests :: A_setting_switch_that_says_something_other_than_on_or_off_is_refused(\"true\")",
+            "OptionalFeatureToggledEventTests :: A_setting_switch_that_says_something_other_than_on_or_off_is_refused(1)",
+            "OptionalFeatureToggledEventTests :: A_setting_switch_that_says_something_other_than_on_or_off_is_refused(null)",
+            "OptionalFeatureToggledEventTests :: Any_other_event_that_says_a_setting_was_switched_is_refused - all 10 TestCaseSource rows (TeamTabOpened ... PortfolioRefreshTriggered)",
+            "OptionalFeatureToggledEventTests :: Any_other_event_carrying_either_half_of_a_setting_switch_is_refused(optionalFeature only)",
+            "OptionalFeatureToggledEventTests :: Any_other_event_carrying_either_half_of_a_setting_switch_is_refused(enabled only)",
+            "Slice04ProductEventsTests :: Nothing_leaves_an_instance_whose_administrator_stopped_usage_data(OptionalFeatureToggled) - new case, RED on the 204 leg (400 before the name binds)",
+            "Slice04ProductEventsTests :: Nothing_leaves_a_browser_that_refused(OptionalFeatureToggled) - new case. NOT a RED: it asserts only an empty collector, and a 400 leaves the collector empty too. It is added for sweep symmetry, and it passes on both sides of this step."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs (edit - append OptionalFeatureToggled = 10)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataOptionalFeature.cs (NEW - public enum with FeatureOrder = 0 only. Doc comment says why it is usage data's own list rather than the product's stored keys, and that a setting reaches the census only when somebody adds it here on purpose. Carry the same 'zero is a real answer here, not a stand-in for none given' line comment as UsageDataWorkTrackingSystem)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventReported.cs (edit - add UsageDataOptionalFeature? OptionalFeature and bool? Enabled directly after WorkTrackingSystem, so the closed-list choices sit together and the two numbers stay last. No defaults: every construction site states the fields. Update the doc comment where it describes which events carry what)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/UsageDataEventBatchDto.cs (edit - UsageDataEventDto gains UsageDataOptionalFeature? OptionalFeature and bool? Enabled in the same position. Both nullable (S6964). Still no string property. The doc comment's 'two choices from closed lists and two bounded numbers' becomes accurate for three choices, a yes/no and two numbers)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs (edit - add a FrozenSet declaration of the events that say which setting was switched, containing OptionalFeatureToggled. Fits gains the two parameters and requires, both ways round: in the set <=> OptionalFeature present AND Enabled present; not in the set <=> both absent. A half on either side is refused. Extend the class doc comment, which currently describes only pages and system kinds)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs (edit - AsTakenIn refuses an OptionalFeature value that is not a defined member, as it already does for Route and WorkTrackingSystem, because the registered JsonStringEnumConverter accepts integers. It passes both fields to Fits and into UsageDataEventReported. The refusal path is otherwise unchanged)",
+            "docs/settings/usagedata.md (edit - add one row to the table under 'The complete list of events:' for a behaviour setting being switched: when it is sent (somebody switched a setting under Settings -> System and the server accepted the change), what travels (which setting, only *Let Lighthouse own the order of your Features*, and whether it is now on or off; never the setting's own key, name or description). Add the plain sentence that switching *Never send usage data* is never reported in either direction, with the reason in reader terms. Correct the counts the new row makes stale: 'That is the whole vocabulary' stays; 'Eight of the ten carry nothing but the fact that they happened' becomes the true count (seven of the eleven: two tab openings carry a page, the connection carries a kind, this one carries a setting and a direction); the 'Which tab was opened' field row's 'On the other eight events' becomes 'other nine'. The two FIELD rows go in 01-02, with the publisher that sends them)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs (edit - remove the six [Ignore(PendingDeliver)] markers on B3-B8 only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Slice04ProductEventsTests.cs (edit - add a private const for \"OptionalFeatureToggled\" beside the existing name consts; add it to EveryEventThereIs; add its arm to ABatchOfWhateverShape (optionalFeature FeatureOrder, enabled true, through a small private helper beside ABatchNamingAWorkTrackingSystem); reword the EveryEventThereIs doc comment's 'the seven that are easy to build a message for' so it stays true)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs (edit - ABatchReporting's positional UsageDataEventDto gains OptionalFeature: null, Enabled: null)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/UsageDataForwardingServiceTests.cs (edit - HandIn's positional UsageDataEventReported gains the two nulls)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataEventQueueTests.cs (edit - ABatch's positional UsageDataEventReported gains the two nulls)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataMistypedCollectorAddressTests.cs (edit - ABatch's positional UsageDataEventReported gains the two nulls)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataPublishedMessageTests.cs (edit - ABatch's positional UsageDataEventReported gains the two nulls)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The RED run is captured BEFORE any production edit, with B3-B8 un-ignored and the two sweep cases added, and it matches red-classification.md. B3: 400 where 204 was expected. B4-B6: the partial or out-of-list message is refused and nothing is sent, but the complete control message also gets 400 where 204 was expected. B7/B8: 204 where 400 was expected, and the event reached the collector. The new veto-sweep case: 400 where 204 was expected. A different failure (build, fixture, licence, 'no such table: Features' treated as a failure) is a finding to report, not something to fix around. That SQLite start-up line is logged on green runs too.",
+            "The server reads a message carrying OptionalFeatureToggled with optionalFeature FeatureOrder and enabled true or false as one accepted event. The consent gate and the administrator's veto apply to it with no new code path: B3 and the extended veto sweep are green.",
+            "The server refuses the whole batch (400, collector untouched) for: this event missing either or both fields; a setting not on usage data's list (NeverSendUsageData, DeltaSync, FeatureOrdering, UsageData); a direction that is not a JSON boolean (\"true\", 1, null); and any of the other ten events carrying either field. Every case of B4-B8 is green, including each in-scenario control.",
+            "UsageDataOptionalFeature has exactly one member, FeatureOrder. It has no member for the veto, for DeltaSync or for any key string the product stores.",
+            "An integer posted as optionalFeature that names no member is refused rather than read as a setting. The controller treats the new enum exactly as it treats Route and WorkTrackingSystem.",
+            "The shape rule is a declaration in UsageDataEventShapes, checked both ways round for both fields together. There is no per-call-site check, and one field is never accepted without the other.",
+            "No string-typed property appears on UsageDataEventDto or UsageDataEventReported: UsageDataEmitSeamArchUnitTest.NothingOnTheWayIn_HasAFieldThatCouldHoldFreeText stays green unedited.",
+            "UsageDataDisclosureTest stays green: the page's event table has one row per UsageDataEventName member. The page states that switching the veto is never reported, in either direction, in plain language. The corrected counts are true for eleven events. Terms are the seeded defaults (Features, Team, Portfolio), never Epic/Initiative/Story.",
+            "All existing Slice04ProductEventsTests stay green. In particular, Nothing_travels_with_an_event_beyond_what_the_page_says_travels (TeamCreated) is unchanged and green, and the publisher is untouched in this step.",
+            "UsageDataEmitSeamArchUnitTest.EveryFieldOnTheWayOut_IsOneSomebodyWroteDown is NOT edited in this step and stays green. The publisher gains no field until 01-02.",
+            "Program.cs is not touched.",
+            "New and edited doc comments give the reason in plain language and cite no internal reference ('E2', 'AC-1.5', 'ADR-190', 'U1') as the explanation.",
+            "`dotnet build` has zero warnings. The backend suite is green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "Order: un-ignore B3-B8 and add the sweep case, capture RED, then production, then the five positional call sites, then the page. Commit once, with the suite green. Wire names are fixed by DISTILL and must match exactly: inbound `optionalFeature` (enum as its name) and `enabled` (JSON boolean). ASP.NET's camelCase binding of the new DTO members gives these with no attribute. A useful targeted run while iterating: `dotnet test --filter \"FullyQualifiedName~UsageData\"` covers Integration/UsageData, both Architecture/UsageData* tests, the controller tests and the service tests. Then run the full filtered suite before committing: `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. Environmental failures, not regressions: in a worktree, exactly 2 Licensing failures on the gitignored valid_not_expired_license.json (copy it from the main checkout); 10 ReleaseServiceTest failures under load (re-run that class alone). Consult docs/ci-learnings.md before editing, and remember the pre-commit ledger hook is blind in a worktree. CA1861: no inline new[] in any assertion; EveryEventThereIs is already static readonly, so keep it that way. S1192: the new name literal appears in the array and in the switch arm, so give it a private const like its siblings. S6964: both new DTO members nullable. S107 does not fire on positional records, and Fits reaching 5 parameters is under the limit. S4136: if Fits ends up with an overload, keep the overloads adjacent. Prefer widening the single method, since it has one production caller. NUnit2045/NUnit2056: no new assertions are written here, and any you touch keep `using (Assert.EnterMultipleScope())`. Run `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` before any push, filtered to touched files. Remove any `*/docs` symlink before a frontend build (Biome --write hazard); this step needs no frontend build. Commit message:\nfeat(usage-data): the server reads a behaviour-setting switch and refuses any other shape of one\n\nCo-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01S6Sp4ZZENHoZ618NjkefKi"
+        },
+        {
+          "id": "01-02",
+          "name": "A setting switch reaches the collector saying which setting and which way",
+          "description": "PostHogUsageDataPublisher's outbound properties gain optional_feature and enabled. Both are left out entirely when null, as work_tracking_system is, so every other event's field set is unchanged. UsageDataEmitSeamArchUnitTest's hand-written field list widens by exactly those two names, and the disclosure page gains the two field rows. Un-ignore B1, B2 and B9, the last three. The fixture's PendingDeliver constant and its 'ships ignored' doc sentence go with them.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs",
+          "scenario_name": "Switching_the_feature_order_setting_on_arrives_saying_which_setting_and_that_it_is_now_on",
+          "unskips": [
+            "[Ignore(PendingDeliver)] removed :: Switching_the_feature_order_setting_on_arrives_saying_which_setting_and_that_it_is_now_on (B1, @walking_skeleton, AC-1.1)",
+            "[Ignore(PendingDeliver)] removed :: Switching_it_back_off_arrives_as_one_more_event_saying_it_is_now_off (B2, AC-1.1)",
+            "[Ignore(PendingDeliver)] removed :: Nothing_travels_with_a_setting_switch_beyond_which_setting_and_which_way (B9, AC-1.6)"
+          ],
+          "red_to_green_tests": [
+            "OptionalFeatureToggledEventTests :: Switching_the_feature_order_setting_on_arrives_saying_which_setting_and_that_it_is_now_on",
+            "OptionalFeatureToggledEventTests :: Switching_it_back_off_arrives_as_one_more_event_saying_it_is_now_off",
+            "OptionalFeatureToggledEventTests :: Nothing_travels_with_a_setting_switch_beyond_which_setting_and_which_way",
+            "UsageDataEmitSeamArchUnitTest :: EveryFieldOnTheWayOut_IsOneSomebodyWroteDown - goes red the moment the publisher gains the two members and green when the list is widened. Both happen inside this step."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/UsageData/PostHogUsageDataPublisher.cs (edit - WhatEachMessageCarries gains [JsonPropertyName(\"optional_feature\")] string? and [JsonPropertyName(\"enabled\")] bool?, each with JsonIgnore(Condition = WhenWritingNull), directly after work_tracking_system. EverythingInTheBatch fills them from reported.OptionalFeature?.ToString() and reported.Enabled. Extend the record's doc comment, which lists what travels)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataEmitSeamArchUnitTest.cs (edit - EveryFieldTheCollectorIsSent gains exactly \"enabled\" and \"optional_feature\", kept in the list's alphabetical order. Nothing else in the file changes)",
+            "docs/settings/usagedata.md (edit - the 'Every event carries these' table gains two rows in the style of 'Which tab was opened': which setting was switched, only on a behaviour setting switch, the one value FeatureOrder, never the setting's own key or name; and which way it was switched, only on that event, true for now on and false for now off. Each says that on every other event the field is not there at all)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs (edit - remove the last three [Ignore(PendingDeliver)] markers; delete `private const string PendingDeliver`, which has no user left (S1144); delete the class doc comment's 'Every scenario ships ignored. They are switched on one at a time, each one a single step of the work.', which is no longer true. Its sentence about naming the event as text stays: it still explains why these post JSON text)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "The RED run is captured BEFORE the publisher edit, with B1, B2 and B9 un-ignored. The recorder receives the event under the name OptionalFeatureToggled, but optional_feature and enabled are absent. B1 fails on the setting (null where FeatureOrder was expected). B2's switch-on control passes and its switch-off leg fails on the missing setting. B9's field set lacks the two names. Any other failure shape is a finding to report.",
+            "A consenting browser's accepted switch of the ordering setting arrives at the collector as exactly one message, named OptionalFeatureToggled, carrying optional_feature = \"FeatureOrder\" and enabled as a JSON true. Switching it back off arrives as one more message with enabled as a JSON false.",
+            "Nothing else travels with it. Its property set is exactly the page's per-event facts plus optional_feature and enabled, and neither the stored key FeatureOrdering nor the setting's display name appears anywhere in what was sent (B9).",
+            "Every other event's outbound property set is unchanged: optional_feature and enabled are omitted, never written as null or false. Slice04ProductEventsTests.Nothing_travels_with_an_event_beyond_what_the_page_says_travels (TeamCreated) is green unedited, and so are the existing UsageDataPublishedMessageTests.",
+            "The emit-seam field list names exactly two more fields than before, `enabled` and `optional_feature`, and EveryFieldOnTheWayOut_IsOneSomebodyWroteDown is green.",
+            "The disclosure page's field table describes both new fields. UsageDataDisclosureTest stays green. The field rows are not what it counts, so check them by reading.",
+            "Zero [Ignore] markers and no PendingDeliver constant remain in OptionalFeatureToggledEventTests.cs. All 28 of its cases run and pass.",
+            "Program.cs is not touched.",
+            "`dotnet build` has zero warnings. The backend suite is green with the live-connector categories excluded."
+          ],
+          "implementation_notes": "The outbound names are fixed by DISTILL: `optional_feature` and `enabled`. The enum is sent as its name (FeatureOrder), the same way work_tracking_system sends its kind. The bool? must be omitted when null. A plain `bool` or a missing JsonIgnore would write `enabled: false` onto all ten other events and red Slice04's field-set scenario. That scenario is the guard, and it is not a test to edit. Iterate with `dotnet test --filter \"FullyQualifiedName~UsageData\"`, then run the full filtered suite before committing (same filter and the same environmental failure notes as 01-01). CA1861 does not apply to the widened field list, which is already a static readonly array. S1144: deleting PendingDeliver is required, not optional, once its last user goes. Run the `dotnet format analyzers` sweep before any push. Commit message:\nfeat(usage-data): a behaviour-setting switch reaches the collector saying which setting and which way\n\nCo-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01S6Sp4ZZENHoZ618NjkefKi"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The settings screen reports a switch once the server has accepted it",
+      "description": "The browser half. The TS mirrors gain the event name, usage data's setting list and the two optional fields. A key-to-name mapping sends FeatureOrdering as FeatureOrder and nothing for any other key. SystemSettingsTab reports after `await updateFeature(...)` resolves and never in its catch. The reporter already owns the consent decision, so the call site has no consent branch.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Switching Feature Order reports which setting and which way, after the server said yes",
+          "description": "UsageDataEventName (in UsageDataService.ts) gains OptionalFeatureToggled. UsageData.ts gains the string-valued UsageDataOptionalFeature mirror. IUsageDataEvent, NoticedEvent and UsageDataCapabilityUse gain optionalFeature? and enabled?. A new usageDataOptionalFeatureFor(key) maps the settings the browser knows through a Record and answers undefined for everything else, the veto included. SystemSettingsTab.onToggleOptionalFeature reports { name, optionalFeature, enabled: the new state } only after the write resolves. Un-skip F1-F6.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageData.test.tsx",
+          "scenario_name": "reports the ordering setting switched on once the server has accepted it",
+          "unskips": [
+            "it.skip -> it :: SystemSettingsTab.usageData.test.tsx :: reports the ordering setting switched on once the server has accepted it (F1, AC-1.1)",
+            "it.skip -> it :: SystemSettingsTab.usageData.test.tsx :: reports it switched back off as one more event (F2, AC-1.1)",
+            "it.skip.each -> it.each :: SystemSettingsTab.usageData.test.tsx :: reports nothing when the veto, stored as %s, is switched %s (F3, AC-1.2) - 2 cases",
+            "it.skip -> it :: SystemSettingsTab.usageData.test.tsx :: reports nothing for a switch the server refused (F4, AC-1.3)",
+            "it.skip -> it :: SystemSettingsTab.usageData.test.tsx :: reports nothing for a setting usage data has no name for (F5, AC-1.6)",
+            "it.skip -> it :: SystemSettingsTab.usageDataHandIn.test.tsx :: hands in which setting was switched and which way (F6, AC-1.1)"
+          ],
+          "red_to_green_tests": [
+            "Reporting a behaviour setting being switched :: reports the ordering setting switched on once the server has accepted it",
+            "Reporting a behaviour setting being switched :: reports it switched back off as one more event",
+            "Reporting a behaviour setting being switched :: reports nothing when the veto, stored as false, is switched on",
+            "Reporting a behaviour setting being switched :: reports nothing when the veto, stored as true, is switched off",
+            "Reporting a behaviour setting being switched :: reports nothing for a switch the server refused",
+            "Reporting a behaviour setting being switched :: reports nothing for a setting usage data has no name for",
+            "A behaviour setting switch, as this browser hands it in :: hands in which setting was switched and which way"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/UsageDataService.ts (edit - UsageDataEventName gains OptionalFeatureToggled: \"OptionalFeatureToggled\"; IUsageDataEvent gains optionalFeature?: UsageDataOptionalFeature and enabled?: boolean, each with a one-line doc saying it is only on a setting switch)",
+            "Lighthouse.Frontend/src/models/UsageData/UsageData.ts (edit - add `UsageDataOptionalFeature = { FeatureOrder: \"FeatureOrder\" } as const` and its type, in the style of UsageDataWorkTrackingSystem. Doc comment: usage data's own list, not the product's stored keys, and the veto is deliberately absent)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataBuffer.ts (edit - NoticedEvent gains optionalFeature? and enabled?, typed from the mirrors)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataReporter.ts (edit - UsageDataCapabilityUse gains optionalFeature? and enabled?)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataOptionalFeatures.ts (NEW, as DESIGN names it - `usageDataOptionalFeatureFor(key: string): UsageDataOptionalFeature | undefined` over a Record containing only FeatureOrdering -> FeatureOrder. It answers undefined for UsageData, for any unknown key and for a key that names an Object.prototype member, e.g. 'constructor' or 'toString'. Use Object.hasOwn or a null-prototype object, never a bare index. The sibling usageDataWorkTrackingSystemFor lives in usageDataReporter.ts. Either home is acceptable, but DESIGN names a new file)",
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx (edit - take `useUsageDataReporter()` at component level. In onToggleOptionalFeature, after `await optionalFeatureService.updateFeature(...)` resolves and inside the try, map toggledFeature.key. Only if the mapping yields a name, report { name: UsageDataEventName.OptionalFeatureToggled, optionalFeature, enabled: !toggledFeature.enabled }. Add nothing to the catch)",
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageData.test.tsx (edit - it.skip -> it on F1, F2, F4, F5; it.skip.each -> it.each on F3; delete the header's 'Pending until the event exists. Each one is switched on by itself, as one step of the work.', which is no longer true)",
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageDataHandIn.test.tsx (edit - it.skip -> it on F6; delete the header's 'Pending until the event exists.')"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "The RED run is captured BEFORE any production edit, with all 7 cases un-skipped, and it matches red-classification.md. F1: the 'not reported before the answer' leg passes, then the reporter is called 0 times where 1 was expected. F2-F5: the ordering control reported 0 times. F6: postEvents received nothing matching. Any import, type or setup failure is a finding to report.",
+            "Switching Feature Order reports nothing while the server has not answered. Once the write is accepted it reports exactly one OptionalFeatureToggled saying FeatureOrder and the new state (true). Switching it back reports one more with false (F1, F2).",
+            "Switching the veto (Never send usage data) reports nothing, whichever way it goes (F3). A switch the server refused reports nothing (F4). A setting whose key usage data has no name for reports nothing (F5). In each case the ordering switch that follows still reports once, so the silence is the rule and not a broken screen.",
+            "With the real consent answer, reporter and detector, the switch is handed to postEvents carrying name OptionalFeatureToggled, optionalFeature FeatureOrder and enabled true (F6).",
+            "The call site carries no consent branch. Whether anything is recorded stays the reporter's decision. SystemSettingsTab still renders where no consent provider is mounted: the existing SystemSettingsTab.test.tsx and SystemSettingsTab.behaviourSettings.test.tsx are green unedited.",
+            "No report is ever built with an optionalFeature the server would refuse: the mapping yields only FeatureOrder or nothing, and enabled is always a boolean. A refused message takes its whole batch down with it.",
+            "The TS mirrors use string values (the server answers and accepts names, not numbers). The key mapping is a Record, not a switch and not a pass-through of the stored key.",
+            "Comments give the reason in plain language and cite no internal reference ('E5', 'AC-1.3', 'U2').",
+            "`pnpm test` is green. `pnpm build` completes with zero errors and zero warnings, which implies a clean Biome check on ./src."
+          ],
+          "implementation_notes": "Order: un-skip, capture RED with `pnpm vitest run src/pages/Settings/System/SystemSettingsTab.usageData.test.tsx src/pages/Settings/System/SystemSettingsTab.usageDataHandIn.test.tsx`, then production, then the full `pnpm test`, then `pnpm build`, then commit. The prebuild runs `biome check --write` and rewrites ./src, so build BEFORE staging and commit what the build left. Remove any `*/docs` symlink before building, or Biome reformats the docs tree. Frontend traps: take the reporter through useUsageDataReporter, which reads useUsageDataConsentIfKnown. Never call useUsageDataConsent from the screen: it throws outside UsageDataConsentProvider, and the screen's other tests mount none. Un-skip with it.skip -> it and it.skip.each -> it.each only. Never wrap in describe.skip: Vitest evaluates a skipped describe's body, so a hoisted scaffold call becomes a failed suite rather than pending tests. The direction reported is the new state, read from the row as it was before the click (`!toggledFeature.enabled`). The optimistic re-render hands the second click the updated row, which is what F2 relies on. Sonar/Biome: S7735 (no negated condition in a ternary); S7770 (pass single-arg functions directly); prefer globalThis over window if either is touched. No zod change: the server does not return these fields. Commit message:\nfeat(usage-data): report a behaviour setting switched once the server accepted it\n\nCo-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01S6Sp4ZZENHoZ618NjkefKi"
+        }
+      ]
+    }
+  ]
+}

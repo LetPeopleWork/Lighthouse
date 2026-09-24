@@ -8,8 +8,7 @@
 > went. It uses the existing pipe: the browser notices, our own backend checks consent and the
 > administrator's veto, and our backend forwards. Nothing about the pipe changes.
 >
-> **ADO: no item yet.** Creating one needs the maintainer's confirmation. Proposed: a User Story under
-> Epic #5733, titled "Usage Data :: report when a behaviour setting is switched", tagged `Release Notes`.
+> **ADO: none, by the maintainer's decision (2026-09-24).** This ships without its own work item.
 
 Combined DISCUSS + DESIGN pass (2026-09-24). Runs after story #5913, which retires the Faster Updates
 switch, so the list of settings this event can name is the list after that story.
@@ -53,7 +52,7 @@ This belongs up front, because the request says *"who has toggled things"*.
 | E2 | **It carries exactly two things:** which setting (`optional_feature`), from a closed list of its own, and the state it was switched to (`enabled`: `true`/`false`). Never the setting's key string, name or description. Both are declared in `UsageDataEventShapes`, both ways round, like the connector kind: this event is refused without them, and every other event is refused with them. | Locked |
 | E3 | **The list of settings is the event's own closed enum, `UsageDataOptionalFeature`,** not the product's key strings. This follows the same reasoning as `UsageDataWorkTrackingSystem`: what leaves an instance is decided by a list written for that purpose. Members: `FeatureOrder` only (amended 2026-09-24, see E5). `DeltaSync` is absent because story #5913 removes it. A future setting reaches the census only when somebody adds it to that list deliberately. | Locked |
 | E4 | **Sent only after the server accepted the change.** The settings screen flips the switch before the server answers. The event fires after `updateFeature` resolves, never on the click, and never when the write is refused, for example the 403 a Community instance gets on a premium row. | Locked |
-| E5 | **The veto is not reported in either direction** (amended 2026-09-24 after DISTILL's U1, orchestrator decision taken while the maintainer was away, reversible). Switching *Never send usage data* on can never be reported: the gate drops every batch from that moment on, including the one saying so. Switching it off would be dropped too, in the browser, because the browser's consent answer still reads "stopped by the administrator" until its next hourly refresh. Making it reportable needs new consent-refresh plumbing, and it would still give a one-sided count (lifts only, never engagements) that reads as "people keep lifting the veto". So `NeverSendUsageData` is not in the event's list; the browser's key mapping leaves `UsageData` out, which by E6 means nothing is sent. The disclosure row says the veto switch is never reported. | Locked (reversible) |
+| E5 | **The veto is not reported in either direction** (amended 2026-09-24 after DISTILL's U1, orchestrator decision taken while the maintainer was away; **confirmed by the maintainer the same day**). Switching *Never send usage data* on can never be reported: the gate drops every batch from that moment on, including the one saying so. Switching it off would be dropped too, in the browser, because the browser's consent answer still reads "stopped by the administrator" until its next hourly refresh. Making it reportable needs new consent-refresh plumbing, and it would still give a one-sided count (lifts only, never engagements) that reads as "people keep lifting the veto". So `NeverSendUsageData` is not in the event's list; the browser's key mapping leaves `UsageData` out, which by E6 means nothing is sent. The disclosure row says the veto switch is never reported. | Locked |
 | E6 | **A setting the browser does not recognise is not reported.** The browser maps the setting keys it knows to the enum through a `Record`. A key it does not know sends nothing, rather than a guess or a placeholder. | Locked |
 | E7 | **Terminology.** The disclosure row names the settings as the settings table does: *Let Lighthouse own the order of your Features* (default term), *Never send usage data*. | Locked |
 
@@ -355,3 +354,122 @@ and the disclosure row should say that. No test depends on the sentence.
 | Solution architect | DESIGN | "rejected, 12 blockers" | **Overruled.** Every "blocker" is a production change the component table *specifies* and DELIVER has not made yet: the reviewer checked the code instead of the design. Its own summary says the design is "solid and handoff-ready", confirms E5 and the both-ways shape check can be built, and finds the privacy boundaries intact |
 | Platform architect | DEVOPS N/A | approved (2 low) | Noted: CI and E2E cannot leak into the census. `PostHogUsageDataPublisher.WhereThisOneSends()` returns null for a build nobody published, and no workflow sets `UsageData__CollectorBaseUrl`. The PostHog insight for the capability-use KPI is the maintainer's to build after release |
 | Acceptance designer | DISTILL | approved (1 low) | B7/B8 rely on slice 04's cross-file control. By design, and recorded |
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Three steps and one refactor, 2026-09-24. The backend went first so that a browser never posts a name the
+server would refuse, because a refused message takes its whole batch down with it.
+
+| Step | Commit | What it changed |
+|------|--------|-----------------|
+| 01-01 | `a60f422ae` | The server reads `OptionalFeatureToggled` (value 10) and usage data's own one-member list, `UsageDataOptionalFeature.FeatureOrder`. The record and the DTO gain `OptionalFeature?` and `Enabled?`. `UsageDataEventShapes` declares the event both ways round, and the controller refuses an `optionalFeature` that names no member. The disclosure page gains the event row and the sentence saying the veto is never reported. |
+| 01-02 | `b7d9cd6d5` | The publisher sends `optional_feature` and `enabled`, and leaves both out when null. The emit-seam field list gains exactly those two names, and the disclosure page gains the two field rows. |
+| 02-01 | `1cd746b66` | The settings screen reports the switch once `updateFeature` has resolved, through `useUsageDataReporter`, with no consent branch at the call site. The key is mapped through a `Record` that knows only `FeatureOrdering`, so the veto and any unknown key send nothing. |
+| — | `9e4caea0c` | Refactor: one presence rule for every event part, and `Fits` judges the whole event. The browser's key lookup became a `Map`. |
+
+No ADR, no migration, `Program.cs` untouched, no DEVOPS change. A new event name needs no PostHog set-up,
+because events are created on first arrival.
+
+## Wave: DELIVER / [REF] Files modified
+
+`git diff --name-only a7ee9f29b..HEAD` also lists story #5913's files, because its commits sit between this
+feature's DISCUSS commit and its DISTILL commit. The list below is the union of this feature's own commits
+(`62a8b62fe`, `c3dfe268e`, `a60f422ae`, `b7d9cd6d5`, `1cd746b66`, `9e4caea0c`).
+
+**Production, backend** (`Lighthouse.Backend/Lighthouse.Backend/`)
+- `Models/UsageData/UsageDataEventName.cs`
+- `Models/UsageData/UsageDataOptionalFeature.cs` (new)
+- `Models/UsageData/UsageDataEventReported.cs`
+- `Models/UsageData/UsageDataEventShapes.cs`
+- `API/DTO/UsageDataEventBatchDto.cs`
+- `API/UsageDataController.cs`
+- `Services/Implementation/UsageData/PostHogUsageDataPublisher.cs`
+
+**Production, frontend** (`Lighthouse.Frontend/src/`)
+- `models/UsageData/UsageData.ts`
+- `services/Api/UsageDataService.ts`
+- `services/UsageData/usageDataBuffer.ts`
+- `services/UsageData/usageDataReporter.ts`
+- `services/UsageData/usageDataOptionalFeatures.ts` (new)
+- `pages/Settings/System/SystemSettingsTab.tsx`
+
+**Tests**
+- `Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs` (new, DISTILL)
+- `Lighthouse.Backend.Tests/Integration/UsageData/Slice04ProductEventsTests.cs` (the two every-event sweeps gain the new event)
+- `Lighthouse.Backend.Tests/Architecture/UsageDataEmitSeamArchUnitTest.cs` (field list plus `enabled`, `optional_feature`)
+- `Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs`, `Services/Implementation/BackgroundServices/UsageDataForwardingServiceTests.cs`, `Services/Implementation/UsageData/UsageDataEventQueueTests.cs`, `UsageDataMistypedCollectorAddressTests.cs`, `UsageDataPublishedMessageTests.cs` (positional constructions gain the two nulls)
+- `Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageData.test.tsx` (new, DISTILL)
+- `Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.usageDataHandIn.test.tsx` (new, DISTILL)
+
+**Docs**
+- `docs/settings/usagedata.md` (event row, two field rows, the veto sentence, corrected counts)
+- `docs/feature/optional-feature-toggled-usage-event/` (`feature-delta.md`, `red-classification.md`, `deliver/roadmap.json`, `mutation/`)
+- `docs/evolution/2026-09-24-optional-feature-toggled-usage-event.md` and `docs/evolution/optional-feature-toggled-usage-event/mutation-results.md` (finalize)
+- `docs/product/kpi-contracts.yaml` (`OUT-usagedata-setting-switches`, finalize)
+
+## Wave: DELIVER / [REF] Scenarios green
+
+- **Backend: 28 of 28** `OptionalFeatureToggledEventTests` cases (B1–B9), un-ignored step by step, with zero
+  `[Ignore]` markers and no `PendingDeliver` constant left. Slice 04's two every-event sweeps were extended
+  with `OptionalFeatureToggled`, so the administrator's veto and a refusing browser are covered for this event
+  too.
+- **Frontend: 7 of 7** (F1–F6, F3 has two cases), all `it.skip` removed.
+- `UsageDataDisclosureTest`, `UsageDataEmitSeamArchUnitTest` and `Slice04ProductEventsTests` are green,
+  `Nothing_travels_with_an_event_beyond_what_the_page_says_travels` included and unedited.
+
+## Wave: DELIVER / [REF] DoD check
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Name on the list, both fields declared in `UsageDataEventShapes`, publisher sends `optional_feature` / `enabled` | **PASS** (`a60f422ae`, `b7d9cd6d5`) |
+| 2 | Reported from `SystemSettingsTab` only after an accepted write, through `useUsageDataReporter`, no consent branch at the call site | **PASS** (`1cd746b66`; F1, F4, F6) |
+| 3 | TS mirrors carry the name and the enum as string values; the key mapping is a keyed lookup, not a switch | **PASS**. It began as a `Record` and the refactor made it a `Map`, which keeps the "keys it knows, nothing for the rest" rule and cannot match an `Object.prototype` name |
+| 4 | Emit-seam field list widened by exactly two names | **PASS** (`enabled`, `optional_feature`) |
+| 5 | Disclosure page updated, `UsageDataDisclosureTest` green | **PASS** |
+| 6 | Backend suite (live connectors excluded), `pnpm test`, `pnpm build` green with zero warnings | **PASS** (see Quality gates) |
+| 7 | Stryker ≥ 80 % on changed lines, both stacks | **PASS**: backend 100 % on changed lines, frontend 100 % (`mutation/results.md`) |
+
+## Wave: DELIVER / [REF] Demo evidence
+
+The Elevator Pitch is exercised end to end by two scenarios, one on each side of the ingest endpoint:
+
+- **B1** posts the raw browser message to the real endpoint over HTTP, and reads the recording collector
+  below `HttpClient`: exactly one `OptionalFeatureToggled` with `optional_feature: "FeatureOrder"` and
+  `enabled: true`.
+- **F6** clicks the *Let Lighthouse own the order of your Features* switch with the real consent answer,
+  reporter and detector, and asserts what reaches `postEvents`.
+
+A live PostHog check is not possible before release. A build nobody published knows no collector address
+and sends nothing, by design, so the first real event appears after the next release.
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Result |
+|------|--------|
+| Backend suite, live connectors excluded | 7273 passed, 0 failed |
+| `pnpm test` | 5705 passed |
+| `dotnet build`, `pnpm build` (Biome included) | clean, zero warnings |
+| Adversarial review (`nw-software-crafter-reviewer`) | APPROVED, 0 findings |
+| Mutation | backend 100 % on changed lines, frontend 100 % |
+| DES integrity | exit 0 |
+| SonarCloud | verified by CI after push |
+
+**Known gap, accepted:** no test posts an integer `optionalFeature`. The `Enum.IsDefined` guard in
+`AsTakenIn` is covered by reading, because Stryker.NET generated no mutant that removes it.
+
+## Wave: DELIVER / [REF] KPI note
+
+`OUT-usagedata-setting-switches` is added to `docs/product/kpi-contracts.yaml`. Its correctness half
+(every accepted switch from a consenting browser arrives once, a refused or vetoed one never does) is held
+by the scenarios above. Its census half has no baseline yet: it is measured after release. The PostHog
+insight, `OptionalFeatureToggled` broken down by `optional_feature` × `enabled`, is the maintainer's to build
+after release. It is not built in this repository.
+
+## Wave: DELIVER / [REF] Release notes
+
+**None drafted.** There is no ADO work item for this feature, by the maintainer's decision, and so no
+`Release Notes` tag to carry a line. This is internal telemetry: nothing on screen changes, and the only
+user-facing text is the disclosure row in `docs/settings/usagedata.md`, which is the promise itself.
+Screenshots: N/A, no visible UI change.

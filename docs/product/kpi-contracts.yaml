@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-07-26
+updated: 2026-09-24
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -23,19 +23,20 @@ description: >
     - opt_in_telemetry_required: not measurable until enough people on released
                                  instances have agreed, AND until an event exists that
                                  answers the question. Both halves matter: the mechanism
-                                 ships, the unprompted ask ships, and ten named events
-                                 ship - but an outcome asking something none of those ten
+                                 ships, the unprompted ask ships, and eleven named events
+                                 ship - but an outcome asking something none of those eleven
                                  says stays deferred, and now names which event it is
                                  waiting for rather than waiting on the feature as a
                                  whole. Flag for product decision; do NOT build
                                  instrumentation that phones home without consent.
 
-  What the ten events say, in one line each, so an outcome author can tell at a glance
+  What the eleven events say, in one line each, so an outcome author can tell at a glance
   whether one of them answers the question: a Team or Portfolio tab was opened (which tab,
   never which Team or Portfolio); a Team or Portfolio was created or deleted; a forecast was
   run by hand on a Team; a work tracking system was connected (which kind, never which
-  authentication method, never its address); a Team or Portfolio was refreshed by hand. The
-  full disclosure, which is the authoritative list, is docs/settings/usagedata.md.
+  authentication method, never its address); a Team or Portfolio was refreshed by hand; a
+  behaviour setting was switched (which setting, from usage data's own list, and which way;
+  never the veto). The full disclosure, which is the authoritative list, is docs/settings/usagedata.md.
 
 outcomes:
 
@@ -1227,3 +1228,30 @@ outcomes:
         - "The collector's own dashboard."
     alerting: []
     status: live-on-release
+
+  - id: OUT-usagedata-setting-switches
+    feature: optional-feature-toggled-usage-event
+    title: Which behaviour settings people switch, and which way
+    target: "No target on the counts. Descriptive by intent - it informs whether a behaviour setting stays optional, becomes the default or goes away, and a target would invite steering it. Baseline: none yet, measured after the release that ships the event. What is held to a rule is the pipe: every accepted switch from a consenting browser arrives as exactly one event, and a refused or vetoed one never does."
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      The decision to retire the Faster Updates switch had to rest on one dev instance's
+      log, because nothing else said how anyone used it. The next decision of that kind -
+      keep a setting, make it the default, or remove it - should rest on how often people
+      switch it and which way. A setting nobody touches reads differently from one people
+      keep switching off.
+    measurement_plan:
+      data_collection:
+        - "Usage data event: OptionalFeatureToggled, carrying which setting (optional_feature, from usage data's own list, today only FeatureOrder) and which way (enabled, true or false). Never the setting's stored key, name or description."
+        - "Switching Never send usage data is never reported, in either direction, and a setting usage data has no name for is never reported either."
+        - "That the count is complete and never includes a refused or vetoed switch is held by Lighthouse.Backend.Tests/Integration/UsageData/OptionalFeatureToggledEventTests.cs and the two SystemSettingsTab usage-data specs, not measured in the field."
+      derivation: "Switch events per setting, split by direction, per 90-day window, vendor instance excluded."
+      surfacing:
+        - "A PostHog insight on OptionalFeatureToggled broken down by optional_feature and enabled, built by the maintainer after release."
+    alerting: []
+    status: live-on-release
+    caveat: >
+      Every number here counts browsers that agreed, not installations, and there is no way
+      to tell who switched: two browsers of one installation look like two unrelated
+      browsers. The list of settings has one member, so until another is
+      added deliberately this describes one setting only.
