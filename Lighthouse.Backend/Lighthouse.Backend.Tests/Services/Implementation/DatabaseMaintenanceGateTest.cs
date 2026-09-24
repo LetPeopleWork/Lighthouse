@@ -111,6 +111,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void TryAcquire_RestoreAlreadyActive_AnotherRestoreIsNotPendingBehindABackup()
+        {
+            subject.TryAcquire(DatabaseOperationType.Restore, "op-restore-running");
+
+            var result = subject.TryAcquire(DatabaseOperationType.Restore, "op-restore-again");
+
+            Assert.That(result.PendingBehindBackup, Is.False);
+        }
+
+        [Test]
         public void TryAcquire_RestoreAlreadyActive_BackupReturnsFalse()
         {
             subject.TryAcquire(DatabaseOperationType.Restore, "op-restore");

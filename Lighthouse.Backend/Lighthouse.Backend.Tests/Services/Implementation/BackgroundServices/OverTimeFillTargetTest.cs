@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
@@ -46,8 +47,100 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             Assert.That(target?.LastObservedOn, Is.EqualTo(ThatEveningsDay));
         }
 
-        private static ServiceProvider ServicesKnowing(Team? team = null, Portfolio? portfolio = null)
+        [Test]
+        public void ATeamThatNoLongerExists_HasNothingToFill()
         {
+            using var services = ServicesKnowing();
+
+            Assert.That(OverTimeFillTarget.For(services, new OverTimeFillRequest(OwnerId, OwnerType.Team, [])), Is.Null);
+        }
+
+        [Test]
+        public void APortfolioThatNoLongerExists_HasNothingToFill()
+        {
+            using var services = ServicesKnowing();
+
+            Assert.That(OverTimeFillTarget.For(services, new OverTimeFillRequest(OwnerId, OwnerType.Portfolio, [])), Is.Null);
+        }
+
+        /// <summary>
+        /// Another team's work and work still open say nothing about where this team's history begins.
+        /// </summary>
+        [Test]
+        public void ATeamsHistory_BeginsOnTheEarliestDayOneOfItsOwnItemsFinished()
+        {
+            var team = new Team { Id = OwnerId, UpdateTime = SeenInTheEvening, DoneItemsCutoffDays = 0 };
+            List<WorkItem> items =
+            [
+                new() { TeamId = OwnerId, ClosedDate = InTheMorningOf(new DateOnly(2026, 6, 20)) },
+                new() { TeamId = OwnerId, ClosedDate = InTheMorningOf(new DateOnly(2026, 5, 4)) },
+                new() { TeamId = OwnerId + 1, ClosedDate = InTheMorningOf(new DateOnly(2026, 1, 1)) },
+                new() { TeamId = OwnerId, ClosedDate = null },
+            ];
+            using var services = ServicesKnowing(team: team, workItems: items);
+
+            var target = OverTimeFillTarget.For(services, new OverTimeFillRequest(OwnerId, OwnerType.Team, []));
+
+            Assert.That(target?.EarliestDayTheItemsSupport(), Is.EqualTo(new DateOnly(2026, 5, 4)));
+        }
+
+        [Test]
+        public void ATeamThatHasNeverFinishedAnything_HasNoHistoryToFillFrom()
+        {
+            var team = new Team { Id = OwnerId, UpdateTime = SeenInTheEvening, DoneItemsCutoffDays = 0 };
+            using var services = ServicesKnowing(team: team, workItems: [new() { TeamId = OwnerId, ClosedDate = null }]);
+
+            var target = OverTimeFillTarget.For(services, new OverTimeFillRequest(OwnerId, OwnerType.Team, []));
+
+            Assert.That(target?.EarliestDayTheItemsSupport(), Is.Null);
+        }
+
+        /// <summary>
+        /// A delivery shared with another portfolio belongs to this one too; one that only another
+        /// portfolio holds, and one still open, say nothing about where this portfolio's history begins.
+        /// </summary>
+        [Test]
+        public void APortfoliosHistory_BeginsOnTheEarliestDayOneOfItsOwnDeliveriesFinished()
+        {
+            var portfolio = new Portfolio { Id = OwnerId, UpdateTime = SeenInTheEvening, DoneItemsCutoffDays = 0 };
+            var elsewhere = new Portfolio { Id = OwnerId + 1 };
+            List<Feature> deliveries =
+            [
+                DeliveryOf([portfolio], new DateOnly(2026, 6, 20)),
+                DeliveryOf([portfolio, elsewhere], new DateOnly(2026, 5, 4)),
+                DeliveryOf([elsewhere], new DateOnly(2026, 1, 1)),
+                DeliveryOf([portfolio], null),
+            ];
+            using var services = ServicesKnowing(portfolio: portfolio, deliveries: deliveries);
+
+            var target = OverTimeFillTarget.For(services, new OverTimeFillRequest(OwnerId, OwnerType.Portfolio, []));
+
+            Assert.That(target?.EarliestDayTheItemsSupport(), Is.EqualTo(new DateOnly(2026, 5, 4)));
+        }
+
+        private static Feature DeliveryOf(List<Portfolio> portfolios, DateOnly? finishedOn)
+        {
+            var delivery = new Feature { ClosedDate = finishedOn is { } day ? InTheMorningOf(day) : null };
+            delivery.Portfolios.AddRange(portfolios);
+
+            return delivery;
+        }
+
+        private static DateTime InTheMorningOf(DateOnly day) => day.ToDateTime(new TimeOnly(9, 0), DateTimeKind.Utc);
+
+        private static ServiceProvider ServicesKnowing(
+            Team? team = null, Portfolio? portfolio = null, List<WorkItem>? workItems = null, List<Feature>? deliveries = null)
+        {
+            var storedItems = new Mock<IWorkItemRepository>();
+            storedItems
+                .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns((Expression<Func<WorkItem, bool>> predicate) => (workItems ?? []).AsQueryable().Where(predicate));
+
+            var storedDeliveries = new Mock<IRepository<Feature>>();
+            storedDeliveries
+                .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => (deliveries ?? []).AsQueryable().Where(predicate));
+
             var teams = new Mock<IRepository<Team>>();
             teams.Setup(repository => repository.GetById(OwnerId)).Returns(team);
 
@@ -65,8 +158,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 .AddSingleton(portfolios.Object)
                 .AddSingleton(Mock.Of<ITeamMetricsService>())
                 .AddSingleton(Mock.Of<IPortfolioMetricsService>())
-                .AddSingleton(Mock.Of<IWorkItemRepository>())
-                .AddSingleton(Mock.Of<IRepository<Feature>>())
+                .AddSingleton(storedItems.Object)
+                .AddSingleton(storedDeliveries.Object)
                 .AddSingleton(limitWriter.Object)
                 .AddSingleton<ILighthouseClock>(new FakeLighthouseClock(anHourLaterInLosAngeles, LosAngeles))
                 .BuildServiceProvider();

@@ -404,6 +404,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(count, Is.Zero);
         }
 
+        [Test]
+        public async Task TeamDataRefreshed_NullTeam_ReadsNoMetrics_AndLeavesTheCacheAlone()
+        {
+            teamRepositoryMock.Setup(x => x.GetById(999)).Returns((Team?)null);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(999), CancellationToken.None);
+
+            teamMetricsServiceMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_NullPortfolio_ReadsNoMetrics_AndLeavesTheCacheAlone()
+        {
+            portfolioRepositoryMock.Setup(x => x.GetById(999)).Returns((Portfolio?)null);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(999), CancellationToken.None);
+
+            portfolioMetricsServiceMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void TeamDataRefreshed_SaveThrows_DoesNotRethrow_AndLogsStructuredError()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            teamMetricsServiceMock
+                .Setup(x => x.GetCycleTimePercentilesForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(Percentiles(1, 2, 3, 4));
+
+            var refusingRepo = new Mock<IPercentilesOverTimeSnapshotRepository>();
+            refusingRepo.Setup(x => x.Save()).ThrowsAsync(new InvalidOperationException("save boom"));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context, refusingRepo.Object);
+
+            Assert.DoesNotThrowAsync(
+                async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None));
+
+            VerifyRecordingFailureLoggedWithPercentilesFamily(
+                "a failed save is reported under the Percentiles family like any other recording failure");
+        }
+
         // -----------------------------------------------------------------
         // ValueFor must tolerate a percentile that the metrics reader omits —
         // the missing percentile is recorded as 0, never throwing. (Guards the
