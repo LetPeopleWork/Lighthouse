@@ -1351,6 +1351,7 @@ namespace Lighthouse.Backend
             // the window were missing. Both controllers keep asking for the interface and are unaware.
             builder.Services.AddScoped<PercentilesOverTimeSeriesQuery>();
             builder.Services.AddScoped<IOverTimeGapReconciler, OverTimeGapReconciler>();
+            builder.Services.AddScoped<IOverTimeHistoryFillSwitch, OverTimeHistoryFillSwitch>();
             builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, GapAskingPercentilesOverTimeSeriesQuery>();
 
             // Registered as itself as well as as the background job, because emptying the queue is

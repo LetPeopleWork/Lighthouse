@@ -6,7 +6,10 @@ using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 namespace Lighthouse.Backend.Services.Implementation
 {
     public class OverTimeGapReconciler(
-        ILighthouseClock clock, IOverTimeHistoryFiller filler, ReconstructionMemo memo) : IOverTimeGapReconciler
+        ILighthouseClock clock,
+        IOverTimeHistoryFiller filler,
+        ReconstructionMemo memo,
+        IOverTimeHistoryFillSwitch fillSwitch) : IOverTimeGapReconciler
     {
         /// <summary>
         /// The most days one visit hands over, and deliberately not the most a pass will work out.
@@ -36,7 +39,10 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var missing = DaysWithoutAReading(ownerId, ownerType, from.Value, to ?? clock.Today, daysAlreadyHeld);
-            if (missing.Count == 0)
+            // Asked only once days are known to be missing, so a chart that already holds its whole
+            // period pays nothing for the switch. Switched off says nothing to the log: that would be a
+            // line on every chart load of every instance that simply left the preview off.
+            if (missing.Count == 0 || !fillSwitch.IsSwitchedOn())
             {
                 return;
             }

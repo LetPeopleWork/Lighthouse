@@ -214,15 +214,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         private void SwitchTheFillOnTheWayAnAdministratorWould()
         {
-            // A build that does not store the switch yet does not gate the fill either, so its scenarios
-            // already run with the fill at work and there is nothing to switch. The moment the product
-            // seeds the row, this goes through the endpoint and a refusal fails the scenario. The early
-            // return stops being needed at that point and should go with it.
-            if (TheStoredFillSwitch() is null)
-            {
-                return;
-            }
-
             TheFillIsSwitched(on: true).GetAwaiter().GetResult();
         }
 

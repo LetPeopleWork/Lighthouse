@@ -80,6 +80,20 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     IsPreview = false,
                     IsPremium = true,
                 },
+                new OptionalFeature
+                {
+                    Id = 0,
+                    Key = OptionalFeatureKeys.OverTimeHistoryFillKey,
+                    Name = "Fill in past days on over-time charts",
+                    Description =
+                        "A preview. While this is on, opening Percentiles Over Time or PBC Over Time fills in "
+                        + "the days the chart is missing, working them out in the background from the history "
+                        + "Lighthouse already stores. Turning it off stops any further filling; days already "
+                        + "filled stay.",
+                    Enabled = false,
+                    IsPreview = true,
+                    IsPremium = false,
+                },
             ];
         }
 

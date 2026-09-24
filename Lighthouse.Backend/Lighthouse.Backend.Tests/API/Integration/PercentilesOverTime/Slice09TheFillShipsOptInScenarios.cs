@@ -35,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-05 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task With_the_fill_switched_off_opening_a_chart_queues_nothing_and_switching_it_on_needs_no_restart()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -70,7 +69,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @concurrency @error @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task A_chart_already_filling_in_when_the_fill_is_switched_off_finishes_and_one_still_waiting_never_starts()
         {
             var fillingTeamId = GivenATeamStillBeingRefreshed();
@@ -113,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @driving_port @us-05 @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Switching_the_fill_off_keeps_every_day_it_filled_and_switching_it_back_on_fills_only_what_is_still_missing()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -153,7 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @error @upgrade @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task An_instance_that_stores_no_fill_switch_fills_nothing_until_an_admin_switches_it_on_after_the_upgrade()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -183,7 +179,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @rbac @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Someone_who_is_not_a_system_admin_cannot_switch_the_fill_and_their_charts_carry_on_as_before()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -210,7 +205,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @not-gated @regression @real-io @contract-shape:bounded-change
         [Test]
-        [Ignore(Pending)]
         public async Task The_daily_recording_still_writes_today_with_the_fill_switched_off()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -233,7 +227,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @not-gated @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_quiet_day_is_still_left_blank_by_the_daily_recording_with_the_fill_switched_off()
         {
             var teamId = GivenATeamStillBeingRefreshed();
@@ -283,7 +276,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         // @us-05 @read-cost @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Opening_a_chart_that_is_missing_nothing_pays_nothing_for_the_switch_and_one_missing_days_pays_one_lookup()
         {
             var teamId = GivenATeamStillBeingRefreshed();

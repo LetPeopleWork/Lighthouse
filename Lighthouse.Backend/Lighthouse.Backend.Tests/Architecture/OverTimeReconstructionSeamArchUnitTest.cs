@@ -354,7 +354,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// product decided against.
         /// </summary>
         [Test]
-        [Ignore("Pending: the opt-in switch for filling in past days is not built yet (story 6053, slice 05) - un-ignore in DELIVER")]
         public void TheFillSwitchKey_IsNamedOnlyByTheKeyList_TheSeeder_AndTheSwitch()
         {
             var files = ProductionSourceFiles();

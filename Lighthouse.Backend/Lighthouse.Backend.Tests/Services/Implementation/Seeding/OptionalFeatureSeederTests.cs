@@ -14,6 +14,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         [
             OptionalFeatureKeys.FeatureOrderingKey,
             OptionalFeatureKeys.UsageDataKey,
+            OptionalFeatureKeys.OverTimeHistoryFillKey,
         ];
 
         /// <summary>
@@ -23,11 +24,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         /// </summary>
         private const string OverTimeHistoryFillKey = "OverTimeHistoryFill";
 
-        private const string PendingUntilTheFillSwitchShips =
-            "Pending: the opt-in switch for filling in past days is not built yet (story 6053, slice 05) - un-ignore in DELIVER";
-
         [Test]
-        [Ignore(PendingUntilTheFillSwitchShips)]
         public async Task SeedAsync_AddsTheOverTimeHistoryFill_OffInPreviewAndFree()
         {
             var subject = CreateSubject();
@@ -49,7 +46,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        [Ignore(PendingUntilTheFillSwitchShips)]
         public async Task SeedAsync_OverTimeHistoryFillSwitchedOnBeforeTheUpgrade_StaysOnAndIsRedescribed()
         {
             // Arrange - an instance whose administrator already opted in, carrying an older wording and flags.
@@ -85,7 +81,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         // Spelled out rather than read off the seeder, because comparing a value to the constant it came from
         // passes even when the words are blanked. These are the words an administrator decides on.
         [Test]
-        [Ignore(PendingUntilTheFillSwitchShips)]
         public async Task SeedAsync_OverTimeHistoryFill_ReadsTheWayAnAdministratorSeesIt()
         {
             var subject = CreateSubject();

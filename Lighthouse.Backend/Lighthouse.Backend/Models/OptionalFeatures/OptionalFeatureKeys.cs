@@ -30,5 +30,11 @@
         /// always has until somebody deliberately stops it.
         /// </summary>
         public const string UsageDataKey = "UsageData";
+
+        /// <summary>
+        /// Whether opening an over-time chart fills in the past days it is missing, worked out from the
+        /// history already stored. Ships off and as a preview; while off, days already filled stay.
+        /// </summary>
+        public const string OverTimeHistoryFillKey = "OverTimeHistoryFill";
     }
 }
