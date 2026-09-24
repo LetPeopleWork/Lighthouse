@@ -2748,3 +2748,34 @@ days permanently unfillable — the same shape as the budget-abandoned-day trap.
 refusal to the ceiling value it was refused under. Observing either needs a cost signal at the driving
 port (what the reconciler asks the filler for), the same gap as U-6 and U-28. Deferred to the
 adversarial review after the user's live check.
+
+### U-46 — The 90-day cap moved into the filler, and the ADR describes a walk the code never did
+
+Found at 04-01. On first un-ignore `A_period_that_reaches_further_back_than_the_team_does_still_returns_the_part_it_covers`
+failed for a real reason: the reconciler handed over only the oldest 90 missing days (-400..-311), all
+before the owner's floor at -40, and the floor is only learned inside a pass — so the first load wrote
+nothing. Fixed in `7d3d9962e`: the cap now counts days a pass actually works out, inside the filler;
+days outside what the stored items support are stepped over for free; the reconciler's bound became a
+ten-year guard against hand-typed centuries.
+
+Order stays oldest-first, deliberately: newest-first would re-ask the same ceiling-refused days forever
+for an owner nobody syncs any more (see U-45), never reaching the older days that can be filled.
+
+**Doc drift, not yet fixed:** ADR-207 D4 and `brief.md` say a pass "walks back from the window's ceiling
+and stops after 90 days it actually wrote", giving the most recent 90 days first. The code walks
+oldest-first — it did before this step too — and counts days worked out, not days written. Correct the
+ADR and brief at 04-03.
+
+**The predates-everything scenarios cannot catch a floor regression.** Sabotage showed the state is
+guarded twice — by the floor and by the absence gate — and either alone keeps both scenarios green.
+Arming the floor needs an item still in progress since before the period (e.g. started at -800, never
+closed), so Work Item Age and WIP readings exist on days only the floor refuses. Not done; for the
+adversarial review. The other three states each fail to their own sabotage: null floor, ceiling, cap.
+
+### U-47 — The empty states cannot be told apart, and there are four of them, not three
+
+04-01's criterion 4 verdict. "Period predates everything", "owner holds nothing" and "owner no longer
+synced" all return HTTP 200 with `[]`; the second and third are asked with the same range. And because
+the read never waits for the fill, the **first open of a period that can be filled also returns `[]`** —
+"not worked out yet, look again shortly" collapses with all three. No response field was added (the
+contract ADR has rejected one twice). So 04-02 writes one sentence true of all four states.
