@@ -195,6 +195,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private async Task FillAsync(IServiceProvider services, OverTimeFillRequest request, CancellationToken cancellationToken)
         {
+            // Asked before the owner is loaded, because loading it is already a query against a file a
+            // restore may be about to replace. Asked after the pass counts as running rather than before,
+            // so that either the gate sees this pass and refuses, or this pass sees the operation and
+            // stops: checked the other way round, both could look at the same moment and both go ahead.
+            var maintenance = services.GetRequiredService<DatabaseMaintenanceGate>();
+            if (MaintenanceNeedsTheDatabase(maintenance))
+            {
+                ReportStandingDownForMaintenance(request);
+                return;
+            }
+
             var target = OverTimeFillTarget.For(services, request);
             if (target is null)
             {
@@ -204,7 +215,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             var writers = new OverTimeWriters(
                 services.GetRequiredService<IPercentileSnapshotWriter>(),
                 services.GetRequiredService<IProcessBehaviorSnapshotWriter>());
-            var maintenance = services.GetRequiredService<DatabaseMaintenanceGate>();
             var memo = services.GetRequiredService<ReconstructionMemo>();
             var progress = new PassProgress();
 
@@ -251,17 +261,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             foreach (var day in request.CandidateDays)
             {
                 // A backup, restore or clear replaces the database file, so writing into it while one
-                // runs is what this stands down for. Asked once per day rather than once per pass
-                // because a pass outlives the moment it started: the operator may press the button
-                // halfway through the walk. Giving up mid-walk costs nothing here - the days already
-                // written stay written, and the next chart load asks for whatever is still missing.
-                if (maintenance.IsMaintenanceOperationActive)
+                // runs - or while an operator this pass turned away is waiting to start one - is what
+                // this stands down for. Asked once per day as well as once per pass because a pass
+                // outlives the moment it started: the operator may press the button halfway through the
+                // walk. Giving up mid-walk costs nothing here - the days already written stay written,
+                // and the next chart load asks for whatever is still missing.
+                if (MaintenanceNeedsTheDatabase(maintenance))
                 {
-                    logger.LogInformation(
-                        "Over-time reconstruction stood down for {OwnerType} {OwnerId} ({MetricFamily}); a database maintenance operation is running",
-                        request.OwnerType,
-                        request.OwnerId,
-                        MetricFamily);
+                    ReportStandingDownForMaintenance(request);
 
                     break;
                 }
@@ -301,6 +308,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 progress.TriedADay();
                 await FillOneDayAsync(writers, memo, request, day, target, progress);
             }
+        }
+
+        /// <summary>
+        /// Two narrow questions rather than whether the gate is blocked at all: a pass in flight is
+        /// one of the things that blocks it, so asking that would have every pass stand down for itself.
+        /// </summary>
+        private static bool MaintenanceNeedsTheDatabase(DatabaseMaintenanceGate maintenance)
+            => maintenance.IsMaintenanceOperationActive || maintenance.IsMaintenanceOperationWaiting;
+
+        private void ReportStandingDownForMaintenance(OverTimeFillRequest request)
+        {
+            logger.LogInformation(
+                "Over-time reconstruction stood down for {OwnerType} {OwnerId} ({MetricFamily}); a database maintenance operation is running or waiting to start",
+                request.OwnerType,
+                request.OwnerId,
+                MetricFamily);
         }
 
         /// <summary>

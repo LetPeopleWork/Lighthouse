@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
+using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -82,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 .AddSingleton(limitWriterMock.Object)
                 .AddSingleton(fillSwitchMock.Object)
                 .AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Now))
-                .AddSingleton(new DatabaseMaintenanceGate(Mock.Of<IUpdateStatusStore>()))
+                .AddSingleton(_ => new DatabaseMaintenanceGate(Mock.Of<IUpdateStatusStore>(), subject))
                 .AddSingleton<ReconstructionMemo>()
                 .BuildServiceProvider();
 
@@ -190,6 +191,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                     "The first failure lost its exception, so nobody reading the log can tell what went wrong.");
                 Assert.That(problems.Exists(entry => entry.Message.Contains("could not write 5 days", StringComparison.Ordinal)), Is.True,
                     "No line says how many days the pass could not write.");
+            }
+        }
+
+        /// <summary>
+        /// A restore is refused for as long as a pass runs, and the queue starts the next pass the moment
+        /// one ends - so an operator turned away once could be turned away again and again for as long
+        /// as owners are waiting. Once someone has been turned away, the pass under way stops at its
+        /// next day, no further pass starts, and trying again gets in.
+        /// </summary>
+        [Test]
+        public async Task ARestoreTurnedAwayByAPass_StopsThePassAtItsNextDayAndStartsNoOther_AndIsLetInOnItsNextTry()
+        {
+            const int stillWaiting = TeamId + 1;
+            GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+            var gate = services.GetRequiredService<DatabaseMaintenanceGate>();
+            GateAcquisitionResult? turnedAway = null;
+            percentileWriterMock
+                .Setup(writer => writer.SaveFilledDay())
+                .Callback(() => turnedAway ??= gate.TryAcquire(DatabaseOperationType.Restore, "restore-pressed-mid-pass"))
+                .Returns(Task.CompletedTask);
+
+            subject.AskFor(RequestFor(TeamId, Today.AddDays(-2), Today.AddDays(-1)));
+            subject.AskFor(RequestFor(stillWaiting, Today));
+            await subject.DrainAsync(CancellationToken.None);
+            var triedAgain = gate.TryAcquire(DatabaseOperationType.Restore, "restore-pressed-again");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(turnedAway?.Acquired, Is.False,
+                    "The restore was let in while a pass was writing, so nothing here was ever waiting.");
+                percentileWriterMock.Verify(writer => writer.SaveFilledDay(), Times.Once,
+                    "The pass carried on to its next day while the operator was waiting.");
+                teamRepositoryMock.Verify(repository => repository.GetById(stillWaiting), Times.Never,
+                    "The next waiting pass started, and loaded its owner, while the operator was waiting.");
+                Assert.That(triedAgain.Acquired, Is.True,
+                    $"Trying again after the pass stood down was refused: {triedAgain.BlockedReason}");
             }
         }
 

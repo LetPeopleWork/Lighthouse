@@ -3,6 +3,9 @@ using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
+using Microsoft.Extensions.Time.Testing;
+using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -207,6 +210,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void IsMaintenanceOperationWaiting_TurnedAwayByAFill_IsTrue()
+        {
+            var (gate, _, _) = AGateWithAPassInFlight();
+
+            gate.TryAcquire(DatabaseOperationType.Restore, "op-1");
+
+            Assert.That(gate.IsMaintenanceOperationWaiting, Is.True);
+        }
+
+        [Test]
+        public void IsMaintenanceOperationWaiting_TurnedAwayByABackgroundUpdate_IsFalse()
+        {
+            var (gate, _, _) = AGateWithAPassInFlight();
+            var key = new UpdateKey(UpdateType.Team, 1);
+            updateStatuses[key] = new UpdateStatus { UpdateType = UpdateType.Team, Id = 1, Status = UpdateProgress.InProgress };
+
+            gate.TryAcquire(DatabaseOperationType.Restore, "op-1");
+
+            Assert.That(gate.IsMaintenanceOperationWaiting, Is.False);
+        }
+
+        [Test]
+        public void IsMaintenanceOperationWaiting_OnceTheOperationIsLetIn_IsFalse()
+        {
+            var (gate, fill, _) = AGateWithAPassInFlight();
+            gate.TryAcquire(DatabaseOperationType.Restore, "op-1");
+            fill.Setup(activity => activity.HasPassInFlight).Returns(false);
+
+            gate.TryAcquire(DatabaseOperationType.Restore, "op-2");
+
+            Assert.That(gate.IsMaintenanceOperationWaiting, Is.False);
+        }
+
+        [Test]
+        public void IsMaintenanceOperationWaiting_AMinuteAfterTheOperatorWasTurnedAway_IsFalse()
+        {
+            var (gate, _, time) = AGateWithAPassInFlight();
+            gate.TryAcquire(DatabaseOperationType.Restore, "op-1");
+
+            time.Advance(TimeSpan.FromMinutes(1));
+
+            Assert.That(gate.IsMaintenanceOperationWaiting, Is.False);
+        }
+
+        [Test]
         public void TryAcquire_TwoBackupsSimultaneously_SecondFails()
         {
             subject.TryAcquire(DatabaseOperationType.Backup, "op-1");
@@ -214,6 +262,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var result = subject.TryAcquire(DatabaseOperationType.Backup, "op-2");
 
             Assert.That(result.Acquired, Is.False);
+        }
+
+        private (DatabaseMaintenanceGate Gate, Mock<IOverTimeHistoryFillActivity> Fill, FakeTimeProvider Time) AGateWithAPassInFlight()
+        {
+            var fill = new Mock<IOverTimeHistoryFillActivity>();
+            fill.Setup(activity => activity.HasPassInFlight).Returns(true);
+            var time = new FakeTimeProvider();
+
+            return (new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc), fill.Object, time), fill, time);
         }
     }
 }

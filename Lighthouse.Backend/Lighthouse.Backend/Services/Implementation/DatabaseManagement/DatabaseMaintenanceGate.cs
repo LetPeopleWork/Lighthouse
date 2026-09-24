@@ -14,17 +14,30 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         private const string HistoryIsBeingFilledIn =
             "The chart is filling in days it was missing. Database operations cannot start until it has finished.";
 
+        /// <summary>
+        /// How long an operator turned away by the history fill is still counted as waiting. The pass
+        /// that turned them away stops at its next day, well inside a second as a rule and never past
+        /// its own ten-second allowance, so trying again inside a minute gets in. Past a minute without
+        /// a second try they are taken to have gone, and charts may fill in again - which costs nothing
+        /// if they come back later, because a pass stops for them the same way the next time.
+        /// </summary>
+        private static readonly TimeSpan HowLongATurnedAwayOperatorIsWaiting = TimeSpan.FromMinutes(1);
+
         private readonly IUpdateStatusStore statusStore;
         private readonly IOverTimeHistoryFillActivity? historyFill;
+        private readonly TimeProvider time;
         private readonly object gateLock = new();
 
         private string? activeOperationId;
         private DatabaseOperationType? activeOperationType;
+        private DateTimeOffset? turnedAwayByTheFillAt;
 
-        public DatabaseMaintenanceGate(IUpdateStatusStore statusStore, IOverTimeHistoryFillActivity? historyFill = null)
+        public DatabaseMaintenanceGate(
+            IUpdateStatusStore statusStore, IOverTimeHistoryFillActivity? historyFill = null, TimeProvider? time = null)
         {
             this.statusStore = statusStore;
             this.historyFill = historyFill;
+            this.time = time ?? TimeProvider.System;
         }
 
         public bool IsBlocked => WhatIsHoldingTheDatabase() != null;
@@ -36,6 +49,24 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         /// database off its own back has to stand down while one is: all three replace the file.
         /// </summary>
         public bool IsMaintenanceOperationActive => ActiveOperationId != null;
+
+        /// <summary>
+        /// Whether an operator was turned away because history was being filled in, and has not been
+        /// let in since. The fill starts no new pass while this holds and stops the one under way at
+        /// its next day: the queue starts the next pass the moment one ends, so without this an
+        /// operator could be turned away for as long as owners are waiting rather than for one pass.
+        /// </summary>
+        public bool IsMaintenanceOperationWaiting
+        {
+            get
+            {
+                lock (gateLock)
+                {
+                    return turnedAwayByTheFillAt is { } since
+                        && time.GetUtcNow() - since < HowLongATurnedAwayOperatorIsWaiting;
+                }
+            }
+        }
 
         public string? ActiveOperationId
         {
@@ -66,6 +97,11 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 var backgroundWork = WhatBackgroundWorkIsWriting();
                 if (backgroundWork != null)
                 {
+                    if (backgroundWork == HistoryIsBeingFilledIn)
+                    {
+                        turnedAwayByTheFillAt = time.GetUtcNow();
+                    }
+
                     return new GateAcquisitionResult(false, backgroundWork);
                 }
 
@@ -79,6 +115,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                 activeOperationId = operationId;
                 activeOperationType = operationType;
+                turnedAwayByTheFillAt = null;
 
                 return new GateAcquisitionResult(true, null);
             }
