@@ -1756,6 +1756,13 @@ runs, and the two before this one were green on the Docker job.
   proves nothing. `Lighthouse.EndToEndTests` is deliberately not pinned — its workflows activate
   `pnpm@latest` and it patches nothing, so pinning it would create the disagreement rather than close
   it.
+- **Update 2026-09-25**: the "`Lighthouse.EndToEndTests` is deliberately not pinned" rule no longer
+  holds. Every workflow now takes pnpm from the `packageManager` field instead of `@latest` or a
+  `version:` input — `pnpm/action-setup` is pointed at the project's own `package.json` with
+  `package_json_file:`, corepack is gone, and the Dockerfile installs the same version with npm — and
+  `Lighthouse.EndToEndTests` names the same pnpm version as the frontend. Dependabot and CI now read
+  the same field, so they agree. If a Dependabot PR for `Lighthouse.EndToEndTests` ever writes its
+  lockfile with a different pnpm, that is the signal to revisit this.
 
 ### 2026-09-16 — a stale run listing set the change-detection base six weeks back, so a Jira-only change ran every live connector
 - **Symptom**: run `35073810008` (commit `d504bfeec`, touching only `WorkTrackingConnectors/Jira/*.cs`

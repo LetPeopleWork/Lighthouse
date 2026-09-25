@@ -5,8 +5,6 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { findToolchainPinViolations } from './toolchain-pins.mjs';
 
-const SLICE_02 = 'pending: slice 02 (pnpm from packageManager)';
-
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
 
 const packageJson = (name) =>
@@ -123,7 +121,7 @@ test('the repository names its Node version only in .nvmrc', async () => {
 	assert.deepEqual(violations, [], describeAll(violations));
 });
 
-test('the repository names its pnpm version only in packageManager', { skip: SLICE_02 }, async () => {
+test('the repository names its pnpm version only in packageManager', async () => {
 	const violations = ofFamily(await findToolchainPinViolations(REPO_ROOT), 'pnpm');
 	assert.deepEqual(violations, [], describeAll(violations));
 });

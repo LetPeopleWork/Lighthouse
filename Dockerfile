@@ -1,3 +1,6 @@
+# check=skip=InvalidDefaultArgInFrom
+# NODE_VERSION has no default on purpose, so a build that does not pass it fails
+# instead of quietly using some other Node. This check only warns about exactly that.
 ARG NODE_VERSION
 FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER app
@@ -25,8 +28,7 @@ RUN dotnet build "Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.cspr
 FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-bookworm-slim AS node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
-RUN corepack enable \
-    && corepack prepare pnpm@10.12.1 --activate \
+RUN npm install -g "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1].split('+')[0]")" \
     && pnpm install --frozen-lockfile --ignore-scripts \
     && pnpm run build-docker
 
