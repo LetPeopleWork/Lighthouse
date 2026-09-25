@@ -438,3 +438,7 @@ green.
 - Gherkin `.feature` files are not produced. This surface's convention is `node:test`, and the test
   names read as the scenarios.
 - Outcomes registry: skipped. The guard is a CI invariant, not a product contract.
+- Both slices carry only `@infrastructure` stories, which the slice-composition gate normally
+  rejects. That is accepted here because the whole feature is infrastructure-only (same as
+  `backend-sonar-in-regular-ci`). Each slice's value is to the maintainer, not a product user:
+  observable in CI logs and the local shell, and releasable on its own.
