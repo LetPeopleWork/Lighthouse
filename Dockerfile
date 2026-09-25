@@ -1,3 +1,4 @@
+ARG NODE_VERSION
 FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER app
 WORKDIR /app
@@ -21,7 +22,7 @@ RUN dotnet build "Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.cspr
 	-c "$BUILD_CONFIGURATION" \
 	-o /app/build/
 
-FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS node-builder
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-bookworm-slim AS node-builder
 WORKDIR /node
 COPY Lighthouse.Frontend /node
 RUN corepack enable \

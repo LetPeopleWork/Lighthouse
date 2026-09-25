@@ -12,10 +12,11 @@ on:
       - ".github/actions/**"
       - ".github/scripts/**"
       - "examples/postgres/**"
-      # The image build reads all four. Without them a Dockerfile or
+      # The image build reads all five. Without them a Dockerfile or
       # .dockerignore change reaches main without ever being built, which is how
       # a broken COPY got there in the first place.
       - "Dockerfile"
+      - ".nvmrc"
       - ".dockerignore"
       - "LICENSE"
       - "NOTICE"
