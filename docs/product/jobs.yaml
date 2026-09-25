@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-22
+updated: 2026-09-25
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -56,6 +56,7 @@ feature_context:
   - story-6055-activity-names-the-work
   - epic-4172-forecast-backtest-sweep
   - story-6053-reconstruct-over-time-history
+  - story-6088-clients-dependency-updates
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7524,3 +7525,55 @@ jobs:
         effectively unreachable on a real instance; the dev database shows 4 usable days out of ~365
         reconstructible ones. Gap: 3 - large, and unusually cheap to close because every metric the recorder
         writes is already computed from a (startDate, endDate) window, so a past day is the same call shifted.
+
+  - id: job-maintainer-keep-shipped-clients-patched-without-toil
+    title: Keep what the clients ship on current, aged dependencies without doing it by hand
+    persona: lighthouse-maintainer
+    feature_context: story-6088-clients-dependency-updates
+    created: 2026-09-25
+    note: >
+      User Story 6088. lighthouse-clients publishes five npm packages (client, cli, mcp-core, mcp-http,
+      mcp-stdio), the Bun-compiled `lh` binaries, an MCPB bundle and the mcp-http image, and has no
+      dependency automation at all. The Lighthouse repo (Dependabot) and lighthouse-platform (Renovate)
+      both have it. DISCOVER and DIVERGE were skipped by the user's instruction, so this job rests on the
+      story text and the user's answers of 2026-09-25; it is scored conservatively for that reason.
+    job_story: >
+      When a dependency of the Lighthouse clients ships a fix,
+      I want the update proposed, checked and merged without me touching it - but only once the new
+      version has been public for 7 days, long enough for a compromised release to be caught -
+      so the CLI and MCP servers stay current for the people who install them, and my attention goes
+      only to the updates that genuinely need a decision.
+    dimensions:
+      functional: >
+        One PR per update with the lockfile included; merged automatically when the CI check is green for
+        patch and minor versions; majors opened and left for the maintainer; nothing proposed before the
+        version is 7 days old; security fixes opened at once but left for the maintainer.
+      emotional: >
+        Move from "the clients are probably behind and I would not know by how much" to "the PR list
+        drains itself" - without the unease of a bot
+        merging into a public repo that ships to other people's machines.
+      social: >
+        Ship CLI and MCP releases that do not carry months-old dependencies to third parties, and be seen
+        to take supply-chain risk seriously by waiting before adopting anything new.
+    forces:
+      push: >
+        Dependencies move only when the maintainer remembers.
+      pull: >
+        The same arrangement the other two repos already have: a PR per update, merged once green, and a
+        dashboard that says what is waiting and why.
+      anxiety: >
+        Will a bot merge something that breaks consumers, or a freshly compromised package? (Addressed:
+        7-day minimum age, majors and security fixes never auto-merged, and Renovate merges only once
+        the CI check is green.)
+      habit: >
+        Trunk-based pushes straight to main, and a release gate approved by hand. Both stay unchanged;
+        publishing is still a human act.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - real security and hygiene value for software that ships to third parties, but no
+        consumer has reported a stale or vulnerable dependency, and nothing is blocked today. Current
+        satisfaction 1 - nothing exists; updates happen only by hand. Gap 2 - a known, bounded fix with two
+        in-house precedents; held at 2 because the job was not validated through DISCOVER.
