@@ -129,7 +129,7 @@ test('the repository names its pnpm version only in packageManager', { skip: SLI
 	assert.deepEqual(violations, [], describeAll(violations));
 });
 
-test('a tree reading every version from its single source passes', { skip: SLICE_01 }, async (t) => {
+test('a tree reading every version from its single source passes', async (t) => {
 	const { root } = await tree(t);
 	const violations = await findToolchainPinViolations(root);
 	assert.deepEqual(violations, [], describeAll(violations));
@@ -330,7 +330,7 @@ const PNPM_DRIFTS = [
 ];
 
 for (const [family, drifts, skip] of [
-	['node', NODE_DRIFTS, SLICE_01],
+	['node', NODE_DRIFTS, false],
 	['pnpm', PNPM_DRIFTS, SLICE_02],
 ]) {
 	for (const drift of drifts) {
