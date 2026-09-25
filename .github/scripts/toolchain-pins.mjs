@@ -282,4 +282,148 @@ const NODE_RULES = [
 	engineStrict,
 ];
 
-const RULES = [...NODE_RULES];
+// --- pnpm rules ------------------------------------------------------------------------------
+
+/** @returns {Violation} */
+const pnpmViolation = (rule, file, line, message) => ({
+	family: 'pnpm',
+	rule,
+	file,
+	...(line && { line }),
+	message,
+});
+
+const indentOf = (text) => text.match(/^\s*/)[0].length;
+const isBlank = (text) => text.trim() === '' || /^\s*#/.test(text);
+
+/** Index just past the last line indented deeper than `start`, i.e. where its block ends. */
+function blockEnd(allLines, start) {
+	const indent = indentOf(allLines[start]);
+	let end = start + 1;
+	while (end < allLines.length && (isBlank(allLines[end]) || indentOf(allLines[end]) > indent)) end++;
+	return end;
+}
+
+/** Index of the `- ` line that opens the step containing `index`. */
+function stepStart(allLines, index) {
+	if (/^\s*-\s/.test(allLines[index])) return index;
+	const indent = indentOf(allLines[index]);
+	for (let i = index - 1; i >= 0; i--) {
+		if (/^\s*-\s/.test(allLines[i]) && indentOf(allLines[i]) < indent) return i;
+	}
+	return index;
+}
+
+/** @param {Repo} repo */
+function pnpmActionSteps(repo) {
+	return repo.yamlFiles.flatMap(({ file, content }) => {
+		const allLines = lines(content);
+		return allLines.flatMap((text, index) => {
+			if (!/\buses:\s*["']?pnpm\/action-setup@/.test(text)) return [];
+			const start = stepStart(allLines, index);
+			const step = allLines.slice(start, blockEnd(allLines, start));
+			const violations = step.some((stepLine) => /^\s*package_json_file\s*:/.test(stepLine))
+				? []
+				: [
+						pnpmViolation(
+							'pnpm-action-no-package-json',
+							file,
+							index + 1,
+							'add package_json_file: Lighthouse.Frontend/package.json so the step reads packageManager',
+						),
+					];
+			const withAt = step.findIndex((stepLine) => /^\s*with\s*:\s*$/.test(stepLine));
+			if (withAt === -1) return violations;
+			const withBlock = step.slice(withAt + 1, blockEnd(step, withAt));
+			const versionAt = withBlock.findIndex((stepLine) => /^\s*version\s*:/.test(stepLine));
+			if (versionAt !== -1) {
+				violations.push(
+					pnpmViolation(
+						'pnpm-action-version-literal',
+						file,
+						start + withAt + 1 + versionAt + 1,
+						'remove version: and let the step read packageManager from package_json_file',
+					),
+				);
+			}
+			return violations;
+		});
+	});
+}
+
+// A shell expansion such as pnpm@$(...) reads the version from packageManager, so only a
+// digit or `latest` right after the @ counts as writing a version down.
+const PNPM_LITERAL = /\bpnpm@(?:\d|latest\b)/;
+
+/** @param {Repo} repo */
+function pnpmInstallLines(repo) {
+	const sources = [...repo.yamlFiles];
+	if (repo.dockerfile !== null) sources.push({ file: DOCKERFILE, content: repo.dockerfile });
+	return sources.flatMap(({ file, content }) =>
+		lines(content).flatMap((text, index) => {
+			// Dropping corepack removes the whole line, so a pnpm@ on it would be a second report
+			// of the same fix.
+			if (/corepack/i.test(text)) {
+				return [
+					pnpmViolation(
+						'corepack-used',
+						file,
+						index + 1,
+						'drop corepack; install pnpm with pnpm/action-setup (package_json_file) or from packageManager',
+					),
+				];
+			}
+			if (PNPM_LITERAL.test(text)) {
+				return [
+					pnpmViolation(
+						'pnpm-version-literal',
+						file,
+						index + 1,
+						'read the pnpm version from packageManager instead of writing it here',
+					),
+				];
+			}
+			return [];
+		}),
+	);
+}
+
+/** @param {Repo} repo */
+function packageManager(repo) {
+	const declared = repo.projects
+		.filter(({ packageJson }) => packageJson !== null)
+		.map(({ dir, packageJson }) => ({
+			dir,
+			packageJson,
+			value: JSON.parse(packageJson).packageManager,
+		}));
+	const reference = declared.find(({ dir }) => dir === PROJECT_DIRS[0])?.value;
+
+	return declared.flatMap(({ dir, packageJson, value }) => {
+		const file = `${dir}/package.json`;
+		if (value === undefined) {
+			return [
+				pnpmViolation(
+					'package-manager-missing',
+					file,
+					undefined,
+					`add "packageManager": "${reference ?? 'pnpm@<version>'}"`,
+				),
+			];
+		}
+		if (reference === undefined || value === reference) return [];
+		const line = lines(packageJson).findIndex((text) => /^\s*"packageManager"\s*:/.test(text));
+		return [
+			pnpmViolation(
+				'package-manager-mismatch',
+				file,
+				line === -1 ? undefined : line + 1,
+				`set packageManager to "${reference}" to match ${PROJECT_DIRS[0]}/package.json`,
+			),
+		];
+	});
+}
+
+const PNPM_RULES = [pnpmActionSteps, pnpmInstallLines, packageManager];
+
+const RULES = [...NODE_RULES, ...PNPM_RULES];

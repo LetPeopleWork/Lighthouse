@@ -330,7 +330,7 @@ const PNPM_DRIFTS = [
 
 for (const [family, drifts, skip] of [
 	['node', NODE_DRIFTS, false],
-	['pnpm', PNPM_DRIFTS, SLICE_02],
+	['pnpm', PNPM_DRIFTS, false],
 ]) {
 	for (const drift of drifts) {
 		test(`reports ${drift.name}`, { skip }, async (t) => {
