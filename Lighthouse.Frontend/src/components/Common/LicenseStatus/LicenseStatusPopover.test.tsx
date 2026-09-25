@@ -751,8 +751,8 @@ describe("LicenseStatusPopover", () => {
 		});
 
 		it("shows renew button exactly 30 days before expiry", () => {
-			const expiryDate = new Date();
-			expiryDate.setDate(expiryDate.getDate() + 30);
+			// The window is 30 × 24 hours; 30 calendar days is an hour longer across a clock change.
+			const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
 			const licenseStatus: ILicenseStatus = {
 				hasLicense: true,
