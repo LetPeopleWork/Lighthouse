@@ -87,6 +87,11 @@ async function listYamlFiles(root) {
 
 const lines = (content) => content.split('\n');
 
+// In YAML a `#` starts a comment only after whitespace and outside quotes, so `"a # b"` and
+// `a#b` are values. Rules match on what is left, so a trailing note cannot change a verdict.
+const UNCOMMENTED = /^(?:"[^"]*"|'[^']*'|[^#]|(?<=\S)#)*/;
+const yamlLines = (content) => lines(content).map((text) => UNCOMMENTED.exec(text)[0]);
+
 /** @returns {Violation} */
 const nodeViolation = (rule, file, line, message) => ({
 	family: 'node',
@@ -107,7 +112,7 @@ function nvmrcVersion(repo) {
 /** @param {Repo} repo */
 function nodeVersionLiterals(repo) {
 	return repo.yamlFiles.flatMap(({ file, content }) =>
-		lines(content).flatMap((text, index) =>
+		yamlLines(content).flatMap((text, index) =>
 			/^\s*(?:-\s+)?node-version\s*:/.test(text)
 				? [
 						nodeViolation(
@@ -208,7 +213,7 @@ function nvmrcWellFormed(repo) {
 
 /** @param {Repo} repo */
 function nvmrcInCiPaths(repo) {
-	const listed = lines(repo.ciWorkflow ?? '').some((text) => /^\s*-\s*(["']?)\.nvmrc\1\s*$/.test(text));
+	const listed = yamlLines(repo.ciWorkflow ?? '').some((text) => /^\s*-\s*(["']?)\.nvmrc\1\s*$/.test(text));
 	return listed
 		? []
 		: [
@@ -237,7 +242,7 @@ function nvmrcInChangeDetection(repo) {
 			),
 		];
 	}
-	const changeLines = lines(repo.changesWorkflow);
+	const changeLines = yamlLines(repo.changesWorkflow);
 	return NODE_DEPENDENT_OUTPUTS.flatMap((output) => {
 		const index = changeLines.findIndex((text) => new RegExp(`^\\s*${output}=`).test(text));
 		if (index !== -1 && changeLines[index].includes('.nvmrc')) return [];
@@ -293,7 +298,7 @@ function enginesNodeLine(packageJson) {
 /** @param {Repo} repo */
 function engineStrict(repo) {
 	return repo.projects.flatMap(({ dir, packageJson, workspace }) =>
-		packageJson === null || /^engineStrict:\s*true\s*$/m.test(workspace ?? '')
+		packageJson === null || yamlLines(workspace ?? '').some((text) => /^engineStrict:\s*true\s*$/.test(text))
 			? []
 			: [
 					nodeViolation(
@@ -352,7 +357,7 @@ function stepStart(allLines, index) {
 /** @param {Repo} repo */
 function pnpmActionSteps(repo) {
 	return repo.yamlFiles.flatMap(({ file, content }) => {
-		const allLines = lines(content);
+		const allLines = yamlLines(content);
 		return allLines.flatMap((text, index) => {
 			if (!/\buses:\s*["']?pnpm\/action-setup@/.test(text)) return [];
 			const start = stepStart(allLines, index);

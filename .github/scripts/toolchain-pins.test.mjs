@@ -624,6 +624,13 @@ const PNPM_SPELLINGS = [
 		},
 		needle: '"packageManager": "pnpm@11.7.0"',
 	},
+	{
+		name: 'a pnpm version under a with: line that carries a trailing comment',
+		rule: 'pnpm-action-version-literal',
+		file: WORKFLOW,
+		edits: { [WORKFLOW]: both(replace(PNPM_STEP, PNPM_STEP.replace('with:', 'with:  # inputs')), pinPnpm) },
+		needle: 'version: 10.33.2',
+	},
 ];
 
 // --- Near misses: text that looks like a pin, or a source spelled differently, and is fine ----
@@ -673,6 +680,14 @@ const NEAR_MISSES = [
 	{
 		name: 'engineStrict: true written with extra spaces',
 		edits: { 'Lighthouse.Frontend/pnpm-workspace.yaml': 'engineStrict:   true  \n' },
+	},
+	{
+		name: 'engineStrict: true followed by a comment',
+		edits: { 'Lighthouse.Frontend/pnpm-workspace.yaml': 'engineStrict: true # fail on wrong Node\n' },
+	},
+	{
+		name: 'a CI trigger listing .nvmrc followed by a comment',
+		edits: { '.github/workflows/ci.yml': replace('- ".nvmrc"', '- ".nvmrc"  # Node bump') },
 	},
 	{
 		name: 'a pnpm setup step followed by another action that takes a version: input',
