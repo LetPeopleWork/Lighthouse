@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { join, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 /**
  * @typedef {'node' | 'pnpm'} Family
@@ -10,6 +10,7 @@ import { join, sep } from 'node:path';
  *   dockerfile: string | null,
  *   dockerWorkflow: string | null,
  *   ciWorkflow: string | null,
+ *   changesWorkflow: string | null,
  *   nvmrc: string | null,
  *   projects: Project[],
  * }} Repo
@@ -19,6 +20,7 @@ const NVMRC = '.nvmrc';
 const DOCKERFILE = 'Dockerfile';
 const CI_WORKFLOW = '.github/workflows/ci.yml';
 const DOCKER_WORKFLOW = '.github/workflows/ci_docker.yml';
+const CHANGES_WORKFLOW = '.github/workflows/ci_changes.yml';
 const PROJECT_DIRS = ['Lighthouse.Frontend', 'Lighthouse.EndToEndTests'];
 
 // Docker tags and setup-node both accept a bare version, but neither understands nvm aliases
@@ -32,7 +34,7 @@ const NVMRC_VERSION = /^\d+(\.\d+){0,2}$/;
  * @returns {Promise<Violation[]>}
  */
 export async function findToolchainPinViolations(repoRoot) {
-	const repo = await readRepo(repoRoot);
+	const repo = await readRepo(resolve(repoRoot));
 	return RULES.flatMap((rule) => rule(repo));
 }
 
@@ -54,6 +56,7 @@ async function readRepo(root) {
 		dockerfile: await read(DOCKERFILE),
 		dockerWorkflow: await read(DOCKER_WORKFLOW),
 		ciWorkflow: await read(CI_WORKFLOW),
+		changesWorkflow: await read(CHANGES_WORKFLOW),
 		nvmrc: await read(NVMRC),
 		projects,
 	};
@@ -218,6 +221,37 @@ function nvmrcInCiPaths(repo) {
 			];
 }
 
+// A Node bump touches no file under a project directory, so unless these outputs also match
+// .nvmrc, CI starts on it and then skips the very jobs that would catch the break.
+const NODE_DEPENDENT_OUTPUTS = ['frontend', 'e2e'];
+
+/** @param {Repo} repo */
+function nvmrcInChangeDetection(repo) {
+	if (repo.changesWorkflow === null) {
+		return [
+			nodeViolation(
+				'nvmrc-not-in-change-detection',
+				CHANGES_WORKFLOW,
+				undefined,
+				'add change detection that sets frontend and e2e to true when .nvmrc changes',
+			),
+		];
+	}
+	const changeLines = lines(repo.changesWorkflow);
+	return NODE_DEPENDENT_OUTPUTS.flatMap((output) => {
+		const index = changeLines.findIndex((text) => new RegExp(`^\\s*${output}=`).test(text));
+		if (index !== -1 && changeLines[index].includes('.nvmrc')) return [];
+		return [
+			nodeViolation(
+				'nvmrc-not-in-change-detection',
+				CHANGES_WORKFLOW,
+				index === -1 ? undefined : index + 1,
+				`match .nvmrc in the ${output}= change pattern, so a Node bump runs the ${output} jobs`,
+			),
+		];
+	});
+}
+
 /** @param {Repo} repo */
 function enginesNode(repo) {
 	const version = nvmrcVersion(repo);
@@ -278,6 +312,7 @@ const NODE_RULES = [
 	dockerBuildArg,
 	nvmrcWellFormed,
 	nvmrcInCiPaths,
+	nvmrcInChangeDetection,
 	enginesNode,
 	engineStrict,
 ];

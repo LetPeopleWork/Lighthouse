@@ -32,6 +32,14 @@ on:
       - ".nvmrc"
       - "Dockerfile"
 `,
+	'.github/workflows/ci_changes.yml': `jobs:
+  changes:
+    steps:
+      - name: Check for changes
+        run: |
+          frontend=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.Frontend/|\\.nvmrc$)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          e2e=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.EndToEndTests/|\\.nvmrc$)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+`,
 	'.github/workflows/ci_frontend.yml': `jobs:
   build:
     steps:
@@ -136,6 +144,7 @@ test('a tree reading every version from its single source passes', async (t) => 
 
 const WORKFLOW = '.github/workflows/ci_frontend.yml';
 const ACTION = '.github/actions/build-frontend/action.yml';
+const CHANGES = '.github/workflows/ci_changes.yml';
 
 const NODE_DRIFTS = [
 	{
@@ -214,6 +223,26 @@ const NODE_DRIFTS = [
 		rule: 'nvmrc-not-in-ci-paths',
 		file: '.github/workflows/ci.yml',
 		edits: { '.github/workflows/ci.yml': replace('      - ".nvmrc"\n', '') },
+	},
+	{
+		name: 'change detection that would not verify the frontend when only .nvmrc changes',
+		rule: 'nvmrc-not-in-change-detection',
+		file: CHANGES,
+		edits: { [CHANGES]: replace("'^(Lighthouse.Frontend/|\\.nvmrc$)'", '^Lighthouse.Frontend/') },
+		needle: 'frontend=',
+	},
+	{
+		name: 'change detection that would not verify the end-to-end tests when only .nvmrc changes',
+		rule: 'nvmrc-not-in-change-detection',
+		file: CHANGES,
+		edits: { [CHANGES]: replace("'^(Lighthouse.EndToEndTests/|\\.nvmrc$)'", '^Lighthouse.EndToEndTests/') },
+		needle: 'e2e=',
+	},
+	{
+		name: 'a repository with no change detection to hold .nvmrc',
+		rule: 'nvmrc-not-in-change-detection',
+		file: CHANGES,
+		edits: { [CHANGES]: null },
 	},
 	{
 		name: 'a project whose engines disagree with .nvmrc',
@@ -326,12 +355,12 @@ const PNPM_DRIFTS = [
 	},
 ];
 
-for (const [family, drifts, skip] of [
-	['node', NODE_DRIFTS, false],
-	['pnpm', PNPM_DRIFTS, false],
+for (const [family, drifts] of [
+	['node', NODE_DRIFTS],
+	['pnpm', PNPM_DRIFTS],
 ]) {
 	for (const drift of drifts) {
-		test(`reports ${drift.name}`, { skip }, async (t) => {
+		test(`reports ${drift.name}`, async (t) => {
 			const { root, files } = await tree(t, drift.edits);
 			const violations = await findToolchainPinViolations(root);
 

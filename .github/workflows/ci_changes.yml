@@ -190,8 +190,8 @@ jobs:
           
           github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.*\.yml && echo 'true' || echo 'false')
           backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^Lighthouse.Backend(/|.Tests/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-          frontend=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.Frontend/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
-          e2e=$(git diff --name-only $base_ref HEAD | grep -q ^Lighthouse.EndToEndTests/ || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          frontend=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.Frontend/|\.nvmrc$)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          e2e=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.EndToEndTests/|\.nvmrc$)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
 
           # Per-connector path detection (slice-03b / CS-H). Workflow file changes
           # propagate to every output so a ci.*.yml edit reruns everything.
