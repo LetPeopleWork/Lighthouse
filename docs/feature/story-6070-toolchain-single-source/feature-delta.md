@@ -398,15 +398,15 @@ can't observe. DELIVER records the evidence here.
 
 | AC | Check | Evidence |
 |---|---|---|
-| AC1.4 | `docker build --target node-builder .` fails; with `--build-arg NODE_VERSION=$(cat .nvmrc)` succeeds | _pending_ |
-| AC1.6 | probe `features/6070-node-probe`, `.nvmrc` = older 24.x patch → every Node-setting job prints it | _run URL_ |
-| AC1.7 | first `main` run: `--build-arg NODE_VERSION=24`, `node:24-bookworm-slim` pulled, green | _run URL_ |
-| AC2.1–2.2 | `fnm` in fish; `node --version` = v24.x in repo (interactive + non-interactive), v26.8.2 outside | _pending_ |
-| AC2.4 | `pnpm install` on Node 26 → `ERR_PNPM_UNSUPPORTED_ENGINE`; on Node 24 → ok (both projects) | _pending_ |
-| AC2.5 | `pnpm test` + `pnpm build` green under the `.nvmrc` Node | _pending_ |
-| AC3.5 | E2E `pnpm install --frozen-lockfile` under the pinned pnpm | _pending_ |
-| AC3.6 | probe `features/6070-pnpm-probe`, both `packageManager` = older 10.x → every pnpm job prints it | _run URL_ |
-| AC3.7 | ci-learnings 2026-09-14 amended | _commit_ |
+| AC1.4 | `docker build --target node-builder .` fails; with `--build-arg NODE_VERSION=$(cat .nvmrc)` succeeds | 2026-09-25, buildx 0.29.1, tracked-files context. Without the arg: `failed to parse stage name "node:-bookworm-slim": invalid reference format`, exit 1. With `NODE_VERSION=24`: pulled `node:24-bookworm-slim`, `Done … using pnpm v10.33.2`, frontend built, exit 0. After slice 02 the stage installs pnpm 10.33.2 from `packageManager` and the `InvalidDefaultArgInFrom` warning is gone. |
+| AC1.6 | probe `features/6070-node-probe`, `.nvmrc` = older 24.x patch → every Node-setting job prints it | Run [36135362619](https://github.com/LetPeopleWork/Lighthouse/actions/runs/36135362619): an `.nvmrc`-only commit started CI and every job that ran resolved `.nvmrc as 24.20.0`. That run also exposed that change detection skipped Verify Frontend and Verify End to End Tests on an `.nvmrc`-only change, fixed in step 01-03. Rerun [36136635678](https://github.com/LetPeopleWork/Lighthouse/actions/runs/36136635678): all 8 Node-setting jobs, frontend and end-to-end included, resolved `.nvmrc as 24.20.0`. Both branches deleted. |
+| AC1.7 | first `main` run: `--build-arg NODE_VERSION=24`, `node:24-bookworm-slim` pulled, green | _pending — first push to main_ |
+| AC2.1–2.2 | `fnm` in fish; `node --version` = v24.x in repo (interactive + non-interactive), v26.8.2 outside | fnm 1.39.0, `--use-on-cd --version-file-strategy=recursive`. Hooked in `~/.config/fish/conf.d/fnm.fish` for the terminal and at the top of `~/.zshenv` for the non-interactive shells that Claude Code and lean-ctx run (zsh). In the repo and in `Lighthouse.Frontend`: v24.21.0 in fish, zsh, the Bash tool and lean-ctx. In `/tmp`: v26.8.2. |
+| AC2.4 | `pnpm install` on Node 26 → `ERR_PNPM_UNSUPPORTED_ENGINE`; on Node 24 → ok (both projects) | Node 26.8.2: both projects exit 1 with `ERR_PNPM_UNSUPPORTED_ENGINE`. Node 24.21.0: both succeed. With `engineStrict` removed, pnpm 10.33.2 only warns, so the setting in `pnpm-workspace.yaml` is what refuses. |
+| AC2.5 | `pnpm test` + `pnpm build` green under the `.nvmrc` Node | `pnpm build` clean (Biome: no fixes). `pnpm test` 5703 pass / 1 fail: `LicenseStatusPopover > shows renew button exactly 30 days before expiry`. It is date-dependent, unrelated to this change, and fails on every frontend run on 2026-09-25, when today + 30 days crosses the 25 Oct clock change in `TZ=Europe/Zurich`. |
+| AC3.5 | E2E `pnpm install --frozen-lockfile` under the pinned pnpm | pnpm 10.33.2 + Node 24.21.0: both projects "Lockfile is up to date", lockfiles unchanged. |
+| AC3.6 | probe `features/6070-pnpm-probe`, both `packageManager` = older 10.x → every pnpm job prints it | Run [36136640072](https://github.com/LetPeopleWork/Lighthouse/actions/runs/36136640072): both `packageManager` fields set to `pnpm@10.33.0`; all 7 pnpm-installing jobs (frontend, end-to-end, SBOM, package, SQLite, Postgres, auth) ran 10.33.0. Branch deleted. |
+| AC3.7 | ci-learnings 2026-09-14 amended | Commit fefa57de2, "Update 2026-09-25" paragraph appended; original text unchanged. |
 
 ## Wave: DISTILL / [REF] Scaffolds
 
@@ -442,3 +442,70 @@ green.
   rejects. That is accepted here because the whole feature is infrastructure-only (same as
   `backend-sonar-in-regular-ci`). Each slice's value is to the maintainer, not a product user:
   observable in CI logs and the local shell, and releasable on its own.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Node comes from `.nvmrc` (`24`) and pnpm from `packageManager` (`pnpm@10.33.2`, the same in both projects)
+for every CI job, the Docker image, Dependabot, and the maintainer's shell. The version is written
+nowhere else, and corepack is gone. `engines.node` is strict, so `pnpm install` refuses any other Node
+major. A dependency-free guard, `.github/scripts/toolchain-pins.mjs`, runs in `Verify Workflow Scripts`
+and fails CI with file and line when a literal version comes back, a copy disagrees, or a Node bump would
+stop triggering the jobs it affects.
+
+## Wave: DELIVER / [REF] Steps and commits
+
+| step | commit | what |
+|---|---|---|
+| 01-01 | `c5b66f179` | guard: Node rules |
+| 01-02 | `2b03677d9` | workflows, action, Dockerfile, `ci.yml` paths, engines + engineStrict onto `.nvmrc` |
+| 01-03 | `42fbf66e5` | change detection treats `.nvmrc` as a frontend and end-to-end change; guard rule for it |
+| 02-01 | `2f31edf19` | guard: pnpm rules |
+| 02-02 | `fefa57de2` | every pnpm install from `packageManager`; corepack removed; E2E pinned; Docker check directive; ledger note |
+| 02-03 | `0d82d11a6` | tests for comments and formatting variants (mutation remediation) |
+| 02-04 | `fb3fd989d` | guard ignores trailing YAML comments |
+
+Guard suite: 86/86 green (80 toolchain + 6 generate-version). `des-verify-integrity`: all 7 steps have
+complete traces.
+
+## Wave: DELIVER / [REF] Quality gates
+
+- **Refactor:** done inside the steps (root path resolution, inert skip column removed).
+- **Adversarial review:**
+  - slice 01: approved.
+  - slice 02 + 01-03: approved. That report was unreliable (misspelled paths, invented line numbers), so
+    its key claims were re-checked by hand. Every job installs pnpm before its setup-node cache step and
+    before its first pnpm command.
+- **Mutation:** 89.77 % (gate 80 %). See `mutation/results.md`.
+- **Probe runs:** see the evidence table in the DISTILL section.
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+- **The ACs missed change detection.** Story 1 assumed that making CI *start* on an `.nvmrc`-only change
+  was enough. The first probe showed `ci_changes.yml` then classified the change as touching no project
+  and skipped Verify Frontend and Verify End to End Tests, the jobs a Node bump affects most. Fixed in
+  step 01-03, which also added a guard rule. Recorded here because DISCUSS D10 named only `ci.yml`'s
+  `push.paths`.
+- **Test authorship moved into DELIVER.** DISTILL's tests spelled every construct exactly one way, so
+  their behaviour on comments and formatting variants was unspecified. Mutation testing exposed this, and
+  steps 02-03 and 02-04 added those tests during DELIVER.
+
+## Wave: DELIVER / [REF] Definition of Done
+
+| # | item | status |
+|---|---|---|
+| 1 | Story 1–4 ACs incl. both probes | done, except AC1.7 (first `main` run), pending push |
+| 2 | probe branches deleted | done |
+| 3 | `ci.yml` green on `main` incl. Docker | pending push. **Verify Frontend is red on 2026-09-25 for an unrelated reason** (see below) |
+| 4 | guard green, proven red on seeded drift | done |
+| 5 | fnm interactive + non-interactive | done |
+| 6 | ci-learnings consulted and amended | done (2026-09-14 entry). The 2026-06-16 "reproduce in a `node:24` container" advice still holds for pnpm-version questions; no change. |
+| 7 | contributor docs name `.nvmrc`, not a number | N/A. No README/CONTRIBUTING names a Node setup (checked 2026-09-25). |
+| 8 | conventional commits; ADO in sync | commits done; ADO update at push |
+| 9 | no new Sonar issues | to confirm on the `main` run |
+
+**Unrelated red on 2026-09-25:** `LicenseStatusPopover > shows renew button exactly 30 days before expiry`
+builds its expiry as today + 30 calendar days. The suite runs in `TZ=Europe/Zurich`, and today + 30 days
+crosses the 25 Oct clock change, so the gap is 30 days and one hour and the button doesn't show. It fails
+on any frontend run today, with or without this story, and passes from 2026-09-26.

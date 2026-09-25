@@ -1,0 +1,13 @@
+{
+  "testRunner": "command",
+  "commandRunner": { "command": "node --test .github/scripts/toolchain-pins.test.mjs" },
+  "checkers": [],
+  "reporters": ["progress", "clear-text", "json"],
+  "jsonReporter": { "fileName": "reports/mutation.json" },
+  "coverageAnalysis": "off",
+  "concurrency": 6,
+  "timeoutMS": 30000,
+  "thresholds": { "high": 80, "low": 70, "break": 0 },
+  "mutate": [".github/scripts/toolchain-pins.mjs"],
+  "tempDirName": ".stryker-tmp"
+}

@@ -1,0 +1,278 @@
+{
+  "roadmap": {
+    "project_id": "story-6070-toolchain-single-source",
+    "created_at": "2026-09-25",
+    "total_steps": 7,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Slice 01 of ADO Story 6070: every CI job, the Docker frontend stage and the maintainer's shell take Node from .nvmrc, pnpm refuses a wrong Node, and a guard test fails CI if a literal Node version comes back. Acceptance: the Node-family tests in .github/scripts/toolchain-pins.test.mjs go from skipped to GREEN (the compliant tree, 14 seeded drifts, and the real repository); pnpm-family tests stay skipped for slice 02; frontend pnpm test + pnpm build stay green under the .nvmrc Node."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, mirroring the bug-6054 precedent for a mechanical, fully specified change)",
+    "reviewed_at": "2026-09-25",
+    "notes": "No architect dispatch: DESIGN was skipped by the user and D1-D11 plus DISTILL T1-T5 in feature-delta.md prescribe every edit. The acceptance tests were reviewed and approved at the end of DISTILL. Every DISTILL Node-family test maps to a step (01-01: tests 3-17; 01-02: test 1); pnpm-family tests (2, 18-25) belong to slice 02 and are deliberately out of this roadmap. Local fnm setup (AC2.1-2.2) was done and verified by the orchestrator before this roadmap, at the user's request, since it touches the maintainer's own shell config rather than the repository."
+  },
+  "ssot_inputs": [
+    "docs/feature/story-6070-toolchain-single-source/feature-delta.md",
+    "docs/feature/story-6070-toolchain-single-source/slices/slice-01-node-from-nvmrc.md",
+    "docs/ci-learnings.md"
+  ],
+  "user_decisions": [
+    "Dockerfile ARG NODE_VERSION with no default (D2)",
+    "engines strict, fnm set up locally first (D3, D4)",
+    "SSOT proof via throwaway features/ probe branch (D5) - a push, so it waits for the user",
+    "pnpm in scope, as slice 02 (D6)"
+  ],
+  "out_of_scope": [
+    "pnpm version pins, corepack, packageManager (slice 02)",
+    "Node 26 upgrade",
+    "dotnet-version pins",
+    "Probe branch push and main push - orchestrator, after user review"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Node from .nvmrc everywhere",
+      "description": "Build the Node half of the guard, then move the repository onto it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Guard: report every Node version written outside .nvmrc",
+          "description": "Implement the Node-family rules of findToolchainPinViolations in .github/scripts/toolchain-pins.mjs, replacing the RED scaffold.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "a tree reading every version from its single source passes; reports <each of the 14 Node drifts>",
+          "red_to_green_tests": [
+            "a tree reading every version from its single source passes",
+            "reports a workflow that writes the Node version itself",
+            "reports a workflow that writes the Node version unquoted",
+            "reports a composite action that writes the Node version itself",
+            "reports a Dockerfile that names the Node image tag directly",
+            "reports a Dockerfile whose NODE_VERSION carries a default a build could silently fall back to",
+            "reports a Dockerfile declaring NODE_VERSION after the first stage, where FROM cannot see it",
+            "reports an image build that does not hand .nvmrc to the Dockerfile",
+            "reports a repository with no .nvmrc",
+            "reports an .nvmrc naming an alias rather than a version",
+            "reports an .nvmrc with a v prefix, which is not a Docker tag",
+            "reports a CI trigger that would not start a run when only .nvmrc changes",
+            "reports a project whose engines disagree with .nvmrc",
+            "reports a project that declares no Node engine",
+            "reports a project that only warns when installed on the wrong Node"
+          ],
+          "files_to_modify": [
+            ".github/scripts/toolchain-pins.mjs (replace scaffold)",
+            ".github/scripts/toolchain-pins.test.mjs (unskip the Node-family tests only: test 3 and the NODE_DRIFTS loop; the two real-repository tests and PNPM_DRIFTS stay skipped)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "All 15 listed tests GREEN; the real-repository tests and the 8 pnpm drifts remain skipped; generate-version tests still GREEN.",
+            "Each seeded drift yields exactly one violation, with family 'node', the rule id, the repo-relative file path (forward slashes) and 1-based line where the test expects one.",
+            "When .nvmrc is missing or malformed, rules that compare against it (engines-node-mismatch) stay silent rather than adding a second violation.",
+            "No dependencies: node: built-ins only. YAML and Dockerfiles are read line by line. Scans .github/**/*.yml|yaml, Dockerfile, .nvmrc, and the two projects' package.json and pnpm-workspace.yaml under the given root; a file that does not exist is skipped unless a rule requires it.",
+            "__SCAFFOLD__ export removed. Every violation carries a message that says what to write instead (e.g. use node-version-file: '.nvmrc').",
+            "RED captured first: with the tests unskipped against the scaffold they fail on AssertionError."
+          ],
+          "implementation_notes": "Match the style of .github/scripts/generate-version.mjs (tabs, ESM, small named functions). Structure the rules so slice 02 can add the pnpm family without touching the Node rules (e.g. a list of rule functions each returning violations). Rule details are D9 and T1-T5 in feature-delta.md: engines.node must equal `${nvmrc major}.x`; engine-strict means `engineStrict: true` in that project's pnpm-workspace.yaml; the Dockerfile must declare `ARG NODE_VERSION` (no `=`) before its first FROM, and its node stage must use `node:${NODE_VERSION}`; ci_docker.yml must pass `--build-arg NODE_VERSION=$(cat .nvmrc)`; ci.yml push.paths must list `.nvmrc`; .nvmrc must match /^\\d+(\\.\\d+){0,2}$/. Comments only where the why is not readable from code, in plain language, no internal references (project CLAUDE.md). Commit: `feat(toolchain): guard reports Node versions written outside .nvmrc`"
+        },
+        {
+          "id": "01-02",
+          "name": "Move CI, Docker and both pnpm projects onto .nvmrc",
+          "description": "Point every consumer at .nvmrc and turn engine-strict on, so the real-repository Node check goes green.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "the repository names its Node version only in .nvmrc",
+          "red_to_green_tests": [
+            "the repository names its Node version only in .nvmrc"
+          ],
+          "files_to_modify": [
+            ".nvmrc (already created, contains 24 - commit it)",
+            ".github/workflows/ci.yml (add \".nvmrc\" to push.paths)",
+            ".github/workflows/ci_e2e.yml",
+            ".github/workflows/ci_verifyauth.yml",
+            ".github/workflows/ci_sonar_gates.yml",
+            ".github/workflows/ci_package-linux-standalone.yml",
+            ".github/workflows/ci_package-macos-standalone.yml",
+            ".github/workflows/ci_package-win-standalone.yml",
+            ".github/workflows/ci_verifysqlite.yml",
+            ".github/workflows/ci_verifypostgres.yml",
+            ".github/workflows/ci_sbom.yml",
+            ".github/workflows/ci_docker.yml (node-version-file, and --build-arg NODE_VERSION=$(cat .nvmrc) on docker buildx build)",
+            ".github/workflows/ci_workflow-scripts.yml",
+            ".github/actions/build-frontend/action.yml",
+            "Dockerfile (ARG NODE_VERSION before the first FROM, no default; node stage FROM uses ${NODE_VERSION})",
+            "Lighthouse.Frontend/package.json (engines.node 24.x)",
+            "Lighthouse.Frontend/pnpm-workspace.yaml (engineStrict: true)",
+            "Lighthouse.EndToEndTests/package.json (engines.node 24.x)",
+            "Lighthouse.EndToEndTests/pnpm-workspace.yaml (engineStrict: true)",
+            ".github/scripts/toolchain-pins.test.mjs (unskip the Node real-repository test only)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "Real-repository Node test GREEN; every other Node test still GREEN.",
+            "Every setup-node step uses `node-version-file: '.nvmrc'`; no `node-version:` key remains under .github/.",
+            "AC1.4: `docker build --target node-builder .` fails at FROM without the build arg; with `--build-arg NODE_VERSION=$(cat .nvmrc)` the node-builder stage builds. Record both outcomes (last lines) in the report.",
+            "AC2.4: in both projects, `pnpm install --frozen-lockfile` under the .nvmrc Node succeeds; under the system Node 26 (`/usr/bin/node`, e.g. PATH with /usr/bin first) it fails with ERR_PNPM_UNSUPPORTED_ENGINE. If pnpm 10.33.2 ignores engineStrict in pnpm-workspace.yaml, STOP and report - do not switch to .npmrc on your own (that changes a DISTILL decision).",
+            "AC2.5: `pnpm test` and `pnpm build` in Lighthouse.Frontend pass under the .nvmrc Node. pnpm build runs biome --write via prebuild; if it rewrites unrelated files, revert them.",
+            "Lockfiles unchanged (engines is not a lockfile input in pnpm 10 - verify with git diff; if a lockfile changes, report why).",
+            "Workflow YAML stays valid (actionlint if installed, else careful review); no other step in the touched workflows changes."
+          ],
+          "implementation_notes": "Consult docs/ci-learnings.md before touching package.json or pnpm settings (settings live in pnpm-workspace.yaml, never package.json#pnpm). Keep existing comments that remain true; the ci_workflow-scripts.yml comment about Node 24 and directories is still true. Do not touch any pnpm/action-setup `version:` or corepack line - that is slice 02, and the guard's pnpm tests stay skipped. Commit: `ci(toolchain): every job and the image take Node from .nvmrc` (one commit; the workflow and Dockerfile changes only make sense together)."
+        },
+        {
+          "id": "01-03",
+          "name": "A Node bump runs the jobs it affects",
+          "description": "Added after the slice-01 probe run: an .nvmrc-only commit started CI, but ci_changes.yml classified it as touching no project, so Verify Frontend and Verify End to End Tests were skipped - the jobs a Node change affects most. Make .nvmrc count as a frontend and end-to-end change, and add a guard rule so it cannot regress.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "reports change detection that would not verify the frontend or end-to-end tests when only .nvmrc changes",
+          "red_to_green_tests": [
+            "the repository names its Node version only in .nvmrc",
+            "reports change detection that would not verify the frontend when only .nvmrc changes",
+            "reports change detection that would not verify the end-to-end tests when only .nvmrc changes"
+          ],
+          "files_to_modify": [
+            ".github/workflows/ci_changes.yml",
+            ".github/scripts/toolchain-pins.mjs",
+            ".github/scripts/toolchain-pins.test.mjs"
+          ],
+          "dependencies": ["02-02"],
+          "criteria": [
+            "Back-propagated scenario (DISTILL did not foresee it): two new NODE_DRIFTS entries plus a compliant ci_changes.yml in the COMPLIANT fixture, rule id `nvmrc-not-in-change-detection`, reported at the line that computes `frontend=` or `e2e=` when that line does not match `.nvmrc`.",
+            "ci_changes.yml: `.nvmrc` changes set frontend=true and e2e=true. Backend detection unchanged.",
+            "Whole guard suite GREEN, 0 skipped.",
+            "Refactor while here: findToolchainPinViolations resolves its root to an absolute path (a relative root crashes today); drop the now-inert per-family skip column in the drift loop."
+          ],
+          "implementation_notes": "Commit: `ci(toolchain): a Node bump runs the frontend and end-to-end jobs`."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "pnpm from packageManager everywhere",
+      "description": "Slice 02: build the pnpm half of the guard, then move every pnpm install onto packageManager and drop corepack. Added 2026-09-25 while slice 01's probe run was in CI; the pre-slice spike question (does the E2E lockfile install frozen under pnpm 10.33.2?) was already answered yes by step 01-02.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Guard: report every pnpm version written outside packageManager",
+          "description": "Add the pnpm-family rules to findToolchainPinViolations alongside the Node rules.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "reports <each of the 8 pnpm drifts>",
+          "red_to_green_tests": [
+            "reports a pnpm setup step that writes its own version",
+            "reports a pnpm setup step that does not say which package.json to read",
+            "reports a workflow that activates pnpm through corepack",
+            "reports a workflow that asks for whatever pnpm is newest",
+            "reports a Dockerfile that names its own pnpm version",
+            "reports a Dockerfile that activates pnpm through corepack",
+            "reports a project with no packageManager",
+            "reports two projects naming different pnpm versions"
+          ],
+          "files_to_modify": [
+            ".github/scripts/toolchain-pins.mjs (add PNPM_RULES; Node rules untouched)",
+            ".github/scripts/toolchain-pins.test.mjs (unskip PNPM_DRIFTS only; the pnpm real-repository test stays skipped)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "All 8 pnpm drift tests GREEN; all Node tests still GREEN; the pnpm real-repository test still skipped.",
+            "Each seeded drift yields exactly one violation with family 'pnpm', rule id, file, and line where the test expects one.",
+            "pnpm-action-no-package-json is reported at the `uses: pnpm/action-setup` line; pnpm-action-version-literal at the `version:` line inside that step's `with:` block (not any other `version:` key in the file).",
+            "corepack-used: any line mentioning corepack in .github/**/*.yml|yaml or the Dockerfile. pnpm-version-literal: `pnpm@<digit>` or `pnpm@latest` in .github/**/*.yml|yaml or the Dockerfile; a `pnpm@$(...)` expansion is not a literal.",
+            "package-manager-missing: a project package.json without packageManager. package-manager-mismatch: the EndToEndTests packageManager differs from the Frontend's, reported in the EndToEndTests package.json at the packageManager line.",
+            "RED captured first."
+          ],
+          "implementation_notes": "Mirror the structure 01-01 established (small rule functions over the repo snapshot, a PNPM_RULES list). Comments only where the why is not readable, plain language, no internal references. Commit: `feat(toolchain): guard reports pnpm versions written outside packageManager`"
+        },
+        {
+          "id": "02-02",
+          "name": "Move CI, Docker and the E2E project onto packageManager",
+          "description": "Every pnpm install reads packageManager; corepack is gone; the pnpm real-repository check goes green.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "the repository names its pnpm version only in packageManager",
+          "red_to_green_tests": [
+            "the repository names its pnpm version only in packageManager"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/package.json (packageManager equal to the Frontend's)",
+            ".github/actions/build-frontend/action.yml",
+            ".github/workflows/ci_sonar_gates.yml",
+            ".github/workflows/ci_sbom.yml",
+            ".github/workflows/ci_package-linux-standalone.yml",
+            ".github/workflows/ci_package-macos-standalone.yml",
+            ".github/workflows/ci_package-win-standalone.yml",
+            ".github/workflows/ci_e2e.yml",
+            ".github/workflows/ci_verifyauth.yml",
+            ".github/workflows/ci_verifysqlite.yml",
+            ".github/workflows/ci_verifypostgres.yml",
+            "Dockerfile",
+            "docs/ci-learnings.md (append a dated note to the 2026-09-14 entry)",
+            ".github/scripts/toolchain-pins.test.mjs (unskip the pnpm real-repository test; remove the now-unused skip constant)"
+          ],
+          "dependencies": ["02-01"],
+          "criteria": [
+            "pnpm real-repository test GREEN; whole guard suite 0 skipped, 0 failed.",
+            "Every pnpm/action-setup step: no `version:`, `package_json_file:` pointing at the package.json of the project that step installs.",
+            "The four `corepack enable` / `corepack prepare pnpm@latest` steps are replaced by a pnpm/action-setup step (same pinned SHA as the other workflows) with package_json_file: Lighthouse.EndToEndTests/package.json, placed before the first pnpm command; any PNPM_HOME/PATH lines that existed only for corepack go with them.",
+            "Dockerfile: pnpm installed without corepack and without a literal, from the copied package.json's packageManager (strip any `+sha...` suffix). Also add, as the Dockerfile's first line, the BuildKit directive `# check=skip=InvalidDefaultArgInFrom` with a plain-language justification line: NODE_VERSION deliberately has no default so a build without it fails, and the check warns about exactly that.",
+            "AC3.5: `pnpm install --frozen-lockfile` passes in both projects under the pinned pnpm 10.33.2 and the .nvmrc Node. Lockfiles unchanged.",
+            "Docker node-builder stage still builds with --build-arg NODE_VERSION=$(cat .nvmrc) and prints pnpm 10.33.2 (buildx from the scratchpad as in 01-02 if needed; a tracked-files-only context).",
+            "AC3.7: docs/ci-learnings.md 2026-09-14 entry gets an appended, dated paragraph: the 'EndToEndTests deliberately not pinned' rule no longer holds, because every workflow now reads packageManager instead of @latest, so Dependabot and CI agree on one version; if a Dependabot E2E PR ever regenerates the lockfile with a different pnpm, that is the signal to revisit. Plain language, no internal references.",
+            "actionlint clean on touched workflows; no unrelated step changes."
+          ],
+          "implementation_notes": "Read docs/ci-learnings.md 2026-06-16 and 2026-09-14 first. pnpm/action-setup reads packageManager when `version` is omitted and `package_json_file` points at the file (it defaults to the repository root, which has no package.json). Do not git stash anything - the user has stashes that must not be touched. Commit: `ci(toolchain): every pnpm install takes its version from packageManager` (one commit)."
+        },
+        {
+          "id": "02-03",
+          "name": "Pin the guard's near-miss behaviour (mutation remediation)",
+          "description": "StrykerJS on toolchain-pins.mjs scored 74.85% (378 killed / 127 survived) against the 80% per-feature gate. Survivors are dominated by regex anchor/whitespace mutants and step-scoping conditionals that no fixture exercises: every fixture spells each construct exactly one way. Add tests that specify the behaviour at those edges; production code stays frozen unless a test exposes a real defect.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "near-miss spellings are judged by what they mean, not how they are written",
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            ".github/scripts/toolchain-pins.test.mjs"
+          ],
+          "dependencies": ["01-03"],
+          "criteria": [
+            "Mutation score on .github/scripts/toolchain-pins.mjs >= 80% with the same Stryker setup (command runner over node --test).",
+            "New tests describe behaviour a maintainer would care about (comments are not pins; registry-prefixed images are pins; engineStrict false is off; a neighbouring step's version is not the pnpm step's; blank/comment lines inside a with: block; missing .github directory; formatting variants such as extra spaces or quote styles), not mutant-shaped assertions.",
+            "Any survivor judged equivalent is listed with a one-line reason in the report.",
+            "If a new test exposes a real defect, stop and report it rather than changing production code."
+          ],
+          "implementation_notes": "Commit: `test(toolchain): pin how the guard reads comments and formatting variants`."
+        },
+        {
+          "id": "02-04",
+          "name": "The guard reads past trailing YAML comments",
+          "description": "Found by mutation remediation: a trailing `# comment` on a YAML line changes the guard's verdict. `with:  # inputs` on a pnpm step hides any `version:` under it (a pin slips through); `engineStrict: true # why` reads as off; `- \".nvmrc\"  # why` in ci.yml paths reads as not listed.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/toolchain-pins.test.mjs",
+          "scenario_name": "a trailing comment on a YAML line does not change what the guard sees",
+          "red_to_green_tests": [
+            "reports a pnpm version under a with: line that carries a trailing comment",
+            "accepts engineStrict: true followed by a comment",
+            "accepts .nvmrc in the CI trigger paths followed by a comment"
+          ],
+          "files_to_modify": [
+            ".github/scripts/toolchain-pins.mjs",
+            ".github/scripts/toolchain-pins.test.mjs"
+          ],
+          "dependencies": ["02-03"],
+          "criteria": [
+            "The three tests above fail first against current code, then pass.",
+            "Trailing YAML comments (whitespace then # to end of line, outside quotes) are ignored when matching YAML lines; a # inside a quoted value is not a comment.",
+            "The flow-style `with: { package_json_file: ... }` false alarm stays out of scope; note it as a known limit in a comment only if the code would otherwise mislead a reader.",
+            "Whole suite green; mutation score re-measured and still >= 80%."
+          ],
+          "implementation_notes": "Commit: `fix(toolchain): the guard reads past trailing YAML comments`."
+        }
+      ]
+    }
+  ]
+}
