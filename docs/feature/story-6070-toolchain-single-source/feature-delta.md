@@ -510,3 +510,17 @@ exactly 30 days before expiry` built its expiry as today + 30 calendar days. The
 30 × 24 hours. Across the 25 Oct clock change in `TZ=Europe/Zurich`, 30 calendar days is an hour longer
 than that, so the button correctly stayed hidden and the test failed on every frontend run that day. The
 fixture now adds 30 × 24 hours. Frontend suite: 5704/5704 passing.
+
+## Wave: DELIVER / [REF] Finalize checklist (2026-09-25)
+
+| item | answer |
+|---|---|
+| Public docs prose (`docs/`) | N/A: the build toolchain has no user-facing surface, and no page names a Node or pnpm version. |
+| Per-feature screenshots | N/A: no UI change. |
+| Demo data | N/A: no data change. |
+| Website marketing assets | N/A: nothing a visitor sees changed. |
+| Lighthouse-Clients (CLI/MCP) | N/A: no API or contract change. |
+| `ARCHITECTURE.md` | Updated: §15 names `.nvmrc` / `packageManager` as the toolchain sources and the guard that keeps them single. |
+| Evolution doc | `docs/evolution/2026-09-25-story-6070-toolchain-single-source.md` |
+| Permanent-directory migration | N/A: DESIGN was skipped, so there are no architecture docs, ADRs, walking-skeleton or UX journeys to move. |
+| Session state removed | `.nwave/des/deliver-session.json`, `deliver/.develop-progress.json`. The DES execution log stays (gitignored, local audit trail). |

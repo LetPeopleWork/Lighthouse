@@ -322,6 +322,7 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 - Frontend: `pnpm test`, `pnpm build` (`tsc -b` + Vite → `Lighthouse.Backend/Lighthouse.Backend/wwwroot`; Biome runs as the `prebuild` hook).
 - Run the full app from source: `pnpm build` (FE → wwwroot) → `Lighthouse.Backend/Start-DevServer.ps1` (serves API + SPA on :5169, SQLite by default). It keeps the dev key ring outside the repo, where a `git clean` or a fresh worktree cannot destroy it — losing a ring is what leaves stored credentials unreadable. E2E: Playwright (Page Object Model) against the running app.
 - EF migrations: `Create-Migration.ps1` (both providers).
+- Toolchain versions: Node comes from `.nvmrc`, pnpm from `packageManager` (the same in both pnpm projects), for CI, the Docker image and a local version manager alike. `engines.node` is strict, so `pnpm install` refuses any other Node major. `.github/scripts/toolchain-pins.mjs` runs in `Verify Workflow Scripts` and fails CI when a version is written anywhere else.
 
 **Test stack** — Backend: NUnit + Moq + `Microsoft.EntityFrameworkCore.InMemory` + `WebApplicationFactory`; net10.0. Frontend: Vitest + React Testing Library. E2E: Playwright. Architecture: TngTech.ArchUnitNET (+ a few reflection contract-pins).
 
