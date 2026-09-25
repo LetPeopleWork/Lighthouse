@@ -403,7 +403,7 @@ can't observe. DELIVER records the evidence here.
 | AC1.7 | first `main` run: `--build-arg NODE_VERSION=24`, `node:24-bookworm-slim` pulled, green | _pending — first push to main_ |
 | AC2.1–2.2 | `fnm` in fish; `node --version` = v24.x in repo (interactive + non-interactive), v26.8.2 outside | fnm 1.39.0, `--use-on-cd --version-file-strategy=recursive`. Hooked in `~/.config/fish/conf.d/fnm.fish` for the terminal and at the top of `~/.zshenv` for the non-interactive shells that Claude Code and lean-ctx run (zsh). In the repo and in `Lighthouse.Frontend`: v24.21.0 in fish, zsh, the Bash tool and lean-ctx. In `/tmp`: v26.8.2. |
 | AC2.4 | `pnpm install` on Node 26 → `ERR_PNPM_UNSUPPORTED_ENGINE`; on Node 24 → ok (both projects) | Node 26.8.2: both projects exit 1 with `ERR_PNPM_UNSUPPORTED_ENGINE`. Node 24.21.0: both succeed. With `engineStrict` removed, pnpm 10.33.2 only warns, so the setting in `pnpm-workspace.yaml` is what refuses. |
-| AC2.5 | `pnpm test` + `pnpm build` green under the `.nvmrc` Node | `pnpm build` clean (Biome: no fixes). `pnpm test` 5703 pass / 1 fail: `LicenseStatusPopover > shows renew button exactly 30 days before expiry`. It is date-dependent, unrelated to this change, and fails on every frontend run on 2026-09-25, when today + 30 days crosses the 25 Oct clock change in `TZ=Europe/Zurich`. |
+| AC2.5 | `pnpm test` + `pnpm build` green under the `.nvmrc` Node | `pnpm build` clean (Biome: no fixes). `pnpm test` 5704/5704 after `4ee500a53` fixed an unrelated clock-change test (see Definition of Done). |
 | AC3.5 | E2E `pnpm install --frozen-lockfile` under the pinned pnpm | pnpm 10.33.2 + Node 24.21.0: both projects "Lockfile is up to date", lockfiles unchanged. |
 | AC3.6 | probe `features/6070-pnpm-probe`, both `packageManager` = older 10.x → every pnpm job prints it | Run [36136640072](https://github.com/LetPeopleWork/Lighthouse/actions/runs/36136640072): both `packageManager` fields set to `pnpm@10.33.0`; all 7 pnpm-installing jobs (frontend, end-to-end, SBOM, package, SQLite, Postgres, auth) ran 10.33.0. Branch deleted. |
 | AC3.7 | ci-learnings 2026-09-14 amended | Commit fefa57de2, "Update 2026-09-25" paragraph appended; original text unchanged. |
@@ -497,7 +497,7 @@ complete traces.
 |---|---|---|
 | 1 | Story 1–4 ACs incl. both probes | done, except AC1.7 (first `main` run), pending push |
 | 2 | probe branches deleted | done |
-| 3 | `ci.yml` green on `main` incl. Docker | pending push. **Verify Frontend is red on 2026-09-25 for an unrelated reason** (see below) |
+| 3 | `ci.yml` green on `main` incl. Docker | pending push (the unrelated clock-change red is fixed, see below) |
 | 4 | guard green, proven red on seeded drift | done |
 | 5 | fnm interactive + non-interactive | done |
 | 6 | ci-learnings consulted and amended | done (2026-09-14 entry). The 2026-06-16 "reproduce in a `node:24` container" advice still holds for pnpm-version questions; no change. |
@@ -505,7 +505,8 @@ complete traces.
 | 8 | conventional commits; ADO in sync | commits done; ADO update at push |
 | 9 | no new Sonar issues | to confirm on the `main` run |
 
-**Unrelated red on 2026-09-25:** `LicenseStatusPopover > shows renew button exactly 30 days before expiry`
-builds its expiry as today + 30 calendar days. The suite runs in `TZ=Europe/Zurich`, and today + 30 days
-crosses the 25 Oct clock change, so the gap is 30 days and one hour and the button doesn't show. It fails
-on any frontend run today, with or without this story, and passes from 2026-09-26.
+**Unrelated red on 2026-09-25, fixed in `4ee500a53`:** the test `LicenseStatusPopover > shows renew button
+exactly 30 days before expiry` built its expiry as today + 30 calendar days. The component's window is
+30 × 24 hours. Across the 25 Oct clock change in `TZ=Europe/Zurich`, 30 calendar days is an hour longer
+than that, so the button correctly stayed hidden and the test failed on every frontend run that day. The
+fixture now adds 30 × 24 hours. Frontend suite: 5704/5704 passing.
