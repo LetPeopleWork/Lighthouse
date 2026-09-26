@@ -48,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @driving_adapter @real-io @us-01 @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task The_same_check_answers_on_the_versioned_route_as_well()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -76,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase("{\"applyFilterOverride\":\"yes\"}")]
         [TestCase("{\"applyFilterOverride\":1}")]
         [TestCase("{\"applyFilterOverride\":")]
-        [Ignore(Pending)]
         public async Task A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked(string options)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -106,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @rbac @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -131,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @error @real-io @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_Team_that_does_not_exist_is_answered_as_not_found()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
