@@ -435,7 +435,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		expect(panelTitlesInOrder(group)).toEqual([14, 30, 45, 60, 90]);
 	});
 
-	it.skip(`a row draws the forecast as a band with its four levels and marks where the Team's actual landed (${PENDING})`, async () => {
+	it(`a row draws the forecast as a band with its four levels and marks where the Team's actual landed (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				checks: [
@@ -461,7 +461,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		expect(within(row).getByText("42")).toBeInTheDocument();
 	});
 
-	it.skip(`@error a check that could not run says so in words where the band would be, never blank (${PENDING})`, async () => {
+	it(`@error a check that could not run says so in words where the band would be, never blank (${PENDING})`, async () => {
 		const group = await theVerdictFor(coastalSurvey());
 
 		await expandTheEvidence(group);
@@ -474,7 +474,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		expect(within(row).queryByText("95%")).toBeNull();
 	});
 
-	it.skip(`@error a check whose forecast could not be worked out gives its own reason, not the thin-history one (${PENDING})`, async () => {
+	it(`@error a check whose forecast could not be worked out gives its own reason, not the thin-history one (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				unevaluable: [
@@ -496,7 +496,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		expect(within(row).queryByText("95%")).toBeNull();
 	});
 
-	it.skip(`@error a panel none of whose checks could run still appears, every row carrying its reason (${PENDING})`, async () => {
+	it(`@error a panel none of whose checks could run still appears, every row carrying its reason (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				unevaluable: fourChecksOfTheWindow(90, "TooFewActiveDays", 2),

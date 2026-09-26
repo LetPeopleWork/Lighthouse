@@ -10,9 +10,12 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	actualDescription,
+	bandDescription,
 	denominatorStatement,
 	determinationCopy,
 	findings,
+	horizonLabel,
 	levelLine,
 	levelReadingCopy,
 	listOf,
@@ -21,6 +24,7 @@ import {
 	standingCopy,
 	sufficiencyReasonCopy,
 	type UnrunChecks,
+	unevaluableRowCopy,
 	unevaluatedSentence,
 	type VerdictFacts,
 	whyChecksCouldNotRun,
@@ -604,6 +608,76 @@ describe("whyChecksCouldNotRun", () => {
 		);
 		expect(statement).toMatch(
 			/4 of the 16 checks could not run, so they are left out of every count\. 1 check on the 14-day sampling window had fewer than 7 days with completed Tickets to draw on\. The 4 levels/,
+		);
+	});
+});
+
+describe("horizonLabel", () => {
+	it.each([
+		{ horizonDays: 7, expected: "1 week" },
+		{ horizonDays: 14, expected: "2 weeks" },
+		{ horizonDays: 28, expected: "4 weeks" },
+		{ horizonDays: 56, expected: "8 weeks" },
+		{ horizonDays: 10, expected: "10 days" },
+	])(
+		"names a $horizonDays-day horizon $expected",
+		({ horizonDays, expected }) => {
+			expect(horizonLabel(horizonDays)).toBe(expected);
+		},
+	);
+});
+
+const someRowFacts = (daysWithCompletedWork: number) => ({
+	daysWithCompletedWork,
+	minimumActiveDays: MINIMUM_ACTIVE_DAYS,
+	getTerm: ticketTerms,
+});
+
+describe("unevaluableRowCopy", () => {
+	it("tells thin history with the days it had, the minimum it was held to and the renamed work items", () => {
+		expect(unevaluableRowCopy.TooFewActiveDays(someRowFacts(3))).toBe(
+			"Not enough history in this window to check: 3 days with completed Tickets, 7 needed.",
+		);
+	});
+
+	it("counts a single day in the singular", () => {
+		expect(unevaluableRowCopy.TooFewActiveDays(someRowFacts(1))).toMatch(
+			/: 1 day with completed Tickets,/,
+		);
+	});
+
+	it("tells a forecast that could not be worked out without borrowing the thin-history words", () => {
+		const sentence = unevaluableRowCopy.DegenerateForecast(someRowFacts(20));
+		expect(sentence).toBe(
+			"No forecast could be worked out from the history in this window.",
+		);
+		expect(sentence).not.toMatch(/not enough history|days with completed/i);
+	});
+
+	it("still says something when a check that could run brought no forecast back", () => {
+		expect(unevaluableRowCopy.Sufficient(someRowFacts(30))).toBe(
+			"No forecast came back for this check.",
+		);
+	});
+});
+
+describe("bandDescription", () => {
+	it("reads every level's value in the order given", () => {
+		expect(
+			bandDescription([
+				{ probability: 95, value: 31 },
+				{ probability: 85, value: 36 },
+				{ probability: 70, value: 41 },
+				{ probability: 50, value: 48 },
+			]),
+		).toBe("Forecast: 31 at 95%, 36 at 85%, 41 at 70% and 48 at 50%.");
+	});
+});
+
+describe("actualDescription", () => {
+	it("reads the actual count with the renamed work items", () => {
+		expect(actualDescription(42, ticketTerms)).toBe(
+			"Actual: 42 Tickets completed.",
 		);
 	});
 });

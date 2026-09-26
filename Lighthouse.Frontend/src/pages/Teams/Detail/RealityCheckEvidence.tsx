@@ -1,6 +1,10 @@
 import { Box, Stack, Typography } from "@mui/material";
 import type React from "react";
-import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
+import type {
+	RealityCheckCell,
+	RealityCheckResult,
+} from "../../../models/Forecasts/RealityCheckResult";
+import RealityCheckBandRow from "./RealityCheckBandRow";
 
 interface RealityCheckEvidenceProps {
 	result: RealityCheckResult;
@@ -8,6 +12,18 @@ interface RealityCheckEvidenceProps {
 
 const samplingWindowTitle = (windowDays: number): string =>
 	`Sampling window: ${windowDays} days`;
+
+const checksOfWindow = (
+	result: RealityCheckResult,
+	windowDays: number,
+): RealityCheckCell[] =>
+	result.sampledHorizonDays.flatMap((horizonDays) =>
+		result.cells.filter(
+			(cell) =>
+				cell.samplingWindowDays === windowDays &&
+				cell.horizonDays === horizonDays,
+		),
+	);
 
 // Panels follow the server's sweep order, and every swept window gets one: a missing panel would read
 // as "this window was fine".
@@ -25,6 +41,18 @@ const RealityCheckEvidence: React.FC<Readonly<RealityCheckEvidenceProps>> = ({
 				<Typography variant="subtitle2">
 					{samplingWindowTitle(windowDays)}
 				</Typography>
+				<Stack spacing={1}>
+					{checksOfWindow(result, windowDays).map((cell) => (
+						<RealityCheckBandRow
+							key={cell.horizonDays}
+							horizonDays={cell.horizonDays}
+							sufficiency={cell.sufficiency}
+							forecast={cell.forecast}
+							actualCompleted={cell.actualCompleted}
+							minimumActiveDays={result.minimumActiveDays}
+						/>
+					))}
+				</Stack>
 			</Box>
 		))}
 	</Stack>

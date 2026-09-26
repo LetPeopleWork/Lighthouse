@@ -4,6 +4,7 @@ import {
 	type NotTestedReason,
 	type RealityCheckCell,
 	type RealityCheckDenominator,
+	type RealityCheckForecastLevel,
 	type RealityCheckLevelCoverage,
 	type RealityCheckSoundWindow,
 	type Standing,
@@ -221,6 +222,46 @@ export const whyChecksCouldNotRun = (
 					});
 		return sentence === null ? [] : [sentence];
 	});
+
+export const horizonLabel = (horizonDays: number): string => {
+	if (horizonDays % 7 !== 0) {
+		return `${horizonDays} days`;
+	}
+	const weeks = horizonDays / 7;
+	return weeks === 1 ? "1 week" : `${weeks} weeks`;
+};
+
+export interface UnevaluableRowFacts {
+	daysWithCompletedWork: number;
+	minimumActiveDays: number;
+	getTerm: TermGetter;
+}
+
+const dayCount = (days: number): string =>
+	days === 1 ? "1 day" : `${days} days`;
+
+// Said where the band would be, so the row is never blank; each reason keeps its own words.
+export const unevaluableRowCopy: Record<
+	SufficiencyReason,
+	(facts: UnevaluableRowFacts) => string
+> = {
+	Sufficient: () => "No forecast came back for this check.",
+	TooFewActiveDays: ({ daysWithCompletedWork, minimumActiveDays, getTerm }) =>
+		`Not enough history in this window to check: ${dayCount(daysWithCompletedWork)} with completed ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}, ${minimumActiveDays} needed.`,
+	DegenerateForecast: () =>
+		"No forecast could be worked out from the history in this window.",
+};
+
+export const bandDescription = (
+	levels: readonly RealityCheckForecastLevel[],
+): string =>
+	`Forecast: ${listOf(levels.map(({ probability, value }) => `${value} at ${probability}%`))}.`;
+
+export const actualDescription = (
+	actualCompleted: number,
+	getTerm: TermGetter,
+): string =>
+	`Actual: ${actualCompleted} ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} completed.`;
 
 const runsLeftOut = ({
 	runsAttempted,
