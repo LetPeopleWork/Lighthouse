@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-4172-forecast-backtest-sweep")]
     public class TeamForecastRealityCheckRunEventTests : UsageDataCollectorObservationTest
     {
-        private const string Pending = "Pending: the Forecast Reality Check is not built yet (epic 4172, slice 01, story 6072).";
-
         private const string TeamForecastRealityCheckRun = "TeamForecastRealityCheckRun";
 
         /// <summary>Appended to the end of the list, never renumbered: a renumbered member silently names a different event.</summary>
@@ -116,11 +114,11 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(",\"route\":\"" + TeamMetricsTab + "\"")]
         [TestCase(",\"workTrackingSystem\":\"Jira\"")]
         [TestCase(",\"optionalFeature\":\"FeatureOrder\",\"enabled\":true")]
-        [Ignore(Pending)]
         public async Task A_reality_check_event_carrying_anything_but_its_name_is_refused(string somethingExtra)
         {
             var token = await ABrowserThatAgreedAsync();
             using var complete = await HandInAsync(token, ARealityCheckRun());
+            await EverythingTheCollectorReceived();
             Outbound.Clear();
 
             using var withExtra = await HandInAsync(token, ARealityCheckRun(somethingExtra));
