@@ -1,0 +1,46 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6094.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Teams/Detail/realityCheckGrading.ts",
+    "src/pages/Teams/Detail/realityCheckCopy.ts",
+    "src/pages/Teams/Detail/ForecastRealityCheck.tsx",
+    "src/pages/Teams/Detail/RealityCheckDialog.tsx",
+    "src/pages/Teams/Detail/RealityCheckVerdict.tsx",
+    "src/pages/Teams/Detail/RealityCheckTable.tsx",
+    "src/pages/Teams/Detail/RealityCheckPeriodGroup.tsx",
+    "src/pages/Teams/Detail/RealityCheckGradedCell.tsx",
+    "src/pages/Teams/Detail/RealityCheckLegend.tsx"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6094-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6094"
+}
