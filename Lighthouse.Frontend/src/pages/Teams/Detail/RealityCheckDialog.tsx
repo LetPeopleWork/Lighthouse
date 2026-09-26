@@ -26,6 +26,7 @@ interface RealityCheckDialogProps {
 	open: boolean;
 	teamName: string;
 	run: RealityCheckRun;
+	onRunAgain: () => void;
 	onClose: () => void;
 }
 
@@ -59,6 +60,7 @@ const RealityCheckDialog: React.FC<Readonly<RealityCheckDialogProps>> = ({
 	open,
 	teamName,
 	run,
+	onRunAgain,
 	onClose,
 }) => {
 	const theme = useTheme();
@@ -88,6 +90,7 @@ const RealityCheckDialog: React.FC<Readonly<RealityCheckDialogProps>> = ({
 				<RealityCheckRunContent teamName={teamName} run={run} />
 			</DialogContent>
 			<DialogActions>
+				<Button onClick={onRunAgain}>Run again</Button>
 				<Button onClick={onClose}>Close</Button>
 			</DialogActions>
 		</Dialog>

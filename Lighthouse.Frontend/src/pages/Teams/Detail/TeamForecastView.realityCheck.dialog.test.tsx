@@ -600,7 +600,7 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 });
 
 describe("@us-04 @slice-04 running again, closing and reopening", () => {
-	it.skip(`Run again asks again and the dialog fills in with the fresh answer (${PENDING})`, async () => {
+	it(`Run again asks again and the dialog fills in with the fresh answer`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8 } }),
 		);
@@ -616,7 +616,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
 
-	it.skip(`closing and pressing Run reality check again asks again (${PENDING})`, async () => {
+	it(`closing and pressing Run reality check again asks again`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -631,7 +631,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
 
-	it.skip(`@error while a check is running neither Run again nor reopening starts a second one (${PENDING})`, async () => {
+	it(`@error while a check is running neither Run again nor reopening starts a second one`, async () => {
 		anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -651,7 +651,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(runRealityCheck).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip(`@error a check that fails to come back leaves the dialog open with a plain message and Run again, and no answer (${PENDING})`, async () => {
+	it(`@error a check that fails to come back leaves the dialog open with a plain message and Run again, and no answer`, async () => {
 		runRealityCheck.mockRejectedValue(
 			new Error("The reality check could not be run"),
 		);
@@ -670,7 +670,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(within(dialog).queryByRole("table")).toBeNull();
 	});
 
-	it.skip(`@error Run again after a failure can still bring the answer (${PENDING})`, async () => {
+	it(`@error Run again after a failure can still bring the answer`, async () => {
 		runRealityCheck
 			.mockRejectedValueOnce(new Error("The reality check could not be run"))
 			.mockResolvedValueOnce(aRealityCheckAnswer());

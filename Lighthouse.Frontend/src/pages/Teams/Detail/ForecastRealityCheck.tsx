@@ -1,6 +1,7 @@
 import { Button } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useRef, useState } from "react";
+import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
@@ -14,6 +15,14 @@ interface ForecastRealityCheckProps {
 
 const RUNNING: RealityCheckRun = { state: "running" };
 
+const FALLBACK_FAILURE_MESSAGE =
+	"The reality check could not be run. Please try again.";
+
+const failedRun = (error: unknown): RealityCheckRun => ({
+	state: "failed",
+	message: error instanceof Error ? error.message : FALLBACK_FAILURE_MESSAGE,
+});
+
 const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	teamId,
 	teamName,
@@ -23,8 +32,17 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	const reportUsage = useUsageDataReporter();
 	const [isOpen, setIsOpen] = useState(false);
 	const [run, setRun] = useState<RealityCheckRun>(RUNNING);
-	// State updates land a render late, so a quick second press would still see "not running".
+	// State updates land a render late, so a quick second press would still see the old values.
 	const isRunningRef = useRef(false);
+	const isOpenRef = useRef(false);
+
+	const settleAnswer = useCallback(
+		(result: RealityCheckResult) => {
+			setRun({ state: "answered", result });
+			reportUsage({ name: UsageDataEventName.TeamForecastRealityCheckRun });
+		},
+		[reportUsage],
+	);
 
 	const runCheck = useCallback(async () => {
 		if (isRunningRef.current) {
@@ -39,24 +57,26 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 				teamId,
 				applyFilterOverride,
 			);
-			setRun({ state: "answered", result });
-			reportUsage({ name: UsageDataEventName.TeamForecastRealityCheckRun });
+			// Nobody is looking at an answer that lands after the dialog closed; the next open asks afresh.
+			if (isOpenRef.current) {
+				settleAnswer(result);
+			}
 		} catch (error) {
-			setRun({
-				state: "failed",
-				message:
-					error instanceof Error
-						? error.message
-						: "The reality check could not be run. Please try again.",
-			});
+			setRun(failedRun(error));
 		} finally {
 			isRunningRef.current = false;
 		}
-	}, [forecastService, teamId, applyFilterOverride, reportUsage]);
+	}, [forecastService, teamId, applyFilterOverride, settleAnswer]);
 
 	const openAndRun = () => {
+		isOpenRef.current = true;
 		setIsOpen(true);
 		void runCheck();
+	};
+
+	const close = () => {
+		isOpenRef.current = false;
+		setIsOpen(false);
 	};
 
 	return (
@@ -72,7 +92,8 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 				open={isOpen}
 				teamName={teamName}
 				run={run}
-				onClose={() => setIsOpen(false)}
+				onRunAgain={() => void runCheck()}
+				onClose={close}
 			/>
 		</>
 	);
