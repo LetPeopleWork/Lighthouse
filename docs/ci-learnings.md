@@ -862,6 +862,17 @@ get re-applied.
 
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
+### 2026-09-26 — typescript:S4624: a template literal nested inside another fails the gate
+- **Symptom**: frontend gate `new_violations` = 2, both `typescript:S4624` ("Refactor this code to not use
+  nested template literals") in `realityCheckCopy.ts` — a ternary `` `${n === 1 ? "1 check" : `${n} checks`}` ``
+  and a `` levels.map(l => `${l.value} at ${l.probability}%`) `` inside an outer template.
+- **Root cause**: Biome and `tsc` accept nested template literals; only Sonar flags them, so nothing local
+  catches it.
+- **Fix**: pulled each inner template into a small named function (`checks`, `levelAt`) in
+  `src/pages/Teams/Detail/realityCheckCopy.ts`.
+- **Rule going forward**: never write a backtick template inside a `${…}` of another template — including
+  in a ternary branch or a `.map` callback; name the inner phrase as its own function or const first.
+
 ### 2026-06-06 — typescript:S4144: two mock-service factories with byte-identical bodies
 - **Symptom**: Frontend Sonar gate ERROR on `new_violations = 1` after the recurring-blackout-events push (HEAD 6e8d95ce). The violation: `typescript:S4144 — Update this function so that its implementation is not identical to 'createMockBlackoutPeriodService'.` at `Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts:391` — the new `createMockRecurringBlackoutRuleService` factory returned the same `{ getAll: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() }` shape as the sibling `createMockBlackoutPeriodService` factory. A clean `pnpm build` does NOT catch it (S4144 is a Sonar-only smell, not a tsc/Biome rule).
 - **Root cause**: Both `IBlackoutPeriodService` and `IRecurringBlackoutRuleService` expose the identical CRUD surface (`getAll`/`create`/`update`/`delete`), so their hand-written mock factories had character-for-character identical implementations. S4144 ("functions should not have identical implementations") fires at MAJOR; the `new_violations = 0` gate then reds the whole frontend.
