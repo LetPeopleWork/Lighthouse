@@ -404,7 +404,6 @@ describe("colors utility functions", () => {
 });
 
 // The six fills a reality check's graded cells take, one per grade, the same in the light and the dark theme.
-const PENDING_GRADES = "the grade fills are not built yet";
 
 const gradeFills = (): Record<ForecastGrade, string> => {
 	const fills = (
@@ -417,7 +416,7 @@ const gradeFills = (): Record<ForecastGrade, string> => {
 };
 
 describe("@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone the colours of a graded check", () => {
-	it.skip(`gives every grade a fill whose text reads at 4.5 to 1 or better (${PENDING_GRADES})`, () => {
+	it("gives every grade a fill whose text reads at 4.5 to 1 or better", () => {
 		const fills = gradeFills();
 
 		const tooFaint = FORECAST_GRADES.filter((grade) => {
@@ -431,7 +430,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone the colours of a gra
 		expect(tooFaint).toEqual([]);
 	});
 
-	it.skip(`never paints a grade in a confidence level's colour, and gives no two grades the same fill (${PENDING_GRADES})`, () => {
+	it("never paints a grade in a confidence level's colour, and gives no two grades the same fill", () => {
 		const fills = FORECAST_GRADES.map((grade) =>
 			gradeFills()[grade]?.toLowerCase(),
 		);

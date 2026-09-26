@@ -8,6 +8,19 @@
  * - UI components: min 3:1 (AA)
  */
 
+import type { ForecastGrade } from "../../pages/Teams/Detail/realityCheckGrading";
+
+// Green when the forecast held, red when it did not; the deeper the shade, the closer it landed.
+// Kept apart from the forecast level colours, which mean confidence and not how a check turned out.
+const forecastGrade: Record<ForecastGrade, string> = {
+	HeldWithin10: "#2e7d32",
+	Held10To25: "#81c784",
+	HeldOver25: "#c8e6c9",
+	NotHeldWithin10: "#f8bbd0",
+	NotHeld10To25: "#e57373",
+	NotHeldOver25: "#d32f2f",
+};
+
 export const appColors = {
 	// Primary Colors - Company brand color: #30574e
 	primary: {
@@ -30,6 +43,7 @@ export const appColors = {
 		confident: "#4caf50", // Green with good contrast in both modes
 		certain: "#388e3c", // Green with better contrast in both modes
 	},
+	forecastGrade,
 	// Status colors for consistency
 	status: {
 		success: "#4caf50", // Brighter green for better dark mode contrast
