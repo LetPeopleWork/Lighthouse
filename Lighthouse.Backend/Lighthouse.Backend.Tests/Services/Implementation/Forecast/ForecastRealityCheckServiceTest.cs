@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Cells.Select(cell => (cell.SamplingWindowDays, cell.HorizonDays)),
-                    Is.EquivalentTo(StandardWindowDays.SelectMany(window => HorizonDays.Select(horizon => (window, horizon)))));
+                    Is.EquivalentTo(EveryCellOf(StandardWindowDays)));
                 Assert.That(misplaced, Is.Empty);
             }
         }
@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             Run();
 
-            foreach (var (window, horizon) in StandardWindowDays.SelectMany(window => HorizonDays.Select(horizon => (window, horizon))))
+            foreach (var (window, horizon) in EveryCellOf(StandardWindowDays))
             {
                 var historyEnd = AsDateTime(Today.AddDays(-horizon));
                 teamMetricsService.Verify(
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(result.StandardWindowDays, Is.EqualTo(StandardWindowDays));
                 Assert.That(result.SampledWindowDays, Is.EqualTo(expectedSampledWindowDays));
                 Assert.That(result.Cells.Select(cell => (cell.SamplingWindowDays, cell.HorizonDays)),
-                    Is.EquivalentTo(expectedSampledWindowDays.SelectMany(window => HorizonDays.Select(horizon => (window, horizon)))));
+                    Is.EquivalentTo(EveryCellOf(expectedSampledWindowDays)));
                 Assert.That(result.Denominator.RunsAttempted, Is.EqualTo(expectedSampledWindowDays.Length * HorizonDays.Length));
                 Assert.That(teamMetricsService.Invocations.Count(invocation => invocation.Method.Name == nameof(ITeamMetricsService.GetBlackoutAwareThroughputForTeam)),
                     Is.EqualTo(expectedSampledWindowDays.Length * HorizonDays.Length));
@@ -300,6 +300,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         private static DateTime AsDateTime(DateOnly day) => day.ToDateTime(TimeOnly.MinValue);
+
+        private static List<(int Window, int Horizon)> EveryCellOf(int[] windowDays)
+            => [.. windowDays.SelectMany(window => HorizonDays.Select(horizon => (window, horizon)))];
 
         /// <summary>Ten trials each at 16, 14, 12 and 10 items, so the four levels read 16, 14, 12 and 10.</summary>
         private static HowManyForecast AForecastOfTenTwelveFourteenSixteen(int days)

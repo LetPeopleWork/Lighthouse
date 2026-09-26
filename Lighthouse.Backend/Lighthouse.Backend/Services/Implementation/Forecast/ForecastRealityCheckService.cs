@@ -67,65 +67,33 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var forecastDays = blackoutPeriodService
                 .GetEffectiveBlackoutDays(periodStart, periodEnd)
                 .CountWorkingDays(periodStart, periodEnd);
+            var period = new ScoredPeriod(horizonDays, scoredPeriodStart, anchorDate, forecastDays, actualCompleted);
 
-            return [.. sampledWindowDays.Select(samplingWindowDays =>
-                CheckOneWindow(team, mode, new ScoredPeriod(horizonDays, scoredPeriodStart, anchorDate, forecastDays, actualCompleted), samplingWindowDays))];
+            return [.. sampledWindowDays.Select(samplingWindowDays => CheckOneWindow(team, mode, new CheckedWindow(period, samplingWindowDays)))];
         }
 
-        private RealityCheckCellDto CheckOneWindow(Team team, ThroughputFilterMode mode, ScoredPeriod period, int samplingWindowDays)
+        private RealityCheckCellDto CheckOneWindow(Team team, ThroughputFilterMode mode, CheckedWindow window)
         {
-            var historyWindowStart = period.Start.AddDays(-samplingWindowDays);
             var history = teamMetricsService.GetBlackoutAwareThroughputForTeam(
-                team, AsDateTime(historyWindowStart), AsDateTime(period.Start), mode);
+                team, AsDateTime(window.HistoryStart), AsDateTime(window.HistoryEnd), mode);
 
             if (!ForecastDataSufficiencyPolicy.HasEnoughData(history))
             {
-                return Unevaluable(period, samplingWindowDays, historyWindowStart, SufficiencyReason.TooFewActiveDays, history.DaysWithThroughput);
+                return window.Unevaluable(SufficiencyReason.TooFewActiveDays, history.DaysWithThroughput);
             }
 
-            var forecast = forecastService.HowMany(history, period.ForecastDays);
+            var forecast = forecastService.HowMany(history, window.Period.ForecastDays);
             var levels = ConfidenceLevels
                 .Select(level => new RealityCheckForecastDto(level, forecast.GetProbability(level)))
                 .ToList();
 
             if (!RealityCheckVerdictPolicy.HasAReadingAtEveryLevel(levels))
             {
-                return Unevaluable(period, samplingWindowDays, historyWindowStart, SufficiencyReason.DegenerateForecast, history.DaysWithThroughput);
+                return window.Unevaluable(SufficiencyReason.DegenerateForecast, history.DaysWithThroughput);
             }
 
-            var levelOutcomes = levels
-                .Select(level => new RealityCheckLevelOutcomeDto(
-                    level.Probability, level.Value, RealityCheckVerdictPolicy.Held(period.ActualCompleted, level.Value)))
-                .ToList();
-
-            return new RealityCheckCellDto(
-                period.Horizon,
-                samplingWindowDays,
-                period.Start,
-                period.End,
-                historyWindowStart,
-                period.Start,
-                new RealityCheckSufficiencyDto(true, SufficiencyReason.Sufficient, history.DaysWithThroughput),
-                levels,
-                period.ActualCompleted,
-                RealityCheckVerdictPolicy.Outcome(period.ActualCompleted, levels),
-                levelOutcomes);
+            return window.Evaluated(levels, history.DaysWithThroughput);
         }
-
-        private static RealityCheckCellDto Unevaluable(
-            ScoredPeriod period, int samplingWindowDays, DateOnly historyWindowStart, SufficiencyReason reason, int daysWithCompletedWork)
-            => new(
-                period.Horizon,
-                samplingWindowDays,
-                period.Start,
-                period.End,
-                historyWindowStart,
-                period.Start,
-                new RealityCheckSufficiencyDto(false, reason, daysWithCompletedWork),
-                null,
-                null,
-                null,
-                null);
 
         private static RealityCheckDenominatorDto CountWhatWasEvaluated(List<RealityCheckCellDto> cells)
         {
@@ -149,5 +117,52 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private static DateTime AsDateTime(DateOnly day) => day.ToDateTime(TimeOnly.MinValue);
 
         private sealed record ScoredPeriod(int Horizon, DateOnly Start, DateOnly End, int ForecastDays, int ActualCompleted);
+
+        // A sampling window learns from the days right before the period it is scored on, so its history ends
+        // where that period starts.
+        private sealed record CheckedWindow(ScoredPeriod Period, int SamplingWindowDays)
+        {
+            public DateOnly HistoryStart => Period.Start.AddDays(-SamplingWindowDays);
+
+            public DateOnly HistoryEnd => Period.Start;
+
+            public RealityCheckCellDto Unevaluable(SufficiencyReason reason, int daysWithCompletedWork)
+                => Cell(new RealityCheckSufficiencyDto(false, reason, daysWithCompletedWork), null, null, null, null);
+
+            public RealityCheckCellDto Evaluated(List<RealityCheckForecastDto> forecast, int daysWithCompletedWork)
+            {
+                var actualCompleted = Period.ActualCompleted;
+                var levelOutcomes = forecast
+                    .Select(level => new RealityCheckLevelOutcomeDto(
+                        level.Probability, level.Value, RealityCheckVerdictPolicy.Held(actualCompleted, level.Value)))
+                    .ToList();
+
+                return Cell(
+                    new RealityCheckSufficiencyDto(true, SufficiencyReason.Sufficient, daysWithCompletedWork),
+                    forecast,
+                    actualCompleted,
+                    RealityCheckVerdictPolicy.Outcome(actualCompleted, forecast),
+                    levelOutcomes);
+            }
+
+            private RealityCheckCellDto Cell(
+                RealityCheckSufficiencyDto sufficiency,
+                List<RealityCheckForecastDto>? forecast,
+                int? actualCompleted,
+                CellOutcome? outcome,
+                List<RealityCheckLevelOutcomeDto>? levelOutcomes)
+                => new(
+                    Period.Horizon,
+                    SamplingWindowDays,
+                    Period.Start,
+                    Period.End,
+                    HistoryStart,
+                    HistoryEnd,
+                    sufficiency,
+                    forecast,
+                    actualCompleted,
+                    outcome,
+                    levelOutcomes);
+        }
     }
 }
