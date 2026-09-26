@@ -23,20 +23,22 @@ description: >
     - opt_in_telemetry_required: not measurable until enough people on released
                                  instances have agreed, AND until an event exists that
                                  answers the question. Both halves matter: the mechanism
-                                 ships, the unprompted ask ships, and eleven named events
-                                 ship - but an outcome asking something none of those eleven
+                                 ships, the unprompted ask ships, and twelve named events
+                                 ship - but an outcome asking something none of those twelve
                                  says stays deferred, and now names which event it is
                                  waiting for rather than waiting on the feature as a
                                  whole. Flag for product decision; do NOT build
                                  instrumentation that phones home without consent.
 
-  What the eleven events say, in one line each, so an outcome author can tell at a glance
+  What the twelve events say, in one line each, so an outcome author can tell at a glance
   whether one of them answers the question: a Team or Portfolio tab was opened (which tab,
   never which Team or Portfolio); a Team or Portfolio was created or deleted; a forecast was
   run by hand on a Team; a work tracking system was connected (which kind, never which
   authentication method, never its address); a Team or Portfolio was refreshed by hand; a
   behaviour setting was switched (which setting, from usage data's own list, and which way;
-  never the veto). The full disclosure, which is the authoritative list, is docs/settings/usagedata.md.
+  never the veto); a forecast reality check answered on a Team (its name only, sent after the
+  answer, counting an answer whose checks had too little history to run, never a failed request).
+  The full disclosure, which is the authoritative list, is docs/settings/usagedata.md.
 
 outcomes:
 
@@ -1285,8 +1287,8 @@ outcomes:
     measurement_window: "per 30-day window, from the first published release that ships slice 01"
     gate: hard for the pipe (red build if any scenario fails); none on the count, which is descriptive
     alerting: []
-    status: designed-not-shipped
-    status_note: "DELIVER of slice 01 (ADO #6072) flips this to live-on-release and moves this file's header from eleven named events to twelve."
+    status: live-on-release
+    status_note: "Goes live with the first published release that carries slice 01 (ADO #6072). No such release is known yet."
     caveat: >
       Counts browsers that agreed, not installations and not Teams. A low number early on says few
       people have agreed yet, not that nobody uses the check.
