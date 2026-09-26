@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// count is machine-independent and is asserted, by RealityCheckQueryCountTest.
     /// </summary>
     [TestFixture]
-    [Category("epic-4172-forecast-reality-check")]
+    [Category("epic-4172-forecast-backtest-sweep")]
     [Category("slice-01")]
     public class RealityCheckWallClockProbe
     {

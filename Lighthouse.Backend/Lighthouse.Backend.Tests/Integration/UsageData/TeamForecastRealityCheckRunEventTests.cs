@@ -9,12 +9,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// what the check found.
     ///
     /// Written as what a browser posts and what reaches the collector, for the reason the fixture beside
-    /// this one gives. The name does not exist in the code yet and must not appear there before the
-    /// usage data page describes it - so these name it as text, the assembly keeps building, and each
-    /// scenario fails on its own assertion the moment it is un-ignored. When the name ships it also joins
-    /// the list of name-only events in Slice04ProductEventsTests, whose sweeps then cover it too.
-    ///
-    /// Every scenario ships ignored and is switched on as a step of the work.
+    /// this one gives. The scenarios name the event as text rather than as the member of the list in the
+    /// code, so they pin the name as it travels on the wire. The name is also on the list of name-only
+    /// events in Slice04ProductEventsTests, whose sweeps cover it too.
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]

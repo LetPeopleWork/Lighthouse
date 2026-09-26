@@ -1,3 +1,4 @@
+using ArchUnitNET.Domain.Dependencies;
 using ArchUnitNET.NUnit;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using System.Text.RegularExpressions;
@@ -13,9 +14,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// range the check had just said was undifferentiated. A sweep that could reach anything with a
     /// Save on it is one small step from bringing that button back.
     ///
-    /// The rules find the feature's types by name. ArchUnitNET refuses a rule that finds nothing, so
-    /// until the types exist every rule here fails for that reason alone. The first test also pins that the policy is
-    /// a static class, which no dependency rule can express.
+    /// The rules find the feature's types by name, and ArchUnitNET refuses a rule that finds nothing, so
+    /// the first test pins that the sweep and its policy are where the rules look. It also pins that the
+    /// policy is a static class, which no dependency rule can express.
     ///
     /// The verdict's enums do not carry the feature's name, so they are listed by hand, and the first
     /// test fails if one of them is renamed or moved out from under that list.
@@ -48,17 +49,22 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ImplementationPattern = @"^Lighthouse\.Backend\.Services\.Implementation($|\..*)";
 
-        private const string ApiPattern = @"^Lighthouse\.Backend\.API($|\..*)";
+        private const string Controller = "Lighthouse.Backend.API.ForecastRealityCheckController";
+
+        private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
+
+        private static readonly string[] RepositoryWriters = ["Save", "Add", "Update", "Remove", "Delete"];
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static GivenTypesConjunction TheRealityCheck() =>
             Types().That().HaveNameContaining(FeatureWord).Or().HaveFullNameMatching(VerdictVocabularyPattern);
 
-        // The check's controller has to look the Team up before it can hand it over, so it is the one place the
-        // check may hold a repository. What must never write is the sweep and its rules behind that controller.
-        private static GivenTypesConjunction TheRealityCheckBehindItsController() =>
-            TheRealityCheck().And().DoNotResideInNamespaceMatching(ApiPattern);
+        // The check's controller has to look the Team up before it can hand it over, so it alone may hold a
+        // repository - and the next rule keeps it to reading. Any other reality check type, in the API or behind it,
+        // may not reach one at all.
+        private static GivenTypesConjunction TheRealityCheckBesideItsController() =>
+            TheRealityCheck().And().DoNotHaveFullName(Controller);
 
         // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
@@ -90,12 +96,36 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void Nothing_in_the_reality_check_can_reach_a_repository()
         {
-            TheRealityCheckBehindItsController()
+            TheRealityCheckBesideItsController()
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(RepositoriesPattern))
                 .Because(
                     "the sweep is handed the Team it checks and reads everything else through the metrics service. " +
                     "A repository is a Save away from writing a Team setting, which the check must never do.")
                 .Check(Architecture);
+        }
+
+        // Read off the call dependencies directly: the fluent call rule does not match a method declared on the
+        // generic repository interface, so it would pass a controller that saves.
+        // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
+        [Test]
+        public void The_check_s_controller_only_ever_reads_through_the_repository_it_holds()
+        {
+            var controller = Architecture.Types
+                .Where(type => type.FullName == Controller || type.FullName.StartsWith(Controller + "+", StringComparison.Ordinal))
+                .ToList();
+            var writes = controller
+                .SelectMany(type => type.Dependencies.OfType<MethodCallDependency>())
+                .Where(call => call.TargetMember.DeclaringType.Namespace.FullName == RepositoriesNamespace
+                    && RepositoryWriters.Any(writer => call.TargetMember.Name.StartsWith(writer + "(", StringComparison.Ordinal)))
+                .Select(call => $"{call.Origin.FullName} calls {call.TargetMember.DeclaringType.FullName}.{call.TargetMember.Name}")
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(controller, Is.Not.Empty, "the rule looks for the check's controller by name; without it the rule guards nothing");
+                Assert.That(writes, Is.Empty,
+                    "the controller holds a repository only to look the Team up; saving, adding, updating or removing through it would make the check write");
+            }
         }
 
         // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation

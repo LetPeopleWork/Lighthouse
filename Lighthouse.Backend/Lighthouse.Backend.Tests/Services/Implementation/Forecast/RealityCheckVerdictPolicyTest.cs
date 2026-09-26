@@ -417,19 +417,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             _ => Check.CouldNotRun,
         };
 
+        /// <summary>
+        /// The answer written out from how many windows held up and how many could not be checked at all,
+        /// rather than worked out the way the policy works it out.
+        /// </summary>
         private static Determination ExpectedDetermination(ICollection<WindowFate> fates)
         {
-            if (fates.All(fate => fate == WindowFate.CouldNotRun))
-            {
-                return Determination.NotEnoughEvidence;
-            }
+            var windows = fates.Count;
+            var heldUp = fates.Count(fate => fate == WindowFate.HoldsUp);
+            var couldNotBeChecked = fates.Count(fate => fate == WindowFate.CouldNotRun);
 
-            if (fates.All(fate => fate == WindowFate.HoldsUp))
+            return (heldUp, couldNotBeChecked) switch
             {
-                return Determination.AllWindowsAlike;
-            }
-
-            return fates.Contains(WindowFate.HoldsUp) ? Determination.SomeWindowsSound : Determination.NoWindowSound;
+                (0, var notChecked) when notChecked == windows => Determination.NotEnoughEvidence,
+                (var held, 0) when held == windows => Determination.AllWindowsAlike,
+                (0, _) => Determination.NoWindowSound,
+                _ => Determination.SomeWindowsSound,
+            };
         }
 
         private static IEnumerable<RealityCheckCellDto> EveryOtherWindow(int windowDays, Check check) =>
