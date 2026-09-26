@@ -12,7 +12,7 @@ import {
 } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { parseLocalDate } from "../../../utils/date/localDate";
-import type { ForecastGrade } from "./realityCheckGrading";
+import type { ForecastGrade, LevelCloseness } from "./realityCheckGrading";
 
 type TermGetter = (key: string) => string;
 
@@ -363,21 +363,26 @@ export const denominatorStatement = (
 const heldAgainstExpected = (
 	{ confidenceLevel, heldCount, expectedHeldCount }: RealityCheckLevelCoverage,
 	runsEvaluated: number,
+	{ withinTenPercent }: LevelCloseness,
 ): string =>
-	`${confidenceLevel}th: held ${heldCount} of ${runsEvaluated} (should be about ${Math.round(expectedHeldCount)})`;
+	`${confidenceLevel}th: held ${heldCount} of ${runsEvaluated} (should be about ${Math.round(expectedHeldCount)}), within 10% in ${withinTenPercent}`;
 
 // A level between the two extremes gets its two counts and no adjective: checks that are not independent
 // trials give no honest threshold for calling a level well calibrated.
 export const levelReadingCopy: Record<
 	LevelReading,
-	(level: RealityCheckLevelCoverage, runsEvaluated: number) => string
+	(
+		level: RealityCheckLevelCoverage,
+		runsEvaluated: number,
+		closeness: LevelCloseness,
+	) => string
 > = {
-	SometimesHeld: (level, runsEvaluated) =>
-		`${heldAgainstExpected(level, runsEvaluated)}.`,
-	NeverHeld: (level, runsEvaluated) =>
-		`${heldAgainstExpected(level, runsEvaluated)} — it never held, which is over-forecasting.`,
-	AlwaysHeld: (level, runsEvaluated) =>
-		`${heldAgainstExpected(level, runsEvaluated)} — it held every time, which is under-forecasting.`,
+	SometimesHeld: (level, runsEvaluated, closeness) =>
+		`${heldAgainstExpected(level, runsEvaluated, closeness)}.`,
+	NeverHeld: (level, runsEvaluated, closeness) =>
+		`${heldAgainstExpected(level, runsEvaluated, closeness)} — it never held, which is over-forecasting.`,
+	AlwaysHeld: (level, runsEvaluated, closeness) =>
+		`${heldAgainstExpected(level, runsEvaluated, closeness)} — it held every time, which is under-forecasting.`,
 	NotEvaluated: ({ confidenceLevel }) =>
 		`${confidenceLevel}th: no check could be run, so this level was not tested.`,
 };
@@ -385,7 +390,8 @@ export const levelReadingCopy: Record<
 export const levelLine = (
 	level: RealityCheckLevelCoverage,
 	runsEvaluated: number,
-): string => levelReadingCopy[level.reading](level, runsEvaluated);
+	closeness: LevelCloseness,
+): string => levelReadingCopy[level.reading](level, runsEvaluated, closeness);
 
 /**
  * The check reports and the person acts. Only one of the two things it looked at is stored on the

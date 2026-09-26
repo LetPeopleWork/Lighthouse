@@ -373,7 +373,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		);
 	});
 
-	it.skip(`counts the checks that fell short by under 10% as within 10% too (${PENDING})`, async () => {
+	it(`counts the checks that fell short by under 10% as within 10% too`, async () => {
 		const dialog = await theDialogFor({
 			heldCounts: { 50: 12 },
 			checks: theSixteenChecksAt(50, [
@@ -390,7 +390,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		);
 	});
 
-	it.skip(`@boundary adds no "usually" when the checks within 10% are split between held and not held (${PENDING})`, async () => {
+	it(`@boundary adds no "usually" when the checks within 10% are split between held and not held`, async () => {
 		const dialog = await theDialogFor({
 			heldCounts: { 70: 8 },
 			checks: theSixteenChecksAt(70, [
@@ -407,7 +407,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		);
 	});
 
-	it.skip(`@boundary adds no "usually" when one grade holds exactly half the checks, not more (${PENDING})`, async () => {
+	it(`@boundary adds no "usually" when one grade holds exactly half the checks, not more`, async () => {
 		const dialog = await theDialogFor({
 			heldCounts: { 95: 16 },
 			checks: theSixteenChecksAt(95, [
@@ -497,7 +497,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		);
 	});
 
-	it.skip(`@error a level no check could test says so, with no count and no "usually" (${PENDING})`, async () => {
+	it(`@error a level no check could test says so, with no count and no "usually"`, async () => {
 		const dialog = await theDialogFor({
 			soundWindowDays: [],
 			determination: "NotEnoughEvidence",
@@ -521,7 +521,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		expect(linesMatching(dialog, /within 10% in|usually/i)).toHaveLength(0);
 	});
 
-	it.skip(`@kpi-OUT-6094-no-window-ranked no level's line names, counts or ranks a sampling window (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-no-window-ranked no level's line names, counts or ranks a sampling window`, async () => {
 		const dialog = await theDialogFor({
 			heldCounts: { 85: 15 },
 			checks: theSixteenChecksAt(85, [

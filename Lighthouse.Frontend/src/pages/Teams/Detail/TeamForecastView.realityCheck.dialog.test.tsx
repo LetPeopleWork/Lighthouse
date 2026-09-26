@@ -218,14 +218,32 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
 		);
 
-		expectTheLine(dialog, "50th: held 8 of 16 (should be about 8).");
-		expectTheLine(dialog, "70th: held 11 of 16 (should be about 11).");
-		expectTheLine(dialog, "85th: held 14 of 16 (should be about 14).");
-		expectTheLine(dialog, "95th: held 15 of 16 (should be about 15).");
+		expectTheLine(
+			dialog,
+			"50th: held 8 of 16 (should be about 8), within 10% in 0.",
+		);
+		expectTheLine(
+			dialog,
+			"70th: held 11 of 16 (should be about 11), within 10% in 16.",
+		);
+		expectTheLine(
+			dialog,
+			"85th: held 14 of 16 (should be about 14), within 10% in 12.",
+		);
+		expectTheLine(
+			dialog,
+			"95th: held 15 of 16 (should be about 15), within 10% in 0.",
+		);
 
 		const inReadingOrder = [
-			linesReading(dialog, "50th: held 8 of 16 (should be about 8).")[0],
-			linesReading(dialog, "95th: held 15 of 16 (should be about 15).")[0],
+			linesReading(
+				dialog,
+				"50th: held 8 of 16 (should be about 8), within 10% in 0.",
+			)[0],
+			linesReading(
+				dialog,
+				"95th: held 15 of 16 (should be about 15), within 10% in 0.",
+			)[0],
 			linesMatching(dialog, /between 14 and 90 days/i)[0],
 			linesMatching(dialog, /sampling window is a setting on this Team/i)[0],
 			linesMatching(dialog, /confidence level is not a setting/i)[0],
@@ -254,13 +272,16 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 
 		expectTheLine(
 			dialog,
-			"50th: held 0 of 16 (should be about 8) — it never held, which is over-forecasting.",
+			"50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting.",
 		);
 		expectTheLine(
 			dialog,
-			"85th: held 16 of 16 (should be about 14) — it held every time, which is under-forecasting.",
+			"85th: held 16 of 16 (should be about 14), within 10% in 12 — it held every time, which is under-forecasting.",
 		);
-		expectTheLine(dialog, "95th: held 16 of 16 (should be about 15).");
+		expectTheLine(
+			dialog,
+			"95th: held 16 of 16 (should be about 15), within 10% in 0.",
+		);
 	});
 
 	it(`@error a Team whose history supports no check is told in words that no level was tested, and the table still stands`, async () => {
@@ -611,7 +632,10 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		await userEvent.click(theButtonNamed(dialog, /^run again$/i));
 
 		await waitFor(() =>
-			expectTheLine(dialog, "50th: held 9 of 16 (should be about 8)."),
+			expectTheLine(
+				dialog,
+				"50th: held 9 of 16 (should be about 8), within 10% in 0.",
+			),
 		);
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});

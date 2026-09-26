@@ -40,6 +40,7 @@ import {
 	windowRowLabel,
 	windowVerdict,
 } from "./realityCheckCopy";
+import type { LevelCloseness } from "./realityCheckGrading";
 
 const LADDER = [14, 30, 60, 90];
 const LADDER_WITH_45 = [14, 30, 45, 60, 90];
@@ -389,6 +390,11 @@ const aLevel = (
 	...overrides,
 });
 
+const withinTenPercentIn = (
+	withinTenPercent: number,
+	gradedChecks = 16,
+): LevelCloseness => ({ gradedChecks, withinTenPercent, usualGrade: null });
+
 const RETIRED_WORDS = /\b(beaten|about right|excellen\w*)\b/i;
 
 describe("denominatorStatement", () => {
@@ -430,8 +436,8 @@ describe("denominatorStatement", () => {
 
 describe("levelReadingCopy", () => {
 	it("gives a level between the extremes its two counts and nothing more", () => {
-		expect(levelLine(aLevel(), 16)).toBe(
-			"85th: held 14 of 16 (should be about 14).",
+		expect(levelLine(aLevel(), 16, withinTenPercentIn(6))).toBe(
+			"85th: held 14 of 16 (should be about 14), within 10% in 6.",
 		);
 	});
 
@@ -445,9 +451,10 @@ describe("levelReadingCopy", () => {
 					reading: "NeverHeld",
 				}),
 				16,
+				withinTenPercentIn(0),
 			),
 		).toBe(
-			"95th: held 0 of 16 (should be about 15) — it never held, which is over-forecasting.",
+			"95th: held 0 of 16 (should be about 15), within 10% in 0 — it never held, which is over-forecasting.",
 		);
 	});
 
@@ -461,9 +468,10 @@ describe("levelReadingCopy", () => {
 					reading: "AlwaysHeld",
 				}),
 				12,
+				withinTenPercentIn(3, 12),
 			),
 		).toBe(
-			"50th: held 12 of 12 (should be about 6) — it held every time, which is under-forecasting.",
+			"50th: held 12 of 12 (should be about 6), within 10% in 3 — it held every time, which is under-forecasting.",
 		);
 	});
 
@@ -477,25 +485,45 @@ describe("levelReadingCopy", () => {
 					reading: "NotEvaluated",
 				}),
 				0,
+				withinTenPercentIn(0, 0),
 			),
 		).toBe("70th: no check could be run, so this level was not tested.");
 	});
 
 	it.each([
-		{ expected: 13.6, line: "85th: held 14 of 16 (should be about 14)." },
-		{ expected: 11.2, line: "85th: held 14 of 16 (should be about 11)." },
-		{ expected: 8, line: "85th: held 14 of 16 (should be about 8)." },
+		{
+			expected: 13.6,
+			line: "85th: held 14 of 16 (should be about 14), within 10% in 6.",
+		},
+		{
+			expected: 11.2,
+			line: "85th: held 14 of 16 (should be about 11), within 10% in 6.",
+		},
+		{
+			expected: 8,
+			line: "85th: held 14 of 16 (should be about 8), within 10% in 6.",
+		},
 	])(
 		"prints the server's expected count $expected rounded to a whole check",
 		({ expected, line }) => {
-			expect(levelLine(aLevel({ expectedHeldCount: expected }), 16)).toBe(line);
+			expect(
+				levelLine(
+					aLevel({ expectedHeldCount: expected }),
+					16,
+					withinTenPercentIn(6),
+				),
+			).toBe(line);
 		},
 	);
 
 	it.each(LEVEL_READINGS)(
 		"never uses a retired word nor a renameable term: %s",
 		(reading) => {
-			const line = levelReadingCopy[reading](aLevel({ reading }), 16);
+			const line = levelReadingCopy[reading](
+				aLevel({ reading }),
+				16,
+				withinTenPercentIn(6),
+			);
 			expect(line).toMatch(/^85th: /);
 			expect(line).not.toMatch(RETIRED_WORDS);
 			expect(line).not.toMatch(HARD_CODED_TERMS);
