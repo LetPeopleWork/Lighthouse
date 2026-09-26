@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.API
             return await this.GetEntityByIdAnExecuteAction(teamRepository, id, async team =>
             {
                 var manualForecast = new ManualForecastDto(input.RemainingItems ?? 0, input.TargetDate);
-                var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
+                var mode = ThroughputFilterOverride.ToFilterMode(input.ApplyFilterOverride);
                 var forecastWindowStart = clock.TodayAsUtcMidnight;
 
                 var timeToTargetDate = input.TargetDate.HasValue
@@ -156,16 +156,6 @@ namespace Lighthouse.Backend.API
             return windowStart.AddDays(calendarSpan);
         }
 
-        private static ThroughputFilterMode MapOverrideToFilterMode(bool? applyFilterOverride)
-        {
-            return applyFilterOverride switch
-            {
-                true => ThroughputFilterMode.ApplyFilter,
-                false => ThroughputFilterMode.SkipFilter,
-                null => ThroughputFilterMode.RespectTeamSetting,
-            };
-        }
-
         private static string? ValidateBacktestInput(BacktestInputDto input, DateOnly today)
         {
             var minStartDate = today.AddDays(-14);
@@ -204,7 +194,7 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
-                var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
+                var mode = ThroughputFilterOverride.ToFilterMode(input.ApplyFilterOverride);
                 var historyStart = input.HistoricalStartDate.ToDateTime(TimeOnly.MinValue);
                 var historyEnd = input.HistoricalEndDate.ToDateTime(TimeOnly.MinValue);
                 var historicalThroughput = teamMetricsService.GetBlackoutAwareThroughputForTeam(team, historyStart, historyEnd, mode);

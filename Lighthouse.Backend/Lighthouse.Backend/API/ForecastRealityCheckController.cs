@@ -30,22 +30,12 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
-                var mode = FilterModeFor(input.ApplyFilterOverride);
+                var mode = ThroughputFilterOverride.ToFilterMode(input.ApplyFilterOverride);
                 var result = realityCheckService.Run(team, mode);
                 var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
 
                 return result with { FilterApplied = status.FilterApplied, ExcludedSummary = status.ExcludedSummary };
             });
-        }
-
-        private static ThroughputFilterMode FilterModeFor(bool? applyFilterOverride)
-        {
-            return applyFilterOverride switch
-            {
-                true => ThroughputFilterMode.ApplyFilter,
-                false => ThroughputFilterMode.SkipFilter,
-                null => ThroughputFilterMode.RespectTeamSetting,
-            };
         }
     }
 }
