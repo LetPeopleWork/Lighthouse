@@ -1653,27 +1653,30 @@ runs, and the two before this one were green on the Docker job.
   line, an identifier or any culture-independent string is built from interpolation. `Invariant(...)`
   reads more naturally and is the habit worth unlearning here.
 
-### 2026-09-16 (first seen 2026-08-22) — flake: `SQLite Error 15: 'locking protocol'` in `IntegrationTestBase.Init` (Recurrence: 3)
+### 2026-09-26 (first seen 2026-08-22) — RESOLVED: `SQLite Error 15: 'locking protocol'` in `IntegrationTestBase.Init` was every test reusing its fixture's database path (Recurrence: 4)
 - **Symptom**: a single integration test fails in `SetUp` at `EnsureCreated()` with
   `Microsoft.Data.Sqlite.SqliteException : SQLite Error 15: 'locking protocol'`, taking ~10 s where it
-  normally runs in under a second. Seen twice on 2026-08-22, and again on 2026-09-16 (run 35091633703,
-  `TeamsInProject_DeleteTeam_DeletesRemainingWorkOfTeamAsync`, on a docs-only HEAD whose diff cannot
-  reach the deletion repository at all).
-- **Root cause**: not established. It is a file-locking error raised before any test body runs, so it
-  cannot be caused by the code under test.
-- **Fix**: none. Re-run the test alone; it passes.
-- **Rule going forward**: a failure thrown from `SetUp`/`EnsureCreated` with a SQLite locking code is
-  infrastructure, not a regression — the stack ends in EF's `RelationalDatabaseCreator`, never in
-  product code. Re-run alone before investigating. Distinguish it from the GitHub-quota failures in
-  `LighthouseReleaseServiceIntegrationTest`, which look similar in a summary but are a different cause.
-- **This is one face of a family, and the family is what now deserves the fix.** The same
-  `EnsureCreated()`-in-`SetUp` position has produced error 15 (`locking protocol`), error 10
-  (`disk I/O error`, 2026-08-17, Recurrence 2), error 1 (`table already exists`, 2026-05-18) and
-  `disk image is malformed` (2026-08-19). One process-wide SQLite connection pool under
-  `Parallelizable(ParallelScope.Fixtures)` explains all four, and the 2026-05-18 entry already named
-  the durable fix — `[NonParallelizable]` on `IntegrationTestBase`. Counting each error code as its own
-  flake is what has kept that fix from being taken: individually none reaches the "three runs, different
-  commits" bar, and together they passed it long ago.
+  normally runs in under a second. Seen twice on 2026-08-22, on 2026-09-16 (run 35091633703,
+  `TeamsInProject_DeleteTeam_DeletesRemainingWorkOfTeamAsync`) and on 2026-09-26 (run 36249938078,
+  `TeamInProject_WithExistingStartForecasts_DeleteTeam_LeavesTheFeaturesOwnStartAlone`, 1 of 7890).
+  The same `EnsureCreated()`-in-`SetUp` position also produced error 10 (`disk I/O error`, 2026-08-17),
+  error 1 (`table already exists`, 2026-05-18) and `disk image is malformed` (2026-08-19).
+- **Root cause**: each `TestWebApplicationFactory` fixed ONE database path, and every test in the fixture
+  ran `EnsureDeleted()` + `EnsureCreated()` on it. EF Core's `EnsureCreated()` puts every new SQLite
+  database into WAL mode, and `EnsureDeleted()` removes only the `.db` file — the `-wal`/`-shm` siblings
+  stay. Work that outlived the previous test's request still held a connection to those same sidecar
+  files, so two databases shared one lock file and corrupted each other's locks. The earlier theory in
+  this entry (one process-wide connection pool, fix with `[NonParallelizable]`) was wrong: the factory
+  sets `Pooling=False` and every fixture already has its own file.
+- **Fix**: `TestWebApplicationFactory.UseFreshDatabase()` gives every test a path no earlier test used,
+  called from `IntegrationTestBase.Init`; `Dispose` also deletes each used database's sidecar files.
+  Guarded by `TestWebApplicationFactoryTest`.
+- **Rule going forward**: never recreate a SQLite database at a path a still-running connection may have
+  used — give the new database a new path. Deleting the `.db` file does not free its `-wal`/`-shm` files.
+- **Known leftover**: since EF Core 9, removing `DbContextOptions<T>` does not remove the application's
+  `AddDbContext` callback (`IDbContextOptionsConfiguration<T>`), so every test scope still opens a
+  never-disposed WAL connection to a shared `LighthouseAppContext.db` in the test bin directory. Not the
+  cause of this flake; a candidate if a shared-file SQLite error ever names that database.
 
 ### 2026-09-14 — a reclaimed ServiceNow PDI 502s and blocks every connector PR, and rebuilding it has two steps no script can do
 - **Symptom**: every test under `Category=ServiceNowIntegration` fails against `dev191338`, which
