@@ -115,7 +115,8 @@ Three ways it could fail:
 1. **Cost.** Evidence is strong: `RunBacktest` is already synchronous, and every `TeamMetricsService` read
    goes through `GetFromCacheIfExists` over Work Items already in the database, so **no work tracking
    system is contacted**. Sixteen cells is a bounded multiple of something the product already does inside
-   a request. Strong — but an inference until AC-1.1 runs.
+   a request. **Measured, no longer an inference** — see *Measured* above, and DESIGN's earlier probe
+   (701 ms cold / 612 ms warm median on a real-sized Team, R-1). *(Corrected 2026-09-26.)*
 2. **Cache shape.** The sixteen runs ask for sixteen *different* history windows. If `GetFromCacheIfExists`
    keys on the window, every one of them is a cache miss, and the bounded multiple is a multiple of the
    uncached cost rather than the cached one. The probe must be run on a cold cache as well as a warm one.

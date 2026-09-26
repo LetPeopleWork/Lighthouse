@@ -1019,7 +1019,7 @@ estimates, so nothing below may be reported downstream as a measured baseline.
 | **O4 — do not rank incomparable windows** | Every reader of the artifact | Reads the denominator and the non-comparability statement | 100% of rendered results, collapsed and expanded | AC-1.5 and AC-2.5, asserted | 0 — nothing in the product says it today |
 | **O4b — no winner is ever named** | The verdict | Names a region, never a single best window | 0 response fields and 0 rendered strings naming one window as best | AC-1.4, asserted | N/A — the surface does not exist |
 | **O6 — no unsupportable cell is read as a result** | Every unevaluable cell | Says why it could not be checked, visibly distinct from a calm result | 100% of unevaluable cells; 0 blank | AC-1.7, AC-2.3, asserted | Shipped guard covers the Team-level case; the per-cell case does not exist |
-| **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports held-count against expected-count (`evaluated × P/100`, per ADR-210), with always-held called over-forecasting | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
+| **§4.3 — the nominal-rate lesson lands** | Each of the four confidence levels | Reports held-count against expected-count (`evaluated × P/100`, per ADR-210), with never-held called over-forecasting and always-held called under-forecasting (each only when the level's own rate expected at least one check the other way, DES-16) *(corrected 2026-09-26: this cell said always-held was over-forecasting)* | 4 of 4 levels, every run | AC-1.6, AC-2.4, asserted | 0 — no surface in the product states a nominal rate |
 | **O2 — Teams whose window has been checked** | Teams on the dev and demo instances | Have been through a reality check at least once | At least 3 within 30 days of release | Dogfooding record in the slice briefs; usage data only if consent exists | 0 |
 | **O5 — the answer travels** | A forecaster answering a sceptic | Pastes a one-pager instead of describing a screen | At least 1 one-pager shared externally within 60 days | Manual — the maintainer's own use, and any community mention | 0 |
 | **No write path exists** | The feature | Mutates a Team setting | 0 endpoints, 0 controls | AC-1.9, asserted; and the absence of any write in the driving-ports table | N/A — the previous plan had one |
@@ -1929,7 +1929,7 @@ Interaction mode is Propose, so each carries a recommendation and the work is no
 | **OQ-3** | **ADR-195 is stale** — it reads `Accepted` with three lanes; the lanes were reverted (`f216ef558`) and only this brief records it. Correct its status? | **Yes, separately.** Not this Epic's work, but this Epic is the second feature in a row to be misled by an ADR describing a deleted mechanism (ADR-127 was the first). One line of status note. | Open. Note that R-1 resolving in favour of the in-request shape means **this Epic never touches the queue**, so the staleness no longer endangers this feature — only the next one to read that ADR. |
 | **OQ-4** | The verdict sentence cannot come from the server (DES-1), which contradicts the recorded D12 MCP precondition. Rewrite the precondition? | **Yes.** The answer (no CLI/MCP in this Epic) is unchanged and better supported. The precondition as written would need an MCP tool to re-implement the copy, which is the §4.1 risk D12 exists to avoid. | **CLOSED 2026-09-22 — rewritten as recommended.** The precondition now turns on the *client* composing the sentence from facts rather than the server shipping one. The answer (no CLI/MCP in this Epic) is unchanged and better supported. See the amended DISCUSS checklist entry above. |
 | **OQ-5** | Should the sweep's cost finding (up to twenty identical closed-item queries on a cold cache) be probed before slice 01 starts, or as its first task? | **As its first task, unchanged.** AC-1.1 already requires it. DESIGN only sharpens what to measure: run it cold, and count the queries, not just the wall clock. | **CLOSED 2026-09-22 — overtaken by events, resolved by measurement.** It was probed ahead of both options. `RealityCheckWallClockProbe` does exactly the sharpened thing — cold and warm, counting executed commands rather than only wall clock — and **the prediction was exact, not approximate: twenty queries, at every data volume and on every run, with the count not growing with Team size.** See "R-1, measured". |
-| **OQ-6** *(new, 2026-09-22 — see below)* | **A Team with `UseFixedDatesForThroughput = true` has no rolling sampling window at all** — `ThroughputHistory` does not drive its forecasts, so there is nothing of its own to sweep as a fifth window, and the feature's premise (*"the sampling window behind every forecast this Team publishes"*) does not describe it. Should such a Team see the check at all? | **Run it, and say so.** Sweep the standard four windows, sixteen cells, with `currentSettingWasTested: false` and a reason. The sixteen cells are still a true statement about how that Team's history would have forecast; only the "is *your* setting sound" clause is inapplicable. **Hiding the button would be worse** — a fixed-dates Team is exactly the kind that has stopped thinking about its sampling configuration. | **Open — product question, not architectural.** Surfaced by DES-13; latent before it. |
+| **OQ-6** *(new, 2026-09-22 — see below)* | **A Team with `UseFixedDatesForThroughput = true` has no rolling sampling window at all** — `ThroughputHistory` does not drive its forecasts, so there is nothing of its own to sweep as a fifth window, and the feature's premise (*"the sampling window behind every forecast this Team publishes"*) does not describe it. Should such a Team see the check at all? | **Run it, and say so.** Sweep the standard four windows, sixteen cells, with `currentSettingWasTested: false` and a reason. The sixteen cells are still a true statement about how that Team's history would have forecast; only the "is *your* setting sound" clause is inapplicable. **Hiding the button would be worse** — a fixed-dates Team is exactly the kind that has stopped thinking about its sampling configuration. | **DECIDED 2026-09-26 by the maintainer (during DISCUSS for Story #6094): run it, and say so.** A fixed-dates Team sees the check and is told its own setting was not tested — DESIGN's default, as built (DES-17 `NotTested` / `UsesFixedDates`). Surfaced by DES-13; latent before it. |
 
 ### Where this stands after the 2026-09-22 pass
 
@@ -1940,7 +1940,8 @@ read RESOLVED:
 - **OQ-3 is another document's bookkeeping.** ADR-195 needs a status note. R-1 resolved in favour of the
   in-request shape, so this Epic never touches the update queue and the staleness cannot mislead this
   feature. It can still mislead the next reader of that ADR, which is why it stays on the list.
-- **OQ-6 is a product question with a safe default already designed in.** A fixed-dates Team gets the
+- **OQ-6 is a product question with a safe default already designed in** *(DECIDED 2026-09-26: the default
+  stands — see the table)*. A fixed-dates Team gets the
   standard sixteen cells and `currentSettingWasTested: false`. That behaviour is specified, testable and
   ships correctly whatever the maintainer later decides about whether to show the control at all. It is
   open in the sense that someone may want a different product answer, not in the sense that anything is
@@ -2406,7 +2407,8 @@ the fixture is wrong):
 The response stays one envelope of facts (DES-1); no per-window score, bounds pair or rendered sentence
 appears (DES-2, DES-3); the check stays read-only (DES-5); ADR-210's scoring is used exactly as accepted;
 D9's single sufficiency bar is untouched — DES-14 deliberately adds no minimum number of checks per window.
-OQ-6 stays open as a product question with its default unchanged.
+OQ-6 stays open as a product question with its default unchanged. *(Since DECIDED, 2026-09-26: the
+maintainer kept the default — fixed-dates Teams see the check and are told their setting was not tested.)*
 
 ### DES-19 — Every period is an exact run of days, and no check learns from a day it is scored on
 
@@ -3272,3 +3274,626 @@ placeholder.
   delivery can be forecast exactly. **Fixed by DES-19** — exact inclusive runs of days with no overlap. The
   harness now requires exact history lengths, and a scenario on the shipped engine with a steady Team pins
   the result.
+
+---
+
+# Story #6094 — the graded results dialog
+
+**ADO**: Story #6094 *"The reality check shows every forecast, the actual, and how right each one was"*,
+child of Epic #4172. **Wave**: DISCUSS, 2026-09-26, agent Luna (`nw-product-owner`). **Density**: lean,
+Tier-1 only. **Interactive part done by the maintainer**: every product question DIVERGE left open was
+answered on 2026-09-26 and is recorded below as `6094-D1..D10`. Nothing here re-opens them. Nothing
+committed, no code touched, reviewer not run (the orchestrator runs it).
+
+**Configuration**: user-facing, frontend-heavy (where the grading is computed is DESIGN's call, see *Open
+for DESIGN*); brownfield; lightweight UX research; JTBD traced, not re-run.
+
+## Wave: DISCUSS / [REF] Prior Wave Consultation — Story #6094
+
+| Source | State |
+|---|---|
+| `diverge/story-6094/recommendation.md` (64 lines) | ✓ read whole — Option 5 confirmed, five refinements, nine open questions |
+| `diverge/story-6094/job-analysis.md` (80 lines) | ✓ read whole — job unchanged, ODI S1-S5, two code facts (actual belongs to the period; forecast colours mean confidence) |
+| `diverge/story-6094/taste-evaluation.md` §2 | ✓ invariants I-a..I-d read |
+| `wave-decisions.md` — *DIVERGE Decisions — Story #6094*; *DESIGN amendments 2026-09-26* | ✓ read — rule A (DES-14), `SometimesHeld` / `AlwaysHeld` (DES-16) |
+| This file — DISCUSS D1-D13, US-01..US-03, Story Map, Checklist, KPIs, DoR, DoD; Response Contract; DESIGN amendments DES-14..DES-19; DEVOPS usage-data event; DISTILL E2E and handoff | ✓ read in pages, fresh |
+| `slices/slice-01-…md`, `slices/slice-02-…md` | ✓ read whole; slice 03 header read (deferred, untouched) |
+| Shipped frontend: `ForecastRealityCheck.tsx`, `RealityCheckVerdict.tsx`, `RealityCheckEvidence.tsx`, `realityCheckCopy.ts`, `ForecastLevel.ts`, `TeamForecastView.tsx:439-440`, `TeamDetail.tsx:489` | ✓ read — button label **"Run reality check"**, tab label **"Forecasts"** |
+| `RealityCheckBandRow.tsx`, `RealityCheckResult.ts`, `TeamForecastView.realityCheck*.test.tsx` | ⊘ located by glob, not opened — only their existence matters here (retirement list) |
+| E2E: `TeamsDetail.spec.ts`, `TeamDetailPage.ts:89-123` | ✓ read — a "Forecast reality check" **step** already exists in the shared Team visit, asserting the inline verdict and denominator through POM locators scoped to the Backtesting card |
+| `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | ✓ read — steps 1-5; extended (see SSOT Updates) |
+| `docs/product/jobs.yaml:7342-7460` | ✓ read — job unchanged, not edited |
+| Brown, *The Full Monte*, ASOS Tech Blog, <https://medium.com/asos-techblog/the-full-monte-901d721b8532> | ✓ verified from the original by the maintainer on 2026-09-26 (quotes below) |
+| `docs/ci-learnings.md` | ⊘ not read — a code-wave ledger; nothing here writes code |
+
+**The source, now verified** (maintainer, 2026-09-26, medium.com original). This replaces, for the
+decisions below, the "unverified" notes in `diverge/story-6094/job-analysis.md` §5 and `recommendation.md`
+§4; those DIVERGE files are left as written.
+
+- *"correct (i.e. the team completed the exact OR more than number of items)"* is green; *"incorrect (i.e.
+  the team completed less than the number of items forecast)"* is red. Same event as ADR-210's `held`
+  (`actual >= value(P)`).
+- The margin is measured against the **actual**: *"within +/- 10% ... of the actual result"*. Bands ≤10%,
+  10-25%, >25%, symmetric.
+- Six shades: correct within 10% dark green; correct by more than 25% light green ("play it safe");
+  incorrect within 10% pink; large misses dark red. Closeness sets the shade, correct/incorrect the hue.
+- He graded 50 / 70 / 85 only, over periods of 2 / 4 / 8 / 12 weeks, history 6-12 weeks, rows were teams.
+
+**R-5 is discharged for these claims**: one human page-load of the original has now happened.
+
+## Wave: DISCUSS / [REF] Persona — Story #6094
+
+Unchanged from the Epic. **`delivery-forecaster`** primary: Maria Santos, who runs delivery for Ocean
+Explorer and quotes a number to leadership. The story adds one need to her profile, not a new persona: she
+wants to say *how much slack or risk* the number she quotes carries, not only whether it held.
+`forecasting-prospect` secondary (reads the table in a screenshot or the launch post). Read-only viewer
+Tom Becker is still served by Team read alone.
+
+## Wave: DISCUSS / [REF] JTBD One-Liner — Story #6094
+
+- **`job-forecaster-check-the-forecast-against-what-happened`** — unchanged, traced to, not re-run. This
+  story serves its *"read how far off it was"* half: *know how often, and by how much, the number I quote
+  has been right for this Team lately* (`diverge/story-6094/job-analysis.md` §2-§3). Both stories below
+  carry this `job_id`. Leading story outcomes: **S2** (do not mistake an over-cautious forecast for an
+  accurate one, 12.6) and **S1** (time to see how far each forecast landed, 12.5); **S3** (a large
+  percentage read into a one-Work-Item miss) and **S5** (a level's expected misses read as failures) are
+  guardrails.
+
+## Wave: DISCUSS / [REF] Locked Decisions — Story #6094
+
+All taken by the maintainer on 2026-09-26 unless marked *DISCUSS default*. A default is a sensible choice
+this wave made where the maintainer's decision left a detail open; each is listed again under questions
+for the maintainer so it can be overturned cheaply.
+
+### 6094-D1 — Everything moves into a dialog; the text result opens it, the graded table follows
+
+The Forecast Backtesting group keeps **only the "Run reality check" button** for this feature (the shipped
+single-shot backtest in the same group is untouched). The dialog opens on a short **text result**; the
+graded **table** follows as its evidence. DIVERGE Option 5. **Option 3 (sentence stays inline) rejected** —
+"inline is horrible" covered the sentence too.
+
+### 6094-D2 — The error is Brown's: a percentage of the actual, and the miss in Work Items beside it
+
+- **Hue — held or not.** A forecast *held* when `actual >= forecast` (ADR-210; Brown's "correct").
+- **Margin** = `|actual − forecast| / actual`. Bands, symmetric for both hues: **within 10%** (≤ 10%),
+  **10-25%** (> 10% and ≤ 25%), **more than 25%** (> 25%). The band is decided on the unrounded value
+  *(boundary inclusivity: DISCUSS default, following Brown's "within ±10%")*.
+- **Every graded cell also prints the miss in Work Items**, signed as `actual − forecast`: **"+4"** means
+  the Team delivered 4 more than forecast (held), **"−2"** means 2 fewer (did not hold), **"0"** means
+  exact. *(Sign convention: DISCUSS default — chosen so the sign always agrees with the hue.)*
+- **Actual of 0**: no band and no percentage. A forecast above 0 did **not hold**, shown in Work Items
+  only ("−2"). A forecast of 0 against an actual of 0 **held, exactly** (miss "0", graded as within 10%).
+- No minimum actual below which the percentage is hidden: the Work Item miss beside it is the guard
+  against reading 33% into one Work Item (S3).
+
+### 6094-D3 — Brown's own colour scale, shade by closeness, never colour alone
+
+Six grades on a scale **separate from the product's forecast colours**: held within 10% dark green, held
+10-25% mid green, held by more than 25% light green; did not hold within 10% pink, 10-25% mid red, more
+than 25% dark red. **Every cell also carries a glyph and a word** — ✓ *held* / ✗ *did not hold* — and its
+percentage in text, so colour is never the only signal (WCAG 1.4.1). A forecast above 0 against an actual
+of 0 takes the dark-red grade with no percentage *(DISCUSS default — the margin is unbounded, so it sits
+with the largest misses)*. `ForecastLevel` colours and icons keep meaning **confidence level**
+(Risky / Realistic / Confident / Certain) and appear **only on the four level column headers**.
+
+### 6094-D4 — The shipped inline pieces fold into the text result or are retired
+
+- **Folded into the text result**: the window-region sentence (rule A, DES-14, with its standing,
+  not-tested and could-not-run clauses), the per-level held reading (DES-16), the two findings (AC-1.9),
+  the denominator and non-comparability statement (AC-1.5), and the could-not-run reasons. Order *(DISCUSS
+  default)*: level lines, window sentence, findings, denominator.
+- **Retired**: the band-row evidence panels (`RealityCheckEvidence`, `RealityCheckBandRow`), the separate
+  level lines under them (`NominalRateLines` as a component), and the "Show the evidence" toggle. The
+  table is the evidence now. **Retiring means DELIVER deletes their code and their tests** — including the
+  US-02 frontend scenarios in `TeamForecastView.realityCheck.test.tsx` that assert panels and band rows,
+  `RealityCheckBandRow.test.ts`, and copy helpers only those components use — and replaces the
+  card-scoped POM locators. A retired component left in the tree is a defect in DELIVER, not a leftover.
+
+### 6094-D5 — Table shape: rows are period × history window, columns are the four levels
+
+- **Rows**: one per (period × sampling window) — **16 on the standard ladder, 20 when the Team's own
+  window is off it** — grouped by period, periods in horizon order 1 / 2 / 4 / 8 weeks (`[7, 14, 28, 56]`
+  days, each ending today), windows in the server's ladder order inside each group.
+- **The actual is printed once per period group**, in the group header with the period's dates — the
+  scored period depends on the horizon only, so every window in a group shares it.
+- **Columns**: 50th / 70th / 85th / 95th.
+- The Team's own window's row header says **"your setting"** in words *(DISCUSS default)*. It is a label,
+  not an emphasis: rows are never reordered, filtered or highlighted by grade.
+
+### 6094-D6 — Four levels, deliberately beyond Brown
+
+The 95th stays (Epic D1). Brown graded 50 / 70 / 85; the 95th is where a level that held every time can
+read as caution rather than accuracy, which is this story's S2.
+
+### 6094-D7 — The text result: one line per level, held against should-have-held, and how close
+
+Worked form (maintainer's example): *"85th: held 15 of 16 (should be about 14), within 10% in 3. Holding,
+but usually low by more than a quarter."*
+
+- **Per level**: held count over evaluable checks, the nominal expectation (`evaluated × P/100`, ADR-210)
+  rounded, and the count of checks that landed within 10%. The Epic's reading is kept: `NeverHeld` =
+  over-forecasting, `AlwaysHeld` = under-forecasting (DES-16 thresholds), `NotEvaluated` says the level
+  was not tested.
+- **"How close"** (slice 05): *DISCUSS default rule* — a closing clause *"Usually {within 10% | low by
+  10-25% | low by more than a quarter | high by …}"* is added only when **more than half** of that level's
+  graded checks share one band and direction; otherwise no clause. "Low" means the forecast was below what
+  the Team delivered. The example's *"Holding"* is **not** adopted by default, because DES-16 gives
+  `SometimesHeld` no adjective — see question 1 for the maintainer.
+- **Summaries by level, and by period only as the group header's actual. Never by window** (I-a): no
+  line, count or phrase in the dialog tallies, averages or orders the sampling windows.
+- **"held", never "beaten".** Brown's one-sided correct / incorrect is **credited to him** in the dialog;
+  the three-way reading (a level that always held is under-forecasting) is **stated as this product's**,
+  in the same place (Epic D7 / AC-1.8).
+
+### 6094-D8 — Opening, re-running, closing
+
+The button opens the dialog **at once** in a loading state, which fills in when the answer arrives.
+**"Run again"** inside the dialog re-runs; closing and reopening re-runs (nothing is kept between opens,
+ADR-209). While a run is in flight, neither control starts a second one. A failed request leaves the dialog
+open with a plain message and "Run again" *(DISCUSS default)*. **`TeamForecastRealityCheckRun` fires once
+per result, unchanged** — after an answer arrives, never on the press, never on a failure; a re-run or a
+reopen that returns an answer is a new result and reports again.
+
+### 6094-D9 — The maintainer's ask supersedes two earlier rulings; the invariants hold
+
+- **Superseded**: slice 02's OUT item *"A matrix or a ranked list"* (the matrix half — the ranked-list
+  half stands) and Epic D2's *"64 marks and an unreadable artifact"*. The maintainer has asked for the
+  matrix; density becomes slice 04's learning hypothesis rather than a ruling.
+- **Still holding, unchanged**: **I-a** no per-window score, rank or winner anywhere, including text the
+  client derives (DES-2, E5); **I-b** read-only end to end — no Apply, no `recommendedWindow`, the ArchUnit
+  rule (E1) untouched; **I-c** an unevaluable check is never blank and never looks calm (ADR-194, D9);
+  **I-d** no hard-coded renameable term (E7).
+
+### 6094-D10 — Accessibility defaults (DISCUSS defaults, maintainer asked for sensible ones)
+
+- **Table semantics**: a real `<table>` with a `<caption>` naming the Team and what the table shows;
+  level columns as `<th scope="col">`; each period group a `<tbody>` whose header row is
+  `<th scope="rowgroup">` carrying the period dates and the actual; each window a `<th scope="row">`.
+- **Each graded cell's accessible text** reads in order: level, forecast, held or did not hold, the miss
+  in Work Items, the percentage — e.g. *"85th: 36, held, 6 more delivered, 14% of the actual"*.
+- **A legend** in words beside the table names the six grades and the not-checked state.
+- **Dialog**: focus moves into the dialog on open and is trapped there; Escape and a visible close control
+  both close it; focus returns to "Run reality check" on close; the loading state is announced politely
+  (`aria-live`) and the result's arrival moves no focus.
+- **Narrow screens**: below the small breakpoint the dialog takes the full screen; the table scrolls
+  horizontally inside its own region with the row-header column kept visible; no column, number or grade
+  is dropped to fit.
+
+## Wave: DISCUSS / [REF] Scope Assessment — Story #6094
+
+**PASS — 2 stories, 1-2 modules (Team Forecast UI; the forecasting API only if DESIGN puts the grading
+there), ~12h (≈1.5 days) across two slices.** No oversized signal: 2 stories (<10); ≤2 modules (<3); the
+walking skeleton touches 2 integration points (button → dialog → existing endpoint); ~1.5 days (<2 weeks);
+one user outcome.
+
+## Wave: DISCUSS / [REF] Walking Skeleton — Story #6094
+
+**Brownfield. The Playwright walking skeleton owed since slice 01 lands in slice 04.** Found while reading:
+slice 01 did not add the separate `ForecastRealityCheck.spec.ts` DISTILL listed; it added a
+*"Forecast reality check"* **step** to the shared Team visit in `TeamsDetail.spec.ts`, through
+`TeamDetailPage` locators scoped to the Backtesting card. Those locators stop matching once the result
+moves into a dialog, so slice 04 **rewrites that step as the skeleton**: demo data (scenario 0's first
+Team), through the POM only — press "Run reality check", the dialog opens, the text result and the table
+are visible, Escape closes it. One skeleton; everything else stays in Vitest. Whether it stays a step in
+the shared visit or becomes its own spec is DISTILL's call (the E2E-minimalism rule favours the step).
+
+## Wave: DISCUSS / [REF] User Stories — Story #6094
+
+### US-04 — The check opens in a dialog: words first, every forecast next to its actual beneath
+
+**Job**: `job-forecaster-check-the-forecast-against-what-happened` · **Persona**: `delivery-forecaster`
+· **Slice**: 04 · **ADO**: #6094
+
+**Problem.** Maria Santos runs delivery for Ocean Explorer. Today the check answers inline under the
+Backtesting group, and its evidence is a stack of band rows where how far a forecast landed from what the
+Team delivered is a tick position with no number on it. She can say *that* the 85th held; she cannot say
+by how much, and the page grows long enough that the answer and its evidence never fit together.
+
+#### Elevator Pitch
+
+Before: on Team → **Forecasts** → Forecast Backtesting, pressing **"Run reality check"** prints a paragraph
+inline, and the evidence is band rows behind "Show the evidence" with no forecast or actual printed.
+
+After: pressing **"Run reality check"** opens a dialog at once; it fills in with one line per confidence
+level (*"85th: held 15 of 16 (should be about 14)"*), the sampling-window sentence, and beneath them a
+table of every check — each period's actual printed once, each forecast next to it with its miss in Work
+Items and ✓ held / ✗ did not hold.
+
+Decision enabled: which of the four numbers Maria quotes, now that she can see the actual it is measured
+against in every period.
+
+#### Domain Examples
+
+1. **Happy path** — Ocean Explorer (window 30, on the ladder). Maria presses the button; the dialog opens
+   with *"Checking Ocean Explorer's forecasts against what happened…"* and fills in within a second. The
+   table's "Last 8 weeks" group reads *42 Work Items completed*; the 30-day row shows 50th **48 −6 ✗**,
+   70th **40 +2 ✓**, 85th **36 +6 ✓**, 95th **31 +11 ✓**. Sixteen rows, four groups.
+2. **Edge** — a Team at 45 days (off the ladder) gets twenty rows; in every period group the 45-day row
+   sits between 30 and 60 and says *"your setting"*. Coastal Survey's 14-day row in the 2-week group reads
+   *"Not enough history — 3 days with completed Work Items, 5 needed"* across all four level columns.
+3. **Error/boundary** — Tom Becker (read-only) opens it on a flaky connection; the request fails. The
+   dialog stays open, says the check could not be run, and offers "Run again"; no usage event is sent. He
+   presses Escape and focus returns to "Run reality check".
+
+#### UAT Scenarios (BDD)
+
+```gherkin
+Scenario: Pressing the button opens the dialog at once and it fills in
+  Given Maria Santos is on Ocean Explorer's Forecasts tab
+  When she presses "Run reality check"
+  Then a dialog opens straight away saying the check is running
+  And it fills in with the result without her giving a date
+
+Scenario: The dialog opens on words, one line per confidence level
+  Given Maria has run the reality check on Ocean Explorer
+  When the result arrives
+  Then she reads one line for each of the 50th, 70th, 85th and 95th saying how often it held and how often it should have
+  And she reads which sampling windows held up and where her own setting stands
+  And the statement of what was checked and why the checks cannot be ranked is on screen
+
+Scenario: Every forecast sits next to what the Team delivered
+  Given Ocean Explorer completed 42 Work Items in the last 8 weeks
+  When Maria reads the table
+  Then the 42 is printed once for the 8-week group
+  And each forecast in that group shows its value, the miss in Work Items, and whether it held
+
+Scenario: A check that could not run says so in its row
+  Given Coastal Survey's 14-day history before the 2-week period holds 3 days with completed Work Items
+  When Maria reads Coastal Survey's table
+  Then that row says it could not be checked and why, across all four levels
+  And no cell in it is blank or graded
+
+Scenario: Running again and reopening both give a fresh answer
+  Given Maria has a result open for Ocean Explorer
+  When she presses "Run again", and later closes the dialog and presses "Run reality check" again
+  Then each time the dialog fills in with a fresh answer
+  And each answer is counted once as a reality check that was run
+
+Scenario: The dialog can be used from the keyboard
+  Given Tom Becker has opened the reality check with the keyboard
+  When he presses Escape
+  Then the dialog closes and his focus is back on "Run reality check"
+
+Scenario: The Backtesting group keeps only the button
+  Given Maria has closed the dialog
+  When she looks at the Forecast Backtesting group
+  Then she sees the "Run reality check" button and the single back-test, and no verdict or evidence inline
+```
+
+#### Acceptance Criteria
+
+- [ ] **AC-4.1** — Pressing "Run reality check" opens a dialog immediately in a loading state that is
+  announced to assistive technology; the answer replaces it when it arrives. No date is asked for (D6).
+- [ ] **AC-4.2** — The text result comes first and holds: one line per level (held of evaluable, "should be
+  about" `round(evaluated × P/100)`, and the DES-16 reading — never-held over-forecasting, always-held
+  under-forecasting, not-evaluated said in words); the rule-A window sentence with its standing /
+  not-tested / could-not-run clauses; the two findings (AC-1.9); the denominator and non-comparability
+  statement (AC-1.5). None of it sits behind a tooltip, toggle or disclosure.
+- [ ] **AC-4.3** — The table has 16 or 20 body rows (matching `denominator.runsAttempted`), grouped by
+  period in horizon order, windows in the server's ladder order; the actual is printed once per group with
+  the period's first and last day; columns are 50th / 70th / 85th / 95th, each header carrying its
+  `ForecastLevel` name and icon.
+- [ ] **AC-4.4** — Each evaluable cell shows the forecast value, the signed miss in Work Items
+  (`actual − forecast`), and ✓ *held* / ✗ *did not hold* as glyph plus word.
+- [ ] **AC-4.5** — An unevaluable row states its reason and numbers in words across the four level
+  columns (I-c); a period group whose rows are all unevaluable still renders.
+- [ ] **AC-4.6** — "Run again" re-runs; closing and reopening re-runs; no second run starts while one is
+  in flight; a failed request shows a message and "Run again" in the dialog. `TeamForecastRealityCheckRun`
+  is reported once per answer received and never on the press or on a failure.
+- [ ] **AC-4.7** — Accessibility per 6094-D10: table semantics with caption and scoped headers, focus
+  trapped while open, Escape closes, focus returns to the button, full-screen dialog and horizontally
+  scrolling table on narrow screens with nothing dropped.
+- [ ] **AC-4.8** — The Backtesting group renders only the button for this feature. `RealityCheckEvidence`,
+  `RealityCheckBandRow`, the "Show the evidence" toggle and their tests are deleted; the Playwright step
+  asserts the dialog through the POM on demo data and runs locally before commit.
+- [ ] **AC-4.9 (invariants)** — no text or ordering in the dialog summarises or ranks sampling windows
+  (I-a); nothing writes a Team setting (I-b); every renameable term renders from the instance's
+  terminology and "throughput", "Epic", "Initiative" and "Story" appear in no label (I-d).
+
+> Sizing: 7 scenarios (top of the band), 9 ACs of which AC-4.9 restates invariants the existing
+> rankability and read-only tests already guard. ~7h. Stated rather than split, because the dialog, the
+> table and the retirement only make sense shipped together: a dialog without the table would retire the
+> evidence with nothing in its place.
+
+#### Technical Notes
+
+- Consumes the shipped response unchanged: held, forecast value and actual are already per cell
+  (`levelOutcomes[].held`, `forecastValue`, `actualCompleted`). Slice 04 needs no backend change.
+- Reuse `realityCheckCopy.ts` composers (`windowVerdict`, `levelReadingCopy`, `findings`,
+  `denominatorStatement`, `whyChecksCouldNotRun`); the level-line wording changes to "should be about".
+- Existing frontend reality-check tests that assert inline placement move to the dialog; US-02 panel
+  tests are deleted with their components.
+
+#### Dependencies
+
+Slices 01 and 02 (shipped, `9851b4ea3`). The usage-data event (shipped in slice 01). No external dependency.
+
+---
+
+### US-05 — How close each forecast landed, on Brown's scale
+
+**Job**: `job-forecaster-check-the-forecast-against-what-happened` · **Persona**: `delivery-forecaster`
+(secondary `forecasting-prospect`) · **Slice**: 05 · **ADO**: #6094
+
+**Problem.** With slice 04 Maria can see that the 95th held in every check and by how many Work Items — but
+a held forecast looks like success whatever its margin. A 95th that held because it was 40% below what the
+Team delivered is a sandbag, and nothing on screen says so at a glance.
+
+#### Elevator Pitch
+
+Before: in the reality check dialog every held forecast looks the same — ✓ and a number.
+
+After: each cell is shaded on Nick Brown's scale — green when it held, red when it did not, darker the
+closer it landed — with the percentage of the actual beside the Work Item miss, and each level's line adds
+how close it landed: *"85th: held 15 of 16 (should be about 14), within 10% in 3. Usually low by more than
+a quarter."*
+
+Decision enabled: whether the number Maria quotes carries slack she should say out loud ("our 85th is
+usually a quarter below what we deliver") or is tight.
+
+#### Domain Examples
+
+1. **Happy path** — Ocean Explorer, last 8 weeks, actual 42, 30-day row: 70th 40 (+2, 5%) dark green;
+   85th 36 (+6, 14%) mid green; 95th 31 (+11, 26%) light green; 50th 48 (−6, 14%) mid red.
+2. **Edge: a tiny period** — Coastal Survey completed 3 Work Items in the last week; its 50th forecast was 4.
+   The cell reads **4 −1 33% ✗**, dark red — and the "−1" is what stops Maria reading a disaster into one
+   Work Item.
+3. **Boundary: nothing delivered** — Harbour Pilots completed nothing in the last week (the whole Team was
+   at a conference). Their 95th of 0 reads **0 0 ✓** held, exact; their 50th of 2 reads **2 −2 ✗** with no
+   percentage, dark red.
+
+#### UAT Scenarios (BDD)
+
+```gherkin
+Scenario: A forecast that held is shaded by how close it landed
+  Given Ocean Explorer completed 42 Work Items in the last 8 weeks
+  And its 30-day 95th forecast was 31 and its 70th was 40
+  When Maria reads that row
+  Then the 95th shows 11 more delivered, 26% of the actual, as held by more than a quarter
+  And the 70th shows 2 more delivered, 5% of the actual, as held within 10%
+
+Scenario: A forecast that did not hold is graded by how far it fell short
+  Given the same row's 50th forecast was 48
+  When Maria reads it
+  Then it shows 6 fewer delivered, 14% of the actual, as did not hold by 10 to 25%
+
+Scenario: A one-Work-Item miss on a small period shows the Work Item beside the percentage
+  Given Coastal Survey completed 3 Work Items in the last week and its 50th forecast was 4
+  When Maria reads that cell
+  Then it shows 1 fewer delivered beside 33% of the actual
+
+Scenario: A period in which nothing was delivered has no percentage
+  Given Harbour Pilots completed no Work Items in the last week
+  When Maria reads that period's forecasts
+  Then a forecast of 0 is shown as held exactly
+  And a forecast of 2 is shown as not held, 2 fewer delivered, with no percentage
+
+Scenario: Each level's line says how close it usually landed
+  Given 9 of the 16 checks at Ocean Explorer's 85th held by more than a quarter
+  When Maria reads the 85th line
+  Then it says how many of its checks landed within 10%
+  And it says the 85th is usually low by more than a quarter
+
+Scenario: The grade never rests on colour alone, and the method is credited
+  Given Maria has the graded table open
+  When she reads a cell and the legend
+  Then every cell states in words whether it held and its margin
+  And the dialog credits Nick Brown's correct-or-incorrect grading and states that calling an always-held level under-forecasting is this product's reading
+```
+
+#### Acceptance Criteria
+
+- [ ] **AC-5.1** — Margin = `|actual − forecast| / actual` on the unrounded value; bands ≤10%, >10-25%,
+  >25%, the same for both hues. The displayed whole-number percentage never contradicts its band.
+- [ ] **AC-5.2** — Six grades per 6094-D3 on a colour scale distinct from the `ForecastLevel` colours,
+  legible in the light and dark themes; every graded cell also shows the percentage in text and ✓ / ✗ with
+  its word.
+- [ ] **AC-5.3** — Actual 0: no percentage and no band; forecast > 0 → did not hold, dark-red grade, miss in
+  Work Items only; forecast 0 → held exactly.
+- [ ] **AC-5.4** — Each level line adds "within 10% in N" over its graded checks and, only when more than
+  half of them share one band and direction, a "usually …" clause (6094-D7). No clause names or counts a
+  sampling window.
+- [ ] **AC-5.5** — A legend names the six grades and the not-checked state in words. Unevaluable rows keep
+  their words and take no grade colour (I-c).
+- [ ] **AC-5.6** — The dialog credits Nick Brown's *The Full Monte* for the correct / incorrect grading and
+  closeness shading, and in the same place states that the always-held-is-under-forecasting reading and the
+  95th level are this product's additions (Epic D7, AC-1.8).
+
+#### Technical Notes
+
+- Where the margin and grade are computed — backend fields on `CellLevelOutcomeDto` or a client function
+  over `forecastValue` and `actualCompleted` — is **open for DESIGN**. Either way the rule is defined once.
+- The shipped `levelCoverage` counts stay the source for held / expected; "within 10%" and "usually …" are
+  new counts per level.
+
+#### Dependencies
+
+Slice 04 (the dialog and the table).
+
+## Wave: DISCUSS / [REF] Story Map and Slices — Story #6094
+
+**Backbone** (the Epic's, with steps 3 and 4 now inside the dialog): press it → **read the answer in
+words** → **look at every forecast against its actual** → take the findings away.
+
+| Slice | Story | Ships | Estimate | Learning hypothesis |
+|---|---|---|---|---|
+| 04 | US-04 | Dialog, text result, period × window table with held / miss in Work Items, retirement of the inline UI, the Playwright skeleton | ~7h | 64-80 cells grouped by period are readable on real history, and moving the answer behind one click costs nothing because the dialog opens on words |
+| 05 | US-05 | Brown's grading: margin bands, six shades, percentage, legend, credit, "how close" clause per level | ~5h | Shading by closeness makes over-caution visible (S2) without making small periods look worse than they are (S3) |
+
+Slice 03 (#6074, the one-pager) **stays deferred and keeps its number**. If it returns it exports the
+text result and the graded table, not the retired panels.
+
+### Priority Rationale
+
+1. **04 first** — it carries the density risk (the one thing D2 warned about) and the retirement; if the
+   table is unreadable on real data, that is learned before any shading is built.
+2. **05 second** — the grading is the new concept, isolated so its rule (and where it lives) can be decided
+   and tested on its own. 04 is shippable without it: held / not held and the Work Item miss already answer
+   "how far off".
+
+### Carpaccio taste tests
+
+Four or more new components in one slice? No — 04 adds a dialog and a table; 05 adds a grade and a legend.
+Any slice only `@infrastructure`? No. Any slice on synthetic data only? No — both dogfood on the dev
+instance's real history; E2E uses demo data. Two slices identical but for scale? No.
+
+## Wave: DISCUSS / [REF] Out of Scope — Story #6094
+
+- Any per-window score, tally, ordering or highlight (I-a); any control that writes a Team setting (I-b).
+- A per-period tally in the text result — permitted by 6094-D7, not asked for; the group header's actual
+  is the per-period summary.
+- Changing the sweep, the ladder, the horizons, rule A, DES-16 thresholds, or the response's existing
+  fields.
+- The one-pager export (slice 03, deferred) and CLI / MCP exposure (Epic D12).
+- A new usage-data event or property.
+- Brown's 12-week period and 6-12-week history ranges — the Epic's ladder is not reopened.
+
+## Wave: DISCUSS / [REF] Project DISCUSS Checklist — Story #6094
+
+Mirrors the Epic's checklist; each answer states whether it changed.
+
+- **RBAC impact — N/A, unchanged, because** no endpoint, permission or write path is added. The dialog
+  calls the shipped `POST …/reality-check/{teamId}` under `TeamRead`; if DESIGN adds grade fields they
+  ride the same guarded response. Read-only users (Tom Becker) get the whole dialog; no `useRbac()`
+  branch is added and nothing fetches `my-summary`.
+- **Lighthouse-Clients CLI / MCP versioning — N/A, unchanged, because** Epic D12 stands: no client
+  exposure, no version bump. One note for the precondition list: if grading lands in the backend, a future
+  tool gets grades without re-implementing them — but still must compose the level lines client-side.
+- **Website marketing surface — changed in content, not in timing.** Still no website change in this
+  story; the launch post and docs page remain Epic-finalization work. What changes: (1) **R-5 is
+  discharged** — the maintainer verified Brown's article on medium.com, so the grading may be quoted
+  publicly with attribution and with our departures stated; (2) the graded table is now the most
+  recognisably "Full Monte" artifact and should be the launch post's picture; (3) the owed docs page and
+  **two per-theme `@screenshot` shots** change from *collapsed verdict card + expanded panels* to *the
+  dialog's text result + the graded table*, in configurable terminology; any new image under
+  `docs/assets` is checked against the website repo's hot-links before it is renamed.
+- **Usage data — N/A for a new event, because** `TeamForecastRealityCheckRun` already counts results and
+  6094-D8 keeps it once per result. No property is added.
+- **Terminology** — Team, Work Item, Feature defaults via `getTerm`; "throughput" in no label; no "Epic",
+  "Initiative", "Story" in user-facing text. "Sampling window", "confidence level", "held" are not
+  renameable terms.
+- **Demo data** — the E2E skeleton uses scenario 0's first Team; the screenshots need a demo Team with
+  enough history for a non-degenerate table (carried from the Epic checklist, unchanged).
+
+## Wave: DISCUSS / [REF] Outcome KPIs — Story #6094
+
+Declared as hypotheses; nothing here is a measured baseline.
+
+| KPI | Who | Does what | By how much | Measured by | Baseline |
+|---|---|---|---|---|---|
+| **S1 — how far each forecast landed is printed** | Every evaluable cell | Shows forecast, actual (per group) and miss in Work Items | 100% of evaluable cells, 16 or 20 rows | AC-4.3, AC-4.4, asserted | 0 — magnitude is a tick position today |
+| **S2 — caution is visible** | Each level line | States "within 10% in N" and, when true, "usually …" | 4 of 4 levels, every result | AC-5.4, asserted | 0 |
+| **S3 — no percentage without its Work Items** | Every graded cell | Shows the Work Item miss beside any percentage; none at actual 0 | 100%; 0 percentages at actual 0 | AC-5.1, AC-5.3, asserted | N/A |
+| **Colour never alone** | Every graded cell | Carries glyph + word + percentage text | 100% | AC-5.2, asserted | N/A |
+| **I-a holds** | The dialog | Summarises or orders by window | 0 strings, 0 orderings | AC-4.9, AC-5.4; the shipped rankability scan | 0 today — must stay 0 |
+| **Use does not drop behind the extra click** | Instances that consented to usage data | Run the check | Weekly `TeamForecastRealityCheckRun` count in the 30 days after release ≥ the 30 days before | PostHog, existing name-only event | The pre-release 30-day count (read at release) |
+| **Density readable** | The maintainer, dogfooding | States each level's finding from the dialog alone | 3 real Teams on the dev instance, each read in under a minute, recorded in the slice 04 brief | Dogfooding note | N/A |
+
+**Flag for DEVOPS, not designed here**: a reopen or "Run again" that returns an answer counts as a new
+result, so the usage count can rise without new users. If the maintainer later wants runs told apart from
+re-runs, the name-only event cannot do it; that would be a separate DEVOPS decision.
+
+## Wave: DISCUSS / [REF] Pre-requisites — Story #6094
+
+| # | Pre-requisite | State |
+|---|---|---|
+| P-1 | Slices 01 + 02 shipped: endpoint, verdict copy, per-cell `held`, `forecastValue`, `actualCompleted` | **Confirmed** — pushed `9851b4ea3`; response contract read |
+| P-2 | DES-14 rule A and DES-16 `SometimesHeld` confirmed | **Confirmed** by the maintainer 2026-09-26 |
+| P-3 | Brown's grading verified at source | **Confirmed** by the maintainer 2026-09-26 |
+| P-4 | A demo Team reaches the check in E2E | **Confirmed** — the shared Team visit already runs the check on scenario 0 |
+| P-5 | Where the grade is computed | **Open for DESIGN** — does not block slice 04 |
+
+## Wave: DISCUSS / [REF] Definition of Ready — Story #6094
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| 1 | Problem statement, domain language | PASS | US-04 / US-05 open on Maria's inability to say by how much a quoted number held; no solution language |
+| 2 | Persona with specific characteristics | PASS | `delivery-forecaster` (Maria Santos, Ocean Explorer), read-only Tom Becker, secondary `forecasting-prospect` |
+| 3 | 3+ domain examples, real data | PASS | 3 per story: Ocean Explorer 42 vs 48/40/36/31; Team at 45 with 20 rows; Coastal Survey 3 vs 4; Harbour Pilots 0 vs 0 and 2; Tom on a failed request |
+| 4 | UAT Given/When/Then, 3-7 | PASS | 7 (US-04), 6 (US-05) |
+| 5 | AC derived from UAT | PASS | AC-4.1..4.9, AC-5.1..5.6, each tracing to a scenario or a named invariant |
+| 6 | Right-sized | PASS with qualification | ~7h + ~5h, each demonstrable in one session; US-04 sits at the top of the band (7 scenarios, 9 ACs, one of them invariants) — stated, not split, see its sizing note |
+| 7 | Technical notes | PASS | Response reused unchanged in 04; grading location open for DESIGN; retirement list named |
+| 8 | Dependencies tracked | PASS | P-1..P-5; only P-5 open, and it is DESIGN's by design |
+| 9 | Outcome KPIs measurable | PASS | 7 KPIs with target and method; the usage one reuses the shipped event |
+
+Job traceability: both stories carry `job_id: job-forecaster-check-the-forecast-against-what-happened`.
+Neither is `@infrastructure`; both have an Elevator Pitch with the real entry point.
+
+### DoR: PASS
+
+## Wave: DISCUSS / [REF] Definition of Done — Story #6094
+
+The Epic's DoD 1-6 and 13 apply unchanged (build, tests, Biome, Playwright run locally through POMs on
+demo data, Sonar, Stryker ≥ 80% run last on frozen code, no write path). In addition:
+
+1. The retired components and their tests are **deleted**, not left unused (6094-D4); a search for
+   `RealityCheckEvidence`, `RealityCheckBandRow` and "Show the evidence" finds nothing.
+2. The Playwright step drives the dialog through `TeamDetailPage`; no inline `page.locator()` in the spec.
+3. Dogfooded on three real Teams of the dev instance; the density finding written into the slice 04 brief.
+4. No new usage-data event; `docs/settings/usagedata.md` unchanged unless DEVOPS decides otherwise.
+5. Docs page and two per-theme screenshots at Epic finalization show the dialog and the graded table.
+6. ADO Story #6094 transitioned; Epic #4172 stops at Resolved, never Closed.
+
+## Wave: DISCUSS / [REF] Open for DESIGN — Story #6094
+
+1. **Where grading lives.** Backend fields per `CellLevelOutcomeDto` (margin, band, direction as closed
+   enums — facts on the wire, DES-1) or a client function over the shipped fields. The precedent that
+   `minimumActiveDays` is echoed rather than duplicated argues one way; "slice 04 needs no backend change"
+   the other.
+2. **The six grade colours** for the light and dark themes, with text contrast inside each; distinct from
+   `riskyColor` … `certainColor`.
+3. **Percentage rounding** so the shown whole number never contradicts its band (e.g. 10.4% in 10-25%).
+4. **The dialog and table components** — reuse of an existing dialog pattern, the full-screen breakpoint,
+   the sticky row-header mechanism.
+5. **Copy composition** — whether the level-line and closeness composers are factored so a future MCP tool
+   could share them (Epic D12 precondition).
+
+## Wave: DISCUSS / [REF] Questions for the maintainer — Story #6094
+
+None blocks DESIGN; each has a default already written into the decisions above.
+
+1. **"Holding, but …"** — the worked example opens its closing clause with *"Holding"*, an adjective on a
+   level that reads `SometimesHeld`. DES-16 (confirmed 2026-09-26) says that reading carries **no**
+   calibration adjective. Default: drop "Holding", keep *"Usually low by more than a quarter."* Or should
+   "Holding" become the `SometimesHeld` word, reversing that part of DES-16?
+2. **Sign of the Work Item miss** — default `actual − forecast` ("+4" = delivered 4 more, held).
+3. **Actual 0, forecast above 0** — default grade: dark red, no percentage.
+4. **Order inside the text result** — default: the level lines first (the confidence level is the axis
+   that carries the signal), then the window sentence, the findings, the denominator.
+5. **The "usually …" rule** — default: added only when more than half of the level's graded checks share
+   one band and direction.
+6. **"your setting"** on the Team's own window row — default: yes, as a plain label.
+
+## Wave: DISCUSS / [REF] Risks — Story #6094
+
+| # | Risk | Disposition |
+|---|---|---|
+| R-6094-1 | 64-80 cells unreadable on real data (Epic D2's warning) | Slice 04's learning hypothesis; dogfood on three real Teams before slice 05 |
+| R-6094-2 | "More green is better" read into the table, when half the 50th column should not hold | Level lines state held against should-have-held beside the table; the 95th's light green is named as caution |
+| R-6094-3 | A percentage on a small actual looks alarming | Work Item miss beside every percentage (6094-D2) |
+| R-6094-4 | Colour means two things (confidence vs grade) | Grade scale separate; `ForecastLevel` colours on headers only (6094-D3) |
+| R-6094-5 | Deleting tested components drops coverage or leaves dead copy helpers | DoD item 1; Stryker on frozen code |
+| R-6094-6 | The dialog's loading state makes the E2E step flaky | Assert on the filled result, not the spinner; the E2E timeout rule applies |
+| R-6094-7 | A per-window reading creeps into the copy (I-a) | AC-4.9 / AC-5.4; the shipped rankability scan extended to the dialog's text |
+
+## Wave: DISCUSS / [REF] SSOT Updates — Story #6094
+
+| File | Change |
+|---|---|
+| `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Steps 1-5 updated for the dialog (surfaces, what the user sees, mockups for the text result and the graded table); changelog entry for Story #6094 |
+| `docs/product/jobs.yaml` | **Not edited.** The job is unchanged and the feature id `epic-4172-forecast-backtest-sweep` is already in the file's feature list; the file keeps no per-story changelog |
+| Personas | Not edited — no new characteristic beyond the job's existing "read how far off it was" |
+
+## Wave: DISCUSS / [REF] Corrections made during this wave
+
+1. **OQ-6 marked DECIDED** (maintainer, 2026-09-26): fixed-dates Teams see the check and are told their
+   setting was not tested — in the Open Questions table, the "where this stands" bullet, and the note
+   under DESIGN's amendments.
+2. **Outcome KPI §4.3** said always-held is over-forecasting; code (`levelReadingCopy.AlwaysHeld`) and
+   AC-2.4 say **under**-forecasting. Fixed, with DES-16's condition.
+3. **Slice 01 brief**, learning hypothesis 1, still called the cost "an inference" — R-1 was measured
+   (the brief's own *Measured* table, and DESIGN's 701 ms cold / 612 ms warm probe). Fixed.
+4. **`red-classification.md`** row for `Somebody_who_cannot_read_the_Team_is_refused_…` said Forbidden
+   (403); the scenario asserts NotFound (404). Fixed, with the observation that this scenario has no
+   presence leg of its own.

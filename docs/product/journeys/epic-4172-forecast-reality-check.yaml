@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-4172-forecast-backtest-sweep
-updated: 2026-09-22
+updated: 2026-09-26
 ado: "#4172"
 note: >
   User-facing feature name is "Forecast Reality Check" (shortens to "Reality Check" in-app). The internal
@@ -132,10 +132,11 @@ journeys:
 
       - id: 1
         name: Notice the question exists
-        surface: Team → Forecast tab → "Forecast Backtesting" group
+        surface: Team → Forecasts tab → "Forecast Backtesting" group → "Run reality check"
         what_they_see: >
           A single button labelled for the check, inside the InputGroup that already holds the shipped
-          single-shot backtest, above its date pickers. No dialog, no configuration, no dates.
+          single-shot backtest, above its date pickers. It opens a dialog (Story #6094); nothing of the
+          check renders inline. No configuration, no dates.
         emotional_state:
           entry: Unexamined confidence — they came to this tab to read a forecast, not to question one
           exit: Curious, faintly wary — "I did not know I could ask that"
@@ -154,10 +155,11 @@ journeys:
 
       - id: 2
         name: Press it, and wait a beat
-        surface: the same group
+        surface: a dialog the button opens at once (Story #6094; was the same group)
         what_they_see: >
-          The button becomes a spinner in place. Measured expectation is seconds. No notification, because
-          there is nothing to notify about — removing the asynchrony is what buys that.
+          The dialog opens straight away saying the check is running, and fills in when the answer arrives.
+          Measured expectation is well under a second. "Run again" re-runs inside the dialog; closing and
+          reopening runs a fresh check. No notification, because it is on screen.
         emotional_state:
           entry: Curious
           exit: Braced — the peak tension of the journey, and deliberately short
@@ -171,37 +173,35 @@ journeys:
           - The user navigates away mid-run and returns to a surface that has forgotten it
 
       - id: 3
-        name: Read the sentence
-        surface: a result card in the same group
+        name: Read the answer in words
+        surface: the dialog, text result first (Story #6094; was a result card in the same group)
         what_they_see: >
-          One sentence with two clauses, plus permanent copy beneath it. First clause, a REGION of sampling
-          windows that behaved alike and whether the current setting is inside it — never a winner. Second
-          clause, how each of the four confidence levels fared against its own nominal rate, with any level
-          never beaten called over-forecasting rather than excellent. Then the denominator paragraph, on
-          screen, not in a tooltip. Any checks that could not run are named with their reason.
+          REWRITTEN 2026-09-26 for Story #6094. One line per confidence level: how often it held against how
+          often it should have, and (from slice 05) how close it landed; a level that never held is called
+          over-forecasting, one that held every time when a miss was expected is called under-forecasting.
+          Then the sampling-window sentence naming a REGION (rule A) and where the current setting stands,
+          never a winner; the two findings; the denominator paragraph, on screen, not in a tooltip. Any
+          checks that could not run are named with their reason.
         tui_mockup: |
-          +-- Forecast Reality Check -------------------------------------------+
-          | Anything between ${regionLow} and ${regionHigh} days would have      |
-          | behaved about the same for ${teamName}. Your current                 |
-          | ${currentSamplingWindow} is inside that range — this setting is fine.|
-          |                                                                      |
-          | At 85% the forecast held in 3 of 4 checks; at 95% it held in 4 of 4  |
-          | and was never beaten, which is over-forecasting rather than          |
-          | excellence; at 70% in 2 of 4; at 50% in 1 of 4.                      |
-          |                                                                      |
-          | ${runCount} forecast runs were checked, each read at                 |
-          | ${levelCount} confidence levels — ${scoreCount} scores in all. The   |
-          | four levels of a single run come from the same simulation, so they   |
-          | are not independent of one another. Each run covers a different      |
-          | stretch of real time — every one ends today and reaches back by its  |
-          | own length — so they are not repeated trials of one experiment and   |
-          | should not be ranked against each other.                             |
-          |                                                                      |
-          | 2 of the 16 checks could not run: their 14-day sampling windows hold |
-          | fewer than 5 days with completed ${workItemsTerm}.                   |
-          |                                                                      |
-          | [ Show the evidence ]                                                |
-          +----------------------------------------------------------------------+
+          +-- Forecast Reality Check: ${teamName} ----------------------------------+
+          | 50th: held 7 of 16 (should be about 8), within 10% in 4.              |
+          | 70th: held 12 of 16 (should be about 11), within 10% in 5.            |
+          | 85th: held 15 of 16 (should be about 14), within 10% in 3.            |
+          |   Usually low by more than a quarter.                                 |
+          | 95th: held 16 of 16 (should be about 15), within 10% in 1.            |
+          |                                                                        |
+          | Anything between ${regionLow} and ${regionHigh} days would have        |
+          | behaved about the same for ${teamName}. Your current                   |
+          | ${currentSamplingWindow} is inside that range - this setting is fine.  |
+          |                                                                        |
+          | The sampling window is a setting on this ${teamTerm}. The confidence   |
+          | level is not a setting: it is which of the 4 numbers you choose to     |
+          | quote.                                                                 |
+          |                                                                        |
+          | ${runCount} forecast runs were checked, each read at ${levelCount}     |
+          | confidence levels - ${scoreCount} scores in all. [...non-comparability]|
+          |                                              [ Run again ]  [ Close ]  |
+          +------------------------------------------------------------------------+
         emotional_state:
           entry: Braced
           exit: >
@@ -231,44 +231,60 @@ journeys:
 
       - id: 4
         name: Look at the evidence
-        surface: the same card, expanded
+        surface: the same dialog, beneath the text result (Story #6094; was the card's expanded band panels)
         what_they_see: >
-          Four panels, one per sampling window. Inside each, one row per horizon, drawn as a forecast band
-          spanning the four confidence levels with a single mark where the Team's actual completed count
-          landed. A row that could not be checked says so in words where the band would be. Below the
-          panels, four lines: per confidence level, how many evaluable checks it was beaten in against how
-          many its nominal rate expects.
+          REWRITTEN 2026-09-26 for Story #6094; the band-row panels are retired. A table: one row per
+          period x sampling window (16 on the standard ladder, 20 when the Team's own window is off it),
+          grouped by period (1 / 2 / 4 / 8 weeks, each ending today) with the period's actual printed once in
+          the group header; columns 50th / 70th / 85th / 95th, headed by their confidence-level names. Each
+          cell shows the forecast, the miss in Work Items (actual minus forecast) and held or did not hold as
+          a glyph and a word; from slice 05 also the percentage of the actual and a grade on Nick Brown's
+          scale (green held / red did not, darker the closer). A row that could not be checked says so in
+          words across all four levels. A legend names the grades; Brown is credited for the grading and the
+          product's own additions are named beside it.
         tui_mockup: |
-          +-- Sampling window: 30 days ------------------------------------------+
-          |                      95     85     70     50                         |
-          |   8 weeks   |-------+------+------+------|          * 42             |
-          |   4 weeks   |-----+-----+-----+-----|   * 19                         |
-          |   2 weeks   not enough history in this window — 3 days with completed |
-          |             ${workItemsTerm}, ${minimumActiveDays} needed             |
-          |   1 week    |---+---+---+---|           * 6                          |
-          +----------------------------------------------------------------------+
-          Across the 14 checks that could be run:
-            50%   beaten in 9   (about 7 expected)   about right
-            70%   beaten in 5   (about 4 expected)   about right
-            85%   beaten in 1   (about 2 expected)   about right
-            95%   beaten in 0   (about 1 expected)   never beaten — over-forecasting, not excellence
+          +-- Forecast Reality Check: ${teamName} -----------------------------------+
+          |                  50th Risky  70th Realistic  85th Confident  95th Certain |
+          | Last 8 weeks, ${periodStart} to ${periodEnd}: ${periodActual} ${workItemsTerm} completed |
+          |   14 days          46 -4 ✗      41 +1 ✓       37 +5 ✓        33 +9 ✓       |
+          |   30 days          48 -6 ✗      40 +2 ✓       36 +6 ✓        31 +11 ✓      |
+          |   60 days  ...                                                            |
+          | Last 2 weeks, ...: 9 ${workItemsTerm} completed                           |
+          |   14 days   Not enough history - 3 days with completed ${workItemsTerm},  |
+          |             ${minimumActiveDays} needed                                   |
+          |   30 days  ...                                                            |
+          +---------------------------------------------------------------------------+
+          From slice 05 a cell reads e.g. "36  +6  14% ✓" on a mid-green grade (held, 10-25%).
         emotional_state:
-          entry: Interested, and slightly sceptical of the sentence
+          entry: Interested, and slightly sceptical of the words above
           exit: >
-            Convinced by something they looked at rather than something they were told. This is the step
-            that earns the recommendation's weakest score on its highest-weighted criterion
+            Convinced by numbers they looked at rather than a sentence they were told, and able to say how
+            much slack the number they quote carries
+        shared_artifacts:
+          - name: period_actual
+            source: RealityCheckCellDto.actualCompleted (identical for every window of one horizon)
+            displayed_as: "${periodActual}"
+            consumers: [the period group header, each cell's Work Item miss, each cell's percentage]
+          - name: period_dates
+            source: RealityCheckCellDto.scoredPeriodStart / scoredPeriodEnd (DES-19, inclusive)
+            displayed_as: ["${periodStart}", "${periodEnd}"]
+            consumers: [the period group header]
         integration_checkpoint: >
-          Every row in every panel corresponds to exactly one cell in the response, and an unevaluable row
-          renders visibly differently from every evaluable outcome — never blank (ADR-194).
+          Every body row corresponds to exactly one cell in the response (16 or 20, matching
+          denominator.runsAttempted); an unevaluable row renders visibly differently from every graded one,
+          never blank (ADR-194); rows keep the server's ladder order and are never sorted or highlighted by
+          grade (no per-window reading, DES-2).
         failure_modes:
-          - Four bands of four levels, four to a panel, turn out to be unreadable at real data
-          - An unevaluable row renders as an empty band and is read as a calm result
-          - A panel with no evaluable rows is omitted, which reads as "this window was fine"
-          - The rendering drifts toward a matrix or a ranked list, which D6 forbids
+          - 64-80 cells turn out to be unreadable at real data (slice 04's learning hypothesis)
+          - An unevaluable row renders as empty cells and is read as a calm result
+          - A mostly-green table is read as "trust it" when the 95th's light green means caution
+          - A percentage on a small actual looks alarming without its Work Item miss beside it
+          - Colour is the only signal of a grade, or reuses the confidence-level colours
+          - Text or ordering in the dialog starts summarising by sampling window
 
       - id: 5
         name: Take the two findings away
-        surface: the verdict card
+        surface: the dialog's text result (was the verdict card until Story #6094)
         what_they_see: >
           REWRITTEN 2026-09-22 when Apply was dropped; this step previously offered a control. It now
           offers none. Permanently on the card, beside the verdict: the sampling window is a setting on
@@ -347,3 +363,12 @@ changelog:
       rather than 1, 3 and 5. THE FEATURE IS NOW READ-ONLY END TO END, with no write path at all. The
       three honesty requirements, all four confidence levels, the end anchor and the no-Report position
       are unchanged — dropping Apply strengthens 4.1 rather than relaxing it.
+  - date: 2026-09-26
+    feature: epic-4172-forecast-backtest-sweep
+    change: >
+      Story #6094 (DISCUSS; decisions 6094-D1..D10 in feature-delta.md). The check moves into a dialog the
+      button opens at once; step 3 becomes a text result led by one line per confidence level; step 4's
+      band-row panels are retired and replaced by a period x window table with the actual printed once per
+      period, graded on Nick Brown's scale (percentage of the actual, the miss in Work Items, glyph and word
+      per cell). Supersedes the old step 4 failure mode "drifts toward a matrix" — the maintainer asked for
+      the matrix; ranking by window stays forbidden. Steps 1, 2 and 5 re-surfaced; the arc is unchanged.

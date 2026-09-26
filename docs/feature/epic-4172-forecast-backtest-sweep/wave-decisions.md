@@ -1076,3 +1076,70 @@ skipped by the maintainer · **Artifacts**: `diverge/story-6094/` (`job-analysis
   of the shipped sentence / level lines / evidence panels, dialog entry point, colour mapping — the forecast
   colours already mean confidence level — text wording, accessibility, terminology, the reversal).
 - **Review**: `nw-diverger-reviewer` not run by Flux; the orchestrator runs it.
+
+---
+
+# DISCUSS Decisions — Story #6094
+
+**Agent**: Luna (`nw-product-owner`) · **Date**: 2026-09-26 · The interactive part was done by the
+maintainer, who answered every question DIVERGE left open · Full text: `feature-delta.md`, part
+*Story #6094 — the graded results dialog* · Slices: `slices/slice-04-the-answer-opens-in-a-dialog.md`,
+`slices/slice-05-how-close-each-forecast-landed.md` · Nothing committed; reviewer not run.
+
+## Key Decisions
+
+| # | Decision | By |
+|---|---|---|
+| 6094-D1 | Everything moves into a dialog; the Backtesting group keeps only "Run reality check"; the dialog opens on a text result, the graded table follows. Option 5; Option 3 rejected | maintainer |
+| 6094-D2 | Error = % of the **actual** (Brown), bands ≤10 / 10-25 / >25, symmetric; every cell also shows the miss in Work Items; actual 0 → no percentage, forecast > 0 did not hold, 0 vs 0 held exactly | maintainer (+ defaults: sign `actual − forecast`, band on the unrounded value) |
+| 6094-D3 | Brown's separate green/red scale, shade by closeness, glyph + word per cell (WCAG 1.4.1); `ForecastLevel` colours on level headers only | maintainer (+ default: actual-0 miss is dark red) |
+| 6094-D4 | Window sentence and per-level reading fold into the text result; band-row panels and level lines retired — **DELIVER deletes their code and tests** | maintainer (+ default order: levels, window, findings, denominator) |
+| 6094-D5 | Rows period × window (16 / 20), grouped by period, actual once per group; columns 50 / 70 / 85 / 95; periods `[7, 14, 28, 56]` ending today | maintainer (+ default: "your setting" row label) |
+| 6094-D6 | The 95th stays, deliberately beyond Brown | maintainer |
+| 6094-D7 | One line per level: held vs should-have-held, within-10% count, "usually …" clause; `NeverHeld` over-, `AlwaysHeld` under-forecasting; summaries by level / period only, never window; "held" not "beaten"; Brown credited, our three-way reading owned | maintainer (+ default "usually" rule; "Holding" not adopted pending question 1) |
+| 6094-D8 | Opens at once with a loading state; "Run again" inside; close + reopen re-runs; `TeamForecastRealityCheckRun` once per result, unchanged | maintainer |
+| 6094-D9 | Supersedes slice 02's "no matrix" and Epic D2's "64 marks is unreadable"; I-a..I-d hold | maintainer |
+| 6094-D10 | Accessibility: table caption + scoped headers + row groups; focus trap, Escape, focus return; full-screen + horizontal scroll on narrow screens | DISCUSS defaults, as asked |
+
+## Requirements Summary
+
+- **US-04 / slice 04 (~7h)** — dialog, text result, period × window table with held and Work Item miss,
+  retirement of the inline UI, the Playwright walking skeleton (rewrites the existing step in
+  `TeamsDetail.spec.ts`). Hypothesis: 64-80 cells are readable on real history, and the dialog costs
+  nothing because it opens on words.
+- **US-05 / slice 05 (~5h)** — Brown's grading: margin bands, six shades, percentage, legend, credit,
+  per-level closeness. Hypothesis: shading exposes over-caution (S2) without inflating small periods (S3).
+- Both trace to `job-forecaster-check-the-forecast-against-what-happened` (unchanged; "read how far off it
+  was" half). Scope: **PASS — 2 stories, 1-2 modules, ~1.5 days.** DoR: **PASS** (US-04 at the top of the
+  band, stated). Slice 03 stays deferred and keeps its number.
+
+## Constraints
+
+Read-only end to end (I-b, ArchUnit E1); no per-window score, rank or tally, including derived text (I-a);
+unevaluable never blank (I-c); no hard-coded renameable term, "throughput" in no label (I-d); rule A and
+DES-16 unchanged; no new usage-data event; no CLI / MCP (Epic D12).
+
+## Upstream Changes
+
+- **Superseded**: slice 02's "a matrix" OUT item and Epic D2's density ruling — by the maintainer's ask.
+- **Brown verified at source** (medium.com, maintainer, 2026-09-26): the DIVERGE "unverified" notes on
+  the margin's reference quantity (the actual) and the colours are answered; **R-5 discharged** for these
+  claims. Zero actuals are not something the source settles — their handling is the maintainer's decision
+  (6094-D2), not Brown's.
+- **OQ-6 DECIDED**: fixed-dates Teams see the check and are told their setting was not tested.
+- **Corrections** in `feature-delta.md` (OQ-6 status; KPI §4.3 always-held = under-forecasting), the slice
+  01 brief (cost measured, not inferred) and `red-classification.md` (404, not 403).
+- **Journey** `docs/product/journeys/epic-4172-forecast-reality-check.yaml` steps 1-5 updated for the
+  dialog, changelog entry added. `jobs.yaml` not edited.
+
+## Open for DESIGN
+
+Where grading lives (backend enums vs client function); the six grade colours per theme; percentage
+rounding that never contradicts the band; dialog/table components; copy composers shareable with a future
+MCP tool.
+
+## Questions for the maintainer (none blocks DESIGN)
+
+1. "Holding, but …" — adopt as the `SometimesHeld` word (reversing DES-16's no-adjective), or drop (default)?
+2. Miss sign `actual − forecast` (default). 3. Actual-0 miss graded dark red (default). 4. Text order:
+   levels first (default). 5. "Usually …" only on a majority (default). 6. "your setting" row label (default).

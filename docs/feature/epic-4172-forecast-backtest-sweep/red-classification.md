@@ -31,7 +31,7 @@ the green back-test scenario in the same fixture proves the host, the seeding an
 | A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked | 3 (a word / a number / cut-off JSON) | MISSING_FUNCTIONALITY | the presence leg - a well-formed request for the same Team - got NotFound; without it a missing route would pass as a refusal |
 | Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today | 1 | MISSING_FUNCTIONALITY | expected OK, got NotFound |
 | Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer | 1 | MISSING_FUNCTIONALITY | expected OK, got NotFound |
-| Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it | 1 | MISSING_FUNCTIONALITY | expected Forbidden, got NotFound |
+| Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it | 1 | MISSING_FUNCTIONALITY | expects NotFound (404) with no cells in the body — the single back-test's own refusal, so the answer never reveals that the Team exists. *(Corrected 2026-09-26: this row said Forbidden (403), which the scenario does not assert.)* A missing route also answers 404, so this scenario has no presence leg of its own; the route is proved by Tom's scenario above |
 | A_Team_that_does_not_exist_is_answered_as_not_found | 1 | MISSING_FUNCTIONALITY | the presence leg - the check answering for a Team that does exist - got NotFound; without that leg this scenario would pass today |
 | Every_check_ends_today_and_reaches_back_by_its_own_length | 1 | MISSING_FUNCTIONALITY | expected OK, got NotFound |
 | The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear | 1 | MISSING_FUNCTIONALITY | expected OK, got NotFound |
