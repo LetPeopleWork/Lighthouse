@@ -90,6 +90,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly int[] LadderWithoutSixty = [14, 30, 90];
 
+        private static readonly int[] OnlyThirty = [30];
+
         private const int ChecksPerWindow = 4;
 
         private enum Check
@@ -198,8 +200,143 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(soundWindow.SoundWindowDays, Is.Empty);
+                Assert.That(soundWindow.UnevaluatedWindowDays, Is.EqualTo(Ladder));
                 Assert.That(soundWindow.Determination, Is.EqualTo(Determination.NotEnoughEvidence));
             }
+        }
+
+        [TestCase(2, 0, true)]
+        [TestCase(2, 1, false)]
+        [TestCase(1, 0, true)]
+        [TestCase(1, 1, false)]
+        public void SoundWindows_AWindowOnlySomeOfWhoseChecksRanIsJudgedOnTheOnesThatDid(int checksThatRan, int ofThemFellShort, bool holdsUp)
+        {
+            Check[] checks =
+            [
+                .. Enumerable.Repeat(Check.FellShort, ofThemFellShort),
+                .. Enumerable.Repeat(Check.InsideTheBand, checksThatRan - ofThemFellShort),
+                .. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow - checksThatRan),
+            ];
+            var cells = ChecksOf(90, checks).Concat(EveryOtherWindow(90, Check.InsideTheBand)).ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 90);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays.Contains(90), Is.EqualTo(holdsUp));
+                Assert.That(soundWindow.UnevaluatedWindowDays, Is.Empty);
+                Assert.That(soundWindow.Determination, Is.EqualTo(holdsUp ? Determination.AllWindowsAlike : Determination.SomeWindowsSound));
+            }
+        }
+
+        [TestCase(14)]
+        [TestCase(30)]
+        [TestCase(60)]
+        [TestCase(90)]
+        public void SoundWindows_AWindowNoneOfWhoseChecksRanIsAGapNeverAPass(int windowDays)
+        {
+            var cells = ChecksOf(windowDays, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])
+                .Concat(EveryOtherWindow(windowDays, Check.InsideTheBand))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, windowDays);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(Ladder.Where(days => days != windowDays)));
+                Assert.That(soundWindow.UnevaluatedWindowDays, Is.EqualTo(new[] { windowDays }));
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.SomeWindowsSound));
+            }
+        }
+
+        [Test]
+        public void SoundWindows_AWindowThatCouldNotBeCheckedBesideWindowsThatFellShortIsNoWindowSound()
+        {
+            var cells = ChecksOf(30, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])
+                .Concat(EveryOtherWindow(30, Check.FellShort))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.Empty);
+                Assert.That(soundWindow.UnevaluatedWindowDays, Is.EqualTo(OnlyThirty));
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.NoWindowSound));
+            }
+        }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        public void SoundWindows_AWindowWithACheckThatFellShortWasEvaluatedHoweverManyOfItsChecksCouldNotRun(int timesShort)
+        {
+            var cells = ChecksOf(60, [.. Enumerable.Repeat(Check.FellShort, timesShort), .. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow - timesShort)])
+                .Concat(EveryOtherWindow(60, Check.InsideTheBand))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 60);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(LadderWithoutSixty));
+                Assert.That(soundWindow.UnevaluatedWindowDays, Is.Empty);
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.SomeWindowsSound));
+            }
+        }
+
+        [Test]
+        public void SoundWindows_EveryMixOfWindowStatesIsDeterminedInOrderAndNoWindowIsBothSoundAndUnevaluated()
+        {
+            WindowFate[] fates = [WindowFate.HoldsUp, WindowFate.FallsShort, WindowFate.CouldNotRun];
+            var everyMix = Ladder.Aggregate(
+                new[] { new Dictionary<int, WindowFate>() }.AsEnumerable(),
+                (mixes, windowDays) => mixes.SelectMany(mix => fates.Select(fate => new Dictionary<int, WindowFate>(mix) { [windowDays] = fate })));
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var mix in everyMix)
+                {
+                    var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(CheckFor(mix[windowDays]), ChecksPerWindow)])).ToList();
+
+                    var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+
+                    Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(Ladder.Where(days => mix[days] == WindowFate.HoldsUp)));
+                    Assert.That(soundWindow.UnevaluatedWindowDays, Is.EqualTo(Ladder.Where(days => mix[days] == WindowFate.CouldNotRun)));
+                    Assert.That(soundWindow.SoundWindowDays.Intersect(soundWindow.UnevaluatedWindowDays), Is.Empty);
+                    Assert.That(soundWindow.Determination, Is.EqualTo(ExpectedDetermination(mix.Values)));
+                }
+            }
+        }
+
+        private enum WindowFate
+        {
+            HoldsUp,
+            FallsShort,
+            CouldNotRun,
+        }
+
+        private static Check CheckFor(WindowFate fate) => fate switch
+        {
+            WindowFate.HoldsUp => Check.InsideTheBand,
+            WindowFate.FallsShort => Check.FellShort,
+            _ => Check.CouldNotRun,
+        };
+
+        private static Determination ExpectedDetermination(ICollection<WindowFate> fates)
+        {
+            if (fates.All(fate => fate == WindowFate.CouldNotRun))
+            {
+                return Determination.NotEnoughEvidence;
+            }
+
+            if (fates.All(fate => fate == WindowFate.HoldsUp))
+            {
+                return Determination.AllWindowsAlike;
+            }
+
+            return fates.Contains(WindowFate.HoldsUp) ? Determination.SomeWindowsSound : Determination.NoWindowSound;
         }
 
         private static IEnumerable<RealityCheckCellDto> EveryOtherWindow(int windowDays, Check check) =>

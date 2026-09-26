@@ -38,19 +38,21 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var windowStates = sampledWindowDays
                 .Select(windowDays => StateOf(cells.Where(cell => cell.SamplingWindowDays == windowDays)))
                 .ToList();
-            var soundWindowDays = sampledWindowDays
-                .Where((_, index) => windowStates[index] == WindowState.HoldsUp)
-                .ToList();
+            var soundWindowDays = WindowsIn(WindowState.HoldsUp, sampledWindowDays, windowStates);
 
             return new RealityCheckSoundWindowDto(
                 soundWindowDays,
-                [],
+                WindowsIn(WindowState.NotEvaluated, sampledWindowDays, windowStates),
                 DeterminationOf(windowStates),
                 currentSettingDays,
                 true,
                 soundWindowDays.Contains(currentSettingDays) ? CurrentSettingStanding.Inside : CurrentSettingStanding.Outside,
                 null);
         }
+
+        private static List<int> WindowsIn(
+            WindowState state, IReadOnlyList<int> sampledWindowDays, List<WindowState> windowStates)
+            => [.. sampledWindowDays.Where((_, index) => windowStates[index] == state)];
 
         // Only falling short of the most cautious forecast counts against a window. The band's top edge is the
         // median forecast, so landing above it is what half of a well-judged forecast's checks do: a coin flip,

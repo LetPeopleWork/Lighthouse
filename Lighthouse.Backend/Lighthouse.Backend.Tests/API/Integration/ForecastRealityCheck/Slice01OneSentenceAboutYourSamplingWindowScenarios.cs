@@ -239,7 +239,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Every_check_that_was_run_is_in_the_answer_including_the_ones_that_could_not_be_evaluated()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
@@ -399,7 +398,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(2, 1, false)]
         [TestCase(1, 0, true)]
         [TestCase(1, 1, false)]
-        [Ignore(Pending)]
         public async Task A_window_only_some_of_whose_checks_could_run_is_judged_on_the_ones_that_did(int checksThatRan, int ofThemFellShort, bool holdsUp)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -416,7 +414,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_window_that_could_not_be_checked_in_the_middle_of_the_ladder_is_a_gap_in_the_region()
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(60);
@@ -581,7 +578,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Coastal_Surveys_fourteen_day_checks_hold_too_few_days_of_finished_work_and_are_named_as_unable_to_run()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
