@@ -10,7 +10,9 @@ import type React from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
-import RealityCheckPeriodGroup from "./RealityCheckPeriodGroup";
+import RealityCheckPeriodGroup, {
+	stickyHeaderCellSx,
+} from "./RealityCheckPeriodGroup";
 import { tableCaption } from "./realityCheckCopy";
 
 interface RealityCheckTableProps {
@@ -42,12 +44,12 @@ const RealityCheckTable: React.FC<Readonly<RealityCheckTableProps>> = ({
 	const { getTerm } = useTerminology();
 
 	return (
-		<TableContainer>
-			<Table size="small" sx={{ captionSide: "top" }}>
+		<TableContainer sx={{ overflowX: "auto" }}>
+			<Table size="small" sx={{ captionSide: "top", minWidth: 640 }}>
 				<caption>{tableCaption(result.teamName, getTerm)}</caption>
 				<TableHead>
 					<TableRow>
-						<TableCell>Sampling window</TableCell>
+						<TableCell sx={stickyHeaderCellSx}>Sampling window</TableCell>
 						{result.confidenceLevels.map((confidenceLevel) => (
 							<LevelColumnHeader
 								key={confidenceLevel}

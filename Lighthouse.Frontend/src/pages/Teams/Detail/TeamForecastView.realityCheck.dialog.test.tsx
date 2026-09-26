@@ -99,8 +99,6 @@ vi.mock("./BacktestForecaster", () => ({
 	default: () => <div data-testid="backtest-forecaster" />,
 }));
 
-const PENDING = "the reality check dialog is not built yet";
-
 const MINUS = "−";
 
 const runRealityCheck = vi.fn();
@@ -526,7 +524,7 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 		expect(table.querySelectorAll('th[scope="row"]')).toHaveLength(16);
 	});
 
-	it.skip(`@kpi-OUT-6094-no-window-ranked says nothing that tallies, orders or picks out a sampling window, and offers no way to sort the table (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-no-window-ranked says nothing that tallies, orders or picks out a sampling window, and offers no way to sort the table`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
 		);
@@ -543,7 +541,7 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 		expect(within(table).queryAllByRole("button")).toHaveLength(0);
 	});
 
-	it.skip(`@kpi-OUT-4172-read-only offers no control that could change a Team setting (${PENDING})`, async () => {
+	it(`@kpi-OUT-4172-read-only offers no control that could change a Team setting`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		for (const role of [
@@ -562,7 +560,7 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 		}
 	});
 
-	it.skip(`speaks the instance's own words for Team and Work Item, and no tracker's (${PENDING})`, async () => {
+	it(`speaks the instance's own words for Team and Work Item, and no tracker's`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Ticket");
@@ -713,7 +711,7 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 
-	it.skip(`focus moves into the dialog when it opens, and the answer arriving moves it nowhere (${PENDING})`, async () => {
+	it(`focus moves into the dialog when it opens, and the answer arriving moves it nowhere`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -729,7 +727,7 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 		expect(document.activeElement).toBe(focusedWhileRunning);
 	});
 
-	it.skip(`on a narrow screen the dialog takes the whole screen and the table drops nothing (${PENDING})`, async () => {
+	it(`on a narrow screen the dialog takes the whole screen and the table drops nothing`, async () => {
 		setMatchMedia(true);
 
 		const dialog = await theDialogFor(aRealityCheckAnswer());

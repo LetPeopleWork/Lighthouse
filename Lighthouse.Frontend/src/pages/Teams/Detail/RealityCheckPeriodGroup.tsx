@@ -1,4 +1,5 @@
 import { TableBody, TableCell, TableRow } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import type React from "react";
 import type {
 	RealityCheckCell,
@@ -14,6 +15,17 @@ import {
 	unevaluableRowCopy,
 	windowRowLabel,
 } from "./realityCheckCopy";
+
+// On a narrow screen the table scrolls sideways, and a reader must still see which period and which
+// window a number belongs to. The cells need an opaque background to hide what scrolls beneath them; the
+// dialog's paper carries its dark-theme elevation tint in --Paper-overlay, which the cells inherit.
+export const stickyHeaderCellSx: SxProps<Theme> = {
+	position: "sticky",
+	left: 0,
+	zIndex: 1,
+	backgroundColor: "background.paper",
+	backgroundImage: "var(--Paper-overlay)",
+};
 
 interface RealityCheckPeriodGroupProps {
 	result: RealityCheckResult;
@@ -104,6 +116,7 @@ const RealityCheckPeriodGroup: React.FC<
 					component="th"
 					scope="rowgroup"
 					colSpan={result.confidenceLevels.length + 1}
+					sx={stickyHeaderCellSx}
 				>
 					{horizonLabel(horizonDays)}
 					{period && <PeriodFacts period={period} />}
@@ -111,7 +124,7 @@ const RealityCheckPeriodGroup: React.FC<
 			</TableRow>
 			{result.sampledWindowDays.map((windowDays) => (
 				<TableRow key={windowDays}>
-					<TableCell component="th" scope="row">
+					<TableCell component="th" scope="row" sx={stickyHeaderCellSx}>
 						{windowRowLabel(
 							windowDays,
 							currentSettingWasTested && windowDays === currentSettingDays,

@@ -22,6 +22,9 @@ const RealityCheckVerdict: React.FC<Readonly<RealityCheckVerdictProps>> = ({
 
 	return (
 		<Stack spacing={1.5}>
+			<Typography variant="subtitle1" component="h3">
+				How often each confidence level held
+			</Typography>
 			<Stack spacing={0.5}>
 				{levelCoverage.map((level) => (
 					<Typography key={level.confidenceLevel} variant="body1">
