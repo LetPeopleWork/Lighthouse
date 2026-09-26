@@ -3897,3 +3897,568 @@ None blocks DESIGN; each has a default already written into the decisions above.
 4. **`red-classification.md`** row for `Somebody_who_cannot_read_the_Team_is_refused_…` said Forbidden
    (403); the scenario asserts NotFound (404). Fixed, with the observation that this scenario has no
    presence leg of its own.
+
+---
+
+# Story #6094 — DESIGN
+
+**Wave**: DESIGN, 2026-09-26, agent Morgan (`nw-solution-architect`). **Scope**: application (components).
+**Interaction mode**: PROPOSE, maintainer AFK — each open question below lists its options, and the
+recommended one is taken and recorded as decided unless it changes what a user sees, is told or can do
+beyond what DISCUSS locked; those are under *Needs the maintainer*. Decisions are numbered `6094-DES-n` so
+they cannot be confused with DISCUSS's `6094-D1..D10` or the Epic's `DES-1..DES-19`. Nothing committed, no
+code touched, no reviewer run (the orchestrator runs it).
+
+## Wave: DESIGN / [REF] Prior Wave Consultation — Story #6094
+
+| Source | State |
+|---|---|
+| This file, *Story #6094* DISCUSS part (3280-3899): Locked Decisions 6094-D1..D10, US-04 / US-05 with ACs, Open for DESIGN, P-5, Questions for the maintainer, Risks, DoD | ✓ read whole, fresh |
+| This file, Epic DESIGN: Design Decisions DES-1..DES-13, C4 L1/L2, Component Decomposition, Reuse Analysis, Driving / Driven Ports, Response Contract, Technology Choices, Architecture Enforcement, Quality Attributes, Amendments after DISTILL DES-14..DES-19 | ✓ read in pages, fresh |
+| `slices/slice-04-the-answer-opens-in-a-dialog.md`, `slices/slice-05-how-close-each-forecast-landed.md` | ✓ read whole |
+| `wave-decisions.md` — *DESIGN — amendments after DISTILL*; *DIVERGE Decisions — Story #6094*; *DISCUSS Decisions — Story #6094* | ✓ read |
+| `docs/product/architecture/brief.md` — *Application Architecture — epic-4172-forecast-backtest-sweep* (I1-I10, components, E1-E7, ADR references) | ✓ read (8800-9056) |
+| ADR-209, ADR-210 | ✓ read (heads and decisions) |
+| `docs/ci-learnings.md` | ✓ index read; entries that constrain this design read in full: S3776 on a render body, S7764 `globalThis`, DataGrid phantom overflow, chart markers hidden from `getByRole`, MUI strips `data-testid` from icons, `getByRole` name substring matching, jsdom has no `matchMedia` |
+| Frontend: `ForecastRealityCheck.tsx`, `RealityCheckVerdict.tsx`, `RealityCheckEvidence.tsx`, `RealityCheckBandRow.tsx`, `realityCheckCopy.ts`, `RealityCheckResult.ts`, `forecastSchemas.ts`, `ForecastLevel.ts`, `utils/forecast/percentileColor.ts`, `utils/theme/colors.ts`, `utils/date/localDate.ts`, `WorkItemsDialog.tsx` (dialog pattern) | ✓ read |
+| Frontend usage sweep: 25 files use MUI `<Dialog>` directly, none through a shared wrapper; 14 use MUI `Table`; `useMediaQuery(theme.breakpoints.down("sm"))` in 5 | ✓ searched |
+| Backend: `ForecastRealityCheckService.cs` (how `actualCompleted` is filled), `RealityCheckResultDto.cs`, `RealityCheckVerdictTypes.cs`, `RealityCheckReadOnlyArchUnitTest.cs` | ✓ read (service in full around the cell assembly; the rest by signature) |
+| E2E: `TeamsDetail.spec.ts:61-65`, `TeamDetailPage.ts:103-123` | ✓ located — the "Forecast reality check" step and its three locators |
+
+**One code fact found here that DISCUSS did not have** (it changes slice 04's scope, see 6094-DES-7):
+`ForecastRealityCheckService` builds an unevaluable cell with `actualCompleted: null`, although the actual
+for its period was already read. So a period group in which **no** window could be checked carries no
+actual anywhere in the response, and 6094-D5's "the actual is printed once per period group" cannot be
+honoured for it from the shipped fields. That group is reachable: a sparse Team, and every group of a Team
+whose history supports no check at all (`NotEnoughEvidence`).
+
+## Wave: DESIGN / [REF] Design Decisions — Story #6094
+
+| # | Decision | Status |
+|---|---|---|
+| 6094-DES-1 | The grade is a client reading of shipped facts; the backend keeps owning *held* ([ADR-211](../../product/architecture/adr-211-a-reality-check-grade-is-read-in-the-client-from-facts-the-server-already-sends.md)) | **DECIDED** (open item 1) |
+| 6094-DES-2 | The grade is a closed six-member set, and the actual-0 cases map into it | **DECIDED** (engineering reading of 6094-D2 / D3) |
+| 6094-DES-3 | Band on whole numbers; show the percentage rounded half-up, then clamped into its band | **DECIDED** (open item 3) |
+| 6094-DES-4 | Six fill tokens, the same in both themes, text colour from the shipped contrast helper | **DECIDED** (open item 2) |
+| 6094-DES-5 | Plain MUI `Dialog` and MUI `Table`; no DataGrid, no shared dialog wrapper | **DECIDED** (open item 4) |
+| 6094-DES-6 | One run lifecycle owned by the container; the trigger button never goes into a loading state | **DECIDED** (engineering detail of 6094-D8) |
+| 6094-DES-7 | The envelope gains `scoredPeriods`, so every period group can print its actual | **DECIDED** (from the code fact above) |
+| 6094-DES-8 | Copy stays in pure composers; rules and words live in separate modules; no shared package now | **DECIDED** (open item 5) |
+| 6094-DES-9 | Retirement list, and what of `realityCheckCopy.ts` survives | **DECIDED** (open item 6) |
+
+### 6094-DES-1 — The grade is read in the client from facts the server already sends; *held* stays the server's
+
+**The question** (P-5): compute the grade — held or not, closeness band, percentage, signed Work Item
+miss — as closed-enum fields on `CellLevelOutcomeDto`, or as a pure client function over
+`forecastValue`, `actualCompleted` and `held`, which every evaluable cell already carries.
+
+| Option | For | Against |
+|---|---|---|
+| **A — backend fields** (`grade` enum per level outcome; `withinTenPercentCount`, `usualGrade` per `LevelCoverageDto`) | One rule reachable by any future non-browser consumer; mirrors `heldCount` living on the server | Four new wire members, each needing a C# enum, a TS union and a zod enum; enums travel as **strings out**, so a member spelled differently on the two sides compiles on both and fails only at a real parse — and the frontend fixture is hand-built, so no frontend test would see it. The percentage must still be rounded for display in the client, so AC-5.1 ("the shown % never contradicts its band") would span the seam: band decided in C#, percentage shown by TS. A server-side rule nothing on the server uses |
+| **B — pure client module** (recommended) | Zero new wire members; its inputs are integers and a boolean slice 04 already parses and prints, so the seam is already crossed and tested. Band and displayed percentage are decided in **one** function, so AC-5.1 is one exhaustive unit test. The deferred one-pager (slice 03) is client-side and would reuse the same module. Mutation-tested by StrykerJS on a small pure file | A later MCP tool or server-side renderer would have to re-implement the band — but DES-1 already requires any such consumer to compose every sentence itself, and Epic D12 says no such consumer exists |
+| C — hybrid: backend band enum, client percentage | — | Rejected. It splits exactly the pair AC-5.1 needs to agree across two stacks: the "untested seam between two tested ends" |
+
+**Decided: B.** And one refinement that keeps ADR-210 single-sourced: **the client does not recompute
+*held*.** The hue comes from the wire's `held`, which `RealityCheckVerdictPolicy.Held` decides; the client
+adds only the margin, which no server rule uses. That is the same line the Epic already draws with
+`minimumActiveDays` and `unevaluatedWindowDays` — the client never re-derives a *backend* rule — applied the
+other way round: the backend is not handed a rule that only a screen needs.
+
+**The per-level counts** ("within 10% in N" and the "usually" clause) are computed by the same module over a
+level's **graded checks** — the cells whose `sufficiency.isSufficient` is true, which are exactly the
+`denominator.runsEvaluated` checks `levelCoverage` counts. `heldCount` and `expectedHeldCount` stay the
+server's and are never recounted.
+
+**Revisit trigger**, written into ADR-211: the first consumer of the grade that is not this browser client
+(an MCP tool, the CLI, or a server-side PDF renderer such as the one Spike #6052 explored). Moving the rule
+then is contained — one pure TS module becomes one pure static C# policy plus wire fields — and costs no
+migration.
+
+The ArchUnit read-only rule (E1) is untouched under every option; nothing here goes near a write.
+
+### 6094-DES-2 — Six grades, one closed set, and where the two actual-0 cases fall
+
+`ForecastGrade` is a client-side closed union of six members, named from the check's point of view:
+
+| Grade | Hue (wire `held`) | Band (6094-DES-3) | DISCUSS shade (6094-D3) |
+|---|---|---|---|
+| `HeldWithin10` | true | ≤ 10% | dark green |
+| `Held10To25` | true | > 10% and ≤ 25% | mid green |
+| `HeldOver25` | true | > 25% | light green |
+| `NotHeldWithin10` | false | ≤ 10% | pink |
+| `NotHeld10To25` | false | > 10% and ≤ 25% | mid red |
+| `NotHeldOver25` | false | > 25% | dark red |
+
+**Actual 0**, per 6094-D2 and D3, maps into the same set rather than adding members: forecast 0 → `held`
+true → `HeldWithin10`, no percentage, miss "0" (D2: "held, exactly … graded as within 10%"); forecast above
+0 → `held` false → `NotHeldOver25`, no percentage (D3 default: "sits with the largest misses"). So the grade
+set stays six, and a cell's percentage is `null` exactly when the actual is 0.
+
+A graded cell's reading is therefore `{ grade, miss, percentOfActual | null }`, where `miss = actual −
+forecast` (6094-D2's sign). Every map keyed by grade — fill colour, legend words, "usually" phrase, the
+accessible cell text's margin phrase — is an exhaustive `Record<ForecastGrade, …>` with no `default:`
+(the E6 idiom), so a seventh grade cannot reach the screen without its colour and its words.
+
+**"Usually" rule, made exact**: a level's clause is shown when one grade holds **more than half** of that
+level's graded checks (`2 × count > graded`), and never when the level has no graded check. Because the hue
+*is* the direction, "one band and direction" (6094-D7) is "one grade". The clause names the grade, never a
+window (I-a).
+
+### 6094-DES-3 — The percentage never contradicts its band: decide the band on whole numbers, round, then clamp
+
+With `a = actualCompleted > 0` and `m = |a − forecast|` (both whole numbers on the wire):
+
+1. **Band, in integer arithmetic** — no floating point, so 3 of 30 is exactly 10%:
+   - within 10% ⟺ `10·m ≤ a`
+   - 10-25% ⟺ `10·m > a` and `4·m ≤ a`
+   - more than 25% ⟺ `4·m > a`
+   Boundaries inclusive on the lower band, per 6094-D2's default (Brown's "within ±10%").
+2. **Shown percentage** — `p = round-half-up(100·m / a)`, computed in integers as `⌊(200·m + a) / (2·a)⌋`.
+3. **Clamp into the band** — only three narrow edges ever move:
+   - 10-25% band: shown as at least **11** (a value in (10, 10.5) would otherwise read "10%");
+   - more than 25%: shown as at least **26** (a value in (25, 25.5) would read "25%");
+   - within 10% with `m > 0`: shown as at least **1** (a value under 0.5% would read "0%" beside "+1").
+   No clamp is needed upward: `10·m ≤ a` implies `p ≤ 10`, and `4·m ≤ a` implies `p ≤ 25`.
+
+The percentage is printed unsigned ("14%"); the sign lives on the Work Item miss (6094-D2).
+
+**Every DISCUSS worked example reads as written**: 2 of 42 → 5%; 6 of 42 → 14% (both 70th/85th and 50th);
+11 of 42 → 26%; 1 of 3 → 33%. Boundary examples for DISTILL: 4 of 40 → within 10%, "10%"; 4 of 39 → 10-25%,
+"11%" (10.26); 25 of 100 → 10-25%, "25%"; 25 of 99 → more than 25%, "26%" (25.25); 1 of 300 → within 10%,
+"1%".
+
+| Option | Verdict |
+|---|---|
+| **Round half-up, then clamp** (above) | **Decided.** Whole numbers everywhere; the shown number is off the true one by under one point, and only at three edges |
+| Ceiling everywhere (never contradicts, no clamp) | Rejected: rewrites the locked examples — 14.29% would read 15%, 26.19% would read 27% |
+| One decimal only where rounding would cross a band edge ("10.3%") | Rejected: mixed precision in one column reads as a different kind of number |
+
+**The invariant is enforced, not sampled**: a Vitest test walks every `a` in 1..200 against every forecast in
+0..400 and asserts the shown percentage lies inside the band's range (`≤ 10`, `11..25`, `≥ 26`) and is `≥ 1`
+whenever `m > 0`. A bounded exhaustive loop — no property-testing package is installed, and none is added.
+
+### 6094-DES-4 — The six colours: one fill token per grade, the same in both themes
+
+Tokens are added to `appColors` in `utils/theme/colors.ts` (the file that declares itself the "central
+location for all color definitions"), as `appColors.forecastGrade.<grade>`, and consumed through one
+exhaustive `Record<ForecastGrade, string>` beside the grading module. **No hex appears in a component.** The
+text on a fill is chosen by the shipped `getContrastText(fill)` — no second text-colour table.
+
+| Grade | Fill | Text (`getContrastText`) | Text contrast on the fill | Fill vs dark page `#121212` |
+|---|---|---|---|---|
+| `HeldWithin10` | `#2e7d32` | `#ffffff` | 5.1 : 1 | 3.7 : 1 |
+| `Held10To25` | `#81c784` | `#222222` | 7.9 : 1 | 9.3 : 1 |
+| `HeldOver25` | `#c8e6c9` | `#222222` | 11.8 : 1 | 13.9 : 1 |
+| `NotHeldWithin10` | `#f8bbd0` | `#222222` | 9.9 : 1 | 11.6 : 1 |
+| `NotHeld10To25` | `#e57373` | `#222222` | 5.3 : 1 | 6.3 : 1 |
+| `NotHeldOver25` | `#d32f2f` | `#ffffff` | 5.0 : 1 | 3.8 : 1 |
+
+Ratios computed at design time with the WCAG 2.1 formula; DELIVER asserts them (E10) rather than trusting
+this table. Every text/fill pair clears **4.5 : 1** (AA for normal text). The fill-against-page column is
+informational: the grade is carried by the glyph, the word and the percentage (6094-D3, WCAG 1.4.1), so the
+fill is not the only means of telling a cell's state and 1.4.11 does not bind it — and inside a dark-mode
+dialog MUI's elevation overlay lightens the paper, which lowers that column further.
+
+**Kept apart from the forecast-level colours** (`risky #f44336`, `realistic #ff9800`, `confident
+#4caf50`, `certain #388e3c`): no grade fill equals one of them (asserted, E10), and the two scales never
+share a form — level colours appear only as the icon and name in the four column headers (6094-D3); grade
+colours appear only as a cell's fill. A red/green overlap in hue is Brown's scale meeting the product's, and
+6094-D3 already answers it by placement, not by avoiding red and green.
+
+| Option | Verdict |
+|---|---|
+| **One set for both themes** (above) | **Decided.** Brown's shade order — dark green is the closest hold, dark red the largest miss — reads the same in both per-theme screenshots, and in the launch post's picture. The two dark ends were lifted from MUI's 900 shades to 800 / 700 so they stay visible on the dark page |
+| A second set for the dark theme with lightness inverted, so the strongest grades stand out most from a dark page | Rejected: "dark green means spot on" would mean light green in one theme and dark green in the other; the legend would have to explain the theme |
+| Tinted text or a coloured border instead of a fill | Rejected: 6094-D3 / US-05 ask for shaded cells |
+
+Unevaluable rows take **no** grade fill (I-c, AC-5.5): the shipped italic secondary-text treatment
+(ADR-194's "never blank, never calm") carries over from the band row.
+
+### 6094-DES-5 — Plain MUI `Dialog` and MUI `Table`
+
+**Dialog.** No shared dialog wrapper exists — 25 components use MUI `Dialog` directly — so this is the 26th,
+following `WorkItemsDialog`'s shape (title with an absolutely positioned close `IconButton` labelled
+"Close", content on `background.paper`). `fullWidth`, `maxWidth="lg"`, and `fullScreen` below the `sm`
+breakpoint via `useMediaQuery(theme.breakpoints.down("sm"))`, the idiom `FilterBar`, `Footer` and
+`DashboardHeader` use. A wrapper is not created for one more caller.
+
+What 6094-D10 needs comes from MUI's `Modal` without extra code: focus moves into the dialog on open and is
+trapped there; Escape closes it; focus is restored to the element that had it — the "Run reality check"
+button — on close. `aria-labelledby` points at the title. The loading message sits in a `role="status"`
+(polite) region; the answer's arrival moves no focus. Actions: **"Run again"** and **"Close"**.
+
+**Table: MUI `Table`, not `DataGrid`.**
+
+| Option | Verdict |
+|---|---|
+| **MUI `Table`** (renders a real `<table>`) | **Decided.** Gives 6094-D10's `<caption>`, `<th scope="col">`, one `<tbody>` per period with a `<th scope="rowgroup">`, and `<th scope="row">` per window, directly. Used by 14 components already |
+| MUI X `DataGrid` | Rejected, four independent reasons: it renders an ARIA grid of `div`s with no caption and no row-group headers; row grouping is a Premium feature; its toolbar export is premium-gated (DES-7); and **its column sorting would let a user order the sampling windows by a level's column**, which is a per-window ranking the product must never offer (I-a). The ledger also records its scroller reporting phantom horizontal overflow |
+
+**Layout the crafter can rely on:**
+
+- Iterate `sampledHorizonDays`, then inside each group `sampledWindowDays`, and **look cells up** by
+  `(horizonDays, samplingWindowDays)`. Never sort or filter `cells`; the server's order is the only order.
+- Group header: `horizonLabel(horizonDays)` ("Last 8 weeks"), the period's first and last day, and the
+  actual — all from the new `scoredPeriods` entry (6094-DES-7). Days are parsed with `parseLocalDate` (the
+  shipped UTC-safe parser), never `new Date(iso)`.
+- Column headers: 50th / 70th / 85th / 95th, each with `new ForecastLevel(p)`'s name and icon (Risky,
+  Realistic, Confident, Certain).
+- The Team's own window's row header carries "your setting" (6094-D5) when
+  `soundWindow.currentSettingWasTested` and the row's window equals `currentSettingDays`; never when
+  `NotTested` (DES-17).
+- An unevaluable row is one `<td colSpan={4}>` with `unevaluableRowCopy`'s words — across the four level
+  columns, never blank (AC-4.5).
+- **Narrow screens**: the `TableContainer` scrolls horizontally in its own region; the row-header cells and
+  the group-header text are `position: sticky; left: 0` with an **opaque** `background.paper` so scrolled
+  cells do not show through. In the dark theme the dialog paper carries MUI's elevation overlay as a
+  background image; the sticky cells must use the same surface or they read as a different colour.
+
+**Components** (render-body complexity is what the ledger's S3776 entry says fails the gate, so nested JSX is
+split out by design): the period group and the graded cell are their own components.
+
+### 6094-DES-6 — The container owns one run; the button never shows a loading state
+
+`ForecastRealityCheck` keeps the shipped in-flight guard (a ref, because state lands a render late) and owns
+one run state: *idle → running → answered | failed*.
+
+- The button **opens the dialog and starts a run**. It carries **no** `loading` or disabled state any more:
+  MUI restores focus to it on close, and focus cannot be restored to a disabled control (6094-D10).
+- "Run again" starts a run unless one is in flight (6094-D8).
+- Closing does not cancel the request. **Reopening while a run is still in flight adopts it** — the dialog
+  shows the loading state and then that answer — instead of starting a second (6094-D8's "neither control
+  starts a second one" outranks "reopening re-runs" in that window).
+- **An answer that arrives while the dialog is closed is dropped and not reported.** `TeamForecastRealityCheckRun`
+  fires once per answer *shown*; no one saw a dropped one. A reopen then starts a fresh run.
+- A failure shows a plain message and "Run again" **inside the dialog**, replacing the shipped snackbar for
+  this feature (6094-D8); no usage event on a failure (unchanged).
+
+### 6094-DES-7 — The envelope gains `scoredPeriods`, so every period group has its actual
+
+6094-D5 prints the actual once per period group. The shipped cells carry it only when evaluable (see the code
+fact under Prior Wave Consultation), so a group in which no window could run has no actual to print.
+
+| Option | Verdict |
+|---|---|
+| **Add `scoredPeriods` to the envelope** — one entry per horizon, from the period records the service already builds | **Decided.** Additive; no existing field changes meaning; models the DIVERGE finding that *the actual belongs to the period*; costs no read (the actual is already read once per horizon — the 20 / 24 query count is unchanged) |
+| Fill `actualCompleted` on unevaluable cells too | Rejected: changes what an existing field means (`actualCompleted: null` currently travels with every unevaluable cell, and shipped tests and code lean on that), and still leaves the client picking "the actual of some cell" for a period fact |
+| Leave the header of an all-unevaluable group without an actual | Rejected: departs from 6094-D5 in exactly the case a sparse Team hits; would need the maintainer |
+
+This moves slice 04's "no backend change" (6094 Technical Notes, slice-04 OUT list) — see *Changed
+Assumptions*. The contract is in *Response Contract changes* below.
+
+### 6094-DES-8 — Copy composers: pure functions now, no shared package
+
+| Option | Verdict |
+|---|---|
+| **Keep composers as pure `(facts, getTerm) → string` functions in `realityCheckCopy.ts`, grading rules in a separate string-free `realityCheckGrading.ts`** | **Decided.** Already the shipped shape — no React, no hooks, no JSX in the copy module. Splitting rules from words is what a later consumer would need first, and it is also what makes each unit-testable on its own |
+| Extract composers into a package a Lighthouse-Clients MCP tool could import | Rejected — YAGNI. Epic D12: no CLI/MCP exposure; DES-1: such a tool must compose its own sentences anyway. Trigger to revisit is the same as ADR-211's |
+| Compose sentences in React components | Rejected: untestable without rendering, and pushes render-body complexity towards S3776 |
+
+New composers (the crafter names them): the level line in 6094-D7's form (*"85th: held 15 of 16 (should be
+about 14)"*, the DES-16 reading appended as today, then from slice 05 *", within 10% in 3."* and the
+"usually" clause); a graded cell's accessible text (6094-D10's order: level, forecast, held or did not hold,
+the miss in words, the percentage); the period group header; the legend words; the Brown credit.
+
+### 6094-DES-9 — What is deleted, what is reshaped, what of `realityCheckCopy.ts` survives
+
+| Item | Fate | Why |
+|---|---|---|
+| `RealityCheckEvidence.tsx` (incl. `NominalRateLines`) | **DELETE** | 6094-D4. The level lines move into the text result as copy, not as this component |
+| `RealityCheckBandRow.tsx` (incl. `rowExtent`, `positionIn`, the local visually-hidden style) | **DELETE** | 6094-D4 |
+| `RealityCheckBandRow.test.ts` | **DELETE** | Tests only the deleted file |
+| "Show the evidence" / "Hide the evidence" toggle and its state in `ForecastRealityCheck` | **DELETE** | 6094-D4 |
+| `realityCheckCopy.ts` → `bandDescription`, `actualDescription` | **DELETE** (+ their cases in `realityCheckCopy.test.ts`) | Used only by the band row |
+| `realityCheckCopy.ts` → `levelReadingCopy` / `levelLine` | **RESHAPE** | Wording to 6094-D7 ("85th: held 15 of 16 (should be about 14)"); slice 05 appends the closeness parts |
+| `realityCheckCopy.ts` → `regionOf`, `listOf`, `determinationCopy`, `standingCopy`, `notTestedReasonCopy`, `unevaluatedSentence`, `windowVerdict`, `sufficiencyReasonCopy`, `whyChecksCouldNotRun`, `denominatorStatement`, `findings` | **KEEP** | The text result's window sentence, findings and denominator (6094-D4) |
+| `realityCheckCopy.ts` → `horizonLabel`, `unevaluableRowCopy` | **KEEP, new callers** | Period group header; unevaluable table row |
+| `RealityCheckVerdict.tsx` | **RESHAPE** into the dialog's text result | Loses the `showsLevels` prop and its import from `RealityCheckEvidence`; renders levels first (6094-D4 order) |
+| `ForecastRealityCheck.tsx` | **RESHAPE** | Button + run lifecycle + dialog (6094-DES-6) |
+| `TeamForecastView.realityCheck.test.tsx` | **RESHAPE** | Inline-placement scenarios move into the dialog; US-02 panel / band-row scenarios **deleted** with their components |
+| `TeamForecastView.realityCheck.usageData.test.tsx` | **RESHAPE** | Same once-per-answer assertions, driven through the dialog; add the reopen and dropped-answer cases (6094-DES-6) |
+| `getPercentileColor` (`utils/forecast/percentileColor.ts`) | **KEEP, loses one caller** | `BacktestResultDisplay` still uses it. The table's headers use `ForecastLevel`, which carries icon and name as well as colour |
+| `TeamDetailPage.ts` card-scoped locators (`realityCheckVerdict`, `realityCheckDenominator`) | **REPLACE** with dialog-scoped locators | They stop matching once the answer leaves the card |
+
+A search for `RealityCheckEvidence`, `RealityCheckBandRow`, `NominalRateLines`, `rowExtent` and "Show the
+evidence" finding nothing is DELIVER's done-check (6094 DoD item 1).
+
+## Wave: DESIGN / [REF] Component Decomposition — Story #6094
+
+### Frontend — `Lighthouse.Frontend/src`
+
+| Path | Change | Responsibility | Slice |
+|---|---|---|---|
+| `pages/Teams/Detail/ForecastRealityCheck.tsx` | **EXTEND (reshape)** | "Run reality check" button; owns the run lifecycle, the in-flight guard and the usage event (6094-DES-6); opens the dialog | 04 |
+| `pages/Teams/Detail/RealityCheckDialog.tsx` | **NEW** | The MUI `Dialog`: title + close, loading / failed / answered states, "Run again", full screen below `sm` | 04 |
+| `pages/Teams/Detail/RealityCheckVerdict.tsx` | **EXTEND (reshape)** | The text result: level lines, window sentence, findings, denominator — in that order, nothing behind a disclosure | 04, 05 |
+| `pages/Teams/Detail/RealityCheckTable.tsx` | **NEW** | Caption, level column headers, one row group per period in horizon order, rows in ladder order; horizontal scroll with sticky row headers | 04 |
+| `pages/Teams/Detail/RealityCheckPeriodGroup.tsx` | **NEW** | One `<tbody>`: the `rowgroup` header (period, dates, actual) and its window rows, "your setting", unevaluable rows | 04 |
+| `pages/Teams/Detail/RealityCheckGradedCell.tsx` | **NEW** | One level of one row: forecast, signed miss, ✓ held / ✗ did not hold (04); grade fill and percentage (05); accessible text per 6094-D10 | 04, 05 |
+| `pages/Teams/Detail/RealityCheckLegend.tsx` | **NEW** | The six grades and "not checked" in words, and the Brown credit with this product's two departures (AC-5.5, AC-5.6) | 05 |
+| `pages/Teams/Detail/realityCheckGrading.ts` | **NEW** | Pure, string-free: the miss (04); `ForecastGrade`, band, shown percentage, per-level "within 10%" count and dominant grade (05). No React, no terminology | 04, 05 |
+| `pages/Teams/Detail/realityCheckCopy.ts` | **EXTEND** (+ two deletions) | New composers (6094-DES-8); `bandDescription`, `actualDescription` deleted | 04, 05 |
+| `utils/theme/colors.ts` | **EXTEND** | `appColors.forecastGrade` fills (6094-DES-4) | 05 |
+| `models/Forecasts/RealityCheckResult.ts` | **EXTEND** | `RealityCheckScoredPeriod` and `scoredPeriods` on the result (6094-DES-7) | 04 |
+| `models/Forecasts/forecastSchemas.ts` | **EXTEND** | `scoredPeriods` in `RealityCheckResultSchema` | 04 |
+| `tests/RealityCheckFixture.tsx` | **EXTEND** | `scoredPeriods` consistent with the cells by default | 04 |
+| `pages/Teams/Detail/RealityCheckEvidence.tsx`, `RealityCheckBandRow.tsx`, `RealityCheckBandRow.test.ts` | **DELETE** | 6094-DES-9 | 04 |
+
+The crafter may merge or split the NEW components differently; the boundaries that matter are the pure
+grading module, the pure copy module, and nested JSX kept out of any one render body.
+
+### Backend — `Lighthouse.Backend`
+
+| Path | Change | Responsibility | Slice |
+|---|---|---|---|
+| `Models/Forecast/RealityCheckResultDto.cs` | **EXTEND** | `RealityCheckScoredPeriodDto` record; `ScoredPeriods` on `RealityCheckResultDto` | 04 |
+| `Services/Implementation/Forecast/ForecastRealityCheckService.cs` | **EXTEND** | Emit one `RealityCheckScoredPeriodDto` per horizon from the `ScoredPeriod` it already builds | 04 |
+| `RealityCheckVerdictPolicy`, `ForecastRealityCheckController`, every other reality-check type | **NO CHANGE** | — | — |
+
+### E2E — `Lighthouse.EndToEndTests`
+
+| Path | Change | Slice |
+|---|---|---|
+| `tests/models/teams/TeamDetailPage.ts` | **EXTEND** — dialog-scoped locators replace `realityCheckVerdict` / `realityCheckDenominator` | 04 |
+| `tests/specs/teams/TeamsDetail.spec.ts` | **EXTEND** — the "Forecast reality check" step becomes the walking skeleton (press, dialog, text result and table visible, Escape closes) | 04 |
+
+### C4 — L1 and L2 unchanged
+
+No new person, external system or container. The Epic's System Context and Container diagrams stand as
+drawn; the one edge whose wording is now stale is the SPA's "Presses Run reality check on" — it still is,
+and the answer now opens in a dialog. The frontend is the only place with enough new boxes to draw:
+
+```mermaid
+C4Component
+  title Component — the reality check dialog (Story #6094, frontend)
+  Person(forecaster, "Delivery Forecaster")
+  Container_Boundary(spa, "React SPA") {
+    Component(container, "ForecastRealityCheck", "React", "Button, run lifecycle, usage event")
+    Component(dialog, "RealityCheckDialog", "MUI Dialog", "Loading, failed and answered states; Run again")
+    Component(verdict, "RealityCheckVerdict", "React", "The text result")
+    Component(table, "RealityCheckTable", "MUI Table", "Period groups x windows x levels")
+    Component(cell, "RealityCheckGradedCell", "React", "Forecast, miss, held, grade")
+    Component(legend, "RealityCheckLegend", "React", "Grades in words, Brown credit")
+    Component(grading, "realityCheckGrading", "Pure TS", "Miss, band, percentage, per-level counts")
+    Component(copy, "realityCheckCopy", "Pure TS", "Every sentence, from facts and terminology")
+    Component(tokens, "colors.ts forecastGrade", "Theme tokens", "Six fills")
+    Component(api, "forecastService.runRealityCheck", "API client + zod", "Parses the envelope")
+  }
+  Container_Ext(backend, "ASP.NET Core Backend", "POST forecast/reality-check/{teamId}")
+  Rel(forecaster, container, "Presses Run reality check on")
+  Rel(container, api, "Requests one answer through")
+  Rel(api, backend, "POSTs to")
+  Rel(container, dialog, "Opens and feeds the run state to")
+  Rel(dialog, verdict, "Shows first")
+  Rel(dialog, table, "Shows beneath the text")
+  Rel(dialog, legend, "Shows beside the table")
+  Rel(table, cell, "Renders each level of each row with")
+  Rel(cell, grading, "Reads miss, grade and percentage from")
+  Rel(cell, tokens, "Takes its fill from")
+  Rel(verdict, grading, "Reads per-level counts from")
+  Rel(verdict, copy, "Composes its sentences with")
+  Rel(cell, copy, "Composes its accessible text with")
+```
+
+## Wave: DESIGN / [REF] Driving Ports — Story #6094
+
+| Port | Surface | Guard | Change |
+|---|---|---|---|
+| HTTP | `POST /api/{v1,latest}/forecast/reality-check/{teamId}` | `TeamRead`, unchanged | Response gains `scoredPeriods` (additive) |
+| UI | Team → Forecasts → Forecast Backtesting → **Run reality check** → opens the dialog and starts a run | `useRbac()` — no new gating; read-only users get the whole dialog | Reshaped |
+| UI | Dialog → **Run again** | — | NEW |
+| UI | Dialog → **Close** / Escape | — | NEW |
+| UI | the card's **Show the evidence** toggle | — | **Removed** |
+
+**No driving port writes** (I-b). Copy as Markdown (slice 03) stays deferred.
+
+## Wave: DESIGN / [REF] Driven Ports — Story #6094
+
+Unchanged: `ITeamMetricsService`, `IForecastService`, `IBlackoutPeriodService`, `IRepository<Team>`
+(controller only), `ILighthouseClock`. **No new driven port, no new adapter, no external integration —
+therefore no contract-testing annotation is owed.** The actual in `scoredPeriods` is the value the service
+already reads once per horizon; no read is added (the query-count guard stays 20 / 24).
+
+## Wave: DESIGN / [REF] Reuse Analysis — Story #6094 (HARD GATE)
+
+| # | Existing | Verdict | Justification | Contract shape / universe |
+|---|---|---|---|---|
+| 1 | `ForecastRealityCheck` | **EXTEND** | Same button, request, guard and usage event; the answer moves into a dialog | Adapter over one read |
+| 2 | `RealityCheckVerdict` | **EXTEND** | Becomes the text result; its composers are reused | Pure render of facts |
+| 3 | `realityCheckCopy.ts` | **EXTEND** | 13 composers kept, 2 reshaped, 2 deleted (6094-DES-9); new composers join them | Pure functions |
+| 4 | `RealityCheckEvidence`, `RealityCheckBandRow` | **DELETE** | 6094-D4 retires them; nothing reuses them | — |
+| 5 | MUI `Dialog` (25 direct callers; `WorkItemsDialog`'s title + close pattern) | **REUSE as-is** | No shared wrapper exists; creating one for a 26th caller is speculative | — |
+| 6 | MUI `Table` / `TableContainer` (14 callers) | **REUSE as-is** | Only a real `<table>` gives 6094-D10's caption and scoped row-group headers | — |
+| 7 | MUI X `DataGrid` / `DataGridBase` | **NOT REUSED** | No caption or row groups; row grouping Premium; export premium-gated (DES-7); column sort would rank windows (I-a) | — |
+| 8 | `useMediaQuery(theme.breakpoints.down("sm"))` | **REUSE the idiom** | The full-screen breakpoint, as in `FilterBar`, `Footer`, `DashboardHeader` | Read |
+| 9 | `ForecastLevel` | **REUSE as-is** | Name and icon on the four column headers (AC-4.3) | Pure |
+| 10 | `getPercentileColor` | **NO CHANGE** | Keeps its other caller; the table does not need it | Pure |
+| 11 | `appColors` / `colors.ts` | **EXTEND** | The declared central palette gains `forecastGrade` | Data |
+| 12 | `getContrastText`, `calculateContrastRatio` (`colors.ts`) | **REUSE as-is** | Text colour on each fill; the contrast assertion (E10) | Pure |
+| 13 | `parseLocalDate` (`utils/date/localDate.ts`) | **REUSE as-is** | The period's first and last day without the UTC day shift | Pure |
+| 14 | `horizonLabel`, `unevaluableRowCopy` | **REUSE** | Group header; unevaluable row | Pure |
+| 15 | `useTerminology()` / `TERMINOLOGY_KEYS` | **NO CHANGE** | Team, Work Items in every string (I-d) | Read |
+| 16 | `useUsageDataReporter`, `TeamForecastRealityCheckRun` | **NO CHANGE** | Once per answer shown (6094-DES-6) | Fire-and-forget |
+| 17 | `useErrorSnackbar` | **NO LONGER USED here** | 6094-D8 puts the failure message inside the dialog | — |
+| 18 | `RealityCheckVerdictPolicy.Held` (via wire `held`) | **REUSE, not recomputed** | ADR-210's rule stays single-sourced on the server (6094-DES-1) | Pure |
+| 19 | `levelCoverage` (`heldCount`, `expectedHeldCount`, `reading`) | **NO CHANGE** | Source of held / should-be-about; never recounted in the client | Data |
+| 20 | `ForecastRealityCheckService`'s `ScoredPeriod` record | **EXTEND** | Already holds horizon, dates and actual per period; mapped to `scoredPeriods` | Bounded-change, empty mutation set (unchanged) |
+| 21 | `RealityCheckResultDto` | **EXTEND** | One additive envelope field | Data |
+| 22 | `forecastSchemas.ts` / `RealityCheckResult.ts` | **EXTEND** | Mirror the field; zod parses it like every other field | Pure parse |
+| 23 | `RealityCheckFixture.tsx` | **EXTEND** | Default `scoredPeriods` derived consistently | Test data |
+| 24 | `TeamDetailPage` POM | **EXTEND** | Dialog locators replace the card's | — |
+| 25 | `realityCheckToMarkdown` (slice 03, deferred) | **NOT BUILT** | If slice 03 returns, it consumes `realityCheckGrading` and the new composers — the reason they are pure | — |
+
+**CREATE NEW, each justified**: `RealityCheckDialog` (no dialog exists for this answer; no shared wrapper to
+extend), `RealityCheckTable`, `RealityCheckPeriodGroup`, `RealityCheckGradedCell` (no table of forecasts
+against actuals exists; `BacktestResultDisplay` is a chart per result and its grammar was refused by DES-6),
+`RealityCheckLegend` (no graded legend exists), `realityCheckGrading.ts` (no margin or grade rule exists
+anywhere), `RealityCheckScoredPeriodDto` (no period fact exists on the envelope). None is justified by
+complexity.
+
+## Wave: DESIGN / [REF] Technology Choices — Story #6094
+
+Nothing is added to either stack.
+
+| Choice | Licence | Note |
+|---|---|---|
+| `@mui/material` 9.x `Dialog`, `Table`, `useMediaQuery` | MIT | Installed |
+| Vitest + React Testing Library | MIT | The exhaustive rounding loop needs no property-testing package |
+| ArchUnitNET | Apache 2.0 | E1/E2 unchanged |
+| Biome 2.5 | MIT / Apache 2.0 | Installed; runs on defaults (no configuration file). Its cognitive-complexity rule is the local check for S3776 |
+
+Rejected: MUI X `DataGrid` (6094-DES-5); any charting package (DES-6 stands — the table has no shared axis).
+
+## Wave: DESIGN / [REF] Architecture Enforcement — Story #6094
+
+E1-E7 stand unchanged. **E1, the read-only rule, is untouched**: the backend change is one read-model field
+built from a value already in hand, and `RealityCheckReadOnlyArchUnitTest` needs no edit.
+
+| # | Rule | Enforced by |
+|---|---|---|
+| E6 (extended) | Every map keyed by `ForecastGrade` — fill, legend words, "usually" phrase, the cell's margin words — is an exhaustive `Record<ForecastGrade, …>` with no `default:` | TypeScript compiler |
+| E8 | The table never reorders: rows follow `sampledHorizonDays`, then `sampledWindowDays`, whatever order `cells` arrives in | Vitest, feeding a shuffled `cells` array |
+| E9 | `realityCheckGrading.ts` and `realityCheckCopy.ts` import no React and no MUI | Their unit tests call them directly, with no render. A lint rule (Biome `noRestrictedImports` scoped to the two files) would be the stronger guard, but the frontend has **no Biome configuration file** — Biome runs on its defaults — and adding the first one is a project-wide change outside this story. Recorded, not built |
+| E10 | Each `forecastGrade` fill has ≥ 4.5 : 1 contrast with `getContrastText(fill)`, and no fill equals a forecast-level colour | Vitest in `colors.test.ts`, using the shipped `calculateContrastRatio` |
+| E11 | The shown percentage never contradicts its band (AC-5.1) | Vitest, exhaustive over actual 1..200 × forecast 0..400 (6094-DES-3) |
+| E12 | `scoredPeriods` has one entry per `sampledHorizonDays` in that order, and every evaluable cell's `actualCompleted` equals its period's | NUnit over the DTO, beside E5 |
+| E5 (re-checked) | `scoredPeriods` is per **horizon**, never per window, so E5(c) "no per-window scalar" still holds | NUnit, the shipped assertion |
+
+The rankability scan R-6094-7 names is DISTILL's to extend over the dialog's rendered text (I-a).
+
+## Wave: DESIGN / [REF] Response Contract changes — Story #6094
+
+One additive field on the envelope. Nothing else changes; no enum is added to the wire.
+
+```
+RealityCheckResultDto
+  …every shipped field unchanged…
+  scoredPeriods             RealityCheckScoredPeriodDto[]   // NEW (6094-DES-7): one per sampledHorizonDays,
+                                                            // in that order — 4 entries
+
+RealityCheckScoredPeriodDto
+  horizonDays               int          // equals the matching sampledHorizonDays entry
+  scoredPeriodStart         DateOnly     // anchorDate − horizonDays + 1 (DES-19); equals every cell's of this horizon
+  scoredPeriodEnd           DateOnly     // anchorDate
+  actualCompleted           int          // never null: read for every period, whether or not any window could be checked
+```
+
+Serialised `camelCase` like the rest of the envelope; `DateOnly` travels as the ISO day string the cells
+already use. TypeScript: `RealityCheckScoredPeriod { horizonDays: number; scoredPeriodStart: string;
+scoredPeriodEnd: string; actualCompleted: number }`, and `z.array(z.object({…}))` with `z.string()` for the
+days (no `z.coerce.date()`, per the ledger's epoch trap). Cells keep `actualCompleted: null` when unevaluable —
+**its meaning does not change**.
+
+Compatibility: additive to a route no external client consumes (Epic D12); no Lighthouse-Clients bump; no
+RBAC change; no migration.
+
+## Wave: DESIGN / [REF] Quality Attributes — Story #6094
+
+| Attribute | Strategy |
+|---|---|
+| Functional suitability | AC-5.1's invariant is exhaustive-tested in one module; *held* is never recomputed; every period prints its actual |
+| Usability / accessibility | Real table semantics; focus trap, Escape and focus return from MUI's `Modal`; the trigger never disabled, so focus can return to it; colour never alone; ≥ 4.5 : 1 text on every fill |
+| Maintainability | Rules (grading), words (copy) and rendering split; every grade-keyed map exhaustive |
+| Performance | Unchanged: one request, no added read; 16-20 rows × 4 cells render without virtualisation |
+| Security | Unchanged: `TeamRead`, no write path, no new permission |
+| Compatibility | One additive response field; no client exposure |
+
+## Wave: DESIGN / [REF] Open Questions for DISTILL / DELIVER — Story #6094
+
+1. **Pin the rounding edges** (6094-DES-3) as scenarios: 4 of 40 → "10%" within 10%; 4 of 39 → "11%"; 25 of
+   100 → "25%"; 25 of 99 → "26%"; 1 of 300 → "1%".
+2. **The minus sign.** DISCUSS writes the miss as "−2" (U+2212). DISTILL decides whether the visible miss uses
+   U+2212 or the ASCII hyphen and pins it; a test written with one never matches the other.
+3. **RTL name matchers are unanchored**: "within 10%" appears in both a held and a not-held grade's words;
+   assert whole strings.
+4. **jsdom has no `matchMedia`**: every test that renders the dialog needs the stub `DashboardHeader.test.tsx`
+   already uses, or `useMediaQuery` throws.
+5. **E2E**: locate through the dialog's role and name, never the level icons (MUI strips `data-testid` from
+   icons in production builds); assert on the filled result, not the loading text (R-6094-6).
+6. **The dropped-answer case** (6094-DES-6): close while running, let the answer arrive, reopen — one
+   request in flight at a time, no usage event for the dropped answer, one for the answer shown.
+7. **Backend scenario for `scoredPeriods`**: a Team whose history supports no check at all still gets four
+   periods with their actuals (E12).
+8. **StrykerJS**: add `realityCheckGrading.ts` and the new components to the frontend mutate set; the
+   backend change is a mapping, covered by E12 and the existing Stryker.NET scope.
+9. **Unevaluable row wording**: 6094-D5's example ("Not enough history — 3 days with completed Work Items, 5
+   needed") differs slightly from the shipped `unevaluableRowCopy` ("Not enough history in this window to
+   check: 3 days …"). Keep the shipped copy unless DISTILL pins the example's.
+
+## Wave: DESIGN / [REF] Needs the maintainer — Story #6094
+
+Two copy gaps 6094-D7 leaves open. Each changes what a user is told, so neither is decided here; each has a
+default DISTILL may write against, cheap to flip.
+
+1. **Does "within 10% in N" count the checks that did *not* hold by under 10% as well?** Default: **yes** —
+   6094-D2 makes the bands symmetric, and Brown's margin is "within ±10%". So a 50th that fell 3 short of 42
+   counts. The alternative counts held checks only, which would make the phrase read as "held, and close".
+2. **The "usually" phrase for each grade.** 6094-D7 gives *"Usually {within 10% | low by 10-25% | low by more
+   than a quarter | high by …}"*. Default completion, one per grade: `HeldWithin10` "within 10%",
+   `Held10To25` "low by 10-25%", `HeldOver25` "low by more than a quarter", `NotHeldWithin10` "high by up to
+   10%", `NotHeld10To25` "high by 10-25%", `NotHeldOver25` "high by more than a quarter". Under this default a
+   level split 5 / 5 between the two within-10% grades of 16 gets no clause, because the rule counts one
+   grade (6094-D7's "one band and direction"). The alternative pools both within-10% grades into
+   "within 10%" for the clause.
+
+DISCUSS's own six questions keep their defaults and are not reopened here: "Holding" not adopted; miss
+signed `actual − forecast`; dark red at actual 0; levels first in the text; the more-than-half "usually"
+rule; "your setting" as a plain label.
+
+## Wave: DESIGN / [REF] Changed Assumptions — Story #6094
+
+1. **Slice 04 is not backend-free.** DISCUSS (US-04 Technical Notes, slice-04 OUT list) said the response
+   already carries everything. It does not for a period group in which no window could be checked: those
+   cells carry `actualCompleted: null`, so the group's actual exists nowhere in the response. 6094-DES-7 adds
+   `scoredPeriods` — about an hour of backend work in slice 04 (a record, its mapping, one acceptance
+   scenario) and no query.
+2. **The grade needs no backend at all**, so slice 05 is frontend only — the reverse of what P-5 left open.
+3. **The failure path changes surface**: the shipped check reports failures through the error snackbar;
+   6094-D8 moves the message into the dialog. Tests asserting the snackbar for this feature move with it.
+
+## Wave: DESIGN / [REF] Contradictions found in DISCUSS — Story #6094
+
+- **Actual 0 against forecast 0.** 6094-D2 says "held, exactly … graded as within 10%"; AC-5.3 says "no
+  percentage and no band"; slice 05's table says "held, exact". Read together: no percentage is printed, and
+  the cell takes the `HeldWithin10` grade (dark green) and counts towards "within 10% in N". 6094-DES-2
+  follows D2, the more specific statement. If the maintainer meant "no grade colour" there, it is a
+  one-line change to the grading module.
+- **Slice 04's "no backend change"** — see Changed Assumptions 1.
+
+## Wave: DESIGN / [REF] Handoff — Story #6094
+
+**To DEVOPS**: no infrastructure change, no new event (6094-D8 keeps `TeamForecastRealityCheckRun`); the
+usage-data answer stays "N/A for a new event". One behaviour to note beside DISCUSS's re-run flag: an answer
+arriving after the dialog was closed is not reported (6094-DES-6). **No external integration, so no contract
+tests are recommended.**
+
+**To DISTILL**: slice 04 — dialog, text result, table with `scoredPeriods`, retirement, the Playwright
+skeleton, the backend scenario for `scoredPeriods` (E12); slice 05 — the grading module (E11's exhaustive
+loop, the boundary cases above), the six fills (E10), the legend and credit, the level-line closeness parts.
+Write the two *Needs the maintainer* items against their defaults and mark them so.
+
+**To DELIVER**: delete per 6094-DES-9 in the same slice that adds the dialog; run
+`npx biome lint --only=complexity/noExcessiveCognitiveComplexity` on every new component; `globalThis`, not
+`window`, if any DOM global is touched.
+
+**Artifacts**: this section; [ADR-211](../../product/architecture/adr-211-a-reality-check-grade-is-read-in-the-client-from-facts-the-server-already-sends.md);
+`docs/product/architecture/brief.md` (epic-4172 section, a Story #6094 delta); `wave-decisions.md`
+(*DESIGN — Story #6094*).

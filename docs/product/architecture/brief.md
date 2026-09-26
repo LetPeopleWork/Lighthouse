@@ -8846,6 +8846,10 @@ one actual mark, or the unevaluable words) · `realityCheckToMarkdown` (pure fun
 `forecastService.runRealityCheck` (EXTEND) · `getPercentileColor` (EXTEND — lifted out of
 `BacktestResultDisplay.tsx` so the band's ticks colour identically to every other forecast surface).
 
+> **Superseded in part by Story #6094** (see *Story #6094 delta* at the end of this section):
+> `RealityCheckEvidence` and `RealityCheckBandRow` are retired, the answer opens in a dialog, and the
+> evidence is a graded table.
+
 ### The rendering is not a chart, and the reason is grammar
 
 `@mui/x-charts` 9.0.1 is installed; `@mui/x-charts-pro` is not, so no Heatmap exists. That is the cheap
@@ -9054,6 +9058,34 @@ items are noted below rather than forced to read resolved.
 from them alone would exercise only the sixteen-cell path. The twenty-cell path, the hole-in-the-middle
 sound set (an off-ladder window unsound while its neighbours are sound) and the fixed-dates Team all need
 coverage.
+
+### Story #6094 delta — the graded results dialog (DESIGN 2026-09-26)
+
+The answer moves off the page into a dialog: a text result first, then a table of every check — rows are
+period × sampling window grouped by period, columns the four levels — each forecast beside its period's
+actual, graded on Nick Brown's scale. Full decisions `6094-DES-1..9` in the feature delta.
+
+- **Topology change (frontend only).** Retired: `RealityCheckEvidence`, `RealityCheckBandRow`, the "Show the
+  evidence" toggle. New: `RealityCheckDialog` (plain MUI `Dialog`, full screen below `sm`),
+  `RealityCheckTable` / `RealityCheckPeriodGroup` / `RealityCheckGradedCell` (MUI `Table` — a real
+  `<table>` with caption and row-group headers; **not** `DataGrid`, whose column sort would rank sampling
+  windows, I1), `RealityCheckLegend`, and the pure module `realityCheckGrading.ts`. `ForecastRealityCheck`
+  keeps the run lifecycle and the usage event; `RealityCheckVerdict` becomes the text result.
+- **I11 — the grade is a client reading; *held* is the server's.** Band, shown percentage and per-level
+  closeness counts are computed in one pure TS module over `forecastValue`, `actualCompleted` and the wire's
+  `held`; the client never recomputes *held* ([ADR-211](./adr-211-a-reality-check-grade-is-read-in-the-client-from-facts-the-server-already-sends.md)).
+  The band is decided in integers and the shown whole-number percentage is rounded half-up then clamped into
+  its band, so it never contradicts it (asserted exhaustively).
+- **I12 — every period carries its actual.** The envelope gains `scoredPeriods` (one per horizon:
+  `horizonDays`, `scoredPeriodStart`, `scoredPeriodEnd`, `actualCompleted`), because unevaluable cells carry
+  `actualCompleted: null` and a period with no evaluable window would otherwise print no actual. Additive; no
+  read added (20 / 24 unchanged); per horizon, never per window, so I1 holds.
+- **Colour.** Six grade fills in `appColors.forecastGrade`, one set for both themes, text colour from
+  `getContrastText`, every pair ≥ 4.5 : 1; forecast-level colours stay on the column headers only.
+- **Enforcement added**: exhaustive `Record<ForecastGrade, …>` maps (E6 extended); table order follows the
+  server's ladder whatever order `cells` arrives in (E8); contrast and disjointness of the fills (E10); the
+  percentage-never-contradicts-its-band loop (E11); `scoredPeriods` shape and agreement with the cells (E12).
+  E1 (read-only) untouched.
 
 ## Application Architecture — story-5913-always-faster-updates
 

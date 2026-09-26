@@ -1143,3 +1143,64 @@ MCP tool.
 1. "Holding, but …" — adopt as the `SometimesHeld` word (reversing DES-16's no-adjective), or drop (default)?
 2. Miss sign `actual − forecast` (default). 3. Actual-0 miss graded dark red (default). 4. Text order:
    levels first (default). 5. "Usually …" only on a majority (default). 6. "your setting" row label (default).
+
+---
+
+## DESIGN — Story #6094
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-09-26 · **Mode**: Propose, maintainer AFK —
+recommended options taken unless they change what a user sees · **Full text**: `feature-delta.md`, part
+*Story #6094 — DESIGN* · **ADR**: [ADR-211](../../product/architecture/adr-211-a-reality-check-grade-is-read-in-the-client-from-facts-the-server-already-sends.md)
+· Nothing committed; reviewer not run.
+
+### Key Decisions
+
+| # | Decision | Status |
+|---|---|---|
+| 6094-DES-1 | Grade computed in one pure client module over shipped fields; the hue is the wire's `held`, never recomputed (ADR-211) | DECIDED |
+| 6094-DES-2 | Six-member `ForecastGrade`; actual 0 + forecast 0 → `HeldWithin10`, forecast > 0 → `NotHeldOver25`, no percentage at actual 0; every grade-keyed map exhaustive | DECIDED |
+| 6094-DES-3 | Band in integers (`10m ≤ a`, `4m ≤ a`); shown % = round-half-up, clamped to ≥ 11 / ≥ 26 / ≥ 1 at the three edges; DISCUSS examples unchanged | DECIDED |
+| 6094-DES-4 | Fills `#2e7d32 #81c784 #c8e6c9 #f8bbd0 #e57373 #d32f2f` in `appColors.forecastGrade`, one set for both themes, text via `getContrastText`, all ≥ 4.5 : 1 | DECIDED |
+| 6094-DES-5 | Plain MUI `Dialog` (full screen below `sm`) and MUI `Table`; not `DataGrid` (no caption / row groups, Premium grouping and export, column sort would rank windows) | DECIDED |
+| 6094-DES-6 | Container owns one run; button never loading/disabled (focus return); reopen during a run adopts it; an answer arriving while closed is dropped and not reported; failures shown in the dialog | DECIDED |
+| 6094-DES-7 | Envelope gains `scoredPeriods` (per horizon: dates + actual) — unevaluable cells carry no actual, so an all-unevaluable period group had none to print | DECIDED |
+| 6094-DES-8 | Copy stays in pure composers; rules (`realityCheckGrading.ts`) and words (`realityCheckCopy.ts`) separate; no shared package (YAGNI, D12) | DECIDED |
+| 6094-DES-9 | Delete `RealityCheckEvidence`, `RealityCheckBandRow` (+ test), the toggle, `bandDescription`, `actualDescription`; reshape `ForecastRealityCheck`, `RealityCheckVerdict`, level-line copy and the two frontend spec files; replace the card-scoped POM locators | DECIDED |
+
+### Architecture Summary
+
+Frontend-heavy delta on the shipped hexagon. The SPA gains a dialog, a period-grouped table (period group
+and graded cell as their own components), a legend, and a pure grading module; the backend gains one
+additive envelope field built from a value it already reads. No new route, permission, driven port,
+external integration, event, migration or technology. C4 L1/L2 unchanged; an L3 of the frontend dialog is in
+the feature delta.
+
+### Reuse Analysis
+
+25 rows examined: 21 reused unchanged or extended, 1 deleted (the two retired components), 1 deliberately not reused
+(`DataGrid`), 1 no longer used here (`useErrorSnackbar`), 1 deferred (`realityCheckToMarkdown`); CREATE NEW —
+the dialog, table, period group, graded cell, legend, grading module and `RealityCheckScoredPeriodDto` —
+each justified by the absence of anything to extend, none by complexity.
+
+### Tech Stack
+
+Nothing added. MUI 9 `Dialog` / `Table` / `useMediaQuery` (MIT), Vitest + RTL (MIT), ArchUnitNET (Apache 2.0)
+unchanged, Biome 2.5 on defaults.
+
+### Constraints
+
+Read-only end to end, E1 untouched (I-b); no per-window score, order or tally — rows follow the server's
+ladder, `scoredPeriods` is per horizon (I-a); unevaluable rows never blank and take no grade colour (I-c);
+every renameable term from the instance's terminology (I-d); ADR-210's *held* single-sourced on the server.
+
+### Upstream Changes
+
+- **Slice 04 is not backend-free** (changes DISCUSS's US-04 Technical Notes and slice-04 OUT list):
+  `scoredPeriods` is ~1h of backend work, no added read.
+- **Slice 05 is frontend only** (resolves P-5).
+- **Contradiction resolved**: actual 0 vs forecast 0 — 6094-D2 ("graded as within 10%") is followed over
+  AC-5.3's "no band": dark green, no percentage, counts toward "within 10% in N".
+- **Needs the maintainer** (defaults written, DISTILL may proceed against them): (1) "within 10% in N"
+  counts not-held checks within 10% too (default yes); (2) the six "usually" phrases, with `NotHeldWithin10`
+  → "high by up to 10%" and no pooling of the two within-10% grades (default).
+- DISCUSS's six maintainer questions keep their defaults, not reopened.
