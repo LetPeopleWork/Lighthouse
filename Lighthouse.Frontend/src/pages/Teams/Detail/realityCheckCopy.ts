@@ -367,6 +367,20 @@ const heldAgainstExpected = (
 ): string =>
 	`${confidenceLevel}th: held ${heldCount} of ${runsEvaluated} (should be about ${Math.round(expectedHeldCount)}), within 10% in ${withinTenPercent}`;
 
+// Held means the team delivered at least the forecast, so a held miss is the forecast set too low and a
+// missed one is the forecast set too high.
+export const usualGradeCopy: Record<ForecastGrade, string> = {
+	HeldWithin10: "within 10%",
+	Held10To25: "low by 10-25%",
+	HeldOver25: "low by more than a quarter",
+	NotHeldWithin10: "high by up to 10%",
+	NotHeld10To25: "high by 10-25%",
+	NotHeldOver25: "high by more than a quarter",
+};
+
+const usually = ({ usualGrade }: LevelCloseness): string =>
+	usualGrade === null ? "" : ` Usually ${usualGradeCopy[usualGrade]}.`;
+
 // A level between the two extremes gets its two counts and no adjective: checks that are not independent
 // trials give no honest threshold for calling a level well calibrated.
 export const levelReadingCopy: Record<
@@ -378,11 +392,11 @@ export const levelReadingCopy: Record<
 	) => string
 > = {
 	SometimesHeld: (level, runsEvaluated, closeness) =>
-		`${heldAgainstExpected(level, runsEvaluated, closeness)}.`,
+		`${heldAgainstExpected(level, runsEvaluated, closeness)}.${usually(closeness)}`,
 	NeverHeld: (level, runsEvaluated, closeness) =>
-		`${heldAgainstExpected(level, runsEvaluated, closeness)} — it never held, which is over-forecasting.`,
+		`${heldAgainstExpected(level, runsEvaluated, closeness)} — it never held, which is over-forecasting.${usually(closeness)}`,
 	AlwaysHeld: (level, runsEvaluated, closeness) =>
-		`${heldAgainstExpected(level, runsEvaluated, closeness)} — it held every time, which is under-forecasting.`,
+		`${heldAgainstExpected(level, runsEvaluated, closeness)} — it held every time, which is under-forecasting.${usually(closeness)}`,
 	NotEvaluated: ({ confidenceLevel }) =>
 		`${confidenceLevel}th: no check could be run, so this level was not tested.`,
 };

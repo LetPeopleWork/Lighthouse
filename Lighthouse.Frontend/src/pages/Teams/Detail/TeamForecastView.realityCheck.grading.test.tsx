@@ -34,8 +34,6 @@ import type { ForecastGrade } from "./realityCheckGrading";
  * percentage and every grade word are pinned whole, because "within 10%" is the start of both a held and a
  * not-held grade. The level lines of slice 04 gain their closeness here, so the slice 04 level-line and
  * cell-name pins are rewritten to these when this slice is delivered.
- *
- * Every spec is pending until the grading exists.
  */
 
 const { terms } = vi.hoisted(() => ({
@@ -90,8 +88,6 @@ vi.mock("./NewItemForecaster", () => ({
 vi.mock("./BacktestForecaster", () => ({
 	default: () => <div data-testid="backtest-forecaster" />,
 }));
-
-const PENDING = "the grading is not built yet";
 
 const MINUS = "−";
 
@@ -356,7 +352,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 });
 
 describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line says how close it usually landed", () => {
-	it.skip(`Maria's 85th: held 15 of 16, 3 within 10%, and usually low by more than a quarter (${PENDING})`, async () => {
+	it(`Maria's 85th: held 15 of 16, 3 within 10%, and usually low by more than a quarter`, async () => {
 		const dialog = await theDialogFor({
 			heldCounts: { 85: 15 },
 			checks: theSixteenChecksAt(85, [
@@ -422,7 +418,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		);
 	});
 
-	it.skip.each<{
+	it.each<{
 		grade: ForecastGrade;
 		level: LevelColumn;
 		forecast: number;
@@ -465,7 +461,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 			line: "50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting. Usually high by more than a quarter.",
 		},
 	])(
-		`says how a level usually landed in the words of its grade - $grade (${PENDING})`,
+		`says how a level usually landed in the words of its grade - $grade`,
 		async ({ grade, level, forecast, line }) => {
 			const held = grade.startsWith("Held");
 			const dialog = await theDialogFor({
@@ -478,7 +474,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		},
 	);
 
-	it.skip(`@error leaves the checks that could not run out of "within 10%" and of "usually" (${PENDING})`, async () => {
+	it(`@error leaves the checks that could not run out of "within 10%" and of "usually"`, async () => {
 		const dialog = await theDialogFor({
 			heldCounts: { 85: 12 },
 			unevaluatedWindowDays: [14],

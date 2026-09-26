@@ -220,29 +220,29 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 
 		expectTheLine(
 			dialog,
-			"50th: held 8 of 16 (should be about 8), within 10% in 0.",
+			"50th: held 8 of 16 (should be about 8), within 10% in 0. Usually high by more than a quarter.",
 		);
 		expectTheLine(
 			dialog,
-			"70th: held 11 of 16 (should be about 11), within 10% in 16.",
+			"70th: held 11 of 16 (should be about 11), within 10% in 16. Usually high by up to 10%.",
 		);
 		expectTheLine(
 			dialog,
-			"85th: held 14 of 16 (should be about 14), within 10% in 12.",
+			"85th: held 14 of 16 (should be about 14), within 10% in 12. Usually within 10%.",
 		);
 		expectTheLine(
 			dialog,
-			"95th: held 15 of 16 (should be about 15), within 10% in 0.",
+			"95th: held 15 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
 		);
 
 		const inReadingOrder = [
 			linesReading(
 				dialog,
-				"50th: held 8 of 16 (should be about 8), within 10% in 0.",
+				"50th: held 8 of 16 (should be about 8), within 10% in 0. Usually high by more than a quarter.",
 			)[0],
 			linesReading(
 				dialog,
-				"95th: held 15 of 16 (should be about 15), within 10% in 0.",
+				"95th: held 15 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
 			)[0],
 			linesMatching(dialog, /between 14 and 90 days/i)[0],
 			linesMatching(dialog, /sampling window is a setting on this Team/i)[0],
@@ -272,15 +272,15 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 
 		expectTheLine(
 			dialog,
-			"50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting.",
+			"50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting. Usually high by more than a quarter.",
 		);
 		expectTheLine(
 			dialog,
-			"85th: held 16 of 16 (should be about 14), within 10% in 12 — it held every time, which is under-forecasting.",
+			"85th: held 16 of 16 (should be about 14), within 10% in 12 — it held every time, which is under-forecasting. Usually within 10%.",
 		);
 		expectTheLine(
 			dialog,
-			"95th: held 16 of 16 (should be about 15), within 10% in 0.",
+			"95th: held 16 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
 		);
 	});
 
@@ -634,7 +634,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		await waitFor(() =>
 			expectTheLine(
 				dialog,
-				"50th: held 9 of 16 (should be about 8), within 10% in 0.",
+				"50th: held 9 of 16 (should be about 8), within 10% in 0. Usually high by more than a quarter.",
 			),
 		);
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
