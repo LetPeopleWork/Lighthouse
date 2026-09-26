@@ -102,7 +102,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		).toBe(TEAM_FORECAST_REALITY_CHECK_RUN);
 	});
 
-	it.skip(`reports a run once, after the answer came back and not when the button was pressed (${PENDING})`, async () => {
+	it(`reports a run once, after the answer came back and not when the button was pressed (${PENDING})`, async () => {
 		let answer: (value: unknown) => void = () => {};
 		runRealityCheck.mockReturnValue(
 			new Promise((resolve) => {
@@ -120,7 +120,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it.skip(`@error reports a run whose every check was too thin to evaluate, because that is still an answer (${PENDING})`, async () => {
+	it(`@error reports a run whose every check was too thin to evaluate, because that is still an answer (${PENDING})`, async () => {
 		await theAnswerIn(
 			runRealityCheck,
 			aRealityCheckAnswer({
@@ -150,7 +150,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it.skip(`@error reports a run for a Team that forecasts from fixed dates (${PENDING})`, async () => {
+	it(`@error reports a run for a Team that forecasts from fixed dates (${PENDING})`, async () => {
 		await theAnswerIn(
 			runRealityCheck,
 			aRealityCheckAnswer({
@@ -164,7 +164,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it.skip(`@error reports nothing for a request that failed (${PENDING})`, async () => {
+	it(`@error reports nothing for a request that failed (${PENDING})`, async () => {
 		runRealityCheck.mockRejectedValue(
 			new Error("The reality check could not be run"),
 		);
@@ -176,7 +176,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	it.skip(`never reports a reality check as a forecast run by hand (${PENDING})`, async () => {
+	it(`never reports a reality check as a forecast run by hand (${PENDING})`, async () => {
 		await theAnswerIn(runRealityCheck, aRealityCheckAnswer());
 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
