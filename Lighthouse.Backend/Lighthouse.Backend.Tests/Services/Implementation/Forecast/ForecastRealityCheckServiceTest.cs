@@ -27,6 +27,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly int[] ConfidenceLevels = [50, 70, 85, 95];
 
+        private static readonly int[] SevenDaysWithWorkFinishedOnFive = [1, 0, 2, 1, 0, 1, 3];
+
         private static readonly int[] SixDaysWithWorkFinishedOnFour = [1, 0, 2, 1, 0, 1];
 
         private static readonly int[] AllOfTheActualOnOneDay = [ActualCompletedInEveryPeriod];
@@ -59,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             teamMetricsService = new Mock<ITeamMetricsService>();
             teamMetricsService
                 .Setup(service => service.GetBlackoutAwareThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
-                .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(SixDaysWithWorkFinishedOnFour)));
+                .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(SevenDaysWithWorkFinishedOnFive)));
             teamMetricsService
                 .Setup(service => service.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
                 .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(AllOfTheActualOnOneDay)));
@@ -162,7 +164,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                     Is.EqualTo(TheFourLevelsTheForecastReads));
                 Assert.That(cell.LevelOutcomes!.Select(level => (level.ConfidenceLevel, level.ForecastValue, level.Held)),
                     Is.EqualTo(OnlyTheTwoLevelsAtOrBelowTwelveHeld));
-                Assert.That(cell.Sufficiency.DaysWithCompletedWork, Is.EqualTo(4));
+                Assert.That(cell.Sufficiency, Is.EqualTo(new RealityCheckSufficiencyDto(true, SufficiencyReason.Sufficient, 5)));
             }
         }
 
@@ -185,6 +187,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(result.SoundWindow.CurrentSettingDays, Is.EqualTo(TeamSamplingWindowDays));
                 Assert.That(result.SoundWindow.CurrentSettingWasTested, Is.True);
                 Assert.That(result.LevelCoverage.Select(line => line.ConfidenceLevel), Is.EqualTo(ConfidenceLevels));
+            }
+        }
+
+        [Test]
+        public void A_cell_whose_history_the_shipped_bar_refuses_is_never_forecast_and_counts_for_nothing()
+        {
+            teamMetricsService
+                .Setup(service => service.GetBlackoutAwareThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(SixDaysWithWorkFinishedOnFour)));
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                forecastService.Verify(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()), Times.Never);
+                Assert.That(result.Cells, Has.Count.EqualTo(16), "a check that cannot run is still reported");
+                Assert.That(result.Cells.Select(cell => cell.Sufficiency),
+                    Is.All.EqualTo(new RealityCheckSufficiencyDto(false, SufficiencyReason.TooFewActiveDays, 4)));
+                AssertNothingWasReadOffAnyCell(result);
+            }
+        }
+
+        [Test]
+        public void A_cell_whose_forecast_has_no_reading_is_named_degenerate_and_counts_for_nothing()
+        {
+            forecastService
+                .Setup(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
+                .Returns((RunChartData _, int days) => new HowManyForecast([], days));
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Cells, Has.Count.EqualTo(16), "a check that cannot run is still reported");
+                Assert.That(result.Cells.Select(cell => cell.Sufficiency),
+                    Is.All.EqualTo(new RealityCheckSufficiencyDto(false, SufficiencyReason.DegenerateForecast, 5)));
+                AssertNothingWasReadOffAnyCell(result);
+            }
+        }
+
+        private static void AssertNothingWasReadOffAnyCell(RealityCheckResultDto result)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Cells.Where(cell => cell.Forecast is not null || cell.ActualCompleted is not null
+                    || cell.Outcome is not null || cell.LevelOutcomes is not null), Is.Empty);
+                Assert.That(result.Denominator, Is.EqualTo(new RealityCheckDenominatorDto(16, 0, 4, 0)));
+                Assert.That(result.LevelCoverage.Select(line => (line.HeldCount, line.ExpectedHeldCount, line.Reading)),
+                    Is.All.EqualTo((0, 0.0, LevelReading.NotEvaluated)));
+                Assert.That(result.SoundWindow.Determination, Is.EqualTo(Determination.NotEnoughEvidence));
             }
         }
 

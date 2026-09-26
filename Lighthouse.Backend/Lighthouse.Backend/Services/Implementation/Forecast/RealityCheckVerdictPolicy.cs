@@ -6,6 +6,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     {
         public static bool Held(int actualCompleted, int forecastValue) => actualCompleted >= forecastValue;
 
+        // The forecast engine answers minus one for a level when its simulation holds nothing to read that level
+        // from, so a negative value is the engine saying it cannot tell, never a number of items.
+        public static bool HasAReadingAtEveryLevel(IReadOnlyList<RealityCheckForecastDto> forecast)
+            => forecast.All(level => level.Value >= 0);
+
         public static CellOutcome Outcome(int actualCompleted, IReadOnlyList<RealityCheckForecastDto> forecast)
         {
             var mostConfidentValue = forecast.MaxBy(level => level.Probability)!.Value;

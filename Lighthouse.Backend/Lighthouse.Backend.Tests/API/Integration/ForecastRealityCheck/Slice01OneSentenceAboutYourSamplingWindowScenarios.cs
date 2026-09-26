@@ -497,7 +497,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(70, 0, 8.4, NeverHeld)]
         [TestCase(85, 12, 10.2, AlwaysHeld)]
         [TestCase(95, 12, 11.4, SometimesHeld)]
-        [Ignore(Pending)]
         public async Task Only_the_checks_that_could_run_count_towards_how_often_a_level_should_have_held(
             int confidenceLevel, int timesItHeld, double timesItWasExpectedToHold, string reading)
         {
@@ -607,7 +606,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // @driving_port @us-01 @boundary @real-io @contract-shape:pure-function
         [TestCase(5, true)]
         [TestCase(4, false)]
-        [Ignore(Pending)]
         public async Task Five_days_with_finished_work_is_enough_to_check_and_four_is_not(int daysWithFinishedWork, bool canBeChecked)
         {
             var team = GivenATeamThatFinishedWorkOnlyOnThisManyDaysBeforeLastWeek(daysWithFinishedWork);
@@ -624,7 +622,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();

@@ -61,11 +61,22 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var historyWindowStart = period.Start.AddDays(-samplingWindowDays);
             var history = teamMetricsService.GetBlackoutAwareThroughputForTeam(
                 team, AsDateTime(historyWindowStart), AsDateTime(period.Start), mode);
-            var forecast = forecastService.HowMany(history, period.ForecastDays);
 
+            if (!ForecastDataSufficiencyPolicy.HasEnoughData(history))
+            {
+                return Unevaluable(period, samplingWindowDays, historyWindowStart, SufficiencyReason.TooFewActiveDays, history.DaysWithThroughput);
+            }
+
+            var forecast = forecastService.HowMany(history, period.ForecastDays);
             var levels = ConfidenceLevels
                 .Select(level => new RealityCheckForecastDto(level, forecast.GetProbability(level)))
                 .ToList();
+
+            if (!RealityCheckVerdictPolicy.HasAReadingAtEveryLevel(levels))
+            {
+                return Unevaluable(period, samplingWindowDays, historyWindowStart, SufficiencyReason.DegenerateForecast, history.DaysWithThroughput);
+            }
+
             var levelOutcomes = levels
                 .Select(level => new RealityCheckLevelOutcomeDto(
                     level.Probability, level.Value, RealityCheckVerdictPolicy.Held(period.ActualCompleted, level.Value)))
@@ -84,6 +95,21 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 RealityCheckVerdictPolicy.Outcome(period.ActualCompleted, levels),
                 levelOutcomes);
         }
+
+        private static RealityCheckCellDto Unevaluable(
+            ScoredPeriod period, int samplingWindowDays, DateOnly historyWindowStart, SufficiencyReason reason, int daysWithCompletedWork)
+            => new(
+                period.Horizon,
+                samplingWindowDays,
+                period.Start,
+                period.End,
+                historyWindowStart,
+                period.Start,
+                new RealityCheckSufficiencyDto(false, reason, daysWithCompletedWork),
+                null,
+                null,
+                null,
+                null);
 
         private static RealityCheckDenominatorDto CountWhatWasEvaluated(List<RealityCheckCellDto> cells)
         {
