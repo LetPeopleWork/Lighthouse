@@ -294,3 +294,35 @@ app is allowed to break (DISCUSS D7).
 The same as the DISCUSS pre-requisites. In addition, the backups container has `force_destroy = false`:
 empty it (`openstack object delete --all` / `mc rm --recursive`) before `tofu destroy`, or the destroy
 fails partway.
+
+---
+
+## Wave: DELIVER / [REF] Outcome (2026-09-26)
+
+**Slice 01: passed.** The lpw database (`pg_dump -Fc`, 42 tables) and all 6 ExternalSecret-synced
+secrets were exported to the operator's machine. Restored into `postgres:17` and run on image
+`26.9.24.6` with the exported encryption key, lpw showed 1 Portfolio and 2 Teams, and all 3 stored
+connections (Azure DevOps, Jira token, Jira OAuth) validated (AC-1.1 … AC-1.4).
+
+**Slice 02: teardown done, DNS and billing checks still open.**
+- ArgoCD controllers scaled to 0, then every PV switched to `Delete` and removed: the 2 bound disks
+  plus **4 orphaned `Released` 8 GiB disks** from old test tenants, which had been billing unnoticed.
+- `ingress-nginx-controller` LoadBalancer Service deleted, so the Octavia load balancer and floating
+  IP were released.
+- `tofu destroy`: 4 of 4 resources destroyed (cluster, worker pool, backups container, backup
+  keypair). An application credential cannot mint EC2 keypairs (403), so the state was pulled with
+  `openstack object save` and destroyed through a gitignored `backend_override.tf`.
+- State bucket and the out-of-band state keypair deleted. Final listing: no servers, volumes,
+  floating IPs, load balancers, containers or EC2 credentials (AC-2.2, AC-2.3).
+- `lighthouse-platform`: README banner plus `docs/respin.md` (US-3). Only those two files changed
+  (AC-3.3).
+
+**Found along the way:** the nightly backup CronJob had been in `ImagePullBackOff` for 5 days, and
+the backups bucket held **0 objects**. No backup had ever landed. `docs/respin.md` step 8 covers this.
+
+**Open:**
+- AC-2.4: remove the `*.lighthouse.letpeople.work` A record at the registrar (operator, manual).
+- AC-2.5: billing check today and again on 2026-09-27.
+- DoD 5: push `lighthouse-platform` `main` (AC-3.4).
+- Clean-up: revoke the `teardown` application credential and the Infomaniak API token, move the
+  export into the password manager, and delete `~/lpw-export-2026-09-26/`.
