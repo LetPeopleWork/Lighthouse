@@ -246,7 +246,7 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 		expect(linesMatching(dialog, /\bbeaten\b|about right/i)).toHaveLength(0);
 	});
 
-	it.skip(`@error a level that never held reads as over-forecasting and one that always held when misses were expected reads as under-forecasting (${PENDING})`, async () => {
+	it(`@error a level that never held reads as over-forecasting and one that always held when misses were expected reads as under-forecasting`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				heldCounts: { 50: 0, 70: 9, 85: 16, 95: 16 },
@@ -265,7 +265,7 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 		expectTheLine(dialog, "95th: held 16 of 16 (should be about 15).");
 	});
 
-	it.skip(`@error a Team whose history supports no check is told in words that no level was tested, and the table still stands (${PENDING})`, async () => {
+	it(`@error a Team whose history supports no check is told in words that no level was tested, and the table still stands`, async () => {
 		const dialog = await theDialogFor(nothingCouldBeChecked());
 
 		for (const level of LEVEL_COLUMNS) {
