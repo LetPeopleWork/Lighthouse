@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+	CELL_OUTCOMES,
+	DETERMINATIONS,
+	LEVEL_READINGS,
+	NOT_TESTED_REASONS,
+	STANDINGS,
+	SUFFICIENCY_REASONS,
+} from "./RealityCheckResult";
 
 // Backend serialises absent optional strings as JSON null (not omitted), so these
 // must accept null; normalise to undefined to keep the `string | undefined` contract.
@@ -44,3 +52,66 @@ export const BacktestResultSchema = z.object({
 });
 
 export type BacktestResultResponse = z.infer<typeof BacktestResultSchema>;
+
+const RealityCheckCellSchema = z.object({
+	horizonDays: z.number(),
+	samplingWindowDays: z.number(),
+	scoredPeriodStart: z.string(),
+	scoredPeriodEnd: z.string(),
+	historyWindowStart: z.string(),
+	historyWindowEnd: z.string(),
+	sufficiency: z.object({
+		isSufficient: z.boolean(),
+		reason: z.enum(SUFFICIENCY_REASONS),
+		daysWithCompletedWork: z.number(),
+	}),
+	forecast: z.array(HowManyForecastSchema).nullable(),
+	actualCompleted: z.number().nullable(),
+	outcome: z.enum(CELL_OUTCOMES).nullable(),
+	levelOutcomes: z
+		.array(
+			z.object({
+				confidenceLevel: z.number(),
+				forecastValue: z.number(),
+				held: z.boolean(),
+			}),
+		)
+		.nullable(),
+});
+
+export const RealityCheckResultSchema = z.object({
+	teamId: z.number(),
+	teamName: z.string(),
+	anchorDate: z.string(),
+	standardWindowDays: z.array(z.number()),
+	sampledWindowDays: z.array(z.number()),
+	sampledHorizonDays: z.array(z.number()),
+	confidenceLevels: z.array(z.number()),
+	filterApplied: z.boolean(),
+	excludedSummary: z.string().nullable(),
+	minimumActiveDays: z.number(),
+	denominator: z.object({
+		runsAttempted: z.number(),
+		runsEvaluated: z.number(),
+		levelsPerRun: z.number(),
+		scoresEvaluated: z.number(),
+	}),
+	soundWindow: z.object({
+		soundWindowDays: z.array(z.number()),
+		unevaluatedWindowDays: z.array(z.number()),
+		determination: z.enum(DETERMINATIONS),
+		currentSettingDays: z.number(),
+		currentSettingWasTested: z.boolean(),
+		currentSettingStanding: z.enum(STANDINGS),
+		currentSettingNotTestedReason: z.enum(NOT_TESTED_REASONS).nullable(),
+	}),
+	levelCoverage: z.array(
+		z.object({
+			confidenceLevel: z.number(),
+			heldCount: z.number(),
+			expectedHeldCount: z.number(),
+			reading: z.enum(LEVEL_READINGS),
+		}),
+	),
+	cells: z.array(RealityCheckCellSchema),
+});

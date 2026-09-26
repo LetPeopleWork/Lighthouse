@@ -2,9 +2,11 @@ import { BacktestResult } from "../../models/Forecasts/BacktestResult";
 import {
 	BacktestResultSchema,
 	ManualForecastSchema,
+	RealityCheckResultSchema,
 } from "../../models/Forecasts/forecastSchemas";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
+import type { RealityCheckResult } from "../../models/Forecasts/RealityCheckResult";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
 import { BaseApiService } from "./BaseApiService";
 
@@ -32,6 +34,11 @@ export interface IForecastService {
 		historicalEndDate: Date,
 		applyFilterOverride?: boolean,
 	): Promise<BacktestResult>;
+
+	runRealityCheck(
+		teamId: number,
+		applyFilterOverride?: boolean,
+	): Promise<RealityCheckResult>;
 }
 
 export class ForecastService
@@ -143,6 +150,25 @@ export class ForecastService
 				requestBody,
 			);
 			return ForecastService.deserializeBacktestResult(response.data);
+		});
+	}
+
+	async runRealityCheck(
+		teamId: number,
+		applyFilterOverride?: boolean,
+	): Promise<RealityCheckResult> {
+		return this.withErrorHandling(async () => {
+			const requestBody: { applyFilterOverride?: boolean } = {};
+
+			if (applyFilterOverride !== undefined) {
+				requestBody.applyFilterOverride = applyFilterOverride;
+			}
+
+			const response = await this.apiService.post<unknown>(
+				`/forecast/reality-check/${teamId}`,
+				requestBody,
+			);
+			return BaseApiService.parse(RealityCheckResultSchema, response.data);
 		});
 	}
 

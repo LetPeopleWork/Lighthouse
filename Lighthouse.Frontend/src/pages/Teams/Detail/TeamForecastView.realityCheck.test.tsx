@@ -151,7 +151,7 @@ beforeEach(() => {
 });
 
 describe("@us-01 @driving_port slice 01 - one sentence about your sampling window", () => {
-	it.skip(`@walking_skeleton pressing Run reality check answers in the Forecast Backtesting group without asking for a date (${PENDING})`, async () => {
+	it(`@walking_skeleton pressing Run reality check answers in the Forecast Backtesting group without asking for a date (${PENDING})`, async () => {
 		const group = await theVerdictFor(aRealityCheckAnswer());
 
 		expect(runRealityCheck).toHaveBeenCalledTimes(1);
@@ -383,7 +383,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(linesMatching(group, /work items?/i)).toHaveLength(0);
 	});
 
-	it.skip(`@error a check that fails to come back leaves no verdict and says what went wrong (${PENDING})`, async () => {
+	it(`@error a check that fails to come back leaves no verdict and says what went wrong (${PENDING})`, async () => {
 		runRealityCheck.mockRejectedValue(
 			new Error("The reality check could not be run"),
 		);
@@ -397,7 +397,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(within(group).queryByText(/forecast runs were checked/i)).toBeNull();
 	});
 
-	it.skip(`@error pressing again while a check is running does not start a second one (${PENDING})`, async () => {
+	it(`@error pressing again while a check is running does not start a second one (${PENDING})`, async () => {
 		runRealityCheck.mockReturnValue(new Promise(() => {}));
 		const group = renderTheForecastTab(runRealityCheck);
 

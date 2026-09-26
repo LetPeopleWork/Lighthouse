@@ -25,6 +25,7 @@ import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import BacktestForecaster, { type HistoricalMode } from "./BacktestForecaster";
+import ForecastRealityCheck from "./ForecastRealityCheck";
 import ManualForecaster from "./ManualForecaster";
 import NewItemForecaster from "./NewItemForecaster";
 
@@ -436,6 +437,12 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				/>
 			</InputGroup>
 			<InputGroup title="Forecast Backtesting">
+				<ForecastRealityCheck
+					teamId={team.id}
+					applyFilterOverride={
+						isPremiumFilterActive ? applyBacktestFilterOverride : undefined
+					}
+				/>
 				<BacktestForecaster
 					team={team}
 					backtestResult={backtestResult}

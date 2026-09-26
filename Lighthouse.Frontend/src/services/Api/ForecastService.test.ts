@@ -748,4 +748,128 @@ describe("ForecastService", () => {
 			expect(result.percentiles[3].value).toBe(14);
 		});
 	});
+
+	describe("runRealityCheck", () => {
+		const aRealityCheckResponse = () => ({
+			teamId: 7,
+			teamName: "Ocean Explorer",
+			anchorDate: "2026-09-22",
+			standardWindowDays: [14, 30, 60, 90],
+			sampledWindowDays: [30],
+			sampledHorizonDays: [7],
+			confidenceLevels: [50, 95],
+			filterApplied: false,
+			excludedSummary: null,
+			minimumActiveDays: 5,
+			denominator: {
+				runsAttempted: 2,
+				runsEvaluated: 1,
+				levelsPerRun: 2,
+				scoresEvaluated: 2,
+			},
+			soundWindow: {
+				soundWindowDays: [30],
+				unevaluatedWindowDays: [],
+				determination: "AllWindowsAlike",
+				currentSettingDays: 30,
+				currentSettingWasTested: true,
+				currentSettingStanding: "Inside",
+				currentSettingNotTestedReason: null,
+			},
+			levelCoverage: [
+				{
+					confidenceLevel: 50,
+					heldCount: 1,
+					expectedHeldCount: 0.5,
+					reading: "AlwaysHeld",
+				},
+			],
+			cells: [
+				{
+					horizonDays: 7,
+					samplingWindowDays: 30,
+					scoredPeriodStart: "2026-09-15",
+					scoredPeriodEnd: "2026-09-22",
+					historyWindowStart: "2026-08-16",
+					historyWindowEnd: "2026-09-15",
+					sufficiency: {
+						isSufficient: true,
+						reason: "Sufficient",
+						daysWithCompletedWork: 12,
+					},
+					forecast: [
+						{ probability: 50, value: 8 },
+						{ probability: 95, value: 4 },
+					],
+					actualCompleted: 6,
+					outcome: "WithinBand",
+					levelOutcomes: [
+						{ confidenceLevel: 50, forecastValue: 8, held: false },
+						{ confidenceLevel: 95, forecastValue: 4, held: true },
+					],
+				},
+				{
+					horizonDays: 7,
+					samplingWindowDays: 14,
+					scoredPeriodStart: "2026-09-15",
+					scoredPeriodEnd: "2026-09-22",
+					historyWindowStart: "2026-09-01",
+					historyWindowEnd: "2026-09-15",
+					sufficiency: {
+						isSufficient: false,
+						reason: "TooFewActiveDays",
+						daysWithCompletedWork: 2,
+					},
+					forecast: null,
+					actualCompleted: null,
+					outcome: null,
+					levelOutcomes: null,
+				},
+			],
+		});
+
+		it("should post no override when none is given and keep the days as they travel", async () => {
+			const response = aRealityCheckResponse();
+			mockedAxios.post.mockResolvedValueOnce({ data: response });
+
+			const result = await forecastService.runRealityCheck(7);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/forecast/reality-check/7",
+				{},
+			);
+			expect(result).toEqual(response);
+			expect(result.anchorDate).toBe("2026-09-22");
+			expect(result.cells[0].scoredPeriodStart).toBe("2026-09-15");
+		});
+
+		it("should post the override when one is given, even when it is false", async () => {
+			mockedAxios.post.mockResolvedValueOnce({ data: aRealityCheckResponse() });
+
+			await forecastService.runRealityCheck(7, false);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/forecast/reality-check/7",
+				{ applyFilterOverride: false },
+			);
+		});
+
+		it("should reject a closed-set member sent as a number with a structured ApiError", async () => {
+			const response = aRealityCheckResponse();
+			mockedAxios.post.mockResolvedValueOnce({
+				data: {
+					...response,
+					soundWindow: { ...response.soundWindow, determination: 0 },
+				},
+			});
+
+			const error = await forecastService
+				.runRealityCheck(7)
+				.catch((caught: unknown) => caught);
+
+			expect(error).toBeInstanceOf(ApiError);
+			expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+			expect((error as ApiError).technicalDetails).toContain("determination");
+		});
+	});
 });

@@ -250,6 +250,7 @@ describe("TeamForecastView component", () => {
 		runManualForecast: vi.fn(),
 		runItemPrediction: vi.fn(),
 		runBacktest: vi.fn(),
+		runRealityCheck: vi.fn(),
 	};
 
 	const mockTeamMetricsService = {

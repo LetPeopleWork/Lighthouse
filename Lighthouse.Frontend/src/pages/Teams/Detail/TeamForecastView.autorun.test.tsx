@@ -107,6 +107,7 @@ const forecastService = {
 	runManualForecast: vi.fn(),
 	runItemPrediction: vi.fn().mockResolvedValue({}),
 	runBacktest: vi.fn().mockResolvedValue({}),
+	runRealityCheck: vi.fn(),
 };
 
 const teamMetricsService = {
