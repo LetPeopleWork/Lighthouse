@@ -42,6 +42,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly (int, int, bool)[] OnlyTheTwoLevelsAtOrBelowTwelveHeld = [(50, 16, false), (70, 14, false), (85, 12, true), (95, 10, true)];
 
+        // Against levels reading 16, 14, 12 and 10, each horizon's actual clears one more level than the last,
+        // so across its four windows each level holds a different number of times.
+        private static readonly Dictionary<int, int> ActualCompletedByHorizon = new() { [7] = 10, [14] = 12, [28] = 14, [56] = 16 };
+
+        private static readonly (int, int)[] EachLevelHeldInItsOwnNumberOfChecks = [(50, 4), (70, 8), (85, 12), (95, 16)];
+
         private Mock<IForecastService> forecastService = null!;
 
         private Mock<ITeamMetricsService> teamMetricsService = null!;
@@ -264,6 +270,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                     Is.EqualTo(OnlyTheTwoLevelsAtOrBelowTwelveHeld));
                 Assert.That(cell.Sufficiency, Is.EqualTo(new RealityCheckSufficiencyDto(true, SufficiencyReason.Sufficient, 5)));
             }
+        }
+
+        [Test]
+        public void Each_level_counts_only_the_checks_it_held_in_itself()
+        {
+            teamMetricsService
+                .Setup(service => service.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns((Team _, DateTime start, DateTime end, ThroughputFilterMode _) =>
+                    new RunChartData(RunChartDataGenerator.GenerateRunChartData([ActualCompletedByHorizon[(end - start).Days + 1]])));
+
+            var result = Run();
+
+            Assert.That(result.LevelCoverage.Select(line => (line.ConfidenceLevel, line.HeldCount)),
+                Is.EqualTo(EachLevelHeldInItsOwnNumberOfChecks));
         }
 
         [Test]

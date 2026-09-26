@@ -48,6 +48,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             Assert.That(RealityCheckVerdictPolicy.Held(actualCompleted, ValueAt95), Is.EqualTo(expected));
         }
 
+        [TestCase(25, 18, 14, 10, true)]
+        [TestCase(25, 18, 14, 0, true)]
+        [TestCase(0, 0, 0, 0, true)]
+        [TestCase(25, 18, 14, -1, false)]
+        [TestCase(-1, -1, -1, -1, false)]
+        public void HasAReadingAtEveryLevel_ZeroItemsIsAReadingButMinusOneAtAnyLevelLeavesTheForecastUnreadable(
+            int valueAt50, int valueAt70, int valueAt85, int valueAt95, bool expected)
+        {
+            RealityCheckForecastDto[] forecast = [new(50, valueAt50), new(70, valueAt70), new(85, valueAt85), new(95, valueAt95)];
+
+            Assert.That(RealityCheckVerdictPolicy.HasAReadingAtEveryLevel(forecast), Is.EqualTo(expected));
+        }
+
         [TestCase(50, 8.0)]
         [TestCase(70, 11.2)]
         [TestCase(85, 13.6)]
