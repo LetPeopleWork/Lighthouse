@@ -85,8 +85,6 @@ vi.mock("./BacktestForecaster", () => ({
 	default: () => <div data-testid="backtest-forecaster" />,
 }));
 
-const PENDING = "the Forecast Reality Check is not built yet";
-
 const TEAM_FORECAST_REALITY_CHECK_RUN = "TeamForecastRealityCheckRun";
 
 const aRealityCheckWasRun = { name: TEAM_FORECAST_REALITY_CHECK_RUN };
@@ -99,7 +97,7 @@ beforeEach(() => {
 });
 
 describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a reality check", () => {
-	it(`is on the list of names the browser may send, as the word itself (${PENDING})`, () => {
+	it(`is on the list of names the browser may send, as the word itself`, () => {
 		expect(
 			(UsageDataEventName as Record<string, string>)[
 				TEAM_FORECAST_REALITY_CHECK_RUN
@@ -107,7 +105,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		).toBe(TEAM_FORECAST_REALITY_CHECK_RUN);
 	});
 
-	it(`reports a run once, after the answer came back and not when the button was pressed (${PENDING})`, async () => {
+	it(`reports a run once, after the answer came back and not when the button was pressed`, async () => {
 		let answer: (value: unknown) => void = () => {};
 		runRealityCheck.mockReturnValue(
 			new Promise((resolve) => {
@@ -125,7 +123,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it(`@error reports a run whose every check was too thin to evaluate, because that is still an answer (${PENDING})`, async () => {
+	it(`@error reports a run whose every check was too thin to evaluate, because that is still an answer`, async () => {
 		await theDialogWithTheAnswer(
 			runRealityCheck,
 			aRealityCheckAnswer({
@@ -154,7 +152,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it(`@error reports a run for a Team that forecasts from fixed dates (${PENDING})`, async () => {
+	it(`@error reports a run for a Team that forecasts from fixed dates`, async () => {
 		await theDialogWithTheAnswer(
 			runRealityCheck,
 			aRealityCheckAnswer({
@@ -168,7 +166,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it(`@error reports nothing for a request that failed (${PENDING})`, async () => {
+	it(`@error reports nothing for a request that failed`, async () => {
 		runRealityCheck.mockRejectedValue(
 			new Error("The reality check could not be run"),
 		);
@@ -181,7 +179,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	it(`never reports a reality check as a forecast run by hand (${PENDING})`, async () => {
+	it(`never reports a reality check as a forecast run by hand`, async () => {
 		await theDialogWithTheAnswer(runRealityCheck, aRealityCheckAnswer());
 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
@@ -197,7 +195,6 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
  * shows that same check and reports it once; an answer that arrives after the dialog was closed was shown
  * to nobody and is not reported.
  */
-const PENDING_DIALOG = "the reality check dialog is not built yet";
 
 const anAnswerStillOnItsWay = () => {
 	let answer: (value: unknown) => void = () => {};
@@ -223,7 +220,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		setMatchMedia(false);
 	});
 
-	it.skip(`reports once when the dialog shows the answer, and not when it opened (${PENDING_DIALOG})`, async () => {
+	it(`reports once when the dialog shows the answer, and not when it opened`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 
@@ -238,7 +235,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 	});
 
-	it.skip(`reports again when Run again brings a fresh answer (${PENDING_DIALOG})`, async () => {
+	it(`reports again when Run again brings a fresh answer`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -253,7 +250,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
 
-	it.skip(`reports again when the dialog is closed and opened again after an answer (${PENDING_DIALOG})`, async () => {
+	it(`reports again when the dialog is closed and opened again after an answer`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -266,7 +263,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		expect(reportUsage).toHaveBeenCalledTimes(2);
 	});
 
-	it.skip(`@error reopening while the check is still running shows that same check and reports it once (${PENDING_DIALOG})`, async () => {
+	it(`@error reopening while the check is still running shows that same check and reports it once`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -282,7 +279,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip(`@error an answer that arrives after the dialog was closed was shown to nobody and is not reported, and reopening asks afresh (${PENDING_DIALOG})`, async () => {
+	it(`@error an answer that arrives after the dialog was closed was shown to nobody and is not reported, and reopening asks afresh`, async () => {
 		const droppedAnswerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -300,7 +297,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip(`@error reports nothing when Run again fails (${PENDING_DIALOG})`, async () => {
+	it(`@error reports nothing when Run again fails`, async () => {
 		runRealityCheck
 			.mockResolvedValueOnce(aRealityCheckAnswer())
 			.mockRejectedValueOnce(new Error("The reality check could not be run"));
@@ -317,7 +314,7 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip(`never reports a check from the dialog as a forecast run by hand, however often it runs (${PENDING_DIALOG})`, async () => {
+	it(`never reports a check from the dialog as a forecast run by hand, however often it runs`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
