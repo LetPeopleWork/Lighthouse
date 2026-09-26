@@ -83,6 +83,14 @@ export interface RealityCheckCell {
 	levelOutcomes: RealityCheckLevelOutcome[] | null;
 }
 
+/** One period the checks were scored on, and what the Team finished in it, whether or not any check of it could run. */
+export interface RealityCheckScoredPeriod {
+	horizonDays: number;
+	scoredPeriodStart: string;
+	scoredPeriodEnd: string;
+	actualCompleted: number;
+}
+
 export interface RealityCheckDenominator {
 	runsAttempted: number;
 	runsEvaluated: number;
@@ -121,5 +129,6 @@ export interface RealityCheckResult {
 	denominator: RealityCheckDenominator;
 	soundWindow: RealityCheckSoundWindow;
 	levelCoverage: RealityCheckLevelCoverage[];
+	scoredPeriods: RealityCheckScoredPeriod[];
 	cells: RealityCheckCell[];
 }

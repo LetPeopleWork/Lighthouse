@@ -113,5 +113,13 @@ export const RealityCheckResultSchema = z.object({
 			reading: z.enum(LEVEL_READINGS),
 		}),
 	),
+	scoredPeriods: z.array(
+		z.object({
+			horizonDays: z.number(),
+			scoredPeriodStart: z.string(),
+			scoredPeriodEnd: z.string(),
+			actualCompleted: z.number(),
+		}),
+	),
 	cells: z.array(RealityCheckCellSchema),
 });

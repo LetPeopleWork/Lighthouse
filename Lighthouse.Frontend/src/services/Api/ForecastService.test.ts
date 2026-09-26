@@ -784,6 +784,14 @@ describe("ForecastService", () => {
 					reading: "AlwaysHeld",
 				},
 			],
+			scoredPeriods: [
+				{
+					horizonDays: 7,
+					scoredPeriodStart: "2026-09-15",
+					scoredPeriodEnd: "2026-09-22",
+					actualCompleted: 6,
+				},
+			],
 			cells: [
 				{
 					horizonDays: 7,
@@ -844,7 +852,7 @@ describe("ForecastService", () => {
 		});
 
 		// @us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed
-		it.skip("should keep every period the check scored, with its days and what was delivered, as they travel (pending: the answer's periods are not read yet)", async () => {
+		it("should keep every period the check scored, with its days and what was delivered, as they travel", async () => {
 			const scoredPeriods = [
 				{
 					horizonDays: 7,

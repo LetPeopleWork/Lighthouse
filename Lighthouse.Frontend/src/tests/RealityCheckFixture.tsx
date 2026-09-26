@@ -177,14 +177,14 @@ const aCell = (
 	horizon: number,
 	options: RealityCheckAnswerOptions,
 ): RealityCheckWireCell => {
-	const scoredPeriodStart = shiftDay(REALITY_CHECK_TODAY, -horizon);
+	const historyWindowEnd = shiftDay(REALITY_CHECK_TODAY, -horizon);
 	const dates = {
 		horizonDays: horizon,
 		samplingWindowDays: window,
-		scoredPeriodStart,
+		scoredPeriodStart: shiftDay(REALITY_CHECK_TODAY, -horizon + 1),
 		scoredPeriodEnd: REALITY_CHECK_TODAY,
-		historyWindowStart: shiftDay(scoredPeriodStart, -window),
-		historyWindowEnd: scoredPeriodStart,
+		historyWindowStart: shiftDay(historyWindowEnd, -window),
+		historyWindowEnd,
 	};
 
 	const unevaluable = options.unevaluable?.find(
