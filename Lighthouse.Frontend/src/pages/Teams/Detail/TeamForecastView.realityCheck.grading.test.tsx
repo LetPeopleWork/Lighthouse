@@ -167,7 +167,7 @@ beforeEach(() => {
 });
 
 describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
-	it.skip(`@kpi-OUT-6094-no-percentage-without-its-work-items a forecast that held is shaded by how close it landed - Ocean Explorer's 30-day row over 8 weeks (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-no-percentage-without-its-work-items a forecast that held is shaded by how close it landed - Ocean Explorer's 30-day row over 8 weeks`, async () => {
 		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
 
@@ -193,7 +193,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		});
 	});
 
-	it.skip(`@kpi-OUT-6094-no-percentage-without-its-work-items a forecast that did not hold is graded by how far it fell short - the same row's 50th (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-no-percentage-without-its-work-items a forecast that did not hold is graded by how far it fell short - the same row's 50th`, async () => {
 		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const cell = levelCell(
 			windowRow(periodGroup(theTableIn(dialog), 56), 30),
@@ -208,7 +208,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		expect(cell).toHaveStyle({ backgroundColor: gradeFill("NotHeld10To25") });
 	});
 
-	it.skip(`@error @kpi-OUT-6094-no-percentage-without-its-work-items a one-Work-Item miss on a small period shows the Work Item beside the percentage - Coastal Survey's week (${PENDING})`, async () => {
+	it(`@error @kpi-OUT-6094-no-percentage-without-its-work-items a one-Work-Item miss on a small period shows the Work Item beside the percentage - Coastal Survey's week`, async () => {
 		const dialog = await theDialogFor({
 			teamName: "Coastal Survey",
 			checks: [
@@ -236,7 +236,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		expect(cell).toHaveStyle({ backgroundColor: gradeFill("NotHeldOver25") });
 	});
 
-	it.skip(`@error @kpi-OUT-6094-no-percentage-without-its-work-items a period in which nothing was delivered has no percentage: 0 against 0 held exactly, 2 against 0 did not hold by the most - Harbour Pilots' week (${PENDING})`, async () => {
+	it(`@error @kpi-OUT-6094-no-percentage-without-its-work-items a period in which nothing was delivered has no percentage: 0 against 0 held exactly, 2 against 0 did not hold by the most - Harbour Pilots' week`, async () => {
 		const dialog = await theDialogFor({
 			teamName: "Harbour Pilots",
 			checks: [
@@ -312,7 +312,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		},
 	);
 
-	it.skip(`@kpi-OUT-6094-colour-never-alone every graded cell says in words whether it held and by how much, so colour is never the only sign (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-colour-never-alone every graded cell says in words whether it held and by how much, so colour is never the only sign`, async () => {
 		const dialog = await theDialogFor({});
 		const namePattern =
 			/^(50|70|85|95)th: \d+, (held|did not hold), (exactly as forecast|\d+ (more|fewer) delivered), \d+% of the actual$/;
@@ -328,7 +328,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		}
 	});
 
-	it.skip(`@error a check that could not run keeps its words and takes no grade colour (${PENDING})`, async () => {
+	it(`@error a check that could not run keeps its words and takes no grade colour`, async () => {
 		const dialog = await theDialogFor({
 			unevaluable: HORIZON_DAYS.map((horizon) => ({
 				window: 14,

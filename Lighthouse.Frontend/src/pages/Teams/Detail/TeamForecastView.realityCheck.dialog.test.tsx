@@ -344,16 +344,16 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
 
 		expect(levelCell(row, 50)).toHaveAccessibleName(
-			"50th: 48, did not hold, 6 fewer delivered",
+			"50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
 		);
 		expect(levelCell(row, 70)).toHaveAccessibleName(
-			"70th: 40, held, 2 more delivered",
+			"70th: 40, held, 2 more delivered, 5% of the actual",
 		);
 		expect(levelCell(row, 85)).toHaveAccessibleName(
-			"85th: 36, held, 6 more delivered",
+			"85th: 36, held, 6 more delivered, 14% of the actual",
 		);
 		expect(levelCell(row, 95)).toHaveAccessibleName(
-			"95th: 31, held, 11 more delivered",
+			"95th: 31, held, 11 more delivered, 26% of the actual",
 		);
 
 		expect(within(levelCell(row, 50)).getByText("48")).toBeInTheDocument();
@@ -389,7 +389,9 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 			70,
 		);
 
-		expect(cell).toHaveAccessibleName("70th: 22, held, exactly as forecast");
+		expect(cell).toHaveAccessibleName(
+			"70th: 22, held, exactly as forecast, 0% of the actual",
+		);
 		expect(within(cell).getByText("0")).toBeInTheDocument();
 		expect(cell).not.toHaveTextContent(/[+−-]0\b/);
 	});

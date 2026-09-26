@@ -22,6 +22,7 @@ import {
 	levelReadingCopy,
 	listOf,
 	notTestedReasonCopy,
+	percentShown,
 	periodActual,
 	regionOf,
 	signedMiss,
@@ -746,20 +747,74 @@ describe("heldWord and heldGlyph", () => {
 describe("gradedCellName", () => {
 	it.each([
 		{
-			facts: { confidenceLevel: 50, forecastValue: 48, miss: -6, held: false },
-			name: "50th: 48, did not hold, 6 fewer delivered",
+			facts: {
+				confidenceLevel: 50,
+				forecastValue: 48,
+				miss: -6,
+				held: false,
+				percentOfActual: 14,
+			},
+			name: "50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
 		},
 		{
-			facts: { confidenceLevel: 70, forecastValue: 40, miss: 2, held: true },
-			name: "70th: 40, held, 2 more delivered",
+			facts: {
+				confidenceLevel: 70,
+				forecastValue: 40,
+				miss: 2,
+				held: true,
+				percentOfActual: 5,
+			},
+			name: "70th: 40, held, 2 more delivered, 5% of the actual",
 		},
 		{
-			facts: { confidenceLevel: 70, forecastValue: 22, miss: 0, held: true },
-			name: "70th: 22, held, exactly as forecast",
+			facts: {
+				confidenceLevel: 70,
+				forecastValue: 22,
+				miss: 0,
+				held: true,
+				percentOfActual: 0,
+			},
+			name: "70th: 22, held, exactly as forecast, 0% of the actual",
 		},
 		{
-			facts: { confidenceLevel: 95, forecastValue: 31, miss: 11, held: true },
-			name: "95th: 31, held, 11 more delivered",
+			facts: {
+				confidenceLevel: 95,
+				forecastValue: 31,
+				miss: 11,
+				held: true,
+				percentOfActual: 26,
+			},
+			name: "95th: 31, held, 11 more delivered, 26% of the actual",
+		},
+		{
+			facts: {
+				confidenceLevel: 50,
+				forecastValue: 4,
+				miss: -1,
+				held: false,
+				percentOfActual: 33,
+			},
+			name: "50th: 4, did not hold, 1 fewer delivered, 33% of the actual",
+		},
+		{
+			facts: {
+				confidenceLevel: 95,
+				forecastValue: 0,
+				miss: 0,
+				held: true,
+				percentOfActual: null,
+			},
+			name: "95th: 0, held, exactly as forecast",
+		},
+		{
+			facts: {
+				confidenceLevel: 50,
+				forecastValue: 2,
+				miss: -2,
+				held: false,
+				percentOfActual: null,
+			},
+			name: "50th: 2, did not hold, 2 fewer delivered",
 		},
 	])("reads $name", ({ facts, name }) => {
 		expect(gradedCellName(facts)).toBe(name);
@@ -772,7 +827,17 @@ describe("gradedCellName", () => {
 				forecastValue: 36,
 				miss: 6,
 				held: false,
+				percentOfActual: 14,
 			}),
-		).toBe("85th: 36, did not hold, 6 more delivered");
+		).toBe("85th: 36, did not hold, 6 more delivered, 14% of the actual");
+	});
+});
+
+describe("percentShown", () => {
+	it.each([
+		{ percent: 0, shown: "0%" },
+		{ percent: 26, shown: "26%" },
+	])("writes $percent as $shown", ({ percent, shown }) => {
+		expect(percentShown(percent)).toBe(shown);
 	});
 });

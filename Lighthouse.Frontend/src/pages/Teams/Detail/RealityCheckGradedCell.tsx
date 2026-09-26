@@ -1,12 +1,14 @@
 import { TableCell } from "@mui/material";
 import type React from "react";
+import { appColors, getContrastText } from "../../../utils/theme/colors";
 import {
 	gradedCellName,
 	heldGlyph,
 	heldWord,
+	percentShown,
 	signedMiss,
 } from "./realityCheckCopy";
-import { missOf } from "./realityCheckGrading";
+import { readCheck } from "./realityCheckGrading";
 
 interface RealityCheckGradedCellProps {
 	confidenceLevel: number;
@@ -18,7 +20,12 @@ interface RealityCheckGradedCellProps {
 const RealityCheckGradedCell: React.FC<
 	Readonly<RealityCheckGradedCellProps>
 > = ({ confidenceLevel, forecastValue, actualCompleted, held }) => {
-	const miss = missOf({ forecastValue, actualCompleted });
+	const { grade, miss, percentOfActual } = readCheck({
+		forecastValue,
+		actualCompleted,
+		held,
+	});
+	const fill = appColors.forecastGrade[grade];
 
 	return (
 		<TableCell
@@ -27,9 +34,16 @@ const RealityCheckGradedCell: React.FC<
 				forecastValue,
 				miss,
 				held,
+				percentOfActual,
 			})}
+			style={{ backgroundColor: fill, color: getContrastText(fill) }}
 		>
 			<span>{forecastValue}</span> <span>{signedMiss(miss)}</span>{" "}
+			{percentOfActual === null ? null : (
+				<>
+					<span>{percentShown(percentOfActual)}</span>{" "}
+				</>
+			)}
 			<span>
 				{heldGlyph(held)} {heldWord(held)}
 			</span>

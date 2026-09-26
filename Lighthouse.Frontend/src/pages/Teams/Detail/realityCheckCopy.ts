@@ -282,6 +282,8 @@ export interface GradedCellFacts {
 	/** What the Team delivered minus what was forecast. */
 	miss: number;
 	held: boolean;
+	/** None when the period delivered nothing, since a share of nothing has no meaning. */
+	percentOfActual: number | null;
 }
 
 // A typographic minus, not a hyphen, so a negative miss reads as a number and not as a dash.
@@ -312,13 +314,22 @@ export const heldWord = (held: boolean): string =>
 
 export const heldGlyph = (held: boolean): string => (held ? "✓" : "✗");
 
+export const percentShown = (percentOfActual: number): string =>
+	`${percentOfActual}%`;
+
+const percentInWords = (percentOfActual: number | null): string =>
+	percentOfActual === null
+		? ""
+		: `, ${percentShown(percentOfActual)} of the actual`;
+
 export const gradedCellName = ({
 	confidenceLevel,
 	forecastValue,
 	miss,
 	held,
+	percentOfActual,
 }: GradedCellFacts): string =>
-	`${confidenceLevel}th: ${forecastValue}, ${heldWord(held)}, ${missInWords(miss)}`;
+	`${confidenceLevel}th: ${forecastValue}, ${heldWord(held)}, ${missInWords(miss)}${percentInWords(percentOfActual)}`;
 
 const runsLeftOut = ({
 	runsAttempted,
