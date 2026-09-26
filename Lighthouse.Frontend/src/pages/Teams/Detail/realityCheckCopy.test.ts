@@ -15,12 +15,15 @@ import {
 	determinationCopy,
 	findings,
 	gradedCellName,
+	gradeLegendCopy,
 	heldGlyph,
 	heldWord,
 	horizonLabel,
 	levelLine,
 	levelReadingCopy,
 	listOf,
+	methodCredit,
+	notCheckedLegend,
 	notTestedReasonCopy,
 	percentShown,
 	periodActual,
@@ -839,5 +842,22 @@ describe("percentShown", () => {
 		{ percent: 26, shown: "26%" },
 	])("writes $percent as $shown", ({ percent, shown }) => {
 		expect(percentShown(percent)).toBe(shown);
+	});
+});
+
+describe("gradeLegendCopy", () => {
+	it("gives every grade and the not-checked state words of their own", () => {
+		const words = [...Object.values(gradeLegendCopy), notCheckedLegend];
+
+		expect(new Set(words).size).toBe(words.length);
+	});
+});
+
+describe("methodCredit", () => {
+	it("credits Nick Brown's method and owns this product's two additions in the same place", () => {
+		expect(methodCredit).toMatch(/Nick Brown's method in The Full Monte\./);
+		expect(methodCredit).toMatch(
+			/always held as under-forecasting, and the 95th level, are this product's additions\.$/,
+		);
 	});
 });

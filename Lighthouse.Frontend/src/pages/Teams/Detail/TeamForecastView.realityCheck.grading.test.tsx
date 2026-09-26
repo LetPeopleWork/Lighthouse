@@ -272,7 +272,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		});
 	});
 
-	it.skip.each<{
+	it.each<{
 		actual: number;
 		forecast: number;
 		shown: string;
@@ -284,7 +284,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		{ actual: 99, forecast: 74, shown: "26%", grade: "HeldOver25" },
 		{ actual: 300, forecast: 299, shown: "1%", grade: "HeldWithin10" },
 	])(
-		`@boundary shows $shown for a forecast of $forecast against $actual, never a number its shade contradicts (${PENDING})`,
+		`@boundary shows $shown for a forecast of $forecast against $actual, never a number its shade contradicts`,
 		async ({ actual, forecast, shown, grade }) => {
 			const dialog = await theDialogFor({
 				checks: [
@@ -542,7 +542,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 });
 
 describe("@us-05 @slice-05 the legend and the credit", () => {
-	it.skip(`@kpi-OUT-6094-colour-never-alone names the six grades and the not-checked state in words (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-colour-never-alone names the six grades and the not-checked state in words`, async () => {
 		const dialog = await theDialogFor({});
 
 		for (const words of [
@@ -558,7 +558,7 @@ describe("@us-05 @slice-05 the legend and the credit", () => {
 		}
 	});
 
-	it.skip(`credits Nick Brown's held-or-not grading and shading by closeness, and names what this product added (${PENDING})`, async () => {
+	it(`credits Nick Brown's held-or-not grading and shading by closeness, and names what this product added`, async () => {
 		const dialog = await theDialogFor({});
 
 		expectALine(dialog, /Nick Brown/);

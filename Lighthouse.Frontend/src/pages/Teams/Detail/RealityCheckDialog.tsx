@@ -14,6 +14,7 @@ import {
 import type React from "react";
 import { useId } from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
+import RealityCheckLegend from "./RealityCheckLegend";
 import RealityCheckTable from "./RealityCheckTable";
 import RealityCheckVerdict from "./RealityCheckVerdict";
 
@@ -52,6 +53,7 @@ const RealityCheckRunContent: React.FC<
 		<Stack spacing={3}>
 			<RealityCheckVerdict result={run.result} />
 			<RealityCheckTable result={run.result} />
+			<RealityCheckLegend />
 		</Stack>
 	);
 };

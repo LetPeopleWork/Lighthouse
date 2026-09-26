@@ -12,6 +12,7 @@ import {
 } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { parseLocalDate } from "../../../utils/date/localDate";
+import type { ForecastGrade } from "./realityCheckGrading";
 
 type TermGetter = (key: string) => string;
 
@@ -394,3 +395,19 @@ export const findings = (getTerm: TermGetter, levelCount: number): string[] => [
 	`The sampling window is a setting on this ${getTerm(TERMINOLOGY_KEYS.TEAM)}.`,
 	`The confidence level is not a setting: it is which of the ${levelCount} numbers you choose to quote.`,
 ];
+
+export const gradeLegendCopy: Record<ForecastGrade, string> = {
+	HeldWithin10: "Held, within 10%",
+	Held10To25: "Held, by 10-25%",
+	HeldOver25: "Held, by more than 25%",
+	NotHeldWithin10: "Did not hold, within 10%",
+	NotHeld10To25: "Did not hold, by 10-25%",
+	NotHeldOver25: "Did not hold, by more than 25%",
+};
+
+export const notCheckedLegend = "Not checked";
+
+// The source method is credited in the same breath as what this product added, so the additions are
+// never mistaken for the author's.
+export const methodCredit =
+	"Grading each forecast as held or not, and shading it by how close it landed, follows Nick Brown's method in The Full Monte. Reading a level that always held as under-forecasting, and the 95th level, are this product's additions.";
