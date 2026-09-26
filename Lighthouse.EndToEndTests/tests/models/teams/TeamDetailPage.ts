@@ -111,17 +111,6 @@ export class TeamDetailPage {
 		await this.runRealityCheckButton.click();
 	}
 
-	// Every verdict opens by naming the team whose sampling windows were checked.
-	realityCheckVerdict(teamName: string): Locator {
-		return this.backtestForecastingCard.getByText(`for ${teamName}`);
-	}
-
-	get realityCheckDenominator(): Locator {
-		return this.backtestForecastingCard.getByText(
-			/^\d+ forecast runs? (were|was) checked/,
-		);
-	}
-
 	// The answer opens in a dialog. Found by its role and name, never by a level icon: production builds
 	// strip the test ids MUI puts on icons.
 	get realityCheckDialog(): Locator {

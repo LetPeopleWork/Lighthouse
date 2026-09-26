@@ -1,8 +1,7 @@
+import { TableBody, TableCell, TableRow } from "@mui/material";
 import type React from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
-
-// RED scaffold written by DISTILL for Story 6094; DELIVER replaces the body and removes the marker.
-export const __SCAFFOLD__ = true;
+import { horizonLabel } from "./realityCheckCopy";
 
 interface RealityCheckPeriodGroupProps {
 	result: RealityCheckResult;
@@ -11,10 +10,21 @@ interface RealityCheckPeriodGroupProps {
 
 const RealityCheckPeriodGroup: React.FC<
 	Readonly<RealityCheckPeriodGroupProps>
-> = ({ horizonDays }) => {
-	throw new Error(
-		`Not yet implemented -- RED scaffold: the ${horizonDays}-day period group`,
-	);
-};
+> = ({ result, horizonDays }) => (
+	<TableBody>
+		<TableRow>
+			<TableCell component="th" scope="rowgroup">
+				{horizonLabel(horizonDays)}
+			</TableCell>
+		</TableRow>
+		{result.sampledWindowDays.map((windowDays) => (
+			<TableRow key={windowDays}>
+				<TableCell component="th" scope="row">
+					{windowDays} days
+				</TableCell>
+			</TableRow>
+		))}
+	</TableBody>
+);
 
 export default RealityCheckPeriodGroup;

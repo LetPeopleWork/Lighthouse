@@ -1,29 +1,28 @@
-import { Button, Stack } from "@mui/material";
+import { Button } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useRef, useState } from "react";
-import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
-import RealityCheckEvidence from "./RealityCheckEvidence";
-import RealityCheckVerdict from "./RealityCheckVerdict";
+import RealityCheckDialog, { type RealityCheckRun } from "./RealityCheckDialog";
 
 interface ForecastRealityCheckProps {
 	teamId: number;
+	teamName: string;
 	applyFilterOverride?: boolean;
 }
 
+const RUNNING: RealityCheckRun = { state: "running" };
+
 const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	teamId,
+	teamName,
 	applyFilterOverride,
 }) => {
 	const { forecastService } = useContext(ApiServiceContext);
-	const { showError } = useErrorSnackbar();
 	const reportUsage = useUsageDataReporter();
-	const [result, setResult] = useState<RealityCheckResult | null>(null);
-	const [isRunning, setIsRunning] = useState(false);
-	const [isEvidenceShown, setIsEvidenceShown] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
+	const [run, setRun] = useState<RealityCheckRun>(RUNNING);
 	// State updates land a render late, so a quick second press would still see "not running".
 	const isRunningRef = useRef(false);
 
@@ -33,52 +32,49 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 		}
 
 		isRunningRef.current = true;
-		setIsRunning(true);
-		setResult(null);
-		setIsEvidenceShown(false);
+		setRun(RUNNING);
 
 		try {
-			setResult(
-				await forecastService.runRealityCheck(teamId, applyFilterOverride),
+			const result = await forecastService.runRealityCheck(
+				teamId,
+				applyFilterOverride,
 			);
+			setRun({ state: "answered", result });
 			reportUsage({ name: UsageDataEventName.TeamForecastRealityCheckRun });
 		} catch (error) {
-			showError(
-				error instanceof Error
-					? error.message
-					: "The reality check could not be run. Please try again.",
-			);
+			setRun({
+				state: "failed",
+				message:
+					error instanceof Error
+						? error.message
+						: "The reality check could not be run. Please try again.",
+			});
 		} finally {
 			isRunningRef.current = false;
-			setIsRunning(false);
 		}
-	}, [forecastService, teamId, applyFilterOverride, showError, reportUsage]);
+	}, [forecastService, teamId, applyFilterOverride, reportUsage]);
+
+	const openAndRun = () => {
+		setIsOpen(true);
+		void runCheck();
+	};
 
 	return (
-		<Stack spacing={2} sx={{ width: "100%" }}>
+		<>
 			<Button
 				variant="contained"
-				onClick={runCheck}
-				loading={isRunning}
+				onClick={openAndRun}
 				sx={{ alignSelf: "flex-start" }}
 			>
 				Run reality check
 			</Button>
-			{result && (
-				<>
-					<RealityCheckVerdict result={result} showsLevels={!isEvidenceShown} />
-					<Button
-						variant="text"
-						aria-expanded={isEvidenceShown}
-						onClick={() => setIsEvidenceShown((shown) => !shown)}
-						sx={{ alignSelf: "flex-start" }}
-					>
-						{isEvidenceShown ? "Hide the evidence" : "Show the evidence"}
-					</Button>
-					{isEvidenceShown && <RealityCheckEvidence result={result} />}
-				</>
-			)}
-		</Stack>
+			<RealityCheckDialog
+				open={isOpen}
+				teamName={teamName}
+				run={run}
+				onClose={() => setIsOpen(false)}
+			/>
+		</>
 	);
 };
 

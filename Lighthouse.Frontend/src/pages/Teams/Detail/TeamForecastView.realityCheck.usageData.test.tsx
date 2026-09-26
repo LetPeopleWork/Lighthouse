@@ -8,7 +8,7 @@ import {
 	pressRunRealityCheck,
 	renderTheForecastTab,
 	setMatchMedia,
-	theAnswerIn,
+	theDialogWithTheAnswer,
 	theRealityCheckDialog,
 } from "../../../tests/RealityCheckFixture";
 
@@ -95,6 +95,7 @@ const runRealityCheck = vi.fn();
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	setMatchMedia(false);
 });
 
 describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a reality check", () => {
@@ -125,7 +126,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 	});
 
 	it(`@error reports a run whose every check was too thin to evaluate, because that is still an answer (${PENDING})`, async () => {
-		await theAnswerIn(
+		await theDialogWithTheAnswer(
 			runRealityCheck,
 			aRealityCheckAnswer({
 				soundWindowDays: [],
@@ -147,7 +148,6 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 					})),
 				),
 			}),
-			/could not run/i,
 		);
 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
@@ -155,7 +155,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 	});
 
 	it(`@error reports a run for a Team that forecasts from fixed dates (${PENDING})`, async () => {
-		await theAnswerIn(
+		await theDialogWithTheAnswer(
 			runRealityCheck,
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
@@ -175,13 +175,14 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		const group = renderTheForecastTab(runRealityCheck);
 
 		await pressRunRealityCheck(group);
-		await screen.findByText(/the reality check could not be run/i);
+		const dialog = await theRealityCheckDialog();
+		await within(dialog).findByText(/the reality check could not be run/i);
 
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
 	it(`never reports a reality check as a forecast run by hand (${PENDING})`, async () => {
-		await theAnswerIn(runRealityCheck, aRealityCheckAnswer());
+		await theDialogWithTheAnswer(runRealityCheck, aRealityCheckAnswer());
 
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 		expect(reportUsage).not.toHaveBeenCalledWith({
@@ -194,7 +195,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
  * Once the answer opens in a dialog (Story 6094, slice 04) the event means an answer somebody was shown.
  * Run again and a reopen that bring an answer each report again; reopening while a check is still running
  * shows that same check and reports it once; an answer that arrives after the dialog was closed was shown
- * to nobody and is not reported. The specs above move into the dialog with it when it is delivered.
+ * to nobody and is not reported.
  */
 const PENDING_DIALOG = "the reality check dialog is not built yet";
 

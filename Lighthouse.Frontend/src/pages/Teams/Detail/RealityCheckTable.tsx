@@ -1,19 +1,28 @@
+import { Table, TableContainer } from "@mui/material";
 import type React from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
-
-// RED scaffold written by DISTILL for Story 6094; DELIVER replaces the body and removes the marker.
-export const __SCAFFOLD__ = true;
+import RealityCheckPeriodGroup from "./RealityCheckPeriodGroup";
 
 interface RealityCheckTableProps {
 	result: RealityCheckResult;
 }
 
+// A plain table, never a data grid: a sortable grid would let a reader rank the sampling windows, and the
+// checks cannot honestly be ranked against each other.
 const RealityCheckTable: React.FC<Readonly<RealityCheckTableProps>> = ({
 	result,
-}) => {
-	throw new Error(
-		`Not yet implemented -- RED scaffold: the table of checks for ${result.teamName}`,
-	);
-};
+}) => (
+	<TableContainer>
+		<Table size="small">
+			{result.sampledHorizonDays.map((horizonDays) => (
+				<RealityCheckPeriodGroup
+					key={horizonDays}
+					result={result}
+					horizonDays={horizonDays}
+				/>
+			))}
+		</Table>
+	</TableContainer>
+);
 
 export default RealityCheckTable;

@@ -4,7 +4,6 @@ import {
 	type NotTestedReason,
 	type RealityCheckCell,
 	type RealityCheckDenominator,
-	type RealityCheckForecastLevel,
 	type RealityCheckLevelCoverage,
 	type RealityCheckSoundWindow,
 	type Standing,
@@ -252,17 +251,6 @@ export const unevaluableRowCopy: Record<
 		"No forecast could be worked out from the history in this window.",
 };
 
-export const bandDescription = (
-	levels: readonly RealityCheckForecastLevel[],
-): string =>
-	`Forecast: ${listOf(levels.map(({ probability, value }) => `${value} at ${probability}%`))}.`;
-
-export const actualDescription = (
-	actualCompleted: number,
-	getTerm: TermGetter,
-): string =>
-	`Actual: ${actualCompleted} ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} completed.`;
-
 const runsLeftOut = ({
 	runsAttempted,
 	runsEvaluated,
@@ -295,7 +283,7 @@ const heldAgainstExpected = (
 	{ confidenceLevel, heldCount, expectedHeldCount }: RealityCheckLevelCoverage,
 	runsEvaluated: number,
 ): string =>
-	`At ${confidenceLevel}% the forecast held in ${heldCount} of ${runsEvaluated} checks, about ${Math.round(expectedHeldCount)} expected`;
+	`${confidenceLevel}th: held ${heldCount} of ${runsEvaluated} (should be about ${Math.round(expectedHeldCount)})`;
 
 // A level between the two extremes gets its two counts and no adjective: checks that are not independent
 // trials give no honest threshold for calling a level well calibrated.
@@ -310,7 +298,7 @@ export const levelReadingCopy: Record<
 	AlwaysHeld: (level, runsEvaluated) =>
 		`${heldAgainstExpected(level, runsEvaluated)} — it held every time, which is under-forecasting.`,
 	NotEvaluated: ({ confidenceLevel }) =>
-		`At ${confidenceLevel}% no check could be run, so this level was not tested.`,
+		`${confidenceLevel}th: no check could be run, so this level was not tested.`,
 };
 
 export const levelLine = (

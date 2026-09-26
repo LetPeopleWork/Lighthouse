@@ -10,8 +10,6 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
-	actualDescription,
-	bandDescription,
 	denominatorStatement,
 	determinationCopy,
 	findings,
@@ -421,7 +419,7 @@ describe("denominatorStatement", () => {
 describe("levelReadingCopy", () => {
 	it("gives a level between the extremes its two counts and nothing more", () => {
 		expect(levelLine(aLevel(), 16)).toBe(
-			"At 85% the forecast held in 14 of 16 checks, about 14 expected.",
+			"85th: held 14 of 16 (should be about 14).",
 		);
 	});
 
@@ -437,7 +435,7 @@ describe("levelReadingCopy", () => {
 				16,
 			),
 		).toBe(
-			"At 95% the forecast held in 0 of 16 checks, about 15 expected — it never held, which is over-forecasting.",
+			"95th: held 0 of 16 (should be about 15) — it never held, which is over-forecasting.",
 		);
 	});
 
@@ -453,7 +451,7 @@ describe("levelReadingCopy", () => {
 				12,
 			),
 		).toBe(
-			"At 50% the forecast held in 12 of 12 checks, about 6 expected — it held every time, which is under-forecasting.",
+			"50th: held 12 of 12 (should be about 6) — it held every time, which is under-forecasting.",
 		);
 	});
 
@@ -468,19 +466,17 @@ describe("levelReadingCopy", () => {
 				}),
 				0,
 			),
-		).toBe("At 70% no check could be run, so this level was not tested.");
+		).toBe("70th: no check could be run, so this level was not tested.");
 	});
 
 	it.each([
-		{ expected: 13.6, printed: "about 14 expected" },
-		{ expected: 11.2, printed: "about 11 expected" },
-		{ expected: 8, printed: "about 8 expected" },
+		{ expected: 13.6, line: "85th: held 14 of 16 (should be about 14)." },
+		{ expected: 11.2, line: "85th: held 14 of 16 (should be about 11)." },
+		{ expected: 8, line: "85th: held 14 of 16 (should be about 8)." },
 	])(
 		"prints the server's expected count $expected rounded to a whole check",
-		({ expected, printed }) => {
-			expect(levelLine(aLevel({ expectedHeldCount: expected }), 16)).toContain(
-				printed,
-			);
+		({ expected, line }) => {
+			expect(levelLine(aLevel({ expectedHeldCount: expected }), 16)).toBe(line);
 		},
 	);
 
@@ -488,7 +484,7 @@ describe("levelReadingCopy", () => {
 		"never uses a retired word nor a renameable term: %s",
 		(reading) => {
 			const line = levelReadingCopy[reading](aLevel({ reading }), 16);
-			expect(line).toMatch(/^At 85%/);
+			expect(line).toMatch(/^85th: /);
 			expect(line).not.toMatch(RETIRED_WORDS);
 			expect(line).not.toMatch(HARD_CODED_TERMS);
 		},
@@ -657,27 +653,6 @@ describe("unevaluableRowCopy", () => {
 	it("still says something when a check that could run brought no forecast back", () => {
 		expect(unevaluableRowCopy.Sufficient(someRowFacts(30))).toBe(
 			"No forecast came back for this check.",
-		);
-	});
-});
-
-describe("bandDescription", () => {
-	it("reads every level's value in the order given", () => {
-		expect(
-			bandDescription([
-				{ probability: 95, value: 31 },
-				{ probability: 85, value: 36 },
-				{ probability: 70, value: 41 },
-				{ probability: 50, value: 48 },
-			]),
-		).toBe("Forecast: 31 at 95%, 36 at 85%, 41 at 70% and 48 at 50%.");
-	});
-});
-
-describe("actualDescription", () => {
-	it("reads the actual count with the renamed work items", () => {
-		expect(actualDescription(42, ticketTerms)).toBe(
-			"Actual: 42 Tickets completed.",
 		);
 	});
 });
