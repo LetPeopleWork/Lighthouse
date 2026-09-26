@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -39,21 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     [Category("slice-01")]
     public class RealityCheckQueryCountTest
     {
-        private const string Pending = "Pending: the Forecast Reality Check is not built yet (epic 4172, slice 01, story 6072).";
-
         private const int DaysOfFinishedWork = 200;
-
-        /// <summary>
-        /// SCAFFOLD: the seam this test needs and the product does not have yet. Spelled out because the
-        /// shape of the seam is the handoff.
-        /// </summary>
-        private const string MissingSweepSeam =
-            "The production reality-check sweep does not exist yet. Replace this seam with a call to the " +
-            "production ForecastRealityCheckService, constructed over the metrics service, forecast service, " +
-            "blackout service and clock handed in here, run once for the Team with the forecast filter " +
-            "skipped. The service takes the resolved Team as a parameter and holds no repository of its own. " +
-            "The Team's filter status for the answer's envelope is read by the controller, as the single " +
-            "back-test reads it, so it is not among the reads counted here.";
 
         private string databaseFile = string.Empty;
 
@@ -81,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // @driving_port @us-01 @real-io @sqlite @kpi-OUT-4172-answer-in-seconds @contract-shape:bounded-change
         [TestCase(30, 20)]
         [TestCase(45, 24)]
-        [Ignore(Pending)]
         public void One_check_on_a_cold_cache_reads_the_Teams_finished_work_once_per_window_it_asks_about(int samplingWindowDays, int expectedReads)
         {
             var reads = new CountsEveryQuery();
@@ -99,8 +85,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         private static void TheProductionSweepRunsOnce(Team team, TeamMetricsService metrics, IForecastService forecasts)
         {
-            _ = (team, metrics, forecasts);
-            throw new AssertionException(MissingSweepSeam);
+            var sweep = new ForecastRealityCheckService(forecasts, metrics, NoBlackoutPeriods(), TestToday.Clock);
+
+            sweep.Run(team, ThroughputFilterMode.SkipFilter);
         }
 
         private static Team GivenATeamThatFinishedWorkEveryDay(LighthouseAppContext context, int samplingWindowDays)
@@ -148,11 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 .Setup(provider => provider.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
 
-            var blackoutPeriodService = new Mock<IBlackoutPeriodService>();
-            blackoutPeriodService
-                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns([]);
-
             var filterRuleService = new Mock<IForecastFilterRuleService>();
             filterRuleService
                 .Setup(service => service.GetEffectiveRuleSet(It.IsAny<Team>()))
@@ -164,10 +146,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 Mock.Of<IRepository<Feature>>(),
                 appSettingService.Object,
                 serviceProvider.Object,
-                blackoutPeriodService.Object,
+                NoBlackoutPeriods(),
                 filterRuleService.Object,
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 TestToday.Clock);
+        }
+
+        private static IBlackoutPeriodService NoBlackoutPeriods()
+        {
+            var blackoutPeriodService = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodService
+                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
+            return blackoutPeriodService.Object;
         }
 
         private static IForecastService ForecastsThatNeverSimulate()

@@ -63,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase("{\"applyFilterOverride\":null}")]
         [TestCase("{\"applyFilterOverride\":false}")]
         [TestCase("{\"applyFilterOverride\":true}")]
-        [Ignore(Pending)]
         public async Task The_check_answers_whether_or_not_the_forecast_filter_choice_is_given(string options)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -94,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @error @real-io @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
