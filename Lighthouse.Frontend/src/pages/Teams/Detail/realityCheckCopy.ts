@@ -276,6 +276,50 @@ export const unevaluableRowCopy: Record<
 		"No forecast could be worked out from the history in this window.",
 };
 
+export interface GradedCellFacts {
+	confidenceLevel: number;
+	forecastValue: number;
+	/** What the Team delivered minus what was forecast. */
+	miss: number;
+	held: boolean;
+}
+
+// A typographic minus, not a hyphen, so a negative miss reads as a number and not as a dash.
+const MINUS = "−";
+
+export const signedMiss = (miss: number): string => {
+	if (miss > 0) {
+		return `+${miss}`;
+	}
+	if (miss < 0) {
+		return `${MINUS}${-miss}`;
+	}
+	return "0";
+};
+
+const missInWords = (miss: number): string => {
+	if (miss > 0) {
+		return `${miss} more delivered`;
+	}
+	if (miss < 0) {
+		return `${-miss} fewer delivered`;
+	}
+	return "exactly as forecast";
+};
+
+export const heldWord = (held: boolean): string =>
+	held ? "held" : "did not hold";
+
+export const heldGlyph = (held: boolean): string => (held ? "✓" : "✗");
+
+export const gradedCellName = ({
+	confidenceLevel,
+	forecastValue,
+	miss,
+	held,
+}: GradedCellFacts): string =>
+	`${confidenceLevel}th: ${forecastValue}, ${heldWord(held)}, ${missInWords(miss)}`;
+
 const runsLeftOut = ({
 	runsAttempted,
 	runsEvaluated,

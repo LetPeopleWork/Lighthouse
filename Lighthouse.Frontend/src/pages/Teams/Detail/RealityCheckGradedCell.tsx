@@ -1,7 +1,12 @@
+import { TableCell } from "@mui/material";
 import type React from "react";
-
-// RED scaffold written by DISTILL for Story 6094; DELIVER replaces the body and removes the marker.
-export const __SCAFFOLD__ = true;
+import {
+	gradedCellName,
+	heldGlyph,
+	heldWord,
+	signedMiss,
+} from "./realityCheckCopy";
+import { missOf } from "./realityCheckGrading";
 
 interface RealityCheckGradedCellProps {
 	confidenceLevel: number;
@@ -12,9 +17,23 @@ interface RealityCheckGradedCellProps {
 
 const RealityCheckGradedCell: React.FC<
 	Readonly<RealityCheckGradedCellProps>
-> = ({ confidenceLevel }) => {
-	throw new Error(
-		`Not yet implemented -- RED scaffold: the ${confidenceLevel}th level of one check`,
+> = ({ confidenceLevel, forecastValue, actualCompleted, held }) => {
+	const miss = missOf({ forecastValue, actualCompleted });
+
+	return (
+		<TableCell
+			aria-label={gradedCellName({
+				confidenceLevel,
+				forecastValue,
+				miss,
+				held,
+			})}
+		>
+			<span>{forecastValue}</span> <span>{signedMiss(miss)}</span>{" "}
+			<span>
+				{heldGlyph(held)} {heldWord(held)}
+			</span>
+		</TableCell>
 	);
 };
 

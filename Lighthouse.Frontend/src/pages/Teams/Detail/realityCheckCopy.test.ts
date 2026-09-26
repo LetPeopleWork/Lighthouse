@@ -14,6 +14,9 @@ import {
 	denominatorStatement,
 	determinationCopy,
 	findings,
+	gradedCellName,
+	heldGlyph,
+	heldWord,
 	horizonLabel,
 	levelLine,
 	levelReadingCopy,
@@ -21,6 +24,7 @@ import {
 	notTestedReasonCopy,
 	periodActual,
 	regionOf,
+	signedMiss,
 	standingCopy,
 	sufficiencyReasonCopy,
 	tableCaption,
@@ -711,5 +715,64 @@ describe("unevaluableRowCopy", () => {
 		expect(unevaluableRowCopy.Sufficient(someRowFacts(30))).toBe(
 			"No forecast came back for this check.",
 		);
+	});
+});
+
+describe("signedMiss", () => {
+	it.each([
+		{ miss: 2, expected: "+2" },
+		{ miss: 11, expected: "+11" },
+		{ miss: 0, expected: "0" },
+		{ miss: -6, expected: "\u22126" },
+	])("reads a miss of $miss as $expected", ({ miss, expected }) => {
+		expect(signedMiss(miss)).toBe(expected);
+	});
+
+	it("never writes a hyphen for a negative miss", () => {
+		expect(signedMiss(-6)).not.toContain("-");
+	});
+});
+
+describe("heldWord and heldGlyph", () => {
+	it.each([
+		{ held: true, word: "held", glyph: "\u2713" },
+		{ held: false, word: "did not hold", glyph: "\u2717" },
+	])("says $word beside $glyph", ({ held, word, glyph }) => {
+		expect(heldWord(held)).toBe(word);
+		expect(heldGlyph(held)).toBe(glyph);
+	});
+});
+
+describe("gradedCellName", () => {
+	it.each([
+		{
+			facts: { confidenceLevel: 50, forecastValue: 48, miss: -6, held: false },
+			name: "50th: 48, did not hold, 6 fewer delivered",
+		},
+		{
+			facts: { confidenceLevel: 70, forecastValue: 40, miss: 2, held: true },
+			name: "70th: 40, held, 2 more delivered",
+		},
+		{
+			facts: { confidenceLevel: 70, forecastValue: 22, miss: 0, held: true },
+			name: "70th: 22, held, exactly as forecast",
+		},
+		{
+			facts: { confidenceLevel: 95, forecastValue: 31, miss: 11, held: true },
+			name: "95th: 31, held, 11 more delivered",
+		},
+	])("reads $name", ({ facts, name }) => {
+		expect(gradedCellName(facts)).toBe(name);
+	});
+
+	it("takes whether it held as given, even where the numbers alone would say otherwise", () => {
+		expect(
+			gradedCellName({
+				confidenceLevel: 85,
+				forecastValue: 36,
+				miss: 6,
+				held: false,
+			}),
+		).toBe("85th: 36, did not hold, 6 more delivered");
 	});
 });

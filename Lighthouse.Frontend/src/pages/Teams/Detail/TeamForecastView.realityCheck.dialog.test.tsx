@@ -341,7 +341,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(linesMatching(eightWeeks, /Work Items completed/)).toHaveLength(1);
 	});
 
-	it.skip(`@kpi-OUT-6094-how-far-each-forecast-landed shows every forecast with its value, its miss in Work Items and whether it held - Ocean Explorer's 30-day row over 8 weeks (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-how-far-each-forecast-landed shows every forecast with its value, its miss in Work Items and whether it held - Ocean Explorer's 30-day row over 8 weeks`, async () => {
 		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
 
@@ -370,7 +370,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(within(levelCell(row, 95)).getByText("+11")).toBeInTheDocument();
 	});
 
-	it.skip(`@boundary a forecast the Team delivered exactly shows a miss of 0 and held (${PENDING})`, async () => {
+	it(`@boundary a forecast the Team delivered exactly shows a miss of 0 and held`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				checks: [
@@ -396,7 +396,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(cell).not.toHaveTextContent(/[+−-]0\b/);
 	});
 
-	it.skip(`@error a check that could not run says why across all four level columns, never blank and never graded - Coastal Survey's 14-day row over 2 weeks (${PENDING})`, async () => {
+	it(`@error a check that could not run says why across all four level columns, never blank and never graded - Coastal Survey's 14-day row over 2 weeks`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 		const row = windowRow(periodGroup(theTableIn(dialog), 14), 14);
 
@@ -410,7 +410,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(row).not.toHaveTextContent(/[✓✗]/);
 	});
 
-	it.skip(`@error a check whose forecast could not be worked out gives its own reason, not the thin-history one (${PENDING})`, async () => {
+	it(`@error a check whose forecast could not be worked out gives its own reason, not the thin-history one`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				unevaluable: [
@@ -433,7 +433,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(row).not.toHaveTextContent(/[✓✗]/);
 	});
 
-	it.skip(`@error @kpi-OUT-6094-how-far-each-forecast-landed a period in which no window could be checked still shows what the Team delivered, and every row its reason (${PENDING})`, async () => {
+	it(`@error @kpi-OUT-6094-how-far-each-forecast-landed a period in which no window could be checked still shows what the Team delivered, and every row its reason`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				unevaluable: STANDARD_WINDOW_DAYS.map((window) => ({
