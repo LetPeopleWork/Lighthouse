@@ -7,6 +7,7 @@ import type {
 	RealityCheckResult,
 } from "../../../models/Forecasts/RealityCheckResult";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import RealityCheckVerdict from "./RealityCheckVerdict";
 
 interface ForecastRealityCheckProps {
 	teamId: number;
@@ -71,9 +72,12 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 				Run reality check
 			</Button>
 			{result && (
-				<Typography variant="body2" color="text.secondary">
-					{denominatorLine(result.denominator)}
-				</Typography>
+				<>
+					<RealityCheckVerdict result={result} />
+					<Typography variant="body2" color="text.secondary">
+						{denominatorLine(result.denominator)}
+					</Typography>
+				</>
 			)}
 		</Stack>
 	);

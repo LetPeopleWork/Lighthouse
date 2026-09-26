@@ -164,7 +164,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(within(group).queryAllByRole("textbox")).toHaveLength(0);
 	});
 
-	it.skip(`every window behaving alike reads as an answer: the whole range, and the setting is fine (${PENDING})`, async () => {
+	it(`every window behaving alike reads as an answer: the whole range, and the setting is fine (${PENDING})`, async () => {
 		const group = await theVerdictFor(aRealityCheckAnswer());
 
 		expectALine(group, /between 14 and 90 days/i);
@@ -175,7 +175,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		).toHaveLength(0);
 	});
 
-	it.skip(`Deep Current's 14 days sits outside a range and is told so (${PENDING})`, async () => {
+	it(`Deep Current's 14 days sits outside a range and is told so (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				teamName: "Deep Current",
@@ -190,7 +190,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expectALine(group, /current 14\b.*not inside that range/i);
 	});
 
-	it.skip(`@error a region with a hole in it is listed window by window, never as a span that would claim the gap (${PENDING})`, async () => {
+	it(`@error a region with a hole in it is listed window by window, never as a span that would claim the gap (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
@@ -205,7 +205,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expectALine(group, /current 45\b.*not inside/i);
 	});
 
-	it.skip(`@error a window that could not be checked in the middle of the ladder breaks the range, and is named as not checked rather than as not holding up (${PENDING})`, async () => {
+	it(`@error a window that could not be checked in the middle of the ladder breaks the range, and is named as not checked rather than as not holding up (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 60,
@@ -221,7 +221,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(linesMatching(group, /30-day.*not inside/i)).toHaveLength(0);
 	});
 
-	it.skip(`@error when no window held up the sentence says so and names no least-bad window (${PENDING})`, async () => {
+	it(`@error when no window held up the sentence says so and names no least-bad window (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				teamName: "Deep Current",
@@ -328,7 +328,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(linesMatching(group, /between \d+ and \d+ days/i)).toHaveLength(0);
 	});
 
-	it.skip(`@error a Team forecasting from fixed dates still gets the region, and no claim about a setting that was not tested (${PENDING})`, async () => {
+	it(`@error a Team forecasting from fixed dates still gets the region, and no claim about a setting that was not tested (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
