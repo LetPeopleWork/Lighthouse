@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @walking_skeleton @driving_port @driving_adapter @real-io @us-01 @kpi-OUT-4172-never-overclaims @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -149,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Every_check_ends_today_and_reaches_back_by_its_own_length()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -165,7 +163,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -180,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(30)]
         [TestCase(60)]
         [TestCase(90)]
-        [Ignore(Pending)]
         public async Task A_Team_whose_window_is_on_the_standard_ladder_is_checked_sixteen_times(int samplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);

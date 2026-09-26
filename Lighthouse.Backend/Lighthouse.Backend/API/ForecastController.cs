@@ -233,6 +233,23 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpPost("reality-check/{teamId:int}")]
+        [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
+        public ActionResult<RealityCheckResultDto> RunRealityCheck(
+            int teamId,
+            [FromBody] RealityCheckInputDto input,
+            [FromServices] IForecastRealityCheckService realityCheckService)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            {
+                var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
+                var result = realityCheckService.Run(team, mode);
+                var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
+
+                return result with { FilterApplied = status.FilterApplied, ExcludedSummary = status.ExcludedSummary };
+            });
+        }
+
         public class ManualForecastInputDto
         {
             public int? RemainingItems { get; set; }

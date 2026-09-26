@@ -1372,6 +1372,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IProcessBehaviorSeriesQuery, GapAskingProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
+            builder.Services.AddScoped<IForecastRealityCheckService, ForecastRealityCheckService>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();
             builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();
             builder.Services.AddScoped<IFeatureOrdering, FeatureOrdering>();
