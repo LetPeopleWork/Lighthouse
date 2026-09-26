@@ -808,3 +808,81 @@ E5, the Open Questions table, "What DESIGN Found Wrong", the handoff, and the R-
 `docs/product/architecture/brief.md` · this file.
 
 **No implementation code written. Epic #4172 stays `Planned`; its three Stories stay `New`.**
+
+---
+
+## DEVOPS
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-09-26 · **Interaction mode**: Propose
+(autonomous; Decisions 1-9 settled by the project and not re-asked) · **Density**: lean, no expansion
+triggers declared by the wave, so no menu.
+**Predecessor**: DESIGN (complete, including revision DR-D1..DR-D6). **Successor**: DISTILL.
+
+### Artifacts produced
+
+| Path | What it holds |
+|---|---|
+| `feature-delta.md` (appended) | Thirteen `## Wave: DEVOPS / [REF]` sections, from Prior Wave Consultation to Handoff to DISTILL |
+| `feature-delta.md` DISCUSS Definition of Done | **Item 15 added**, marked as a DEVOPS addition: the usage-data event ships in slice 01 |
+| `environments.yaml` | **NEW.** One target environment (`clean`), the two real stores CI runs E2E on, the usage-data consent states, coexistence matrix |
+| `slices/slice-01-…md` | IN scope gains the usage-data event step, marked as a DEVOPS addition |
+| `docs/product/kpi-contracts.yaml` | Five `OUT-4172-*` entries appended, all `designed-not-shipped`; `updated:` moved to 2026-09-26 |
+
+No `upstream-changes.md`: nothing here changes DESIGN.
+
+### Key decisions
+
+- **[DV-OPS-1] No platform change.** No container, store, queue, secret, configuration key, dependency or
+  workflow. The existing pipeline carries it; `Architecture/` tests already run on every push.
+- **[DV-OPS-2] No migration — confirmed.** DESIGN's "none" holds; the event persists nothing either.
+  Rollback is redeploying the previous image, and leaves nothing behind.
+- **[DV-OPS-3] The usage-data event is `TeamForecastRealityCheckRun = 11`, name only.** Fired from the
+  browser after a run returns a result — thin-history results included, failed requests excluded. Owned
+  by slice 01 (#6072). Rejected: carrying the current setting's standing. No KPI needs it, it would be
+  the first event reporting a result computed from a customer's Work Items (a consent-copy change, not an
+  engineering one), and every property widens every layer of the pipe.
+- **[DV-OPS-4] The R-1 probe stays `[Explicit]`.** Wall clocks do not travel between machines. Recommended
+  to DISTILL instead: a non-explicit **query-count** test on the production service (20 / 24), which is
+  machine-independent and catches a per-cell actual read.
+- **[DV-OPS-5] Keep the real Monte Carlo out of most acceptance scenarios.** Coverage instrumentation makes
+  one sweep ~5 s in CI. No wall-clock assertions.
+- **[DV-OPS-6] O2 stays manual.** Its target population (dev and demo instances) is the one usage data
+  excludes, and no event carries a Team. The event serves a new outcome, use outside the vendor.
+
+### Infrastructure summary
+
+- Deployment: existing calver release, image replaced on upgrade (recreate). No canary, no flag.
+- CI/CD: GitHub Actions, existing `ci.yml`; trunk-based, push to `main`. Slice 01's `Program.cs`
+  registration will force the full live-connector suite once — expected, not a defect.
+- Observability: opt-in usage data to PostHog (one new name) plus existing structured logs. No alerting.
+- Mutation testing: per-feature, Stryker.NET + StrykerJS, ≥ 80 %, acceptance suite excluded, last on
+  frozen code.
+
+### Found and recorded, not fixed
+
+- **The probe's horizons are `[14, 28, 42, 56]`; the contract's are `[7, 14, 28, 56]`**, and it ran three
+  samples where AC-1.1 asks for twelve. R-1's conclusion stands (the probe over-states the cost), but the
+  701 ms is not a measurement of the contract. AC-1.1's slice 01 confirmation should use the contract.
+- **A 7-day horizon contradicts DISCUSS's "the 14-day minimum survives as a property of the 2-week
+  horizon".** For DISTILL to reconcile.
+- **The slice briefs lag DESIGN** (sixteen-only counts, "range plus a boolean", "no fifth panel",
+  "beaten"). `feature-delta.md` is the source of truth.
+
+### Questions for the maintainer (none blocks DISTILL)
+
+U-1 verdict distribution in the field (recommended no) · U-2 a Copy-as-Markdown event for O5 (recommended
+not now) · U-3 the website privacy notice does not name the connector-kind and setting fields the pipe
+already sends (legal-copy judgement).
+
+### Gates
+
+| Gate | Verdict |
+|---|---|
+| Prior-wave consultation with read checklist | **PASS** |
+| Contradiction check against DESIGN | **PASS** — none; three intra-artifact discrepancies recorded |
+| Environment inventory | **PASS** — `environments.yaml` |
+| Every Outcome KPI has an instrument or an explicit "manual, because" | **PASS** — eleven rows |
+| Rollback designed before rollout | **PASS** |
+| Per-wave peer review | **Not run** — no trigger fires; the consolidated review runs at the end of DISTILL |
+
+**No code written, nothing committed. Epic #4172 stays `Planned`; its three Stories stay `New`.**

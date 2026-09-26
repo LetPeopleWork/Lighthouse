@@ -1098,6 +1098,10 @@ mandatory consolidated review fires at the end of DISTILL.
 13. **No write path ships.** If any slice introduces an endpoint or a control that mutates a Team setting,
     Apply has been reintroduced and D4 has been violated.
 14. ADO Epic #4172 and its child Stories transitioned; **the Epic stops at Resolved, never Closed.**
+15. *(Added by DEVOPS, 2026-09-26.)* **The usage-data event `TeamForecastRealityCheckRun` (value 11,
+    name only) ships in slice 01**, reported from the browser after a run comes back with a result, and
+    `docs/settings/usagedata.md` lists it in the same commit as the enum member. See "Usage-data event"
+    under DEVOPS.
 
 ---
 
@@ -2072,3 +2076,393 @@ count of 24.
 **What the number is not.** SQLite, in-process, one machine, no Kestrel, no serialisation, no concurrent
 load. It measures the sweep's own cost, which is what R-1 asked — a loaded production instance will be
 slower, and the 20,000-item row has less headroom than it looks.
+
+---
+
+# DEVOPS
+
+**Wave**: DEVOPS · 2026-09-26 · Apex (`nw-platform-architect`), interaction mode **PROPOSE** · density
+`lean`, `expansion_prompt: ask-intelligent`. DEVOPS declares no expansion triggers, so no menu is offered
+and no Tier-2 section is rendered. (The density-telemetry helper the skill names,
+`scripts/shared/telemetry.py`, is not installed in this environment, so no skip event was written.)
+
+Decisions 1-9 are settled by the project and were not re-asked: Docker image plus signed standalone builds,
+published as a GitHub release · no new container · GitHub Actions, existing workflows only · existing
+infrastructure **and** existing CI/CD, so this wave extends and never redesigns · observability is the
+opt-in usage-data pipe (Epic #5733) to PostHog plus the existing structured logging · the existing calver
+release with a recreate-style image replace · no feature flags and no A/B · trunk-based, pushed straight to
+`main` · per-feature mutation testing, already in `CLAUDE.md` and not rewritten.
+
+**The honest summary is the one DESIGN gave: there is almost no platform work.** One thing is new, and it
+was asked for by the maintainer: a usage-data event when somebody runs the check. Most of this section is
+about that event.
+
+---
+
+## Wave: DEVOPS / [REF] Prior Wave Consultation
+
+| Source | State |
+|---|---|
+| `CLAUDE.md` (project) | ✓ read whole |
+| `docs/ci-learnings.md` (1 800 lines) | ✓ headings, the mandatory pre-push command, the whole preflight checklist, and the entries on wall-clock budgets in CI (2026-08-23), ArchUnit in Release (2026-08-22) and cache warming (2026-07-24) |
+| `feature-delta.md` DISCUSS: Locked Decisions, US-01..03 with ACs, Story Map, Out of Scope, Project Checklist, **Outcome KPIs**, Pre-requisites, DoR, **Definition of Done**, **Risks Carried Forward** | ✓ read |
+| `feature-delta.md` DESIGN: every section from Prior Wave Consultation to "R-1, measured", including DES-1..DES-13, the R-1 budget, C4 L1/L2, driving and driven ports, the response contract, Architecture Enforcement E1-E7, Quality Attributes, Open Questions (OQ-1..OQ-6), Handoff | ✓ read |
+| `wave-decisions.md` (810 lines) | ✓ DISCUSS revision, ADO mapping, DESIGN, DESIGN revision DR-D1..DR-D6 |
+| `slices/slice-01…md`, `slice-02…md`, `slice-03…md` | ✓ read whole |
+| ADR-209, ADR-210 | ✓ read (209 whole, 210 context and decision) |
+| ADR-190 (usage-data pipe), ADR-191 (pseudonymous identity) | ✓ context and constraints; ADR-191 via `ARCHITECTURE.md` §10 |
+| `RealityCheckWallClockProbe.cs` (`Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/`) | ✓ read — `[Explicit]`, three `TestCase`s, its own copy of the sweep |
+| Usage-data pipe, backend: `UsageDataEventName`, `UsageDataEventShapes`, `UsageDataEventReported`, `UsageDataEventBatchDto`, `UsageDataGate` (allowance), `PostHogUsageDataPublisher` (name serialisation) | ✓ read |
+| Usage-data pipe, frontend: `UsageDataService.ts`, `usageDataReporter.ts`, the `TeamManualForecastRun` call site in `TeamForecastView.tsx` | ✓ read |
+| Pinning tests: `UsageDataDisclosureTest`, `Slice04ProductEventsTests` (`EventsThatCarryNothingButTheirName`, `EveryEventThereIs`) | ✓ read |
+| `docs/settings/usagedata.md` (the public list of everything collected) | ✓ read |
+| `docs/feature/optional-feature-toggled-usage-event/feature-delta.md` — the most recent event added to the pipe, used as the touch-list precedent | ✓ read |
+| `docs/product/kpi-contracts.yaml` | ✓ exists; header and the four `OUT-usagedata-*` entries read |
+| `.github/workflows/ci.yml`, `ci_backend.yml` (test filter), `Scripts/test-selection/path-classifier.sh` | ✓ read |
+| Website privacy notice (`/storage/repos/website/src/components/LegalInfoDialog.tsx` §6) | ✓ read — it describes what is received by category and points at the Lighthouse docs page for the list |
+| `docs/feature/epic-4172-*/discuss/outcome-kpis.md`, `…/design/` | ⊘ do not exist — this feature keeps everything in `feature-delta.md` |
+
+**Contradictions with DESIGN checked for.** None of the DEVOPS decisions below contradicts DESIGN. Three
+discrepancies *inside* the prior artifacts were found while reading and are recorded under Changed
+Assumptions; none of them changes an architectural decision.
+
+---
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+| Environment | Platform | Preconditions | Why it is (or is not) an axis |
+|---|---|---|---|
+| **clean** | linux, macos | A Team with completed Work Items in the database | The only target environment. Nothing is stored (ADR-209), so no run can start from anything but clean |
+| EF InMemory | test only | — | Backend unit and `WebApplicationFactory` tests. No query counting, no foreign keys |
+| SQLite | `ci_verifysqlite.yml` | — | Real store; the Playwright suite runs here |
+| PostgreSQL | `ci_verifypostgres.yml` | — | Real store; the Playwright suite runs here too |
+
+The two real stores are **not** a parametrization axis for acceptance tests: DESIGN establishes no
+provider-specific SQL and no migration. They are named so DISTILL knows the walking skeleton runs twice in
+CI. The usage-data consent states the new event must be asserted across are in `environments.yaml`.
+
+**Coexistence with a prior install: N/A, because** the feature stores nothing and adds no configuration.
+There is no older state for a new version to meet.
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+**No new workflow, no new job, no new step.** The feature rides the existing pipeline.
+
+| Stage | Where | What this feature relies on |
+|---|---|---|
+| Local, before commit | developer machine | `dotnet build` (zero warnings), the connector-excluded `dotnet test`, `pnpm test`, `pnpm build` (Biome runs as `prebuild`) |
+| Local, before push | developer machine | `dotnet format analyzers … --verify-no-changes` over every touched **and new** `.cs` file, per the ledger. Run before `git push`, not after |
+| Commit stage | `ci.yml` → `ci_backend.yml`, `ci_frontend.yml` | Every push to `main`. The backend always runs `Category!=Integration`, which **includes `Architecture/`** — so the new read-only rule (E1) and the usage-data pins run on every push |
+| Quality gate | `ci_sonar_gates.yml` | `new_violations = 0`. Skipped if the backend job is red, so a red backend ships unjudged |
+| Build | `ci_packageapp.yml`, `ci_docker.yml`, standalone packaging | Unchanged |
+| Acceptance | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | The Playwright walking skeleton for the check, once per store |
+| Release | calver release, deployment approval | Unchanged. A `waiting` run on `main` is the deploy approval, not a missing gate |
+
+**Two things about this feature's cost in CI that are not visible from the diff:**
+
+1. **Slice 01 will force the full live-connector suite once.** Registering `IForecastRealityCheckService`
+   is a line in `Program.cs`, and `Program.cs` is on the shared-path whitelist in `path-classifier.sh`. The
+   push that lands it runs every `Category=Integration` test — Jira, ADO, Linear, ServiceNow and the
+   unauthenticated GitHub pair. Expect it; a red GitHub pair on a rate limit is not this feature's defect.
+2. **The Monte Carlo is about seven times slower in CI than locally**, because `ci_backend.yml` runs under
+   coverage instrumentation (`[Lighthouse]*`), and a simulation loop is the worst case for it (ledger,
+   2026-08-23). One real sweep costs ~0.7 s on a workstation and roughly 5 s on the agent. **DISTILL should
+   run the real engine end to end in a handful of scenarios only** and drive the verdict rules through the
+   pure `RealityCheckVerdictPolicy`, or through a stubbed `IForecastService`. **No scenario may assert a
+   wall clock.**
+
+### The R-1 probe stays `[Explicit]` — decided, with one addition recommended
+
+`RealityCheckWallClockProbe` answered R-1 by measurement (701 ms cold median against a 5 000 ms budget, 20
+queries at every data volume). It is `[Explicit]`, so no CI filter selects it, and that is correct: a wall
+clock measured on one machine says nothing on another, and the ledger has already paid for learning that a
+5× margin fails on an agent that is 10-20× slower.
+
+**What is worth promoting is the query count, not the time.** The count is machine-independent, and it is
+the one number that catches the regression DESIGN predicted — an implementation that reads the actual
+completed count per cell rather than per horizon shows 25 queries instead of 24. The probe cannot catch that
+today because it runs **its own copy** of the sweep, not the production service. **Recommended to DISTILL,
+not required:** one ordinary (non-`[Explicit]`) backend test that drives the *production*
+`ForecastRealityCheckService` over a small SQLite fixture with a cold cache and asserts **20 queries for a
+Team on the standard ladder and 24 for a Team at 45 days**. It asserts no time. It costs one real sweep
+per case in CI. The `[Explicit]` probe keeps the wall clock, and DESIGN's recommended twenty-cell case
+belongs there as a fourth `TestCase`.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring contracts
+
+One row per Outcome KPI from DISCUSS. Most of them are properties of the artifact, held by tests in CI
+rather than measured in the field — which is the right place for a property that must hold for every
+rendered result.
+
+| KPI (DISCUSS) | Instrument | Where it runs | Field-measurable? |
+|---|---|---|---|
+| **O1** — answer within 5 s median / 10 s max | `RealityCheckWallClockProbe` (`[Explicit]`), and the AC-1.1 confirmation written into the slice 01 brief | By hand, on one machine | **No, by decision.** Usage data carries no durations, and adding one would be a new field on every layer of the pipe for a number the probe already answers. Structured request logging already records the endpoint's duration per instance |
+| **O4** — denominator and non-comparability on screen, 100 % of results | AC-1.5 / AC-2.5 acceptance tests | CI, every push | No — asserted |
+| **O4b** — no winner named, 0 fields and 0 strings | E5 over the DTO (NUnit); a Vitest check on rendered copy | CI, every push | No — asserted, and structurally non-representable (DES-2) |
+| **O6** — no unevaluable cell blank or read as a result | AC-1.7 / AC-2.3 tests; E6 exhaustive `Record<Enum,…>` maps | CI — the TypeScript compiler and Vitest | No — asserted |
+| **§4.3** — held-count against expected-count at 4 of 4 levels | AC-1.6 / AC-2.4 tests; `RealityCheckVerdictPolicy` value-in/value-out tests | CI, every push | No — asserted |
+| **O2** — at least 3 Teams checked within 30 days of release, on dev and demo instances | **The dogfooding record in the slice briefs.** Manual | Maintainer | **Not by usage data, and not for this target.** The target population is exactly the population the pipe excludes: a build nobody published sends nothing, and the vendor's own instance is excluded from every ratio. The event also never carries a Team, so it cannot count Teams anywhere. See the next row |
+| *new* — **the check is used outside the vendor** | **`TeamForecastRealityCheckRun`**, the usage-data event designed below | Released instances whose browser agreed | **Yes**, as a floor: distinct consenting browsers that ran the check, per 30-day window. Counts browsers, not installations and not Teams |
+| **O5** — at least one one-pager shared externally within 60 days | Manual — the maintainer's own use and community mentions | Maintainer | No. A "copied as Markdown" event was considered and not designed; see Open question U-2 below |
+| **No write path** — 0 endpoints, 0 controls | E1, `RealityCheckReadOnlyArchUnitTest` in `Lighthouse.Backend.Tests/Architecture/`; AC-1.9 | CI, every push — `Architecture/` runs under `Category!=Integration` | No — structural |
+| **Engine drift** — 0 | The existing forecast assertions, unedited, before and after slice 01; E4 (`ForecastDataSufficiencyPolicy.cs` byte-unchanged) reviewed in the diff | CI, every push | No — asserted |
+| **Mutation kill rate** ≥ 80 % | Stryker.NET and StrykerJS, per feature, acceptance suite excluded | By hand, last, on frozen code | No — per delivery |
+
+**Alerting: none, deliberately.** A self-hosted product has no central on-call, the endpoint writes nothing
+that could corrupt, and every guardrail above is a failing build rather than a page.
+
+---
+
+## Wave: DEVOPS / [REF] Usage-data event — `TeamForecastRealityCheckRun`
+
+**The maintainer's explicit ask**: know when somebody runs the Reality Check. The pipe is live on `main`
+and was built to answer exactly this kind of question ("did anyone ever use the thing we spent a month
+on"), so the event goes through it unchanged.
+
+### The design
+
+| | Decision |
+|---|---|
+| **Name** | `TeamForecastRealityCheckRun`. House naming is *owner + thing + past-tense verb*, and the nearest sibling is `TeamManualForecastRun`; the feature's product name is *Forecast Reality Check* |
+| **Integer** | **`11`**, appended at the end of `UsageDataEventName`. Never renumber: the TypeScript mirror sends the *word*, but the backend reads integers too, and a renumbered member would silently name a different event |
+| **Where it fires** | In the browser, in the new `ForecastRealityCheck` card, **after `forecastService.runRealityCheck` has resolved with a result**, through `useUsageDataReporter()`. Never on the press, never in the `catch`, and with no consent branch at the call site — the hook already does nothing for a browser that has not agreed |
+| **What counts** | **Every run that came back with a result — including one whose cells were all unevaluable, and one for a Team on fixed sampling dates.** A run whose request failed (network, 4xx, 5xx) does **not** count |
+| **Properties** | **None. Name only**, like `TeamManualForecastRun`. No Team, no sampling window, no cell count, no standing, no outcome |
+| **Owning slice** | **Slice 01 — ADO Story #6072.** That is where the check first becomes runnable. It is a DELIVER step; nothing is implemented in this wave |
+
+### Why a thin-history run counts and a failed request does not
+
+The event means *somebody got a reality check back*. That is the same line `TeamManualForecastRun` draws
+("after the forecast came back, not when it was asked for"). A response saying "this Team's history is too
+thin to check most windows" **is** the check's answer — D9 and ADR-194 make the unevaluable state a
+first-class result, rendered in words, never blank. Leaving those runs out would bias the count towards
+Teams with long histories and make the feature look least used exactly where its warning matters most.
+Telling the two kinds of run apart would also need the outcome property rejected below.
+
+A failed request gave the user nothing. Its count belongs in the server's own logs, which already record
+it, not in a record of what people use.
+
+### Why name-only and not the standing of the current setting
+
+The obvious candidate for a property is DES-4's tri-state — `Inside | Outside | NotDetermined` — which
+would say how often a Team's sampling window turns out to be wrong in the field. It is rejected, for four
+reasons in descending weight:
+
+1. **No Outcome KPI needs it.** The KPI the event serves is "is the check used outside the vendor", and a
+   name answers that completely. The closest thing to a question the standing would answer — slice 01's
+   learning hypothesis 3, *"the null result may be the answer for every Team"* — is answered by dogfooding
+   before slice 02, long before a field population exists to count.
+2. **It would be the first event that reports a result computed from the customer's own Work Items.**
+   Every event today says that somebody *did* something, plus at most a fixed fact about the product
+   (which tab, which connector kind, which setting). The public page promises the nearest sibling carries
+   "not what was asked, not what came back"; the website's privacy notice says "we do not receive any of
+   your content" and describes what *is* received as the name of the action. A verdict about a Team's
+   delivery history is not content in the narrow sense, but it is derived from nothing else, and it is a
+   change to what people agreed to that the maintainer would have to make deliberately, in the consent copy
+   first. Name-only keeps the event inside what both pages already say.
+3. **Every property widens every layer.** The last property added (`OptionalFeatureToggled`) touched the
+   record, the DTO, `UsageDataEventShapes`, the controller, the publisher, the emit-seam ArchUnit list, two
+   TypeScript types and the buffer. A name-only event touches none of those: an event absent from every
+   declaration in `UsageDataEventShapes` is already refused if it carries anything.
+4. **A count of `Outside` would be read as a quality score for the feature**, when it is a fact about
+   Teams, and would invite exactly the kind of league table D6 forbids.
+
+**Revisit trigger:** the maintainer wants the field distribution of verdicts. Then it is a separate
+decision, taken consent-copy first, with its own closed enum — not a property added in passing.
+
+### What slice 01's DELIVER owes, in order (backend first)
+
+Backend before frontend within the slice, as the precedent did: a browser that posts a name the server
+cannot read gets its **whole batch** refused, so the server must know the name before any bundle sends it.
+In production the two always ship together in one image, so the ordering matters only between commits on
+`main`.
+
+1. `Models/UsageData/UsageDataEventName.cs` — append `TeamForecastRealityCheckRun = 11`.
+2. **Same commit:** `docs/settings/usagedata.md` gains one event row, or
+   `UsageDataDisclosureTest.EveryEventTheProductCanSend_HasALineOnThePage` goes red — it counts the enum
+   against the page's rows. Proposed row, in the page's own voice:
+   *A forecast reality check was run* | *Somebody pressed **Run reality check** on a Team's Forecast tab and
+   got an answer back — including an answer that said the history was too thin to check. **Never a check
+   that failed to come back*** | *Nothing. **Not which Team, not its sampling window, not what the check
+   found***.
+   The counts on the same page move with it and must be re-grepped rather than trusted: *"Seven of the
+   eleven carry nothing"* becomes *eight of the twelve*; *"On the other nine events"* (tab field) becomes
+   *ten*; *"On the other ten events"* (both setting fields) becomes *eleven*.
+3. `Lighthouse.Backend.Tests/Integration/UsageData/Slice04ProductEventsTests.cs` — add the name to
+   `EventsThatCarryNothingButTheirName`, so the administrator-veto and refusing-browser sweeps cover it and
+   `Nothing_travels_with_an_event_beyond_what_the_page_says_travels` judges it. No new test class is needed
+   for the backend half.
+4. `Lighthouse.Frontend/src/services/Api/UsageDataService.ts` — `TeamForecastRealityCheckRun:
+   "TeamForecastRealityCheckRun"` in the `UsageDataEventName` object. **The value is the word, never a
+   number**: enums serialise as strings outbound, so a numeric mirror compared against what the server
+   sends is always false.
+5. The call site in the new `ForecastRealityCheck` component, after the awaited result; nothing in the
+   `catch`.
+6. **A frontend call-site test.** The shipped `TeamManualForecastRun` call site has no page-level test —
+   `useUsageDataReporter` is exercised only by its own unit test, `OverviewDashboard` and
+   `SystemSettingsTab`. A seam between two tested ends is where coverage goes missing, so this one gets a
+   test: reported once after a result, not on the press, not on a failed request.
+7. `docs/product/kpi-contracts.yaml` — flip `OUT-4172-reality-check-used-outside-the-vendor` to
+   `live-on-release`, and move the header's "eleven named events" to twelve with a one-line description of
+   the new one.
+
+Unchanged, and worth saying so a reviewer does not go looking: `UsageDataEventShapes`,
+`UsageDataEventReported`, `UsageDataEventBatchDto`, `UsageDataController`, `PostHogUsageDataPublisher` (it
+sends `Name.ToString()`), `UsageDataEmitSeamArchUnitTest`'s field list, `UsageDataPayloadPurityTest`, the
+PostHog project (an event name is created on first arrival), and the daily event allowance (a button a
+human presses a few times a day is noise against it).
+
+---
+
+## Wave: DEVOPS / [REF] Deployment strategy
+
+**The existing release, unchanged: a calver release, and the running image replaced by the next one
+(recreate).** No canary and no flag: the feature is read-only, stores nothing and adds one route, so there
+is nothing a partial rollout would protect.
+
+**Rollback contract, written first:** redeploy the previous release's image. Nothing is persisted (ADR-209),
+there is **no migration** (DoD 7 — confirmed; DESIGN's "none" holds, and the shipped
+`ExpandOnlyMigrationGuard` would judge one if it appeared), no configuration key and no secret, so a
+rollback leaves nothing behind and needs no data step. Usage-data events already forwarded stay at the
+collector under its retention period, which is the standing behaviour for every event.
+
+**Post-deploy validation:** run the check once on a Team on the released instance and read the sentence.
+The first `TeamForecastRealityCheckRun` can only appear after a published release, because an unpublished
+build sends nothing.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+**per-feature**, as `CLAUDE.md` already records — not rewritten. Stryker.NET on the backend, StrykerJS on
+the frontend, **≥ 80 %**, run **last, on frozen code**, because any later edit shifts the line and byte
+ranges the configs target. **Both configs must exclude the acceptance suite** (a run that includes it takes
+~80 minutes instead of ~3), and both are gitignored, so they are re-anchored per slice and force-added when
+committed. Primary targets: `RealityCheckVerdictPolicy` and `ForecastRealityCheckService` on the backend;
+the verdict composer and `realityCheckToMarkdown` on the frontend. The one-line usage-data additions are
+covered by the existing pins rather than by mutation.
+
+---
+
+## Wave: DEVOPS / [REF] Observability stack
+
+| Signal | Tool | This feature |
+|---|---|---|
+| Product usage | Opt-in usage data → our backend → PostHog (Cloud EU) | One new event name, `TeamForecastRealityCheckRun`. No new vendor, no new field |
+| Logs | Existing structured ASP.NET Core logging, per instance | Nothing new. A failed request is logged by the existing pipeline |
+| Metrics | None beyond the above for this product | Not applicable: a self-hosted product with no central metrics collection |
+| Traces | None | Not applicable, for the same reason |
+
+---
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+**Trunk-based.** Commits are pushed straight to `origin main`; no branch and no pull request. `ci.yml`
+triggers on push to `main` (and `features/**`), which is the only trigger this feature uses. Every commit on
+`main` must be green on its own, which is why the usage-data enum member and its disclosure row land in
+**one** commit.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Must keep working | Risk from this feature | Held by |
+|---|---|---|
+| The shipped single backtest and `BacktestForecaster` in the same group | The card sits above its date pickers; the shipped contract is not widened | DESIGN reuse row 12; existing tests unedited |
+| `TeamManualForecastRun` | The check must never travel through the manual-forecast path, or one press would report two events | The slice 01 call-site test |
+| The shared per-Team metrics cache | A sweep warms up to 24 window-keyed entries. It is a user-initiated read like any widget, so its exposure during a Team refresh is the same as any widget's; it adds no invalidation and needs none. The ledger's 2026-07-24 rule is about *event handlers* that read through the cache, which this is not | No new mechanism |
+| `ThroughputQuickSetting` | None — untouched by design (D4) | — |
+| The usage-data pipe | One enum member at value 11 | `UsageDataDisclosureTest`, `Slice04ProductEventsTests`, `UsageDataPayloadPurityTest` |
+| Lighthouse-Clients CLI / MCP | **N/A, because** neither client touches usage data and D12 declines any client exposure of the check | — |
+| The website | **N/A, because** its privacy notice describes what is received by category and points at `docs/settings/usagedata.md` for the list; a name-only event fits the category "the name of the action taken" | — |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+| # | DESIGN constraint the platform must satisfy | State |
+|---|---|---|
+| PR-1 | No new container, store, queue, secret or configuration | **Satisfied** — nothing added |
+| PR-2 | No EF migration | **Satisfied** — none needed; the usage-data event persists nothing either |
+| PR-3 | The read-only rule (E1) runs on every push | **Satisfied** — `Architecture/` runs under the always-on `Category!=Integration` filter. Verify the new ArchUnit test in **Release** before pushing: CI builds `-c Release`, and a dependency edge that exists only inside an `async` method vanishes there (ledger, 2026-08-22) |
+| PR-4 | E3 — no `DateTime.UtcNow` in the feature | **Satisfied** — the shipped `CalendarDayAnchorSeamArchUnitTest` covers the assembly |
+| PR-5 | The usage-data pipe is on `main` | **Satisfied** — ten events live, the eleventh (`OptionalFeatureToggled`, value 10) shipped 2026-09-24 |
+| PR-6 | R-5 — one human page-load of the source article before anything is quoted publicly | **Open, DELIVER gate** — unchanged by this wave |
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+**1. DISCUSS O2 said "usage data only if consent exists". Refined, not changed.** The DISCUSS row reads:
+*"O2 — Teams whose window has been checked … Measured by: Dogfooding record in the slice briefs; usage data
+only if consent exists."* Usage data **cannot** measure O2 as targeted: the target population (dev and demo
+instances) is the one the pipe excludes, and no event carries a Team. O2 stays manual. The event serves a
+**new** outcome instead — use outside the vendor — recorded in `kpi-contracts.yaml` as
+`OUT-4172-reality-check-used-outside-the-vendor`.
+
+**2. Slice 01 gains a step, and the Definition of Done gains an item.** The slice brief's IN scope now
+lists the usage-data event and its disclosure row, and DISCUSS's Definition of Done gains item 15. Both
+edits are marked as DEVOPS additions in place. D8 is untouched: the event stores nothing in Lighthouse.
+
+**3. Found while reading, not caused by this wave — for DISTILL to reconcile, not for DEVOPS to fix:**
+
+- **The probe measured different horizons from the contract.** `RealityCheckWallClockProbe` sweeps
+  horizons `[14, 28, 42, 56]` days; the response contract (DES-11) and DES-6 say `[7, 14, 28, 56]`. The
+  Monte Carlo cost is linear in the number of days forecast, so the probe did 140 horizon-days of work
+  where the contract does 105. **R-1's conclusion stands and gets safer** — the measured 701 ms is an
+  over-estimate of the contract's sweep — but the number in DESIGN is not a measurement of the contract.
+  It also ran three samples per volume where AC-1.1 asks for twelve. AC-1.1's confirmation in slice 01
+  should run against the production service with the contract's horizons and twelve samples.
+- **A 1-week horizon and DISCUSS's "14-day minimum survives as a property of the 2-week horizon" (S2,
+  reuse row 13) cannot both be true.** With a 7-day horizon the shortest scored period is 7 days, not 14.
+  DESIGN did not reopen it and nothing here depends on it, but DISTILL will write a scenario over the
+  shortest horizon and should know which number it is.
+- **The slice briefs lag DESIGN.** Slice 01 still says "sixteen runs" and "a *range* plus a boolean"
+  (DES-4 made it a tri-state; DES-13 made it sixteen or twenty); slice 02 still says "no fifth panel" and
+  "beaten" (retired by ADR-210 and amended by AC-2.1); slice 03 says "all sixteen rows". `feature-delta.md`
+  carries the corrected ACs and is the source of truth; the briefs were not rewritten here.
+
+No change to DESIGN is required by any of this, so no `upstream-changes.md` is written.
+
+---
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL
+
+**To `nw-acceptance-designer`:**
+
+- **Environments**: `environments.yaml` — one target environment, `clean`. SQLite and PostgreSQL run the
+  Playwright suite in CI but are not a parametrization axis. The usage-data consent states are listed there
+  for the event's scenarios.
+- **Keep the real engine to a handful of scenarios.** Coverage instrumentation makes a real sweep ~5 s in
+  CI. Everything that can be a value-in/value-out assertion on `RealityCheckVerdictPolicy` should be one.
+  **No wall-clock assertion anywhere.**
+- **Recommended, not required:** one non-`[Explicit]` query-count test on the production service over
+  SQLite — 20 on-ladder, 24 at 45 days. It is the only automated check that catches a per-cell actual read.
+- **The usage-data event** is slice 01's: backend scenarios go in the existing `Slice04ProductEventsTests`
+  harness by adding the name to `EventsThatCarryNothingButTheirName`; the frontend needs a call-site test
+  for "reported once after a result, not on the press, not on failure". `UsageDataDisclosureTest` needs no
+  edit — it goes red on its own until the page gains the row.
+- **Reconcile the horizon ladder** (`[7, 14, 28, 56]` in the contract, `[14, 28, 42, 56]` in the probe)
+  before writing the shortest-horizon scenario.
+- **Both cell counts** still need coverage, as DESIGN's handoff says: on-ladder (16), off-ladder (20), the
+  hole-in-the-middle case, and a fixed-dates Team — which also counts as a completed run for the event.
+
+**Open questions that are the maintainer's, not the design's** (none blocks DISTILL):
+
+- **U-1** — The event is designed name-only. If you want the field distribution of verdicts (how often a
+  Team's window turns out `Outside`), that is a consent-copy change first. Recommended: no.
+- **U-2** — O5 ("the answer travels") stays manual. A second name-only event on **Copy as Markdown**
+  (slice 03) would measure it for the cost of one more enum member and one more disclosure row.
+  Recommended: not now — slice 03 is severable, and the event can join it if the slice ships.
+- **U-3** — Not this feature's, found in passing: the website privacy notice lists *which tab was opened*
+  among what is received but not *which kind of work tracking system was connected* nor *which setting was
+  switched*, both of which the pipe sends today. It points at the docs page for the full list, so it may be
+  sufficient as written; that is a legal-copy judgement, not an engineering one.
+
+Per-wave peer review: **not run.** No trigger fires — no new deployment target, no new CI framework, no
+observability rewrite (one enum member in an existing pipe), no security posture change. The consolidated
+review runs at the end of DISTILL.

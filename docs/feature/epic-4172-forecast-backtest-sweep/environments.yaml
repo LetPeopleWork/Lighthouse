@@ -1,0 +1,77 @@
+# Environment inventory — epic-4172-forecast-backtest-sweep ("Forecast Reality Check", ADO #4172)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism). Written by the DEVOPS wave, 2026-09-26.
+#
+# The feature is pure business logic inside an existing container: one read-only endpoint, one pure
+# policy, one card on the Team Forecast tab, and one usage-data event name. It installs nothing into a
+# system, adds no configuration key, environment variable, secret, chart value, EF migration or
+# dependency, and contacts no work tracking system. So there is exactly one target environment, as the
+# DEVOPS skill prescribes for pure business logic.
+#
+# Two things below are NOT target environments but DISTILL has to know them anyway:
+#   database_environments — the two real relational stores CI already runs the E2E suite against.
+#   usage_data_consent_states — the axis the new usage-data event must be asserted across.
+
+target_environments:
+  - name: clean
+    description: >
+      A running Lighthouse with a Team whose completed Work Items are already in the database. No prior
+      reality-check state exists anywhere, because the feature stores nothing (ADR-209): every run starts
+      from clean by construction, so there is no "with stale state" or "upgraded from an older version"
+      environment to model.
+    platform: [linux, macos]
+    preconditions: []
+
+database_environments:
+  # Not a parametrization axis for acceptance tests. DESIGN states the feature has no provider-specific
+  # SQL and no migration, so SQLite and PostgreSQL behave alike by construction. They are listed so that
+  # DISTILL knows where its Playwright walking skeleton will actually run.
+  - name: ef-inmemory
+    used_by: "Backend unit and WebApplicationFactory tests (dotnet test, Category!=Integration)"
+    caveat: "Does not enforce foreign keys and has no query counting. Any query-count assertion must run on SQLite."
+  - name: sqlite
+    used_by: ".github/workflows/ci_verifysqlite.yml — builds the image, starts it on SQLite, runs the Playwright suite"
+  - name: postgresql
+    used_by: ".github/workflows/ci_verifypostgres.yml — the same, on PostgreSQL"
+
+usage_data_consent_states:
+  # The event TeamForecastRealityCheckRun is detected in the browser and forwarded by the backend,
+  # which re-checks consent per event (ADR-190). Every state below already exists and is already
+  # exercised for the other ten name-only events by Slice04ProductEventsTests; the new name joins
+  # those sweeps rather than getting its own copies.
+  - state: browser-agreed
+    expect: "exactly one event per completed run"
+  - state: browser-refused
+    expect: "nothing sent; the call site has no consent branch of its own"
+  - state: browser-not-yet-asked
+    expect: "nothing sent"
+  - state: administrator-veto
+    expect: "nothing forwarded by the backend, whatever the browser sends"
+  - state: unpublished-build
+    expect: "nothing leaves the instance; a build nobody published knows no collector address. This includes the dev instance."
+
+coexistence_matrix:
+  - tool: "POST /api/latest/forecast/backtest/{teamId} and BacktestForecaster (same Forecast Backtesting group)"
+    must_not_break: true
+    reason: "The new card sits above the shipped date pickers in the same InputGroup; the shipped contract is not widened (DESIGN reuse row 12)."
+  - tool: "TeamManualForecastRun usage-data event"
+    must_not_break: true
+    reason: "A reality check must not travel through the manual-forecast path and so must never fire this event; each run reports its own name once."
+  - tool: "Shared per-Team metrics cache"
+    must_not_break: true
+    reason: "The sweep reads through it and warms up to 24 window-keyed entries per Team. Same exposure as any widget read; no new invalidation."
+  - tool: "ThroughputQuickSetting in the Team header"
+    must_not_break: true
+    reason: "Untouched by design (D4); it is the control the user acts with."
+  - tool: "Opt-in usage-data pipe (ingest endpoint, gate, queue, PostHog forwarder)"
+    must_not_break: true
+    reason: "One enum member appended at the end (value 11). No new field, so UsageDataEventShapes, the DTO, the record and the publisher are unchanged."
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest]
+  Shipped_artifacts: [Docker image, Linux standalone, Windows standalone, macOS standalone]
+  note: "No platform-specific code. The standalone verify jobs need no change."
+
+deployment_assumptions:
+  - "No EF migration. A migration appearing in this feature means ADR-209 / D8 was violated; the shipped ExpandOnlyMigrationGuard would also judge one."
+  - "Rollback is replacing the image with the previous release. Nothing is stored, so nothing is left behind."
+  - "The usage-data enum member is appended, never renumbered: value 11. An older browser bundle never sends it; a newer bundle is only ever served by the backend it shipped with."

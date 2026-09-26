@@ -68,6 +68,17 @@ putting it behind one is how it becomes unusable.
   artifact reports the sampling window as a setting on this Team and the confidence level as a choice of
   which number to quote — two findings the human acts on. **The feature renders no control that writes a
   Team setting.**
+- **The usage-data event `TeamForecastRealityCheckRun`** *(added by DEVOPS, 2026-09-26, at the
+  maintainer's request)*. Appended to `UsageDataEventName` as **value 11**, carrying **nothing but its
+  name**. Reported through `useUsageDataReporter()` from the card **after the run comes back with a
+  result** — including a result whose cells were all unevaluable — and never on the press or on a failed
+  request. Backend first: the enum member, its row in `docs/settings/usagedata.md` (and the counts on that
+  page) and its entry in `Slice04ProductEventsTests.EventsThatCarryNothingButTheirName` land in **one**
+  commit, because `UsageDataDisclosureTest` counts the enum against the page. Then the TypeScript mirror
+  in `UsageDataService.ts` (the word, never a number), the call site, and a call-site test. Finally
+  `docs/product/kpi-contracts.yaml`: flip `OUT-4172-reality-check-used-outside-the-vendor` to
+  `live-on-release` and move its header from eleven events to twelve. Full design and the ordered touch
+  list: `feature-delta.md`, "Wave: DEVOPS / Usage-data event".
 
 ## OUT of scope
 

@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-24
+updated: 2026-09-26
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -1255,3 +1255,89 @@ outcomes:
       to tell who switched: two browsers of one installation look like two unrelated
       browsers. The list of settings has one member, so until another is
       added deliberately this describes one setting only.
+
+  # epic-4172-forecast-backtest-sweep (Forecast Reality Check, ADO #4172). Added by the DEVOPS wave,
+  # 2026-09-26, before any code exists. Acceptance-scenario files are written in DISTILL; each entry
+  # names the tag DISTILL should put on them.
+
+  - id: OUT-4172-reality-check-used-outside-the-vendor
+    feature: epic-4172-forecast-backtest-sweep
+    title: The Forecast Reality Check is run by somebody outside the vendor
+    target: "Seen from at least one consenting browser that is not the vendor's own instance within 90 days of the release that ships it. A hypothesis, not a measured baseline: baseline is none."
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      The feature was built to demonstrate a forecasting method to people who do not yet trust it, and
+      the only way to know whether anyone presses the button is to be told. The DISCUSS target for
+      checked Teams (at least three on the dev and demo instances) is a dogfooding record and stays
+      manual, because that population is exactly the one usage data excludes.
+    measurement_plan:
+      data_collection:
+        - "Usage data event: TeamForecastRealityCheckRun (value 11), carrying nothing but its name. Never the Team, its sampling window, the number of checks or what the check found."
+        - "Sent once for every run that came back with a result, including one whose checks could not be evaluated for thin history; never for a request that failed."
+        - "That the event arrives exactly once per completed run from a consenting browser, and never otherwise, is held by the slice 01 call-site test and Slice04ProductEventsTests (the name joins EventsThatCarryNothingButTheirName)."
+      derivation: "Distinct consenting browsers reporting the event, per 30-day window, vendor instance excluded."
+      surfacing:
+        - "docs/settings/usagedata.md is the disclosure; the collector's own dashboard is where the number is read."
+    alerting: []
+    status: designed-not-shipped
+    status_note: "DELIVER of slice 01 (ADO #6072) flips this to live-on-release and moves this file's header from eleven named events to twelve."
+    caveat: >
+      Counts browsers that agreed, not installations and not Teams. A low number early on says few
+      people have agreed yet, not that nobody uses the check.
+
+  - id: OUT-4172-answer-in-seconds
+    feature: epic-4172-forecast-backtest-sweep
+    title: One press answers in seconds, with no dates asked for
+    target: "Median at most 5 s and maximum at most 10 s across twelve samples, on a Team with at least twelve months of Work Items (AC-1.1)"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      RealityCheckWallClockProbe (Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/), which
+      is [Explicit] and run by hand, plus the AC-1.1 confirmation written into the slice 01 brief. The
+      DESIGN measurement was 701 ms cold median with 20 queries, on horizons longer than the contract's,
+      so it over-states the cost. Never asserted in CI: a wall clock taken on one machine fails on a build
+      agent 10-20 times slower.
+    measurement_window: once in slice 01, re-run if the sweep's shape changes
+    alerting: []
+    status: designed-not-shipped
+
+  - id: OUT-4172-never-overclaims
+    feature: epic-4172-forecast-backtest-sweep
+    title: The artifact never names a winner, always states its denominator, and never renders an unevaluable check as a result
+    target: "100% of rendered results carry the denominator and non-comparability statements; 0 response fields and 0 strings name a single best sampling window; 0 unevaluable checks render blank; 4 of 4 confidence levels report held-count against expected-count"
+    measurement_scope: per_instance
+    measured_by: >
+      Acceptance and unit tests written in DISTILL for AC-1.4 to AC-1.7, AC-2.3 to AC-2.5, and DESIGN's
+      enforcement rules E5 (no per-window scalar in the response) and E6 (exhaustive enum-to-copy maps,
+      held by the TypeScript compiler). Tag: @kpi-OUT-4172-never-overclaims.
+    acceptance_scenarios: pending DISTILL
+    alerting:
+      - condition: "any of the assertions fails"
+        action: "backend or frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-4172-read-only
+    feature: epic-4172-forecast-backtest-sweep
+    title: The check writes nothing and changes nothing in the forecast engine
+    target: "0 endpoints and 0 controls that write a Team setting; 0 changes to the forecast engine or to ForecastDataSufficiencyPolicy"
+    measurement_scope: per_instance
+    measured_by: >
+      RealityCheckReadOnlyArchUnitTest (DESIGN rule E1) under Lighthouse.Backend.Tests/Architecture/,
+      which runs on every push under the always-on Category!=Integration filter; AC-1.9; and the existing
+      forecast assertions passing unedited before and after slice 01. Tag: @kpi-OUT-4172-read-only.
+    acceptance_scenarios: pending DISTILL
+    alerting:
+      - condition: "the ArchUnit rule or an existing forecast assertion fails"
+        action: "backend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-4172-the-answer-travels
+    feature: epic-4172-forecast-backtest-sweep
+    title: A one-pager is shared outside the product
+    target: "At least 1 one-pager shared externally within 60 days of the release that ships slice 03"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      Manual: the maintainer's own use and any community mention. Not instrumented; a name-only usage-data
+      event on Copy as Markdown was considered and left for the maintainer to decide when slice 03 ships.
+    measurement_window: 60 days after slice 03 ships (slice 03 is severable)
+    alerting: []
+    status: designed-not-shipped
