@@ -759,11 +759,11 @@
         },
         {
           "id": "01-21",
-          "name": "One thin Playwright walking skeleton — a demo Team's Forecast tab runs the check and shows the sentence and the denominator",
+          "name": "Playwright walking skeleton — a fourth step in the existing Forecasts-tab visit",
           "description": "Lighthouse.EndToEndTests/tests/specs/teams/ForecastRealityCheck.spec.ts, through a page object, on a seeded demo scenario. Open a demo Team, go to Forecasts, press Run reality check, and see a sentence and the 'forecast runs were checked' denominator. One skeleton only, which runs twice in CI (the SQLite and PostgreSQL verify jobs). Everything else stays in the fast suites.",
           "agent": "nw-software-crafter",
-          "test_file": "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/specs/teams/ForecastRealityCheck.spec.ts",
-          "scenario_name": "A demo Team's Forecast tab runs the reality check and states what it checked",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts",
+          "scenario_name": "should show manual, new-work-item, and backtesting forecasts on the team Forecasts tab :: step 'Forecast reality check'",
           "unskips": [
             "None — the crafter authors this spec and its page object at this step. DISTILL listed the skeleton and deliberately did not write it, because a locator written against markup nobody has rendered is the unrun spec the project's rules forbid."
           ],
@@ -771,8 +771,7 @@
             "ForecastRealityCheck.spec.ts :: A demo Team's Forecast tab runs the reality check and states what it checked"
           ],
           "files_to_modify": [
-            "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/specs/teams/ForecastRealityCheck.spec.ts",
-            "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/models/teams/ForecastRealityCheckCard.ts",
+            "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts",
             "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/models/teams/TeamDetailPage.ts"
           ],
           "dependencies": [
@@ -786,7 +785,7 @@
             "It asserts the sentence and the denominator are visible. It makes no assertion about where the actual mark sits, and no wall clock. If the check is slow in CI, widen that one wait; do not add a second spec.",
             "Biome and tsc are clean for the E2E project as its CI job runs them."
           ],
-          "implementation_notes": "Files: ForecastRealityCheck.spec.ts and ForecastRealityCheckCard.ts are NEW, and TeamDetailPage.ts is edited to expose the card. The spec must pick a demo Team whose history gives at least some evaluable checks, so the sentence is not the nothing-concluded one. Check the demo scenario's data before choosing. Commit: `test(forecast): one walking skeleton for the reality check (story 6072)`"
+          "implementation_notes": "Maintainer direction (2026-09-26): reuse the existing Forecasts-tab test rather than create a new spec or page object. TeamsDetail.spec.ts already walks one visit through three test.step blocks (manual forecast, new-work-item forecast, backtesting) on demo scenario 0. Append a fourth test.step('Forecast reality check') to that same test: press Run reality check, wait for the answer, and assert the verdict sentence and the 'forecast runs were checked' denominator line are visible. Add the locators and a runRealityCheck() action to the existing TeamDetailPage.ts page object, beside runBacktest() and backtestForecastingSection; the spec never calls page.locator() directly. Keep it a thin sanity check: no wall-clock assertion, no assertion on specific numbers that depend on demo-data dates. Rename the test title to include the reality check. Run it locally before committing (see /run-dev and the E2E README for how the suite starts its own backend); never commit an unrun locator. Commit: `test(forecast): the reality check joins the forecasts-tab walk-through (story 6072)`"
         },
         {
           "id": "01-22",
