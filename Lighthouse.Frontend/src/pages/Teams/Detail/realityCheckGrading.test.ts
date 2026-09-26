@@ -12,11 +12,7 @@ import {
  * hue; the miss as a share of what the period delivered sets the shade - within 10%, 10 to 25%, more than
  * 25%, the same on both sides. The shown whole-number percentage never contradicts its band, and a period
  * in which nothing was delivered has no percentage at all.
- *
- * Pending until the grading exists (Story 6094, slice 05); the miss alone belongs to slice 04.
  */
-
-const PENDING = "the grading is not built yet";
 
 const aCheck = (
 	actualCompleted: number,
@@ -229,7 +225,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 });
 
 describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level usually landed", () => {
-	it.skip(`counts the checks that landed within 10% on either side, held or not (${PENDING})`, () => {
+	it("counts the checks that landed within 10% on either side, held or not", () => {
 		const closeness = levelCloseness([
 			...heldWithin10(2),
 			...notHeldWithin10(4),
@@ -241,7 +237,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 		expect(closeness.withinTenPercent).toBe(6);
 	});
 
-	it.skip(`names the grade more than half the checks share - Maria's 85th, low by more than a quarter in 9 of 16 (${PENDING})`, () => {
+	it("names the grade more than half the checks share - Maria's 85th, low by more than a quarter in 9 of 16", () => {
 		const closeness = levelCloseness([
 			...heldOver25(9),
 			...heldWithin10(3),
@@ -256,13 +252,13 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 		});
 	});
 
-	it.skip(`@boundary names no grade when one holds exactly half the checks (${PENDING})`, () => {
+	it("@boundary names no grade when one holds exactly half the checks", () => {
 		expect(
 			levelCloseness([...heldOver25(8), ...held10To25(8)]).usualGrade,
 		).toBeNull();
 	});
 
-	it.skip(`@boundary names no grade when the checks within 10% are split between held and not held (${PENDING})`, () => {
+	it("@boundary names no grade when the checks within 10% are split between held and not held", () => {
 		const closeness = levelCloseness([
 			...heldWithin10(5),
 			...notHeldWithin10(5),
@@ -274,7 +270,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 		expect(closeness.usualGrade).toBeNull();
 	});
 
-	it.skip(`@error a level with no check that could run has nothing within 10% and no usual grade (${PENDING})`, () => {
+	it("@error a level with no check that could run has nothing within 10% and no usual grade", () => {
 		expect(levelCloseness([])).toEqual({
 			gradedChecks: 0,
 			withinTenPercent: 0,

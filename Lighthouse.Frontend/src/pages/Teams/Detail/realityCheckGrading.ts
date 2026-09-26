@@ -1,6 +1,3 @@
-// RED scaffold written by DISTILL for Story 6094; DELIVER replaces every body and removes the marker.
-export const __SCAFFOLD__ = true;
-
 /**
  * How one forecast landed against what its period delivered, on Nick Brown's scale: the hue is whether it
  * held, the shade how close it landed as a share of the actual.
@@ -37,12 +34,6 @@ export interface LevelCloseness {
 	/** The grade more than half of the level's graded checks share, if one does. */
 	usualGrade: ForecastGrade | null;
 }
-
-const notYetImplemented = (question: string, facts: unknown): never => {
-	throw new Error(
-		`Not yet implemented -- RED scaffold: ${question} for ${JSON.stringify(facts)}`,
-	);
-};
 
 export const missOf = ({
 	actualCompleted,
@@ -103,6 +94,35 @@ export const readCheck = (check: GradedCheck): CheckReading => {
 	};
 };
 
+// Held and not held both count: the question is how close the forecast came, not which side it missed on.
+const WITHIN_TEN_PERCENT: ReadonlySet<ForecastGrade> = new Set<ForecastGrade>([
+	"HeldWithin10",
+	"NotHeldWithin10",
+]);
+
+// A usual grade needs a strict majority, so a level split evenly between two grades has none.
+const isStrictMajority = (count: number, total: number): boolean =>
+	2 * count > total;
+
 export const levelCloseness = (
 	checks: readonly GradedCheck[],
-): LevelCloseness => notYetImplemented("how close one level landed", checks);
+): LevelCloseness => {
+	const countOfGrade = new Map<ForecastGrade, number>();
+	for (const check of checks) {
+		const { grade } = readCheck(check);
+		countOfGrade.set(grade, (countOfGrade.get(grade) ?? 0) + 1);
+	}
+
+	let withinTenPercent = 0;
+	let usualGrade: ForecastGrade | null = null;
+	for (const [grade, count] of countOfGrade) {
+		if (WITHIN_TEN_PERCENT.has(grade)) {
+			withinTenPercent += count;
+		}
+		if (isStrictMajority(count, checks.length)) {
+			usualGrade = grade;
+		}
+	}
+
+	return { gradedChecks: checks.length, withinTenPercent, usualGrade };
+};
