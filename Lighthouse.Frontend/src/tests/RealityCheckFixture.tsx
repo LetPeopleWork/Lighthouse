@@ -69,6 +69,14 @@ export interface RealityCheckWireCell {
 		| null;
 }
 
+/** One period the checks were scored on, and what the Team finished in it. Never null, whether or not any check of it could run. */
+export interface RealityCheckWireScoredPeriod {
+	horizonDays: number;
+	scoredPeriodStart: string;
+	scoredPeriodEnd: string;
+	actualCompleted: number;
+}
+
 export interface RealityCheckWireAnswer {
 	teamId: number;
 	teamName: string;
@@ -101,6 +109,7 @@ export interface RealityCheckWireAnswer {
 		expectedHeldCount: number;
 		reading: LevelReading;
 	}[];
+	scoredPeriods: RealityCheckWireScoredPeriod[];
 	cells: RealityCheckWireCell[];
 }
 
@@ -137,6 +146,13 @@ export interface RealityCheckAnswerOptions {
 	readings?: Partial<Record<50 | 70 | 85 | 95, LevelReading>>;
 	unevaluable?: UnevaluableCheck[];
 	checks?: EvaluableCheck[];
+	/**
+	 * What the Team finished in each period. Defaults to the actual its evaluable checks carry; a period none
+	 * of whose checks could run needs one given here, or it gets the fixture's usual amount for its length.
+	 */
+	periodActuals?: Partial<Record<7 | 14 | 28 | 56, number>>;
+	/** The checks in the order they travel, when a spec needs them out of the ladder's order. */
+	cellOrder?: (cells: RealityCheckWireCell[]) => RealityCheckWireCell[];
 }
 
 const shiftDay = (day: string, days: number): string => {
@@ -236,6 +252,26 @@ const aCell = (
 	};
 };
 
+const scoredPeriodsOf = (
+	cells: readonly RealityCheckWireCell[],
+	options: RealityCheckAnswerOptions,
+): RealityCheckWireScoredPeriod[] =>
+	HORIZON_DAYS.map((horizon) => {
+		const ofThisPeriod = cells.filter((cell) => cell.horizonDays === horizon);
+		const carried = ofThisPeriod.find(
+			(cell) => cell.actualCompleted !== null,
+		)?.actualCompleted;
+		return {
+			horizonDays: horizon,
+			scoredPeriodStart: ofThisPeriod[0].scoredPeriodStart,
+			scoredPeriodEnd: ofThisPeriod[0].scoredPeriodEnd,
+			actualCompleted:
+				options.periodActuals?.[horizon] ??
+				carried ??
+				Math.round((5.5 * horizon) / 7),
+		};
+	});
+
 /**
  * A complete answer: every window swept against every horizon, unevaluable checks included with their
  * reason, and a denominator and nominal-rate lines that agree with the checks.
@@ -299,7 +335,8 @@ export const aRealityCheckAnswer = (
 				options.readings?.[level] ??
 				(runsEvaluated === 0 ? "NotEvaluated" : "SometimesHeld"),
 		})),
-		cells,
+		scoredPeriods: scoredPeriodsOf(cells, options),
+		cells: options.cellOrder ? options.cellOrder(cells) : cells,
 	};
 };
 
@@ -390,3 +427,154 @@ export const linesMatching = (
 				pattern.test(child.textContent ?? ""),
 			),
 	);
+
+// --- The dialog the answer opens in (Story 6094) ---
+
+/** MUI reads matchMedia through useMediaQuery, and jsdom does not provide it. */
+export const setMatchMedia = (matches: boolean) => {
+	Object.defineProperty(globalThis, "matchMedia", {
+		writable: true,
+		value: (query: string) => ({
+			matches,
+			media: query,
+			onchange: null,
+			addListener: () => {},
+			removeListener: () => {},
+			addEventListener: () => {},
+			removeEventListener: () => {},
+			dispatchEvent: () => false,
+		}),
+	});
+};
+
+export const REALITY_CHECK_DIALOG_NAME = /reality check/i;
+
+export const theRealityCheckDialog = (): Promise<HTMLElement> =>
+	screen.findByRole("dialog", { name: REALITY_CHECK_DIALOG_NAME });
+
+/** The dialog once the answer has filled it, recognised by the denominator every answer states. */
+export const theDialogWithTheAnswer = async (
+	runRealityCheck: Mock,
+	answer: RealityCheckWireAnswer,
+): Promise<HTMLElement> => {
+	runRealityCheck.mockResolvedValue(answer);
+	const group = renderTheForecastTab(runRealityCheck);
+	await pressRunRealityCheck(group);
+	const dialog = await theRealityCheckDialog();
+	await waitFor(() =>
+		expectALine(dialog, /\d+ forecast runs? (were|was) checked/i),
+	);
+	return dialog;
+};
+
+const readingOf = (element: Element): string =>
+	(element.textContent ?? "").replaceAll(/\s+/g, " ").trim();
+
+/**
+ * The deepest elements whose whole text is exactly `text`. A pattern matcher would also find "did not
+ * hold, within 10%" when asked for "within 10%", so every line and grade word is pinned whole.
+ */
+export const linesReading = (
+	container: HTMLElement,
+	text: string,
+): HTMLElement[] =>
+	Array.from(container.querySelectorAll<HTMLElement>("*")).filter(
+		(element) =>
+			readingOf(element) === text &&
+			!Array.from(element.children).some((child) => readingOf(child) === text),
+	);
+
+export const expectTheLine = (container: HTMLElement, text: string) => {
+	expect(
+		linesReading(container, text),
+		`no line reads exactly "${text}"`,
+	).not.toHaveLength(0);
+};
+
+export const LEVEL_COLUMNS = [50, 70, 85, 95] as const;
+
+export type LevelColumn = (typeof LEVEL_COLUMNS)[number];
+
+const HORIZON_LABELS: Record<number, string> = {
+	7: "1 week",
+	14: "2 weeks",
+	28: "4 weeks",
+	56: "8 weeks",
+};
+
+export const theTableIn = (dialog: HTMLElement): HTMLElement =>
+	within(dialog).getByRole("table");
+
+/** Every period's row group, in the order they are drawn: each is a row group with its own header. */
+export const periodGroupsOf = (table: HTMLElement): HTMLElement[] =>
+	within(table)
+		.getAllByRole("rowgroup")
+		.filter((group) => group.querySelector('th[scope="rowgroup"]') !== null);
+
+export const periodHeaderOf = (group: HTMLElement): HTMLElement => {
+	const header = group.querySelector<HTMLElement>('th[scope="rowgroup"]');
+	expect(header, "the period has no row-group header").not.toBeNull();
+	return header as HTMLElement;
+};
+
+export const periodHeaderText = (group: HTMLElement): string =>
+	readingOf(periodHeaderOf(group));
+
+export const periodGroup = (
+	table: HTMLElement,
+	horizonDays: number,
+): HTMLElement => {
+	const label = new RegExp(String.raw`\b${HORIZON_LABELS[horizonDays]}\b`);
+	const matching = periodGroupsOf(table).filter((group) =>
+		label.test(periodHeaderText(group)),
+	);
+	expect(matching, `one group for the ${horizonDays}-day period`).toHaveLength(
+		1,
+	);
+	return matching[0];
+};
+
+const windowHeaderOf = (row: HTMLElement): HTMLElement | null =>
+	row.querySelector<HTMLElement>('th[scope="row"]');
+
+/** The rows of one period, one per sampling window, in the order they are drawn. */
+export const windowRowsOf = (group: HTMLElement): HTMLElement[] =>
+	within(group)
+		.getAllByRole("row")
+		.filter((row) => windowHeaderOf(row) !== null);
+
+export const windowHeaderText = (row: HTMLElement): string => {
+	const header = windowHeaderOf(row);
+	return header === null ? "" : readingOf(header);
+};
+
+export const windowDaysOf = (row: HTMLElement): number =>
+	Number(/^(\d+) days\b/.exec(windowHeaderText(row))?.[1]);
+
+export const windowRow = (
+	group: HTMLElement,
+	samplingWindowDays: number,
+): HTMLElement => {
+	const matching = windowRowsOf(group).filter(
+		(row) => windowDaysOf(row) === samplingWindowDays,
+	);
+	expect(
+		matching,
+		`one row for the ${samplingWindowDays}-day window`,
+	).toHaveLength(1);
+	return matching[0];
+};
+
+export const levelCell = (row: HTMLElement, level: LevelColumn): HTMLElement =>
+	within(row).getAllByRole("cell")[LEVEL_COLUMNS.indexOf(level)];
+
+/**
+ * Every check of one period at the same numbers - the eight-week group in the stories, where Ocean
+ * Explorer delivered 42 and its forecasts were 48 / 40 / 36 / 31 at the 50th / 70th / 85th / 95th.
+ */
+export const thePeriodChecked = (
+	horizon: number,
+	numbers: Omit<EvaluableCheck, "window" | "horizon">,
+	windows: readonly number[] = STANDARD_WINDOW_DAYS,
+): EvaluableCheck[] =>
+	windows.map((window) => ({ window, horizon, ...numbers }));

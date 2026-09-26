@@ -843,6 +843,27 @@ describe("ForecastService", () => {
 			expect(result.cells[0].scoredPeriodStart).toBe("2026-09-15");
 		});
 
+		// @us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed
+		it.skip("should keep every period the check scored, with its days and what was delivered, as they travel (pending: the answer's periods are not read yet)", async () => {
+			const scoredPeriods = [
+				{
+					horizonDays: 7,
+					scoredPeriodStart: "2026-09-16",
+					scoredPeriodEnd: "2026-09-22",
+					actualCompleted: 0,
+				},
+			];
+			mockedAxios.post.mockResolvedValueOnce({
+				data: { ...aRealityCheckResponse(), scoredPeriods },
+			});
+
+			const result = await forecastService.runRealityCheck(7);
+
+			expect(
+				(result as unknown as { scoredPeriods?: unknown }).scoredPeriods,
+			).toEqual(scoredPeriods);
+		});
+
 		it("should post the override when one is given, even when it is false", async () => {
 			mockedAxios.post.mockResolvedValueOnce({ data: aRealityCheckResponse() });
 

@@ -1249,3 +1249,41 @@ code, with the acceptance suite excluded.
 - **DESIGN OQ-8** refined, not contradicted: the backend change still needs a Stryker.NET run, and the
   frontend mutate set covers the whole surviving reality-check UI.
 - No contradiction with DESIGN, so no `upstream-changes.md`.
+
+---
+
+## DISTILL — Story #6094
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-09-26 · **Mode**: maintainer AFK, the
+orchestrator's two reconciliation rulings applied · **Full text**: `feature-delta.md`, part *Story #6094 —
+DISTILL* · RED record: `red-classification.md`, part *Story #6094* · Nothing committed; no production
+behaviour changed; reviewer not run.
+
+### Key Decisions
+
+| # | Decision |
+|---|---|
+| 6094-DT-1 | **Reconciliation passed, 0 contradictions**, after two rulings applied, not re-decided: actual 0 vs forecast 0 follows 6094-D2 / DES-2 (dark green, no percentage, counts towards "within 10% in N"; AC-5.3 reworded in place to "no percentage"); slice 04 carries `scoredPeriods` (the slice 04 brief's OUT list corrected in place). No `CLARIFICATION_NEEDED` |
+| 6094-DT-2 | Written against every DISCUSS and DESIGN copy default; each scenario pinning a default names it. DISTILL additionally pins, as copy within those defaults: the level-line punctuation, the cell's accessible wording ("6 more delivered", "exactly as forecast", "14% of the actual"), the legend words, the loading sentence, and U+2212 for the minus |
+| 6094-DT-3 | **76 definitions, 99 cases, all pending**; 31 of 76 (41%) error / edge. Backend 5 (`Slice04TheAnswerOpensInADialog*`), frontend dialog 30, grading 17, pure rules 13 (incl. the exhaustive 1..200 × 0..400 property), usage data 7 (PR-6094-5), colours 2 (E10), parse 1, E2E 1 |
+| 6094-DT-4 | **Walking skeleton = the Playwright step, extending the shared Team visit** (`test.step.skip` + dialog-scoped POM locators). Pending: it cannot be green before the dialog exists; DELIVER of slice 04 un-skips and runs it locally before commit and deletes the old step and locators in that commit |
+| 6094-DT-5 | New spec files, not edits to the green `TeamForecastView.realityCheck.test.tsx`; its inline and slice 02 specs, `RealityCheckBandRow.test.ts`, two copy-test groups and the old E2E step are listed for DELIVER to delete or rewrite in the dialog's commit |
+| 6094-DT-6 | Scaffolds: `realityCheckGrading.ts` (used now) and the five component files (reached only through `TeamForecastView`). Not scaffolded: `appColors.forecastGrade`, the TS and C# `scoredPeriods` types — the tests read them through seams that fail by assertion |
+| 6094-DT-7 | `RealityCheckQueryCountTest` unchanged — it is the 20 / 24 guard (PR-6094-6). No property-testing package added; the grading property is the bounded exhaustive loop |
+| 6094-DT-8 | RED verified: 98 of 98 runnable cases fail for the missing behaviour (no dialog; scaffold error; missing `scoredPeriods`; no grade fills); 0 BROKEN |
+| 6094-DT-9 | AT completeness 13 / 15 COMPLETE; gaps C5b (narrow screen not crossed with other tables) and C6a (malformed `scoredPeriods`), both in delivery scope, low |
+
+### Upstream Changes
+
+- AC-5.3 in `feature-delta.md` reworded (R-6094-1); slice 04 brief OUT list amended (R-6094-2);
+  `kpi-contracts.yaml` six `OUT-6094-*` entries now name their scenarios.
+- For DELIVER: `RealityCheckFixture.tsx` still dates cells `anchor − H` (pre-DES-19); correct when next
+  touched.
+
+### Verification at hand-off
+
+Frontend `pnpm test`: 399 files passed, 3 skipped; 5 849 tests passed, 93 skipped (all 93 are this wave's).
+`pnpm build`: green, zero warnings; its `biome check --write` changed nothing. Backend `dotnet build` of the
+test project: 0 errors, no code warnings (six NuGet TFM-support notices from build-tooling packages are
+not from this change); analyzer sweep: no finding in a touched file; reality-check filter: 187 passed, 5
+skipped (this wave's). E2E: `tsc` clean, `playwright test --list` loads the spec.

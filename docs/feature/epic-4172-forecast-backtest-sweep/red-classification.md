@@ -141,3 +141,135 @@ one green unchanged; frontend 32 pending.
 - **The Playwright walking skeleton** is listed in the feature delta as pending and not written: the card
   does not exist, and a Page Object locator written against markup nobody has rendered is exactly the
   unrun spec the project rules forbid. It is owed at DELIVER of slice 01, on seeded demo data.
+
+---
+
+# Story #6094 — the graded results dialog (slices 04 and 05)
+
+Run on 2026-09-26 in the main checkout, against unmodified production code plus the DISTILL scaffolds.
+Every pending case was un-skipped or un-ignored by a script that copied each file first, ran it once, and
+copied it back byte for byte (`cmp` confirmed each restore). Frontend: one Vitest run of the six touched
+spec files together. Backend: one build and one run of the slice 04 fixture.
+
+**99 new cases: 98 run, 98 RED, 0 BROKEN, 0 passing.** The one case not run is the Playwright walking
+skeleton, which cannot be run before the dialog exists (see its row). No case failed on an import, a type,
+a parse or a harness fault: the scaffolds load, the fixture builds the answer, the tab renders and the
+**Run reality check** button is pressed in every frontend case before the first failure.
+
+| Class | Meaning here |
+|---|---|
+| `MISSING_FUNCTIONALITY` (dialog) | The press succeeds; the next step, `findByRole("dialog", { name: /reality check/i })`, finds nothing, because the answer still renders inline. That is the absent dialog, not a harness fault: the tab, the button and the stand-in service all worked |
+| `MISSING_FUNCTIONALITY` (scaffold) | The call reaches `realityCheckGrading.ts` and its scaffold throws `Not yet implemented -- RED scaffold: …`, naming the question and the facts it was asked about |
+| `MISSING_FUNCTIONALITY` (assertion) | An assertion fires on a value the production code does not produce yet |
+
+## Backend - `API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialogScenarios.cs`
+
+Every scenario gets an answer (the check exists and answers 200), then fails on the harness's field
+lookup: `The answer carries no 'scoredPeriods' where the contract puts one`. The reader then treats the
+periods as none, so the scenario's other legs fail as assertions too ("one period per horizon …"), never
+as an exception. The legs that do not read `scoredPeriods` - no check carries an actual, twenty checks
+were run - pass, which shows the harness and seeding are sound.
+
+| Scenario | Class | Fails on |
+|---|---|---|
+| Every_period_the_check_scored_is_in_the_answer_with_its_days_and_what_the_Team_delivered | MISSING_FUNCTIONALITY | no `scoredPeriods` on the answer |
+| Every_check_that_could_be_evaluated_carries_the_same_actual_as_its_period | MISSING_FUNCTIONALITY | no `scoredPeriods` on the answer |
+| A_Team_whose_history_supports_no_check_still_gets_four_periods_each_with_what_it_delivered | MISSING_FUNCTIONALITY | no `scoredPeriods`; "every period says what the Team delivered in it …" |
+| A_week_in_which_the_Team_delivered_nothing_is_a_period_whose_actual_is_zero_not_missing | MISSING_FUNCTIONALITY | no `scoredPeriods`; "every period says what the Team delivered in it, zero included …" |
+| A_Team_whose_own_window_is_off_the_ladder_gets_one_period_per_horizon_never_one_per_window | MISSING_FUNCTIONALITY | no `scoredPeriods`; "one period per horizon …" (its twenty-checks leg passes) |
+
+## Frontend - `src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx` (slice 04)
+
+All 31 cases: `MISSING_FUNCTIONALITY` - `Unable to find role="dialog" and name /reality check/i`.
+
+| Spec | Cases |
+|---|---|
+| opens the dialog at once, saying the check is running, and fills in without asking for a date | 1 |
+| opens on one line per confidence level, then the window sentence, the findings, the denominator, above the table | 1 |
+| @error never held = over-forecasting, always held = under-forecasting | 1 |
+| @error a Team whose history supports no check: no level tested, the table still stands | 1 |
+| keeps nothing behind a toggle, a tooltip or a disclosure | 1 |
+| one row per check, grouped by period in horizon order, windows in ladder order (16 / 20) | 2 |
+| each period's actual printed once, in its header, with its first and last day | 1 |
+| every forecast with its value, its miss in Work Items and whether it held (Ocean Explorer, 8 weeks) | 1 |
+| @boundary delivered exactly: a miss of 0, held | 1 |
+| @error a check that could not run: its reason across all four columns | 1 |
+| @error a forecast that could not be worked out: its own reason | 1 |
+| @error a period in which no window could be checked still shows its actual | 1 |
+| the Team's own window is "your setting" in every period | 1 |
+| @error a Team whose setting was not tested has no "your setting" row | 1 |
+| keeps the run order when the checks arrive shuffled | 1 |
+| the four level columns with their confidence names | 1 |
+| a real table: caption, row-group and row headers | 1 |
+| nothing tallies, orders or picks out a window; no sorting | 1 |
+| no control that could change a Team setting | 1 |
+| the instance's own words, and no tracker's | 1 |
+| the Backtesting group keeps only the button once the dialog is closed | 1 |
+| Run again asks again and fills in afresh | 1 |
+| closing and reopening asks again | 1 |
+| @error while running, neither Run again nor reopening starts a second check | 1 |
+| @error a failed check: plain message and Run again in the dialog, no answer | 1 |
+| @error Run again after a failure can bring the answer | 1 |
+| Escape closes and puts focus back on Run reality check | 1 |
+| the visible close control closes it too | 1 |
+| focus moves into the dialog; the answer arriving moves it nowhere | 1 |
+| on a narrow screen: full screen, nothing dropped | 1 |
+
+## Frontend - `src/pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx` (slice 05)
+
+All 26 cases: `MISSING_FUNCTIONALITY` - `Unable to find role="dialog" and name /reality check/i`. The
+grading sits behind the dialog, so these reach their own assertions only once slice 04 is delivered; they
+were written so that nothing in them depends on slice 05 existing before that point.
+
+| Spec | Cases |
+|---|---|
+| a forecast that held is shaded by how close it landed (26% / 14% / 5%) | 1 |
+| a forecast that did not hold is graded by how far it fell short (14%) | 1 |
+| @error a one-Work-Item miss beside 33% | 1 |
+| @error nothing delivered: no percentage; 0 held exactly, 2 did not hold by the most | 1 |
+| @boundary 10% / 11% / 25% / 26% / 1% at the band edges | 5 |
+| every graded cell says in words whether it held and by how much | 1 |
+| @error a check that could not run takes no grade colour | 1 |
+| Maria's 85th: held 15 of 16, within 10% in 3, usually low by more than a quarter | 1 |
+| misses within 10% count as within 10% | 1 |
+| @boundary no "usually" when within-10% is split between held and not held | 1 |
+| @boundary no "usually" at exactly half | 1 |
+| the "usually" words of each of the six grades | 6 |
+| @error checks that could not run are left out of the counts | 1 |
+| @error a level no check could test: no count, no "usually" | 1 |
+| no level line names, counts or ranks a window | 1 |
+| the legend names six grades and "Not checked" | 1 |
+| Nick Brown credited, this product's additions named | 1 |
+
+## Frontend - `src/pages/Teams/Detail/realityCheckGrading.test.ts` (slices 04 and 05)
+
+All 26 cases: `MISSING_FUNCTIONALITY` (scaffold) - `Not yet implemented -- RED scaffold: the miss in
+Work Items …` (4), `… the grade of one check …` (17, including the exhaustive 1..200 x 0..400 property,
+which fails on its first call), `… how close one level landed …` (5).
+
+## Frontend - other files
+
+| File | Spec | Class | Fails on |
+|---|---|---|---|
+| `TeamForecastView.realityCheck.usageData.test.tsx` | all 7 dialog cases (first open, Run again, reopen after an answer, @error reopen adopting the running check, @error dropped answer, @error failed Run again, never a manual forecast run) | MISSING_FUNCTIONALITY | no dialog |
+| `utils/theme/colors.test.ts` | every grade's text reads at 4.5 : 1; no grade in a level colour, no two grades alike | MISSING_FUNCTIONALITY | `appColors has no forecastGrade fills: expected undefined to be defined` |
+| `services/Api/ForecastService.test.ts` | keeps every period the check scored as it travels | MISSING_FUNCTIONALITY | `expected undefined to deeply equal [ { horizonDays: 7, … } ]` - the parse drops the field today |
+
+## E2E - `Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts`
+
+| Step | Class | Why it was not run |
+|---|---|---|
+| @walking_skeleton "Forecast reality check opens in a dialog" (`test.step.skip`) | not run - pending | It needs the dialog in a running Lighthouse; against today's build it could only fail on the missing dialog, which the Vitest cases above already show. It is un-skipped and **run locally before commit at DELIVER of slice 04**, in the same commit that deletes the step above it and the card-scoped locators. The rest of the shared visit ran as before (`playwright test --list` loads the spec; `tsc` over the E2E project is clean) |
+
+## Existing tests DELIVER retires or rewrites (not run here, still green)
+
+These stay green today and are **not** touched by DISTILL. They go in the slice 04 commit that adds the
+dialog (6094-DES-9), except where noted: every slice 01 spec in `TeamForecastView.realityCheck.test.tsx`
+that finds the answer inside the Backtesting group (rewritten through the dialog or deleted where a
+dialog spec above replaces it); all eight slice 02 specs in that file (deleted); `RealityCheckBandRow.test.ts`
+(deleted); the `bandDescription` and `actualDescription` cases in `realityCheckCopy.test.ts` (deleted) and
+its `levelLine` cases (rewritten to the "should be about" form); the five pre-dialog specs in
+`TeamForecastView.realityCheck.usageData.test.tsx` (moved into the dialog; the failed-request spec stops
+looking for a snackbar); the existing "Forecast reality check" Playwright step and the `realityCheckVerdict`
+/ `realityCheckDenominator` locators (deleted). At slice 05, the slice 04 level-line and cell-name pins in
+`TeamForecastView.realityCheck.dialog.test.tsx` are rewritten to the graded form.

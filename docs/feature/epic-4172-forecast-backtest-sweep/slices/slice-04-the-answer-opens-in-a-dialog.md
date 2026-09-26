@@ -43,7 +43,9 @@ Items and whether it held.
 ## OUT of scope
 
 - Margin percentages, bands, shades, legend, Brown credit, the "within 10%" count — slice 05.
-- Any backend change. The response already carries `forecastValue`, `actualCompleted` and `held` per cell.
+- Any backend change beyond `scoredPeriods` (6094-DES-7, accepted in DISTILL): one additive envelope field
+  carrying each period's dates and actual, because a period none of whose checks could run carries no
+  actual anywhere else. The cells keep `forecastValue`, `actualCompleted` and `held` unchanged.
 - Any per-window summary, ordering or highlight (I-a); any control that writes a Team setting (I-b).
 - The one-pager (slice 03, deferred).
 

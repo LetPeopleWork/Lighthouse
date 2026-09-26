@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+	FORECAST_GRADES,
+	type ForecastGrade,
+} from "../../pages/Teams/Detail/realityCheckGrading";
+import {
 	appColors,
 	calculateContrastRatio,
 	getColorMapForKeys,
@@ -396,5 +400,46 @@ describe("colors utility functions", () => {
 			);
 			expect(darkTextContrast).toBeGreaterThanOrEqual(4.5);
 		});
+	});
+});
+
+// The six fills a reality check's graded cells take, one per grade, the same in the light and the dark theme.
+const PENDING_GRADES = "the grade fills are not built yet";
+
+const gradeFills = (): Record<ForecastGrade, string> => {
+	const fills = (
+		appColors as unknown as {
+			forecastGrade?: Record<ForecastGrade, string>;
+		}
+	).forecastGrade;
+	expect(fills, "appColors has no forecastGrade fills").toBeDefined();
+	return fills as Record<ForecastGrade, string>;
+};
+
+describe("@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone the colours of a graded check", () => {
+	it.skip(`gives every grade a fill whose text reads at 4.5 to 1 or better (${PENDING_GRADES})`, () => {
+		const fills = gradeFills();
+
+		const tooFaint = FORECAST_GRADES.filter((grade) => {
+			const fill = fills[grade];
+			return (
+				fill === undefined ||
+				calculateContrastRatio(getContrastText(fill), fill) < 4.5
+			);
+		});
+
+		expect(tooFaint).toEqual([]);
+	});
+
+	it.skip(`never paints a grade in a confidence level's colour, and gives no two grades the same fill (${PENDING_GRADES})`, () => {
+		const fills = FORECAST_GRADES.map((grade) =>
+			gradeFills()[grade]?.toLowerCase(),
+		);
+		const levelColours = Object.values(appColors.forecast).map((colour) =>
+			colour.toLowerCase(),
+		);
+
+		expect(fills.filter((fill) => levelColours.includes(fill))).toEqual([]);
+		expect(new Set(fills).size).toBe(FORECAST_GRADES.length);
 	});
 });

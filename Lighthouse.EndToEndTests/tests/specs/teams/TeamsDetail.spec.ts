@@ -64,5 +64,27 @@ testWithTeam(
 			await expect(teamDetailPage.realityCheckVerdict(team.name)).toBeVisible();
 			await expect(teamDetailPage.realityCheckDenominator).toBeVisible();
 		});
+
+		// @walking_skeleton @driving_port @us-04 @slice-04 - pending until the answer opens in a dialog; it
+		// then replaces the step above, and the card-scoped locators that step uses are deleted with it.
+		await test.step
+			.skip("Forecast reality check opens in a dialog", async () => {
+				await teamDetailPage.runRealityCheck();
+
+				await expect(teamDetailPage.realityCheckDialog).toBeVisible();
+				await expect(teamDetailPage.realityCheckLevelLine(85)).toBeVisible();
+				await expect(
+					teamDetailPage.realityCheckDialogDenominator,
+				).toBeVisible();
+				await expect(teamDetailPage.realityCheckTable).toBeVisible();
+				expect(
+					await teamDetailPage.realityCheckWindowRows.count(),
+				).toBeGreaterThanOrEqual(16);
+
+				await teamDetailPage.closeRealityCheckWithEscape();
+
+				await expect(teamDetailPage.realityCheckDialog).toBeHidden();
+				await expect(teamDetailPage.runRealityCheckButton).toBeFocused();
+			});
 	},
 );

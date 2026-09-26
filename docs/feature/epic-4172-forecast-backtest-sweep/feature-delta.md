@@ -3688,8 +3688,10 @@ Scenario: The grade never rests on colour alone, and the method is credited
 - [ ] **AC-5.2** — Six grades per 6094-D3 on a colour scale distinct from the `ForecastLevel` colours,
   legible in the light and dark themes; every graded cell also shows the percentage in text and ✓ / ✗ with
   its word.
-- [ ] **AC-5.3** — Actual 0: no percentage and no band; forecast > 0 → did not hold, dark-red grade, miss in
-  Work Items only; forecast 0 → held exactly.
+- [ ] **AC-5.3** — Actual 0: no percentage; forecast > 0 → did not hold, dark-red grade, miss in
+  Work Items only; forecast 0 → held exactly, dark-green grade, counted towards "within 10% in N".
+  *(Reconciled in DISTILL, 2026-09-26: this read "no percentage and no band", which 6094-D2 and
+  6094-DES-2 contradict for forecast 0 — see Story #6094 DISTILL, Reconciliation.)*
 - [ ] **AC-5.4** — Each level line adds "within 10% in N" over its graded checks and, only when more than
   half of them share one band and direction, a "usually …" clause (6094-D7). No clause names or counts a
   sampling window.
@@ -4752,3 +4754,381 @@ is not to hold a release.
 
 Per-wave peer review: **not run** here (the orchestrator runs it). No trigger fires: no new deployment
 target, CI framework, observability change or security posture change.
+
+---
+
+# Story #6094 — DISTILL
+
+**Wave**: DISTILL, 2026-09-26, Quinn (`nw-acceptance-designer`), maintainer AFK, the orchestrator's two
+reconciliation rulings applied. **Density**: lean, Tier-1 only; DISTILL declares no expansion triggers, so no
+menu. `[lang-mode]` C# (NUnit 4.6, `WebApplicationFactory`) + TypeScript (Vitest + RTL) + Playwright (POM).
+`[policy-mode]` inherit. `[port-mode]` N/A — the Python state-delta port does not apply here, as the ATDD
+policy records; scenarios are NUnit / Vitest tests whose names are the Gherkin. Deliverable type
+`application`. **Nothing committed, no production behaviour changed, no reviewer run.**
+
+## Wave: DISTILL / [REF] Prior Wave Consultation — Story #6094
+
+| | Source |
+|---|---|
+| + | This file: Epic DISTILL (2852-3280: scenario list, WS strategy, adapter coverage, scaffolds, test placement, pre-requisites, findings, audit, handoff); Story #6094 DISCUSS (6094-D1..D10, US-04 / US-05 ACs and Gherkin, maintainer questions and defaults), DESIGN (6094-DES-1..9, DES-3 rounding and edges, DES-4 colours, DES-6 run ownership, DES-7 `scoredPeriods`, DES-9 retirement, E6-E12, open questions for DISTILL, *Needs the maintainer*), DEVOPS (usage-event cases, 20 / 24, Stryker sets, commit order) — read in pages, fresh |
+| + | `wave-decisions.md` — DIVERGE / DISCUSS / DESIGN / DEVOPS for Story #6094 |
+| + | `slices/slice-04-…`, `slices/slice-05-…` |
+| + | `docs/product/kpi-contracts.yaml` — the seven `OUT-6094-*` entries |
+| + | `docs/architecture/atdd-infrastructure-policy.md` (inherited; no port is new) |
+| + | `red-classification.md` (the Epic's) |
+| + | `docs/ci-learnings.md` — preflight rules, ledger checks, Tests and Sonar-frontend sections, pre-applied (S7735, S1192, S4144, S3776, S7764, NUnit2045 / 2046 / 1028, CA1859 / 1861; `getByRole` substring trap; MUI strips icon test ids; jsdom `matchMedia`) |
+| + | Tests: `TeamForecastView.realityCheck.test.tsx`, `…realityCheck.usageData.test.tsx`, `RealityCheckFixture.tsx`, `realityCheckCopy.ts`, `ForecastRealityCheck.tsx`, `RealityCheckVerdict.tsx`, `forecastSchemas.ts`, `ForecastService.test.ts`, `colors.ts` / `colors.test.ts`, `ForecastLevel.ts`, `DashboardHeader.test.tsx` (the `matchMedia` stub); backend `ForecastRealityCheckAcceptanceTest.cs`, `Slice01…{Scenarios,Specifications}.cs`, `RealityCheckQueryCountTest.cs`, `RealityCheckResultDto.cs`; E2E `TeamsDetail.spec.ts`, `TeamDetailPage.ts` |
+| - | `docs/product/journeys/epic-4172-forecast-reality-check.yaml`, `brief.md` delta, ADR-211 — not re-read; DISCUSS and DESIGN above quote what the scenarios need from them (steps 1-5, the driving ports, the client-side grade) |
+| - | `discuss/`, `design/`, `devops/` subfolders, `spike/` — do not exist; everything lives in this file |
+| - | `package.json` has **no** `fast-check`: the grading property is the bounded exhaustive loop DES-3 describes, and no dependency is added |
+
+## Wave: DISTILL / [REF] Reconciliation — Story #6094
+
+**Reconciliation passed — 0 contradictions** between DISCUSS, DESIGN and DEVOPS, after the two tensions
+below, which the orchestrator ruled on before this wave (logged in the AFK marker) and which are applied,
+not re-decided:
+
+| # | Tension | Resolution applied |
+|---|---|---|
+| R-6094-1 | Actual 0 against forecast 0: 6094-D2 says "held, exactly … graded as within 10%"; AC-5.3 said "no percentage and no band" | **6094-D2 / DES-2 stand.** The cell takes the `HeldWithin10` (dark green) grade, shows no percentage, and counts towards "within 10% in N". AC-5.3's wording is corrected in place to "no percentage" (see *Upstream changes*). Forecast above 0 against actual 0: did not hold, `NotHeldOver25` (dark red), no percentage, miss in Work Items only |
+| R-6094-2 | Slice 04 was written as backend-free; DES-7 adds `scoredPeriods` | **Accepted.** Slice 04 carries one additive envelope field and one backend fixture; the slice 04 brief's OUT list is corrected in place |
+
+The copy defaults are the spec, and the scenarios are written against them: DISCUSS's (no "Holding"; miss
+signed `actual − forecast`; dark red at actual 0; level lines first; "usually" only on a majority; "your
+setting" as a label) and DESIGN's two *Needs the maintainer* defaults ("within 10% in N" counts held **and**
+not-held checks within 10%; the six "usually" phrases, with no pooling of the two within-10% grades). Every
+scenario that pins one of those defaults names it in its title, so flipping one is a find-and-change.
+No other contradiction, and no product question beyond those defaults, was found — nothing is returned
+as `CLARIFICATION_NEEDED`.
+
+## Wave: DISTILL / [REF] Scenario list with tags — Story #6094
+
+**76 test definitions, 99 cases. 0 green, 99 pending** (98 run once unskipped and classified RED; the
+Playwright step is not runnable before the dialog exists). **Error and edge: 31 of 76 definitions (41%).**
+Frontend pending markers are `it.skip` / `it.skip.each` with the reason in the title — never `describe.skip`,
+and no scaffold is called outside an `it` body; backend ones are `[Ignore(Pending)]` with `Pending = "Pending:
+the answer does not list the periods it scored yet (epic 4172, slice 04, story 6094)."`; the E2E step is
+`test.step.skip`. Tags sit in the title (frontend), a `// @tag` line (backend) and a comment above the step
+(E2E), as the Epic's files do. `@contract-shape` is `pure-function` for every backend scenario (the check
+is read-only); the frontend specs are rendering and carry the Epic's convention of no shape tag.
+
+### Backend — `API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialog{Scenarios,Specifications}.cs` (5)
+
+| Scenario | Tags |
+|---|---|
+| `Every_period_the_check_scored_is_in_the_answer_with_its_days_and_what_the_Team_delivered` | `@driving_port @real-io @us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed` (E12) |
+| `Every_check_that_could_be_evaluated_carries_the_same_actual_as_its_period` | same (E12) |
+| `A_Team_whose_history_supports_no_check_still_gets_four_periods_each_with_what_it_delivered` | same `@error` (DESIGN OQ-7) |
+| `A_week_in_which_the_Team_delivered_nothing_is_a_period_whose_actual_is_zero_not_missing` | same `@boundary` (Harbour Pilots) |
+| `A_Team_whose_own_window_is_off_the_ladder_gets_one_period_per_horizon_never_one_per_window` | `@driving_port @real-io @us-04 @slice-04 @boundary @kpi-OUT-6094-no-window-ranked` (E5c) |
+
+The harness gains one reader, `RealityCheckAnswer.ScoredPeriods` (test code). **`RealityCheckQueryCountTest`
+is the PR-6094-6 guard and is deliberately unchanged**: it pins 20 / 24 through the production sweep, so a
+`scoredPeriods` that reads anything reds it the moment DELIVER lands it. The shipped rankability scan in
+slice 01 walks every property name of the answer, so it judges `scoredPeriods` without an edit.
+
+### Frontend — `TeamForecastView.realityCheck.dialog.test.tsx` (US-04, slice 04: 30 definitions, 31 cases)
+
+| Spec | Tags |
+|---|---|
+| opens the dialog at once, saying the check is running, and it fills in without asking for a date | `@us-04 @slice-04 @driving_port` (AC-4.1) |
+| opens on one line per level — held against should-have-held — then the window sentence, the findings and the denominator, above the table | AC-4.2, D4 order |
+| a level that never held reads over-forecasting, one that always held when misses were expected reads under-forecasting | `@error` AC-4.2 |
+| a Team whose history supports no check is told no level was tested, and the table still stands | `@error` AC-4.2 / AC-4.5 |
+| keeps nothing behind a toggle, a tooltip or a disclosure | AC-4.2 |
+| one row per check (16 / 20), grouped by period in horizon order, windows in ladder order | `@kpi-OUT-6094-how-far-each-forecast-landed` AC-4.3 (2 cases) |
+| prints each period's actual once, in its header, with the period's first and last day | `@kpi-OUT-6094-how-far-each-forecast-landed` AC-4.3, DES-7 |
+| every forecast with its value, its miss in Work Items and whether it held — Ocean Explorer's 30-day row over 8 weeks | `@kpi-OUT-6094-how-far-each-forecast-landed` AC-4.4, U+2212 pinned |
+| a forecast the Team delivered exactly shows a miss of 0 and held | `@boundary` AC-4.4 |
+| a check that could not run says why across all four level columns, never blank and never graded — Coastal Survey | `@error` AC-4.5 |
+| a check whose forecast could not be worked out gives its own reason | `@error` AC-4.5 |
+| a period in which no window could be checked still shows what the Team delivered, and every row its reason | `@error @kpi-OUT-6094-how-far-each-forecast-landed` AC-4.5, DES-7 |
+| the Team's own window is called "your setting" in every period, and no other row is | D5 default |
+| a Team whose own setting was not tested has no row called "your setting" | `@error` DES-5 / DES-17 |
+| keeps the order the check was run in, even when the checks arrive shuffled | `@kpi-OUT-6094-no-window-ranked` E8 |
+| heads the four level columns 50th / 70th / 85th / 95th with their confidence names | AC-4.3 |
+| is a real table: caption naming the Team, a header for each period and each window | AC-4.7, D10 |
+| says nothing that tallies, orders or picks out a window, and offers no sorting | `@kpi-OUT-6094-no-window-ranked` AC-4.9 (I-a) |
+| offers no control that could change a Team setting | `@kpi-OUT-4172-read-only` AC-4.9 (I-b) |
+| speaks the instance's own words for Team and Work Item, and no tracker's | AC-4.9 (I-d) |
+| the Forecast Backtesting group keeps only the button once the dialog is closed | AC-4.8 |
+| Run again asks again and fills in with the fresh answer | AC-4.6 |
+| closing and pressing Run reality check again asks again | AC-4.6 |
+| while a check is running neither Run again nor reopening starts a second one | `@error` AC-4.6, DES-6 |
+| a check that fails to come back leaves the dialog open with a plain message and Run again | `@error` AC-4.6, D8 |
+| Run again after a failure can still bring the answer | `@error` AC-4.6 |
+| Escape closes the dialog and puts focus back on Run reality check | AC-4.7 |
+| the visible close control closes it too | AC-4.7 |
+| focus moves into the dialog when it opens, and the answer arriving moves it nowhere | AC-4.7 |
+| on a narrow screen the dialog takes the whole screen and the table drops nothing | AC-4.7 (`matchMedia` stub = true) |
+
+### Frontend — `TeamForecastView.realityCheck.grading.test.tsx` (US-05, slice 05: 17 definitions, 26 cases)
+
+| Spec | Tags |
+|---|---|
+| a forecast that held is shaded by how close it landed (26% / 14% / 5%) | `@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items` AC-5.1 / 5.2 |
+| a forecast that did not hold is graded by how far it fell short (−6, 14%) | same |
+| a one-Work-Item miss on a small period shows the Work Item beside the percentage (−1, 33%) | same `@error` |
+| a period in which nothing was delivered has no percentage: 0 vs 0 held exactly, 2 vs 0 did not hold by the most | same `@error` AC-5.3 (R-6094-1) |
+| shows 10% / 11% / 25% / 26% / 1% at the band edges, never a number its shade contradicts | `@boundary` DES-3 edges (5 cases) |
+| every graded cell says in words whether it held and by how much | `@kpi-OUT-6094-colour-never-alone` AC-5.2 |
+| a check that could not run keeps its words and takes no grade colour | `@error` AC-5.5 (I-c) |
+| Maria's 85th: held 15 of 16, within 10% in 3, usually low by more than a quarter | `@kpi-OUT-6094-caution-is-visible` AC-5.4, D7 example without "Holding" |
+| counts the checks that fell short by under 10% as within 10% too | same — **DESIGN *Needs the maintainer* default 1** |
+| no "usually" when the within-10% checks are split between held and not held | same `@boundary` — **default 2 (no pooling)** |
+| no "usually" when one grade holds exactly half, not more | same `@boundary` |
+| the "usually" words of each of the six grades | same — **default 2 phrases** (6 cases) |
+| leaves checks that could not run out of "within 10%" and "usually" | same `@error` |
+| a level no check could test says so, with no count and no "usually" | same `@error` |
+| no level's line names, counts or ranks a sampling window | `@kpi-OUT-6094-no-window-ranked` AC-5.4 |
+| the legend names the six grades and "Not checked" in words | `@kpi-OUT-6094-colour-never-alone` AC-5.5 |
+| credits Nick Brown and names this product's two additions | AC-5.6 |
+
+### Frontend — pure rules, colours, wire and usage data
+
+| File | Spec | Tags |
+|---|---|---|
+| `realityCheckGrading.test.ts` | the miss is delivered minus forecast (4 cases) | `@us-04 @slice-04` |
+| same | the stories' examples as written (5); the band edges incl. two not-held mirrors (7) | `@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items`, edges `@boundary` |
+| same | delivered exactly = within 10%, 0%; 0 vs 0 and 2 vs 0 with no percentage | `@boundary`, `@error` ×2 |
+| same | the hue is the server's `held`, never recounted | DES-1 |
+| same | **for every actual 1..200 and forecast 0..400** the band follows the integer rule, the shown % sits in its band, is ≥ 1 when missed, the hue follows `held`, the miss is `actual − forecast` | `@property` E11 |
+| same | `levelCloseness`: counts both sides; majority grade; none at half; none when within-10% is split; none with no graded check | `@kpi-OUT-6094-caution-is-visible`, 2 `@boundary`, 1 `@error` |
+| `utils/theme/colors.test.ts` | every grade fill reads ≥ 4.5 : 1 with `getContrastText`; no grade is a level colour and no two grades share a fill | `@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone` E10 |
+| `services/Api/ForecastService.test.ts` | the parse keeps every scored period as it travels | `@us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed` |
+| `TeamForecastView.realityCheck.usageData.test.tsx` (new describe, 7) | reports once when the dialog shows the answer; Run again reports again; reopen after an answer reports again; **reopen during a run adopts it — one request, one event** `@error`; **an answer arriving after close is not reported, reopening asks afresh** `@error`; a failed Run again reports nothing `@error`; never `TeamManualForecastRun` | `@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click` (PR-6094-5) |
+
+### E2E — the walking skeleton
+
+| Step | Tags |
+|---|---|
+| `TeamsDetail.spec.ts` → `test.step.skip("Forecast reality check opens in a dialog")`: press, dialog visible by role and name, the 85th level line, the denominator, the table with ≥ 16 row headers, Escape, dialog hidden, focus back on the button | `@walking_skeleton @driving_port @us-04 @slice-04` — **pending** |
+
+### Existing tests DELIVER deletes or rewrites (not touched here — all still green)
+
+| Existing test | Fate at DELIVER | When |
+|---|---|---|
+| `TeamForecastView.realityCheck.test.tsx`, slice 01 specs that find the answer inside the Backtesting group (17) | **Rewrite** through the dialog where a dialog spec above does not already cover them (window sentence, Deep Current, hole in the region, mid-ladder gap, no window held up, denominator at 16 / 20, fixed dates, findings, terminology); **delete** the rest (walking skeleton, failure-via-snackbar, second press, level lines in the old wording, read-only — each replaced by a dialog spec) | slice 04, the dialog's commit |
+| `TeamForecastView.realityCheck.test.tsx`, all 8 slice 02 panel / band-row specs | **Delete** (6094-D4, DES-9) | slice 04 |
+| `RealityCheckBandRow.test.ts` | **Delete** | slice 04 |
+| `realityCheckCopy.test.ts` — `bandDescription`, `actualDescription` cases | **Delete**; `levelLine` / `levelReadingCopy` cases **rewrite** to "should be about" | slice 04 |
+| `TeamForecastView.realityCheck.usageData.test.tsx` — the five pre-dialog specs | **Move** into the dialog (the failed-request spec stops looking for a snackbar); the name-on-the-list spec stays | slice 04 |
+| `ForecastService.test.ts` — "keep the days as they travel" (`toEqual(response)`) | **Rewrite** its response to carry `scoredPeriods` if the schema requires the field | slice 04 |
+| `TeamsDetail.spec.ts` "Forecast reality check" step + `TeamDetailPage.realityCheckVerdict` / `realityCheckDenominator` | **Delete**; the skipped dialog step replaces it | slice 04 |
+| `TeamForecastView.realityCheck.dialog.test.tsx` — the slice 04 level-line and cell-name pins | **Rewrite** to the graded form (", within 10% in N", ", P% of the actual") | slice 05 |
+
+### DISCUSS Gherkin coverage
+
+| DISCUSS scenario | Test |
+|---|---|
+| US-04 Pressing the button opens the dialog at once and it fills in | dialog: *opens the dialog at once …* |
+| US-04 The dialog opens on words, one line per confidence level | dialog: *opens on one line per level …*, *never held / always held*, *keeps nothing behind a toggle* |
+| US-04 Every forecast sits next to what the Team delivered | dialog: *each period's actual once*, *every forecast with its value …*; backend E12 scenarios |
+| US-04 A check that could not run says so in its row | dialog: *could not run …*, *could not be worked out …*, *a period in which no window could be checked …* |
+| US-04 Running again and reopening both give a fresh answer | dialog: *Run again*, *closing and reopening*; usage data: Run again / reopen report again |
+| US-04 The dialog can be used from the keyboard | dialog: *Escape …*, *focus moves into the dialog …* |
+| US-04 The Backtesting group keeps only the button | dialog: *the Forecast Backtesting group keeps only the button* |
+| US-05 A forecast that held is shaded by how close it landed | grading: *held … shaded*; rules: the stories' examples |
+| US-05 A forecast that did not hold is graded by how far it fell short | grading: *did not hold …* |
+| US-05 A one-Work-Item miss on a small period | grading: *a one-Work-Item miss …* |
+| US-05 A period in which nothing was delivered has no percentage | grading: *nothing was delivered …*; rules: actual 0 ×2 |
+| US-05 Each level's line says how close it usually landed | grading: *Maria's 85th …* and the level-line describe |
+| US-05 The grade never rests on colour alone, and the method is credited | grading: *every graded cell says in words …*, *legend*, *credits Nick Brown*; colours E10 |
+
+## Wave: DISTILL / [REF] WS strategy — Story #6094
+
+**Inherited: Strategy B, extend the shipped vertical.** The one walking skeleton is the Playwright step in
+`TeamsDetail.spec.ts`, rewritten for the dialog through the `TeamDetailPage` POM on demo scenario 0's first
+Team: press **Run reality check**, see the dialog (by role and name, never by a level icon), a level line,
+the denominator and the table, press Escape, see the dialog gone and focus back on the button.
+**It extends the existing shared visit rather than adding a spec** (CI consolidation; the step already
+exists there and runs on SQLite and PostgreSQL). It asserts the filled result, never the loading text
+(R-6094-6), and ends with the dialog closed so no later step inherits it.
+
+**The walking skeleton is pending at hand-off and cannot be green before DELIVER**: the dialog does not
+exist, and a POM step against markup nobody has rendered can only fail on the missing dialog. As the Epic
+did for its owed skeleton, it is `test.step.skip` now, its locators are written but unrun, and **DELIVER
+of slice 04 un-skips it, runs it locally against a running Lighthouse before commit, and deletes the old
+card step and its two locators in the same commit.** The Vitest dialog specs are the component-level
+proof in the meantime. At hand-off the suites are green: every new case is skipped, nothing RED is
+committed.
+
+No green scenario is added for slice 04: the harness this wave touches is the slice 01 one, whose 187
+reality-check backend tests stay green after the reader was added, which proves it.
+
+## Wave: DISTILL / [REF] Adapter coverage table — Story #6094
+
+| Adapter / port | Class | Real-I/O scenario | Treatment |
+|---|---|---|---|
+| `ForecastRealityCheckController` over HTTP (`latest`) | driving | the five slice 04 backend scenarios | real `WebApplicationFactory` host |
+| EF + `TeamMetricsService` (the per-horizon actual `scoredPeriods` reuses) | driven internal | the five slice 04 scenarios; `RealityCheckQueryCountTest` (20 / 24, unchanged) | real, SQLite file |
+| `IForecastService` | driven, non-deterministic | the five slice 04 scenarios — scripted per check (no real Monte Carlo, DEVOPS DV-OPS-5) | existing policy row |
+| `ILighthouseClock`, `ILicenseService` | driven external | same | existing policy rows |
+| `forecastService.runRealityCheck` (browser client + zod) | driving port of the dialog | every dialog / grading / usage spec (stand-in); the parse spec in `ForecastService.test.ts` (real client over a mocked transport) | existing |
+| `useUsageDataReporter` | driven | the seven dialog usage-data specs | stand-in reporter, as the Epic's file does |
+| `useMediaQuery` / `matchMedia` | driven (browser) | every dialog spec (`false`), the narrow-screen spec (`true`) | the `DashboardHeader.test.tsx` stub, now `setMatchMedia` in the fixture |
+| Demo scenario 0 + running Lighthouse | driving (E2E) | the Playwright skeleton | existing policy row |
+
+No "NO — MISSING" row. **No new port**, so the ATDD policy is inherited unchanged.
+
+## Wave: DISTILL / [REF] Scaffolds — Story #6094
+
+RED-ready scaffolds, each carrying `export const __SCAFFOLD__ = true;` and throwing
+`new Error("Not yet implemented -- RED scaffold: …")` naming what was asked. They pass `tsc -b`, Biome and
+the build with zero warnings; each file has its message once (S1192), each function uses its parameters
+(no unused-parameter findings), and no scaffold is called outside an `it` body.
+
+| File | Scaffolds | Used by a test now |
+|---|---|---|
+| `src/pages/Teams/Detail/realityCheckGrading.ts` | `FORECAST_GRADES` (the six-member closed set of DES-2 — a declaration, not behaviour), `ForecastGrade`, `GradedCheck`, `CheckReading`, `LevelCloseness`; `missOf`, `readCheck`, `levelCloseness` throw | yes — `realityCheckGrading.test.ts`, `colors.test.ts`, the grading spec's types |
+| `src/pages/Teams/Detail/RealityCheckDialog.tsx` | component + `RealityCheckRun` (running / answered / failed) | no — reached through `TeamForecastView` only (Mandate 1) |
+| `src/pages/Teams/Detail/RealityCheckTable.tsx` | component | no |
+| `src/pages/Teams/Detail/RealityCheckPeriodGroup.tsx` | component | no |
+| `src/pages/Teams/Detail/RealityCheckGradedCell.tsx` | component | no |
+| `src/pages/Teams/Detail/RealityCheckLegend.tsx` | component | no |
+
+**Not scaffolded, deliberately**: `appColors.forecastGrade` (the tests read it through a typed seam that
+fails as `expected undefined to be defined`, so no production data is added); `RealityCheckScoredPeriod` /
+`scoredPeriods` in `RealityCheckResult.ts` and `forecastSchemas.ts` (the fixture carries its own wire type
+and the parse spec reads the field through a cast, so the build does not need it); the C#
+`RealityCheckScoredPeriodDto` (the backend scenarios read the answer as JSON, as the Epic's do). DELIVER
+may merge or split the five component scaffolds (DESIGN allows it); `grep -r "__SCAFFOLD__" src/` must find
+nothing when slice 05 closes.
+
+## Wave: DISTILL / [REF] Test placement — Story #6094
+
+| File | Holds |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialog{Scenarios,Specifications}.cs` | E12 and OQ-7, beside the slice 01 pair; `[Category("slice-04")]` |
+| `…/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs` | + `ScoredPeriodReading` and `RealityCheckAnswer.ScoredPeriods` |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx` | Slice 04 as Maria meets it |
+| `…/TeamForecastView.realityCheck.grading.test.tsx` | Slice 05 as Maria meets it |
+| `…/realityCheckGrading.test.ts` | The pure rules, the E11 exhaustive property |
+| `…/TeamForecastView.realityCheck.usageData.test.tsx` | + the dialog's emission cases |
+| `Lighthouse.Frontend/src/utils/theme/colors.test.ts` | + E10 |
+| `Lighthouse.Frontend/src/services/Api/ForecastService.test.ts` | + the `scoredPeriods` parse |
+| `Lighthouse.Frontend/src/tests/RealityCheckFixture.tsx` | + `scoredPeriods` (consistent with the cells by default; `periodActuals` overrides), `cellOrder`, `setMatchMedia`, dialog / table finders, `linesReading` / `expectTheLine` (whole-string match), `thePeriodChecked` |
+| `Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts`, `tests/models/teams/TeamDetailPage.ts` | The skipped skeleton step; dialog-scoped locators |
+
+New spec files rather than edits to `TeamForecastView.realityCheck.test.tsx`, because that file's specs
+are green today and must stay so until the dialog replaces them; DELIVER folds or deletes per the table
+above. Add all four new spec files and `colors.test.ts` to `vitest.stryker.6094.config.ts`'s `include`.
+
+## Wave: DISTILL / [REF] Driving Adapter coverage — Story #6094
+
+| Entry point in DESIGN | Exercised over its protocol by |
+|---|---|
+| `POST /api/latest/forecast/reality-check/{teamId}` — `scoredPeriods` | the five slice 04 backend scenarios (the versioned route shares the controller and is covered by slice 01) |
+| UI: **Run reality check** → opens the dialog and starts a run | dialog spec 1; the Playwright skeleton |
+| UI: Dialog → **Run again** | dialog Run-again specs; usage-data Run-again specs |
+| UI: Dialog → **Close** / Escape | dialog Escape and close-control specs; the skeleton |
+| UI: **Show the evidence** (removed) | its absence: *keeps nothing behind a toggle*, *the Backtesting group keeps only the button* |
+
+## Wave: DISTILL / [REF] Pre-requisites — Story #6094
+
+For DELIVER, what the specs find things by — nothing about layout or styling beyond this:
+
+- **P-6094-1. The dialog** is `role="dialog"` named by its title, which contains "reality check"
+  (`/reality check/i`); its buttons are **Run again** and **Close** (the icon button may also be named
+  "Close"); nothing else in it is a control.
+- **P-6094-2. The loading state** is a `role="status"` region reading *"Checking {Team name}'s forecasts
+  against what happened…"*, present again when a reopen adopts a running check.
+- **P-6094-3. The table** is a real `<table>` with a `<caption>` naming the Team; one `<tbody>` per period
+  whose header is `<th scope="rowgroup">` containing the horizon label ("1 week" … "8 weeks"), the period's
+  first and last day as `<time dateTime="YYYY-MM-DD">` (from `scoredPeriods`), and "{actual} {Work Items}
+  completed"; one `<th scope="row">` per window starting "{N} days", the Team's own window also saying
+  "your setting"; level `columnheader`s whose text starts "50th" … "95th" and contains the `ForecastLevel`
+  name; an unevaluable row is one `<td colSpan={4}>`.
+- **P-6094-4. A graded cell** has the accessible name *"{P}th: {forecast}, held | did not hold, {n} more
+  delivered | {n} fewer delivered | exactly as forecast"* — plus *", {p}% of the actual"* from slice 05
+  when the actual is above 0 — and visibly shows the forecast, the signed miss ("+2", "0", **"−6" with
+  U+2212**), ✓ or ✗ as a text glyph with "held" / "did not hold", and from slice 05 "{p}%" and the grade
+  fill as its background.
+- **P-6094-5. Level lines**, whole strings: slice 04 *"85th: held 14 of 16 (should be about 14)."*, with
+  *" — it never held, which is over-forecasting"* / *" — it held every time, which is under-forecasting"*
+  before the full stop, and *"85th: no check could be run, so this level was not tested."*; slice 05 adds
+  *", within 10% in N"* before the reading and *" Usually …."* after the full stop.
+- **P-6094-6. Legend words**, whole strings: *"Held, within 10%"*, *"Held, by 10-25%"*, *"Held, by more than
+  25%"*, *"Did not hold, within 10%"*, *"Did not hold, by 10-25%"*, *"Did not hold, by more than 25%"*,
+  *"Not checked"*.
+- **P-6094-7. Unevaluable row copy** stays the shipped `unevaluableRowCopy` (DESIGN OQ-9 default).
+- **P-6094-8.** `useMediaQuery(theme.breakpoints.down("sm"))` drives `fullScreen`; every dialog spec
+  stubs `matchMedia` (`setMatchMedia`).
+- **P-6094-9.** Backend `scoredPeriods` lands before, or with, the frontend that requires it (DEVOPS);
+  `RealityCheckQueryCountTest` must stay 20 / 24.
+- **P-6094-10. DEVOPS matrix**: one environment, `clean`; the Playwright step runs on SQLite and
+  PostgreSQL in CI and is not a parametrisation axis.
+
+## Wave: DISTILL / [REF] Findings and upstream changes — Story #6094
+
+**Upstream changes made in place**
+
+| File | Change |
+|---|---|
+| This file, AC-5.3 | "no percentage and no band" → "no percentage"; forecast 0 is dark green and counts towards "within 10% in N" (R-6094-1), with a note pointing here |
+| `slices/slice-04-the-answer-opens-in-a-dialog.md` | OUT list: "Any backend change" → "Any backend change beyond `scoredPeriods`" (R-6094-2) |
+| `docs/product/kpi-contracts.yaml` | The six testable `OUT-6094-*` entries now list their scenarios; `OUT-6094-density-readable` stays a dogfooding record |
+
+**Pinned by DISTILL within the defaults — copy, cheap to flip, not a product decision re-opened**: the
+level-line punctuation (P-6094-5), the cell's accessible wording (P-6094-4: "6 more delivered", "exactly
+as forecast", "14% of the actual"), the legend words (P-6094-6), the loading sentence (P-6094-2, from the
+DISCUSS domain example), and U+2212 for the minus (DESIGN OQ-2). Each lives in one spec title or one
+constant; if the maintainer rewords one, DELIVER changes the literal and the composer together.
+
+**For DELIVER (in scope, no upstream routing)**
+
+- F-6094-1. `RealityCheckFixture.tsx` still dates each cell's scored period `anchor − H` .. `anchor`, the
+  pre-DES-19 reading (DES-19 made it `anchor − H + 1`). No existing spec asserts a cell's dates, and
+  `scoredPeriods` is derived from the cells so the fixture agrees with itself; the one dates spec above
+  compares against the fixture's own period. Correct `shiftDay(REALITY_CHECK_TODAY, -horizon)` to
+  `-horizon + 1` when DELIVER next touches the fixture.
+- F-6094-2. The grading spec asserts the grade fill as the cell's computed `background-color` in jsdom. If
+  the cell's fill is applied in a way jsdom cannot compute, keep the fill observable (e.g. the same token
+  as an inline style) rather than weakening the assertion to a class name.
+
+## Wave: DISTILL / [REF] AT completeness audit — Story #6094
+
+15-item checklist: **13 / 15 — COMPLETE.**
+
+| Item | Verdict | By |
+|---|---|---|
+| C1a empty / minimum input | pass | a Team with no evaluable check (backend + dialog); actual 0; a level with no graded check |
+| C1b partition boundaries | pass | the five DES-3 edges + two not-held mirrors; exactly half; the exhaustive 200 × 401 loop |
+| C2a state machine: transitions | pass | the run's idle → running → answered / failed, failed → running, answered → running (Run again), closed-while-running → adopted, closed → dropped |
+| C2b illegal transitions | pass | a second run while one is in flight (Run again, reopen) |
+| C3 0 / 1 / N | pass | 0 graded checks, 1 cell, 12 / 16 / 20 checks, 4 periods |
+| C4a apply twice | pass | Run again; close and reopen; each reports once more |
+| C4b inverse without prerequisite | pass (N/A) | closing is the only inverse, and it needs an open dialog; nothing is written |
+| C5a mode flags | pass | narrow vs wide screen; setting tested vs not tested; off-ladder vs on |
+| C5b flag orthogonality | **gap** | the narrow screen is asserted on the default answer only, not crossed with the unevaluable or off-ladder tables |
+| C6a malformed input | **gap** | a `scoredPeriods` entry with a null actual or a missing period is not specified to be refused; the parse spec pins only the good case |
+| C6b each declared error | pass | the failed request (dialog message, no event); both unevaluable reasons |
+| C6c closed error set | pass | the six grades are exhaustive (E6, compiler); both sufficiency reasons |
+| C7a degraded resource | pass | the request fails; Run again recovers |
+| C7b interruption | pass | close while running; the answer arrives closed and is dropped |
+| C7c concurrency | pass | no second run in flight; the adopted run reports once |
+
+Both gaps are `AT_GAP_IN_DELIVERY_SCOPE`, low; neither is a `SPECIFICATION_AMBIGUITY`. Audit log:
+`(epic-4172-forecast-backtest-sweep, C5, 1, low)`, `(epic-4172-forecast-backtest-sweep, C6, 1, low)`.
+**Tier B**: not added — no property-testing package, and the one domain-rich input (actual × forecast) is
+covered exhaustively by the E11 loop. **Mandate-12 / state-delta**: N/A in this stack (ATDD policy).
+
+## Wave: DISTILL / [REF] Handoff — Story #6094
+
+**To DELIVER (`nw-software-crafter`)**, slice 04 then slice 05:
+
+1. **Backend first** (DEVOPS commit order): un-ignore the five slice 04 scenarios one at a time; add
+   `RealityCheckScoredPeriodDto` and map it from the `ScoredPeriod` the service already builds;
+   `RealityCheckQueryCountTest` must still read 20 / 24.
+2. **Frontend slice 04**: un-skip `realityCheckGrading.test.ts`'s miss cases, then the dialog specs one at a
+   time, starting with *opens the dialog at once …*; the usage-data dialog cases with the run lifecycle;
+   the parse spec with the schema. In the dialog's commit: delete / rewrite per the table above, delete the
+   retired components, un-skip the Playwright step, **run it locally before commit**, and delete the old
+   step and its locators.
+3. **Frontend slice 05**: the grading rules (E11 loop), E10 colours, then the grading specs; rewrite the
+   slice 04 level-line and cell-name pins to the graded form in the same commit.
+4. `red-classification.md` records what every case fails on today; a case that fails on anything else when
+   un-skipped is a harness problem to fix first.
+5. Stryker: the new spec files and `colors.test.ts` go in the 6094 runner's `include`.
+
+**Reviewer gate**: the four-reviewer final gate is the orchestrator's.

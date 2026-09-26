@@ -122,6 +122,36 @@ export class TeamDetailPage {
 		);
 	}
 
+	// The answer opens in a dialog. Found by its role and name, never by a level icon: production builds
+	// strip the test ids MUI puts on icons.
+	get realityCheckDialog(): Locator {
+		return this.page.getByRole("dialog", { name: /reality check/i });
+	}
+
+	get realityCheckDialogDenominator(): Locator {
+		return this.realityCheckDialog.getByText(
+			/^\d+ forecast runs? (were|was) checked/,
+		);
+	}
+
+	realityCheckLevelLine(level: 50 | 70 | 85 | 95): Locator {
+		return this.realityCheckDialog.getByText(
+			new RegExp(`^${level}th: (held \\d+ of \\d+|no check could be run)`),
+		);
+	}
+
+	get realityCheckTable(): Locator {
+		return this.realityCheckDialog.getByRole("table");
+	}
+
+	get realityCheckWindowRows(): Locator {
+		return this.realityCheckTable.locator('th[scope="row"]');
+	}
+
+	async closeRealityCheckWithEscape(): Promise<void> {
+		await this.page.keyboard.press("Escape");
+	}
+
 	async clickBacktestHistoricalThroughputTab(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Historical Throughput" }).click();
 	}

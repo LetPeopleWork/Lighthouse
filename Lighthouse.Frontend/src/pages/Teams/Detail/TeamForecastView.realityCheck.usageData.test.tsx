@@ -1,11 +1,15 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import {
 	aRealityCheckAnswer,
+	expectALine,
 	pressRunRealityCheck,
 	renderTheForecastTab,
+	setMatchMedia,
 	theAnswerIn,
+	theRealityCheckDialog,
 } from "../../../tests/RealityCheckFixture";
 
 /**
@@ -183,5 +187,148 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		expect(reportUsage).not.toHaveBeenCalledWith({
 			name: UsageDataEventName.TeamManualForecastRun,
 		});
+	});
+});
+
+/**
+ * Once the answer opens in a dialog (Story 6094, slice 04) the event means an answer somebody was shown.
+ * Run again and a reopen that bring an answer each report again; reopening while a check is still running
+ * shows that same check and reports it once; an answer that arrives after the dialog was closed was shown
+ * to nobody and is not reported. The specs above move into the dialog with it when it is delivered.
+ */
+const PENDING_DIALOG = "the reality check dialog is not built yet";
+
+const anAnswerStillOnItsWay = () => {
+	let answer: (value: unknown) => void = () => {};
+	runRealityCheck.mockReturnValueOnce(
+		new Promise((resolve) => {
+			answer = resolve;
+		}),
+	);
+	return (value: unknown) => act(async () => answer(value));
+};
+
+const theAnswerIsShownIn = async (dialog: HTMLElement) => {
+	await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
+};
+
+const closeTheDialog = async () => {
+	await userEvent.keyboard("{Escape}");
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+};
+
+describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting a reality check from its dialog", () => {
+	beforeEach(() => {
+		setMatchMedia(false);
+	});
+
+	it.skip(`reports once when the dialog shows the answer, and not when it opened (${PENDING_DIALOG})`, async () => {
+		const answerArrives = anAnswerStillOnItsWay();
+		const group = renderTheForecastTab(runRealityCheck);
+
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+		expect(reportUsage).not.toHaveBeenCalled();
+
+		await answerArrives(aRealityCheckAnswer());
+		await theAnswerIsShownIn(dialog);
+
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
+	});
+
+	it.skip(`reports again when Run again brings a fresh answer (${PENDING_DIALOG})`, async () => {
+		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+		await theAnswerIsShownIn(dialog);
+
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: /^run again$/i }),
+		);
+
+		await waitFor(() => expect(reportUsage).toHaveBeenCalledTimes(2));
+		expect(runRealityCheck).toHaveBeenCalledTimes(2);
+	});
+
+	it.skip(`reports again when the dialog is closed and opened again after an answer (${PENDING_DIALOG})`, async () => {
+		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		await theAnswerIsShownIn(await theRealityCheckDialog());
+		await closeTheDialog();
+
+		await pressRunRealityCheck(group);
+		await theAnswerIsShownIn(await theRealityCheckDialog());
+
+		expect(reportUsage).toHaveBeenCalledTimes(2);
+	});
+
+	it.skip(`@error reopening while the check is still running shows that same check and reports it once (${PENDING_DIALOG})`, async () => {
+		const answerArrives = anAnswerStillOnItsWay();
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		await theRealityCheckDialog();
+		await closeTheDialog();
+
+		await pressRunRealityCheck(group);
+		const reopened = await theRealityCheckDialog();
+		await answerArrives(aRealityCheckAnswer());
+		await theAnswerIsShownIn(reopened);
+
+		expect(runRealityCheck).toHaveBeenCalledTimes(1);
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+	});
+
+	it.skip(`@error an answer that arrives after the dialog was closed was shown to nobody and is not reported, and reopening asks afresh (${PENDING_DIALOG})`, async () => {
+		const droppedAnswerArrives = anAnswerStillOnItsWay();
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		await theRealityCheckDialog();
+		await closeTheDialog();
+
+		await droppedAnswerArrives(aRealityCheckAnswer());
+		expect(reportUsage).not.toHaveBeenCalled();
+
+		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
+		await pressRunRealityCheck(group);
+		await theAnswerIsShownIn(await theRealityCheckDialog());
+
+		expect(runRealityCheck).toHaveBeenCalledTimes(2);
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+	});
+
+	it.skip(`@error reports nothing when Run again fails (${PENDING_DIALOG})`, async () => {
+		runRealityCheck
+			.mockResolvedValueOnce(aRealityCheckAnswer())
+			.mockRejectedValueOnce(new Error("The reality check could not be run"));
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+		await theAnswerIsShownIn(dialog);
+
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: /^run again$/i }),
+		);
+		await within(dialog).findByText(/the reality check could not be run/i);
+
+		expect(reportUsage).toHaveBeenCalledTimes(1);
+	});
+
+	it.skip(`never reports a check from the dialog as a forecast run by hand, however often it runs (${PENDING_DIALOG})`, async () => {
+		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+		await theAnswerIsShownIn(dialog);
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: /^run again$/i }),
+		);
+		await waitFor(() => expect(reportUsage).toHaveBeenCalledTimes(2));
+
+		for (const [event] of reportUsage.mock.calls) {
+			expect(event).toEqual(aRealityCheckWasRun);
+		}
 	});
 });

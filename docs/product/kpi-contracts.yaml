@@ -1383,7 +1383,7 @@ outcomes:
       scoredPeriods has one entry per sampledHorizonDays, in that order, and that every evaluable cell's
       actualCompleted equals its period's. Baseline is 0, because today the size of a miss shows only as a
       tick position.
-    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-how-far-each-forecast-landed"
+    acceptance_scenarios: "Tagged @kpi-OUT-6094-how-far-each-forecast-landed (DISTILL 2026-09-26, all pending): backend Slice04TheAnswerOpensInADialogScenarios.cs - all five (every period with its days and actual; evaluated checks carry their period's actual; a Team with no evaluable check still gets four periods with actuals; a week with nothing delivered is 0, not missing; an off-ladder Team still gets one period per horizon); frontend TeamForecastView.realityCheck.dialog.test.tsx - one row per check grouped by period (16 / 20), each period's actual once with its days, every forecast with value + miss + held, a period no window could check still shows its actual; ForecastService.test.ts - the parse keeps scoredPeriods"
     measurement_window: every push (CI)
     gate: hard
     alerting:
@@ -1397,7 +1397,7 @@ outcomes:
     target: "4 of 4 level lines state 'within 10% in N' in every result, and carry the 'usually' clause exactly when one grade holds more than half of that level's graded checks"
     measurement_scope: per_instance
     measured_by: "AC-5.4 scenarios and the realityCheckGrading unit tests (the per-level count and the dominant grade)."
-    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-caution-is-visible"
+    acceptance_scenarios: "Tagged @kpi-OUT-6094-caution-is-visible (DISTILL 2026-09-26, all pending): TeamForecastView.realityCheck.grading.test.tsx - the level-line describe (Maria's 85th, misses within 10% counted, no clause when split or at exactly half, the six 'usually' phrases, unevaluable checks left out, NotEvaluated has no count); realityCheckGrading.test.ts - the levelCloseness describe"
     measurement_window: every push (CI)
     gate: hard
     alerting:
@@ -1414,7 +1414,7 @@ outcomes:
       AC-5.1 / AC-5.3 scenarios, and DESIGN rule E11: a Vitest loop over every actual in 1..200 and every
       forecast in 0..400. For each pair it asserts that the shown percentage lies in its band (<= 10,
       11..25, >= 26) and is >= 1 whenever the miss is not 0.
-    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-no-percentage-without-its-work-items"
+    acceptance_scenarios: "Tagged @kpi-OUT-6094-no-percentage-without-its-work-items (DISTILL 2026-09-26, all pending): realityCheckGrading.test.ts - the stories' examples, the band edges 4/40 -> 10%, 4/39 -> 11%, 25/100 -> 25%, 25/99 -> 26%, 1/300 -> 1%, actual 0 with no percentage, and the exhaustive 1..200 x 0..400 property (E11); TeamForecastView.realityCheck.grading.test.tsx - Ocean Explorer's held and not-held cells, Coastal Survey's -1 beside 33%, Harbour Pilots' week with no percentage"
     measurement_window: every push (CI)
     gate: hard
     alerting:
@@ -1431,7 +1431,7 @@ outcomes:
       AC-5.2 scenarios; DESIGN rule E10 in colors.test.ts, using the shipped calculateContrastRatio; and
       rule E6, where every map keyed by ForecastGrade is an exhaustive Record held by the TypeScript
       compiler.
-    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-colour-never-alone"
+    acceptance_scenarios: "Tagged @kpi-OUT-6094-colour-never-alone (DISTILL 2026-09-26, all pending): colors.test.ts - every grade fill reads at >= 4.5:1 with getContrastText, none equals a forecast-level colour, no two alike (E10); TeamForecastView.realityCheck.grading.test.tsx - every one of 64 graded cells names held or not, the miss and the percentage in words and shows a glyph; the legend names six grades and 'Not checked'"
     measurement_window: every push (CI)
     gate: hard
     alerting:
@@ -1448,7 +1448,7 @@ outcomes:
       AC-4.9 / AC-5.4 scenarios; DESIGN rule E8, where a shuffled cells array still renders in
       sampledHorizonDays then sampledWindowDays order; and the shipped rankability scan, extended over the
       dialog's rendered text.
-    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-no-window-ranked"
+    acceptance_scenarios: "Tagged @kpi-OUT-6094-no-window-ranked (DISTILL 2026-09-26, all pending): TeamForecastView.realityCheck.dialog.test.tsx - shuffled checks still drawn in ladder order (E8), nothing in the dialog tallies, orders or picks a window and no column sorts; TeamForecastView.realityCheck.grading.test.tsx - no level line names, counts or ranks a window; backend A_Team_whose_own_window_is_off_the_ladder_gets_one_period_per_horizon_never_one_per_window (E5c). The shipped backend rankability scan covers the new envelope field unchanged"
     measurement_window: every push (CI)
     gate: hard
     alerting:
@@ -1473,7 +1473,7 @@ outcomes:
       derivation: "Distinct consenting browsers reporting the event, per 30-day window, vendor instance excluded. Raw event counts are descriptive only and are never compared across the #6094 release."
       surfacing:
         - "docs/settings/usagedata.md is the disclosure (unchanged by this story); the collector's own dashboard is where the number is read."
-    acceptance_scenarios: "The emission scenarios in TeamForecastView.realityCheck.usageData.test.tsx, reshaped in DISTILL for the dialog (first open, Run again, reopen, adopted in-flight run, dropped answer, failure), tagged @kpi-OUT-6094-use-survives-the-extra-click"
+    acceptance_scenarios: "Tagged @kpi-OUT-6094-use-survives-the-extra-click (DISTILL 2026-09-26, all pending): the seven dialog cases in TeamForecastView.realityCheck.usageData.test.tsx - first open reports once when the answer is shown, Run again reports again, reopen after an answer reports again, reopen during a run adopts it (one request, one event), an answer arriving after close is dropped and not reported, a failed Run again reports nothing, never TeamManualForecastRun. The five pre-dialog emission specs move into the dialog at DELIVER"
     measurement_window: "30 days either side of the first published release carrying Story #6094"
     gate: hard for the emission scenarios; none on the count, which is descriptive
     precondition: >

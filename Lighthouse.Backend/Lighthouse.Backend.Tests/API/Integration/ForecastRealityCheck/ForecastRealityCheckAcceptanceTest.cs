@@ -407,6 +407,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             public List<CellReading> CellsFor(int samplingWindowDays)
                 => [.. Cells.Where(cell => cell.SamplingWindowDays == samplingWindowDays)];
 
+            /// <summary>
+            /// The periods the checks were scored on, one per horizon, as the answer lists them. An answer without
+            /// them fails on the field's name and then reads as listing none, so every later assertion fails as an
+            /// assertion rather than on reading a value that is not there.
+            /// </summary>
+            public List<ScoredPeriodReading> ScoredPeriods
+            {
+                get
+                {
+                    var periods = Field(Root, "scoredPeriods");
+                    return periods.ValueKind == JsonValueKind.Array
+                        ? [.. periods.EnumerateArray().Select(ScoredPeriodReading.From)]
+                        : [];
+                }
+            }
+
             public LevelCoverageReading Coverage(int confidenceLevel)
             {
                 var matching = Field(Root, "levelCoverage").EnumerateArray()
@@ -469,6 +485,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                             level => Field(level, "confidenceLevel").GetInt32(),
                             level => Field(level, "held").GetBoolean())
                         : []);
+            }
+        }
+
+        /// <summary>
+        /// One period a check was scored on, and what the Team finished in it. The actual is read as nullable so
+        /// that an answer leaving it out reads as a missing actual rather than as zero.
+        /// </summary>
+        protected sealed record ScoredPeriodReading(int HorizonDays, DateOnly ScoredPeriodStart, DateOnly ScoredPeriodEnd, int? ActualCompleted)
+        {
+            public static ScoredPeriodReading From(JsonElement period)
+            {
+                var actual = Field(period, "actualCompleted");
+
+                return new ScoredPeriodReading(
+                    Field(period, "horizonDays").GetInt32(),
+                    AsDay(Field(period, "scoredPeriodStart")),
+                    AsDay(Field(period, "scoredPeriodEnd")),
+                    actual.ValueKind == JsonValueKind.Number ? actual.GetInt32() : null);
             }
         }
 
