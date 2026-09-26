@@ -13,7 +13,11 @@ const RealityCheckPeriodGroup: React.FC<
 > = ({ result, horizonDays }) => (
 	<TableBody>
 		<TableRow>
-			<TableCell component="th" scope="rowgroup">
+			<TableCell
+				component="th"
+				scope="rowgroup"
+				colSpan={result.confidenceLevels.length + 1}
+			>
 				{horizonLabel(horizonDays)}
 			</TableCell>
 		</TableRow>

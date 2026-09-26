@@ -299,11 +299,11 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 });
 
 describe("@us-04 @slice-04 every forecast next to what the Team delivered", () => {
-	it.skip.each([
+	it.each([
 		{ ownWindow: 30, rows: 16, windows: [14, 30, 60, 90] },
 		{ ownWindow: 45, rows: 20, windows: [14, 30, 45, 60, 90] },
 	])(
-		`@kpi-OUT-6094-how-far-each-forecast-landed has one row per check - $rows - grouped by period in horizon order, the windows in ladder order in every group (${PENDING})`,
+		`@kpi-OUT-6094-how-far-each-forecast-landed has one row per check - $rows - grouped by period in horizon order, the windows in ladder order in every group`,
 		async ({ ownWindow, rows, windows }) => {
 			const dialog = await theDialogFor(
 				aRealityCheckAnswer({ currentSettingDays: ownWindow }),
@@ -481,7 +481,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(linesMatching(dialog, /your setting/i)).toHaveLength(0);
 	});
 
-	it.skip(`@kpi-OUT-6094-no-window-ranked keeps the order the check was run in, even when the checks arrive shuffled (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-no-window-ranked keeps the order the check was run in, even when the checks arrive shuffled`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
@@ -499,7 +499,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		}
 	});
 
-	it.skip(`heads the four level columns 50th, 70th, 85th and 95th, each with its confidence name (${PENDING})`, async () => {
+	it(`heads the four level columns 50th, 70th, 85th and 95th, each with its confidence name`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		const levelHeaders = within(theTableIn(dialog))
@@ -516,7 +516,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 });
 
 describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
-	it.skip(`is a real table: a caption naming the Team, a header for each period and one for each window (${PENDING})`, async () => {
+	it(`is a real table: a caption naming the Team, a header for each period and one for each window`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const table = theTableIn(dialog);
 

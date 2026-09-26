@@ -230,6 +230,9 @@ export const horizonLabel = (horizonDays: number): string => {
 	return weeks === 1 ? "1 week" : `${weeks} weeks`;
 };
 
+export const tableCaption = (teamName: string, getTerm: TermGetter): string =>
+	`Every forecast checked for ${teamName}, by period and sampling window, beside what the ${getTerm(TERMINOLOGY_KEYS.TEAM)} delivered.`;
+
 export interface UnevaluableRowFacts {
 	daysWithCompletedWork: number;
 	minimumActiveDays: number;

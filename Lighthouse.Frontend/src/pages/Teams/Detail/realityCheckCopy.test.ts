@@ -21,6 +21,7 @@ import {
 	regionOf,
 	standingCopy,
 	sufficiencyReasonCopy,
+	tableCaption,
 	type UnrunChecks,
 	unevaluableRowCopy,
 	unevaluatedSentence,
@@ -621,6 +622,14 @@ describe("horizonLabel", () => {
 			expect(horizonLabel(horizonDays)).toBe(expected);
 		},
 	);
+});
+
+describe("tableCaption", () => {
+	it("names the Team and what the table shows, in the instance's word for Team", () => {
+		expect(tableCaption("Ocean Explorer", getTerm)).toBe(
+			"Every forecast checked for Ocean Explorer, by period and sampling window, beside what the Squad delivered.",
+		);
+	});
 });
 
 const someRowFacts = (daysWithCompletedWork: number) => ({
