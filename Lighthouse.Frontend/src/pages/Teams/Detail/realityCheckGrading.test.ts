@@ -70,13 +70,13 @@ const shownInsideItsBand = (
 	percent <= SHOWN_RANGE_OF_BAND[band][1];
 
 describe("@us-04 @slice-04 the miss in Work Items", () => {
-	it.skip.each([
+	it.each([
 		{ actual: 42, forecast: 36, miss: 6 },
 		{ actual: 42, forecast: 48, miss: -6 },
 		{ actual: 40, forecast: 40, miss: 0 },
 		{ actual: 0, forecast: 2, miss: -2 },
 	])(
-		`is what the Team delivered minus what was forecast, so its sign always agrees with whether it held - $actual against $forecast (${PENDING})`,
+		`is what the Team delivered minus what was forecast, so its sign always agrees with whether it held - $actual against $forecast`,
 		({ actual, forecast, miss }) => {
 			expect(missOf({ actualCompleted: actual, forecastValue: forecast })).toBe(
 				miss,

@@ -44,9 +44,11 @@ const notYetImplemented = (question: string, facts: unknown): never => {
 	);
 };
 
-export const missOf = (
-	check: Pick<GradedCheck, "forecastValue" | "actualCompleted">,
-): number => notYetImplemented("the miss in Work Items", check);
+export const missOf = ({
+	actualCompleted,
+	forecastValue,
+}: Pick<GradedCheck, "forecastValue" | "actualCompleted">): number =>
+	actualCompleted - forecastValue;
 
 export const readCheck = (check: GradedCheck): CheckReading =>
 	notYetImplemented("the grade of one check", check);
