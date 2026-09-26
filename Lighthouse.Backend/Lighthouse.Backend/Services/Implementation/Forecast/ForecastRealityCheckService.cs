@@ -35,14 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 ConfidenceLevels,
                 ForecastDataSufficiencyPolicy.MinimumActiveDays,
                 denominator,
-                new RealityCheckSoundWindowDto(
-                    [],
-                    [],
-                    Determination.NotEnoughEvidence,
-                    team.ThroughputHistory,
-                    true,
-                    CurrentSettingStanding.NotDetermined,
-                    null),
+                RealityCheckVerdictPolicy.SoundWindows(StandardWindowDays, cells, team.ThroughputHistory),
                 CoverageOfEachLevel(cells, denominator.RunsEvaluated),
                 cells);
         }

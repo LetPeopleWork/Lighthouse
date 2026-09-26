@@ -27,6 +27,61 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 confidenceLevel, heldCount, expectedHeldCount, Reading(heldCount, runsEvaluated, expectedHeldCount));
         }
 
+        public static RealityCheckSoundWindowDto SoundWindows(
+            IReadOnlyList<int> sampledWindowDays, IReadOnlyList<RealityCheckCellDto> cells, int currentSettingDays)
+        {
+            var windowStates = sampledWindowDays
+                .Select(windowDays => StateOf(cells.Where(cell => cell.SamplingWindowDays == windowDays)))
+                .ToList();
+            var soundWindowDays = sampledWindowDays
+                .Where((_, index) => windowStates[index] == WindowState.HoldsUp)
+                .ToList();
+
+            return new RealityCheckSoundWindowDto(
+                soundWindowDays,
+                [],
+                DeterminationOf(windowStates),
+                currentSettingDays,
+                true,
+                soundWindowDays.Contains(currentSettingDays) ? CurrentSettingStanding.Inside : CurrentSettingStanding.Outside,
+                null);
+        }
+
+        // Only falling short of the most cautious forecast counts against a window. The band's top edge is the
+        // median forecast, so landing above it is what half of a well-judged forecast's checks do: a coin flip,
+        // not a finding.
+        private static WindowState StateOf(IEnumerable<RealityCheckCellDto> windowCells)
+        {
+            var heldAtMostCautiousLevel = windowCells
+                .Where(cell => cell.Sufficiency.IsSufficient)
+                .Select(cell => cell.LevelOutcomes!.MaxBy(outcome => outcome.ConfidenceLevel)!.Held)
+                .ToList();
+
+            if (heldAtMostCautiousLevel.Count == 0)
+            {
+                return WindowState.NotEvaluated;
+            }
+
+            var timesHeld = heldAtMostCautiousLevel.Count(held => held);
+
+            return timesHeld * 2 > heldAtMostCautiousLevel.Count ? WindowState.HoldsUp : WindowState.DoesNotHoldUp;
+        }
+
+        private static Determination DeterminationOf(List<WindowState> windowStates)
+        {
+            if (windowStates.TrueForAll(state => state == WindowState.NotEvaluated))
+            {
+                return Determination.NotEnoughEvidence;
+            }
+
+            if (windowStates.TrueForAll(state => state == WindowState.HoldsUp))
+            {
+                return Determination.AllWindowsAlike;
+            }
+
+            return windowStates.Contains(WindowState.HoldsUp) ? Determination.SomeWindowsSound : Determination.NoWindowSound;
+        }
+
         // Never holding, or always holding, only says something when the level's own rate predicted at least
         // one whole check going the other way; below that, the extreme is what the level predicted.
         private static LevelReading Reading(int heldCount, int runsEvaluated, double expectedHeldCount)
@@ -47,6 +102,13 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
 
             return LevelReading.SometimesHeld;
+        }
+
+        private enum WindowState
+        {
+            HoldsUp,
+            DoesNotHoldUp,
+            NotEvaluated,
         }
     }
 }

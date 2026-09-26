@@ -259,7 +259,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Every_window_behaving_alike_is_an_answer_that_says_the_setting_is_fine()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -272,7 +271,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Deep_Currents_fourteen_day_window_over_forecast_three_times_in_four_and_sits_outside_the_region()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
@@ -331,7 +329,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task When_no_window_held_up_the_answer_says_so_rather_than_naming_the_least_bad()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
@@ -355,7 +352,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_window_that_fell_short_of_its_most_cautious_forecast_in_two_of_four_checks_is_outside_the_region()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -378,7 +374,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Delivering_more_than_forecast_never_counts_against_a_window_only_falling_short_does()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -693,7 +688,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();

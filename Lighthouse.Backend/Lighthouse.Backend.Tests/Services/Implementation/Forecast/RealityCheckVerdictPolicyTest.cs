@@ -83,5 +83,159 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             Assert.That(RealityCheckVerdictPolicy.Coverage(confidenceLevel, heldCount, runsEvaluated).Reading, Is.EqualTo(expected));
         }
+
+        private static readonly int[] Ladder = [14, 30, 60, 90];
+
+        private static readonly int[] LadderWithoutThirty = [14, 60, 90];
+
+        private static readonly int[] LadderWithoutSixty = [14, 30, 90];
+
+        private const int ChecksPerWindow = 4;
+
+        private enum Check
+        {
+            FellShort,
+            InsideTheBand,
+            AboveTheBand,
+            CouldNotRun,
+        }
+
+        [TestCase(0, false)]
+        [TestCase(1, false)]
+        [TestCase(2, false)]
+        [TestCase(3, true)]
+        [TestCase(4, true)]
+        public void SoundWindows_AWindowHoldsUpOnlyWhenItsMostCautiousForecastHeldInMoreThanHalfOfItsChecks(int timesHeld, bool holdsUp)
+        {
+            var cells = ChecksOf(30, [.. Enumerable.Repeat(Check.InsideTheBand, timesHeld), .. Enumerable.Repeat(Check.FellShort, ChecksPerWindow - timesHeld)])
+                .Concat(EveryOtherWindow(30, Check.InsideTheBand))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(holdsUp ? Ladder : LadderWithoutThirty));
+                Assert.That(soundWindow.Determination, Is.EqualTo(holdsUp ? Determination.AllWindowsAlike : Determination.SomeWindowsSound));
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(holdsUp ? CurrentSettingStanding.Inside : CurrentSettingStanding.Outside));
+            }
+        }
+
+        [Test]
+        public void SoundWindows_DeliveringMoreThanForecastInEveryCheckNeverCountsAgainstAWindow()
+        {
+            var cells = ChecksOf(30, [.. Enumerable.Repeat(Check.AboveTheBand, ChecksPerWindow)])
+                .Concat(EveryOtherWindow(30, Check.InsideTheBand))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(Ladder));
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.AllWindowsAlike));
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.Inside));
+            }
+        }
+
+        [TestCase(1, true)]
+        [TestCase(2, false)]
+        [TestCase(3, false)]
+        public void SoundWindows_InAMixOfShortAndAboveTheBandChecksOnlyTheShortOnesCount(int timesShort, bool holdsUp)
+        {
+            var cells = ChecksOf(60, [.. Enumerable.Repeat(Check.FellShort, timesShort), .. Enumerable.Repeat(Check.AboveTheBand, ChecksPerWindow - timesShort)])
+                .Concat(EveryOtherWindow(60, Check.InsideTheBand))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays.Contains(60), Is.EqualTo(holdsUp));
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.Inside));
+            }
+        }
+
+        [Test]
+        public void SoundWindows_TheRegionKeepsTheLadderOrderWhateverOrderTheChecksArriveIn()
+        {
+            var cells = Enumerable.Reverse(Ladder)
+                .SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(windowDays == 60 ? Check.FellShort : Check.InsideTheBand, ChecksPerWindow)]))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 60);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(LadderWithoutSixty));
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.SomeWindowsSound));
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.Outside));
+            }
+        }
+
+        [Test]
+        public void SoundWindows_WhenNoWindowHoldsUpTheRegionIsEmptyAndNoWindowIsNamed()
+        {
+            var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.FellShort, ChecksPerWindow)])).ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.Empty);
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.NoWindowSound));
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.Outside));
+            }
+        }
+
+        [Test]
+        public void SoundWindows_WhenNoCheckCouldRunAnywhereThereIsNotEnoughEvidence()
+        {
+            var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])).ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.SoundWindowDays, Is.Empty);
+                Assert.That(soundWindow.Determination, Is.EqualTo(Determination.NotEnoughEvidence));
+            }
+        }
+
+        private static IEnumerable<RealityCheckCellDto> EveryOtherWindow(int windowDays, Check check) =>
+            Ladder
+                .Where(otherWindowDays => otherWindowDays != windowDays)
+                .SelectMany(otherWindowDays => ChecksOf(otherWindowDays, [.. Enumerable.Repeat(check, ChecksPerWindow)]));
+
+        private static IEnumerable<RealityCheckCellDto> ChecksOf(int windowDays, Check[] checks) =>
+            checks.Select(check => ACheck(windowDays, check));
+
+        private static RealityCheckCellDto ACheck(int windowDays, Check check)
+        {
+            var actualCompleted = check switch
+            {
+                Check.FellShort => ValueAt95 - 1,
+                Check.AboveTheBand => ValueAt50 + 1,
+                _ => ValueAt95,
+            };
+            var day = new DateOnly(2026, 9, 1);
+            var ran = check != Check.CouldNotRun;
+
+            return new RealityCheckCellDto(
+                14,
+                windowDays,
+                day,
+                day,
+                day,
+                day,
+                new RealityCheckSufficiencyDto(ran, ran ? SufficiencyReason.Sufficient : SufficiencyReason.TooFewActiveDays, 0),
+                ran ? Forecast : null,
+                ran ? actualCompleted : null,
+                ran ? RealityCheckVerdictPolicy.Outcome(actualCompleted, Forecast) : null,
+                ran
+                    ? [.. Forecast.Select(level => new RealityCheckLevelOutcomeDto(
+                        level.Probability, level.Value, RealityCheckVerdictPolicy.Held(actualCompleted, level.Value)))]
+                    : null);
+        }
     }
 }
