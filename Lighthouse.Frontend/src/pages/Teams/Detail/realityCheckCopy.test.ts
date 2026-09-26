@@ -10,6 +10,7 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	dayInWords,
 	denominatorStatement,
 	determinationCopy,
 	findings,
@@ -18,6 +19,7 @@ import {
 	levelReadingCopy,
 	listOf,
 	notTestedReasonCopy,
+	periodActual,
 	regionOf,
 	standingCopy,
 	sufficiencyReasonCopy,
@@ -27,6 +29,7 @@ import {
 	unevaluatedSentence,
 	type VerdictFacts,
 	whyChecksCouldNotRun,
+	windowRowLabel,
 	windowVerdict,
 } from "./realityCheckCopy";
 
@@ -620,6 +623,51 @@ describe("horizonLabel", () => {
 		"names a $horizonDays-day horizon $expected",
 		({ horizonDays, expected }) => {
 			expect(horizonLabel(horizonDays)).toBe(expected);
+		},
+	);
+});
+
+const workItemTerms = (key: string) =>
+	({ workItem: "Ticket", workItems: "Tickets" })[key] ?? `unexpected ${key}`;
+
+describe("periodActual", () => {
+	it.each([
+		{ actual: 42, expected: "42 Tickets completed" },
+		{ actual: 1, expected: "1 Ticket completed" },
+		{ actual: 0, expected: "0 Tickets completed" },
+	])(
+		"says $expected in the instance's words for Work Items",
+		({ actual, expected }) => {
+			expect(periodActual(actual, workItemTerms)).toBe(expected);
+		},
+	);
+});
+
+describe("dayInWords", () => {
+	it.each([
+		{ isoDay: "2026-09-26", expected: "Sep 26, 2026" },
+		{ isoDay: "2026-01-01", expected: "Jan 1, 2026" },
+		{ isoDay: "2026-12-31", expected: "Dec 31, 2026" },
+	])(
+		"reads $isoDay as the calendar day it names, $expected",
+		({ isoDay, expected }) => {
+			expect(dayInWords(isoDay, "en-US")).toBe(expected);
+		},
+	);
+
+	it("leaves a string that is not a day as it came", () => {
+		expect(dayInWords("not a day", "en-US")).toBe("not a day");
+	});
+});
+
+describe("windowRowLabel", () => {
+	it.each([
+		{ windowDays: 45, isYourSetting: true, expected: "45 days, your setting" },
+		{ windowDays: 30, isYourSetting: false, expected: "30 days" },
+	])(
+		"labels the $windowDays-day window $expected",
+		({ windowDays, isYourSetting, expected }) => {
+			expect(windowRowLabel(windowDays, isYourSetting)).toBe(expected);
 		},
 	);
 });

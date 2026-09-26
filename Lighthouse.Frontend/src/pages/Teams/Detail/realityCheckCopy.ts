@@ -11,6 +11,7 @@ import {
 	type SufficiencyReason,
 } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { parseLocalDate } from "../../../utils/date/localDate";
 
 type TermGetter = (key: string) => string;
 
@@ -229,6 +230,27 @@ export const horizonLabel = (horizonDays: number): string => {
 	const weeks = horizonDays / 7;
 	return weeks === 1 ? "1 week" : `${weeks} weeks`;
 };
+
+export const periodActual = (
+	actualCompleted: number,
+	getTerm: TermGetter,
+): string =>
+	`${actualCompleted} ${getTerm(actualCompleted === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS)} completed`;
+
+// A period's day is a calendar day, not an instant: read through UTC it would show as the day before
+// for anyone west of Greenwich.
+export const dayInWords = (isoDay: string, locale?: string): string =>
+	parseLocalDate(isoDay)?.toLocaleDateString(locale, {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+	}) ?? isoDay;
+
+export const windowRowLabel = (
+	windowDays: number,
+	isYourSetting: boolean,
+): string =>
+	isYourSetting ? `${windowDays} days, your setting` : `${windowDays} days`;
 
 export const tableCaption = (teamName: string, getTerm: TermGetter): string =>
 	`Every forecast checked for ${teamName}, by period and sampling window, beside what the ${getTerm(TERMINOLOGY_KEYS.TEAM)} delivered.`;

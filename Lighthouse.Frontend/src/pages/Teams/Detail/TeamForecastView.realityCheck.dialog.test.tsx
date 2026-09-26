@@ -193,7 +193,7 @@ beforeEach(() => {
 });
 
 describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words first", () => {
-	it(`pressing Run reality check opens the dialog at once, saying the check is running, and it fills in without asking for a date (${PENDING})`, async () => {
+	it(`pressing Run reality check opens the dialog at once, saying the check is running, and it fills in without asking for a date`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 
@@ -215,7 +215,7 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 		expect(within(dialog).queryAllByRole("textbox")).toHaveLength(0);
 	});
 
-	it(`opens on one line per confidence level - held against should-have-held - then the window sentence, the two findings and the denominator, in that order and above the table (${PENDING})`, async () => {
+	it(`opens on one line per confidence level - held against should-have-held - then the window sentence, the two findings and the denominator, in that order and above the table`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
 		);
@@ -281,7 +281,7 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 		expect(periodGroupsOf(theTableIn(dialog))).toHaveLength(4);
 	});
 
-	it(`keeps nothing behind a toggle, a tooltip or a disclosure (${PENDING})`, async () => {
+	it(`keeps nothing behind a toggle, a tooltip or a disclosure`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		const denominator = linesMatching(dialog, /16 forecast runs were checked/i);
@@ -324,7 +324,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		},
 	);
 
-	it.skip(`@kpi-OUT-6094-how-far-each-forecast-landed prints each period's actual once, in its header, with the period's first and last day (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-how-far-each-forecast-landed prints each period's actual once, in its header, with the period's first and last day`, async () => {
 		const answer = oceanExplorerOverEightWeeks();
 		const dialog = await theDialogFor(answer);
 		const eightWeeks = periodGroup(theTableIn(dialog), 56);
@@ -455,7 +455,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		}
 	});
 
-	it.skip(`the Team's own window is called "your setting" in every period, and no other row is (${PENDING})`, async () => {
+	it(`the Team's own window is called "your setting" in every period, and no other row is`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ currentSettingDays: 45 }),
 		);
@@ -468,7 +468,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		}
 	});
 
-	it.skip(`@error a Team whose own setting was not tested has no row called "your setting" (${PENDING})`, async () => {
+	it(`@error a Team whose own setting was not tested has no row called "your setting"`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
@@ -579,7 +579,7 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 		).toHaveLength(0);
 	});
 
-	it(`the Forecast Backtesting group keeps only the button once the dialog is closed (${PENDING})`, async () => {
+	it(`the Forecast Backtesting group keeps only the button once the dialog is closed`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -689,7 +689,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 });
 
 describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", () => {
-	it(`Escape closes the dialog and puts focus back on Run reality check (${PENDING})`, async () => {
+	it(`Escape closes the dialog and puts focus back on Run reality check`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		const button = theButtonNamed(group, /^run reality check$/i);
@@ -703,7 +703,7 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 		await waitFor(() => expect(button).toHaveFocus());
 	});
 
-	it(`the visible close control closes it too (${PENDING})`, async () => {
+	it(`the visible close control closes it too`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		await userEvent.click(
