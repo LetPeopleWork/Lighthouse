@@ -12,7 +12,8 @@ namespace Lighthouse.Backend.Models.Forecast
         RealityCheckDenominatorDto Denominator,
         RealityCheckSoundWindowDto SoundWindow,
         IReadOnlyList<RealityCheckLevelCoverageDto> LevelCoverage,
-        IReadOnlyList<RealityCheckCellDto> Cells)
+        IReadOnlyList<RealityCheckCellDto> Cells,
+        IReadOnlyList<RealityCheckScoredPeriodDto> ScoredPeriods)
     {
         public bool FilterApplied { get; init; }
 
@@ -50,6 +51,12 @@ namespace Lighthouse.Backend.Models.Forecast
         int? ActualCompleted,
         CellOutcome? Outcome,
         IReadOnlyList<RealityCheckLevelOutcomeDto>? LevelOutcomes);
+
+    /// <summary>
+    /// One horizon's scored period and what the Team finished in it. The actual is here even when no sampling
+    /// window could be checked against it, and a Team that finished nothing reads zero, never a missing value.
+    /// </summary>
+    public sealed record RealityCheckScoredPeriodDto(int HorizonDays, DateOnly ScoredPeriodStart, DateOnly ScoredPeriodEnd, int ActualCompleted);
 
     public sealed record RealityCheckSufficiencyDto(bool IsSufficient, SufficiencyReason Reason, int DaysWithCompletedWork);
 

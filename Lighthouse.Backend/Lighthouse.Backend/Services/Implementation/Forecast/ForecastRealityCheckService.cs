@@ -23,8 +23,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         {
             var anchorDate = clock.Today;
             var sampledWindowDays = WindowsToSample(team);
-            var cells = HorizonDays
-                .SelectMany(horizonDays => CheckOneHorizon(team, mode, anchorDate, horizonDays, sampledWindowDays))
+            var periods = HorizonDays
+                .Select(horizonDays => ScorePeriod(team, mode, anchorDate, horizonDays))
+                .ToList();
+            var cells = periods
+                .SelectMany(period => sampledWindowDays.Select(samplingWindowDays => CheckOneWindow(team, mode, new CheckedWindow(period, samplingWindowDays))))
                 .ToList();
             var denominator = CountWhatWasEvaluated(cells);
 
@@ -40,7 +43,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 denominator,
                 RealityCheckVerdictPolicy.SoundWindows(sampledWindowDays, cells, team.ThroughputHistory, team.UseFixedDatesForThroughput),
                 CoverageOfEachLevel(cells, denominator.RunsEvaluated),
-                cells);
+                cells,
+                [.. periods.Select(period => period.AsDto())]);
         }
 
         // The Team's own setting is the window its forecasts actually use, so it is always among those checked,
@@ -55,8 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return [.. StandardWindowDays.Append(team.ThroughputHistory).Distinct().Order()];
         }
 
-        private List<RealityCheckCellDto> CheckOneHorizon(
-            Team team, ThroughputFilterMode mode, DateOnly anchorDate, int horizonDays, List<int> sampledWindowDays)
+        private ScoredPeriod ScorePeriod(Team team, ThroughputFilterMode mode, DateOnly anchorDate, int horizonDays)
         {
             // Both ends of a period are days inside it, so a horizon of H days ending today starts H - 1 days ago.
             var scoredPeriodStart = anchorDate.AddDays(-(horizonDays - 1));
@@ -71,9 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var forecastDays = blackoutPeriodService
                 .GetEffectiveBlackoutDays(periodStart, periodEnd)
                 .CountWorkingDays(periodStart.AddDays(-1), periodEnd);
-            var period = new ScoredPeriod(horizonDays, scoredPeriodStart, anchorDate, forecastDays, actualCompleted);
-
-            return [.. sampledWindowDays.Select(samplingWindowDays => CheckOneWindow(team, mode, new CheckedWindow(period, samplingWindowDays)))];
+            return new ScoredPeriod(horizonDays, scoredPeriodStart, anchorDate, forecastDays, actualCompleted);
         }
 
         private RealityCheckCellDto CheckOneWindow(Team team, ThroughputFilterMode mode, CheckedWindow window)
@@ -120,7 +121,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private static DateTime AsDateTime(DateOnly day) => day.ToDateTime(TimeOnly.MinValue);
 
-        private sealed record ScoredPeriod(int Horizon, DateOnly Start, DateOnly End, int ForecastDays, int ActualCompleted);
+        private sealed record ScoredPeriod(int Horizon, DateOnly Start, DateOnly End, int ForecastDays, int ActualCompleted)
+        {
+            public RealityCheckScoredPeriodDto AsDto() => new(Horizon, Start, End, ActualCompleted);
+        }
 
         // A sampling window learns from the days right before the period it is scored on and from none of that
         // period's own days, so its history ends the day before the period starts and holds exactly its length.

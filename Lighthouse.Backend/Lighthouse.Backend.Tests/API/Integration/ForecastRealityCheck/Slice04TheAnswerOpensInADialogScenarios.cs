@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     {
         // @driving_port @real-io @us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Every_period_the_check_scored_is_in_the_answer_with_its_days_and_what_the_Team_delivered()
         {
             var oceanExplorer = GivenOceanExplorerFinishingAWorkItemEveryDay();
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @real-io @us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task Every_check_that_could_be_evaluated_carries_the_same_actual_as_its_period()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
@@ -57,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @real-io @us-04 @slice-04 @error @kpi-OUT-6094-how-far-each-forecast-landed @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Team_whose_history_supports_no_check_still_gets_four_periods_each_with_what_it_delivered()
         {
             var newlyFormed = GivenATeamThatHasFinishedAlmostNothing();
@@ -75,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @real-io @us-04 @slice-04 @boundary @kpi-OUT-6094-how-far-each-forecast-landed @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_week_in_which_the_Team_delivered_nothing_is_a_period_whose_actual_is_zero_not_missing()
         {
             var harbourPilots = GivenHarbourPilotsWhoFinishedNothingLastWeek();
@@ -96,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @real-io @us-04 @slice-04 @boundary @kpi-OUT-6094-no-window-ranked @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Team_whose_own_window_is_off_the_ladder_gets_one_period_per_horizon_never_one_per_window()
         {
             var team = GivenATeamFinishingAWorkItemEveryDaySetTo(45);

@@ -345,6 +345,62 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [TestCase(30, 4)]
+        [TestCase(45, 5)]
+        public void Each_horizon_is_one_scored_period_ending_today_in_horizon_order_whatever_the_number_of_windows(int teamWindowDays, int windowsChecked)
+        {
+            team.ThroughputHistory = teamWindowDays;
+            teamMetricsService
+                .Setup(service => service.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns((Team _, DateTime start, DateTime end, ThroughputFilterMode _) =>
+                    new RunChartData(RunChartDataGenerator.GenerateRunChartData([ActualCompletedByHorizon[(end - start).Days + 1]])));
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ScoredPeriods, Is.EqualTo(HorizonDays.Select(horizon =>
+                    new RealityCheckScoredPeriodDto(horizon, Today.AddDays(-(horizon - 1)), Today, ActualCompletedByHorizon[horizon]))));
+                Assert.That(result.SampledWindowDays, Has.Count.EqualTo(windowsChecked));
+                Assert.That(result.Cells.Where(cell => cell.ActualCompleted != ActualCompletedByHorizon[cell.HorizonDays]), Is.Empty);
+                Assert.That(teamMetricsService.Invocations.Count(invocation => invocation.Method.Name == nameof(ITeamMetricsService.GetThroughputForTeam)),
+                    Is.EqualTo(HorizonDays.Length), "a period's actual is the one read for its horizon, not a second read");
+            }
+        }
+
+        [Test]
+        public void A_period_in_which_the_team_finished_nothing_says_zero()
+        {
+            teamMetricsService
+                .Setup(service => service.GetThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData([0])));
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ScoredPeriods.Select(period => period.ActualCompleted), Is.EqualTo(Enumerable.Repeat(0, HorizonDays.Length)));
+                Assert.That(result.Cells.Select(cell => cell.ActualCompleted), Is.All.EqualTo(0));
+            }
+        }
+
+        [Test]
+        public void A_period_whose_every_check_could_not_run_still_says_what_the_team_finished()
+        {
+            teamMetricsService
+                .Setup(service => service.GetBlackoutAwareThroughputForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData(SixDaysWithWorkFinishedOnFour)));
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.ScoredPeriods.Select(period => (period.HorizonDays, period.ActualCompleted)),
+                    Is.EqualTo(HorizonDays.Select(horizon => (horizon, ActualCompletedInEveryPeriod))));
+                AssertNothingWasReadOffAnyCell(result);
+            }
+        }
+
         private static void AssertNothingWasReadOffAnyCell(RealityCheckResultDto result)
         {
             using (Assert.EnterMultipleScope())
