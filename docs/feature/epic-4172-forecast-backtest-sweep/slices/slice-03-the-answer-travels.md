@@ -1,3 +1,5 @@
+> **DEFERRED 2026-09-26 — reporting format under re-evaluation.**
+
 # Slice 03 — The answer travels — SEVERABLE
 
 **Feature**: epic-4172-forecast-backtest-sweep · **ADO**: to create under Epic #4172 · **Story**: US-03

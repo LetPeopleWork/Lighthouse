@@ -886,3 +886,160 @@ already sends (legal-copy judgement).
 | Per-wave peer review | **Not run** — no trigger fires; the consolidated review runs at the end of DISTILL |
 
 **No code written, nothing committed. Epic #4172 stays `Planned`; its three Stories stay `New`.**
+
+---
+
+## DISTILL
+
+**Agent**: Quinn (`nw-acceptance-designer`) · **Date**: 2026-09-26 · **Density**: lean, no expansion
+triggers declared by the wave, so no menu.
+**Predecessor**: DEVOPS. **Successor**: DELIVER - after the orchestrator's four-reviewer final gate.
+
+### Artifacts produced
+
+| Path | What it holds |
+|---|---|
+| `feature-delta.md` (appended) | Thirteen `## Wave: DISTILL / [REF]` sections: consultation, reconciliation, scenario list, WS strategy, adapter coverage, scaffolds, placement, driving adapters, pre-requisites, findings, completeness audit, outcomes registry, handoff |
+| `red-classification.md` | **NEW.** Every pending scenario un-skipped and run against unmodified code: 110 cases (after the follow-up below), all `MISSING_FUNCTIONALITY`, none `BROKEN` |
+| `Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs` | **NEW.** Harness |
+| `…/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindow{Scenarios,Specifications}.cs` | **NEW.** 38 scenarios, 65 cases, one green (after the follow-up) |
+| `…/ForecastRealityCheck/RealityCheckQueryCountTest.cs` | **NEW.** 20 / 24 reads on a cold cache |
+| `Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs` | **NEW.** E1, E2 |
+| `Lighthouse.Backend.Tests/Integration/UsageData/TeamForecastRealityCheckRunEventTests.cs` | **NEW.** The usage-data event |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.test.tsx`, `…realityCheck.usageData.test.tsx`, `src/tests/RealityCheckFixture.tsx` | **NEW.** 30 specs (slices 01 and 02, and the event's call site) and their shared fixture |
+| `slices/slice-01`, `slices/slice-02` | Stale terms corrected in place (R-D1, R-D3) |
+| `slices/slice-03` | A one-line DEFERRED banner, nothing else |
+| `recommendation.md` §5.2, `feature-delta.md` S2 and reuse row 13 | The "14-day minimum survives as a property of the 2-week horizon" sentence corrected in place (R-D1) |
+| `docs/architecture/atdd-infrastructure-policy.md` | One row appended: the per-check scripted forecast over the production engine |
+| `docs/product/kpi-contracts.yaml` | Four `OUT-4172-*` entries gain their scenario links; `OUT-4172-the-answer-travels` records that slice 03 is deferred |
+
+### Key decisions
+
+- **[DS-1] Reconciliation passed with zero contradictions**, after applying the orchestrator's three
+  resolutions: horizons `[7, 14, 28, 56]`; OQ-6 takes DESIGN's default; slice briefs brought up to date.
+- **[DS-2] No production scaffolds.** Scenarios talk to the check over the wire and read JSON, so the suite
+  builds against today's code and every un-skipped scenario fails on an assertion. The one type a test
+  needs - the sweep service, for the query count - is a test-side seam throwing an `AssertionException`,
+  as story 6053 did.
+- **[DS-3] The forecast is scripted per check, and the walking skeleton alone runs the real engine.** A
+  scenario about which levels held has to choose what each check forecast; one real sweep costs about five
+  seconds under CI's coverage run. The script recognises a check only by its history length and its
+  horizon, and wraps the production engine rather than replacing it.
+- **[DS-4] The green scenario is the coexistence guard**, `The_single_back_test_beside_the_check_still_answers_as_it_did`
+  - the walking skeleton cannot pass before the endpoint exists, and this one proves the harness end to end.
+- **[DS-5] ADR-210 scored at all four levels.** 16 evaluable checks give expected counts 8.0 / 11.2 / 13.6
+  / 15.2; 12 evaluable give 6.0 / 8.4 / 10.2 / 11.4. The 50% row cannot tell the right formula from the
+  complement; the other three can.
+- **[DS-6] Region scenarios pinned only where every reasonable rule agrees**, at first; the rule for a
+  "sound" window was not specified (F-1). It is now DES-14 rule A, confirmed by the maintainer, and the
+  boundary scenarios are written (see the follow-up below).
+- **[DS-7] The Playwright skeleton is listed, not written** - no card exists to locate, and an unrun POM
+  locator is what the project rules forbid.
+- **[DS-8] Slice 03 is deferred, not cancelled** - the maintainer's decision on 2026-09-26, because how the
+  check is reported is being re-evaluated after slices 01 and 02 ship. No scenario, scaffold or test is
+  written for it; the specs drafted for it earlier in this wave were deleted; the slice brief carries a
+  DEFERRED banner and the DISCUSS and DESIGN text about it is left as it stands.
+
+### Step-reuse measurement (informational)
+
+Backend: 38 scenarios in slice 01 make 147 step calls over 67 distinct step methods - **2.2x** (plus
+a handful of direct calls on the forecast script, which is the scenario choosing its data). That is
+the natural ceiling for this feature's shape: each scenario asserts a different fact of one response, so
+most `Then` steps are used once or twice, while the `Given` vocabulary (Ocean Explorer, Deep Current,
+Coastal Survey, a Team at N days) is shared across nearly all of them. The domain vocabulary is typed where
+it is closed - `HeldUpTo` for how far a check held, the wire names for every closed set as constants - and
+no step body holds business logic: the Givens seed, the Whens call the endpoint, the Thens read the answer.
+
+### Found and routed, not fixed
+
+F-1 (what makes a window sound); F-2 (determination with a wholly unevaluable window); F-3 (a level's
+reading with nothing evaluated, and what `AlwaysHeld` means); F-4 (the fixed-dates Team's standing and where
+its reason travels); F-5 (20 / 24 reads versus the envelope's filter status). All to DESIGN; none
+contradicts another wave. **All five closed the same day as DES-14..DES-18** - see the DESIGN amendments
+and the DISTILL follow-up below.
+
+### Gates
+
+| Gate | Verdict |
+|---|---|
+| Prior-wave consultation with read checklist | **PASS** |
+| Wave-decision reconciliation (hard gate) | **PASS** - 0 contradictions after the three resolutions |
+| Driving adapters covered over their protocol | **PASS** - both routes, the RBAC guard, the two UI entry points in scope, the event ingest; Copy as Markdown deferred with slice 03 |
+| Adapter coverage - every driven adapter real or per policy | **PASS** - one policy row appended |
+| Error / edge share at least 40% | **PASS** - 39 of 79 (49%), after the follow-up |
+| AT completeness audit | **COMPLETE** - 14 / 15; C5b left as a documented gap |
+| RED, not BROKEN | **PASS** - 110 / 110 pending cases `MISSING_FUNCTIONALITY`, after the follow-up |
+| Suite green at hand-off | **PASS** - see the backend and frontend runs in the hand-back |
+| Four-reviewer final gate | **Not run here** - the orchestrator runs it |
+
+**Nothing committed, nothing pushed.**
+
+---
+
+## DESIGN — amendments after DISTILL, 2026-09-26
+
+**Agent**: Morgan (`nw-solution-architect`) · **Mode**: Propose (autonomous back-propagation) ·
+**Trigger**: DISTILL's findings F-1..F-5. Full text in `feature-delta.md`, section *DESIGN / Amendments
+after DISTILL (2026-09-26)*, placed before the DEVOPS part.
+
+| Decision | Closes | Status | In one line |
+|---|---|---|---|
+| DES-14 | F-1 | **DECIDED — confirmed by the maintainer 2026-09-26 (rule A)** | A sampling window holds up when its 95% forecast held in more than half of the checks that could run on it; only short-falls below the band count against a window; a window with no evaluable check is "not evaluated" and never in the region. The per-window, absolute shape is decided (DES-2 rules out any relative rule); the maintainer confirmed the threshold and direction (rule A) on 2026-09-26 |
+| DES-15 | F-2 | DECIDED | A wholly unevaluable window makes the answer `SomeWindowsSound`, never `AllWindowsAlike`; new `unevaluatedWindowDays` so the client can word "could not be checked" apart from "did not hold up" |
+| DES-16 | F-3 | DECIDED (the rename confirmed by the maintainer 2026-09-26) | `NotEvaluated` when nothing ran; `NeverHeld` / `AlwaysHeld` only when the level's own rate expected at least one whole check the other way. `AboutRight` is renamed `SometimesHeld` |
+| DES-17 | F-4 | DECIDED | Untested setting → standing `NotTested` with a closed-enum reason, `UsesFixedDates` or `NotAPositiveLength` |
+| DES-18 | F-5 | DECIDED | The filter status is read in the controller; the sweep reads 20 / 24, a whole cold request 21 / 25 |
+
+**Questions for the maintainer** (DELIVER is not blocked on the pinned scenarios, which pass under every
+candidate):
+
+1. *Confirm the rule: a sampling window is outside the range when the Team fell short of even its 95%
+   forecast in at least half of the checks that could be run on it (two of four is enough), and delivering
+   more than the 50% forecast never counts against a window — that shows up only in the 50% level's line.
+   The alternatives are to require a strict majority of short-falls (three of four), or to count consistent
+   over-delivery against a window as well.*
+2. *Should a level that neither never held nor always held be labelled "about right" even when it is far
+   from its expected count — for example a 95% level holding in 8 of 16 checks against about 15 expected?
+   Recommended: rename it `SometimesHeld` and let the two counts be the plain reading.*
+
+**Contract changes** (additive, marked "amended 2026-09-26" in the Response Contract): `unevaluatedWindowDays`,
+`currentSettingNotTestedReason`, standing member `NotTested`, reading member `NotEvaluated`. Reuse row 7
+amended; DISTILL's Findings rows point at DES-14..DES-18.
+
+**DISTILL tests to adjust (not edited here)**: two backend assertions change at the 95% level
+(`A_Team_that_always_beat_its_most_optimistic_forecast_…`, and the `(95, 12, 11.4, AlwaysHeld)` case of
+`Only_the_checks_that_could_run_count_…`, both to `AboutRight`); the frontend fixture and four spec answers
+need the new fields and members. The query-count test is unchanged. Full list in the amendment section.
+
+**No code written, nothing committed.**
+
+---
+
+## DISTILL — follow-up after the DESIGN amendments, 2026-09-26
+
+**Agent**: Quinn (`nw-acceptance-designer`). **Trigger**: DES-14..DES-18, and the maintainer's two answers
+the same day - DES-14 confirmed as rule A, and DES-16's middle reading renamed `AboutRight` -> `SometimesHeld`.
+
+- **Brought in line** (backend): the always-beat scenario now asserts `AlwaysHeld` at 50/70/85 and
+  `SometimesHeld` at 95 and is retitled
+  `A_Team_that_always_beat_its_most_optimistic_forecast_is_told_which_levels_always_held_when_a_miss_was_expected`;
+  `(95, 12, 11.4)` reads `SometimesHeld`; the harness reads `unevaluatedWindowDays` and
+  `currentSettingNotTestedReason`, with constants `NotTested`, `NotEvaluated`, `UsesFixedDates`,
+  `NotAPositiveLength`. The fixed-dates scenario (now stored 45 and 0 - fixed dates wins) and the
+  non-positive-window scenario assert standing `NotTested` with their reasons; the DES-17 invariant is
+  asserted there and on the tested Teams (no evaluable check, Coastal Survey, the Team at 14 bursting); a
+  wholly unevaluable window is asserted to be in `unevaluatedWindowDays` with `determination`
+  `SomeWindowsSound`; with nothing evaluated every level reads `NotEvaluated` and every window is listed.
+- **Boundary scenarios written** (rule A): two of four short -> outside; one short and three above the band
+  -> holds up (delivering more never counts against a window); partly evaluable, judged on the checks that
+  ran (2/0 in, 2/1 out, 1/0 in, 1/1 out); a window that could not be checked mid-ladder is a gap in the
+  region. Frontend: the mid-ladder gap is listed member by member and the window named as not checked.
+- **Frontend**: the fixture gains `NotTested`, `NotEvaluated`, `SometimesHeld`, `unevaluatedWindowDays` and
+  `currentSettingNotTestedReason` with consistent defaults; fixed-dates answers carry `NotTested` /
+  `UsesFixedDates`; no-evaluable-check answers carry `NotEvaluated` and every window unevaluated; Coastal
+  Survey carries `unevaluatedWindowDays: [14]`; every rendered verdict is asserted to carry no "about right".
+- **Docs**: DES-14 and DES-16 marked confirmed, the Response Contract's `reading` renamed, DISTILL Findings
+  closed, `brief.md` I2 / I9 / E5 / E6 updated, `red-classification.md` re-run.
+
+**Counts after the follow-up**: 79 test definitions, 111 cases, 1 green, 110 pending, all RED for missing
+behaviour; error and edge 39 of 79 (49%). Nothing committed.

@@ -5,7 +5,8 @@
 
 **Reference class**: `ForecastController.RunBacktest` (`:195-234`) — a synchronous, non-async action that
 runs one `HowMany`, two throughput reads and one `CreateForecastDtos(50, 70, 85, 95)` inside the request.
-This slice runs that same shape sixteen times and adds a reading on top of it.
+This slice runs that same shape sixteen times - twenty for a Team whose own sampling window is off the
+standard ladder - and adds a reading on top of it.
 
 ## Goal
 
@@ -21,7 +22,8 @@ Measure, on the development instance, against a Team holding at least twelve mon
 
 1. The median and maximum wall-clock of a single shipped `POST /api/latest/forecast/backtest/{teamId}`,
    twelve samples. This is the baseline.
-2. The median and maximum of a sixteen-run sweep in the same process, twelve samples.
+2. The median and maximum of the sweep in the same process, twelve samples - sixteen runs for a Team on
+   the standard ladder, and a second measurement at twenty runs for a Team whose own window is off it.
 
 Budget: **median at most 5 s, maximum at most 10 s.** Both numbers go into this brief before any UI is
 written.
@@ -50,8 +52,9 @@ putting it behind one is how it becomes unusable.
   `ForecastController`'s existing two-route pattern. Guard
   `[RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]`, byte-identical to the shipped
   backtest. Body at most `{ "applyFilterOverride": bool? }`. **No dates.**
-- **Sixteen runs, four horizons × four sampling windows**, every one ending today and reaching back by its
-  own length; each run's history window sits immediately before its scored period. Reuses
+- **Sixteen runs on the standard ladder, twenty off it: four horizons (1, 2, 4 and 8 weeks) × the
+  sampling windows 14, 30, 60 and 90 days plus the Team's own window when it is not one of those**, every
+  one ending today and reaching back by its own length; each run's history window sits immediately before its scored period. Reuses
   `forecastService.HowMany`, `GetBlackoutAwareThroughputForTeam`, `GetThroughputForTeam`,
   `GetEffectiveBlackoutDays` / `CountWorkingDays`, `GetForecastThroughputStatus` and `CreateForecastDtos`
   **unchanged**.
@@ -115,7 +118,7 @@ Three ways it could fail:
    finding of the source study* and the strongest thing the feature can say, but it is worth knowing
    before slice 02 invests in an evidence view for it.
 
-**Confirms, if it succeeds**: slices 02, 03 and 04 are all presentation over a response that already
+**Confirms, if it succeeds**: slices 02 and 03 are both presentation over a response that already
 exists. No further forecasting work is required anywhere in this Epic.
 
 ## Acceptance criteria
@@ -128,13 +131,15 @@ arrived here on 2026-09-22 from the deleted Apply story.
 - Route style: kebab-case segments are this codebase's convention (`my-summary`, `group-mappings`,
   `system-admins`, `bootstrap/system-admin`). `reality-check` is idiomatic.
 - `BacktestInputDto`'s validation (`ForecastController.cs:169-193`) is **not** reused as written. D6 makes
-  three of its four rules vacuous; the 14-day minimum survives as a property of the 2-week horizon, not as
-  input validation.
+  three of its four rules vacuous, and the fourth - the 14-day minimum - has no successor: the request
+  carries no dates, and whether a 1-week or 2-week horizon can be evaluated is decided per check by the
+  shipped sufficiency bar (D9). *(Corrected in DISTILL, 2026-09-26.)*
 - **Do not hard-code one Team into the result shape.** "Check every Team at once" is a plausible next unit
   of work, and ADR-209 carries this as an explicit forward-compatibility constraint.
 - The response must carry no field naming a single winning window. If a `recommendedWindow` field feels
-  natural, that is §4.1 reasserting itself and the answer is a *range* plus a boolean for whether the
-  current setting is inside it. **This is exactly the pressure that produced the Apply button and got it
+  natural, that is §4.1 reasserting itself and the answer is a *set* of windows that behaved alike plus
+  a three-way standing for the current setting - inside, outside, or not determined (DES-4) - never a
+  boolean, which would have to answer for a window the check could not evaluate. **This is exactly the pressure that produced the Apply button and got it
   removed** — a single recommended value is the thing the data cannot support.
 - Dogfood against this project's own Lighthouse instance with real history before the slice closes. Its
   data is real; the checked-in `.db` is not.

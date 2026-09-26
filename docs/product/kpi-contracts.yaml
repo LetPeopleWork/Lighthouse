@@ -1278,6 +1278,12 @@ outcomes:
       derivation: "Distinct consenting browsers reporting the event, per 30-day window, vendor instance excluded."
       surfacing:
         - "docs/settings/usagedata.md is the disclosure; the collector's own dashboard is where the number is read."
+    acceptance_scenarios:
+      # Tagged @kpi-OUT-4172-reality-check-used-outside-the-vendor. Written and ignored in DISTILL (2026-09-26).
+      - "Lighthouse.Backend.Tests/Integration/UsageData/TeamForecastRealityCheckRunEventTests.cs - all five scenarios: one name-only event from an agreed browser; nothing from a refused or never-asked one; nothing under the administrator's veto; a message carrying anything but the name refused; the enum member at 11 and its line on docs/settings/usagedata.md"
+      - "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.usageData.test.tsx - reported once after the answer, including an all-unevaluable answer and a fixed-dates Team; never on the press, never on a failed request, never as TeamManualForecastRun"
+    measurement_window: "per 30-day window, from the first published release that ships slice 01"
+    gate: hard for the pipe (red build if any scenario fails); none on the count, which is descriptive
     alerting: []
     status: designed-not-shipped
     status_note: "DELIVER of slice 01 (ADO #6072) flips this to live-on-release and moves this file's header from eleven named events to twelve."
@@ -1297,6 +1303,10 @@ outcomes:
       so it over-states the cost. Never asserted in CI: a wall clock taken on one machine fails on a build
       agent 10-20 times slower.
     measurement_window: once in slice 01, re-run if the sweep's shape changes
+    acceptance_scenarios:
+      # Tagged @kpi-OUT-4172-answer-in-seconds. The machine-independent half only; no scenario asserts clock time.
+      - "Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs - One_check_on_a_cold_cache_reads_the_Teams_finished_work_once_per_window_it_asks_about: 20 reads for a Team at 30 days, 24 at 45 days, through the production sweep on SQLite"
+    gate: soft for the wall clock (hand-run probe, recorded in the slice 01 brief); hard for the read count (red build)
     alerting: []
     status: designed-not-shipped
 
@@ -1309,7 +1319,16 @@ outcomes:
       Acceptance and unit tests written in DISTILL for AC-1.4 to AC-1.7, AC-2.3 to AC-2.5, and DESIGN's
       enforcement rules E5 (no per-window scalar in the response) and E6 (exhaustive enum-to-copy maps,
       held by the TypeScript compiler). Tag: @kpi-OUT-4172-never-overclaims.
-    acceptance_scenarios: pending DISTILL
+    acceptance_scenarios:
+      # Written and ignored in DISTILL (2026-09-26); every one tagged @kpi-OUT-4172-never-overclaims.
+      - "Slice01OneSentenceAboutYourSamplingWindowScenarios.cs - no winner: No_part_of_the_answer_can_rank_one_sampling_window_above_another (a set in the ladder's order, no per-window number anywhere, no sentence, no source credit on the wire); the region cases Every_window_behaving_alike_..., Deep_Currents_..., The_windows_either_side_of_an_off_ladder_setting_..., An_off_ladder_setting_can_hold_up_..., When_no_window_held_up_..."
+      - "Slice01OneSentenceAboutYourSamplingWindowScenarios.cs - denominator and completeness: The_answer_states_exactly_what_it_checked_..., Every_check_that_was_run_is_in_the_answer_..., Every_check_ends_today_..., A_Team_whose_window_is_off_the_ladder_has_it_checked_as_a_fifth_window"
+      - "Slice01OneSentenceAboutYourSamplingWindowScenarios.cs - held against nominal rate at all four levels: A_level_is_expected_to_hold_as_often_as_its_own_percentage_of_the_checks (50/70/85/95), Only_the_checks_that_could_run_count_..., A_Team_that_never_reached_even_its_most_cautious_forecast_..."
+      - "Slice01OneSentenceAboutYourSamplingWindowScenarios.cs - no unevaluable check read as a result: Coastal_Surveys_fourteen_day_checks_..., A_check_whose_forecast_could_not_be_worked_out_..., A_Team_whose_history_supports_no_check_at_all_..., A_Team_forecasting_from_fixed_dates_..."
+      - "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.test.tsx - the denominator on screen and never behind a tooltip (16 and 20 runs), no best or recommended window, the region with a hole listed member by member, unevaluable rows in words and never blank, the nominal-rate lines, no 'beaten'"
+    measurement_window: every push (CI)
+    gate: hard
+    open_questions: "The rule for which windows are sound is not specified yet (DISTILL finding F-1, routed to DESIGN); the region scenarios pin only the cases every reasonable rule agrees on."
     alerting:
       - condition: "any of the assertions fails"
         action: "backend or frontend build fails (red)"
@@ -1324,7 +1343,13 @@ outcomes:
       RealityCheckReadOnlyArchUnitTest (DESIGN rule E1) under Lighthouse.Backend.Tests/Architecture/,
       which runs on every push under the always-on Category!=Integration filter; AC-1.9; and the existing
       forecast assertions passing unedited before and after slice 01. Tag: @kpi-OUT-4172-read-only.
-    acceptance_scenarios: pending DISTILL
+    acceptance_scenarios:
+      # Written and ignored in DISTILL (2026-09-26); every one tagged @kpi-OUT-4172-read-only.
+      - "Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs - nothing named *RealityCheck* reaches a repository or the database; the verdict policy is static and depends on no service"
+      - "Slice01OneSentenceAboutYourSamplingWindowScenarios.cs - Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items; Running_the_check_twice_gives_the_same_answer_twice"
+      - "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.test.tsx - offers no control that could change a Team setting"
+    measurement_window: every push (CI)
+    gate: hard
     alerting:
       - condition: "the ArchUnit rule or an existing forecast assertion fails"
         action: "backend build fails (red)"
@@ -1339,5 +1364,6 @@ outcomes:
       Manual: the maintainer's own use and any community mention. Not instrumented; a name-only usage-data
       event on Copy as Markdown was considered and left for the maintainer to decide when slice 03 ships.
     measurement_window: 60 days after slice 03 ships (slice 03 is severable)
+    acceptance_scenarios: "none - slice 03 was deferred by the maintainer on 2026-09-26 while the reporting format is re-evaluated; not cancelled"
     alerting: []
     status: designed-not-shipped

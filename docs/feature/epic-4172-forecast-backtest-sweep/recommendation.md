@@ -295,8 +295,10 @@ POST /api/latest/forecast/reality-check/{teamId}      (also /api/v1/…, per For
   `GetThroughputForTeam`, `blackoutPeriodService.GetEffectiveBlackoutDays` / `CountWorkingDays`,
   `GetForecastThroughputStatus`, and `CreateForecastDtos`. **Nothing in the forecast engine changes.**
 - `BacktestInputDto`'s validation rules (`ForecastController.cs:169-193`) are **not** reused as written —
-  C4's fixed anchoring makes three of the four checks vacuous. The 14-day minimum window survives as a
-  property of the 2-week horizon rather than as input validation.
+  C4's fixed anchoring makes three of the four checks vacuous. The 14-day minimum window has no
+  successor: the request carries no dates, and whether a short horizon can be evaluated is decided per
+  check by the shipped sufficiency bar. *(Corrected in DISTILL, 2026-09-26: the horizons are 1, 2, 4
+  and 8 weeks, so a "2-week floor" could not hold.)*
 
 ### 5.3 The entity
 

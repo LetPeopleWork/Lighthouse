@@ -109,7 +109,7 @@ Read from the tree on 2026-09-22, before any decision below was taken.
 | # | Surface | What is actually there |
 |---|---|---|
 | S1 | `Lighthouse.Backend/API/ForecastController.cs:195-234` | `RunBacktest`. **`public ActionResult<BacktestResultDto> RunBacktest(...)` — already synchronous, no `async`/`await`.** One `forecastService.HowMany`, one `GetBlackoutAwareThroughputForTeam`, one `GetThroughputForTeam`, one `GetForecastThroughputStatus`, one `CreateForecastDtos(50, 70, 85, 95)`. Guard `[RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]`. |
-| S2 | `ForecastController.cs:169-193` | `ValidateBacktestInput` — four date rules. Under D6 (today as the end anchor) three of the four are vacuous; only the 14-day minimum survives, and it survives as a property of the 2-week horizon rather than as input validation. |
+| S2 | `ForecastController.cs:169-193` | `ValidateBacktestInput` — four date rules. Under D6 (today as the end anchor) three of the four are vacuous. The fourth, the 14-day minimum, has no successor: the request carries no dates, so there is nothing to hold to a minimum, and whether a short horizon can be evaluated is decided per check by the shipped sufficiency bar (D9). *(Corrected in DISTILL, 2026-09-26: this row used to say the 14-day minimum survives as a property of the 2-week horizon, which cannot be true once the shortest horizon is 1 week.)* |
 | S3 | `API/DTO/BacktestResultDto.cs` | Four dates, `List<ForecastDto> Percentiles`, `ActualThroughput`, `FilterApplied`, `ExcludedSummary`. **All four percentiles are already returned by every run.** |
 | S4 | `Services/Implementation/Forecast/ForecastDataSufficiencyPolicy.cs:7,9` | `public const int MinimumActiveDays = 5;` and `HasEnoughData(RunChartData throughput) => throughput.DaysWithThroughput >= MinimumActiveDays`. **This is the shipped bar C5 composes with. It is a pure function over a `RunChartData` and can be called per cell without modification.** |
 | S5 | `Services/Implementation/TeamMetricsService.cs:110-118` | `GetForecastThroughputStatus` returns `status with { HasSufficientData = ForecastDataSufficiencyPolicy.HasEnoughData(status.Throughput) }` — but over the *Team's configured* window. Per-cell sufficiency means calling S4 on each cell's own `RunChartData`, not calling S5 sixteen times. |
@@ -1683,13 +1683,13 @@ valid justifications and none is used.
 | 4 | `IForecastService.HowMany` | **NO CHANGE** | Called once per cell — sixteen or twenty times — with different inputs. AC asserts the engine does not change; the existing forecast assertions must pass unmodified before and after. | Pure over `(RunChartData, days)` |
 | 5 | `ITeamMetricsService.GetBlackoutAwareThroughputForTeam` | **NO CHANGE** | The history read, per cell, per its own window. | Read; memoises into the metrics cache |
 | 6 | `ITeamMetricsService.GetThroughputForTeam(team, start, end, mode)` | **NO CHANGE** | The actual-completed read, **per horizon (four reads), not per cell**. The scored period depends only on the horizon, so the fifth sampling window adds no actual-completed read. | Read; memoises |
-| 7 | `ITeamMetricsService.GetForecastThroughputStatus` | **NO CHANGE** | One call, for `FilterApplied` and `ExcludedSummary` on the envelope. Not called per cell — it reports the Team's configured window, which is not what a cell asks. | Read; memoises |
+| 7 | `ITeamMetricsService.GetForecastThroughputStatus` | **NO CHANGE** | One call, for `FilterApplied` and `ExcludedSummary` on the envelope. Not called per cell — it reports the Team's configured window, which is not what a cell asks. **Amended 2026-09-26 (DES-18): the call is made by the controller, as `RunBacktest` makes it, and never by the sweep service** — so the sweep reads 20 / 24 times on a cold cache and a whole request 21 / 25. | Read; memoises |
 | 8 | `IBlackoutPeriodService.GetEffectiveBlackoutDays` / `CountWorkingDays` | **NO CHANGE** | Horizon → working days, exactly as `RunBacktest` does it. Four distinct horizons, so four calls. | Pure over the fetched periods |
 | 9 | `ForecastDataSufficiencyPolicy.HasEnoughData` | **NO CHANGE — called per cell** | C5/D9. A pure predicate over one `RunChartData`; calling it on each cell's own history needs no modification. `MinimumActiveDays` is echoed into the response, never re-declared. | Pure |
 | 10 | `ILighthouseClock.Today` / `TodayAsUtcMidnight` | **NO CHANGE** | The END anchor. Never `DateTime.UtcNow` — already enforced by the shipped `CalendarDayAnchorSeamArchUnitTest`. | Read |
 | 11 | `Team.GetThroughputSettings(today)` | **NO CHANGE, and not called** | Confirms the today-anchored reach-back shape the sweep uses, but it answers for the Team's *configured* window. A cell needs an arbitrary window, so the sweep computes its own dates. Recorded so nobody "reuses" it into a bug. | Pure |
 | 12 | `BacktestResultDto` | **CREATE NEW instead** | Cannot be extended. It models exactly one scored period and one history window in four get-only constructor-set `DateOnly` properties. A sweep of sixteen is not that object with more fields, and widening it would change the shipped `POST backtest/{teamId}` contract that three frontend components consume. | — |
-| 13 | `ValidateBacktestInput` | **NOT REUSED, and nothing replaces it** | D6 makes three of its four rules vacuous; the fourth (a 14-day minimum) survives as a property of the 2-week horizon rather than as input validation. The request body carries no dates, so there is nothing to validate. | — |
+| 13 | `ValidateBacktestInput` | **NOT REUSED, and nothing replaces it** | D6 makes three of its four rules vacuous. The fourth (a 14-day minimum) has no successor: the request body carries no dates, so there is nothing to validate, and whether a 1-week or 2-week horizon can be evaluated is decided per check by the shipped sufficiency bar (D9). *(Corrected in DISTILL, 2026-09-26; the horizons are 7/14/28/56 days.)* | — |
 | 14 | `ForecastDataSufficiencyPolicy` as the home for the verdict rules | **CREATE NEW (`RealityCheckVerdictPolicy`) instead** | Adding to that file would modify a file AC-1.7 asserts is unchanged, and it is a single-predicate policy that C5/D9 explicitly forbid touching. The new policy sits beside it in the same namespace, same pure-static shape. | Pure |
 | 15 | `UpdateQueueService` | **NOT USED** | ADR-209 §3. One channel, one reader; the reality check is a different kind of work and a human is waiting. | — |
 | 16 | `InputGroup` | **NO CHANGE** | The shipped container the card goes inside. | — |
@@ -1759,8 +1759,8 @@ RealityCheckResultDto                    ← the whole response body; the ADR-20
   sampledWindowDays         int[]        // standardWindowDays ∪ {ThroughputHistory}, ascending: 4 or 5 (DES-13)
   sampledHorizonDays        int[]        // [7, 14, 28, 56]
   confidenceLevels          int[]        // [50, 70, 85, 95]
-  filterApplied             bool
-  excludedSummary           string?
+  filterApplied             bool         // read by the controller, not the sweep (DES-18, amended 2026-09-26)
+  excludedSummary           string?      // same
   minimumActiveDays         int          // echoed from ForecastDataSufficiencyPolicy, never re-declared
   denominator               DenominatorDto
   soundWindow               SoundWindowDto
@@ -1774,18 +1774,25 @@ DenominatorDto
   levelsPerRun              int          // 4
   scoresEvaluated           int          // runsEvaluated × levelsPerRun — what was ACTUALLY evaluated
 
-SoundWindowDto                            // DES-2, DES-3, DES-4
-  soundWindowDays           int[]        // filtered from sampledWindowDays; its order IS that order
+SoundWindowDto                            // DES-2, DES-3, DES-4, DES-14..DES-17
+  soundWindowDays           int[]        // filtered from sampledWindowDays; its order IS that order.
+                                         // Membership rule: DES-14 (rule A, confirmed by the maintainer, amended 2026-09-26)
+  unevaluatedWindowDays     int[]        // NEW, amended 2026-09-26 (DES-15): sampledWindowDays filtered to
+                                         // the windows none of whose checks could run; never overlaps soundWindowDays
   determination             AllWindowsAlike | SomeWindowsSound | NoWindowSound | NotEnoughEvidence
-  currentSettingDays        int
-  currentSettingWasTested   bool
-  currentSettingStanding    Inside | Outside | NotDetermined
+                                         // rules fixed in DES-15, amended 2026-09-26
+  currentSettingDays        int          // the stored ThroughputHistory; not the forecast's window when NotTested (DES-17)
+  currentSettingWasTested   bool         // false ⟺ standing NotTested ⟺ reason non-null (DES-17)
+  currentSettingStanding    Inside | Outside | NotDetermined | NotTested   // NotTested amended 2026-09-26 (DES-17)
+  currentSettingNotTestedReason  UsesFixedDates | NotAPositiveLength | null // NEW, amended 2026-09-26 (DES-17)
 
 LevelCoverageDto                          // DES-8 / ADR-210
   confidenceLevel           int
   heldCount                 int
   expectedHeldCount         double       // runsEvaluated × confidenceLevel / 100
-  reading                   AboutRight | NeverHeld | AlwaysHeld
+  reading                   SometimesHeld | NeverHeld | AlwaysHeld | NotEvaluated
+                                         // NotEvaluated, the thresholds and the rename AboutRight -> SometimesHeld
+                                         // amended 2026-09-26 (DES-16, the name confirmed by the maintainer)
 
 RealityCheckCellDto
   horizonDays               int
@@ -2076,6 +2083,324 @@ count of 24.
 **What the number is not.** SQLite, in-process, one machine, no Kestrel, no serialisation, no concurrent
 load. It measures the sweep's own cost, which is what R-1 asked — a loaded production instance will be
 slower, and the 20,000-item row has less headroom than it looks.
+
+---
+
+## Wave: DESIGN / [REF] Amendments after DISTILL (2026-09-26)
+
+Agent: Morgan (`nw-solution-architect`) · Date: 2026-09-26 · Interaction mode: **Propose** (autonomous
+back-propagation). DISTILL routed five findings to DESIGN as `SPECIFICATION_AMBIGUITY` (see *DISTILL /
+Findings*). Each is closed here by one decision, numbered on from DES-13. This section sits before the
+DEVOPS part so that DESIGN reads as one block; the Response Contract above is amended in place and every
+changed line is marked "amended 2026-09-26".
+
+| Decision | Closes | Status |
+|---|---|---|
+| DES-14 — what makes a sampling window hold up, and how the region is formed | F-1 | **DECIDED — confirmed by the maintainer 2026-09-26 (rule A)** |
+| DES-15 — `determination` when a whole window could not be evaluated | F-2 | **DECIDED** |
+| DES-16 — a level's `reading` with nothing evaluated, and the thresholds for the two extremes | F-3 | **DECIDED**; the middle member's name confirmed by the maintainer 2026-09-26 as `SometimesHeld` |
+| DES-17 — the standing of a setting that was not tested, and its reason | F-4 | **DECIDED** |
+| DES-18 — where the filter status is read, and therefore the query count | F-5 | **DECIDED** |
+
+Read for this pass, fresh: DISCUSS D1-D4, D6, D7, D9, US-01 and US-02 with their ACs; DESIGN DES-1..DES-13,
+the Response Contract, the Reuse Analysis; DEVOPS (query count, usage-data event); DISTILL (scenario list,
+pre-requisites, findings); ADR-209, ADR-210; `recommendation.md` §1.2 and §4; the DISTILL test files
+(`ForecastRealityCheckAcceptanceTest.cs`, `Slice01…Scenarios.cs`, `Slice01…Specifications.cs`,
+`RealityCheckQueryCountTest.cs`, `RealityCheckFixture.tsx`, both frontend spec files); and
+`ForecastController.RunBacktest`, `TeamMetricsService.GetForecastThroughputStatus`.
+
+### DES-14 — A sampling window holds up when its 95% forecast held in more than half of the checks that could be run on it — **DECIDED — confirmed by the maintainer 2026-09-26 (rule A)**
+
+> **Confirmed 2026-09-26.** The maintainer chose rule A as written below: two short-falls of four put a
+> window outside; delivering more than the 50% forecast never counts against a window; a partly
+> evaluable window is judged on the checks that ran; a window with no check that ran is not evaluated
+> and never in the region; and a window between two that hold up which does not hold up, or was not
+> evaluated, breaks the span. The question below is kept as it was asked.
+
+**What the maintainer must decide:** *Confirm the rule: a sampling window is outside the range when the Team
+fell short of even its 95% forecast in at least half of the checks that could be run on it (two of four is
+enough), and delivering more than the 50% forecast never counts against a window — that shows up only in
+the 50% level's line. The alternatives are to require a strict majority of short-falls (three of four), or
+to count consistent over-delivery against a window as well.*
+
+**The shape is decided; only the threshold is proposed.** The rule has to judge each window on its own
+checks, never against the other windows. A relative rule — "a window is in the region when it cannot be
+told apart from the rest", which is the Model Confidence Set idea `recommendation.md` §1.2 cites — needs a
+score per window and a comparison between scores. DES-2 exists to make exactly that non-representable, so
+any relative rule is ruled out by a decision already taken. What remains is an *absolute* test per window,
+and every window ends in one of three states:
+
+| Window state | When |
+|---|---|
+| **holds up** | at least one of its checks could be evaluated, and its 95% forecast held (`actual >= value(95)`, ADR-210) in **more than half** of those checks |
+| **does not hold up** | at least one of its checks could be evaluated, and the 95% forecast held in half of them or fewer |
+| **not evaluated** | none of its checks could be evaluated (too little history or a degenerate forecast, DES-9) |
+
+Said to a user in one sentence: *"A sampling window counts as holding up when the Team delivered at least
+its most cautious (95%) forecast in more than half of the checks that could be run on it."*
+
+**How it answers each case DISTILL left open:**
+
+| Case | Result | Why |
+|---|---|---|
+| All four checks inside the band | holds up | 95% held in 4 of 4 (DISTILL's pinned case) |
+| Three or four of four below the whole band | does not hold up | 95% held in 1 or 0 of 4 (DISTILL's pinned case, and Deep Current) |
+| Two of four below the whole band | does not hold up | 95% held in 2 of 4, which is not more than half. A 95% forecast that fails in half its checks is failing ten times as often as it says it will |
+| Mixed: some below the band, some above it | only the ones below count | A check above the band held at 95% (and at every other level). It is an under-forecast *check*, and it is reported as one in its cell, but it is not a short-fall |
+| Partly evaluable (say 2 of 4 checks could run) | judged on the checks that ran | 95% held in 2 of 2 holds up; 1 of 2 does not. The window's denominator is visible in the evidence view, where each unevaluable row says why |
+| Only one check could run | that one check decides | Kept deliberately simple; the evidence view shows the one row it rests on. A minimum number of checks per window would be a second sufficiency bar, which D9 forbids |
+| No check could run | not evaluated | Never in the region (the principle DISTILL pinned) and never counted as not holding up either — see DES-15 |
+
+**Why only the bottom edge of the band counts against a window.** The band runs from the 95% forecast up
+to the 50% forecast. Its top edge is the *median*: by the forecast's own definition, about half of all
+checks of a perfectly calibrated forecast land above it. Landing above the band is a coin flip, not a
+failure. Landing below it is the 5% tail. So the band is not symmetric in what it means, and a rule that
+treated both edges alike would be reading noise as a finding. Under-forecasting is not lost: it is what
+the 50% level's line reports when that level held in every check (DES-16), which is where D7's symmetric
+three-way treatment already lives — per check and per level. The region asks the one question a
+forecaster publishes on: *could the cautious number this window produces be trusted?*
+
+**The candidates, compared.** The rates below treat the checks as independent draws at the forecast's own
+nominal rate. They are not independent (D6 — each covers a different stretch of real time and several
+overlap), so these numbers are used only to compare the rules with each other at design time. They are
+never shown to a user and are not a significance test.
+
+| Rule | A perfectly calibrated window with four checks is called "does not hold up"… | Verdict |
+|---|---|---|
+| **A (recommended)** — 95% held in more than half of the evaluable checks | about 1 time in 70 | Recommended. One sentence, uses ADR-210's own word, and false findings are rare |
+| A′ — 95% held in at least half (a strict majority of short-falls is needed: 3 of 4) | about 1 time in 2 000 | Viable and more conservative, but calls a window that failed its 95% forecast in two of four checks "about the same" as one that never failed |
+| B — most checks landed inside the band | about 3 times in 4 | Rejected. The band holds only ~45% of a calibrated forecast's outcomes, so this would call good windows unsound most of the time |
+| C — any check below the band | about 1 time in 5; with four or five windows, most Teams would see a false finding | Rejected. Noise presented as a finding |
+| D — A, plus "does not hold up" when the 50% forecast held in every check | about 1 time in 13 per window; roughly one Team in three across five windows | Rejected as the default: it turns ordinary over-delivery into a finding against the sampling window. It is the maintainer's alternative if over-delivery should count against a window |
+
+**How the region is formed from the window states.** `soundWindowDays` is `sampledWindowDays` filtered to
+the windows that hold up — so it stays a subsequence of the ladder in the ladder's own order, and DES-2
+holds unchanged. DES-3's contiguity rule decides only how the client *words* it: the client names a span
+("anything between X and Y days") only when the windows that hold up are a contiguous run of
+`sampledWindowDays`; **any sampled window between them that does not hold up, or was not evaluated, breaks
+the run**, and the client lists the members instead. Both hole directions DISTILL covers follow directly:
+
+- Team at 45, its own window short in every check, the rest fine → region `[14, 30, 60, 90]`, the 45 in the
+  middle breaks the run, so the members are listed and the Team's setting is `Outside`.
+- Team at 45 holding up while 30 and 60 do not → region `[14, 45, 90]`, listed, setting `Inside`.
+- Coastal Survey, 14 not evaluated at the bottom of the ladder, the rest fine → region `[30, 60, 90]`, a
+  contiguous run, so "anything between 30 and 90 days"; the 14 is named as could-not-run, never as
+  not-holding-up (DES-15).
+
+**The worked examples still read as written.** Ocean Explorer: every window holds up, the region is all of
+them, "this setting is fine". Deep Current: 14 days held at 95% in 1 of 4, so it does not hold up; 30, 60
+and 90 do; "anything between 30 and 90 days … your current 14 is not inside that range — it over-forecast
+in 3 of its 4 checks".
+
+**Where it lives.** `RealityCheckVerdictPolicy.SoundWindows`, pure, over the cells. No contract field
+changes because of this decision: the rule decides which windows appear in `soundWindowDays`, and nothing
+else. If the maintainer chooses A′ or D instead, only that predicate changes.
+
+**What DELIVER may do before the answer.** Every region scenario DISTILL pinned passes under A, A′ and D
+alike (checked against the scripted forecasts: the default check holds at 95% and 85%, and every
+"does not hold up" window is scripted to hold at no level). So those scenarios can be turned on with A
+implemented. The boundary scenarios — two of four, mixed, partly evaluable, a not-evaluated window in the
+middle of the ladder — are written only after the maintainer confirms, so no test pins a rule nobody has
+agreed to.
+
+### DES-15 — A window none of whose checks could run makes the answer `SomeWindowsSound`, never `AllWindowsAlike` — DECIDED
+
+Derived from I2 and ADR-194 (a missing result must never read as a calm one) and from DES-4's own
+membership logic; no product judgement is involved. `determination` is decided over the three window
+states of DES-14, in this order:
+
+| `determination` | When |
+|---|---|
+| `NotEnoughEvidence` | no window was evaluated |
+| `AllWindowsAlike` | **every** sampled window was evaluated and holds up |
+| `NoWindowSound` | at least one window was evaluated, and none holds up |
+| `SomeWindowsSound` | everything else: at least one window holds up, and at least one either does not or was not evaluated |
+
+"All windows alike" is a claim about every window in `sampledWindowDays`. A window the check could not
+evaluate cannot be part of that claim, so a Team like Coastal Survey — 14 unevaluable, the rest holding
+up — is `SomeWindowsSound`, which is also what DISTILL's frontend fixture already assumes.
+
+**One field is added so the client never has to re-derive a backend rule.** `SomeWindowsSound` covers two
+different situations the sentence must word differently: "14 days did not hold up" and "14 days could not be
+checked". The cells carry enough to tell them apart, but only by re-implementing "a window is evaluated
+when at least one of its checks is" in the browser — the same duplication `minimumActiveDays` is echoed to
+avoid. So `SoundWindowDto` gains **`unevaluatedWindowDays: int[]`** — `sampledWindowDays` filtered to the
+windows none of whose checks could run. It is a set of window lengths in ladder order, carries no number
+per window, and cannot rank anything, so DES-2 and E5 hold (E5(b)'s subsequence assertion applies to it as
+well). `soundWindowDays` and `unevaluatedWindowDays` never share a member; the windows in neither are the
+ones that were evaluated and did not hold up.
+
+`currentSettingStanding` is unaffected: `NotDetermined` still means exactly "the Team's own window is in
+`unevaluatedWindowDays`".
+
+### DES-16 — A level's reading: `NotEvaluated` when nothing ran, and an extreme is a finding only when its own rate expected at least one check to go the other way — DECIDED (the middle member's name confirmed as `SometimesHeld`, 2026-09-26)
+
+> **Renamed 2026-09-26, confirmed by the maintainer: `AboutRight` is now `SometimesHeld`** — a plain fact
+> beside `NeverHeld` and `AlwaysHeld`; the held and expected counts printed beside it carry the judgement,
+> and the client puts no calibration adjective on it. The tables below use the new name.
+
+**Nothing evaluated.** `reading` gains **`NotEvaluated`**, used when `runsEvaluated` is 0. `heldCount` is 0
+and `expectedHeldCount` is 0.0, as DISTILL already asserts. A closed-set member rather than `null`, so
+E6's exhaustive map forces the client to write its copy ("no check could be run, so this level was not
+tested").
+
+**The two extremes.** With `evaluated` checks, `held` of them held, and `expected = evaluated × P/100`
+(ADR-210):
+
+| `reading` | When |
+|---|---|
+| `NotEvaluated` | `evaluated = 0` |
+| `NeverHeld` | `held = 0` **and** `expected ≥ 1` — at least one hold was expected |
+| `AlwaysHeld` | `held = evaluated` **and** `evaluated − expected ≥ 1` — at least one miss was expected |
+| `SometimesHeld` | everything else |
+
+**Why "at least one whole check".** The counts are whole checks, and the check cannot justify a statistical
+test because its checks are not independent trials (D3, D6). The one model-free line is whether the level's
+own rate predicted the extreme *not* to happen. ADR-210 already draws it: under the superseded arithmetic a
+95% level that fell short in none of 14 checks, against about one expected short-fall (0.7 of one), is
+called *"unremarkable and says nothing about over-forecasting"*. The same holds for a 95% level holding in 16 of 16 against 15.2
+expected: its rate predicted fewer than one miss, so never missing is what it predicted, and calling it
+under-forecasting would over-claim. AC-2.4's *"where far fewer were expected"* is this condition; "far"
+cannot be made stricter without a statistical model the checks do not support.
+
+What the rule gives on the cases DISTILL pinned:
+
+| Case | Old pin | Under DES-16 |
+|---|---|---|
+| 16 checks, held 8 / 11 / 14 / 15 at 50 / 70 / 85 / 95 | all `AboutRight` | all `SometimesHeld` — unchanged but for the name |
+| 12 checks, held 0 / 0 / 12 / 12 | `NeverHeld` / `NeverHeld` / `AlwaysHeld` / `AlwaysHeld` | 50, 70, 85 unchanged; **95% becomes `SometimesHeld`** (0.6 of a miss expected) |
+| 16 checks, none held | all `NeverHeld` | unchanged (even the 50% level expected 8) |
+| 16 checks, every level held | all `AlwaysHeld` | 50, 70, 85 unchanged; **95% becomes `SometimesHeld`** (0.8 of a miss expected) |
+
+The headline lesson is untouched: a 95% level that held in none of 16 checks against about 15 expected is
+`NeverHeld`, over-forecasting, with its yardstick beside it.
+
+**The name of the middle member — CONFIRMED 2026-09-26 as `SometimesHeld`.** The question as it was put: *What the maintainer must decide: should a level that neither
+never held nor always held be labelled "about right" even when it is far from its expected count — for
+example a 95% level holding in 8 of 16 checks against about 15 expected? Recommended: rename it
+`SometimesHeld`, so it sits beside `NeverHeld` and `AlwaysHeld` as a fact rather than a judgement, and let
+the two counts printed beside it be the plain reading.* No model-free threshold for "about right" exists,
+for the same reason as above. **The maintainer accepted the rename: the wire name is `SometimesHeld`, its
+meaning is "neither extreme", and the client prints the held and expected counts for it with no calibration
+adjective** — which DISTILL's frontend specs assert (`held in 8 … about 8 expected`, and no "about right"
+anywhere). The rename touched only the enum member, the client's copy map and the tests that name it.
+
+### DES-17 — A setting that was not tested has its own standing, `NotTested`, and its reason travels as a closed enum — DECIDED
+
+Derived from DES-4 (which narrowed `NotDetermined` to one meaning precisely so it would not be overloaded
+again) and DES-1 (facts, never a rendered sentence). No product judgement: OQ-6 — whether a fixed-dates
+Team should see the check at all — stays open exactly as it was, and this decision is correct under either
+answer.
+
+- `currentSettingStanding` gains **`NotTested`**: the Team has no rolling sampling window for the check to
+  test. It is neither inside nor outside anything, which is all DISTILL pinned.
+- `SoundWindowDto` gains **`currentSettingNotTestedReason: UsesFixedDates | NotAPositiveLength | null`**.
+  `UsesFixedDates` when `Team.UseFixedDatesForThroughput` is true; `NotAPositiveLength` when
+  `ThroughputHistory <= 0`. When both hold, `UsesFixedDates` wins, because it is the reason the stored
+  window does not drive the Team's forecasts at all. `null` whenever the setting was tested.
+- **Invariant**, to be asserted wherever the answer is checked: `currentSettingWasTested == false` ⟺
+  `currentSettingStanding == NotTested` ⟺ `currentSettingNotTestedReason != null`.
+- `currentSettingDays` keeps reporting the stored `ThroughputHistory` as stored. When the standing is
+  `NotTested` it is **not** the window behind the Team's forecasts, and the client must not render it as
+  "your current N" — DISTILL's fixed-dates spec already asserts that no "current 45" line appears.
+
+**Why not reuse `NotDetermined`.** It means "your window was checked and there was too little history to
+conclude", and its copy says so. A fixed-dates Team given that copy would be told something false about
+its history. **Why not a free-text reason.** DES-1: every sentence is composed in the browser in the
+instance's own words. **Why a separate reason rather than two standing members.** The standing answers
+"where does your setting sit relative to the region"; the reason answers "why was it not tested". Keeping
+them apart keeps the standing's copy map at one "not tested" message and lets a third reason be added
+without touching the standing. `currentSettingWasTested` is now derivable from the standing; it stays,
+because it is already the at-a-glance discriminator ("Telling a twenty-cell report from a sixteen-cell
+one") and DISTILL pins it, and the invariant above keeps the two from drifting.
+
+### DES-18 — The filter status is read in the controller, so the sweep's own reads stay 20 / 24 — DECIDED
+
+`ForecastController.RunRealityCheck` reads `ITeamMetricsService.GetForecastThroughputStatus(team, mode)`,
+exactly as `RunBacktest` does, and hands `filterApplied` and `excludedSummary` to the sweep; how they reach
+the envelope is the crafter's choice. **`ForecastRealityCheckService` never calls
+`GetForecastThroughputStatus`.** This is DISTILL's pre-requisite P-D1, confirmed.
+
+Three reasons:
+
+1. **It is the shipped pattern.** `RunBacktest` reads the status in the controller, after the forecast; the
+   reality check is its sibling on the same controller.
+2. **The status is request context, not sweep work.** It describes the Team's *configured* window — for a
+   fixed-dates Team, its fixed range — which reuse row 7 already says is "not what a cell asks".
+3. **It keeps the query-count guard sharp.** The status is cached under its own key
+   (`ForecastStatus_{mode}`), separate from every key the sweep uses, so reading it inside the service
+   would always add exactly one cold read. The service's reads would become "one per window asked about,
+   plus one", and a regression that added one read per horizon or per cell would be one number further
+   from the invariant a reader has in their head.
+
+**The numbers, stated in full so nobody discovers them later.** The sweep reads **20** times on a cold cache
+for a Team on the standard ladder and **24** for a Team whose own window adds a fifth — what
+`RealityCheckQueryCountTest` pins, unchanged. **A whole cold request reads one more, 21 / 25**, because the
+controller's status read is part of it. The query-count test is the guard: a service that also read the
+status would show 21 / 25 there.
+
+Reuse row 7 is amended in place to say where the call now lives.
+
+### What these amendments change in the contract
+
+All additive; no shipped contract changes (the endpoint is not built yet).
+
+| Change | Decision |
+|---|---|
+| `SoundWindowDto.unevaluatedWindowDays : int[]` — new | DES-15 |
+| `SoundWindowDto.determination` — members unchanged, precise rules added | DES-15 |
+| `SoundWindowDto.currentSettingStanding` — gains `NotTested` | DES-17 |
+| `SoundWindowDto.currentSettingNotTestedReason : UsesFixedDates \| NotAPositiveLength \| null` — new | DES-17 |
+| `LevelCoverageDto.reading` — gains `NotEvaluated`; thresholds for `NeverHeld` / `AlwaysHeld` fixed; `AboutRight` renamed `SometimesHeld` (confirmed 2026-09-26) | DES-16 |
+| `filterApplied`, `excludedSummary` — unchanged in shape, read by the controller | DES-18 |
+
+E6's exhaustive `Record<…>` maps now also cover `NotTested`, the two not-tested reasons, and
+`NotEvaluated`, so none of them can reach the screen without copy. No enforcement rule is added: the
+query-count test already guards DES-18, and the DES-17 invariant is an assertion over the answer.
+
+### DISTILL tests that must change
+
+No test file was edited in this wave. These are the adjustments the amendments require. **All of them were made in the DISTILL follow-up on 2026-09-26.**
+
+**Assertions that would fail as pinned:**
+
+| File | Test | What must change |
+|---|---|---|
+| `Slice01OneSentenceAboutYourSamplingWindowScenarios.cs` | `A_Team_that_always_beat_its_most_optimistic_forecast_is_told_every_level_always_held` | `ThenEveryLevelReads(answer, AlwaysHeld)` fails at the 95% level (16 held against 15.2 expected reads `AboutRight`). Assert `AlwaysHeld` at 50, 70 and 85 and `AboutRight` at 95; the title should stop claiming "every level" |
+| same | `Only_the_checks_that_could_run_count_towards_how_often_a_level_should_have_held` | `[TestCase(95, 12, 11.4, AlwaysHeld)]` becomes `AboutRight`. The other three cases stand |
+
+**Fixtures that would describe an answer the server can no longer give** (the assertions still pass, but
+the fixture is wrong):
+
+| File | Where | What must change |
+|---|---|---|
+| `Lighthouse.Frontend/src/tests/RealityCheckFixture.tsx` | `Standing`, `LevelReading`, `RealityCheckWireAnswer`, `aRealityCheckAnswer` | `Standing` gains `"NotTested"`; `LevelReading` gains `"NotEvaluated"`; the wire answer gains `unevaluatedWindowDays` and `currentSettingNotTestedReason`; defaults stay consistent (reason `null` when tested, standing `NotTested` when not; `unevaluatedWindowDays` = windows whose every check is unevaluable; readings `NotEvaluated` when nothing was evaluated) |
+| `TeamForecastView.realityCheck.test.tsx` | "a Team forecasting from fixed dates still gets the region…" | `standing: "NotDetermined"` → `"NotTested"`, with reason `"UsesFixedDates"` |
+| `TeamForecastView.realityCheck.usageData.test.tsx` | the fixed-dates run (`currentSettingWasTested: false`, `standing: "NotDetermined"`) | same change |
+| `TeamForecastView.realityCheck.test.tsx` and `…usageData.test.tsx` | the "no check could run" answers (`determination: "NotEnoughEvidence"`) | readings `NotEvaluated` at every level; `unevaluatedWindowDays` = every sampled window |
+| `TeamForecastView.realityCheck.test.tsx` | `coastalSurvey()` | `unevaluatedWindowDays: [14]` |
+
+**Recommended additions, not required by a failing assertion:**
+
+- Backend harness (`ForecastRealityCheckAcceptanceTest.cs`): `RealityCheckAnswer` accessors for
+  `unevaluatedWindowDays` and `currentSettingNotTestedReason`; constants `NotTested`, `NotEvaluated`.
+- `A_Team_forecasting_from_fixed_dates_…` and `A_stored_window_that_is_not_a_length_of_time_…`: tighten
+  to standing `NotTested` and reasons `UsesFixedDates` / `NotAPositiveLength`, plus the DES-17 invariant.
+- `A_Team_whose_history_supports_no_check_at_all_…`: every level reads `NotEvaluated`; every sampled window
+  is in `unevaluatedWindowDays`.
+- `Coastal_Surveys_fourteen_day_checks_…`: `determination` is `SomeWindowsSound`, `unevaluatedWindowDays`
+  is `[14]`.
+- **After the maintainer confirms DES-14**: the boundary scenarios — two of four short, mixed over and
+  under, partly evaluable (1 of 1, 1 of 2), and a not-evaluated window in the middle of the ladder breaking
+  the span (backend region and frontend wording).
+- `RealityCheckQueryCountTest`: **no change** — 20 / 24 stands (DES-18).
+
+### What does not change
+
+The response stays one envelope of facts (DES-1); no per-window score, bounds pair or rendered sentence
+appears (DES-2, DES-3); the check stays read-only (DES-5); ADR-210's scoring is used exactly as accepted;
+D9's single sufficiency bar is untouched — DES-14 deliberately adds no minimum number of checks per window.
+OQ-6 stays open as a product question with its default unchanged.
 
 ---
 
@@ -2440,7 +2765,7 @@ No change to DESIGN is required by any of this, so no `upstream-changes.md` is w
 - **Keep the real engine to a handful of scenarios.** Coverage instrumentation makes a real sweep ~5 s in
   CI. Everything that can be a value-in/value-out assertion on `RealityCheckVerdictPolicy` should be one.
   **No wall-clock assertion anywhere.**
-- **Recommended, not required:** one non-`[Explicit]` query-count test on the production service over
+- **Recommended, not required — and written by DISTILL as `RealityCheckQueryCountTest`:** one non-`[Explicit]` query-count test on the production service over
   SQLite — 20 on-ladder, 24 at 45 days. It is the only automated check that catches a per-cell actual read.
 - **The usage-data event** is slice 01's: backend scenarios go in the existing `Slice04ProductEventsTests`
   harness by adding the name to `EventsThatCarryNothingButTheirName`; the frontend needs a call-site test
@@ -2466,3 +2791,416 @@ No change to DESIGN is required by any of this, so no `upstream-changes.md` is w
 Per-wave peer review: **not run.** No trigger fires — no new deployment target, no new CI framework, no
 observability rewrite (one enum member in an existing pipe), no security posture change. The consolidated
 review runs at the end of DISTILL.
+
+---
+
+# DISTILL
+
+**Wave**: DISTILL · 2026-09-26 · Quinn (`nw-acceptance-designer`) · density `lean`; DISTILL declares no
+expansion triggers, so no menu is offered and no Tier-2 section is rendered. Language: C# (NUnit 4.6,
+`WebApplicationFactory`, ArchUnitNET) on the backend, TypeScript (Vitest + React Testing Library) on the
+frontend. Deliverable type: `application` (`.nwave/des-config.json` declares none). The Python-pilot
+artifacts of the methodology - `.feature` files, `assert_state_delta`, Hypothesis - do not apply to this
+project, as the ATDD infrastructure policy records; the scenarios are NUnit and Vitest tests whose names are
+the Gherkin, split `*Scenarios.cs` / `*Specifications.cs` as the house precedent does.
+
+---
+
+## Wave: DISTILL / [REF] Prior Wave Consultation
+
+| | Source |
+|---|---|
+| + | `CLAUDE.md` (project) and `docs/ci-learnings.md` - the mandatory analyzer sweep, the preflight rules and the Tests section, pre-applied to every file written here |
+| + | `feature-delta.md` - all of it, re-read fresh: DISCUSS (US-01..US-03, their Gherkin and ACs, DoD 1-15), DESIGN (DES-1..DES-13, the response contract, driving/driven ports, E1-E7, R-1 measured), DEVOPS (all thirteen sections) |
+| + | `wave-decisions.md` - DESIGN, DESIGN revision DR-D1..DR-D6, DEVOPS |
+| + | `environments.yaml`, `slices/slice-01..03` |
+| + | `docs/architecture/atdd-infrastructure-policy.md` |
+| + | `docs/product/kpi-contracts.yaml` - the five `OUT-4172-*` entries |
+| + | ADR-209 (structure and consequences), ADR-210 (decision, cell verdict, degenerate forecast) |
+| + | `docs/product/architecture/brief.md` - the `epic-4172-forecast-backtest-sweep` section, invariants I1-I9 |
+| + | `recommendation.md` §4.1 and §5.2; `docs/product/journeys/epic-4172-forecast-reality-check.yaml` step 3 |
+| + | Precedent `e0f557de3` (story 6053 DISTILL: harness + `SliceNN…Scenarios/Specifications` pairs, `[Ignore(Pending)]`, test-side seams throwing `AssertionException`) and `62a8b62fe` (usage-data event: raw-JSON backend fixture on `UsageDataCollectorObservationTest`, frontend call-site spec, `red-classification.md`) |
+| + | `RealityCheckWallClockProbe.cs`, `Slice04ProductEventsTests`, `UsageDataDisclosureTest`, `TeamForecastView.autorun.test.tsx`, `ForecastController.RunBacktest`, `TeamMetricsService` throughput reads, `ForecastBase.GetProbability` |
+| - | `docs/feature/epic-4172-*/discuss/`, `design/`, `devops/` - do not exist; everything lives in this file |
+| - | `spike/` - no SPIKE was run; no walking skeleton was promoted |
+
+---
+
+## Wave: DISTILL / [REF] Slice 03 deferred
+
+**Slice 03 (US-03, the Copy as Markdown one-pager, Story #6074) was deferred by the maintainer on
+2026-09-26, because how the check is reported is being re-evaluated after slices 01 and 02 ship. It is
+not cancelled.** No scenario, scaffold or test is written for it in this wave, and none that had been
+drafted was kept. The DISCUSS and DESIGN text about slice 03 is left as it stands; the slice brief carries
+a DEFERRED banner and nothing else changed. When the reporting question is answered, slice 03 gets its own
+DISTILL pass against whatever format replaces or confirms the one-pager.
+
+---
+
+## Wave: DISTILL / [REF] Reconciliation
+
+**Reconciliation passed - 0 contradictions between DISCUSS, DESIGN and DEVOPS**, after three items the
+orchestrator resolved before this wave and which are applied here:
+
+| # | Item | Resolution applied |
+|---|---|---|
+| R-D1 | Horizons: DISCUSS's mockup and stories draw 1/2/4/8-week rows and DESIGN's contract says `[7, 14, 28, 56]`, while three sentences said "the 14-day minimum survives as a property of the 2-week horizon" | **Horizons are `[7, 14, 28, 56]` days.** The stale sentence is corrected in place in S2 (DISCUSS surface inventory), DESIGN reuse row 13, `recommendation.md` §5.2 and the slice 01 implementer notes: the old 14-day input rule has no successor, because the request carries no dates, and whether a short horizon can be evaluated is decided per check by the shipped sufficiency bar (D9). The R-1 probe's `[14, 28, 42, 56]` is a probe inaccuracy that over-states the cost; the probe is not changed |
+| R-D2 | OQ-6: should a Team forecasting from fixed dates see the check at all? | **DESIGN's designed default**: the standard four windows, sixteen checks, `currentSettingWasTested: false`. Covered by `A_Team_forecasting_from_fixed_dates_is_checked_at_the_standard_windows_and_told_its_own_setting_was_not_tested`, and the usage-data event fires for such a run |
+| R-D3 | The slice briefs lagged DESIGN ("sixteen runs", "a range plus a boolean", "no fifth panel", "beaten", "all sixteen rows", "slices 02, 03 and 04") | Updated in place in the slice 01 and slice 02 briefs; this file stays the source of truth. The slice 03 brief was left as it was, apart from its DEFERRED banner, when slice 03 was deferred the same day |
+
+No other contradiction was found. What *was* found are places where the design does not yet say enough
+for a test to pin; they are not contradictions and they are routed below under **Findings**.
+
+---
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+**79 test definitions, 111 executed cases. 1 green, 110 pending** (after the DESIGN amendments and the
+maintainer's two answers on 2026-09-26). Slice 03 has none - see *Slice 03
+deferred* below. Backend pending tests carry
+`[Ignore(Pending)]` with `Pending = "Pending: the Forecast Reality Check is not built yet (epic 4172,
+slice 01, story 6072)."`; frontend ones are `it.skip` / `it.skip.each` with the same reason in the title.
+Tags sit in a `// @tag` line above each backend test and in the title of each frontend spec, as the
+directories' house style has it. Every scenario carries a `@contract-shape:` tag; below, `pure` /
+`bounded` / `preserving`.
+
+**Error and edge scenarios: 39 of 79 definitions (49%).**
+
+### Backend - `Slice01OneSentenceAboutYourSamplingWindowScenarios.cs` (38 methods, 65 cases)
+
+| Scenario | Tags | Cases | State |
+|---|---|---|---|
+| `Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date` | `@walking_skeleton @driving_port @driving_adapter @real-io @us-01 @kpi-OUT-4172-never-overclaims` `preserving` | 1 | pending |
+| `The_same_check_answers_on_the_versioned_route_as_well` | `@driving_port @driving_adapter @real-io @us-01` `pure` | 1 | pending |
+| `The_check_answers_whether_or_not_the_forecast_filter_choice_is_given` | `@driving_port @us-01 @boundary @real-io` `pure` | 4 | pending |
+| `A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked` | `@driving_port @us-01 @error @real-io` `preserving` | 3 | pending |
+| `Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today` | `@driving_port @us-01 @error @real-io` `pure` | 1 | pending |
+| `Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer` | `@driving_port @us-01 @rbac @real-io` `pure` | 1 | pending |
+| `Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it` | `@driving_port @us-01 @rbac @error @real-io` `preserving` | 1 | pending |
+| `A_Team_that_does_not_exist_is_answered_as_not_found` | `@driving_port @us-01 @error @real-io` `preserving` | 1 | pending |
+| `Every_check_ends_today_and_reaches_back_by_its_own_length` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_Team_whose_window_is_on_the_standard_ladder_is_checked_sixteen_times` (14/30/60/90) | `@driving_port @us-01 @real-io` `pure` | 4 | pending |
+| `A_Team_whose_window_is_off_the_ladder_has_it_checked_as_a_fifth_window` (45/7/120) | `@driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims` `pure` | 3 | pending |
+| `No_part_of_the_answer_can_rank_one_sampling_window_above_another` (30/45) | `@driving_port @us-01 @property @real-io @kpi-OUT-4172-never-overclaims` `pure` | 2 | pending |
+| `Every_check_that_was_run_is_in_the_answer_including_the_ones_that_could_not_be_evaluated` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `Every_window_behaving_alike_is_an_answer_that_says_the_setting_is_fine` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `Deep_Currents_fourteen_day_window_over_forecast_three_times_in_four_and_sits_outside_the_region` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `The_windows_either_side_of_an_off_ladder_setting_can_hold_up_when_the_setting_itself_does_not` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `An_off_ladder_setting_can_hold_up_when_the_windows_either_side_of_it_do_not` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_window_that_fell_short_of_its_most_cautious_forecast_in_two_of_four_checks_is_outside_the_region` | `@driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `Delivering_more_than_forecast_never_counts_against_a_window_only_falling_short_does` | `@driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_window_only_some_of_whose_checks_could_run_is_judged_on_the_ones_that_did` (2/0, 2/1, 1/0, 1/1) | `@driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims` `pure` | 4 | pending |
+| `A_window_that_could_not_be_checked_in_the_middle_of_the_ladder_is_a_gap_in_the_region` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `When_no_window_held_up_the_answer_says_so_rather_than_naming_the_least_bad` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_Team_whose_history_supports_no_check_at_all_is_told_nothing_could_be_concluded` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `When_the_Teams_own_window_could_not_be_evaluated_its_standing_is_not_determined` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_level_is_expected_to_hold_as_often_as_its_own_percentage_of_the_checks` (50/70/85/95) | `@driving_port @us-01 @property @real-io @kpi-OUT-4172-never-overclaims` `pure` | 4 | pending |
+| `Only_the_checks_that_could_run_count_towards_how_often_a_level_should_have_held` (50/70/85/95) | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 4 | pending |
+| `A_Team_that_never_reached_even_its_most_cautious_forecast_is_told_no_level_ever_held` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_Team_that_always_beat_its_most_optimistic_forecast_is_told_every_level_always_held` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `Each_check_says_where_the_Teams_actual_landed_against_its_forecast` (5 positions) | `@driving_port @us-01 @property @real-io` `pure` | 5 | pending |
+| `Coastal_Surveys_fourteen_day_checks_hold_too_few_days_of_finished_work_and_are_named_as_unable_to_run` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `Five_days_with_finished_work_is_enough_to_check_and_four_is_not` (5/4) | `@driving_port @us-01 @boundary @real-io` `pure` | 2 | pending |
+| `A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing` | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
+| `A_Team_forecasting_from_fixed_dates_is_checked_at_the_standard_windows_and_told_its_own_setting_was_not_tested` (stored 45 / 0) | `@driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims` `pure` | 2 | pending |
+| `A_stored_window_that_is_not_a_length_of_time_adds_nothing_to_the_check` (0/-7) | `@driving_port @us-01 @error @real-io` `pure` | 2 | pending |
+| `Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items` | `@driving_port @us-01 @real-io @kpi-OUT-4172-read-only` `preserving` | 1 | pending |
+| `Running_the_check_twice_gives_the_same_answer_twice` | `@driving_port @us-01 @real-io @kpi-OUT-4172-read-only` `preserving` | 1 | pending |
+| `The_single_back_test_beside_the_check_still_answers_as_it_did` | `@driving_port @regression @coexistence @real-io` `preserving` | 1 | **green** |
+
+### Backend - other fixtures (10 methods, 14 cases)
+
+| Scenario | File | Tags | Cases | State |
+|---|---|---|---|---|
+| `One_check_on_a_cold_cache_reads_the_Teams_finished_work_once_per_window_it_asks_about` (30 -> 20, 45 -> 24) | `ForecastRealityCheck/RealityCheckQueryCountTest.cs` | `@driving_port @us-01 @real-io @sqlite @kpi-OUT-4172-answer-in-seconds` `bounded` | 2 | pending |
+| `The_sweep_and_its_verdict_rules_exist_where_these_rules_look_for_them` | `Architecture/RealityCheckReadOnlyArchUnitTest.cs` | `@us-01 @kpi-OUT-4172-read-only` `preserving` | 1 | pending |
+| `Nothing_in_the_reality_check_can_reach_a_repository` | same | `@us-01 @kpi-OUT-4172-read-only` `preserving` | 1 | pending |
+| `Nothing_in_the_reality_check_can_reach_the_database_directly` | same | `@us-01 @kpi-OUT-4172-read-only` `preserving` | 1 | pending |
+| `The_verdict_rules_depend_on_no_service` | same | `@us-01` `pure` | 1 | pending |
+| `A_browser_that_agreed_reports_a_reality_check_as_one_event_carrying_only_its_name` | `Integration/UsageData/TeamForecastRealityCheckRunEventTests.cs` | `@driving_port @real-io @us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor` `bounded` | 1 | pending |
+| `Nothing_leaves_a_browser_that_did_not_agree_when_it_runs_a_reality_check` (declined / never asked) | same | `@driving_port @real-io @us-01 @error` `preserving` | 2 | pending |
+| `Nothing_is_forwarded_while_the_administrator_has_stopped_usage_data` | same | `@driving_port @real-io @us-01 @error` `preserving` | 1 | pending |
+| `A_reality_check_event_carrying_anything_but_its_name_is_refused` (route / kind of system / setting) | same | `@driving_port @real-io @us-01 @error` `preserving` | 3 | pending |
+| `The_event_is_the_twelfth_on_the_list_and_the_usage_data_page_describes_it` | same | `@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor` `bounded` | 1 | pending |
+
+### Frontend - `TeamForecastView.realityCheck.test.tsx` (25 definitions, 26 cases)
+
+| Spec | Story | Tags | State |
+|---|---|---|---|
+| pressing Run reality check answers in the Forecast Backtesting group without asking for a date | US-01 | `@walking_skeleton @driving_port` | pending |
+| every window behaving alike reads as an answer: the whole range, and the setting is fine | US-01 | | pending |
+| Deep Current's 14 days sits outside a range and is told so | US-01 | | pending |
+| a region with a hole in it is listed window by window, never as a span that would claim the gap | US-01 | `@error` | pending |
+| a window that could not be checked in the middle of the ladder breaks the range, and is named as not checked rather than as not holding up | US-01 | `@error` | pending |
+| when no window held up the sentence says so and names no least-bad window | US-01 | `@error` | pending |
+| states its denominator and why the checks cannot be ranked, on screen and never behind a tooltip (16 and 20 runs) | US-01 | | pending (2 cases) |
+| each level is reported as how often it held against its own percentage of the checks | US-01 | | pending |
+| a level that never held is called over-forecasting, beside how often it should have held | US-01 | `@error` | pending |
+| checks that could not run are named with their reason and left out of every count | US-01 | `@error` | pending |
+| a Team whose history supports no check is told nothing could be concluded | US-01 | `@error` | pending |
+| a Team forecasting from fixed dates still gets the region, and no claim about a setting that was not tested | US-01 | `@error` | pending |
+| reports the two findings as two findings | US-01 | | pending |
+| offers no control that could change a Team setting | US-01 | `@kpi-OUT-4172-read-only` | pending |
+| speaks the instance's own words for Team and Work Item | US-01 | | pending |
+| a check that fails to come back leaves no verdict and says what went wrong | US-01 | `@error` | pending |
+| pressing again while a check is running does not start a second one | US-01 | `@error` | pending |
+| expanding shows one panel per sampling window checked, in order of length, and no confidence-level control | US-02 | | pending |
+| a Team whose own window is off the ladder gets a fifth panel, in its place by length | US-02 | | pending |
+| a row draws the forecast as a band with its four levels and marks where the Team's actual landed | US-02 | | pending |
+| a check that could not run says so in words where the band would be, never blank | US-02 | `@error` | pending |
+| a check whose forecast could not be worked out gives its own reason, not the thin-history one | US-02 | `@error` | pending |
+| a panel none of whose checks could run still appears, every row carrying its reason | US-02 | `@error` | pending |
+| below the panels each level says how often it held against how often it should have | US-02 | | pending |
+| the denominator and non-comparability statements stay on screen whether or not the evidence is open | US-02 | | pending |
+
+### Frontend - `TeamForecastView.realityCheck.usageData.test.tsx` (6)
+
+| Spec | Tags | State |
+|---|---|---|
+| is on the list of names the browser may send, as the word itself | `@kpi-OUT-4172-reality-check-used-outside-the-vendor` | pending |
+| reports a run once, after the answer came back and not when the button was pressed | | pending |
+| reports a run whose every check was too thin to evaluate, because that is still an answer | `@error` | pending |
+| reports a run for a Team that forecasts from fixed dates | `@error` | pending |
+| reports nothing for a request that failed | `@error` | pending |
+| never reports a reality check as a forecast run by hand | | pending |
+
+### E2E - one thin Playwright walking skeleton, listed and not written
+
+`Lighthouse.EndToEndTests/tests/specs/teams/ForecastRealityCheck.spec.ts`, through a Page Object, on a
+seeded demo scenario: open a demo Team's Forecast tab, press **Run reality check**, see the sentence and the
+denominator. **Pending and deliberately not written in this wave**: the card does not exist, and a POM
+locator written against markup nobody has rendered is exactly the unrun spec the project's rules forbid.
+It is owed at DELIVER of slice 01 and runs twice in CI (SQLite and PostgreSQL verify jobs). One skeleton
+only; everything else stays in the fast suites.
+
+### DISCUSS Gherkin coverage
+
+| DISCUSS scenario | Acceptance test |
+|---|---|
+| US-01 The check answers in one sentence without asking for a date | backend WS `Maria_runs_the_reality_check_…` + frontend WS `pressing Run reality check answers …` |
+| US-01 Every window behaving alike is a real answer, not an absence | `Every_window_behaving_alike_…` + `every window behaving alike reads as an answer …` |
+| US-01 The artifact states what it checked and why the checks cannot be ranked | `The_answer_states_exactly_what_it_checked_…` + `states its denominator … (16 and 20 runs)` |
+| US-01 A confidence level that never held is called over-forecasting | `A_Team_that_never_reached_even_its_most_cautious_forecast_…` + `a level that never held is called over-forecasting …` |
+| US-01 A period whose own history is too thin is excluded and named | `Coastal_Surveys_fourteen_day_checks_…` + `checks that could not run are named …` |
+| US-01 Reading the check needs read rights on the Team and nothing more | `Tom_who_can_read_the_Team_but_not_change_it_…` + `Somebody_who_cannot_read_the_Team_is_refused_…` |
+| US-02 The evidence shows one panel per sampling window and no more | `expanding shows one panel per sampling window …` + `… gets a fifth panel …` |
+| US-02 Where the actual landed is what says which levels held | `a row draws the forecast as a band …` + backend `Each_check_says_where_the_Teams_actual_landed_…` |
+| US-02 A check that could not run says so where the picture would be | `a check that could not run says so in words …` |
+| US-02 Each confidence level reports how often it held against how often it should have | `below the panels each level says …` + backend `Only_the_checks_that_could_run_count_…` |
+| US-02 The non-comparability statement is visible whether or not the evidence is expanded | `the denominator and non-comparability statements stay on screen …` |
+| US-03, all four scenarios | **deferred** - no test written (see *Slice 03 deferred*) |
+
+Added beyond DISCUSS, each from a named decision: the twenty-check path and the hole in the region
+(DES-13, DES-3), the fixed-dates Team and the non-positive window (DES-4, OQ-6), the degenerate forecast
+(DES-9), the 70/85/95 scoring rows (ADR-210), the rankability scan (DES-2, E5), the query count (DEVOPS),
+the read-only architecture rules (E1, E2), the usage-data event (DoD 15), and the coexistence with the
+single back-test.
+
+---
+
+## Wave: DISTILL / [REF] WS strategy
+
+**Inherited, not decided here: DISCUSS chose Strategy B** - extend the shipped vertical; no new layer is
+built. Under the Architecture of Reference the one walking-skeleton scenario per surface drives the
+production composition root end to end:
+
+- **Backend**: `Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date` -
+  real HTTP host, real SQLite file, real EF, real metrics service over seeded finished Work Items, and the
+  **shipped forecast engine** with its starting number pinned and 1 000 simulated runs. The only scenario
+  that runs the real Monte Carlo, because one sweep costs about five seconds under CI's coverage run.
+  It asserts no clock time.
+- **Frontend**: `pressing Run reality check answers in the Forecast Backtesting group without asking for a
+  date` - the real `TeamForecastView` with the check's request answered by a stand-in service.
+- **E2E**: the one Playwright skeleton above, owed at DELIVER.
+
+**Why the one green scenario is not the walking skeleton**: the skeleton cannot pass before the endpoint
+exists. Following the story 6053 precedent, the green scenario is one that holds today and proves the
+harness: `The_single_back_test_beside_the_check_still_answers_as_it_did` drives the shipped back-test
+through the same host, seeding, pinned clock and scripted forecast every pending scenario uses, and it
+stays as the coexistence guard the DEVOPS matrix asks for.
+
+---
+
+## Wave: DISTILL / [REF] Adapter coverage table
+
+| Adapter / port | Class | Real-I/O scenario | Treatment |
+|---|---|---|---|
+| `ForecastController` over HTTP (both routes) | driving | every Slice01 scenario; `The_same_check_answers_on_the_versioned_route_as_well` | real `WebApplicationFactory` host |
+| EF `LighthouseAppContext` + `IRepository<Team>` + `WorkItemRepository` (SQLite file) | driven internal | every Slice01 scenario; `RealityCheckQueryCountTest` (query counting needs SQLite, per `environments.yaml`) | real |
+| `ITeamMetricsService` / `TeamMetricsService` | driven internal | every Slice01 scenario (history windows, actuals, sufficiency from seeded Work Items) | real |
+| `IBlackoutPeriodService` | driven internal | every Slice01 scenario (no blackout periods seeded, so working days equal calendar days) | real |
+| `IForecastService` | driven, non-deterministic | the walking skeleton runs the shipped engine; every other scenario scripts the forecast per check | shipped engine, per-check scripted - new policy row |
+| `ILighthouseClock` | driven, non-deterministic | every Slice01 scenario | `FakeLighthouseClock` at 2026-09-22 |
+| `ILicenseService` | driven external | every Slice01 scenario | `Mock<ILicenseService>`, premium granted |
+| Usage-data pipe (ingest endpoint, gate, queue, collector) | driven | the five `TeamForecastRealityCheckRunEventTests` | real pipe, recording collector (existing policy rows) |
+| `forecastService.runRealityCheck` (browser API client) | driving port of the card | every frontend spec | stand-in returning the wire-shaped answer |
+
+No "NO - MISSING" rows. **Policy file**: one row appended to `docs/architecture/atdd-infrastructure-policy.md`
+- the per-check scripted forecast over the production engine. Every other
+mechanism was already recorded.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+**No production scaffold files are created.** Every scenario talks to the check over the wire and reads
+the answer as JSON (backend) or hands the card the wire shape (frontend), so the suites build against the
+application as it stands and an un-skipped scenario fails on its assertion rather than on the build - the
+choice both precedents made. Test-side seams replace the scaffolds where a type is needed:
+
+| Seam | Where | Replaced at DELIVER by |
+|---|---|---|
+| `TheProductionSweepRunsOnce(team, metrics, forecasts)` - throws `AssertionException` spelling out the missing service and its shape | `RealityCheckQueryCountTest.cs` | a call to the production `ForecastRealityCheckService` |
+| ArchUnitNET rules naming `*RealityCheck*` types and `RealityCheckVerdictPolicy` by name | `RealityCheckReadOnlyArchUnitTest.cs` | nothing - they judge the types the moment they exist (ArchUnitNET refuses an empty rule, so they are RED until then) |
+| `forecastService.runRealityCheck` stand-in and the wire-shaped `aRealityCheckAnswer` | `src/tests/RealityCheckFixture.tsx` | the real API method; if the client model turns ISO dates into `Date`s, the fixture is the one place to change |
+| The event name as text (`"TeamForecastRealityCheckRun"`) | `TeamForecastRealityCheckRunEventTests.cs`, `…usageData.test.tsx` | the enum member (value 11) and the TypeScript mirror (the word) |
+
+`UsageDataDisclosureTest` and `Slice04ProductEventsTests` are **not edited**: adding the name to
+`EventsThatCarryNothingButTheirName` now would red the shipped sweeps, and the disclosure test goes red on
+its own the moment the enum gains a member without a page row. Both are DELIVER's step 1-3 of the DEVOPS
+touch list.
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+| File | Holds |
+|---|---|
+| `Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs` | Feature-wide harness beside the R-1 probe: host, seeding, the per-check forecast script, the wire reader |
+| `…/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindow{Scenarios,Specifications}.cs` | Slice 01 through the endpoint |
+| `…/ForecastRealityCheck/RealityCheckQueryCountTest.cs` | The DEVOPS query-count check, ordinary (not `[Explicit]`) |
+| `Lighthouse.Backend.Tests/Architecture/RealityCheckReadOnlyArchUnitTest.cs` | E1 and E2 |
+| `Lighthouse.Backend.Tests/Integration/UsageData/TeamForecastRealityCheckRunEventTests.cs` | The usage-data event, beside `OptionalFeatureToggledEventTests` |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.test.tsx` | Slices 01 and 02 as the forecaster meets them |
+| `Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.usageData.test.tsx` | The event's call site |
+| `Lighthouse.Frontend/src/tests/RealityCheckFixture.tsx` | The wire-shaped answer and the render helper both frontend files share |
+
+Slice 02 is presentation over slice 01's response, so it has no backend fixture of its own. Slice 03 is
+deferred and has no tests anywhere.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter coverage
+
+| Entry point in DESIGN | Exercised over its protocol by |
+|---|---|
+| `POST /api/latest/forecast/reality-check/{teamId}` | every Slice01 scenario, the walking skeleton first |
+| `POST /api/v1/forecast/reality-check/{teamId}` | `The_same_check_answers_on_the_versioned_route_as_well` |
+| RBAC guard `TeamRead` on that route | `Tom_who_can_read_the_Team_but_not_change_it_…` (Team viewer, full answer) and `Somebody_who_cannot_read_the_Team_is_refused_…` (viewer of another Team, 403, no check in the body) |
+| UI: **Run reality check** + the verdict card | frontend slice 01 specs |
+| UI: **Show the evidence** | frontend slice 02 specs |
+| Clipboard: **Copy as Markdown** | none - slice 03 deferred |
+| `POST /api/latest/usagedata/events` carrying the new name | `TeamForecastRealityCheckRunEventTests` |
+
+No scenario calls the sweep service or the verdict policy to *make* a check happen, except the query-count
+test, whose whole subject is the service's own reads and which DEVOPS asked for at that seam.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+For DELIVER, in the order the scenarios need them:
+
+- **P-D1. The filter status for the envelope is read in the controller**, as `RunBacktest` reads it, not
+  inside the counted service call. The query-count test pins **20 / 24** as DEVOPS specified - the sweep's
+  own reads. If the service also reads `GetForecastThroughputStatus`, the count becomes 21 / 25 and the
+  test has to be re-argued with DESIGN, not simply re-numbered. **Confirmed by DES-18.**
+- **P-D2. Enums travel as words.** Every scenario reads `determination`, `currentSettingStanding`,
+  `reading`, `outcome` and `sufficiency.reason` as strings, as the API already serialises enums outbound.
+- **P-D3. Every cell is present, and an unevaluable one carries `forecast: null`, `outcome: null`,
+  `levelOutcomes: null`.** The contract says so for `forecast`; the scenarios hold the other two to it,
+  because a cell that could not run must carry nothing a reader can take for a result.
+- **P-D4. The markup the frontend specs find things by**: the card lives in the Forecast Backtesting group;
+  its buttons are named **Run reality check** and **Show the evidence**; each evidence
+  panel is a `group` named "Sampling window: N days"; each row is a `group` named by its horizon ("1 week",
+  "2 weeks", "4 weeks", "8 weeks"). Nothing about layout or styling is pinned. Where the actual mark sits
+  inside the band is not asserted in jsdom; the Playwright skeleton and the per-theme screenshots are where
+  that is seen.
+- **P-D5. The walking skeleton runs the real engine** with the pinned starting number and 1 000 runs the
+  harness registers. A slow CI run there is the coverage instrumentation, not a regression; no scenario
+  asserts clock time.
+- **P-D6. Architecture rules in Release**: run `RealityCheckReadOnlyArchUnitTest` under `-c Release`
+  before the push that turns it on.
+- **P-D7. DEVOPS environment matrix**: one target environment, `clean`; SQLite and PostgreSQL are not an
+  axis here (both carry the Playwright skeleton in CI); the five usage-data consent states are covered by
+  the event fixture (agreed, refused, never asked, administrator veto) and by the pipe's existing
+  unpublished-build behaviour.
+
+---
+
+## Wave: DISTILL / [REF] Findings
+
+Routed upstream as `SPECIFICATION_AMBIGUITY` - none contradicts another wave. **All five are closed**
+(DES-14..DES-18, 2026-09-26; DES-14's rule and DES-16's name confirmed by the maintainer the same day),
+and the suite was brought in line with them the same day. Nothing now blocks DELIVER.
+
+| # | Finding | Route | What the scenarios do now |
+|---|---|---|---|
+| **F-1** | **What makes a sampling window "sound" is not specified.** DESIGN names `SoundWindows` and `Determination` on the policy and gives the shape of the answer, but no rule decides whether a window "behaved alike". The only worked example is Deep Current: three of four checks below the whole band makes a window unsound. Two of four, a mix of over- and under-forecast, and a window that is partly unevaluable are all undecided | DESIGN — **Resolved by DES-14, confirmed by the maintainer 2026-09-26 (rule A)**: a window holds up when its 95% forecast held in more than half of the checks that ran on it | The earlier pins stand. The boundary scenarios are now written: two of four short -> outside; one short and three above the band -> holds up; partly evaluable, judged on the checks that ran (2/0, 2/1, 1/0, 1/1); a window that could not be checked mid-ladder breaks the span (backend region and frontend wording) |
+| **F-2** | **`determination` when a whole window could not be evaluated** - is it `AllWindowsAlike` if the rest agree? | DESIGN — **Resolved by DES-15 (2026-09-26), DECIDED**: `SomeWindowsSound`, and the window is listed in the new `unevaluatedWindowDays` | Asserted wherever a whole window is unevaluable (Coastal Survey, the Team at 14 bursting, the mid-ladder gap): listed in `unevaluatedWindowDays`, not sound, `determination` `SomeWindowsSound`; with no window evaluated, every window is listed and the answer is `NotEnoughEvidence` |
+| **F-3** | **A level's `reading` when nothing could be evaluated**, and whether `AlwaysHeld` needs "far fewer expected" (AC-2.4's wording) or simply every check held - a 95% level holding 16 of 16 against 15.2 expected is not obviously under-forecasting | DESIGN — **Resolved by DES-16 (2026-09-26), DECIDED**: `NotEvaluated` when nothing ran; an extreme needs at least one whole check expected the other way, so two pinned 95% cases change. The middle member is renamed `SometimesHeld`, confirmed by the maintainer | 95% holding 16/16 and 12/12 now reads `SometimesHeld`; the always-beat scenario asserts `AlwaysHeld` at 50/70/85 only and is retitled. Nothing evaluated reads `NotEvaluated` at every level. The UI shows the two counts and no "about right" wording, asserted on every rendered verdict |
+| **F-4** | **A fixed-dates Team's `currentSettingStanding` and "its reason"**: DES-4 says `currentSettingWasTested: false` "with its reason", but the contract has no reason field, and `false` has two causes (fixed dates; a window of zero or less) the client cannot tell apart | DESIGN — **Resolved by DES-17 (2026-09-26), DECIDED**: standing `NotTested`, reason `UsesFixedDates` or `NotAPositiveLength` in a new closed-enum field | Asserted: standing `NotTested` with `UsesFixedDates` (including a fixed-dates Team whose stored window is 0 - fixed dates wins) or `NotAPositiveLength`; and the invariant not tested <=> `NotTested` <=> a reason, on the tested Teams too |
+| **F-5** | **20 / 24 queries versus the envelope's filter status** (reuse row 7): the probe that produced 20 did not read the filter status; reading it inside the service adds one | DESIGN (placement) — **Resolved by DES-18 (2026-09-26), DECIDED**: read in the controller; the sweep reads 20 / 24, a whole cold request 21 / 25 | Pinned at 20 / 24; P-D1 confirmed |
+
+**AT gaps inside delivery scope, deliberately left**: the forecast-filter override is exercised for
+acceptance only (four body shapes answer); that it changes `filterApplied` and nothing else - the
+completeness audit's flag-orthogonality item - needs a Team with a forecast filter configured and is left
+to DELIVER's unit tests of the controller's mapping, which is shipped and unchanged.
+
+---
+
+## Wave: DISTILL / [REF] AT completeness audit
+
+15-item checklist, computed item by item: **14 / 15 - COMPLETE.**
+
+| Item | Verdict | By |
+|---|---|---|
+| C1a empty / minimum input | pass | empty body; a Team that has finished almost nothing |
+| C1b partition boundaries | pass | five days vs four; windows 7, 0, -7, 120 |
+| C2a / C2b state machine | pass (N/A) | the check is stateless - nothing is stored between runs (ADR-209) |
+| C3 0 / 1 / N | pass | unevaluable checks 0, 1 (the degenerate one), 4, 16; sound windows 0 and N |
+| C4a apply twice | pass | `Running_the_check_twice_gives_the_same_answer_twice` |
+| C4b inverse without prerequisite | pass (N/A) | read-only; there is no inverse |
+| C5a mode flags | pass | `applyFilterOverride` absent / null / false / true |
+| C5b flag orthogonality | **gap** | see AT gaps above |
+| C6a malformed input | pass | a word, a number, cut-off JSON; dates the check does not take |
+| C6b each declared error | pass | 403, 404, 400, both unevaluable reasons |
+| C6c closed error set | pass | every reason and outcome comes from its closed set |
+| C7a degraded resource | pass | the request fails -> no verdict, no event |
+| C7b interruption | pass | a second press while a check is running |
+| C7c concurrency | pass (N/A) | no concurrency claim; nothing is written |
+
+Audit log: `(epic-4172-forecast-backtest-sweep, C5, 1, low)`.
+
+---
+
+## Wave: DISTILL / [REF] Outcomes registry
+
+**Not registered, with the reason.** The new typed contract is the reality-check endpoint's answer. Its
+kind would be `operation`, but the registry's rows are pure modules with stable input and output shapes,
+and the answer's decisive rule - F-1, which windows are sound - is not specified yet. Register it at DELIVER
+once `RealityCheckVerdictPolicy` exists with that rule decided, so the row describes the rule rather than a
+placeholder.
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To DELIVER (`nw-software-crafter`)**, slice 01 first:
+
+1. The measurement AC-1.1 stays first, and is now a confirmation - run it against the production service
+   with the contract's horizons and twelve samples, at sixteen and at twenty checks.
+2. Un-ignore one scenario at a time, starting with the walking skeleton. `red-classification.md` records
+   what each one fails on today; a scenario that fails on anything else when un-ignored is a harness
+   problem to fix before the production step.
+3. Backend before frontend for the usage-data event, in the DEVOPS order: enum member 11 + the page row +
+   `EventsThatCarryNothingButTheirName` in one commit, then the TypeScript mirror (the word), then the call
+   site.
+4. The region follows DES-14 rule A, confirmed by the maintainer; the boundary scenarios that pin it are
+   written and pending like the rest.
+5. The Playwright skeleton is written and run locally at the end of slice 01, on demo data, through a POM.
+6. Slice 03 is deferred, not cancelled: DELIVER stops after slice 02, and slice 03 comes back through
+   DISTILL once the maintainer has decided how the check is reported.
+
+**Reviewer gate**: the four-reviewer final gate is run by the orchestrator, not by this wave.

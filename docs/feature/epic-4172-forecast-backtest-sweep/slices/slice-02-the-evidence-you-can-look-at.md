@@ -5,13 +5,15 @@
 **Depends on**: slice 01 (the response shape)
 
 **Reference class**: the shipped `BacktestForecaster` result display already renders one forecast's four
-percentiles against one actual. This slice renders sixteen of those, grouped four to a panel.
+percentiles against one actual. This slice renders sixteen of those - twenty for a Team whose own window is off the standard ladder -
+grouped by sampling window, one row per horizon.
 
 ## Goal
 
 A forecaster who is about to repeat the verdict to someone who will push back can expand it and see the
-sixteen checks themselves — each one's forecast range with the Team's actual marked against it — plus
-four lines saying how often each confidence level was beaten and how often it should have been.
+checks themselves — sixteen, or twenty off the ladder — each one's forecast range with the Team's actual
+marked against it, plus four lines saying how often each confidence level held and how often it should
+have (a level *holds* when the Team delivered at least what it forecast; ADR-210).
 
 ## Why this is second and not fourth
 
@@ -23,8 +25,10 @@ one is the third, and deferring it past second is how "evidence on request" quie
 
 ## IN scope
 
-- **Four panels, one per sampling window**, titled by window length. No fifth panel and no
-  confidence-level control (D2).
+- **One panel per sampling window swept — four on the standard ladder, five when the Team's own window
+  is off it** — titled by window length and ordered by it (AC-2.1, amended by DES-13). No
+  per-confidence-level panel and no confidence-level control (D2): a fifth panel is a fifth sampling
+  window, never a confidence level.
 - **One row per horizon inside each panel.** The forecast is drawn as a band spanning the four confidence
   levels, with a single mark at the Team's actual completed count. **The mark's position within the band
   is what reports which levels held** — there is no separate per-level rendering, because a Monte Carlo
@@ -33,9 +37,9 @@ one is the third, and deferring it past second is how "evidence on request" quie
   numbers (*"3 days with completed Work Items, 5 needed"*). Visually distinct from every evaluable outcome
   and never blank. A panel whose rows are all unevaluable still renders — an omitted panel reads as "this
   window was fine".
-- **The nominal-rate lines**, one per confidence level: beaten-count over evaluable checks, the count its
-  nominal rate expects, and a plain reading of the two. A level never beaten is called over-forecasting,
-  not excellent.
+- **The nominal-rate lines**, one per confidence level: how many of the evaluable checks it held in, the
+  count its nominal rate expects (`evaluated × P/100`, ADR-210), and a plain reading of the two. A level
+  that never held is called over-forecasting, not excellent. The word "beaten" is retired.
 - The denominator and non-comparability copy stays on screen whether or not the evidence is expanded.
 
 ## OUT of scope
@@ -47,12 +51,12 @@ one is the third, and deferring it past second is how "evidence on request" quie
   `@mui/x-charts-pro` and therefore no Heatmap component — which is moot, because a heatmap is forbidden
   on its own merits (below).
 - A matrix or a ranked list. A matrix is a coordinate system and a ranked list is a league table, and D6
-  says these sixteen cells are neither.
+  says these cells - sixteen or twenty - are neither.
 
 ## Learning hypothesis
 
 **Disproves, if it fails**: D2's claim that the confidence dimension costs zero panels and zero controls.
-Four bands of four levels each, stacked four to a panel, is a dense picture and the density argument is
+Four bands of four levels each, stacked one per horizon in each panel, is a dense picture and the density argument is
 made on paper here. If real data proves it unreadable, the fallback is **not** a per-level panel explosion
 — it is showing fewer horizons per panel, because the horizon axis is the one D6 already says cannot be
 ranked anyway.
