@@ -99,7 +99,7 @@ export const readCheck = (check: GradedCheck): CheckReading => {
 	return {
 		grade: gradeOfBand[band],
 		miss,
-		percentOfActual: shownPercentOf(off, actual, band),
+		percentOfActual: actual === 0 ? null : shownPercentOf(off, actual, band),
 	};
 };
 

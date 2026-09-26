@@ -176,7 +176,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		});
 	});
 
-	it.skip(`@error a forecast of nothing in a period that delivered nothing held exactly, with no percentage (${PENDING})`, () => {
+	it(`@error a forecast of nothing in a period that delivered nothing held exactly, with no percentage`, () => {
 		expect(readCheck(aCheck(0, 0))).toEqual({
 			grade: "HeldWithin10",
 			miss: 0,
@@ -184,7 +184,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		});
 	});
 
-	it.skip(`@error a forecast above nothing in a period that delivered nothing did not hold, the largest miss, with no percentage (${PENDING})`, () => {
+	it(`@error a forecast above nothing in a period that delivered nothing did not hold, the largest miss, with no percentage`, () => {
 		expect(readCheck(aCheck(0, 2))).toEqual({
 			grade: "NotHeldOver25",
 			miss: -2,
@@ -197,7 +197,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		expect(readCheck(aCheck(40, 42, true)).grade).toBe("HeldWithin10");
 	});
 
-	it.skip(`@property for every actual from 1 to 200 and every forecast from 0 to 400 the percentage sits in its band, stays within 1 of the true share of the actual, and is at least 1 whenever the forecast missed (${PENDING})`, () => {
+	it(`@property for every actual from 1 to 200 and every forecast from 0 to 400 the percentage sits in its band, stays within 1 of the true share of the actual, and is at least 1 whenever the forecast missed`, () => {
 		const contradictions: string[] = [];
 
 		for (let actual = 1; actual <= 200; actual++) {
