@@ -33,27 +33,45 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         }
 
         public static RealityCheckSoundWindowDto SoundWindows(
-            IReadOnlyList<int> sampledWindowDays, IReadOnlyList<RealityCheckCellDto> cells, int currentSettingDays)
+            IReadOnlyList<int> sampledWindowDays, IReadOnlyList<RealityCheckCellDto> cells, int currentSettingDays, bool usesFixedDates)
         {
             var windowStates = sampledWindowDays
                 .Select(windowDays => StateOf(cells.Where(cell => cell.SamplingWindowDays == windowDays)))
                 .ToList();
             var soundWindowDays = WindowsIn(WindowState.HoldsUp, sampledWindowDays, windowStates);
             var unevaluatedWindowDays = WindowsIn(WindowState.NotEvaluated, sampledWindowDays, windowStates);
+            var notTestedReason = WhyNotTested(currentSettingDays, usesFixedDates);
 
             return new RealityCheckSoundWindowDto(
                 soundWindowDays,
                 unevaluatedWindowDays,
                 DeterminationOf(windowStates),
                 currentSettingDays,
-                true,
-                StandingOf(currentSettingDays, soundWindowDays, unevaluatedWindowDays),
-                null);
+                notTestedReason is null,
+                StandingOf(notTestedReason, currentSettingDays, soundWindowDays, unevaluatedWindowDays),
+                notTestedReason);
+        }
+
+        // Fixed dates win over a stored length that is not a length of time, because fixed dates are why the stored
+        // window does not drive the Team's forecasts at all.
+        public static NotTestedReason? WhyNotTested(int currentSettingDays, bool usesFixedDates)
+        {
+            if (usesFixedDates)
+            {
+                return NotTestedReason.UsesFixedDates;
+            }
+
+            return currentSettingDays <= 0 ? NotTestedReason.NotAPositiveLength : null;
         }
 
         private static CurrentSettingStanding StandingOf(
-            int currentSettingDays, List<int> soundWindowDays, List<int> unevaluatedWindowDays)
+            NotTestedReason? notTestedReason, int currentSettingDays, List<int> soundWindowDays, List<int> unevaluatedWindowDays)
         {
+            if (notTestedReason is not null)
+            {
+                return CurrentSettingStanding.NotTested;
+            }
+
             if (unevaluatedWindowDays.Contains(currentSettingDays))
             {
                 return CurrentSettingStanding.NotDetermined;

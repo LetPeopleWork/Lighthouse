@@ -38,16 +38,16 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 ConfidenceLevels,
                 ForecastDataSufficiencyPolicy.MinimumActiveDays,
                 denominator,
-                RealityCheckVerdictPolicy.SoundWindows(sampledWindowDays, cells, team.ThroughputHistory),
+                RealityCheckVerdictPolicy.SoundWindows(sampledWindowDays, cells, team.ThroughputHistory, team.UseFixedDatesForThroughput),
                 CoverageOfEachLevel(cells, denominator.RunsEvaluated),
                 cells);
         }
 
         // The Team's own setting is the window its forecasts actually use, so it is always among those checked,
-        // even when it is not one of the standard lengths.
+        // even when it is not one of the standard lengths. A Team with no rolling window of its own adds nothing.
         private static List<int> WindowsToSample(Team team)
         {
-            if (team.ThroughputHistory <= 0)
+            if (RealityCheckVerdictPolicy.WhyNotTested(team.ThroughputHistory, team.UseFixedDatesForThroughput) is not null)
             {
                 return [.. StandardWindowDays];
             }

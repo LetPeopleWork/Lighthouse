@@ -155,6 +155,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [TestCase(true, 45)]
+        [TestCase(true, 7)]
+        [TestCase(true, 0)]
+        [TestCase(false, 0)]
+        [TestCase(false, -7)]
+        public void A_team_without_a_rolling_window_of_its_own_adds_nothing_to_the_ladder(bool usesFixedDates, int storedWindowDays)
+        {
+            team.UseFixedDatesForThroughput = usesFixedDates;
+            team.ThroughputHistory = storedWindowDays;
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.SampledWindowDays, Is.EqualTo(StandardWindowDays));
+                Assert.That(result.Denominator.RunsAttempted, Is.EqualTo(StandardWindowDays.Length * HorizonDays.Length));
+                Assert.That(result.SoundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.NotTested));
+                Assert.That(result.SoundWindow.CurrentSettingDays, Is.EqualTo(storedWindowDays));
+            }
+        }
+
         [Test]
         public void The_filter_status_is_never_read_by_the_sweep()
         {

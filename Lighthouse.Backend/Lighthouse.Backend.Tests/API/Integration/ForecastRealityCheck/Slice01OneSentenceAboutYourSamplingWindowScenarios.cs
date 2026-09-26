@@ -639,7 +639,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(45)]
         [TestCase(0)]
-        [Ignore(Pending)]
         public async Task A_Team_forecasting_from_fixed_dates_is_checked_at_the_standard_windows_and_told_its_own_setting_was_not_tested(int storedSamplingWindowDays)
         {
             var fixedDatesTeam = GivenATeamForecastingFromFixedDates("Lighthouse Keepers", storedSamplingWindowDays);
@@ -657,7 +656,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // @driving_port @us-01 @error @real-io @contract-shape:pure-function
         [TestCase(0)]
         [TestCase(-7)]
-        [Ignore(Pending)]
         public async Task A_stored_window_that_is_not_a_length_of_time_adds_nothing_to_the_check(int storedSamplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(storedSamplingWindowDays);

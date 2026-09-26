@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(30, Check.InsideTheBand))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(30, Check.InsideTheBand))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(60, Check.InsideTheBand))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(windowDays == 60 ? Check.FellShort : Check.InsideTheBand, ChecksPerWindow)]))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 60);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 60, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.FellShort, ChecksPerWindow)])).ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -195,7 +195,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])).ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             ];
             var cells = ChecksOf(90, checks).Concat(EveryOtherWindow(90, Check.InsideTheBand)).ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 90);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 90, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(windowDays, Check.InsideTheBand))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, windowDays);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, windowDays, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(currentSettingDays, everyOtherWindowHoldsUp ? Check.InsideTheBand : Check.FellShort))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -275,7 +275,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])).ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -294,7 +294,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(Ladder.Where(days => days != 30 && days != 60).SelectMany(days => ChecksOf(days, [.. Enumerable.Repeat(Check.InsideTheBand, ChecksPerWindow)])))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30, usesFixedDates: false);
 
             Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(expected));
         }
@@ -306,7 +306,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(30, Check.FellShort))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -326,7 +326,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Concat(EveryOtherWindow(60, Check.InsideTheBand))
                 .ToList();
 
-            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 60);
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 60, usesFixedDates: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -350,13 +350,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 {
                     var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(CheckFor(mix[windowDays]), ChecksPerWindow)])).ToList();
 
-                    var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14);
+                    var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 14, usesFixedDates: false);
 
                     Assert.That(soundWindow.SoundWindowDays, Is.EqualTo(Ladder.Where(days => mix[days] == WindowFate.HoldsUp)));
                     Assert.That(soundWindow.UnevaluatedWindowDays, Is.EqualTo(Ladder.Where(days => mix[days] == WindowFate.CouldNotRun)));
                     Assert.That(soundWindow.SoundWindowDays.Intersect(soundWindow.UnevaluatedWindowDays), Is.Empty);
                     Assert.That(soundWindow.Determination, Is.EqualTo(ExpectedDetermination(mix.Values)));
                 }
+            }
+        }
+
+        [TestCase(45, true, NotTestedReason.UsesFixedDates)]
+        [TestCase(30, true, NotTestedReason.UsesFixedDates)]
+        [TestCase(0, true, NotTestedReason.UsesFixedDates)]
+        [TestCase(-7, true, NotTestedReason.UsesFixedDates)]
+        [TestCase(0, false, NotTestedReason.NotAPositiveLength)]
+        [TestCase(-7, false, NotTestedReason.NotAPositiveLength)]
+        public void SoundWindows_ASettingThatIsNotARollingWindowIsNotTestedAndSaysWhyWhateverTheWindowsShow(int currentSettingDays, bool usesFixedDates, NotTestedReason expectedReason)
+        {
+            Check[] everyOutcome = [Check.InsideTheBand, Check.FellShort, Check.CouldNotRun];
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var outcome in everyOutcome)
+                {
+                    var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(outcome, ChecksPerWindow)])).ToList();
+
+                    var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays, usesFixedDates);
+
+                    Assert.That(soundWindow.CurrentSettingWasTested, Is.False);
+                    Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.NotTested));
+                    Assert.That(soundWindow.CurrentSettingNotTestedReason, Is.EqualTo(expectedReason));
+                    Assert.That(soundWindow.CurrentSettingDays, Is.EqualTo(currentSettingDays));
+                }
+            }
+        }
+
+        [TestCase(1)]
+        [TestCase(14)]
+        [TestCase(45)]
+        public void SoundWindows_ARollingWindowOfAnyPositiveLengthIsTestedAndGivesNoReason(int currentSettingDays)
+        {
+            var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.InsideTheBand, ChecksPerWindow)])).ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays, usesFixedDates: false);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.CurrentSettingWasTested, Is.True);
+                Assert.That(soundWindow.CurrentSettingStanding, Is.Not.EqualTo(CurrentSettingStanding.NotTested));
+                Assert.That(soundWindow.CurrentSettingNotTestedReason, Is.Null);
             }
         }
 
