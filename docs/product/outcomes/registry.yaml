@@ -73,3 +73,33 @@ outcomes:
   artifact: Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTeamLanes.ts
   related: []
   superseded_by: null
+- id: OUT-4
+  kind: specification
+  summary: Judges which of the sampling windows a Forecast Reality Check tried held
+    up against what the Team then actually finished. A window holds up when its 95%
+    forecast held in more than half of the checks that ran for it, and finishing more
+    than forecast never counts against it. The verdict is decided in this order - not
+    enough evidence when no window had a check that ran, all windows alike when every
+    window held up, no window sound when none did, and otherwise some windows sound.
+    Each confidence level reads as not evaluated when nothing ran, never held or always
+    held only when its own rate predicted at least one check going the other way, and
+    sometimes held otherwise.
+  feature: epic-4172-forecast-backtest-sweep
+  inputs:
+  - shape: the sampling window lengths tried, every check's forecast at each confidence
+      level with whether enough history existed to run it and what was actually finished,
+      the Team's current window length, and whether the Team forecasts from fixed dates
+  output:
+    shape: the windows that held up, the windows no check could evaluate, the overall
+      determination, where the Team's current window stands among them or why it was
+      not tested, and per confidence level how often it held against how often it should
+      have, with its reading
+  keywords:
+  - reality-check
+  - back-test
+  - sampling-window
+  - forecast-verdict
+  - confidence-level
+  artifact: Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/RealityCheckVerdictPolicy.cs
+  related: []
+  superseded_by: null
