@@ -54,7 +54,7 @@ own skill may hard-block on a missing predecessor (DISTILL blocks on missing DES
 name one thing to ask for; answering that question clears the block but leaves every other decision
 that wave would have made to be improvised silently somewhere downstream. Run the wave.
 
-## DISCUSS Wave & DELIVER Wave
+## DISCUSS, DEVOPS & DELIVER Waves
 
 `nw-discuss` and `nw-finalize` each carry their own checklists (RBAC impact, Lighthouse-Clients CLI/MCP versioning, website marketing surface for DISCUSS; docs prose, per-feature screenshots, demo data, website asset freshness for DELIVER). Apply those checklists in full when running those waves — see the command definitions for the current rules rather than this file, so there's one place to update them.
 
@@ -62,6 +62,13 @@ Two standing principles worth keeping visible here because they're easy to skip 
 
 - **No silent N/A.** Every checklist item gets an explicit answer, including "N/A, because …" — never an implicit skip.
 - **Per-feature, not batched.** Docs/screenshots/client updates happen at feature finalization, not deferred to `/release`. If `/release`'s `update-docs` pass finds a lot of drift, that's a signal the per-feature discipline was skipped — fix it at the feature level.
+- **DEVOPS asks which usage-data event, if any, would show the feature is used.** We are building
+  the opt-in usage-data catalog (PostHog, via the backend-forwarded pipe) up one feature at a time, so
+  every DEVOPS wave answers this explicitly — an event design, or "N/A, because …". Prefer a name-only
+  event; add a property only when an outcome KPI cannot be counted without it, and only as a closed
+  enum, never free text, ids or counts. Append to `UsageDataEventName` with the next integer, never
+  renumber. Emitting it is a DELIVER step in the slice that first makes the feature usable, and that
+  step also lists the event in `docs/settings/usagedata.md`.
 - **Write the configurable term, not one tracker's word for it.** Everything a user can rename under Settings → Terminology (feature, work item, team, portfolio, delivery, cycle time, throughput, WIP, blocked, SLE) renders as *their* word. Docs, release notes and UI fallback defaults use the seeded default from `TerminologySeeder.cs` — `Feature`/`Features`, `Work Item`/`Work Items`, … — never "Epic", "Initiative" or "Story", which name a heading a Jira or Linear reader never sees. A literal work-tracking-system **value** (a filter matching type `Epic` in ADO) is the exception and stays as written.
 
 ### Commits & Shared Contracts
