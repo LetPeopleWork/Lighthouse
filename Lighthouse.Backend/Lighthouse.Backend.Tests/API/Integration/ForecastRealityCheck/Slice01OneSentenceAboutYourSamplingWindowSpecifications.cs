@@ -672,13 +672,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 "nothing is kept between runs, so the same history answers the same way");
         }
 
-        private static async Task ThenTheyAreRefusedWithoutASingleCheck(HttpResponseMessage response)
+        private static async Task ThenTheyAreToldItWasNotFoundWithoutASingleCheck(HttpResponseMessage response)
         {
             var body = await response.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound),
+                    "a person who cannot read the Team is told it was not found, like the back-test, so the answer never reveals that it exists");
                 Assert.That(body, Does.Not.Contain("cells"));
             }
         }

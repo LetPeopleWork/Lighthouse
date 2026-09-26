@@ -2876,7 +2876,7 @@ directories' house style has it. Every scenario carries a `@contract-shape:` tag
 | `A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked` | `@driving_port @us-01 @error @real-io` `preserving` | 3 | pending |
 | `Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today` | `@driving_port @us-01 @error @real-io` `pure` | 1 | pending |
 | `Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer` | `@driving_port @us-01 @rbac @real-io` `pure` | 1 | pending |
-| `Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it` | `@driving_port @us-01 @rbac @error @real-io` `preserving` | 1 | pending |
+| `Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it` (told the Team was not found, like the back-test) | `@driving_port @us-01 @rbac @error @real-io` `preserving` | 1 | green (DELIVER step 01-11) |
 | `A_Team_that_does_not_exist_is_answered_as_not_found` | `@driving_port @us-01 @error @real-io` `preserving` | 1 | pending |
 | `Every_check_ends_today_and_reaches_back_by_its_own_length` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
 | `The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear` | `@driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims` `pure` | 1 | pending |
@@ -3087,7 +3087,7 @@ deferred and has no tests anywhere.
 |---|---|
 | `POST /api/latest/forecast/reality-check/{teamId}` | every Slice01 scenario, the walking skeleton first |
 | `POST /api/v1/forecast/reality-check/{teamId}` | `The_same_check_answers_on_the_versioned_route_as_well` |
-| RBAC guard `TeamRead` on that route | `Tom_who_can_read_the_Team_but_not_change_it_…` (Team viewer, full answer) and `Somebody_who_cannot_read_the_Team_is_refused_…` (viewer of another Team, 403, no check in the body) |
+| RBAC guard `TeamRead` on that route | `Tom_who_can_read_the_Team_but_not_change_it_…` (Team viewer, full answer) and `Somebody_who_cannot_read_the_Team_is_refused_…` (viewer of another Team: told the Team was not found, exactly like the existing back-test, so the answer never reveals that the Team exists; no check in the body) |
 | UI: **Run reality check** + the verdict card | frontend slice 01 specs |
 | UI: **Show the evidence** | frontend slice 02 specs |
 | Clipboard: **Copy as Markdown** | none - slice 03 deferred |
@@ -3165,7 +3165,7 @@ to DELIVER's unit tests of the controller's mapping, which is shipped and unchan
 | C5a mode flags | pass | `applyFilterOverride` absent / null / false / true |
 | C5b flag orthogonality | **gap** | see AT gaps above |
 | C6a malformed input | pass | a word, a number, cut-off JSON; dates the check does not take |
-| C6b each declared error | pass | 403, 404, 400, both unevaluable reasons |
+| C6b each declared error | pass | not found for a person who cannot read the Team (as the back-test answers, so the Team's existence is never revealed), not found for a Team that does not exist, 400 for a malformed body, both unevaluable reasons |
 | C6c closed error set | pass | every reason and outcome comes from its closed set |
 | C7a degraded resource | pass | the request fails -> no verdict, no event |
 | C7b interruption | pass | a second press while a check is running |

@@ -17,8 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     [Category("slice-01")]
     public partial class Slice01OneSentenceAboutYourSamplingWindowTest
     {
-        private const string Pending = "Pending: the Forecast Reality Check is not built yet (epic 4172, slice 01, story 6072).";
-
         // --- The check answers ---
 
         /// <summary>
@@ -114,8 +112,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         // @driving_port @us-01 @rbac @error @real-io @contract-shape:unbounded-preservation
+        /// <summary>
+        /// Refused as "not found", exactly as the single back-test refuses, so the answer never reveals
+        /// that a Team the person may not see exists at all.
+        /// </summary>
         [Test]
-        [Ignore(Pending)]
         public async Task Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -123,7 +124,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             using var refused = await WhenSomebodyWhoCanReadOnlyAnotherTeamRunsTheCheck(oceanExplorer, harbourPilots);
 
-            await ThenTheyAreRefusedWithoutASingleCheck(refused);
+            await ThenTheyAreToldItWasNotFoundWithoutASingleCheck(refused);
         }
 
         // @driving_port @us-01 @error @real-io @contract-shape:unbounded-preservation
