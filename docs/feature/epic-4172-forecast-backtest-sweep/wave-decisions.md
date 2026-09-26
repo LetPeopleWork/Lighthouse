@@ -1043,3 +1043,36 @@ the same day - DES-14 confirmed as rule A, and DES-16's middle reading renamed `
 
 **Counts after the follow-up**: 79 test definitions, 111 cases, 1 green, 110 pending, all RED for missing
 behaviour; error and edge 39 of 79 (49%). Nothing committed.
+
+---
+
+# DIVERGE Decisions — Story #6094
+
+**Agent**: Flux (`nw-diverger`), light pass requested by the maintainer · **Date**: 2026-09-26 · DISCOVER
+skipped by the maintainer · **Artifacts**: `diverge/story-6094/` (`job-analysis.md`, `options-raw.md`,
+`taste-evaluation.md`, `recommendation.md`). Epic-level DIVERGE artifacts untouched. Nothing committed.
+
+- **Job**: unchanged — `job-forecaster-check-the-forecast-against-what-happened`, served through its
+  "read how far off it was" half (trust calibration per confidence level). `jobs.yaml` not edited.
+  Story ODI S1-S5; S2 (mistaking an over-cautious forecast for an accurate one, 12.6) and S1 (time to see
+  how far each forecast landed, 12.5) lead.
+- **Research**: reused the Epic's `competitive-research.md`; no researcher dispatched. Brown's margin
+  reference quantity, zero-actual handling and table colours recorded as **unverified**. Brown's "correct"
+  equals ADR-210's `held`.
+- **Weights**: the skill's Default column (DVF 30 / T1 20 / T2 20 / T3 15 / T4 15), locked before scoring;
+  tie-break on Desirability, also locked. Epic invariants (no per-window score, read-only, unevaluable never
+  blank, no hard-coded renameable term) run as an unweighted check; no option failed it.
+- **Decision**: **confirm the maintainer's direction** (dialog + Brown's graded table + text result), with
+  the text result leading the dialog (Option 5, 4.10). Maintainer's literal form scored 3.70 (4th), losing
+  only on Progressive Disclosure and Concept Count. Dissent: Option 3 (sentence stays inline, table in a
+  dialog), tied at 4.10, lost on the tie-break because it keeps inline what the maintainer asked to remove.
+- **Refinements handed to DISCUSS**: text leads; table laid out by period with each actual printed once
+  (the scored period depends on the horizon only, so there are 4 actuals, not 16 or 20); grades carry a
+  glyph or word, not colour alone; percentage guarded on small and zero actuals; held-rate reading kept
+  beside the grades.
+- **Reversal to record in DISCUSS**: the maintainer's ask supersedes slice 02's "no matrix" and D2's
+  "64 marks is unreadable"; the invariants those rules protected still hold.
+- **Open questions**: `diverge/story-6094/recommendation.md` §5 (error formula, "correct" per level, fate
+  of the shipped sentence / level lines / evidence panels, dialog entry point, colour mapping — the forecast
+  colours already mean confidence level — text wording, accessibility, terminology, the reversal).
+- **Review**: `nw-diverger-reviewer` not run by Flux; the orchestrator runs it.
