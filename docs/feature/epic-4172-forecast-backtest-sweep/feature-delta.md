@@ -1623,7 +1623,7 @@ C4Container
   Person(forecaster, "Delivery Forecaster")
   Container_Boundary(lh, "Lighthouse") {
     Container(spa, "React SPA", "React 18 + TypeScript + MUI", "Team Forecast tab; composes every sentence from facts and the instance's terminology")
-    Container(api, "ASP.NET Core Backend", ".NET 10", "ForecastController, the sweep service and the verdict policy")
+    Container(api, "ASP.NET Core Backend", ".NET 10", "ForecastRealityCheckController, the sweep service and the verdict policy")
     ContainerDb(db, "Relational store", "SQLite / PostgreSQL", "Work items, Teams, blackout periods")
     Container(cache, "Metrics cache", "In-process, keyed by entity and window", "Read-through memo over run charts")
   }
@@ -1639,8 +1639,9 @@ C4Container
 **No new container.** No queue, no store, no external call, no migration. The feature adds one route to a
 container that exists and one card to a page that exists.
 
-A component diagram (L3) is **not** drawn. The backend addition is three types and the frontend addition
-is four; the decomposition table below carries more information than a diagram of seven boxes would.
+A component diagram (L3) is **not** drawn. The backend addition is four types, counting the check's own
+controller, and the frontend addition is four; the decomposition table below carries more information than
+a diagram of eight boxes would.
 L3 earns its place on a complex subsystem, and this is not one.
 
 ---
@@ -1651,7 +1652,7 @@ L3 earns its place on a complex subsystem, and this is not one.
 
 | Component | Verdict | Responsibility | Contract shape |
 |---|---|---|---|
-| `ForecastController.RunRealityCheck` | **EXTEND** | Driving adapter. Resolves the Team via the shipped `GetEntityByIdAnExecuteAction` helper, maps `applyFilterOverride` to a `ThroughputFilterMode` via the existing private `MapOverrideToFilterMode`, calls the sweep, returns the envelope. **No input validation**: the body carries no dates, so there is nothing to validate. | Adapter; no logic |
+| `ForecastRealityCheckController.RunRealityCheck` | **CREATE NEW** | Driving adapter on its own controller, with the same `api/v1/forecast` + `api/latest/forecast` routes as `ForecastController`, so the URLs do not change. Takes `IForecastRealityCheckService`, `IRepository<Team>` and `ITeamMetricsService` through its constructor. Resolves the Team via the shipped `GetEntityByIdAnExecuteAction` helper, maps `applyFilterOverride` to a `ThroughputFilterMode` the same way `ForecastController` does, calls the sweep, returns the envelope. **No input validation**: the body carries no dates, so there is nothing to validate. **Why not an action on `ForecastController`:** the maintainer prefers constructor injection, and that controller already takes seven constructor parameters; an eighth trips Sonar's S107, a fair sign it carries too much. Putting the service on the action with `[FromServices]`, or suppressing S107, would only have hidden that. `ForecastController` is left exactly as it was before this feature. *(Changed in DELIVER, 2026-09-26; DESIGN had this as an added action on `ForecastController`.)* | Adapter; no logic |
 | `IForecastRealityCheckService` / `ForecastRealityCheckService` | **CREATE NEW** | Builds the `(horizon, window)` pairs from today — sixteen, or twenty when the Team's own window is off the standard ladder (DES-13); reads history per cell and actuals per horizon; runs `HowMany`; assembles the envelope. Holds no write surface (DES-5). | Bounded-change, empty mutation set. Returns a value; writes nothing outside the metrics cache its collaborators own |
 | `RealityCheckVerdictPolicy` | **CREATE NEW** | Pure static. `Held`, `ExpectedHeldCount`, `CellOutcome`, `SoundWindows`, `Determination`, `CurrentSettingStanding`. Owns every rule ADR-210 settles. | **Pure function (return-only).** No DI, no clock, no I/O; today arrives as a parameter |
 | `RealityCheckInputDto` + the result DTO family | **CREATE NEW** | The wire contract. See the contract section. | Data |
@@ -1677,9 +1678,9 @@ valid justifications and none is used.
 
 | # | Existing component | Verdict | Justification | Contract shape / universe |
 |---|---|---|---|---|
-| 1 | `ForecastController` (two-route class attribute, `api/v1` + `api/latest`) | **EXTEND** | One added action. The dual-route attribute is on the class, so the `/api/v1/…` twin is free — verified in the source, not assumed. | Adapter; the added action declares no mutation |
-| 2 | `ForecastController.MapOverrideToFilterMode` | **EXTEND (reuse as-is)** | Already private static and exactly the mapping `applyFilterOverride` needs. | Pure |
-| 3 | `ForecastController.GetEntityByIdAnExecuteAction` | **EXTEND (reuse as-is)** | The shipped Team-resolution + 404 path, used by `RunBacktest`. Reusing it is what lets the sweep service avoid `IRepository<Team>` entirely (DES-5). | Read-only resolution |
+| 1 | `ForecastController` (two-route class attribute, `api/v1` + `api/latest`) | **NO CHANGE — its routes are copied, not extended** | The check lives on its own `ForecastRealityCheckController`, which repeats the two `api/v1/forecast` + `api/latest/forecast` routes, so the `/api/v1/…` twin is still free. `ForecastController` already takes seven constructor parameters, and an eighth would trip S107. *(Changed in DELIVER, 2026-09-26.)* | Adapter; the new controller declares no mutation |
+| 2 | `ForecastController.MapOverrideToFilterMode` | **NOT REUSED — the three-way mapping is repeated** | It is private to `ForecastController`, which stays unchanged, so the new controller carries its own three-line copy of the same `true` / `false` / `null` mapping. *(Changed in DELIVER, 2026-09-26.)* | Pure |
+| 3 | `ApiHelpers.GetEntityByIdAnExecuteAction` | **EXTEND (reuse as-is)** | The shipped Team-resolution + 404 path, used by `RunBacktest`. It is an extension method on `ControllerBase`, so the new controller reuses it as-is. Reusing it is what lets the sweep service avoid `IRepository<Team>` entirely (DES-5). | Read-only resolution |
 | 4 | `IForecastService.HowMany` | **NO CHANGE** | Called once per cell — sixteen or twenty times — with different inputs. AC asserts the engine does not change; the existing forecast assertions must pass unmodified before and after. | Pure over `(RunChartData, days)` |
 | 5 | `ITeamMetricsService.GetBlackoutAwareThroughputForTeam` | **NO CHANGE** | The history read, per cell, per its own window. | Read; memoises into the metrics cache |
 | 6 | `ITeamMetricsService.GetThroughputForTeam(team, start, end, mode)` | **NO CHANGE** | The actual-completed read, **per horizon (four reads), not per cell**. The scored period depends only on the horizon, so the fifth sampling window adds no actual-completed read. | Read; memoises |
@@ -2316,7 +2317,7 @@ one") and DISTILL pins it, and the invariant above keeps the two from drifting.
 
 ### DES-18 — The filter status is read in the controller, so the sweep's own reads stay 20 / 24 — DECIDED
 
-`ForecastController.RunRealityCheck` reads `ITeamMetricsService.GetForecastThroughputStatus(team, mode)`,
+`ForecastRealityCheckController.RunRealityCheck` reads `ITeamMetricsService.GetForecastThroughputStatus(team, mode)`,
 exactly as `RunBacktest` does, and hands `filterApplied` and `excludedSummary` to the sweep; how they reach
 the envelope is the crafter's choice. **`ForecastRealityCheckService` never calls
 `GetForecastThroughputStatus`.** This is DISTILL's pre-requisite P-D1, confirmed.
@@ -3026,7 +3027,7 @@ stays as the coexistence guard the DEVOPS matrix asks for.
 
 | Adapter / port | Class | Real-I/O scenario | Treatment |
 |---|---|---|---|
-| `ForecastController` over HTTP (both routes) | driving | every Slice01 scenario; `The_same_check_answers_on_the_versioned_route_as_well` | real `WebApplicationFactory` host |
+| `ForecastRealityCheckController` over HTTP (both routes) | driving | every Slice01 scenario; `The_same_check_answers_on_the_versioned_route_as_well` | real `WebApplicationFactory` host |
 | EF `LighthouseAppContext` + `IRepository<Team>` + `WorkItemRepository` (SQLite file) | driven internal | every Slice01 scenario; `RealityCheckQueryCountTest` (query counting needs SQLite, per `environments.yaml`) | real |
 | `ITeamMetricsService` / `TeamMetricsService` | driven internal | every Slice01 scenario (history windows, actuals, sufficiency from seeded Work Items) | real |
 | `IBlackoutPeriodService` | driven internal | every Slice01 scenario (no blackout periods seeded, so working days equal calendar days) | real |
