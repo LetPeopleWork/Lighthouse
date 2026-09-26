@@ -199,7 +199,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(45)]
         [TestCase(7)]
         [TestCase(120)]
-        [Ignore(Pending)]
         public async Task A_Team_whose_window_is_off_the_ladder_has_it_checked_as_a_fifth_window(int samplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);
@@ -221,7 +220,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // @driving_port @us-01 @property @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(30)]
         [TestCase(45)]
-        [Ignore(Pending)]
         public async Task No_part_of_the_answer_can_rank_one_sampling_window_above_another(int samplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);
@@ -292,7 +290,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task The_windows_either_side_of_an_off_ladder_setting_can_hold_up_when_the_setting_itself_does_not()
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(45);
@@ -310,7 +307,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task An_off_ladder_setting_can_hold_up_when_the_windows_either_side_of_it_do_not()
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(45);

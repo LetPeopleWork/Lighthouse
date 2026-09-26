@@ -128,6 +128,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [TestCase(14, new[] { 14, 30, 60, 90 })]
+        [TestCase(30, new[] { 14, 30, 60, 90 })]
+        [TestCase(45, new[] { 14, 30, 45, 60, 90 })]
+        [TestCase(7, new[] { 7, 14, 30, 60, 90 })]
+        [TestCase(120, new[] { 14, 30, 60, 90, 120 })]
+        public void The_teams_own_window_is_always_one_of_those_checked_and_the_ladder_stays_in_order(int teamWindowDays, int[] expectedSampledWindowDays)
+        {
+            team.ThroughputHistory = teamWindowDays;
+
+            var result = Run();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.StandardWindowDays, Is.EqualTo(StandardWindowDays));
+                Assert.That(result.SampledWindowDays, Is.EqualTo(expectedSampledWindowDays));
+                Assert.That(result.Cells.Select(cell => (cell.SamplingWindowDays, cell.HorizonDays)),
+                    Is.EquivalentTo(expectedSampledWindowDays.SelectMany(window => HorizonDays.Select(horizon => (window, horizon)))));
+                Assert.That(result.Denominator.RunsAttempted, Is.EqualTo(expectedSampledWindowDays.Length * HorizonDays.Length));
+                Assert.That(teamMetricsService.Invocations.Count(invocation => invocation.Method.Name == nameof(ITeamMetricsService.GetBlackoutAwareThroughputForTeam)),
+                    Is.EqualTo(expectedSampledWindowDays.Length * HorizonDays.Length));
+                Assert.That(teamMetricsService.Invocations.Count(invocation => invocation.Method.Name == nameof(ITeamMetricsService.GetThroughputForTeam)),
+                    Is.EqualTo(HorizonDays.Length), "the actual depends only on the horizon");
+                Assert.That(result.SoundWindow.SoundWindowDays, Is.EqualTo(expectedSampledWindowDays));
+                Assert.That(result.SoundWindow.CurrentSettingDays, Is.EqualTo(teamWindowDays));
+            }
+        }
+
         [Test]
         public void The_filter_status_is_never_read_by_the_sweep()
         {

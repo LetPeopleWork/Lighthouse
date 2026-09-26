@@ -22,7 +22,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         public RealityCheckResultDto Run(Team team, ThroughputFilterMode mode)
         {
             var anchorDate = clock.Today;
-            var cells = HorizonDays.SelectMany(horizonDays => CheckOneHorizon(team, mode, anchorDate, horizonDays)).ToList();
+            var sampledWindowDays = WindowsToSample(team);
+            var cells = HorizonDays
+                .SelectMany(horizonDays => CheckOneHorizon(team, mode, anchorDate, horizonDays, sampledWindowDays))
+                .ToList();
             var denominator = CountWhatWasEvaluated(cells);
 
             return new RealityCheckResultDto(
@@ -30,17 +33,30 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 team.Name,
                 anchorDate,
                 StandardWindowDays,
-                StandardWindowDays,
+                sampledWindowDays,
                 HorizonDays,
                 ConfidenceLevels,
                 ForecastDataSufficiencyPolicy.MinimumActiveDays,
                 denominator,
-                RealityCheckVerdictPolicy.SoundWindows(StandardWindowDays, cells, team.ThroughputHistory),
+                RealityCheckVerdictPolicy.SoundWindows(sampledWindowDays, cells, team.ThroughputHistory),
                 CoverageOfEachLevel(cells, denominator.RunsEvaluated),
                 cells);
         }
 
-        private List<RealityCheckCellDto> CheckOneHorizon(Team team, ThroughputFilterMode mode, DateOnly anchorDate, int horizonDays)
+        // The Team's own setting is the window its forecasts actually use, so it is always among those checked,
+        // even when it is not one of the standard lengths.
+        private static List<int> WindowsToSample(Team team)
+        {
+            if (team.ThroughputHistory <= 0)
+            {
+                return [.. StandardWindowDays];
+            }
+
+            return [.. StandardWindowDays.Append(team.ThroughputHistory).Distinct().Order()];
+        }
+
+        private List<RealityCheckCellDto> CheckOneHorizon(
+            Team team, ThroughputFilterMode mode, DateOnly anchorDate, int horizonDays, List<int> sampledWindowDays)
         {
             var scoredPeriodStart = anchorDate.AddDays(-horizonDays);
             var periodStart = AsDateTime(scoredPeriodStart);
@@ -52,7 +68,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 .GetEffectiveBlackoutDays(periodStart, periodEnd)
                 .CountWorkingDays(periodStart, periodEnd);
 
-            return [.. StandardWindowDays.Select(samplingWindowDays =>
+            return [.. sampledWindowDays.Select(samplingWindowDays =>
                 CheckOneWindow(team, mode, new ScoredPeriod(horizonDays, scoredPeriodStart, anchorDate, forecastDays, actualCompleted), samplingWindowDays))];
         }
 
