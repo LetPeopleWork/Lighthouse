@@ -30,5 +30,7 @@ namespace Lighthouse.Backend.Models.UsageData
         PortfolioRefreshTriggered = 9,
 
         OptionalFeatureToggled = 10,
+
+        TeamForecastRealityCheckRun = 11,
     }
 }
