@@ -58,15 +58,19 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private List<RealityCheckCellDto> CheckOneHorizon(
             Team team, ThroughputFilterMode mode, DateOnly anchorDate, int horizonDays, List<int> sampledWindowDays)
         {
-            var scoredPeriodStart = anchorDate.AddDays(-horizonDays);
+            // Both ends of a period are days inside it, so a horizon of H days ending today starts H - 1 days ago.
+            var scoredPeriodStart = anchorDate.AddDays(-(horizonDays - 1));
             var periodStart = AsDateTime(scoredPeriodStart);
             var periodEnd = AsDateTime(anchorDate);
 
             // The scored period depends only on the horizon, so every sampling window shares this one read.
             var actualCompleted = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd, mode).Total;
+
+            // Working days are counted after the day they start from, so counting from the day before the period
+            // takes in its first day as well as its last.
             var forecastDays = blackoutPeriodService
                 .GetEffectiveBlackoutDays(periodStart, periodEnd)
-                .CountWorkingDays(periodStart, periodEnd);
+                .CountWorkingDays(periodStart.AddDays(-1), periodEnd);
             var period = new ScoredPeriod(horizonDays, scoredPeriodStart, anchorDate, forecastDays, actualCompleted);
 
             return [.. sampledWindowDays.Select(samplingWindowDays => CheckOneWindow(team, mode, new CheckedWindow(period, samplingWindowDays)))];
@@ -118,13 +122,13 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private sealed record ScoredPeriod(int Horizon, DateOnly Start, DateOnly End, int ForecastDays, int ActualCompleted);
 
-        // A sampling window learns from the days right before the period it is scored on, so its history ends
-        // where that period starts.
+        // A sampling window learns from the days right before the period it is scored on and from none of that
+        // period's own days, so its history ends the day before the period starts and holds exactly its length.
         private sealed record CheckedWindow(ScoredPeriod Period, int SamplingWindowDays)
         {
-            public DateOnly HistoryStart => Period.Start.AddDays(-SamplingWindowDays);
+            public DateOnly HistoryStart => HistoryEnd.AddDays(-(SamplingWindowDays - 1));
 
-            public DateOnly HistoryEnd => Period.Start;
+            public DateOnly HistoryEnd => Period.Start.AddDays(-1);
 
             public RealityCheckCellDto Unevaluable(SufficiencyReason reason, int daysWithCompletedWork)
                 => Cell(new RealityCheckSufficiencyDto(false, reason, daysWithCompletedWork), null, null, null, null);

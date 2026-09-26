@@ -81,9 +81,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var misplaced = result.Cells
                 .Where(cell => cell.ScoredPeriodEnd != Today
-                    || cell.ScoredPeriodStart != Today.AddDays(-cell.HorizonDays)
-                    || cell.HistoryWindowEnd != cell.ScoredPeriodStart
-                    || cell.HistoryWindowStart != cell.ScoredPeriodStart.AddDays(-cell.SamplingWindowDays))
+                    || cell.ScoredPeriodStart != Today.AddDays(-(cell.HorizonDays - 1))
+                    || cell.HistoryWindowEnd != cell.ScoredPeriodStart.AddDays(-1)
+                    || cell.HistoryWindowStart != cell.HistoryWindowEnd.AddDays(-(cell.SamplingWindowDays - 1)))
                 .ToList();
 
             using (Assert.EnterMultipleScope())
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             {
                 var historyEnd = AsDateTime(Today.AddDays(-horizon));
                 teamMetricsService.Verify(
-                    service => service.GetBlackoutAwareThroughputForTeam(team, historyEnd.AddDays(-window), historyEnd, Mode),
+                    service => service.GetBlackoutAwareThroughputForTeam(team, historyEnd.AddDays(-(window - 1)), historyEnd, Mode),
                     Times.Once);
             }
         }
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             foreach (var horizon in HorizonDays)
             {
                 teamMetricsService.Verify(
-                    service => service.GetThroughputForTeam(team, AsDateTime(Today.AddDays(-horizon)), AsDateTime(Today), Mode),
+                    service => service.GetThroughputForTeam(team, AsDateTime(Today.AddDays(-(horizon - 1))), AsDateTime(Today), Mode),
                     Times.Once);
             }
 
@@ -197,6 +197,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                     service => service.HowMany(It.IsAny<RunChartData>(), horizon - OneBlackoutDayInsideEveryHorizon.Length),
                     Times.Exactly(StandardWindowDays.Length));
             }
+        }
+
+        /// <summary>
+        /// The one-week horizon runs from six days ago to today. Its first day counts like its last, so a
+        /// blackout six days ago takes a day away, and a blackout seven days ago - the day before it starts -
+        /// takes nothing.
+        /// </summary>
+        [TestCase(null, 7)]
+        [TestCase(-6, 6)]
+        [TestCase(-7, 7)]
+        public void The_one_week_horizon_is_forecast_over_its_seven_days_less_the_blackout_days_among_them(int? blackoutDaysFromToday, int forecastDays)
+        {
+            BlackoutPeriod[] blackouts = blackoutDaysFromToday is { } offset
+                ? [new BlackoutPeriod { Start = Today.AddDays(offset), End = Today.AddDays(offset) }]
+                : [];
+            blackoutPeriodService
+                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(blackouts);
+
+            Run();
+
+            forecastService.Verify(
+                service => service.HowMany(It.IsAny<RunChartData>(), forecastDays),
+                Times.Exactly(StandardWindowDays.Length));
+        }
+
+        [Test]
+        public void The_day_every_check_ends_on_is_the_instances_own_day_not_the_utc_one()
+        {
+            var lateEveningUtcThatIsAlreadyTomorrowInZurich = new DateTimeOffset(Today.ToDateTime(new TimeOnly(23, 30)), TimeSpan.Zero);
+            var instanceDay = Today.AddDays(1);
+
+            var result = Run(new FakeLighthouseClock(lateEveningUtcThatIsAlreadyTomorrowInZurich, TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich")));
+
+            var misplaced = result.Cells
+                .Where(cell => cell.ScoredPeriodEnd != instanceDay
+                    || cell.ScoredPeriodStart != instanceDay.AddDays(-(cell.HorizonDays - 1))
+                    || cell.HistoryWindowEnd != instanceDay.AddDays(-cell.HorizonDays))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.AnchorDate, Is.EqualTo(instanceDay));
+                Assert.That(misplaced, Is.Empty);
+                Assert.That(result.Cells, Is.Not.Empty);
+            }
+
+            teamMetricsService.Verify(
+                service => service.GetThroughputForTeam(team, AsDateTime(instanceDay.AddDays(-6)), AsDateTime(instanceDay), Mode),
+                Times.Once);
         }
 
         [Test]
@@ -289,12 +339,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         private RealityCheckResultDto Run()
+            => Run(new FakeLighthouseClock(new DateTimeOffset(Today.ToDateTime(new TimeOnly(9, 0)), TimeSpan.Zero)));
+
+        private RealityCheckResultDto Run(ILighthouseClock clock)
         {
             var subject = new ForecastRealityCheckService(
                 forecastService.Object,
                 teamMetricsService.Object,
                 blackoutPeriodService.Object,
-                new FakeLighthouseClock(new DateTimeOffset(Today.ToDateTime(new TimeOnly(9, 0)), TimeSpan.Zero)));
+                clock);
 
             return subject.Run(team, Mode);
         }

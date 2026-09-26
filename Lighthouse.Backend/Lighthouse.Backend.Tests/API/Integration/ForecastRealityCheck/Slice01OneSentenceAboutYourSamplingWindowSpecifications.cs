@@ -241,12 +241,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
+        /// <summary>
+        /// Every date in the answer is a day that belongs to the stretch it bounds, first and last alike: a
+        /// horizon of H days runs from H - 1 days ago to today, and a window of W days ends the day before that.
+        /// </summary>
         private static void ThenEachChecksHistorySitsImmediatelyBeforeWhatItScores(RealityCheckAnswer answer)
         {
             var misplaced = answer.Cells
-                .Where(cell => cell.ScoredPeriodStart != TodayDay.AddDays(-cell.HorizonDays)
-                    || cell.HistoryWindowEnd != cell.ScoredPeriodStart
-                    || cell.HistoryWindowStart != cell.ScoredPeriodStart.AddDays(-cell.SamplingWindowDays))
+                .Where(cell => cell.ScoredPeriodStart != TodayDay.AddDays(-(cell.HorizonDays - 1))
+                    || cell.HistoryWindowEnd != cell.ScoredPeriodStart.AddDays(-1)
+                    || cell.HistoryWindowStart != cell.HistoryWindowEnd.AddDays(-(cell.SamplingWindowDays - 1)))
                 .Select(cell => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d: history {cell.HistoryWindowStart}..{cell.HistoryWindowEnd}, scored {cell.ScoredPeriodStart}..{cell.ScoredPeriodEnd}")
                 .ToList();
 
@@ -461,6 +465,45 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             Assert.That(disagreements, Is.Empty,
                 "a level held exactly when the Team delivered at least what that level forecast");
+        }
+
+        private static void ThenEveryCheckScoredOneWorkItemForEachDayOfItsHorizon(RealityCheckAnswer answer)
+        {
+            var miscounted = answer.Cells
+                .Where(cell => cell.ActualCompleted != cell.HorizonDays)
+                .Select(cell => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d: actual {cell.ActualCompleted}")
+                .ToList();
+
+            Assert.That(miscounted, Is.Empty,
+                "one Work Item was finished on each day, so a check scoring H days finds exactly H; one more means it scored a day outside its horizon");
+        }
+
+        private static void ThenEveryLevelOfEveryCheckForecastOneWorkItemForEachDayOfItsHorizon(RealityCheckAnswer answer)
+        {
+            var misforecast = answer.Cells
+                .SelectMany(cell => ConfidenceLevels
+                    .Where(level => cell.ForecastByLevel.GetValueOrDefault(level, -1) != cell.HorizonDays)
+                    .Select(level => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d at {level}%: forecast {cell.ForecastByLevel.GetValueOrDefault(level, -1)}"))
+                .ToList();
+
+            Assert.That(misforecast, Is.Empty,
+                "a history holding one Work Item on every one of its days forecasts exactly one per day of the horizon, at every level");
+        }
+
+        private static void ThenEveryLevelHeldInEveryCheck(RealityCheckAnswer answer)
+        {
+            var missed = answer.Cells
+                .SelectMany(cell => ConfidenceLevels
+                    .Where(level => !cell.HeldByLevel.GetValueOrDefault(level))
+                    .Select(level => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d at {level}%"))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(missed, Is.Empty, "the Team delivered exactly what every level forecast, so every level held");
+                Assert.That(ConfidenceLevels.Select(level => answer.Coverage(level).HeldCount), Is.All.EqualTo(answer.Cells.Count),
+                    "every level held in every one of the checks");
+            }
         }
 
         private static void ThenTheLevelHeldAgainstItsNominalRate(

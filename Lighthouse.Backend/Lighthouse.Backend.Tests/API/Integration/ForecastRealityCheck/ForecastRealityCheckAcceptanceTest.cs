@@ -38,9 +38,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// over under the coverage run CI uses. Where a scenario is about the check running end to end, it asks
     /// for the shipped engine instead, with its starting number pinned and fewer runs than production uses.
     ///
-    /// Nothing here names a type this feature is about to add. Every scenario talks to the check over the
-    /// wire and reads the answer as JSON, so the suite builds against the application as it stands and a
-    /// scenario that is switched on fails on the answer rather than on the build.
+    /// Nothing here names a type of the check's own code. Every scenario talks to the check over the wire
+    /// and reads the answer as JSON, so the scenarios pin what a caller receives, and a change that breaks
+    /// that fails on the answer rather than on the build.
     /// </summary>
     public abstract class ForecastRealityCheckAcceptanceTest
     {
@@ -262,15 +262,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         /// <summary>
-        /// Every scenario reads the answer through here, so an unbuilt check fails on this assertion - the
-        /// check was not there to answer - rather than on a JSON parser choking on an empty body.
+        /// Every scenario reads the answer through here, so a check that did not answer fails on this assertion
+        /// rather than on a JSON parser choking on an empty body. It is also where every check is held to
+        /// learning from exactly its own window: no scenario here has a blackout day, so a history one day
+        /// longer or shorter than a swept window means a check read days that were not its own.
         /// </summary>
-        protected static async Task<RealityCheckAnswer> ReadTheAnswer(HttpResponseMessage response)
+        protected async Task<RealityCheckAnswer> ReadTheAnswer(HttpResponseMessage response)
         {
             var body = await response.Content.ReadAsStringAsync();
 
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The reality check did not answer. Body: {body}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    $"The reality check did not answer. Body: {body}");
+                Assert.That(Forecasts.HistoriesNoSweptWindowIsAsLongAs, Is.Empty,
+                    "every check learns from exactly as many days as its window holds; these history lengths match no window swept");
+            }
 
             using var document = JsonDocument.Parse(body);
             return new RealityCheckAnswer(document.RootElement.Clone());
@@ -499,14 +506,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         /// <summary>
         /// Which forecast each check produces, chosen by the scenario. A check is recognised by the length
-        /// of the history it was handed - its sampling window - and by the number of days it forecast -
-        /// its horizon. Nothing else about how the check asks is assumed.
+        /// of the history it was handed - exactly its sampling window - and by the number of days it forecast -
+        /// its horizon. Nothing else about how the check asks is assumed. Every history length handed over is
+        /// kept, the shipped engine's included, so a scenario can tell a check that read a day too many.
         /// </summary>
         protected sealed class ForecastScript
         {
             private readonly Dictionary<(int Window, int Horizon), HeldUpTo?> checks = [];
 
             private readonly SortedSet<int> windows = [.. StandardWindowDays];
+
+            private readonly List<int> historyLengthsHandedOver = [];
+
+            private readonly Lock handingOver = new();
 
             private bool shippedEngine;
 
@@ -536,17 +548,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             public void RunAsShipped() => shippedEngine = true;
 
+            public List<int> HistoriesNoSweptWindowIsAsLongAs
+            {
+                get
+                {
+                    lock (handingOver)
+                    {
+                        return [.. historyLengthsHandedOver.Where(length => !windows.Contains(length))];
+                    }
+                }
+            }
+
             public HowManyForecast? ForecastFor(RunChartData history, int days)
             {
+                lock (handingOver)
+                {
+                    historyLengthsHandedOver.Add(history.History);
+                }
+
                 if (shippedEngine)
                 {
                     return null;
                 }
 
-                var window = windows.MinBy(candidate => Math.Abs(candidate - history.History));
                 var horizon = HorizonDays.MinBy(candidate => Math.Abs(candidate - days));
 
-                if (!checks.TryGetValue((window, horizon), out var held))
+                if (!checks.TryGetValue((history.History, horizon), out var held))
                 {
                     held = Otherwise;
                 }

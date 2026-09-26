@@ -44,6 +44,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
+        /// <summary>
+        /// A Team that finishes exactly one Work Item every day leaves the shipped engine nothing to be unsure
+        /// about: every level of every check forecasts one item for each day of the horizon, and the Team
+        /// delivers exactly that. A check that scored one day more than its horizon, or learned from a day it
+        /// is also scored on, reads this steady Team as beating every forecast it was ever given.
+        /// </summary>
+        // @driving_port @driving_adapter @real-io @us-01 @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
+        [Test]
+        public async Task A_Team_finishing_one_Work_Item_every_day_delivers_exactly_what_every_level_of_every_check_forecast()
+        {
+            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
+            GivenTheForecastIsWorkedOutAsShipped();
+
+            var answer = await TheAnswerTo(oceanExplorer);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
+                ThenEveryCheckScoredOneWorkItemForEachDayOfItsHorizon(answer);
+                ThenEveryLevelOfEveryCheckForecastOneWorkItemForEachDayOfItsHorizon(answer);
+                ThenEveryCheckLandedThisWay(answer, WithinBand);
+                ThenEveryLevelHeldInEveryCheck(answer);
+            }
+        }
+
         // @driving_port @driving_adapter @real-io @us-01 @contract-shape:pure-function
         [Test]
         public async Task The_same_check_answers_on_the_versioned_route_as_well()
@@ -700,8 +725,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         /// <summary>
         /// The single back-test sits in the same group on the same tab and its contract is not widened.
-        /// Green before the check exists, and it stays the harness's own proof that seeding, the pinned
-        /// clock and the scripted forecast reach the real forecast endpoints.
+        /// It is also the harness's own proof that seeding, the pinned clock and the scripted forecast reach
+        /// the real forecast endpoints.
         /// </summary>
         // @driving_port @regression @coexistence @real-io @contract-shape:unbounded-preservation
         [Test]

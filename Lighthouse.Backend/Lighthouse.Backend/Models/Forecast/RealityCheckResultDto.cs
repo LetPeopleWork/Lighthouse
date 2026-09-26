@@ -32,6 +32,12 @@ namespace Lighthouse.Backend.Models.Forecast
 
     public sealed record RealityCheckLevelCoverageDto(int ConfidenceLevel, int HeldCount, double ExpectedHeldCount, LevelReading Reading);
 
+    /// <summary>
+    /// One check: a sampling window's history forecast over one horizon and scored against what the Team finished.
+    /// Every date names a calendar day inside the stretch it bounds, first and last alike. The scored period holds
+    /// exactly <c>HorizonDays</c> days and ends on the anchor day; the history holds exactly <c>SamplingWindowDays</c>
+    /// days and ends the day before the scored period starts, so no check learns from a day it is scored on.
+    /// </summary>
     public sealed record RealityCheckCellDto(
         int HorizonDays,
         int SamplingWindowDays,
