@@ -20,8 +20,10 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// How many times one reality check asks the database for a Team's finished Work Items, on a cold
-    /// cache, through the production sweep.
+    /// How many times one reality check reads the Team's finished work from the database, on a cold
+    /// cache, through the production sweep. These are the reads of the Team's finished work, not every
+    /// round trip the check makes: the blackout days are read through a service this test stands in for,
+    /// so their reads are not in the count.
     ///
     /// The metrics cache is keyed by window but the query underneath is not, so every window the sweep
     /// asks about costs one identical read: one per sampling window per horizon, plus one per horizon for

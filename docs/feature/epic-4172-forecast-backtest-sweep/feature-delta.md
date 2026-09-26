@@ -1679,7 +1679,7 @@ valid justifications and none is used.
 | # | Existing component | Verdict | Justification | Contract shape / universe |
 |---|---|---|---|---|
 | 1 | `ForecastController` (two-route class attribute, `api/v1` + `api/latest`) | **NO CHANGE — its routes are copied, not extended** | The check lives on its own `ForecastRealityCheckController`, which repeats the two `api/v1/forecast` + `api/latest/forecast` routes, so the `/api/v1/…` twin is still free. `ForecastController` already takes seven constructor parameters, and an eighth would trip S107. *(Changed in DELIVER, 2026-09-26.)* | Adapter; the new controller declares no mutation |
-| 2 | `ForecastController.MapOverrideToFilterMode` | **NOT REUSED — the three-way mapping is repeated** | It is private to `ForecastController`, which stays unchanged, so the new controller carries its own three-line copy of the same `true` / `false` / `null` mapping. *(Changed in DELIVER, 2026-09-26.)* | Pure |
+| 2 | `ForecastController.MapOverrideToFilterMode` | **EXTRACTED — one mapping, both controllers** | The `true` / `false` / `null` mapping now lives once, as `ThroughputFilterOverride.ToFilterMode` beside the `ThroughputFilterMode` enum, and both `ForecastController` and the reality check's controller call it; the private copies are gone. *(Changed in DELIVER, 2026-09-26; extracted in the revision pass the same day.)* | Pure |
 | 3 | `ApiHelpers.GetEntityByIdAnExecuteAction` | **EXTEND (reuse as-is)** | The shipped Team-resolution + 404 path, used by `RunBacktest`. It is an extension method on `ControllerBase`, so the new controller reuses it as-is. Reusing it is what lets the sweep service avoid `IRepository<Team>` entirely (DES-5). | Read-only resolution |
 | 4 | `IForecastService.HowMany` | **NO CHANGE** | Called once per cell — sixteen or twenty times — with different inputs. AC asserts the engine does not change; the existing forecast assertions must pass unmodified before and after. | Pure over `(RunChartData, days)` |
 | 5 | `ITeamMetricsService.GetBlackoutAwareThroughputForTeam` | **NO CHANGE** | The history read, per cell, per its own window. | Read; memoises into the metrics cache |
@@ -1798,10 +1798,12 @@ LevelCoverageDto                          // DES-8 / ADR-210
 RealityCheckCellDto
   horizonDays               int
   samplingWindowDays        int
-  scoredPeriodStart         DateOnly     // anchorDate − horizonDays
-  scoredPeriodEnd           DateOnly     // anchorDate
-  historyWindowStart        DateOnly     // scoredPeriodStart − samplingWindowDays
-  historyWindowEnd          DateOnly     // scoredPeriodStart
+                                         // every date is a calendar day inside the stretch it bounds, first and
+                                         // last alike; no day is in both stretches (amended 2026-09-26, DES-19)
+  scoredPeriodStart         DateOnly     // anchorDate − horizonDays + 1: the first scored day (amended 2026-09-26, DES-19)
+  scoredPeriodEnd           DateOnly     // anchorDate: the last scored day — horizonDays days in all
+  historyWindowStart        DateOnly     // historyWindowEnd − samplingWindowDays + 1: the first day learned from (amended 2026-09-26, DES-19)
+  historyWindowEnd          DateOnly     // scoredPeriodStart − 1: the last day learned from — samplingWindowDays days in all (amended 2026-09-26, DES-19)
   sufficiency               SufficiencyDto
   forecast                  ForecastDto[]?           // 4 when evaluable, null otherwise
   actualCompleted           int?
@@ -2102,6 +2104,7 @@ changed line is marked "amended 2026-09-26".
 | DES-16 — a level's `reading` with nothing evaluated, and the thresholds for the two extremes | F-3 | **DECIDED**; the middle member's name confirmed by the maintainer 2026-09-26 as `SometimesHeld` |
 | DES-17 — the standing of a setting that was not tested, and its reason | F-4 | **DECIDED** |
 | DES-18 — where the filter status is read, and therefore the query count | F-5 | **DECIDED** |
+| DES-19 — every period is an exact run of days, and no check learns from a day it is scored on | DELIVER review, 2026-09-26 | **DECIDED** — added in the DELIVER revision pass |
 
 Read for this pass, fresh: DISCUSS D1-D4, D6, D7, D9, US-01 and US-02 with their ACs; DESIGN DES-1..DES-13,
 the Response Contract, the Reuse Analysis; DEVOPS (query count, usage-data event); DISTILL (scenario list,
@@ -2334,11 +2337,13 @@ Three reasons:
    plus one", and a regression that added one read per horizon or per cell would be one number further
    from the invariant a reader has in their head.
 
-**The numbers, stated in full so nobody discovers them later.** The sweep reads **20** times on a cold cache
-for a Team on the standard ladder and **24** for a Team whose own window adds a fifth — what
-`RealityCheckQueryCountTest` pins, unchanged. **A whole cold request reads one more, 21 / 25**, because the
-controller's status read is part of it. The query-count test is the guard: a service that also read the
-status would show 21 / 25 there.
+**The numbers, stated in full so nobody discovers them later.** The sweep makes **20** reads of the Team's
+finished work on a cold cache for a Team on the standard ladder and **24** for a Team whose own window adds
+a fifth — what `RealityCheckQueryCountTest` pins, unchanged. **A whole cold request makes one more, 21 / 25**,
+because the controller's status read is part of it. The query-count test is the guard: a service that also
+read the status would show 21 / 25 there. *(Wording amended 2026-09-26.)* These are reads of the Team's
+finished work, not every round trip a check makes: the blackout days are read as well, through a service the
+query-count test stands in for, and those reads are not counted.
 
 Reuse row 7 is amended in place to say where the call now lives.
 
@@ -2402,6 +2407,53 @@ The response stays one envelope of facts (DES-1); no per-window score, bounds pa
 appears (DES-2, DES-3); the check stays read-only (DES-5); ADR-210's scoring is used exactly as accepted;
 D9's single sufficiency bar is untouched — DES-14 deliberately adds no minimum number of checks per window.
 OQ-6 stays open as a product question with its default unchanged.
+
+### DES-19 — Every period is an exact run of days, and no check learns from a day it is scored on
+
+Added 2026-09-26 in the DELIVER revision pass, from the adversarial review's blocker, confirmed by the
+orchestrator against the code. **DECIDED.**
+
+**The convention.** Every date a check reports is a calendar day that belongs to the stretch it bounds; the
+first day and the last day are both included, and no day belongs to both stretches. With `today` the
+instance's own calendar day (the anchor), a horizon of `H` days and a sampling window of `W` days:
+
+| Field | Formula | Days in the stretch |
+|---|---|---|
+| `scoredPeriodStart` | today − H + 1 | |
+| `scoredPeriodEnd` | today | **H** |
+| `historyWindowStart` | today − H − W + 1 | |
+| `historyWindowEnd` | today − H — the day before the scored period starts | **W** |
+
+- What the Team finished is read over exactly those H days.
+- The forecast horizon is the working days among those same H days: H, less any blackout day inside them.
+  The shipped working-day count counts the days *after* the day it starts from, so the check counts from
+  the day before the scored period starts (today − H) to today.
+- The history is exactly W days — the same count the live forecast reads for a W-day setting, which is W
+  days ending on the day it runs. Blackout days inside it are left out, as the live forecast leaves them out.
+
+Worked cell, H = 7, W = 30, today = 2026-09-22: scored **2026-09-16 .. 2026-09-22** (7 days), learned from
+**2026-08-17 .. 2026-09-15** (30 days). Under the original formulas the same cell scored 2026-09-15 ..
+2026-09-22 (8 days) and learned from 2026-08-16 .. 2026-09-15 (31 days), with 2026-09-15 in both.
+
+**Why.** The metrics reads include both their first and their last day; the working-day count leaves out the
+day it starts from. The original contract (`scoredPeriodStart = anchorDate − horizonDays`,
+`historyWindowEnd = scoredPeriodStart`) mixed the two, so each check scored H + 1 days against a forecast of
+H, and learned from W + 1 days, one of which it was also scored on. The reviewer's worked example shows the
+cost: a steady Team that finishes exactly one Work Item every day is forecast exactly H at every level, then
+scored against H + 1 — so it reads **UnderForecast in every check and above its forecast at every level**.
+The check would tell the most predictable Team there is that its forecasts are too cautious.
+
+**What changes.** The values of the four dates, the actual each check scores, and the history each check
+learns from. No field is added, removed or renamed: the names already say "start" and "end" of a stretch,
+and the frontend only parses the four dates, so a rename would break the client and add nothing. The reads
+of the Team's finished work stay 20 / 24 (DES-18).
+
+**Held by.** An acceptance scenario on the shipped engine with a Team that finishes one Work Item every day:
+every check's actual and its forecast at every level equal the horizon, every check lands `WithinBand`, and
+every level holds. The acceptance harness requires every history handed to the forecast to be exactly as
+long as a swept window, so a W + 1 read fails every scenario. Unit tests pin the ranges, the one-week
+horizon's working days with a blackout on its first day and on the day before it, and the anchor on an
+instance whose own day has already moved on while it is still the previous day in UTC.
 
 ---
 
@@ -3205,3 +3257,18 @@ placeholder.
    DISTILL once the maintainer has decided how the check is reported.
 
 **Reviewer gate**: the four-reviewer final gate is run by the orchestrator, not by this wave.
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+- **The check's date ranges were off by one day (found by the DELIVER adversarial review, 2026-09-26).** The
+  Response Contract set `scoredPeriodStart = anchorDate − horizonDays` and `historyWindowEnd =
+  scoredPeriodStart`, but the metrics reads include both their first and last day and the working-day count
+  does not include the day it starts from. Each check therefore scored H + 1 days against a forecast of H
+  days and learned from W + 1 days, one of which it was also scored on; a Team finishing one Work Item a day
+  read UnderForecast in every check. The tests did not see it: the scripted-forecast harness matched a
+  history to its window by the nearest length, so 31 days passed for 30, and no scenario used a Team whose
+  delivery can be forecast exactly. **Fixed by DES-19** — exact inclusive runs of days with no overlap. The
+  harness now requires exact history lengths, and a scenario on the shipped engine with a steady Team pins
+  the result.
