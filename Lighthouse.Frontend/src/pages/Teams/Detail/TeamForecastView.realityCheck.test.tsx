@@ -513,7 +513,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		}
 	});
 
-	it.skip(`below the panels each level says how often it held against how often it should have (${PENDING})`, async () => {
+	it(`below the panels each level says how often it held against how often it should have (${PENDING})`, async () => {
 		const group = await theVerdictFor(coastalSurvey());
 
 		await expandTheEvidence(group);
@@ -523,7 +523,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		expect(linesMatching(group, /\bbeaten\b/i)).toHaveLength(0);
 	});
 
-	it.skip(`the denominator and non-comparability statements stay on screen whether or not the evidence is open (${PENDING})`, async () => {
+	it(`the denominator and non-comparability statements stay on screen whether or not the evidence is open (${PENDING})`, async () => {
 		const group = await theVerdictFor(aRealityCheckAnswer());
 
 		expectALine(group, /should not be ranked/i);

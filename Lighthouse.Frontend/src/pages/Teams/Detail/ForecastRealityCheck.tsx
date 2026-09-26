@@ -66,7 +66,7 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 			</Button>
 			{result && (
 				<>
-					<RealityCheckVerdict result={result} />
+					<RealityCheckVerdict result={result} showsLevels={!isEvidenceShown} />
 					<Button
 						variant="text"
 						aria-expanded={isEvidenceShown}

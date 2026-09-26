@@ -5,10 +5,27 @@ import type {
 	RealityCheckResult,
 } from "../../../models/Forecasts/RealityCheckResult";
 import RealityCheckBandRow from "./RealityCheckBandRow";
+import { levelLine } from "./realityCheckCopy";
 
 interface RealityCheckEvidenceProps {
 	result: RealityCheckResult;
 }
+
+interface NominalRateLinesProps {
+	result: RealityCheckResult;
+}
+
+export const NominalRateLines: React.FC<Readonly<NominalRateLinesProps>> = ({
+	result,
+}) => (
+	<Stack spacing={0.5}>
+		{result.levelCoverage.map((level) => (
+			<Typography key={level.confidenceLevel} variant="body2">
+				{levelLine(level, result.denominator.runsEvaluated)}
+			</Typography>
+		))}
+	</Stack>
+);
 
 const samplingWindowTitle = (windowDays: number): string =>
 	`Sampling window: ${windowDays} days`;
@@ -55,6 +72,7 @@ const RealityCheckEvidence: React.FC<Readonly<RealityCheckEvidenceProps>> = ({
 				</Stack>
 			</Box>
 		))}
+		<NominalRateLines result={result} />
 	</Stack>
 );
 
