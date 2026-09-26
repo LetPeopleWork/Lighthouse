@@ -14,13 +14,8 @@ import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
-import {
-	certainColor,
-	confidentColor,
-	defaultColor,
-	realisticColor,
-	riskyColor,
-} from "../../../utils/theme/colors";
+import { getPercentileColor } from "../../../utils/forecast/percentileColor";
+import { defaultColor } from "../../../utils/theme/colors";
 
 const ResultHeader = styled(Typography)({
 	marginBottom: "8px",
@@ -60,25 +55,6 @@ export const computeAverageForecast = (
 	const avgForecast = avgPerDay * backtestDays;
 
 	return { avgPerDay, avgForecast };
-};
-
-/**
- * Maps percentile probability to forecast palette color.
- * 50% = risky, 70% = realistic, 85% = confident, 95% = certain
- */
-const getPercentileColor = (probability: number): string => {
-	switch (probability) {
-		case 50:
-			return riskyColor;
-		case 70:
-			return realisticColor;
-		case 85:
-			return confidentColor;
-		case 95:
-			return certainColor;
-		default:
-			return defaultColor;
-	}
 };
 
 interface ChartDataRow {

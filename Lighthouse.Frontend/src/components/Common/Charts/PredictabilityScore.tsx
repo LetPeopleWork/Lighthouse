@@ -10,10 +10,8 @@ import type React from "react";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
-import {
-	appColors,
-	getPredictabilityScoreColor,
-} from "../../../utils/theme/colors";
+import { getPercentileColor } from "../../../utils/forecast/percentileColor";
+import { getPredictabilityScoreColor } from "../../../utils/theme/colors";
 
 interface PredictabilityScoreProps {
 	data: IForecastPredictabilityScore;
@@ -28,15 +26,6 @@ const PredictabilityScore: React.FC<PredictabilityScoreProps> = ({
 
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
-
-	// Get percentile color based on percentile value
-	const getPercentileColor = (percentile: number): string => {
-		if (percentile === 95) return appColors.forecast.certain;
-		if (percentile === 85) return appColors.forecast.confident;
-		if (percentile === 70) return appColors.forecast.realistic;
-		if (percentile === 50) return appColors.forecast.risky;
-		return theme.palette.grey[500];
-	};
 
 	const scoreColor = getPredictabilityScoreColor(data.predictabilityScore);
 	const hasResults = data.forecastResults.size > 0;
