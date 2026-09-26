@@ -487,7 +487,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(70, 11, 11.2)]
         [TestCase(85, 14, 13.6)]
         [TestCase(95, 15, 15.2)]
-        [Ignore(Pending)]
         public async Task A_level_is_expected_to_hold_as_often_as_its_own_percentage_of_the_checks(int confidenceLevel, int timesItHeld, double timesItWasExpectedToHold)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
@@ -526,7 +525,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Team_that_never_reached_even_its_most_cautious_forecast_is_told_no_level_ever_held()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
@@ -549,7 +547,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Team_that_always_beat_its_most_optimistic_forecast_is_told_which_levels_always_held_when_a_miss_was_expected()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();

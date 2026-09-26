@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         {
             var anchorDate = clock.Today;
             var cells = HorizonDays.SelectMany(horizonDays => CheckOneHorizon(team, mode, anchorDate, horizonDays)).ToList();
+            var denominator = CountWhatWasEvaluated(cells);
 
             return new RealityCheckResultDto(
                 team.Id,
@@ -33,7 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 HorizonDays,
                 ConfidenceLevels,
                 ForecastDataSufficiencyPolicy.MinimumActiveDays,
-                CountWhatWasEvaluated(cells),
+                denominator,
                 new RealityCheckSoundWindowDto(
                     [],
                     [],
@@ -42,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                     true,
                     CurrentSettingStanding.NotDetermined,
                     null),
-                [.. ConfidenceLevels.Select(level => new RealityCheckLevelCoverageDto(level, 0, 0, LevelReading.NotEvaluated))],
+                CoverageOfEachLevel(cells, denominator.RunsEvaluated),
                 cells);
         }
 
@@ -96,6 +97,18 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var runsEvaluated = cells.Count(cell => cell.Sufficiency.IsSufficient);
 
             return new RealityCheckDenominatorDto(cells.Count, runsEvaluated, ConfidenceLevels.Length, runsEvaluated * ConfidenceLevels.Length);
+        }
+
+        private static List<RealityCheckLevelCoverageDto> CoverageOfEachLevel(List<RealityCheckCellDto> cells, int runsEvaluated)
+        {
+            var heldOutcomes = cells
+                .Where(cell => cell.Sufficiency.IsSufficient)
+                .SelectMany(cell => cell.LevelOutcomes ?? [])
+                .Where(outcome => outcome.Held)
+                .ToList();
+
+            return [.. ConfidenceLevels.Select(level => RealityCheckVerdictPolicy.Coverage(
+                level, heldOutcomes.Count(outcome => outcome.ConfidenceLevel == level), runsEvaluated))];
         }
 
         private static DateTime AsDateTime(DateOnly day) => day.ToDateTime(TimeOnly.MinValue);

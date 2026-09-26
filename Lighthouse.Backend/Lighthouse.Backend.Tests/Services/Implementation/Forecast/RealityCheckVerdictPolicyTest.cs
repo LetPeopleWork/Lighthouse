@@ -47,5 +47,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             Assert.That(RealityCheckVerdictPolicy.Held(actualCompleted, ValueAt95), Is.EqualTo(expected));
         }
+
+        [TestCase(50, 8.0)]
+        [TestCase(70, 11.2)]
+        [TestCase(85, 13.6)]
+        [TestCase(95, 15.2)]
+        public void Coverage_ALevelIsExpectedToHoldInItsOwnPercentageOfTheEvaluatedChecks(int confidenceLevel, double expectedHeldCount)
+        {
+            var coverage = RealityCheckVerdictPolicy.Coverage(confidenceLevel, 10, 16);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(coverage.ConfidenceLevel, Is.EqualTo(confidenceLevel));
+                Assert.That(coverage.HeldCount, Is.EqualTo(10));
+                Assert.That(coverage.ExpectedHeldCount, Is.EqualTo(expectedHeldCount).Within(1e-9));
+            }
+        }
+
+        [TestCase(50, 0, 0, LevelReading.NotEvaluated)]
+        [TestCase(95, 0, 0, LevelReading.NotEvaluated)]
+        [TestCase(50, 0, 2, LevelReading.NeverHeld)]
+        [TestCase(95, 0, 1, LevelReading.SometimesHeld)]
+        [TestCase(35, 0, 3, LevelReading.NeverHeld)]
+        [TestCase(95, 1, 2, LevelReading.SometimesHeld)]
+        [TestCase(95, 20, 20, LevelReading.AlwaysHeld)]
+        [TestCase(99, 99, 99, LevelReading.SometimesHeld)]
+        [TestCase(99, 100, 100, LevelReading.AlwaysHeld)]
+        [TestCase(95, 16, 16, LevelReading.SometimesHeld)]
+        [TestCase(50, 16, 16, LevelReading.AlwaysHeld)]
+        [TestCase(85, 16, 16, LevelReading.AlwaysHeld)]
+        [TestCase(85, 15, 16, LevelReading.SometimesHeld)]
+        [TestCase(95, 0, 16, LevelReading.NeverHeld)]
+        public void Coverage_NeverAndAlwaysAreFindingsOnlyWhenTheLevelsOwnRateExpectedAWholeCheckToGoTheOtherWay(
+            int confidenceLevel, int heldCount, int runsEvaluated, LevelReading expected)
+        {
+            Assert.That(RealityCheckVerdictPolicy.Coverage(confidenceLevel, heldCount, runsEvaluated).Reading, Is.EqualTo(expected));
+        }
     }
 }
