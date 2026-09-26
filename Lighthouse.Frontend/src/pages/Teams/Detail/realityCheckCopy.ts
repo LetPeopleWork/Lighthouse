@@ -181,8 +181,11 @@ export interface UnrunChecks {
 	getTerm: TermGetter;
 }
 
+const checks = (checkCount: number): string =>
+	checkCount === 1 ? "1 check" : `${checkCount} checks`;
+
 const checksOn = ({ checkCount, windowDays }: UnrunChecks): string =>
-	`${checkCount === 1 ? "1 check" : `${checkCount} checks`} on the ${samplingWindowsNamed(windowDays)}`;
+	`${checks(checkCount)} on the ${samplingWindowsNamed(windowDays)}`;
 
 // Thin history and a forecast that could not be worked out are different troubles with different
 // remedies, so each is told in its own words and neither borrows the other's.
@@ -252,10 +255,12 @@ export const unevaluableRowCopy: Record<
 		"No forecast could be worked out from the history in this window.",
 };
 
+const levelAt = ({ probability, value }: RealityCheckForecastLevel): string =>
+	`${value} at ${probability}%`;
+
 export const bandDescription = (
 	levels: readonly RealityCheckForecastLevel[],
-): string =>
-	`Forecast: ${listOf(levels.map(({ probability, value }) => `${value} at ${probability}%`))}.`;
+): string => `Forecast: ${listOf(levels.map(levelAt))}.`;
 
 export const actualDescription = (
 	actualCompleted: number,
