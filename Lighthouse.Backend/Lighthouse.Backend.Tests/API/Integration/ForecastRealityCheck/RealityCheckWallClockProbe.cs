@@ -17,95 +17,139 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// How long a sixteen-run reality check takes, and how many database round trips it costs, at the
-    /// number of simulated runs the product ships with and over a year of real-sized history.
+    /// How long one reality check takes, and how many database round trips it costs, measured on the
+    /// production ForecastRealityCheckService over the real metrics and forecast services, at the number
+    /// of simulated runs the product ships with and over a year of real-sized history. Beside it, the
+    /// same numbers for one shipped single backtest on the same Team, as the baseline a user already
+    /// waits for.
     ///
-    /// This answers R-1 of Epic 4172, which every other decision in that feature rests on: the check is
-    /// designed to be synchronous and one-click, and a sweep that cannot finish inside a request would
-    /// cost the interaction that IS the feature. The design reasoned the cost was affordable from the
-    /// fact that the shipped single backtest is already a synchronous action contacting no work tracking
-    /// system - reasoned, not measured, until this runs.
+    /// The check is designed to be synchronous and one-click, so a sweep that cannot finish inside a
+    /// request would cost the interaction that is the feature. The budget it is judged against is a
+    /// median of at most five seconds and a maximum of at most ten.
     ///
-    /// It also prices the one cost the design found and could not settle. TeamMetricsService caches
-    /// throughput under a key that carries the window, but the repository predicate underneath does not:
-    /// every miss runs the same "all closed items for this Team" query. Sixteen distinct sampling windows
-    /// plus four distinct scored periods therefore issue up to twenty identical queries on a cold cache.
-    /// That is why the query count is reported beside the wall clock - a sweep that is fast on a small
-    /// Team and slow on a large one shows up here as queries, not milliseconds.
+    /// The query count is reported beside the wall clock because the metrics cache is keyed by window
+    /// while the query underneath is not: every window the sweep asks about costs one identical read of
+    /// the Team's finished work, so the cold cost is the part that grows with the size of the Team.
     ///
-    /// Deliberately not an assertion, following the two probes beside it: a wall clock recorded on one
-    /// machine says nothing on another, and a bound checked in from somebody's laptop fails CI for
-    /// something that is not a defect. The query count IS machine-independent, so if any number here
-    /// ever becomes an assertion it should be that one.
+    /// Deliberately not an assertion: a wall clock recorded on one machine says nothing on another, and
+    /// a bound checked in from somebody's laptop fails CI for something that is not a defect. The query
+    /// count is machine-independent and is asserted, by RealityCheckQueryCountTest.
     /// </summary>
     [TestFixture]
     [Category("epic-4172-forecast-reality-check")]
     [Category("slice-01")]
     public class RealityCheckWallClockProbe
     {
-        /// <summary>Horizons the sweep scores, in days. Two, four, six and eight weeks.</summary>
-        private static readonly int[] HorizonDays = [14, 28, 42, 56];
-
-        /// <summary>Sampling windows the sweep tries, in days.</summary>
-        private static readonly int[] SamplingWindowDays = [14, 30, 60, 90];
+        private const string RunByHand = "Measures wall clock and query count. Run by hand, on one machine.";
 
         private const int HistoryDaysToSeed = 365;
 
-        private const int RunsPerMeasurement = 3;
+        private const int SamplesPerCase = 12;
+
+        private const int BacktestHorizonDays = 28;
+
+        private const int BacktestSamplingWindowDays = 30;
 
         /// <param name="closedItemsToSeed">
         /// 615 is a real Team in this product's own dev database: a year of completed Work Items. The
-        /// larger volumes are there because the twenty-query finding is a cost that scales with the
-        /// Team, not with the sweep - a sweep that is affordable on a small Team and not on a large one
-        /// would be invisible at one volume.
+        /// larger volumes are there because the cold cost scales with the Team, not with the sweep - a
+        /// sweep that is affordable on a small Team and not on a large one would be invisible at one volume.
         /// </param>
-        // @probe @us-01 @r-1 (AC-1.1)
-        [TestCase(615)]
-        [TestCase(5_000)]
-        [TestCase(20_000)]
-        [Explicit("Measures wall clock and query count. Run by hand, on one machine.")]
-        public async Task MeasureSixteenRunRealityCheckWallClock(int closedItemsToSeed)
+        /// <param name="teamSamplingWindowDays">
+        /// 30 is on the standard ladder, so the sweep checks sixteen cells. 45 is not, so the Team's own
+        /// window is checked as a fifth and the sweep grows to twenty cells.
+        /// </param>
+        // @probe @us-01
+        [TestCase(615, 30)]
+        [TestCase(615, 45)]
+        [TestCase(5_000, 30)]
+        [TestCase(20_000, 30)]
+        [Explicit(RunByHand)]
+        public async Task MeasureRealityCheckWallClock(int closedItemsToSeed, int teamSamplingWindowDays)
+        {
+            var cellsChecked = 0;
+            var cellsEvaluated = 0;
+
+            var measurement = MeasureOnAFreshDatabase(closedItemsToSeed, teamSamplingWindowDays, (team, metrics, forecasts) =>
+            {
+                var result = new ForecastRealityCheckService(forecasts, metrics, NoBlackoutPeriods(), TestToday.Clock)
+                    .Run(team, ThroughputFilterMode.SkipFilter);
+                cellsChecked = result.Denominator.RunsAttempted;
+                cellsEvaluated = result.Denominator.RunsEvaluated;
+            });
+
+            await Report(
+                $"Reality check: {cellsChecked} cells ({cellsEvaluated} evaluated, each one simulated), " +
+                $"Team window {teamSamplingWindowDays} days",
+                closedItemsToSeed,
+                measurement);
+
+            Assert.That(measurement.Cold, Has.Count.EqualTo(SamplesPerCase));
+        }
+
+        /// <summary>
+        /// One shipped backtest exactly as ForecastController.RunBacktest performs it: one read of the
+        /// sampling window, one simulation, one read of what was actually delivered. Four weeks scored,
+        /// the thirty days before them sampled.
+        /// </summary>
+        // @probe @us-01
+        [Test]
+        [Explicit(RunByHand)]
+        public async Task MeasureSingleBacktestWallClock()
+        {
+            const int closedItemsToSeed = 615;
+
+            var measurement = MeasureOnAFreshDatabase(closedItemsToSeed, BacktestSamplingWindowDays, (team, metrics, forecasts) =>
+            {
+                var periodEnd = TestToday.Clock.TodayAsUtcMidnight;
+                var periodStart = periodEnd.AddDays(-BacktestHorizonDays);
+                var history = metrics.GetBlackoutAwareThroughputForTeam(
+                    team, periodStart.AddDays(-BacktestSamplingWindowDays), periodStart, ThroughputFilterMode.SkipFilter);
+                var forecastDays = NoBlackoutPeriods()
+                    .GetEffectiveBlackoutDays(periodStart, periodEnd)
+                    .CountWorkingDays(periodStart, periodEnd);
+
+                forecasts.HowMany(history, forecastDays);
+                metrics.GetThroughputForTeam(team, periodStart, periodEnd, ThroughputFilterMode.SkipFilter);
+            });
+
+            await Report("Single backtest: 1 cell", closedItemsToSeed, measurement);
+
+            Assert.That(measurement.Cold, Has.Count.EqualTo(SamplesPerCase));
+        }
+
+        /// <summary>
+        /// Seeds one database, then takes one unrecorded sample so the first recorded one is not paying
+        /// for the process compiling the code, then twelve recorded samples. Each sample builds fresh
+        /// services, so its first run meets an empty cache - the state a first click lands in - and its
+        /// second run, on the same services, meets the cache the first one filled.
+        /// </summary>
+        private static Measurement MeasureOnAFreshDatabase(
+            int closedItemsToSeed, int teamSamplingWindowDays, Action<Team, TeamMetricsService, ForecastService> operation)
         {
             var databaseFile = Path.Combine(
-                Path.GetTempPath(), $"reality-check-probe-{Path.GetRandomFileName().Replace(".", "")}.db");
+                Path.GetTempPath(), $"reality-check-probe-{Path.GetRandomFileName().Replace(".", "", StringComparison.Ordinal)}.db");
 
             try
             {
-                var cold = new List<long>();
-                var warm = new List<long>();
-                var coldQueries = new List<int>();
-                var warmQueries = new List<int>();
-
-                for (var run = 0; run < RunsPerMeasurement; run++)
+                using (var context = BuildContext(databaseFile, new QueryCounter()))
                 {
-                    var measurement = MeasureOneSweep(databaseFile, run == 0, closedItemsToSeed);
-                    cold.Add(measurement.ColdMilliseconds);
-                    warm.Add(measurement.WarmMilliseconds);
-                    coldQueries.Add(measurement.ColdQueries);
-                    warmQueries.Add(measurement.WarmQueries);
+                    context.Database.EnsureCreated();
+                    SeedRealisticHistory(context, closedItemsToSeed, teamSamplingWindowDays);
                 }
 
-                await TestContext.Out.WriteLineAsync(
-                    $"Reality check: {HorizonDays.Length * SamplingWindowDays.Length} cells, " +
-                    $"{ForecastSimulationLimits.Default.Trials} trials per run, " +
-                    $"{closedItemsToSeed} closed Work Items over {HistoryDaysToSeed} days.");
-                await TestContext.Out.WriteLineAsync(
-                    $"  COLD cache: {string.Join(" ms, ", cold)} ms " +
-                    $"(median {Median(cold)} ms, max {cold.Max()} ms), " +
-                    $"queries {string.Join("/", coldQueries)}");
-                await TestContext.Out.WriteLineAsync(
-                    $"  WARM cache: {string.Join(" ms, ", warm)} ms " +
-                    $"(median {Median(warm)} ms, max {warm.Max()} ms), " +
-                    $"queries {string.Join("/", warmQueries)}");
-                await TestContext.Out.WriteLineAsync(
-                    "  Budget under consideration: median <= 5000 ms, max <= 10000 ms.");
+                var measurement = new Measurement(MeasureOneSample(databaseFile, operation).ColdMilliseconds);
 
-                Assert.That(cold, Is.Not.Empty);
+                for (var sample = 0; sample < SamplesPerCase; sample++)
+                {
+                    measurement.Add(MeasureOneSample(databaseFile, operation));
+                }
+
+                return measurement;
             }
             finally
             {
@@ -114,76 +158,52 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        private static SweepMeasurement MeasureOneSweep(string databaseFile, bool seed, int closedItemsToSeed)
+        private static Sample MeasureOneSample(string databaseFile, Action<Team, TeamMetricsService, ForecastService> operation)
         {
             var queryCounter = new QueryCounter();
-
             using var context = BuildContext(databaseFile, queryCounter);
-            context.Database.EnsureCreated();
-
-            if (seed)
-            {
-                SeedRealisticHistory(context, closedItemsToSeed);
-            }
-
             var team = context.Teams.First();
 
-            // A fresh service means a cold cache, which is the state a first click lands in.
             var metricsService = BuildMetricsService(context);
             var forecastService = BuildForecastService();
 
             queryCounter.Reset();
             var coldStopwatch = Stopwatch.StartNew();
-            RunTheSweep(team, metricsService, forecastService);
+            operation(team, metricsService, forecastService);
             coldStopwatch.Stop();
             var coldQueries = queryCounter.Count;
 
             queryCounter.Reset();
             var warmStopwatch = Stopwatch.StartNew();
-            RunTheSweep(team, metricsService, forecastService);
+            operation(team, metricsService, forecastService);
             warmStopwatch.Stop();
 
-            return new SweepMeasurement(
-                coldStopwatch.ElapsedMilliseconds, warmStopwatch.ElapsedMilliseconds,
-                coldQueries, queryCounter.Count);
+            return new Sample(coldStopwatch.ElapsedMilliseconds, warmStopwatch.ElapsedMilliseconds, coldQueries, queryCounter.Count);
         }
 
-        /// <summary>
-        /// The sweep exactly as ForecastController.RunBacktest performs one cell, sixteen times, with
-        /// today as the end anchor: every cell ends today and reaches back by its own horizon, and its
-        /// sampling window sits immediately before it.
-        /// </summary>
-        private static void RunTheSweep(Team team, TeamMetricsService metricsService, ForecastService forecastService)
+        private static async Task Report(string what, int closedItemsToSeed, Measurement measurement)
         {
-            var today = DateTime.UtcNow.Date;
-
-            foreach (var horizon in HorizonDays)
-            {
-                var periodStart = today.AddDays(-horizon);
-                var periodEnd = today;
-
-                foreach (var window in SamplingWindowDays)
-                {
-                    var historyEnd = periodStart;
-                    var historyStart = periodStart.AddDays(-window);
-
-                    var historicalThroughput = metricsService.GetBlackoutAwareThroughputForTeam(
-                        team, historyStart, historyEnd, ThroughputFilterMode.SkipFilter);
-
-                    forecastService.HowMany(historicalThroughput, horizon);
-                }
-
-                // Per horizon, not per cell - four reads shared four ways. An implementation that reads
-                // the actual inside the inner loop is already 25% more expensive than it needs to be.
-                metricsService.GetThroughputForTeam(team, periodStart, periodEnd, ThroughputFilterMode.SkipFilter);
-            }
+            await TestContext.Out.WriteLineAsync(
+                $"{what}; {ForecastSimulationLimits.Default.Trials} trials per run; " +
+                $"{closedItemsToSeed} closed Work Items over {HistoryDaysToSeed} days; {SamplesPerCase} samples.");
+            await TestContext.Out.WriteLineAsync(
+                $"  Unrecorded first sample (compiling the code): {measurement.FirstSampleMilliseconds} ms");
+            await TestContext.Out.WriteLineAsync(
+                $"  COLD cache: {string.Join(", ", measurement.Cold)} ms " +
+                $"(median {Median(measurement.Cold)} ms, max {measurement.Cold.Max()} ms), " +
+                $"queries {string.Join("/", measurement.ColdQueries.Distinct())}");
+            await TestContext.Out.WriteLineAsync(
+                $"  WARM cache: {string.Join(", ", measurement.Warm)} ms " +
+                $"(median {Median(measurement.Warm)} ms, max {measurement.Warm.Max()} ms), " +
+                $"queries {string.Join("/", measurement.WarmQueries.Distinct())}");
+            await TestContext.Out.WriteLineAsync("  Budget: median <= 5000 ms, max <= 10000 ms.");
         }
 
-        private static void SeedRealisticHistory(LighthouseAppContext context, int closedItemsToSeed)
+        private static void SeedRealisticHistory(LighthouseAppContext context, int closedItemsToSeed, int teamSamplingWindowDays)
         {
-            // A Team carries a required connection FK it inherits from WorkTrackingSystemOptionsOwner.
-            // Nothing in the sweep reads it - no work tracking system is contacted at any point - but the
-            // row has to exist for the Team to persist at all.
+            // A Team carries a required connection it inherits from WorkTrackingSystemOptionsOwner. Nothing
+            // measured here reads it and no work tracking system is contacted, but the row has to exist for
+            // the Team to persist at all.
             var connection = new WorkTrackingSystemConnection
             {
                 Name = "Probe Connection",
@@ -195,13 +215,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             var team = new Team
             {
                 Name = "Probe Team",
-                ThroughputHistory = 90,
+                ThroughputHistory = teamSamplingWindowDays,
                 WorkTrackingSystemConnectionId = connection.Id,
             };
             context.Teams.Add(team);
             context.SaveChanges();
 
-            var today = DateTime.UtcNow.Date;
+            var today = TestToday.Clock.TodayAsUtcMidnight;
             var random = new Random(4172);
             var items = new List<WorkItem>();
 
@@ -240,11 +260,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 .Setup(provider => provider.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
                 .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
 
-            var blackoutPeriodService = new Mock<IBlackoutPeriodService>();
-            blackoutPeriodService
-                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns([]);
-
             var filterRuleService = new Mock<IForecastFilterRuleService>();
             filterRuleService
                 .Setup(service => service.GetEffectiveRuleSet(It.IsAny<Team>()))
@@ -256,7 +271,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 Mock.Of<IRepository<Feature>>(),
                 appSettingService.Object,
                 serviceProvider.Object,
-                blackoutPeriodService.Object,
+                NoBlackoutPeriods(),
                 filterRuleService.Object,
                 Mock.Of<IWorkItemStateTransitionRepository>(),
                 TestToday.Clock);
@@ -274,6 +289,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 ForecastSimulationLimits.Default);
         }
 
+        private static IBlackoutPeriodService NoBlackoutPeriods()
+        {
+            var blackoutPeriodService = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodService
+                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
+            return blackoutPeriodService.Object;
+        }
+
         private static LighthouseAppContext BuildContext(string databaseFile, QueryCounter queryCounter)
         {
             var optionsBuilder = new DbContextOptionsBuilder<LighthouseAppContext>();
@@ -286,7 +310,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 optionsBuilder.Options, Mock.Of<ICryptoService>(), Mock.Of<ILogger<LighthouseAppContext>>());
         }
 
-        private static long Median(List<long> values) => values.Order().ElementAt(values.Count / 2);
+        /// <summary>With an even number of samples, the mean of the middle two.</summary>
+        private static double Median(List<long> values)
+        {
+            var ordered = values.Order().ToList();
+            var middle = ordered.Count / 2;
+
+            return ordered.Count % 2 == 1 ? ordered[middle] : (ordered[middle - 1] + ordered[middle]) / 2.0;
+        }
 
         private static void TryDelete(string path)
         {
@@ -303,8 +334,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        private sealed record SweepMeasurement(
-            long ColdMilliseconds, long WarmMilliseconds, int ColdQueries, int WarmQueries);
+        private sealed record Sample(long ColdMilliseconds, long WarmMilliseconds, int ColdQueries, int WarmQueries);
+
+        private sealed class Measurement(long firstSampleMilliseconds)
+        {
+            public long FirstSampleMilliseconds { get; } = firstSampleMilliseconds;
+
+            public List<long> Cold { get; } = [];
+
+            public List<long> Warm { get; } = [];
+
+            public List<int> ColdQueries { get; } = [];
+
+            public List<int> WarmQueries { get; } = [];
+
+            public void Add(Sample sample)
+            {
+                Cold.Add(sample.ColdMilliseconds);
+                Warm.Add(sample.WarmMilliseconds);
+                ColdQueries.Add(sample.ColdQueries);
+                WarmQueries.Add(sample.WarmQueries);
+            }
+        }
 
         /// <summary>
         /// Counts executed commands. This is the machine-independent half of the measurement: the wall
