@@ -226,3 +226,71 @@ operator can see. Slice 02 bundles the docs with the teardown, so no slice is do
 ## Wave: DISCUSS / [REF] Scope assessment
 
 PASS: 3 stories, 1 bounded context (the platform), about 1 day of operator time.
+
+---
+
+## Wave: DEVOPS / [REF] Skipped waves
+
+DESIGN and DISTILL were skipped at the user's explicit request (2026-09-26). This is a one-off manual
+teardown with no code to design and no automated acceptance suite. The DISCUSS ACs are the checks
+DELIVER runs by hand.
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+See `environments.yaml`. There are three surfaces: the Infomaniak dc4 project (end state: empty), the
+`letpeople.work` DNS zone (end state: wildcard record gone, Mailgun records untouched), and the operator
+workstation (end state: lpw restored locally).
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+No pipeline changes. `validate-tenants` (PR and push to `main`) and the Renovate auto-merge
+`workflow_run` never talk to the cluster. They only lint, validate and merge, so they stay green with
+the cluster gone. ArgoCD, the component that deployed, goes away with the cluster, so a merge to `main`
+now updates git and nothing else. The only commit this feature makes to `lighthouse-platform` is the
+README banner and `docs/respin.md` (US-3), and it is expected to leave `validate-tenants` green
+(AC-3.4).
+
+## Wave: DEVOPS / [REF] Deployment strategy
+
+Ordered teardown with a hard gate, no rollback past the gate. Everything up to and including slice 01 is
+read-only. Slice 02 begins with deleting the load balancer, and from that point the rollback is a full
+respin (`docs/respin.md`) from the exported secrets and dump. That is why AC-1.3 must pass first.
+
+## Wave: DEVOPS / [REF] Monitoring contracts
+
+| KPI | Instrument | When |
+|---|---|---|
+| Spend 0.00 CHF/day | Infomaniak Manager, Public Cloud billing view | teardown day +1, +30 |
+| Restorability | Operator runs the local restore (AC-1.3) | before slice 02 |
+| Dangling DNS 0 | `dig lpw.lighthouse.letpeople.work` and `dig nonexistent.lighthouse.letpeople.work` return NXDOMAIN | after slice 02 |
+| Automation continuity | `gh run list -R LetPeopleWork/lighthouse-platform` shows green `validate-tenants` runs | +30 days |
+
+The +30 checks are manual. No cloud reminder is scheduled.
+
+## Wave: DEVOPS / [REF] Observability stack
+
+The in-cluster kube-prometheus-stack, Alertmanager and fleet-monitoring charts are removed along with
+the cluster. The repo has no external alert receivers and no uptime monitor, so nothing outside the
+cluster starts alerting. Their definitions stay in `gitops/platform/` for the respin.
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+Disabled for this feature, because it changes no code. The project-wide per-feature strategy in
+`CLAUDE.md` is unchanged.
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+Trunk. The `lighthouse-platform` doc commit goes straight to `main`, the same way this workspace does in
+`Lighthouse`.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+`validate-tenants`, Renovate and its auto-merge, and Lighthouse `ci_chart.yml` (Renovate's chart
+source) must all keep working. So must website Mailgun sending on `lighthouse.letpeople.work`. The Jira
+app is allowed to break (DISCUSS D7).
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+The same as the DISCUSS pre-requisites. In addition, the backups container has `force_destroy = false`:
+empty it (`openstack object delete --all` / `mc rm --recursive`) before `tofu destroy`, or the destroy
+fails partway.

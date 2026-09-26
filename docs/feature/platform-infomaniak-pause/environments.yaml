@@ -1,0 +1,43 @@
+# Environments this teardown touches. DISTILL was skipped; this file tells DELIVER which surfaces
+# must end up empty and which must keep working.
+target_environments:
+  - name: infomaniak-dc4
+    description: "Live Infomaniak Public Cloud project (dc4-a): managed K8s cluster, node pool, Octavia LB, Cinder volumes, backups + tfstate buckets"
+    platform: [infomaniak-public-cloud]
+    preconditions:
+      - "kubeconfig reachable"
+      - "OpenBao unsealed"
+      - "INFOMANIAK_TOKEN + state-bucket S3 keypair exported in the operator shell"
+    end_state: "no billable resources"
+  - name: dns-letpeople-work
+    description: "letpeople.work zone at the registrar"
+    platform: [registrar-dns]
+    preconditions: ["registrar access"]
+    end_state: "wildcard *.lighthouse A record removed; Mailgun records unchanged"
+  - name: operator-workstation
+    description: "Local restore target for the slice-01 proof"
+    platform: [linux]
+    preconditions: ["local Postgres", "Lighthouse checkout that builds"]
+    end_state: "lpw restored, stored credential decrypts"
+
+coexistence_matrix:
+  - tool: "lighthouse-platform validate-tenants workflow"
+    must_not_break: true
+  - tool: "lighthouse-platform Renovate + dependabot-automerge workflow"
+    must_not_break: true
+  - tool: "Lighthouse ci_chart.yml chart publish (Renovate's datasource)"
+    must_not_break: true
+  - tool: "Website Mailgun sending on lighthouse.letpeople.work"
+    must_not_break: true
+  - tool: "lighthouse-jira-app"
+    must_not_break: false   # accepted: its backend host goes dark
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest]
+  Operator: [Linux]
+
+deployment_assumptions:
+  - "Nothing is destroyed before the slice-01 restore succeeds"
+  - "Resources OpenTofu does not own (Octavia LB, PVC volumes) are removed before tofu destroy"
+  - "No file under .github/, gitops/, infra/ or renovate.json changes in lighthouse-platform"
+  - "Respin is a fresh bring-up from the repo plus the exported secrets and dump"
