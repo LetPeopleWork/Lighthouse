@@ -145,7 +145,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		},
 	);
 
-	it.skip.each<{
+	it.each<{
 		actual: number;
 		forecast: number;
 		grade: ForecastGrade;
@@ -159,7 +159,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		{ actual: 40, forecast: 44, grade: "NotHeldWithin10", percent: 10 },
 		{ actual: 39, forecast: 43, grade: "NotHeld10To25", percent: 11 },
 	])(
-		`@boundary shows a percentage that never contradicts its band at the edges - $forecast against $actual is $percent% (${PENDING})`,
+		`@boundary shows a percentage that never contradicts its band at the edges - $forecast against $actual is $percent%`,
 		({ actual, forecast, grade, percent }) => {
 			const reading = readCheck(aCheck(actual, forecast));
 

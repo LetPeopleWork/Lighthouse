@@ -76,16 +76,30 @@ const bandOf = (off: number, actual: number): Band => {
 const roundedPercentOf = (off: number, actual: number): number =>
 	Math.floor((200 * off + actual) / (2 * actual));
 
+// Rounding can pull a figure back onto the edge its band starts just past (10.3% to 10, a sliver of a miss to 0),
+// which would read as the band next to it; the shown figure is raised to the least the band can mean.
+const LEAST_SHOWN_PERCENT_OF_BAND: Record<Band, number> = {
+	within10: 1,
+	"10To25": 11,
+	over25: 26,
+};
+
+const shownPercentOf = (off: number, actual: number, band: Band): number => {
+	const leastShown = off === 0 ? 0 : LEAST_SHOWN_PERCENT_OF_BAND[band];
+	return Math.max(roundedPercentOf(off, actual), leastShown);
+};
+
 export const readCheck = (check: GradedCheck): CheckReading => {
 	const miss = missOf(check);
 	const off = Math.abs(miss);
 	const actual = check.actualCompleted;
+	const band = bandOf(off, actual);
 	const gradeOfBand = check.held ? HELD_GRADE_OF_BAND : NOT_HELD_GRADE_OF_BAND;
 
 	return {
-		grade: gradeOfBand[bandOf(off, actual)],
+		grade: gradeOfBand[band],
 		miss,
-		percentOfActual: roundedPercentOf(off, actual),
+		percentOfActual: shownPercentOf(off, actual, band),
 	};
 };
 
