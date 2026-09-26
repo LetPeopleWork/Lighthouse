@@ -94,7 +94,7 @@ beforeEach(() => {
 });
 
 describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a reality check", () => {
-	it.skip(`is on the list of names the browser may send, as the word itself (${PENDING})`, () => {
+	it(`is on the list of names the browser may send, as the word itself (${PENDING})`, () => {
 		expect(
 			(UsageDataEventName as Record<string, string>)[
 				TEAM_FORECAST_REALITY_CHECK_RUN
