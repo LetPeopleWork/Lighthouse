@@ -38,13 +38,19 @@ putting it behind one is how it becomes unusable.
 
 ### Measured
 
-> To be filled in before any other work in this slice. Leaving this section empty when the slice closes
-> means AC-1.1 was skipped, not passed.
+Twelve samples each, on a cold metrics cache, at the shipped 10,000 trials per run, on a Team of 615
+finished Work Items over 365 days. Measured on the production service in-process over SQLite, not over
+HTTP on the development instance; method, machine and caveats in
+[`deliver/budget-measurement.md`](../deliver/budget-measurement.md).
 
-| | Single backtest | Sixteen-run sweep |
-|---|---|---|
-| Median | *(pending)* | *(pending)* |
-| Maximum | *(pending)* | *(pending)* |
+| | Single backtest | Sixteen-run sweep (window 30) | Twenty-run sweep (window 45) |
+|---|---|---|---|
+| Median | 46.5 ms | 540.5 ms | 657 ms |
+| Maximum | 52 ms | 604 ms | 754 ms |
+| Queries | 2 | 20 | 24 |
+
+**Budget met** (median at most 5,000 ms, maximum at most 10,000 ms). At 20,000 finished Work Items the
+sixteen-run sweep's median is 1,730.5 ms and its maximum 1,815 ms, still inside.
 
 ## IN scope
 
