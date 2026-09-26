@@ -249,6 +249,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [TestCase(14, true)]
+        [TestCase(30, false)]
+        [TestCase(60, true)]
+        [TestCase(90, false)]
+        public void SoundWindows_WhenTheTeamsOwnWindowCouldNotBeEvaluatedItsStandingIsNotDeterminedAndItWasStillTested(int currentSettingDays, bool everyOtherWindowHoldsUp)
+        {
+            var cells = ChecksOf(currentSettingDays, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])
+                .Concat(EveryOtherWindow(currentSettingDays, everyOtherWindowHoldsUp ? Check.InsideTheBand : Check.FellShort))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.NotDetermined));
+                Assert.That(soundWindow.CurrentSettingWasTested, Is.True);
+                Assert.That(soundWindow.CurrentSettingNotTestedReason, Is.Null);
+            }
+        }
+
+        [TestCase(14)]
+        [TestCase(90)]
+        public void SoundWindows_WhenNoCheckCouldRunAnywhereTheTeamsOwnWindowIsNotDetermined(int currentSettingDays)
+        {
+            var cells = Ladder.SelectMany(windowDays => ChecksOf(windowDays, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)])).ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, currentSettingDays);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(CurrentSettingStanding.NotDetermined));
+                Assert.That(soundWindow.CurrentSettingWasTested, Is.True);
+                Assert.That(soundWindow.CurrentSettingNotTestedReason, Is.Null);
+            }
+        }
+
+        [TestCase(true, CurrentSettingStanding.Inside)]
+        [TestCase(false, CurrentSettingStanding.Outside)]
+        public void SoundWindows_AnotherWindowThatCouldNotBeEvaluatedLeavesTheTeamsOwnStandingDetermined(bool ownWindowHoldsUp, CurrentSettingStanding expected)
+        {
+            var cells = ChecksOf(30, [.. Enumerable.Repeat(ownWindowHoldsUp ? Check.InsideTheBand : Check.FellShort, ChecksPerWindow)])
+                .Concat(ChecksOf(60, [.. Enumerable.Repeat(Check.CouldNotRun, ChecksPerWindow)]))
+                .Concat(Ladder.Where(days => days != 30 && days != 60).SelectMany(days => ChecksOf(days, [.. Enumerable.Repeat(Check.InsideTheBand, ChecksPerWindow)])))
+                .ToList();
+
+            var soundWindow = RealityCheckVerdictPolicy.SoundWindows(Ladder, cells, 30);
+
+            Assert.That(soundWindow.CurrentSettingStanding, Is.EqualTo(expected));
+        }
+
         [Test]
         public void SoundWindows_AWindowThatCouldNotBeCheckedBesideWindowsThatFellShortIsNoWindowSound()
         {

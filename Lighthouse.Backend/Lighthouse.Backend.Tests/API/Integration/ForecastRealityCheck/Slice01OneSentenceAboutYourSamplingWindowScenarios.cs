@@ -431,7 +431,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task A_Team_whose_history_supports_no_check_at_all_is_told_nothing_could_be_concluded()
         {
             var newlyFormed = GivenATeamThatHasFinishedAlmostNothing();
@@ -451,7 +450,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
-        [Ignore(Pending)]
         public async Task When_the_Teams_own_window_could_not_be_evaluated_its_standing_is_not_determined()
         {
             var team = GivenATeamFinishingWorkEveryFifthDaySetTo(14);
@@ -699,7 +697,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// <summary>Nothing is stored between runs, so a second press over the same history answers identically.</summary>
         // @driving_port @us-01 @real-io @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task Running_the_check_twice_gives_the_same_answer_twice()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();

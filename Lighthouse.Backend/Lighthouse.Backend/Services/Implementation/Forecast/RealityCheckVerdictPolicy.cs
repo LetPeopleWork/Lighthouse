@@ -39,15 +39,27 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 .Select(windowDays => StateOf(cells.Where(cell => cell.SamplingWindowDays == windowDays)))
                 .ToList();
             var soundWindowDays = WindowsIn(WindowState.HoldsUp, sampledWindowDays, windowStates);
+            var unevaluatedWindowDays = WindowsIn(WindowState.NotEvaluated, sampledWindowDays, windowStates);
 
             return new RealityCheckSoundWindowDto(
                 soundWindowDays,
-                WindowsIn(WindowState.NotEvaluated, sampledWindowDays, windowStates),
+                unevaluatedWindowDays,
                 DeterminationOf(windowStates),
                 currentSettingDays,
                 true,
-                soundWindowDays.Contains(currentSettingDays) ? CurrentSettingStanding.Inside : CurrentSettingStanding.Outside,
+                StandingOf(currentSettingDays, soundWindowDays, unevaluatedWindowDays),
                 null);
+        }
+
+        private static CurrentSettingStanding StandingOf(
+            int currentSettingDays, List<int> soundWindowDays, List<int> unevaluatedWindowDays)
+        {
+            if (unevaluatedWindowDays.Contains(currentSettingDays))
+            {
+                return CurrentSettingStanding.NotDetermined;
+            }
+
+            return soundWindowDays.Contains(currentSettingDays) ? CurrentSettingStanding.Inside : CurrentSettingStanding.Outside;
         }
 
         private static List<int> WindowsIn(
