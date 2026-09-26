@@ -86,7 +86,7 @@ describe("@us-04 @slice-04 the miss in Work Items", () => {
 });
 
 describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items how close one forecast landed", () => {
-	it.skip.each<{
+	it.each<{
 		story: string;
 		actual: number;
 		forecast: number;
@@ -135,7 +135,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 			percent: 33,
 		},
 	])(
-		`reads the stories' examples as the stories wrote them - $story (${PENDING})`,
+		`reads the stories' examples as the stories wrote them - $story`,
 		({ actual, forecast, grade, miss, percent }) => {
 			expect(readCheck(aCheck(actual, forecast))).toEqual({
 				grade,
@@ -168,7 +168,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		},
 	);
 
-	it.skip(`@boundary a forecast the Team delivered exactly held within 10%, 0 off and 0% (${PENDING})`, () => {
+	it(`@boundary a forecast the Team delivered exactly held within 10%, 0 off and 0%`, () => {
 		expect(readCheck(aCheck(40, 40))).toEqual({
 			grade: "HeldWithin10",
 			miss: 0,
@@ -192,7 +192,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		});
 	});
 
-	it.skip(`takes whether a forecast held from the server and never recounts it (${PENDING})`, () => {
+	it(`takes whether a forecast held from the server and never recounts it`, () => {
 		expect(readCheck(aCheck(42, 40, false)).grade).toBe("NotHeldWithin10");
 		expect(readCheck(aCheck(40, 42, true)).grade).toBe("HeldWithin10");
 	});
