@@ -1,11 +1,8 @@
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useRef, useState } from "react";
 import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
-import type {
-	RealityCheckDenominator,
-	RealityCheckResult,
-} from "../../../models/Forecasts/RealityCheckResult";
+import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import RealityCheckVerdict from "./RealityCheckVerdict";
 
@@ -13,17 +10,6 @@ interface ForecastRealityCheckProps {
 	teamId: number;
 	applyFilterOverride?: boolean;
 }
-
-const denominatorLine = ({
-	runsEvaluated,
-	levelsPerRun,
-	scoresEvaluated,
-}: RealityCheckDenominator): string =>
-	[
-		`${runsEvaluated} forecast runs were checked, each read at ${levelsPerRun} confidence levels — ${scoresEvaluated} scores in all.`,
-		`The ${levelsPerRun} levels of a single run come from the same simulation, so they are not independent of one another.`,
-		"And each run covers a different stretch of real time — every one ends today and reaches back by its own length — so they are not repeated trials of one experiment and should not be ranked against each other.",
-	].join(" ");
 
 const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	teamId,
@@ -71,14 +57,7 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 			>
 				Run reality check
 			</Button>
-			{result && (
-				<>
-					<RealityCheckVerdict result={result} />
-					<Typography variant="body2" color="text.secondary">
-						{denominatorLine(result.denominator)}
-					</Typography>
-				</>
-			)}
+			{result && <RealityCheckVerdict result={result} />}
 		</Stack>
 	);
 };

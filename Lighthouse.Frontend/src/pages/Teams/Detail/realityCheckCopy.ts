@@ -1,6 +1,9 @@
 import type {
 	Determination,
+	LevelReading,
 	NotTestedReason,
+	RealityCheckDenominator,
+	RealityCheckLevelCoverage,
 	RealityCheckSoundWindow,
 	Standing,
 } from "../../../models/Forecasts/RealityCheckResult";
@@ -154,3 +157,70 @@ export const windowVerdict = (
 		.filter((sentence): sentence is string => sentence !== null)
 		.join(" ");
 };
+
+const runsChecked = (runsEvaluated: number): string =>
+	runsEvaluated === 1
+		? "1 forecast run was checked"
+		: `${runsEvaluated} forecast runs were checked`;
+
+const runsLeftOut = ({
+	runsAttempted,
+	runsEvaluated,
+}: RealityCheckDenominator): string | null =>
+	runsAttempted > runsEvaluated
+		? `${runsAttempted - runsEvaluated} of the ${runsAttempted} checks could not run, so they are left out of every count.`
+		: null;
+
+/**
+ * What was counted, and why the counts must not be read as independent trials or ranked against each
+ * other: the levels of one run share a simulation, and every run looks at a different stretch of time.
+ */
+export const denominatorStatement = (
+	denominator: RealityCheckDenominator,
+): string => {
+	const { runsEvaluated, levelsPerRun, scoresEvaluated } = denominator;
+	return [
+		`${runsChecked(runsEvaluated)}, each read at ${levelsPerRun} confidence levels — ${scoresEvaluated} scores in all.`,
+		runsLeftOut(denominator),
+		`The ${levelsPerRun} levels of a single run come from the same simulation, so they are not independent of one another.`,
+		"And each run covers a different stretch of real time — every one ends today and reaches back by its own length — so they are not repeated trials of one experiment and should not be ranked against each other.",
+	]
+		.filter((sentence): sentence is string => sentence !== null)
+		.join(" ");
+};
+
+const heldAgainstExpected = (
+	{ confidenceLevel, heldCount, expectedHeldCount }: RealityCheckLevelCoverage,
+	runsEvaluated: number,
+): string =>
+	`At ${confidenceLevel}% the forecast held in ${heldCount} of ${runsEvaluated} checks, about ${Math.round(expectedHeldCount)} expected`;
+
+// A level between the two extremes gets its two counts and no adjective: checks that are not independent
+// trials give no honest threshold for calling a level well calibrated.
+export const levelReadingCopy: Record<
+	LevelReading,
+	(level: RealityCheckLevelCoverage, runsEvaluated: number) => string
+> = {
+	SometimesHeld: (level, runsEvaluated) =>
+		`${heldAgainstExpected(level, runsEvaluated)}.`,
+	NeverHeld: (level, runsEvaluated) =>
+		`${heldAgainstExpected(level, runsEvaluated)} — it never held, which is over-forecasting.`,
+	AlwaysHeld: (level, runsEvaluated) =>
+		`${heldAgainstExpected(level, runsEvaluated)} — it held every time, which is under-forecasting.`,
+	NotEvaluated: ({ confidenceLevel }) =>
+		`At ${confidenceLevel}% no check could be run, so this level was not tested.`,
+};
+
+export const levelLine = (
+	level: RealityCheckLevelCoverage,
+	runsEvaluated: number,
+): string => levelReadingCopy[level.reading](level, runsEvaluated);
+
+/**
+ * The check reports and the person acts. Only one of the two things it looked at is stored on the
+ * team, so they are told apart rather than merged into one recommendation.
+ */
+export const findings = (getTerm: TermGetter, levelCount: number): string[] => [
+	`The sampling window is a setting on this ${getTerm(TERMINOLOGY_KEYS.TEAM)}.`,
+	`The confidence level is not a setting: it is which of the ${levelCount} numbers you choose to quote.`,
+];

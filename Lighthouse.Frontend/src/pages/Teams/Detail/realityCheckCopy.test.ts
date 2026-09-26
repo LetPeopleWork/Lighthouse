@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
 	DETERMINATIONS,
+	LEVEL_READINGS,
 	NOT_TESTED_REASONS,
+	type RealityCheckDenominator,
+	type RealityCheckLevelCoverage,
 	type RealityCheckSoundWindow,
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	denominatorStatement,
 	determinationCopy,
+	findings,
+	levelLine,
+	levelReadingCopy,
 	listOf,
 	notTestedReasonCopy,
 	regionOf,
@@ -342,4 +349,149 @@ describe("windowVerdict", () => {
 			expect(verdict).not.toMatch(HARD_CODED_TERMS);
 		},
 	);
+});
+
+const aDenominator = (
+	overrides: Partial<RealityCheckDenominator> = {},
+): RealityCheckDenominator => ({
+	runsAttempted: 16,
+	runsEvaluated: 16,
+	levelsPerRun: 4,
+	scoresEvaluated: 64,
+	...overrides,
+});
+
+const aLevel = (
+	overrides: Partial<RealityCheckLevelCoverage> = {},
+): RealityCheckLevelCoverage => ({
+	confidenceLevel: 85,
+	heldCount: 14,
+	expectedHeldCount: 13.6,
+	reading: "SometimesHeld",
+	...overrides,
+});
+
+const RETIRED_WORDS = /\b(beaten|about right|excellen\w*)\b/i;
+
+describe("denominatorStatement", () => {
+	it("states the runs, the levels and the scores, then why they are neither independent nor rankable", () => {
+		expect(denominatorStatement(aDenominator())).toBe(
+			"16 forecast runs were checked, each read at 4 confidence levels — 64 scores in all. The 4 levels of a single run come from the same simulation, so they are not independent of one another. And each run covers a different stretch of real time — every one ends today and reaches back by its own length — so they are not repeated trials of one experiment and should not be ranked against each other.",
+		);
+	});
+
+	it("counts only the runs that could be evaluated, and says how many of those attempted were left out", () => {
+		const statement = denominatorStatement(
+			aDenominator({
+				runsAttempted: 20,
+				runsEvaluated: 12,
+				scoresEvaluated: 48,
+			}),
+		);
+		expect(statement).toMatch(
+			/^12 forecast runs were checked, each read at 4 confidence levels — 48 scores in all\. 8 of the 20 checks could not run, so they are left out of every count\. /,
+		);
+	});
+
+	it("says nothing was left out when every attempted run was evaluated", () => {
+		expect(denominatorStatement(aDenominator())).not.toMatch(/could not run/);
+	});
+
+	it("speaks of a single run in the singular", () => {
+		expect(
+			denominatorStatement(
+				aDenominator({
+					runsAttempted: 1,
+					runsEvaluated: 1,
+					scoresEvaluated: 4,
+				}),
+			),
+		).toMatch(/^1 forecast run was checked, /);
+	});
+});
+
+describe("levelReadingCopy", () => {
+	it("gives a level between the extremes its two counts and nothing more", () => {
+		expect(levelLine(aLevel(), 16)).toBe(
+			"At 85% the forecast held in 14 of 16 checks, about 14 expected.",
+		);
+	});
+
+	it("calls a level that never held over-forecasting, beside the count its rate expected", () => {
+		expect(
+			levelLine(
+				aLevel({
+					confidenceLevel: 95,
+					heldCount: 0,
+					expectedHeldCount: 15.2,
+					reading: "NeverHeld",
+				}),
+				16,
+			),
+		).toBe(
+			"At 95% the forecast held in 0 of 16 checks, about 15 expected — it never held, which is over-forecasting.",
+		);
+	});
+
+	it("calls a level that always held under-forecasting, beside the count its rate expected", () => {
+		expect(
+			levelLine(
+				aLevel({
+					confidenceLevel: 50,
+					heldCount: 12,
+					expectedHeldCount: 6,
+					reading: "AlwaysHeld",
+				}),
+				12,
+			),
+		).toBe(
+			"At 50% the forecast held in 12 of 12 checks, about 6 expected — it held every time, which is under-forecasting.",
+		);
+	});
+
+	it("says a level with nothing evaluated was not tested, and prints no counts", () => {
+		expect(
+			levelLine(
+				aLevel({
+					confidenceLevel: 70,
+					heldCount: 0,
+					expectedHeldCount: 0,
+					reading: "NotEvaluated",
+				}),
+				0,
+			),
+		).toBe("At 70% no check could be run, so this level was not tested.");
+	});
+
+	it.each([
+		{ expected: 13.6, printed: "about 14 expected" },
+		{ expected: 11.2, printed: "about 11 expected" },
+		{ expected: 8, printed: "about 8 expected" },
+	])(
+		"prints the server's expected count $expected rounded to a whole check",
+		({ expected, printed }) => {
+			expect(levelLine(aLevel({ expectedHeldCount: expected }), 16)).toContain(
+				printed,
+			);
+		},
+	);
+
+	it.each(LEVEL_READINGS)(
+		"never uses a retired word nor a renameable term: %s",
+		(reading) => {
+			const line = levelReadingCopy[reading](aLevel({ reading }), 16);
+			expect(line).toMatch(/^At 85%/);
+			expect(line).not.toMatch(RETIRED_WORDS);
+			expect(line).not.toMatch(HARD_CODED_TERMS);
+		},
+	);
+});
+
+describe("findings", () => {
+	it("reports the window as a setting on the renamed team and the confidence level as not a setting", () => {
+		expect(findings(getTerm, 4)).toEqual([
+			"The sampling window is a setting on this Squad.",
+			"The confidence level is not a setting: it is which of the 4 numbers you choose to quote.",
+		]);
+	});
 });

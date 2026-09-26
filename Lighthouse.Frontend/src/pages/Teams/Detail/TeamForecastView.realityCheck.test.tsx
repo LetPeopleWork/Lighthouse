@@ -238,7 +238,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		).toHaveLength(0);
 	});
 
-	it.skip.each([
+	it.each([
 		{ ownWindow: 30, runs: 16, scores: 64 },
 		{ ownWindow: 45, runs: 20, scores: 80 },
 	])(
@@ -263,7 +263,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		},
 	);
 
-	it.skip(`each level is reported as how often it held against its own percentage of the checks (${PENDING})`, async () => {
+	it(`each level is reported as how often it held against its own percentage of the checks (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
 		);
@@ -273,7 +273,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(linesMatching(group, /\bbeaten\b/i)).toHaveLength(0);
 	});
 
-	it.skip(`@error a level that never held is called over-forecasting, beside how often it should have held (${PENDING})`, async () => {
+	it(`@error a level that never held is called over-forecasting, beside how often it should have held (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				readings: {
@@ -343,7 +343,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(linesMatching(group, /\bcurrent 45\b/i)).toHaveLength(0);
 	});
 
-	it.skip(`reports the two findings as two findings: the window is a setting, the confidence level is not (${PENDING})`, async () => {
+	it(`reports the two findings as two findings: the window is a setting, the confidence level is not (${PENDING})`, async () => {
 		const group = await theVerdictFor(aRealityCheckAnswer());
 
 		expectALine(group, /sampling window is a setting on this Team/i);
