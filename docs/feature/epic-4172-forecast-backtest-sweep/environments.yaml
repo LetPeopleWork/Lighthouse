@@ -39,7 +39,7 @@ usage_data_consent_states:
   # exercised for the other ten name-only events by Slice04ProductEventsTests; the new name joins
   # those sweeps rather than getting its own copies.
   - state: browser-agreed
-    expect: "exactly one event per completed run"
+    expect: "exactly one event per answer shown. From Story #6094 (dialog): Run again and a reopen that return an answer each report again; a reopen that adopts an in-flight run reports once; an answer that arrives after the dialog was closed is dropped and not reported; a failed request never reports"
   - state: browser-refused
     expect: "nothing sent; the call site has no consent branch of its own"
   - state: browser-not-yet-asked

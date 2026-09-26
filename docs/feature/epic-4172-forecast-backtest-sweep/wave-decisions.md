@@ -1204,3 +1204,48 @@ every renameable term from the instance's terminology (I-d); ADR-210's *held* si
   counts not-held checks within 10% too (default yes); (2) the six "usually" phrases, with `NotHeldWithin10`
   → "high by up to 10%" and no pooling of the two within-10% grades (default).
 - DISCUSS's six maintainer questions keep their defaults, not reopened.
+
+---
+
+## DEVOPS — Story #6094
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-09-26 · **Mode**: Propose, maintainer AFK. The
+recommended option was taken every time · **Full text**: `feature-delta.md`, part *Story #6094 — DEVOPS* ·
+Nothing committed; no code or workflow touched; reviewer not run.
+
+### Key Decisions
+
+| # | Decision |
+|---|---|
+| 6094-OPS-1 | **No new usage-data event and no new property (N/A).** The existing name-only `TeamForecastRealityCheckRun = 11` answers the one #6094 KPI that uses the pipe. Rejected: a `…Rerun` event (would be 12) and a `trigger` enum property, because no KPI needs to tell first runs from re-runs |
+| 6094-OPS-2 | The event is read as **distinct consenting browsers per 30-day window** (ADR-191 pseudonym), never as raw counts compared across the release. Emission semantics: one per answer *shown* (DES-6); `usagedata.md` is unchanged because its wording still holds |
+| 6094-OPS-3 | The use KPI's "before" window exists only if a release with the inline check precedes #6094's by 30 days; the event is unreleased today (`9851b4ea3` in no tag). Do not hold a release to manufacture one |
+| 6094-OPS-4 | Configuration restated, not re-decided: existing CI, trunk-based, recreate release, opt-in usage data + logs, per-feature mutation. No workflow, migration, key or secret |
+| 6094-OPS-5 | Mutation: Stryker.NET at the close of slice 04 (`ForecastRealityCheckService.cs`, reusing the 6072 config plus E12); StrykerJS at the close of slice 05 over **every surviving reality-check frontend module**, the first frontend run since #6072 deferred it |
+
+### Infrastructure Summary
+
+- Environments: unchanged, one target `clean`. `environments.yaml` gets one line sharpened
+  (`browser-agreed`: one event per answer shown).
+- CI/CD: no change. Slice 04 does not touch `Program.cs`, so no live-connector suite is forced. The rewritten
+  Playwright step runs twice in CI (SQLite, PostgreSQL).
+- Deployment: recreate, with rollback = previous image. The additive `scoredPeriods` has no version skew (zod
+  drops unknown keys).
+- Observability: nothing new; no alerting.
+- KPI contracts: seven `OUT-6094-*` entries appended to `docs/product/kpi-contracts.yaml`.
+
+### Constraints
+
+The per-horizon actual in `scoredPeriods` must reuse the value already read, so `RealityCheckQueryCountTest`
+stays 20 / 24. Backend `scoredPeriods` lands before, or in the same commit as, the frontend that requires it.
+Retired components and their POM locators go in the same commit as the dialog. Mutation runs last, on frozen
+code, with the acceptance suite excluded.
+
+### Upstream Changes
+
+- **DISCUSS KPI "use does not drop behind the extra click"**: the measure changes from a raw weekly count to
+  distinct browsers per 30-day window, and it is marked measurable only if a baseline window exists.
+- **DISCUSS DoD item 4** confirmed: `docs/settings/usagedata.md` unchanged.
+- **DESIGN OQ-8** refined, not contradicted: the backend change still needs a Stryker.NET run, and the
+  frontend mutate set covers the whole surviving reality-check UI.
+- No contradiction with DESIGN, so no `upstream-changes.md`.

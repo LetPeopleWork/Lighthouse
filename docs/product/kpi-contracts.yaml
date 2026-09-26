@@ -1369,3 +1369,134 @@ outcomes:
     acceptance_scenarios: "none - slice 03 was deferred by the maintainer on 2026-09-26 while the reporting format is re-evaluated; not cancelled"
     alerting: []
     status: designed-not-shipped
+
+  # Story #6094 (Epic 4172): the graded results dialog. Added by the DEVOPS wave on 2026-09-26, before any
+  # code for the story exists. DISTILL writes the scenario files and tags each one @kpi-<id>.
+
+  - id: OUT-6094-how-far-each-forecast-landed
+    feature: epic-4172-forecast-backtest-sweep
+    title: Every evaluable check shows its forecast, the period's actual and the miss in Work Items
+    target: "100% of evaluable cells, 16 or 20 rows; every period group prints its actual, including a group in which no window could be checked"
+    measurement_scope: per_instance
+    measured_by: >
+      AC-4.3 / AC-4.4 scenarios on the dialog's table, and DESIGN rule E12: an NUnit assertion that
+      scoredPeriods has one entry per sampledHorizonDays, in that order, and that every evaluable cell's
+      actualCompleted equals its period's. Baseline is 0, because today the size of a miss shows only as a
+      tick position.
+    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-how-far-each-forecast-landed"
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any of the assertions fails"
+        action: "backend or frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6094-caution-is-visible
+    feature: epic-4172-forecast-backtest-sweep
+    title: Each confidence level says how often it landed within 10%, and how it usually missed
+    target: "4 of 4 level lines state 'within 10% in N' in every result, and carry the 'usually' clause exactly when one grade holds more than half of that level's graded checks"
+    measurement_scope: per_instance
+    measured_by: "AC-5.4 scenarios and the realityCheckGrading unit tests (the per-level count and the dominant grade)."
+    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-caution-is-visible"
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any of the assertions fails"
+        action: "frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6094-no-percentage-without-its-work-items
+    feature: epic-4172-forecast-backtest-sweep
+    title: A percentage never appears without the miss in Work Items, never at an actual of 0, and never contradicts its band
+    target: "100% of graded cells show the Work Item miss beside any percentage; 0 percentages at actual 0; 0 shown percentages outside their band"
+    measurement_scope: per_instance
+    measured_by: >
+      AC-5.1 / AC-5.3 scenarios, and DESIGN rule E11: a Vitest loop over every actual in 1..200 and every
+      forecast in 0..400. For each pair it asserts that the shown percentage lies in its band (<= 10,
+      11..25, >= 26) and is >= 1 whenever the miss is not 0.
+    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-no-percentage-without-its-work-items"
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any of the assertions fails"
+        action: "frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6094-colour-never-alone
+    feature: epic-4172-forecast-backtest-sweep
+    title: A grade is never told by colour alone, and its text is readable on its fill
+    target: "100% of graded cells carry a glyph, a word and the percentage in text; each of the six fills gives >= 4.5:1 contrast with its text; no fill equals a forecast-level colour"
+    measurement_scope: per_instance
+    measured_by: >
+      AC-5.2 scenarios; DESIGN rule E10 in colors.test.ts, using the shipped calculateContrastRatio; and
+      rule E6, where every map keyed by ForecastGrade is an exhaustive Record held by the TypeScript
+      compiler.
+    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-colour-never-alone"
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any of the assertions fails, or the compiler finds a grade without its colour or words"
+        action: "frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6094-no-window-ranked
+    feature: epic-4172-forecast-backtest-sweep
+    title: The dialog never summarises, orders or highlights a sampling window
+    target: "0 strings that tally, average or order sampling windows; 0 row orders other than the server's ladder"
+    measurement_scope: per_instance
+    measured_by: >
+      AC-4.9 / AC-5.4 scenarios; DESIGN rule E8, where a shuffled cells array still renders in
+      sampledHorizonDays then sampledWindowDays order; and the shipped rankability scan, extended over the
+      dialog's rendered text.
+    acceptance_scenarios: "Written in DISTILL, tagged @kpi-OUT-6094-no-window-ranked"
+    measurement_window: every push (CI)
+    gate: hard
+    alerting:
+      - condition: "any of the assertions fails"
+        action: "frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6094-use-survives-the-extra-click
+    feature: epic-4172-forecast-backtest-sweep
+    title: Moving the answer behind a dialog does not cost the check its users
+    target: "Distinct consenting browsers reporting TeamForecastRealityCheckRun in the 30 days after the release that ships Story #6094 >= the 30 days before. A hypothesis; the baseline is read at that release."
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      DISCUSS stated this as a weekly event count. The dialog adds Run again and re-runs on every reopen,
+      so each person produces more events than before. A raw before/after comparison would pass even if
+      fewer people used the check. Counting distinct browsers answers the question as asked, and re-runs
+      cannot inflate it, so no new event or property is needed (the Lighthouse usage-data rule).
+    measurement_plan:
+      data_collection:
+        - "Usage data event: TeamForecastRealityCheckRun (value 11), unchanged and name only. From Story #6094 it is sent once per answer shown: Run again and a reopen that return an answer report again; an answer that arrives after the dialog was closed is dropped and not reported; a failed request never reports."
+        - "Each event reaches the collector under a per-browser pseudonym (ADR-191), which is what makes a distinct-browser count possible."
+      derivation: "Distinct consenting browsers reporting the event, per 30-day window, vendor instance excluded. Raw event counts are descriptive only and are never compared across the #6094 release."
+      surfacing:
+        - "docs/settings/usagedata.md is the disclosure (unchanged by this story); the collector's own dashboard is where the number is read."
+    acceptance_scenarios: "The emission scenarios in TeamForecastView.realityCheck.usageData.test.tsx, reshaped in DISTILL for the dialog (first open, Run again, reopen, adopted in-flight run, dropped answer, failure), tagged @kpi-OUT-6094-use-survives-the-extra-click"
+    measurement_window: "30 days either side of the first published release carrying Story #6094"
+    gate: hard for the emission scenarios; none on the count, which is descriptive
+    precondition: >
+      A baseline exists only if a published release carrying the inline check (slices 01 + 02, first on
+      main at 9851b4ea3, in no release as of 2026-09-26) ships at least 30 days before the release carrying
+      Story #6094. If both ship together, this outcome is not measurable, and
+      OUT-4172-reality-check-used-outside-the-vendor is the only usage signal. Decided in DEVOPS: do not hold
+      a release to manufacture the baseline.
+    alerting: []
+    status: designed-not-shipped
+    caveat: >
+      Counts browsers that agreed, not installations and not Teams. A small consenting population makes a
+      before/after difference noise until it grows.
+
+  - id: OUT-6094-density-readable
+    feature: epic-4172-forecast-backtest-sweep
+    title: The 64-80 cell table is readable on real history
+    target: "The maintainer states each confidence level's finding from the dialog alone, for 3 real Teams on the dev instance, each in under a minute"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      A dogfooding note in the slice 04 brief. Manual by necessity: the dev instance is a build nobody
+      published, so usage data never sees it.
+    measurement_window: once, at the close of slice 04, before slice 05 starts
+    acceptance_scenarios: "none; a dogfooding record"
+    alerting: []
+    status: designed-not-shipped

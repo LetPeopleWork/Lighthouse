@@ -4462,3 +4462,293 @@ Write the two *Needs the maintainer* items against their defaults and mark them 
 **Artifacts**: this section; [ADR-211](../../product/architecture/adr-211-a-reality-check-grade-is-read-in-the-client-from-facts-the-server-already-sends.md);
 `docs/product/architecture/brief.md` (epic-4172 section, a Story #6094 delta); `wave-decisions.md`
 (*DESIGN — Story #6094*).
+
+---
+
+# Story #6094 — DEVOPS
+
+**Wave**: DEVOPS, 2026-09-26, Apex (`nw-platform-architect`). **Mode**: PROPOSE, maintainer AFK. The
+recommended option is taken every time and recorded. Decisions are numbered `6094-OPS-n`. **Density**:
+lean. Nothing committed, no code or workflow touched, no reviewer run (the orchestrator runs it).
+
+**The Epic's configuration is restated here and not re-decided.** It was checked against the Epic's DEVOPS
+part (lines 2462-2850): Docker image plus signed standalone builds, published as a GitHub release, and
+self-hosted on SQLite or PostgreSQL · GitHub Actions, existing workflows only, extend and never add ·
+opt-in usage data (Epic #5733) to PostHog plus the existing structured logging, no alerting · the calver
+release with the image replaced (recreate), no canary, no flag · trunk-based, pushed straight to `main` ·
+per-feature mutation testing, Stryker.NET + StrykerJS, ≥ 80 %, already in `CLAUDE.md` and not edited ·
+E2E in CI through `ci_verifysqlite.yml` / `ci_verifypostgres.yml`.
+
+**Summary: again there is almost no platform work.** The story needs no new usage-data event. The real
+findings are about *how the existing event is read* and about a frontend mutation gate that is now owed.
+
+## Wave: DEVOPS / [REF] Prior Wave Consultation — Story #6094
+
+| Source | State |
+|---|---|
+| This file, Epic DEVOPS (2462-2850), incl. the `TeamForecastRealityCheckRun` design (~2600) | ✓ read whole, fresh |
+| This file, Story #6094 DISCUSS (3280-3900): 6094-D1..D10, Outcome KPIs + the DEVOPS flag on re-runs, Out of Scope, Checklist, DoD, Risks | ✓ read |
+| This file, Story #6094 DESIGN (3903-end): 6094-DES-1..9 (esp. DES-6 run ownership, DES-7 `scoredPeriods`), Component Decomposition, Reuse, Enforcement E8-E12, Response Contract changes, OQ-1..9, Changed Assumptions, Handoff | ✓ read |
+| `environments.yaml` | ✓ read whole |
+| `docs/product/kpi-contracts.yaml` | ✓ header and all five `OUT-4172-*` entries read |
+| `docs/settings/usagedata.md` | ✓ the reality-check row (line 51) and the counts that move with it (56, 76-78) |
+| `Models/UsageData/UsageDataEventName.cs` | ✓ read — `TeamForecastRealityCheckRun = 11` is the last member |
+| `ForecastRealityCheck.tsx` (the emission, line 44), `UsageDataService.ts:31` | ✓ read |
+| `PostHogUsageDataPublisher.cs` (`distinct_id`), `ARCHITECTURE.md` §10 (ADR-191 pseudonym) | ✓ checked — each event reaches PostHog under a per-browser pseudonym |
+| `Lighthouse.Backend.Tests/Integration/UsageData/` | ✓ listed — `TeamForecastRealityCheckRunEventTests.cs` exists |
+| `mutation/results.md`, `mutation/stryker.6072.backend.json` | ✓ read — frontend gate **N/A, deferred to #6094** |
+| `.github/workflows/` (listing), `ci.yml` (e2e / verify jobs), `path-classifier.sh` (Program.cs whitelist) | ✓ checked — no workflow mentions Stryker; no change needed |
+| `git tag --contains 9851b4ea3` | ✓ run — **no tag contains it**; the latest release is `v26.9.24.6` |
+
+**Checked against DESIGN for contradictions: none found.** One refinement of DESIGN OQ-8 is under
+Mutation testing strategy.
+
+## Wave: DEVOPS / [REF] Environment matrix — Story #6094
+
+**Unchanged.** There is still one target environment, `clean`. The dialog is client-side state over the
+same read-only endpoint, and nothing new is stored (ADR-209). SQLite and PostgreSQL still run the Playwright
+step in CI and are still not a parametrization axis. The additive `scoredPeriods` field is built from the
+per-horizon actual the service already reads, so it adds no SQL that could differ between providers.
+
+One wording in `environments.yaml` was sharpened; no new environment was added. The `browser-agreed`
+consent state used to say *"one event per completed run"*. It now says **one event per answer shown**, to
+match 6094-DES-6.
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline — Story #6094
+
+**No new workflow, job or step.** The delta against the Epic's outline:
+
+| Stage | This story |
+|---|---|
+| Local, before push | `dotnet format analyzers … --verify-no-changes` over the new `RealityCheckScoredPeriodDto` and the edited service. `npx biome lint --only=complexity/noExcessiveCognitiveComplexity` on every new component (DESIGN handoff) |
+| Commit stage (`ci_backend.yml`, `ci_frontend.yml`) | Backend: E12 (`scoredPeriods` shape) and the unchanged `RealityCheckQueryCountTest` (still **20 / 24**; the new field reads nothing new). Frontend: E8, E10, E11 (the exhaustive 200 × 401 rounding loop, a few ms) |
+| Live-connector suite | **Not forced this time.** Slice 04 edits `ForecastRealityCheckService.cs` and a DTO, not `Program.cs`, so `path-classifier.sh` selects no connector suite. If DELIVER finds it must touch `Program.cs`, expect the full Integration run, as slice 01 had |
+| Acceptance (`ci_verifysqlite.yml`, `ci_verifypostgres.yml`) | The rewritten "Forecast reality check" step in `TeamsDetail.spec.ts`: press, dialog, text result and table, then Escape. It runs once per store. Assert on the filled result, never the loading text (R-6094-6) |
+| Sonar gate, build, release | Unchanged |
+
+## Wave: DEVOPS / [REF] Monitoring contracts — Story #6094
+
+One row per Outcome KPI from the Story #6094 DISCUSS. All but two are held by tests in CI.
+
+| KPI (DISCUSS #6094) | Instrument | Where it runs | Field-measurable? | Contract |
+|---|---|---|---|---|
+| **S1**: every evaluable cell shows its forecast, the period's actual and the miss in Work Items | AC-4.3 / AC-4.4 scenarios; E12 (every period group has its actual, including all-unevaluable groups) | CI, every push | No, asserted | `OUT-6094-how-far-each-forecast-landed` |
+| **S2**: caution is visible ("within 10% in N" and the "usually" clause, 4 of 4 levels) | AC-5.4; `realityCheckGrading` unit tests | CI, every push | No, asserted | `OUT-6094-caution-is-visible` |
+| **S3**: no percentage without its Work Items, and none at actual 0 | AC-5.1 / AC-5.3; E11's exhaustive loop | CI, every push | No, asserted | `OUT-6094-no-percentage-without-its-work-items` |
+| **Colour never alone** (glyph + word + percentage, and ≥ 4.5 : 1 text) | AC-5.2; E10 in `colors.test.ts`; E6 exhaustive `Record<ForecastGrade,…>` | CI, TypeScript compiler + Vitest | No, asserted | `OUT-6094-colour-never-alone` |
+| **I-a holds**: 0 per-window strings or orderings | AC-4.9 / AC-5.4; E8 (shuffled `cells` renders in ladder order); the rankability scan extended over the dialog's text | CI, every push | No, asserted | `OUT-6094-no-window-ranked` |
+| **Use does not drop behind the extra click** | The existing `TeamForecastRealityCheckRun`, **counted as distinct consenting browsers per 30-day window**, not as raw weekly events (6094-OPS-2) | PostHog, released instances whose browser agreed | **Yes, as a floor, and only if a baseline window exists** (6094-OPS-3) | `OUT-6094-use-survives-the-extra-click` |
+| **Density readable**: 3 real Teams, each level's finding stated in under a minute | Dogfooding note in the slice 04 brief | Maintainer, dev instance | No, manual. The dev instance is excluded from usage data by construction | `OUT-6094-density-readable` |
+
+**No alerting**, as the Epic recorded: every guardrail here fails the build, and a self-hosted product has no
+central on-call.
+
+## Wave: DEVOPS / [REF] Usage-data event — Story #6094
+
+**Answer: (a) N/A, no new event and no new property.** The existing name-only `TeamForecastRealityCheckRun`
+(value 11) is enough. DISCUSS flagged that re-runs and reopens count as results. That flag is answered by
+*how the event is counted*, not by adding a second event.
+
+### 6094-OPS-1: why no dialog-re-run event
+
+The only #6094 KPI that uses the pipe is *"use does not drop behind the extra click"*. It asks whether
+**people** still run the check once it sits behind a dialog. It does not ask how often each of them presses
+it. Every event reaches PostHog under a per-browser pseudonym (ADR-191; `distinct_id` in
+`PostHogUsageDataPublisher`). So **distinct consenting browsers per 30-day window** answers the KPI, and a
+re-run or a reopen from the same browser cannot inflate that number. A `…RealityCheckRerun` event would only
+be needed to tell first runs from re-runs, and no #6094 KPI asks that. The project rule allows an event or
+property only where a KPI cannot be counted without it, so none is added. That also leaves
+`UsageDataEventName`, the disclosure page and consent copy unchanged.
+
+**Rejected:**
+
+- (b) a name-only `TeamForecastRealityCheckRerun` (would be value 12). No KPI needs it. It would also cost
+  one enum member, one disclosure row and the recount of the page's *"Eight of the twelve…"* sentences.
+- A closed-enum `trigger` property (`Open | RunAgain`). It is a property no KPI needs, and it would be the
+  first property on this event, which widens every layer of the pipe (the Epic's reason 3).
+
+**Revisit trigger:** the maintainer asks how often people re-run, or whether "Run again" is used at all.
+That is a new question with its own KPI. At that point the recommended shape is a separate name-only event
+at the next free integer (12 today, re-checked in the enum at the time), because a name-only event touches
+none of the shape declarations.
+
+### 6094-OPS-2: how the existing event is read from now on
+
+- **Primary:** distinct consenting browsers reporting `TeamForecastRealityCheckRun`, per 30-day window,
+  vendor instance excluded. This is the same derivation as `OUT-4172-reality-check-used-outside-the-vendor`.
+- **Raw event counts are descriptive only and are never compared across the #6094 release.** The dialog adds
+  "Run again", and a reopen re-runs. A before/after comparison of raw counts would therefore be biased
+  towards "no drop" by exactly the change being judged.
+- **Emission semantics under 6094-DES-6:** one event per answer **shown**. "Run again" and a reopen that
+  return an answer each report again. An answer that arrives after the dialog was closed is dropped and not
+  reported. A failed request never reports. A reopen that adopts an in-flight run reports once, when its
+  answer is shown.
+- `docs/settings/usagedata.md` **stays unchanged** (6094 DoD item 4, confirmed). Its row, *"Somebody ran a
+  forecast reality check on a Team page and got an answer back … a check that failed to come back never
+  does"*, is still true for the dialog, for Run again and for the dropped answer (nobody got that one back).
+  `UsageDataEventName`, `UsageDataService.ts`, `TeamForecastRealityCheckRunEventTests.cs` and the page's
+  counts are unchanged.
+- **Owning slice for the *emission move*:** slice 04. The one `reportUsage` call moves with the run lifecycle
+  into the reshaped `ForecastRealityCheck` (DES-6). `TeamForecastView.realityCheck.usageData.test.tsx` is
+  reshaped per DES-9 and gains the Run-again, reopen, adopted-run and dropped-answer cases.
+
+### 6094-OPS-3: the "before" window may not exist
+
+The KPI's baseline is *"the pre-release 30-day count (read at release)"*. **The event has never shipped:**
+`9851b4ea3` (slices 01 + 02, which introduce it) is in no tag, and the latest release is `v26.9.24.6`. A
+baseline window exists **only if a release carrying the inline check ships at least 30 days before the
+release carrying #6094**. If both go out in one release, there is no "before", and this KPI reduces to
+`OUT-4172-reality-check-used-outside-the-vendor` (is it used at all).
+
+**Decided (recommended): do not hold or split a release to manufacture a baseline.** The consenting
+population is small this early, and a 30-day count of an inline check would be too small to compare against.
+The contract records the condition, and the KPI is marked *measurable only if a baseline window exists*.
+
+## Wave: DEVOPS / [REF] Deployment strategy — Story #6094
+
+**Unchanged.** The calver release replaces the image (recreate). No canary and no flag: the story is
+read-only UI plus one additive response field.
+
+**Rollback, written first:** redeploy the previous release's image. There is no migration, no configuration
+key and no secret, and nothing is persisted, so no data step is needed. There is no version skew in either
+direction. The bundle is served by the backend it shipped with. A stale cached bundle meeting a newer
+backend parses the envelope with zod, which drops the unknown `scoredPeriods` key by default.
+
+**Post-deploy validation:** on the released instance, press "Run reality check" on a Team. Check that the
+dialog opens on words, the table shows each period's actual, and Escape returns focus to the button.
+
+## Wave: DEVOPS / [REF] Mutation testing strategy — Story #6094
+
+**Per-feature, ≥ 80 %, run last on frozen code, acceptance suite excluded, as `CLAUDE.md` says.** One
+finding changes the scope. **Story #6072's frontend gate was N/A**, deferred to #6094 because the inline UI
+was about to be replaced (`mutation/results.md`, *Frontend*). So #6094's StrykerJS run is the **first
+frontend mutation run of the reality check**. Its mutate set is every reality-check frontend module that
+survives the retirement, not only the files #6094 creates.
+
+**Timing (decided):** Stryker.NET at the close of **slice 04**, the only slice with a backend change.
+StrykerJS once at the close of **slice 05**, on frozen code, covering both slices' files. If slice 05 is
+deferred, StrykerJS runs at the close of slice 04 over the slice 04 files below.
+
+### StrykerJS (`Lighthouse.Frontend`): mutate set
+
+| File | Slice | Why |
+|---|---|---|
+| `src/pages/Teams/Detail/realityCheckGrading.ts` | 04, 05 | **Primary.** The miss, band, shown percentage, per-level counts, dominant grade |
+| `src/pages/Teams/Detail/realityCheckCopy.ts` | 04, 05 | **Primary.** Never mutated before; 13 kept composers plus the reshaped level line and the new ones |
+| `src/pages/Teams/Detail/ForecastRealityCheck.tsx` | 04 | The run lifecycle, the in-flight guard and the once-per-answer-shown emission (DES-6) |
+| `src/pages/Teams/Detail/RealityCheckDialog.tsx` | 04 | Loading / failed / answered states, Run again |
+| `src/pages/Teams/Detail/RealityCheckVerdict.tsx` | 04, 05 | Text-result order (levels first) |
+| `src/pages/Teams/Detail/RealityCheckTable.tsx` | 04 | Ladder order, never re-sorted (E8) |
+| `src/pages/Teams/Detail/RealityCheckPeriodGroup.tsx` | 04 | Group header actual from `scoredPeriods`, "your setting", unevaluable rows |
+| `src/pages/Teams/Detail/RealityCheckGradedCell.tsx` | 04, 05 | Cell reading and accessible text |
+| `src/pages/Teams/Detail/RealityCheckLegend.tsx` | 05 | Legend words, Brown credit |
+
+**Not mutated, with the reason:** `utils/theme/colors.ts` `forecastGrade` block (data, held by E10 rather
+than mutation; the rest of the file belongs to other features) · `models/Forecasts/RealityCheckResult.ts`
+(types only) · `models/Forecasts/forecastSchemas.ts` (a zod declaration; held by the parse tests) ·
+`tests/RealityCheckFixture.tsx` (test data). The deleted `RealityCheckEvidence.tsx` /
+`RealityCheckBandRow.tsx` do not exist by the time of the run (DoD item 1).
+
+Config, following the house pattern: `Lighthouse.Frontend/stryker.config.6094.mjs` (or `.json`) plus a
+`vitest.stryker.6094.config.ts` whose `include` names only the reality-check test files
+(`realityCheckGrading.test.ts`, `realityCheckCopy.test.ts`, `TeamForecastView.realityCheck*.test.tsx`, the
+new component tests, `colors.test.ts`). A copy goes into this workspace's `mutation/` beside
+`stryker.6072.backend.json`. Configs are gitignored, so they are force-added when committed.
+
+### Stryker.NET (`Lighthouse.Backend`): mutate set
+
+| File | Slice | Why |
+|---|---|---|
+| `Services/Implementation/Forecast/ForecastRealityCheckService.cs` | 04 | The new `ScoredPeriod` → `RealityCheckScoredPeriodDto` mapping |
+
+**Refinement of DESIGN OQ-8:** DESIGN says the backend change is "covered by E12 and the existing Stryker.NET
+scope". Under the per-feature rule that still needs a **run**, and the cheapest one is to reuse
+`stryker.6072.backend.json` as `stryker.6094.backend.json`: the same `mutate` minus the two unchanged files
+if wanted, with E12's test class added to `test-case-filter`, and `API.Integration` still excluded.
+`RealityCheckResultDto.cs` stays unmutated (records only). `RealityCheckVerdictPolicy.cs` is unchanged by
+#6094 and keeps its 97.53 % from #6072.
+
+## Wave: DEVOPS / [REF] Observability stack — Story #6094
+
+| Signal | Tool | This story |
+|---|---|---|
+| Product usage | Opt-in usage data → our backend → PostHog (Cloud EU) | No new event or field. The existing event is read as distinct browsers (6094-OPS-2) |
+| Logs | Existing structured ASP.NET Core logging | Nothing new. A failed request is logged server-side exactly as before; the dialog only moves where the user sees it |
+| Metrics, traces | None | N/A, as the Epic recorded for a self-hosted product |
+
+## Wave: DEVOPS / [REF] Branching strategy — Story #6094
+
+**Trunk-based, unchanged.** Push straight to `origin main`, with no branch and no PR. The two
+commit-atomicity rules that matter here:
+
+- **The backend `scoredPeriods` field lands before, or in the same commit as, the frontend that requires it.**
+  If the zod schema declares `scoredPeriods` as required while `main`'s backend does not yet send it, the
+  E2E step on that commit parses nothing.
+- **Deleting a retired component and replacing its locator land in the same commit as the dialog**
+  (6094-DES-9, DoD item 1), so no commit on `main` carries a dead component or a POM locator that matches
+  nothing.
+
+## Wave: DEVOPS / [REF] Coexistence matrix — Story #6094
+
+| Must keep working | Risk from this story | Held by |
+|---|---|---|
+| The shipped single backtest (`BacktestForecaster`, same Backtesting group) and `getPercentileColor` for `BacktestResultDisplay` | The card shrinks to a button; the other caller keeps the colour helper | DESIGN reuse row 10; existing tests unedited |
+| `TeamManualForecastRun` | The reshaped container must still never report through the manual-forecast path | The reshaped usage-data call-site test |
+| `TeamForecastRealityCheckRun` pins | None. Name, value 11 and page row are unchanged | `TeamForecastRealityCheckRunEventTests.cs` unedited; `UsageDataDisclosureTest` |
+| `RealityCheckQueryCountTest` (20 / 24) | `scoredPeriods` must reuse the per-horizon actual already read | The unchanged test, red if a read is added |
+| `useErrorSnackbar` elsewhere | The reality check stops using it; other callers are unaffected | No shared change |
+| The shared Team visit in `TeamsDetail.spec.ts` | Only the reality-check step changes; the steps after it must not inherit an open dialog | The step ends with Escape and the dialog gone |
+| Website hot-links into `docs/assets` | The two per-theme screenshots change at Epic finalization | Grep the website repo before renaming any asset (finalization checklist) |
+| Lighthouse-Clients CLI / MCP | **N/A, because** Epic D12 stands and `scoredPeriods` is on a route no client consumes | — |
+
+## Wave: DEVOPS / [REF] Pre-requisites — Story #6094
+
+| # | Pre-requisite | Owner | State |
+|---|---|---|---|
+| PR-6094-1 | No new container, store, secret, configuration key, migration or workflow | DEVOPS | **Satisfied**: nothing added |
+| PR-6094-2 | The usage-data event and its disclosure row exist | Slice 01 | **Satisfied**: value 11, `usagedata.md` line 51, on `main` @ `9851b4ea3` (unreleased) |
+| PR-6094-3 | StrykerJS config + `vitest.stryker.6094.config.ts` with the mutate set above; the first frontend mutation of the reality check | DELIVER, slice 05 close (or 04 if 05 is deferred) | **Open**, a DELIVER edit |
+| PR-6094-4 | `stryker.6094.backend.json` (from 6072's), E12's test class added to the filter | DELIVER, slice 04 close | **Open**, a DELIVER edit |
+| PR-6094-5 | `TeamForecastView.realityCheck.usageData.test.tsx` covers Run again, reopen, adopted in-flight run, dropped answer, failure | DISTILL writes, DELIVER greens | **Open** |
+| PR-6094-6 | `RealityCheckQueryCountTest` stays 20 / 24 after `scoredPeriods` | DELIVER | **Open**, must hold |
+| PR-6094-7 | Baseline window for the use KPI (6094-OPS-3): whether a release with the inline check precedes #6094's | Maintainer, at release | **Open, not blocking.** Default: do not hold a release for it |
+
+## Wave: DEVOPS / [REF] Changed Assumptions — Story #6094
+
+1. **The use KPI's measure changes from a raw weekly count to distinct consenting browsers per 30-day
+   window.** DISCUSS wrote *"Weekly `TeamForecastRealityCheckRun` count in the 30 days after release ≥ the
+   30 days before"*. The dialog's Run again and re-running on reopen raise the raw count per person, so the
+   comparison as written would pass even if fewer people used the check. The distinct-browser reading is
+   immune to that and needs no new event.
+2. **The use KPI's baseline may not exist** (6094-OPS-3). The event is unreleased. The KPI is recorded as
+   measurable only if a release with the inline check precedes #6094's by 30 days.
+3. **`environments.yaml`'s `browser-agreed` expectation** is now "one event per answer shown", following
+   6094-DES-6's dropped answer. It is sharpened in place.
+4. **The frontend mutation gate is owed here, and it is wider than DESIGN OQ-8 implies.** #6072 deferred it,
+   so the mutate set includes `realityCheckCopy.ts` and every surviving reality-check module, not only the
+   new ones.
+5. **Slice 04 does not force the live-connector suite.** The Epic's slice 01 did because of `Program.cs`;
+   this story does not touch it.
+
+No change to DESIGN, so no `upstream-changes.md` is written.
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL — Story #6094
+
+**To `nw-acceptance-designer`:**
+
+- **Environments:** `environments.yaml`, unchanged except the sharpened `browser-agreed` line. One target
+  environment. The Playwright step runs on SQLite and PostgreSQL in CI and is not a parametrization axis.
+- **Usage data:** no new event. Write the call-site scenarios against **once per answer shown**: first open;
+  Run again; close-and-reopen after an answer; reopen during a run (adopted, one event); close during a run
+  with the answer arriving closed (no event); failure (no event); never `TeamManualForecastRun`. Leave
+  `TeamForecastRealityCheckRunEventTests.cs` alone.
+- **Tag the #6094 KPI scenarios** with the `@kpi-OUT-6094-*` ids now in `docs/product/kpi-contracts.yaml`.
+- **Keep the real Monte Carlo out of most scenarios** (the Epic's DV-OPS-5 still applies). E12 needs one
+  real sweep at most, and a Team whose history supports no check can use a stubbed `IForecastService`.
+- **No wall-clock assertion anywhere**, including on the dialog's loading state.
+
+**Open for the maintainer (none blocks DISTILL):** PR-6094-7, the baseline release ordering. The default
+is not to hold a release.
+
+Per-wave peer review: **not run** here (the orchestrator runs it). No trigger fires: no new deployment
+target, CI framework, observability change or security posture change.
