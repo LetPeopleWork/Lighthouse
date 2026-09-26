@@ -6,6 +6,7 @@ import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckR
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import RealityCheckEvidence from "./RealityCheckEvidence";
 import RealityCheckVerdict from "./RealityCheckVerdict";
 
 interface ForecastRealityCheckProps {
@@ -22,6 +23,7 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	const reportUsage = useUsageDataReporter();
 	const [result, setResult] = useState<RealityCheckResult | null>(null);
 	const [isRunning, setIsRunning] = useState(false);
+	const [isEvidenceShown, setIsEvidenceShown] = useState(false);
 	// State updates land a render late, so a quick second press would still see "not running".
 	const isRunningRef = useRef(false);
 
@@ -33,6 +35,7 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 		isRunningRef.current = true;
 		setIsRunning(true);
 		setResult(null);
+		setIsEvidenceShown(false);
 
 		try {
 			setResult(
@@ -61,7 +64,20 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 			>
 				Run reality check
 			</Button>
-			{result && <RealityCheckVerdict result={result} />}
+			{result && (
+				<>
+					<RealityCheckVerdict result={result} />
+					<Button
+						variant="text"
+						aria-expanded={isEvidenceShown}
+						onClick={() => setIsEvidenceShown((shown) => !shown)}
+						sx={{ alignSelf: "flex-start" }}
+					>
+						{isEvidenceShown ? "Hide the evidence" : "Show the evidence"}
+					</Button>
+					{isEvidenceShown && <RealityCheckEvidence result={result} />}
+				</>
+			)}
 		</Stack>
 	);
 };

@@ -414,7 +414,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 });
 
 describe("@us-02 slice 02 - the evidence you can look at", () => {
-	it.skip(`expanding shows one panel per sampling window checked, in order of length, and no confidence-level control (${PENDING})`, async () => {
+	it(`expanding shows one panel per sampling window checked, in order of length, and no confidence-level control (${PENDING})`, async () => {
 		const group = await theVerdictFor(aRealityCheckAnswer());
 
 		await expandTheEvidence(group);
@@ -425,7 +425,7 @@ describe("@us-02 slice 02 - the evidence you can look at", () => {
 		}
 	});
 
-	it.skip(`a Team whose own window is off the ladder gets a fifth panel, in its place by length (${PENDING})`, async () => {
+	it(`a Team whose own window is off the ladder gets a fifth panel, in its place by length (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({ currentSettingDays: 45 }),
 		);
