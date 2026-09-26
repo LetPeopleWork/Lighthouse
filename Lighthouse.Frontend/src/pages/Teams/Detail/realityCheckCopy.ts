@@ -1,11 +1,14 @@
-import type {
-	Determination,
-	LevelReading,
-	NotTestedReason,
-	RealityCheckDenominator,
-	RealityCheckLevelCoverage,
-	RealityCheckSoundWindow,
-	Standing,
+import {
+	type Determination,
+	type LevelReading,
+	type NotTestedReason,
+	type RealityCheckCell,
+	type RealityCheckDenominator,
+	type RealityCheckLevelCoverage,
+	type RealityCheckSoundWindow,
+	type Standing,
+	SUFFICIENCY_REASONS,
+	type SufficiencyReason,
 } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 
@@ -116,17 +119,24 @@ export const notTestedReasonCopy: Record<
 		`This ${getTerm(TERMINOLOGY_KEYS.TEAM)}'s sampling window is not a positive number of days, so its own setting was not tested.`,
 };
 
+const samplingWindowsNamed = (windowDays: readonly number[]): string => {
+	const windows = listOf(windowDays.map((days) => `${days}-day`));
+	return windowDays.length === 1
+		? `${windows} sampling window`
+		: `${windows} sampling windows`;
+};
+
 export const unevaluatedSentence = (
 	unevaluatedWindowDays: readonly number[],
 ): string | null => {
 	if (unevaluatedWindowDays.length === 0) {
 		return null;
 	}
-	const windows = listOf(unevaluatedWindowDays.map((days) => `${days}-day`));
+	const windows = samplingWindowsNamed(unevaluatedWindowDays);
 	if (unevaluatedWindowDays.length === 1) {
-		return `The ${windows} sampling window could not be checked, so it is not counted either way.`;
+		return `The ${windows} could not be checked, so it is not counted either way.`;
 	}
-	return `The ${windows} sampling windows could not be checked, so they are not counted either way.`;
+	return `The ${windows} could not be checked, so they are not counted either way.`;
 };
 
 /**
@@ -163,6 +173,55 @@ const runsChecked = (runsEvaluated: number): string =>
 		? "1 forecast run was checked"
 		: `${runsEvaluated} forecast runs were checked`;
 
+export interface UnrunChecks {
+	checkCount: number;
+	windowDays: number[];
+	minimumActiveDays: number;
+	getTerm: TermGetter;
+}
+
+const checksOn = ({ checkCount, windowDays }: UnrunChecks): string =>
+	`${checkCount === 1 ? "1 check" : `${checkCount} checks`} on the ${samplingWindowsNamed(windowDays)}`;
+
+// Thin history and a forecast that could not be worked out are different troubles with different
+// remedies, so each is told in its own words and neither borrows the other's.
+export const sufficiencyReasonCopy: Record<
+	SufficiencyReason,
+	(unrun: UnrunChecks) => string | null
+> = {
+	Sufficient: () => null,
+	TooFewActiveDays: (unrun) =>
+		`${checksOn(unrun)} had fewer than ${unrun.minimumActiveDays} days with completed ${unrun.getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} to draw on.`,
+	DegenerateForecast: (unrun) =>
+		`For ${checksOn(unrun)}, no forecast could be worked out from the history.`,
+};
+
+/**
+ * One sentence per reason a check could not run, naming the windows it happened on in the order they
+ * were swept.
+ */
+export const whyChecksCouldNotRun = (
+	cells: readonly RealityCheckCell[],
+	sampledWindowDays: readonly number[],
+	minimumActiveDays: number,
+	getTerm: TermGetter,
+): string[] =>
+	SUFFICIENCY_REASONS.flatMap((reason) => {
+		const unrun = cells.filter((cell) => cell.sufficiency.reason === reason);
+		const sentence =
+			unrun.length === 0
+				? null
+				: sufficiencyReasonCopy[reason]({
+						checkCount: unrun.length,
+						windowDays: sampledWindowDays.filter((days) =>
+							unrun.some((cell) => cell.samplingWindowDays === days),
+						),
+						minimumActiveDays,
+						getTerm,
+					});
+		return sentence === null ? [] : [sentence];
+	});
+
 const runsLeftOut = ({
 	runsAttempted,
 	runsEvaluated,
@@ -177,11 +236,13 @@ const runsLeftOut = ({
  */
 export const denominatorStatement = (
 	denominator: RealityCheckDenominator,
+	whyLeftOut: readonly string[] = [],
 ): string => {
 	const { runsEvaluated, levelsPerRun, scoresEvaluated } = denominator;
 	return [
 		`${runsChecked(runsEvaluated)}, each read at ${levelsPerRun} confidence levels — ${scoresEvaluated} scores in all.`,
 		runsLeftOut(denominator),
+		...whyLeftOut,
 		`The ${levelsPerRun} levels of a single run come from the same simulation, so they are not independent of one another.`,
 		"And each run covers a different stretch of real time — every one ends today and reaches back by its own length — so they are not repeated trials of one experiment and should not be ranked against each other.",
 	]

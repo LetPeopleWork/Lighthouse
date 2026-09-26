@@ -292,7 +292,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expect(linesMatching(group, /\bexcellen/i)).toHaveLength(0);
 	});
 
-	it.skip(`@error checks that could not run are named with their reason and left out of every count (${PENDING})`, async () => {
+	it(`@error checks that could not run are named with their reason and left out of every count (${PENDING})`, async () => {
 		const group = await theVerdictFor(coastalSurvey());
 
 		expectALine(group, /(4|four) of the (16|sixteen) checks could not run/i);
@@ -301,7 +301,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expectALine(group, /48 scores in all/i);
 	});
 
-	it.skip(`@error a Team whose history supports no check is told nothing could be concluded rather than shown an empty result (${PENDING})`, async () => {
+	it(`@error a Team whose history supports no check is told nothing could be concluded rather than shown an empty result (${PENDING})`, async () => {
 		const group = await theVerdictFor(
 			aRealityCheckAnswer({
 				soundWindowDays: [],
@@ -350,7 +350,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		expectALine(group, /confidence level is not a setting/i);
 	});
 
-	it.skip(`@kpi-OUT-4172-read-only offers no control that could change a Team setting (${PENDING})`, async () => {
+	it(`@kpi-OUT-4172-read-only offers no control that could change a Team setting (${PENDING})`, async () => {
 		const group = await theVerdictFor(aRealityCheckAnswer());
 
 		for (const role of [
@@ -371,7 +371,7 @@ describe("@us-01 @driving_port slice 01 - one sentence about your sampling windo
 		}
 	});
 
-	it.skip(`speaks the instance's own words for Team and Work Item (${PENDING})`, async () => {
+	it(`speaks the instance's own words for Team and Work Item (${PENDING})`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Ticket");

@@ -6,6 +6,7 @@ import {
 	denominatorStatement,
 	findings,
 	levelLine,
+	whyChecksCouldNotRun,
 	windowVerdict,
 } from "./realityCheckCopy";
 
@@ -42,7 +43,15 @@ const RealityCheckVerdict: React.FC<Readonly<RealityCheckVerdictProps>> = ({
 				</Typography>
 			))}
 			<Typography variant="body2" color="text.secondary">
-				{denominatorStatement(denominator)}
+				{denominatorStatement(
+					denominator,
+					whyChecksCouldNotRun(
+						result.cells,
+						result.sampledWindowDays,
+						result.minimumActiveDays,
+						getTerm,
+					),
+				)}
 			</Typography>
 		</Stack>
 	);

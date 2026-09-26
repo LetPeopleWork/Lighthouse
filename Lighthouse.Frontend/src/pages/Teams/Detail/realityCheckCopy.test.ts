@@ -3,6 +3,7 @@ import {
 	DETERMINATIONS,
 	LEVEL_READINGS,
 	NOT_TESTED_REASONS,
+	type RealityCheckCell,
 	type RealityCheckDenominator,
 	type RealityCheckLevelCoverage,
 	type RealityCheckSoundWindow,
@@ -18,8 +19,11 @@ import {
 	notTestedReasonCopy,
 	regionOf,
 	standingCopy,
+	sufficiencyReasonCopy,
+	type UnrunChecks,
 	unevaluatedSentence,
 	type VerdictFacts,
+	whyChecksCouldNotRun,
 	windowVerdict,
 } from "./realityCheckCopy";
 
@@ -493,5 +497,113 @@ describe("findings", () => {
 			"The sampling window is a setting on this Squad.",
 			"The confidence level is not a setting: it is which of the 4 numbers you choose to quote.",
 		]);
+	});
+});
+
+// A minimum other than the shipped 5, so a literal 5 in the copy would show.
+const MINIMUM_ACTIVE_DAYS = 7;
+
+const ticketTerms = (key: string) =>
+	key === "workItems" ? "Tickets" : `unexpected ${key}`;
+
+const someUnrunChecks = (
+	overrides: Partial<UnrunChecks> = {},
+): UnrunChecks => ({
+	checkCount: 4,
+	windowDays: [14],
+	minimumActiveDays: MINIMUM_ACTIVE_DAYS,
+	getTerm: ticketTerms,
+	...overrides,
+});
+
+const aCell = (
+	samplingWindowDays: number,
+	reason: RealityCheckCell["sufficiency"]["reason"],
+): RealityCheckCell => ({
+	horizonDays: 7,
+	samplingWindowDays,
+	scoredPeriodStart: "2026-09-15",
+	scoredPeriodEnd: "2026-09-22",
+	historyWindowStart: "2026-08-01",
+	historyWindowEnd: "2026-09-15",
+	sufficiency: {
+		isSufficient: reason === "Sufficient",
+		reason,
+		daysWithCompletedWork: 2,
+	},
+	forecast: null,
+	actualCompleted: null,
+	outcome: null,
+	levelOutcomes: null,
+});
+
+describe("sufficiencyReasonCopy", () => {
+	it("tells thin history with the minimum it was held to and the renamed work items", () => {
+		expect(sufficiencyReasonCopy.TooFewActiveDays(someUnrunChecks())).toBe(
+			"4 checks on the 14-day sampling window had fewer than 7 days with completed Tickets to draw on.",
+		);
+	});
+
+	it("tells a forecast that could not be worked out without borrowing the thin-history words", () => {
+		const sentence = sufficiencyReasonCopy.DegenerateForecast(
+			someUnrunChecks({ checkCount: 1, windowDays: [30, 60] }),
+		);
+		expect(sentence).toBe(
+			"For 1 check on the 30-day and 60-day sampling windows, no forecast could be worked out from the history.",
+		);
+		expect(sentence).not.toMatch(/days with completed/i);
+	});
+
+	it("says nothing of a check that could run", () => {
+		expect(sufficiencyReasonCopy.Sufficient(someUnrunChecks())).toBeNull();
+	});
+});
+
+describe("whyChecksCouldNotRun", () => {
+	it("gives one sentence per reason, naming its windows in ladder order and counting only its own checks", () => {
+		const cells = [
+			aCell(60, "TooFewActiveDays"),
+			aCell(14, "DegenerateForecast"),
+			aCell(14, "TooFewActiveDays"),
+			aCell(30, "Sufficient"),
+			aCell(14, "TooFewActiveDays"),
+		];
+
+		expect(
+			whyChecksCouldNotRun(cells, LADDER, MINIMUM_ACTIVE_DAYS, ticketTerms),
+		).toEqual([
+			"3 checks on the 14-day and 60-day sampling windows had fewer than 7 days with completed Tickets to draw on.",
+			"For 1 check on the 14-day sampling window, no forecast could be worked out from the history.",
+		]);
+	});
+
+	it("has nothing to say when every check could run", () => {
+		expect(
+			whyChecksCouldNotRun(
+				[aCell(14, "Sufficient")],
+				LADDER,
+				MINIMUM_ACTIVE_DAYS,
+				ticketTerms,
+			),
+		).toEqual([]);
+	});
+
+	it("is folded into the denominator right after the count of checks left out", () => {
+		const statement = denominatorStatement(
+			aDenominator({
+				runsAttempted: 16,
+				runsEvaluated: 12,
+				scoresEvaluated: 48,
+			}),
+			whyChecksCouldNotRun(
+				[aCell(14, "TooFewActiveDays")],
+				LADDER,
+				MINIMUM_ACTIVE_DAYS,
+				ticketTerms,
+			),
+		);
+		expect(statement).toMatch(
+			/4 of the 16 checks could not run, so they are left out of every count\. 1 check on the 14-day sampling window had fewer than 7 days with completed Tickets to draw on\. The 4 levels/,
+		);
 	});
 });
