@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 new RealityCheckSufficiencyDto(true, SufficiencyReason.Sufficient, history.DaysWithThroughput),
                 levels,
                 period.ActualCompleted,
-                null,
+                RealityCheckVerdictPolicy.Outcome(period.ActualCompleted, levels),
                 levelOutcomes);
         }
 

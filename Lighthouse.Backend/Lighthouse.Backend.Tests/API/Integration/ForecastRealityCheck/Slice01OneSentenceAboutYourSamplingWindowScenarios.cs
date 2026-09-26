@@ -576,7 +576,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(HeldUpTo.EightyFive, WithinBand)]
         [TestCase(HeldUpTo.Seventy, WithinBand)]
         [TestCase(HeldUpTo.EveryLevel, UnderForecast)]
-        [Ignore(Pending)]
         public async Task Each_check_says_where_the_Teams_actual_landed_against_its_forecast(HeldUpTo held, string outcome)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
