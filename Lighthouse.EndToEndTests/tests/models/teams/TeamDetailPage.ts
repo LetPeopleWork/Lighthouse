@@ -94,6 +94,34 @@ export class TeamDetailPage {
 		return this.page.getByRole("heading", { name: "Forecast Backtesting" });
 	}
 
+	private get backtestForecastingCard(): Locator {
+		return this.backtestForecastingSection.locator(
+			"xpath=ancestor::div[contains(@class, 'MuiCard-root')][1]",
+		);
+	}
+
+	get runRealityCheckButton(): Locator {
+		return this.backtestForecastingCard.getByRole("button", {
+			name: "Run reality check",
+			exact: true,
+		});
+	}
+
+	async runRealityCheck(): Promise<void> {
+		await this.runRealityCheckButton.click();
+	}
+
+	// Every verdict opens by naming the team whose sampling windows were checked.
+	realityCheckVerdict(teamName: string): Locator {
+		return this.backtestForecastingCard.getByText(`for ${teamName}`);
+	}
+
+	get realityCheckDenominator(): Locator {
+		return this.backtestForecastingCard.getByText(
+			/^\d+ forecast runs? (were|was) checked/,
+		);
+	}
+
 	async clickBacktestHistoricalThroughputTab(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Historical Throughput" }).click();
 	}

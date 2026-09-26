@@ -12,7 +12,7 @@ const testWithTeam = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 // same page, then exercised one panel on it. They are steps of one visit now; the
 // assertions are unchanged.
 testWithTeam(
-	"should show manual, new-work-item, and backtesting forecasts on the team Forecasts tab",
+	"should show manual, new-work-item, backtesting, and reality check forecasts on the team Forecasts tab",
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
 
@@ -56,6 +56,13 @@ testWithTeam(
 			await expect(
 				teamDetailPage.page.getByText(/Actual Throughput:/),
 			).toBeVisible();
+		});
+
+		await test.step("Forecast reality check", async () => {
+			await teamDetailPage.runRealityCheck();
+
+			await expect(teamDetailPage.realityCheckVerdict(team.name)).toBeVisible();
+			await expect(teamDetailPage.realityCheckDenominator).toBeVisible();
 		});
 	},
 );
