@@ -48,10 +48,17 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ImplementationPattern = @"^Lighthouse\.Backend\.Services\.Implementation($|\..*)";
 
+        private const string ApiPattern = @"^Lighthouse\.Backend\.API($|\..*)";
+
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static GivenTypesConjunction TheRealityCheck() =>
             Types().That().HaveNameContaining(FeatureWord).Or().HaveFullNameMatching(VerdictVocabularyPattern);
+
+        // The check's controller has to look the Team up before it can hand it over, so it is the one place the
+        // check may hold a repository. What must never write is the sweep and its rules behind that controller.
+        private static GivenTypesConjunction TheRealityCheckBehindItsController() =>
+            TheRealityCheck().And().DoNotResideInNamespaceMatching(ApiPattern);
 
         // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
@@ -83,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void Nothing_in_the_reality_check_can_reach_a_repository()
         {
-            TheRealityCheck()
+            TheRealityCheckBehindItsController()
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(RepositoriesPattern))
                 .Because(
                     "the sweep is handed the Team it checks and reads everything else through the metrics service. " +
