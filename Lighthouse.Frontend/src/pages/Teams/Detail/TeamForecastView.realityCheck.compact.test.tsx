@@ -149,7 +149,7 @@ const asComputed = (fill: string): string => {
 	return probe.style.backgroundColor;
 };
 
-/** Ocean Explorer's week of the story: 14 completed, its 14-day forecasts 21 / 17 / 12 / 9. */
+/** Ocean Explorer's example week: 14 completed, its 14-day forecasts 21 / 17 / 12 / 9. */
 const oceanExplorersWeek = () =>
 	aRealityCheckAnswer({
 		checks: [

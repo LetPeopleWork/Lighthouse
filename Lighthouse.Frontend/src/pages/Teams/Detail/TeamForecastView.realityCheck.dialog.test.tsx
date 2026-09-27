@@ -113,7 +113,7 @@ const anAnswerStillOnItsWay = () => {
 	return (value: unknown) => act(async () => answer(value));
 };
 
-/** The eight-week group of the stories: Ocean Explorer delivered 42, its forecasts were 48 / 40 / 36 / 31. */
+/** Ocean Explorer's example eight weeks: it delivered 42, its forecasts were 48 / 40 / 36 / 31. */
 const oceanExplorerOverEightWeeks = () =>
 	aRealityCheckAnswer({
 		checks: thePeriodChecked(56, {

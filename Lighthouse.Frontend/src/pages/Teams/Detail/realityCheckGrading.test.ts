@@ -67,6 +67,23 @@ const SHOWN_RANGE_OF_BAND = {
 	over: [26, Number.POSITIVE_INFINITY],
 } as const;
 
+// Rounded half up in whole numbers, and kept off 0 and 100 unless no check held or every one did.
+const shareByTheRule = (held: number, evaluated: number): number => {
+	if (held === 0 || held === evaluated) {
+		return held === evaluated ? 100 : 0;
+	}
+	const rounded = Math.floor((200 * held + evaluated) / (2 * evaluated));
+	return Math.min(99, Math.max(1, rounded));
+};
+
+const everyHeldCountUpTo = (
+	mostEvaluated: number,
+): { held: number; evaluated: number }[] =>
+	Array.from({ length: mostEvaluated }, (_, index) => index + 1).flatMap(
+		(evaluated) =>
+			Array.from({ length: evaluated + 1 }, (_, held) => ({ held, evaluated })),
+	);
+
 const shownInsideItsBand = (
 	band: keyof typeof SHOWN_RANGE_OF_BAND,
 	percent: number,
@@ -306,21 +323,15 @@ describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its ch
 	});
 
 	it(`@property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did`, () => {
-		const contradictions: string[] = [];
-
-		for (let evaluated = 1; evaluated <= 200; evaluated++) {
-			for (let held = 0; held <= evaluated; held++) {
-				const share = heldShare(held, evaluated) ?? -1;
-				const rounded = Math.floor((200 * held + evaluated) / (2 * evaluated));
-				const expected = Math.min(99, Math.max(1, rounded));
-				const edge = held === evaluated ? 100 : 0;
-				const wanted = held === 0 || held === evaluated ? edge : expected;
-
-				if (share !== wanted) {
-					contradictions.push(`${held} of ${evaluated}: ${share}%`);
-				}
-			}
-		}
+		const contradictions = everyHeldCountUpTo(200)
+			.filter(
+				({ held, evaluated }) =>
+					heldShare(held, evaluated) !== shareByTheRule(held, evaluated),
+			)
+			.map(
+				({ held, evaluated }) =>
+					`${held} of ${evaluated}: ${heldShare(held, evaluated)}%`,
+			);
 
 		expect(contradictions.slice(0, 10)).toEqual([]);
 		expect(contradictions).toHaveLength(0);
