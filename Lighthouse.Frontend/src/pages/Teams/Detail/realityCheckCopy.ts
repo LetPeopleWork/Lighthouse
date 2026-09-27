@@ -242,11 +242,13 @@ export const horizonLabel = (horizonDays: number): string => {
 	return weeks === 1 ? "1 week" : `${weeks} weeks`;
 };
 
+const workItemCount = (count: number, getTerm: TermGetter): string =>
+	`${count} ${getTerm(count === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS)}`;
+
 export const periodActual = (
 	actualCompleted: number,
 	getTerm: TermGetter,
-): string =>
-	`${actualCompleted} ${getTerm(actualCompleted === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS)} completed`;
+): string => `${workItemCount(actualCompleted, getTerm)} completed`;
 
 // A period's day is a calendar day, not an instant: read through UTC it would show as the day before
 // for anyone west of Greenwich. The digits are the reader's own, as the back-test date pickers show them.
@@ -305,59 +307,44 @@ export const unevaluableRowCopy: Record<
 };
 
 export interface GradedCellFacts {
-	confidenceLevel: number;
 	forecastValue: number;
-	/** What the Team delivered minus what was forecast. */
+	actualCompleted: number;
+	/** What the Team completed minus what was forecast. */
 	miss: number;
-	held: boolean;
-	/** None when the period delivered nothing, since a share of nothing has no meaning. */
+	/** None when the period completed nothing, since a share of nothing has no meaning. */
 	percentOfActual: number | null;
 }
 
-// A typographic minus, not a hyphen, so a negative miss reads as a number and not as a dash.
+// A typographic minus, not a hyphen, so a negative figure reads as a number and not as a dash.
 const MINUS = "−";
-
-export const signedMiss = (miss: number): string => {
-	if (miss > 0) {
-		return `+${miss}`;
-	}
-	if (miss < 0) {
-		return `${MINUS}${-miss}`;
-	}
-	return "0";
-};
-
-const missInWords = (miss: number): string => {
-	if (miss > 0) {
-		return `${miss} more delivered`;
-	}
-	if (miss < 0) {
-		return `${-miss} fewer delivered`;
-	}
-	return "exactly as forecast";
-};
-
-export const heldWord = (held: boolean): string =>
-	held ? "held" : "did not hold";
 
 export const heldGlyph = (held: boolean): string => (held ? "✓" : "✗");
 
 export const percentShown = (percentOfActual: number): string =>
 	`${percentOfActual}%`;
 
-const percentInWords = (percentOfActual: number | null): string =>
-	percentOfActual === null
-		? ""
-		: `, ${percentShown(percentOfActual)} of the actual`;
+const signOf = (miss: number): string => (miss > 0 ? "+" : MINUS);
 
-export const gradedCellName = ({
-	confidenceLevel,
-	forecastValue,
-	miss,
-	held,
-	percentOfActual,
-}: GradedCellFacts): string =>
-	`${confidenceLevel}th: ${forecastValue}, ${heldWord(held)}, ${missInWords(miss)}${percentInWords(percentOfActual)}`;
+const howFarOff = (miss: number, percentOfActual: number | null): string =>
+	percentOfActual === null
+		? "No percentage — nothing was completed."
+		: `Forecast off by ${signOf(miss)}${percentShown(percentOfActual)}`;
+
+const moreOrFewer = (miss: number): string => (miss > 0 ? "more" : "fewer");
+
+/** How a forecast compared with what was completed, in words: the cell's tooltip and its accessible name. */
+export const cellComparison = (
+	{ forecastValue, actualCompleted, miss, percentOfActual }: GradedCellFacts,
+	getTerm: TermGetter,
+): string => {
+	if (miss === 0) {
+		return forecastValue === 0
+			? `Closed no ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}, exactly as forecasted.`
+			: `Closed exactly the forecasted ${workItemCount(forecastValue, getTerm)}.`;
+	}
+	const difference = workItemCount(Math.abs(miss), getTerm);
+	return `Closed ${difference} ${moreOrFewer(miss)} (${actualCompleted}) than forecasted (${forecastValue}). ${howFarOff(miss, percentOfActual)}`;
+};
 
 const runsLeftOut = ({
 	runsAttempted,

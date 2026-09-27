@@ -63,14 +63,10 @@ const UnevaluableCells: React.FC<
 
 // A level the server left out of a check stays an empty cell, which the legend reads as not checked, so
 // every other forecast still sits under its own column.
-const LevelCell: React.FC<
-	Readonly<{ confidenceLevel: number; check: GradedCheck | null }>
-> = ({ confidenceLevel, check }) =>
-	check === null ? (
-		<TableCell />
-	) : (
-		<RealityCheckGradedCell confidenceLevel={confidenceLevel} check={check} />
-	);
+const LevelCell: React.FC<Readonly<{ check: GradedCheck | null }>> = ({
+	check,
+}) =>
+	check === null ? <TableCell /> : <RealityCheckGradedCell check={check} />;
 
 const CheckCells: React.FC<
 	Readonly<{ cell: RealityCheckCell | undefined; result: RealityCheckResult }>
@@ -91,7 +87,6 @@ const CheckCells: React.FC<
 			{result.confidenceLevels.map((confidenceLevel) => (
 				<LevelCell
 					key={confidenceLevel}
-					confidenceLevel={confidenceLevel}
 					check={gradedCheckAt(
 						{ levelOutcomes, actualCompleted },
 						confidenceLevel,

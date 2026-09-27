@@ -355,7 +355,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 });
 
 describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and explains itself on demand", () => {
-	it.skip(`@kpi-OUT-6094-how-far-each-forecast-landed Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-how-far-each-forecast-landed Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				checks: thePeriodChecked(56, {
@@ -398,7 +398,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		});
 	});
 
-	it.skip.each([
+	it.each([
 		{
 			comparison: "more completed, by one Work Item",
 			actual: 15,
@@ -451,7 +451,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 			name: "Closed 1 Work Item fewer (0) than forecasted (1). No percentage — nothing was completed.",
 		},
 	])(
-		`@kpi-OUT-6094-no-percentage-without-its-work-items $comparison: the cell shows "$shows" and is named "$name" (${PENDING})`,
+		`@kpi-OUT-6094-no-percentage-without-its-work-items $comparison: the cell shows "$shows" and is named "$name"`,
 		async ({ actual, forecast, shows, name }) => {
 			const dialog = await theDialogFor(
 				aRealityCheckAnswer({

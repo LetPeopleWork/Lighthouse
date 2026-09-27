@@ -1,48 +1,37 @@
-import { TableCell } from "@mui/material";
+import { TableCell, Tooltip } from "@mui/material";
 import type React from "react";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors, getContrastText } from "../../../utils/theme/colors";
-import {
-	gradedCellName,
-	heldGlyph,
-	heldWord,
-	percentShown,
-	signedMiss,
-} from "./realityCheckCopy";
+import { cellComparison, heldGlyph } from "./realityCheckCopy";
 import { type GradedCheck, readCheck } from "./realityCheckGrading";
 
 interface RealityCheckGradedCellProps {
-	confidenceLevel: number;
 	check: GradedCheck;
 }
 
+// The tooltip's title also becomes the cell's accessible name, so the words shown on demand and the
+// words a screen reader hears are one and the same.
 const RealityCheckGradedCell: React.FC<
 	Readonly<RealityCheckGradedCellProps>
-> = ({ confidenceLevel, check }) => {
-	const { forecastValue, held } = check;
+> = ({ check }) => {
+	const { getTerm } = useTerminology();
+	const { forecastValue, actualCompleted, held } = check;
 	const { grade, miss, percentOfActual } = readCheck(check);
 	const fill = appColors.forecastGrade[grade];
 
 	return (
-		<TableCell
-			aria-label={gradedCellName({
-				confidenceLevel,
-				forecastValue,
-				miss,
-				held,
-				percentOfActual,
-			})}
-			style={{ backgroundColor: fill, color: getContrastText(fill) }}
-		>
-			<span>{forecastValue}</span> <span>{signedMiss(miss)}</span>{" "}
-			{percentOfActual === null ? null : (
-				<>
-					<span>{percentShown(percentOfActual)}</span>{" "}
-				</>
+		<Tooltip
+			title={cellComparison(
+				{ forecastValue, actualCompleted, miss, percentOfActual },
+				getTerm,
 			)}
-			<span>
-				{heldGlyph(held)} {heldWord(held)}
-			</span>
-		</TableCell>
+		>
+			<TableCell
+				style={{ backgroundColor: fill, color: getContrastText(fill) }}
+			>
+				{heldGlyph(held)} {forecastValue}
+			</TableCell>
+		</Tooltip>
 	);
 };
 

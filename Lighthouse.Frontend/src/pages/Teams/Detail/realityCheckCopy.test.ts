@@ -10,14 +10,13 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	cellComparison,
 	dayInDigits,
 	denominatorStatement,
 	determinationCopy,
 	findings,
-	gradedCellName,
 	gradeLegendCopy,
 	heldGlyph,
-	heldWord,
 	horizonLabel,
 	LOADING,
 	levelLine,
@@ -30,7 +29,6 @@ import {
 	periodActual,
 	periodHeader,
 	regionOf,
-	signedMiss,
 	standingCopy,
 	sufficiencyReasonCopy,
 	tableCaption,
@@ -815,105 +813,114 @@ describe("unevaluableRowCopy", () => {
 	});
 });
 
-describe("signedMiss", () => {
+describe("heldGlyph", () => {
 	it.each([
-		{ miss: 2, expected: "+2" },
-		{ miss: 11, expected: "+11" },
-		{ miss: 0, expected: "0" },
-		{ miss: -6, expected: "\u22126" },
-	])("reads a miss of $miss as $expected", ({ miss, expected }) => {
-		expect(signedMiss(miss)).toBe(expected);
-	});
-
-	it("never writes a hyphen for a negative miss", () => {
-		expect(signedMiss(-6)).not.toContain("-");
-	});
-});
-
-describe("heldWord and heldGlyph", () => {
-	it.each([
-		{ held: true, word: "held", glyph: "\u2713" },
-		{ held: false, word: "did not hold", glyph: "\u2717" },
-	])("says $word beside $glyph", ({ held, word, glyph }) => {
-		expect(heldWord(held)).toBe(word);
+		{ held: true, glyph: "✓" },
+		{ held: false, glyph: "✗" },
+	])("marks held $held with $glyph", ({ held, glyph }) => {
 		expect(heldGlyph(held)).toBe(glyph);
 	});
 });
 
-describe("gradedCellName", () => {
+describe("cellComparison", () => {
 	it.each([
 		{
 			facts: {
-				confidenceLevel: 50,
-				forecastValue: 48,
-				miss: -6,
-				held: false,
-				percentOfActual: 14,
-			},
-			name: "50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
-		},
-		{
-			facts: {
-				confidenceLevel: 70,
 				forecastValue: 40,
+				actualCompleted: 42,
 				miss: 2,
-				held: true,
 				percentOfActual: 5,
 			},
-			name: "70th: 40, held, 2 more delivered, 5% of the actual",
+			name: "Closed 2 Tickets more (42) than forecasted (40). Forecast off by +5%",
 		},
 		{
 			facts: {
-				confidenceLevel: 70,
-				forecastValue: 22,
-				miss: 0,
-				held: true,
-				percentOfActual: 0,
+				forecastValue: 14,
+				actualCompleted: 15,
+				miss: 1,
+				percentOfActual: 7,
 			},
-			name: "70th: 22, held, exactly as forecast, 0% of the actual",
+			name: "Closed 1 Ticket more (15) than forecasted (14). Forecast off by +7%",
 		},
 		{
 			facts: {
-				confidenceLevel: 95,
-				forecastValue: 31,
-				miss: 11,
-				held: true,
-				percentOfActual: 26,
+				forecastValue: 21,
+				actualCompleted: 14,
+				miss: -7,
+				percentOfActual: 50,
 			},
-			name: "95th: 31, held, 11 more delivered, 26% of the actual",
+			name: "Closed 7 Tickets fewer (14) than forecasted (21). Forecast off by −50%",
 		},
 		{
 			facts: {
-				confidenceLevel: 50,
 				forecastValue: 4,
+				actualCompleted: 3,
 				miss: -1,
-				held: false,
 				percentOfActual: 33,
 			},
-			name: "50th: 4, did not hold, 1 fewer delivered, 33% of the actual",
+			name: "Closed 1 Ticket fewer (3) than forecasted (4). Forecast off by −33%",
 		},
 		{
 			facts: {
-				confidenceLevel: 95,
-				forecastValue: 0,
+				forecastValue: 22,
+				actualCompleted: 22,
 				miss: 0,
-				held: true,
-				percentOfActual: null,
+				percentOfActual: 0,
 			},
-			name: "95th: 0, held, exactly as forecast",
+			name: "Closed exactly the forecasted 22 Tickets.",
 		},
 		{
 			facts: {
-				confidenceLevel: 50,
-				forecastValue: 2,
-				miss: -2,
-				held: false,
+				forecastValue: 1,
+				actualCompleted: 1,
+				miss: 0,
+				percentOfActual: 0,
+			},
+			name: "Closed exactly the forecasted 1 Ticket.",
+		},
+		{
+			facts: {
+				forecastValue: 0,
+				actualCompleted: 0,
+				miss: 0,
 				percentOfActual: null,
 			},
-			name: "50th: 2, did not hold, 2 fewer delivered",
+			name: "Closed no Tickets, exactly as forecasted.",
+		},
+		{
+			facts: {
+				forecastValue: 2,
+				actualCompleted: 0,
+				miss: -2,
+				percentOfActual: null,
+			},
+			name: "Closed 2 Tickets fewer (0) than forecasted (2). No percentage — nothing was completed.",
+		},
+		{
+			facts: {
+				forecastValue: 1,
+				actualCompleted: 0,
+				miss: -1,
+				percentOfActual: null,
+			},
+			name: "Closed 1 Ticket fewer (0) than forecasted (1). No percentage — nothing was completed.",
 		},
 	])("reads $name", ({ facts, name }) => {
-		expect(gradedCellName(facts)).toBe(name);
+		expect(cellComparison(facts, workItemTerms)).toBe(name);
+	});
+
+	it("never writes a hyphen for fewer completed", () => {
+		expect(
+			cellComparison(
+				{
+					forecastValue: 48,
+					actualCompleted: 42,
+					miss: -6,
+					percentOfActual: 14,
+				},
+				workItemTerms,
+			),
+		).not.toContain("-");
 	});
 });
 

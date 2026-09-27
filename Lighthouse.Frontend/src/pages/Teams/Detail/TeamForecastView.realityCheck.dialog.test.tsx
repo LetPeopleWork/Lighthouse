@@ -39,9 +39,8 @@ import {
  *
  * What the specs need from the markup, and nothing more: the dialog is named for the reality check; the
  * table is a real table, one row group per period headed by a row-group header, one row per sampling window
- * headed by a row header that starts "N days"; a graded cell's accessible name reads level, forecast, held
- * or not, and the miss in words. The visible miss carries a sign - "+2", "0", and the typographic minus
- * "−6" (U+2212), never a hyphen.
+ * headed by a row header that starts "N days"; a graded cell is named by how its forecast compared with
+ * what was completed, a negative figure carrying the typographic minus "−" (U+2212), never a hyphen.
  */
 
 const { terms } = vi.hoisted(() => ({
@@ -370,35 +369,6 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(linesMatching(eightWeeks, /Work Items completed/)).toHaveLength(1);
 	});
 
-	it(`@kpi-OUT-6094-how-far-each-forecast-landed shows every forecast with its value, its miss in Work Items and whether it held - Ocean Explorer's 30-day row over 8 weeks`, async () => {
-		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
-		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
-
-		expect(levelCell(row, 50)).toHaveAccessibleName(
-			"50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
-		);
-		expect(levelCell(row, 70)).toHaveAccessibleName(
-			"70th: 40, held, 2 more delivered, 5% of the actual",
-		);
-		expect(levelCell(row, 85)).toHaveAccessibleName(
-			"85th: 36, held, 6 more delivered, 14% of the actual",
-		);
-		expect(levelCell(row, 95)).toHaveAccessibleName(
-			"95th: 31, held, 11 more delivered, 26% of the actual",
-		);
-
-		expect(within(levelCell(row, 50)).getByText("48")).toBeInTheDocument();
-		expect(
-			within(levelCell(row, 50)).getByText(`${MINUS}6`),
-		).toBeInTheDocument();
-		expect(levelCell(row, 50)).toHaveTextContent("✗");
-		expect(levelCell(row, 50)).toHaveTextContent(/did not hold/);
-		expect(within(levelCell(row, 70)).getByText("+2")).toBeInTheDocument();
-		expect(levelCell(row, 70)).toHaveTextContent("✓");
-		expect(levelCell(row, 70)).not.toHaveTextContent(/did not hold/);
-		expect(within(levelCell(row, 95)).getByText("+11")).toBeInTheDocument();
-	});
-
 	it(`puts each forecast under its own level's column, whatever order the check lists its levels in`, async () => {
 		const answer = oceanExplorerOverEightWeeks();
 		const dialog = await theDialogFor({
@@ -414,10 +384,10 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
 
 		expect(levelCell(row, 50)).toHaveAccessibleName(
-			"50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
+			`Closed 6 Work Items fewer (42) than forecasted (48). Forecast off by ${MINUS}14%`,
 		);
 		expect(levelCell(row, 95)).toHaveAccessibleName(
-			"95th: 31, held, 11 more delivered, 26% of the actual",
+			"Closed 11 Work Items more (42) than forecasted (31). Forecast off by +26%",
 		);
 	});
 
@@ -442,42 +412,14 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(levelCell(row, 70)).toBeEmptyDOMElement();
 		expect(levelCell(row, 70)).not.toHaveAttribute("aria-label");
 		expect(levelCell(row, 50)).toHaveAccessibleName(
-			"50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
+			`Closed 6 Work Items fewer (42) than forecasted (48). Forecast off by ${MINUS}14%`,
 		);
 		expect(levelCell(row, 85)).toHaveAccessibleName(
-			"85th: 36, held, 6 more delivered, 14% of the actual",
+			"Closed 6 Work Items more (42) than forecasted (36). Forecast off by +14%",
 		);
 		expect(levelCell(row, 95)).toHaveAccessibleName(
-			"95th: 31, held, 11 more delivered, 26% of the actual",
+			"Closed 11 Work Items more (42) than forecasted (31). Forecast off by +26%",
 		);
-	});
-
-	it(`@boundary a forecast the Team delivered exactly shows a miss of 0 and held`, async () => {
-		const dialog = await theDialogFor(
-			aRealityCheckAnswer({
-				checks: [
-					{
-						window: 30,
-						horizon: 28,
-						at95: 18,
-						at85: 20,
-						at70: 22,
-						at50: 26,
-						actual: 22,
-					},
-				],
-			}),
-		);
-		const cell = levelCell(
-			windowRow(periodGroup(theTableIn(dialog), 28), 30),
-			70,
-		);
-
-		expect(cell).toHaveAccessibleName(
-			"70th: 22, held, exactly as forecast, 0% of the actual",
-		);
-		expect(within(cell).getByText("0")).toBeInTheDocument();
-		expect(cell).not.toHaveTextContent(/[+−-]0\b/);
 	});
 
 	it(`@error a check that could not run says why across all four level columns, never blank and never graded - Coastal Survey's 14-day row over 2 weeks`, async () => {
