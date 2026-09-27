@@ -1387,3 +1387,30 @@ Reviewer not run in this pass (the orchestrator runs it). Committed; not pushed.
 - No platform change and no new usage-data event (the existing value 11 is unchanged); clients N/A because the API response is unchanged.
 - One push for 06a+06b after the gates.
 - The frontend Stryker config is extended to the new and renamed reality-check modules. The backend controller stays out of the Stryker.NET scope, and its log line is pinned by an acceptance scenario.
+
+---
+
+## DISTILL amendment — Story #6094, US-06 (2026-09-27)
+
+**Agent**: Quinn (`nw-acceptance-designer`) · maintainer AFK, recommended calls recorded · **Full text**:
+`feature-delta.md`, *DISTILL / [REF] US-06 amendment* · RED record: `red-classification.md`, *Story #6094,
+US-06* · Reviewer not run (the orchestrator's four-reviewer gate).
+
+| # | Decision |
+|---|---|
+| 6094-DT-10 | **Reconciliation passed, 0 open contradictions**; five DISCUSS-vs-DESIGN tensions applied as settled: the headline explanation is DESIGN's click / Enter / Space popover (not a hover tooltip); the credit is the maintainer's one linked line, no additions claimed; the badge tooltip names no window that held up; en-US dates are padded (`09/16/2026`); "fine" for both inside states |
+| 6094-DT-11 | **53 pending definitions, 85 cases** (+ 2 green guards): frontend trigger 6 / 7 (real back-test forecaster), compact 18 / 25, summary 21 / 35, held share 3 / 7 (E13 exhaustive loop); backend `Slice06AnOperatorSeesEveryRealityCheck*` 4 / 10; E2E 1 step. Error and edge 35 of 84 runnable cases (42%) |
+| 6094-DT-12 | **RED verified**: 84 of 84 runnable cases fail on the missing behaviour (old words, missing icon / region / bar / badge, the `heldShare` scaffold, no log line); 0 BROKEN. The Playwright step is not runnable before the summary exists |
+| 6094-DT-13 | Harness, forward-compatible and green: the fixture waits for the table instead of the denominator 06b removes; the four existing reality-check spec files' stand-in back-test forecaster renders the trigger's new slot; the backend reality-check host now captures its log through Serilog at Information (the `FasterUpdates` wiring) |
+| 6094-DT-14 | **Retirement table (41 entries)** in `feature-delta.md`: every existing spec pinning S-1..S-25, each tagged 06a or 06b for deletion / rewrite in the commit that breaks it. Nothing deleted now |
+| 6094-DT-15 | Walking skeleton: three POM members added (`realityCheckHeadline`, `realityCheckLevelBar`, `realityCheckExplanationIcon`) and a `test.step.skip` beside the green step; DELIVER 06b un-skips it, runs it locally, deletes the old step and its two locators |
+| 6094-DT-16 | Pinned by DISTILL, cheap to flip: Escape on a cell tooltip leaves the dialog open; the credit line may end with or without a full stop; the badge tone is MUI's palette class. Copy row 20 has no N = 0 form (F-US06-1, DELIVER's call). AT completeness 13 / 15 COMPLETE; gaps C5b (locale × edge headers, dark theme) and C7b (closing with the popover open), both in delivery scope, low |
+
+### Verification at hand-off
+
+Frontend `pnpm test`: 403 files passed, 1 skipped; 5 967 tests passed, 74 skipped (all 74 are this wave's).
+`pnpm build`: green, zero warnings; `biome check ./src` clean after its `--write` pass formatted the new
+files. Backend `dotnet build`: 0 errors, only the six Microsoft.Build 18.10.1 net10.0 notices; filtered
+`dotnet test`: 7 637 passed, 11 skipped (10 are this wave's), 0 failed; the reality-check namespace alone:
+73 passed, 10 skipped; `dotnet format analyzers`: no finding in a touched or new file. E2E: `tsc` clean,
+Biome clean, `playwright test --list` loads the spec. Ledger greps over every touched file: no match.

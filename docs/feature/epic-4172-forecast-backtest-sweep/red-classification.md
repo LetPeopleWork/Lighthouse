@@ -273,3 +273,113 @@ its `levelLine` cases (rewritten to the "should be about" form); the five pre-di
 looking for a snackbar); the existing "Forecast reality check" Playwright step and the `realityCheckVerdict`
 / `realityCheckDenominator` locators (deleted). At slice 05, the slice 04 level-line and cell-name pins in
 `TeamForecastView.realityCheck.dialog.test.tsx` are rewritten to the graded form.
+
+# Story #6094, US-06 — the reality check reads at a glance (slices 06a and 06b)
+
+Run on 2026-09-27 in the main checkout, against unmodified production code plus one DISTILL scaffold
+(`heldShare` in `realityCheckGrading.ts`). Every pending case was un-skipped or un-ignored in a copy - the
+frontend files as `*.unskipped.test.ts(x)` beside the originals, the backend scenarios file by deleting its
+`[Ignore(Pending)]` lines after saving a copy - run once, and the copy deleted or the original restored
+(`cmp` confirmed the backend restore). Frontend: one Vitest run per spec file. Backend: one build and one
+run of the new fixture.
+
+**84 new runnable cases: 84 RED, 0 BROKEN, 0 passing.** The Playwright step is the one pending case not
+run (see its row). No case failed on an import, a type, a parse or a harness fault. Two new cases are
+green on purpose and are not pending: the trigger file's back-test harness check and the compact file's
+unevaluable-row guard.
+
+| Class | Meaning here |
+|---|---|
+| `MISSING_FUNCTIONALITY` (words) | The dialog renders the answer as shipped; an assertion on the new words, glyph-only cells, headline, badge or level row fires on the old text instead |
+| `MISSING_FUNCTIONALITY` (element) | A lookup the new markup satisfies finds nothing today: the "What does the reality check do?" icon, the "About these numbers" icon, the named scroll region, a level bar `img`, a tooltip. Testing Library reports it as an element-not-found error thrown from the assertion, the same class the slice 04 specs failed with on the missing dialog |
+| `MISSING_FUNCTIONALITY` (scaffold) | The call reaches `heldShare` and its scaffold throws `Not yet implemented -- RED scaffold: the share of … checks a level held in, … of them held` |
+| `MISSING_FUNCTIONALITY` (log) | The check answers 200, and the log holds no line of a reality check: `Expected … with 1 elements, actual … with 0 elements` |
+
+Harness proof, run in the same session: the reality-check acceptance host's new log capture saw 13 lines
+during start-up and seeding (a one-off probe, deleted after the run), so the backend REDs are the missing
+line and not an inert capture. The trigger file's green harness case brings a real back-test result into
+the group, so its REDs are placement and not a harness that cannot render the back-test forecaster.
+
+## Backend - `API/Integration/ForecastRealityCheck/Slice06AnOperatorSeesEveryRealityCheckScenarios.cs` (06a)
+
+| Scenario | Cases | Class | Fails on |
+|---|---|---|---|
+| Every_check_run_writes_one_line_an_operator_sees_naming_the_Team_and_the_filter_choice_asked_for | 6 (latest: unset, null, on, off; versioned: unset, on) | MISSING_FUNCTIONALITY (log) | no line of a reality check at Information, after an answer of 200 |
+| A_check_asked_for_a_Team_that_does_not_exist_writes_no_line | 1 | MISSING_FUNCTIONALITY (log) | its presence leg: the check for the Team that exists wrote no line |
+| A_request_whose_filter_choice_cannot_be_read_is_refused_and_writes_no_line | 2 (a word / cut-off JSON) | MISSING_FUNCTIONALITY (log) | its presence leg, as above |
+| A_check_refused_to_somebody_who_cannot_read_the_Team_writes_no_line | 1 | MISSING_FUNCTIONALITY (log) | its presence leg, as above |
+
+Each negative scenario runs a logged check first, so it cannot pass on a capture that sees nothing, and
+never calls `Clear()` between that check and its "nothing logged" assertion.
+
+## Frontend - `src/pages/Teams/Detail/TeamForecastView.realityCheck.trigger.test.tsx` (06a)
+
+| Spec | Cases | Class | Fails on |
+|---|---|---|---|
+| "Run reality check" sits after the back-test inputs, its explanation just before it, above a single back-test result | 1 | MISSING_FUNCTIONALITY (words) | `expected false to be true` - the button sits before the inputs |
+| with the forecast filter switch shown, the trigger comes after the switch too | 1 | MISSING_FUNCTIONALITY (words) | `expected false to be true` |
+| on keyboard focus / on hover the info icon explains what the check does | 2 | MISSING_FUNCTIONALITY (element) | no button named "What does the reality check do?" |
+| @error pressing the info icon opens nothing and runs no check | 1 | MISSING_FUNCTIONALITY (element) | same |
+| pressing "Run reality check" from its new place still opens the dialog | 1 | MISSING_FUNCTIONALITY (element) | same |
+| the explanation speaks the instance's own words | 1 | MISSING_FUNCTIONALITY (element) | same |
+| *(green)* the single back-test beside the check still shows its result once an input changes | 1 | passes | - |
+
+## Frontend - `src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx` (06a)
+
+| Spec | Cases | Class | Fails on |
+|---|---|---|---|
+| the first run shows a spinner and "Crunching the numbers…"; the answer moves no focus | 1 | MISSING_FUNCTIONALITY (words) | `expected 'Checking Ocean Explorer's forecasts …' to be 'Crunching the numbers…'` |
+| Run again shows the same spinner and words | 1 | MISSING_FUNCTIONALITY (words) | same |
+| @error a check that fails replaces the spinner with its plain message | 1 | MISSING_FUNCTIONALITY (words) | same, before the failure |
+| every period header in de-CH / en-US | 2 | MISSING_FUNCTIONALITY (words) | `1 week, 16. Sept. 2026 to 22. Sept. 2026: …` - the pinned locale reaches the formatter, so the month name is the old format and not a harness fault |
+| @boundary one Work Item completed, in the singular | 1 | MISSING_FUNCTIONALITY (words) | the old header |
+| @error no scored period: the horizon alone | 1 | MISSING_FUNCTIONALITY (words) | `expected '1 week' to be 'Forecast Horizon: 1 week'` |
+| Ocean Explorer's 30-day row over 8 weeks: ✗ 48, ✓ 40, ✓ 36, ✓ 31 and their names | 1 | MISSING_FUNCTIONALITY (words) | `'48 −6 14% ✗ did not hold'` |
+| the seven cell wordings (more / fewer by one, exactly, exactly one, 0 vs 0, 0 vs 2, 0 vs 1) | 7 | MISSING_FUNCTIONALITY (words) | the old visible cell, e.g. `'14 +1 7% ✓ held'` |
+| every graded cell is a keyboard stop showing only glyph and forecast | 1 | MISSING_FUNCTIONALITY (words) | no `tabindex` on the cell |
+| on keyboard focus / on hover a cell shows its comparison in a tooltip | 2 | MISSING_FUNCTIONALITY (words / element) | the old visible cell; no tooltip |
+| @error a level left out shows "—" and is a keyboard stop | 1 | MISSING_FUNCTIONALITY (words) | `expected '' to be '—'` |
+| @error Escape dismisses a cell's tooltip and leaves the dialog open | 1 | MISSING_FUNCTIONALITY (words) | the keyboard never reaches the cell |
+| the legend is two titled rows over the six fills | 1 | MISSING_FUNCTIONALITY (words) | no "Forecast held" |
+| the credit line and "Not checked" are gone from under the legend | 1 | MISSING_FUNCTIONALITY (words) | the credit paragraph is still there |
+| no caption; the scroll region is named for the Team | 1 | MISSING_FUNCTIONALITY (element) | no region named "Forecasts checked for Ocean Explorer, by forecast horizon and sampling window" |
+| the Backtesting group holds the trigger and its explanation | 1 | MISSING_FUNCTIONALITY (words) | one button, not two |
+| the headers, cells and region name in the instance's words | 1 | MISSING_FUNCTIONALITY (words) | the old header |
+| *(green)* @error a check that could not run keeps its reason and is no keyboard stop | 1 | passes | - |
+
+## Frontend - `src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx` (06b)
+
+| Spec | Cases | Class | Fails on |
+|---|---|---|---|
+| only the headline, badge and four level rows above the table, ≤ 50 words | 1 | MISSING_FUNCTIONALITY (words) | no line reads "Backtested 16 scenarios · 64 forecasts" |
+| none of the replaced sentences is said anywhere | 1 | MISSING_FUNCTIONALITY (words) | "How often each confidence level held" is still there |
+| the headline in its five forms (16, 20, 12 of 16, none of 16, one scenario at one level) | 5 | MISSING_FUNCTIONALITY (words) | no line reads the headline |
+| Maria's 85th: bar at 94% against 85%, "94% (15 of 16) · 3 accurate" | 1 | MISSING_FUNCTIONALITY (element) | no `img` named by the bar's text alternative |
+| four level rows in ascending order | 1 | MISSING_FUNCTIONALITY (words) | `expected [] to deeply equal [ …(4) ]` |
+| @error never held / always held get no extra words | 1 | MISSING_FUNCTIONALITY (words) | no line reads "0% (0 of 16) · 0 accurate" |
+| @error Kelp Farm: plain headline, could-not-be-checked badge, four levels not tested | 1 | MISSING_FUNCTIONALITY (words) | no headline |
+| the badge in each of nine verdict states and its tone | 9 | MISSING_FUNCTIONALITY (words) | `no badge reads "…"` |
+| the badge on keyboard focus: its name, what held up means, the window not checked | 1 | MISSING_FUNCTIONALITY (words) | no badge |
+| @error the Team's own window not checked is named among those not counted | 1 | MISSING_FUNCTIONALITY (words) | no badge |
+| @boundary every window checked: the tooltip only says what held up means | 1 | MISSING_FUNCTIONALITY (words) | no badge |
+| nothing names, orders or scores a window - Deep Current | 1 | MISSING_FUNCTIONALITY (words) | no badge |
+| hovering the info icon names it and opens nothing | 1 | MISSING_FUNCTIONALITY (element) | no button named "About these numbers" |
+| a click / Enter / Space opens the explanation | 3 | MISSING_FUNCTIONALITY (element) | same |
+| the article is the next Tab stop and opens in a new tab | 1 | MISSING_FUNCTIONALITY (element) | same |
+| Escape closes the explanation first, then the dialog | 1 | MISSING_FUNCTIONALITY (element) | same |
+| @error Kelp Farm's explanation: all 16 left out, and why | 1 | MISSING_FUNCTIONALITY (element) | same |
+| @error Coastal Survey's explanation: how many and why | 1 | MISSING_FUNCTIONALITY (element) | same |
+| the only control the summary adds is the explanation's icon | 1 | MISSING_FUNCTIONALITY (words) | `expected [] to have a length of 1` |
+| fixed dates, in the instance's word for Team | 1 | MISSING_FUNCTIONALITY (words) | no badge |
+| the explanation in the instance's words | 1 | MISSING_FUNCTIONALITY (element) | no "About these numbers" |
+
+## Frontend - `src/pages/Teams/Detail/realityCheckGrading.test.ts` (06b)
+
+All 7 cases: MISSING_FUNCTIONALITY (scaffold) - `@error` no share without a check (1), the five worked
+shares (5), and the exhaustive 1..200 property, which fails on its first call (1).
+
+## E2E - `Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts`
+
+| Step | Class | Why it was not run |
+|---|---|---|
+| @walking_skeleton "Forecast reality check reads at a glance" (`test.step.skip`) | not run - pending | It needs the summary in a running Lighthouse; against today's build it could only fail on the missing headline, which the Vitest cases above already show. `tsc` over the E2E project is clean and `playwright test --list` loads the spec. DELIVER of 06b un-skips it, **runs it locally before commit**, and deletes the step above it with `realityCheckLevelLine` and `realityCheckDialogDenominator` in the same commit |

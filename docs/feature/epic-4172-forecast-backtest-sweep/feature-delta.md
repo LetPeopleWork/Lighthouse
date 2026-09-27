@@ -6225,3 +6225,263 @@ covered exhaustively by the E11 loop. **Mandate-12 / state-delta**: N/A in this 
 5. Stryker: the new spec files and `colors.test.ts` go in the 6094 runner's `include`.
 
 **Reviewer gate**: the four-reviewer final gate is the orchestrator's.
+
+---
+
+## Wave: DISTILL / [REF] US-06 amendment — Story #6094
+
+**Wave**: DISTILL amendment, 2026-09-27, Quinn (`nw-acceptance-designer`), maintainer AFK — recommended calls
+taken and recorded below. **Density**: lean, Tier-1 only; no expansion triggers, so no menu. `[lang-mode]`
+TypeScript (Vitest + RTL) + C# (NUnit 4.6, `WebApplicationFactory`) + Playwright (POM). `[policy-mode]`
+inherit. `[port-mode]` N/A — the Python state-delta port does not apply, as the ATDD policy records.
+Deliverable type `application`. Reviewer not run (the orchestrator's four-reviewer gate). RED record:
+`red-classification.md`, part *Story #6094, US-06*.
+
+### Prior wave consultation — US-06 DISTILL
+
+| | Source |
+|---|---|
+| + | This file: *DISCUSS / US-06 amendment* (3903-4561: 6094-D11..D25, S-1..S-25, US-06 Gherkin A-1..B-6, AC-6.1..6.16, *Copy to confirm*, *Maintainer answers*), *DESIGN / US-06 amendment* (5128-5540: 6094-DES-10..20, contradictions 1-5, handoff), *DEVOPS / US-06 amendment* (5831-5851), *Story #6094 — DISTILL* (5853-6227) — read in pages |
+| + | `slices/slice-06-reads-at-a-glance.md` (06a / 06b), read through the *Maintainer answers* (its 06b IN list predates them) |
+| + | `wave-decisions.md` (DISTILL #6094; DISCUSS, DESIGN, DEVOPS amendments), `red-classification.md` |
+| + | `docs/ci-learnings.md` — ledger checks and preflight rules pre-applied (S7735, S4624, S8786 anchored patterns, S7764, NUnit2045/2046/2056/1028, CA1859/1861/1869, S6667; RTL name matchers are unanchored; Vitest `describe.skip` still evaluates its body; MUI strips icon test ids; MUI opens a tooltip on keyboard focus-visible only) |
+| + | Code: the reality-check components, `realityCheckCopy.ts`, `realityCheckGrading.ts`, `BacktestForecaster.tsx`, `TeamForecastView.tsx`, `ForecastRealityCheckController.cs`, `CapturedLogMessages.cs`, the `FasterUpdates` Serilog wiring; every existing reality-check spec file; `TeamDetailPage.ts`, `TeamsDetail.spec.ts` |
+
+### Reconciliation — US-06
+
+**Reconciliation passed — 0 open contradictions.** DESIGN recorded five DISCUSS-vs-DESIGN tensions and the
+maintainer's answers settle four of them; each is applied here, not re-decided, and the ACs are tested in
+their reconciled form:
+
+| # | Tension | Applied |
+|---|---|---|
+| R-6094-US06-1 | AC-6.11 / 6094-D25: the headline explanation opens "on hover, keyboard focus and click" and "stays open while hovered" vs 6094-DES-10's click-opened popover | **DESIGN stands** (D25 itself allowed "a click-toggled popover"): opens on click, Enter or Space; hovering shows only a plain tooltip naming the icon; the link is the next Tab stop; Escape closes the popover first and returns focus to its icon |
+| R-6094-US06-2 | AC-6.11 / B-4 / AC-1.8: the credit "beside this product's additions" vs *Maintainer answer 1* | **Maintainer stands**: one line, "Inspired by Nick Brown's article The Full Monte", the title linked; no additions claimed (S-25). The spec accepts the line with or without a closing full stop, since copy row 20 shows one and the answer does not |
+| R-6094-US06-3 | AC-6.12 "tooltip shows the windows that held up as a set" and 6094-D22 / D23's tooltip wording vs *Maintainer answers 3 and 9* | **Maintainer stands**: the badge tooltip holds only the "held up" definition (row 14) and the not-checked sentence (row 15); no window is named as having held up, anywhere; the tick is explained only by the bar's text alternative (row 5b) |
+| R-6094-US06-4 | 6094-D16's en-US example `9/21/2026` vs 6094-DES-15's padded `09/21/2026` | **DESIGN stands** (the digits the back-test pickers on the same tab show): the specs pin `09/16/2026` in en-US and `16.09.2026` in de-CH |
+| R-6094-US06-5 | *Maintainer answer 4* ("fine" for both inside states) vs copy row 7's earlier draft | Already folded into row 7; tested as "fine" for `AllWindowsAlike` and `SomeWindowsSound` alike |
+
+No product question is open; nothing is returned as `CLARIFICATION_NEEDED`.
+
+### Scenario list and AC map — US-06
+
+**53 new pending definitions, 85 cases** (84 run unskipped and classified RED; the Playwright step is not
+runnable before the summary exists), plus **2 green guards**. Error and edge: **35 of 84 runnable cases
+(42%)**, counted by case because most of it sits inside the parametrised tables (five of seven cell
+wordings, six of nine badge states, three of five headlines, four of ten log cases). Pending
+markers follow the previous DISTILL: frontend `it.skip` / `it.skip.each` with the slice in the title
+(`(06a: …)` / `(06b: …)`), no `describe.skip` and no scaffold called outside an `it` body; backend
+`[Ignore(Pending)]`; E2E `test.step.skip`. Tags sit in the title (frontend), a `// @tag` line (backend) and a
+comment above the step (E2E).
+
+| AC | Slice | Test (file → spec) |
+|---|---|---|
+| AC-6.1 trigger below inputs, right-aligned, info icon | 06a | `…realityCheck.trigger.test.tsx` → *"Run reality check" sits after the back-test inputs, its explanation just before it, above a single back-test result*; *with the forecast filter switch shown …*; *on keyboard focus / on hover the info icon explains …* (2); *@error pressing the info icon opens nothing*; *pressing "Run reality check" from its new place still opens the dialog*; green *the single back-test … still shows its result*. `…compact.test.tsx` → *the Backtesting group holds the trigger and its explanation*. Right alignment is visual: the maintainer's review and the per-theme screenshots owed at FINALIZE |
+| AC-6.2 spinner + "Crunching the numbers…", polite, no focus move | 06a | `…compact` → *the first run shows a spinner …*; *Run again shows the same spinner …*; *@error a check that fails replaces the spinner …*. No wall-clock assertion (DEVOPS) |
+| AC-6.3 backend Information log | 06a | `Slice06AnOperatorSeesEveryRealityCheckScenarios.cs` → `Every_check_run_writes_one_line_…` (6: both routes, on / off / none), `A_check_asked_for_a_Team_that_does_not_exist_writes_no_line`, `A_request_whose_filter_choice_cannot_be_read_is_refused_and_writes_no_line` (2), `A_check_refused_to_somebody_who_cannot_read_the_Team_writes_no_line`. The exact line is asserted whole, so no Team name and no user identity can ride along |
+| AC-6.4 period header, numeric locale dates | 06a | `…compact` → *in de-CH / en-US every period header reads …* (2); *@boundary one Work Item … singular*; *@error no scored period: the horizon alone*. The locale is pinned at `Date.prototype.toLocaleDateString`; calendar days are guarded by the Zurich-pinned suite. Centring is visual |
+| AC-6.5 glyph + forecast; tooltip = name; "—" | 06a | `…compact` → *Ocean Explorer's 30-day row over 8 weeks …* (fills unchanged); the seven wordings (`it.each`); *every graded cell is a keyboard stop …* (64 cells, anchored name patterns); *on keyboard focus / on hover a cell shows its comparison in a tooltip*; *@error a level left out shows "—" …*; *@error Escape dismisses a cell's tooltip and leaves the dialog open*; green *@error a check that could not run keeps its reason …* |
+| AC-6.6 two-row legend, no credit, no "Not checked" | 06a | `…compact` → *the legend is two titled rows … on the grade fills, in band order*; *the credit line and the "Not checked" entry are gone* |
+| AC-6.7 no visible caption; named, focusable region; headers | 06a | `…compact` → *no caption sits above the table; its scrolling region is named for the Team …* |
+| AC-6.8 only headline, badge, level rows; removed texts nowhere | 06b | `…summary.test.tsx` → *above the table sit only the headline, the window badge and four level rows — no more than 50 words* (KPI *Words above the table*, `@kpi-OUT-6094-words-above-the-table`); *none of the sentences the summary replaces is said anywhere* |
+| AC-6.9 headline forms | 06b | `…summary` → the five-case `it.each` (16; 20; 12 of 16; none of 16; 1 scenario · 1 forecast) |
+| AC-6.10 level rows, bar, tick, text alternative | 06b | `…summary` → *Maria's 85th …*; *one row per level in ascending order …*; *@error never held / always held get no extra words* (6094-D23); *@error Kelp Farm …* (not evaluated). `realityCheckGrading.test.ts` → *the share of its checks a level held in*: `@error` no share (1), five worked shares, and the `@property` exhaustive 1..200 loop (E13). The tick's position is visual; its meaning is in the text alternative |
+| AC-6.11 headline explanation (reconciled, R-…-1 and -2) | 06b | `…summary` → *hovering the info icon names it and opens nothing*; *a click / Enter / Space opens the explanation … and nothing else* (3); *the article is the next Tab stop and opens The Full Monte in a new tab*; *Escape closes the explanation first …*; *@error Kelp Farm's explanation*; *@error Coastal Survey's explanation* |
+| AC-6.12 badge per state, tone, tooltip (reconciled, R-…-3) | 06b | `…summary` → the nine-case badge `it.each` (six states of 6094-DES-13 plus both inside forms, both not-determined forms and the unreachable `AllWindowsAlike` + `Outside`), tone asserted as the chip's palette class; *on keyboard focus the badge …*; *@error the Team's own window not checked …*; *@boundary every window checked …*; *nothing names, orders or scores a window — Deep Current* (E14, over the dialog text, the badge tooltip and the explanation) |
+| AC-6.13 Terminology | both | `…compact` → *the headers, cells and region name in the instance's words*; `…trigger` → *the explanation speaks the instance's own words*; `…summary` → *fixed dates, in the instance's word for Team*; *the explanation and its reasons … and no tracker's* |
+| AC-6.14 themes | both | Grade fills asserted unchanged on the cells and legend swatches (`…compact`); contrast of every fill in both themes stays pinned by `utils/theme/colors.test.ts` (E10, unchanged); badge tones by palette name (`…summary`). The bar, tick and tones *in the dark theme* are not assertable in jsdom — **documented gap**, covered by the two per-theme screenshots owed at FINALIZE |
+| AC-6.15 walking skeleton | 06b | `TeamsDetail.spec.ts` → `test.step.skip("Forecast reality check reads at a glance")` through `TeamDetailPage` (POM plan below) |
+| AC-6.16 invariants | both | No API field: `ForecastService.test.ts` parse spec and the backend slice 01 / 04 suites, unchanged. Nothing writes: `…summary` → *the only control the summary adds is the explanation's icon* (replaces the dialog spec at `…dialog.test.tsx:664`), `…trigger` → *@error pressing the info icon opens nothing and runs no check*. Once per answer: the `…usageData.test.tsx` dialog specs, unchanged (their stand-in back-test forecaster now renders the trigger's new slot, so they keep running after 06a) |
+
+**DISCUSS Gherkin coverage**: A-1 → AC-6.1 specs; A-2 → AC-6.2; A-3 → AC-6.3; A-4 → *on keyboard focus a
+cell shows its comparison … ✗ 21 against 14*; A-5 → the 0 vs 0 and 0 vs 2 wordings; A-6 → the de-CH headers,
+the legend and caption specs; B-1 → *only the headline, badge and four level rows*; B-2 → *Maria's 85th*;
+B-3 → the Deep Current badge case and the E14 scan; B-4 → the explanation specs (reconciled); B-5 → *Kelp
+Farm*; B-6 → the fixed-dates badge case.
+
+### Walking skeleton and POM plan — US-06
+
+**Inherited: extend the shared Team visit.** The existing step *"Forecast reality check opens in a dialog"*
+stays green and untouched until 06b. Beside it, pending:
+
+| POM member (`TeamDetailPage.ts`) | State now | At DELIVER 06b |
+|---|---|---|
+| `runRealityCheckButton`, `runRealityCheck()`, `realityCheckDialog`, `realityCheckTable`, `realityCheckWindowRows`, `closeRealityCheckWithEscape()` | kept | kept — the button stays inside the *Forecast Backtesting* card |
+| `realityCheckHeadline` | **added**: `getByText` with one anchored pattern over the three headline forms | used by the new step |
+| `realityCheckLevelBar(level)` | **added**: `getByRole("img", { name: /^{level}th / })`, anchored | used by the new step |
+| `realityCheckExplanationIcon` | **added**: card-scoped button "What does the reality check do?" | used by the new step |
+| `realityCheckDialogDenominator`, `realityCheckLevelLine(level)` | kept (the green step uses them) | **deleted**, with the old step, in the commit that removes the prose |
+
+The pending step asserts the trigger's info icon, presses the button, sees the dialog, the headline, four
+level bars and the table (≥ 16 window rows), presses Escape and sees focus back on the button. It never
+presses the headline's icon, whose open popover would take the first Escape. Level icons are never located.
+DELIVER un-skips it and **runs it locally before commit** (memory rule).
+
+### Scaffolds — US-06
+
+| File | Scaffold | Used by a test now |
+|---|---|---|
+| `src/pages/Teams/Detail/realityCheckGrading.ts` | `export const __SCAFFOLD__ = true;` and `heldShare(heldCount, runsEvaluated): number \| null`, which throws `Not yet implemented -- RED scaffold: …` | yes — the three `heldShare` specs in `realityCheckGrading.test.ts` |
+
+Nothing else is scaffolded: every other new behaviour is reached through the rendered Forecasts tab or the
+HTTP endpoint, and no spec imports a component or composer DELIVER has yet to write. `grep -r "__SCAFFOLD__"
+src/` must find nothing when 06b closes.
+
+### Test placement and harness changes — US-06
+
+| File | Holds |
+|---|---|
+| `Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.trigger.test.tsx` (new) | AC-6.1 with the **real** back-test forecaster; only its result display and chart stood in |
+| `…/TeamForecastView.realityCheck.compact.test.tsx` (new) | 06a as Maria meets it |
+| `…/TeamForecastView.realityCheck.summary.test.tsx` (new) | 06b as Maria meets it |
+| `…/realityCheckGrading.test.ts` | + the `heldShare` describe (E13) |
+| `Lighthouse.Frontend/src/tests/RealityCheckFixture.tsx` | `theDialogWithTheAnswer` now waits for the table instead of the denominator sentence 06b removes (same moment, both ways); + exported `readingOf`; + `tabUntilFocused` |
+| The four existing reality-check spec files | Their stand-in `BacktestForecaster` now renders its `realityCheck` slot, so the button is found after 6094-DES-17 moves it. Green before and after; no assertion changed |
+| `Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs` | + `CapturedLogs`: the host's `ILoggerFactory` replaced by a Serilog factory writing to `CapturedLogMessages` at Information, EF and ASP.NET Core at Warning (the `FasterUpdates` wiring). The 187 existing reality-check tests run through it unchanged |
+| `…/Slice06AnOperatorSeesEveryRealityCheck{Scenarios,Specifications}.cs` (new) | AC-6.3; `[Category("slice-06a")]` |
+| `Lighthouse.EndToEndTests/tests/models/teams/TeamDetailPage.ts`, `tests/specs/teams/TeamsDetail.spec.ts` | Three POM members and the pending step |
+
+Add the three new spec files to `vitest.stryker.6094.config.ts`'s `include` when the 06b mutation run is set up.
+
+### Retirement table — existing tests that pin superseded behaviour
+
+All green today and **not touched** beyond the harness lines above. DELIVER deletes or rewrites each in the
+same commit as the change that breaks it. 41 entries; "rewrite" keeps the spec's still-valid purpose
+with the new wording or wait.
+
+| # | File:line | Pins | Fate | Step |
+|---|---|---|---|---|
+| 1 | `TeamForecastView.realityCheck.dialog.test.tsx:197` | loading *"Checking Ocean Explorer's forecasts…"* (S-7), waits on the denominator | rewrite: drop the loading assertion (the compact spec owns it), keep "no date asked", wait for the table | 06a |
+| 2 | `…dialog.test.tsx:219` | waits on *"16 forecast runs were checked"* (line 233) | rewrite the wait (table or headline) | 06b |
+| 3 | `…dialog.test.tsx:238` | level lines with *"should be about"* / *"Usually"*, window sentence, findings, denominator order (S-4, S-6) | delete | 06b |
+| 4 | `…dialog.test.tsx:287` | *"it never held, which is over-forecasting"* / *"under-forecasting"* (S-20) | delete | 06b |
+| 5 | `…dialog.test.tsx:309` | *"no check could be run, so this level was not tested."* and *"16 of the 16 checks could not run"* | delete (Kelp Farm summary spec) | 06b |
+| 6 | `…dialog.test.tsx:325` | the denominator visible and outside any tooltip; "nothing behind a tooltip" (contradicted by 6094-D17) | delete | 06b |
+| 7 | `…dialog.test.tsx:368` | `<time>` elements in the header and `/42 Work Items completed/` | rewrite: drop the `time` check (6094-DES-15 removes them), keep "actual printed once" | 06a |
+| 8 | `…dialog.test.tsx:385` | header `8 weeks, {dayInWords} to {dayInWords}: …` (S-5, S-11) and the `dayInWords` import (line 34) | delete | 06a |
+| 9 | `…dialog.test.tsx:395` | old cell names (*"50th: 48, did not hold, 6 fewer delivered, 14% of the actual"*) and visible miss / word (S-2, S-3, S-12) | delete | 06a |
+| 10 | `…dialog.test.tsx:424` | column placement asserted through old cell names | rewrite to the comparison names | 06a |
+| 11 | `…dialog.test.tsx:446` | a left-out level is an empty, unnamed cell (6094-D24 supersedes) | delete | 06a |
+| 12 | `…dialog.test.tsx:477` | *"exactly as forecast, 0% of the actual"*, visible "0" | delete | 06a |
+| 13 | `…dialog.test.tsx:637` | a `<caption>` exists; table named by it (S-8, S-13) | delete (the compact region spec) | 06a |
+| 14 | `…dialog.test.tsx:664` | every dialog button is *Run again* or *Close* | delete (the summary controls spec allows *About these numbers*) | 06b |
+| 15 | `…dialog.test.tsx:683` | *"setting on this Squad"* (a finding, S-21) | delete (the terminology specs of both new files) | 06b |
+| 16 | `…dialog.test.tsx:700` | the group's only button is *Run reality check*; waits on the denominator | delete (the compact group spec) | 06a |
+| 17 | `…dialog.test.tsx:721` | Run again pinned through a level line (line 734) | rewrite: the fresh answer read from a level row | 06b |
+| 18 | `…dialog.test.tsx:740`, `:802`, `:821`, `:845` | wait on the denominator (lines 745 / 750, 813, 829, 856) | rewrite the waits | 06b |
+| 19 | `…dialog.test.tsx:771` | "no answer" read as no denominator line (line 784) — passes vacuously once it is gone | rewrite: no table | 06b |
+| 20 | `…dialog.test.tsx:861` | the scroll region *named by the table's caption* | delete (the compact region spec) | 06a |
+| 21 | `TeamForecastView.realityCheck.grading.test.tsx:162`, `:188`, `:203`, `:231`, `:278` (5 cases) | old cell names and visible `%`, `+11`, `−6` (S-3, S-15) | rewrite: keep each grade-fill assertion, drop the names and visible text (the compact wordings own them) | 06a |
+| 22 | `…grading.test.tsx:307` | every cell's name in the old pattern, visible `%` and glyph | delete | 06a |
+| 23 | `…grading.test.tsx:323` | visible text *"31 +11 26% ✓ held"* | delete | 06a |
+| 24 | `…grading.test.tsx:361`, `:378`, `:395`, `:412`, `:469` (6 cases), `:483`, `:502`, `:525`, `:549` | level lines with *"within 10% in N"* and *"Usually …"* (S-6, S-14) | delete (the summary's level-row specs count *accurate* both sides) | 06b |
+| 25 | `…grading.test.tsx:570` | six grade words and *"Not checked"* in the legend (S-16) | delete | 06a |
+| 26 | `…grading.test.tsx:586` | the credit and *"this product"* under the legend (S-17, S-25) | delete | 06a |
+| 27 | `TeamForecastView.realityCheck.test.tsx:126`, `:137`, `:152`, `:167`, `:183` | the region sentence in its span / list / none forms (S-22) | delete (the badge specs) | 06b |
+| 28 | `…realityCheck.test.tsx:200` (2 cases), `:225` | the denominator statement at 16 / 20 and 12 checks | delete (the headline specs and the Coastal explanation) | 06b |
+| 29 | `…realityCheck.test.tsx:234`, `:260` | nothing concluded; fixed dates *"gets the region"* | delete (Kelp Farm and the fixed-dates badge) | 06b |
+| 30 | `…realityCheck.test.tsx:275`, `:282` | the two findings; *"setting on this Squad"* | delete | 06b |
+| 31 | `TeamForecastView.realityCheck.usageData.test.tsx:210`, `:257` (`theAnswerIsShownIn`) | wait on the denominator | rewrite the waits | 06b |
+| 32 | `realityCheckCopy.test.ts:683` `dayInWords` | month-name dates | rewrite as `dayInDigits` unit specs | 06a |
+| 33 | `realityCheckCopy.test.ts:712` `tableCaption` | the caption | rewrite as `tableRegionName` | 06a |
+| 34 | `realityCheckCopy.test.ts:754` `signedMiss`, `:779` `gradedCellName`, `:769` `heldWord and heldGlyph` (the `heldWord` half) | visible miss, old names, the grade word | delete (keep a `heldGlyph` case) | 06a |
+| 35 | `realityCheckCopy.test.ts:881` `gradeLegendCopy`, `:889` `methodCredit` | six grade words; the legend credit | rewrite to band labels; delete `methodCredit` | 06a |
+| 36 | `realityCheckCopy.test.ts:77` `regionOf`, `:144` `determinationCopy`, `:201` `standingCopy`, `:274` `notTestedReasonCopy`, `:316` `windowVerdict` | the region and verdict sentences | delete | 06b |
+| 37 | `realityCheckCopy.test.ts:401` `denominatorStatement`, `:632` (the "folded into the denominator" case) | the denominator paragraph | delete; `runsLeftOut` is reshaped with a unit spec | 06b |
+| 38 | `realityCheckCopy.test.ts:438` `levelReadingCopy`, `:535` `findings`, `:865` `usualGradeCopy` | level sentences, findings, "usually" phrases | delete | 06b |
+| 39 | `realityCheckGrading.test.ts:265`, `:280`, `:286` | `usualGrade` (a strict majority) | delete with `usualGrade` / `isStrictMajority` | 06b |
+| 40 | `realityCheckGrading.test.ts:298` | "nothing within 10% **and no usual grade**" | rewrite: drop the usual-grade half | 06b |
+| 41 | `TeamsDetail.spec.ts:62` step *"Forecast reality check opens in a dialog"* + `TeamDetailPage.realityCheckLevelLine`, `.realityCheckDialogDenominator` | the level line and denominator sentence | delete; un-skip the new step | 06b |
+
+Kept, still valid: `…dialog.test.tsx:343` (grouping), `:505`, `:519`, `:531`, `:554` (unevaluable rows),
+`:576`, `:589`, `:602`, `:620`, `:647` (ranking scan), `:755`, `:790`, `:835`, `:871`; `…grading.test.tsx:333`;
+`realityCheckGrading.test.ts` grade and miss specs and `:253`; `colors.test.ts`; the rest of `realityCheckCopy.test.ts`.
+
+### Pre-requisites — what the specs find things by (US-06)
+
+- **P-US06-1.** The trigger's info icon is a button named *"What does the reality check do?"* whose tooltip
+  (copy row 1) is its accessible description; it comes before the button, both after the historical-window
+  control and the filter switch, and before the back-test result tabs, in document order.
+- **P-US06-2.** The loading state is a `role="status"` region whose whole text is *"Crunching the numbers…"*,
+  holding a progress indicator (it may be `aria-hidden`).
+- **P-US06-3.** A graded or "—" cell is the `<td>` itself, `tabIndex={0}`, wrapped by the MUI `Tooltip`
+  whose title is its accessible name; its visible text reads exactly *"✓ 17"* / *"✗ 21"* / *"—"*; the grade
+  fill stays the cell's background.
+- **P-US06-4.** The period header is the `th[scope="rowgroup"]`, whose whole text is the header sentence;
+  the day goes through `Date.prototype.toLocaleDateString` (6094-DES-15), where the specs pin the locale.
+- **P-US06-5.** The scroll region is `role="region"` named *"Forecasts checked for {Team name}, by forecast
+  horizon and sampling window"*, contains the table, `tabIndex={0}`; the table has no `<caption>`.
+- **P-US06-6.** Each legend label's swatch is the nearest grade-filled element before it, outside the table.
+- **P-US06-7.** The headline is one element whose whole text is the headline; the explanation opens from a
+  button named *"About these numbers"* into a `role="dialog"` of the same name holding only copy row 20's
+  paragraphs and a link named *"The Full Monte"*.
+- **P-US06-8.** The badge is an MUI `Chip` (`.MuiChip-root`, colour class = tone), focusable, its visible
+  words its name; its tooltip holds only rows 14 and 15.
+- **P-US06-9.** Each level bar is `role="img"` named by copy row 5b and holds a (hidden) `progressbar` whose
+  `aria-valuenow` is the shown share; the row text is one element reading *"{p}% ({held} of {n}) · {a} accurate"*.
+- **P-US06-10.** Backend line, constant template: `Reality check run for Team {TeamId} (filter override:
+  {FilterOverride})` with `on` / `off` / `none`, at Information, once per allowed request.
+
+### SSOT updates — US-06
+
+| File | Change |
+|---|---|
+| `docs/product/kpi-contracts.yaml` | New `OUT-6094-words-above-the-table` (DISCUSS's *Words above the table*, ≤ 50, the one US-06 KPI a test can count); the US-06 specs appended to `OUT-6094-how-far-each-forecast-landed`, `-caution-is-visible`, `-no-percentage-without-its-work-items`, `-colour-never-alone` and `-no-window-ranked`. *Reads at a glance* stays a dogfooding record, as `OUT-6094-density-readable` was |
+
+### Findings — US-06
+
+- **F-US06-1 (copy, low, DELIVER's call).** Copy row 20 has no form for N = 0: read literally it would say
+  *"so 0 scenarios give 0 forecasts."* The Kelp Farm explanation spec pins only the could-not-run
+  paragraph and its reasons, and leaves that sentence to DELIVER (omitting it for N = 0 is the recommended
+  reading). Not a product decision.
+- **F-US06-2 (pinned by DISTILL, cheap to flip).** Escape on a focused cell's tooltip closes the tooltip and
+  leaves the dialog open, the same order the headline popover follows; if MUI's Escape also reaches the
+  dialog, DELIVER stops it at the cell.
+- **F-US06-3.** The badge's tone is asserted as MUI's palette class on the chip (`MuiChip-colorSuccess` /
+  `Warning` / `Default`), following 6094-DES-12's "tone is MUI's palette name".
+- **F-US06-4.** The slice-06 brief's 06b IN list and `wave-decisions.md`'s D15 / D22 rows predate the
+  maintainer's answers (DESIGN contradiction 5); read through them, not edited here.
+
+### AT completeness audit — US-06
+
+15-item checklist: **13 / 15 — COMPLETE.**
+
+| Item | Verdict | By |
+|---|---|---|
+| C1a empty / minimum | pass | N = 0 (Kelp Farm); actual 0 against 0 / 1 / 2; a level left out; no scored period |
+| C1b partition boundaries | pass | the exhaustive held-share loop (0, all, 1..99 clamp); singular / plural at 1 in headline, header and cells |
+| C2a transitions | pass | running → answered / failed on first run and Run again; popover closed → open → closed; tooltip shown → dismissed |
+| C2b illegal transitions | pass | the info icon starts nothing; the popover's Escape does not close the dialog |
+| C3 0 / 1 / N | pass | 0, 1, 12, 16, 20 scenarios; 1 forecast; 64 cells |
+| C4a apply twice | pass | Run again shows the loading state again |
+| C4b inverse without prerequisite | pass (N/A) | no write; closing is the only inverse |
+| C5a mode flags | pass | filter override on / off / none on both routes; filter switch shown or not; de-CH / en-US |
+| C5b flag orthogonality | **gap** | the locale is not crossed with the singular or no-scored-period headers; the dark theme is not rendered (AC-6.14, screenshots at FINALIZE) |
+| C6a malformed input | pass | an unreadable filter choice is refused and logs nothing |
+| C6b each declared error | pass | unknown Team; refused reader; a failed check |
+| C6c closed error set | pass | all six badge states plus the unreachable one; both unevaluable reasons |
+| C7a degraded resource | pass | the check fails; the dialog shows the plain message |
+| C7b interruption | **gap** | closing while the explanation popover is open is not specified beyond Escape order |
+| C7c concurrency | pass (N/A) | no new concurrency; the one-run-in-flight specs stand |
+
+Both gaps `AT_GAP_IN_DELIVERY_SCOPE`, low; no `SPECIFICATION_AMBIGUITY`. Audit log:
+`(epic-4172-forecast-backtest-sweep, C5, 1, low)`, `(epic-4172-forecast-backtest-sweep, C7, 1, low)`.
+**Tier B**: not added (no property-testing package; the one generative input, held × evaluated, is covered by
+the exhaustive loop). **Mandate-12 / state-delta**: N/A in this stack (ATDD policy).
+
+### Handoff — US-06
+
+**To DELIVER (`nw-software-crafter`)**, 06a then 06b, one push for both (maintainer answer 8):
+
+1. **06a backend**: un-ignore `Slice06AnOperatorSeesEveryRealityCheck*` one scenario at a time; add the
+   logger to the controller (count the constructor's parameters first, S107).
+2. **06a frontend**: `…trigger` specs with the `realityCheck` slot; `…compact` specs one at a time; in each
+   commit delete or rewrite the 06a rows of the retirement table that the change breaks, and the composers
+   6094-DES-18 retires in 06a.
+3. **06b frontend**: `heldShare` (replace the scaffold, drop `__SCAFFOLD__`), then the `…summary` specs; the
+   06b retirement rows and composers; un-skip the Playwright step, **run it locally before commit**, delete
+   the old step and its two locators in the same commit.
+4. A case that fails on anything but its recorded reason when un-skipped is a harness problem to fix first
+   (`red-classification.md`, *Story #6094, US-06*).
+
+**Reviewer gate**: the four-reviewer final gate is the orchestrator's.
