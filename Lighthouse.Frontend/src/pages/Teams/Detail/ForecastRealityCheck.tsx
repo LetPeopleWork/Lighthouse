@@ -68,10 +68,15 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 		}
 	}, [forecastService, teamId, applyFilterOverride, settleAnswer]);
 
+	// runCheck settles every failure itself, so the launched promise has nothing left to report.
+	const startCheck = () => {
+		runCheck().catch(() => undefined);
+	};
+
 	const openAndRun = () => {
 		isOpenRef.current = true;
 		setIsOpen(true);
-		void runCheck();
+		startCheck();
 	};
 
 	const close = () => {
@@ -92,7 +97,7 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 				open={isOpen}
 				teamName={teamName}
 				run={run}
-				onRunAgain={() => void runCheck()}
+				onRunAgain={startCheck}
 				onClose={close}
 			/>
 		</>
