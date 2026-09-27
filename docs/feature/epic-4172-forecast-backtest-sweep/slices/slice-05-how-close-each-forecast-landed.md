@@ -11,8 +11,8 @@
 
 ## Goal
 
-In the dialog, every forecast cell is graded — green when it held, red when it did not, darker the closer
-it landed — with the percentage of the actual beside the Work Item miss, and each level's line says how
+In the dialog, every forecast cell is graded — green when it held, deepening the closer it landed; red when
+it did not, deepening the further it missed — with the percentage of the actual beside the Work Item miss, and each level's line says how
 close it usually landed, so Maria can tell a tight 85th from a padded one.
 
 ## IN scope

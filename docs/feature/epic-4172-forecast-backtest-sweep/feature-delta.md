@@ -3623,8 +3623,8 @@ Team delivered is a sandbag, and nothing on screen says so at a glance.
 
 Before: in the reality check dialog every held forecast looks the same — ✓ and a number.
 
-After: each cell is shaded on Nick Brown's scale — green when it held, red when it did not, darker the
-closer it landed — with the percentage of the actual beside the Work Item miss, and each level's line adds
+After: each cell is shaded on Nick Brown's scale — green when it held, deepening the closer it landed; red
+when it did not, deepening the further it missed — with the percentage of the actual beside the Work Item miss, and each level's line adds
 how close it landed: *"85th: held 15 of 16 (should be about 14), within 10% in 3. Usually low by more than
 a quarter."*
 
@@ -3899,6 +3899,640 @@ None blocks DESIGN; each has a default already written into the decisions above.
 4. **`red-classification.md`** row for `Somebody_who_cannot_read_the_Team_is_refused_…` said Forbidden
    (403); the scenario asserts NotFound (404). Fixed, with the observation that this scenario has no
    presence leg of its own.
+
+## Wave: DISCUSS / [REF] US-06 amendment (2026-09-27) — Story #6094
+
+**Wave**: DISCUSS amendment, 2026-09-27, agent Luna (`nw-product-owner`). **Trigger**: the maintainer's
+manual review of the shipped slices 04 + 05 on 2026-09-27 — the dialog is *"far too wordy and hard to
+read"*. **Interactive part done by the maintainer**: ten decisions locked on 2026-09-27, recorded below
+as `6094-D11..D20`; nothing here re-opens them. Details the locked decisions left open are *DISCUSS
+defaults* `6094-D21..D25`, each listed again under *Questions for the maintainer*. **Configuration**:
+user-facing; brownfield; UX depth lightweight; walking skeleton reused (the shared Team visit's
+*"Forecast reality check opens in a dialog"* step in `TeamsDetail.spec.ts`, updated); JTBD traced, not
+re-run. History above this block is **not edited** except the one wording fix under *Corrections*; every
+earlier item this amendment replaces is named in *Superseded by US-06*.
+
+### Prior wave consultation — US-06
+
+| Source | State |
+|---|---|
+| This file, Story #6094 DISCUSS (6094-D1..D10, US-04, US-05, KPIs, DoR, checklist) | ✓ read in pages, fresh |
+| This file, Epic US-01 (AC-1.4 .. AC-1.9) and Story #6094 DESIGN 6094-DES-1..DES-5 | ✓ read — the honesty ACs this amendment touches |
+| `wave-decisions.md` — *DISCUSS / DESIGN / DISTILL Decisions — Story #6094* | ✓ read |
+| `slices/slice-04-…md`, `slices/slice-05-…md` | ✓ read whole |
+| `docs/product/jobs.yaml:7342-7400` | ✓ read — job unchanged, not edited |
+| Shipped UI: `ForecastRealityCheck.tsx`, `RealityCheckDialog.tsx`, `RealityCheckVerdict.tsx`, `RealityCheckTable.tsx`, `RealityCheckPeriodGroup.tsx`, `RealityCheckGradedCell.tsx`, `RealityCheckLegend.tsx`, `realityCheckCopy.ts`, `realityCheckGrading.ts`, `TeamForecastView.tsx:439-468`, `BacktestForecaster.tsx:274-421` | ✓ read whole — the current copy quoted below is verbatim from `realityCheckCopy.ts` |
+| Backend `ForecastRealityCheckController.cs` | ✓ read — **no log line today**; no `ILogger` anywhere in the reality-check controller or service |
+| E2E `TeamDetailPage.ts:103-140`, `TeamsDetail.spec.ts:62-66` | ✓ read — `realityCheckLevelLine` and `realityCheckDialogDenominator` locate text this amendment deletes |
+
+### What the maintainer saw, and what replaces it
+
+Above the table today, for a Team with every check evaluable: a heading, four level sentences (*"85th: held
+15 of 16 (should be about 14), within 10% in 3. Usually low by more than a quarter."*), the region sentence,
+two findings sentences and a four-sentence denominator paragraph — **about 210 words** before the first
+number of the table. Each cell then reads *"21 −7 50% ✗ did not hold"*. US-06 turns the top into a
+summary one can take in at a glance, and the cell into two characters and a number, with every word it
+loses still reachable on hover and on keyboard focus.
+
+```text
++-- Forecast reality check -------------------------------------------------- [x] --+
+| Backtested 16 scenarios · 64 forecasts  (i)          [ Your 30-day sampling window: fine ] |
+|                                                                                   |
+| 50th (!) Risky      [##########|#####.........]  75% (12 of 16) · 4 accurate       |
+| 70th (~) Realistic  [##############|###.......]  88% (14 of 16) · 5 accurate       |
+| 85th (+) Confident  [#################|##.....]  94% (15 of 16) · 3 accurate       |
+| 95th (*) Certain    [####################|####]  100% (16 of 16) · 1 accurate      |
+|                                       '|' = the rate the level should hold at     |
+|                                                                                   |
+|        Forecast Horizon: 1 week (21.09.2026 – 27.09.2026) – 14 Work Items completed |
+|  Sampling window     50th Risky   70th Realistic   85th Confident   95th Certain   |
+|  14 days             ✗ 21         ✓ 12             ✓ 9              ✓ 6            |
+|  30 days, your setting ✗ 17       ✓ 13             ✓ 10             ✓ 7            |
+|  ...                                                                              |
+|                                                                                   |
+|  Forecast held    [#] within 10%  [#] 10–25% off  [#] more than 25% off            |
+|  Forecast missed  [#] within 10%  [#] 10–25% off  [#] more than 25% off            |
+|                                                         [ Run again ]  [ Close ]  |
++-----------------------------------------------------------------------------------+
+  hover / focus on "✗ 21":  Closed 7 Work Items fewer (14) than forecasted (21).
+                            Forecast off by −50%
+```
+
+On the Forecasts tab, the trigger moves under the Forecast Backtesting inputs:
+
+```text
++-- Forecast Backtesting --------------------------------------------------------+
+| [Start date] [End date] [Rolling | Fixed] [Historical Window (Days)]            |
+| [x] Apply forecast filter                                                        |
+|                                              (i) [ Run reality check ]          |
+| ...single back-test result, when there is one...                                 |
++---------------------------------------------------------------------------------+
+```
+
+Emotional arc, unchanged in shape and shortened in time: *curious → braced → informed*; the new summary is
+built so the *informed* moment arrives before any scrolling, and the table becomes something Maria dips
+into rather than something she has to get through.
+
+### Locked decisions — US-06 (maintainer, 2026-09-27)
+
+#### 6094-D11 — The trigger moves below the Backtesting inputs, right-aligned, with an explanation beside it
+
+The button keeps the label **"Run reality check"**. It sits **below the Forecast Backtesting inputs** (the
+date fields, the historical-window control and, when shown, the forecast-filter switch) and **above** any
+single back-test result, **right-aligned**. An **info icon** beside it shows a one-to-two-sentence
+plain-language explanation of what the check does (drafted copy: *Copy to confirm*, row 1).
+
+#### 6094-D12 — While a check runs: a spinner and "Crunching the numbers…"
+
+The same loading state on the **first run and on "Run again"**: a progress spinner and the words
+**"Crunching the numbers…"**, announced politely. It replaces *"Checking {Team}'s forecasts against what
+happened…"*.
+
+#### 6094-D13 — The backend logs every reality check at Information level
+
+When a reality check is triggered the backend writes one log entry at **Information** level naming the
+**Team id** and the **filter override** as requested (`true`, `false` or not given), so an operator sees it
+at the default log level. Backend-only; nothing a user sees changes.
+
+#### 6094-D14 — A summary replaces all the prose above the table
+
+1. **Headline** — *"Backtested {N} scenarios · {M} forecasts"*, where **N** is the forecast runs evaluated
+   (`denominator.runsEvaluated`) and **M** is N × levels (`denominator.scoresEvaluated`), with an **info
+   icon** (6094-D15).
+2. **Window badge** — a compact badge such as *"Your 90-day sampling window: fine"*, derived from the
+   **existing** verdict (`soundWindow`: determination, standing, not-tested reason). It keeps the words
+   "sampling window" and **never ranks windows** (I-a). Wording per verdict state: *Copy to confirm*,
+   rows 6-12.
+3. **One row per confidence level** — the level label as in today's column headers (*"50th"*, the
+   `ForecastLevel` icon, *"Risky"*), a **horizontal bar filled to the share of checks in which the forecast
+   held**, a **tick mark at the rate the level should hold at** (its percentile: 50%, 70%, 85%, 95%), and
+   the text *"75% (12 of 16) · 4 accurate"*, where **accurate** = graded within 10% (`HeldWithin10` or
+   `NotHeldWithin10`). The bar and tick replace *"should be about N"*: a bar well past its tick is a level
+   that held too often (forecasts set too low — under-forecasting), a bar well short of it one that held
+   too rarely (set too high — over-forecasting). The bar has a **text alternative** carrying the held
+   share and the expected rate.
+4. **Removed from the dialog**: the heading *"How often each confidence level held"*; every per-level
+   sentence including *"(should be about N)"* and the *"Usually …"* clause; the region sentence
+   (*"Anything between 14 and 90 days would have behaved about the same…"*, and its list / none forms);
+   *"The sampling window is a setting on this Team."*; *"The confidence level is not a setting: it is which
+   of the 4 numbers you choose to quote."*
+
+#### 6094-D15 — The headline's info icon holds the explanation, the credit, and a link to the source
+
+Its tooltip carries: the **denominator explanation** (what N and M count; that the levels of one scenario
+share a simulation; that every scenario covers a different stretch of time, so they are not independent
+trials and must not be ranked) in plain language; the **credit** to Nick Brown's *The Full Monte* for
+held/missed grading and closeness shading, with **our additions** named in the same place (AC-1.8
+honoured); and a **link** to <https://medium.com/asos-techblog/the-full-monte-901d721b8532>. A link to
+Lighthouse's own docs page is **owed at FINALIZE** — the page does not exist yet (see *Owed*).
+
+#### 6094-D16 — The period header reads as one centred line with numeric local dates
+
+*"Forecast Horizon: 1 week (21.09.2026 – 27.09.2026) – 14 {Work Items} completed"*, centred across the
+table. Dates in the **user's locale, numeric short date** (day / month / year digits in the locale's order
+and separator — `21.09.2026` in de-CH, `9/21/2026` in en-US — never a month name). Horizon label as today
+(*1 week / 2 weeks / 4 weeks / 8 weeks*). **{Work Items}** from Terminology, singular for 1.
+
+#### 6094-D17 — A cell shows only its glyph and its forecast; the rest is in its tooltip
+
+A graded cell reads **"✓ 17"** or **"✗ 21"**, still filled with its grade colour (palette, grading rule,
+band edges and rounding **unchanged** — 6094-DES-2..DES-4). On **hover and on keyboard focus** a tooltip
+says how the forecast compared with what was completed, e.g. *"Closed 29 {Work Items} more (46) than
+forecasted (17). Forecast off by +63%"* / *"Closed 7 {Work Items} fewer (14) than forecasted (21). Forecast
+off by −50%"*. The percentage is the existing percentage of the **actual** (Brown), as shown today
+(clamped per 6094-DES-3), signed **+** when more was completed and **−** when fewer. Exact and actual-0
+wordings: *Copy to confirm*, rows 16-19. **The tooltip text is also the cell's accessible name.**
+Unevaluable rows keep their muted explanatory text unchanged.
+
+#### 6094-D18 — The visible table caption goes
+
+*"Every forecast checked for {Team}, by period and sampling window, beside what the {Team} delivered."* is
+removed from view. The horizontally scrolling region keeps a **non-visible accessible name** (*Copy to
+confirm*, row 24).
+
+#### 6094-D19 — The legend is two titled rows; the credit line under it goes
+
+Row **"Forecast held"**, then row **"Forecast missed"**, each with three swatches labelled **"within 10%"**,
+**"10–25% off"**, **"more than 25% off"**. The credit sentence under the legend is removed; its content
+lives in the headline tooltip (6094-D15).
+
+#### 6094-D20 — A check in which nothing could be evaluated still gets a sensible headline
+
+When **N = 0** (every scenario unevaluable) the headline says so plainly instead of *"Backtested 0
+scenarios · 0 forecasts"* (*Copy to confirm*, row 4).
+
+### DISCUSS defaults — US-06 (overturnable cheaply; each is a question below)
+
+#### 6094-D21 — When some scenarios could not run, the headline says "N of T"
+
+*"Backtested 12 of 16 scenarios · 48 forecasts"* when `runsAttempted > runsEvaluated`; the locked form
+*"Backtested 16 scenarios · 64 forecasts"* when every scenario ran. The could-not-run sentences
+(`whyChecksCouldNotRun`, wording unchanged) move into the headline tooltip. *Why*: the paragraph that said
+how many checks could not run is gone, and without "of 16" a sparse Team's 12 would read as the whole
+ladder — I-c ("never looks calm").
+
+#### 6094-D22 — The badge carries a tone and a tooltip; the tooltip is where the region went
+
+Tone: *fine* / *held up* on the success colour, *did not hold up* on the warning colour, *could not be
+checked* / *not tested* neutral — the words carry the meaning, the colour only repeats it. On hover and
+focus the badge shows the **set of windows that held up** (the region, shortened), what *held up* means
+(rule A, DES-14), and the could-not-be-checked windows (*Copy to confirm*, rows 13-15). *Why*: 6094-D14.4
+removes the region sentence from view; without it a Team whose window **did not** hold up has no way to
+learn which windows did, short of reading the table — and the table deliberately summarises no window.
+The tooltip names a set, never a best member (I-a).
+
+#### 6094-D23 — A level that always or never held gets no extra words on its row
+
+The bar at 100% past its tick (or at 0% short of it) is the reading; the tooltip explains under- and
+over-forecasting once for all four rows. `LevelReading` (DES-16) stays the server's, now used only for
+`NotEvaluated` (*"Not tested — no check could run"*).
+
+#### 6094-D24 — A level the server left out of a check shows a dash, not an empty cell
+
+Today such a cell is empty and the legend's *"Not checked"* entry explains it. The two-row legend (6094-D19)
+has no such entry, so the cell shows **"—"** with the tooltip and accessible name *"Not checked at this
+confidence level."* (I-c: never blank). The *"Not checked"* legend entry goes.
+
+#### 6094-D25 — The headline tooltip is one a reader can move into, and Escape closes it first
+
+Because it holds a link (6094-D15), the headline tooltip opens on hover, on keyboard focus and on click;
+stays open while the pointer is over it; its link is reachable with Tab; **Escape dismisses the tooltip
+without closing the dialog** (WCAG 1.4.13). Whether this is an interactive tooltip or a click-toggled
+popover is DESIGN's call.
+
+### Superseded by US-06
+
+Nothing below is deleted from this file; each item stays where it was written and is read through this
+list.
+
+| # | Superseded item | Where | Replaced by |
+|---|---|---|---|
+| S-1 | *"The dialog opens on a short **text result**"* | 6094-D1 | Opens on the summary: headline, badge, level rows (6094-D14). The dialog itself, and the Backtesting group keeping only the button, stand |
+| S-2 | *"Every graded cell also prints the miss in Work Items, signed … '+4' … '−2' … '0'"* (visible) | 6094-D2 | Miss in {Work Items} in words in the cell tooltip (6094-D17). The margin rule, bands and actual-0 handling stand |
+| S-3 | *"Every cell also carries a glyph and a word … and its percentage in text"* (visible) | 6094-D3 | Glyph visible; word-equivalent and percentage in the tooltip and accessible name (6094-D17). Six grades and the separate scale stand |
+| S-4 | The whole *folded into the text result* list and its default order (levels, window sentence, findings, denominator) | 6094-D4 | 6094-D14 / D15: counts in the headline, explanation in its tooltip, standing in the badge, findings removed. The **retirement** half of 6094-D4 stands (already delivered) |
+| S-5 | Group header text *"{horizon}, {date} to {date}: N {Work Items} completed"* with month-name dates | 6094-D5 | 6094-D16. "Actual printed once per period group" stands |
+| S-6 | The per-level line (*"85th: held 15 of 16 (should be about 14), within 10% in 3."*), the *"Usually …"* rule, the `NeverHeld` / `AlwaysHeld` sentences, and the credit's location | 6094-D7 | Level rows with bar + tick (6094-D14.3, D23); credit in the tooltip (6094-D15). "held, never beaten" and "summaries by level / period only, never by window" stand |
+| S-7 | Loading text *"Checking {Team}'s forecasts against what happened…"* | 6094-D8 (as pinned by 6094-DT-2) | 6094-D12. Open-at-once, re-run, reopen, usage-event rules stand |
+| S-8 | *"a real `<table>` with a `<caption>` naming the Team"* (visible); cell accessible text *"85th: 36, held, 6 more delivered, 14% of the actual"*; *"A legend … names the six grades and the not-checked state"* | 6094-D10 | 6094-D18 (non-visible name); 6094-D17 (tooltip text is the name); 6094-D19 / D24. Focus trap, Escape, focus return, full-screen, sticky row headers stand |
+| S-9 | US-04 scenario *"The dialog opens on words, one line per confidence level"* and AC-4.2 | US-04 | US-06 scenarios B-1, B-2, B-4; AC-6.8 .. AC-6.12 |
+| S-10 | AC-4.1's loading-state wording (the announced loading state itself stands) | US-04 | AC-6.2 |
+| S-11 | AC-4.3's *"first and last day"* format (the grouping and order stand) | US-04 | AC-6.4 |
+| S-12 | AC-4.4 (cell shows value, signed miss, glyph **and word**) | US-04 | AC-6.5 |
+| S-13 | AC-4.7's *"table semantics with caption"* (scoped headers and row groups stand) | US-04 | AC-6.7 |
+| S-14 | US-05 scenario *"Each level's line says how close it usually landed"* and AC-5.4 | US-05 | AC-6.10 ("N accurate"); the "usually" clause is gone |
+| S-15 | AC-5.2's *"every graded cell also shows the percentage in text and ✓ / ✗ with its word"* (six grades, distinct scale, both themes stand) | US-05 | AC-6.5, AC-6.14 |
+| S-16 | AC-5.5's legend of six grades plus not-checked | US-05 | AC-6.6 |
+| S-17 | AC-5.6's *"The dialog credits…"* — location only; the credit-with-our-additions content stands | US-05 | AC-6.11 |
+| S-18 | US-05 scenario *"The grade never rests on colour alone, and the method is credited"* — the *"every cell states in words"* half | US-05 | Glyph on the cell + words on hover / focus (AC-6.5); see risk R-6094-8 |
+| S-19 | **Epic AC-1.5** — *"permanently on screen, never behind a tooltip or a disclosure"* for the non-independence and non-comparability statements (and the matching US-01 scenario line) | Epic US-01 | The **counts** stay permanently on screen (headline); the two statements move into the headline tooltip (6094-D15). A deliberate relaxation of honesty requirement 4.2 by the maintainer, 2026-09-27 |
+| S-20 | **Epic AC-1.6** — the words *"described as over-forecasting"* in the dialog | Epic US-01 | Bar short of its tick + tooltip explanation (6094-D23). The server's `NeverHeld` reading is unchanged |
+| S-21 | **Epic AC-1.9** — the two findings as permanent copy | Epic US-01 | Removed (6094-D14.4). The *no control writes a Team setting* half of AC-1.9 stands |
+| S-22 | **Epic AC-1.4**'s *"the verdict names a range"* in the dialog body | Epic US-01 | The badge states the setting's standing; the range moves to the badge tooltip (6094-D22, a default). "No field and no string names one window as best" stands |
+| S-23 | Journey step 3 mockup and step 5 (*"Take the two findings away"*) | `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Updated in this amendment (see *SSOT updates*) |
+| S-24 | Slice 04 KPI *Density readable* (under a minute per Team) | Story #6094 KPIs | KPI *Reads at a glance* below (tighter) |
+
+### US-06 — The reality check reads at a glance
+
+**Job**: `job-forecaster-check-the-forecast-against-what-happened` (unchanged, not re-run; this story serves
+the same *"read how far off it was"* half, now with less effort to read — the job's ODI outcome S1, *time to
+see how far each forecast landed*, is exactly what was too slow) · **Persona**: `delivery-forecaster`
+(Maria Santos), with read-only Tom Becker and secondary `forecasting-prospect` · **Slice**: 06 (split 06a /
+06b, see the brief) · **ADO**: #6094
+
+**Problem.** Maria Santos runs delivery for Ocean Explorer and opens the reality check before she quotes a
+number. The answer is all there, but it arrives as some two hundred words above a table whose every cell
+reads like *"21 −7 50% ✗ did not hold"*. She has to read a paragraph to find out whether her setting is
+fine and which level held, and the table is too dense to scan for colour. She closes the dialog without
+the one sentence she came for, or copies it out by hand.
+
+#### Elevator Pitch
+
+Before: on Team → **Forecasts** → Forecast Backtesting, **"Run reality check"** opens a dialog that starts
+with a heading, four sentences like *"85th: held 15 of 16 (should be about 14), within 10% in 3. Usually low
+by more than a quarter."*, a region sentence, two findings and a denominator paragraph, over a table whose
+cells read *"21 −7 50% ✗ did not hold"*.
+
+After: the dialog opens on *"Backtested 16 scenarios · 64 forecasts"*, a badge *"Your 30-day sampling
+window: fine"*, and four bars — *"85th Confident ▕████████▏ 94% (15 of 16) · 3 accurate"* with a tick at
+85% — over a table whose cells read *"✓ 17"* on their grade colour, with *"Closed 29 Work Items more (46)
+than forecasted (17). Forecast off by +63%"* on hover or focus.
+
+Decision enabled: in a few seconds, whether to keep her sampling window and which of the four numbers to
+quote — and, from one tooltip, how far any single forecast was off.
+
+#### Domain Examples
+
+1. **Happy path — Ocean Explorer, window 30, every check ran.** Maria presses "Run reality check"; a spinner
+   and *"Crunching the numbers…"*; then *"Backtested 16 scenarios · 64 forecasts"*, badge *"Your 30-day
+   sampling window: fine"*. The 95th row's bar is full, past its tick at 95%: *"100% (16 of 16) · 1
+   accurate"*. In the 8-week group (*"Forecast Horizon: 8 weeks (03.08.2026 – 27.09.2026) – 42 Work Items
+   completed"*) the 30-day row reads **✗ 48, ✓ 40, ✓ 36, ✓ 31**; focusing ✓ 31 shows *"Closed 11 Work Items
+   more (42) than forecasted (31). Forecast off by +26%"*.
+2. **Edge — Coastal Survey, sparse, window 60 days; and Harbour Pilots on fixed dates.** Four of Coastal
+   Survey's sixteen scenarios could not run: *"Backtested 12 of 16 scenarios · 48 forecasts"*, badge *"Your
+   60-day sampling window: held up"*. Its 1-week 50th cell *"✗ 4"* reads *"Closed 1 Work Item fewer (3) than forecasted (4).
+   Forecast off by −33%"*. Harbour Pilots, which forecasts from fixed dates, sees the badge *"Your Team
+   forecasts from fixed dates: sampling window not tested"*; its 1-week 95th cell *"✓ 0"* reads *"Closed no
+   Work Items, exactly as forecasted."* and its 50th *"✗ 2"* reads *"Closed 2 Work Items fewer (0) than
+   forecasted (2). No percentage — nothing was completed."*.
+3. **Error / boundary — a brand-new Team, "Kelp Farm", 9 days of history.** No scenario can run: the
+   headline reads *"None of the 16 scenarios could be backtested"*, the badge *"Your 30-day sampling window:
+   could not be checked"*, every level row *"Not tested — no check could run"* with an empty bar and its
+   tick; the table's rows each say why. Tom Becker, keyboard only, tabs to the headline's info icon, reads
+   the tooltip, tabs to the link to Nick Brown's post, presses Escape — the tooltip closes and the dialog
+   stays open; a second Escape closes the dialog. The operator sees
+   `Reality check run for Team 57 (filter override: none)` in the log at Information level.
+
+#### UAT Scenarios (BDD)
+
+Grouped by the slice that delivers them (the split is in `slices/slice-06-reads-at-a-glance.md`).
+
+```gherkin
+# --- 06a: the trigger, the loading state, the log, and the compact table -------------------
+
+Scenario: A-1 The check is started from under the back-test inputs and explains itself
+  Given Maria Santos is on Ocean Explorer's Forecasts tab
+  When she looks at the Forecast Backtesting group
+  Then "Run reality check" sits below the back-test inputs, aligned to the right
+  And its info icon, on hover or keyboard focus, says in plain words what the check does
+
+Scenario: A-2 Every run shows that it is working
+  Given Maria has opened the reality check for Ocean Explorer
+  When the check is running, the first time or after she presses "Run again"
+  Then she sees a spinner and "Crunching the numbers…"
+  And assistive technology announces it without moving focus
+
+Scenario: A-3 An operator can see that a reality check was run
+  Given the backend runs at its default log level
+  When Tom Becker runs the reality check for Team 57 with the forecast filter switched on
+  Then one log entry at Information level names Team 57 and a filter override of on
+
+Scenario: A-4 A cell shows only whether it held and the forecast, and explains itself on demand
+  Given Ocean Explorer completed 14 Work Items in the last week
+  And its 14-day 50th forecast for that week was 21
+  When Maria hovers over or tabs to that cell
+  Then the cell reads "✗ 21" on its grade colour
+  And its tooltip and accessible name read "Closed 7 Work Items fewer (14) than forecasted (21). Forecast off by −50%"
+
+Scenario: A-5 Exact hits and empty periods are told in words, not as a percentage
+  Given Harbour Pilots completed no Work Items in the last week
+  And its 95th forecast was 0 and its 50th forecast was 2
+  When Maria tabs to each cell
+  Then the 95th says "Closed no Work Items, exactly as forecasted."
+  And the 50th says it closed 2 Work Items fewer than forecasted, with no percentage
+
+Scenario: A-6 Each period is one centred line with the dates in her own format
+  Given Maria's browser uses the de-CH locale
+  When she reads Ocean Explorer's 1-week group
+  Then its header reads "Forecast Horizon: 1 week (21.09.2026 – 27.09.2026) – 14 Work Items completed"
+  And the legend shows "Forecast held" and "Forecast missed", each with "within 10%", "10–25% off" and "more than 25% off"
+  And no visible caption sits above the table
+
+# --- 06b: the summary ------------------------------------------------------------------------
+
+Scenario: B-1 The dialog opens on a summary, not on paragraphs
+  Given every one of Ocean Explorer's 16 scenarios could be checked
+  When the result arrives
+  Then Maria reads "Backtested 16 scenarios · 64 forecasts"
+  And she reads no sentence per confidence level, no region sentence and no findings above the table
+
+Scenario: B-2 Each confidence level is a bar against the rate it should hold at
+  Given Ocean Explorer's 85th held in 15 of 16 checks, 3 of them within 10%
+  When Maria reads the 85th row
+  Then its bar is filled to 94% with a tick at 85%
+  And the row reads "94% (15 of 16) · 3 accurate"
+  And the bar's text alternative says it held in 94% of checks against an expected 85%
+
+Scenario: B-3 The sampling window is one badge that never ranks windows
+  Given Deep Current's sampling window is 14 days and it did not hold up
+  When Maria reads the summary
+  Then the badge reads "Your 14-day sampling window: did not hold up"
+  And no text in the dialog names any window as best, better or recommended
+
+Scenario: B-4 The explanation, the credit and the source are one focus away
+  Given Tom Becker uses only the keyboard
+  When he moves focus to the headline's info icon
+  Then he reads what the scenarios and forecasts count, why they cannot be ranked, and Nick Brown credited beside this product's additions
+  And he can reach the link to "The Full Monte" and follow it
+  And Escape closes the tooltip while the dialog stays open
+
+Scenario: B-5 A Team with no checkable history still gets a plain answer
+  Given Kelp Farm has 9 days of history and none of its 16 scenarios could be checked
+  When the result arrives
+  Then the headline reads "None of the 16 scenarios could be backtested"
+  And the badge reads "Your 30-day sampling window: could not be checked"
+  And every level row says it was not tested
+
+Scenario: B-6 A Team that forecasts from fixed dates is told its window was not tested
+  Given Harbour Pilots forecasts from fixed dates rather than a rolling sampling window
+  When Maria reads its summary
+  Then the badge reads "Your Team forecasts from fixed dates: sampling window not tested"
+```
+
+#### Acceptance Criteria
+
+06a:
+
+- [ ] **AC-6.1** — "Run reality check" renders below the Forecast Backtesting inputs (after the forecast
+  filter switch when it is shown) and above any single back-test result, right-aligned. An info icon
+  beside it has an accessible name and shows the explanation (*Copy*, row 1) on hover and on keyboard
+  focus. The button's label and behaviour are unchanged (6094-D8 opening, re-run, one run in flight).
+- [ ] **AC-6.2** — While a run is in flight, first run and "Run again" alike, the dialog shows a spinner and
+  "Crunching the numbers…" in a polite live region; the answer's arrival moves no focus.
+- [ ] **AC-6.3 (backend)** — Each request to the reality-check endpoint (both routes) writes exactly one log
+  entry at `Information` naming the Team id and the requested filter override (`true` / `false` / not
+  given), as a structured message template — no string interpolation, no Team name, no user identity.
+  A request refused by RBAC or for an unknown Team writes no such entry. The response is unchanged.
+- [ ] **AC-6.4** — Each period group's header reads *"Forecast Horizon: {horizon} ({start} – {end}) –
+  {actual} {Work Item | Work Items} completed"*, centred across the table; `{start}` / `{end}` are the
+  period's first and last day, formatted numerically in the user's locale (no month name), read as
+  calendar days (no UTC shift); the term is the instance's Terminology, singular for 1. When a period has
+  no scored-period entry the header reads *"Forecast Horizon: {horizon}"*.
+- [ ] **AC-6.5** — Each evaluable cell's visible content is exactly the glyph (✓ held / ✗ missed) and the
+  forecast value. Its tooltip — shown on hover **and** on keyboard focus — and its accessible name are the
+  same text: the more / fewer / exact / actual-0 wordings of *Copy* rows 16-19, with the difference and the
+  actual and forecast in figures, the {Work Items} term singular or plural, and the percentage of the actual
+  as today's grading shows it (unchanged value, clamping and band), prefixed **+** when more was completed
+  and **−** (U+2212) when fewer; no percentage when the actual is 0. Every graded cell is reachable by
+  keyboard. A level left out of a check shows "—" named *"Not checked at this confidence level."*
+- [ ] **AC-6.6** — The legend is two titled rows, *"Forecast held"* then *"Forecast missed"*, each with the
+  three swatches in band order labelled *"within 10%"*, *"10–25% off"*, *"more than 25% off"*, using the
+  existing six grade fills. No credit line and no *"Not checked"* entry under it.
+- [ ] **AC-6.7** — No visible caption above the table; the horizontally scrolling region keeps an accessible
+  name (*Copy*, row 24) and stays keyboard-focusable; the table keeps scoped column, row and row-group
+  headers and its sticky row-header column.
+
+06b:
+
+- [ ] **AC-6.8** — Above the table the dialog shows only: the headline with its info icon, the window badge,
+  and one row per confidence level. None of the removed texts of 6094-D14.4 renders anywhere in the dialog.
+- [ ] **AC-6.9** — Headline: *"Backtested {N} scenario(s) · {M} forecasts"* when every scenario ran;
+  *"Backtested {N} of {T} scenarios · {M} forecasts"* when some could not (6094-D21); *"None of the {T}
+  scenarios could be backtested"* when N = 0 (6094-D20). N = `runsEvaluated`, T = `runsAttempted`, M =
+  `scoresEvaluated`; singular "scenario" / "forecast" for 1.
+- [ ] **AC-6.10** — One row per level, in ascending level order: the `ForecastLevel` label as in the column
+  headers (percentile, icon, name); a bar filled to `heldCount / runsEvaluated` with a tick at the level's
+  percentile; the text *"{p}% ({held} of {evaluated}) · {a} accurate"*, `p` rounded to a whole number, `a`
+  the level's graded checks in `HeldWithin10` or `NotHeldWithin10`. The bar has a text alternative (*Copy*,
+  row 5b) carrying the held share, the counts, the expected rate and the accurate count. A `NotEvaluated`
+  level shows an empty bar with its tick and *"Not tested — no check could run"*. `AlwaysHeld` / `NeverHeld`
+  add no words (6094-D23).
+- [ ] **AC-6.11** — The headline's info icon has an accessible name and opens the explanation (*Copy*, row
+  20) on hover, keyboard focus and click: the denominator explanation, the could-not-run sentences when any,
+  what the tick and *accurate* mean, the credit to Nick Brown's *The Full Monte* with this product's
+  additions in the same place (AC-1.8), and a link to the article that opens in a new tab. It stays open
+  while hovered, its link is reachable by Tab, and Escape closes it without closing the dialog (6094-D25).
+- [ ] **AC-6.12** — The badge shows one wording per verdict state (*Copy*, rows 6-12), with the Team's
+  current window in days where it has one; it is derived only from `soundWindow` and `sampledWindowDays`.
+  Its tooltip (hover and focus) shows the windows that held up as a set, what *held up* means and which
+  windows could not be checked (6094-D22). No badge text, tone or tooltip names, orders or scores a single
+  window as better than another (I-a — the shipped rankability scan runs over the new copy).
+
+Both:
+
+- [ ] **AC-6.13 (Terminology, I-d)** — {Team}, {Work Item}, {Work Items} render from the instance's
+  Terminology in every new string; "throughput", "Epic", "Initiative" and "Story" appear in no new label.
+- [ ] **AC-6.14 (themes)** — The grade fills, their text contrast (≥ 4.5 : 1, asserted as today), the badge
+  tones, the bars and the tick are legible in the light and dark themes; nothing in the palette changes.
+- [ ] **AC-6.15 (walking skeleton)** — The shared Team visit's reality-check step, through `TeamDetailPage`
+  only and on demo data, presses the button, sees the dialog, the headline, the four level rows and the
+  table, and closes it with Escape; `realityCheckLevelLine` and `realityCheckDialogDenominator` are replaced
+  by locators for the summary. Run locally before commit.
+- [ ] **AC-6.16 (invariants, unchanged)** — no API response field added, removed or renamed; nothing writes a
+  Team setting (I-b); `TeamForecastRealityCheckRun` is still sent once per answer received (6094-D8).
+
+> **Sizing**: 12 scenarios and 16 ACs in one story is above the 3-7 band **as one slice**; it is delivered
+> as two slices of 6 scenarios each (06a ~6h, 06b ~6.5h), each demonstrable on its own. Stated, not gamed:
+> the maintainer asked for one story; the split is the sizing remedy.
+
+#### Technical Notes
+
+- **The API response does not change** — verified field by field: headline ← `denominator.runsEvaluated`,
+  `runsAttempted`, `scoresEvaluated`; level rows ← `levelCoverage[].heldCount`, `confidenceLevel`,
+  `reading`, `denominator.runsEvaluated`, and the per-cell grades `realityCheckGrading.readCheck` already
+  computes over `levelOutcomes[].forecastValue` / `held` and `actualCompleted`; badge ← `soundWindow.*` and
+  `sampledWindowDays`; period header ← `scoredPeriods[]`; cell tooltips ← the cell's `actualCompleted`,
+  `forecastValue`, `held` and `readCheck`'s percentage. The only backend change is the log line (AC-6.3).
+- Where the log line sits (controller or service) and how the log is asserted are DESIGN's call; the
+  controller takes no logger today. Sonar/CA rules for logging (message templates, no interpolation) apply.
+- Composers in `realityCheckCopy.ts` that lose their last caller (`levelReadingCopy`, `usualGradeCopy`,
+  `findings`, `denominatorStatement` in its current form, `regionSentence`, `tableCaption`,
+  `gradedCellName`, `dayInWords`, `methodCredit`, `gradeLegendCopy`, `notCheckedLegend`) are **deleted
+  with their tests**, per 6094-D4's retirement rule; a dead composer left behind is a DELIVER defect.
+- ~64-80 graded cells become keyboard stops: DESIGN decides between Tab stops and arrow-key navigation
+  inside the table (one Tab stop, roving focus); either way focus shows the tooltip.
+- `levelCloseness.usualGrade` loses its only consumer; `withinTenPercent` becomes the *accurate* count.
+
+#### Dependencies
+
+Slices 04 + 05 (delivered locally, commits up to `655ab5a52`). No external dependency. The docs page the
+tooltip will link to is owed at FINALIZE (not a dependency of 06a / 06b).
+
+### Copy to confirm
+
+Every string below is a DISCUSS draft for the maintainer's review, except where marked *locked*. `{Team}`,
+`{Work Item}`, `{Work Items}` are Terminology terms; `{…}` are values from the response.
+
+| # | Where | Draft copy |
+|---|---|---|
+| 1 | Trigger info icon — accessible name / tooltip | Name: *"What does the reality check do?"* · Tooltip: *"Replays this {Team}'s recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the {Work Items} actually completed. It only reads: nothing on the {Team} is changed."* |
+| 2 | Loading (first run and "Run again") | Spinner + *"Crunching the numbers…"* (*locked*) |
+| 3 | Headline, every scenario ran | *"Backtested {N} scenarios · {M} forecasts"* (*locked*); N = 1: *"Backtested 1 scenario · {M} forecasts"* |
+| 3b | Headline, some could not run (6094-D21) | *"Backtested {N} of {T} scenarios · {M} forecasts"* — e.g. *"Backtested 12 of 16 scenarios · 48 forecasts"* |
+| 4 | Headline, N = 0 (6094-D20) | *"None of the {T} scenarios could be backtested"* |
+| 4b | Headline info icon — accessible name | *"About these numbers"* |
+| 5 | Level row text | *"{p}% ({held} of {evaluated}) · {a} accurate"* — e.g. *"75% (12 of 16) · 4 accurate"* (*locked form*); not evaluated: *"Not tested — no check could run"* |
+| 5b | Level bar — text alternative | *"{level}th {Name}: held in {p}% of checks ({held} of {evaluated}), expected about {level}%; {a} accurate within 10%"* — e.g. *"85th Confident: held in 94% of checks (15 of 16), expected about 85%; 3 accurate within 10%"* · not evaluated: *"50th Risky: not tested, no check could run"* |
+| 6 | Badge — every window held up, yours inside (`AllWindowsAlike` + `Inside`) | *"Your {d}-day sampling window: fine"* |
+| 7 | Badge — some held up, yours among them (`SomeWindowsSound` + `Inside`) | *"Your {d}-day sampling window: held up"* |
+| 8 | Badge — some held up, yours not (`SomeWindowsSound` + `Outside`; also the unreachable `AllWindowsAlike` + `Outside`) | *"Your {d}-day sampling window: did not hold up"* |
+| 9 | Badge — none held up (`NoWindowSound`) | *"Your {d}-day sampling window: did not hold up (no window did)"* |
+| 10 | Badge — yours could not be checked (`NotDetermined`, including `NotEnoughEvidence`) | *"Your {d}-day sampling window: could not be checked"* |
+| 11 | Badge — not tested, fixed dates (`NotTested` / `UsesFixedDates`) | *"Your {Team} forecasts from fixed dates: sampling window not tested"* |
+| 12 | Badge — not tested, not a positive length (`NotTested` / `NotAPositiveLength`) | *"Your sampling window: not tested (not a positive number of days)"* |
+| 13 | Badge tooltip — the set that held up (6094-D22) | span: *"Sampling windows that held up: {first} to {last} days."* · list: *"Sampling windows that held up: {14, 30 and 90} days."* · none: *"No sampling window checked held up."* · no window could be checked: *"No sampling window could be checked."* |
+| 14 | Badge tooltip — what "held up" means | *"A sampling window held up when its 95th forecast held in more than half of the checks that could be run on it."* |
+| 15 | Badge tooltip — windows not checked | today's sentence, unchanged: *"The {14-day} sampling window could not be checked, so it is not counted either way."* (plural form as today) |
+| 16 | Cell tooltip = accessible name — more completed | *"Closed {d} {Work Items} more ({actual}) than forecasted ({forecast}). Forecast off by +{p}%"* (*locked form*) — d = 1: *"Closed 1 {Work Item} more (15) than forecasted (14). Forecast off by +7%"* |
+| 17 | Cell tooltip — fewer completed | *"Closed {d} {Work Items} fewer ({actual}) than forecasted ({forecast}). Forecast off by −{p}%"* (*locked form*) |
+| 18 | Cell tooltip — exactly as forecast | actual > 0: *"Closed exactly the forecasted {n} {Work Items}."* (1: *"… the forecasted 1 {Work Item}."*) · actual 0 and forecast 0: *"Closed no {Work Items}, exactly as forecasted."* |
+| 19 | Cell tooltip — nothing completed, forecast above 0 | *"Closed {f} {Work Items} fewer (0) than forecasted ({f}). No percentage — nothing was completed."* |
+| 19b | Cell for a level left out of a check (6094-D24) | Visible *"—"*; tooltip / name *"Not checked at this confidence level."* |
+| 20 | Headline tooltip (6094-D15, D21) | *"Each scenario replays one forecast: a recent period ({1 week, 2 weeks, 4 weeks and 8 weeks}, each ending today), forecast from one sampling window of the history before it, then compared with what the {Team} actually completed. Each is read at {4} confidence levels, so {16} scenarios give {64} forecasts."* ¶ *[only when some could not run]* *"{4} of the {16} scenarios could not run and are left out of every count."* + today's `whyChecksCouldNotRun` sentences ¶ *"The {4} forecasts of one scenario come from the same simulation, and every scenario covers a different stretch of time, so they are not independent trials and should not be ranked against each other."* ¶ *"The tick on each bar is how often that level should hold — the 85th about 85% of the time. Well past the tick, its forecasts were set too low; well short of it, too high. Accurate means within 10% of what was completed, whether the forecast held or not."* ¶ *"Grading each forecast as held or missed, and shading it by how close it landed, follows Nick Brown's method in* [The Full Monte](https://medium.com/asos-techblog/the-full-monte-901d721b8532)*. Reading the bar against its tick as under- or over-forecasting, and the 95th level, are Lighthouse's additions."* |
+| 21 | Period header | *"Forecast Horizon: {1 week} ({21.09.2026} – {27.09.2026}) – {14} {Work Items} completed"* (*locked form*); 1: *"– 1 {Work Item} completed"*; no scored period: *"Forecast Horizon: {1 week}"* |
+| 22 | Legend row titles | *"Forecast held"*, *"Forecast missed"* (*locked*) |
+| 23 | Legend swatch labels (each row) | *"within 10%"*, *"10–25% off"*, *"more than 25% off"* (*locked*) |
+| 24 | Table scroll region — accessible name (not visible) | *"Forecasts checked for {Team name}, by forecast horizon and sampling window"* |
+
+### Out of scope — US-06
+
+- Any change to the grading rule, band edges, rounding / clamping, the six fills, the sweep, the ladder,
+  the horizons, rule A, DES-16 thresholds or any response field (AC-6.16).
+- Any per-window score, ordering or highlight — including in the badge and its tooltip (I-a); any control
+  that writes a Team setting (I-b).
+- The link to Lighthouse's own docs page in the headline tooltip — FINALIZE, once the page exists.
+- A new usage-data event or property; CLI / MCP exposure (Epic D12); the one-pager (slice 03, deferred).
+- Re-wording the unevaluable row text (6094-D17 keeps it) and the "your setting" row label.
+
+### Project DISCUSS checklist — US-06 (no silent N/A)
+
+- **RBAC impact — N/A, because** no endpoint, permission, guard or write path is added or changed; the
+  dialog still calls `POST …/forecast/reality-check/{teamId}` under `TeamRead`, and read-only Tom Becker
+  sees everything including the tooltips. The new log entry is written only after the guard passes and
+  carries a Team id the caller could already read. No `useRbac()` branch; nothing fetches `my-summary`.
+- **Lighthouse-Clients CLI / MCP versioning — N/A, because the API response does not change**, verified
+  field by field under *Technical Notes*: every new string is composed in the browser from fields the
+  response already carries (`denominator`, `levelCoverage`, `soundWindow`, `sampledWindowDays`,
+  `scoredPeriods`, the cells). No field is added, removed or renamed; Epic D12 (no client exposure) stands;
+  no version bump.
+- **Website marketing surface — no change now; the owed assets change shape.** The docs page and the two
+  per-theme `@screenshot` shots owed at Epic finalization now show the **summary** (headline, badge, bars)
+  and the compact table rather than the prose and the dense cells; the launch post's picture should be the
+  summary over the table. Any renamed or replaced image under `docs/assets` is checked against the website
+  repo's hot-links first. The docs page is also what the headline tooltip will link to (FINALIZE).
+- **Usage data — N/A for a new event, because** `TeamForecastRealityCheckRun` already counts every answer
+  and 6094-D8's once-per-answer rule is unchanged; the summary adds no outcome a KPI needs counted.
+- **Terminology** — {Team}, {Work Item}, {Work Items} via `getTerm` in every new string (AC-6.13);
+  "Forecast Horizon", "sampling window", "scenario", "forecast", "accurate", "held" are not renameable.
+- **Demo data** — the walking skeleton keeps demo scenario 0's first Team; the screenshots still need a demo
+  Team with enough history for a non-degenerate summary (carried, unchanged).
+- **DEVOPS — hand-off note: N/A for this amendment, because** there is no platform, pipeline, environment
+  or usage-event change; the only backend change is one Information-level log line at the default level.
+  The existing Stryker mutate sets cover the touched files; DEVOPS may confirm that in one line.
+
+### Outcome KPIs — US-06
+
+Declared as hypotheses. Rows marked *adjusted* replace the Story #6094 KPI of the same name.
+
+| KPI | Who | Does what | By how much | Measured by | Baseline |
+|---|---|---|---|---|---|
+| **Reads at a glance** (new, replaces *Density readable*) | The maintainer, dogfooding | States each level's finding and the window standing from the summary alone | 3 real Teams on the dev instance, each in **under 15 s**, recorded in the slice 06b brief | Dogfooding note | The 2026-09-27 review: "far too wordy and hard to read" |
+| **Words above the table** (new) | The dialog, a fully evaluable Team | Visible words before the table | **≤ 50** | Counted in a Vitest over the rendered summary | ~210 today |
+| **S1 — how far each forecast landed is one focus away** (adjusted) | Every evaluable cell | Tooltip and name carry actual, forecast, difference in {Work Items} and % | 100% of evaluable cells | AC-6.5, asserted | Shipped as visible text (slices 04 + 05) |
+| **S2 — caution is visible** (adjusted) | Each level row | Shows held share against its tick and the accurate count | 4 of 4 levels, every result | AC-6.10, asserted | Sentences with "should be about" |
+| **S3 — no percentage without its {Work Items}** (carried) | Every cell tooltip | Shows the {Work Item} difference beside any %; none at actual 0 | 100%; 0 percentages at actual 0 | AC-6.5, asserted | Holds today |
+| **I-a holds** (carried) | The dialog incl. badge and tooltips | Summarises or orders by window | 0 strings, 0 orderings | AC-6.12; the rankability scan | 0 — must stay 0 |
+| **Use does not drop** (carried) | Consenting instances | Run the check | Weekly `TeamForecastRealityCheckRun` count in the 30 days after release ≥ the 30 days before | PostHog, existing event | Read at release |
+
+### Definition of Ready — US-06
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| 1 | Problem statement, domain language | PASS | Maria cannot get the one sentence she came for out of ~210 words and dense cells; no solution language in the problem |
+| 2 | Persona with specific characteristics | PASS | `delivery-forecaster` Maria Santos (Ocean Explorer, quotes a number); keyboard-only read-only Tom Becker; an operator reading the default log |
+| 3 | 3+ domain examples, real data | PASS | Ocean Explorer 42 vs 31 → +26%; Coastal Survey 12 of 16, 3 vs 4 → −33%; Harbour Pilots fixed dates, 0 vs 0 and 0 vs 2; Kelp Farm N = 0; Team 57 log line |
+| 4 | UAT Given/When/Then, 3-7 | PASS with qualification | 12 in the story, **6 per delivered slice** (06a: A-1..A-6, 06b: B-1..B-6) |
+| 5 | AC derived from UAT | PASS | AC-6.1..6.7 ← A-1..A-6; AC-6.8..6.12 ← B-1..B-6; AC-6.13..6.16 cross-cutting invariants (Terminology, themes, skeleton, contract) |
+| 6 | Right-sized | PASS with qualification | ~12.5h as one story — over a day, so **split into 06a (~6h) and 06b (~6.5h)**, each demonstrable in one session (see the brief) |
+| 7 | Technical notes | PASS | Response unchanged (verified per field); log placement and cell keyboard model open for DESIGN; dead composers named for deletion |
+| 8 | Dependencies tracked | PASS | Slices 04 + 05 delivered locally; docs-page link owed at FINALIZE; the *Copy to confirm* table awaits the maintainer (does not block DESIGN) |
+| 9 | Outcome KPIs measurable | PASS | 7 KPIs with target and method; two new, three adjusted, two carried |
+
+Job traceability: `job_id: job-forecaster-check-the-forecast-against-what-happened` (the job covers the
+effort of reading the answer; not extended). Not `@infrastructure`; Elevator Pitch present with the real
+entry point (Team → Forecasts → Forecast Backtesting → "Run reality check").
+
+#### DoR: PASS (with the two stated qualifications, both resolved by the 06a / 06b split)
+
+### Open for DESIGN — US-06
+
+1. **Log placement and assertion** (AC-6.3): controller or service; a fake `ILogger` or a log-capturing
+   provider in the integration fixture.
+2. **Keyboard model for 64-80 cells** (AC-6.5): Tab stops or one Tab stop with arrow keys.
+3. **Interactive tooltip vs popover** for the headline (6094-D25), and whether the badge and cell tooltips
+   share the component.
+4. **The bar**: which primitive carries the text alternative (`role="img"` with a label, `meter`, or a
+   visually hidden sentence) and how the tick is drawn so it is visible in both themes.
+5. **Numeric local date**: reuse of `utils/date/localDate.ts` / `getLocaleDateFormat()` (the back-test date
+   pickers already format numerically) rather than a second formatter.
+6. **What of `realityCheckCopy.ts` survives** — the retirement list under *Technical Notes*, confirmed.
+
+### Questions for the maintainer — US-06
+
+None blocks DESIGN; each has a default already written in.
+
+1. **The whole *Copy to confirm* table** — rows 1, 3b, 4, 4b, 5b, 6-15, 18-20, 24 are drafts.
+2. **"N of T" in the headline** when some scenarios could not run (6094-D21)? Default: yes.
+3. **The region in the badge tooltip** (6094-D22)? You removed the region sentence; the default puts a
+   shortened version in the badge's tooltip so a Team whose window did not hold up can still learn which
+   did. Or should it go entirely?
+4. **"fine" vs "held up"** in the badge: the shipped copy said *"this setting is fine"* only when every
+   window behaved alike; the default keeps that distinction (row 6 vs row 7). Or *"fine"* for both?
+5. **Always / never held** get no words on the row (6094-D23)? Default: none — the bar and tick say it.
+6. **The two findings** (window is a setting; level is a choice) are now said nowhere. Default: leave them
+   out, as decided. Or one sentence in the headline tooltip? Journey step 5 is rewritten either way.
+7. **"—" for a level left out of a check** (6094-D24), with the *"Not checked"* legend entry dropped?
+
+### Risks — US-06
+
+| # | Risk | Disposition |
+|---|---|---|
+| R-6094-8 | Colour carries the band on the cell face; the words are one hover / focus away (WCAG 1.4.1) | Glyph stays visible; tooltip = accessible name; legend in words; DISTILL asserts every cell's name |
+| R-6094-9 | Moving the non-independence statement into a tooltip invites ranking the scenarios (honesty 4.2 relaxed, S-19) | Counts stay on screen; the statement is one focus away; the rankability scan still runs; table stays unsortable |
+| R-6094-10 | A tooltip holding a link is unreachable or closes the dialog on Escape | 6094-D25 / AC-6.11 assert Tab-reachability and Escape order |
+| R-6094-11 | 64-80 new Tab stops make the dialog tedious by keyboard | Open for DESIGN item 2 |
+| R-6094-12 | A bar is read as "more is better" (a full 95th bar looks like success) | The tick shows the expected rate; the tooltip names too-low / too-high; 95th past its tick = caution |
+
+### Owed at FINALIZE — US-06
+
+- The docs page for the reality check, and **its link in the headline tooltip** (6094-D15).
+- Two per-theme `@screenshot` shots of the summary + compact table (replacing the prose ones planned).
+
+### SSOT updates — US-06
+
+| File | Change |
+|---|---|
+| `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Steps 2 (loading words), 3 (summary mockup), 4 (compact cells, period header, legend) and 5 (findings now implicit) annotated for US-06; the "darker the closer" wording fixed; changelog entry 2026-09-27 |
+| `docs/product/jobs.yaml` | **Not edited** — the job already covers reading how far off a forecast was; nothing about the job changes |
+| Personas | Not edited |
+
+### Corrections — US-06
+
+1. **"darker the closer it landed"** (US-05 elevator pitch; slice 05 goal; journey step 4) was wrong for
+   red: the six fills deepen green **towards** a close hold (`#2e7d32` within 10%, `#c8e6c9` beyond 25%)
+   and deepen red **away** from a close miss (`#f8bbd0` within 10%, `#d32f2f` beyond 25%). Now: *green
+   deepens the closer it landed, red deepens the further it missed*.
 
 ---
 

@@ -1287,3 +1287,62 @@ Frontend `pnpm test`: 399 files passed, 3 skipped; 5 849 tests passed, 93 skippe
 test project: 0 errors, no code warnings (six NuGet TFM-support notices from build-tooling packages are
 not from this change); analyzer sweep: no finding in a touched file; reality-check filter: 187 passed, 5
 skipped (this wave's). E2E: `tsc` clean, `playwright test --list` loads the spec.
+
+---
+
+## DISCUSS amendment — Story #6094, US-06 "The reality check reads at a glance" (2026-09-27)
+
+**Agent**: Luna (`nw-product-owner`) · **Trigger**: the maintainer's manual review of slices 04 + 05 on
+2026-09-27 — "far too wordy and hard to read" · **Full text**: `feature-delta.md`, *US-06 amendment
+(2026-09-27) — Story #6094* · **Slice**: `slices/slice-06-reads-at-a-glance.md` (06a / 06b).
+
+**Wave setup**: feature type user-facing · walking skeleton = the existing Playwright step in the shared
+Team visit (`TeamsDetail.spec.ts`), updated in 06b · UX depth lightweight · JTBD = the existing
+`job-forecaster-check-the-forecast-against-what-happened`, not extended (it already covers reading how far
+off a forecast was) · DIVERGE not re-run (the direction is the maintainer's review).
+
+### Key Decisions
+
+| # | Decision | By |
+|---|---|---|
+| 6094-D11 | "Run reality check" moves below the Backtesting inputs, right-aligned, with an info icon explaining the check | maintainer |
+| 6094-D12 | Spinner + "Crunching the numbers…" on first run and "Run again" | maintainer |
+| 6094-D13 | Backend logs each check at Information: Team id + filter override | maintainer |
+| 6094-D14 | Summary replaces all prose: headline "Backtested {N} scenarios · {M} forecasts", window badge, one bar per level with a tick at its percentile and "75% (12 of 16) · 4 accurate"; level sentences, region sentence and both findings removed | maintainer |
+| 6094-D15 | Headline info tooltip: denominator explanation, Brown credit with our additions, link to *The Full Monte*; own docs link owed at FINALIZE | maintainer |
+| 6094-D16 | Period header "Forecast Horizon: 1 week (21.09.2026 – 27.09.2026) – 14 {Work Items} completed", centred, numeric local dates | maintainer |
+| 6094-D17 | Cells show "✓ 17" / "✗ 21" on the unchanged grade colours; hover and focus tooltip = accessible name, % of the actual signed | maintainer |
+| 6094-D18 | Visible table caption removed; scroll region keeps a hidden accessible name | maintainer |
+| 6094-D19 | Legend: "Forecast held" / "Forecast missed" rows × "within 10%", "10–25% off", "more than 25% off"; credit line removed | maintainer |
+| 6094-D20 | N = 0 gets its own headline | maintainer |
+| 6094-D21 | "Backtested N of T scenarios" when some could not run | DISCUSS default |
+| 6094-D22 | Badge tone + tooltip holding the set of windows that held up | DISCUSS default |
+| 6094-D23 | Always / never held: no extra words on the row | DISCUSS default |
+| 6094-D24 | A level left out of a check shows "—", named "Not checked at this confidence level." | DISCUSS default |
+| 6094-D25 | The headline tooltip is reachable (hover, focus, click); Escape closes it before the dialog | DISCUSS default |
+
+### Requirements Summary
+
+- **US-06**, 12 scenarios, AC-6.1..6.16, ~12.5h → **split 06a (~6h: trigger, loading, log, cells + tooltips,
+  period header, legend, caption) and 06b (~6.5h: headline + tooltip, badge, bars, prose deletion,
+  skeleton update)**. 06a first: certain, and it can start while the maintainer reviews 06b's copy.
+- **Superseded, not deleted**: 24 items (S-1..S-24) across 6094-D1..D10, AC-4.1..4.7, AC-5.2..5.6, Epic
+  AC-1.4 / 1.5 / 1.6 / 1.9 and the journey's steps 3 and 5. Notable: **AC-1.5's "never behind a tooltip" is
+  relaxed** — the counts stay on screen, the non-independence statement moves into the tooltip.
+- **Scope: PASS — 1 story (2 slices), 2 modules (Team Forecast UI; one backend log line), ~1.5 days.**
+  **DoR: PASS** with two stated qualifications (scenario count and size as one slice), both resolved by
+  the split.
+- **API response unchanged** (verified field by field) → no CLI / MCP version bump; RBAC N/A; website: the
+  owed docs page and screenshots change shape; **DEVOPS N/A** (no platform or usage-event change).
+
+### Upstream Changes
+
+- Wording fixed: "darker the closer it landed" → green deepens the closer it landed, red deepens the further
+  it missed (US-05 elevator pitch, slice 05 goal, journey step 4).
+- Journey `docs/product/journeys/epic-4172-forecast-reality-check.yaml`: steps 2-5 annotated for US-06,
+  changelog entry. `jobs.yaml` not edited.
+
+### Waiting on the maintainer (none blocks DESIGN)
+
+The *Copy to confirm* table, and the seven questions under *Questions for the maintainer — US-06*.
+Reviewer not run in this pass (the orchestrator runs it). Committed; not pushed.

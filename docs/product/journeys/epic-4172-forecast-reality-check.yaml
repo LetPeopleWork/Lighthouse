@@ -156,6 +156,10 @@ journeys:
       - id: 2
         name: Press it, and wait a beat
         surface: a dialog the button opens at once (Story #6094; was the same group)
+        amended_2026_09_27: >
+          US-06 (6094-D11, D12). The button sits below the Forecast Backtesting inputs, right-aligned, with an
+          info icon explaining the check. While a run is in flight (first run and "Run again") the dialog
+          shows a spinner and "Crunching the numbers...". The backend logs each check at Information level.
         what_they_see: >
           The dialog opens straight away saying the check is running, and fills in when the answer arrives.
           Measured expectation is well under a second. "Run again" re-runs inside the dialog; closing and
@@ -175,6 +179,15 @@ journeys:
       - id: 3
         name: Read the answer in words
         surface: the dialog, text result first (Story #6094; was a result card in the same group)
+        amended_2026_09_27: >
+          US-06 (6094-D14, D15, D20-D23) SUPERSEDES the what_they_see and tui_mockup below. The prose is
+          replaced by a summary: "Backtested ${runCount} scenarios · ${scoreCount} forecasts" with an info
+          icon whose tooltip holds the denominator and non-comparability statements, the Brown credit with
+          the product's additions, and a link to The Full Monte; a badge "Your ${currentSamplingWindow}-day
+          sampling window: fine | held up | did not hold up | could not be checked" (or not tested); one row
+          per level with a bar filled to the held share, a tick at the level's percentile and
+          "75% (12 of 16) · 4 accurate". The failure mode "denominator behind a tooltip" is RELAXED by the
+          maintainer (2026-09-27): the counts stay on screen, the statements move into the tooltip.
         what_they_see: >
           REWRITTEN 2026-09-26 for Story #6094. One line per confidence level: how often it held against how
           often it should have, and (from slice 05) how close it landed; a level that never held is called
@@ -232,6 +245,13 @@ journeys:
       - id: 4
         name: Look at the evidence
         surface: the same dialog, beneath the text result (Story #6094; was the card's expanded band panels)
+        amended_2026_09_27: >
+          US-06 (6094-D16..D19, D24). Cells read "✓ 17" / "✗ 21" on the unchanged grade colours; on hover
+          and keyboard focus a tooltip (also the accessible name) reads e.g. "Closed 7 ${workItemsTerm}
+          fewer (14) than forecasted (21). Forecast off by −50%". Group header: "Forecast Horizon: 1 week
+          (${periodStart} – ${periodEnd}) – ${periodActual} ${workItemsTerm} completed", numeric local dates.
+          No visible caption. Legend: "Forecast held" / "Forecast missed" x "within 10%", "10–25% off",
+          "more than 25% off"; the credit moved to the step 3 tooltip.
         what_they_see: >
           REWRITTEN 2026-09-26 for Story #6094; the band-row panels are retired. A table: one row per
           period x sampling window (16 on the standard ladder, 20 when the Team's own window is off it),
@@ -239,7 +259,7 @@ journeys:
           the group header; columns 50th / 70th / 85th / 95th, headed by their confidence-level names. Each
           cell shows the forecast, the miss in Work Items (actual minus forecast) and held or did not hold as
           a glyph and a word; from slice 05 also the percentage of the actual and a grade on Nick Brown's
-          scale (green held / red did not, darker the closer). A row that could not be checked says so in
+          scale (green held, deeper the closer; red did not, deeper the further off). A row that could not be checked says so in
           words across all four levels. A legend names the grades; Brown is credited for the grading and the
           product's own additions are named beside it.
         tui_mockup: |
@@ -285,6 +305,10 @@ journeys:
       - id: 5
         name: Take the two findings away
         surface: the dialog's text result (was the verdict card until Story #6094)
+        amended_2026_09_27: >
+          US-06 (6094-D14.4) removes both findings sentences from the dialog. The window finding survives
+          as the step 3 badge; the confidence-level finding is left to the level rows. Still true and still
+          the integration checkpoint: nothing in the feature writes a Team setting.
         what_they_see: >
           REWRITTEN 2026-09-22 when Apply was dropped; this step previously offered a control. It now
           offers none. Permanently on the card, beside the verdict: the sampling window is a setting on
@@ -372,3 +396,13 @@ changelog:
       period, graded on Nick Brown's scale (percentage of the actual, the miss in Work Items, glyph and word
       per cell). Supersedes the old step 4 failure mode "drifts toward a matrix" — the maintainer asked for
       the matrix; ranking by window stays forbidden. Steps 1, 2 and 5 re-surfaced; the arc is unchanged.
+  - date: 2026-09-27
+    feature: epic-4172-forecast-backtest-sweep
+    change: >
+      Story #6094 US-06 "The reality check reads at a glance" (DISCUSS amendment; 6094-D11..D25 in
+      feature-delta.md), after the maintainer found the dialog too wordy. Steps 2-5 carry an
+      amended_2026_09_27 note: trigger moved and explained, new loading words, a summary (headline, window
+      badge, bars with a tick) instead of prose, compact cells with tooltips, numeric period header, two-row
+      legend, findings removed. The "denominator never behind a tooltip" failure mode is relaxed by the
+      maintainer. Also fixed: the grade scale is green deepening the closer it landed, red deepening the
+      further it missed (was "darker the closer").
