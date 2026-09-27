@@ -70,7 +70,13 @@ interface BacktestForecasterProps {
 	onHistoricalFixedStartDateChange: (value: dayjs.Dayjs | null) => void;
 	onHistoricalFixedEndDateChange: (value: dayjs.Dayjs | null) => void;
 	onInputChange: (complete: boolean) => void;
+	realityCheck?: React.ReactNode;
 }
+
+const OptionalFullWidthRow: React.FC<{ children?: React.ReactNode }> = ({
+	children,
+}) =>
+	children === undefined ? null : <Grid size={{ xs: 12 }}>{children}</Grid>;
 
 const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	team,
@@ -92,6 +98,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	onHistoricalFixedStartDateChange,
 	onHistoricalFixedEndDateChange,
 	onInputChange,
+	realityCheck,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
@@ -418,6 +425,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 					)}
 				</Grid>
 			</Grid>
+			<OptionalFullWidthRow>{realityCheck}</OptionalFullWidthRow>
 			{backtestResult && (
 				<Grid size={{ xs: 12 }}>
 					<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>

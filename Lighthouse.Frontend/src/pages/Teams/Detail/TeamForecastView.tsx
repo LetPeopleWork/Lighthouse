@@ -437,13 +437,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				/>
 			</InputGroup>
 			<InputGroup title="Forecast Backtesting">
-				<ForecastRealityCheck
-					teamId={team.id}
-					teamName={team.name}
-					applyFilterOverride={
-						isPremiumFilterActive ? applyBacktestFilterOverride : undefined
-					}
-				/>
 				<BacktestForecaster
 					team={team}
 					backtestResult={backtestResult}
@@ -464,6 +457,15 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					onHistoricalFixedStartDateChange={setBacktestHistoricalFixedStartDate}
 					onHistoricalFixedEndDateChange={setBacktestHistoricalFixedEndDate}
 					onInputChange={handleBacktestInputChange}
+					realityCheck={
+						<ForecastRealityCheck
+							teamId={team.id}
+							teamName={team.name}
+							applyFilterOverride={
+								isPremiumFilterActive ? applyBacktestFilterOverride : undefined
+							}
+						/>
+					}
 				/>
 			</InputGroup>
 		</Grid>

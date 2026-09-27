@@ -36,8 +36,6 @@ import TeamForecastView from "./TeamForecastView";
  * check do?", whose tooltip describes it (the name stays the question), and it opens nothing.
  */
 
-const PENDING = "06a: the trigger has not moved under the inputs yet";
-
 const THE_QUESTION = "What does the reality check do?";
 
 const { terms } = vi.hoisted(() => ({
@@ -194,7 +192,7 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		expect(theTrigger(group)).toBeInTheDocument();
 	});
 
-	it.skip(`"Run reality check" sits after the back-test inputs, with its explanation just before it, and above a single back-test result once there is one (${PENDING})`, async () => {
+	it(`"Run reality check" sits after the back-test inputs, with its explanation just before it, and above a single back-test result once there is one`, async () => {
 		const group = renderTheForecastTabWithItsBacktestInputs();
 		const windowField = within(group).getByLabelText(
 			/Historical Window \(Days\)/i,
@@ -217,7 +215,7 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		expect(follows(trigger, result)).toBe(true);
 	});
 
-	it.skip(`with the forecast filter switch shown, the trigger comes after the switch too (${PENDING})`, async () => {
+	it(`with the forecast filter switch shown, the trigger comes after the switch too`, async () => {
 		const teamService = createMockTeamService();
 		const settings = Promise.resolve({
 			forecastFilterRuleSetJson: JSON.stringify({ conditions: [{}] }),
@@ -234,14 +232,14 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		expect(follows(filterSwitch, theTrigger(group))).toBe(true);
 	});
 
-	it.skip.each([
+	it.each([
 		{ how: "keyboard focus", arriveAt: tabUntilFocused },
 		{
 			how: "hover",
 			arriveAt: (element: HTMLElement) => userEvent.hover(element),
 		},
 	])(
-		`on $how the info icon explains in plain words what the check does, and keeps the question as its name (${PENDING})`,
+		`on $how the info icon explains in plain words what the check does, and keeps the question as its name`,
 		async ({ arriveAt }) => {
 			const group = renderTheForecastTabWithItsBacktestInputs();
 			const explanation = within(group).getByRole("button", {
@@ -259,7 +257,7 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		},
 	);
 
-	it.skip(`@error pressing the info icon opens nothing and runs no check (${PENDING})`, async () => {
+	it(`@error pressing the info icon opens nothing and runs no check`, async () => {
 		const group = renderTheForecastTabWithItsBacktestInputs();
 
 		const explanation = within(group).getByRole("button", {
@@ -274,7 +272,7 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		expect(runRealityCheck).not.toHaveBeenCalled();
 	});
 
-	it.skip(`pressing "Run reality check" from its new place still opens the dialog and runs one check (${PENDING})`, async () => {
+	it(`pressing "Run reality check" from its new place still opens the dialog and runs one check`, async () => {
 		const group = renderTheForecastTabWithItsBacktestInputs();
 		const explanation = within(group).getByRole("button", {
 			name: THE_QUESTION,
@@ -287,7 +285,7 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		expect(explanation).toBeInTheDocument();
 	});
 
-	it.skip(`the explanation speaks the instance's own words for Team and Work Items (${PENDING})`, async () => {
+	it(`the explanation speaks the instance's own words for Team and Work Items`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");
 		const group = renderTheForecastTabWithItsBacktestInputs();

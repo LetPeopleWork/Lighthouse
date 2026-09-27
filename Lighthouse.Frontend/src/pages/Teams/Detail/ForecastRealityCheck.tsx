@@ -1,11 +1,14 @@
-import { Button } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import RealityCheckDialog, { type RealityCheckRun } from "./RealityCheckDialog";
+import { triggerExplanation } from "./realityCheckCopy";
 
 interface ForecastRealityCheckProps {
 	teamId: number;
@@ -30,6 +33,7 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 }) => {
 	const { forecastService } = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
+	const { getTerm } = useTerminology();
 	const [isOpen, setIsOpen] = useState(false);
 	const [run, setRun] = useState<RealityCheckRun>(RUNNING);
 	// State updates land a render late, so a quick second press would still see the old values.
@@ -94,13 +98,23 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 
 	return (
 		<>
-			<Button
-				variant="contained"
-				onClick={openAndRun}
-				sx={{ alignSelf: "flex-start" }}
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "flex-end",
+					alignItems: "center",
+					gap: 1,
+				}}
 			>
-				Run reality check
-			</Button>
+				<Tooltip title={triggerExplanation(getTerm)} describeChild>
+					<IconButton aria-label="What does the reality check do?">
+						<InfoOutlinedIcon fontSize="small" />
+					</IconButton>
+				</Tooltip>
+				<Button variant="contained" onClick={openAndRun}>
+					Run reality check
+				</Button>
+			</Box>
 			<RealityCheckDialog
 				open={isOpen}
 				teamName={teamName}

@@ -228,6 +228,9 @@ export const whyChecksCouldNotRun = (
 		return sentence === null ? [] : [sentence];
 	});
 
+export const triggerExplanation = (getTerm: TermGetter): string =>
+	`Replays this ${getTerm(TERMINOLOGY_KEYS.TEAM)}'s recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} actually completed.`;
+
 export const horizonLabel = (horizonDays: number): string => {
 	if (horizonDays % 7 !== 0) {
 		return `${horizonDays} days`;

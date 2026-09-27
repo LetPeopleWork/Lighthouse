@@ -696,25 +696,6 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 			linesMatching(dialog, /\b(throughput|Epic|Initiative|Story)\b/i),
 		).toHaveLength(0);
 	});
-
-	it(`the Forecast Backtesting group keeps only the button once the dialog is closed`, async () => {
-		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
-		const group = renderTheForecastTab(runRealityCheck);
-		await pressRunRealityCheck(group);
-		const dialog = await theRealityCheckDialog();
-		await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
-
-		await closeWithEscape();
-
-		expect(linesMatching(group, /forecast runs were checked/i)).toHaveLength(0);
-		expect(linesMatching(group, /\d+th: held/)).toHaveLength(0);
-		expect(within(group).queryAllByRole("table")).toHaveLength(0);
-		expect(
-			within(group)
-				.getAllByRole("button")
-				.map((button) => button.textContent?.trim()),
-		).toEqual(["Run reality check"]);
-	});
 });
 
 describe("@us-04 @slice-04 running again, closing and reopening", () => {

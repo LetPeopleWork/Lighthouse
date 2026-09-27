@@ -32,6 +32,7 @@ import {
 	standingCopy,
 	sufficiencyReasonCopy,
 	tableCaption,
+	triggerExplanation,
 	type UnrunChecks,
 	unevaluableRowCopy,
 	unevaluatedSentence,
@@ -645,6 +646,17 @@ describe("whyChecksCouldNotRun", () => {
 		);
 		expect(statement).toMatch(
 			/4 of the 16 checks could not run, so they are left out of every count\. 1 check on the 14-day sampling window had fewer than 7 days with completed Tickets to draw on\. The 4 levels/,
+		);
+	});
+});
+
+describe("triggerExplanation", () => {
+	it("says what the check does in the instance's words for Team and Work Items", () => {
+		const squadTerms = (key: string) =>
+			({ team: "Squad", workItems: "Tickets" })[key] ?? `unexpected ${key}`;
+
+		expect(triggerExplanation(squadTerms)).toBe(
+			"Replays this Squad's recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the Tickets actually completed.",
 		);
 	});
 });

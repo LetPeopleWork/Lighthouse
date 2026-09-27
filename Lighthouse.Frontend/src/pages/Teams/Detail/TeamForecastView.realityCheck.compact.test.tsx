@@ -656,7 +656,7 @@ describe("@us-06 @slice-06a the legend, the table's name and the Backtesting gro
 		expect(within(table).getAllByRole("columnheader")).toHaveLength(5);
 	});
 
-	it.skip(`the Forecast Backtesting group holds the trigger and its explanation, and nothing of the answer once the dialog is closed (${PENDING})`, async () => {
+	it(`the Forecast Backtesting group holds the trigger and its explanation, and nothing of the answer once the dialog is closed`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
