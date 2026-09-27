@@ -542,25 +542,6 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 		expect(within(table).queryAllByRole("button")).toHaveLength(0);
 	});
 
-	it(`@kpi-OUT-4172-read-only offers no control that could change a Team setting`, async () => {
-		const dialog = await theDialogFor(aRealityCheckAnswer());
-
-		for (const role of [
-			"textbox",
-			"spinbutton",
-			"combobox",
-			"checkbox",
-			"switch",
-			"radio",
-			"slider",
-		]) {
-			expect(within(dialog).queryAllByRole(role), role).toHaveLength(0);
-		}
-		for (const button of within(dialog).getAllByRole("button")) {
-			expect(button).toHaveAccessibleName(/^(run again|close)$/i);
-		}
-	});
-
 	it(`speaks the instance's own words for Team and Work Item, and no tracker's`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");

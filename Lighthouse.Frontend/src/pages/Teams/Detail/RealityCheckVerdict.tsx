@@ -26,7 +26,7 @@ const RealityCheckVerdict: React.FC<Readonly<RealityCheckVerdictProps>> = ({
 
 	return (
 		<Stack spacing={1.5}>
-			<RealityCheckHeadline denominator={denominator} />
+			<RealityCheckHeadline result={result} />
 			<RealityCheckWindowBadge soundWindow={result.soundWindow} />
 			<Stack spacing={1}>
 				{[...levelCoverage]

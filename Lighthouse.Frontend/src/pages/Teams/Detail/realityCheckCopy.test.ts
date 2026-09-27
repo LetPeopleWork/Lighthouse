@@ -11,13 +11,18 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	ACCURATE_MEANS,
 	badgeWords,
+	CREDIT_LEAD,
 	cellComparison,
 	dayInDigits,
 	denominatorStatement,
 	determinationCopy,
+	EXPLANATION_NAME,
+	FULL_MONTE,
 	findings,
 	gradeLegendCopy,
+	headlineExplanation,
 	heldGlyph,
 	heldUpMeans,
 	horizonLabel,
@@ -29,7 +34,6 @@ import {
 	levelReadingCopy,
 	levelRowText,
 	listOf,
-	methodCredit,
 	notCheckedCell,
 	notTestedReasonCopy,
 	percentShown,
@@ -985,19 +989,7 @@ describe("legendTitles", () => {
 	});
 });
 
-describe("methodCredit", () => {
-	it("credits Nick Brown's method and owns this product's two additions in the same place", () => {
-		expect(methodCredit).toMatch(/Nick Brown's method in The Full Monte\./);
-		expect(methodCredit).toMatch(
-			/always held as under-forecasting, and the 95th level, are this product's additions\.$/,
-		);
-	});
-});
-
 describe("badgeWords", () => {
-	const squadTerms = (key: string) =>
-		key === "team" ? "Squad" : `unexpected ${key}`;
-
 	it.each<{ state: WindowBadgeState; days: number; words: string }>([
 		{ state: "Fine", days: 30, words: "Your 30-day sampling window: fine" },
 		{
@@ -1132,4 +1124,67 @@ describe("realityCheckHeadline", () => {
 			).toBe(headline);
 		},
 	);
+});
+
+const squadTerms = (key: string) =>
+	key === "team" ? "Squad" : `unexpected ${key}`;
+
+const theLadder = (runsEvaluated: number, scoresEvaluated: number) => ({
+	sampledHorizonDays: [7, 14, 28, 56],
+	denominator: {
+		runsAttempted: 16,
+		runsEvaluated,
+		levelsPerRun: 4,
+		scoresEvaluated,
+	},
+});
+
+describe("headlineExplanation", () => {
+	it("says what a scenario is, how many forecasts the scenarios give, and what accurate means", () => {
+		expect(headlineExplanation(theLadder(16, 64), squadTerms)).toEqual([
+			"Each scenario replays one forecast: a recent period (1 week, 2 weeks, 4 weeks and 8 weeks, each ending today), forecast from one sampling window of the history before it, then compared with what the Squad actually completed. Each is read at 4 confidence levels, so 16 scenarios give 64 forecasts.",
+			"Accurate means within 10% of what was completed, whether the forecast held or not.",
+		]);
+	});
+
+	it("speaks of a single scenario, level and forecast in the singular", () => {
+		const [scenario] = headlineExplanation(
+			{
+				sampledHorizonDays: [7],
+				denominator: {
+					runsAttempted: 1,
+					runsEvaluated: 1,
+					levelsPerRun: 1,
+					scoresEvaluated: 1,
+				},
+			},
+			squadTerms,
+		);
+
+		expect(scenario).toBe(
+			"Each scenario replays one forecast: a recent period (1 week, each ending today), forecast from one sampling window of the history before it, then compared with what the Squad actually completed. Each is read at 1 confidence level, so 1 scenario gives 1 forecast.",
+		);
+	});
+
+	it("leaves out how many forecasts the scenarios give when none could be backtested", () => {
+		const [scenario] = headlineExplanation(theLadder(0, 0), squadTerms);
+
+		expect(scenario).toBe(
+			"Each scenario replays one forecast: a recent period (1 week, 2 weeks, 4 weeks and 8 weeks, each ending today), forecast from one sampling window of the history before it, then compared with what the Squad actually completed. Each is read at 4 confidence levels.",
+		);
+	});
+});
+
+describe("the explanation's name and its credit", () => {
+	it("names the explanation, says what accurate means and credits Nick Brown's article, linked", () => {
+		expect(EXPLANATION_NAME).toBe("About these numbers");
+		expect(ACCURATE_MEANS).toBe(
+			"Accurate means within 10% of what was completed, whether the forecast held or not.",
+		);
+		expect(CREDIT_LEAD).toBe("Inspired by Nick Brown's article");
+		expect(FULL_MONTE).toEqual({
+			title: "The Full Monte",
+			url: "https://medium.com/asos-techblog/the-full-monte-901d721b8532",
+		});
+	});
 });

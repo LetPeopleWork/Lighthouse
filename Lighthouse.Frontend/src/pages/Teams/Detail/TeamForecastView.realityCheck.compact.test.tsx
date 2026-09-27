@@ -43,8 +43,6 @@ import { appColors } from "../../../utils/theme/colors";
  * these specs pin the reader's locale.
  */
 
-const PENDING = "06a: the compact table is not built yet";
-
 const LOADING = "Crunching the numbers…";
 
 const MINUS = "−";
@@ -631,7 +629,7 @@ describe("@us-06 @slice-06a the legend, the table's name and the Backtesting gro
 		expect(labels.map(swatchBefore)).toEqual(fills);
 	});
 
-	it.skip(`the credit line and the "Not checked" entry are gone from under the legend (${PENDING})`, async () => {
+	it(`the credit line and the "Not checked" entry are gone from under the legend`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		expect(linesMatching(dialog, /Nick Brown|Full Monte/)).toHaveLength(0);

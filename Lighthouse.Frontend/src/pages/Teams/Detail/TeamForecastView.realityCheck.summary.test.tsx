@@ -603,7 +603,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 });
 
 describe("@us-06 @slice-06b the explanation, the credit and the source are one press away", () => {
-	it.skip(`hovering the headline's info icon names it "${EXPLANATION_ICON}" and opens nothing (${PENDING})`, async () => {
+	it(`hovering the headline's info icon names it "${EXPLANATION_ICON}" and opens nothing`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		await userEvent.hover(theExplanationIcon(dialog));
@@ -613,7 +613,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		expect(screen.queryByRole("dialog", { name: EXPLANATION_ICON })).toBeNull();
 	});
 
-	it.skip.each([
+	it.each([
 		{ how: "a click", open: (icon: HTMLElement) => userEvent.click(icon) },
 		{
 			how: "Enter",
@@ -630,7 +630,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 			},
 		},
 	])(
-		`$how on the info icon opens the explanation: what the scenarios count, what accurate means, and Nick Brown's article linked, and nothing else (${PENDING})`,
+		`$how on the info icon opens the explanation: what the scenarios count, what accurate means, and Nick Brown's article linked, and nothing else`,
 		async ({ open }) => {
 			const dialog = await theDialogFor(aRealityCheckAnswer());
 
@@ -652,7 +652,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		},
 	);
 
-	it.skip(`the article is the next Tab stop and opens The Full Monte in a new tab (${PENDING})`, async () => {
+	it(`the article is the next Tab stop and opens The Full Monte in a new tab`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		await userEvent.click(theExplanationIcon(dialog));
@@ -738,7 +738,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 });
 
 describe("@us-06 @slice-06b the summary holds to what the check promised", () => {
-	it.skip(`@kpi-OUT-4172-read-only the only control the summary adds is its explanation's icon; nothing could change a Team setting (${PENDING})`, async () => {
+	it(`@kpi-OUT-4172-read-only the only control the summary adds is its explanation's icon; nothing could change a Team setting`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		for (const role of [

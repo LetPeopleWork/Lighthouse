@@ -2,11 +2,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import type React from "react";
 import { FORECAST_GRADES } from "../../../models/Forecasts/RealityCheckResult";
 import { appColors } from "../../../utils/theme/colors";
-import {
-	gradeLegendCopy,
-	legendTitles,
-	methodCredit,
-} from "./realityCheckCopy";
+import { gradeLegendCopy, legendTitles } from "./realityCheckCopy";
 import { GRADE_HELD } from "./realityCheckGrading";
 
 interface LegendEntryProps {
@@ -74,9 +70,6 @@ const RealityCheckLegend: React.FC = () => (
 	<Stack spacing={1}>
 		<LegendRow held />
 		<LegendRow held={false} />
-		<Typography variant="body2" color="text.secondary">
-			{methodCredit}
-		</Typography>
 	</Stack>
 );
 

@@ -5,7 +5,6 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import {
 	aRealityCheckAnswer,
 	type EvaluableCheck,
-	expectALine,
 	expectTheLine,
 	HORIZON_DAYS,
 	type LevelColumn,
@@ -497,19 +496,5 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		for (const line of levelLines) {
 			expect(line).not.toHaveTextContent(/\bdays?\b|window/i);
 		}
-	});
-});
-
-describe("@us-05 @slice-05 the legend and the credit", () => {
-	it(`credits Nick Brown's held-or-not grading and shading by closeness, and names what this product added`, async () => {
-		const dialog = await theDialogFor({});
-
-		expectALine(dialog, /Nick Brown/);
-		expectALine(dialog, /The Full Monte/);
-		expectALine(
-			dialog,
-			/(always held.*under-forecasting.*this product|this product.*always held.*under-forecasting)/i,
-		);
-		expectALine(dialog, /(95th.*this product|this product.*95th)/i);
 	});
 });

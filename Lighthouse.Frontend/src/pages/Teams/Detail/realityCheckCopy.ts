@@ -389,6 +389,52 @@ export const realityCheckHeadline = ({
 	return `Backtested ${backtested} · ${forecasts(scoresEvaluated)}`;
 };
 
+export const EXPLANATION_NAME = "About these numbers";
+
+export const ACCURATE_MEANS =
+	"Accurate means within 10% of what was completed, whether the forecast held or not.";
+
+export const CREDIT_LEAD = "Inspired by Nick Brown's article";
+
+export const FULL_MONTE = {
+	title: "The Full Monte",
+	url: "https://medium.com/asos-techblog/the-full-monte-901d721b8532",
+} as const;
+
+export interface ExplanationFacts {
+	sampledHorizonDays: readonly number[];
+	denominator: RealityCheckDenominator;
+}
+
+const confidenceLevels = (count: number): string =>
+	count === 1 ? "1 confidence level" : `${count} confidence levels`;
+
+const scenariosGive = (scenarioCount: number, forecastCount: number): string =>
+	scenarioCount === 1
+		? `1 scenario gives ${forecasts(forecastCount)}`
+		: `${scenarios(scenarioCount)} give ${forecasts(forecastCount)}`;
+
+// With nothing backtested, "0 scenarios give 0 forecasts" would only repeat the headline's "none".
+const scenarioExplanation = (
+	{ sampledHorizonDays, denominator }: ExplanationFacts,
+	getTerm: TermGetter,
+): string => {
+	const { runsEvaluated, levelsPerRun, scoresEvaluated } = denominator;
+	const periods = listOf(sampledHorizonDays.map(horizonLabel));
+	const readAt = `Each is read at ${confidenceLevels(levelsPerRun)}`;
+	const counted =
+		runsEvaluated === 0
+			? `${readAt}.`
+			: `${readAt}, so ${scenariosGive(runsEvaluated, scoresEvaluated)}.`;
+	return `Each scenario replays one forecast: a recent period (${periods}, each ending today), forecast from one sampling window of the history before it, then compared with what the ${getTerm(TERMINOLOGY_KEYS.TEAM)} actually completed. ${counted}`;
+};
+
+/** The paragraphs the headline's explanation holds before its credit line. */
+export const headlineExplanation = (
+	facts: ExplanationFacts,
+	getTerm: TermGetter,
+): string[] => [scenarioExplanation(facts, getTerm), ACCURATE_MEANS];
+
 export interface LevelRowFacts {
 	confidenceLevel: number;
 	levelName: string;
@@ -522,8 +568,3 @@ export const legendTitles = {
 	held: "Forecast held",
 	missed: "Forecast missed",
 } as const;
-
-// The source method is credited in the same breath as what this product added, so the additions are
-// never mistaken for the author's.
-export const methodCredit =
-	"Grading each forecast as held or not, and shading it by how close it landed, follows Nick Brown's method in The Full Monte. Reading a level that always held as under-forecasting, and the 95th level, are this product's additions.";
