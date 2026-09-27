@@ -21,10 +21,13 @@ import {
 	heldGlyph,
 	heldUpMeans,
 	horizonLabel,
+	type LevelRowFacts,
 	LOADING,
 	legendTitles,
+	levelBarName,
 	levelLine,
 	levelReadingCopy,
+	levelRowText,
 	listOf,
 	methodCredit,
 	notCheckedCell,
@@ -1031,6 +1034,48 @@ describe("heldUpMeans", () => {
 	it("says what it takes for a sampling window to hold up", () => {
 		expect(heldUpMeans).toBe(
 			"A sampling window held up when its 95th forecast held in more than half of the checks that could be run on it.",
+		);
+	});
+});
+
+const mariasEightyFifth: LevelRowFacts = {
+	confidenceLevel: 85,
+	levelName: "Confident",
+	heldCount: 15,
+	runsEvaluated: 16,
+	share: 94,
+	withinTenPercent: 3,
+};
+
+const notTested: LevelRowFacts = {
+	confidenceLevel: 50,
+	levelName: "Risky",
+	heldCount: 0,
+	runsEvaluated: 0,
+	share: null,
+	withinTenPercent: 0,
+};
+
+describe("levelRowText", () => {
+	it("reads the held share, the counts and the accurate checks", () => {
+		expect(levelRowText(mariasEightyFifth)).toBe("94% (15 of 16) · 3 accurate");
+	});
+
+	it("says a level no check could test was not tested", () => {
+		expect(levelRowText(notTested)).toBe("Not tested — no check could run");
+	});
+});
+
+describe("levelBarName", () => {
+	it("names the bar by its level, its held share and counts, the rate it should hold at and its accurate checks", () => {
+		expect(levelBarName(mariasEightyFifth)).toBe(
+			"85th Confident: held in 94% of checks (15 of 16), expected about 85%; 3 accurate within 10%",
+		);
+	});
+
+	it("names the bar of a level no check could test as not tested", () => {
+		expect(levelBarName(notTested)).toBe(
+			"50th Risky: not tested, no check could run",
 		);
 	});
 });

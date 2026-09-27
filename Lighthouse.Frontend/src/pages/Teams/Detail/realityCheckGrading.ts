@@ -48,6 +48,15 @@ export const gradedCheckAt = (
 	};
 };
 
+export const gradedChecksAt = (
+	confidenceLevel: number,
+	cells: readonly RealityCheckCell[],
+): GradedCheck[] =>
+	cells.flatMap((cell) => {
+		const check = gradedCheckAt(cell, confidenceLevel);
+		return check === null ? [] : [check];
+	});
+
 export const missOf = ({
 	actualCompleted,
 	forecastValue,

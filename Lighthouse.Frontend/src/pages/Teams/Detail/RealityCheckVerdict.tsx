@@ -1,10 +1,8 @@
 import { Stack, Typography } from "@mui/material";
 import type React from "react";
-import type {
-	RealityCheckCell,
-	RealityCheckResult,
-} from "../../../models/Forecasts/RealityCheckResult";
+import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
+import RealityCheckLevelRow from "./RealityCheckLevelRow";
 import RealityCheckWindowBadge from "./RealityCheckWindowBadge";
 import {
 	denominatorStatement,
@@ -13,20 +11,7 @@ import {
 	whyChecksCouldNotRun,
 	windowVerdict,
 } from "./realityCheckCopy";
-import {
-	type GradedCheck,
-	gradedCheckAt,
-	levelCloseness,
-} from "./realityCheckGrading";
-
-const gradedChecksAt = (
-	confidenceLevel: number,
-	cells: readonly RealityCheckCell[],
-): GradedCheck[] =>
-	cells.flatMap((cell) => {
-		const check = gradedCheckAt(cell, confidenceLevel);
-		return check === null ? [] : [check];
-	});
+import { gradedChecksAt, levelCloseness } from "./realityCheckGrading";
 
 interface RealityCheckVerdictProps {
 	result: RealityCheckResult;
@@ -41,6 +26,18 @@ const RealityCheckVerdict: React.FC<Readonly<RealityCheckVerdictProps>> = ({
 	return (
 		<Stack spacing={1.5}>
 			<RealityCheckWindowBadge soundWindow={result.soundWindow} />
+			<Stack spacing={1}>
+				{[...levelCoverage]
+					.sort((a, b) => a.confidenceLevel - b.confidenceLevel)
+					.map((level) => (
+						<RealityCheckLevelRow
+							key={level.confidenceLevel}
+							level={level}
+							runsEvaluated={denominator.runsEvaluated}
+							cells={result.cells}
+						/>
+					))}
+			</Stack>
 			<Typography variant="subtitle1" component="h3">
 				How often each confidence level held
 			</Typography>

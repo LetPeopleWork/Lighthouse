@@ -368,6 +368,41 @@ export const cellComparison = (
 	return `Closed ${difference} ${moreOrFewer(miss)} (${actualCompleted}) than forecasted (${forecastValue}). ${howFarOff(miss, percentOfActual)}`;
 };
 
+export interface LevelRowFacts {
+	confidenceLevel: number;
+	levelName: string;
+	heldCount: number;
+	runsEvaluated: number;
+	/** The held share to show; none for a level no check could test. */
+	share: number | null;
+	withinTenPercent: number;
+}
+
+export const levelRowText = ({
+	heldCount,
+	runsEvaluated,
+	share,
+	withinTenPercent,
+}: LevelRowFacts): string =>
+	share === null
+		? "Not tested — no check could run"
+		: `${share}% (${heldCount} of ${runsEvaluated}) · ${withinTenPercent} accurate`;
+
+/** What the bar and its tick show, for a reader who cannot see them. */
+export const levelBarName = ({
+	confidenceLevel,
+	levelName,
+	heldCount,
+	runsEvaluated,
+	share,
+	withinTenPercent,
+}: LevelRowFacts): string => {
+	const level = `${confidenceLevel}th ${levelName}`;
+	return share === null
+		? `${level}: not tested, no check could run`
+		: `${level}: held in ${share}% of checks (${heldCount} of ${runsEvaluated}), expected about ${confidenceLevel}%; ${withinTenPercent} accurate within 10%`;
+};
+
 const runsLeftOut = ({
 	runsAttempted,
 	runsEvaluated,

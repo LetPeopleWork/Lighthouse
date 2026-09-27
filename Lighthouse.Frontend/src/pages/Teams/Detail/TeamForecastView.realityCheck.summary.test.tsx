@@ -343,7 +343,7 @@ describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on 
 });
 
 describe("@us-06 @slice-06b each confidence level is a bar against the rate it should hold at", () => {
-	it.skip(`@kpi-OUT-6094-caution-is-visible Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading "94% (15 of 16) · 3 accurate" (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-caution-is-visible Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading "94% (15 of 16) · 3 accurate"`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer(mariasEightyFifth()));
 		const bar = within(dialog).getByRole("img", {
 			name: "85th Confident: held in 94% of checks (15 of 16), expected about 85%; 3 accurate within 10%",
@@ -355,7 +355,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		expectTheLine(dialog, "94% (15 of 16) · 3 accurate");
 	});
 
-	it.skip(`one row per level in ascending order, each labelled like its column and reading its held share, counts and accurate checks (${PENDING})`, async () => {
+	it(`one row per level in ascending order, each labelled like its column and reading its held share, counts and accurate checks`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 12, 70: 14, 85: 15, 95: 16 } }),
 		);
