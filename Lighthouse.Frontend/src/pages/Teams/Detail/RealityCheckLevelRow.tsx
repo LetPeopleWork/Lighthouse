@@ -58,6 +58,7 @@ const RealityCheckLevelRow: React.FC<Readonly<RealityCheckLevelRowProps>> = ({
 		confidenceLevel,
 		levelName: new ForecastLevel(confidenceLevel).level,
 		heldCount,
+		// A check only counts once its forecast has a reading at every level, so every level shares one count.
 		runsEvaluated,
 		share:
 			reading === "NotEvaluated" ? null : heldShare(heldCount, runsEvaluated),
