@@ -21,7 +21,8 @@ namespace Lighthouse.Backend.API
     public class ForecastRealityCheckController(
         IForecastRealityCheckService realityCheckService,
         IRepository<Team> teamRepository,
-        ITeamMetricsService teamMetricsService)
+        ITeamMetricsService teamMetricsService,
+        ILogger<ForecastRealityCheckController> logger)
         : ControllerBase
     {
         [HttpPost("reality-check/{teamId:int}")]
@@ -30,6 +31,9 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
+                var filterOverride = DescribeFilterOverride(input.ApplyFilterOverride);
+                logger.LogInformation("Reality check run for Team {TeamId} (filter override: {FilterOverride:l})", team.Id, filterOverride);
+
                 var mode = ThroughputFilterOverride.ToFilterMode(input.ApplyFilterOverride);
                 var result = realityCheckService.Run(team, mode);
                 var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
@@ -37,5 +41,12 @@ namespace Lighthouse.Backend.API
                 return result with { FilterApplied = status.FilterApplied, ExcludedSummary = status.ExcludedSummary };
             });
         }
+
+        private static string DescribeFilterOverride(bool? applyFilterOverride) => applyFilterOverride switch
+        {
+            true => "on",
+            false => "off",
+            null => "none",
+        };
     }
 }

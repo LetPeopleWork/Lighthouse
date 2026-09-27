@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     public partial class Slice06AnOperatorSeesEveryRealityCheckTest
     {
         // @driving_port @real-io @us-06 @slice-06a @contract-shape:bounded-change
-        [Ignore(Pending)]
         [TestCase(NoOptions, "none", LatestRoute)]
         [TestCase("{\"applyFilterOverride\":null}", "none", LatestRoute)]
         [TestCase("{\"applyFilterOverride\":true}", "on", LatestRoute)]
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @real-io @us-06 @slice-06a @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_check_asked_for_a_Team_that_does_not_exist_writes_no_line()
         {
             var oceanExplorer = GivenOceanExplorerWithWorkFinishedEveryDay();
@@ -50,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         // @driving_port @real-io @us-06 @slice-06a @error @contract-shape:unbounded-preservation
-        [Ignore(Pending)]
         [TestCase("{\"applyFilterOverride\":\"yes\"}")]
         [TestCase("{\"applyFilterOverride\":")]
         public async Task A_request_whose_filter_choice_cannot_be_read_is_refused_and_writes_no_line(string request)
@@ -65,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // @driving_port @real-io @us-06 @slice-06a @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_check_refused_to_somebody_who_cannot_read_the_Team_writes_no_line()
         {
             var oceanExplorer = GivenOceanExplorerWithWorkFinishedEveryDay();

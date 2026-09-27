@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// </summary>
     public partial class Slice06AnOperatorSeesEveryRealityCheckTest : ForecastRealityCheckAcceptanceTest
     {
-        private const string Pending = "Pending: the reality check writes nothing to the log yet (epic 4172, slice 06a, story 6094).";
-
         private const string ALineOfARealityCheck = "Reality check run for Team";
 
         private const int ANumberNoTeamWasEverGiven = 987_654;
