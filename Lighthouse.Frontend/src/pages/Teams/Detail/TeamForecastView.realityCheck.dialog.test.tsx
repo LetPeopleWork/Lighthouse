@@ -763,6 +763,18 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(within(dialog).queryByRole("table")).toBeNull();
 	});
 
+	it(`@error a failure that carries no message of its own still says plainly that the check could not run`, async () => {
+		runRealityCheck.mockRejectedValue({ status: 503 });
+		const group = renderTheForecastTab(runRealityCheck);
+
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			/^The reality check could not be run\. Please try again\.$/,
+		);
+	});
+
 	it(`@error Run again after a failure can still bring the answer`, async () => {
 		runRealityCheck
 			.mockRejectedValueOnce(new Error("The reality check could not be run"))
