@@ -28,7 +28,6 @@ const RealityCheckWindowBadge: React.FC<
 > = ({ soundWindow }) => {
 	const { getTerm } = useTerminology();
 	const state = windowBadgeOf(soundWindow);
-	// A chip has no role that takes its name from its words, so the same words are given as its name.
 	const words = badgeWords[state](soundWindow.currentSettingDays, getTerm);
 	const notChecked = unevaluatedSentence(soundWindow.unevaluatedWindowDays);
 	const { tooltip, target } = useFocusTooltip();
@@ -49,7 +48,6 @@ const RealityCheckWindowBadge: React.FC<
 				{...target}
 				color={TONE[state]}
 				label={words}
-				aria-label={words}
 				sx={{ alignSelf: "flex-start" }}
 			/>
 		</Tooltip>

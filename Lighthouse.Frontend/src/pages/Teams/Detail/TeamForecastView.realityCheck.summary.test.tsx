@@ -27,7 +27,7 @@ import {
  *
  * What the specs need from the markup, and nothing more: the headline's explanation opens from a button
  * named "About these numbers" into a `dialog` of the same name, holding a link named "The Full Monte";
- * the badge is a focusable MUI chip whose visible words are its name and whose tooltip describes it; each
+ * the badge is a focusable MUI chip that reads its visible words and whose open tooltip describes it; each
  * level's bar is an `img` named by its text alternative, holding a hidden progress bar whose value is the
  * held share.
  */
@@ -524,7 +524,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		},
 	);
 
-	it(`on keyboard focus the badge keeps its words as its name and says what held up means and which windows could not be checked, naming none that held up - Coastal Survey`, async () => {
+	it(`on keyboard focus the badge reads its words and is described by a tooltip saying what held up means and which windows could not be checked, naming none that held up - Coastal Survey`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 		const badge = theBadgeReading(dialog, "Your 30-day sampling window: fine");
 		const notChecked =
@@ -533,7 +533,11 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		await tabUntilFocused(badge);
 		const tooltip = await screen.findByRole("tooltip");
 
-		expect(badge).toHaveAccessibleName("Your 30-day sampling window: fine");
+		expect(readingOf(badge)).toBe("Your 30-day sampling window: fine");
+		expect(badge).not.toHaveAttribute("aria-label");
+		expect(badge).toHaveAccessibleDescription(
+			expect.stringContaining(HELD_UP_MEANS),
+		);
 		expect(linesReading(tooltip, HELD_UP_MEANS)).not.toHaveLength(0);
 		expect(linesReading(tooltip, notChecked)).not.toHaveLength(0);
 		expect(withoutSentences(tooltip, [HELD_UP_MEANS, notChecked])).toBe("");
