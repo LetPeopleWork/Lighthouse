@@ -710,9 +710,9 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		await pressRunRealityCheck(group);
 		const dialog = await theRealityCheckDialog();
 
-		expect(
-			await within(dialog).findByText(/the reality check could not be run/i),
-		).toBeInTheDocument();
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"The reality check could not be run",
+		);
 		expect(theButtonNamed(dialog, /^run again$/i)).toBeInTheDocument();
 		expect(linesMatching(dialog, /forecast runs were checked/i)).toHaveLength(
 			0,

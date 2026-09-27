@@ -47,7 +47,7 @@ const RealityCheckRunContent: React.FC<
 		);
 	}
 	if (run.state === "failed") {
-		return <Typography>{run.message}</Typography>;
+		return <Typography role="alert">{run.message}</Typography>;
 	}
 	return (
 		<Stack spacing={3}>
