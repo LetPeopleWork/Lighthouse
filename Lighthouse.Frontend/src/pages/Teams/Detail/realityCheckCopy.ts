@@ -318,6 +318,8 @@ export interface GradedCellFacts {
 // A typographic minus, not a hyphen, so a negative figure reads as a number and not as a dash.
 const MINUS = "−";
 
+export const notCheckedCell = "Not checked at this confidence level.";
+
 export const heldGlyph = (held: boolean): string => (held ? "✓" : "✗");
 
 export const percentShown = (percentOfActual: number): string =>

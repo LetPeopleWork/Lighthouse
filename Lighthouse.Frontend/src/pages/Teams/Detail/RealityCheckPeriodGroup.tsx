@@ -6,7 +6,9 @@ import type {
 	RealityCheckResult,
 } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
-import RealityCheckGradedCell from "./RealityCheckGradedCell";
+import RealityCheckGradedCell, {
+	RealityCheckNotCheckedCell,
+} from "./RealityCheckGradedCell";
 import {
 	periodHeader,
 	unevaluableRowCopy,
@@ -61,12 +63,16 @@ const UnevaluableCells: React.FC<
 	);
 };
 
-// A level the server left out of a check stays an empty cell, which the legend reads as not checked, so
-// every other forecast still sits under its own column.
+// A level the server left out of a check keeps its cell, so every other forecast still sits under its
+// own column.
 const LevelCell: React.FC<Readonly<{ check: GradedCheck | null }>> = ({
 	check,
 }) =>
-	check === null ? <TableCell /> : <RealityCheckGradedCell check={check} />;
+	check === null ? (
+		<RealityCheckNotCheckedCell />
+	) : (
+		<RealityCheckGradedCell check={check} />
+	);
 
 const CheckCells: React.FC<
 	Readonly<{ cell: RealityCheckCell | undefined; result: RealityCheckResult }>

@@ -391,37 +391,6 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		);
 	});
 
-	it(`@error a level the check left out stays an empty cell, and every other forecast keeps its own column`, async () => {
-		const answer = oceanExplorerOverEightWeeks();
-		const dialog = await theDialogFor({
-			...answer,
-			cells: answer.cells.map((cell) =>
-				cell.horizonDays === 56 && cell.samplingWindowDays === 30
-					? {
-							...cell,
-							levelOutcomes: (cell.levelOutcomes ?? []).filter(
-								(outcome) => outcome.confidenceLevel !== 70,
-							),
-						}
-					: cell,
-			),
-		});
-		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
-
-		expect(within(row).getAllByRole("cell")).toHaveLength(4);
-		expect(levelCell(row, 70)).toBeEmptyDOMElement();
-		expect(levelCell(row, 70)).not.toHaveAttribute("aria-label");
-		expect(levelCell(row, 50)).toHaveAccessibleName(
-			`Closed 6 Work Items fewer (42) than forecasted (48). Forecast off by ${MINUS}14%`,
-		);
-		expect(levelCell(row, 85)).toHaveAccessibleName(
-			"Closed 6 Work Items more (42) than forecasted (36). Forecast off by +14%",
-		);
-		expect(levelCell(row, 95)).toHaveAccessibleName(
-			"Closed 11 Work Items more (42) than forecasted (31). Forecast off by +26%",
-		);
-	});
-
 	it(`@error a check that could not run says why across all four level columns, never blank and never graded - Coastal Survey's 14-day row over 2 weeks`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 		const row = windowRow(periodGroup(theTableIn(dialog), 14), 14);

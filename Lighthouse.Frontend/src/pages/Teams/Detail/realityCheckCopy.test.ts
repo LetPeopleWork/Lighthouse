@@ -23,6 +23,7 @@ import {
 	levelReadingCopy,
 	listOf,
 	methodCredit,
+	notCheckedCell,
 	notCheckedLegend,
 	notTestedReasonCopy,
 	percentShown,
@@ -819,6 +820,12 @@ describe("heldGlyph", () => {
 		{ held: false, glyph: "✗" },
 	])("marks held $held with $glyph", ({ held, glyph }) => {
 		expect(heldGlyph(held)).toBe(glyph);
+	});
+});
+
+describe("notCheckedCell", () => {
+	it("names a level the check left out", () => {
+		expect(notCheckedCell).toBe("Not checked at this confidence level.");
 	});
 });
 

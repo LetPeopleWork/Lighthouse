@@ -478,7 +478,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		},
 	);
 
-	it.skip(`@kpi-OUT-6094-how-far-each-forecast-landed every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-how-far-each-forecast-landed every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		const cells = everyGradedCell(dialog);
@@ -494,7 +494,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		}
 	});
 
-	it.skip(`on keyboard focus a cell shows its comparison in a tooltip whose words are the cell's name - Ocean Explorer's 14-day 50th, ✗ 21 against 14 (${PENDING})`, async () => {
+	it(`on keyboard focus a cell shows its comparison in a tooltip whose words are the cell's name - Ocean Explorer's 14-day 50th, ✗ 21 against 14`, async () => {
 		const dialog = await theDialogFor(oceanExplorersWeek());
 		const cell = theFirstGradedCell(dialog);
 		const comparison = `Closed 7 Work Items fewer (14) than forecasted (21). Forecast off by ${MINUS}50%`;
@@ -507,7 +507,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		expect(cell).toHaveAccessibleName(comparison);
 	});
 
-	it.skip(`on hover a cell shows the same tooltip (${PENDING})`, async () => {
+	it(`on hover a cell shows the same tooltip`, async () => {
 		const dialog = await theDialogFor(oceanExplorersWeek());
 		const cell = theFirstGradedCell(dialog);
 
@@ -519,7 +519,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		);
 	});
 
-	it.skip(`@error a level the check left out shows "—", is named "Not checked at this confidence level." and is still a keyboard stop (${PENDING})`, async () => {
+	it(`@error a level the check left out shows "—", is named "Not checked at this confidence level." and is still a keyboard stop`, async () => {
 		const answer = oceanExplorersWeek();
 		const dialog = await theDialogFor({
 			...answer,
@@ -548,7 +548,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 });
 
 describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
-	it.skip(`@error Escape dismisses a cell's tooltip and leaves the dialog open (${PENDING})`, async () => {
+	it(`@error Escape dismisses a cell's tooltip and leaves the dialog open`, async () => {
 		const dialog = await theDialogFor(oceanExplorersWeek());
 
 		await tabUntilFocused(theFirstGradedCell(dialog));
