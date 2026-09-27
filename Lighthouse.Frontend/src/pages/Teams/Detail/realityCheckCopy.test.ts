@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	DETERMINATIONS,
+	type ForecastGrade,
 	LEVEL_READINGS,
 	NOT_TESTED_REASONS,
 	type RealityCheckCell,
@@ -19,12 +20,12 @@ import {
 	heldGlyph,
 	horizonLabel,
 	LOADING,
+	legendTitles,
 	levelLine,
 	levelReadingCopy,
 	listOf,
 	methodCredit,
 	notCheckedCell,
-	notCheckedLegend,
 	notTestedReasonCopy,
 	percentShown,
 	periodActual,
@@ -957,10 +958,24 @@ describe("usualGradeCopy", () => {
 });
 
 describe("gradeLegendCopy", () => {
-	it("gives every grade and the not-checked state words of their own", () => {
-		const words = [...Object.values(gradeLegendCopy), notCheckedLegend];
+	it.each<{ grade: ForecastGrade; label: string }>([
+		{ grade: "HeldWithin10", label: "within 10%" },
+		{ grade: "Held10To25", label: "10–25% off" },
+		{ grade: "HeldOver25", label: "more than 25% off" },
+		{ grade: "NotHeldWithin10", label: "within 10%" },
+		{ grade: "NotHeld10To25", label: "10–25% off" },
+		{ grade: "NotHeldOver25", label: "more than 25% off" },
+	])("labels $grade's band $label", ({ grade, label }) => {
+		expect(gradeLegendCopy[grade]).toBe(label);
+	});
+});
 
-		expect(new Set(words).size).toBe(words.length);
+describe("legendTitles", () => {
+	it("titles the held row and the missed row", () => {
+		expect(legendTitles).toEqual({
+			held: "Forecast held",
+			missed: "Forecast missed",
+		});
 	});
 });
 

@@ -592,7 +592,7 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 });
 
 describe("@us-06 @slice-06a the legend, the table's name and the Backtesting group", () => {
-	it.skip(`@kpi-OUT-6094-colour-never-alone the legend is two titled rows - "${HELD_TITLE}" then "${MISSED_TITLE}" - each with its three bands on the grade fills, in band order (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-colour-never-alone the legend is two titled rows - "${HELD_TITLE}" then "${MISSED_TITLE}" - each with its three bands on the grade fills, in band order`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const titles = [HELD_TITLE, MISSED_TITLE].map((title) => {
 			const matching = linesReading(dialog, title);

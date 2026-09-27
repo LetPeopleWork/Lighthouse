@@ -52,6 +52,16 @@ export const missOf = ({
 }: Pick<GradedCheck, "forecastValue" | "actualCompleted">): number =>
 	actualCompleted - forecastValue;
 
+/** Which side of the hue a grade sits on: the forecast held, or it was missed. */
+export const GRADE_HELD: Record<ForecastGrade, boolean> = {
+	HeldWithin10: true,
+	Held10To25: true,
+	HeldOver25: true,
+	NotHeldWithin10: false,
+	NotHeld10To25: false,
+	NotHeldOver25: false,
+};
+
 type Band = "within10" | "10To25" | "over25";
 
 const HELD_GRADE_OF_BAND: Record<Band, ForecastGrade> = {

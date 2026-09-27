@@ -501,22 +501,6 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 });
 
 describe("@us-05 @slice-05 the legend and the credit", () => {
-	it(`@kpi-OUT-6094-colour-never-alone names the six grades and the not-checked state in words`, async () => {
-		const dialog = await theDialogFor({});
-
-		for (const words of [
-			"Held, within 10%",
-			"Held, by 10-25%",
-			"Held, by more than 25%",
-			"Did not hold, within 10%",
-			"Did not hold, by 10-25%",
-			"Did not hold, by more than 25%",
-			"Not checked",
-		]) {
-			expectTheLine(dialog, words);
-		}
-	});
-
 	it(`credits Nick Brown's held-or-not grading and shading by closeness, and names what this product added`, async () => {
 		const dialog = await theDialogFor({});
 

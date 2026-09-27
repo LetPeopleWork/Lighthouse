@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	GRADE_HELD,
 	type GradedCheck,
 	gradedCheckAt,
 	heldShare,
@@ -301,6 +302,19 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 			withinTenPercent: 0,
 			usualGrade: null,
 		});
+	});
+});
+
+describe("@us-06 @slice-06a @kpi-OUT-6094-colour-never-alone which side of the hue a grade sits on", () => {
+	it.each<{ grade: ForecastGrade; held: boolean }>([
+		{ grade: "HeldWithin10", held: true },
+		{ grade: "Held10To25", held: true },
+		{ grade: "HeldOver25", held: true },
+		{ grade: "NotHeldWithin10", held: false },
+		{ grade: "NotHeld10To25", held: false },
+		{ grade: "NotHeldOver25", held: false },
+	])("$grade is held: $held", ({ grade, held }) => {
+		expect(GRADE_HELD[grade]).toBe(held);
 	});
 });
 

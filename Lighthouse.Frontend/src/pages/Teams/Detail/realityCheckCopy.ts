@@ -432,16 +432,20 @@ export const findings = (getTerm: TermGetter, levelCount: number): string[] => [
 	`The confidence level is not a setting: it is which of the ${levelCount} numbers you choose to quote.`,
 ];
 
+// The legend's row title says held or missed, so a band label only says how far off.
 export const gradeLegendCopy: Record<ForecastGrade, string> = {
-	HeldWithin10: "Held, within 10%",
-	Held10To25: "Held, by 10-25%",
-	HeldOver25: "Held, by more than 25%",
-	NotHeldWithin10: "Did not hold, within 10%",
-	NotHeld10To25: "Did not hold, by 10-25%",
-	NotHeldOver25: "Did not hold, by more than 25%",
+	HeldWithin10: "within 10%",
+	Held10To25: "10–25% off",
+	HeldOver25: "more than 25% off",
+	NotHeldWithin10: "within 10%",
+	NotHeld10To25: "10–25% off",
+	NotHeldOver25: "more than 25% off",
 };
 
-export const notCheckedLegend = "Not checked";
+export const legendTitles = {
+	held: "Forecast held",
+	missed: "Forecast missed",
+} as const;
 
 // The source method is credited in the same breath as what this product added, so the additions are
 // never mistaken for the author's.
