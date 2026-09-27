@@ -2,8 +2,8 @@
   "roadmap": {
     "project_id": "epic-4172-forecast-backtest-sweep",
     "created_at": "2026-09-26",
-    "total_steps": 48,
-    "total_phases": 4,
+    "total_steps": 65,
+    "total_phases": 5,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "deliverable_type": "application",
@@ -12,7 +12,7 @@
   },
   "validation": {
     "status": "approved",
-    "notes": "Scenario ownership, counted against the test files rather than the feature-delta tables. Each pending test is claimed by exactly one step, none is orphaned and none is claimed twice. BACKEND, 47 methods / 78 cases. Slice01OneSentenceAboutYourSamplingWindowScenarios.cs has 37 pending methods (64 cases) across 01-01..01-11; the 38th method, The_single_back_test_beside_the_check_still_answers_as_it_did, is already green and is pinned at 01-01. RealityCheckQueryCountTest.cs has 1 method / 2 cases at 01-10. RealityCheckReadOnlyArchUnitTest.cs has 4 methods at 01-12. TeamForecastRealityCheckRunEventTests.cs has 5 methods / 8 cases at 01-17. FRONTEND, 31 definitions / 32 cases. TeamForecastView.realityCheck.test.tsx has 17 slice-01 definitions (18 cases) across 01-13..01-16 and 8 slice-02 definitions across 02-02..02-04. TeamForecastView.realityCheck.usageData.test.tsx has 6 definitions across 01-18 and 01-19. Total 78 pending definitions and 110 pending cases, which matches red-classification.md (backend 78 cases, frontend 32). Per-step case counts: 01-01:7, 01-02:5, 01-03:6, 01-04:6, 01-05:7, 01-06:7, 01-07:3, 01-08:7, 01-09:4, 01-10:7, 01-11:7, 01-12:4, 01-13:3, 01-14:6, 01-15:5, 01-16:4, 01-17:8, 01-18:1, 01-19:5, 01-20:0, 01-21:0 (the crafter writes the Playwright skeleton), 01-22:0 (measurement), 02-01:0 (refactor), 02-02:2, 02-03:4, 02-04:2. One deliberate deviation from the 'fewer than 8 per step' rule: 01-17 un-ignores 8 cases from 5 methods. All eight turn on a single enum member. DEVOPS requires the member, its page row and the Slice04 list entry to land in one commit, so a split would only create a step with no production file.\n\nSTORY #6094 (phases 04 and 05, slices 04 and 05), appended 2026-09-26; phases 01 and 02 above are unchanged and stay approved. Scenario ownership is counted against the DISTILL test files, not the feature-delta tables. Each pending #6094 case is claimed by exactly one step; none is orphaned and none is claimed twice. Total: 76 pending definitions / 99 cases, matching red-classification.md's Story #6094 section (99 new cases, 98 run RED plus the unrunnable Playwright step). BACKEND, 5 methods / 5 cases: Slice04TheAnswerOpensInADialogScenarios.cs, all at 04-01. RealityCheckQueryCountTest (20 / 24) is the guard and stays unedited. FRONTEND: TeamForecastView.realityCheck.dialog.test.tsx has 30 definitions / 31 cases (04-04:6, 04-05:5, 04-06:2, 04-07:3, 04-08:5, 04-09:5, 04-11:5). TeamForecastView.realityCheck.grading.test.tsx has 17 definitions / 26 cases (05-06:6, 05-07:7, 05-08:5, 05-09:8). realityCheckGrading.test.ts has 13 definitions / 26 cases (04-03:4, 05-01:7, 05-02:7, 05-03:3, 05-04:5). TeamForecastView.realityCheck.usageData.test.tsx has 7 definitions / 7 cases, all at 04-10. utils/theme/colors.test.ts has 2, at 05-05. services/Api/ForecastService.test.ts has 1, at 04-02. E2E: TeamsDetail.spec.ts has 1 test.step.skip, at 04-04. Per-step case counts: 04-01:5, 04-02:1, 04-03:4, 04-04:7 (6 dialog specs + the walking skeleton), 04-05:5, 04-06:2, 04-07:3, 04-08:5, 04-09:5, 04-10:7, 04-11:5, 04-12:0 (Stryker.NET configuration, PR-6094-4), 05-01:7, 05-02:7, 05-03:3, 05-04:5, 05-05:2, 05-06:6, 05-07:7, 05-08:5, 05-09:8, 05-10:0 (StrykerJS configuration, PR-6094-3, plus the done-checks). Phase 04 = 49 cases, phase 05 = 50. ORDER: the backend scoredPeriods field (04-01) lands before the zod schema that requires it (04-02). 04-04 is the atomic commit: the dialog, every retirement on the design's list, the rewritten or deleted inline and usage specs, the POM locator swap, and the un-skipped Playwright step, run locally against a fresh Lighthouse and never against :5169. The slice 04 cell-name pins are rewritten at 05-06, and the level-line pins at 05-08, each in the commit that changes the string. DEVIATIONS, each deliberate: (1) 05-09 claims 8 cases. Six are rows of one it.each over a single exhaustive Record of 'usually' phrases; the compiler forces all six in at once, so a split would leave a step that passes on first un-skip with no production change. (2) The ForecastService 'keep the days as they travel' toEqual rewrite moves from the dialog commit to 04-02, because the required schema field is what breaks it, and 04-02 would otherwise be red on its own. (3) DISTILL's retirement table placed 15 of the 17 inline slice-01 specs. The other two ('@error checks that could not run are named with their reason and left out of every count' and '@error a Team whose history supports no check is told nothing could be concluded rather than shown an empty result') are rewritten through the dialog at 04-04, not deleted, because no dialog spec pins that wording. (4) Tests the crafter writes although DISTILL wrote the acceptance specs: inner-loop ForecastRealityCheckServiceTest cases for the scoredPeriods mapping (04-01), because Stryker.NET excludes the acceptance category; and whole-string realityCheckCopy.test.ts cases for every new composer, because this is realityCheckCopy.ts's first mutation run. Steps where a spec may pass on first un-skip say so (04-06, 04-10, 04-11, 05-07, 05-08); the commit body records it honestly. Peer review: not run; the orchestrator runs it. Phases 04+05 review (2026-09-26): conditionally approved, 0 blockers, no orphans, no double claims; 05-09 sizing accepted (one it.each over an exhaustive Record). The reviewer counted it.each blocks as single cases (83); per-file expanded counts match DISTILL (99)."
+    "notes": "Scenario ownership, counted against the test files rather than the feature-delta tables. Each pending test is claimed by exactly one step, none is orphaned and none is claimed twice. BACKEND, 47 methods / 78 cases. Slice01OneSentenceAboutYourSamplingWindowScenarios.cs has 37 pending methods (64 cases) across 01-01..01-11; the 38th method, The_single_back_test_beside_the_check_still_answers_as_it_did, is already green and is pinned at 01-01. RealityCheckQueryCountTest.cs has 1 method / 2 cases at 01-10. RealityCheckReadOnlyArchUnitTest.cs has 4 methods at 01-12. TeamForecastRealityCheckRunEventTests.cs has 5 methods / 8 cases at 01-17. FRONTEND, 31 definitions / 32 cases. TeamForecastView.realityCheck.test.tsx has 17 slice-01 definitions (18 cases) across 01-13..01-16 and 8 slice-02 definitions across 02-02..02-04. TeamForecastView.realityCheck.usageData.test.tsx has 6 definitions across 01-18 and 01-19. Total 78 pending definitions and 110 pending cases, which matches red-classification.md (backend 78 cases, frontend 32). Per-step case counts: 01-01:7, 01-02:5, 01-03:6, 01-04:6, 01-05:7, 01-06:7, 01-07:3, 01-08:7, 01-09:4, 01-10:7, 01-11:7, 01-12:4, 01-13:3, 01-14:6, 01-15:5, 01-16:4, 01-17:8, 01-18:1, 01-19:5, 01-20:0, 01-21:0 (the crafter writes the Playwright skeleton), 01-22:0 (measurement), 02-01:0 (refactor), 02-02:2, 02-03:4, 02-04:2. One deliberate deviation from the 'fewer than 8 per step' rule: 01-17 un-ignores 8 cases from 5 methods. All eight turn on a single enum member. DEVOPS requires the member, its page row and the Slice04 list entry to land in one commit, so a split would only create a step with no production file.\n\nSTORY #6094 (phases 04 and 05, slices 04 and 05), appended 2026-09-26; phases 01 and 02 above are unchanged and stay approved. Scenario ownership is counted against the DISTILL test files, not the feature-delta tables. Each pending #6094 case is claimed by exactly one step; none is orphaned and none is claimed twice. Total: 76 pending definitions / 99 cases, matching red-classification.md's Story #6094 section (99 new cases, 98 run RED plus the unrunnable Playwright step). BACKEND, 5 methods / 5 cases: Slice04TheAnswerOpensInADialogScenarios.cs, all at 04-01. RealityCheckQueryCountTest (20 / 24) is the guard and stays unedited. FRONTEND: TeamForecastView.realityCheck.dialog.test.tsx has 30 definitions / 31 cases (04-04:6, 04-05:5, 04-06:2, 04-07:3, 04-08:5, 04-09:5, 04-11:5). TeamForecastView.realityCheck.grading.test.tsx has 17 definitions / 26 cases (05-06:6, 05-07:7, 05-08:5, 05-09:8). realityCheckGrading.test.ts has 13 definitions / 26 cases (04-03:4, 05-01:7, 05-02:7, 05-03:3, 05-04:5). TeamForecastView.realityCheck.usageData.test.tsx has 7 definitions / 7 cases, all at 04-10. utils/theme/colors.test.ts has 2, at 05-05. services/Api/ForecastService.test.ts has 1, at 04-02. E2E: TeamsDetail.spec.ts has 1 test.step.skip, at 04-04. Per-step case counts: 04-01:5, 04-02:1, 04-03:4, 04-04:7 (6 dialog specs + the walking skeleton), 04-05:5, 04-06:2, 04-07:3, 04-08:5, 04-09:5, 04-10:7, 04-11:5, 04-12:0 (Stryker.NET configuration, PR-6094-4), 05-01:7, 05-02:7, 05-03:3, 05-04:5, 05-05:2, 05-06:6, 05-07:7, 05-08:5, 05-09:8, 05-10:0 (StrykerJS configuration, PR-6094-3, plus the done-checks). Phase 04 = 49 cases, phase 05 = 50. ORDER: the backend scoredPeriods field (04-01) lands before the zod schema that requires it (04-02). 04-04 is the atomic commit: the dialog, every retirement on the design's list, the rewritten or deleted inline and usage specs, the POM locator swap, and the un-skipped Playwright step, run locally against a fresh Lighthouse and never against :5169. The slice 04 cell-name pins are rewritten at 05-06, and the level-line pins at 05-08, each in the commit that changes the string. DEVIATIONS, each deliberate: (1) 05-09 claims 8 cases. Six are rows of one it.each over a single exhaustive Record of 'usually' phrases; the compiler forces all six in at once, so a split would leave a step that passes on first un-skip with no production change. (2) The ForecastService 'keep the days as they travel' toEqual rewrite moves from the dialog commit to 04-02, because the required schema field is what breaks it, and 04-02 would otherwise be red on its own. (3) DISTILL's retirement table placed 15 of the 17 inline slice-01 specs. The other two ('@error checks that could not run are named with their reason and left out of every count' and '@error a Team whose history supports no check is told nothing could be concluded rather than shown an empty result') are rewritten through the dialog at 04-04, not deleted, because no dialog spec pins that wording. (4) Tests the crafter writes although DISTILL wrote the acceptance specs: inner-loop ForecastRealityCheckServiceTest cases for the scoredPeriods mapping (04-01), because Stryker.NET excludes the acceptance category; and whole-string realityCheckCopy.test.ts cases for every new composer, because this is realityCheckCopy.ts's first mutation run. Steps where a spec may pass on first un-skip say so (04-06, 04-10, 04-11, 05-07, 05-08); the commit body records it honestly. Peer review: not run; the orchestrator runs it. Phases 04+05 review (2026-09-26): conditionally approved, 0 blockers, no orphans, no double claims; 05-09 sizing accepted (one it.each over an exhaustive Record). The reviewer counted it.each blocks as single cases (83); per-file expanded counts match DISTILL (99).\n\nSTORY #6094, US-06 AMENDMENT (phase 06, slices 06a and 06b), appended 2026-09-27; phases 01, 02, 04 and 05 above are unchanged. Scenario ownership is counted against the DISTILL test files: 53 pending definitions / 85 cases, matching red-classification.md's US-06 part (84 RED plus the unrunnable Playwright step). Each pending case is claimed by exactly one step; none is orphaned and none is claimed twice. Two green guards stay green and are claimed by no step: the trigger file's back-test harness case and the compact file's unevaluable-row case. BACKEND, 4 methods / 10 cases: Slice06AnOperatorSeesEveryRealityCheckScenarios.cs, all at 06-01. FRONTEND: TeamForecastView.realityCheck.trigger.test.tsx 6 definitions / 7 cases, all at 06-02. TeamForecastView.realityCheck.compact.test.tsx 18 / 25 (06-02:1, 06-03:3, 06-04:4, 06-05:8, 06-06:5, 06-07:2, 06-08:1, 06-14:1). TeamForecastView.realityCheck.summary.test.tsx 21 / 35 (06-10:10, 06-11:3, 06-12:2, 06-13:6, 06-14:6, 06-15:4, 06-16:4). realityCheckGrading.test.ts 3 / 7, all at 06-09. E2E: TeamsDetail.spec.ts has 1 test.step.skip, at 06-16. Per-step case counts: 06-01:10, 06-02:8, 06-03:3, 06-04:4, 06-05:8, 06-06:5, 06-07:2, 06-08:1, 06-09:7, 06-10:10, 06-11:3, 06-12:2, 06-13:6, 06-14:7, 06-15:4, 06-16:5, 06-17:0 (StrykerJS configuration). Slice 06a (06-01..06-08) = 41 cases; slice 06b (06-09..06-17) = 44; total 85. AC COVERAGE, every AC-6.x in at least one step's red_to_green_tests: AC-6.1 06-02; AC-6.2 06-03; AC-6.3 06-01; AC-6.4 06-04; AC-6.5 06-05, 06-06; AC-6.6 06-08, 06-14 (credit and 'Not checked' gone); AC-6.7 06-07; AC-6.8 06-16; AC-6.9 06-13; AC-6.10 06-09, 06-12, 06-13 (Kelp Farm), 06-16 (never / always held); AC-6.11 06-14, 06-15 (as reconciled: click / Enter / Space, Escape first, the one linked credit line); AC-6.12 06-10, 06-11, 06-16 (Deep Current, no window ranked); AC-6.13 06-02, 06-07, 06-10, 06-15; AC-6.14 06-05 (fills on cells), 06-08 (fills on legend swatches), 06-10 (badge tones), with colors.test.ts unchanged and the dark theme a documented gap for the per-theme screenshots owed at FINALIZE; AC-6.15 06-16; AC-6.16 06-14 (read-only controls) and 06-02 (the icon runs no check), with the ForecastService parse spec, the backend slice 01 / 04 suites and the usage-data specs as unchanged guards. RETIREMENT: all 41 rows of DISTILL's table are placed, each in the step whose change breaks it. DEVIATIONS, each deliberate: (1) 06-01 claims 10 cases, all on one log line; the negative scenarios fail only on their presence leg. (2) 06-02 claims 8: the compact group spec replaces retirement row 16, which that change breaks. (3) 06-05 claims 8: seven are rows of one it.each over the single composer cellComparison. (4) 06-10 claims 10: nine are rows of one it.each over an exhaustive six-member union, as 05-09 was. (5) THE CREDIT: the compact spec 'the credit line and the \"Not checked\" entry are gone', retirement row 26 and methodCredit move from 06a to 06-14, the step that adds the explanation, so the legend keeps the credit until the popover holds it and no commit shows the dialog without it. (6) RealityCheckLevelLabel is extracted at 06-12 (DESIGN said 06a), where its second user arrives. (7) The Playwright swap is part of 06-16, not a step of its own, because the old step asserts the text 06-16 deletes, and DISTILL and DEVOPS both require the locator deletions to land with that change. (8) The denominator-wait rewrites (rows 2, 17, 18, 19, 31) move forward to 06-13 so that 06-16 stays a deletion. (9) The teamName props go at 06-03 rather than 06-02, because the loading text is their last reader. Steps where a spec may pass on first un-skip say so (06-06 hover, 06-15 Escape). Peer review: not run; the orchestrator runs it."
   },
   "ssot_inputs": {
     "feature_delta": "/storage/repos/Lighthouse/docs/feature/epic-4172-forecast-backtest-sweep/feature-delta.md (DISCUSS US-01/US-02 and DoD 1-15; DESIGN DES-1..DES-18, Response Contract, Reuse Analysis, E1-E7, R-1 measured; DEVOPS usage-data event and CI notes; DISTILL scenario list, P-D1..P-D7, findings F-1..F-5 all closed, handoff)",
@@ -25,9 +25,12 @@
     "ado_stories": "Slice 01 = Story #6072, slice 02 = Story #6073, slice 03 = Story #6074 (DEFERRED), slices 04 and 05 = Story #6094",
     "slice_04": "/storage/repos/Lighthouse/docs/feature/epic-4172-forecast-backtest-sweep/slices/slice-04-the-answer-opens-in-a-dialog.md",
     "slice_05": "/storage/repos/Lighthouse/docs/feature/epic-4172-forecast-backtest-sweep/slices/slice-05-how-close-each-forecast-landed.md",
-    "story_6094": "feature-delta.md, Story #6094 parts: DISCUSS (6094-D1..D10, US-04 / US-05), DESIGN (6094-DES-1..9, Component Decomposition, Reuse Analysis, E6-E12, Response Contract changes), DEVOPS (6094-OPS-1..3, commit-order rules, mutation sets, PR-6094-1..7), DISTILL (scenario list, retirement table, scaffolds, P-6094-1..10, F-6094-1/2); ADR-211; red-classification.md, Story #6094 section"
+    "story_6094": "feature-delta.md, Story #6094 parts: DISCUSS (6094-D1..D10, US-04 / US-05), DESIGN (6094-DES-1..9, Component Decomposition, Reuse Analysis, E6-E12, Response Contract changes), DEVOPS (6094-OPS-1..3, commit-order rules, mutation sets, PR-6094-1..7), DISTILL (scenario list, retirement table, scaffolds, P-6094-1..10, F-6094-1/2); ADR-211; red-classification.md, Story #6094 section",
+    "slice_06": "/storage/repos/Lighthouse/docs/feature/epic-4172-forecast-backtest-sweep/slices/slice-06-reads-at-a-glance.md (06a / 06b split; its 06b IN list predates the maintainer's answers and is read through them)",
+    "story_6094_us06": "feature-delta.md, US-06 amendment parts: DISCUSS (6094-D11..D25, S-1..S-25, AC-6.1..6.16, Copy to confirm, Maintainer answers 2026-09-27), DESIGN (6094-DES-10..DES-20, component map and retirement list DES-18, POM plan DES-20), DEVOPS (mutation scope), DISTILL (AC to test map, 41-row retirement table, POM plan, scaffolds, P-US06-1..10, F-US06-1..4); red-classification.md, Story #6094 US-06 part"
   },
   "user_decisions": [
+    "US-06 (maintainer, 2026-09-27) — 06a and 06b are pushed together, after both slices and the quality gates. The credit reads as one linked line, 'Inspired by Nick Brown's article The Full Monte', inside the headline's explanation and nowhere else; no additions are claimed. The badge tooltip names no window that held up; 'fine' is the word for both inside states; the non-independence statement and the two findings are said nowhere. This roadmap keeps the credit under the legend until 06-14 moves it, so it is never absent from any commit.",
     "DES-14 (rule A, confirmed by the maintainer) — a sampling window holds up when its 95% forecast held (actual >= value at 95) in MORE than half of the checks that could be evaluated on it. Two short-falls of four put it outside. Delivering more than the 50% forecast never counts against a window. A partly evaluable window is judged on the checks that ran, and a single check that ran decides it alone. A window with no evaluable check is 'not evaluated' and is never in the region. soundWindowDays is sampledWindowDays filtered, in ladder order.",
     "DES-15 — determination, evaluated in this order: NotEnoughEvidence when no window was evaluated; AllWindowsAlike when EVERY sampled window was evaluated and holds up; NoWindowSound when at least one was evaluated and none holds up; SomeWindowsSound otherwise. unevaluatedWindowDays is new; it lists the windows with no evaluable check and never overlaps soundWindowDays.",
     "DES-16 (name confirmed as SometimesHeld) — NotEvaluated when evaluated = 0; NeverHeld when held = 0 and expected >= 1; AlwaysHeld when held = evaluated and evaluated - expected >= 1; SometimesHeld otherwise. The client prints the two counts beside SometimesHeld with no calibration adjective. The words 'about right' appear nowhere.",
@@ -43,6 +46,7 @@
   "out_of_scope": [
     "Slice 03 / Story #6074, Copy as Markdown and realityCheckToMarkdown. DEFERRED by the maintainer on 2026-09-26 while the reporting format is re-evaluated. It has no step, no scaffold and no test. DELIVER of Story #6094 continues with phases 04 and 05, and slice 03 still has no phase.",
     "Story #6094: running Stryker (04-12 and 05-10 write configuration only; the orchestrator runs both last, on frozen code), the dogfooding note on three dev-instance Teams in the slice 04 and 05 briefs, the per-theme screenshots, docs and release notes (all finalization), a new usage-data event or property (6094-OPS-1: none), any change to RealityCheckVerdictPolicy or the forecast engine, and any per-window summary, ordering or control that writes a Team setting.",
+    "Story #6094 US-06: any API or DTO change (AC-6.16), any change to the grading rule, band edges, rounding, fills, sweep, ladder, horizons or rule A; the link to Lighthouse's own docs page in the headline explanation, the dogfooding 'reads at a glance' note and the two per-theme screenshots (all FINALIZE); a new usage-data event; ForecastRealityCheckController in the Stryker.NET set; running Stryker (06-17 writes configuration only).",
     "Any control or endpoint that writes a Team setting (D4 and DoD 13, declined rather than deferred).",
     "Any change to the forecast engine (IForecastService.HowMany) or to ForecastDataSufficiencyPolicy.cs (E4, I7, I8).",
     "Queueing the check through UpdateQueueService (Contingency B is dead per R-1 measured), and Contingency A (read closed items once), unless 01-22 finds the budget missed.",
@@ -1782,6 +1786,703 @@
             "No Stryker run in this step. Mutation runs last, on frozen code, with the acceptance suite excluded."
           ],
           "implementation_notes": "StrykerJS resolves vitest.stryker.6094.config.ts relative to the working directory, so the copy in Lighthouse.Frontend/ is the one it reads. Keep the two copies in step if either is edited later. Commit: `chore(forecast): mutation configuration for the reality check dialog (story 6094)`"
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "The reality check reads at a glance (US-06 amendment, slices 06a then 06b)",
+      "description": "Story #6094, US-06 amendment (2026-09-27), read through the maintainer's answers. Steps 06-01..06-08 are slice 06a: the operator's log line (the only backend change), the trigger under the back-test inputs with its info icon, the 'Crunching the numbers…' loading state, the one-line period header in the reader's digits, the compact cells whose tooltip is their name, the '—' cell, the named scroll region without a caption, and the two-row legend. Steps 06-09..06-17 are slice 06b: the held share, the window badge and its tooltip, the level rows with bar and tick, the headline, the explanation popover that takes over Nick Brown's credit, the removal of every retired sentence and composer together with the walking-skeleton swap, and the StrykerJS configuration. No API field changes (AC-6.16). THE CREDIT: the legend keeps its credit paragraph through 06a; 06-14 moves it into the headline's explanation and deletes it from under the legend in the same commit, so no commit ever shows the dialog without the credit. 06a and 06b are pushed together, after both slices and the quality gates (maintainer answer 8). THE RETIREMENT RULE: each step deletes or rewrites, in its own commit, the retirement-table specs its change breaks (DISTILL's 41 rows, listed per step), and deletes the composers and components DESIGN's retirement list names in the step that orphans them. If a retirement-table spec breaks a step earlier than planned, it is deleted or rewritten in that commit and the commit body says so; a retired spec is never skipped, and a spec outside the table that breaks is a regression, not a retirement. RED is the reason red-classification.md records for Story #6094, US-06; a case failing on anything else when un-skipped is a harness problem fixed before any production edit.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Backend — every reality check writes one Information line naming the Team and the filter choice asked for",
+          "description": "ForecastRealityCheckController gains ILogger<ForecastRealityCheckController> on its primary constructor (count the parameters first: 3 to 4 stays clear of S107). One LogInformation sits inside the found-Team lambda, before realityCheckService.Run, with the constant template `Reality check run for Team {TeamId} (filter override: {FilterOverride:l})`. FilterOverride is computed into a local before the call: 'on', 'off' or 'none' for true, false or not given. An unknown Team (404) and a refused reader write nothing; the response is unchanged. OptionalFeaturesController is the idiom to copy, and UpdateServiceBase's {EntityType:l} the precedent for the :l format.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice06AnOperatorSeesEveryRealityCheckScenarios.cs",
+          "scenario_name": "Every_check_run_writes_one_line_an_operator_sees_naming_the_Team_and_the_filter_choice_asked_for",
+          "unskips": [
+            "[Ignore(Pending)] removed :: Every_check_run_writes_one_line_an_operator_sees_naming_the_Team_and_the_filter_choice_asked_for — 6 cases (latest route: not given, null, true, false; versioned route: not given, true)",
+            "[Ignore(Pending)] removed :: A_check_asked_for_a_Team_that_does_not_exist_writes_no_line",
+            "[Ignore(Pending)] removed :: A_request_whose_filter_choice_cannot_be_read_is_refused_and_writes_no_line — 2 cases (a word, cut-off JSON)",
+            "[Ignore(Pending)] removed :: A_check_refused_to_somebody_who_cannot_read_the_Team_writes_no_line",
+            "Already green, must STAY green and UNEDITED :: RealityCheckQueryCountTest (20 / 24), RealityCheckReadOnlyArchUnitTest, and every other reality-check acceptance scenario, all of which now run through the fixture's Serilog capture"
+          ],
+          "red_to_green_tests": [
+            "Slice06AnOperatorSeesEveryRealityCheckScenarios.cs :: Every_check_run_writes_one_line_an_operator_sees_naming_the_Team_and_the_filter_choice_asked_for",
+            "Slice06AnOperatorSeesEveryRealityCheckScenarios.cs :: A_check_asked_for_a_Team_that_does_not_exist_writes_no_line",
+            "Slice06AnOperatorSeesEveryRealityCheckScenarios.cs :: A_request_whose_filter_choice_cannot_be_read_is_refused_and_writes_no_line",
+            "Slice06AnOperatorSeesEveryRealityCheckScenarios.cs :: A_check_refused_to_somebody_who_cannot_read_the_Team_writes_no_line"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend/API/ForecastRealityCheckController.cs",
+            "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice06AnOperatorSeesEveryRealityCheckScenarios.cs"
+          ],
+          "dependencies": [
+            "05-10"
+          ],
+          "criteria": [
+            "The rendered line is exactly 'Reality check run for Team 57 (filter override: none)' (on / off / none, unquoted thanks to :l). The template is a constant with no interpolation and no expression evaluated inside the logging call (CA2254). It carries no Team name and no user identity.",
+            "Both routes log exactly one line per allowed request, at Information, which is the default level, so no configuration changes. The line sits inside the found-Team branch and before the run: an unknown Team writes nothing, a check that then throws was still logged, and the RBAC guard refuses before the action runs.",
+            "The negative scenarios keep their presence leg (a logged check first). No Clear() is added between that check and the 'nothing logged' assertion, or the positive control fails for the wrong reason.",
+            "Only the controller changes in production. ForecastRealityCheckService, IForecastRealityCheckService and Program.cs are byte-unchanged, so the live-connector suite is not forced. RealityCheckQueryCountTest stays 20 / 24 and RealityCheckReadOnlyArchUnitTest stays green, both unedited: a logger is not a write path.",
+            "The controller stays out of the Stryker.NET mutate set (DEVOPS, US-06); no RecordingLogger unit test is owed.",
+            "The RED run is captured before any production edit: the positive cases fail on 'Expected … with 1 elements, actual … with 0 elements', the negative ones on their presence leg, as red-classification.md records.",
+            "`dotnet build` introduces no new warning (the six Microsoft.Build TFM warnings already on main are the only ones allowed), and `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` is green. Run `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` over the touched files.",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-16, AC-6.3 or E15."
+          ],
+          "implementation_notes": "Ten cases, over the guideline, and deliberately. All ten turn on the one log line: the four negative scenarios fail today on the presence leg they run first, so splitting them off would leave a step that passes on first un-ignore with no production change. This goes first because it is the only backend change and 06a/06b push together; no frontend step depends on it. Commit: `feat(forecast): log every reality check an operator can see (story 6094)`"
+        },
+        {
+          "id": "06-02",
+          "name": "The trigger sits under the back-test inputs, right-aligned, with an info icon that says what the check does",
+          "description": "BacktestForecaster gains one optional realityCheck?: React.ReactNode prop, rendered in its own full-width grid row after the inputs grid (after the filter switch when it is shown) and before the result tabs. TeamForecastView passes <ForecastRealityCheck … /> into that slot instead of rendering it first in the group. ForecastRealityCheck renders a right-aligned row (justifyContent flex-end, replacing alignSelf flex-start): an InfoOutlined IconButton named 'What does the reality check do?' inside an MUI Tooltip with describeChild whose title is the new triggerExplanation composer (copy row 1), then the unchanged button. Pressing the icon opens nothing.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.trigger.test.tsx",
+          "scenario_name": "\"Run reality check\" sits after the back-test inputs, with its explanation just before it, and above a single back-test result once there is one",
+          "unskips": [
+            "it.skip → it :: \"Run reality check\" sits after the back-test inputs, with its explanation just before it, and above a single back-test result once there is one",
+            "it.skip → it :: with the forecast filter switch shown, the trigger comes after the switch too",
+            "it.skip.each → it.each :: on $how the info icon explains in plain words what the check does, and keeps the question as its name — 2 cases (keyboard focus, hover)",
+            "it.skip → it :: @error pressing the info icon opens nothing and runs no check",
+            "it.skip → it :: pressing \"Run reality check\" from its new place still opens the dialog and runs one check",
+            "it.skip → it :: the explanation speaks the instance's own words for Team and Work Items",
+            "it.skip → it (TeamForecastView.realityCheck.compact.test.tsx) :: the Forecast Backtesting group holds the trigger and its explanation, and nothing of the answer once the dialog is closed",
+            "Deleted in this commit (not pending; retirement row 16) :: TeamForecastView.realityCheck.dialog.test.tsx:700 — the group's only button is Run reality check. The compact group spec above replaces it, and this change is what breaks it",
+            "Already green, must STAY green :: the single back-test beside the check still shows its result once an input changes (trigger file), and the four existing reality-check spec files, whose stand-in back-test forecaster already renders the slot"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.trigger.test.tsx :: \"Run reality check\" sits after the back-test inputs, with its explanation just before it, and above a single back-test result once there is one",
+            "TeamForecastView.realityCheck.trigger.test.tsx :: with the forecast filter switch shown, the trigger comes after the switch too",
+            "TeamForecastView.realityCheck.trigger.test.tsx :: on $how the info icon explains in plain words what the check does, and keeps the question as its name",
+            "TeamForecastView.realityCheck.trigger.test.tsx :: @error pressing the info icon opens nothing and runs no check",
+            "TeamForecastView.realityCheck.trigger.test.tsx :: pressing \"Run reality check\" from its new place still opens the dialog and runs one check",
+            "TeamForecastView.realityCheck.trigger.test.tsx :: the explanation speaks the instance's own words for Team and Work Items",
+            "TeamForecastView.realityCheck.compact.test.tsx :: the Forecast Backtesting group holds the trigger and its explanation, and nothing of the answer once the dialog is closed"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/ForecastRealityCheck.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.trigger.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx"
+          ],
+          "dependencies": [
+            "06-01"
+          ],
+          "criteria": [
+            "Document order: the historical-window field, the filter switch when shown, the info icon, the button, then the back-test result tabs once there is a result. Right alignment is visual and is left to the maintainer's review and the per-theme screenshots owed at FINALIZE.",
+            "The icon's accessible name stays the question and the tooltip is its accessible description (describeChild). The explanation is the whole string 'Replays this {Team}'s recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the {Work Items} actually completed.', with both terms from getTerm; triggerExplanation is pure and gets whole-string realityCheckCopy.test.ts cases.",
+            "The icon is not a toggle: no aria-expanded, no popover, no dialog and no run. The button's label and behaviour are unchanged (opening, Run again, one run in flight), and it stays inside the Forecast Backtesting card, so the POM's card-scoped runRealityCheckButton still matches.",
+            "BacktestForecaster takes one ReactNode slot and none of the reality check's own props. The single back-test keeps working beside it.",
+            "The teamName props are not removed here: the loading text still reads them until 06-03.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-17 or AC-6.1."
+          ],
+          "implementation_notes": "Eight cases, one over the guideline. Seven are the trigger file; the eighth is the compact group spec, which replaces retirement row 16 and must land in the commit that breaks that row. Commit: `feat(forecast): the reality check starts under the back-test inputs and explains itself (story 6094)`"
+        },
+        {
+          "id": "06-03",
+          "name": "Every run shows a spinner and 'Crunching the numbers…'; the Team name leaves the dialog's props",
+          "description": "RealityCheckDialog's loading state becomes a role='status' region holding an aria-hidden CircularProgress and the words 'Crunching the numbers…' (copy constant LOADING), the same on the first run and on Run again. A failure replaces it with the plain message. The loading text no longer names the Team, so RealityCheckDialog.teamName, ForecastRealityCheck.teamName and the teamName TeamForecastView passes all go (Sonar S6767 fires on an unused prop).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+          "scenario_name": "the first run shows a spinner and \"Crunching the numbers…\" in a polite status, and the answer arriving moves no focus",
+          "unskips": [
+            "it.skip → it :: the first run shows a spinner and \"Crunching the numbers…\" in a polite status, and the answer arriving moves no focus",
+            "it.skip → it :: Run again shows the same spinner and \"Crunching the numbers…\" while the fresh check runs",
+            "it.skip → it :: @error a check that fails replaces the spinner and \"Crunching the numbers…\" with its plain message",
+            "Rewritten in this commit (not pending; retirement row 1) :: TeamForecastView.realityCheck.dialog.test.tsx:197 — drop the 'Checking Ocean Explorer's forecasts…' assertion (the compact spec owns the loading state), keep 'no date is asked', and wait for the table"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.compact.test.tsx :: the first run shows a spinner and \"Crunching the numbers…\" in a polite status, and the answer arriving moves no focus",
+            "TeamForecastView.realityCheck.compact.test.tsx :: Run again shows the same spinner and \"Crunching the numbers…\" while the fresh check runs",
+            "TeamForecastView.realityCheck.compact.test.tsx :: @error a check that fails replaces the spinner and \"Crunching the numbers…\" with its plain message"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckDialog.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/ForecastRealityCheck.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx"
+          ],
+          "dependencies": [
+            "06-02"
+          ],
+          "criteria": [
+            "The status region's whole text is 'Crunching the numbers…' (one ellipsis character), it is polite and never assertive, and it holds a progress indicator that may be aria-hidden. The answer's arrival moves no focus. No wall-clock assertion anywhere.",
+            "The composer or literal that built 'Checking {Team}'s forecasts against what happened…' is deleted with its test, so the done-check search for 'Checking ' at 06-16 finds nothing.",
+            "No teamName prop remains on RealityCheckDialog or ForecastRealityCheck, and TeamForecastView passes none. The table's region name will read result.teamName from the answer (06-07), never a prop.",
+            "The run lifecycle is unchanged: one run in flight, Run again, reopen, and the usage event once per answer shown. The usage-data specs stay green unedited.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D12 or AC-6.2."
+          ],
+          "implementation_notes": "Commit: `feat(forecast): the reality check says it is crunching the numbers while it runs (story 6094)`"
+        },
+        {
+          "id": "06-04",
+          "name": "Each period is one line: 'Forecast Horizon: 1 week (16.09.2026 – 22.09.2026) – 6 Work Items completed', in the reader's own digits",
+          "description": "dayInWords becomes dayInDigits(isoDay, locale?): the shipped parseLocalDate, then toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }), falling back to the ISO string. A new periodHeader(horizonDays, period | undefined, getTerm, locale?) composes the whole header from the kept horizonLabel and periodActual, or 'Forecast Horizon: {horizon}' when the answer carries no scored period for it. RealityCheckPeriodGroup renders it as the whole text of the th[scope='rowgroup'], centred from the sm breakpoint up and left-aligned and sticky below it. The <time> elements go.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-how-far-each-forecast-landed in $locale every period header reads its horizon, its first and last day in digits, and what was completed",
+          "unskips": [
+            "it.skip.each → it.each :: @kpi-OUT-6094-how-far-each-forecast-landed in $locale every period header reads its horizon, its first and last day in digits, and what was completed — 2 cases (de-CH, en-US)",
+            "it.skip → it :: @boundary a period in which the Team completed one Work Item says so in the singular",
+            "it.skip → it :: @error a period the answer carries no scored period for is headed by its horizon alone",
+            "Rewritten in this commit (not pending; retirement row 7) :: TeamForecastView.realityCheck.dialog.test.tsx:368 — drop the <time> check, keep 'the actual is printed once per period'",
+            "Deleted in this commit (not pending; retirement row 8) :: TeamForecastView.realityCheck.dialog.test.tsx:385 — the month-name header — and the dayInWords import at line 34",
+            "Rewritten in this commit (not pending; retirement row 32) :: realityCheckCopy.test.ts:683 dayInWords — becomes dayInDigits unit specs"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.compact.test.tsx :: @kpi-OUT-6094-how-far-each-forecast-landed in $locale every period header reads its horizon, its first and last day in digits, and what was completed",
+            "TeamForecastView.realityCheck.compact.test.tsx :: @boundary a period in which the Team completed one Work Item says so in the singular",
+            "TeamForecastView.realityCheck.compact.test.tsx :: @error a period the answer carries no scored period for is headed by its horizon alone"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckPeriodGroup.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx"
+          ],
+          "dependencies": [
+            "06-03"
+          ],
+          "criteria": [
+            "Whole strings, with an en dash and spaces around it both between the days and before the actual: 'Forecast Horizon: 1 week (16.09.2026 – 22.09.2026) – 6 Work Items completed' in de-CH and 'Forecast Horizon: 1 week (09/16/2026 – 09/22/2026) – 6 Work Items completed' in en-US (padded, the digits the back-test pickers show), '– 1 Work Item completed' for one, and 'Forecast Horizon: 1 week' without a scored period. No month name anywhere.",
+            "Days are calendar days: every day the formatter sees is local midnight, which the spec's hour guard checks. No UTC shift.",
+            "No new date helper. getLocaleDateFormat is not exported or shared; parseLocalDate is reused.",
+            "periodHeader and dayInDigits are pure and get whole-string realityCheckCopy.test.ts cases (both locales pinned, singular, no scored period, an unparsable day falling back to the ISO string). dayInWords is deleted.",
+            "The Work Item terms come from getTerm (WORK_ITEM for one, WORK_ITEMS otherwise).",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-15 or AC-6.4."
+          ],
+          "implementation_notes": "Centring is visual and not asserted. Commit: `feat(forecast): each period reads as one line with the reader's own dates (story 6094)`"
+        },
+        {
+          "id": "06-05",
+          "name": "A cell shows only its glyph and its forecast, and is named by how the forecast compared with what was completed",
+          "description": "RealityCheckGradedCell's visible content becomes heldGlyph, a space and the forecast value, on the unchanged grade fill. The <td> is wrapped in a text-only MUI Tooltip whose title is the new cellComparison(facts, getTerm): copy rows 16-19, more completed, fewer completed, exactly as forecast, and nothing completed. MUI puts the title on the cell as aria-label, so the shipped explicit aria-label goes. GradedCellFacts is reshaped to { forecastValue, actualCompleted, miss, percentOfActual }. The percentage is readCheck's, unchanged in value, clamp and band, signed + when more was completed and − (U+2212) when fewer, and absent when the actual is 0.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-how-far-each-forecast-landed Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared",
+          "unskips": [
+            "it.skip → it :: @kpi-OUT-6094-how-far-each-forecast-landed Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared",
+            "it.skip.each → it.each :: @kpi-OUT-6094-no-percentage-without-its-work-items $comparison: the cell shows \"$shows\" and is named \"$name\" — 7 cases (more by one, fewer by one, exactly, exactly one, 0 against 0, 0 against 2, 0 against 1)",
+            "Deleted in this commit (not pending; retirement row 9) :: TeamForecastView.realityCheck.dialog.test.tsx:395 — old cell names and the visible miss and word",
+            "Rewritten in this commit (not pending; retirement row 10) :: TeamForecastView.realityCheck.dialog.test.tsx:424 — column placement asserted through the comparison names",
+            "Deleted in this commit (not pending; retirement row 12) :: TeamForecastView.realityCheck.dialog.test.tsx:477 — 'exactly as forecast, 0% of the actual' and a visible '0'",
+            "Rewritten in this commit (not pending; retirement row 21) :: TeamForecastView.realityCheck.grading.test.tsx:162, :188, :203, :231, :278 (5 cases) — keep each grade-fill assertion, drop the old names and the visible %, +11, −6",
+            "Deleted in this commit (not pending; retirement rows 22 and 23) :: TeamForecastView.realityCheck.grading.test.tsx:307 (every cell in the old name pattern) and :323 (visible '31 +11 26% ✓ held')",
+            "Deleted in this commit (not pending; retirement row 34) :: realityCheckCopy.test.ts:754 signedMiss, :779 gradedCellName, and the heldWord half of :769 (a heldGlyph case stays)"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.compact.test.tsx :: @kpi-OUT-6094-how-far-each-forecast-landed Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared",
+            "TeamForecastView.realityCheck.compact.test.tsx :: @kpi-OUT-6094-no-percentage-without-its-work-items $comparison: the cell shows \"$shows\" and is named \"$name\""
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckGradedCell.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx"
+          ],
+          "dependencies": [
+            "06-04"
+          ],
+          "criteria": [
+            "The visible text is exactly '✓ 17' or '✗ 21'. The name and tooltip are the same whole string, for example 'Closed 7 Work Items fewer (14) than forecasted (21). Forecast off by −50%', 'Closed exactly the forecasted 22 Work Items.', 'Closed no Work Items, exactly as forecasted.' and 'Closed 2 Work Items fewer (0) than forecasted (2). No percentage — nothing was completed.', singular for one.",
+            "The percentage is readCheck's percentOfActual and is never recomputed; the hue is the wire's held. Grading rule, band edges, rounding, clamping and the six fills are unchanged, and the rewritten grade-fill assertions stay green (AC-6.14 on the cells).",
+            "cellComparison is pure and gets whole-string realityCheckCopy.test.ts cases for every row (more, fewer, exactly, exactly one, 0 against 0, 0 against a forecast, singular and plural). Any map keyed by ForecastGrade stays an exhaustive Record with no default:.",
+            "Composers this orphans are deleted with their tests: signedMiss, missInWords, heldWord, percentInWords and gradedCellName. Search first; one still called by the old prose waits for 06-16.",
+            "Keyboard focus and the '—' cell are 06-06's; unevaluable rows keep their muted reason unchanged.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D17 or AC-6.5."
+          ],
+          "implementation_notes": "Eight cases, one over the guideline, and deliberately: seven are rows of one it.each, one per branch of the single composer cellComparison, so splitting them would leave steps that pass on first un-skip with no production change. Commit: `feat(forecast): each cell shows its glyph and forecast and explains itself in its name (story 6094)`"
+        },
+        {
+          "id": "06-06",
+          "name": "Every graded cell is a keyboard stop whose tooltip opens on focus; a level left out of a check shows '—'",
+          "description": "Each graded cell gets tabIndex={0} and a focus outline in getContrastText(fill), inset so neighbours do not clip it. LevelCell's empty cell becomes the '—' cell: tabIndex 0, wrapped in a Tooltip titled by the new notCheckedCell, 'Not checked at this confidence level.'. Escape dismisses a cell's tooltip and leaves the dialog open; if MUI lets that Escape reach the dialog, stop it at the cell. No roving focus and no role='grid'.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-how-far-each-forecast-landed every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was",
+          "unskips": [
+            "it.skip → it :: @kpi-OUT-6094-how-far-each-forecast-landed every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was",
+            "it.skip → it :: on keyboard focus a cell shows its comparison in a tooltip whose words are the cell's name - Ocean Explorer's 14-day 50th, ✗ 21 against 14",
+            "it.skip → it :: on hover a cell shows the same tooltip",
+            "it.skip → it :: @error a level the check left out shows \"—\", is named \"Not checked at this confidence level.\" and is still a keyboard stop",
+            "it.skip → it :: @error Escape dismisses a cell's tooltip and leaves the dialog open",
+            "Deleted in this commit (not pending; retirement row 11) :: TeamForecastView.realityCheck.dialog.test.tsx:446 — a left-out level as an empty, unnamed cell",
+            "Already green, must STAY green :: @error a check that could not run keeps its reason across the four columns, and is neither graded nor a keyboard stop"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.compact.test.tsx :: @kpi-OUT-6094-how-far-each-forecast-landed every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was",
+            "TeamForecastView.realityCheck.compact.test.tsx :: on keyboard focus a cell shows its comparison in a tooltip whose words are the cell's name - Ocean Explorer's 14-day 50th, ✗ 21 against 14",
+            "TeamForecastView.realityCheck.compact.test.tsx :: on hover a cell shows the same tooltip",
+            "TeamForecastView.realityCheck.compact.test.tsx :: @error a level the check left out shows \"—\", is named \"Not checked at this confidence level.\" and is still a keyboard stop",
+            "TeamForecastView.realityCheck.compact.test.tsx :: @error Escape dismisses a cell's tooltip and leaves the dialog open"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckGradedCell.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckPeriodGroup.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx"
+          ],
+          "dependencies": [
+            "06-05"
+          ],
+          "criteria": [
+            "The ladder answer has 64 graded cells, each with tabindex 0, visible text matching /^[✓✗] \\d+$/, and a name that is one of the cell wordings. The '—' cell reads exactly '—', is named 'Not checked at this confidence level.' and is a keyboard stop. Unevaluable rows stay one muted reason with no tabindex.",
+            "The tooltip opens on keyboard focus-visible (the specs arrive with tabUntilFocused, not a bare focus event) and on hover, and Escape closes it while the dialog stays open and focus stays on the cell.",
+            "The focus outline uses getContrastText(fill), which the colour contrast tests already prove at 4.5 : 1 or better on every fill in both themes.",
+            "The hover spec may pass on first un-skip, because 06-05's Tooltip already opens on hover; record that honestly in the commit body.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-11, 6094-D24 or F-US06-2."
+          ],
+          "implementation_notes": "Commit: `feat(forecast): every cell can be reached by keyboard, and a missing level shows a dash (story 6094)`"
+        },
+        {
+          "id": "06-07",
+          "name": "The visible caption goes; the scrolling region is named for the Team, and the table speaks the instance's words",
+          "description": "RealityCheckTable drops its <caption>. The horizontally scrolling region becomes role='region' named by tableRegionName(result.teamName), 'Forecasts checked for {Team name}, by forecast horizon and sampling window', and keeps tabIndex 0. The scoped column, row and row-group headers and the sticky row-header column stay. tableCaption is reshaped into tableRegionName.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+          "scenario_name": "no caption sits above the table; its scrolling region is named for the Team, takes keyboard focus, and the table keeps its period, window and level headers",
+          "unskips": [
+            "it.skip → it :: no caption sits above the table; its scrolling region is named for the Team, takes keyboard focus, and the table keeps its period, window and level headers",
+            "it.skip → it :: speaks the instance's own words in the period headers and the cells, and names the region by the Team's own name",
+            "Deleted in this commit (not pending; retirement rows 13 and 20) :: TeamForecastView.realityCheck.dialog.test.tsx:637 (a caption exists and names the table) and :861 (the scroll region named by the caption)",
+            "Rewritten in this commit (not pending; retirement row 33) :: realityCheckCopy.test.ts:712 tableCaption — becomes tableRegionName"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.compact.test.tsx :: no caption sits above the table; its scrolling region is named for the Team, takes keyboard focus, and the table keeps its period, window and level headers",
+            "TeamForecastView.realityCheck.compact.test.tsx :: speaks the instance's own words in the period headers and the cells, and names the region by the Team's own name"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckTable.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx"
+          ],
+          "dependencies": [
+            "06-06"
+          ],
+          "criteria": [
+            "No <caption> and no visible 'Every forecast checked for …'. The region contains the table and is focusable; the table has 4 row-group headers, 16 row headers and 5 column headers for the ladder answer.",
+            "With Team, Work Item and Work Items renamed, headers, cell names and the region read the instance's words; no 'Work Items' remains and none of throughput, Epic, Initiative or Story appears.",
+            "tableRegionName is pure with a whole-string unit case. The sticky row-header column is visual and not assertable in jsdom (documented gap, covered by the per-theme screenshots owed at FINALIZE).",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D18 or AC-6.7."
+          ],
+          "implementation_notes": "Commit: `feat(forecast): the reality check table loses its visible caption and keeps its name (story 6094)`"
+        },
+        {
+          "id": "06-08",
+          "name": "The legend is two titled rows, 'Forecast held' and 'Forecast missed', three bands each; the credit stays until the explanation can hold it",
+          "description": "RealityCheckLegend becomes a row titled 'Forecast held' then a row titled 'Forecast missed', each with three swatches in band order labelled 'within 10%', '10–25% off' and 'more than 25% off', on the existing six grade fills. GRADE_HELD: Record<ForecastGrade, boolean> joins realityCheckGrading.ts and decides each grade's row; gradeLegendCopy is reshaped into the band labels and a legendTitles constant carries the two titles. The 'Not checked' entry goes, since the '—' cell now names itself. The credit paragraph under the legend STAYS, untouched, in this step: 06-14 moves it into the headline's explanation and removes it here in one commit.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-colour-never-alone the legend is two titled rows - \"Forecast held\" then \"Forecast missed\" - each with its three bands on the grade fills, in band order",
+          "unskips": [
+            "it.skip → it :: @kpi-OUT-6094-colour-never-alone the legend is two titled rows - \"Forecast held\" then \"Forecast missed\" - each with its three bands on the grade fills, in band order",
+            "Deleted in this commit (not pending; retirement row 25) :: TeamForecastView.realityCheck.grading.test.tsx:570 — the six grade words and 'Not checked' in the legend",
+            "Rewritten in this commit (not pending; retirement row 35, first half) :: realityCheckCopy.test.ts:881 gradeLegendCopy — becomes the band labels",
+            "Deliberately NOT in this step (moved to 06-14) :: compact 'the credit line and the \"Not checked\" entry are gone from under the legend', retirement row 26 (grading.test.tsx:586, the credit under the legend) and the methodCredit half of retirement row 35 (realityCheckCopy.test.ts:889). DISTILL placed them in 06a; they move so the credit is never absent from a commit"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.compact.test.tsx :: @kpi-OUT-6094-colour-never-alone the legend is two titled rows - \"Forecast held\" then \"Forecast missed\" - each with its three bands on the grade fills, in band order"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckLegend.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx"
+          ],
+          "dependencies": [
+            "06-07"
+          ],
+          "criteria": [
+            "Whole strings in reading order: 'Forecast held', 'within 10%', '10–25% off' (en dash), 'more than 25% off', 'Forecast missed', then the three labels again. Each label's swatch is the nearest grade-filled element before it, outside the table, on the existing fill (AC-6.14 on the legend).",
+            "GRADE_HELD and the band-label map are exhaustive Records with no default:. GRADE_HELD is string-free and imports no React or MUI, and gets a value-in/value-out case per grade in realityCheckGrading.test.ts.",
+            "notCheckedLegend is deleted with its test. methodCredit, the credit paragraph and their specs are untouched and stay green.",
+            "This closes 06a: every 06a pending spec is green except the compact credit spec, which 06-14 owns by design.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D19 or AC-6.6."
+          ],
+          "implementation_notes": "The slice brief left the credit to DELIVER's call; this roadmap keeps it under the legend until 06-14 moves it, rather than relying on the one push. Commit: `feat(forecast): the grading legend reads as two rows (story 6094)`"
+        },
+        {
+          "id": "06-09",
+          "name": "The share of its checks a level held in, never contradicting whether it always or never held",
+          "description": "heldShare(heldCount, runsEvaluated) replaces the DISTILL scaffold in realityCheckGrading.ts: null when nothing was evaluated; otherwise the half-up rounding floor((200·held + n) / (2·n)) in integers, 100 only when held = n, 0 only when held = 0, and clamped into 1..99 otherwise. The __SCAFFOLD__ export goes.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.test.ts",
+          "scenario_name": "$held of $evaluated reads $share%",
+          "unskips": [
+            "it.skip → it :: @error a level no check could test has no share",
+            "it.skip.each → it.each :: $held of $evaluated reads $share% — 5 cases (15/16, 14/16, 12/16, 16/16, 0/16)",
+            "it.skip → it :: @property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did"
+          ],
+          "red_to_green_tests": [
+            "realityCheckGrading.test.ts :: @error a level no check could test has no share",
+            "realityCheckGrading.test.ts :: $held of $evaluated reads $share%",
+            "realityCheckGrading.test.ts :: @property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.test.ts"
+          ],
+          "dependencies": [
+            "06-08"
+          ],
+          "criteria": [
+            "No floating point decides the share. The module stays pure and string-free, importing no React, no MUI and no terminology.",
+            "`grep -r \"__SCAFFOLD__\" Lighthouse.Frontend/src/` finds nothing after this step.",
+            "usualGrade and isStrictMajority stay: the old level lines still use them until 06-16.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted)."
+          ],
+          "implementation_notes": "Commit: `feat(forecast): read the share of its checks a level held in (story 6094)`"
+        },
+        {
+          "id": "06-10",
+          "name": "The Team's sampling window is one badge: one wording and one tone per verdict state",
+          "description": "windowBadgeOf(soundWindow) joins realityCheckGrading.ts and returns one of six states, the first match winning: FixedDates (reason UsesFixedDates), NotAPositiveLength (that reason), CouldNotBeChecked (standing NotDetermined or determination NotEnoughEvidence), NoWindowHeldUp (NoWindowSound), Fine (standing Inside), DidNotHoldUp (otherwise). badgeWords, an exhaustive Record<WindowBadgeState, (days, getTerm) => string>, carries copy rows 6-12 in realityCheckCopy.ts, and the new RealityCheckWindowBadge renders a filled small MUI Chip, tabIndex 0, with an exhaustive tone Record (success, warning, default). It sits above the table, in RealityCheckVerdict for now, before the old prose, which stays until 06-16.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-no-window-ranked when $state the badge reads \"$badge\" in the $tone tone",
+          "unskips": [
+            "it.skip.each → it.each :: @kpi-OUT-6094-no-window-ranked when $state the badge reads \"$badge\" in the $tone tone — 9 cases (the six states, both inside forms, both not-determined forms, and the unreachable AllWindowsAlike + Outside)",
+            "it.skip → it :: a Team forecasting from fixed dates is told so in the instance's own word for Team"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: @kpi-OUT-6094-no-window-ranked when $state the badge reads \"$badge\" in the $tone tone",
+            "TeamForecastView.realityCheck.summary.test.tsx :: a Team forecasting from fixed dates is told so in the instance's own word for Team"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckWindowBadge.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckVerdict.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx"
+          ],
+          "dependencies": [
+            "06-09"
+          ],
+          "criteria": [
+            "Whole strings: 'Your 30-day sampling window: fine' for AllWindowsAlike and SomeWindowsSound alike when the Team's window is inside (maintainer answer 4), '… did not hold up', '… did not hold up (no window did)', '… could not be checked', 'Your {Team} forecasts from fixed dates: sampling window not tested' with the Team term from getTerm, and 'Your sampling window: not tested (not a positive number of days)'.",
+            "The reason is checked before the standing. Only soundWindow and currentSettingDays are read. The tone is MUI's palette name, asserted as MuiChip-colorSuccess / Warning / Default.",
+            "windowBadgeOf is string-free and gets value-in/value-out cases for all six states and the precedence; badgeWords gets whole-string cases. Every map over the state is an exhaustive Record with no default:.",
+            "The badge names only the Team's own window: no other window, no order and no score.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-13 or AC-6.12."
+          ],
+          "implementation_notes": "Ten cases, over the guideline, and deliberately: nine are rows of one it.each over a single exhaustive six-member union (the compiler forces every wording and tone in at once, as 05-09 was), and the tenth is that union's Terminology case. Commit: `feat(forecast): the Team's sampling window as one badge (story 6094)`"
+        },
+        {
+          "id": "06-11",
+          "name": "The badge's tooltip says what 'held up' means and which windows could not be checked, and never which held up",
+          "description": "The chip sits in a Tooltip with describeChild, so its visible words stay its name and the tooltip is its description. The tooltip holds copy row 14, the new heldUpMeans ('A sampling window held up when its 95th forecast held in more than half of the checks that could be run on it.'), and then row 15, the shipped unevaluatedSentence, only when unevaluatedWindowDays is not empty.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "on keyboard focus the badge keeps its words as its name and says what held up means and which windows could not be checked, naming none that held up - Coastal Survey",
+          "unskips": [
+            "it.skip → it :: on keyboard focus the badge keeps its words as its name and says what held up means and which windows could not be checked, naming none that held up - Coastal Survey",
+            "it.skip → it :: @error when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted",
+            "it.skip → it :: @boundary when every window could be checked the badge's tooltip only says what held up means"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: on keyboard focus the badge keeps its words as its name and says what held up means and which windows could not be checked, naming none that held up - Coastal Survey",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @error when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @boundary when every window could be checked the badge's tooltip only says what held up means"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckWindowBadge.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx"
+          ],
+          "dependencies": [
+            "06-10"
+          ],
+          "criteria": [
+            "The tooltip holds only rows 14 and 15 and names no window as having held up anywhere (maintainer answer 3). The not-checked sentence is the shipped one, unchanged, singular or plural as today.",
+            "The badge's accessible name is its visible words; the tooltip opens on keyboard focus-visible and on hover.",
+            "heldUpMeans gets a whole-string unit case.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D22 or 6094-DES-12."
+          ],
+          "implementation_notes": "Commit: `feat(forecast): the window badge explains itself (story 6094)`"
+        },
+        {
+          "id": "06-12",
+          "name": "Each confidence level is a bar against the rate it should hold at, reading '94% (15 of 16) · 3 accurate'",
+          "description": "First a refactor: RealityCheckLevelLabel is extracted from RealityCheckTable's private LevelColumnHeader (percentile, ForecastLevel icon aria-hidden, name), and the column headers use it unchanged. Then RealityCheckLevelRow: the label; a Box role='img' named by levelBarName (copy row 5b) holding an aria-hidden determinate LinearProgress at heldShare and an aria-hidden tick at left {level}%; and levelRowText (row 5), '{p}% ({held} of {evaluated}) · {a} accurate', where a is levelCloseness's withinTenPercent. A NotEvaluated level reads 'Not tested — no check could run', with an empty bar, its tick and row 5b's not-evaluated form. Four rows in ascending level order sit above the table; the old level lines stay until 06-16.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-caution-is-visible Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading \"94% (15 of 16) · 3 accurate\"",
+          "unskips": [
+            "it.skip → it :: @kpi-OUT-6094-caution-is-visible Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading \"94% (15 of 16) · 3 accurate\"",
+            "it.skip → it :: one row per level in ascending order, each labelled like its column and reading its held share, counts and accurate checks"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: @kpi-OUT-6094-caution-is-visible Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading \"94% (15 of 16) · 3 accurate\"",
+            "TeamForecastView.realityCheck.summary.test.tsx :: one row per level in ascending order, each labelled like its column and reading its held share, counts and accurate checks"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckLevelLabel.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckLevelRow.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckTable.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckVerdict.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx"
+          ],
+          "dependencies": [
+            "06-11"
+          ],
+          "criteria": [
+            "Whole strings: the bar's name '85th Confident: held in 94% of checks (15 of 16), expected about 85%; 3 accurate within 10%', its hidden progressbar's aria-valuenow '94', and the row text '94% (15 of 16) · 3 accurate'. The not-evaluated name is '50th Risky: not tested, no check could run'.",
+            "heldCount and runsEvaluated are the server's and never recounted. The accurate count counts held and not-held checks within 10% alike.",
+            "Colours are primary.main on action.disabledBackground; the tick is text.primary, 2 px wide and 4 px above and below the bar. Neither the ForecastLevel colours nor the grade fills are used. The bar has no mount animation.",
+            "The extraction lands as its own `refactor(forecast): …` commit before the feature commit. The column headers read exactly as before, and every existing header spec stays green.",
+            "levelRowText and levelBarName are pure with whole-string unit cases, including the not-evaluated forms.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted). Run `npx biome lint --only=complexity/noExcessiveCognitiveComplexity` on the new components.",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-14 or AC-6.10."
+          ],
+          "implementation_notes": "DESIGN listed RealityCheckLevelLabel under 06a. It is extracted here instead, because this is where its second user arrives; extracting it earlier would give it a single caller. Commits: `refactor(forecast): extract the level label the table and the summary share (story 6094)`, then `feat(forecast): each confidence level as a bar against its rate (story 6094)`"
+        },
+        {
+          "id": "06-13",
+          "name": "The headline counts what was backtested: 'Backtested 16 scenarios · 64 forecasts', 'N of T', or none",
+          "description": "The new RealityCheckHeadline renders realityCheckHeadline(denominator) (copy rows 3, 3b and 4): 'Backtested {N} scenarios · {M} forecasts' when every scenario ran, 'Backtested {N} of {T} scenarios · {M} forecasts' when some could not, and 'None of the {T} scenarios could be backtested' when N = 0, singular for one. N is runsEvaluated, T runsAttempted and M scoresEvaluated. It sits first above the badge and the level rows. In the same step, the specs that wait on the denominator sentence are rewritten to wait on the table or the headline, so 06-16 can delete the sentence without touching them.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-caution-is-visible when $case the headline reads \"$headline\"",
+          "unskips": [
+            "it.skip.each → it.each :: @kpi-OUT-6094-caution-is-visible when $case the headline reads \"$headline\" — 5 cases (16; 20; 12 of 16, Coastal Survey; none of 16, Kelp Farm; one scenario at one level)",
+            "it.skip → it :: @error a Team with no checkable history - Kelp Farm - gets a plain headline, a could-not-be-checked badge and four levels not tested, each an empty bar",
+            "Rewritten in this commit (not pending; retirement rows 2, 18, 19) :: TeamForecastView.realityCheck.dialog.test.tsx:219, :740, :802, :821, :845 — the waits on the denominator become waits on the table or headline; :771 — 'no answer' becomes 'no table'",
+            "Rewritten in this commit (not pending; retirement row 17) :: TeamForecastView.realityCheck.dialog.test.tsx:721 — Run again reads the fresh answer from a level row, not a level line",
+            "Rewritten in this commit (not pending; retirement row 31) :: TeamForecastView.realityCheck.usageData.test.tsx:210, :257 (theAnswerIsShownIn) — wait on the table or headline"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: @kpi-OUT-6094-caution-is-visible when $case the headline reads \"$headline\"",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @error a Team with no checkable history - Kelp Farm - gets a plain headline, a could-not-be-checked badge and four levels not tested, each an empty bar"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckHeadline.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckVerdict.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.usageData.test.tsx"
+          ],
+          "dependencies": [
+            "06-12"
+          ],
+          "criteria": [
+            "The headline is one element whose whole text is the headline. realityCheckHeadline is pure with whole-string cases for every form, including 'Backtested 1 scenario · 1 forecast'.",
+            "Kelp Farm reads 'None of the 16 scenarios could be backtested', the badge 'Your 30-day sampling window: could not be checked', and four rows 'Not tested — no check could run' with empty bars.",
+            "Each rewritten spec keeps its purpose and stays green. The usage event is still sent once per answer shown, and the usage-data specs' assertions are unchanged apart from the wait.",
+            "The spec rewrites may land as a separate `test(forecast): …` commit before the feature commit.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D20, 6094-D21 or AC-6.9."
+          ],
+          "implementation_notes": "DISTILL placed the wait rewrites with the sentence's deletion. They move here, one step earlier, because once the headline and the level rows exist they can be rewritten against their final target, and that keeps 06-16 a deletion. Commit: `feat(forecast): the reality check opens on a headline that counts what it backtested (story 6094)`"
+        },
+        {
+          "id": "06-14",
+          "name": "The headline's info icon opens the explanation, and Nick Brown's credit moves into it from under the legend",
+          "description": "An InfoOutlined IconButton named 'About these numbers' follows the headline. On hover a plain Tooltip names it. On click, Enter or Space it opens an MUI Popover (the WidgetShell pattern) with role='dialog' and the same name, holding copy row 20 for an answer in which every scenario ran: the scenario explanation ('Each scenario replays one forecast: … so 16 scenarios give 64 forecasts.'), 'Accurate means within 10% of what was completed, whether the forecast held or not.', and 'Inspired by Nick Brown's article' followed by an MUI Link 'The Full Monte' (target _blank, rel noopener noreferrer). The copy module exports the lead words and the FULL_MONTE title and URL as constants; the link itself is JSX. In the SAME commit the credit paragraph under the legend and methodCredit are deleted: the credit moves and is never absent.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "$how on the info icon opens the explanation: what the scenarios count, what accurate means, and Nick Brown's article linked, and nothing else",
+          "unskips": [
+            "it.skip → it :: hovering the headline's info icon names it \"About these numbers\" and opens nothing",
+            "it.skip.each → it.each :: $how on the info icon opens the explanation: what the scenarios count, what accurate means, and Nick Brown's article linked, and nothing else — 3 cases (a click, Enter, Space)",
+            "it.skip → it :: the article is the next Tab stop and opens The Full Monte in a new tab",
+            "it.skip → it :: @kpi-OUT-4172-read-only the only control the summary adds is its explanation's icon; nothing could change a Team setting",
+            "it.skip → it (TeamForecastView.realityCheck.compact.test.tsx) :: the credit line and the \"Not checked\" entry are gone from under the legend",
+            "Deleted in this commit (not pending; retirement row 14) :: TeamForecastView.realityCheck.dialog.test.tsx:664 — every dialog button is Run again or Close. The read-only spec above replaces it, and adding the icon is what breaks it",
+            "Deleted in this commit (not pending; retirement row 26) :: TeamForecastView.realityCheck.grading.test.tsx:586 — the credit and 'this product' under the legend",
+            "Deleted in this commit (not pending; retirement row 35, second half) :: realityCheckCopy.test.ts:889 methodCredit"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: hovering the headline's info icon names it \"About these numbers\" and opens nothing",
+            "TeamForecastView.realityCheck.summary.test.tsx :: $how on the info icon opens the explanation: what the scenarios count, what accurate means, and Nick Brown's article linked, and nothing else",
+            "TeamForecastView.realityCheck.summary.test.tsx :: the article is the next Tab stop and opens The Full Monte in a new tab",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @kpi-OUT-4172-read-only the only control the summary adds is its explanation's icon; nothing could change a Team setting",
+            "TeamForecastView.realityCheck.compact.test.tsx :: the credit line and the \"Not checked\" entry are gone from under the legend"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckHeadline.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckLegend.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx"
+          ],
+          "dependencies": [
+            "06-13"
+          ],
+          "criteria": [
+            "The popover opens on click, Enter or Space only, never on hover or focus. Focus moves into it and the link is its first Tab stop. The link's href is exactly https://medium.com/asos-techblog/the-full-monte-901d721b8532.",
+            "The popover holds exactly the scenario explanation, the accurate sentence and the one credit line, and no could-not-run text when every scenario ran. The credit names Nick Brown and The Full Monte and claims no additions of this product (the maintainer's answer; the old 'this product' clause is retired).",
+            "No text in the dialog, with the popover closed, mentions Nick Brown or The Full Monte, and no 'Not checked' legend entry remains. methodCredit and the legend's credit paragraph are deleted with their tests.",
+            "The dialog's buttons are exactly Run again, Close and About these numbers. There is no textbox, spinbutton, combobox, checkbox, switch, radio or slider, so nothing could change a Team setting.",
+            "headlineExplanation and the credit constants are pure, with whole-string unit cases.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-DES-10, 6094-D15 or S-25."
+          ],
+          "implementation_notes": "This is the step that owns the credit's move. The compact credit spec, retirement row 26 and methodCredit were DISTILL's 06a items and land here instead, so that no commit, pushed or not, shows the dialog without the credit. Commit: `feat(forecast): the headline explains its numbers and credits Nick Brown (story 6094)`"
+        },
+        {
+          "id": "06-15",
+          "name": "The explanation says how many scenarios could not run and why; Escape closes it before the dialog",
+          "description": "When runsAttempted > runsEvaluated, the popover adds '{k} of the {T} scenarios could not run and are left out of every count.' and the shipped whyChecksCouldNotRun sentences, unchanged. When N = 0, the '… so {N} scenarios give {M} forecasts' clause is left out rather than saying 0 gives 0 (the recommended reading of an open copy finding). Escape closes the popover first and returns focus to its icon; a second Escape closes the dialog.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "@error when some scenarios could not run the explanation says how many and why - Coastal Survey",
+          "unskips": [
+            "it.skip → it :: @error when no scenario could run the explanation says all of them were left out, and why - Kelp Farm",
+            "it.skip → it :: @error when some scenarios could not run the explanation says how many and why - Coastal Survey",
+            "it.skip → it :: the explanation and its reasons speak the instance's own words, and no tracker's",
+            "it.skip → it :: Escape closes the explanation first and puts focus back on its icon; a second Escape closes the dialog"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: @error when no scenario could run the explanation says all of them were left out, and why - Kelp Farm",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @error when some scenarios could not run the explanation says how many and why - Coastal Survey",
+            "TeamForecastView.realityCheck.summary.test.tsx :: the explanation and its reasons speak the instance's own words, and no tracker's",
+            "TeamForecastView.realityCheck.summary.test.tsx :: Escape closes the explanation first and puts focus back on its icon; a second Escape closes the dialog"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckHeadline.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx"
+          ],
+          "dependencies": [
+            "06-14"
+          ],
+          "criteria": [
+            "Coastal Survey's explanation holds the whole scenario sentence ending 'so 12 scenarios give 48 forecasts.', '4 of the 16 scenarios could not run and are left out of every count.' and its reason. Kelp Farm's holds '16 of the 16 scenarios could not run and are left out of every count.' and its reason.",
+            "runsLeftOut is reshaped to the scenario wording. If the old denominator paragraph still calls it, the old caller keeps its wording until 06-16 (the new form as its own composer, merged when the old caller dies), so no 06-16 retirement spec breaks early. The new form gets a whole-string unit case.",
+            "Team and Work Items come from getTerm in the explanation and its reasons; no 'Work Items', throughput, Epic, Initiative or Story when renamed.",
+            "The Escape spec may pass on first un-skip, because MUI's modal manager answers Escape for the top-most modal; it is the guard of the Escape order, so record that honestly.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D21, F-US06-1 or R-6094-10."
+          ],
+          "implementation_notes": "Commit: `feat(forecast): the explanation names the scenarios that could not run (story 6094)`"
+        },
+        {
+          "id": "06-16",
+          "name": "The summary replaces the prose: RealityCheckVerdict becomes RealityCheckSummary, every retired sentence and composer goes, and the walking skeleton reads at a glance",
+          "description": "`git mv RealityCheckVerdict.tsx RealityCheckSummary.tsx` and rename the component. It renders the headline, the badge and the four level rows, in that order, and nothing else. Deleted: the heading 'How often each confidence level held', every level line with 'should be about' and 'Usually …', the region sentence, the two findings and the denominator paragraph, plus every composer on DESIGN's delete list not already gone: regionOf, Region, VerdictFacts, noWindowHeldUp, regionSentence, regionNoun, determinationCopy, standingCopy, notTestedReasonCopy, windowVerdict, runsChecked, denominatorStatement, heldAgainstExpected, usualGradeCopy, usually, levelReadingCopy, levelLine and findings, and usualGrade and isStrictMajority from realityCheckGrading.ts. In the same commit the Playwright walking skeleton is swapped: the pending step is un-skipped, and the old step with TeamDetailPage.realityCheckLevelLine and realityCheckDialogDenominator is deleted, because the old step asserts the very text this commit removes.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+          "scenario_name": "@kpi-OUT-6094-words-above-the-table above the table sit only the headline, the window badge and four level rows - no more than 50 words",
+          "unskips": [
+            "it.skip → it :: @kpi-OUT-6094-words-above-the-table above the table sit only the headline, the window badge and four level rows - no more than 50 words",
+            "it.skip → it :: none of the sentences the summary replaces is said anywhere in the dialog",
+            "it.skip → it :: @error a level that never held and one that always held get no words beyond their bar and numbers",
+            "it.skip → it :: @kpi-OUT-6094-no-window-ranked nothing in the summary, the badge's tooltip or the explanation names, orders or scores a window - Deep Current, whose 14 days did not hold up",
+            "test.step.skip → test.step (Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts) :: Forecast reality check reads at a glance",
+            "Deleted in this commit (not pending; retirement row 41) :: TeamsDetail.spec.ts:62 step 'Forecast reality check opens in a dialog', and TeamDetailPage.realityCheckLevelLine and .realityCheckDialogDenominator",
+            "Deleted in this commit (not pending; retirement rows 3, 4, 5, 6, 15) :: TeamForecastView.realityCheck.dialog.test.tsx:238, :287, :309, :325, :683",
+            "Deleted in this commit (not pending; retirement row 24) :: TeamForecastView.realityCheck.grading.test.tsx:361, :378, :395, :412, :469 (6 cases), :483, :502, :525, :549",
+            "Deleted in this commit (not pending; retirement rows 27, 28, 29, 30) :: TeamForecastView.realityCheck.test.tsx:126, :137, :152, :167, :183, :200 (2 cases), :225, :234, :260, :275, :282",
+            "Deleted in this commit (not pending; retirement rows 36, 37, 38) :: realityCheckCopy.test.ts:77 regionOf, :144 determinationCopy, :201 standingCopy, :274 notTestedReasonCopy, :316 windowVerdict, :401 denominatorStatement, :632 (folded into the denominator), :438 levelReadingCopy, :535 findings, :865 usualGradeCopy",
+            "Deleted in this commit (not pending; retirement row 39) :: realityCheckGrading.test.ts:265, :280, :286 (usualGrade)",
+            "Rewritten in this commit (not pending; retirement row 40) :: realityCheckGrading.test.ts:298 — drop the 'and no usual grade' half"
+          ],
+          "red_to_green_tests": [
+            "TeamForecastView.realityCheck.summary.test.tsx :: @kpi-OUT-6094-words-above-the-table above the table sit only the headline, the window badge and four level rows - no more than 50 words",
+            "TeamForecastView.realityCheck.summary.test.tsx :: none of the sentences the summary replaces is said anywhere in the dialog",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @error a level that never held and one that always held get no words beyond their bar and numbers",
+            "TeamForecastView.realityCheck.summary.test.tsx :: @kpi-OUT-6094-no-window-ranked nothing in the summary, the badge's tooltip or the explanation names, orders or scores a window - Deep Current, whose 14 days did not hold up",
+            "Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts :: Forecast reality check reads at a glance"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckVerdict.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckSummary.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/RealityCheckDialog.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckCopy.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.test.ts",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.realityCheck.test.tsx",
+            "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/models/teams/TeamDetailPage.ts",
+            "/storage/repos/Lighthouse/Lighthouse.EndToEndTests/tests/specs/teams/TeamsDetail.spec.ts"
+          ],
+          "dependencies": [
+            "06-15"
+          ],
+          "criteria": [
+            "Above the table sit only the headline with its icon, the badge and four level rows: 50 words or fewer for a fully evaluable Team. None of the retired sentences renders anywhere in the dialog.",
+            "A level that never or always held gets no words beyond its bar and numbers: no 'never held', 'every time', 'over-forecasting' or 'under-forecasting'. The server's LevelReading is used only for NotEvaluated.",
+            "The rankability scan runs over the dialog text, the badge tooltip and the explanation. Above the table only the Team's own '14-day' is named, and no text names, orders or scores a window.",
+            "Done-check, run and reported in the commit body: a search of Lighthouse.Frontend/src for every deleted composer name, and for 'How often each confidence level held', 'should be about', 'Usually ', 'The sampling window is a setting' and 'Checking ', returns nothing, tests included. `grep -r \"__SCAFFOLD__\" Lighthouse.Frontend/src/` finds nothing. No it.skip, it.skip.each, test.step.skip or [Ignore(Pending)] tagged 06a or 06b remains in any US-06 file.",
+            "The Playwright step is RUN locally, green, before committing, against a fresh Lighthouse on a spare port, started as `.claude/commands/run-dev.md` and the E2E README describe, with LIGHTHOUSEURL pointed at it. Override the Kestrel endpoint keys, because ASPNETCORE_URLS is ignored while appsettings pins 5169/7246. Never run it against the dev instance on :5169, which playwright.config.ts falls back to. It runs on demo data through TeamDetailPage only: it sees the trigger's info icon, presses the button, sees the dialog, the headline, four level bars and the table with at least 16 window rows, presses Escape, and finds focus back on the button. It never presses the headline's icon, whose open popover would take the first Escape. Level icons are never located. An unrun spec or POM locator is never committed.",
+            "grep -r for realityCheckLevelLine, realityCheckDialogDenominator and every changed accessible name under Lighthouse.EndToEndTests/ finds no stale use: neither tsc -b nor pnpm test compiles the POMs. Biome and tsc are clean for the E2E project.",
+            "The kept dialog specs (grouping, unevaluable rows, ranking scan and the others DISTILL lists as still valid) stay green. No API field changes: the ForecastService parse spec and the backend slice 01 and 04 suites stay green unedited.",
+            "`pnpm test` green and `pnpm build` clean with zero errors and zero warnings (remove */docs symlinks first; commit what the prebuild's `biome check --write` formatted).",
+            "Comments are rare and give a why in plain language, with no internal references such as 6094-D14, 6094-DES-18 or AC-6.8."
+          ],
+          "implementation_notes": "The walking skeleton lands in this commit rather than a step of its own. The old step asserts the level line and the denominator this commit deletes, and DISTILL and DEVOPS both require the locator deletions to land with the change that removes their text. The step un-skips five cases and deletes many specs; it is deletion-heavy by design, since the wait rewrites were pulled forward to 06-13. Commit: `feat(forecast): the reality check opens on a summary, not paragraphs (story 6094)`"
+        },
+        {
+          "id": "06-17",
+          "name": "StrykerJS configuration extended to the reshaped reality check, and the story's done-checks",
+          "description": "stryker.6094.frontend.json's mutate and vitest.stryker.6094.config.ts's include are extended to the new and renamed modules and the three new spec files, in Lighthouse.Frontend and in the byte-identical copies in the workspace's mutation/ folder, both reconciled against `ls src/pages/Teams/Detail/`. ForecastRealityCheckController.cs stays out of the Stryker.NET set. The orchestrator runs StrykerJS last, on frozen code.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/Lighthouse.Frontend/src/pages/Teams/Detail/realityCheckGrading.test.ts",
+          "scenario_name": "None — configuration only",
+          "unskips": [
+            "None, and deliberately (0 cases). These are configuration files for the orchestrator's mutation run."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/stryker.6094.frontend.json",
+            "/storage/repos/Lighthouse/Lighthouse.Frontend/vitest.stryker.6094.config.ts",
+            "/storage/repos/Lighthouse/docs/feature/epic-4172-forecast-backtest-sweep/mutation/stryker.6094.frontend.json",
+            "/storage/repos/Lighthouse/docs/feature/epic-4172-forecast-backtest-sweep/mutation/vitest.stryker.6094.config.ts"
+          ],
+          "dependencies": [
+            "06-16"
+          ],
+          "criteria": [
+            "mutate names: src/pages/Teams/Detail/realityCheckGrading.ts, realityCheckCopy.ts, ForecastRealityCheck.tsx, RealityCheckDialog.tsx, RealityCheckSummary.tsx (replacing RealityCheckVerdict.tsx), RealityCheckTable.tsx, RealityCheckPeriodGroup.tsx, RealityCheckGradedCell.tsx, RealityCheckLegend.tsx, RealityCheckHeadline.tsx, RealityCheckWindowBadge.tsx, RealityCheckLevelRow.tsx and RealityCheckLevelLabel.tsx. If the crafter merged the summary pieces, list the files that exist. Deliberately not mutated: BacktestForecaster.tsx (one pass-through slot, and not a reality-check module), plus 05-10's exclusions.",
+            "include adds TeamForecastView.realityCheck.trigger.test.tsx, TeamForecastView.realityCheck.compact.test.tsx and TeamForecastView.realityCheck.summary.test.tsx to 05-10's list, and drops any listed spec file that no longer exists.",
+            "Each pair of copies is byte-identical. The configs are gitignored, so the committed ones are force-added (`git add -f`).",
+            "Done-checks, run and reported in the commit body: `grep -r \"__SCAFFOLD__\" Lighthouse.Frontend/src/` finds nothing; no it.skip, it.skip.each, test.step.skip or [Ignore(Pending)] for US-06 remains; the 06-16 search for deleted composer names and retired sentences still finds nothing.",
+            "No Stryker run in this step. Mutation runs last, on frozen code, with the acceptance suite excluded."
+          ],
+          "implementation_notes": "StrykerJS resolves vitest.stryker.6094.config.ts relative to the working directory, so the copy in Lighthouse.Frontend/ is the one it reads. Commit: `chore(forecast): mutation configuration for the at-a-glance reality check (story 6094)`"
         }
       ]
     }
