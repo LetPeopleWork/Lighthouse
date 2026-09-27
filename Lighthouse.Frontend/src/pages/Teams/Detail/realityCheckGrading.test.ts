@@ -318,27 +318,22 @@ describe("@us-06 @slice-06a @kpi-OUT-6094-colour-never-alone which side of the h
 	});
 });
 
-const HELD_SHARE_PENDING = "06b: the held share is not built yet";
-
 describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its checks a level held in", () => {
-	it.skip(`@error a level no check could test has no share (${HELD_SHARE_PENDING})`, () => {
+	it(`@error a level no check could test has no share`, () => {
 		expect(heldShare(0, 0)).toBeNull();
 	});
 
-	it.skip.each([
+	it.each([
 		{ held: 15, evaluated: 16, share: 94 },
 		{ held: 14, evaluated: 16, share: 88 },
 		{ held: 12, evaluated: 16, share: 75 },
 		{ held: 16, evaluated: 16, share: 100 },
 		{ held: 0, evaluated: 16, share: 0 },
-	])(
-		`$held of $evaluated reads $share% (${HELD_SHARE_PENDING})`,
-		({ held, evaluated, share }) => {
-			expect(heldShare(held, evaluated)).toBe(share);
-		},
-	);
+	])(`$held of $evaluated reads $share%`, ({ held, evaluated, share }) => {
+		expect(heldShare(held, evaluated)).toBe(share);
+	});
 
-	it.skip(`@property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did (${HELD_SHARE_PENDING})`, () => {
+	it(`@property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did`, () => {
 		const contradictions: string[] = [];
 
 		for (let evaluated = 1; evaluated <= 200; evaluated++) {
