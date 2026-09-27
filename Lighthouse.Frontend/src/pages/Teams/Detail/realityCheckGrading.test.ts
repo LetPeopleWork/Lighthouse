@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult";
 import {
 	type GradedCheck,
+	gradedCheckAt,
 	levelCloseness,
 	missOf,
 	readCheck,
@@ -64,6 +65,34 @@ const shownInsideItsBand = (
 ): boolean =>
 	percent >= SHOWN_RANGE_OF_BAND[band][0] &&
 	percent <= SHOWN_RANGE_OF_BAND[band][1];
+
+describe("@us-04 @slice-04 one level of one check, found by its percentile", () => {
+	const LEVEL_OUTCOMES = [
+		{ confidenceLevel: 95, forecastValue: 31, held: true },
+		{ confidenceLevel: 50, forecastValue: 48, held: false },
+	];
+
+	it("reads the level asked for, wherever the check lists it", () => {
+		expect(
+			gradedCheckAt({ levelOutcomes: LEVEL_OUTCOMES, actualCompleted: 42 }, 50),
+		).toEqual({ forecastValue: 48, actualCompleted: 42, held: false });
+	});
+
+	it("@error has nothing for a level the check left out", () => {
+		expect(
+			gradedCheckAt({ levelOutcomes: LEVEL_OUTCOMES, actualCompleted: 42 }, 70),
+		).toBeNull();
+	});
+
+	it("@error has nothing for a check with no actual, even one that lists the level", () => {
+		expect(
+			gradedCheckAt(
+				{ levelOutcomes: LEVEL_OUTCOMES, actualCompleted: null },
+				50,
+			),
+		).toBeNull();
+	});
+});
 
 describe("@us-04 @slice-04 the miss in Work Items", () => {
 	it.each([

@@ -408,6 +408,37 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		);
 	});
 
+	it(`@error a level the check left out stays an empty cell, and every other forecast keeps its own column`, async () => {
+		const answer = oceanExplorerOverEightWeeks();
+		const dialog = await theDialogFor({
+			...answer,
+			cells: answer.cells.map((cell) =>
+				cell.horizonDays === 56 && cell.samplingWindowDays === 30
+					? {
+							...cell,
+							levelOutcomes: (cell.levelOutcomes ?? []).filter(
+								(outcome) => outcome.confidenceLevel !== 70,
+							),
+						}
+					: cell,
+			),
+		});
+		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
+
+		expect(within(row).getAllByRole("cell")).toHaveLength(4);
+		expect(levelCell(row, 70)).toBeEmptyDOMElement();
+		expect(levelCell(row, 70)).not.toHaveAttribute("aria-label");
+		expect(levelCell(row, 50)).toHaveAccessibleName(
+			"50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
+		);
+		expect(levelCell(row, 85)).toHaveAccessibleName(
+			"85th: 36, held, 6 more delivered, 14% of the actual",
+		);
+		expect(levelCell(row, 95)).toHaveAccessibleName(
+			"95th: 31, held, 11 more delivered, 26% of the actual",
+		);
+	});
+
 	it(`@boundary a forecast the Team delivered exactly shows a miss of 0 and held`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
