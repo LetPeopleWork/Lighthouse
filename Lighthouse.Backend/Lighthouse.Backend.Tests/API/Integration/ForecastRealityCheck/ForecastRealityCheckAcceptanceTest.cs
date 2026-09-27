@@ -18,7 +18,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
@@ -93,6 +97,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected ForecastScript Forecasts { get; private set; } = null!;
 
+        /// <summary>What the host logged at the level an operator sees by default, and above.</summary>
+        protected CapturedLogMessages CapturedLogs { get; private set; } = null!;
+
         protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
         protected HttpClient Client { get; private set; } = null!;
@@ -115,6 +122,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             rootFactory = new TestWebApplicationFactory<Program>();
             Forecasts = new ForecastScript();
             var script = Forecasts;
+            CapturedLogs = new CapturedLogMessages();
+            var capturedLogs = CapturedLogs;
 
             Factory = TestWebApplicationFactory<Program>
                 .WithTestAuthentication(rootFactory)
@@ -141,6 +150,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                         services.AddScoped<ForecastService>();
                         services.AddScoped<IForecastService>(provider =>
                             new ForecastWithScriptedChecks(provider.GetRequiredService<ForecastService>(), script));
+
+                        // Serilog is the host's logging pipeline, so a logging provider added here would never
+                        // see a line; replacing the factory is what makes the host's own log readable. The
+                        // framework overrides mirror appsettings.json, so the capture holds what an operator reads.
+                        services.RemoveAll<ILoggerFactory>();
+                        services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                            new LoggerConfiguration()
+                                .MinimumLevel.Information()
+                                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                                .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                                .WriteTo.Sink(capturedLogs)
+                                .CreateLogger(),
+                            dispose: true));
                     });
                 });
 

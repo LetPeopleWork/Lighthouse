@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, type Mock, vi } from "vitest";
 import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
@@ -440,7 +440,10 @@ export const REALITY_CHECK_DIALOG_NAME = /reality check/i;
 export const theRealityCheckDialog = (): Promise<HTMLElement> =>
 	screen.findByRole("dialog", { name: REALITY_CHECK_DIALOG_NAME });
 
-/** The dialog once the answer has filled it, recognised by the denominator every answer states. */
+/**
+ * The dialog once the answer has filled it, recognised by its table: every answer has one, whatever the
+ * summary above it says, and no table is drawn while the check is still running.
+ */
 export const theDialogWithTheAnswer = async (
 	runRealityCheck: Mock,
 	answer: RealityCheckWireAnswer,
@@ -449,14 +452,31 @@ export const theDialogWithTheAnswer = async (
 	const group = renderTheForecastTab(runRealityCheck);
 	await pressRunRealityCheck(group);
 	const dialog = await theRealityCheckDialog();
-	await waitFor(() =>
-		expectALine(dialog, /forecast runs? (?:were|was) checked/i),
-	);
+	await within(dialog).findByRole("table");
 	return dialog;
 };
 
-const readingOf = (element: Element): string =>
+/** An element's text as a reader sees it: runs of white space read as one space. */
+export const readingOf = (element: Element): string =>
 	(element.textContent ?? "").replaceAll(/\s+/g, " ").trim();
+
+/**
+ * Presses Tab until the keyboard reaches `target`. MUI shows a tooltip on keyboard focus only, so a spec
+ * that wants one must arrive the way a keyboard user does, not by a bare focus call.
+ */
+export const tabUntilFocused = async (
+	target: HTMLElement,
+	mostPresses = 200,
+): Promise<void> => {
+	for (
+		let press = 0;
+		press < mostPresses && document.activeElement !== target;
+		press++
+	) {
+		await userEvent.tab();
+	}
+	expect(document.activeElement, "the keyboard never reached it").toBe(target);
+};
 
 /**
  * The deepest elements whose whole text is exactly `text`. A pattern matcher would also find "did not

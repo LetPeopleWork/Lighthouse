@@ -137,3 +137,19 @@ export const levelCloseness = (
 
 	return { gradedChecks: checks.length, withinTenPercent, usualGrade };
 };
+
+export const __SCAFFOLD__ = true;
+
+/**
+ * The share of its checks a level held in, as the whole percentage its bar and row show: 100 only when
+ * every check held and 0 only when none did, so a level that missed once never reads as always holding.
+ * None for a level no check could test.
+ */
+export const heldShare = (
+	heldCount: number,
+	runsEvaluated: number,
+): number | null => {
+	throw new Error(
+		`Not yet implemented -- RED scaffold: the share of ${runsEvaluated} checks a level held in, ${heldCount} of them held`,
+	);
+};

@@ -69,8 +69,11 @@ vi.mock("./NewItemForecaster", () => ({
 	default: () => <div data-testid="new-item-forecaster" />,
 }));
 
+// Renders the slot the reality check's trigger moves into, so the button is found wherever it sits.
 vi.mock("./BacktestForecaster", () => ({
-	default: () => <div data-testid="backtest-forecaster" />,
+	default: ({ realityCheck }: { realityCheck?: React.ReactNode }) => (
+		<div data-testid="backtest-forecaster">{realityCheck}</div>
+	),
 }));
 
 const runRealityCheck = vi.fn();

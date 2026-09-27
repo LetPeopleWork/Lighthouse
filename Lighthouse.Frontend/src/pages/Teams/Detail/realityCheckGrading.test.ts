@@ -3,6 +3,7 @@ import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult
 import {
 	type GradedCheck,
 	gradedCheckAt,
+	heldShare,
 	levelCloseness,
 	missOf,
 	readCheck,
@@ -300,5 +301,47 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 			withinTenPercent: 0,
 			usualGrade: null,
 		});
+	});
+});
+
+const HELD_SHARE_PENDING = "06b: the held share is not built yet";
+
+describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its checks a level held in", () => {
+	it.skip(`@error a level no check could test has no share (${HELD_SHARE_PENDING})`, () => {
+		expect(heldShare(0, 0)).toBeNull();
+	});
+
+	it.skip.each([
+		{ held: 15, evaluated: 16, share: 94 },
+		{ held: 14, evaluated: 16, share: 88 },
+		{ held: 12, evaluated: 16, share: 75 },
+		{ held: 16, evaluated: 16, share: 100 },
+		{ held: 0, evaluated: 16, share: 0 },
+	])(
+		`$held of $evaluated reads $share% (${HELD_SHARE_PENDING})`,
+		({ held, evaluated, share }) => {
+			expect(heldShare(held, evaluated)).toBe(share);
+		},
+	);
+
+	it.skip(`@property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did (${HELD_SHARE_PENDING})`, () => {
+		const contradictions: string[] = [];
+
+		for (let evaluated = 1; evaluated <= 200; evaluated++) {
+			for (let held = 0; held <= evaluated; held++) {
+				const share = heldShare(held, evaluated) ?? -1;
+				const rounded = Math.floor((200 * held + evaluated) / (2 * evaluated));
+				const expected = Math.min(99, Math.max(1, rounded));
+				const edge = held === evaluated ? 100 : 0;
+				const wanted = held === 0 || held === evaluated ? edge : expected;
+
+				if (share !== wanted) {
+					contradictions.push(`${held} of ${evaluated}: ${share}%`);
+				}
+			}
+		}
+
+		expect(contradictions.slice(0, 10)).toEqual([]);
+		expect(contradictions).toHaveLength(0);
 	});
 });

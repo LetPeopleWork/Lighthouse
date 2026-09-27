@@ -129,6 +129,28 @@ export class TeamDetailPage {
 		);
 	}
 
+	// The summary's headline, in each of the forms it takes: every scenario ran, some could not, none could.
+	get realityCheckHeadline(): Locator {
+		return this.realityCheckDialog.getByText(
+			/^(Backtested \d+ (of \d+ )?scenarios? · \d+ forecasts?|None of the \d+ scenarios could be backtested)$/,
+		);
+	}
+
+	// A level's bar is named by its text alternative, which starts with the level. Anchored, because a
+	// name pattern otherwise matches anywhere in the name.
+	realityCheckLevelBar(level: 50 | 70 | 85 | 95): Locator {
+		return this.realityCheckDialog.getByRole("img", {
+			name: new RegExp(`^${level}th `),
+		});
+	}
+
+	get realityCheckExplanationIcon(): Locator {
+		return this.backtestForecastingCard.getByRole("button", {
+			name: "What does the reality check do?",
+			exact: true,
+		});
+	}
+
 	get realityCheckTable(): Locator {
 		return this.realityCheckDialog.getByRole("table");
 	}
