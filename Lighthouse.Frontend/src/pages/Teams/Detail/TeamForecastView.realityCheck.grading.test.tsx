@@ -496,6 +496,29 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line sa
 		);
 	});
 
+	it(`@error keeps a grade usual when it is usual among the checks that ran, however many others could not run`, async () => {
+		const dialog = await theDialogFor({
+			heldCounts: { 85: 12 },
+			unevaluatedWindowDays: [14],
+			unevaluable: HORIZON_DAYS.map((horizon) => ({
+				window: 14,
+				horizon,
+				reason: "TooFewActiveDays" as const,
+				daysWithCompletedWork: 3,
+			})),
+			checks: theSixteenChecksAt(85, [
+				...times(4, HELD_WITHIN_10),
+				...times(7, HELD_WITHIN_10),
+				...times(5, HELD_OVER_25),
+			]),
+		});
+
+		expectTheLine(
+			dialog,
+			"85th: held 12 of 12 (should be about 10), within 10% in 7. Usually within 10%.",
+		);
+	});
+
 	it(`@error a level no check could test says so, with no count and no "usually"`, async () => {
 		const dialog = await theDialogFor({
 			soundWindowDays: [],
