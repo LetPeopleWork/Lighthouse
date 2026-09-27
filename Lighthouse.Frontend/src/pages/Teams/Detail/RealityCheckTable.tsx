@@ -7,6 +7,7 @@ import {
 	TableRow,
 } from "@mui/material";
 import type React from "react";
+import { useId } from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -42,11 +43,20 @@ const RealityCheckTable: React.FC<Readonly<RealityCheckTableProps>> = ({
 	result,
 }) => {
 	const { getTerm } = useTerminology();
+	const captionId = useId();
 
+	// A region that scrolls must take focus, or a keyboard alone could never scroll it.
 	return (
-		<TableContainer sx={{ overflowX: "auto" }}>
+		<TableContainer
+			component="section"
+			aria-labelledby={captionId}
+			tabIndex={0}
+			sx={{ overflowX: "auto" }}
+		>
 			<Table size="small" sx={{ captionSide: "top", minWidth: 640 }}>
-				<caption>{tableCaption(result.teamName, getTerm)}</caption>
+				<caption id={captionId}>
+					{tableCaption(result.teamName, getTerm)}
+				</caption>
 				<TableHead>
 					<TableRow>
 						<TableCell sx={stickyHeaderCellSx}>Sampling window</TableCell>

@@ -775,6 +775,16 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 		expect(document.activeElement).toBe(focusedWhileRunning);
 	});
 
+	it(`the table's scrolling region takes keyboard focus and is named by the table's caption`, async () => {
+		const dialog = await theDialogFor(aRealityCheckAnswer());
+
+		const region = within(dialog).getByRole("region", {
+			name: /^Every forecast checked for Ocean Explorer\b/,
+		});
+		expect(region).toHaveAttribute("tabindex", "0");
+		expect(region).toContainElement(theTableIn(dialog));
+	});
+
 	it(`on a narrow screen the dialog takes the whole screen and the table drops nothing`, async () => {
 		setMatchMedia(true);
 
