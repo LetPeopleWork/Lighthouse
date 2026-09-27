@@ -36,8 +36,8 @@ import { appColors } from "../../../utils/theme/colors";
  * the dialog says "Crunching the numbers…".
  *
  * What the specs need from the markup, and nothing more: a graded or "—" cell is the table cell itself,
- * focusable, and wrapped by the tooltip that names it; the loading state is a `status` region holding a
- * progress indicator; the scrolling region is a `region` named "Forecasts checked for {Team name}, by
+ * focusable, and wrapped by the tooltip that names it; the dialog keeps one `status` region, which holds a
+ * progress indicator while a check runs; the scrolling region is a `region` named "Forecasts checked for {Team name}, by
  * forecast horizon and sampling window"; the period day is formatted through
  * `Date.prototype.toLocaleDateString`, as the back-test date pickers get their digits, which is where
  * these specs pin the reader's locale.
@@ -228,7 +228,7 @@ afterEach(() => {
 });
 
 describe("@us-06 @slice-06a @driving_port every run shows that it is working", () => {
-	it(`the first run shows a spinner and "${LOADING}" in a polite status, and the answer arriving moves no focus`, async () => {
+	it(`the first run shows a spinner and "${LOADING}" in a polite status, and the answer arriving moves no focus and empties that same status`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 
@@ -246,18 +246,22 @@ describe("@us-06 @slice-06a @driving_port every run shows that it is working", (
 		await answerArrives(aRealityCheckAnswer());
 		await within(dialog).findByRole("table");
 		expect(document.activeElement).toBe(focusedWhileRunning);
+		expect(within(dialog).getByRole("status")).toBe(status);
+		expect(readingOf(status)).toBe("");
 	});
 
-	it(`Run again shows the same spinner and "${LOADING}" while the fresh check runs`, async () => {
+	it(`Run again shows the same spinner and "${LOADING}" in the status region the answer left in place, while the fresh check runs`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const answerArrives = anAnswerStillOnItsWay();
+		const status = within(dialog).getByRole("status");
+		expect(readingOf(status)).toBe("");
 
 		await userEvent.click(
 			within(dialog).getByRole("button", { name: /^run again$/i }),
 		);
-		const status = await within(dialog).findByRole("status");
 
-		expect(readingOf(status)).toBe(LOADING);
+		await waitFor(() => expect(readingOf(status)).toBe(LOADING));
+		expect(within(dialog).getByRole("status")).toBe(status);
 		expect(
 			within(status).getByRole("progressbar", { hidden: true }),
 		).toBeInTheDocument();

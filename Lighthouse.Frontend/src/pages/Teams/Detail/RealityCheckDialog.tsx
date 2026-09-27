@@ -40,17 +40,7 @@ const RealityCheckRunContent: React.FC<
 	Readonly<RealityCheckRunContentProps>
 > = ({ run }) => {
 	if (run.state === "running") {
-		return (
-			<Stack
-				role="status"
-				direction="row"
-				spacing={2}
-				sx={{ alignItems: "center" }}
-			>
-				<CircularProgress size={24} aria-hidden />
-				<Typography>{LOADING}</Typography>
-			</Stack>
-		);
+		return null;
 	}
 	if (run.state === "failed") {
 		return <Typography role="alert">{run.message}</Typography>;
@@ -94,6 +84,20 @@ const RealityCheckDialog: React.FC<Readonly<RealityCheckDialogProps>> = ({
 				<CloseIcon />
 			</IconButton>
 			<DialogContent dividers>
+				{/* Kept mounted between runs: a screen reader announces a change to a live region it already knows, not a new one. */}
+				<Stack
+					role="status"
+					direction="row"
+					spacing={2}
+					sx={{ alignItems: "center" }}
+				>
+					{run.state === "running" ? (
+						<>
+							<CircularProgress size={24} aria-hidden />
+							<Typography>{LOADING}</Typography>
+						</>
+					) : null}
+				</Stack>
 				<RealityCheckRunContent run={run} />
 			</DialogContent>
 			<DialogActions>

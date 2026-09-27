@@ -455,7 +455,9 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		await pressRunRealityCheck(group);
 		const reopened = await theRealityCheckDialog();
 
-		expect(within(reopened).getByRole("status")).toBeInTheDocument();
+		expect(within(reopened).getByRole("status")).toHaveTextContent(
+			"Crunching the numbers…",
+		);
 		expect(theButtonNamed(reopened, /^run again$/i)).toBeDisabled();
 		expect(runRealityCheck).toHaveBeenCalledTimes(1);
 	});
