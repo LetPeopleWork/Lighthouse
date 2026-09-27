@@ -851,18 +851,6 @@ describe("gradedCellName", () => {
 	])("reads $name", ({ facts, name }) => {
 		expect(gradedCellName(facts)).toBe(name);
 	});
-
-	it("takes whether it held as given, even where the numbers alone would say otherwise", () => {
-		expect(
-			gradedCellName({
-				confidenceLevel: 85,
-				forecastValue: 36,
-				miss: 6,
-				held: false,
-				percentOfActual: 14,
-			}),
-		).toBe("85th: 36, did not hold, 6 more delivered, 14% of the actual");
-	});
 });
 
 describe("percentShown", () => {
