@@ -686,18 +686,19 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
 
-	it(`@error while a check is running neither Run again nor reopening starts a second one`, async () => {
+	it(`@error while a check is running Run again cannot be pressed and reopening starts no second check`, async () => {
 		anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
 		const dialog = await theRealityCheckDialog();
 
-		await userEvent.click(theButtonNamed(dialog, /^run again$/i));
+		expect(theButtonNamed(dialog, /^run again$/i)).toBeDisabled();
 		await closeWithEscape();
 		await pressRunRealityCheck(group);
 		const reopened = await theRealityCheckDialog();
 
 		expect(within(reopened).getByRole("status")).toBeInTheDocument();
+		expect(theButtonNamed(reopened, /^run again$/i)).toBeDisabled();
 		expect(runRealityCheck).toHaveBeenCalledTimes(1);
 	});
 

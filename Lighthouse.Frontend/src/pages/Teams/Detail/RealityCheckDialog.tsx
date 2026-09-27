@@ -92,7 +92,9 @@ const RealityCheckDialog: React.FC<Readonly<RealityCheckDialogProps>> = ({
 				<RealityCheckRunContent teamName={teamName} run={run} />
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onRunAgain}>Run again</Button>
+				<Button onClick={onRunAgain} disabled={run.state === "running"}>
+					Run again
+				</Button>
 				<Button onClick={onClose}>Close</Button>
 			</DialogActions>
 		</Dialog>
