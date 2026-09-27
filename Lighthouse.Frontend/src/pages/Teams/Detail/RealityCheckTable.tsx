@@ -1,5 +1,4 @@
 import {
-	Stack,
 	Table,
 	TableCell,
 	TableContainer,
@@ -7,8 +6,8 @@ import {
 	TableRow,
 } from "@mui/material";
 import type React from "react";
-import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
+import RealityCheckLevelLabel from "./RealityCheckLevelLabel";
 import RealityCheckPeriodGroup, {
 	stickyHeaderCellSx,
 } from "./RealityCheckPeriodGroup";
@@ -17,23 +16,6 @@ import { tableRegionName } from "./realityCheckCopy";
 interface RealityCheckTableProps {
 	result: RealityCheckResult;
 }
-
-// The name and icon say which confidence level a column is, never how well it did, so the level's
-// colour stays out of the header.
-const LevelColumnHeader: React.FC<Readonly<{ confidenceLevel: number }>> = ({
-	confidenceLevel,
-}) => {
-	const { level, IconComponent } = new ForecastLevel(confidenceLevel);
-	return (
-		<TableCell>
-			<Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-				<span>{`${confidenceLevel}th `}</span>
-				<IconComponent fontSize="small" aria-hidden="true" />
-				<span>{level}</span>
-			</Stack>
-		</TableCell>
-	);
-};
 
 // A plain table, never a data grid: a sortable grid would let a reader rank the sampling windows, and the
 // checks cannot honestly be ranked against each other.
@@ -53,10 +35,9 @@ const RealityCheckTable: React.FC<Readonly<RealityCheckTableProps>> = ({
 					<TableRow>
 						<TableCell sx={stickyHeaderCellSx}>Sampling window</TableCell>
 						{result.confidenceLevels.map((confidenceLevel) => (
-							<LevelColumnHeader
-								key={confidenceLevel}
-								confidenceLevel={confidenceLevel}
-							/>
+							<TableCell key={confidenceLevel}>
+								<RealityCheckLevelLabel confidenceLevel={confidenceLevel} />
+							</TableCell>
 						))}
 					</TableRow>
 				</TableHead>
