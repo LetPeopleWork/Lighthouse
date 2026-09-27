@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult";
 import {
-	type ForecastGrade,
 	type GradedCheck,
 	levelCloseness,
 	missOf,

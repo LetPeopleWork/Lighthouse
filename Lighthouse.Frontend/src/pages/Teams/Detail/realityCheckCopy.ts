@@ -1,5 +1,6 @@
 import {
 	type Determination,
+	type ForecastGrade,
 	type LevelReading,
 	type NotTestedReason,
 	type RealityCheckCell,
@@ -12,7 +13,7 @@ import {
 } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { parseLocalDate } from "../../../utils/date/localDate";
-import type { ForecastGrade, LevelCloseness } from "./realityCheckGrading";
+import type { LevelCloseness } from "./realityCheckGrading";
 
 type TermGetter = (key: string) => string;
 

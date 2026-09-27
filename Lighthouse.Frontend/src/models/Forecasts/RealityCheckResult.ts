@@ -36,6 +36,19 @@ export const LEVEL_READINGS = [
 	"NotEvaluated",
 ] as const;
 
+/**
+ * How one forecast landed against what its period delivered, on Nick Brown's scale: the hue is whether it
+ * held, the shade how close it landed as a share of the actual.
+ */
+export const FORECAST_GRADES = [
+	"HeldWithin10",
+	"Held10To25",
+	"HeldOver25",
+	"NotHeldWithin10",
+	"NotHeld10To25",
+	"NotHeldOver25",
+] as const;
+
 export type Determination = (typeof DETERMINATIONS)[number];
 
 export type Standing = (typeof STANDINGS)[number];
@@ -47,6 +60,8 @@ export type SufficiencyReason = (typeof SUFFICIENCY_REASONS)[number];
 export type CellOutcome = (typeof CELL_OUTCOMES)[number];
 
 export type LevelReading = (typeof LEVEL_READINGS)[number];
+
+export type ForecastGrade = (typeof FORECAST_GRADES)[number];
 
 export interface RealityCheckSufficiency {
 	isSufficient: boolean;

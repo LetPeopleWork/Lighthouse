@@ -1,12 +1,12 @@
 import { Box, Stack, Typography } from "@mui/material";
 import type React from "react";
+import { FORECAST_GRADES } from "../../../models/Forecasts/RealityCheckResult";
 import { appColors } from "../../../utils/theme/colors";
 import {
 	gradeLegendCopy,
 	methodCredit,
 	notCheckedLegend,
 } from "./realityCheckCopy";
-import { FORECAST_GRADES } from "./realityCheckGrading";
 
 interface LegendEntryProps {
 	fill: string;

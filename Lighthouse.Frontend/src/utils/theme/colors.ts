@@ -8,7 +8,7 @@
  * - UI components: min 3:1 (AA)
  */
 
-import type { ForecastGrade } from "../../pages/Teams/Detail/realityCheckGrading";
+import type { ForecastGrade } from "../../models/Forecasts/RealityCheckResult";
 
 // Green when the forecast held, red when it did not. Green deepens the closer it landed; red deepens the further it missed.
 // Kept apart from the forecast level colours, which mean confidence and not how a check turned out.

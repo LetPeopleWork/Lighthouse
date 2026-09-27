@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	FORECAST_GRADES,
 	type ForecastGrade,
-} from "../../pages/Teams/Detail/realityCheckGrading";
+} from "../../models/Forecasts/RealityCheckResult";
 import {
 	appColors,
 	calculateContrastRatio,

@@ -1,19 +1,7 @@
-import type { RealityCheckCell } from "../../../models/Forecasts/RealityCheckResult";
-
-/**
- * How one forecast landed against what its period delivered, on Nick Brown's scale: the hue is whether it
- * held, the shade how close it landed as a share of the actual.
- */
-export const FORECAST_GRADES = [
-	"HeldWithin10",
-	"Held10To25",
-	"HeldOver25",
-	"NotHeldWithin10",
-	"NotHeld10To25",
-	"NotHeldOver25",
-] as const;
-
-export type ForecastGrade = (typeof FORECAST_GRADES)[number];
+import type {
+	ForecastGrade,
+	RealityCheckCell,
+} from "../../../models/Forecasts/RealityCheckResult";
 
 /** One level of one check as the server sends it; whether it held is the server's judgement, never recounted. */
 export interface GradedCheck {

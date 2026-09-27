@@ -1,5 +1,6 @@
 import { within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import {
 	aRealityCheckAnswer,
@@ -22,7 +23,6 @@ import {
 	windowRowsOf,
 } from "../../../tests/RealityCheckFixture";
 import { appColors } from "../../../utils/theme/colors";
-import type { ForecastGrade } from "./realityCheckGrading";
 
 /**
  * How close each forecast landed, on Nick Brown's scale. Every graded cell is shaded
