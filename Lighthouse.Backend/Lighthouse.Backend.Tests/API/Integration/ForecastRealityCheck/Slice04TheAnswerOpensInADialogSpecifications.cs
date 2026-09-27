@@ -1,7 +1,7 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// Step definitions for slice 04 - every period's dates and actual, read off the wire.
+    /// Step definitions for the periods the answer scored - every period's dates and actual, read off the wire.
     ///
     /// Ocean Explorer finishes one Work Item every day, so a period of H days holds exactly H. Coastal Survey
     /// finishes work one day in five, which leaves its two-week window unable to run. The newly formed Team has
@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// </summary>
     public partial class Slice04TheAnswerOpensInADialogTest : ForecastRealityCheckAcceptanceTest
     {
-        private const string Pending = "Pending: the answer does not list the periods it scored yet (epic 4172, slice 04, story 6094).";
-
         private const int LongestHistoryAnyCheckReaches = 160;
 
         /// <summary>Finished yesterday, 40 days ago and 100 days ago: one in each of the three shorter periods, two in the eight-week one.</summary>

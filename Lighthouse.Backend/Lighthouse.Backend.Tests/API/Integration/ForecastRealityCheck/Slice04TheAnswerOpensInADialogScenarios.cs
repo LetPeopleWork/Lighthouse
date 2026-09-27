@@ -1,9 +1,9 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// DISTILL acceptance scenarios for slice 04 of the Forecast Reality Check (story 6094): the answer opens
-    /// in a dialog whose table prints, once per period, what the Team actually delivered. The dialog, its
-    /// words and its table are the browser's and are pinned in the Team Forecast view's own tests; what these
+    /// Acceptance scenarios for the Forecast Reality Check once its answer opens in a dialog whose table prints,
+    /// once per period, what the Team actually delivered. The dialog, its words and its table are the browser's
+    /// and are pinned in the Team Forecast view's own tests; what these
     /// pin is the one fact the table needs and the answer did not carry - every period's actual, including a
     /// period in which no sampling window could be checked, whose checks carry no actual of their own.
     ///
