@@ -526,7 +526,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		},
 	);
 
-	it.skip(`on keyboard focus the badge keeps its words as its name and says what held up means and which windows could not be checked, naming none that held up - Coastal Survey (${PENDING})`, async () => {
+	it(`on keyboard focus the badge keeps its words as its name and says what held up means and which windows could not be checked, naming none that held up - Coastal Survey`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 		const badge = theBadgeReading(dialog, "Your 30-day sampling window: fine");
 		const notChecked =
@@ -541,7 +541,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		expect(withoutSentences(tooltip, [HELD_UP_MEANS, notChecked])).toBe("");
 	});
 
-	it.skip(`@error when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted (${PENDING})`, async () => {
+	it(`@error when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				determination: "SomeWindowsSound",
@@ -565,7 +565,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		expect(linesReading(tooltip, notChecked)).not.toHaveLength(0);
 	});
 
-	it.skip(`@boundary when every window could be checked the badge's tooltip only says what held up means (${PENDING})`, async () => {
+	it(`@boundary when every window could be checked the badge's tooltip only says what held up means`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const badge = theBadgeReading(dialog, "Your 30-day sampling window: fine");
 

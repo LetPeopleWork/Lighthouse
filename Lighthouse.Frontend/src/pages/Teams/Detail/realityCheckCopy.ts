@@ -276,6 +276,9 @@ export const periodHeader = (
 	return `${horizonHeading(horizonDays)} (${firstDay} – ${lastDay}) – ${periodActual(period.actualCompleted, getTerm)}`;
 };
 
+export const heldUpMeans =
+	"A sampling window held up when its 95th forecast held in more than half of the checks that could be run on it.";
+
 const yourWindow = (days: number): string => `Your ${days}-day sampling window`;
 
 export const badgeWords: Record<

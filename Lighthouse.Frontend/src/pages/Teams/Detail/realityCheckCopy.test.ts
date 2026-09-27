@@ -19,6 +19,7 @@ import {
 	findings,
 	gradeLegendCopy,
 	heldGlyph,
+	heldUpMeans,
 	horizonLabel,
 	LOADING,
 	legendTitles,
@@ -1023,5 +1024,13 @@ describe("badgeWords", () => {
 		},
 	])('$state reads "$words"', ({ state, days, words }) => {
 		expect(badgeWords[state](days, squadTerms)).toBe(words);
+	});
+});
+
+describe("heldUpMeans", () => {
+	it("says what it takes for a sampling window to hold up", () => {
+		expect(heldUpMeans).toBe(
+			"A sampling window held up when its 95th forecast held in more than half of the checks that could be run on it.",
+		);
 	});
 });

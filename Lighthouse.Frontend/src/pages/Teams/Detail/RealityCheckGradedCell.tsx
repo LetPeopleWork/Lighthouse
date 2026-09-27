@@ -1,10 +1,10 @@
 import { TableCell, Tooltip, useTheme } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors, getContrastText } from "../../../utils/theme/colors";
 import { cellComparison, heldGlyph, notCheckedCell } from "./realityCheckCopy";
 import { type GradedCheck, readCheck } from "./realityCheckGrading";
+import { useFocusTooltip } from "./useFocusTooltip";
 
 // Inset, so a neighbouring cell's fill never paints over the outline of the one in focus.
 const focusOutline = (colour: string) => ({
@@ -21,10 +21,7 @@ interface WordedCellProps {
 /**
  * A table cell a keyboard can stop on, whose words show in a tooltip on focus or hover. The tooltip's
  * title is also the cell's accessible name, so what is shown on demand and what a screen reader hears
- * are one and the same. Escape closes an open tooltip without letting the dialog around it close too.
- *
- * The tooltip opens on any focus, not only a keyboard one: a cell reached by a click shows the same
- * words hovering over it already did, and the keyboard reader is never left guessing whether it will.
+ * are one and the same.
  */
 const WordedCell: React.FC<Readonly<WordedCellProps>> = ({
 	words,
@@ -32,26 +29,13 @@ const WordedCell: React.FC<Readonly<WordedCellProps>> = ({
 	style,
 	children,
 }) => {
-	const [isOpen, setIsOpen] = useState(false);
-
-	const closeOnEscape = (event: React.KeyboardEvent) => {
-		if (event.key === "Escape" && isOpen) {
-			event.stopPropagation();
-			setIsOpen(false);
-		}
-	};
+	const { tooltip, target } = useFocusTooltip();
 
 	return (
-		<Tooltip
-			title={words}
-			open={isOpen}
-			onOpen={() => setIsOpen(true)}
-			onClose={() => setIsOpen(false)}
-		>
+		<Tooltip title={words} {...tooltip}>
 			<TableCell
 				tabIndex={0}
-				onFocus={() => setIsOpen(true)}
-				onKeyDown={closeOnEscape}
+				{...target}
 				style={style}
 				sx={focusOutline(outlineColour)}
 			>

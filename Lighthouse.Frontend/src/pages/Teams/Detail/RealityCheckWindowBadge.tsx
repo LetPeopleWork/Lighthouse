@@ -1,9 +1,14 @@
-import { Chip } from "@mui/material";
+import { Box, Chip, Tooltip } from "@mui/material";
 import type React from "react";
 import type { RealityCheckSoundWindow } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { badgeWords } from "./realityCheckCopy";
+import {
+	badgeWords,
+	heldUpMeans,
+	unevaluatedSentence,
+} from "./realityCheckCopy";
 import { type WindowBadgeState, windowBadgeOf } from "./realityCheckGrading";
+import { useFocusTooltip } from "./useFocusTooltip";
 
 const TONE: Record<WindowBadgeState, "success" | "warning" | "default"> = {
 	Fine: "success",
@@ -23,15 +28,32 @@ const RealityCheckWindowBadge: React.FC<
 > = ({ soundWindow }) => {
 	const { getTerm } = useTerminology();
 	const state = windowBadgeOf(soundWindow);
+	// A chip has no role that takes its name from its words, so the same words are given as its name.
+	const words = badgeWords[state](soundWindow.currentSettingDays, getTerm);
+	const notChecked = unevaluatedSentence(soundWindow.unevaluatedWindowDays);
+	const { tooltip, target } = useFocusTooltip();
 
 	return (
-		<Chip
-			size="small"
-			tabIndex={0}
-			color={TONE[state]}
-			label={badgeWords[state](soundWindow.currentSettingDays, getTerm)}
-			sx={{ alignSelf: "flex-start" }}
-		/>
+		<Tooltip
+			describeChild
+			{...tooltip}
+			title={
+				<>
+					<Box>{heldUpMeans}</Box>
+					{notChecked === null ? null : <Box>{notChecked}</Box>}
+				</>
+			}
+		>
+			<Chip
+				size="small"
+				tabIndex={0}
+				{...target}
+				color={TONE[state]}
+				label={words}
+				aria-label={words}
+				sx={{ alignSelf: "flex-start" }}
+			/>
+		</Tooltip>
 	);
 };
 
