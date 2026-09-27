@@ -41,6 +41,7 @@ import {
 	periodHeader,
 	realityCheckHeadline,
 	regionOf,
+	scenariosLeftOut,
 	standingCopy,
 	sufficiencyReasonCopy,
 	tableRegionName,
@@ -1129,8 +1130,15 @@ describe("realityCheckHeadline", () => {
 const squadTerms = (key: string) =>
 	key === "team" ? "Squad" : `unexpected ${key}`;
 
-const theLadder = (runsEvaluated: number, scoresEvaluated: number) => ({
+const theLadder = (
+	runsEvaluated: number,
+	scoresEvaluated: number,
+	cells: RealityCheckCell[] = [],
+) => ({
 	sampledHorizonDays: [7, 14, 28, 56],
+	sampledWindowDays: LADDER,
+	minimumActiveDays: MINIMUM_ACTIVE_DAYS,
+	cells,
 	denominator: {
 		runsAttempted: 16,
 		runsEvaluated,
@@ -1151,6 +1159,9 @@ describe("headlineExplanation", () => {
 		const [scenario] = headlineExplanation(
 			{
 				sampledHorizonDays: [7],
+				sampledWindowDays: [30],
+				minimumActiveDays: MINIMUM_ACTIVE_DAYS,
+				cells: [],
 				denominator: {
 					runsAttempted: 1,
 					runsEvaluated: 1,
@@ -1172,6 +1183,40 @@ describe("headlineExplanation", () => {
 		expect(scenario).toBe(
 			"Each scenario replays one forecast: a recent period (1 week, 2 weeks, 4 weeks and 8 weeks, each ending today), forecast from one sampling window of the history before it, then compared with what the Squad actually completed. Each is read at 4 confidence levels.",
 		);
+	});
+});
+
+describe("scenariosLeftOut", () => {
+	it("counts the scenarios that could not run out of those attempted", () => {
+		expect(scenariosLeftOut(theLadder(12, 48).denominator)).toBe(
+			"4 of the 16 scenarios could not run and are left out of every count.",
+		);
+	});
+
+	it("says nothing when every scenario ran", () => {
+		expect(scenariosLeftOut(theLadder(16, 64).denominator)).toBeNull();
+	});
+});
+
+describe("headlineExplanation when some scenarios could not run", () => {
+	const squadAndTicketTerms = (key: string) =>
+		key === "team" ? "Squad" : ticketTerms(key);
+
+	it("says how many were left out and why, between what the scenarios give and what accurate means", () => {
+		const thinFourteenDays = [7, 14, 28, 56].map(() =>
+			aCell(14, "TooFewActiveDays"),
+		);
+
+		expect(
+			headlineExplanation(
+				theLadder(12, 48, thinFourteenDays),
+				squadAndTicketTerms,
+			),
+		).toEqual([
+			"Each scenario replays one forecast: a recent period (1 week, 2 weeks, 4 weeks and 8 weeks, each ending today), forecast from one sampling window of the history before it, then compared with what the Squad actually completed. Each is read at 4 confidence levels, so 12 scenarios give 48 forecasts.",
+			"4 of the 16 scenarios could not run and are left out of every count. 4 checks on the 14-day sampling window had fewer than 7 days with completed Tickets to draw on.",
+			"Accurate means within 10% of what was completed, whether the forecast held or not.",
+		]);
 	});
 });
 

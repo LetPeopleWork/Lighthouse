@@ -403,7 +403,10 @@ export const FULL_MONTE = {
 
 export interface ExplanationFacts {
 	sampledHorizonDays: readonly number[];
+	sampledWindowDays: readonly number[];
+	minimumActiveDays: number;
 	denominator: RealityCheckDenominator;
+	cells: readonly RealityCheckCell[];
 }
 
 const confidenceLevels = (count: number): string =>
@@ -429,11 +432,40 @@ const scenarioExplanation = (
 	return `Each scenario replays one forecast: a recent period (${periods}, each ending today), forecast from one sampling window of the history before it, then compared with what the ${getTerm(TERMINOLOGY_KEYS.TEAM)} actually completed. ${counted}`;
 };
 
+export const scenariosLeftOut = ({
+	runsAttempted,
+	runsEvaluated,
+}: RealityCheckDenominator): string | null =>
+	runsAttempted > runsEvaluated
+		? `${runsAttempted - runsEvaluated} of the ${runsAttempted} scenarios could not run and are left out of every count.`
+		: null;
+
+const whyScenariosWereLeftOut = (
+	facts: ExplanationFacts,
+	getTerm: TermGetter,
+): string[] => {
+	const leftOut = scenariosLeftOut(facts.denominator);
+	if (leftOut === null) {
+		return [];
+	}
+	const why = whyChecksCouldNotRun(
+		facts.cells,
+		facts.sampledWindowDays,
+		facts.minimumActiveDays,
+		getTerm,
+	);
+	return [[leftOut, ...why].join(" ")];
+};
+
 /** The paragraphs the headline's explanation holds before its credit line. */
 export const headlineExplanation = (
 	facts: ExplanationFacts,
 	getTerm: TermGetter,
-): string[] => [scenarioExplanation(facts, getTerm), ACCURATE_MEANS];
+): string[] => [
+	scenarioExplanation(facts, getTerm),
+	...whyScenariosWereLeftOut(facts, getTerm),
+	ACCURATE_MEANS,
+];
 
 export interface LevelRowFacts {
 	confidenceLevel: number;

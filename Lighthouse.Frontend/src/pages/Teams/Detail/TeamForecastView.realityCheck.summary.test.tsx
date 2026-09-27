@@ -670,7 +670,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		);
 	});
 
-	it.skip(`Escape closes the explanation first and puts focus back on its icon; a second Escape closes the dialog (${PENDING})`, async () => {
+	it(`Escape closes the explanation first and puts focus back on its icon; a second Escape closes the dialog`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const icon = theExplanationIcon(dialog);
 
@@ -692,7 +692,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 
-	it.skip(`@error when no scenario could run the explanation says all of them were left out, and why - Kelp Farm (${PENDING})`, async () => {
+	it(`@error when no scenario could run the explanation says all of them were left out, and why - Kelp Farm`, async () => {
 		const dialog = await theDialogFor(kelpFarm());
 
 		await userEvent.click(theExplanationIcon(dialog));
@@ -712,7 +712,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		).not.toHaveLength(0);
 	});
 
-	it.skip(`@error when some scenarios could not run the explanation says how many and why - Coastal Survey (${PENDING})`, async () => {
+	it(`@error when some scenarios could not run the explanation says how many and why - Coastal Survey`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 
 		await userEvent.click(theExplanationIcon(dialog));
@@ -773,7 +773,7 @@ describe("@us-06 @slice-06b the summary holds to what the check promised", () =>
 		);
 	});
 
-	it.skip(`the explanation and its reasons speak the instance's own words, and no tracker's (${PENDING})`, async () => {
+	it(`the explanation and its reasons speak the instance's own words, and no tracker's`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Ticket");
