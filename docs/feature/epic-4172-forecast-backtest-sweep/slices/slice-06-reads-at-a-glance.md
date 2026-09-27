@@ -84,8 +84,8 @@ tooltip "+26%"; Coastal Survey 1 week, 3 vs 4 → "−33%"; Harbour Pilots 0 vs 
 
 ## Dependencies
 
-- The maintainer's review of the *Copy to confirm* table in `feature-delta.md` — 06a needs rows 1, 2,
-  16-19b, 21-24; 06b needs the rest. Neither blocks DESIGN.
+- The *Copy to confirm* table in `feature-delta.md` — Copy table confirmed by the maintainer, 2026-09-27
+  (edits applied); docs-page link still owed at FINALIZE.
 - DESIGN: log placement, cell keyboard model, interactive tooltip vs popover, the bar primitive, the
   numeric date formatter (*Open for DESIGN — US-06*).
 - No DEVOPS change (N/A, stated in the checklist).

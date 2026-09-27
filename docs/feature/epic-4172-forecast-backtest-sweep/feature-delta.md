@@ -4017,13 +4017,13 @@ at the default log level. Backend-only; nothing a user sees changes.
    *"The sampling window is a setting on this Team."*; *"The confidence level is not a setting: it is which
    of the 4 numbers you choose to quote."*
 
-#### 6094-D15 — The headline's info icon holds the explanation, the credit, and a link to the source
+#### 6094-D15 — The headline's info icon holds the explanation, the credit, and a link to the source (non-independence paragraph DROPPED and credit reduced to one linked line by the maintainer 2026-09-27 — see Maintainer answers)
 
 Its tooltip carries: the **denominator explanation** (what N and M count; that the levels of one scenario
 share a simulation; that every scenario covers a different stretch of time, so they are not independent
 trials and must not be ranked) in plain language; the **credit** to Nick Brown's *The Full Monte* for
-held/missed grading and closeness shading, with **our additions** named in the same place (AC-1.8
-honoured); and a **link** to <https://medium.com/asos-techblog/the-full-monte-901d721b8532>. A link to
+held/missed grading and closeness shading, as one linked line, *"Inspired by Nick Brown's article The Full
+Monte"*, which no longer names our additions (AC-1.8's additions clause retired, S-25); and a **link** to <https://medium.com/asos-techblog/the-full-monte-901d721b8532>. A link to
 Lighthouse's own docs page is **owed at FINALIZE** — the page does not exist yet (see *Owed*).
 
 #### 6094-D16 — The period header reads as one centred line with numeric local dates
@@ -4075,8 +4075,8 @@ ladder — I-c ("never looks calm").
 
 Tone: *fine* / *held up* on the success colour, *did not hold up* on the warning colour, *could not be
 checked* / *not tested* neutral — the words carry the meaning, the colour only repeats it. On hover and
-focus the badge shows the **set of windows that held up** (the region, shortened), what *held up* means
-(rule A, DES-14), and the could-not-be-checked windows (*Copy to confirm*, rows 13-15). *Why*: 6094-D14.4
+focus the badge shows what *held up* means (rule A, DES-14) and the could-not-be-checked windows (*Copy to
+confirm*, rows 14-15). *Why the region was proposed (overruled, maintainer answer 3)*: 6094-D14.4
 removes the region sentence from view; without it a Team whose window **did not** hold up has no way to
 learn which windows did, short of reading the table — and the table deliberately summarises no window.
 The tooltip names a set, never a best member (I-a).
@@ -4125,7 +4125,7 @@ list.
 | S-16 | AC-5.5's legend of six grades plus not-checked | US-05 | AC-6.6 |
 | S-17 | AC-5.6's *"The dialog credits…"* — location only; the credit-with-our-additions content stands | US-05 | AC-6.11 |
 | S-18 | US-05 scenario *"The grade never rests on colour alone, and the method is credited"* — the *"every cell states in words"* half | US-05 | Glyph on the cell + words on hover / focus (AC-6.5); see risk R-6094-8 |
-| S-19 | **Epic AC-1.5** — *"permanently on screen, never behind a tooltip or a disclosure"* for the non-independence and non-comparability statements (and the matching US-01 scenario line) | Epic US-01 | The **counts** stay permanently on screen (headline); the two statements move into the headline tooltip (6094-D15). A deliberate relaxation of honesty requirement 4.2 by the maintainer, 2026-09-27 |
+| S-19 | **Epic AC-1.5** — *"permanently on screen, never behind a tooltip or a disclosure"* for the non-independence and non-comparability statements (and the matching US-01 scenario line) | Epic US-01 | The **counts** stay permanently on screen (headline); the two statements are said nowhere in the dialog (maintainer answer 9, 2026-09-27); R-6094-9 records the remaining honesty guards. A deliberate relaxation of honesty requirement 4.2 by the maintainer, 2026-09-27 |
 | S-20 | **Epic AC-1.6** — the words *"described as over-forecasting"* in the dialog | Epic US-01 | Bar short of its tick + tooltip explanation (6094-D23). The server's `NeverHeld` reading is unchanged |
 | S-21 | **Epic AC-1.9** — the two findings as permanent copy | Epic US-01 | Removed (6094-D14.4). The *no control writes a Team setting* half of AC-1.9 stands |
 | S-22 | **Epic AC-1.4**'s *"the verdict names a range"* in the dialog body | Epic US-01 | The badge states the setting's standing; the range is said nowhere (maintainer 2026-09-27). "No field and no string names one window as best" stands |
@@ -4254,7 +4254,7 @@ Scenario: B-3 The sampling window is one badge that never ranks windows
 Scenario: B-4 The explanation, the credit and the source are one focus away
   Given Tom Becker uses only the keyboard
   When he moves focus to the headline's info icon
-  Then he reads what the scenarios and forecasts count, why they cannot be ranked, and Nick Brown credited beside this product's additions
+  Then he reads what the scenarios and forecasts count, what accurate means, and Nick Brown credited in one linked line
   And he can reach the link to "The Full Monte" and follow it
   And Escape closes the tooltip while the dialog stays open
 
@@ -4269,6 +4269,11 @@ Scenario: B-6 A Team that forecasts from fixed dates is told its window was not 
   Given Harbour Pilots forecasts from fixed dates rather than a rolling sampling window
   When Maria reads its summary
   Then the badge reads "Your Team forecasts from fixed dates: sampling window not tested"
+
+Scenario: B-7 Some scenarios could not run, the headline still counts what did
+  Given 4 of Coastal Survey's 16 scenarios could not be checked
+  When the result arrives
+  Then Maria reads "Backtested 12 of 16 scenarios · 48 forecasts"
 ```
 
 #### Acceptance Criteria
@@ -4321,13 +4326,13 @@ Scenario: B-6 A Team that forecasts from fixed dates is told its window was not 
   add no words (6094-D23).
 - [ ] **AC-6.11** — The headline's info icon has an accessible name and opens the explanation (*Copy*, row
   20) on hover, keyboard focus and click: the denominator explanation, the could-not-run sentences when any,
-  what the tick and *accurate* mean, the credit to Nick Brown's *The Full Monte* with this product's
-  additions in the same place (AC-1.8), and a link to the article that opens in a new tab. It stays open
+  what *accurate* means, the credit to Nick Brown's *The Full Monte* as one linked line, per Copy row 20
+  (AC-1.8's additions clause is retired, see S-25), and a link to the article that opens in a new tab. It stays open
   while hovered, its link is reachable by Tab, and Escape closes it without closing the dialog (6094-D25).
 - [ ] **AC-6.12** — The badge shows one wording per verdict state (*Copy*, rows 6-12), with the Team's
   current window in days where it has one; it is derived only from `soundWindow` and `sampledWindowDays`.
-  Its tooltip (hover and focus) shows the windows that held up as a set, what *held up* means and which
-  windows could not be checked (6094-D22). No badge text, tone or tooltip names, orders or scores a single
+  Its tooltip (hover and focus) holds only what *held up* means and which windows could not be checked
+  (6094-D22). No badge text, tone or tooltip names, orders or scores a single
   window as better than another (I-a — the shipped rankability scan runs over the new copy).
 
 Both:
@@ -4463,11 +4468,11 @@ Declared as hypotheses. Rows marked *adjusted* replace the Story #6094 KPI of th
 | 1 | Problem statement, domain language | PASS | Maria cannot get the one sentence she came for out of ~210 words and dense cells; no solution language in the problem |
 | 2 | Persona with specific characteristics | PASS | `delivery-forecaster` Maria Santos (Ocean Explorer, quotes a number); keyboard-only read-only Tom Becker; an operator reading the default log |
 | 3 | 3+ domain examples, real data | PASS | Ocean Explorer 42 vs 31 → +26%; Coastal Survey 12 of 16, 3 vs 4 → −33%; Harbour Pilots fixed dates, 0 vs 0 and 0 vs 2; Kelp Farm N = 0; Team 57 log line |
-| 4 | UAT Given/When/Then, 3-7 | PASS with qualification | 12 in the story, **6 per delivered slice** (06a: A-1..A-6, 06b: B-1..B-6) |
-| 5 | AC derived from UAT | PASS | AC-6.1..6.7 ← A-1..A-6; AC-6.8..6.12 ← B-1..B-6; AC-6.13..6.16 cross-cutting invariants (Terminology, themes, skeleton, contract) |
+| 4 | UAT Given/When/Then, 3-7 | PASS with qualification | 13 in the story, **6 and 7 per delivered slice** (06a: A-1..A-6, 06b: B-1..B-7) |
+| 5 | AC derived from UAT | PASS | AC-6.1..6.7 ← A-1..A-6; AC-6.8..6.12 ← B-1..B-7; AC-6.13..6.16 cross-cutting invariants (Terminology, themes, skeleton, contract) |
 | 6 | Right-sized | PASS with qualification | ~12.5h as one story — over a day, so **split into 06a (~6h) and 06b (~6.5h)**, each demonstrable in one session (see the brief) |
 | 7 | Technical notes | PASS | Response unchanged (verified per field); log placement and cell keyboard model open for DESIGN; dead composers named for deletion |
-| 8 | Dependencies tracked | PASS | Slices 04 + 05 delivered locally; docs-page link owed at FINALIZE; the *Copy to confirm* table awaits the maintainer (does not block DESIGN) |
+| 8 | Dependencies tracked | PASS | Slices 04 + 05 delivered locally; Copy table confirmed by the maintainer, 2026-09-27 (edits applied); docs-page link still owed at FINALIZE. |
 | 9 | Outcome KPIs measurable | PASS | 7 KPIs with target and method; two new, three adjusted, two carried |
 
 Job traceability: `job_id: job-forecaster-check-the-forecast-against-what-happened` (the job covers the
@@ -5305,8 +5310,11 @@ DES-5 set it — centred text in a cell wider than the screen would scroll out o
 | Middleware / action filter | Rejected: a cross-cutting mechanism for one line on one route |
 
 **Template** (constant, no interpolation, CA2254-clean): `"Reality check run for Team {TeamId} (filter
-override: {FilterOverride})"`, with `FilterOverride` the token `on` / `off` / `none` for `true` / `false` /
+override: {FilterOverride:l})"`, with `FilterOverride` the token `on` / `off` / `none` for `true` / `false` /
 not given, computed into a local before the call (so no expression is evaluated inside the logging call).
+The `:l` format is required: Serilog quotes a string value in the rendered message, so a plain
+`{FilterOverride}` would read `(filter override: "none")`. `UpdateServiceBase`'s `{EntityType:l}` is the
+precedent.
 Renders as `Reality check run for Team 57 (filter override: none)` — the domain example. No Team name, no
 user identity. The words "Team" in an operator log line are not the configurable UI term.
 
@@ -5836,12 +5844,15 @@ US-06 reshapes one dialog and adds one log line. Every DEVOPS question gets an e
 |---|---|
 | Platform, container, secret, configuration key, migration, workflow | **N/A, because** nothing is added. The new log line uses the existing Serilog pipeline at `Information`, which is the default level, so it needs no configuration change. |
 | Usage-data event | **N/A, because** `TeamForecastRealityCheckRun` (value 11) still means "an answer somebody was shown", and US-06 changes how the answer looks, not when it is shown. No new event and no property. The "reads at a glance" KPI is judged in the maintainer's review, not measured through the pipe. |
-| Observability | The one change is the `Information` line `Reality check run for Team {TeamId} (filter override: {FilterOverride})` (6094-DES-16). It carries the Team id and one closed value (`on`/`off`/`none`), and no names or free text. |
+| Observability | The one change is the `Information` line `Reality check run for Team {TeamId} (filter override: {FilterOverride:l})` (6094-DES-16). It carries the Team id and one closed value (`on`/`off`/`none`), and no names or free text. |
 | Branching | Trunk-based, unchanged. **06a and 06b go out in one push** after both slices and the quality gates (maintainer answer 8), so `main` never shows the dialog without the credit. Locator deletions land in the same commit as the component that removes them. |
 | Coexistence | As in the #6094 matrix above. In addition, the `BacktestForecaster` single backtest must keep working with the new `realityCheck` slot (6094-DES-17), and the TeamsDetail walking skeleton must still close the dialog before its later steps. |
 | Lighthouse-Clients CLI / MCP | **N/A, because** the API response is unchanged (6094-DES-19). |
 | Mutation scope | `stryker.6094.frontend.json` is re-used and **extended** to the new and renamed modules: `RealityCheckSummary.tsx` replaces `RealityCheckVerdict.tsx`, plus any new file DELIVER adds (level bar, badge, headline, `RealityCheckLevelLabel`), with `vitest.stryker.6094.config.ts`'s include list re-checked against `ls`. **Backend:** `ForecastRealityCheckController.cs` stays **out** of the Stryker.NET mutate set, as recorded in #6072's results. Its tests are HTTP acceptance tests under `API.Integration`, which the Stryker filter excludes for cost. The log line is pinned by the DISTILL acceptance scenario. No unit-level `RecordingLogger` test is owed. |
-| Pre-requisites | None open for US-06. PR-6094-7 (the baseline release ordering) is unchanged and not blocking. |
+| Pre-requisites | None open for US-06. PR-6094-3's mutate set is superseded by the Mutation scope row above (extend to `RealityCheckSummary.tsx` and the new files); PR-6094-7 (the baseline release ordering) is unchanged and not blocking. |
+
+**Correction to the DISCUSS checklist** (*Project DISCUSS checklist — US-06*, its DEVOPS item): the existing
+mutate sets do NOT yet cover the new/renamed US-06 modules; see Mutation scope.
 
 **Hand-off to DISTILL:** reuse `environments.yaml` unchanged. The backend log scenario uses the
 `CapturedLogMessages` capture from 6094-DES-16 and must not call `Clear()` before its negative check. Assert
@@ -6279,13 +6290,13 @@ comment above the step (E2E).
 | AC-6.1 trigger below inputs, right-aligned, info icon | 06a | `…realityCheck.trigger.test.tsx` → *"Run reality check" sits after the back-test inputs, its explanation just before it, above a single back-test result*; *with the forecast filter switch shown …*; *on keyboard focus / on hover the info icon explains …* (2); *@error pressing the info icon opens nothing*; *pressing "Run reality check" from its new place still opens the dialog*; green *the single back-test … still shows its result*. `…compact.test.tsx` → *the Backtesting group holds the trigger and its explanation*. Right alignment is visual: the maintainer's review and the per-theme screenshots owed at FINALIZE |
 | AC-6.2 spinner + "Crunching the numbers…", polite, no focus move | 06a | `…compact` → *the first run shows a spinner …*; *Run again shows the same spinner …*; *@error a check that fails replaces the spinner …*. No wall-clock assertion (DEVOPS) |
 | AC-6.3 backend Information log | 06a | `Slice06AnOperatorSeesEveryRealityCheckScenarios.cs` → `Every_check_run_writes_one_line_…` (6: both routes, on / off / none), `A_check_asked_for_a_Team_that_does_not_exist_writes_no_line`, `A_request_whose_filter_choice_cannot_be_read_is_refused_and_writes_no_line` (2), `A_check_refused_to_somebody_who_cannot_read_the_Team_writes_no_line`. The exact line is asserted whole, so no Team name and no user identity can ride along |
-| AC-6.4 period header, numeric locale dates | 06a | `…compact` → *in de-CH / en-US every period header reads …* (2); *@boundary one Work Item … singular*; *@error no scored period: the horizon alone*. The locale is pinned at `Date.prototype.toLocaleDateString`; calendar days are guarded by the Zurich-pinned suite. Centring is visual |
+| AC-6.4 period header, numeric locale dates | 06a | `…compact` → *in de-CH / en-US every period header reads …* (2); *@boundary one Work Item … singular*; *@error no scored period: the horizon alone*. The locale is pinned at `Date.prototype.toLocaleDateString`; calendar days are guarded by the hour of every day that spy formats, which must be local midnight — a day read through UTC is 02:00 in the Zurich-pinned suite yet still prints the same date, so the header digits alone could not catch it. Centring is visual |
 | AC-6.5 glyph + forecast; tooltip = name; "—" | 06a | `…compact` → *Ocean Explorer's 30-day row over 8 weeks …* (fills unchanged); the seven wordings (`it.each`); *every graded cell is a keyboard stop …* (64 cells, anchored name patterns); *on keyboard focus / on hover a cell shows its comparison in a tooltip*; *@error a level left out shows "—" …*; *@error Escape dismisses a cell's tooltip and leaves the dialog open*; green *@error a check that could not run keeps its reason …* |
 | AC-6.6 two-row legend, no credit, no "Not checked" | 06a | `…compact` → *the legend is two titled rows … on the grade fills, in band order*; *the credit line and the "Not checked" entry are gone* |
-| AC-6.7 no visible caption; named, focusable region; headers | 06a | `…compact` → *no caption sits above the table; its scrolling region is named for the Team …* |
+| AC-6.7 no visible caption; named, focusable region; headers | 06a | `…compact` → *no caption sits above the table; its scrolling region is named for the Team …*. The sticky row-header column is visual and not assertable in jsdom — **documented gap**, covered by the per-theme screenshots owed at FINALIZE |
 | AC-6.8 only headline, badge, level rows; removed texts nowhere | 06b | `…summary.test.tsx` → *above the table sit only the headline, the window badge and four level rows — no more than 50 words* (KPI *Words above the table*, `@kpi-OUT-6094-words-above-the-table`); *none of the sentences the summary replaces is said anywhere* |
-| AC-6.9 headline forms | 06b | `…summary` → the five-case `it.each` (16; 20; 12 of 16; none of 16; 1 scenario · 1 forecast) |
-| AC-6.10 level rows, bar, tick, text alternative | 06b | `…summary` → *Maria's 85th …*; *one row per level in ascending order …*; *@error never held / always held get no extra words* (6094-D23); *@error Kelp Farm …* (not evaluated). `realityCheckGrading.test.ts` → *the share of its checks a level held in*: `@error` no share (1), five worked shares, and the `@property` exhaustive 1..200 loop (E13). The tick's position is visual; its meaning is in the text alternative |
+| AC-6.9 headline forms | 06b | `…summary` → the five-case `it.each` (16; 20; 12 of 16 — B-7, Coastal Survey; none of 16; 1 scenario · 1 forecast) |
+| AC-6.10 level rows, bar, tick, text alternative | 06b | `…summary` → *Maria's 85th …*; *one row per level in ascending order …*; *@error never held / always held get no extra words* (6094-D23; asserts the absence of "never held", "every time", "over-/under-forecasting"); *@error Kelp Farm …* (not evaluated). `realityCheckGrading.test.ts` → *the share of its checks a level held in*: `@error` no share (1), five worked shares, and the `@property` exhaustive 1..200 loop (E13). The tick's position is visual; its meaning is in the text alternative |
 | AC-6.11 headline explanation (reconciled, R-…-1 and -2) | 06b | `…summary` → *hovering the info icon names it and opens nothing*; *a click / Enter / Space opens the explanation … and nothing else* (3); *the article is the next Tab stop and opens The Full Monte in a new tab*; *Escape closes the explanation first …*; *@error Kelp Farm's explanation*; *@error Coastal Survey's explanation* |
 | AC-6.12 badge per state, tone, tooltip (reconciled, R-…-3) | 06b | `…summary` → the nine-case badge `it.each` (six states of 6094-DES-13 plus both inside forms, both not-determined forms and the unreachable `AllWindowsAlike` + `Outside`), tone asserted as the chip's palette class; *on keyboard focus the badge …*; *@error the Team's own window not checked …*; *@boundary every window checked …*; *nothing names, orders or scores a window — Deep Current* (E14, over the dialog text, the badge tooltip and the explanation) |
 | AC-6.13 Terminology | both | `…compact` → *the headers, cells and region name in the instance's words*; `…trigger` → *the explanation speaks the instance's own words*; `…summary` → *fixed dates, in the instance's word for Team*; *the explanation and its reasons … and no tracker's* |
@@ -6297,7 +6308,8 @@ comment above the step (E2E).
 cell shows its comparison … ✗ 21 against 14*; A-5 → the 0 vs 0 and 0 vs 2 wordings; A-6 → the de-CH headers,
 the legend and caption specs; B-1 → *only the headline, badge and four level rows*; B-2 → *Maria's 85th*;
 B-3 → the Deep Current badge case and the E14 scan; B-4 → the explanation specs (reconciled); B-5 → *Kelp
-Farm*; B-6 → the fixed-dates badge case.
+Farm*; B-6 → the fixed-dates badge case; B-7 → the headline `it.each` case *some scenarios could not run -
+Coastal Survey* ("Backtested 12 of 16 scenarios · 48 forecasts").
 
 ### Walking skeleton and POM plan — US-06
 
@@ -6420,7 +6432,7 @@ Kept, still valid: `…dialog.test.tsx:343` (grouping), `:505`, `:519`, `:531`, 
 - **P-US06-9.** Each level bar is `role="img"` named by copy row 5b and holds a (hidden) `progressbar` whose
   `aria-valuenow` is the shown share; the row text is one element reading *"{p}% ({held} of {n}) · {a} accurate"*.
 - **P-US06-10.** Backend line, constant template: `Reality check run for Team {TeamId} (filter override:
-  {FilterOverride})` with `on` / `off` / `none`, at Information, once per allowed request.
+  {FilterOverride:l})` (`:l`, so the token renders unquoted) with `on` / `off` / `none`, at Information, once per allowed request.
 
 ### SSOT updates — US-06
 

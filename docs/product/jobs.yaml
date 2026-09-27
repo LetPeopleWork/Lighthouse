@@ -7389,6 +7389,9 @@ jobs:
       verdict is KEPT and is a deliberate departure from the source, which scored one-sided — it must
       never be attributed to Nick Brown. (4) Nothing is persisted; the result is a response, not a
       record (ADR-209).
+      REVISED 2026-09-27 (Story #6094, US-06): the two findings are no longer printed in the dialog. The
+      window setting stays reachable through ThroughputQuickSetting on the Team header, and the badge says
+      whether the current window is fine; the level choice is shown by the bars against their ticks.
     job_story: >
       When I am about to publish a forecast from a Team whose sampling configuration I set once and have
       never checked,
