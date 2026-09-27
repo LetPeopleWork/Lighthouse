@@ -42,13 +42,13 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         protected void Init()
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+            webApplicationFactory.UseFreshDatabase();
             serviceScope = webApplicationFactory.Services.CreateScope();
             ServiceProvider = serviceScope.ServiceProvider;
 
             DatabaseContext = ServiceProvider.GetService<LighthouseAppContext>()
                               ?? throw new InvalidOperationException("Could not Find DB Context");
 
-            DatabaseContext.Database.EnsureDeleted();
             DatabaseContext.Database.EnsureCreated();
         }
 

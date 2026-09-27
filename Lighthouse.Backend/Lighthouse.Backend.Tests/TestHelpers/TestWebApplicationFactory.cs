@@ -53,7 +53,24 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
     public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {
-        private readonly string databaseFileName = $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
+        private readonly List<string> usedDatabaseFileNames = [];
+
+        private string databaseFileName = NewDatabaseFileName();
+
+        // Work that outlives its request can still hold a connection to the previous test's database. A
+        // recreated database at the same path shares that connection's -wal and -shm files, and the two
+        // corrupt each other's locks: SQLite error 15 ('locking protocol'), 'disk I/O error', or a
+        // malformed database, in whichever test runs next. A path no earlier test used cannot be shared.
+        public void UseFreshDatabase()
+        {
+            usedDatabaseFileNames.Add(databaseFileName);
+            databaseFileName = NewDatabaseFileName();
+        }
+
+        private static string NewDatabaseFileName()
+        {
+            return $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -105,18 +122,25 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
         }
 
-        private void DeleteDatabaseFile()
+        private static void DeleteDatabaseFiles(string fileName)
         {
-            if (File.Exists(databaseFileName))
+            foreach (var path in new[] { fileName, $"{fileName}-wal", $"{fileName}-shm", $"{fileName}-journal" })
             {
-                File.Delete(databaseFileName);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
             }
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            DeleteDatabaseFile();
+
+            foreach (var fileName in usedDatabaseFileNames.Append(databaseFileName))
+            {
+                DeleteDatabaseFiles(fileName);
+            }
         }
 
         public static WebApplicationFactory<T> WithTestAuthentication(TestWebApplicationFactory<T> root)

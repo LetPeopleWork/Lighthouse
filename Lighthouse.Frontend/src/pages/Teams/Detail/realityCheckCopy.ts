@@ -182,8 +182,11 @@ export interface UnrunChecks {
 	getTerm: TermGetter;
 }
 
+const checks = (checkCount: number): string =>
+	checkCount === 1 ? "1 check" : `${checkCount} checks`;
+
 const checksOn = ({ checkCount, windowDays }: UnrunChecks): string =>
-	`${checkCount === 1 ? "1 check" : `${checkCount} checks`} on the ${samplingWindowsNamed(windowDays)}`;
+	`${checks(checkCount)} on the ${samplingWindowsNamed(windowDays)}`;
 
 // Thin history and a forecast that could not be worked out are different troubles with different
 // remedies, so each is told in its own words and neither borrows the other's.
