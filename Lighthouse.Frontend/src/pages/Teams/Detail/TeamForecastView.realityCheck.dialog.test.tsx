@@ -29,6 +29,7 @@ import {
 	windowRow,
 	windowRowsOf,
 } from "../../../tests/RealityCheckFixture";
+import { dayInWords } from "./realityCheckCopy";
 
 /**
  * The Forecast Reality Check once its answer opens in a dialog: the button stays in
@@ -355,6 +356,16 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 			),
 		).toEqual([period.scoredPeriodStart, period.scoredPeriodEnd]);
 		expect(linesMatching(eightWeeks, /Work Items completed/)).toHaveLength(1);
+	});
+
+	it(`@kpi-OUT-6094-how-far-each-forecast-landed heads each period with its length, its first to its last day, and what was completed`, async () => {
+		const answer = oceanExplorerOverEightWeeks();
+		const dialog = await theDialogFor(answer);
+		const period = answer.scoredPeriods[3];
+
+		expect(periodHeaderText(periodGroup(theTableIn(dialog), 56))).toBe(
+			`8 weeks, ${dayInWords(period.scoredPeriodStart)} to ${dayInWords(period.scoredPeriodEnd)}: 42 Work Items completed`,
+		);
 	});
 
 	it(`@kpi-OUT-6094-how-far-each-forecast-landed shows every forecast with its value, its miss in Work Items and whether it held - Ocean Explorer's 30-day row over 8 weeks`, async () => {

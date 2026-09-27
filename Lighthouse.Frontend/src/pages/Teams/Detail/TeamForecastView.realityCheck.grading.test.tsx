@@ -317,6 +317,16 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		}
 	});
 
+	it(`@kpi-OUT-6094-colour-never-alone spaces a graded cell's words apart, so the miss never runs into the percentage - the same row's 95th and 50th`, async () => {
+		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
+		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
+
+		expect(levelCell(row, 95).textContent).toBe("31 +11 26% ✓ held");
+		expect(levelCell(row, 50).textContent).toBe(
+			`48 ${MINUS}6 14% ✗ did not hold`,
+		);
+	});
+
 	it(`@error a check that could not run keeps its words and takes no grade colour`, async () => {
 		const dialog = await theDialogFor({
 			unevaluable: HORIZON_DAYS.map((horizon) => ({
