@@ -14,7 +14,7 @@ import {
 } from "../../../models/Forecasts/RealityCheckResult";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { parseLocalDate } from "../../../utils/date/localDate";
-import type { LevelCloseness } from "./realityCheckGrading";
+import type { LevelCloseness, WindowBadgeState } from "./realityCheckGrading";
 
 type TermGetter = (key: string) => string;
 
@@ -274,6 +274,23 @@ export const periodHeader = (
 	const firstDay = dayInDigits(period.scoredPeriodStart, locale);
 	const lastDay = dayInDigits(period.scoredPeriodEnd, locale);
 	return `${horizonHeading(horizonDays)} (${firstDay} – ${lastDay}) – ${periodActual(period.actualCompleted, getTerm)}`;
+};
+
+const yourWindow = (days: number): string => `Your ${days}-day sampling window`;
+
+export const badgeWords: Record<
+	WindowBadgeState,
+	(days: number, getTerm: TermGetter) => string
+> = {
+	Fine: (days) => `${yourWindow(days)}: fine`,
+	DidNotHoldUp: (days) => `${yourWindow(days)}: did not hold up`,
+	NoWindowHeldUp: (days) =>
+		`${yourWindow(days)}: did not hold up (no window did)`,
+	CouldNotBeChecked: (days) => `${yourWindow(days)}: could not be checked`,
+	FixedDates: (_days, getTerm) =>
+		`Your ${getTerm(TERMINOLOGY_KEYS.TEAM)} forecasts from fixed dates: sampling window not tested`,
+	NotAPositiveLength: () =>
+		"Your sampling window: not tested (not a positive number of days)",
 };
 
 export const windowRowLabel = (

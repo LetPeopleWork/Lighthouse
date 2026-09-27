@@ -1,6 +1,8 @@
 import type {
 	ForecastGrade,
+	NotTestedReason,
 	RealityCheckCell,
+	RealityCheckSoundWindow,
 } from "../../../models/Forecasts/RealityCheckResult";
 
 /** One level of one check as the server sends it; whether it held is the server's judgement, never recounted. */
@@ -170,4 +172,42 @@ export const heldShare = (
 		(200 * heldCount + runsEvaluated) / (2 * runsEvaluated),
 	);
 	return Math.min(99, Math.max(1, rounded));
+};
+
+/** How the Team's own sampling window stood, as one badge reads it. */
+export type WindowBadgeState =
+	| "FixedDates"
+	| "NotAPositiveLength"
+	| "CouldNotBeChecked"
+	| "NoWindowHeldUp"
+	| "Fine"
+	| "DidNotHoldUp";
+
+const NOT_TESTED_BADGE: Record<NotTestedReason, WindowBadgeState> = {
+	UsesFixedDates: "FixedDates",
+	NotAPositiveLength: "NotAPositiveLength",
+};
+
+// A setting that was not tested stands as NotTested, which says nothing on its own, so its reason is read first.
+export const windowBadgeOf = ({
+	currentSettingNotTestedReason,
+	currentSettingStanding,
+	determination,
+}: Pick<
+	RealityCheckSoundWindow,
+	"currentSettingNotTestedReason" | "currentSettingStanding" | "determination"
+>): WindowBadgeState => {
+	if (currentSettingNotTestedReason !== null) {
+		return NOT_TESTED_BADGE[currentSettingNotTestedReason];
+	}
+	if (
+		currentSettingStanding === "NotDetermined" ||
+		determination === "NotEnoughEvidence"
+	) {
+		return "CouldNotBeChecked";
+	}
+	if (determination === "NoWindowSound") {
+		return "NoWindowHeldUp";
+	}
+	return currentSettingStanding === "Inside" ? "Fine" : "DidNotHoldUp";
 };

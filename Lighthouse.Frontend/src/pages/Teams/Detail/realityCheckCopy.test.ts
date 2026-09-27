@@ -11,6 +11,7 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
+	badgeWords,
 	cellComparison,
 	dayInDigits,
 	denominatorStatement,
@@ -44,7 +45,7 @@ import {
 	windowRowLabel,
 	windowVerdict,
 } from "./realityCheckCopy";
-import type { LevelCloseness } from "./realityCheckGrading";
+import type { LevelCloseness, WindowBadgeState } from "./realityCheckGrading";
 
 const LADDER = [14, 30, 60, 90];
 const LADDER_WITH_45 = [14, 30, 45, 60, 90];
@@ -985,5 +986,42 @@ describe("methodCredit", () => {
 		expect(methodCredit).toMatch(
 			/always held as under-forecasting, and the 95th level, are this product's additions\.$/,
 		);
+	});
+});
+
+describe("badgeWords", () => {
+	const squadTerms = (key: string) =>
+		key === "team" ? "Squad" : `unexpected ${key}`;
+
+	it.each<{ state: WindowBadgeState; days: number; words: string }>([
+		{ state: "Fine", days: 30, words: "Your 30-day sampling window: fine" },
+		{
+			state: "DidNotHoldUp",
+			days: 14,
+			words: "Your 14-day sampling window: did not hold up",
+		},
+		{
+			state: "NoWindowHeldUp",
+			days: 30,
+			words: "Your 30-day sampling window: did not hold up (no window did)",
+		},
+		{
+			state: "CouldNotBeChecked",
+			days: 60,
+			words: "Your 60-day sampling window: could not be checked",
+		},
+		{
+			state: "FixedDates",
+			days: 30,
+			words:
+				"Your Squad forecasts from fixed dates: sampling window not tested",
+		},
+		{
+			state: "NotAPositiveLength",
+			days: 0,
+			words: "Your sampling window: not tested (not a positive number of days)",
+		},
+	])('$state reads "$words"', ({ state, days, words }) => {
+		expect(badgeWords[state](days, squadTerms)).toBe(words);
 	});
 });

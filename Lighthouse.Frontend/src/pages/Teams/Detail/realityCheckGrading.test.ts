@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult";
+import type {
+	Determination,
+	ForecastGrade,
+	NotTestedReason,
+	Standing,
+} from "../../../models/Forecasts/RealityCheckResult";
 import {
 	GRADE_HELD,
 	type GradedCheck,
@@ -8,6 +13,8 @@ import {
 	levelCloseness,
 	missOf,
 	readCheck,
+	type WindowBadgeState,
+	windowBadgeOf,
 } from "./realityCheckGrading";
 
 /**
@@ -352,5 +359,101 @@ describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its ch
 
 		expect(contradictions.slice(0, 10)).toEqual([]);
 		expect(contradictions).toHaveLength(0);
+	});
+});
+
+describe("@us-06 @slice-06b @kpi-OUT-6094-no-window-ranked how the Team's own sampling window stands on its badge", () => {
+	it.each<{
+		case: string;
+		determination: Determination;
+		standing: Standing;
+		reason: NotTestedReason | null;
+		state: WindowBadgeState;
+	}>([
+		{
+			case: "fixed dates",
+			determination: "AllWindowsAlike",
+			standing: "NotTested",
+			reason: "UsesFixedDates",
+			state: "FixedDates",
+		},
+		{
+			case: "not a positive length",
+			determination: "SomeWindowsSound",
+			standing: "NotTested",
+			reason: "NotAPositiveLength",
+			state: "NotAPositiveLength",
+		},
+		{
+			case: "a reason wins over any standing",
+			determination: "NoWindowSound",
+			standing: "Outside",
+			reason: "UsesFixedDates",
+			state: "FixedDates",
+		},
+		{
+			case: "its own window could not be checked",
+			determination: "SomeWindowsSound",
+			standing: "NotDetermined",
+			reason: null,
+			state: "CouldNotBeChecked",
+		},
+		{
+			case: "nothing could be concluded",
+			determination: "NotEnoughEvidence",
+			standing: "Inside",
+			reason: null,
+			state: "CouldNotBeChecked",
+		},
+		{
+			case: "not determined wins over no window held up",
+			determination: "NoWindowSound",
+			standing: "NotDetermined",
+			reason: null,
+			state: "CouldNotBeChecked",
+		},
+		{
+			case: "no window held up",
+			determination: "NoWindowSound",
+			standing: "Outside",
+			reason: null,
+			state: "NoWindowHeldUp",
+		},
+		{
+			case: "every window alike, its own inside",
+			determination: "AllWindowsAlike",
+			standing: "Inside",
+			reason: null,
+			state: "Fine",
+		},
+		{
+			case: "some held up, its own inside",
+			determination: "SomeWindowsSound",
+			standing: "Inside",
+			reason: null,
+			state: "Fine",
+		},
+		{
+			case: "some held up, its own outside",
+			determination: "SomeWindowsSound",
+			standing: "Outside",
+			reason: null,
+			state: "DidNotHoldUp",
+		},
+		{
+			case: "every window alike, its own outside",
+			determination: "AllWindowsAlike",
+			standing: "Outside",
+			reason: null,
+			state: "DidNotHoldUp",
+		},
+	])("$case reads $state", ({ determination, standing, reason, state }) => {
+		expect(
+			windowBadgeOf({
+				determination,
+				currentSettingStanding: standing,
+				currentSettingNotTestedReason: reason,
+			}),
+		).toBe(state);
 	});
 });

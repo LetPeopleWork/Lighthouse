@@ -427,7 +427,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 });
 
 describe("@us-06 @slice-06b the sampling window is one badge that never ranks windows", () => {
-	it.skip.each([
+	it.each([
 		{
 			state: "every window held up, the Team's own among them",
 			options: {},
@@ -516,7 +516,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		badge: string;
 		tone: string;
 	}[])(
-		`@kpi-OUT-6094-no-window-ranked when $state the badge reads "$badge" in the $tone tone (${PENDING})`,
+		`@kpi-OUT-6094-no-window-ranked when $state the badge reads "$badge" in the $tone tone`,
 		async ({ options, badge, tone }) => {
 			const dialog = await theDialogFor(aRealityCheckAnswer(options));
 
@@ -761,7 +761,7 @@ describe("@us-06 @slice-06b the summary holds to what the check promised", () =>
 		}
 	});
 
-	it.skip(`a Team forecasting from fixed dates is told so in the instance's own word for Team (${PENDING})`, async () => {
+	it(`a Team forecasting from fixed dates is told so in the instance's own word for Team`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ currentSettingWasTested: false }),

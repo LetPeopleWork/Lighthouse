@@ -5,6 +5,7 @@ import type {
 	RealityCheckResult,
 } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
+import RealityCheckWindowBadge from "./RealityCheckWindowBadge";
 import {
 	denominatorStatement,
 	findings,
@@ -39,6 +40,7 @@ const RealityCheckVerdict: React.FC<Readonly<RealityCheckVerdictProps>> = ({
 
 	return (
 		<Stack spacing={1.5}>
+			<RealityCheckWindowBadge soundWindow={result.soundWindow} />
 			<Typography variant="subtitle1" component="h3">
 				How often each confidence level held
 			</Typography>
