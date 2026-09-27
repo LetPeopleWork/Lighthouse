@@ -22,10 +22,12 @@ export default defineConfig({
 		include: [
 			"src/pages/Teams/Detail/realityCheckGrading.test.ts",
 			"src/pages/Teams/Detail/realityCheckCopy.test.ts",
-			"src/pages/Teams/Detail/TeamForecastView.realityCheck.test.tsx",
 			"src/pages/Teams/Detail/TeamForecastView.realityCheck.dialog.test.tsx",
 			"src/pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx",
 			"src/pages/Teams/Detail/TeamForecastView.realityCheck.usageData.test.tsx",
+			"src/pages/Teams/Detail/TeamForecastView.realityCheck.trigger.test.tsx",
+			"src/pages/Teams/Detail/TeamForecastView.realityCheck.compact.test.tsx",
+			"src/pages/Teams/Detail/TeamForecastView.realityCheck.summary.test.tsx",
 			"src/utils/theme/colors.test.ts",
 		],
 		exclude: [

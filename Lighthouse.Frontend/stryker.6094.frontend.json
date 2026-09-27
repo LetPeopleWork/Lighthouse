@@ -28,11 +28,16 @@
     "src/pages/Teams/Detail/realityCheckCopy.ts",
     "src/pages/Teams/Detail/ForecastRealityCheck.tsx",
     "src/pages/Teams/Detail/RealityCheckDialog.tsx",
-    "src/pages/Teams/Detail/RealityCheckVerdict.tsx",
+    "src/pages/Teams/Detail/RealityCheckSummary.tsx",
     "src/pages/Teams/Detail/RealityCheckTable.tsx",
     "src/pages/Teams/Detail/RealityCheckPeriodGroup.tsx",
     "src/pages/Teams/Detail/RealityCheckGradedCell.tsx",
-    "src/pages/Teams/Detail/RealityCheckLegend.tsx"
+    "src/pages/Teams/Detail/RealityCheckLegend.tsx",
+    "src/pages/Teams/Detail/RealityCheckHeadline.tsx",
+    "src/pages/Teams/Detail/RealityCheckWindowBadge.tsx",
+    "src/pages/Teams/Detail/RealityCheckLevelRow.tsx",
+    "src/pages/Teams/Detail/RealityCheckLevelLabel.tsx",
+    "src/pages/Teams/Detail/useFocusTooltip.ts"
   ],
   "thresholds": {
     "high": 90,
