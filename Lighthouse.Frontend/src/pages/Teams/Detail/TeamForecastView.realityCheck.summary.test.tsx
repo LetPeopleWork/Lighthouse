@@ -298,7 +298,7 @@ describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on 
 		}
 	});
 
-	it.skip.each([
+	it.each([
 		{
 			case: "every one of 16 scenarios ran",
 			answer: () => aRealityCheckAnswer(),
@@ -333,7 +333,7 @@ describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on 
 			headline: "Backtested 1 scenario · 1 forecast",
 		},
 	])(
-		`@kpi-OUT-6094-caution-is-visible when $case the headline reads "$headline" (${PENDING})`,
+		`@kpi-OUT-6094-caution-is-visible when $case the headline reads "$headline"`,
 		async ({ answer, headline }) => {
 			const dialog = await theDialogFor(answer());
 
@@ -399,7 +399,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		).toHaveLength(0);
 	});
 
-	it.skip(`@error a Team with no checkable history - Kelp Farm - gets a plain headline, a could-not-be-checked badge and four levels not tested, each an empty bar (${PENDING})`, async () => {
+	it(`@error a Team with no checkable history - Kelp Farm - gets a plain headline, a could-not-be-checked badge and four levels not tested, each an empty bar`, async () => {
 		const dialog = await theDialogFor(kelpFarm());
 
 		expectTheLine(dialog, "None of the 16 scenarios could be backtested");

@@ -368,6 +368,27 @@ export const cellComparison = (
 	return `Closed ${difference} ${moreOrFewer(miss)} (${actualCompleted}) than forecasted (${forecastValue}). ${howFarOff(miss, percentOfActual)}`;
 };
 
+const scenarios = (count: number): string =>
+	count === 1 ? "1 scenario" : `${count} scenarios`;
+
+const forecasts = (count: number): string =>
+	count === 1 ? "1 forecast" : `${count} forecasts`;
+
+export const realityCheckHeadline = ({
+	runsAttempted,
+	runsEvaluated,
+	scoresEvaluated,
+}: RealityCheckDenominator): string => {
+	if (runsEvaluated === 0) {
+		return `None of the ${scenarios(runsAttempted)} could be backtested`;
+	}
+	const backtested =
+		runsEvaluated === runsAttempted
+			? scenarios(runsEvaluated)
+			: `${runsEvaluated} of ${scenarios(runsAttempted)}`;
+	return `Backtested ${backtested} · ${forecasts(scoresEvaluated)}`;
+};
+
 export interface LevelRowFacts {
 	confidenceLevel: number;
 	levelName: string;

@@ -224,7 +224,9 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 
 		await pressRunRealityCheck(group);
 		const dialog = await theRealityCheckDialog();
-		await waitFor(() => expectALine(dialog, /16 forecast runs were checked/i));
+		await waitFor(() =>
+			expectTheLine(dialog, "Backtested 16 scenarios · 64 forecasts"),
+		);
 
 		expect(runRealityCheck).toHaveBeenCalledWith(42, true);
 	});
@@ -588,12 +590,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 
 		await userEvent.click(theButtonNamed(dialog, /^run again$/i));
 
-		await waitFor(() =>
-			expectTheLine(
-				dialog,
-				"50th: held 9 of 16 (should be about 8), within 10% in 0. Usually high by more than a quarter.",
-			),
-		);
+		await waitFor(() => expectTheLine(dialog, "56% (9 of 16) · 0 accurate"));
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
 
@@ -602,12 +599,12 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
 		const first = await theRealityCheckDialog();
-		await waitFor(() => expectALine(first, /forecast runs were checked/i));
+		await within(first).findByRole("table");
 		await closeWithEscape();
 
 		await pressRunRealityCheck(group);
 		const second = await theRealityCheckDialog();
-		await waitFor(() => expectALine(second, /forecast runs were checked/i));
+		await within(second).findByRole("table");
 
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
@@ -641,9 +638,6 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 			"The reality check could not be run",
 		);
 		expect(theButtonNamed(dialog, /^run again$/i)).toBeInTheDocument();
-		expect(linesMatching(dialog, /forecast runs were checked/i)).toHaveLength(
-			0,
-		);
 		expect(within(dialog).queryByRole("table")).toBeNull();
 	});
 
@@ -670,7 +664,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 
 		await userEvent.click(theButtonNamed(dialog, /^run again$/i));
 
-		await waitFor(() => expectALine(dialog, /16 forecast runs were checked/i));
+		await within(dialog).findByRole("table");
 		expect(
 			within(dialog).queryByText(/the reality check could not be run/i),
 		).toBeNull();
@@ -686,7 +680,7 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 
 		await userEvent.keyboard("{Enter}");
 		const dialog = await theRealityCheckDialog();
-		await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
+		await within(dialog).findByRole("table");
 		await closeWithEscape();
 
 		await waitFor(() => expect(button).toHaveFocus());
@@ -713,7 +707,7 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 		const focusedWhileRunning = document.activeElement;
 
 		await answerArrives(aRealityCheckAnswer());
-		await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
+		await within(dialog).findByRole("table");
 
 		expect(document.activeElement).toBe(focusedWhileRunning);
 	});

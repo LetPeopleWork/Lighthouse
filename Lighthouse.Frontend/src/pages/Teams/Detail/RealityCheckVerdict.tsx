@@ -2,6 +2,7 @@ import { Stack, Typography } from "@mui/material";
 import type React from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
+import RealityCheckHeadline from "./RealityCheckHeadline";
 import RealityCheckLevelRow from "./RealityCheckLevelRow";
 import RealityCheckWindowBadge from "./RealityCheckWindowBadge";
 import {
@@ -25,6 +26,7 @@ const RealityCheckVerdict: React.FC<Readonly<RealityCheckVerdictProps>> = ({
 
 	return (
 		<Stack spacing={1.5}>
+			<RealityCheckHeadline denominator={denominator} />
 			<RealityCheckWindowBadge soundWindow={result.soundWindow} />
 			<Stack spacing={1}>
 				{[...levelCoverage]

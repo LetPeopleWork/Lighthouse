@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import {
 	aRealityCheckAnswer,
-	expectALine,
 	pressRunRealityCheck,
 	renderTheForecastTab,
 	setMatchMedia,
@@ -207,7 +206,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		act(() => reporterInUse.swapTo(reportUsage));
 		await pressRunRealityCheck(group);
 		const dialog = await theRealityCheckDialog();
-		await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
+		await within(dialog).findByRole("table");
 
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
 		expect(beforeTheBrowserAnswered).not.toHaveBeenCalled();
@@ -254,7 +253,7 @@ const anAnswerStillOnItsWay = () => {
 };
 
 const theAnswerIsShownIn = async (dialog: HTMLElement) => {
-	await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
+	await within(dialog).findByRole("table");
 };
 
 const closeTheDialog = async () => {

@@ -35,6 +35,7 @@ import {
 	percentShown,
 	periodActual,
 	periodHeader,
+	realityCheckHeadline,
 	regionOf,
 	standingCopy,
 	sufficiencyReasonCopy,
@@ -1078,4 +1079,57 @@ describe("levelBarName", () => {
 			"50th Risky: not tested, no check could run",
 		);
 	});
+});
+
+describe("realityCheckHeadline", () => {
+	it.each([
+		{
+			attempted: 16,
+			evaluated: 16,
+			scores: 64,
+			headline: "Backtested 16 scenarios · 64 forecasts",
+		},
+		{
+			attempted: 16,
+			evaluated: 12,
+			scores: 48,
+			headline: "Backtested 12 of 16 scenarios · 48 forecasts",
+		},
+		{
+			attempted: 16,
+			evaluated: 0,
+			scores: 0,
+			headline: "None of the 16 scenarios could be backtested",
+		},
+		{
+			attempted: 1,
+			evaluated: 1,
+			scores: 1,
+			headline: "Backtested 1 scenario · 1 forecast",
+		},
+		{
+			attempted: 2,
+			evaluated: 1,
+			scores: 4,
+			headline: "Backtested 1 of 2 scenarios · 4 forecasts",
+		},
+		{
+			attempted: 1,
+			evaluated: 0,
+			scores: 0,
+			headline: "None of the 1 scenario could be backtested",
+		},
+	])(
+		'$evaluated of $attempted scenarios and $scores forecasts read "$headline"',
+		({ attempted, evaluated, scores, headline }) => {
+			expect(
+				realityCheckHeadline({
+					runsAttempted: attempted,
+					runsEvaluated: evaluated,
+					levelsPerRun: 4,
+					scoresEvaluated: scores,
+				}),
+			).toBe(headline);
+		},
+	);
 });
