@@ -12,7 +12,6 @@ import { triggerExplanation } from "./realityCheckCopy";
 
 interface ForecastRealityCheckProps {
 	teamId: number;
-	teamName: string;
 	applyFilterOverride?: boolean;
 }
 
@@ -28,7 +27,6 @@ const failedRun = (error: unknown): RealityCheckRun => ({
 
 const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	teamId,
-	teamName,
 	applyFilterOverride,
 }) => {
 	const { forecastService } = useContext(ApiServiceContext);
@@ -117,7 +115,6 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 			</Box>
 			<RealityCheckDialog
 				open={isOpen}
-				teamName={teamName}
 				run={run}
 				onRunAgain={startCheck}
 				onClose={close}

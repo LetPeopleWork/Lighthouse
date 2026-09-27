@@ -230,7 +230,7 @@ afterEach(() => {
 });
 
 describe("@us-06 @slice-06a @driving_port every run shows that it is working", () => {
-	it.skip(`the first run shows a spinner and "${LOADING}" in a polite status, and the answer arriving moves no focus (${PENDING})`, async () => {
+	it(`the first run shows a spinner and "${LOADING}" in a polite status, and the answer arriving moves no focus`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 
@@ -250,7 +250,7 @@ describe("@us-06 @slice-06a @driving_port every run shows that it is working", (
 		expect(document.activeElement).toBe(focusedWhileRunning);
 	});
 
-	it.skip(`Run again shows the same spinner and "${LOADING}" while the fresh check runs (${PENDING})`, async () => {
+	it(`Run again shows the same spinner and "${LOADING}" while the fresh check runs`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const answerArrives = anAnswerStillOnItsWay();
 
@@ -266,7 +266,7 @@ describe("@us-06 @slice-06a @driving_port every run shows that it is working", (
 		await answerArrives(aRealityCheckAnswer());
 	});
 
-	it.skip(`@error a check that fails replaces the spinner and "${LOADING}" with its plain message (${PENDING})`, async () => {
+	it(`@error a check that fails replaces the spinner and "${LOADING}" with its plain message`, async () => {
 		const failure = "The reality check could not be run. Please try again.";
 		let fail: (error: Error) => void = () => {};
 		runRealityCheck.mockReturnValue(

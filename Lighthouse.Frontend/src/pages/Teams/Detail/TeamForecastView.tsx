@@ -460,7 +460,6 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 					realityCheck={
 						<ForecastRealityCheck
 							teamId={team.id}
-							teamName={team.name}
 							applyFilterOverride={
 								isPremiumFilterActive ? applyBacktestFilterOverride : undefined
 							}

@@ -19,6 +19,7 @@ import {
 	heldGlyph,
 	heldWord,
 	horizonLabel,
+	LOADING,
 	levelLine,
 	levelReadingCopy,
 	listOf,
@@ -647,6 +648,12 @@ describe("whyChecksCouldNotRun", () => {
 		expect(statement).toMatch(
 			/4 of the 16 checks could not run, so they are left out of every count\. 1 check on the 14-day sampling window had fewer than 7 days with completed Tickets to draw on\. The 4 levels/,
 		);
+	});
+});
+
+describe("LOADING", () => {
+	it("says the check is crunching the numbers, with one ellipsis character and no name", () => {
+		expect(LOADING).toBe("Crunching the numbers…");
 	});
 });
 

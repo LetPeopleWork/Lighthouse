@@ -1,6 +1,7 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {
 	Button,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -17,6 +18,7 @@ import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckR
 import RealityCheckLegend from "./RealityCheckLegend";
 import RealityCheckTable from "./RealityCheckTable";
 import RealityCheckVerdict from "./RealityCheckVerdict";
+import { LOADING } from "./realityCheckCopy";
 
 export type RealityCheckRun =
 	| { state: "running" }
@@ -25,25 +27,29 @@ export type RealityCheckRun =
 
 interface RealityCheckDialogProps {
 	open: boolean;
-	teamName: string;
 	run: RealityCheckRun;
 	onRunAgain: () => void;
 	onClose: () => void;
 }
 
 interface RealityCheckRunContentProps {
-	teamName: string;
 	run: RealityCheckRun;
 }
 
 const RealityCheckRunContent: React.FC<
 	Readonly<RealityCheckRunContentProps>
-> = ({ teamName, run }) => {
+> = ({ run }) => {
 	if (run.state === "running") {
 		return (
-			<Typography role="status">
-				Checking {teamName}'s forecasts against what happened…
-			</Typography>
+			<Stack
+				role="status"
+				direction="row"
+				spacing={2}
+				sx={{ alignItems: "center" }}
+			>
+				<CircularProgress size={24} aria-hidden />
+				<Typography>{LOADING}</Typography>
+			</Stack>
 		);
 	}
 	if (run.state === "failed") {
@@ -60,7 +66,6 @@ const RealityCheckRunContent: React.FC<
 
 const RealityCheckDialog: React.FC<Readonly<RealityCheckDialogProps>> = ({
 	open,
-	teamName,
 	run,
 	onRunAgain,
 	onClose,
@@ -89,7 +94,7 @@ const RealityCheckDialog: React.FC<Readonly<RealityCheckDialogProps>> = ({
 				<CloseIcon />
 			</IconButton>
 			<DialogContent dividers>
-				<RealityCheckRunContent teamName={teamName} run={run} />
+				<RealityCheckRunContent run={run} />
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={onRunAgain} disabled={run.state === "running"}>

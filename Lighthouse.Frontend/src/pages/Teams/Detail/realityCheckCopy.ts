@@ -228,6 +228,8 @@ export const whyChecksCouldNotRun = (
 		return sentence === null ? [] : [sentence];
 	});
 
+export const LOADING = "Crunching the numbers…";
+
 export const triggerExplanation = (getTerm: TermGetter): string =>
 	`Replays this ${getTerm(TERMINOLOGY_KEYS.TEAM)}'s recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} actually completed.`;
 

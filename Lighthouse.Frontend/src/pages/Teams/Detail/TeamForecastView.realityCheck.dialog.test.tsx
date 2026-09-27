@@ -194,18 +194,15 @@ beforeEach(() => {
 });
 
 describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words first", () => {
-	it(`pressing Run reality check opens the dialog at once, saying the check is running, and it fills in without asking for a date`, async () => {
+	it(`pressing Run reality check opens the dialog at once, and it fills in without asking for a date`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 
 		await pressRunRealityCheck(group);
 		const dialog = await theRealityCheckDialog();
 
-		expect(within(dialog).getByRole("status")).toHaveTextContent(
-			/checking Ocean Explorer's forecasts against what happened/i,
-		);
 		await answerArrives(aRealityCheckAnswer());
-		await waitFor(() => expectALine(dialog, /16 forecast runs were checked/i));
+		await within(dialog).findByRole("table");
 		expect(runRealityCheck).toHaveBeenCalledTimes(1);
 		expect(runRealityCheck.mock.calls[0][0]).toBe(42);
 		expect(
