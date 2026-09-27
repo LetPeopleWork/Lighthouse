@@ -4131,6 +4131,7 @@ list.
 | S-22 | **Epic AC-1.4**'s *"the verdict names a range"* in the dialog body | Epic US-01 | The badge states the setting's standing; the range is said nowhere (maintainer 2026-09-27). "No field and no string names one window as best" stands |
 | S-23 | Journey step 3 mockup and step 5 (*"Take the two findings away"*) | `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Updated in this amendment (see *SSOT updates*) |
 | S-24 | Slice 04 KPI *Density readable* (under a minute per Team) | Story #6094 KPIs | KPI *Reads at a glance* below (tighter) |
+| S-25 | **Epic AC-1.8** credit *"with this product's additions"* | Epic US-01 | One linked line in the headline popover: *"Inspired by Nick Brown's article The Full Monte"* (maintainer 2026-09-27). The additions are no longer claimed in words |
 
 ### US-06 — The reality check reads at a glance
 
@@ -5826,6 +5827,26 @@ is not to hold a release.
 
 Per-wave peer review: **not run** here (the orchestrator runs it). No trigger fires: no new deployment
 target, CI framework, observability change or security posture change.
+
+## Wave: DEVOPS / [REF] US-06 amendment (2026-09-27) — Story #6094
+
+US-06 reshapes one dialog and adds one log line. Every DEVOPS question gets an explicit answer:
+
+| Question | Answer |
+|---|---|
+| Platform, container, secret, configuration key, migration, workflow | **N/A, because** nothing is added. The new log line uses the existing Serilog pipeline at `Information`, which is the default level, so it needs no configuration change. |
+| Usage-data event | **N/A, because** `TeamForecastRealityCheckRun` (value 11) still means "an answer somebody was shown", and US-06 changes how the answer looks, not when it is shown. No new event and no property. The "reads at a glance" KPI is judged in the maintainer's review, not measured through the pipe. |
+| Observability | The one change is the `Information` line `Reality check run for Team {TeamId} (filter override: {FilterOverride})` (6094-DES-16). It carries the Team id and one closed value (`on`/`off`/`none`), and no names or free text. |
+| Branching | Trunk-based, unchanged. **06a and 06b go out in one push** after both slices and the quality gates (maintainer answer 8), so `main` never shows the dialog without the credit. Locator deletions land in the same commit as the component that removes them. |
+| Coexistence | As in the #6094 matrix above. In addition, the `BacktestForecaster` single backtest must keep working with the new `realityCheck` slot (6094-DES-17), and the TeamsDetail walking skeleton must still close the dialog before its later steps. |
+| Lighthouse-Clients CLI / MCP | **N/A, because** the API response is unchanged (6094-DES-19). |
+| Mutation scope | `stryker.6094.frontend.json` is re-used and **extended** to the new and renamed modules: `RealityCheckSummary.tsx` replaces `RealityCheckVerdict.tsx`, plus any new file DELIVER adds (level bar, badge, headline, `RealityCheckLevelLabel`), with `vitest.stryker.6094.config.ts`'s include list re-checked against `ls`. **Backend:** `ForecastRealityCheckController.cs` stays **out** of the Stryker.NET mutate set, as recorded in #6072's results. Its tests are HTTP acceptance tests under `API.Integration`, which the Stryker filter excludes for cost. The log line is pinned by the DISTILL acceptance scenario. No unit-level `RecordingLogger` test is owed. |
+| Pre-requisites | None open for US-06. PR-6094-7 (the baseline release ordering) is unchanged and not blocking. |
+
+**Hand-off to DISTILL:** reuse `environments.yaml` unchanged. The backend log scenario uses the
+`CapturedLogMessages` capture from 6094-DES-16 and must not call `Clear()` before its negative check. Assert
+no wall-clock time on the "Crunching the numbers…" state. Update the TeamsDetail walking skeleton through
+the page object (6094-DES-20).
 
 ---
 

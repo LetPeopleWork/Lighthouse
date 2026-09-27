@@ -1381,3 +1381,9 @@ Reviewer not run in this pass (the orchestrator runs it). Committed; not pushed.
   by maintainer answers 3 and 9.
 - D16's en-US example reads `09/21/2026` under DES-15, not `9/21/2026`.
 - The slice-06 brief and this file's D15 / D22 rows above still show the pre-answer forms.
+
+## DEVOPS amendment — Story #6094, US-06 (2026-09-27)
+
+- No platform change and no new usage-data event (the existing value 11 is unchanged); clients N/A because the API response is unchanged.
+- One push for 06a+06b after the gates.
+- The frontend Stryker config is extended to the new and renamed reality-check modules. The backend controller stays out of the Stryker.NET scope, and its log line is pinned by an acceptance scenario.
