@@ -368,6 +368,13 @@ describe("@us-06 @slice-06b @kpi-OUT-6094-no-window-ranked how the Team's own sa
 			state: "FixedDates",
 		},
 		{
+			case: "not tested without a reason, which must not read as a warning",
+			determination: "SomeWindowsSound",
+			standing: "NotTested",
+			reason: null,
+			state: "CouldNotBeChecked",
+		},
+		{
 			case: "its own window could not be checked",
 			determination: "SomeWindowsSound",
 			standing: "NotDetermined",

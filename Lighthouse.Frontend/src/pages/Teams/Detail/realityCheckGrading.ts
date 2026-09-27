@@ -174,7 +174,8 @@ const NOT_TESTED_BADGE: Record<NotTestedReason, WindowBadgeState> = {
 	NotAPositiveLength: "NotAPositiveLength",
 };
 
-// A setting that was not tested stands as NotTested, which says nothing on its own, so its reason is read first.
+// A setting that was not tested stands as NotTested, which says nothing on its own, so its reason is read first;
+// without a reason there is nothing to say but that it could not be checked, and it must never read as a warning.
 export const windowBadgeOf = ({
 	currentSettingNotTestedReason,
 	currentSettingStanding,
@@ -187,6 +188,7 @@ export const windowBadgeOf = ({
 		return NOT_TESTED_BADGE[currentSettingNotTestedReason];
 	}
 	if (
+		currentSettingStanding === "NotTested" ||
 		currentSettingStanding === "NotDetermined" ||
 		determination === "NotEnoughEvidence"
 	) {

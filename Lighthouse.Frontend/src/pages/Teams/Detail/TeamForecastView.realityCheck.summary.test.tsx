@@ -486,6 +486,12 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 			tone: "Default",
 		},
 		{
+			state: "the Team's own window was not tested and no reason came with it",
+			options: { determination: "SomeWindowsSound", standing: "NotTested" },
+			badge: "Your 30-day sampling window: could not be checked",
+			tone: "Default",
+		},
+		{
 			state: "the Team forecasts from fixed dates - Harbour Pilots",
 			options: { currentSettingWasTested: false },
 			badge: "Your Team forecasts from fixed dates: sampling window not tested",
