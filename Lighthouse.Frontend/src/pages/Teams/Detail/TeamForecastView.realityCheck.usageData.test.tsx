@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
@@ -295,6 +295,19 @@ describe("@us-04 @slice-04 @kpi-OUT-6094-use-survives-the-extra-click reporting 
 
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 		expect(reportUsage).toHaveBeenCalledTimes(1);
+	});
+
+	it(`@error an answer that arrives after the tab was left was shown to nobody and is not reported`, async () => {
+		const answerArrives = anAnswerStillOnItsWay();
+		const group = renderTheForecastTab(runRealityCheck);
+		await pressRunRealityCheck(group);
+		await theRealityCheckDialog();
+
+		cleanup();
+		await answerArrives(aRealityCheckAnswer());
+
+		expect(runRealityCheck).toHaveBeenCalledTimes(1);
+		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
 	it(`@error reports nothing when Run again fails`, async () => {

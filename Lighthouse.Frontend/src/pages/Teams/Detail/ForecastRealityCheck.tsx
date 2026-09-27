@@ -1,6 +1,6 @@
 import { Button } from "@mui/material";
 import type React from "react";
-import { useCallback, useContext, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
@@ -35,6 +35,14 @@ const ForecastRealityCheck: React.FC<ForecastRealityCheckProps> = ({
 	// State updates land a render late, so a quick second press would still see the old values.
 	const isRunningRef = useRef(false);
 	const isOpenRef = useRef(false);
+
+	// Leaving the tab mid-run closes the dialog as surely as closing it does.
+	useEffect(
+		() => () => {
+			isOpenRef.current = false;
+		},
+		[],
+	);
 
 	const settleAnswer = useCallback(
 		(result: RealityCheckResult) => {
