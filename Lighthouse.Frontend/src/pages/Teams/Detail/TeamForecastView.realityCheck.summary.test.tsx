@@ -574,6 +574,19 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		expect(withoutSentences(tooltip, [HELD_UP_MEANS, notChecked])).toBe("");
 	});
 
+	it(`only Escape closes the badge's tooltip: a reader pressing an arrow key to scroll keeps it open`, async () => {
+		const dialog = await theDialogFor(coastalSurvey());
+		const badge = theBadgeReading(dialog, "Your 30-day sampling window: fine");
+
+		await tabUntilFocused(badge);
+		await screen.findByRole("tooltip");
+		await userEvent.keyboard("{ArrowDown}");
+
+		expect(badge).toHaveAccessibleDescription(
+			expect.stringContaining(HELD_UP_MEANS),
+		);
+	});
+
 	it(`@error when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({

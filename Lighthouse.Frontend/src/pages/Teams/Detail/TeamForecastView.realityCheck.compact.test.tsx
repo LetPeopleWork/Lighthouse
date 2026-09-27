@@ -583,6 +583,18 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 		expect(document.activeElement).toBe(focusedBefore);
 	});
 
+	it(`@error once a cell's tooltip has closed, Escape closes the dialog again`, async () => {
+		const dialog = await theDialogFor(oceanExplorersWeek());
+
+		await userEvent.hover(theFirstGradedCell(dialog));
+		await screen.findByRole("tooltip");
+		await userEvent.unhover(theFirstGradedCell(dialog));
+		await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+		await userEvent.keyboard("{Escape}");
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+
 	// Already true and kept as it is: a check that could not run is one muted reason across the row, never
 	// a graded cell, a "—" or a keyboard stop.
 	it(`@error a check that could not run keeps its reason across the four columns, and is neither graded nor a keyboard stop`, async () => {
