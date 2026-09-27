@@ -35,6 +35,7 @@ import {
 	type UnrunChecks,
 	unevaluableRowCopy,
 	unevaluatedSentence,
+	usualGradeCopy,
 	type VerdictFacts,
 	whyChecksCouldNotRun,
 	windowRowLabel,
@@ -871,6 +872,22 @@ describe("percentShown", () => {
 	])("writes $percent as $shown", ({ percent, shown }) => {
 		expect(percentShown(percent)).toBe(shown);
 	});
+});
+
+describe("usualGradeCopy", () => {
+	it.each([
+		{ grade: "HeldWithin10", words: "within 10%" },
+		{ grade: "Held10To25", words: "low by 10-25%" },
+		{ grade: "HeldOver25", words: "low by more than a quarter" },
+		{ grade: "NotHeldWithin10", words: "high by up to 10%" },
+		{ grade: "NotHeld10To25", words: "high by 10-25%" },
+		{ grade: "NotHeldOver25", words: "high by more than a quarter" },
+	] as const)(
+		"says a level usually graded $grade landed $words",
+		({ grade, words }) => {
+			expect(usualGradeCopy[grade]).toBe(words);
+		},
+	);
 });
 
 describe("gradeLegendCopy", () => {
