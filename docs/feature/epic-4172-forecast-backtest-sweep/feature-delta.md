@@ -5124,6 +5124,419 @@ Write the two *Needs the maintainer* items against their defaults and mark them 
 `docs/product/architecture/brief.md` (epic-4172 section, a Story #6094 delta); `wave-decisions.md`
 (*DESIGN — Story #6094*).
 
+## Wave: DESIGN / [REF] US-06 amendment — Story #6094
+
+**Wave**: DESIGN amendment, 2026-09-27, agent Morgan (`nw-solution-architect`). **Scope**: application
+(components). **Interaction mode**: PROPOSE, maintainer AFK — the recommended option is taken and recorded.
+Numbering continues this story's `6094-DES-n` (DES-1..DES-9 above), so the amendment's decisions are
+**6094-DES-10..DES-20**. Input: *US-06 amendment (2026-09-27)*, read **through its *Maintainer answers***,
+which override the earlier defaults (no region anywhere; "fine" for both inside states; the headline
+explanation trimmed; the credit is one linked line; 06a + 06b pushed together). No ADR: nothing here is
+architecturally significant beyond the story (see *ADR check*). Nothing committed by the agent's own tools;
+reviewer not run (the orchestrator runs it).
+
+### Prior wave consultation — US-06 DESIGN
+
+| Source | State |
+|---|---|
+| This file, *US-06 amendment* (3903-4561): 6094-D11..D25, S-1..S-24, US-06, AC-6.1..6.16, *Copy to confirm*, *Open for DESIGN*, *Maintainer answers*, Risks | ✓ read in pages, fresh |
+| This file, *Story #6094 — DESIGN* (6094-DES-1..DES-9, components, reuse, enforcement E6-E12) | ✓ read |
+| `slices/slice-06-reads-at-a-glance.md`, `wave-decisions.md` (*DESIGN — Story #6094*, *DISCUSS amendment — US-06*) | ✓ read |
+| ADR-211 | ✓ read — not contradicted (see *ADR check*) |
+| Frontend: `ForecastRealityCheck.tsx`, `RealityCheckDialog.tsx`, `RealityCheckVerdict.tsx`, `RealityCheckTable.tsx`, `RealityCheckPeriodGroup.tsx`, `RealityCheckGradedCell.tsx`, `RealityCheckLegend.tsx`, `realityCheckCopy.ts`, `realityCheckGrading.ts`, `RealityCheckResult.ts`, `ForecastLevel.ts`, `TeamForecastView.tsx:439-468`, `BacktestForecaster.tsx` (inputs 273-420, `getLocaleDateFormat` 29-49), `utils/date/localDate.ts`, `utils/theme/colors.ts` | ✓ read |
+| Existing info / tooltip patterns: `ProgressIndicator.tsx` (`Tooltip` around an `InfoOutlined` `IconButton`, plus `LinearProgress`), `WidgetShell.tsx` (`InfoOutlined` `IconButton` opening a `Popover`); no roving-focus or `role="grid"` component exists in `src` | ✓ searched |
+| Backend: `ForecastRealityCheckController.cs`, `OptionalFeaturesController.cs:66` (the Information-log precedent), `TestHelpers/CapturedLogMessages.cs`, `TestHelpers/RecordingLogger.cs`, `FasterUpdatesAcceptanceTest.cs:149-161` (the Serilog capture wiring), `ForecastRealityCheckAcceptanceTest.cs` | ✓ read |
+| E2E: `TeamDetailPage.ts:89-140`, `TeamsDetail.spec.ts:62-75` | ✓ read |
+| `docs/ci-learnings.md` — MUI puts a tooltip on its child as `aria-label` (846); S6767 dead prop (1149); S107 (165); S6667; CA1859 | ✓ read |
+
+### Decisions — US-06
+
+| # | Decision | Resolves |
+|---|---|---|
+| 6094-DES-10 | Headline explanation = `InfoOutlined` `IconButton` opening an MUI `Popover` (the `WidgetShell` pattern) on click / Enter / Space; a plain hover `Tooltip` shows only its name. Not an interactive `Tooltip` | Open 3, 6094-D25 |
+| 6094-DES-11 | Every graded cell and every "—" cell is one Tab stop wrapped in a text-only MUI `Tooltip`; no roving focus, no `role="grid"` | Open 2, R-6094-11 |
+| 6094-DES-12 | The trigger's info icon and the window badge use MUI `Tooltip` with `describeChild`, so their visible words stay their names; the badge is a filled small MUI `Chip` | Open 3 |
+| 6094-DES-13 | The badge state is a string-free reading of `soundWindow` into a closed six-member union; words and tones are exhaustive maps over it | Open 4 (item 4 of the brief) |
+| 6094-DES-14 | The level bar is a `role="img"` box named by copy row 5b, wrapping a hidden determinate `LinearProgress` and a hidden tick; neutral theme colours, tick overhangs the bar | Open 4 |
+| 6094-DES-15 | Numeric local day via `parseLocalDate` + `toLocaleDateString(locale, 2-digit day / 2-digit month / numeric year)` — the digits the back-test pickers on the same tab show; no new helper | Open 5 |
+| 6094-DES-16 | The log line sits in the controller, inside the found-Team branch, before the run; constant template; asserted through the Serilog capture in the reality-check acceptance fixture | Open 1, 6094-D13 |
+| 6094-DES-17 | The trigger reaches its new place through one `ReactNode` slot on `BacktestForecaster`; the now-dead `teamName` props go | 6094-D11 |
+| 6094-DES-18 | Component map and the retirement list for `realityCheckCopy.ts` / `realityCheckGrading.ts` | Open 6 |
+| 6094-DES-19 | No API or DTO change — confirmed field by field | AC-6.16 |
+| 6094-DES-20 | Walking-skeleton locators: two go, two come; the button locator survives | AC-6.15 |
+
+### 6094-DES-10 — The headline explanation is a click-opened popover, not a tooltip
+
+The panel holds a link (6094-D15). That settles the primitive more than taste does:
+
+| Option | Verdict |
+|---|---|
+| **`IconButton` (`InfoOutlined`, name *"About these numbers"*) + MUI `Popover`**, the `WidgetShell` pattern | **Decided.** Opens on click, Enter or Space. `Popover` is a modal: focus moves into it, the link is the first Tab stop, **Escape closes only the popover** — MUI's modal manager answers Escape for the top-most modal alone, and the popover's key handler stops the event before the dialog's — and focus returns to the icon. Zero hand-written focus or key code. The paper carries `role="dialog"` and the same name, so a screen reader announces what opened |
+| Interactive MUI `Tooltip` (hover + focus + click, link inside) | Rejected. The tooltip renders in a portal outside the dialog's DOM, so Tab from the icon never reaches the link, and the dialog's focus trap pulls focus back if it tries; moving focus off the icon closes it. ARIA `role="tooltip"` must not hold interactive content. Making it work means `disablePortal`, a controlled open state, blur-with-`relatedTarget` handling and an Escape handler — custom focus code for one icon |
+| Non-modal `Popper` disclosure (`aria-expanded`), open on hover / focus / click, `disablePortal` | Rejected: the same hand-written open / close / Escape / focus-leave logic as above, and a pattern the codebase does not have. The only gain over the decided option is opening on hover and focus |
+| Open the `Popover` on focus as well | Rejected: a modal that opens because focus arrived and then takes focus is a change of context on focus (WCAG 3.2.1) |
+
+**Consequence, stated plainly**: AC-6.11's *"opens … on hover, keyboard focus and click"* and *"stays open
+while hovered"* become **"opens on click, Enter or Space; stays open until Escape, a click outside, or
+following the link"**. 6094-D25's last sentence gave DESIGN this choice ("an interactive tooltip or a
+click-toggled popover"); a click-toggled popover by definition does not open on hover. WCAG 1.4.13 then does
+not apply (it governs content that appears on hover or focus). Hovering the icon still shows a plain
+`Tooltip` with its name, *"About these numbers"*, so a pointer user learns it is clickable. The other three
+info surfaces (trigger, badge, cells) hold text only and are real tooltips (DES-11, DES-12).
+
+The popover content is copy row 20 as trimmed by the maintainer: the denominator explanation; the
+could-not-run paragraph and `whyChecksCouldNotRun` sentences only when `runsAttempted > runsEvaluated`; the
+*accurate* sentence; *"Inspired by Nick Brown's article"* followed by an MUI `Link` *The Full Monte*
+(`target="_blank"`, `rel="noopener noreferrer"`). The link is JSX; the copy module exports the lead words and
+the title / URL pair as constants, so no sentence is assembled in a component.
+
+### 6094-DES-11 — 64-80 cells: one Tab stop each, a text tooltip each, no grid
+
+| Option | Verdict |
+|---|---|
+| **Each graded and "—" cell `tabIndex={0}`, wrapped in MUI `Tooltip` (string title, default `describeChild={false}`)** | **Decided.** MUI sets the title as the child's `aria-label` whether or not the tooltip is open (ci-learnings 846), so *"the tooltip text is also the cell's accessible name"* (6094-D17) is the library's default rather than code; the shipped explicit `aria-label` goes. The tooltip opens on hover and on keyboard focus (focus-visible), is hoverable, persists while hovered or focused, and Escape dismisses it — WCAG 1.4.13 met by MUI |
+| One Tab stop into the table, arrow keys between cells (roving `tabindex`) | Rejected. Arrow-key movement is only discoverable to assistive technology as `role="grid"`, which puts screen readers into application mode and gives up the reading-table commands a screen-reader user already has for this table; the table's geometry is irregular (a row-group header spanning every column, unevaluable rows as one `colSpan` cell), so the key map is bespoke; and no roving-focus component exists in the frontend to reuse. More code and a worse screen-reader experience, to save keystrokes |
+| Cells not focusable; names only | Rejected: fails WCAG 2.1.1 for a sighted keyboard user, who could not reach the tooltip's words, and AC-6.5 |
+
+**WCAG reasoning.** 2.1.1 (keyboard) requires every cell's words to be reachable without a pointer — hence
+focusable cells. 2.4.3 (focus order) holds: DOM order is title close → headline icon → badge → scroll region
+→ cells row by row → Run again → Close. Tedium (R-6094-11) is bounded, not removed: the dialog's focus trap
+wraps, so Shift+Tab from the first stop reaches *Close* in one keystroke, and Escape closes the dialog from
+anywhere; 2.4.1 (bypass blocks) is a page-level criterion and a modal already bypasses the page. Screen-reader
+users mostly never Tab through: table navigation reads each cell's name with its row and column headers.
+2.4.7 (focus visible): a focused cell gets an outline in `getContrastText(fill)` — the colour E10 already
+proves ≥ 4.5 : 1 on every fill in both themes — inset so it is not clipped by neighbours.
+**Accepted residual**: 2.5.3 (label in name) — the name (*"Closed 7 Work Items fewer (14) than forecasted
+(21)…"*) contains the visible "21" but not "✗"; the cell is not an operable control, so speech-input
+targeting is not its purpose. Recorded, not fixed.
+**Revisit trigger**: the ladder or horizons grow past ~100 cells, or a keyboard user reports the table as
+tedious — then a grid with roving focus is the next step.
+
+The scroll region keeps `tabIndex={0}` (AC-6.7 says it stays focusable). With focusable cells inside it is no
+longer strictly needed for scrolling; keeping it is one extra stop and the AC as written.
+
+### 6094-DES-12 — Trigger info icon and window badge: describing tooltips, a filled chip
+
+- **Trigger info icon** — the `ProgressIndicator` pattern (`Tooltip` around an `InfoOutlined` `IconButton`),
+  with `aria-label` *"What does the reality check do?"* and `describeChild`, so the name stays that question
+  and copy row 1 becomes the description. Placed **before** the button in a right-aligned row (6094-D11).
+- **Badge** — MUI `Chip`, `size="small"`, filled, `tabIndex={0}`, in a `Tooltip` with `describeChild`: the
+  chip's visible words are its name (WCAG 2.5.3 holds) and the tooltip is its description. Tone is MUI's
+  palette name, the codebase's existing idiom (`getStateColor` returns the same names): `success`, `warning`,
+  `default`. Filled, because MUI picks the chip text from the palette's `contrastText`: at MUI's default contrast
+  threshold that is dark text on `#4caf50` and `#ff9800` (about 7 : 1 and 9 : 1), in both themes, which share
+  `appColors.status`. If the theme overrides the threshold, the per-theme screenshots owed at FINALIZE show it.
+- **Badge tooltip** (maintainer answer 3): copy row 14 always, then row 15 — the shipped `unevaluatedSentence`
+  — when `unevaluatedWindowDays` is not empty. No window is named as having held up, anywhere (I-a).
+
+### 6094-DES-13 — The badge state: one string-free reading, then words and a tone
+
+`windowBadgeOf(soundWindow)` joins `realityCheckGrading.ts` (string-free readings of shipped facts, ADR-211's
+line) and returns one of six states. Precedence — the first match wins:
+
+| # | Condition on `soundWindow` | State | Copy row | Tone |
+|---|---|---|---|---|
+| 1 | `currentSettingNotTestedReason === "UsesFixedDates"` | `FixedDates` | 11 | `default` |
+| 2 | `currentSettingNotTestedReason === "NotAPositiveLength"` | `NotAPositiveLength` | 12 | `default` |
+| 3 | `currentSettingStanding === "NotDetermined"` or `determination === "NotEnoughEvidence"` | `CouldNotBeChecked` | 10 | `default` |
+| 4 | `determination === "NoWindowSound"` | `NoWindowHeldUp` | 9 | `warning` |
+| 5 | `currentSettingStanding === "Inside"` | `Fine` | 6, 7 (one word, maintainer answer 4) | `success` |
+| 6 | otherwise (`Outside`) | `DidNotHoldUp` | 8 | `warning` |
+
+The reason (1, 2) is checked before the standing because a not-tested setting carries `NotTested`, which says
+nothing on its own. Words (`Record<WindowBadgeState, (days, getTerm) => string>`, copy module) and tones
+(`Record<WindowBadgeState, "success" | "warning" | "default">`, badge component) are exhaustive maps with no
+`default:` (E6). Only `soundWindow` and the Team's `currentSettingDays` are read (AC-6.12).
+
+### 6094-DES-14 — The level bar and its tick
+
+| Option | Verdict |
+|---|---|
+| **`Box role="img" aria-label={row 5b}`, relative, containing a determinate MUI `LinearProgress` (`aria-hidden`) and an absolutely positioned tick `Box` (`aria-hidden`) at `left: {level}%`** | **Decided.** Reuses the bar `ProgressIndicator` already styles, without its mount animation (a timer the tests would have to wait out, and motion that says nothing). `role="img"` makes the pair one named graphic, and its children presentational |
+| `LinearProgress` alone | Rejected: it announces itself as `progressbar` with a value — the share is not progress towards anything, and the tick would be unnamed |
+| `role="meter"` | Rejected: ARIA 1.2 support is uneven across screen readers; the tick (expected rate) has no slot in it |
+| Inline SVG | Rejected: more code, theme colours by hand, no reuse |
+
+**Colours, both themes.** Fill `primary.main` on the track `action.disabledBackground` (the `ProgressIndicator`
+pair; the dark theme's `primary.main` is already the lighter `appColors.primary.light`). **Not** the
+`ForecastLevel` colours — red for the 50th would read as "bad" on a row that may be well calibrated, and DES-4
+keeps level colours to the header icon and name — and **not** the grade fills, which mean something else.
+Tick: `text.primary`, 2 px wide, **4 px above and below the bar**. The overhang is what makes it visible in
+every case: on the page surface it stands at ≥ 13 : 1 in both themes, whatever it crosses inside the bar
+(against the light theme's dark-green fill it would be nearly invisible on its own). The bar is
+supplementary — the held share is also printed beside it and named by the text alternative — so WCAG 1.4.11
+does not bind the fill; the tick is held to it anyway through the overhang.
+
+**The shown share never contradicts the reading** (the DES-3 principle): `p = round-half-up(100·held /
+evaluated)` in integers, then 100 only when `held = evaluated` and 0 only when `held = 0` — clamped into 1..99
+otherwise. With 16-20 checks per level the clamp never fires today; it is one line and one exhaustive loop, so
+a longer ladder cannot print "100%" beside a level that missed once. Lives in `realityCheckGrading.ts` beside
+`levelCloseness`, returning `null` for a level with no check. `NotEvaluated` (the server's `reading`) chooses
+the *"Not tested — no check could run"* text and row 5b's not-evaluated form; the bar stays empty with its tick.
+
+### 6094-DES-15 — Numeric local dates: the pickers' digits, no new helper
+
+`dayInWords` becomes `dayInDigits(isoDay, locale?)`: `parseLocalDate` (the shipped UTC-safe parser), then
+`toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" })`, falling back to the ISO
+string. That produces the digits, order and separator of the back-test date pickers directly above the
+trigger (`BacktestForecaster.getLocaleDateFormat` maps the default formatter's parts to `DD` / `MM` / `YYYY`):
+`21.09.2026` in de-CH, `09/21/2026` in en-US.
+
+| Option | Verdict |
+|---|---|
+| **Intl options above, inside the copy module** | **Decided.** One option object; the same output as the pickers on the same tab |
+| Export and reuse `getLocaleDateFormat` | Rejected: it exists as two private copies (`BacktestForecaster`, `DateRangeSelector`) and returns a picker **format string**, which would need a date library to apply; extracting a shared helper for one caller is a refactor outside this story |
+| Bare `toLocaleDateString()` (what `LocalDateTimeDisplay` does) | Rejected: unpadded (`21.9.2026` in de-CH) — neither the locked example nor what the pickers show |
+
+The whole header is one composer, `periodHeader(horizonDays, period | undefined, getTerm, locale?)` →
+*"Forecast Horizon: 1 week (21.09.2026 – 27.09.2026) – 14 Work Items completed"*, or *"Forecast Horizon: 1
+week"* without a scored period (AC-6.4), built from the kept `horizonLabel` and `periodActual`. The `<time>`
+elements go; nothing requires them and one string is one test. **Centred** from the `sm` breakpoint up; below
+it the dialog is full screen and the table scrolls sideways, so the header stays left-aligned and sticky as
+DES-5 set it — centred text in a cell wider than the screen would scroll out of view.
+
+### 6094-DES-16 — The log line: in the controller, before the run
+
+| Option | Verdict |
+|---|---|
+| **`ForecastRealityCheckController`**, `ILogger<ForecastRealityCheckController>` added to its primary constructor (3 → 4 parameters, S107 safe), one `LogInformation` inside the found-Team lambda, **before** `realityCheckService.Run` | **Decided.** Only the controller has what AC-6.3 names: the raw `bool?` override (the service receives a `ThroughputFilterMode`, in which "not given" is no longer distinguishable). Inside the lambda means an unknown Team (404) writes nothing; the `RbacGuard` refuses before the action runs, so a refused request writes nothing either. Before the run means a check that then throws was still logged as triggered. `OptionalFeaturesController` is the precedent (primary-constructor logger, one templated `LogInformation`) |
+| `ForecastRealityCheckService` | Rejected: loses "not given"; would log for any future internal caller of the service, which is not a user triggering a check; adds a collaborator to a service whose read-only shape E1 guards |
+| Middleware / action filter | Rejected: a cross-cutting mechanism for one line on one route |
+
+**Template** (constant, no interpolation, CA2254-clean): `"Reality check run for Team {TeamId} (filter
+override: {FilterOverride})"`, with `FilterOverride` the token `on` / `off` / `none` for `true` / `false` /
+not given, computed into a local before the call (so no expression is evaluated inside the logging call).
+Renders as `Reality check run for Team 57 (filter override: none)` — the domain example. No Team name, no
+user identity. The words "Team" in an operator log line are not the configurable UI term.
+
+**Test**: a scenario in the reality-check acceptance fixture, not a mocked `ILogger`. The fixture replaces
+`ILoggerFactory` with a `SerilogLoggerFactory` writing to `CapturedLogMessages` — the `FasterUpdates` /
+`QuietWriteBack` wiring, because Serilog is the pipeline and an added `ILoggerProvider` is silently inert
+(the environment lie ADR-137 D72 records). Asserted: exactly one matching line in `At(LogEventLevel.Information)`
+after `Clear()`, for `true`, `false` and absent, over **both** routes. Negative (unknown Team): the shipped
+`AssertNothingLoggedMatching` carries a positive control that the capture saw *something* — so it must not be
+preceded by `Clear()`, or the control fails for the wrong reason; run it against the capture as the host left
+it, or after one successful check. RBAC refusal is covered by construction (the guard runs before the action)
+and needs no scenario. **Mutation**: Stryker.NET skips the acceptance suite, and the controller is not in
+DEVOPS's backend mutate set; if DEVOPS adds it, a unit test with the shipped `RecordingLogger<T>` is owed.
+
+### 6094-DES-17 — The trigger's new place: one slot on `BacktestForecaster`
+
+The single back-test result renders **inside** `BacktestForecaster`, so a sibling placed after it lands below
+the result (against AC-6.1). `BacktestForecaster` gains one optional `realityCheck?: React.ReactNode` prop,
+rendered in its own full-width grid row after the inputs grid (after the filter switch when shown) and
+before the result tabs; `TeamForecastView` passes `<ForecastRealityCheck … />` there instead of rendering it
+first in the group. Rejected: moving the result out of `BacktestForecaster` (a refactor of a component this
+story does not own), or passing the reality check's own props through `BacktestForecaster` (couples the two).
+`ForecastRealityCheck` renders a right-aligned row: info icon, then the button (`justifyContent:
+flex-end`), replacing `alignSelf: flex-start`. The button stays inside the *Forecast Backtesting* card, so the
+POM's card-scoped `runRealityCheckButton` still matches.
+
+**Dead props**: the loading text no longer names the Team, so `RealityCheckDialog.teamName` loses its only
+use, and with it `ForecastRealityCheck.teamName` and the `teamName` `TeamForecastView` passes. They go in
+06a (Sonar S6767 fires on an unused prop — ci-learnings, 2026-05-29, `saveTooltip`). The table's region name
+reads `result.teamName`, as the caption did.
+
+### 6094-DES-18 — Component map and the retirement list
+
+**Frontend — `Lighthouse.Frontend/src/pages/Teams/Detail/`**
+
+| Path | Change | Responsibility | Slice |
+|---|---|---|---|
+| `ForecastRealityCheck.tsx` | **RESHAPE** | Right-aligned info icon + button (DES-12, DES-17); run lifecycle unchanged (DES-6); `teamName` prop removed | 06a |
+| `BacktestForecaster.tsx` | **EXTEND** | `realityCheck` slot between inputs and result (DES-17) | 06a |
+| `TeamForecastView.tsx` | **RESHAPE** | Passes the reality check into the slot; stops passing `teamName` | 06a |
+| `RealityCheckDialog.tsx` | **RESHAPE** | Loading: `role="status"` region holding an `aria-hidden` `CircularProgress` and *"Crunching the numbers…"* (6094-D12); renders the summary, table and legend; `teamName` prop removed | 06a (loading), 06b (summary) |
+| `RealityCheckTable.tsx` | **RESHAPE** | No `<caption>`; the region is named by `aria-label` (copy row 24, `tableRegionName(teamName)`); column headers use the extracted `RealityCheckLevelLabel` | 06a |
+| `RealityCheckLevelLabel.tsx` | **NEW (extracted)** | Percentile, `ForecastLevel` icon (`aria-hidden`) and name — today's private `LevelColumnHeader` body, shared by the column header and the level row, so both read alike (AC-6.10) | 06a |
+| `RealityCheckPeriodGroup.tsx` | **RESHAPE** | Header from `periodHeader` (DES-15), centred from `sm`; `LevelCell`'s empty cell becomes the "—" cell with its tooltip (6094-D24) | 06a |
+| `RealityCheckGradedCell.tsx` | **RESHAPE** | Visible `heldGlyph` + forecast only; `Tooltip` titled by `cellComparison`; `tabIndex={0}`; focus outline (DES-11); fill unchanged | 06a |
+| `RealityCheckLegend.tsx` | **RESHAPE** | Two titled rows, *Forecast held* / *Forecast missed*, three swatches each in band order; no credit, no *Not checked* | 06a |
+| `RealityCheckVerdict.tsx` → **`RealityCheckSummary.tsx`** | **RESHAPE + rename** | Headline, badge and four level rows, in that order, nothing else (AC-6.8). The rename says what it now is; `git mv` keeps its history | 06b |
+| `RealityCheckHeadline.tsx` | **NEW** | Headline text + the explanation icon and `Popover` (DES-10) | 06b |
+| `RealityCheckWindowBadge.tsx` | **NEW** | `Chip` + describing `Tooltip`; tone map (DES-12, DES-13) | 06b |
+| `RealityCheckLevelRow.tsx` | **NEW** | Label, bar with tick (DES-14), the row text | 06b |
+| `realityCheckGrading.ts` | **EXTEND / TRIM** | + `windowBadgeOf`, `heldShare`, `GRADE_HELD: Record<ForecastGrade, boolean>` (the legend's two rows, exhaustive); − `usualGrade` and `isStrictMajority` | 06a (`GRADE_HELD`), 06b |
+| `realityCheckCopy.ts` | **EXTEND / TRIM** | Below | 06a, 06b |
+
+The crafter may merge the three NEW summary pieces into fewer files; the boundaries that matter stay: string-free
+rules, pure words, and no render body carrying nested JSX past S3776.
+
+**`realityCheckCopy.ts` — every export's fate** (the DISCUSS list, confirmed and completed from the code):
+
+| Fate | Items |
+|---|---|
+| **KEEP** | `listOf`, `samplingWindowsNamed`, `unevaluatedSentence` (badge tooltip, row 15), `UnrunChecks`, `checks`, `checksOn`, `sufficiencyReasonCopy`, `whyChecksCouldNotRun` (headline popover), `horizonLabel` (header, popover), `periodActual`, `windowRowLabel`, `UnevaluableRowFacts`, `dayCount`, `unevaluableRowCopy`, `MINUS`, `heldGlyph`, `percentShown` |
+| **RESHAPE** | `runsLeftOut` → *"{k} of the {T} scenarios could not run and are left out of every count."*; `GradedCellFacts` → `{ forecastValue, actualCompleted, miss, percentOfActual }` (no level, no `held` — the comparison says the direction); `gradeLegendCopy` → band labels per grade (*within 10%*, *10–25% off*, *more than 25% off*); `dayInWords` → `dayInDigits` (DES-15); `tableCaption` → `tableRegionName` (row 24) |
+| **NEW** | `realityCheckHeadline` (rows 3, 3b, 4), `headlineExplanation` (row 20 paragraphs), `FULL_MONTE` + credit lead (row 20), `badgeWords` (rows 6-12), `heldUpMeans` (row 14), `levelRowText` / `levelBarName` (rows 5, 5b), `cellComparison` (rows 16-19), `notCheckedCell` (19b), `periodHeader` (row 21), `legendTitles` (row 22), `triggerExplanation` (row 1), `LOADING` (row 2) |
+| **DELETE** (with their tests) | `regionOf`, `Region`, `VerdictFacts`, `noWindowHeldUp`, `regionSentence`, `regionNoun`, `determinationCopy`, `standingCopy`, `notTestedReasonCopy` (its two sentences are replaced by badge rows 11-12), `windowVerdict`, `runsChecked`, `denominatorStatement`, `heldAgainstExpected`, `usualGradeCopy`, `usually`, `levelReadingCopy`, `levelLine`, `findings`, `signedMiss`, `missInWords`, `heldWord`, `percentInWords`, `gradedCellName`, `notCheckedLegend`, `methodCredit` |
+
+Every composer is used only inside `pages/Teams/Detail/` (searched), so the deletions reach nowhere else.
+**DELIVER's done-check** (06b): a search for each DELETE name and for *"How often each confidence level held"*,
+*"should be about"*, *"Usually "*, *"The sampling window is a setting"* and *"Checking "* over `src` returns
+test-free nothing.
+
+**Backend**: `ForecastRealityCheckController.cs` **EXTEND** (logger, one line — DES-16); acceptance fixture
+**EXTEND** (Serilog capture). Nothing else. **E2E**: DES-20.
+
+**C4 — L1 and L2 unchanged.** The L3 of the dialog above changes inside the SPA only: *RealityCheckVerdict*
+becomes *RealityCheckSummary* with three children, and the legend loses the credit.
+
+```mermaid
+C4Component
+  title Component — reality check dialog after US-06 (frontend, delta)
+  Container_Boundary(spa, "React SPA") {
+    Component(backtest, "BacktestForecaster", "React", "Back-test inputs; hosts the trigger slot")
+    Component(container, "ForecastRealityCheck", "React", "Info icon, button, run lifecycle")
+    Component(dialog, "RealityCheckDialog", "MUI Dialog", "Loading, failed, answered")
+    Component(summary, "RealityCheckSummary", "React", "Headline, badge, level rows")
+    Component(headline, "RealityCheckHeadline", "MUI Popover", "Counts; explanation and credit link")
+    Component(badge, "RealityCheckWindowBadge", "MUI Chip + Tooltip", "Standing of the Team's window")
+    Component(row, "RealityCheckLevelRow", "LinearProgress + tick", "Held share against the level")
+    Component(table, "RealityCheckTable", "MUI Table", "Compact graded cells with tooltips")
+    Component(grading, "realityCheckGrading", "Pure TS", "Grades, held share, badge state")
+    Component(copy, "realityCheckCopy", "Pure TS", "Every sentence")
+  }
+  Rel(backtest, container, "Renders in its slot")
+  Rel(container, dialog, "Opens and feeds the run state to")
+  Rel(dialog, summary, "Shows first")
+  Rel(dialog, table, "Shows beneath the summary")
+  Rel(summary, headline, "Composes")
+  Rel(summary, badge, "Composes")
+  Rel(summary, row, "Renders one per level with")
+  Rel(badge, grading, "Reads its state from")
+  Rel(row, grading, "Reads held share and accurate count from")
+  Rel(headline, copy, "Takes its words from")
+  Rel(table, copy, "Names each cell with")
+```
+
+### 6094-DES-19 — No API or DTO change (AC-6.16)
+
+Every new string is composed in the browser from fields the envelope already carries:
+
+| Surface | Fields read |
+|---|---|
+| Headline + popover | `denominator.runsEvaluated`, `runsAttempted`, `scoresEvaluated`, `levelsPerRun`; `sampledHorizonDays`; `cells[].sufficiency` (via `whyChecksCouldNotRun`); `minimumActiveDays` |
+| Badge + tooltip | `soundWindow.determination`, `currentSettingStanding`, `currentSettingNotTestedReason`, `currentSettingDays`, `unevaluatedWindowDays` |
+| Level rows | `levelCoverage[].confidenceLevel`, `heldCount`, `reading`; `denominator.runsEvaluated`; accurate count from `levelCloseness` over `cells[].levelOutcomes` + `actualCompleted` |
+| Period header | `scoredPeriods[]` (shipped in slice 04) |
+| Cells | `levelOutcomes[].forecastValue`, `held`; `actualCompleted`; `readCheck` |
+| Region name | `teamName` |
+
+No field added, removed or renamed; `RealityCheckResultDto`, `forecastSchemas.ts` and `RealityCheckResult.ts`
+untouched; no Lighthouse-Clients bump; `TeamForecastRealityCheckRun` still once per answer shown (DES-6);
+nothing writes (E1 untouched — a logger is not a write path).
+
+### 6094-DES-20 — Walking skeleton (AC-6.15)
+
+| POM member (`TeamDetailPage.ts`) | Fate |
+|---|---|
+| `runRealityCheckButton`, `runRealityCheck()` | **KEEP** — the button stays inside the *Forecast Backtesting* card |
+| `realityCheckDialog`, `realityCheckTable`, `realityCheckWindowRows`, `closeRealityCheckWithEscape()` | **KEEP** |
+| `realityCheckDialogDenominator` | **DELETE** — the sentence it matches is gone |
+| `realityCheckLevelLine(level)` | **DELETE** — the level sentences are gone |
+| `realityCheckHeadline` | **NEW** — `getByText` with an anchored pattern over the three headline forms (*Backtested N scenario(s) · M forecasts*, *Backtested N of T scenarios · …*, *None of the T scenarios could be backtested*) |
+| `realityCheckLevelBar(level)` | **NEW** — `getByRole("img", { name: /^{level}th / })`, anchored, because name matching is substring by default (ci-learnings) |
+
+The step asserts the headline, four level bars and the table, then Escape. It must not press the headline icon
+first: with the popover open, the first Escape closes the popover, not the dialog (DES-10). Level icons are
+never located (MUI strips their test ids in production builds). Run locally before commit (memory rule).
+
+### Reuse Analysis — US-06 (HARD GATE)
+
+| # | Existing | Verdict | Contract shape / universe |
+|---|---|---|---|
+| 1 | `WidgetShell`'s `InfoOutlined` `IconButton` + `Popover` | **REUSE the pattern** (DES-10) | UI, no state beyond open |
+| 2 | `ProgressIndicator`'s `Tooltip` + `IconButton`; its `LinearProgress` styling | **REUSE the pattern** (DES-12, DES-14) | UI |
+| 3 | MUI `Tooltip` default `aria-label` behaviour | **REUSE** — the cell's accessible name comes free (DES-11) | UI |
+| 4 | MUI `Chip` palette colours, `getStateColor`'s idiom | **REUSE** (DES-12) | UI |
+| 5 | `parseLocalDate` | **REUSE** (DES-15) | Pure |
+| 6 | `getLocaleDateFormat` (two private copies) | **NOT REUSED** — returns a picker format, not a date (DES-15) | — |
+| 7 | `LevelColumnHeader` (private, `RealityCheckTable`) | **EXTRACT** as `RealityCheckLevelLabel` | Pure render |
+| 8 | `levelCloseness.withinTenPercent` | **REUSE** as the *accurate* count | Pure |
+| 9 | `readCheck` (grade, miss, percentage) | **REUSE unchanged** — the tooltip shows its percentage | Pure |
+| 10 | `appColors.forecastGrade`, `getContrastText` | **REUSE unchanged** (fill; focus outline colour) | Data / pure |
+| 11 | `whyChecksCouldNotRun`, `unevaluatedSentence`, `horizonLabel`, `periodActual`, `listOf` | **REUSE** in the popover, badge tooltip and header | Pure |
+| 12 | `CapturedLogMessages` + the Serilog factory swap | **REUSE** (DES-16) | Test sink |
+| 13 | `RecordingLogger<T>` | **HELD IN RESERVE** — only if the controller enters the Stryker.NET set | Test double |
+| 14 | `OptionalFeaturesController`'s logger idiom | **REUSE** (DES-16) | Append-only log, universe = one line |
+
+**CREATE NEW, each justified**: `RealityCheckHeadline`, `RealityCheckWindowBadge`, `RealityCheckLevelRow` (no
+summary, badge or held-share bar exists to extend; `ProgressIndicator` is a completion bar with a centred
+label, no tick and a mount animation); `windowBadgeOf`, `heldShare`, `GRADE_HELD` (no such reading exists).
+None is justified by complexity.
+
+### Technology, enforcement, quality
+
+**Nothing added to either stack**: MUI 9 `Popover`, `Tooltip`, `Chip`, `LinearProgress`, `CircularProgress`,
+`Link` (MIT, installed); `Microsoft.Extensions.Logging` + Serilog (installed).
+
+| # | Rule | Enforced by |
+|---|---|---|
+| E6 (extended) | `badgeWords`, the badge tone map, `GRADE_HELD` and the band labels are exhaustive `Record`s with no `default:` | TypeScript compiler |
+| E9 (unchanged) | `realityCheckGrading.ts` and `realityCheckCopy.ts` import no React and no MUI; the credit link is JSX in the headline component, its words and URL constants in the copy module | Unit tests call them without rendering |
+| E13 | The shown held share never contradicts the reading (DES-14) | Vitest, exhaustive over evaluated 1..200 × held 0..evaluated |
+| E14 | No text in the dialog, including every tooltip and the popover, names, orders or scores a window (I-a) | The shipped rankability scan, run over the rendered summary **and** each tooltip / popover text (they are not in the DOM until opened — feed the composers' outputs to the scan) |
+| E15 | Exactly one Information line per check, none for an unknown Team | NUnit acceptance scenario (DES-16) |
+
+| Attribute | Strategy |
+|---|---|
+| Usability / accessibility | Keyboard reach to every cell (2.1.1); dismissable, hoverable, persistent text tooltips (1.4.13, MUI); popover Escape order; visible names = accessible names for badge and trigger (2.5.3); focus outline ≥ 4.5 : 1 on every fill |
+| Maintainability | Rules, words and rendering stay split; ~25 dead composers deleted rather than left |
+| Performance | 64-80 `Tooltip` instances render lazily (no popper until opened); no request, no read added |
+| Observability | One Information line per check, at the default level, structured |
+| Security | Unchanged: `TeamRead`; the log line carries only a Team id the caller could read; external link opens with `noopener noreferrer` |
+
+### ADR check
+
+No new ADR. Each decision here is local to one dialog and cheap to reverse (a popover for a tooltip, a Tab
+order, a formatter option, one log line); none crosses a container boundary, adds a technology or changes a
+contract. **ADR-211 is not contradicted**: the badge state and the held share are more client readings of
+shipped facts — its decision applied again. Its *Context* mentions the "usually" clause, which US-06 retires;
+ADRs are not edited for that, and the retirement is recorded here. The highest ADR number stays 211.
+
+### Contradictions found in DISCUSS — US-06
+
+1. **AC-6.11 / 6094-D25 "opens on hover, keyboard focus and click; stays open while hovered"** vs DES-10's
+   click-opened popover. D25's own last sentence allows the popover; AC-6.11 was written for the tooltip. DISTILL
+   writes AC-6.11 as *opens on click / Enter / Space; Escape closes it first; the link is reachable by Tab*.
+2. **AC-6.11 "the credit … with this product's additions in the same place (AC-1.8)"** vs *Maintainer answer
+   1* (*"Inspired by Nick Brown's article The Full Monte"*, linked, and nothing else). The design follows the
+   maintainer: **this product's additions are now named nowhere**, so Epic AC-1.8 is relaxed in the same way
+   AC-1.5 was — but it is **not** in the S-1..S-24 list. Needs a line in *Superseded by US-06* (DISCUSS's to
+   add; not edited here).
+3. **AC-6.12 "Its tooltip shows the windows that held up as a set"** and **6094-D23 "the tooltip explains
+   under- and over-forecasting"** vs *Maintainer answers* 3 and 9. Followed: no windows named; the tick is
+   explained only by row 5b.
+4. **6094-D16's en-US example `9/21/2026`** vs DES-15's `09/21/2026` (padded, as the pickers show). The AC's
+   rule — numeric, locale order, no month name — holds; only the example differs.
+5. **Stale restatements** of D15 / D22's pre-answer form in `slices/slice-06-reads-at-a-glance.md` (06b IN
+   list: "Brown credited beside our additions", "tooltip with the set that held up") and in `wave-decisions.md`
+   (D15, D22 rows). Not edited here; DISTILL should read them through the *Maintainer answers*.
+
+### Handoff — US-06
+
+**To DEVOPS** (the next wave in sequence; DISCUSS expected a one-line confirmation): no platform change; no
+usage event (6094-D8 stands); decide whether `ForecastRealityCheckController.cs` joins the Stryker.NET mutate
+set (then DES-16's `RecordingLogger` unit test is owed) and add the new frontend files to the StrykerJS set.
+**No external integration — no contract tests recommended.**
+
+**To DISTILL**: 06a — trigger slot and icon (DES-12, DES-17), loading state, the log scenario and its
+positive-control trap (DES-16), `periodHeader` / `dayInDigits` with a pinned locale (DES-15), cell
+comparisons rows 16-19b and the name-equals-tooltip assertion (DES-11; open tooltips with `userEvent.tab()` —
+MUI opens on keyboard focus-visible, not on a bare `focus` event — and allow for the enter delay), legend rows,
+region name. 06b — headline forms, popover Escape order and link reachability (DES-10), badge precedence
+table (DES-13, all six states), bar name and clamp (DES-14, E13), the ≤ 50-words count, E14, the skeleton
+(DES-20). Contradictions 1-3 above are the ACs to reword before writing against them.
+
+**To DELIVER**: delete per DES-18 in the slice that replaces each piece (06a: cell, legend, caption, date and
+`teamName` pieces; 06b: the prose composers); `git mv` for the summary rename; count constructor parameters
+before adding the logger (S107); `pnpm build` and the backend build clean; run the Playwright step locally.
+
+**Artifacts**: this section; `wave-decisions.md` (*DESIGN amendment — Story #6094, US-06*). `brief.md` and
+the root `ARCHITECTURE.md` are not edited: no concept changes (no new container, port, contract or rule
+location).
+
 ---
 
 # Story #6094 — DEVOPS

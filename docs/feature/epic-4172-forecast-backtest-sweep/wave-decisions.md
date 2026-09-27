@@ -1346,3 +1346,38 @@ off a forecast was) · DIVERGE not re-run (the direction is the maintainer's rev
 
 The *Copy to confirm* table, and the seven questions under *Questions for the maintainer — US-06*.
 Reviewer not run in this pass (the orchestrator runs it). Committed; not pushed.
+
+---
+
+## DESIGN amendment — Story #6094, US-06 (2026-09-27)
+
+**Agent**: Morgan (`nw-solution-architect`) · **Mode**: Propose, maintainer AFK · **Full text**:
+`feature-delta.md`, *DESIGN / US-06 amendment — Story #6094* · Read through the DISCUSS *Maintainer answers*
+(no region anywhere, "fine" for both inside states, trimmed explanation, one linked credit line) · **No ADR**
+(all decisions local to one dialog; ADR-211 not contradicted) · Reviewer not run (the orchestrator runs it).
+
+### Key Decisions
+
+| # | Decision |
+|---|---|
+| 6094-DES-10 | Headline explanation: `InfoOutlined` `IconButton` + MUI `Popover` (the `WidgetShell` pattern), opened by click / Enter / Space; Escape closes the popover first, focus returns to the icon; not an interactive `Tooltip` (portal breaks Tab reach, `role="tooltip"` cannot hold a link) |
+| 6094-DES-11 | Every graded and "—" cell is one Tab stop with a text MUI `Tooltip`; MUI's default makes the tooltip text the `aria-label`; no roving focus / `role="grid"`; focus outline in `getContrastText(fill)` |
+| 6094-DES-12 | Trigger info icon and badge: `Tooltip` with `describeChild` (visible words stay the name); badge = filled small `Chip`, tones `success` / `warning` / `default` |
+| 6094-DES-13 | `windowBadgeOf(soundWindow)` → six states by fixed precedence (fixed dates, not a positive length, could not be checked, none held up, fine, did not hold up); words and tones exhaustive |
+| 6094-DES-14 | Level bar: `role="img"` box named by copy row 5b around an `aria-hidden` determinate `LinearProgress` (no animation) and a tick overhanging 4 px; `primary.main` on `action.disabledBackground`, tick `text.primary`; not level or grade colours; shown share clamped so it never reads 0 / 100 unless it is |
+| 6094-DES-15 | `dayInDigits`: `parseLocalDate` + 2-digit day / month, numeric year — the pickers' digits on the same tab; one `periodHeader` composer; centred from `sm` up |
+| 6094-DES-16 | Log in `ForecastRealityCheckController` (logger 4th ctor parameter), inside the found-Team branch, before the run: `"Reality check run for Team {TeamId} (filter override: {FilterOverride})"` with `on` / `off` / `none`; tested through `CapturedLogMessages` in the acceptance fixture |
+| 6094-DES-17 | Trigger placed through a `realityCheck` slot on `BacktestForecaster` (after inputs, before the result); dead `teamName` props removed |
+| 6094-DES-18 | Component map; `RealityCheckVerdict` → `RealityCheckSummary` + headline / badge / level-row pieces; 25 dead copy items (exported or private) and `usualGrade` deleted |
+| 6094-DES-19 | No API / DTO change, confirmed field by field |
+| 6094-DES-20 | POM: `realityCheckDialogDenominator`, `realityCheckLevelLine` deleted; `realityCheckHeadline`, `realityCheckLevelBar(level)` added; button locator unchanged |
+
+### Upstream Changes (for DISCUSS / DISTILL)
+
+- AC-6.11 "opens on hover and focus" → opens on click / Enter / Space (D25 allowed the popover).
+- AC-6.11's "credit with this product's additions (AC-1.8)" is overridden by maintainer answer 1: Epic
+  AC-1.8 is relaxed like AC-1.5, but is missing from *Superseded by US-06*.
+- AC-6.12 (windows in the badge tooltip) and D23 (tooltip explains under / over-forecasting) are overridden
+  by maintainer answers 3 and 9.
+- D16's en-US example reads `09/21/2026` under DES-15, not `9/21/2026`.
+- The slice-06 brief and this file's D15 / D22 rows above still show the pre-answer forms.
