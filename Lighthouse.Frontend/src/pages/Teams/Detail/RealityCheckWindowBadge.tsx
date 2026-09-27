@@ -46,7 +46,6 @@ const RealityCheckWindowBadge: React.FC<
 		>
 			<Chip
 				size="small"
-				tabIndex={0}
 				{...target}
 				color={TONE[state]}
 				label={words}

@@ -33,12 +33,7 @@ const WordedCell: React.FC<Readonly<WordedCellProps>> = ({
 
 	return (
 		<Tooltip title={words} {...tooltip}>
-			<TableCell
-				tabIndex={0}
-				{...target}
-				style={style}
-				sx={focusOutline(outlineColour)}
-			>
+			<TableCell {...target} style={style} sx={focusOutline(outlineColour)}>
 				{children}
 			</TableCell>
 		</Tooltip>
