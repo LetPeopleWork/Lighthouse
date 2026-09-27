@@ -262,11 +262,15 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 	it.skip(`@error pressing the info icon opens nothing and runs no check (${PENDING})`, async () => {
 		const group = renderTheForecastTabWithItsBacktestInputs();
 
-		await userEvent.click(
-			within(group).getByRole("button", { name: THE_QUESTION }),
-		);
+		const explanation = within(group).getByRole("button", {
+			name: THE_QUESTION,
+		});
+
+		await userEvent.click(explanation);
 
 		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(document.body.querySelector(".MuiPopover-root")).toBeNull();
+		expect(explanation).not.toHaveAttribute("aria-expanded", "true");
 		expect(runRealityCheck).not.toHaveBeenCalled();
 	});
 

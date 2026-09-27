@@ -122,6 +122,13 @@ const anAnswerStillOnItsWay = () => {
 
 const toLocaleDateStringAsShipped = Date.prototype.toLocaleDateString;
 
+/**
+ * The hour of every day the dialog formatted. A calendar day read in the reader's own time zone is local
+ * midnight; one read through UTC is two hours past it in Zurich, where the suite runs, yet still prints
+ * as the same day there, so the printed digits alone cannot tell the two apart.
+ */
+const hoursOfTheDaysFormatted: number[] = [];
+
 /** The reader's browser formats days in `locale`, whatever locale the call itself names. */
 const aReaderWhoseBrowserUses = (locale: string) => {
 	vi.spyOn(Date.prototype, "toLocaleDateString").mockImplementation(function (
@@ -129,6 +136,7 @@ const aReaderWhoseBrowserUses = (locale: string) => {
 		_locales?: Intl.LocalesArgument,
 		options?: Intl.DateTimeFormatOptions,
 	) {
+		hoursOfTheDaysFormatted.push(this.getHours());
 		return toLocaleDateStringAsShipped.call(this, locale, options);
 	});
 };
@@ -168,14 +176,17 @@ const everyGradedCell = (dialog: HTMLElement): HTMLElement[] =>
 		.flatMap(windowRowsOf)
 		.flatMap((row) => within(row).getAllByRole("cell"));
 
-const MORE_OR_FEWER =
-	/^Closed \d+ Work Items? (?:more|fewer) \(\d+\) than forecasted \(\d+\)\. Forecast off by [+−]\d+%$/;
+const MORE =
+	/^Closed \d+ Work Items? more \(\d+\) than forecasted \(\d+\)\. Forecast off by \+\d+%$/;
+const FEWER =
+	/^Closed \d+ Work Items? fewer \(\d+\) than forecasted \(\d+\)\. Forecast off by −\d+%$/;
 const EXACTLY = /^Closed exactly the forecasted \d+ Work Items?\.$/;
 const NOTHING_COMPLETED =
 	/^Closed \d+ Work Items? fewer \(0\) than forecasted \(\d+\)\. No percentage — nothing was completed\.$/;
 const NOTHING_AS_FORECAST = /^Closed no Work Items, exactly as forecasted\.$/;
 const CELL_NAMES = [
-	MORE_OR_FEWER,
+	MORE,
+	FEWER,
 	EXACTLY,
 	NOTHING_COMPLETED,
 	NOTHING_AS_FORECAST,
@@ -210,6 +221,7 @@ beforeEach(() => {
 	terms.set(TERMINOLOGY_KEYS.TEAM, "Team");
 	terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Work Items");
 	terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Work Item");
+	hoursOfTheDaysFormatted.length = 0;
 	aReaderWhoseBrowserUses("de-CH");
 });
 
@@ -304,6 +316,8 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 			expect(periodGroupsOf(theTableIn(dialog)).map(periodHeaderText)).toEqual(
 				headers,
 			);
+			expect(hoursOfTheDaysFormatted).not.toHaveLength(0);
+			expect(hoursOfTheDaysFormatted.filter((hour) => hour !== 0)).toEqual([]);
 		},
 	);
 
@@ -545,6 +559,9 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 		expect(
 			screen.getByRole("dialog", { name: /reality check/i }),
 		).toBeInTheDocument();
+		// A closing dialog lingers through its exit animation, so its presence proves nothing; focus
+		// staying on the cell does, because closing the dialog hands focus back to its trigger.
+		expect(theFirstGradedCell(dialog)).toHaveFocus();
 	});
 
 	// Already true and kept as it is: a check that could not run is one muted reason across the row, never

@@ -383,3 +383,23 @@ shares (5), and the exhaustive 1..200 property, which fails on its first call (1
 | Step | Class | Why it was not run |
 |---|---|---|
 | @walking_skeleton "Forecast reality check reads at a glance" (`test.step.skip`) | not run - pending | It needs the summary in a running Lighthouse; against today's build it could only fail on the missing headline, which the Vitest cases above already show. `tsc` over the E2E project is clean and `playwright test --list` loads the spec. DELIVER of 06b un-skips it, **runs it locally before commit**, and deletes the step above it with `realityCheckLevelLine` and `realityCheckDialogDenominator` in the same commit |
+
+## Re-run after the four-reviewer gate (2026-09-27)
+
+**The expected log line stays unquoted, and DESIGN now makes that true.** Serilog quotes a string value in
+the rendered message, so the template as first designed would have written `(filter override: "on")` while
+`Slice06AnOperatorSeesEveryRealityCheckScenarios.cs` and its specifications expect `(filter override: on)`.
+DESIGN's template now reads `{FilterOverride:l}` (6094-DES-16, P-US06-10, `wave-decisions.md`), after the
+`{EntityType:l}` precedent in `UpdateServiceBase`. The backend scenarios are unchanged, still pending, and
+still RED on the missing line.
+
+Every tightened frontend case was un-skipped in a copy and run once under `TZ=Europe/Zurich`, then the copy
+deleted. **6 cases: 6 RED, 0 BROKEN.**
+
+| Spec | Tightened by | Class | Fails on |
+|---|---|---|---|
+| `…compact` *in de-CH / en-US every period header reads …* (2) | the hour of every day formatted must be local midnight | MISSING_FUNCTIONALITY (words) | the old header, before the new assertion is reached. A day parsed through UTC is 02:00 in Zurich and still prints the same date, so only the hour tells the two apart |
+| `…compact` *every graded cell is a keyboard stop …* | the more and fewer names split into two anchored patterns, `+` only with more, `−` only with fewer | MISSING_FUNCTIONALITY (words) | no `tabindex` on the cell |
+| `…compact` *@error Escape dismisses a cell's tooltip …* | focus must still be on the cell afterwards; a closing dialog lingers through its exit animation, while closing it hands focus back to the trigger | MISSING_FUNCTIONALITY (words) | the keyboard never reaches the cell |
+| `…trigger` *@error pressing the info icon opens nothing …* | no `.MuiPopover-root` in the document and no `aria-expanded="true"` on the icon | MISSING_FUNCTIONALITY (element) | no button named "What does the reality check do?" |
+| `…summary` *@error the Team's own window not checked …* | the "held up" definition must be present, not only nothing else | MISSING_FUNCTIONALITY (words) | no badge reads "Your 30-day sampling window: could not be checked" |

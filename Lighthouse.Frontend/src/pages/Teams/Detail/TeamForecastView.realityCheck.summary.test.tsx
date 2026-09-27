@@ -561,6 +561,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		const tooltip = await screen.findByRole("tooltip");
 
 		expect(withoutSentences(tooltip, [HELD_UP_MEANS, notChecked])).toBe("");
+		expect(linesReading(tooltip, HELD_UP_MEANS)).not.toHaveLength(0);
 		expect(linesReading(tooltip, notChecked)).not.toHaveLength(0);
 	});
 
