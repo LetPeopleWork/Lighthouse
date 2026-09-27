@@ -227,3 +227,147 @@ carries its level outcomes).
 
 - **`src/models/Forecasts/RealityCheckResult.ts`** — holds only the list of grade names and the zod
   schemas that parse the server's reply. No logic to mutate.
+
+## Story 6094 — US-06 (at a glance)
+
+Run 2026-09-27 against `main` @ `dd89f6b8a`. Gate is 80 % kill rate. The code was frozen for this pass:
+the tests listed under *Closed by this pass* were added afterwards and each was proven by applying its
+mutant by hand, watching the new test go red and restoring the file. Stryker was not re-run over them,
+so the scores below are the run's own.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS 9.6.1, vitest runner) | **84.22 %** | 639 | 539 | 100 | 1 | 31 m 59 s |
+| Backend | N/A | — | — | — | — | — |
+
+Config: `stryker.6094.frontend.json` with `vitest.stryker.6094.config.ts` (both copied to
+`Lighthouse.Frontend/` to run).
+
+The backend was not mutated for this change. Its only backend edit is one Information log line in
+`ForecastRealityCheckController.cs`; the controller is covered by HTTP acceptance tests, which are kept
+out of Stryker.NET because a mutation run over them costs far more than it tells, and that log line is
+already pinned by the acceptance scenarios that read the log.
+
+Of the 100 frontend survivors, 11 were missing tests and are closed below. Counting them killed, the
+frontend would stand at 550 of 640 mutants, **85.94 %**. The other 89 and the one uncovered mutant are
+accepted, each with its reason.
+
+### Frontend
+
+| file | mutants | killed | survived | closed by this pass | left |
+| --- | --- | --- | --- | --- | --- |
+| realityCheckCopy.ts | 243 | 240 | 3 | 0 | 3 |
+| realityCheckGrading.ts | 128 | 127 | 1 | 1 | 0 |
+| RealityCheckPeriodGroup.tsx | 60 | 40 | 19 (+1 no coverage) | 0 | 19 (+1) |
+| ForecastRealityCheck.tsx | 43 | 36 | 7 | 0 | 7 |
+| RealityCheckLevelRow.tsx | 32 | 5 | 27 | 6 | 21 |
+| useFocusTooltip.ts | 27 | 23 | 4 | 4 | 0 |
+| RealityCheckDialog.tsx | 26 | 20 | 6 | 0 | 6 |
+| RealityCheckLegend.tsx | 25 | 11 | 14 | 0 | 14 |
+| RealityCheckHeadline.tsx | 17 | 11 | 6 | 0 | 6 |
+| RealityCheckWindowBadge.tsx | 13 | 10 | 3 | 0 | 3 |
+| RealityCheckGradedCell.tsx | 10 | 5 | 5 | 0 | 5 |
+| RealityCheckSummary.tsx | 6 | 6 | 0 | 0 | 0 |
+| RealityCheckTable.tsx | 6 | 3 | 3 | 0 | 3 |
+| RealityCheckLevelLabel.tsx | 4 | 2 | 2 | 0 | 2 |
+
+#### Closed by this pass
+
+- **Where a level's tick sits** — `RealityCheckLevelRow.tsx:36` (the tick's style → nothing, and its
+  object → `{}`), `:37` (`"absolute"` → `""`), `:38` (the `left` offset → an empty string) and `:81`
+  (the bar box's style → `{}`, and `"relative"` → `""`). The spec's title promised a tick at 85%, but it
+  only asserted the bar's value and its text alternative. Each of these leaves the tick somewhere other
+  than the rate the level should hold at, which is the one thing the tick shows. *each level's tick sits
+  along its own bar at the rate the level should hold at* reads the computed style of every bar and
+  asserts a relatively positioned bar holding an absolutely positioned tick at 50%, 70%, 85% and 95%.
+- **Only Escape closes a tooltip** — `useFocusTooltip.ts:20` (`event.key === "Escape"` → `true`). While
+  a tooltip is open the hook catches keys on the whole document ahead of the dialog; treating every key as
+  Escape closed the tooltip on any key and swallowed that key. *only Escape closes the badge's tooltip: a
+  reader pressing an arrow key to scroll keeps it open* focuses the badge, presses an arrow key and asserts
+  the badge is still described by its tooltip.
+- **The Escape listener leaves with the tooltip** — `useFocusTooltip.ts:26`, three mutants of the
+  cleanup: it does nothing, it names no event, or it names the wrong phase. Each leaves the listener
+  behind, still stopping Escape after the tooltip has gone, so the reader can no longer close the dialog
+  with the key. *once a cell's tooltip has closed, Escape closes the dialog again* hovers a cell, moves
+  away until the tooltip is gone, presses Escape and asserts the dialog closes.
+- **`realityCheckGrading.ts:55`, `[]` → `["Stryker was here"]`** — `gradedChecksAt` had no test of its
+  own, and its one caller only counts checks within 10%, which a filler entry never is. *keeps only the
+  checks that have a reading at that level, and nothing in place of the others* passes a check read at the
+  50th, one read only at the 95th, one that could not run and one more read at the 50th, and asserts
+  exactly the two 50th readings come back.
+
+#### Accepted survivors
+
+**Equivalent**
+
+- **`realityCheckCopy.ts:23`, `items.join("")` → `items.join("Stryker was here!")`** — that branch is
+  taken only for fewer than two items, and `join` puts its separator only between items, so it never
+  appears.
+- **`realityCheckCopy.ts:209` and `:216`, `miss > 0` → `miss >= 0`** — the sign and the word "more" or
+  "fewer" are only written for a miss. A miss of zero returns earlier with its own sentence, so neither
+  helper ever sees zero.
+- **`RealityCheckLevelRow.tsx:64`, the not-tested reading → `false`, and `"NotEvaluated"` → `""`** —
+  both drop the check on the server's reading and fall back to working the share out from the counts.
+  The server reads a level as not tested exactly when no check could run, and every level shares that
+  one count, so the counts give no share either: the row still says it was not tested and the bar stays
+  empty.
+- **`RealityCheckWindowBadge.tsx:42`, `notChecked === null` → `false`** — when every window could be
+  checked this draws an empty box inside the tooltip instead of nothing. It holds no text, so the tooltip
+  reads and describes the badge exactly as before.
+- **`ForecastRealityCheck.tsx:39`, `useRef(false)` → `useRef(true)`** — the flag is read only after a
+  run's answer comes back, and every way to start a run goes through opening the dialog, which sets it
+  first.
+- **`ForecastRealityCheck.tsx:46`, `[]` → `["Stryker was here"]`** — a constant dependency never
+  changes, so the cleanup still runs exactly once, on unmount.
+- **`ForecastRealityCheck.tsx:51`, `"answered"` → `""`** — the dialog checks a run's state only against
+  `running` and `failed`, and shows the answer in every other case.
+
+**Guards against a check the server never sends (`RealityCheckPeriodGroup.tsx`)**
+
+The server checks every sampling window against every horizon, so each row the table draws has its
+check, and a check either ran, carrying both its level outcomes and its actual, or could not run,
+carrying neither.
+
+- **`:51` and `:58`, `cell?.sufficiency` → `cell.sufficiency`**, and **`:80` and `:81`, `cell?.` →
+  `cell.`** — differ only when a row has no check.
+- **`:51`, `"Sufficient"` → `""`** (no coverage) — the fallback reason for a row with no check. Never
+  reached.
+- **`:82`, `||` → `&&`, and either side → `false`** — differ only when exactly one of the level outcomes
+  and the actual is missing.
+
+**Styling that jsdom cannot see**
+
+- **`RealityCheckLevelRow.tsx` (19)** — the bar's rounding, track and fill colours and its
+  switched-off transition (`:29`, `:32`, `:33` ×3); how far the tick overhangs the bar and its colour
+  (`:26`, `:39`, `:40`, `:42`); the row's stacking, spacing and alignment (`:71` ×3, `:72`, `:73` ×3);
+  the label column's width (`:75`); and the bar's width (`:81` ×2). Where the tick sits and how full the
+  bar is are asserted; these only change how they look.
+- **`RealityCheckLegend.tsx` (14)** — the legend's flex layout, gaps, swatch border, title weight and
+  width, and the list reset (`:14`, `:23`, `:33`–`:36`, `:41`, `:46`–`:51`). The legend's words, order
+  and swatch fills are asserted.
+- **`RealityCheckGradedCell.tsx:10`, `:11` (5)** — the focus outline drawn on a cell reached by
+  keyboard. jsdom does not match `:focus-visible`, so the outline has no computed value to read; that a
+  cell is a keyboard stop, and what it is named, are asserted.
+- **`RealityCheckHeadline.tsx:35`, `:52`, `:57` (6)** — the headline row's alignment, where the
+  explanation's popover is anchored, and its padding and width. jsdom does no layout; that the popover
+  opens on a press, takes focus, holds the explanation and the article, and closes on Escape is asserted.
+- **`RealityCheckDialog.tsx:76`, `:82`, `:92` (5)** — the title's padding, the close button's absolute
+  position and the status row's alignment.
+- **`RealityCheckDialog.tsx:64`, `"sm"` → `""`** — the breakpoint below which the dialog goes full
+  screen. jsdom has no viewport: the tests stub `matchMedia` with one answer for every query.
+- **`ForecastRealityCheck.tsx:100`–`:103` (4)** — the trigger row's flex alignment.
+- **`RealityCheckPeriodGroup.tsx:22`–`:27`, `:37`–`:40` (11)** — the sticky header cells (position,
+  background, overlay) and the period header's alignment on narrow and wide screens.
+- **`RealityCheckPeriodGroup.tsx:121`, `+ 1` → `- 1`** — the period header's `colSpan`. With four levels
+  it spans 3 columns instead of 5, which only changes where the header is drawn.
+- **`RealityCheckTable.tsx:31`, `:33` (3)** — the horizontal scroll and the table's minimum width. The
+  scroll region's name and keyboard focus are asserted.
+- **`RealityCheckWindowBadge.tsx:51` (2)** — the badge's alignment in its column.
+- **`RealityCheckLevelLabel.tsx:17` (2)** — the label row's alignment.
+
+### Not mutated
+
+- **`src/models/Forecasts/RealityCheckResult.ts`** — holds only the list of grade names, level readings
+  and the zod schemas that parse the server's reply. No logic to mutate.
+- **Backend** — see above; the one backend line is a log statement in a controller covered only by HTTP
+  acceptance tests.
