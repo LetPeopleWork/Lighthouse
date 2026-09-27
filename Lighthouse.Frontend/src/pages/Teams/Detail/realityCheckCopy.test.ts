@@ -10,7 +10,7 @@ import {
 	STANDINGS,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
-	dayInWords,
+	dayInDigits,
 	denominatorStatement,
 	determinationCopy,
 	findings,
@@ -28,6 +28,7 @@ import {
 	notTestedReasonCopy,
 	percentShown,
 	periodActual,
+	periodHeader,
 	regionOf,
 	signedMiss,
 	standingCopy,
@@ -699,20 +700,64 @@ describe("periodActual", () => {
 	);
 });
 
-describe("dayInWords", () => {
+describe("dayInDigits", () => {
 	it.each([
-		{ isoDay: "2026-09-26", expected: "Sep 26, 2026" },
-		{ isoDay: "2026-01-01", expected: "Jan 1, 2026" },
-		{ isoDay: "2026-12-31", expected: "Dec 31, 2026" },
+		{ isoDay: "2026-09-26", locale: "de-CH", expected: "26.09.2026" },
+		{ isoDay: "2026-01-01", locale: "de-CH", expected: "01.01.2026" },
+		{ isoDay: "2026-09-26", locale: "en-US", expected: "09/26/2026" },
+		{ isoDay: "2026-12-31", locale: "en-US", expected: "12/31/2026" },
 	])(
-		"reads $isoDay as the calendar day it names, $expected",
-		({ isoDay, expected }) => {
-			expect(dayInWords(isoDay, "en-US")).toBe(expected);
+		"reads $isoDay in $locale as the calendar day it names, $expected",
+		({ isoDay, locale, expected }) => {
+			expect(dayInDigits(isoDay, locale)).toBe(expected);
 		},
 	);
 
 	it("leaves a string that is not a day as it came", () => {
-		expect(dayInWords("not a day", "en-US")).toBe("not a day");
+		expect(dayInDigits("not a day", "en-US")).toBe("not a day");
+	});
+});
+
+describe("periodHeader", () => {
+	const aWeekEnding = (actualCompleted: number) => ({
+		horizonDays: 7,
+		scoredPeriodStart: "2026-09-16",
+		scoredPeriodEnd: "2026-09-22",
+		actualCompleted,
+	});
+
+	it.each([
+		{
+			locale: "de-CH",
+			actual: 6,
+			expected:
+				"Forecast Horizon: 1 week (16.09.2026 – 22.09.2026) – 6 Tickets completed",
+		},
+		{
+			locale: "en-US",
+			actual: 6,
+			expected:
+				"Forecast Horizon: 1 week (09/16/2026 – 09/22/2026) – 6 Tickets completed",
+		},
+		{
+			locale: "de-CH",
+			actual: 1,
+			expected:
+				"Forecast Horizon: 1 week (16.09.2026 – 22.09.2026) – 1 Ticket completed",
+		},
+	])(
+		"reads $actual completed in $locale as one whole line",
+		({ locale, actual, expected }) => {
+			expect(periodHeader(7, aWeekEnding(actual), workItemTerms, locale)).toBe(
+				expected,
+			);
+		},
+	);
+
+	it("heads a period with no scored period by its horizon alone", () => {
+		expect(periodHeader(56, undefined, workItemTerms, "de-CH")).toBe(
+			"Forecast Horizon: 8 weeks",
+		);
 	});
 });
 

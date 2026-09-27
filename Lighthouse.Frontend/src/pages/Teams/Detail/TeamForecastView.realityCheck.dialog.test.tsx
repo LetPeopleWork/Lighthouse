@@ -15,7 +15,6 @@ import {
 	linesReading,
 	periodGroup,
 	periodGroupsOf,
-	periodHeaderOf,
 	periodHeaderText,
 	pressRunRealityCheck,
 	type RealityCheckWireAnswer,
@@ -31,7 +30,6 @@ import {
 	windowRow,
 	windowRowsOf,
 } from "../../../tests/RealityCheckFixture";
-import { dayInWords } from "./realityCheckCopy";
 
 /**
  * The Forecast Reality Check once its answer opens in a dialog: the button stays in
@@ -41,9 +39,9 @@ import { dayInWords } from "./realityCheckCopy";
  *
  * What the specs need from the markup, and nothing more: the dialog is named for the reality check; the
  * table is a real table, one row group per period headed by a row-group header, one row per sampling window
- * headed by a row header that starts "N days"; the period's first and last day are `time` elements; a
- * graded cell's accessible name reads level, forecast, held or not, and the miss in words. The visible miss
- * carries a sign - "+2", "0", and the typographic minus "−6" (U+2212), never a hyphen.
+ * headed by a row header that starts "N days"; a graded cell's accessible name reads level, forecast, held
+ * or not, and the miss in words. The visible miss carries a sign - "+2", "0", and the typographic minus
+ * "−6" (U+2212), never a hyphen.
  */
 
 const { terms } = vi.hoisted(() => ({
@@ -362,31 +360,14 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		},
 	);
 
-	it(`@kpi-OUT-6094-how-far-each-forecast-landed prints each period's actual once, in its header, with the period's first and last day`, async () => {
-		const answer = oceanExplorerOverEightWeeks();
-		const dialog = await theDialogFor(answer);
+	it(`@kpi-OUT-6094-how-far-each-forecast-landed prints each period's actual once, in its header`, async () => {
+		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const eightWeeks = periodGroup(theTableIn(dialog), 56);
-		const period = answer.scoredPeriods[3];
 
 		expect(periodHeaderText(eightWeeks)).toMatch(
 			/(^|\D)42 Work Items completed\b/,
 		);
-		expect(
-			Array.from(periodHeaderOf(eightWeeks).querySelectorAll("time")).map(
-				(day) => day.getAttribute("datetime"),
-			),
-		).toEqual([period.scoredPeriodStart, period.scoredPeriodEnd]);
 		expect(linesMatching(eightWeeks, /Work Items completed/)).toHaveLength(1);
-	});
-
-	it(`@kpi-OUT-6094-how-far-each-forecast-landed heads each period with its length, its first to its last day, and what was completed`, async () => {
-		const answer = oceanExplorerOverEightWeeks();
-		const dialog = await theDialogFor(answer);
-		const period = answer.scoredPeriods[3];
-
-		expect(periodHeaderText(periodGroup(theTableIn(dialog), 56))).toBe(
-			`8 weeks, ${dayInWords(period.scoredPeriodStart)} to ${dayInWords(period.scoredPeriodEnd)}: 42 Work Items completed`,
-		);
 	});
 
 	it(`@kpi-OUT-6094-how-far-each-forecast-landed shows every forecast with its value, its miss in Work Items and whether it held - Ocean Explorer's 30-day row over 8 weeks`, async () => {

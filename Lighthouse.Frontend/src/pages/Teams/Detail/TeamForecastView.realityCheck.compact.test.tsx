@@ -288,7 +288,7 @@ describe("@us-06 @slice-06a @driving_port every run shows that it is working", (
 });
 
 describe("@us-06 @slice-06a each period is one line, its dates in the reader's own format", () => {
-	it.skip.each([
+	it.each([
 		{
 			locale: "de-CH",
 			headers: [
@@ -308,7 +308,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 			],
 		},
 	])(
-		`@kpi-OUT-6094-how-far-each-forecast-landed in $locale every period header reads its horizon, its first and last day in digits, and what was completed (${PENDING})`,
+		`@kpi-OUT-6094-how-far-each-forecast-landed in $locale every period header reads its horizon, its first and last day in digits, and what was completed`,
 		async ({ locale, headers }) => {
 			aReaderWhoseBrowserUses(locale);
 			const dialog = await theDialogFor(aRealityCheckAnswer());
@@ -321,7 +321,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 		},
 	);
 
-	it.skip(`@boundary a period in which the Team completed one Work Item says so in the singular (${PENDING})`, async () => {
+	it(`@boundary a period in which the Team completed one Work Item says so in the singular`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				checks: thePeriodChecked(7, {
@@ -339,7 +339,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 		);
 	});
 
-	it.skip(`@error a period the answer carries no scored period for is headed by its horizon alone (${PENDING})`, async () => {
+	it(`@error a period the answer carries no scored period for is headed by its horizon alone`, async () => {
 		const answer = aRealityCheckAnswer();
 		const dialog = await theDialogFor({
 			...answer,

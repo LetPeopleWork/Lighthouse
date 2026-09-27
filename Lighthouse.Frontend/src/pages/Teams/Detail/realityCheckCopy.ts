@@ -6,6 +6,7 @@ import {
 	type RealityCheckCell,
 	type RealityCheckDenominator,
 	type RealityCheckLevelCoverage,
+	type RealityCheckScoredPeriod,
 	type RealityCheckSoundWindow,
 	type Standing,
 	SUFFICIENCY_REASONS,
@@ -248,13 +249,30 @@ export const periodActual = (
 	`${actualCompleted} ${getTerm(actualCompleted === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS)} completed`;
 
 // A period's day is a calendar day, not an instant: read through UTC it would show as the day before
-// for anyone west of Greenwich.
-export const dayInWords = (isoDay: string, locale?: string): string =>
+// for anyone west of Greenwich. The digits are the reader's own, as the back-test date pickers show them.
+export const dayInDigits = (isoDay: string, locale?: string): string =>
 	parseLocalDate(isoDay)?.toLocaleDateString(locale, {
-		day: "numeric",
-		month: "short",
+		day: "2-digit",
+		month: "2-digit",
 		year: "numeric",
 	}) ?? isoDay;
+
+const horizonHeading = (horizonDays: number): string =>
+	`Forecast Horizon: ${horizonLabel(horizonDays)}`;
+
+export const periodHeader = (
+	horizonDays: number,
+	period: RealityCheckScoredPeriod | undefined,
+	getTerm: TermGetter,
+	locale?: string,
+): string => {
+	if (period === undefined) {
+		return horizonHeading(horizonDays);
+	}
+	const firstDay = dayInDigits(period.scoredPeriodStart, locale);
+	const lastDay = dayInDigits(period.scoredPeriodEnd, locale);
+	return `${horizonHeading(horizonDays)} (${firstDay} – ${lastDay}) – ${periodActual(period.actualCompleted, getTerm)}`;
+};
 
 export const windowRowLabel = (
 	windowDays: number,

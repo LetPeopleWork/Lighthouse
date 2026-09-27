@@ -4,14 +4,11 @@ import type React from "react";
 import type {
 	RealityCheckCell,
 	RealityCheckResult,
-	RealityCheckScoredPeriod,
 } from "../../../models/Forecasts/RealityCheckResult";
 import { useTerminology } from "../../../services/TerminologyContext";
 import RealityCheckGradedCell from "./RealityCheckGradedCell";
 import {
-	dayInWords,
-	horizonLabel,
-	periodActual,
+	periodHeader,
 	unevaluableRowCopy,
 	windowRowLabel,
 } from "./realityCheckCopy";
@@ -33,24 +30,12 @@ interface RealityCheckPeriodGroupProps {
 	horizonDays: number;
 }
 
-const PeriodDay: React.FC<Readonly<{ isoDay: string }>> = ({ isoDay }) => (
-	<time dateTime={isoDay}>{dayInWords(isoDay)}</time>
-);
-
-const PeriodFacts: React.FC<Readonly<{ period: RealityCheckScoredPeriod }>> = ({
-	period,
-}) => {
-	const { getTerm } = useTerminology();
-	return (
-		<>
-			{", "}
-			<PeriodDay isoDay={period.scoredPeriodStart} />
-			{" to "}
-			<PeriodDay isoDay={period.scoredPeriodEnd} />
-			{": "}
-			<span>{periodActual(period.actualCompleted, getTerm)}</span>
-		</>
-	);
+// Wide enough to hold the whole table, the header reads centred over it; on a narrow screen the table
+// scrolls sideways, so the header keeps to the left edge where the reader can still see it.
+const periodHeaderSx: SxProps<Theme> = {
+	...stickyHeaderCellSx,
+	position: { xs: "sticky", sm: "static" },
+	textAlign: { xs: "left", sm: "center" },
 };
 
 const UnevaluableCells: React.FC<
@@ -124,6 +109,7 @@ const RealityCheckPeriodGroup: React.FC<
 		(scored) => scored.horizonDays === horizonDays,
 	);
 	const { currentSettingDays, currentSettingWasTested } = result.soundWindow;
+	const { getTerm } = useTerminology();
 
 	return (
 		<TableBody>
@@ -132,10 +118,9 @@ const RealityCheckPeriodGroup: React.FC<
 					component="th"
 					scope="rowgroup"
 					colSpan={result.confidenceLevels.length + 1}
-					sx={stickyHeaderCellSx}
+					sx={periodHeaderSx}
 				>
-					{horizonLabel(horizonDays)}
-					{period && <PeriodFacts period={period} />}
+					{periodHeader(horizonDays, period, getTerm)}
 				</TableCell>
 			</TableRow>
 			{result.sampledWindowDays.map((windowDays) => (
