@@ -353,6 +353,27 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		expectTheLine(dialog, "94% (15 of 16) · 3 accurate");
 	});
 
+	it(`each level's tick sits along its own bar at the rate the level should hold at - 50%, 70%, 85% and 95%`, async () => {
+		const dialog = await theDialogFor(aRealityCheckAnswer(mariasEightyFifth()));
+
+		const placements = theLevelBars(dialog).map((bar) => {
+			const tick = Array.from(bar.children).find(
+				(child) => child.getAttribute("role") !== "progressbar",
+			);
+			if (tick === undefined) {
+				return "no tick";
+			}
+			const { position, left } = getComputedStyle(tick);
+			return `${getComputedStyle(bar).position} bar, ${position} tick at ${left}`;
+		});
+
+		expect(placements).toEqual(
+			[50, 70, 85, 95].map(
+				(level) => `relative bar, absolute tick at ${level}%`,
+			),
+		);
+	});
+
 	it(`one row per level in ascending order whatever order the levels arrive in, each labelled like its column and reading its held share, counts and accurate checks`, async () => {
 		const answer = aRealityCheckAnswer({
 			heldCounts: { 50: 12, 70: 14, 85: 15, 95: 16 },
