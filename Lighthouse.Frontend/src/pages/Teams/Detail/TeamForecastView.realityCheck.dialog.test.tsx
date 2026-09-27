@@ -453,6 +453,18 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(row).not.toHaveTextContent(/[✓✗]/);
 	});
 
+	it(`@error a check that could not run is set apart from the graded ones in muted italics`, async () => {
+		const dialog = await theDialogFor(coastalSurvey());
+		const [reason] = within(
+			windowRow(periodGroup(theTableIn(dialog), 14), 14),
+		).getAllByRole("cell");
+
+		expect(reason).toHaveStyle({
+			fontStyle: "italic",
+			color: "rgba(0, 0, 0, 0.6)",
+		});
+	});
+
 	it(`@error a check whose forecast could not be worked out gives its own reason, not the thin-history one`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({

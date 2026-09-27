@@ -63,7 +63,10 @@ const UnevaluableCells: React.FC<
 	const { getTerm } = useTerminology();
 	const reason = cell?.sufficiency.reason ?? "Sufficient";
 	return (
-		<TableCell colSpan={levelCount}>
+		<TableCell
+			colSpan={levelCount}
+			sx={{ color: "text.secondary", fontStyle: "italic" }}
+		>
 			{unevaluableRowCopy[reason]({
 				daysWithCompletedWork: cell?.sufficiency.daysWithCompletedWork ?? 0,
 				minimumActiveDays,
