@@ -350,7 +350,10 @@ export const OCEAN_EXPLORER: Team = {
  * Backtesting group, where the check lives. The test file stands in for the group's other forecasters,
  * so every control left in the group is the check's own.
  */
-export const renderTheForecastTab = (runRealityCheck: Mock): HTMLElement => {
+export const renderTheForecastTab = (
+	runRealityCheck: Mock,
+	teamService?: IApiServiceContext["teamService"],
+): HTMLElement => {
 	const forecastService = {
 		runManualForecast: vi.fn(),
 		runItemPrediction: vi.fn().mockResolvedValue({}),
@@ -373,6 +376,7 @@ export const renderTheForecastTab = (runRealityCheck: Mock): HTMLElement => {
 						forecastService as unknown as IApiServiceContext["forecastService"],
 					teamMetricsService:
 						teamMetricsService as unknown as IApiServiceContext["teamMetricsService"],
+					teamService,
 				})}
 			>
 				<TeamForecastView team={OCEAN_EXPLORER} />

@@ -1,7 +1,9 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { createMockTeamService } from "../../../tests/MockApiServiceProvider";
 import {
 	aRealityCheckAnswer,
 	expectALine,
@@ -209,6 +211,25 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 			),
 		).toBe(false);
 		expect(within(dialog).queryAllByRole("textbox")).toHaveLength(0);
+	});
+
+	it(`a Team with a forecast filter runs the check with the backtest's filter choice, which is only known once the Team's settings have come in`, async () => {
+		const teamService = createMockTeamService();
+		const settings = Promise.resolve({
+			forecastFilterRuleSetJson: JSON.stringify({ conditions: [{}] }),
+		} as ITeamSettings);
+		vi.mocked(teamService.getTeamSettings).mockReturnValue(settings);
+		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
+		const group = renderTheForecastTab(runRealityCheck, teamService);
+		await act(async () => {
+			await settings;
+		});
+
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+		await waitFor(() => expectALine(dialog, /16 forecast runs were checked/i));
+
+		expect(runRealityCheck).toHaveBeenCalledWith(42, true);
 	});
 
 	it(`opens on one line per confidence level - held against should-have-held - then the window sentence, the two findings and the denominator, in that order and above the table`, async () => {

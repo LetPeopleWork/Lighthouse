@@ -25,15 +25,43 @@ import {
  * numbered mirror would compare false against everything the server sends.
  */
 
-const { reportUsage } = vi.hoisted(() => ({ reportUsage: vi.fn() }));
+// The real reporter is a new function whenever this browser's answer changes, and that answer usually
+// lands after the tab has mounted, so the stand-in can be swapped and re-renders whoever holds it.
+const { reportUsage, reporterInUse } = vi.hoisted(() => {
+	const reportUsage = vi.fn();
+	let current: (use: unknown) => void = reportUsage;
+	const listeners = new Set<() => void>();
+	return {
+		reportUsage,
+		reporterInUse: {
+			current: () => current,
+			swapTo: (reporter: (use: unknown) => void) => {
+				current = reporter;
+				for (const listener of listeners) {
+					listener();
+				}
+			},
+			subscribe: (listener: () => void) => {
+				listeners.add(listener);
+				return () => {
+					listeners.delete(listener);
+				};
+			},
+		},
+	};
+});
 vi.mock(
 	"../../../services/UsageData/usageDataReporter",
-	async (importOriginal) => ({
-		...(await importOriginal<
-			typeof import("../../../services/UsageData/usageDataReporter")
-		>()),
-		useUsageDataReporter: () => reportUsage,
-	}),
+	async (importOriginal) => {
+		const { useSyncExternalStore } = await import("react");
+		return {
+			...(await importOriginal<
+				typeof import("../../../services/UsageData/usageDataReporter")
+			>()),
+			useUsageDataReporter: () =>
+				useSyncExternalStore(reporterInUse.subscribe, reporterInUse.current),
+		};
+	},
 );
 
 vi.mock("../../../services/TerminologyContext", () => ({
@@ -94,6 +122,7 @@ const runRealityCheck = vi.fn();
 beforeEach(() => {
 	vi.clearAllMocks();
 	setMatchMedia(false);
+	reporterInUse.swapTo(reportUsage);
 });
 
 describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a reality check", () => {
@@ -164,6 +193,21 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 		);
 
 		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
+	});
+
+	it(`@error reports through the browser's latest answer, not the one it had when the tab opened`, async () => {
+		const beforeTheBrowserAnswered = vi.fn();
+		reporterInUse.swapTo(beforeTheBrowserAnswered);
+		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
+		const group = renderTheForecastTab(runRealityCheck);
+
+		act(() => reporterInUse.swapTo(reportUsage));
+		await pressRunRealityCheck(group);
+		const dialog = await theRealityCheckDialog();
+		await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
+
+		expect(reportUsage).toHaveBeenCalledWith(aRealityCheckWasRun);
+		expect(beforeTheBrowserAnswered).not.toHaveBeenCalled();
 	});
 
 	it(`@error reports nothing for a request that failed`, async () => {
