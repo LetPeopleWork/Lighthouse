@@ -210,6 +210,7 @@ get re-applied.
 - **S6754** — a `useState` call must destructure into `[thing, setThing]`, the setter named for the state. A hook that exports a *wrapped* setter is where this bites: naming the raw pair `[background, setBackgroundState]` to leave `setBackground` free for the public callback is exactly what the rule rejects. Keep the conventional pair and give the wrapper its own verb (`chooseBackground`), which reads better anyway — a wrapper that also persists is not a setter. MINOR severity and invisible to `pnpm build`, `pnpm test` and Biome; only the Sonar `new_violations=0` gate fails, and one MINOR issue is enough to fail it. (2026-09-17, epic-4127 slice 03, run `35216342964`.)
 - Prefer `globalThis` over `window` in component code (S7764).
 - Pass a single-arg pure function directly — `.map(Fn)`, not `.map((x) => Fn(x))` (S7770).
+- A presence-check regex must not open with an unanchored `\d+` ahead of optional parts or an alternation — start at the first literal word, or anchor with `^` (S8786; 2026-09-27, run `36302245472`).
 - Zod: use `.nullable()` (not `.optional()`) for backend `T?` fields that serialise to JSON `null`; `z.coerce.date()` turns `null` into epoch 1970 — guard nullable date fields.
 
 **EF migrations:**
@@ -1206,6 +1207,13 @@ get re-applied.
 - **Fix**: `TimelineControls.tsx:53,58` — wrapped the inline annotation: `}: Readonly<{ … }>)`. No behaviour change, no test change.
 - **Rule going forward**: Every function that returns JSX must have readonly props, private one-file helpers included. `React.FC<Props>` satisfies this on its own; any other shape does not — annotate destructured props as `Readonly<XProps>` (the `DataGridBase` / `FormSelectField` convention) or, for an inline type, `Readonly<{ … }>`. Never rely on a green `pnpm build` to catch it.
 
+
+### 2026-09-27 — typescript:S8786: a test regex that opens with an unanchored `\d+` before an alternation
+
+- **Symptom**: Sonar gate `new_violations = 1` on `LetPeopleWork_Lighthouse_Frontend` for commit `5c6eb9e99` (run 36302245472); every other job green. `typescript:S8786` MAJOR on `src/tests/RealityCheckFixture.tsx:453` — "Simplify this regular expression to reduce its runtime, as it has super-linear performance due to backtracking." The regex was `/\d+ forecast runs? (were|was) checked/i`. Tests, build and Biome were all clean locally.
+- **Root cause**: An unanchored pattern is tried at every start position, and a leading `\d+` re-scans each run of digits once per position before the rest of the pattern (here an optional `s?` and a capturing alternation) fails — Sonar scores that as super-linear. Plenty of simpler `\d+` literals in the suite (`/\d+th/`, `/\d+%/`) pass, so this is not greppable without blocking good code.
+- **Fix**: `RealityCheckFixture.tsx:453` → `/forecast runs? (?:were|was) checked/i`. The count carried no meaning in a "has the answer arrived" wait, so dropping it lost nothing.
+- **Rule going forward**: In a regex that only proves a line is present, don't open with `\d+` (or any unanchored quantified class) followed by optional parts or an alternation — start at the first literal word, or anchor with `^` when the number must be pinned. Use `(?:…)` rather than a capturing group when nothing reads the capture.
 ## EF migrations
 
 ### 2026-08-21 — `Create-Migration.ps1` needs a full solution *build* first, and says neither so

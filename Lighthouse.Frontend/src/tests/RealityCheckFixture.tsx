@@ -450,7 +450,7 @@ export const theDialogWithTheAnswer = async (
 	await pressRunRealityCheck(group);
 	const dialog = await theRealityCheckDialog();
 	await waitFor(() =>
-		expectALine(dialog, /\d+ forecast runs? (were|was) checked/i),
+		expectALine(dialog, /forecast runs? (?:were|was) checked/i),
 	);
 	return dialog;
 };
