@@ -353,10 +353,14 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		expectTheLine(dialog, "94% (15 of 16) · 3 accurate");
 	});
 
-	it(`one row per level in ascending order, each labelled like its column and reading its held share, counts and accurate checks`, async () => {
-		const dialog = await theDialogFor(
-			aRealityCheckAnswer({ heldCounts: { 50: 12, 70: 14, 85: 15, 95: 16 } }),
-		);
+	it(`one row per level in ascending order whatever order the levels arrive in, each labelled like its column and reading its held share, counts and accurate checks`, async () => {
+		const answer = aRealityCheckAnswer({
+			heldCounts: { 50: 12, 70: 14, 85: 15, 95: 16 },
+		});
+		const dialog = await theDialogFor({
+			...answer,
+			levelCoverage: [...answer.levelCoverage].reverse(),
+		});
 
 		expect(
 			theLevelBars(dialog).map((bar) => bar.getAttribute("aria-label")),
