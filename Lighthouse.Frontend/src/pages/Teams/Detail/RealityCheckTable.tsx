@@ -7,14 +7,12 @@ import {
 	TableRow,
 } from "@mui/material";
 import type React from "react";
-import { useId } from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
-import { useTerminology } from "../../../services/TerminologyContext";
 import RealityCheckPeriodGroup, {
 	stickyHeaderCellSx,
 } from "./RealityCheckPeriodGroup";
-import { tableCaption } from "./realityCheckCopy";
+import { tableRegionName } from "./realityCheckCopy";
 
 interface RealityCheckTableProps {
 	result: RealityCheckResult;
@@ -42,21 +40,15 @@ const LevelColumnHeader: React.FC<Readonly<{ confidenceLevel: number }>> = ({
 const RealityCheckTable: React.FC<Readonly<RealityCheckTableProps>> = ({
 	result,
 }) => {
-	const { getTerm } = useTerminology();
-	const captionId = useId();
-
 	// A region that scrolls must take focus, or a keyboard alone could never scroll it.
 	return (
 		<TableContainer
 			component="section"
-			aria-labelledby={captionId}
+			aria-label={tableRegionName(result.teamName)}
 			tabIndex={0}
 			sx={{ overflowX: "auto" }}
 		>
-			<Table size="small" sx={{ captionSide: "top", minWidth: 640 }}>
-				<caption id={captionId}>
-					{tableCaption(result.teamName, getTerm)}
-				</caption>
+			<Table size="small" sx={{ minWidth: 640 }}>
 				<TableHead>
 					<TableRow>
 						<TableCell sx={stickyHeaderCellSx}>Sampling window</TableCell>

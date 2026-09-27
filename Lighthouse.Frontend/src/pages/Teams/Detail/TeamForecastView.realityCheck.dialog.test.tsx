@@ -523,16 +523,6 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 });
 
 describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
-	it(`is a real table: a caption naming the Team, a header for each period and one for each window`, async () => {
-		const dialog = await theDialogFor(aRealityCheckAnswer());
-		const table = theTableIn(dialog);
-
-		expect(table.querySelector("caption")).not.toBeNull();
-		expect(table).toHaveAccessibleName(/Ocean Explorer/);
-		expect(table.querySelectorAll('th[scope="rowgroup"]')).toHaveLength(4);
-		expect(table.querySelectorAll('th[scope="row"]')).toHaveLength(16);
-	});
-
 	it(`@kpi-OUT-6094-no-window-ranked says nothing that tallies, orders or picks out a sampling window, and offers no way to sort the table`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
@@ -726,16 +716,6 @@ describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", 
 		await waitFor(() => expectALine(dialog, /forecast runs were checked/i));
 
 		expect(document.activeElement).toBe(focusedWhileRunning);
-	});
-
-	it(`the table's scrolling region takes keyboard focus and is named by the table's caption`, async () => {
-		const dialog = await theDialogFor(aRealityCheckAnswer());
-
-		const region = within(dialog).getByRole("region", {
-			name: /^Every forecast checked for Ocean Explorer\b/,
-		});
-		expect(region).toHaveAttribute("tabindex", "0");
-		expect(region).toContainElement(theTableIn(dialog));
 	});
 
 	it(`on a narrow screen the dialog takes the whole screen and the table drops nothing`, async () => {

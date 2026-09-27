@@ -282,8 +282,8 @@ export const windowRowLabel = (
 ): string =>
 	isYourSetting ? `${windowDays} days, your setting` : `${windowDays} days`;
 
-export const tableCaption = (teamName: string, getTerm: TermGetter): string =>
-	`Every forecast checked for ${teamName}, by period and sampling window, beside what the ${getTerm(TERMINOLOGY_KEYS.TEAM)} delivered.`;
+export const tableRegionName = (teamName: string): string =>
+	`Forecasts checked for ${teamName}, by forecast horizon and sampling window`;
 
 export interface UnevaluableRowFacts {
 	daysWithCompletedWork: number;

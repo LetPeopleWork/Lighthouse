@@ -638,7 +638,7 @@ describe("@us-06 @slice-06a the legend, the table's name and the Backtesting gro
 		expect(linesReading(dialog, "Not checked")).toHaveLength(0);
 	});
 
-	it.skip(`no caption sits above the table; its scrolling region is named for the Team, takes keyboard focus, and the table keeps its period, window and level headers (${PENDING})`, async () => {
+	it(`no caption sits above the table; its scrolling region is named for the Team, takes keyboard focus, and the table keeps its period, window and level headers`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const table = theTableIn(dialog);
 		const region = within(dialog).getByRole("region", {
@@ -675,7 +675,7 @@ describe("@us-06 @slice-06a the legend, the table's name and the Backtesting gro
 });
 
 describe("@us-06 @slice-06a Terminology", () => {
-	it.skip(`speaks the instance's own words in the period headers and the cells, and names the region by the Team's own name (${PENDING})`, async () => {
+	it(`speaks the instance's own words in the period headers and the cells, and names the region by the Team's own name`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Ticket");

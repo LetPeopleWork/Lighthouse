@@ -32,7 +32,7 @@ import {
 	regionOf,
 	standingCopy,
 	sufficiencyReasonCopy,
-	tableCaption,
+	tableRegionName,
 	triggerExplanation,
 	type UnrunChecks,
 	unevaluableRowCopy,
@@ -772,10 +772,10 @@ describe("windowRowLabel", () => {
 	);
 });
 
-describe("tableCaption", () => {
-	it("names the Team and what the table shows, in the instance's word for Team", () => {
-		expect(tableCaption("Ocean Explorer", getTerm)).toBe(
-			"Every forecast checked for Ocean Explorer, by period and sampling window, beside what the Squad delivered.",
+describe("tableRegionName", () => {
+	it("names the table's scrolling region by the Team's own name and what the table shows", () => {
+		expect(tableRegionName("Ocean Explorer")).toBe(
+			"Forecasts checked for Ocean Explorer, by forecast horizon and sampling window",
 		);
 	});
 });
