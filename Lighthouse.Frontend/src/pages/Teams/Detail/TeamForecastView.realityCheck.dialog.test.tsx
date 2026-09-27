@@ -6,13 +6,10 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { createMockTeamService } from "../../../tests/MockApiServiceProvider";
 import {
 	aRealityCheckAnswer,
-	expectALine,
 	expectTheLine,
 	HORIZON_DAYS,
-	LEVEL_COLUMNS,
 	levelCell,
 	linesMatching,
-	linesReading,
 	periodGroup,
 	periodGroupsOf,
 	periodHeaderText,
@@ -33,9 +30,9 @@ import {
 
 /**
  * The Forecast Reality Check once its answer opens in a dialog: the button stays in
- * the Forecast Backtesting group, the dialog opens at once, and fills in with the answer in words - one
- * line per confidence level first - and beneath them a table of every check, grouped by period, each
- * period's actual printed once and each forecast beside it with its miss in Work Items and whether it held.
+ * the Forecast Backtesting group, the dialog opens at once and fills in with the answer - a summary first,
+ * then a table of every check, grouped by period, each period's actual printed once in its header and each
+ * forecast under its own level's column.
  *
  * What the specs need from the markup, and nothing more: the dialog is named for the reality check; the
  * table is a real table, one row group per period headed by a row-group header, one row per sampling window
@@ -150,29 +147,6 @@ const coastalSurvey = () =>
 		unevaluable: fourChecksOfTheWindow(14, "TooFewActiveDays", 3),
 	});
 
-const nothingCouldBeChecked = () =>
-	aRealityCheckAnswer({
-		soundWindowDays: [],
-		determination: "NotEnoughEvidence",
-		standing: "NotDetermined",
-		unevaluatedWindowDays: [...STANDARD_WINDOW_DAYS],
-		readings: {
-			50: "NotEvaluated",
-			70: "NotEvaluated",
-			85: "NotEvaluated",
-			95: "NotEvaluated",
-		},
-		unevaluable: STANDARD_WINDOW_DAYS.flatMap((window) =>
-			fourChecksOfTheWindow(window, "TooFewActiveDays", 1),
-		),
-		periodActuals: { 7: 1, 14: 1, 28: 1, 56: 2 },
-	});
-
-const follows = (earlier: Element, later: Element): boolean =>
-	(earlier.compareDocumentPosition(later) &
-		Node.DOCUMENT_POSITION_FOLLOWING) !==
-	0;
-
 const theButtonNamed = (container: HTMLElement, name: RegExp) =>
 	within(container).getByRole("button", { name });
 
@@ -229,109 +203,6 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 		);
 
 		expect(runRealityCheck).toHaveBeenCalledWith(42, true);
-	});
-
-	it(`opens on one line per confidence level - held against should-have-held - then the window sentence, the two findings and the denominator, in that order and above the table`, async () => {
-		const dialog = await theDialogFor(
-			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
-		);
-
-		expectTheLine(
-			dialog,
-			"50th: held 8 of 16 (should be about 8), within 10% in 0. Usually high by more than a quarter.",
-		);
-		expectTheLine(
-			dialog,
-			"70th: held 11 of 16 (should be about 11), within 10% in 16. Usually high by up to 10%.",
-		);
-		expectTheLine(
-			dialog,
-			"85th: held 14 of 16 (should be about 14), within 10% in 12. Usually within 10%.",
-		);
-		expectTheLine(
-			dialog,
-			"95th: held 15 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
-		);
-
-		const inReadingOrder = [
-			linesReading(
-				dialog,
-				"50th: held 8 of 16 (should be about 8), within 10% in 0. Usually high by more than a quarter.",
-			)[0],
-			linesReading(
-				dialog,
-				"95th: held 15 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
-			)[0],
-			linesMatching(dialog, /between 14 and 90 days/i)[0],
-			linesMatching(dialog, /sampling window is a setting on this Team/i)[0],
-			linesMatching(dialog, /confidence level is not a setting/i)[0],
-			linesMatching(dialog, /16 forecast runs were checked/i)[0],
-			theTableIn(dialog),
-		];
-		for (const [index, line] of inReadingOrder.entries()) {
-			expect(line, `line ${index} is missing`).toBeDefined();
-		}
-		for (let index = 1; index < inReadingOrder.length; index++) {
-			expect(
-				follows(inReadingOrder[index - 1], inReadingOrder[index]),
-				`line ${index} comes after line ${index - 1}`,
-			).toBe(true);
-		}
-		expect(linesMatching(dialog, /\bbeaten\b|about right/i)).toHaveLength(0);
-	});
-
-	it(`@error a level that never held reads as over-forecasting and one that always held when misses were expected reads as under-forecasting`, async () => {
-		const dialog = await theDialogFor(
-			aRealityCheckAnswer({
-				heldCounts: { 50: 0, 70: 9, 85: 16, 95: 16 },
-				readings: { 50: "NeverHeld", 85: "AlwaysHeld" },
-			}),
-		);
-
-		expectTheLine(
-			dialog,
-			"50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting. Usually high by more than a quarter.",
-		);
-		expectTheLine(
-			dialog,
-			"85th: held 16 of 16 (should be about 14), within 10% in 12 — it held every time, which is under-forecasting. Usually within 10%.",
-		);
-		expectTheLine(
-			dialog,
-			"95th: held 16 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
-		);
-	});
-
-	it(`@error a Team whose history supports no check is told in words that no level was tested, and the table still stands`, async () => {
-		const dialog = await theDialogFor(nothingCouldBeChecked());
-
-		for (const level of LEVEL_COLUMNS) {
-			expectTheLine(
-				dialog,
-				`${level}th: no check could be run, so this level was not tested.`,
-			);
-		}
-		expectALine(
-			dialog,
-			/(16|sixteen) of the (16|sixteen) checks could not run/i,
-		);
-		expect(periodGroupsOf(theTableIn(dialog))).toHaveLength(4);
-	});
-
-	it(`keeps nothing behind a toggle, a tooltip or a disclosure`, async () => {
-		const dialog = await theDialogFor(aRealityCheckAnswer());
-
-		const denominator = linesMatching(dialog, /16 forecast runs were checked/i);
-		expect(denominator[0]).toBeVisible();
-		expect(denominator[0].closest('[role="tooltip"]')).toBeNull();
-		expect(
-			within(dialog)
-				.queryAllByRole("button")
-				.filter((button) => button.hasAttribute("aria-expanded")),
-		).toHaveLength(0);
-		expect(
-			within(dialog).queryByRole("button", { name: /evidence/i }),
-		).toBeNull();
 	});
 });
 
@@ -540,23 +411,6 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 		expect(linesMatching(dialog, /^\d+th: .*\bdays?\b/)).toHaveLength(0);
 		expect(table.querySelectorAll("[aria-sort]")).toHaveLength(0);
 		expect(within(table).queryAllByRole("button")).toHaveLength(0);
-	});
-
-	it(`speaks the instance's own words for Team and Work Item, and no tracker's`, async () => {
-		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
-		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");
-		terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Ticket");
-
-		const dialog = await theDialogFor(coastalSurvey());
-
-		expect(periodHeaderText(periodGroup(theTableIn(dialog), 56))).toMatch(
-			/Tickets completed/,
-		);
-		expectALine(dialog, /setting on this Squad/);
-		expect(linesMatching(dialog, /work items?/i)).toHaveLength(0);
-		expect(
-			linesMatching(dialog, /\b(throughput|Epic|Initiative|Story)\b/i),
-		).toHaveLength(0);
 	});
 });
 

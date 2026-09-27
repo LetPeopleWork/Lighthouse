@@ -32,8 +32,6 @@ import {
  * held share.
  */
 
-const PENDING = "06b: the summary is not built yet";
-
 const EXPLANATION_ICON = "About these numbers";
 
 const HELD_UP_MEANS =
@@ -275,7 +273,7 @@ beforeEach(() => {
 });
 
 describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on paragraphs", () => {
-	it.skip(`@kpi-OUT-6094-words-above-the-table above the table sit only the headline, the window badge and four level rows - no more than 50 words (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-words-above-the-table above the table sit only the headline, the window badge and four level rows - no more than 50 words`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 12, 70: 14, 85: 15, 95: 16 } }),
 		);
@@ -290,7 +288,7 @@ describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on 
 		).toBeLessThanOrEqual(50);
 	});
 
-	it.skip(`none of the sentences the summary replaces is said anywhere in the dialog (${PENDING})`, async () => {
+	it(`none of the sentences the summary replaces is said anywhere in the dialog`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 
 		for (const retired of RETIRED_SENTENCES) {
@@ -381,7 +379,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		}
 	});
 
-	it.skip(`@error a level that never held and one that always held get no words beyond their bar and numbers (${PENDING})`, async () => {
+	it(`@error a level that never held and one that always held get no words beyond their bar and numbers`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				heldCounts: { 50: 0, 70: 9, 85: 12, 95: 16 },
@@ -575,7 +573,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		expect(readingOf(tooltip)).toBe(HELD_UP_MEANS);
 	});
 
-	it.skip(`@kpi-OUT-6094-no-window-ranked nothing in the summary, the badge's tooltip or the explanation names, orders or scores a window - Deep Current, whose 14 days did not hold up (${PENDING})`, async () => {
+	it(`@kpi-OUT-6094-no-window-ranked nothing in the summary, the badge's tooltip or the explanation names, orders or scores a window - Deep Current, whose 14 days did not hold up`, async () => {
 		const dialog = await theDialogFor(deepCurrent());
 		const badge = theBadgeReading(
 			dialog,

@@ -16,8 +16,8 @@ import type React from "react";
 import { useId } from "react";
 import type { RealityCheckResult } from "../../../models/Forecasts/RealityCheckResult";
 import RealityCheckLegend from "./RealityCheckLegend";
+import RealityCheckSummary from "./RealityCheckSummary";
 import RealityCheckTable from "./RealityCheckTable";
-import RealityCheckVerdict from "./RealityCheckVerdict";
 import { LOADING } from "./realityCheckCopy";
 
 export type RealityCheckRun =
@@ -57,7 +57,7 @@ const RealityCheckRunContent: React.FC<
 	}
 	return (
 		<Stack spacing={3}>
-			<RealityCheckVerdict result={run.result} />
+			<RealityCheckSummary result={run.result} />
 			<RealityCheckTable result={run.result} />
 			<RealityCheckLegend />
 		</Stack>

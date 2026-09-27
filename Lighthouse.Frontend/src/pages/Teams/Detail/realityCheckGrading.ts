@@ -23,8 +23,6 @@ export interface CheckReading {
 export interface LevelCloseness {
 	gradedChecks: number;
 	withinTenPercent: number;
-	/** The grade more than half of the level's graded checks share, if one does. */
-	usualGrade: ForecastGrade | null;
 }
 
 // A check lists its levels in its own order, so a level is found by its percentile, never by position.
@@ -132,32 +130,14 @@ const WITHIN_TEN_PERCENT: ReadonlySet<ForecastGrade> = new Set<ForecastGrade>([
 	"NotHeldWithin10",
 ]);
 
-// A usual grade needs a strict majority, so a level split evenly between two grades has none.
-const isStrictMajority = (count: number, total: number): boolean =>
-	2 * count > total;
-
 export const levelCloseness = (
 	checks: readonly GradedCheck[],
-): LevelCloseness => {
-	const countOfGrade = new Map<ForecastGrade, number>();
-	for (const check of checks) {
-		const { grade } = readCheck(check);
-		countOfGrade.set(grade, (countOfGrade.get(grade) ?? 0) + 1);
-	}
-
-	let withinTenPercent = 0;
-	let usualGrade: ForecastGrade | null = null;
-	for (const [grade, count] of countOfGrade) {
-		if (WITHIN_TEN_PERCENT.has(grade)) {
-			withinTenPercent += count;
-		}
-		if (isStrictMajority(count, checks.length)) {
-			usualGrade = grade;
-		}
-	}
-
-	return { gradedChecks: checks.length, withinTenPercent, usualGrade };
-};
+): LevelCloseness => ({
+	gradedChecks: checks.length,
+	withinTenPercent: checks.filter((check) =>
+		WITHIN_TEN_PERCENT.has(readCheck(check).grade),
+	).length,
+});
 
 /**
  * The share of its checks a level held in, as the whole percentage its bar and row show: 100 only when

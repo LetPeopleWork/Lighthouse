@@ -32,7 +32,7 @@ import { appColors } from "../../../utils/theme/colors";
  * whether the forecast held and the forecast itself, on its grade colour; how it compared with what was
  * completed is one hover or one keyboard focus away, and that same sentence is the cell's accessible
  * name. Each period is one line with its dates in the reader's own numeric format; the legend is two
- * titled rows; the caption is gone from view but still names the scrolling region; and while a check runs
+ * titled rows; there is no caption, and the scrolling region is named for the Team instead; and while a check runs
  * the dialog says "Crunching the numbers…".
  *
  * What the specs need from the markup, and nothing more: a graded or "—" cell is the table cell itself,

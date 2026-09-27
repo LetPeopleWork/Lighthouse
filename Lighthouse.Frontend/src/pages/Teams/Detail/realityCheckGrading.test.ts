@@ -42,7 +42,6 @@ const heldWithin10 = (count: number) => checksOf(count, 42, 40);
 const held10To25 = (count: number) => checksOf(count, 42, 36);
 const heldOver25 = (count: number) => checksOf(count, 42, 31);
 const notHeldWithin10 = (count: number) => checksOf(count, 42, 45);
-const notHeld10To25 = (count: number) => checksOf(count, 42, 48);
 
 const bandOf = (grade: ForecastGrade): "within" | "between" | "over" => {
 	if (grade.endsWith("Within10")) {
@@ -257,7 +256,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 	});
 });
 
-describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level usually landed", () => {
+describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level landed", () => {
 	it("counts the checks that landed within 10% on either side, held or not", () => {
 		const closeness = levelCloseness([
 			...heldWithin10(2),
@@ -270,44 +269,10 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 		expect(closeness.withinTenPercent).toBe(6);
 	});
 
-	it("names the grade more than half the checks share - Maria's 85th, low by more than a quarter in 9 of 16", () => {
-		const closeness = levelCloseness([
-			...heldOver25(9),
-			...heldWithin10(3),
-			...held10To25(3),
-			...notHeld10To25(1),
-		]);
-
-		expect(closeness).toEqual({
-			gradedChecks: 16,
-			withinTenPercent: 3,
-			usualGrade: "HeldOver25",
-		});
-	});
-
-	it("@boundary names no grade when one holds exactly half the checks", () => {
-		expect(
-			levelCloseness([...heldOver25(8), ...held10To25(8)]).usualGrade,
-		).toBeNull();
-	});
-
-	it("@boundary names no grade when the checks within 10% are split between held and not held", () => {
-		const closeness = levelCloseness([
-			...heldWithin10(5),
-			...notHeldWithin10(5),
-			...held10To25(3),
-			...notHeld10To25(3),
-		]);
-
-		expect(closeness.withinTenPercent).toBe(10);
-		expect(closeness.usualGrade).toBeNull();
-	});
-
-	it("@error a level with no check that could run has nothing within 10% and no usual grade", () => {
+	it("@error a level with no check that could run has nothing within 10%", () => {
 		expect(levelCloseness([])).toEqual({
 			gradedChecks: 0,
 			withinTenPercent: 0,
-			usualGrade: null,
 		});
 	});
 });

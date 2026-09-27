@@ -4,15 +4,10 @@ import type { ForecastGrade } from "../../../models/Forecasts/RealityCheckResult
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import {
 	aRealityCheckAnswer,
-	type EvaluableCheck,
-	expectTheLine,
 	HORIZON_DAYS,
-	type LevelColumn,
 	levelCell,
-	linesMatching,
 	periodGroup,
 	type RealityCheckAnswerOptions,
-	STANDARD_WINDOW_DAYS,
 	setMatchMedia,
 	theDialogWithTheAnswer,
 	thePeriodChecked,
@@ -24,13 +19,8 @@ import { appColors } from "../../../utils/theme/colors";
 /**
  * How close each forecast landed, on Nick Brown's scale. Every graded cell is shaded
  * green when it held and red when it did not - green deepens the closer it landed, red the further it
- * missed - and carries the percentage of what the period delivered beside its miss in Work Items; each
- * level's line adds how many of its checks landed within 10% - held or not - and, when more than half of
- * them share one grade, how it usually landed.
- *
- * A cell's accessible name reads level, forecast, held or not, the miss in words, and the percentage. The
- * percentage and every grade word are pinned whole, because "within 10%" is the start of both a held and a
- * not-held grade.
+ * missed. These specs pin the fill each cell is drawn in; what a cell says in words is pinned by the
+ * compact specs.
  */
 
 const { terms } = vi.hoisted(() => ({
@@ -96,43 +86,6 @@ const theDialogFor = (options: RealityCheckAnswerOptions) =>
 
 const gradeFill = (grade: ForecastGrade): string =>
 	appColors.forecastGrade[grade];
-
-const LEVEL_KEY = { 50: "at50", 70: "at70", 85: "at85", 95: "at95" } as const;
-
-/**
- * The sixteen checks of the standard ladder, every one against an actual of 42, one level's forecasts
- * taken in turn from `forecasts`. The other levels sit at 20, well clear of anything asserted.
- */
-const theSixteenChecksAt = (
-	level: LevelColumn,
-	forecasts: readonly number[],
-): EvaluableCheck[] =>
-	STANDARD_WINDOW_DAYS.flatMap((window, windowIndex) =>
-		HORIZON_DAYS.map((horizon, horizonIndex) => {
-			const check: EvaluableCheck = {
-				window,
-				horizon,
-				at95: 20,
-				at85: 20,
-				at70: 20,
-				at50: 20,
-				actual: 42,
-			};
-			check[LEVEL_KEY[level]] = forecasts[windowIndex * 4 + horizonIndex];
-			return check;
-		}),
-	);
-
-const times = (count: number, forecast: number): number[] =>
-	Array.from({ length: count }, () => forecast);
-
-// Against an actual of 42, one forecast per grade.
-const HELD_WITHIN_10 = 40;
-const HELD_10_TO_25 = 36;
-const HELD_OVER_25 = 31;
-const NOT_HELD_WITHIN_10 = 45;
-const NOT_HELD_10_TO_25 = 48;
-const NOT_HELD_OVER_25 = 60;
 
 const oceanExplorerOverEightWeeks = (): RealityCheckAnswerOptions => ({
 	checks: thePeriodChecked(56, {
@@ -286,215 +239,6 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 			"NotHeldOver25",
 		] as const) {
 			expect(cell).not.toHaveStyle({ backgroundColor: gradeFill(grade) });
-		}
-	});
-});
-
-describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible each level's line says how close it usually landed", () => {
-	it(`Maria's 85th: held 15 of 16, 3 within 10%, and usually low by more than a quarter`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 85: 15 },
-			checks: theSixteenChecksAt(85, [
-				...times(9, HELD_OVER_25),
-				...times(3, HELD_WITHIN_10),
-				...times(3, HELD_10_TO_25),
-				...times(1, NOT_HELD_10_TO_25),
-			]),
-		});
-
-		expectTheLine(
-			dialog,
-			"85th: held 15 of 16 (should be about 14), within 10% in 3. Usually low by more than a quarter.",
-		);
-	});
-
-	it(`counts the checks that fell short by under 10% as within 10% too`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 50: 12 },
-			checks: theSixteenChecksAt(50, [
-				...times(2, HELD_WITHIN_10),
-				...times(4, NOT_HELD_WITHIN_10),
-				...times(5, HELD_10_TO_25),
-				...times(5, HELD_OVER_25),
-			]),
-		});
-
-		expectTheLine(
-			dialog,
-			"50th: held 12 of 16 (should be about 8), within 10% in 6.",
-		);
-	});
-
-	it(`@boundary adds no "usually" when the checks within 10% are split between held and not held`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 70: 8 },
-			checks: theSixteenChecksAt(70, [
-				...times(5, HELD_WITHIN_10),
-				...times(5, NOT_HELD_WITHIN_10),
-				...times(3, HELD_10_TO_25),
-				...times(3, NOT_HELD_10_TO_25),
-			]),
-		});
-
-		expectTheLine(
-			dialog,
-			"70th: held 8 of 16 (should be about 11), within 10% in 10.",
-		);
-	});
-
-	it(`@boundary adds no "usually" when one grade holds exactly half the checks, not more`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 95: 16 },
-			checks: theSixteenChecksAt(95, [
-				...times(8, HELD_OVER_25),
-				...times(8, HELD_10_TO_25),
-			]),
-		});
-
-		expectTheLine(
-			dialog,
-			"95th: held 16 of 16 (should be about 15), within 10% in 0.",
-		);
-	});
-
-	it.each<{
-		grade: ForecastGrade;
-		level: LevelColumn;
-		forecast: number;
-		line: string;
-	}>([
-		{
-			grade: "HeldWithin10",
-			level: 95,
-			forecast: HELD_WITHIN_10,
-			line: "95th: held 16 of 16 (should be about 15), within 10% in 16. Usually within 10%.",
-		},
-		{
-			grade: "Held10To25",
-			level: 95,
-			forecast: HELD_10_TO_25,
-			line: "95th: held 16 of 16 (should be about 15), within 10% in 0. Usually low by 10-25%.",
-		},
-		{
-			grade: "HeldOver25",
-			level: 95,
-			forecast: HELD_OVER_25,
-			line: "95th: held 16 of 16 (should be about 15), within 10% in 0. Usually low by more than a quarter.",
-		},
-		{
-			grade: "NotHeldWithin10",
-			level: 50,
-			forecast: NOT_HELD_WITHIN_10,
-			line: "50th: held 0 of 16 (should be about 8), within 10% in 16 — it never held, which is over-forecasting. Usually high by up to 10%.",
-		},
-		{
-			grade: "NotHeld10To25",
-			level: 50,
-			forecast: NOT_HELD_10_TO_25,
-			line: "50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting. Usually high by 10-25%.",
-		},
-		{
-			grade: "NotHeldOver25",
-			level: 50,
-			forecast: NOT_HELD_OVER_25,
-			line: "50th: held 0 of 16 (should be about 8), within 10% in 0 — it never held, which is over-forecasting. Usually high by more than a quarter.",
-		},
-	])(
-		`says how a level usually landed in the words of its grade - $grade`,
-		async ({ grade, level, forecast, line }) => {
-			const held = grade.startsWith("Held");
-			const dialog = await theDialogFor({
-				heldCounts: { [level]: held ? 16 : 0 },
-				readings: held ? {} : { [level]: "NeverHeld" as const },
-				checks: theSixteenChecksAt(level, times(16, forecast)),
-			});
-
-			expectTheLine(dialog, line);
-		},
-	);
-
-	it(`@error leaves the checks that could not run out of "within 10%" and of "usually"`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 85: 12 },
-			unevaluatedWindowDays: [14],
-			unevaluable: HORIZON_DAYS.map((horizon) => ({
-				window: 14,
-				horizon,
-				reason: "TooFewActiveDays" as const,
-				daysWithCompletedWork: 3,
-			})),
-			checks: theSixteenChecksAt(85, times(16, HELD_WITHIN_10)),
-		});
-
-		expectTheLine(
-			dialog,
-			"85th: held 12 of 12 (should be about 10), within 10% in 12. Usually within 10%.",
-		);
-	});
-
-	it(`@error keeps a grade usual when it is usual among the checks that ran, however many others could not run`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 85: 12 },
-			unevaluatedWindowDays: [14],
-			unevaluable: HORIZON_DAYS.map((horizon) => ({
-				window: 14,
-				horizon,
-				reason: "TooFewActiveDays" as const,
-				daysWithCompletedWork: 3,
-			})),
-			checks: theSixteenChecksAt(85, [
-				...times(4, HELD_WITHIN_10),
-				...times(7, HELD_WITHIN_10),
-				...times(5, HELD_OVER_25),
-			]),
-		});
-
-		expectTheLine(
-			dialog,
-			"85th: held 12 of 12 (should be about 10), within 10% in 7. Usually within 10%.",
-		);
-	});
-
-	it(`@error a level no check could test says so, with no count and no "usually"`, async () => {
-		const dialog = await theDialogFor({
-			soundWindowDays: [],
-			determination: "NotEnoughEvidence",
-			standing: "NotDetermined",
-			unevaluatedWindowDays: [...STANDARD_WINDOW_DAYS],
-			readings: { 85: "NotEvaluated" },
-			unevaluable: STANDARD_WINDOW_DAYS.flatMap((window) =>
-				HORIZON_DAYS.map((horizon) => ({
-					window,
-					horizon,
-					reason: "TooFewActiveDays" as const,
-					daysWithCompletedWork: 1,
-				})),
-			),
-		});
-
-		expectTheLine(
-			dialog,
-			"85th: no check could be run, so this level was not tested.",
-		);
-		expect(linesMatching(dialog, /within 10% in|usually/i)).toHaveLength(0);
-	});
-
-	it(`@kpi-OUT-6094-no-window-ranked no level's line names, counts or ranks a sampling window`, async () => {
-		const dialog = await theDialogFor({
-			heldCounts: { 85: 15 },
-			checks: theSixteenChecksAt(85, [
-				...times(9, HELD_OVER_25),
-				...times(7, HELD_WITHIN_10),
-			]),
-		});
-
-		const levelLines = linesMatching(
-			dialog,
-			/^(50|70|85|95)th: (held|no check)/,
-		);
-		expect(levelLines).toHaveLength(4);
-		for (const line of levelLines) {
-			expect(line).not.toHaveTextContent(/\bdays?\b|window/i);
 		}
 	});
 });

@@ -58,13 +58,18 @@ testWithTeam(
 			).toBeVisible();
 		});
 
-		// @walking_skeleton @driving_port @us-04 @slice-04
-		await test.step("Forecast reality check opens in a dialog", async () => {
+		// @walking_skeleton @driving_port @us-06 @slice-06b - it never presses the headline's info icon: with
+		// the explanation open, the first Escape would close the explanation rather than the dialog.
+		await test.step("Forecast reality check reads at a glance", async () => {
+			await expect(teamDetailPage.realityCheckExplanationIcon).toBeVisible();
+
 			await teamDetailPage.runRealityCheck();
 
 			await expect(teamDetailPage.realityCheckDialog).toBeVisible();
-			await expect(teamDetailPage.realityCheckLevelLine(85)).toBeVisible();
-			await expect(teamDetailPage.realityCheckDialogDenominator).toBeVisible();
+			await expect(teamDetailPage.realityCheckHeadline).toBeVisible();
+			for (const level of [50, 70, 85, 95] as const) {
+				await expect(teamDetailPage.realityCheckLevelBar(level)).toBeVisible();
+			}
 			await expect(teamDetailPage.realityCheckTable).toBeVisible();
 			expect(
 				await teamDetailPage.realityCheckWindowRows.count(),
@@ -75,33 +80,5 @@ testWithTeam(
 			await expect(teamDetailPage.realityCheckDialog).toBeHidden();
 			await expect(teamDetailPage.runRealityCheckButton).toBeFocused();
 		});
-
-		// @walking_skeleton @driving_port @us-06 @slice-06b - pending until the summary replaces the words
-		// above the table; it then replaces the step above, and the level-line and denominator locators that
-		// step uses are deleted with it. It never presses the headline's info icon: with the explanation open,
-		// the first Escape would close the explanation rather than the dialog.
-		await test.step
-			.skip("Forecast reality check reads at a glance", async () => {
-				await expect(teamDetailPage.realityCheckExplanationIcon).toBeVisible();
-
-				await teamDetailPage.runRealityCheck();
-
-				await expect(teamDetailPage.realityCheckDialog).toBeVisible();
-				await expect(teamDetailPage.realityCheckHeadline).toBeVisible();
-				for (const level of [50, 70, 85, 95] as const) {
-					await expect(
-						teamDetailPage.realityCheckLevelBar(level),
-					).toBeVisible();
-				}
-				await expect(teamDetailPage.realityCheckTable).toBeVisible();
-				expect(
-					await teamDetailPage.realityCheckWindowRows.count(),
-				).toBeGreaterThanOrEqual(16);
-
-				await teamDetailPage.closeRealityCheckWithEscape();
-
-				await expect(teamDetailPage.realityCheckDialog).toBeHidden();
-				await expect(teamDetailPage.runRealityCheckButton).toBeFocused();
-			});
 	},
 );

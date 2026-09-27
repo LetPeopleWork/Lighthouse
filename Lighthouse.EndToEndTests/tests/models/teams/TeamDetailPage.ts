@@ -117,18 +117,6 @@ export class TeamDetailPage {
 		return this.page.getByRole("dialog", { name: /reality check/i });
 	}
 
-	get realityCheckDialogDenominator(): Locator {
-		return this.realityCheckDialog.getByText(
-			/^\d+ forecast runs? (were|was) checked/,
-		);
-	}
-
-	realityCheckLevelLine(level: 50 | 70 | 85 | 95): Locator {
-		return this.realityCheckDialog.getByText(
-			new RegExp(`^${level}th: (held \\d+ of \\d+|no check could be run)`),
-		);
-	}
-
 	// The summary's headline, in each of the forms it takes: every scenario ran, some could not, none could.
 	get realityCheckHeadline(): Locator {
 		return this.realityCheckDialog.getByText(
