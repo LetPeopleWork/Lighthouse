@@ -220,7 +220,7 @@ testWithDemo(
 );
 
 testWithDemo(
-	"Take @screenshot of the team detail forecasts and backtest",
+	"Take @screenshot of the team detail forecasts, backtest and reality check",
 	async ({ testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
@@ -244,6 +244,16 @@ testWithDemo(
 			teamDetailPage.backtestForecastingSection.locator("../../.."),
 			"features/backtest.png",
 		);
+
+		await teamDetailPage.runRealityCheck();
+		await expect(teamDetailPage.realityCheckHeadline).toBeVisible();
+		await takeDialogScreenshot(
+			teamDetailPage.realityCheckDialog,
+			"features/realitycheck.png",
+			0.5,
+			1000,
+		);
+		await teamDetailPage.closeRealityCheckWithEscape();
 	},
 );
 

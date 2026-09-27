@@ -141,3 +141,32 @@ This lets you see whether the actual outcome fell within the forecasted range, g
 
 ### Historical Throughput
 The **Historical Throughput** tab shows the throughput run chart for the historical window used by the backtest, along with its Predictability Score. This helps you understand the input data that drove the simulation.
+## Forecast Reality Check
+A single backtest answers "would this one forecast have held?". The **Forecast Reality Check** answers the bigger question: *how often do this Team's forecasts hold, and is its sampling window a good one?* Press **Run reality check** below the backtest inputs. The info icon beside it explains what the check does.
+
+![Forecast Reality Check](../assets/features/realitycheck.png)
+
+### What it checks
+Lighthouse replays many forecasts at once. Each *scenario* takes a recent period that ends today, forecasts it from one sampling window of the history before that period, and compares the result with the Work Items the Team actually completed.
+
+- **Forecast horizons**: 1, 2, 4 and 8 weeks.
+- **Sampling windows**: 14, 30, 60 and 90 days, plus your Team's own [Throughput History](./edit.html#throughput-history) setting if it is not one of those.
+- **Confidence levels**: every scenario is read at all four levels (50th, 70th, 85th and 95th).
+
+A window that doesn't have enough history to forecast from (fewer than 5 days with completed Work Items) is left out of every count and marked as such, so the numbers never include a forecast that couldn't really have been made.
+
+{: .note}
+The check is read-only. It changes nothing about your Team, and it doesn't pick a "best" window: each scenario covers a different real period, so they are evidence to read side by side, not a race to win.
+
+### Reading the result
+The dialog starts with a summary:
+- A **headline** saying how many scenarios were backtested and how many forecasts that gives. The info icon next to it explains the numbers and credits the method, Nick Brown's article [The Full Monte](https://medium.com/asos-techblog/the-full-monte-901d721b8532).
+- A **badge for your sampling window**: *fine*, *did not hold up*, or *could not be checked*. A Team that forecasts from [fixed start and end dates](./edit.html#throughput-start-and-end-date) has no sampling window, so its badge says the window was not tested. A window holds up when its 95th forecast held in more than half of the checks that could be run on it.
+- **One row per confidence level**, showing how often that level held (for example *94% (15 of 16)*) against a tick at the rate it should hold at, and how many of its forecasts were **accurate**, meaning within 10% of what was completed.
+
+Below the summary, a table shows every scenario: rows are sampling windows grouped by forecast horizon, and columns are the four confidence levels. Each period's header shows its dates and how many Work Items were actually completed. Each cell shows the forecast with a ✓ (held) or ✗ (missed). Green deepens the closer a forecast landed and red deepens the further it missed. Hover over or focus a cell to see exactly how far off it was.
+
+### When to use it
+- Before relying on forecasts for a commitment, to see whether this Team's history makes them trustworthy.
+- When deciding whether to change the sampling window: if yours didn't hold up while others did, it's worth trying one of those.
+- To show someone *why* a forecast deserves trust, instead of asking them to take the Monte Carlo Simulation on faith.
