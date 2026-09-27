@@ -26,9 +26,10 @@ import type { ForecastGrade } from "./realityCheckGrading";
 
 /**
  * How close each forecast landed, on Nick Brown's scale. Every graded cell is shaded
- * green when it held and red when it did not, darker the closer it landed, and carries the percentage of
- * what the period delivered beside its miss in Work Items; each level's line adds how many of its checks
- * landed within 10% - held or not - and, when more than half of them share one grade, how it usually landed.
+ * green when it held and red when it did not - green deepens the closer it landed, red the further it
+ * missed - and carries the percentage of what the period delivered beside its miss in Work Items; each
+ * level's line adds how many of its checks landed within 10% - held or not - and, when more than half of
+ * them share one grade, how it usually landed.
  *
  * A cell's accessible name reads level, forecast, held or not, the miss in words, and the percentage. The
  * percentage and every grade word are pinned whole, because "within 10%" is the start of both a held and a

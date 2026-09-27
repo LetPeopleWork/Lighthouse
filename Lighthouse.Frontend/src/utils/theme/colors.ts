@@ -10,7 +10,7 @@
 
 import type { ForecastGrade } from "../../pages/Teams/Detail/realityCheckGrading";
 
-// Green when the forecast held, red when it did not; the deeper the shade, the closer it landed.
+// Green when the forecast held, red when it did not. Green deepens the closer it landed; red deepens the further it missed.
 // Kept apart from the forecast level colours, which mean confidence and not how a check turned out.
 const forecastGrade: Record<ForecastGrade, string> = {
 	HeldWithin10: "#2e7d32",
