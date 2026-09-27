@@ -17,20 +17,27 @@ import {
 	levelCloseness,
 } from "./realityCheckGrading";
 
+// One width for every label, so every level's bar starts at the same point and the rows read as one scale.
+const LABEL_COLUMN_WIDTH = 150;
+
+const BAR_HEIGHT = 8;
+
+// The tick overhangs the bar so it stays visible whatever part of the bar it crosses.
+const TICK_OVERHANG = BAR_HEIGHT / 2;
+
 // Neither the level's own colour nor a grade fill: either would read as a judgement of the level.
 const barSx = {
-	height: 8,
+	height: BAR_HEIGHT,
 	borderRadius: 1,
 	bgcolor: "action.disabledBackground",
 	"& .MuiLinearProgress-bar": { bgcolor: "primary.main", transition: "none" },
 };
 
-// The tick overhangs the bar so it stays visible whatever part of the bar it crosses.
 const tickSx = (confidenceLevel: number) => ({
 	position: "absolute",
 	left: `${confidenceLevel}%`,
-	top: -4,
-	bottom: -4,
+	top: -TICK_OVERHANG,
+	bottom: -TICK_OVERHANG,
 	width: 2,
 	bgcolor: "text.primary",
 });
@@ -64,7 +71,7 @@ const RealityCheckLevelRow: React.FC<Readonly<RealityCheckLevelRowProps>> = ({
 			spacing={{ xs: 0.5, sm: 2 }}
 			sx={{ alignItems: { sm: "center" } }}
 		>
-			<Box sx={{ minWidth: 150 }}>
+			<Box sx={{ minWidth: LABEL_COLUMN_WIDTH }}>
 				<RealityCheckLevelLabel confidenceLevel={confidenceLevel} />
 			</Box>
 			<Box
