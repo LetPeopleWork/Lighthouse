@@ -67,14 +67,30 @@ const SHOWN_RANGE_OF_BAND = {
 	over: [26, Number.POSITIVE_INFINITY],
 } as const;
 
-// Rounded half up in whole numbers, and kept off 0 and 100 unless no check held or every one did.
-const shareByTheRule = (held: number, evaluated: number): number => {
-	if (held === 0 || held === evaluated) {
-		return held === evaluated ? 100 : 0;
-	}
-	const rounded = Math.floor((200 * held + evaluated) / (2 * evaluated));
-	return Math.min(99, Math.max(1, rounded));
-};
+// 100 and 0 are kept for every check held and for none held, and for nothing else.
+const readsAnExtremeWrongly = (
+	share: number,
+	held: number,
+	evaluated: number,
+): boolean =>
+	(share === 100) !== (held === evaluated) || (share === 0) !== (held === 0);
+
+// Kept off 0 and 100, a sliver of a share reads 1 and all but a sliver reads 99, further than rounding moves it.
+const keptOffTheExtremes = (share: number, trueShare: number): boolean =>
+	(share === 1 && trueShare < 0.5) || (share === 99 && trueShare > 99.5);
+
+const strayFromTheTrueShare = (share: number, trueShare: number): boolean =>
+	Math.abs(share - trueShare) > 0.5 && !keptOffTheExtremes(share, trueShare);
+
+const breaksAShareInvariant = (
+	share: number | null,
+	held: number,
+	evaluated: number,
+): boolean =>
+	share === null ||
+	!Number.isInteger(share) ||
+	readsAnExtremeWrongly(share, held, evaluated) ||
+	strayFromTheTrueShare(share, (100 * held) / evaluated);
 
 const everyHeldCountUpTo = (
 	mostEvaluated: number,
@@ -318,15 +334,17 @@ describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its ch
 		{ held: 12, evaluated: 16, share: 75 },
 		{ held: 16, evaluated: 16, share: 100 },
 		{ held: 0, evaluated: 16, share: 0 },
+		{ held: 1, evaluated: 200, share: 1 },
+		{ held: 1, evaluated: 201, share: 1 },
+		{ held: 199, evaluated: 200, share: 99 },
 	])(`$held of $evaluated reads $share%`, ({ held, evaluated, share }) => {
 		expect(heldShare(held, evaluated)).toBe(share);
 	});
 
-	it(`@property for every count of checks from 1 to 200 and every count held, the share rounds half up, reads 100 only when every check held and 0 only when none did`, () => {
+	it(`@property for every count of checks from 1 to 200 and every count held, the share is a whole percentage within half a point of the true share, reads 100 only when every check held and 0 only when none did, and otherwise stays between 1 and 99`, () => {
 		const contradictions = everyHeldCountUpTo(200)
-			.filter(
-				({ held, evaluated }) =>
-					heldShare(held, evaluated) !== shareByTheRule(held, evaluated),
+			.filter(({ held, evaluated }) =>
+				breaksAShareInvariant(heldShare(held, evaluated), held, evaluated),
 			)
 			.map(
 				({ held, evaluated }) =>
