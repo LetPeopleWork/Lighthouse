@@ -1,6 +1,7 @@
 import { Stack } from "@mui/material";
 import type React from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
+import { percentileName } from "./realityCheckCopy";
 
 interface RealityCheckLevelLabelProps {
 	confidenceLevel: number;
@@ -14,7 +15,7 @@ const RealityCheckLevelLabel: React.FC<
 	const { level, IconComponent } = new ForecastLevel(confidenceLevel);
 	return (
 		<Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-			<span>{`${confidenceLevel}th `}</span>
+			<span>{`${percentileName(confidenceLevel)} `}</span>
 			<IconComponent fontSize="small" aria-hidden="true" />
 			<span>{level}</span>
 		</Stack>

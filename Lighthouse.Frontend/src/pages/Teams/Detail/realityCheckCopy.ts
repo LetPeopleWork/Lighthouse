@@ -12,6 +12,12 @@ import type { WindowBadgeState } from "./realityCheckGrading";
 
 type TermGetter = (key: string) => string;
 
+const countOf = (count: number, noun: string): string =>
+	count === 1 ? `1 ${noun}` : `${count} ${noun}s`;
+
+export const percentileName = (confidenceLevel: number): string =>
+	`${confidenceLevel}th`;
+
 export const listOf = (items: readonly (number | string)[]): string => {
 	if (items.length < 2) {
 		return items.join("");
@@ -46,11 +52,8 @@ export interface UnrunChecks {
 	getTerm: TermGetter;
 }
 
-const checks = (checkCount: number): string =>
-	checkCount === 1 ? "1 check" : `${checkCount} checks`;
-
 const checksOn = ({ checkCount, windowDays }: UnrunChecks): string =>
-	`${checks(checkCount)} on the ${samplingWindowsNamed(windowDays)}`;
+	`${countOf(checkCount, "check")} on the ${samplingWindowsNamed(windowDays)}`;
 
 // Thin history and a forecast that could not be worked out are different troubles with different
 // remedies, so each is told in its own words and neither borrows the other's.
@@ -100,8 +103,7 @@ export const horizonLabel = (horizonDays: number): string => {
 	if (horizonDays % 7 !== 0) {
 		return `${horizonDays} days`;
 	}
-	const weeks = horizonDays / 7;
-	return weeks === 1 ? "1 week" : `${weeks} weeks`;
+	return countOf(horizonDays / 7, "week");
 };
 
 const workItemCount = (count: number, getTerm: TermGetter): string =>
@@ -173,9 +175,6 @@ export interface UnevaluableRowFacts {
 	getTerm: TermGetter;
 }
 
-const dayCount = (days: number): string =>
-	days === 1 ? "1 day" : `${days} days`;
-
 // Said where the band would be, so the row is never blank; each reason keeps its own words.
 export const unevaluableRowCopy: Record<
 	SufficiencyReason,
@@ -183,7 +182,7 @@ export const unevaluableRowCopy: Record<
 > = {
 	Sufficient: () => "No forecast came back for this check.",
 	TooFewActiveDays: ({ daysWithCompletedWork, minimumActiveDays, getTerm }) =>
-		`Not enough history in this window to check: ${dayCount(daysWithCompletedWork)} with completed ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}, ${minimumActiveDays} needed.`,
+		`Not enough history in this window to check: ${countOf(daysWithCompletedWork, "day")} with completed ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)}, ${minimumActiveDays} needed.`,
 	DegenerateForecast: () =>
 		"No forecast could be worked out from the history in this window.",
 };
@@ -230,11 +229,9 @@ export const cellComparison = (
 	return `Closed ${difference} ${moreOrFewer(miss)} (${actualCompleted}) than forecasted (${forecastValue}). ${howFarOff(miss, percentOfActual)}`;
 };
 
-const scenarios = (count: number): string =>
-	count === 1 ? "1 scenario" : `${count} scenarios`;
+const scenarios = (count: number): string => countOf(count, "scenario");
 
-const forecasts = (count: number): string =>
-	count === 1 ? "1 forecast" : `${count} forecasts`;
+const forecasts = (count: number): string => countOf(count, "forecast");
 
 export const realityCheckHeadline = ({
 	runsAttempted,
@@ -271,13 +268,8 @@ export interface ExplanationFacts {
 	cells: readonly RealityCheckCell[];
 }
 
-const confidenceLevels = (count: number): string =>
-	count === 1 ? "1 confidence level" : `${count} confidence levels`;
-
 const scenariosGive = (scenarioCount: number, forecastCount: number): string =>
-	scenarioCount === 1
-		? `1 scenario gives ${forecasts(forecastCount)}`
-		: `${scenarios(scenarioCount)} give ${forecasts(forecastCount)}`;
+	`${scenarios(scenarioCount)} ${scenarioCount === 1 ? "gives" : "give"} ${forecasts(forecastCount)}`;
 
 // With nothing backtested, "0 scenarios give 0 forecasts" would only repeat the headline's "none".
 const scenarioExplanation = (
@@ -286,7 +278,7 @@ const scenarioExplanation = (
 ): string => {
 	const { runsEvaluated, levelsPerRun, scoresEvaluated } = denominator;
 	const periods = listOf(sampledHorizonDays.map(horizonLabel));
-	const readAt = `Each is read at ${confidenceLevels(levelsPerRun)}`;
+	const readAt = `Each is read at ${countOf(levelsPerRun, "confidence level")}`;
 	const counted =
 		runsEvaluated === 0
 			? `${readAt}.`
@@ -358,7 +350,7 @@ export const levelBarName = ({
 	share,
 	withinTenPercent,
 }: LevelRowFacts): string => {
-	const level = `${confidenceLevel}th ${levelName}`;
+	const level = `${percentileName(confidenceLevel)} ${levelName}`;
 	return share === null
 		? `${level}: not tested, no check could run`
 		: `${level}: held in ${share}% of checks (${heldCount} of ${runsEvaluated}), expected about ${confidenceLevel}%; ${withinTenPercent} accurate within 10%`;
