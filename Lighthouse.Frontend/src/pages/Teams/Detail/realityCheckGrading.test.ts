@@ -3,12 +3,15 @@ import type {
 	Determination,
 	ForecastGrade,
 	NotTestedReason,
+	RealityCheckCell,
+	RealityCheckLevelOutcome,
 	Standing,
 } from "../../../models/Forecasts/RealityCheckResult";
 import {
 	GRADE_HELD,
 	type GradedCheck,
 	gradedCheckAt,
+	gradedChecksAt,
 	heldShare,
 	levelCloseness,
 	missOf,
@@ -132,6 +135,44 @@ describe("@us-04 @slice-04 one level of one check, found by its percentile", () 
 				50,
 			),
 		).toBeNull();
+	});
+});
+
+describe("@us-06 @slice-06b one level across every check", () => {
+	const aCell = (
+		samplingWindowDays: number,
+		levelOutcomes: RealityCheckLevelOutcome[] | null,
+		actualCompleted: number | null,
+	): RealityCheckCell => ({
+		horizonDays: 56,
+		samplingWindowDays,
+		scoredPeriodStart: "2026-07-01",
+		scoredPeriodEnd: "2026-08-25",
+		historyWindowStart: "2026-06-01",
+		historyWindowEnd: "2026-06-30",
+		sufficiency: {
+			isSufficient: actualCompleted !== null,
+			reason: actualCompleted === null ? "TooFewActiveDays" : "Sufficient",
+			daysWithCompletedWork: 3,
+		},
+		forecast: null,
+		actualCompleted,
+		outcome: null,
+		levelOutcomes,
+	});
+
+	it("@error keeps only the checks that have a reading at that level, and nothing in place of the others", () => {
+		const cells = [
+			aCell(14, [{ confidenceLevel: 50, forecastValue: 48, held: false }], 42),
+			aCell(30, [{ confidenceLevel: 95, forecastValue: 31, held: true }], 42),
+			aCell(60, null, null),
+			aCell(90, [{ confidenceLevel: 50, forecastValue: 40, held: true }], 44),
+		];
+
+		expect(gradedChecksAt(50, cells)).toEqual([
+			{ forecastValue: 48, actualCompleted: 42, held: false },
+			{ forecastValue: 40, actualCompleted: 44, held: true },
+		]);
 	});
 });
 
