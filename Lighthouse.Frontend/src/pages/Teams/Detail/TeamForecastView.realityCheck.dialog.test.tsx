@@ -389,6 +389,28 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(within(levelCell(row, 95)).getByText("+11")).toBeInTheDocument();
 	});
 
+	it(`puts each forecast under its own level's column, whatever order the check lists its levels in`, async () => {
+		const answer = oceanExplorerOverEightWeeks();
+		const dialog = await theDialogFor({
+			...answer,
+			cells: answer.cells.map((cell) => ({
+				...cell,
+				levelOutcomes:
+					cell.levelOutcomes === null
+						? null
+						: [...cell.levelOutcomes].reverse(),
+			})),
+		});
+		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
+
+		expect(levelCell(row, 50)).toHaveAccessibleName(
+			"50th: 48, did not hold, 6 fewer delivered, 14% of the actual",
+		);
+		expect(levelCell(row, 95)).toHaveAccessibleName(
+			"95th: 31, held, 11 more delivered, 26% of the actual",
+		);
+	});
+
 	it(`@boundary a forecast the Team delivered exactly shows a miss of 0 and held`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({

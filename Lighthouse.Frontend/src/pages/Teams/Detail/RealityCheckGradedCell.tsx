@@ -8,23 +8,18 @@ import {
 	percentShown,
 	signedMiss,
 } from "./realityCheckCopy";
-import { readCheck } from "./realityCheckGrading";
+import { type GradedCheck, readCheck } from "./realityCheckGrading";
 
 interface RealityCheckGradedCellProps {
 	confidenceLevel: number;
-	forecastValue: number;
-	actualCompleted: number;
-	held: boolean;
+	check: GradedCheck;
 }
 
 const RealityCheckGradedCell: React.FC<
 	Readonly<RealityCheckGradedCellProps>
-> = ({ confidenceLevel, forecastValue, actualCompleted, held }) => {
-	const { grade, miss, percentOfActual } = readCheck({
-		forecastValue,
-		actualCompleted,
-		held,
-	});
+> = ({ confidenceLevel, check }) => {
+	const { forecastValue, held } = check;
+	const { grade, miss, percentOfActual } = readCheck(check);
 	const fill = appColors.forecastGrade[grade];
 
 	return (

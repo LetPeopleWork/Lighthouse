@@ -12,27 +12,19 @@ import {
 	whyChecksCouldNotRun,
 	windowVerdict,
 } from "./realityCheckCopy";
-import { type GradedCheck, levelCloseness } from "./realityCheckGrading";
+import {
+	type GradedCheck,
+	gradedCheckAt,
+	levelCloseness,
+} from "./realityCheckGrading";
 
-// A cell lists its levels in its own order, so each level's check is found by its percentile, never by position.
 const gradedChecksAt = (
 	confidenceLevel: number,
 	cells: readonly RealityCheckCell[],
 ): GradedCheck[] =>
-	cells.flatMap(({ levelOutcomes, actualCompleted }) => {
-		const outcome = levelOutcomes?.find(
-			(candidate) => candidate.confidenceLevel === confidenceLevel,
-		);
-		if (outcome === undefined || actualCompleted === null) {
-			return [];
-		}
-		return [
-			{
-				forecastValue: outcome.forecastValue,
-				actualCompleted,
-				held: outcome.held,
-			},
-		];
+	cells.flatMap((cell) => {
+		const check = gradedCheckAt(cell, confidenceLevel);
+		return check === null ? [] : [check];
 	});
 
 interface RealityCheckVerdictProps {

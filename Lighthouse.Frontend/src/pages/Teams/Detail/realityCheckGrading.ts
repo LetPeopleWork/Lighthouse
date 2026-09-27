@@ -1,3 +1,5 @@
+import type { RealityCheckCell } from "../../../models/Forecasts/RealityCheckResult";
+
 /**
  * How one forecast landed against what its period delivered, on Nick Brown's scale: the hue is whether it
  * held, the shade how close it landed as a share of the actual.
@@ -34,6 +36,27 @@ export interface LevelCloseness {
 	/** The grade more than half of the level's graded checks share, if one does. */
 	usualGrade: ForecastGrade | null;
 }
+
+// A check lists its levels in its own order, so a level is found by its percentile, never by position.
+export const gradedCheckAt = (
+	{
+		levelOutcomes,
+		actualCompleted,
+	}: Pick<RealityCheckCell, "levelOutcomes" | "actualCompleted">,
+	confidenceLevel: number,
+): GradedCheck | null => {
+	const outcome = levelOutcomes?.find(
+		(candidate) => candidate.confidenceLevel === confidenceLevel,
+	);
+	if (outcome === undefined || actualCompleted === null) {
+		return null;
+	}
+	return {
+		forecastValue: outcome.forecastValue,
+		actualCompleted,
+		held: outcome.held,
+	};
+};
 
 export const missOf = ({
 	actualCompleted,
