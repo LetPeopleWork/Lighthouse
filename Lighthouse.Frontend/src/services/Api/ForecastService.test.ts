@@ -867,9 +867,7 @@ describe("ForecastService", () => {
 
 			const result = await forecastService.runRealityCheck(7);
 
-			expect(
-				(result as unknown as { scoredPeriods?: unknown }).scoredPeriods,
-			).toEqual(scoredPeriods);
+			expect(result.scoredPeriods).toEqual(scoredPeriods);
 		});
 
 		it("should post the override when one is given, even when it is false", async () => {

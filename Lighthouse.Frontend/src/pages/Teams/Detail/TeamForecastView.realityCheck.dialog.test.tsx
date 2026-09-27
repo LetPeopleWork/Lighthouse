@@ -31,7 +31,7 @@ import {
 } from "../../../tests/RealityCheckFixture";
 
 /**
- * The Forecast Reality Check once its answer opens in a dialog (Story 6094, slice 04): the button stays in
+ * The Forecast Reality Check once its answer opens in a dialog: the button stays in
  * the Forecast Backtesting group, the dialog opens at once, and fills in with the answer in words - one
  * line per confidence level first - and beneath them a table of every check, grouped by period, each
  * period's actual printed once and each forecast beside it with its miss in Work Items and whether it held.
@@ -41,9 +41,6 @@ import {
  * headed by a row header that starts "N days"; the period's first and last day are `time` elements; a
  * graded cell's accessible name reads level, forecast, held or not, and the miss in words. The visible miss
  * carries a sign - "+2", "0", and the typographic minus "−6" (U+2212), never a hyphen.
- *
- * Every spec is pending until the dialog exists. The specs in TeamForecastView.realityCheck.test.tsx that
- * assert the answer inline, and every slice 02 panel spec there, are replaced by these when it does.
  */
 
 const { terms } = vi.hoisted(() => ({
@@ -695,12 +692,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		await pressRunRealityCheck(group);
 		const dialog = await theRealityCheckDialog();
 
-		const runAgain = within(dialog).queryByRole("button", {
-			name: /^run again$/i,
-		});
-		if (runAgain !== null && !runAgain.hasAttribute("disabled")) {
-			await userEvent.click(runAgain);
-		}
+		await userEvent.click(theButtonNamed(dialog, /^run again$/i));
 		await closeWithEscape();
 		await pressRunRealityCheck(group);
 		const reopened = await theRealityCheckDialog();

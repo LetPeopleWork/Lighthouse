@@ -10,12 +10,11 @@ import { createMockApiServiceContext } from "./MockApiServiceProvider";
 
 /**
  * The Forecast Reality Check's answer, shaped exactly as it travels on the wire, for the Team Forecast
- * view's acceptance tests. The client has no model for it yet, so this describes the wire rather than
- * importing a type: if the client's own model ends up reading dates into `Date`s, this is the one place
- * the tests change.
+ * view's acceptance tests. It describes the wire rather than importing the client's model, so the tests
+ * feed the view what the server sends and not what the client hopes to receive.
  *
  * Every check ends on the same pinned day and reaches back by its own horizon; its history sits
- * immediately before what it scores.
+ * immediately before what it scores and holds exactly its own length, first and last day included.
  */
 
 export const REALITY_CHECK_TODAY = "2026-09-22";
@@ -183,7 +182,7 @@ const aCell = (
 		samplingWindowDays: window,
 		scoredPeriodStart: shiftDay(REALITY_CHECK_TODAY, -horizon + 1),
 		scoredPeriodEnd: REALITY_CHECK_TODAY,
-		historyWindowStart: shiftDay(historyWindowEnd, -window),
+		historyWindowStart: shiftDay(historyWindowEnd, -(window - 1)),
 		historyWindowEnd,
 	};
 
@@ -390,21 +389,6 @@ export const pressRunRealityCheck = async (group: HTMLElement) => {
 	);
 };
 
-/**
- * The group once the check has answered, recognised by the first line the answer puts on screen.
- */
-export const theAnswerIn = async (
-	runRealityCheck: Mock,
-	answer: RealityCheckWireAnswer,
-	onceItReads: RegExp = /forecast runs were checked/i,
-): Promise<HTMLElement> => {
-	runRealityCheck.mockResolvedValue(answer);
-	const group = renderTheForecastTab(runRealityCheck);
-	await pressRunRealityCheck(group);
-	await waitFor(() => expectALine(group, onceItReads));
-	return group;
-};
-
 export const expectALine = (group: HTMLElement, pattern: RegExp) => {
 	expect(
 		linesMatching(group, pattern),
@@ -428,7 +412,7 @@ export const linesMatching = (
 			),
 	);
 
-// --- The dialog the answer opens in (Story 6094) ---
+// --- The dialog the answer opens in ---
 
 /** MUI reads matchMedia through useMediaQuery, and jsdom does not provide it. */
 export const setMatchMedia = (matches: boolean) => {

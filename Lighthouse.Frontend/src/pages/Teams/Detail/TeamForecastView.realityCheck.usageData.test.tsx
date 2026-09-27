@@ -190,7 +190,7 @@ describe("@us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor reporting a
 });
 
 /**
- * Once the answer opens in a dialog (Story 6094, slice 04) the event means an answer somebody was shown.
+ * Once the answer opens in a dialog the event means an answer somebody was shown.
  * Run again and a reopen that bring an answer each report again; reopening while a check is still running
  * shows that same check and reports it once; an answer that arrives after the dialog was closed was shown
  * to nobody and is not reported.

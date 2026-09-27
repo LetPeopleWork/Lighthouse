@@ -25,15 +25,14 @@ import { appColors } from "../../../utils/theme/colors";
 import type { ForecastGrade } from "./realityCheckGrading";
 
 /**
- * How close each forecast landed, on Nick Brown's scale (Story 6094, slice 05). Every graded cell is shaded
+ * How close each forecast landed, on Nick Brown's scale. Every graded cell is shaded
  * green when it held and red when it did not, darker the closer it landed, and carries the percentage of
  * what the period delivered beside its miss in Work Items; each level's line adds how many of its checks
  * landed within 10% - held or not - and, when more than half of them share one grade, how it usually landed.
  *
  * A cell's accessible name reads level, forecast, held or not, the miss in words, and the percentage. The
  * percentage and every grade word are pinned whole, because "within 10%" is the start of both a held and a
- * not-held grade. The level lines of slice 04 gain their closeness here, so the slice 04 level-line and
- * cell-name pins are rewritten to these when this slice is delivered.
+ * not-held grade.
  */
 
 const { terms } = vi.hoisted(() => ({
