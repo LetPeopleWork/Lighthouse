@@ -93,9 +93,9 @@ const bandOf = (off: number, actual: number): Band => {
 	return 4 * off <= actual ? "10To25" : "over25";
 };
 
-// 100 * off / actual rounded half up, kept in integers so the shown figure never picks up floating-point error.
-const roundedPercentOf = (off: number, actual: number): number =>
-	Math.floor((200 * off + actual) / (2 * actual));
+// 100 * part / whole rounded half up, kept in integers so the shown figure never picks up floating-point error.
+const wholePercentOf = (part: number, whole: number): number =>
+	Math.floor((200 * part + whole) / (2 * whole));
 
 // Rounding can pull a figure back onto the edge its band starts just past (10.3% to 10, a sliver of a miss to 0),
 // which would read as the band next to it; the shown figure is raised to the least the band can mean.
@@ -107,7 +107,7 @@ const LEAST_SHOWN_PERCENT_OF_BAND: Record<Band, number> = {
 
 const shownPercentOf = (off: number, actual: number, band: Band): number => {
 	const leastShown = off === 0 ? 0 : LEAST_SHOWN_PERCENT_OF_BAND[band];
-	return Math.max(roundedPercentOf(off, actual), leastShown);
+	return Math.max(wholePercentOf(off, actual), leastShown);
 };
 
 export const readCheck = (check: GradedCheck): CheckReading => {
@@ -157,10 +157,7 @@ export const heldShare = (
 	if (heldCount === 0) {
 		return 0;
 	}
-	const rounded = Math.floor(
-		(200 * heldCount + runsEvaluated) / (2 * runsEvaluated),
-	);
-	return Math.min(99, Math.max(1, rounded));
+	return Math.min(99, Math.max(1, wholePercentOf(heldCount, runsEvaluated)));
 };
 
 /** How the Team's own sampling window stood, as one badge reads it. */
