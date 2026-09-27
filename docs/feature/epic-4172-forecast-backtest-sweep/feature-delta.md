@@ -4071,7 +4071,7 @@ scenarios · 0 forecasts"* (*Copy to confirm*, row 4).
 how many checks could not run is gone, and without "of 16" a sparse Team's 12 would read as the whole
 ladder — I-c ("never looks calm").
 
-#### 6094-D22 — The badge carries a tone and a tooltip; the tooltip is where the region went
+#### 6094-D22 — The badge carries a tone and a tooltip (region DROPPED by the maintainer 2026-09-27 — see Maintainer answers)
 
 Tone: *fine* / *held up* on the success colour, *did not hold up* on the warning colour, *could not be
 checked* / *not tested* neutral — the words carry the meaning, the colour only repeats it. On hover and
@@ -4128,7 +4128,7 @@ list.
 | S-19 | **Epic AC-1.5** — *"permanently on screen, never behind a tooltip or a disclosure"* for the non-independence and non-comparability statements (and the matching US-01 scenario line) | Epic US-01 | The **counts** stay permanently on screen (headline); the two statements move into the headline tooltip (6094-D15). A deliberate relaxation of honesty requirement 4.2 by the maintainer, 2026-09-27 |
 | S-20 | **Epic AC-1.6** — the words *"described as over-forecasting"* in the dialog | Epic US-01 | Bar short of its tick + tooltip explanation (6094-D23). The server's `NeverHeld` reading is unchanged |
 | S-21 | **Epic AC-1.9** — the two findings as permanent copy | Epic US-01 | Removed (6094-D14.4). The *no control writes a Team setting* half of AC-1.9 stands |
-| S-22 | **Epic AC-1.4**'s *"the verdict names a range"* in the dialog body | Epic US-01 | The badge states the setting's standing; the range moves to the badge tooltip (6094-D22, a default). "No field and no string names one window as best" stands |
+| S-22 | **Epic AC-1.4**'s *"the verdict names a range"* in the dialog body | Epic US-01 | The badge states the setting's standing; the range is said nowhere (maintainer 2026-09-27). "No field and no string names one window as best" stands |
 | S-23 | Journey step 3 mockup and step 5 (*"Take the two findings away"*) | `docs/product/journeys/epic-4172-forecast-reality-check.yaml` | Updated in this amendment (see *SSOT updates*) |
 | S-24 | Slice 04 KPI *Density readable* (under a minute per Team) | Story #6094 KPIs | KPI *Reads at a glance* below (tighter) |
 
@@ -4376,7 +4376,7 @@ Every string below is a DISCUSS draft for the maintainer's review, except where 
 
 | # | Where | Draft copy |
 |---|---|---|
-| 1 | Trigger info icon — accessible name / tooltip | Name: *"What does the reality check do?"* · Tooltip: *"Replays this {Team}'s recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the {Work Items} actually completed. It only reads: nothing on the {Team} is changed."* |
+| 1 | Trigger info icon — accessible name / tooltip | Name: *"What does the reality check do?"* · Tooltip: *"Replays this {Team}'s recent forecasts — each recent period, forecast from several sampling windows — and compares every one with the {Work Items} actually completed."* |
 | 2 | Loading (first run and "Run again") | Spinner + *"Crunching the numbers…"* (*locked*) |
 | 3 | Headline, every scenario ran | *"Backtested {N} scenarios · {M} forecasts"* (*locked*); N = 1: *"Backtested 1 scenario · {M} forecasts"* |
 | 3b | Headline, some could not run (6094-D21) | *"Backtested {N} of {T} scenarios · {M} forecasts"* — e.g. *"Backtested 12 of 16 scenarios · 48 forecasts"* |
@@ -4385,13 +4385,13 @@ Every string below is a DISCUSS draft for the maintainer's review, except where 
 | 5 | Level row text | *"{p}% ({held} of {evaluated}) · {a} accurate"* — e.g. *"75% (12 of 16) · 4 accurate"* (*locked form*); not evaluated: *"Not tested — no check could run"* |
 | 5b | Level bar — text alternative | *"{level}th {Name}: held in {p}% of checks ({held} of {evaluated}), expected about {level}%; {a} accurate within 10%"* — e.g. *"85th Confident: held in 94% of checks (15 of 16), expected about 85%; 3 accurate within 10%"* · not evaluated: *"50th Risky: not tested, no check could run"* |
 | 6 | Badge — every window held up, yours inside (`AllWindowsAlike` + `Inside`) | *"Your {d}-day sampling window: fine"* |
-| 7 | Badge — some held up, yours among them (`SomeWindowsSound` + `Inside`) | *"Your {d}-day sampling window: held up"* |
+| 7 | Badge — some held up, yours among them (`SomeWindowsSound` + `Inside`) | *"Your {d}-day sampling window: fine"* (maintainer 2026-09-27: same word as row 6) |
 | 8 | Badge — some held up, yours not (`SomeWindowsSound` + `Outside`; also the unreachable `AllWindowsAlike` + `Outside`) | *"Your {d}-day sampling window: did not hold up"* |
 | 9 | Badge — none held up (`NoWindowSound`) | *"Your {d}-day sampling window: did not hold up (no window did)"* |
 | 10 | Badge — yours could not be checked (`NotDetermined`, including `NotEnoughEvidence`) | *"Your {d}-day sampling window: could not be checked"* |
 | 11 | Badge — not tested, fixed dates (`NotTested` / `UsesFixedDates`) | *"Your {Team} forecasts from fixed dates: sampling window not tested"* |
 | 12 | Badge — not tested, not a positive length (`NotTested` / `NotAPositiveLength`) | *"Your sampling window: not tested (not a positive number of days)"* |
-| 13 | Badge tooltip — the set that held up (6094-D22) | span: *"Sampling windows that held up: {first} to {last} days."* · list: *"Sampling windows that held up: {14, 30 and 90} days."* · none: *"No sampling window checked held up."* · no window could be checked: *"No sampling window could be checked."* |
+| 13 | ~~Badge tooltip — the set that held up~~ | **Dropped** (maintainer 2026-09-27): the badge names no windows at all. |
 | 14 | Badge tooltip — what "held up" means | *"A sampling window held up when its 95th forecast held in more than half of the checks that could be run on it."* |
 | 15 | Badge tooltip — windows not checked | today's sentence, unchanged: *"The {14-day} sampling window could not be checked, so it is not counted either way."* (plural form as today) |
 | 16 | Cell tooltip = accessible name — more completed | *"Closed {d} {Work Items} more ({actual}) than forecasted ({forecast}). Forecast off by +{p}%"* (*locked form*) — d = 1: *"Closed 1 {Work Item} more (15) than forecasted (14). Forecast off by +7%"* |
@@ -4399,7 +4399,7 @@ Every string below is a DISCUSS draft for the maintainer's review, except where 
 | 18 | Cell tooltip — exactly as forecast | actual > 0: *"Closed exactly the forecasted {n} {Work Items}."* (1: *"… the forecasted 1 {Work Item}."*) · actual 0 and forecast 0: *"Closed no {Work Items}, exactly as forecasted."* |
 | 19 | Cell tooltip — nothing completed, forecast above 0 | *"Closed {f} {Work Items} fewer (0) than forecasted ({f}). No percentage — nothing was completed."* |
 | 19b | Cell for a level left out of a check (6094-D24) | Visible *"—"*; tooltip / name *"Not checked at this confidence level."* |
-| 20 | Headline tooltip (6094-D15, D21) | *"Each scenario replays one forecast: a recent period ({1 week, 2 weeks, 4 weeks and 8 weeks}, each ending today), forecast from one sampling window of the history before it, then compared with what the {Team} actually completed. Each is read at {4} confidence levels, so {16} scenarios give {64} forecasts."* ¶ *[only when some could not run]* *"{4} of the {16} scenarios could not run and are left out of every count."* + today's `whyChecksCouldNotRun` sentences ¶ *"The {4} forecasts of one scenario come from the same simulation, and every scenario covers a different stretch of time, so they are not independent trials and should not be ranked against each other."* ¶ *"The tick on each bar is how often that level should hold — the 85th about 85% of the time. Well past the tick, its forecasts were set too low; well short of it, too high. Accurate means within 10% of what was completed, whether the forecast held or not."* ¶ *"Grading each forecast as held or missed, and shading it by how close it landed, follows Nick Brown's method in* [The Full Monte](https://medium.com/asos-techblog/the-full-monte-901d721b8532)*. Reading the bar against its tick as under- or over-forecasting, and the 95th level, are Lighthouse's additions."* |
+| 20 | Headline tooltip (6094-D15, D21) | *"Each scenario replays one forecast: a recent period ({1 week, 2 weeks, 4 weeks and 8 weeks}, each ending today), forecast from one sampling window of the history before it, then compared with what the {Team} actually completed. Each is read at {4} confidence levels, so {16} scenarios give {64} forecasts."* ¶ *[only when some could not run]* *"{4} of the {16} scenarios could not run and are left out of every count."* + today's `whyChecksCouldNotRun` sentences ¶ *"Accurate means within 10% of what was completed, whether the forecast held or not."* ¶ *"Inspired by Nick Brown's article* [The Full Monte](https://medium.com/asos-techblog/the-full-monte-901d721b8532)*."* |
 | 21 | Period header | *"Forecast Horizon: {1 week} ({21.09.2026} – {27.09.2026}) – {14} {Work Items} completed"* (*locked form*); 1: *"– 1 {Work Item} completed"*; no scored period: *"Forecast Horizon: {1 week}"* |
 | 22 | Legend row titles | *"Forecast held"*, *"Forecast missed"* (*locked*) |
 | 23 | Legend swatch labels (each row) | *"within 10%"*, *"10–25% off"*, *"more than 25% off"* (*locked*) |
@@ -4504,12 +4504,37 @@ None blocks DESIGN; each has a default already written in.
    out, as decided. Or one sentence in the headline tooltip? Journey step 5 is rewritten either way.
 7. **"—" for a level left out of a check** (6094-D24), with the *"Not checked"* legend entry dropped?
 
+
+### Maintainer answers — US-06 (2026-09-27)
+
+These close the questions above and override any default written earlier in this block.
+
+1. **Copy table** — confirmed with edits, already applied to the table: row 1 loses *"It only reads: nothing
+   on the {Team} is changed."*; row 20 loses the non-independence paragraph, keeps only *"Accurate means
+   within 10% of what was completed, whether the forecast held or not."* from the tick paragraph, and its
+   credit paragraph becomes *"Inspired by Nick Brown's article The Full Monte"* (linked). All other rows as
+   drafted.
+2. **"N of T" in the headline** — default stands (yes).
+3. **Region in the badge tooltip** — **dropped entirely.** 6094-D22 is reduced to: the badge carries a tone
+   and a tooltip holding only the *"held up"* definition (row 14) and the windows-not-checked sentence
+   (row 15). Nothing in the dialog names which windows held up.
+4. **"fine" vs "held up"** — **"fine" for both** inside states (rows 6 and 7).
+5. **Always / never held** — default stands (no words; bar and tick).
+6. **The two findings** — default stands (said nowhere).
+7. **"—" for a missing level** — default stands.
+8. **Shipping** — 06a and 06b are **pushed together**, after both slices and the quality gates, so the
+   credit never disappears in between.
+9. **Consequence of 1 and 3, recorded honestly:** the non-independence / no-ranking statement (S-19) is now
+   said **nowhere** in the dialog, not merely moved into a tooltip, and the tick on each bar is explained
+   only by the bar's screen-reader text (row 5b). R-6094-9 is updated accordingly: the counts stay on
+   screen, the table stays unsortable and no string ranks a window, which remain the honesty guards.
+
 ### Risks — US-06
 
 | # | Risk | Disposition |
 |---|---|---|
 | R-6094-8 | Colour carries the band on the cell face; the words are one hover / focus away (WCAG 1.4.1) | Glyph stays visible; tooltip = accessible name; legend in words; DISTILL asserts every cell's name |
-| R-6094-9 | Moving the non-independence statement into a tooltip invites ranking the scenarios (honesty 4.2 relaxed, S-19) | Counts stay on screen; the statement is one focus away; the rankability scan still runs; table stays unsortable |
+| R-6094-9 | Dropping the non-independence statement (maintainer 2026-09-27) invites ranking the scenarios (honesty 4.2 relaxed, S-19) | Counts stay on screen; the rankability scan still runs; table stays unsortable; no string names or orders a window |
 | R-6094-10 | A tooltip holding a link is unreachable or closes the dialog on Escape | 6094-D25 / AC-6.11 assert Tab-reachability and Escape order |
 | R-6094-11 | 64-80 new Tab stops make the dialog tedious by keyboard | Open for DESIGN item 2 |
 | R-6094-12 | A bar is read as "more is better" (a full 95th bar looks like success) | The tick shows the expected rate; the tooltip names too-low / too-high; 95th past its tick = caution |
