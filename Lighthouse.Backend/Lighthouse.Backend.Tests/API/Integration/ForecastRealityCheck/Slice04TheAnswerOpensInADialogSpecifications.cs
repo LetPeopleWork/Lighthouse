@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// <summary>Nothing in the last seven days; one a day on every day before that.</summary>
         private static readonly Dictionary<int, int> TheHarbourPilotsActualsByHorizon = new() { [7] = 0, [14] = 7, [28] = 21, [56] = 49 };
 
+        private static readonly int[] TheFourHorizonsShortestFirst = [7, 14, 28, 56];
+
         // --- Given ---
 
         private int GivenOceanExplorerFinishingAWorkItemEveryDay()
@@ -64,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         {
             var horizons = answer.ScoredPeriods.Select(period => period.HorizonDays).ToList();
 
-            Assert.That(horizons, Is.EqualTo(answer.SampledHorizonDays),
+            Assert.That(horizons, Is.EqualTo(TheFourHorizonsShortestFirst),
                 "one period per horizon, in the order the horizons were swept - never one per window");
         }
 
@@ -116,13 +118,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         {
             var periods = answer.ScoredPeriods.ToDictionary(period => period.HorizonDays, period => period.ActualCompleted);
 
-            var disagreeing = answer.Cells
-                .Where(cell => cell.IsSufficient)
+            var evaluated = answer.Cells.Where(cell => cell.IsSufficient).ToList();
+            var disagreeing = evaluated
                 .Where(cell => !periods.TryGetValue(cell.HorizonDays, out var actual) || actual != cell.ActualCompleted)
                 .Select(cell => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d: cell {cell.ActualCompleted}")
                 .ToList();
 
-            Assert.That(disagreeing, Is.Empty, "a check that ran carries exactly the actual of the period it was scored on");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(evaluated, Is.Not.Empty, "at least one check ran, or there is nothing to compare");
+                Assert.That(disagreeing, Is.Empty, "a check that ran carries exactly the actual of the period it was scored on");
+            }
         }
 
         private static void ThenEveryCheckThatCouldNotRunStillCarriesNoActualOfItsOwn(RealityCheckAnswer answer)
