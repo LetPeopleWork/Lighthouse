@@ -566,6 +566,23 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 		expect(theFirstGradedCell(dialog)).toHaveFocus();
 	});
 
+	it(`@error Escape dismisses a cell's tooltip opened by hovering, with the focus elsewhere, and leaves the dialog open`, async () => {
+		const dialog = await theDialogFor(oceanExplorersWeek());
+		const focusedBefore = document.activeElement;
+
+		await userEvent.hover(theFirstGradedCell(dialog));
+		await screen.findByRole("tooltip");
+		expect(theFirstGradedCell(dialog)).not.toHaveFocus();
+		await userEvent.keyboard("{Escape}");
+
+		await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+		expect(
+			screen.getByRole("dialog", { name: /reality check/i }),
+		).toBeInTheDocument();
+		// Closing the dialog would hand focus back to its trigger, so focus staying put proves it stayed open.
+		expect(document.activeElement).toBe(focusedBefore);
+	});
+
 	// Already true and kept as it is: a check that could not run is one muted reason across the row, never
 	// a graded cell, a "—" or a keyboard stop.
 	it(`@error a check that could not run keeps its reason across the four columns, and is neither graded nor a keyboard stop`, async () => {
