@@ -96,15 +96,8 @@ const runRealityCheck = vi.fn();
 const theDialogFor = (options: RealityCheckAnswerOptions) =>
 	theDialogWithTheAnswer(runRealityCheck, aRealityCheckAnswer(options));
 
-const gradeFill = (grade: ForecastGrade): string => {
-	const fills = (
-		appColors as unknown as {
-			forecastGrade?: Record<ForecastGrade, string>;
-		}
-	).forecastGrade;
-	expect(fills, "appColors has no forecastGrade fills").toBeDefined();
-	return (fills as Record<ForecastGrade, string>)[grade];
-};
+const gradeFill = (grade: ForecastGrade): string =>
+	appColors.forecastGrade[grade];
 
 const LEVEL_KEY = { 50: "at50", 70: "at70", 85: "at85", 95: "at95" } as const;
 

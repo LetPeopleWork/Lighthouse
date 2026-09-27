@@ -405,15 +405,47 @@ describe("colors utility functions", () => {
 
 // The six fills a reality check's graded cells take, one per grade, the same in the light and the dark theme.
 
-const gradeFills = (): Record<ForecastGrade, string> => {
-	const fills = (
-		appColors as unknown as {
-			forecastGrade?: Record<ForecastGrade, string>;
-		}
-	).forecastGrade;
-	expect(fills, "appColors has no forecastGrade fills").toBeDefined();
-	return fills as Record<ForecastGrade, string>;
+const gradeFills = (): Record<ForecastGrade, string> => appColors.forecastGrade;
+
+const channelsOf = (hex: string) => ({
+	red: Number.parseInt(hex.slice(1, 3), 16),
+	green: Number.parseInt(hex.slice(3, 5), 16),
+	blue: Number.parseInt(hex.slice(5, 7), 16),
+});
+
+const isGreenHued = (hex: string): boolean => {
+	const { red, green, blue } = channelsOf(hex);
+	return green > red && green > blue;
 };
+
+const isRedHued = (hex: string): boolean => {
+	const { red, green, blue } = channelsOf(hex);
+	return red > green && red > blue;
+};
+
+// Contrast against black grows with a colour's relative luminance, so it orders fills from dark to light.
+const lightnessOf = (hex: string): number =>
+	calculateContrastRatio(hex, "#000000");
+
+const isStrictlyDarkening = (grades: ForecastGrade[]): boolean =>
+	grades.every(
+		(grade, index) =>
+			index === 0 ||
+			lightnessOf(gradeFills()[grade]) <
+				lightnessOf(gradeFills()[grades[index - 1]]),
+	);
+
+const HELD_GRADES: ForecastGrade[] = [
+	"HeldWithin10",
+	"Held10To25",
+	"HeldOver25",
+];
+
+const NOT_HELD_GRADES: ForecastGrade[] = [
+	"NotHeldWithin10",
+	"NotHeld10To25",
+	"NotHeldOver25",
+];
 
 describe("@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone the colours of a graded check", () => {
 	it("gives every grade a fill whose text reads at 4.5 to 1 or better", () => {
@@ -440,5 +472,38 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone the colours of a gra
 
 		expect(fills.filter((fill) => levelColours.includes(fill))).toEqual([]);
 		expect(new Set(fills).size).toBe(FORECAST_GRADES.length);
+	});
+
+	it("gives six different fills", () => {
+		const fills = FORECAST_GRADES.map((grade) => gradeFills()[grade]);
+
+		expect(new Set(fills).size).toBe(6);
+	});
+
+	it("paints every forecast that held green and every one that did not red", () => {
+		const fills = gradeFills();
+
+		expect(HELD_GRADES.filter((grade) => !isGreenHued(fills[grade]))).toEqual(
+			[],
+		);
+		expect(NOT_HELD_GRADES.filter((grade) => !isRedHued(fills[grade]))).toEqual(
+			[],
+		);
+	});
+
+	it("deepens green the closer a forecast that held landed", () => {
+		expect(
+			isStrictlyDarkening(["HeldOver25", "Held10To25", "HeldWithin10"]),
+		).toBe(true);
+	});
+
+	it("deepens red the further a forecast that did not hold missed", () => {
+		expect(
+			isStrictlyDarkening([
+				"NotHeldWithin10",
+				"NotHeld10To25",
+				"NotHeldOver25",
+			]),
+		).toBe(true);
 	});
 });
