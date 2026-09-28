@@ -225,15 +225,13 @@ namespace Lighthouse.Backend.API
                 {
                     existingMapping.ValueSource = mappingDto.ValueSource;
                     existingMapping.AppliesTo = mappingDto.AppliesTo;
-                    newFields.Target(existingMapping, mappingDto.AdditionalFieldDefinitionId);
+                    newFields.AssignField(existingMapping, mappingDto.AdditionalFieldDefinitionId);
                     existingMapping.TargetValueType = mappingDto.TargetValueType;
                     existingMapping.DateFormat = mappingDto.DateFormat;
                 }
                 else
                 {
-                    var mapping = mappingDto.ToModel();
-                    newFields.Target(mapping, mappingDto.AdditionalFieldDefinitionId);
-                    existingConnection.WriteBackMappingDefinitions.Add(mapping);
+                    existingConnection.WriteBackMappingDefinitions.Add(newFields.CreateMapping(mappingDto));
                 }
             }
         }

@@ -236,9 +236,7 @@ namespace Lighthouse.Backend.API
 
             foreach (var mappingDto in connectionDto.WriteBackMappingDefinitions)
             {
-                var mapping = mappingDto.ToModel();
-                newFields.Target(mapping, mappingDto.AdditionalFieldDefinitionId);
-                connection.WriteBackMappingDefinitions.Add(mapping);
+                connection.WriteBackMappingDefinitions.Add(newFields.CreateMapping(mappingDto));
             }
 
             return connection;

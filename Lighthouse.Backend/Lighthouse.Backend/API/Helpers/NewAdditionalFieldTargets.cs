@@ -26,23 +26,31 @@ namespace Lighthouse.Backend.API.Helpers
             return field;
         }
 
-        public void Target(WriteBackMappingDefinition mapping, int? fieldId)
+        public WriteBackMappingDefinition CreateMapping(WriteBackMappingDefinitionDto mappingDto)
         {
-            if (fieldId is not < 0 || !fieldsByPlaceholderId.TryGetValue(fieldId.Value, out var newField))
+            var mapping = mappingDto.ToModel();
+            AssignField(mapping, mappingDto.AdditionalFieldDefinitionId);
+            return mapping;
+        }
+
+        public void AssignField(WriteBackMappingDefinition mapping, int? fieldId)
+        {
+            if (fieldId is < 0 && fieldsByPlaceholderId.TryGetValue(fieldId.Value, out var newField))
             {
-                // An unmatched placeholder is kept so the validator can reject it before anything is saved.
-                mapping.AdditionalFieldDefinitionId = fieldId;
+                mapping.AdditionalFieldDefinition = newField;
+
+                // A mapping that is new itself still holds the placeholder. An existing mapping keeps its stored
+                // id, because clearing it as well would leave the database layer unsure which change to apply.
+                if (mapping.AdditionalFieldDefinitionId < 0)
+                {
+                    mapping.AdditionalFieldDefinitionId = null;
+                }
+
                 return;
             }
 
-            mapping.AdditionalFieldDefinition = newField;
-
-            // A mapping that is new itself still holds the placeholder. An existing mapping keeps its stored
-            // id, because clearing it as well would leave the database layer unsure which change to apply.
-            if (mapping.AdditionalFieldDefinitionId < 0)
-            {
-                mapping.AdditionalFieldDefinitionId = null;
-            }
+            // An unmatched placeholder is kept so the validator can reject it before anything is saved.
+            mapping.AdditionalFieldDefinitionId = fieldId;
         }
     }
 }
