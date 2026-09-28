@@ -1,0 +1,75 @@
+{
+  "roadmap": {
+    "project_id": "fix-new-field-mapping-single-save",
+    "created_at": "2026-09-28",
+    "total_steps": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "ADO Bug #6089: adding an additional field and, in the same unsaved edit, a write-back mapping that targets it fails on save. The frontend gives unsaved rows temporary negative ids and the mapping carries the new field's negative id as AdditionalFieldDefinitionId. The backend resets the field's own id so the database assigns a real one, but copies the mapping's negative reference through unchanged; the foreign key then fails at SaveChanges and the request dies with a 500. The validator only rejects null or 0, so the negative id is never caught. Fix: resolve a negative field reference to the new field sent in the same payload, in one shared helper used by both the create and the update endpoint, so a single save works."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-09-28",
+    "notes": "Bugfix flow (/nw-bugfix Phase 3) — minimal roadmap, no DISCUSS/DESIGN/DISTILL waves for this feature. RCA reviewed and approved by the maintainer. One step: the create path, the update path and the re-pointed-existing-mapping case are one defect with one fix (the shared resolver), verified by the same suites; splitting them would produce three REDs that go green on the same production change."
+  },
+  "ssot_inputs": {
+    "rca": "docs/feature/fix-new-field-mapping-single-save/deliver/rca.md",
+    "ado_work_item": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6089"
+  },
+  "out_of_scope": [
+    "Frontend changes. The payload already carries the matching negative id on both the new field and the mapping (AdditionalFieldsEditor.tsx:181, WriteBackMappingsEditor.tsx:177-180, WorkTrackingSystemService.ts:183-192), which is exactly the link the backend fix consumes. A Vitest contract guard would pass today and has no RED, so it is not part of this TDD step.",
+    "Mapping DbUpdateException to a friendly error in general. The fix removes this cause; an unknown negative reference becomes an explicit 400.",
+    "Playwright coverage. E2E is a thin sanity check per flow; the backend integration test through the real HTTP pipeline and SQLite FKs is the regression net."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression tests and fix for ADO Bug 6089",
+      "description": "A write-back mapping that targets an additional field added in the same save persists in one request, on both create and update.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Resolve a mapping's temporary field reference to the new field saved alongside it",
+          "description": "TDD execution. Read docs/feature/fix-new-field-mapping-single-save/deliver/rca.md first.\n\n**RED phase** — Write the regression tests and confirm each fails against unmodified production code.\n(a) Backend integration test (primary) through the real HTTP pipeline (TestWebApplicationFactory, SQLite with foreign keys enforced). Put it in a new file under `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/` (e.g. `WriteBackMappingForNewAdditionalFieldIntegrationTest.cs`); copy the connection-seeding and PUT helper pattern from `API/Integration/BlockedItems/Slice05PredefinedField*.cs`. Cases: (1) PUT an existing connection whose payload adds a field `{id:-1, reference:'customfield_1'}` and a mapping `{id:-1, additionalFieldDefinitionId:-1}` → 200, and after re-reading, the persisted mapping's additionalFieldDefinitionId equals the persisted field's generated id (> 0); (2) the same on POST create; (3) an existing persisted mapping re-pointed in the PUT at a new field with id -1 → 200 and the mapping now targets the new field's real id. Today each fails with a 500.\n(b) Unit tests in `Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs` (repository mocked): the mapping handed to repository.Update references the same AdditionalFieldDefinition instance that was added for the new field; a mapping whose negative reference matches no new field in the payload returns 400 BadRequest (both on update and on create). Add validator cases to `API/Helpers/WriteBackMappingValidatorTest.cs` as needed: two mappings targeting the same new field in the same scope are still reported as duplicates.\n\n**GREEN phase** — Minimal fix, backend only:\n- Add one small shared helper in `Lighthouse.Backend/Lighthouse.Backend/API/Helpers/` (extend `WriteBackMappingsHelper.cs` or add a sibling; keep it small, no deep nesting — Sonar) that, given the incoming field DTOs and the field models created for them, records tempId (Id < 0, captured BEFORE AdditionalFieldDefinitionDto.ToModel resets it to 0) → new AdditionalFieldDefinition model, and for each mapping with AdditionalFieldDefinitionId < 0 sets `mapping.AdditionalFieldDefinition = newField` and clears the negative FK so EF assigns the generated key in the same SaveChanges; a negative reference with no matching new field yields a validation error ('unknown additional field').\n- Use it in both `WorkTrackingSystemConnectionController.UpdateAdditionalFieldDefinitions/UpdateWriteBackMappingDefinitions` (new mappings AND updated existing mappings, currently line ~226) and `WorkTrackingSystemConnectionsController.CreateConnectionFromDto`.\n- `WriteBackMappingValidator.Validate` currently runs after the models are built and rejects `AdditionalFieldDefinitionId is null or 0` (line 20) and groups duplicates by FK id. Make it treat a mapping holding a resolved `AdditionalFieldDefinition` as having a target, and keep duplicate detection correct for mappings that point at the same new field (group by field identity). Unknown-reference errors must surface as 400 through the existing validationErrors / BadRequest paths.\n- The predefined-field filter in UpdateWriteBackMappingDefinitions matches positive ids only; leave it working.\n- The response DTO must return the real positive field id for the mapping after save.\n\n**COMMIT phase** — Conventional commit `fix(writeback): save a mapping and the new field it targets in one request`. Body must carry `Task-Id: fix-new-field-mapping-single-save` and reference Bug #6089. Comments per CLAUDE.md: rare, plain-language why, no internal references.\n\n**Quality gates (mandatory before COMMIT):** consult docs/ci-learnings.md first. From `Lighthouse.Backend/`: `dotnet build` with zero warnings, and `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` fully green (known environmental failures listed in CLAUDE.md are not regressions).",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "Updating a connection with a new additional field and a new write-back mapping targeting it succeeds in one request and persists the mapping against the field's real id",
+            "Creating a connection with a new additional field and a mapping targeting it succeeds in one request",
+            "Re-pointing an existing mapping at a newly added field succeeds in one request",
+            "A mapping referencing a temporary field id that is not in the payload is rejected with 400, not 500",
+            "Duplicate mappings for the same new field in the same scope are still rejected",
+            "Create and update share one resolver; dotnet build has zero warnings and the filtered dotnet test is green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WriteBackMappingForNewAdditionalFieldIntegrationTest.cs",
+          "scenario_name": "A write-back mapping for a field added in the same edit saves in one step",
+          "red_to_green_tests": [
+            "Updating a connection saves a new mapping targeting a new field in one request",
+            "Creating a connection saves a mapping targeting a new field in one request",
+            "Re-pointing an existing mapping at a new field saves in one request",
+            "An unknown temporary field reference is rejected as bad request"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WriteBackMappingsHelper.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/WriteBackMappingValidator.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WriteBackMappingForNewAdditionalFieldIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/WriteBack/WorkTrackingSystemConnectionControllerWriteBackTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/WriteBackMappingValidatorTest.cs"
+          ],
+          "dependencies": [],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "Shared temp-reference resolver in API/Helpers",
+            "Both connection controllers use it",
+            "Validator accepts resolved references and keeps duplicate detection",
+            "Integration + unit regression tests"
+          ]
+        }
+      ]
+    }
+  ]
+}
