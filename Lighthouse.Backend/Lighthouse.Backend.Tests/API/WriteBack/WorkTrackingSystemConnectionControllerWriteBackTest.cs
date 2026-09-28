@@ -135,6 +135,110 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             }
         }
 
+        [Test]
+        public async Task UpdateConnection_NewMappingToFieldAddedInSameSave_ReferencesTheAddedField()
+        {
+            var existingConnection = CreateExistingConnection();
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            WorkTrackingSystemConnection? updated = null;
+            repositoryMock.Setup(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()))
+                .Callback<WorkTrackingSystemConnection>(c => updated = c);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -1, DisplayName = "New", Reference = "customfield_1" });
+            connectionDto.WriteBackMappingDefinitions.Add(MappingDto(id: -1, fieldId: -1));
+
+            var result = await CreateSubject().UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+            var addedField = updated!.AdditionalFieldDefinitions.Single(f => f.Reference == "customfield_1");
+            var mapping = updated.WriteBackMappingDefinitions.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mapping.AdditionalFieldDefinition, Is.SameAs(addedField));
+                Assert.That(mapping.AdditionalFieldDefinitionId, Is.Null);
+            }
+        }
+
+        [Test]
+        public async Task UpdateConnection_ExistingMappingMovedToFieldAddedInSameSave_ReferencesTheAddedField()
+        {
+            var existingConnection = CreateExistingConnection();
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 1, DisplayName = "Old", Reference = "customfield_old" });
+            existingConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
+            {
+                Id = 99,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                AppliesTo = WriteBackAppliesTo.Team,
+                AdditionalFieldDefinitionId = 1
+            });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = 1, DisplayName = "Old", Reference = "customfield_old" });
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -2, DisplayName = "New", Reference = "customfield_1" });
+            connectionDto.WriteBackMappingDefinitions.Add(MappingDto(id: 99, fieldId: -2));
+
+            var result = await CreateSubject().UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+            var addedField = existingConnection.AdditionalFieldDefinitions.Single(f => f.Reference == "customfield_1");
+            Assert.That(existingConnection.WriteBackMappingDefinitions.Single().AdditionalFieldDefinition, Is.SameAs(addedField));
+        }
+
+        [Test]
+        public async Task UpdateConnection_MappingToUnknownUnsavedField_ReturnsBadRequest()
+        {
+            var existingConnection = CreateExistingConnection();
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -1, DisplayName = "New", Reference = "customfield_1" });
+            connectionDto.WriteBackMappingDefinitions.Add(MappingDto(id: -1, fieldId: -7));
+
+            var result = await CreateSubject().UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                repositoryMock.Verify(x => x.Save(), Times.Never());
+            }
+        }
+
+        [Test]
+        public async Task UpdateConnection_ExistingMappingMovedToUnknownUnsavedField_ReturnsBadRequest()
+        {
+            var existingConnection = CreateExistingConnection();
+            existingConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
+            {
+                Id = 99,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                AppliesTo = WriteBackAppliesTo.Team,
+                AdditionalFieldDefinitionId = 1
+            });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Connection" };
+            connectionDto.WriteBackMappingDefinitions.Add(MappingDto(id: 99, fieldId: -7));
+
+            var result = await CreateSubject().UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                repositoryMock.Verify(x => x.Save(), Times.Never());
+            }
+        }
+
+        private static WriteBackMappingDefinitionDto MappingDto(int id, int fieldId)
+            => new()
+            {
+                Id = id,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                AppliesTo = WriteBackAppliesTo.Team,
+                AdditionalFieldDefinitionId = fieldId,
+            };
+
         private WorkTrackingSystemConnection CreateExistingConnection()
         {
             var connection = new WorkTrackingSystemConnection { Name = "Connection" };

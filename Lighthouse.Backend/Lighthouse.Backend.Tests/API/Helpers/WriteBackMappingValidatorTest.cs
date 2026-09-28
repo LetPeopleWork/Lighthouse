@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API.Helpers;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
@@ -283,6 +284,100 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             var result = WriteBackMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_MappingToFieldAddedInSameSave_ReturnsValid()
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinition = new AdditionalFieldDefinition { DisplayName = "New", Reference = "customfield_1" },
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_TwoMappingsToTheSameFieldAddedInSameSave_SameAppliesTo_ReturnsInvalid()
+        {
+            var newField = new AdditionalFieldDefinition { DisplayName = "New", Reference = "customfield_1" };
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinition = newField,
+                },
+                new()
+                {
+                    ValueSource = WriteBackValueSource.FeatureSize,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinition = newField,
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors.Any(e => e.Contains("duplicate", StringComparison.OrdinalIgnoreCase)), Is.True);
+            }
+        }
+
+        [Test]
+        public void Validate_MappingsToTwoDifferentFieldsAddedInSameSave_ReturnsValid()
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinition = new AdditionalFieldDefinition { DisplayName = "New", Reference = "customfield_1" },
+                },
+                new()
+                {
+                    ValueSource = WriteBackValueSource.FeatureSize,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinition = new AdditionalFieldDefinition { DisplayName = "New", Reference = "customfield_1" },
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            Assert.That(result.IsValid, Is.True);
+        }
+
+        [Test]
+        public void Validate_MappingToUnknownUnsavedField_ReturnsUnknownFieldError()
+        {
+            var mappings = new List<WriteBackMappingDefinition>
+            {
+                new()
+                {
+                    ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                    AppliesTo = WriteBackAppliesTo.Team,
+                    AdditionalFieldDefinitionId = -3,
+                }
+            };
+
+            var result = WriteBackMappingValidator.Validate(mappings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Errors, Has.Count.EqualTo(1));
+                Assert.That(result.Errors[0], Does.Contain("unknown additional field"));
+            }
         }
 
         [Test]

@@ -424,6 +424,54 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task CreateNewWorkTrackingSystemConnection_MappingToFieldAddedInSameSave_ReferencesTheAddedField()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            WorkTrackingSystemConnection? added = null;
+            repositoryMock.Setup(x => x.Add(It.IsAny<WorkTrackingSystemConnection>()))
+                .Callback<WorkTrackingSystemConnection>(c => added = c);
+            var newConnectionDto = NewConnectionWithMappingToUnsavedField(fieldId: -1, mappingFieldId: -1);
+
+            var result = await CreateSubject().CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(added?.WriteBackMappingDefinitions.Single().AdditionalFieldDefinition,
+                    Is.SameAs(added?.AdditionalFieldDefinitions.Single()));
+            }
+        }
+
+        [Test]
+        public async Task CreateNewWorkTrackingSystemConnection_MappingToUnknownUnsavedField_ReturnsBadRequest()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var newConnectionDto = NewConnectionWithMappingToUnsavedField(fieldId: -1, mappingFieldId: -7);
+
+            var result = await CreateSubject().CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                repositoryMock.Verify(x => x.Save(), Times.Never());
+            }
+        }
+
+        private static WorkTrackingSystemConnectionDto NewConnectionWithMappingToUnsavedField(int fieldId, int mappingFieldId)
+        {
+            var dto = new WorkTrackingSystemConnectionDto { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            dto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = fieldId, DisplayName = "New", Reference = "customfield_1" });
+            dto.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinitionDto
+            {
+                Id = -1,
+                ValueSource = WriteBackValueSource.WorkItemAgeCycleTime,
+                AppliesTo = WriteBackAppliesTo.Team,
+                AdditionalFieldDefinitionId = mappingFieldId,
+            });
+            return dto;
+        }
+
         private WorkTrackingSystemConnectionsController CreateSubject()
         {
             return new WorkTrackingSystemConnectionsController(

@@ -86,8 +86,9 @@ namespace Lighthouse.Backend.API
                 existingConnection.AuthenticationMethodKey = updatedConnection.AuthenticationMethodKey;
 
                 MergeOptions(existingConnection, updatedConnection.Options);
-                UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions);
-                UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions);
+                var newFields = new NewAdditionalFieldTargets();
+                UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions, newFields);
+                UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions, newFields);
 
                 var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
                 if (!mappingValidation.IsValid)
@@ -193,7 +194,8 @@ namespace Lighthouse.Backend.API
 
         private static void UpdateWriteBackMappingDefinitions(
             WorkTrackingSystemConnection existingConnection,
-            List<WriteBackMappingDefinitionDto> updatedMappings)
+            List<WriteBackMappingDefinitionDto> updatedMappings,
+            NewAdditionalFieldTargets newFields)
         {
             // Predefined (system-owned) fields are inbound-only: they must never be persisted as a
             // write-back mapping target. Drop any incoming mapping that targets a predefined field id.
@@ -223,20 +225,23 @@ namespace Lighthouse.Backend.API
                 {
                     existingMapping.ValueSource = mappingDto.ValueSource;
                     existingMapping.AppliesTo = mappingDto.AppliesTo;
-                    existingMapping.AdditionalFieldDefinitionId = mappingDto.AdditionalFieldDefinitionId;
+                    newFields.Target(existingMapping, mappingDto.AdditionalFieldDefinitionId);
                     existingMapping.TargetValueType = mappingDto.TargetValueType;
                     existingMapping.DateFormat = mappingDto.DateFormat;
                 }
                 else
                 {
-                    existingConnection.WriteBackMappingDefinitions.Add(mappingDto.ToModel());
+                    var mapping = mappingDto.ToModel();
+                    newFields.Target(mapping, mappingDto.AdditionalFieldDefinitionId);
+                    existingConnection.WriteBackMappingDefinitions.Add(mapping);
                 }
             }
         }
 
         private static void UpdateAdditionalFieldDefinitions(
             WorkTrackingSystemConnection existingConnection,
-            List<AdditionalFieldDefinitionDto> updatedFields)
+            List<AdditionalFieldDefinitionDto> updatedFields,
+            NewAdditionalFieldTargets newFields)
         {
             var existingById = existingConnection.AdditionalFieldDefinitions.ToDictionary(f => f.Id);
             var updatedIds = new HashSet<int>(updatedFields.Where(f => f.Id != 0).Select(f => f.Id));
@@ -267,8 +272,7 @@ namespace Lighthouse.Backend.API
                 }
                 else
                 {
-                    // Add new field (Id will be auto-generated)
-                    existingConnection.AdditionalFieldDefinitions.Add(fieldDto.ToModel());
+                    existingConnection.AdditionalFieldDefinitions.Add(newFields.CreateField(fieldDto));
                 }
             }
         }

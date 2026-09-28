@@ -1,4 +1,5 @@
 using System.Globalization;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
 
 namespace Lighthouse.Backend.API.Helpers
@@ -17,7 +18,11 @@ namespace Lighthouse.Backend.API.Helpers
 
             foreach (var mapping in mappings)
             {
-                if (mapping.AdditionalFieldDefinitionId is null or 0)
+                if (mapping.AdditionalFieldDefinitionId < 0 && mapping.AdditionalFieldDefinition is null)
+                {
+                    errors.Add($"The write-back mapping targets an unknown additional field (id: {mapping.AdditionalFieldDefinitionId}).");
+                }
+                else if (TargetOf(mapping) is null)
                 {
                     errors.Add("An additional field is required for every write-back mapping.");
                 }
@@ -37,18 +42,35 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             var duplicates = mappings
-                .Where(m => m.AdditionalFieldDefinitionId is not null and not 0)
-                .GroupBy(m => new { m.AdditionalFieldDefinitionId, m.AppliesTo })
+                .Select(m => new { Target = TargetOf(m), m.AppliesTo })
+                .Where(m => m.Target is not null)
+                .GroupBy(m => m)
                 .Where(g => g.Count() > 1)
-                .Select(g => g.First().AdditionalFieldDefinitionId)
+                .Select(g => Describe(g.Key.Target!))
                 .ToList();
 
             foreach (var duplicate in duplicates)
             {
-                errors.Add($"Duplicate additional field (id: {duplicate}) found for the same scope. Each mapping must target a unique field per scope.");
+                errors.Add($"Duplicate additional field ({duplicate}) found for the same scope. Each mapping must target a unique field per scope.");
             }
 
             return new WriteBackMappingValidationResult(errors);
+        }
+
+        // A field saved in the same request has no id yet, so the field object itself identifies it.
+        private static object? TargetOf(WriteBackMappingDefinition mapping)
+        {
+            if (mapping.AdditionalFieldDefinition is { Id: 0 } newField)
+            {
+                return newField;
+            }
+
+            return mapping.AdditionalFieldDefinitionId is > 0 ? mapping.AdditionalFieldDefinitionId : null;
+        }
+
+        private static string Describe(object target)
+        {
+            return target is AdditionalFieldDefinition newField ? $"new field: '{newField.Reference}'" : $"id: {target}";
         }
 
         /// <summary>

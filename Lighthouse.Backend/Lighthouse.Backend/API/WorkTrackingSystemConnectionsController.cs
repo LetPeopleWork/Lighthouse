@@ -228,17 +228,16 @@ namespace Lighthouse.Backend.API
                     );
             }
 
+            var newFields = new NewAdditionalFieldTargets();
             foreach (var fieldDto in connectionDto.AdditionalFieldDefinitions)
             {
-                var additionalField = fieldDto.ToModel();
-                
-                connection.AdditionalFieldDefinitions.Add(additionalField);
+                connection.AdditionalFieldDefinitions.Add(newFields.CreateField(fieldDto));
             }
 
             foreach (var mappingDto in connectionDto.WriteBackMappingDefinitions)
             {
                 var mapping = mappingDto.ToModel();
-
+                newFields.Target(mapping, mappingDto.AdditionalFieldDefinitionId);
                 connection.WriteBackMappingDefinitions.Add(mapping);
             }
 
