@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Errors, Has.Count.EqualTo(1));
-                Assert.That(result.Errors[0], Does.Contain("additional field"));
+                Assert.That(result.Errors[0], Is.EqualTo("An additional field is required for every write-back mapping."));
             }
         }
 
@@ -207,6 +207,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Errors, Has.Count.EqualTo(1));
+                Assert.That(result.Errors[0], Is.EqualTo("An additional field is required for every write-back mapping."));
             }
         }
 
@@ -258,7 +259,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Errors.Any(e => e.Contains("duplicate", StringComparison.OrdinalIgnoreCase)), Is.True);
+                Assert.That(result.Errors, Has.Count.EqualTo(1));
+                Assert.That(result.Errors[0], Does.StartWith("Duplicate additional field (id: 1) found for the same scope."));
             }
         }
 
@@ -329,7 +331,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Errors.Any(e => e.Contains("duplicate", StringComparison.OrdinalIgnoreCase)), Is.True);
+                Assert.That(result.Errors, Has.Count.EqualTo(1));
+                Assert.That(result.Errors[0], Does.StartWith("Duplicate additional field (new field: 'customfield_1') found for the same scope."));
             }
         }
 
