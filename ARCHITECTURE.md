@@ -330,6 +330,8 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 
 **CI** — `Build And Deploy Lighthouse` (`ci.yml`) on `main` orchestrates a fan of reusable workflows: `ci_backend`, `ci_frontend`, build-from-source E2E (`ci_verifysqlite` / `ci_verifypostgres` / `ci_verifyauth` / `ci_verifywindows` / `ci_verifymacos`), `ci_chart` (Helm lint/test + publish), `ci_docker`, `ci_sonar_gates`, the signed standalone packaging jobs, and `ci_sbom`. Trunk-based: changes push directly to `main`.
 
+**Dependency updates** — Renovate (`renovate.json`) is the only dependency bot. It proposes an update once a release is 7 days old (a security fix at once), and every update merges itself once the required checks of the `main` ruleset pass, except the Node/pnpm toolchain group, a .NET runtime image major and chart value updates, which wait for a maintainer. Dependabot *alerts* stay on as the vulnerability feed Renovate reads. Two guards in `Verify Workflow Scripts` keep this true: `action-pins.mjs` requires every `uses:` to be `@<sha> # <version>`, the only pinned form Renovate can update, and `dependency-bot.mjs` rejects a second bot's config, any `if:` that depends on who pushed or opened the change (a Renovate merge pushes as `renovate[bot]`, and such a guard would skip packaging and release), and a hold without a reason (ADR-212).
+
 ---
 
 ## 16. ADR index (load-bearing)
@@ -369,5 +371,6 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 203 – 205 | The Delivery timeline: a dependency line is drawn only where the forecast honoured the edge and both ends have a bar, one switch splits a Delivery into Team rows without moving its summary bar (its control superseded by 205), and the chart answers one question at a time, with each end of a bar saying for itself whether it crossed the target date. 206 (the lane holder is a piece of work, not a name) is *Proposed* |
 | **207 / 208** | **Over-time history fill: a series read that finds missing days asks a filler of its own, off the update queue, behind an opt-in behaviour setting; a past day is computed by the recorder's own code, written only if absent (§6)** |
 | **209 – 211** | **The Forecast Reality Check: a report is a response, not a stored record; a forecast level either holds or does not, and should hold as often as the level says; the grade is read in the browser from facts the server already sends (§6)** |
+| 212 | Renovate is the one dependency bot across the LetPeopleWork repositories, and a green update merges itself, bar three exceptions that wait for a maintainer (§15) |
 
-The full set (001–211 — 173–177, 181–186, 195–197 and 206 are *Proposed*, reverted or not yet built: designed, but not what the code does), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
+The full set (001–212 — 173–177, 181–186, 195–197 and 206 are *Proposed*, reverted or not yet built: designed, but not what the code does), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
