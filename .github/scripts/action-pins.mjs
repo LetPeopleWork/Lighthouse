@@ -1,6 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
-import { listScannedYamlFiles } from './scanned-yaml-files.mjs';
+import { resolve } from 'node:path';
+import { checkScannedYamlFiles } from './scanned-yaml-files.mjs';
 
 /**
  * @typedef {'action-not-pinned' | 'action-pin-unlabelled'} Rule
@@ -35,12 +34,7 @@ const MESSAGES = {
  * @returns {Promise<Violation[]>}
  */
 export async function findActionPinViolations(repoRoot) {
-	const root = resolve(repoRoot);
-	const files = await listScannedYamlFiles(root);
-	const perFile = await Promise.all(
-		files.map(async (file) => fileViolations(file, await readFile(join(root, file), 'utf8'))),
-	);
-	return perFile.flat();
+	return checkScannedYamlFiles(resolve(repoRoot), fileViolations);
 }
 
 /** @returns {Violation[]} */
@@ -75,8 +69,8 @@ function commentOf(rest) {
 /** @param {Uses} uses @returns {Rule | null} */
 function ruleBroken({ target, label }) {
 	if (UNCHECKED_PREFIXES.some((prefix) => target.startsWith(prefix))) return null;
-	const atAt = target.lastIndexOf('@');
-	const ref = atAt === -1 ? '' : target.slice(atAt + 1);
+	const refStart = target.lastIndexOf('@');
+	const ref = refStart === -1 ? '' : target.slice(refStart + 1);
 	if (!FULL_COMMIT.test(ref)) return 'action-not-pinned';
 	return label === '' ? 'action-pin-unlabelled' : null;
 }

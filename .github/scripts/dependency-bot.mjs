@@ -1,6 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { listScannedYamlFiles } from './scanned-yaml-files.mjs';
+import { checkScannedYamlFiles } from './scanned-yaml-files.mjs';
 
 /**
  * @typedef {'second-bot-config'
@@ -15,6 +15,8 @@ const RENOVATE_CONFIG = 'renovate.json';
 const SECOND_BOT_CONFIGS = ['.github/dependabot.yml', '.github/dependabot.yaml'];
 const IF_KEY = /^(\s*(?:-\s+)?)if\s*:/;
 const READS_ACTOR = /github\.(?:triggering_)?actor|user\.login|\[bot\]/;
+const ACTOR_MESSAGE =
+	'decide whether this runs from the branch or the event, not from who pushed or opened it: a bot merge must run the same jobs as a person';
 
 /**
  * Lists what would let the dependency bot's merges behave differently from a person's, or leave
@@ -35,7 +37,7 @@ export async function findDependencyBotViolations(repoRoot) {
 	const [secondBot, renovate, actor] = await Promise.all([
 		secondBotViolations(root),
 		renovateViolations(root),
-		actorViolations(root),
+		checkScannedYamlFiles(root, fileActorViolations),
 	]);
 	return [...secondBot, ...renovate, ...actor];
 }
@@ -133,15 +135,6 @@ function isNonBlankString(value) {
 
 // --- Jobs do not depend on who merged -------------------------------------------------------------
 
-/** @returns {Promise<Violation[]>} */
-async function actorViolations(root) {
-	const files = await listScannedYamlFiles(root);
-	const perFile = await Promise.all(
-		files.map(async (file) => fileActorViolations(file, await readFile(join(root, file), 'utf8'))),
-	);
-	return perFile.flat();
-}
-
 /** @returns {Violation[]} */
 function fileActorViolations(file, content) {
 	const lines = content.split('\n');
@@ -150,15 +143,7 @@ function fileActorViolations(file, content) {
 		if (key === null) return [];
 		const condition = conditionFrom(lines, index, key[0].length, key[1].length);
 		if (!READS_ACTOR.test(condition)) return [];
-		return [
-			{
-				rule: 'run-depends-on-actor',
-				file,
-				line: index + 1,
-				message:
-					'decide whether this runs from the branch or the event, not from who pushed or opened it: a bot merge must run the same jobs as a person',
-			},
-		];
+		return [{ rule: 'run-depends-on-actor', file, line: index + 1, message: ACTOR_MESSAGE }];
 	});
 }
 
