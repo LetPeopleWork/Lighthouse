@@ -34,12 +34,6 @@
       "description": "A chart value change also needs chart/README.md regenerated with helm-docs and a new chart version, and the chart workflow is not a required check, so a maintainer takes these by hand.",
       "matchManagers": ["helm-values"],
       "automerge": false
-    },
-    {
-      "description": "Held at v7: v9 renamed or removed icons we import, and it was rolled back the day after it merged.",
-      "matchPackageNames": ["@mui/icons-material"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
     }
   ],
   "vulnerabilityAlerts": {
