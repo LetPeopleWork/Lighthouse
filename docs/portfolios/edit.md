@@ -233,7 +233,7 @@ The assumption is that your estimate is numerical. However, if you have categori
 There are a few options that are optional. This means that they have an impact, but you can save a portfolio without bothering.
 
 ## Parent Override Field
-By default, Lighthouse uses the native parent-child relationships from your work tracking system to determine what each Feature hangs under — which is what [Group Features by Parent](detail.html#group-features-by-parent) shows.
+By default, Lighthouse uses the native parent-child relationships from your work tracking system to determine what each Feature hangs under — which is what the [Parent](detail.html#parent) column shows.
 
 If you need to override this behavior (for example, to group Features under a custom field instead of the native parent link), you can select a **Parent Override Field**. This field must be defined as an Additional Field on your Work Tracking System connection first.
 

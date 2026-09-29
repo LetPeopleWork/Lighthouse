@@ -38,18 +38,8 @@ For frequently used adjustments there is a Quick Settings bar in the header that
 ## Features
 For every portfolio, all the features are listed with additional details.
 
-### Table Options
-The Feature table offers two options that you can toggle on/off:
-- Group Features by Parent
-- Hide Completed Features
-
-The settings will be stored for this specific portfolio, so next time you won't have to toggle it off/on again.
-
-#### Group Features by Parent
-If this is toggled on, the Features will not be shown in a flat list, but grouped by their respective parents. This can be useful if your Features (for example *Epics*) have parent items that are of relevance to you. This could be something like an *Initiative* or *Objective* (if you use OKRs or some kind of quarterly planning).
-
-#### Hide Completed Features
-If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features.
+### Hide Completed Features
+If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features. The setting is stored for this specific portfolio, so next time you won't have to toggle it again.
 
 ### Feature Order
 Features are ordered based on the [order in your Work Tracking System](../../concepts/concepts.html#feature-order). To change it, adjust your Work Tracking System and [Refresh the Features](#refresh-features).
@@ -59,11 +49,11 @@ The order is crucial, as Lighthouse forecasts based on the [Feature WIP of each 
 {: .note}
 If you would rather Lighthouse owned the order than your Work Tracking System, turn on [Feature Order](../settings/configuration.html#feature-order-premium) under System Settings. Each row then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom* — see [Moving a Feature](../features/features.html#moving-a-feature). Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
 
-{: .note}
-If you have toggled on the [Group Features by Parent](#group-features-by-parent), the respective Parent Features are shown in the order coming from your Work Tracking System.
-
 ### Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
+
+### Parent
+The item each Feature hangs under in your work tracking system — for example an *Initiative* or *Objective* if you use OKRs or some kind of quarterly planning. The name links to the item in your work tracking system; *No Parent* means the Feature has none. To take the parent from a different field, set a [Parent Override Field](edit.html#parent-override-field).
 
 Three further columns say something about every row:
 - **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet, or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).

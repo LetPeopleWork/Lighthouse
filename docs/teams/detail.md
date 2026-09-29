@@ -39,15 +39,8 @@ The *Features* section is the default section. If a team is involved in one (or 
 
 For every feature, you can see the following details.
 
-## Table Options
-The Feature table offers two options that you can toggle on/off:
-- Group Features by Parent
-- Hide Completed Features
-
-The settings will be stored for this specific team, so next time you won't have to toggle it off/on again.
-
-### Hide Completed Features
-If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features.
+## Hide Completed Features
+If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features. The setting is stored for this specific team, so next time you won't have to toggle it again.
 
 ## Feature Order
 The Features are listed in the order Lighthouse forecasts them — this Team's slice of an instance-wide sequence, so the Features of Portfolios this Team does not work on sit invisibly in between. The [Features page](../features/features.html) shows the whole sequence.
@@ -57,6 +50,9 @@ On an instance where [Lighthouse owns the order](../settings/configuration.html#
 
 ## Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
+
+## Parent
+The item each Feature hangs under in your work tracking system. The name links to the item; *No Parent* means the Feature has none.
 
 Three further columns say something about every row:
 - **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet, or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).
