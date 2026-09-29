@@ -168,6 +168,55 @@ test('does not read a commented-out step', async (t) => {
 	assert.deepEqual(violations, [], describeAll(violations));
 });
 
+// A block scalar is text however it looks: a step that writes a workflow file is not running it.
+const BLOCK_INDICATORS = ['|', '>', '|-', '>-', '|+', '>+', '|2', '>-2', '| # writes a workflow'];
+
+const blockOf = (lines, indent) => lines.map((line) => `\n${' '.repeat(indent)}${line}`).join('');
+
+for (const indicator of BLOCK_INDICATORS) {
+	test(`does not read the text of a run: ${indicator} block as a step`, async (t) => {
+		const { root } = await tree(t, {
+			[WORKFLOW]: workflowWith([
+				`uses: actions/checkout@${SHA} # v6.0.2`,
+				`run: ${indicator}${blockOf(['cat <<YAML > ci.yml', 'uses: some/action@v1', '', '  - uses: actions/checkout@v4', 'YAML'], 10)}`,
+			]),
+		});
+		const violations = await findActionPinViolations(root);
+		assert.deepEqual(violations, [], describeAll(violations));
+	});
+}
+
+test('does not read the text of a block under any other key as a step', async (t) => {
+	const { root } = await tree(t, {
+		[WORKFLOW]: workflowWith([
+			`uses: actions/github-script@${SHA} # v9.0.0\n        with:\n          script: >-${blockOf(['uses: some/action@v1'], 12)}`,
+		]),
+	});
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
+});
+
+test('reads the steps that follow a block again', async (t) => {
+	const { root } = await tree(t, {
+		[WORKFLOW]: workflowWith([`run: |${blockOf(['echo one', '', 'echo two'], 10)}`, 'uses: actions/checkout@v4']),
+	});
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(
+		violations.map((v) => `${v.file}:${v.line} ${v.rule}`),
+		[`${WORKFLOW}:12 action-not-pinned`],
+	);
+});
+
+test('does not read the text of a block in a file saved with Windows line endings', async (t) => {
+	const lf = workflowWith([`run: |${blockOf(['uses: some/action@v1'], 10)}`, 'uses: actions/checkout@v4']);
+	const { root } = await tree(t, { [WORKFLOW]: lf.replaceAll('\n', '\r\n') });
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(
+		violations.map((v) => `${v.file}:${v.line} ${v.rule}`),
+		[`${WORKFLOW}:10 action-not-pinned`],
+	);
+});
+
 // The guard's own test fixtures keep bare pins on purpose; only workflows and actions are in scope.
 test('does not read YAML outside the workflows and actions folders', async (t) => {
 	const { root } = await tree(t, {

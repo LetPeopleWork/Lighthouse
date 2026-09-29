@@ -1,6 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { checkScannedYamlFiles } from './scanned-yaml-files.mjs';
+import { checkScannedYamlFiles, indentOf, structuralLines } from './scanned-yaml-files.mjs';
 
 /**
  * @typedef {'second-bot-config'
@@ -137,28 +137,25 @@ function isNonBlankString(value) {
 
 /** @returns {Violation[]} */
 function fileActorViolations(file, content) {
-	const lines = content.split('\n');
-	return lines.flatMap((text, index) => {
+	const lines = content.split(/\r?\n/);
+	return structuralLines(content).flatMap(({ text, line }) => {
 		const key = IF_KEY.exec(text);
 		if (key === null) return [];
-		const condition = conditionFrom(lines, index, key[0].length, key[1].length);
+		const condition = conditionFrom(lines, line, key[0].length, key[1].length);
 		if (!READS_ACTOR.test(condition)) return [];
-		return [{ rule: 'run-depends-on-actor', file, line: index + 1, message: ACTOR_MESSAGE }];
+		return [{ rule: 'run-depends-on-actor', file, line, message: ACTOR_MESSAGE }];
 	});
 }
 
-// A condition may continue on the lines below its key, as long as they are indented further.
-function conditionFrom(lines, index, valueStart, keyIndent) {
-	const parts = [withoutComment(lines[index].slice(valueStart))];
-	for (const text of lines.slice(index + 1)) {
+// A condition may continue on the lines below its key, as long as they are indented further,
+// whether it is written as a block (`if: >-`) or simply wrapped.
+function conditionFrom(lines, line, valueStart, keyIndent) {
+	const parts = [withoutComment(lines[line - 1].slice(valueStart))];
+	for (const text of lines.slice(line)) {
 		if (text.trim() !== '' && indentOf(text) <= keyIndent) break;
 		parts.push(withoutComment(text));
 	}
 	return parts.join(' ');
-}
-
-function indentOf(text) {
-	return text.length - text.trimStart().length;
 }
 
 // A `#` starts a comment only outside quotes and after a space or at the start.

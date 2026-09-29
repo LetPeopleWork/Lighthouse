@@ -173,6 +173,52 @@ test('does not read a commented-out actor condition', async (t) => {
 	assert.deepEqual(violations, [], describeAll(violations));
 });
 
+// A block scalar is text however it looks: a step that writes a workflow file is not running it.
+const BLOCK_INDICATORS = ['|', '>', '|-', '>-', '|+', '>+', '|2', '>-2', '| # writes a workflow'];
+
+const blockOf = (lines, indent) => lines.map((line) => `\n${' '.repeat(indent)}${line}`).join('');
+
+const dockerWorkflowWithStep = (step) => `${COMPLIANT[DOCKER_WORKFLOW]}      - ${step}\n`;
+
+for (const indicator of BLOCK_INDICATORS) {
+	test(`does not read the text of a run: ${indicator} block as a condition`, async (t) => {
+		const { root } = await tree(t, {
+			[DOCKER_WORKFLOW]: dockerWorkflowWithStep(
+				`run: ${indicator}${blockOf(['cat <<YAML > ci.yml', "if: github.actor == 'me'", '', "  - if: github.actor == 'me'", 'YAML'], 10)}`,
+			),
+		});
+		const violations = await findDependencyBotViolations(root);
+		assert.deepEqual(violations, [], describeAll(violations));
+	});
+}
+
+test('does not read the text of a block under any other key as a condition', async (t) => {
+	const { root } = await tree(t, {
+		[DOCKER_WORKFLOW]: dockerWorkflowWithStep(
+			`uses: actions/github-script@dbcb813823bdd20940b903addbd779551569679f # v9.0.0\n        with:\n          script: >-${blockOf(["if: github.actor == 'me'"], 12)}`,
+		),
+	});
+	const violations = await findDependencyBotViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
+});
+
+test('reads the conditions that follow a block again', async (t) => {
+	const { root } = await tree(t, {
+		[DOCKER_WORKFLOW]: dockerWorkflowWithStep(
+			`run: |${blockOf(['echo one', '', 'echo two'], 10)}\n      - if: github.actor == 'me'\n        run: echo three`,
+		),
+	});
+	const violation = onlyViolation(await findDependencyBotViolations(root), 'run-depends-on-actor', DOCKER_WORKFLOW);
+	assert.equal(violation.line, 14, 'the line of the offending if:');
+});
+
+test('does not read the text of a block in a file saved with Windows line endings', async (t) => {
+	const lf = dockerWorkflowWithStep(`run: |${blockOf(["if: github.actor == 'me'"], 10)}`);
+	const { root } = await tree(t, { [DOCKER_WORKFLOW]: lf.replaceAll('\n', '\r\n') });
+	const violations = await findDependencyBotViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
+});
+
 // --- Every hold says why --------------------------------------------------------------------------
 
 const HOLDS = [

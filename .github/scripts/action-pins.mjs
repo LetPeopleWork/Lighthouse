@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { checkScannedYamlFiles } from './scanned-yaml-files.mjs';
+import { checkScannedYamlFiles, structuralLines } from './scanned-yaml-files.mjs';
 
 /**
  * @typedef {'action-not-pinned' | 'action-pin-unlabelled'} Rule
@@ -39,10 +39,10 @@ export async function findActionPinViolations(repoRoot) {
 
 /** @returns {Violation[]} */
 function fileViolations(file, content) {
-	return content.split('\n').flatMap((text, index) => {
+	return structuralLines(content).flatMap(({ text, line }) => {
 		const uses = parseUses(text);
 		const rule = uses && ruleBroken(uses);
-		return rule ? [{ rule, file, line: index + 1, message: MESSAGES[rule](uses.target) }] : [];
+		return rule ? [{ rule, file, line, message: MESSAGES[rule](uses.target) }] : [];
 	});
 }
 
