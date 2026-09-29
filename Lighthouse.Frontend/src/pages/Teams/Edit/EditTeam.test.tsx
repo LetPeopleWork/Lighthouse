@@ -178,6 +178,18 @@ describe("EditTeam", () => {
 		expect(screen.queryByTestId("create-team-wizard")).not.toBeInTheDocument();
 	});
 
+	it("renders CreateTeamWizard when cloneFrom is not a number", async () => {
+		globalThis.location.search = "?cloneFrom=abc";
+		mockGet.mockReturnValue("abc");
+		renderEditTeamWithContext();
+		await waitFor(() => {
+			expect(screen.getByTestId("create-team-wizard")).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByTestId("modify-team-settings"),
+		).not.toBeInTheDocument();
+	});
+
 	it("renders ModifyTeamSettings when cloneFrom param is present", async () => {
 		globalThis.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5");

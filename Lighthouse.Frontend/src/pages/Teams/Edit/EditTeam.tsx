@@ -21,9 +21,12 @@ const EditTeamPage: React.FC = () => {
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
 
-	const urlParams = new URLSearchParams(globalThis.location.search);
-	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
-	const useWizard = isNewTeam && !hasCloneFrom;
+	const cloneFromId = Number.parseInt(
+		new URLSearchParams(globalThis.location.search).get("cloneFrom") ?? "",
+		10,
+	);
+	const hasCloneSource = !Number.isNaN(cloneFromId);
+	const useWizard = isNewTeam && !hasCloneSource;
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -54,58 +57,17 @@ const EditTeamPage: React.FC = () => {
 		return newSettings;
 	};
 
-	const getTeamSettings = async () => {
-		const urlParams = new URLSearchParams(globalThis.location.search);
-		const cloneFromId = urlParams.get("cloneFrom");
-
-		if (isNewTeam && cloneFromId) {
-			const cloneId = Number.parseInt(cloneFromId, 10);
-			if (!Number.isNaN(cloneId)) {
-				const sourceSettings = await teamService.getTeamSettings(cloneId);
-				return {
-					...sourceSettings,
-					id: 0,
-					name: `Copy of ${sourceSettings.name}`,
-				};
-			}
-		}
-
-		if (!isNewTeam && id) {
+	const getTeamSettings = async (): Promise<ITeamSettings> => {
+		if (id !== undefined) {
 			return await teamService.getTeamSettings(Number.parseInt(id, 10));
 		}
 
-		const defaultTeamSettings: ITeamSettings = {
+		const sourceSettings = await teamService.getTeamSettings(cloneFromId);
+		return {
+			...sourceSettings,
 			id: 0,
-			name: "New Team",
-			throughputHistory: 90,
-			useFixedDatesForThroughput: false,
-			throughputHistoryStartDate: new Date(),
-			throughputHistoryEndDate: new Date(),
-			featureWIP: 0,
-			automaticallyAdjustFeatureWIP: false,
-			dataRetrievalValue: "",
-			workItemTypes: [],
-			toDoStates: [],
-			doingStates: [],
-			doneStates: [],
-			workTrackingSystemConnectionId: 0,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideAdditionalFieldDefinitionId: null,
-			stateMappings: [],
-			doneItemsCutoffDays: 365,
-			processBehaviourChartBaselineStartDate: null,
-			processBehaviourChartBaselineEndDate: null,
-			estimationAdditionalFieldDefinitionId: null,
-			estimationUnit: null,
-			useNonNumericEstimation: false,
-			estimationCategoryValues: [],
-			stalenessThresholdDays: 0,
-			blockedStalenessThresholdDays: 0,
+			name: `Copy of ${sourceSettings.name}`,
 		};
-
-		return defaultTeamSettings;
 	};
 
 	const getWorkTrackingSystems = async () => {

@@ -220,6 +220,18 @@ describe("EditPortfolio", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("renders CreatePortfolioWizard when cloneFrom is not a number", async () => {
+		globalThis.location.search = "?cloneFrom=abc";
+		mockGet.mockReturnValue("abc");
+		renderEditPortfolioWithContext();
+		await waitFor(() => {
+			expect(screen.getByTestId("create-portfolio-wizard")).toBeInTheDocument();
+		});
+		expect(
+			screen.queryByTestId("modify-project-settings"),
+		).not.toBeInTheDocument();
+	});
+
 	it("renders ModifyProjectSettings when cloneFrom param is present", async () => {
 		globalThis.location.search = "?cloneFrom=5";
 		mockGet.mockReturnValue("5");

@@ -19,9 +19,12 @@ const EditPortfolio: React.FC = () => {
 	const gate = useRbacGate({ kind: "systemAdmin" });
 	const reportUsage = useUsageDataReporter();
 
-	const urlParams = new URLSearchParams(globalThis.location.search);
-	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
-	const useWizard = isNewPortfolio && !hasCloneFrom;
+	const cloneFromId = Number.parseInt(
+		new URLSearchParams(globalThis.location.search).get("cloneFrom") ?? "",
+		10,
+	);
+	const hasCloneSource = !Number.isNaN(cloneFromId);
+	const useWizard = isNewPortfolio && !hasCloneSource;
 
 	const navigate = useNavigate();
 	const { portfolioService, workTrackingSystemService, teamService } =
@@ -33,64 +36,20 @@ const EditPortfolio: React.FC = () => {
 		? `Create ${portfolioTerm}`
 		: `Update ${portfolioTerm}`;
 
-	const getPortfolioSettings = async () => {
-		const urlParams = new URLSearchParams(globalThis.location.search);
-		const cloneFromId = urlParams.get("cloneFrom");
-
-		if (isNewPortfolio && cloneFromId) {
-			const cloneId = Number.parseInt(cloneFromId, 10);
-			if (!Number.isNaN(cloneId)) {
-				const sourceSettings =
-					await portfolioService.getPortfolioSettings(cloneId);
-				return {
-					...sourceSettings,
-					id: 0,
-					name: `Copy of ${sourceSettings.name}`,
-				};
-			}
-		}
-
-		if (!isNewPortfolio && id) {
+	const getPortfolioSettings = async (): Promise<IPortfolioSettings> => {
+		if (id !== undefined) {
 			return await portfolioService.getPortfolioSettings(
 				Number.parseInt(id, 10),
 			);
 		}
 
-		const defaultPortfolioSettings: IPortfolioSettings = {
-			overrideRealChildCountStates: [],
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 0,
-			percentileHistoryInDays: 0,
-			sizeEstimateAdditionalFieldDefinitionId: null,
-			dependencyOverrideAdditionalFieldDefinitionId: null,
-			ignoreDependencies: false,
-			featureOwnerAdditionalFieldDefinitionId: null,
+		const sourceSettings =
+			await portfolioService.getPortfolioSettings(cloneFromId);
+		return {
+			...sourceSettings,
 			id: 0,
-			name: "New Portfolio",
-			dataRetrievalValue: "",
-			workItemTypes: [],
-			toDoStates: [],
-			doingStates: [],
-			doneStates: [],
-			workTrackingSystemConnectionId: 0,
-			serviceLevelExpectationProbability: 0,
-			serviceLevelExpectationRange: 0,
-			systemWIPLimit: 0,
-			parentOverrideAdditionalFieldDefinitionId: null,
-			stateMappings: [],
-			doneItemsCutoffDays: 365,
-			processBehaviourChartBaselineStartDate: null,
-			processBehaviourChartBaselineEndDate: null,
-			estimationAdditionalFieldDefinitionId: null,
-			estimationUnit: null,
-			useNonNumericEstimation: false,
-			estimationCategoryValues: [],
-			stalenessThresholdDays: 0,
-			blockedStalenessThresholdDays: 0,
+			name: `Copy of ${sourceSettings.name}`,
 		};
-
-		return defaultPortfolioSettings;
 	};
 
 	const getWorkTrackingSystems = async () => {
