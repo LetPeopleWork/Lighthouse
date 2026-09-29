@@ -372,6 +372,42 @@ describe("ThroughputQuickSetting", () => {
 		expect(mockOnSave).not.toHaveBeenCalled();
 	});
 
+	it("should accept a rolling history of exactly 1 day and save it", async () => {
+		const user = userEvent.setup();
+		const mockOnSave = vi.fn().mockResolvedValue(undefined);
+		render(
+			<ThroughputQuickSetting {...getMockProps({ onSave: mockOnSave })} />,
+		);
+
+		await user.click(screen.getByRole("button", { name: /Throughput/i }));
+
+		const historyInput = screen.getByRole("spinbutton", {
+			name: /Throughput History/i,
+		});
+		await user.clear(historyInput);
+		await user.type(historyInput, "1");
+
+		await user.keyboard("{Enter}");
+
+		await waitFor(() => {
+			expect(mockOnSave).toHaveBeenCalledWith(false, 1, null, null);
+		});
+		expect(
+			screen.queryByText(/must be at least 1 day$/),
+		).not.toBeInTheDocument();
+	});
+
+	it("should offer 1 day as the lowest rolling history", async () => {
+		const user = userEvent.setup();
+		render(<ThroughputQuickSetting {...getMockProps()} />);
+
+		await user.click(screen.getByRole("button", { name: /Throughput/i }));
+
+		expect(
+			screen.getByRole("spinbutton", { name: /Throughput History/i }),
+		).toHaveAttribute("min", "1");
+	});
+
 	it("should not call onSave when value is unchanged", async () => {
 		const user = userEvent.setup();
 		const mockOnSave = vi.fn().mockResolvedValue(undefined);

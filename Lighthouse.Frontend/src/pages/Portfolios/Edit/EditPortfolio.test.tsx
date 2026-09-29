@@ -39,13 +39,23 @@ vi.mock(
 	}),
 );
 
-// Mock ModifyProjectSettings
+const renderedForm = vi.hoisted(() => ({
+	getProjectSettings: undefined as
+		| undefined
+		| (() => Promise<IPortfolioSettings>),
+}));
+
 vi.mock(
 	"../../../components/Common/ProjectSettings/ModifyProjectSettings",
 	() => ({
-		default: () => (
-			<div data-testid="modify-project-settings">ModifyProjectSettings</div>
-		),
+		default: (props: {
+			getProjectSettings: () => Promise<IPortfolioSettings>;
+		}) => {
+			renderedForm.getProjectSettings = props.getProjectSettings;
+			return (
+				<div data-testid="modify-project-settings">ModifyProjectSettings</div>
+			);
+		},
 	}),
 );
 
@@ -136,6 +146,7 @@ describe("EditPortfolio", () => {
 		mockGet.mockReturnValue(null);
 		mockParams = { id: undefined };
 		mockRbacGate = { allowed: true, isLoading: false };
+		renderedForm.getProjectSettings = undefined;
 		// Reset window.location.search
 		globalThis.location.search = "";
 
@@ -242,6 +253,55 @@ describe("EditPortfolio", () => {
 		expect(
 			screen.queryByTestId("create-portfolio-wizard"),
 		).not.toBeInTheDocument();
+	});
+
+	describe("settings loaded into the form", () => {
+		const sourceSettings = {
+			id: 5,
+			name: "Ocean Explorer",
+			percentileHistoryInDays: 45,
+			defaultAmountOfWorkItemsPerFeature: 8,
+		} as IPortfolioSettings;
+
+		const loadSettingsThroughForm = async () => {
+			await waitFor(() => {
+				expect(renderedForm.getProjectSettings).toBeDefined();
+			});
+			return renderedForm.getProjectSettings?.();
+		};
+
+		it("loads the stored settings of the Portfolio being edited unchanged", async () => {
+			mockParams = { id: "7" };
+			mockPortfolioService.getPortfolioSettings.mockResolvedValue(
+				sourceSettings,
+			);
+
+			renderEditPortfolioWithContext();
+			const loaded = await loadSettingsThroughForm();
+
+			expect(mockPortfolioService.getPortfolioSettings).toHaveBeenCalledWith(7);
+			expect(loaded).toEqual(sourceSettings);
+		});
+
+		it("loads a copy of the clone source as a new unsaved Portfolio", async () => {
+			globalThis.location.search = "?cloneFrom=5";
+			mockGet.mockImplementation((key: string) =>
+				key === "cloneFrom" ? "5" : null,
+			);
+			mockPortfolioService.getPortfolioSettings.mockResolvedValue(
+				sourceSettings,
+			);
+
+			renderEditPortfolioWithContext();
+			const loaded = await loadSettingsThroughForm();
+
+			expect(mockPortfolioService.getPortfolioSettings).toHaveBeenCalledWith(5);
+			expect(loaded).toEqual({
+				...sourceSettings,
+				id: 0,
+				name: "Copy of Ocean Explorer",
+			});
+		});
 	});
 
 	describe("RBAC guard", () => {

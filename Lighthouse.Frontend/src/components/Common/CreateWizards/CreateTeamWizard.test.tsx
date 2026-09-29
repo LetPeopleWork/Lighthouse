@@ -704,7 +704,9 @@ describe("CreateTeamWizard", () => {
 			expect(savedSettings.throughputHistory).toBe(
 				DEFAULT_THROUGHPUT_HISTORY_DAYS,
 			);
+			expect(savedSettings.useFixedDatesForThroughput).toBe(false);
 			expect(savedSettings.featureWIP).toBe(DEFAULT_FEATURE_WIP);
+			expect(savedSettings.automaticallyAdjustFeatureWIP).toBe(false);
 			expect(savedSettings.stalenessThresholdDays).toBe(0);
 			expect(savedSettings.blockedStalenessThresholdDays).toBe(0);
 		});

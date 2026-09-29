@@ -191,6 +191,27 @@ describe("FeatureSizeComponent", () => {
 		expect(screen.getByLabelText(/History in Days/i)).toBeInTheDocument();
 	});
 
+	it.each([
+		{ stored: 0, displayed: 90 },
+		{ stored: 45, displayed: 45 },
+	])(
+		"shows a stored percentile history of $stored days as $displayed",
+		({ stored, displayed }) => {
+			render(
+				<FeatureSizeComponent
+					projectSettings={{
+						...initialSettings,
+						usePercentileToCalculateDefaultAmountOfWorkItems: true,
+						percentileHistoryInDays: stored,
+					}}
+					onProjectSettingsChange={mockOnProjectSettingsChange}
+				/>,
+			);
+
+			expect(screen.getByLabelText(/^History in Days/)).toHaveValue(displayed);
+		},
+	);
+
 	it("calls onProjectSettingsChange with correct arguments when defaultWorkItemPercentile changes", () => {
 		const updatedSettings: IPortfolioSettings = {
 			...initialSettings,

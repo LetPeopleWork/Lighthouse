@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
@@ -31,11 +32,15 @@ vi.mock("../../../components/Common/CreateWizards/CreateTeamWizard", () => ({
 	default: () => <div data-testid="create-team-wizard">CreateTeamWizard</div>,
 }));
 
-// Mock ModifyTeamSettings
+const renderedForm = vi.hoisted(() => ({
+	getTeamSettings: undefined as undefined | (() => Promise<ITeamSettings>),
+}));
+
 vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
-	default: () => (
-		<div data-testid="modify-team-settings">ModifyTeamSettings</div>
-	),
+	default: (props: { getTeamSettings: () => Promise<ITeamSettings> }) => {
+		renderedForm.getTeamSettings = props.getTeamSettings;
+		return <div data-testid="modify-team-settings">ModifyTeamSettings</div>;
+	},
 }));
 
 // Mock URLSearchParams and window.location
@@ -125,6 +130,7 @@ describe("EditTeam", () => {
 		mockGet.mockReturnValue(null);
 		mockParams = { id: undefined };
 		mockRbacGate = { allowed: true, isLoading: false };
+		renderedForm.getTeamSettings = undefined;
 		// Reset globalThis.location.search
 		globalThis.location.search = "";
 		mockSettingsService.getDefaultTeamSettings.mockResolvedValue({
@@ -198,6 +204,51 @@ describe("EditTeam", () => {
 			expect(screen.getByTestId("modify-team-settings")).toBeInTheDocument();
 		});
 		expect(screen.queryByTestId("create-team-wizard")).not.toBeInTheDocument();
+	});
+
+	describe("settings loaded into the form", () => {
+		const sourceSettings = {
+			id: 5,
+			name: "Platform Team",
+			throughputHistory: 45,
+			featureWIP: 2,
+		} as ITeamSettings;
+
+		const loadSettingsThroughForm = async () => {
+			await waitFor(() => {
+				expect(renderedForm.getTeamSettings).toBeDefined();
+			});
+			return renderedForm.getTeamSettings?.();
+		};
+
+		it("loads the stored settings of the Team being edited unchanged", async () => {
+			mockParams = { id: "7" };
+			mockTeamService.getTeamSettings.mockResolvedValue(sourceSettings);
+
+			renderEditTeamWithContext();
+			const loaded = await loadSettingsThroughForm();
+
+			expect(mockTeamService.getTeamSettings).toHaveBeenCalledWith(7);
+			expect(loaded).toEqual(sourceSettings);
+		});
+
+		it("loads a copy of the clone source as a new unsaved Team", async () => {
+			globalThis.location.search = "?cloneFrom=5";
+			mockGet.mockImplementation((key: string) =>
+				key === "cloneFrom" ? "5" : null,
+			);
+			mockTeamService.getTeamSettings.mockResolvedValue(sourceSettings);
+
+			renderEditTeamWithContext();
+			const loaded = await loadSettingsThroughForm();
+
+			expect(mockTeamService.getTeamSettings).toHaveBeenCalledWith(5);
+			expect(loaded).toEqual({
+				...sourceSettings,
+				id: 0,
+				name: "Copy of Platform Team",
+			});
+		});
 	});
 
 	describe("RBAC guard", () => {
