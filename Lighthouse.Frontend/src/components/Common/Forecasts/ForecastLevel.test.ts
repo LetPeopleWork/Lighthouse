@@ -1,7 +1,7 @@
 import CertainIcon from "@mui/icons-material/CheckCircle";
 import ConfidentIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import RiskyIcon from "@mui/icons-material/ErrorOutlineOutlined";
-import UnknownIcon from "@mui/icons-material/HelpOutline";
+import UnknownIcon from "@mui/icons-material/HelpOutlineOutlined";
 import RealisticIcon from "@mui/icons-material/QueryBuilder";
 import { describe, expect, it } from "vitest";
 import {
