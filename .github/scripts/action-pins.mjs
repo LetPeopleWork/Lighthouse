@@ -1,5 +1,6 @@
-import { readdir, readFile } from 'node:fs/promises';
-import { join, resolve, sep } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { listScannedYamlFiles } from './scanned-yaml-files.mjs';
 
 /**
  * @typedef {'action-not-pinned' | 'action-pin-unlabelled'} Rule
@@ -7,7 +8,6 @@ import { join, resolve, sep } from 'node:path';
  * @typedef {{ target: string, label: string }} Uses
  */
 
-const SCANNED_FOLDERS = ['.github/workflows/', '.github/actions/'];
 const UNCHECKED_PREFIXES = ['./', 'docker://'];
 const FULL_COMMIT = /^[0-9a-f]{40}$/;
 const USES_KEY = /^\s*(?:-\s+)?uses\s*:/;
@@ -41,16 +41,6 @@ export async function findActionPinViolations(repoRoot) {
 		files.map(async (file) => fileViolations(file, await readFile(join(root, file), 'utf8'))),
 	);
 	return perFile.flat();
-}
-
-// Every read error is thrown, a missing folder included: a guard that saw nothing must not pass.
-async function listScannedYamlFiles(root) {
-	const entries = await readdir(join(root, '.github'), { recursive: true, withFileTypes: true });
-	return entries
-		.filter((entry) => entry.isFile() && /\.ya?ml$/.test(entry.name))
-		.map((entry) => join(entry.parentPath, entry.name).slice(root.length + 1).split(sep).join('/'))
-		.filter((file) => SCANNED_FOLDERS.some((folder) => file.startsWith(folder)))
-		.sort();
 }
 
 /** @returns {Violation[]} */
