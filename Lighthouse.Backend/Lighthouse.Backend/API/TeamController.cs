@@ -138,8 +138,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
-            var storedTeam = teamRepository.GetById(teamId);
-            if (storedTeam != null && !ThroughputHistoryValidator.IsValid(teamSetting, storedTeam.ThroughputHistory))
+            if (!IsThroughputHistoryValid(teamId, teamSetting))
             {
                 return BadRequest(ThroughputHistoryValidator.ErrorMessage);
             }
@@ -222,6 +221,12 @@ namespace Lighthouse.Backend.API
         public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
+        }
+
+        private bool IsThroughputHistoryValid(int teamId, TeamSettingDto teamSetting)
+        {
+            var storedTeam = teamRepository.GetById(teamId);
+            return storedTeam == null || ThroughputHistoryValidator.IsValid(teamSetting, storedTeam.ThroughputHistory);
         }
 
         private string? ValidateTeamRuleSets(int teamId, TeamSettingDto teamSetting)
