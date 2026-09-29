@@ -10,7 +10,7 @@ on:
 jobs:
   verifywindows:
     runs-on: windows-latest
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Download signed Windows binary

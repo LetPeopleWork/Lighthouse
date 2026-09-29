@@ -11,7 +11,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main'
     
     environment:
       name: Release

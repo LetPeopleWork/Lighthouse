@@ -7,8 +7,6 @@ import { findDependencyBotViolations } from './dependency-bot.mjs';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
 
-const PENDING_REAL_REPO = 'pending: the repository still runs Dependabot and has no Renovate policy';
-
 const RENOVATE = 'renovate.json';
 const DOCKER_WORKFLOW = '.github/workflows/ci_docker.yml';
 
@@ -71,14 +69,14 @@ const onlyViolation = (violations, rule, file) => {
 
 // --- The real repository -----------------------------------------------------------------------
 
-test('the repository has one dependency bot, and its merges run the same jobs as a person would', { skip: PENDING_REAL_REPO }, async () => {
+test('the repository has one dependency bot, and its merges run the same jobs as a person would', async () => {
 	const violations = (await findDependencyBotViolations(REPO_ROOT)).filter(
 		(v) => v.rule !== 'hold-without-reason',
 	);
 	assert.deepEqual(violations, [], describeAll(violations));
 });
 
-test('every update the repository holds back says why', { skip: PENDING_REAL_REPO }, async () => {
+test('every update the repository holds back says why', async () => {
 	const violations = (await findDependencyBotViolations(REPO_ROOT)).filter(
 		(v) => v.rule === 'hold-without-reason',
 	);

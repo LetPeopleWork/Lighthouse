@@ -13,7 +13,7 @@ on:
 jobs:
   package-linux-standalone:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main'
     permissions:
       actions: write
 

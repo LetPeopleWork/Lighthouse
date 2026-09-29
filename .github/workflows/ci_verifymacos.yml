@@ -14,7 +14,7 @@ on:
 jobs:
   verifymacos:
     runs-on: macos-latest
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Download signed DMG

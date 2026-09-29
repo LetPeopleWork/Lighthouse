@@ -14,7 +14,7 @@ jobs:
   package-win-standalone:
     runs-on: windows-latest
     timeout-minutes: 45
-    if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: github.ref == 'refs/heads/main'
 
     environment:
       name: "Package and Sign"
