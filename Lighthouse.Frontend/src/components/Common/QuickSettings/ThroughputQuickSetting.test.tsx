@@ -342,7 +342,7 @@ describe("ThroughputQuickSetting", () => {
 		});
 	});
 
-	it("should allow unsetting by setting rolling history to 0", async () => {
+	it("should reject a rolling history of 0 and not save", async () => {
 		const user = userEvent.setup();
 		const mockOnSave = vi.fn().mockResolvedValue(undefined);
 		const startDate = new Date("2024-01-01");
@@ -364,8 +364,12 @@ describe("ThroughputQuickSetting", () => {
 		await user.keyboard("{Enter}");
 
 		await waitFor(() => {
-			expect(mockOnSave).toHaveBeenCalledWith(false, 0, null, null);
+			expect(
+				screen.getByText(/^Throughput history must be at least 1 day$/),
+			).toBeInTheDocument();
 		});
+		expect(screen.queryByText(/unset/i)).not.toBeInTheDocument();
+		expect(mockOnSave).not.toHaveBeenCalled();
 	});
 
 	it("should not call onSave when value is unchanged", async () => {

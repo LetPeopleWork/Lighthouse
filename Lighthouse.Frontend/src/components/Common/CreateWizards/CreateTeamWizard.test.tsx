@@ -8,7 +8,11 @@ import type {
 	DataRetrievalWizardProps,
 	IDataRetrievalWizard,
 } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
-import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import {
+	DEFAULT_FEATURE_WIP,
+	DEFAULT_THROUGHPUT_HISTORY_DAYS,
+	type ITeamSettings,
+} from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -690,8 +694,10 @@ describe("CreateTeamWizard", () => {
 			const savedSettings = saveTeamSettings.mock.calls[0][0];
 			expect(savedSettings.name).toBe("New Team");
 			expect(savedSettings.workTrackingSystemConnectionId).toBe(1);
-			expect(savedSettings.throughputHistory).toBe(90);
-			expect(savedSettings.featureWIP).toBe(0);
+			expect(savedSettings.throughputHistory).toBe(
+				DEFAULT_THROUGHPUT_HISTORY_DAYS,
+			);
+			expect(savedSettings.featureWIP).toBe(DEFAULT_FEATURE_WIP);
 			expect(savedSettings.stalenessThresholdDays).toBe(0);
 			expect(savedSettings.blockedStalenessThresholdDays).toBe(0);
 		});

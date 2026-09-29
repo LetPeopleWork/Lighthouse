@@ -1,6 +1,8 @@
 import type { IBaseSettings } from "../Common/BaseSettings";
 import type { IEntityReference } from "../EntityReference";
 
+export const DEFAULT_PERCENTILE_HISTORY_DAYS = 90;
+
 export interface IPortfolioSettings extends IBaseSettings {
 	owningTeam?: IEntityReference;
 

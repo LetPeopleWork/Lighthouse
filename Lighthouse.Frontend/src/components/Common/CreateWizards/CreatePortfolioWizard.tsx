@@ -1,7 +1,10 @@
 import type React from "react";
 import { useCreateWizard } from "../../../hooks/useCreateWizard";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
-import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
+import {
+	DEFAULT_PERCENTILE_HISTORY_DAYS,
+	type IPortfolioSettings,
+} from "../../../models/Portfolio/PortfolioSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import CreateWizardShell from "./CreateWizardShell";
 
@@ -36,7 +39,7 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,
 			defaultAmountOfWorkItemsPerFeature: 10,
 			defaultWorkItemPercentile: 0,
-			percentileHistoryInDays: 0,
+			percentileHistoryInDays: DEFAULT_PERCENTILE_HISTORY_DAYS,
 			sizeEstimateAdditionalFieldDefinitionId: null,
 			dependencyOverrideAdditionalFieldDefinitionId: null,
 			ignoreDependencies: false,

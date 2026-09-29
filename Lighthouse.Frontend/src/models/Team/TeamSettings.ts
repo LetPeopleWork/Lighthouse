@@ -1,5 +1,8 @@
 import type { IBaseSettings } from "../Common/BaseSettings";
 
+export const DEFAULT_THROUGHPUT_HISTORY_DAYS = 90;
+export const DEFAULT_FEATURE_WIP = 0;
+
 export interface ITeamSettings extends IBaseSettings {
 	throughputHistory: number;
 	useFixedDatesForThroughput: boolean;

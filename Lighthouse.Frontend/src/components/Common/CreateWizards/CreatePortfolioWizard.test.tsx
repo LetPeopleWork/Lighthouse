@@ -8,7 +8,10 @@ import type {
 	DataRetrievalWizardProps,
 	IDataRetrievalWizard,
 } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
-import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
+import {
+	DEFAULT_PERCENTILE_HISTORY_DAYS,
+	type IPortfolioSettings,
+} from "../../../models/Portfolio/PortfolioSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -683,6 +686,9 @@ describe("CreatePortfolioWizard", () => {
 			expect(savedSettings.name).toBe("New Portfolio");
 			expect(savedSettings.workTrackingSystemConnectionId).toBe(1);
 			expect(savedSettings.defaultAmountOfWorkItemsPerFeature).toBe(10);
+			expect(savedSettings.percentileHistoryInDays).toBe(
+				DEFAULT_PERCENTILE_HISTORY_DAYS,
+			);
 			expect(savedSettings.stalenessThresholdDays).toBe(0);
 			expect(savedSettings.blockedStalenessThresholdDays).toBe(0);
 		});

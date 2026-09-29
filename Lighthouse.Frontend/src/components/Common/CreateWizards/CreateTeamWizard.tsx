@@ -1,7 +1,11 @@
 import type React from "react";
 import { useCreateWizard } from "../../../hooks/useCreateWizard";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
-import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import {
+	DEFAULT_FEATURE_WIP,
+	DEFAULT_THROUGHPUT_HISTORY_DAYS,
+	type ITeamSettings,
+} from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import CreateWizardShell from "./CreateWizardShell";
 
@@ -32,11 +36,11 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 			toDoStates: base.toDoStates,
 			doingStates: base.doingStates,
 			doneStates: base.doneStates,
-			throughputHistory: 90,
+			throughputHistory: DEFAULT_THROUGHPUT_HISTORY_DAYS,
 			useFixedDatesForThroughput: false,
 			throughputHistoryStartDate: new Date(),
 			throughputHistoryEndDate: new Date(),
-			featureWIP: 0,
+			featureWIP: DEFAULT_FEATURE_WIP,
 			automaticallyAdjustFeatureWIP: false,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,

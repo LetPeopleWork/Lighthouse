@@ -2,7 +2,10 @@ import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
+import {
+	DEFAULT_PERCENTILE_HISTORY_DAYS,
+	type IPortfolioSettings,
+} from "../../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
@@ -133,7 +136,10 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 							type="number"
 							fullWidth
 							margin="normal"
-							value={projectSettings?.percentileHistoryInDays || "90"}
+							value={
+								projectSettings?.percentileHistoryInDays ||
+								DEFAULT_PERCENTILE_HISTORY_DAYS
+							}
 							slotProps={{
 								htmlInput: {
 									min: 30,

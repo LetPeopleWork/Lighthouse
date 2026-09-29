@@ -166,10 +166,8 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 				setError("Start date must be at least 10 days before end date");
 				return false;
 			}
-		} else if (throughputHistory < 0) {
-			setError(
-				`${throughputTerm} history must be at least 1 day (or 0 to unset)`,
-			);
+		} else if (throughputHistory < 1) {
+			setError(`${throughputTerm} history must be at least 1 day`);
 			return false;
 		}
 
