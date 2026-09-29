@@ -138,6 +138,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
+            if (!ThroughputHistoryValidator.IsValid(teamSetting))
+            {
+                return BadRequest(ThroughputHistoryValidator.ErrorMessage);
+            }
+
             if (!IsStalenessThresholdInRange(teamSetting.StalenessThresholdDays))
             {
                 return BadRequest($"Staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");

@@ -498,7 +498,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var result = await subject.UpdateTeam(1, new TeamSettingDto());
+            var result = await subject.UpdateTeam(1, new TeamSettingDto { ThroughputHistory = 30 });
 
             using (Assert.EnterMultipleScope())
             {
@@ -594,6 +594,55 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase(0)]
+        [TestCase(-1)]
+        public async Task UpdateTeam_ThroughputHistoryNotPositiveWithoutFixedDates_ReturnsBadRequestAndKeepsTeam(int throughputHistory)
+        {
+            var team = new Team { Id = 1, ThroughputHistory = 45 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ThroughputHistory = throughputHistory,
+                UseFixedDatesForThroughput = false,
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest?.Value, Is.EqualTo("Throughput history must be at least 1 day."));
+                Assert.That(team.ThroughputHistory, Is.EqualTo(45));
+                teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task UpdateTeam_ThroughputHistoryZeroWithFixedDates_ReturnsOk()
+        {
+            var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ThroughputHistory = 0,
+                UseFixedDatesForThroughput = true,
+                ThroughputHistoryStartDate = DateTime.UtcNow.Date.AddDays(-60),
+                ThroughputHistoryEndDate = DateTime.UtcNow.Date.AddDays(-1),
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
         [Test]
         public async Task UpdateTeam_ValidBaseline_ReturnsOk()
         {
@@ -605,7 +654,8 @@ namespace Lighthouse.Backend.Tests.API
                 ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
                 ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
                 WorkTrackingSystemConnectionId = 1,
-                DoneItemsCutoffDays = 180
+                DoneItemsCutoffDays = 180,
+                ThroughputHistory = 30
             };
 
             var subject = CreateSubject();
@@ -797,6 +847,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkTrackingSystemConnectionId = 1,
                 DoneItemsCutoffDays = 180,
+                ThroughputHistory = 30,
                 StateMappings =
                 [
                     new StateMappingDto { Name = "In Progress", States = ["Active", "Resolved"] }

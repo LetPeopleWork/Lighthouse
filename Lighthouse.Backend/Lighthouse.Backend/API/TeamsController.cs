@@ -104,6 +104,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
+            if (!ThroughputHistoryValidator.IsValid(teamSetting))
+            {
+                return BadRequest(ThroughputHistoryValidator.ErrorMessage);
+            }
+
             teamSetting.Id = 0;
             var newTeam = new Team();
             newTeam.SyncTeamWithTeamSettings(teamSetting);

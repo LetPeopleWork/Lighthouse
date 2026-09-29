@@ -309,6 +309,30 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase(0)]
+        [TestCase(-1)]
+        public async Task CreateTeam_ThroughputHistoryNotPositiveWithoutFixedDates_ReturnsBadRequestAndSavesNothing(int throughputHistory)
+        {
+            var newTeamSettings = new TeamSettingDto
+            {
+                Name = "New Team",
+                ThroughputHistory = throughputHistory,
+                UseFixedDatesForThroughput = false,
+                WorkTrackingSystemConnectionId = 1
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.CreateTeam(newTeamSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest?.Value, Is.EqualTo("Throughput history must be at least 1 day."));
+                teamRepositoryMock.Verify(x => x.Add(It.IsAny<Team>()), Times.Never);
+            }
+        }
+
         [Test]
         public async Task CreateTeam_ValidBaseline_ReturnsOk()
         {
@@ -318,6 +342,7 @@ namespace Lighthouse.Backend.Tests.API
                 ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-30),
                 ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1),
                 DoneItemsCutoffDays = 180,
+                ThroughputHistory = 30,
                 WorkTrackingSystemConnectionId = 1
             };
 
@@ -352,6 +377,7 @@ namespace Lighthouse.Backend.Tests.API
             var newTeamSettings = new TeamSettingDto
             {
                 Name = "New Team",
+                ThroughputHistory = 30,
                 WorkTrackingSystemConnectionId = 1,
             };
 
