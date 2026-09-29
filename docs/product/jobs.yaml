@@ -7530,9 +7530,14 @@ jobs:
         writes is already computed from a (startDate, endDate) window, so a past day is the same call shifted.
 
   - id: job-maintainer-keep-shipped-clients-patched-without-toil
-    title: Keep what the clients ship on current, aged dependencies without doing it by hand
+    title: Keep what Lighthouse and its clients ship on current, aged dependencies without doing it by hand
     persona: lighthouse-maintainer
-    feature_context: story-6088-clients-dependency-updates
+    feature_context: story-6088-clients-dependency-updates, story-6095-switch-to-renovate
+    revised: >
+      2026-09-29, Story 6095. The job now covers the Lighthouse repo too, which moves from Dependabot to
+      Renovate. The user reversed the rule that majors and security fixes wait for a human: in both repos
+      every update auto-merges once the required checks are green, as Dependabot did in Lighthouse. The
+      one exception is the Node/pnpm toolchain pins in Lighthouse, which open as one PR merged by hand.
     created: 2026-09-25
     note: >
       User Story 6088. lighthouse-clients publishes five npm packages (client, cli, mcp-core, mcp-http,
@@ -7548,9 +7553,9 @@ jobs:
       only to the updates that genuinely need a decision.
     dimensions:
       functional: >
-        One PR per update with the lockfile included; merged automatically when the CI check is green for
-        patch and minor versions; majors opened and left for the maintainer; nothing proposed before the
-        version is 7 days old; security fixes opened at once but left for the maintainer.
+        One PR per update with the lockfile included; merged automatically once the required checks are
+        green, whatever the update type; the Lighthouse toolchain pins grouped and left for the maintainer;
+        nothing proposed before the version is 7 days old; security fixes opened at once and merged once green.
       emotional: >
         Move from "the clients are probably behind and I would not know by how much" to "the PR list
         drains itself" - without the unease of a bot
@@ -7566,8 +7571,8 @@ jobs:
         dashboard that says what is waiting and why.
       anxiety: >
         Will a bot merge something that breaks consumers, or a freshly compromised package? (Addressed:
-        7-day minimum age, majors and security fixes never auto-merged, and Renovate merges only once
-        the CI check is green.)
+        7-day minimum age, and Renovate merges only once the required checks are green. Majors and security
+        fixes auto-merge too since 2026-09-29, a risk the user accepted because Lighthouse has run that way under Dependabot since 2024.)
       habit: >
         Trunk-based pushes straight to main, and a release gate approved by hand. Both stay unchanged;
         publishing is still a human act.

@@ -1,0 +1,17 @@
+{
+  "testRunner": "command",
+  "commandRunner": { "command": "node --test .github/scripts/action-pins.test.mjs .github/scripts/dependency-bot.test.mjs" },
+  "checkers": [],
+  "reporters": ["progress", "clear-text", "json"],
+  "jsonReporter": { "fileName": "reports/mutation.json" },
+  "coverageAnalysis": "off",
+  "concurrency": 6,
+  "timeoutMS": 30000,
+  "thresholds": { "high": 80, "low": 70, "break": 0 },
+  "mutate": [
+    ".github/scripts/action-pins.mjs",
+    ".github/scripts/dependency-bot.mjs",
+    ".github/scripts/scanned-yaml-files.mjs"
+  ],
+  "tempDirName": ".stryker-tmp"
+}

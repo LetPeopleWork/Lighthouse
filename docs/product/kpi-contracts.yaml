@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-26
+updated: 2026-09-29
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -19,6 +19,10 @@ description: >
     - vendor_demo_only: the vendor team's dev/QA/demo deployment(s) are the only
                         observable population. Treat aggregate numbers from this
                         scope as directional, not statistically representative.
+
+    - vendor_repository: the vendor's own repositories on GitHub (bots, CI, merges). Nothing
+                         in a running Lighthouse is involved. Read with `gh` queries by the
+                         maintainer at named check points; no scheduled job.
 
     - opt_in_telemetry_required: not measurable until enough people on released
                                  instances have agreed, AND until an event exists that
@@ -1513,3 +1517,65 @@ outcomes:
     acceptance_scenarios: "Tagged @kpi-OUT-6094-words-above-the-table (DISTILL 2026-09-27, pending): TeamForecastView.realityCheck.summary.test.tsx - above the table sit only the headline, the window badge and four level rows, no more than 50 words"
     alerting: []
     status: designed-not-shipped
+
+  - id: OUT-6095-no-dependabot-after-switch
+    feature: story-6095-switch-to-renovate
+    title: No Dependabot pull request opens once Renovate has taken over
+    target: "0 Dependabot PRs (version or security) created in LetPeopleWork/Lighthouse after the switch date"
+    ga_baseline: "0 (MEASURED at DELIVER finalize 2026-09-29, the switch day; Dependabot security updates off, 0 Dependabot secrets left)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh pr list -R LetPeopleWork/Lighthouse --author app/dependabot --state all
+      --search "created:>=$SWITCH" --json number,title
+    measurement_window: once, a week after the switch
+    acceptance_scenarios: "none; a gh query at the DoD check point"
+    alerting: []
+    status: live-on-release
+
+  - id: OUT-6095-green-updates-merge-themselves
+    feature: story-6095-switch-to-renovate
+    title: A green update never waits on a human
+    target: "0 Renovate PRs with auto-merge enabled, open more than 2 days with every check green, in Lighthouse and lighthouse-clients"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh pr list -R LetPeopleWork/<repo> --author app/renovate --state open
+      --json number,title,createdAt,autoMergeRequest,statusCheckRollup, keeping PRs with an
+      autoMergeRequest, created more than 172800 s ago, whose checks all concluded SUCCESS, SKIPPED or
+      NEUTRAL. The PRs that wait by design (the toolchain group, a .NET image major, chart values) have
+      no autoMergeRequest and drop out.
+    measurement_window: once, a week after the switch, per repo
+    acceptance_scenarios: "none; a gh query at the DoD check point"
+    alerting: []
+    status: live-on-release
+
+  - id: OUT-6095-exceptions-wait-for-the-maintainer
+    feature: story-6095-switch-to-renovate
+    title: The updates that wait for a human are never merged by the bot
+    target: "0 non-security PRs touching the toolchain pins, a .NET runtime image major or chart/values.yaml merged by app/renovate"
+    ga_baseline: "0 (MEASURED at DELIVER finalize 2026-09-29, the switch day: Renovate had merged #1800, #1801 and #1803-#1806, none an exception; no toolchain PR had opened yet)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh pr list -R LetPeopleWork/Lighthouse --author app/renovate --state merged
+      --search "merged:>=$SWITCH" --json number,title,headRefName,mergedBy,files, keeping those merged by
+      app/renovate whose branch is the toolchain or .NET group, or whose files include .nvmrc or
+      chart/values.yaml, and whose title has no [SECURITY]. A toolchain security fix auto-merges by the
+      maintainer's decision and is counted separately, not here.
+    measurement_window: once, a week after the switch
+    acceptance_scenarios: "none; a gh query at the DoD check point"
+    alerting: []
+    status: live-on-release
+
+  - id: OUT-6095-seven-day-release-age
+    feature: story-6095-switch-to-renovate
+    title: No update is proposed before its version is a week old
+    target: "0 non-security Renovate PRs whose version was younger than 7 days when the PR opened"
+    measurement_scope: vendor_repository
+    measured_by: >
+      A sample of 10 PRs from gh pr list -R LetPeopleWork/Lighthouse --author app/renovate --state all
+      --search "created:>=$SWITCH -label:security", each compared with its registry release date
+      (npm view <pkg> time.<ver>, or the GitHub release's published_at for an Action). gh cannot see
+      registry dates, so this is a sample rather than a full count.
+    measurement_window: once, a week after the switch
+    acceptance_scenarios: "none; a sampled check at the DoD check point"
+    alerting: []
+    status: live-on-release

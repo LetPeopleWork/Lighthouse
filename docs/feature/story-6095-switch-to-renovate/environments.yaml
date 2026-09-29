@@ -1,0 +1,66 @@
+# environments.yaml — story-6095-switch-to-renovate (ADO #6095)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+# This feature deploys NOTHING. The "environments" are where the dependency bot and its merges act,
+# plus the local machine where slice 03's hand upgrade is verified.
+
+target_environments:
+  - name: github-lighthouse
+    slice: "01 (and the merge of 03)"
+    description: "LetPeopleWork/Lighthouse on GitHub: hosted Mend Renovate app, main ruleset, Build And Deploy Lighthouse (ci.yml)"
+    platform: [github-actions-ubuntu-latest, github-actions-windows, github-actions-macos]
+    preconditions:
+      - "Renovate app repository selection includes LetPeopleWork/Lighthouse (maintainer action, AFTER the cutover push)"
+      - "Renovate app has 'Dependabot alerts: read'"
+      - "main ruleset 2485146: 8 required checks (Verify Backend, Verify End to End Tests, Verify Frontend, Verify Postgres Linux Build, Package App, Verify SQLite Linux Build, sonar-gates, Verify Workflow Scripts), not strict, no review, merge commits allowed, allow_auto_merge=true"
+      - "Dependabot alerts ON; Dependabot security updates OFF after cutover step 2"
+      - "renovate.json on main (no onboarding PR); dependabot.yml and dependabot-automerge.yaml deleted"
+      - "every uses: in .github/workflows and .github/actions is @<sha> # <version> (146 refs)"
+      - "no workflow filters on github.actor == a bot name"
+
+  - name: github-lighthouse-clients
+    slice: "02"
+    description: "LetPeopleWork/lighthouse-clients on GitHub: the same Renovate app, 'main: require verify' ruleset, Client CI with its Release gate"
+    platform: [github-actions-ubuntu-latest]
+    preconditions:
+      - "Renovate already live (Story #6088)"
+      - "only renovate.json and docs/release-model.md change"
+
+  - name: local-dev
+    slice: "03"
+    description: "Maintainer machine for the MUI hand upgrade and its visual check"
+    platform: [linux]
+    preconditions:
+      - "Node from .nvmrc via the fnm hook at the top of ~/.zshenv"
+      - "pnpm 10.33.2 at ~/.local/share/pnpm/pnpm (the version every lockfile is written with)"
+      - "backend started with Lighthouse.Backend/Start-DevServer.ps1; the dev instance on :5169 with real history (Restore-DbBackup.ps1) is for the visual check only, never an E2E target"
+      - "premium licence present for the @screenshot regeneration run"
+
+coexistence_matrix:
+  - tool: "Dependabot alerts"
+    must_not_break: true   # Renovate's vulnerability PRs read them
+  - tool: "toolchain-pins.mjs guard (Verify Workflow Scripts, node --test against the repo)"
+    must_not_break: true   # not a required check; failure skips version and its dependents
+  - tool: "SonarCloud sonar-gates on main (concurrent-merge stale-report race)"
+    must_not_break: false  # advisory on main; verify the gate through the API
+  - tool: "Live connector suites incl. Linear (API key shared with CI, 429 risk)"
+    must_not_break: true   # ci*.yml or backend csproj changes run every connector suite
+  - tool: "Release environment gate (ci.yml release job, ci_chart.yml publish)"
+    must_not_break: true
+  - tool: "ci_version calver build number (Nth ci.yml run of the day on the branch)"
+    must_not_break: true   # no branch-prefix logic; renovate/* handled like dependabot/*
+  - tool: "Helm Chart workflow (ci_chart.yml, path-filtered, not required)"
+    must_not_break: true   # helm-values updates never auto-merge
+  - tool: "Renovate in lighthouse-platform (ADR-097 canary/fleet rules)"
+    must_not_break: true   # untouched
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest, windows-latest, macos-latest]
+  Local: [Linux (CachyOS), zsh + fnm]
+
+deployment_assumptions:
+  - "No deployment artifact. The change is repository configuration, workflow guards and Action pins."
+  - "The cutover is reversible: revert the two commits, re-enable Dependabot security updates (gh api -X PUT .../automated-security-fixes), deselect the repo in the Renovate app. DEPENDABOT_GITHUB_TOKEN is kept until the first green Renovate merge."
+  - "The pin-conversion script is idempotent. It only rewrites a ref that is not already '@<sha> # <version>', so a second run changes nothing."
+  - "The pin-conversion script is run once and not committed. .github/scripts is untouched, and its test fixtures keep their bare pins."
+  - "Lockfiles are regenerated with pnpm 10.33.2, which Renovate takes from each project's packageManager field."
+  - "The first Renovate run opens about 19 ready PRs at 2 per hour. Expect a burst of live connector runs and a possible SonarCloud stale-report rejection on main."

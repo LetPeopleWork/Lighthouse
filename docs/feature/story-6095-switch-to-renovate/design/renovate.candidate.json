@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "timezone": "Europe/Zurich",
+  "dependencyDashboard": false,
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "rangeStrategy": "bump",
+  "rebaseWhen": "conflicted",
+  "commitMessagePrefix": "deps:",
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "merge-commit",
+  "platformAutomerge": true,
+  "ignoreTests": false,
+  "packageRules": [
+    {
+      "description": "Node and pnpm move together in one pull request that a maintainer merges, because CI, local development, the Docker build and the lockfile format all follow them. Replacing ranges keeps .nvmrc on a bare major and engines on 'major.x', so only a new LTS major opens a pull request.",
+      "matchManagers": ["nvm", "npm"],
+      "matchDepNames": ["node", "pnpm"],
+      "groupName": "Node and pnpm toolchain",
+      "rangeStrategy": "replace",
+      "separateMajorMinor": false,
+      "automerge": false
+    },
+    {
+      "description": "A new .NET runtime image only works once the projects target that .NET version, and no required check builds the image, so a maintainer merges it together with the TargetFramework change.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["mcr.microsoft.com/dotnet/**"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "A chart value change also needs chart/README.md regenerated with helm-docs and a new chart version, and the chart workflow is not a required check, so a maintainer takes these by hand.",
+      "matchManagers": ["helm-values"],
+      "automerge": false
+    },
+    {
+      "description": "Held at 9.0.x: minor releases after 8.11 broke the x-axis labels of the bar and run charts, and no test catches that.",
+      "matchPackageNames": ["@mui/x-charts", "@mui/x-date-pickers"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "enabled": false
+    },
+    {
+      "description": "Held at v7: v9 renamed or removed icons we import, and it was rolled back the day after it merged.",
+      "matchPackageNames": ["@mui/icons-material"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": true
+  }
+}

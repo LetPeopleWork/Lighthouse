@@ -1,0 +1,364 @@
+{
+  "roadmap": {
+    "project_id": "story-6095-switch-to-renovate",
+    "created_at": "2026-09-29",
+    "total_steps": 7,
+    "phases": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "ADO Story 6095: Lighthouse takes its dependency updates from Renovate instead of Dependabot, under the same auto-merge-on-green rules; lighthouse-clients adopts the same auto-merge policy; the held-back MUI packages catch up to the latest 9.x. Acceptance: the two new guards in .github/scripts (action-pins, dependency-bot) go from skipped to GREEN against fixtures and the real repository, renovate.json passes renovate-config-validator --strict, and the frontend suite and build stay green after the MUI upgrade."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (conditionally approved; both findings applied)",
+    "notes": "Built from feature-delta.md (DISCUSS D1-D9, DESIGN DES-1..DES-11, DEVOPS, DISTILL), acceptance/story-6095.feature, the three slice briefs, design/renovate.candidate.json, the RED scaffolds and tests in .github/scripts, and the one-time pin-conversion script in the session scratchpad."
+  },
+  "ssot_inputs": [
+    "docs/feature/story-6095-switch-to-renovate/feature-delta.md",
+    "docs/feature/story-6095-switch-to-renovate/acceptance/story-6095.feature",
+    "docs/feature/story-6095-switch-to-renovate/slices/slice-01-lighthouse-renovate.md",
+    "docs/feature/story-6095-switch-to-renovate/slices/slice-02-clients-automerge-all.md",
+    "docs/feature/story-6095-switch-to-renovate/slices/slice-03-mui-unpin.md",
+    "docs/feature/story-6095-switch-to-renovate/design/renovate.candidate.json",
+    "docs/feature/story-6095-switch-to-renovate/distill/upstream-issues.md",
+    "docs/product/architecture/adr-212-renovate-is-the-one-dependency-bot.md",
+    "docs/ci-learnings.md"
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      ".github/scripts",
+      ".github/workflows",
+      ".github/actions",
+      "Lighthouse.Frontend/src",
+      "/storage/repos/lighthouse-clients"
+    ],
+    "config_files": [
+      "renovate.json",
+      "Lighthouse.Frontend/package.json",
+      "Lighthouse.Frontend/pnpm-lock.yaml",
+      "/storage/repos/lighthouse-clients/renovate.json"
+    ]
+  },
+  "user_decisions": [
+    "Renovate replaces Dependabot in one change; the two bots never overlap (D1)",
+    "Everything auto-merges on green except the toolchain group, .NET runtime image majors and chart value updates (D2, DES-6)",
+    "Every Action pinned once as @sha # version by a throwaway script, not committed (DES-1)",
+    "Delete the dependabot[bot] actor guards; do not swap in renovate[bot] (DES-2)",
+    "lighthouse-clients auto-merges every update type and vulnerability alerts (D3, DES-10)",
+    "MUI holds carry over in slice 01 and are lifted by hand in slice 03 (D7, DES-11)"
+  ],
+  "out_of_scope": [
+    "Pushing anything: the orchestrator pauses before every push, and the slice 01 cutover commit must not reach main before the maintainer adds Lighthouse to the Renovate app selection",
+    "Repository settings: switching Dependabot security updates off, deleting DEPENDABOT_GITHUB_TOKEN and the Dependabot secret set (DES-9 steps 2, 3 and 6, orchestrator/maintainer after push)",
+    "Committing the pin-conversion script",
+    "@mui/lab (no stable v9), lighthouse-platform's Renovate config, schedules, lock-file maintenance",
+    "Mutation testing: DELIVER Phase 5, not roadmap steps (see mutation below)"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Lighthouse switches from Dependabot to Renovate",
+      "description": "Slice 01 (US-01, US-02). Build both guards, pin every Action as @sha # version, then cut over in one commit. Push order per DES-9: the pin commit, then the switch commit.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Guard: report actions Renovate cannot keep current",
+          "description": "Replace the RED scaffold in .github/scripts/action-pins.mjs with findActionPinViolations. Unskip every fixture test; the real-repository test stays skipped because the tree still has tag, branch and bare-SHA refs.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/action-pins.test.mjs",
+          "scenario_name": "An action Renovate would skip or that could move under the build is rejected",
+          "scenarios_closed": [
+            "An action Renovate would skip or that could move under the build is rejected",
+            "References the pin rule does not apply to, or accepts in an unusual form"
+          ],
+          "red_to_green_tests": [
+            "a tree whose every action names a commit and its release passes",
+            "accepts <each of the 9 ACCEPTED forms>",
+            "rejects <each of the 9 REJECTED forms>",
+            "rejects an unpinned action inside a composite action as well",
+            "reports every unpinned action, not just the first",
+            "does not read a commented-out step",
+            "does not read YAML outside the workflows and actions folders",
+            "a .github that cannot be read fails the check instead of passing it"
+          ],
+          "files_to_modify": [
+            ".github/scripts/action-pins.mjs (replace scaffold, remove __SCAFFOLD__)",
+            ".github/scripts/action-pins.test.mjs (skip restructure only, see implementation_notes)"
+          ],
+          "dependencies": [],
+          "deps": [],
+          "criteria": [
+            "All 24 fixture tests GREEN; the real-repository test is the only skipped test in action-pins.test.mjs.",
+            "RED captured first: fixture tests unskipped against the scaffold fail with the scaffold error before implementation.",
+            "Violation shape { rule, file, line, message }; repo-relative forward-slash file, 1-based line, message says what to write instead.",
+            "Only YAML under .github/workflows and .github/actions is read; ./ refs and docker:// are skipped; an unreadable .github rejects the call.",
+            "node --test .github/scripts/*.test.mjs green: every existing test passes, no new failures."
+          ],
+          "implementation_notes": "Skip restructure: delete `const PENDING = 'pending: story 6095 slice 01'`; add `const PENDING_REAL_REPO = 'pending: the repository still pins some actions by tag, branch or bare commit'` used ONLY by the test 'every action the repository runs is pinned to a commit that names its release'; drop `{ skip: PENDING }` from every other test (no test body or name changes). Contract points from DISTILL Scaffolds: a pin is a 40-hex commit then `# <ref>` where ref is a release (v1.3, v6.0.2) or a branch label (stable); quoted pins and varying spaces around # are accepted; a shortened SHA or no ref is action-not-pinned; a bare SHA or empty comment is action-pin-unlabelled; commented-out lines are not read; reusable workflows from another repo by path are in scope. Style: mirror .github/scripts/toolchain-pins.mjs (tabs, ESM, node: built-ins only, small named functions, no CLI entry). Keep each function under cognitive complexity 15 and regexes simple (Sonar). Comments rare, plain language, no internal references (no D2, DES-1, AC-01.7, ADR-212, story or slice numbers) in code, test names or skip strings. EXEMPT FROM PARADIGM: node:test with property-style fixture tables authored in DISTILL; a pure read-only guard returning Violation[] is fully asserted per test, so no Hypothesis/state-delta harness applies. Commit: `feat(ci): guard reports actions Renovate cannot keep current`."
+        },
+        {
+          "id": "01-02",
+          "name": "Pin every action to a commit with its release",
+          "description": "Run the one-time pin-conversion script on the real tree (29 files, 141 lines; .github/scripts untouched), then unskip the action-pins real-repository test, which is now green.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/action-pins.test.mjs",
+          "scenario_name": "Every action the build uses stays one Renovate can keep current",
+          "red_to_green_tests": [
+            "every action the repository runs is pinned to a commit that names its release"
+          ],
+          "files_to_modify": [
+            ".github/workflows/*.yml and *.yaml, .github/actions/*/action.yml (script output only, 29 files)",
+            ".github/scripts/action-pins.test.mjs (delete PENDING_REAL_REPO and its skip option)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "RED first: with the real-repository test unskipped before the script runs, it fails listing the bare, tag and branch refs.",
+            "Script prints no UNRESOLVED line; git diff --stat shows about 29 files and 141 changed lines, all under .github/workflows or .github/actions.",
+            "A second script run changes nothing (idempotent); nothing under .github/scripts changes.",
+            "action-pins.test.mjs: 25 of 25 GREEN, 0 skipped; whole node --test .github/scripts/*.test.mjs suite green.",
+            "Only uses: lines change; no other workflow content differs (actionlint clean if installed)."
+          ],
+          "implementation_notes": "Script: /tmp/claude-1000/-storage-repos-Lighthouse/1572f593-3258-4026-b886-d812d4ed010e/scratchpad/pin-all-actions.sh. Run it, never copy it into the repository: `bash <script> /storage/repos/Lighthouse`. It needs `gh` authenticated (reads repos/<action>/tags, git/ref, commits). It rewrites only lines ending in `uses: owner/repo@<ref>` with nothing after the ref, so the 5 already-annotated refs are left alone. Counts may drift slightly if an upstream tag moved since DESIGN (e.g. sonarqube-quality-gate-action master no longer at a release gets labelled `# master`); both forms satisfy the guard - report any difference from 29/141 with the reason rather than hand-editing. dependabot-automerge.yaml gets converted too; it is deleted in 01-04, that is fine. If the guard still reports a violation after the script, STOP and report the line (do not hand-fix silently). This commit touches ci*.yml, which turns on every live connector suite in CI on push; that is expected and the orchestrator's concern. Commit (DES-9 a): `ci(actions): pin every action to a commit with its release named`."
+        },
+        {
+          "id": "01-03",
+          "name": "Guard: one dependency bot, actor-free jobs, reasoned holds",
+          "description": "Replace the RED scaffold in .github/scripts/dependency-bot.mjs with findDependencyBotViolations. Unskip every fixture test; the two real-repository tests stay skipped because Dependabot is still configured and renovate.json does not exist yet.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/dependency-bot.test.mjs",
+          "scenario_name": "A job that runs or skips depending on who merged is rejected",
+          "scenarios_closed": [
+            "A second dependency bot's configuration is rejected",
+            "A repository without a readable Renovate policy is rejected",
+            "A job that runs or skips depending on who merged is rejected",
+            "A hold without its reason is rejected",
+            "A rule that holds nothing needs no reason"
+          ],
+          "red_to_green_tests": [
+            "a tree with one bot, no actor-dependent job and a reason on every hold passes",
+            "rejects a second bot configured in .github/dependabot.yml / .yaml",
+            "rejects a repository with no Renovate policy",
+            "rejects a Renovate policy that is not valid JSON",
+            "rejects a workflow that <each of the 5 ACTOR_CONDITIONS>",
+            "rejects an actor condition written across several lines",
+            "rejects an actor condition on a step inside a composite action",
+            "does not read a commented-out actor condition",
+            "rejects <each of the 6 HOLDS> with no reason",
+            "rejects a dependency ignored outside any rule",
+            "reports each hold without a reason, not just the first",
+            "does not ask for a reason on <each of the 5 NOT_HOLDS>"
+          ],
+          "files_to_modify": [
+            ".github/scripts/dependency-bot.mjs (replace scaffold, remove __SCAFFOLD__)",
+            ".github/scripts/dependency-bot.test.mjs (skip restructure only, see implementation_notes)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "All 26 fixture tests GREEN; only the two real-repository tests remain skipped in dependency-bot.test.mjs.",
+            "RED captured first: fixture tests unskipped against the scaffold fail with the scaffold error before implementation.",
+            "An if: reading github.actor, github.triggering_actor, any user.login or a [bot] name is reported at its line; a username: ${{ github.actor }} login is not.",
+            "A hold is enabled false, automerge false, allowedVersions, dependencyDashboardApproval true, or non-empty top-level ignoreDeps; each needs a non-blank string or non-empty list description.",
+            "node --test .github/scripts/*.test.mjs green: every existing test passes, no new failures."
+          ],
+          "implementation_notes": "Skip restructure: delete `const PENDING = 'pending: story 6095 slice 01'`; add `const PENDING_REAL_REPO = 'pending: the repository still runs Dependabot and has no Renovate policy'` used ONLY by 'the repository has one dependency bot, and its merges run the same jobs as a person would' and 'every update the repository holds back says why'; drop `{ skip: PENDING }` from every other test. Contract points: violation `{ rule, file, line?, message }`, line required for run-depends-on-actor; an `if: >-` spanning several lines is one condition (reported at the if: line); trailing `# ...` comments are not read; when renovate.json is missing or unparseable report exactly that one violation and skip hold checks; hold-without-reason messages mention `description`. Scope for if: scanning is YAML under .github/workflows and .github/actions, the same scope as action-pins: a small shared helper for listing those files is acceptable if both guards need it verbatim - if you add one, name the extra file in the report so the mutation config includes it; never import toolchain-pins internals. Same style, Sonar and comment rules as 01-01; no internal references in code, test names or skip strings. EXEMPT FROM PARADIGM: same reason as 01-01. Commit: `feat(ci): guard keeps one dependency bot and reasoned holds`."
+        },
+        {
+          "id": "01-04",
+          "name": "Cut over from Dependabot to Renovate",
+          "description": "One commit: add renovate.json byte-identical to the candidate, delete dependabot.yml and the auto-merge workflow, drop the eight actor guards, rewrite the README paragraph, unskip the dependency-bot real-repository tests, validate the config.",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/scripts/dependency-bot.test.mjs",
+          "scenario_name": "Only one dependency bot is configured",
+          "scenarios_closed": [
+            "Only one dependency bot is configured",
+            "The build runs the same jobs whoever merged the change",
+            "Every update the repository holds back says why",
+            "The Renovate policy is accepted by Renovate's own checker (@manual delivery check, acceptance/story-6095.feature)",
+            "The contributor notes describe Renovate and the gap it leaves (@manual delivery check, grep half; the secrets half is post-push)"
+          ],
+          "red_to_green_tests": [
+            "the repository has one dependency bot, and its merges run the same jobs as a person would",
+            "every update the repository holds back says why"
+          ],
+          "files_to_modify": [
+            "renovate.json (CREATE, byte-identical copy of docs/feature/story-6095-switch-to-renovate/design/renovate.candidate.json)",
+            ".github/dependabot.yml (DELETE)",
+            ".github/workflows/dependabot-automerge.yaml (DELETE)",
+            ".github/workflows/ci_codesign-windows.yml",
+            ".github/workflows/ci_docker.yml",
+            ".github/workflows/ci_release.yml",
+            ".github/workflows/ci_verifymacos.yml",
+            ".github/workflows/ci_verifywindows.yml",
+            ".github/workflows/ci_package-linux-standalone.yml",
+            ".github/workflows/ci_package-macos-standalone.yml",
+            ".github/workflows/ci_package-win-standalone.yml",
+            ".github/actions/README.md",
+            ".github/scripts/dependency-bot.test.mjs (delete PENDING_REAL_REPO and its skip options)"
+          ],
+          "dependencies": [
+            "01-02",
+            "01-03"
+          ],
+          "deps": [
+            "01-02",
+            "01-03"
+          ],
+          "criteria": [
+            "RED first: the two real-repository tests unskipped before the edits fail on second-bot-config, run-depends-on-actor and renovate-config-missing.",
+            "cmp renovate.json against the candidate exits 0; each of the 8 workflows keeps if: github.ref == 'refs/heads/main' and no github.actor condition.",
+            "npx --yes --package renovate@44 renovate-config-validator --strict renovate.json prints Config validated successfully and exits 0; record the output.",
+            "grep -rni dependabot .github/actions/README.md finds nothing; README names Renovate and the indirect-dependency gap caught by pnpm audit on main.",
+            "Whole suite node --test .github/scripts/*.test.mjs: 0 failed, 0 skipped, including toolchain-pins and generate-version."
+          ],
+          "implementation_notes": "Copy the candidate with `cp`, do not retype it; do not reformat it (Biome does not cover the repo root JSON, but check no formatter touches it). In each workflow change exactly `if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'` to `if: github.ref == 'refs/heads/main'`; leave the `username: ${{ github.actor }}` GHCR logins in ci_docker.yml and ci_release.yml untouched. README: replace the 'Dependabot:' block with a short 'Dependency updates' paragraph: Renovate (renovate.json at the root) proposes updates once a release is 7 days old and they merge themselves when the required checks pass, except the Node and pnpm toolchain group, .NET runtime image majors and chart value updates, which wait for a maintainer; security fixes skip the wait; a vulnerable indirect dependency gets no bot update and is caught by the pnpm audit on main, where a maintainer adds an override. Do not use the word Dependabot anywhere in the README (say 'GitHub's vulnerability alerts'). Also rewrite the 'Pinning external action SHAs' block: it points at Scripts/pin-action-shas.sh, which does not exist, and describes the bare-SHA form the new guard rejects; replace it with one or two lines saying every uses: is pinned as `@<sha> # <version>` so Renovate can update it, and the workflow-scripts check rejects any other form. While there, the `build-frontend` bullet's 'Node 20 + pnpm 9' is stale (Node comes from .nvmrc, pnpm from packageManager) - fix it in the same edit. Delete the constant once no test uses it. This commit must not reach main before the maintainer adds Lighthouse to the Renovate app; that is the orchestrator's push gate, not a crafter action. Commit (DES-9 b): `ci(deps): switch dependency updates from Dependabot to Renovate`. EXEMPT FROM PARADIGM: config and workflow edits verified by the real-repository guard tests and the Renovate validator."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "lighthouse-clients auto-merges every update",
+      "description": "Slice 02 (US-03). Config and docs change in a DIFFERENT git repository, /storage/repos/lighthouse-clients. Independent of phase 01.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Clients: every update and security fix auto-merges",
+          "description": "Apply the DES-10 diff to lighthouse-clients renovate.json and rewrite its docs/release-model.md Dependency Updates section; validate the config; commit in that repository.",
+          "agent": "nw-software-crafter",
+          "test_file": "docs/feature/story-6095-switch-to-renovate/acceptance/story-6095.feature",
+          "scenario_name": "The clients' policy lets every update merge itself and is still valid",
+          "scenarios_closed": [
+            "The clients' policy lets every update merge itself and is still valid",
+            "The clients' release model states the same rule"
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "/storage/repos/lighthouse-clients/renovate.json",
+            "/storage/repos/lighthouse-clients/docs/release-model.md"
+          ],
+          "dependencies": [],
+          "deps": [],
+          "criteria": [
+            "The patch/minor rule and the Actions-major rule become one matchPackageNames [\"*\"] auto-merge rule; vulnerabilityAlerts.automerge is true; everything else unchanged.",
+            "renovate-config-validator --strict renovate.json exits 0 in lighthouse-clients; record the output.",
+            "jq '.minimumReleaseAge, .vulnerabilityAlerts.automerge, [.packageRules[] | select(.automerge == true) | .matchPackageNames]' prints \"7 days\", true, [[\"*\"]].",
+            "Dependency Updates section says every update, majors and security fixes included, merges itself once CI is green; no-changeset and Release-gate statements unchanged.",
+            "One commit in lighthouse-clients, no changeset, no version bump; nothing in the Lighthouse repository changes."
+          ],
+          "implementation_notes": "Work with absolute paths under /storage/repos/lighthouse-clients and run git there (`git -C /storage/repos/lighthouse-clients ...`). Read that repository's own CLAUDE.md and commit conventions first and follow them where they differ. The rule description text is in DES-10 of feature-delta.md: 'Every update merges itself once CI is green, majors included. A major that breaks a package shows up on the next release run, which still waits for a human at the Release gate.' Keep automergeType pr and ignoreTests false. The release-model sentence (around line 50) becomes: 'Every update, majors and security fixes included, merges itself once CI is green.' No internal references (D3, DES-10, story numbers) in the description or the docs prose. Commit, e.g. `ci(deps): every Renovate update merges itself once verify is green`. EXEMPT FROM PARADIGM: config and prose in another repository; verified by the Renovate validator and jq, with the live behaviour observed after push."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Held-back MUI packages catch up to 9.x",
+      "description": "Slice 03 (US-04). Hand upgrade in Lighthouse.Frontend with pnpm 10.33.2 (~/.local/share/pnpm/pnpm) and Node from .nvmrc via fnm; remove each lifted hold from renovate.json. Needs phase 01's renovate.json.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Upgrade MUI charts and date pickers to latest 9.x",
+          "description": "Move @mui/x-charts and @mui/x-date-pickers from 9.0.x to the latest 9.x, fix whatever the upgrade breaks, and delete their hold rule from renovate.json.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.keyboard.test.tsx",
+          "scenario_name": "The metrics date range survives the keystrokes that once crashed it",
+          "scenarios_closed": [
+            "The metrics date range survives the keystrokes that once crashed it",
+            "The upgraded MUI packages pass every frontend gate (charts and pickers half; E2E is an orchestrator verification)"
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Frontend/pnpm-lock.yaml",
+            "renovate.json (delete the @mui/x-charts + @mui/x-date-pickers rule)",
+            "Lighthouse.Frontend/vitest.config.ts (only if server.deps.inline needs widening)",
+            "chart / date-picker source files the upgrade forces (e.g. BarRunChart, StackedAreaChart, DateRangeSelector) - list each in the report"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "deps": [
+            "01-04"
+          ],
+          "criteria": [
+            "Both packages at the same latest 9.x, same specifier form as @mui/x-data-grid; lockfile written by pnpm 10.33.2; pnpm install --frozen-lockfile passes.",
+            "pnpm test green, including DateRangeSelector.keyboard.test.tsx and DashboardHeader.popover.test.tsx, with no ERR_UNSUPPORTED_DIR_IMPORT.",
+            "pnpm build completes with zero errors and zero warnings; revert unrelated files the prebuild biome --write touches.",
+            "The chart/picker hold rule is gone from renovate.json; renovate-config-validator --strict still exits 0; node --test .github/scripts/*.test.mjs green.",
+            "If a package cannot be lifted, STOP and report the break with the smallest reproduction; do not keep or rewrite the hold yourself."
+          ],
+          "implementation_notes": "Read docs/ci-learnings.md first: 2026-06-18 (MUI bump fails Vitest with ERR_UNSUPPORTED_DIR_IMPORT; fix is a regex in server.deps.inline), 2026-06-16 and the 2026-08-04 RESOLVED entry (pnpm overrides live in pnpm-workspace.yaml, never package.json#pnpm), 2026-09-14 (a lockfile written by a newer pnpm breaks CI). Use `~/.local/share/pnpm/pnpm` (--version prints 10.33.2) and the .nvmrc Node from fnm; never run pnpm without checking its version. Also the MUI-X entries (2026-09-19 markers hidden from the accessibility tree; count SVG path commands; style series by data-series) if chart tests need touching. Unit chart tests mock @mui/x-charts, so they cannot see the x-axis-label regression; that is the orchestrator's dev-instance check, not yours. Do not change @mui/lab (stays 7.0.0) or @mui/icons-material (step 03-02). A lifted package that cannot be kept green is a maintainer decision (hold with reason + ADO Bug created only with confirmation), so stop and report. Keep functions below Sonar cognitive complexity 15; comments rare, plain language, no internal references. Commit: `deps(frontend): bring MUI charts and date pickers up to <version>`. EXEMPT FROM PARADIGM: dependency upgrade covered by the existing Vitest suite, the real-picker tests and pnpm build; no new tests authored."
+        },
+        {
+          "id": "03-02",
+          "name": "Upgrade MUI icons to latest 9.x",
+          "description": "Move @mui/icons-material from v7 to the latest 9.x, fix renamed or removed icons, and delete its hold rule from renovate.json.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastLevel.test.ts",
+          "scenario_name": "The upgraded MUI packages pass every frontend gate",
+          "scenarios_closed": [
+            "The upgraded MUI packages pass every frontend gate"
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Frontend/pnpm-lock.yaml",
+            "renovate.json (delete the @mui/icons-material rule)",
+            "every source file importing a renamed or removed icon (list each in the report)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "deps": [
+            "03-01"
+          ],
+          "criteria": [
+            "@mui/icons-material at the latest 9.x matching @mui/material's line; lockfile by pnpm 10.33.2; frozen install passes; @mui/lab still 7.0.0.",
+            "Every renamed or removed icon replaced by its closest v9 equivalent; the report maps old name to new for each.",
+            "pnpm test green including ForecastLevel.test.ts and ForecastLevel.test.tsx; pnpm build zero errors and zero warnings.",
+            "renovate.json has no MUI rule left; renovate-config-validator --strict exits 0; node --test .github/scripts/*.test.mjs green.",
+            "If an icon has no v9 equivalent or the upgrade cannot go green, STOP and report; do not keep the hold yourself."
+          ],
+          "implementation_notes": "History: an earlier v9 bump was rolled back the next day, alongside a ConfidentIcon/RiskyIcon import fix, which points at renamed icons. A removed icon fails pnpm build because its default import stops resolving, so the build is the detector. Watch pnpm peer-dependency output for @mui/lab 7 against icons 9 and report it; do not upgrade @mui/lab. Same pnpm/Node/ci-learnings rules as 03-01. E2E locators must never key on an MUI icon data-testid (ci-learnings 2026-07-19); if an E2E POM does, report it rather than changing E2E here. Commit: `deps(frontend): bring MUI icons up to <version>`. EXEMPT FROM PARADIGM: dependency upgrade covered by the existing suites; no new tests authored."
+        }
+      ]
+    }
+  ],
+  "verification_notes": {
+    "owner": "orchestrator, not the crafter",
+    "after_01-04_before_push": [
+      "Show the maintainer both slice 01 commits; push only after the maintainer confirms Lighthouse is being added to the Renovate app selection (DES-9 step 3 happens right after the push).",
+      "After push: DES-9 steps 2 (automated-security-fixes DELETE), 4 (T0 observations) and 6 (delete Dependabot secrets after the first green Renovate merge); record the @live-renovate scenarios at T0, T1 and T+7d.",
+      "T1, the first Renovate merge on main: verify the walking-skeleton scenario \"A week-old update merges itself and the release waits for the maintainer\" (PR merged without human action as a merge commit, main runs the full job set and parks at the Release gate)."
+    ],
+    "after_02-01": [
+      "Push lighthouse-clients separately after confirmation; @live-renovate scenarios 'A major update to a client package merges itself once verify is green' and 'A client update that fails verify stays open' are observed later."
+    ],
+    "after_03-02": [
+      "Run the Playwright E2E suite locally (AC-04.1).",
+      "Dev instance (Start-DevServer.ps1, real history via Restore-DbBackup.ps1, :5169): 'Charts still show their x-axis labels' on bar, run and stacked-area charts; the metrics date-range picker; 'Forecast icons still show'.",
+      "'Documentation images that show charts or date pickers are regenerated': regenerate chart/picker @screenshot PNGs into a scratch folder first and compare old vs new, then rm and regenerate (premium licence needed).",
+      "'A package that cannot be lifted keeps its hold with the reason and a reproduction': only if a crafter step stopped; the ADO Bug needs maintainer confirmation."
+    ]
+  },
+  "mutation": {
+    "phase": "DELIVER Phase 5, after all steps, on frozen code",
+    "slice_01": "StrykerJS command runner over .github/scripts/action-pins.mjs and .github/scripts/dependency-bot.mjs (plus any shared helper 01-03 adds), command `node --test .github/scripts/action-pins.test.mjs .github/scripts/dependency-bot.test.mjs`, from a git archive sandbox holding .github, renovate.json and both projects' package.json; gate >= 80%. Precedent: docs/feature/story-6070-toolchain-single-source/mutation/.",
+    "slice_02": "N/A, config and docs only.",
+    "slice_03": "StrykerJS scoped to each frontend source file 03-01/03-02 changed, with a dedicated stryker.config.story-6095-slice-03.mjs and a vitest config limited to those files' tests; >= 80%. N/A if the upgrade needed no source change."
+  }
+}
