@@ -44,7 +44,7 @@ describe("ForecastLevel class", () => {
 
 	it("should treat a missing probability as its own level rather than a risky one", () => {
 		// null coerces to 0 in a numeric comparison, so without the explicit branch this
-		// reads as "Risky" - a risk the data cannot actually support (ADR-112).
+		// reads as "Risky", claiming a risk when there is simply no forecast to judge.
 		const forecastLevel = new ForecastLevel(null);
 
 		expect(forecastLevel.level).toBe("Unknown");

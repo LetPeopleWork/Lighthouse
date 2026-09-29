@@ -20,7 +20,7 @@ export class ForecastLevel {
 
 	constructor(probability: number | null) {
 		// No forecast is its own level, not a bad one. Without this, null coerces to 0 and renders as
-		// "Risky" - conservative, but it states a risk the data cannot support (ADR-112).
+		// "Risky", which claims a risk when there is simply no forecast to judge.
 		if (probability === null) {
 			this.level = "Unknown";
 			this.IconComponent = UnknownIcon;
