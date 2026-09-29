@@ -249,6 +249,13 @@ describe("CreateTeamWizard", () => {
 		mockGetWizardsForSystem.mockReturnValue([]);
 	});
 
+	// The backend creates Teams with the same values (Team.cs), so changing one here without the
+	// other makes a Team's defaults depend on whether it was created in the UI or through the API.
+	it("keeps the Team defaults the backend uses", () => {
+		expect(DEFAULT_THROUGHPUT_HISTORY_DAYS).toBe(90);
+		expect(DEFAULT_FEATURE_WIP).toBe(0);
+	});
+
 	describe("Step 1: Choose Connection", () => {
 		it("renders a stepper with four steps", async () => {
 			renderWizard();

@@ -326,7 +326,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 								}
 								error={!!error}
 								helperText={error}
-								slotProps={{ htmlInput: { min: 10 } }}
+								slotProps={{ htmlInput: { min: 1 } }}
 							/>
 						)}
 					</Box>

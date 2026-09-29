@@ -249,6 +249,12 @@ describe("CreatePortfolioWizard", () => {
 		mockGetWizardsForSystem.mockReturnValue([]);
 	});
 
+	// The backend creates Portfolios with the same value (Portfolio.cs), so changing one here without
+	// the other makes a Portfolio's default depend on whether it was created in the UI or through the API.
+	it("keeps the Portfolio default the backend uses", () => {
+		expect(DEFAULT_PERCENTILE_HISTORY_DAYS).toBe(90);
+	});
+
 	describe("Step 1: Choose Connection", () => {
 		it("renders a stepper with four steps", async () => {
 			renderWizard();
