@@ -324,6 +324,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        [TestCase(null)]
+        [TestCase(0)]
+        [TestCase(-5)]
+        public async Task UpdateFeaturesForProject_UseCalculatedDefault_PercentileHistoryNotAPositiveLength_SamplesTheDefaultWindow(int? percentileHistoryInDays)
+        {
+            var team = CreateTeam();
+            var project = CreatePortfolio();
+
+            project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
+            project.PercentileHistoryInDays = percentileHistoryInDays;
+
+            var feature = new Feature(team, 0) { ReferenceId = "42" };
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+
+            var sampledWindows = new List<TimeSpan>();
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Callback<Portfolio, DateTime, DateTime>((_, startDate, endDate) => sampledWindows.Add(endDate - startDate))
+                .Returns(new List<Feature>());
+
+            var subject = CreateSubject();
+            await subject.UpdateFeaturesForPortfolio(project);
+
+            Assert.That(sampledWindows, Has.Count.EqualTo(1));
+            Assert.That(sampledWindows[0], Is.EqualTo(TimeSpan.FromDays(Portfolio.DefaultPercentileHistoryInDays)).Within(TimeSpan.FromSeconds(5)));
+        }
+
+        [Test]
         public async Task UpdateFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
         {
             var team = CreateTeam();

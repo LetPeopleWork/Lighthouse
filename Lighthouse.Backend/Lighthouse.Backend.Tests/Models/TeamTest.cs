@@ -66,5 +66,25 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(settings.EndDate.Kind, Is.EqualTo(DateTimeKind.Utc));
             };
         }
+
+        [Test]
+        public void NewTeam_ThroughputHistory_IsTheNamedDefaultOfNinetyDays()
+        {
+            var team = new Team();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Team.DefaultThroughputHistoryDays, Is.EqualTo(90));
+                Assert.That(team.ThroughputHistory, Is.EqualTo(Team.DefaultThroughputHistoryDays));
+            }
+        }
+
+        [Test]
+        public void NewTeam_FeatureWIP_IsNotSet()
+        {
+            var team = new Team();
+
+            Assert.That(team.FeatureWIP, Is.Zero);
+        }
     }
 }

@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Models
 {
     public class Portfolio : WorkTrackingSystemOptionsOwner
     {
+        public const int DefaultPercentileHistoryInDays = 90;
+
         public override List<string> WorkItemTypes { get; set; } = ["Epic"];
 
         public List<Team> Teams => GetTeams();
@@ -26,7 +28,7 @@ namespace Lighthouse.Backend.Models
 
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
 
-        public int? PercentileHistoryInDays { get; set; } = 90;
+        public int? PercentileHistoryInDays { get; set; } = DefaultPercentileHistoryInDays;
 
         public int DefaultWorkItemPercentile { get; set; } = 85;
 

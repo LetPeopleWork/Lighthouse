@@ -5,6 +5,18 @@ namespace Lighthouse.Backend.Tests.Models
     public class PortfolioTest
     {
         [Test]
+        public void NewPortfolio_PercentileHistoryInDays_IsTheNamedDefaultOfNinetyDays()
+        {
+            var portfolio = new Portfolio();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Portfolio.DefaultPercentileHistoryInDays, Is.EqualTo(90));
+                Assert.That(portfolio.PercentileHistoryInDays, Is.EqualTo(Portfolio.DefaultPercentileHistoryInDays));
+            }
+        }
+
+        [Test]
         public void RefreshUpdateTime_RefreshesLastUpdateTime()
         {
             var subject = CreateSubject();

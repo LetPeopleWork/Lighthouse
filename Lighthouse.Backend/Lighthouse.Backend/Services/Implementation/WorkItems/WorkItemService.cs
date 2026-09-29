@@ -715,7 +715,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 // calendar day; an off-by-one only widens the percentile's sample.
                 var endDate = DateTime.UtcNow;
 
-                var historyInDays = project.PercentileHistoryInDays ?? 90;
+                var historyInDays = project.PercentileHistoryInDays is int configuredDays and > 0 ? configuredDays : Portfolio.DefaultPercentileHistoryInDays;
                 var startDate = DateTime.UtcNow.AddDays(-historyInDays);
                 var closedFeatures = portfolioMetricsService.GetCycleTimeDataForPortfolio(project, startDate, endDate);
 
@@ -729,7 +729,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                     defaultItems = PercentileCalculator.CalculatePercentile(historicalFeatureSize.ToList(), project.DefaultWorkItemPercentile);
 
                     // Stryker disable once all: reports the value CalculatePercentile just returned; the value is what the caller uses, the sentence is not.
-                    logger.LogDebug("{Percentile} Percentile Based on Last {Days} days is {DefaultItems}", project.DefaultWorkItemPercentile, project.PercentileHistoryInDays, defaultItems);
+                    logger.LogDebug("{Percentile} Percentile Based on Last {Days} days is {DefaultItems}", project.DefaultWorkItemPercentile, historyInDays, defaultItems);
                 }
             }
 

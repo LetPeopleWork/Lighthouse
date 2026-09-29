@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
@@ -27,9 +27,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         // The day grain the recorder snapshots against, mirroring the point-in-time throughputPbc
         // widget: BaseMetricsView asks for [today - defaultDateRange, today]. For a team the
-        // default range is the span of its own throughput history window (Team.ThroughputHistory
-        // defaults to 30 => a 29-day span); PortfolioMetricsView hard-codes 90.
-        private const int DefaultTeamLookbackDays = 29;
+        // default range is the span of its own throughput history window (the fixture Team below
+        // pins 30 days => a 29-day span); PortfolioMetricsView hard-codes 90.
+        private const int TeamThroughputHistoryDays = 30;
+        private const int DefaultTeamLookbackDays = TeamThroughputHistoryDays - 1;
         private const int PortfolioLookbackDays = 90;
 
         // A team pinning fixed throughput dates has no as-of-today range of its own, so the recorder
@@ -141,6 +142,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             {
                 Id = id,
                 Name = $"Test Team {id}",
+                ThroughputHistory = TeamThroughputHistoryDays,
                 WorkTrackingSystemConnection = new WorkTrackingSystemConnection
                 {
                     Name = "Connection",

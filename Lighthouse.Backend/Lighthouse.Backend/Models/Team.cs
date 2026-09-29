@@ -2,9 +2,11 @@
 {
     public class Team : WorkTrackingSystemOptionsOwner
     {
+        public const int DefaultThroughputHistoryDays = 90;
+
         public override List<string> WorkItemTypes { get; set; } = ["User Story", "Bug"];
 
-        public int FeatureWIP { get; set; } = 1;
+        public int FeatureWIP { get; set; }
 
         public bool AutomaticallyAdjustFeatureWIP { get; set; }
 
@@ -14,7 +16,7 @@
 
         public DateTime? ThroughputHistoryEndDate { get; set; }
 
-        public int ThroughputHistory { get; set; } = 30;
+        public int ThroughputHistory { get; set; } = DefaultThroughputHistoryDays;
 
         public string? ForecastFilterRuleSetJson { get; set; }
 
