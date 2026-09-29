@@ -1,6 +1,6 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import PredictabilityScore from "./PredictabilityScore";
 
@@ -12,6 +12,29 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 describe("PredictabilityScore", () => {
+	// jsdom has no layout, so the chart cannot resolve its width and drops reference lines that fall outside its drawing area.
+	beforeEach(() => {
+		const realGetComputedStyle = window.getComputedStyle.bind(window);
+		vi.spyOn(window, "getComputedStyle").mockImplementation(
+			(element, pseudo) => {
+				const style = realGetComputedStyle(element, pseudo);
+				return new Proxy(style, {
+					get(target, property) {
+						if (property === "width" && !target.width.endsWith("px")) {
+							return "800px";
+						}
+						const value = Reflect.get(target, property, target);
+						return typeof value === "function" ? value.bind(target) : value;
+					},
+				});
+			},
+		);
+	});
+
+	afterEach(() => {
+		vi.mocked(window.getComputedStyle).mockRestore();
+	});
+
 	const mockDataWithResults: IForecastPredictabilityScore = {
 		predictabilityScore: 0.75,
 		percentiles: [

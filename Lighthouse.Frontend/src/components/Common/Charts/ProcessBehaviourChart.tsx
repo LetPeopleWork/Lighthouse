@@ -15,6 +15,7 @@ import {
 	ChartsXAxis,
 	ChartsYAxis,
 	LinePlot,
+	type MarkElementProps,
 	MarkPlot,
 } from "@mui/x-charts";
 import type React from "react";
@@ -94,24 +95,11 @@ const getHighestPriorityCause = (
 	return null;
 };
 
-const SpecialCauseMark = (props: Record<string, unknown>) => {
+const SpecialCauseMark = (props: MarkElementProps) => {
 	const { dataPoints, selectedCause, defaultColor } = useContext(
 		SpecialCauseMarkContext,
 	);
-	const {
-		x,
-		y,
-		dataIndex,
-		color: _color,
-		id: _id,
-		...rest
-	} = props as {
-		x: number;
-		y: number;
-		dataIndex: number;
-		color: string;
-		id: string;
-	} & Record<string, unknown>;
+	const { x, y, dataIndex, color: _color, id: _id, ...rest } = props;
 
 	const point = dataPoints[dataIndex];
 	const causes = point?.specialCauses ?? [];
