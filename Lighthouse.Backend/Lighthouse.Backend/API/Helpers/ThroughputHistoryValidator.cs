@@ -11,5 +11,12 @@ namespace Lighthouse.Backend.API.Helpers
         {
             return teamSetting.UseFixedDatesForThroughput || teamSetting.ThroughputHistory > 0;
         }
+
+        // Teams saved before this rule existed can still hold 0. Sending that value back unchanged
+        // must not block saving their other settings, but nobody may newly set 0 or less.
+        public static bool IsValid(TeamSettingDto teamSetting, int storedThroughputHistory)
+        {
+            return IsValid(teamSetting) || teamSetting.ThroughputHistory == storedThroughputHistory;
+        }
     }
 }

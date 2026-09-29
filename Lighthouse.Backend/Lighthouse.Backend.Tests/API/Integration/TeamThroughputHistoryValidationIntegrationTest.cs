@@ -111,6 +111,50 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task PutTeam_StoredThroughputHistoryZero_SavesAnotherSettingAndKeepsZero()
+        {
+            StoreThroughputHistoryDirectly(seededTeamId, 0);
+
+            var teamSetting = BuildTeamSettingDto();
+            teamSetting.Id = seededTeamId;
+            teamSetting.ThroughputHistory = 0;
+            teamSetting.SystemWIPLimit = 7;
+
+            client.AsTeamAdmin(seededTeamId);
+            var response = await client.PutAsJsonAsync($"/api/latest/teams/{seededTeamId}", teamSetting);
+
+            var body = await response.Content.ReadAsStringAsync();
+            var storedTeam = LoadTeamFromDatabase(seededTeamId);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(storedTeam.SystemWIPLimit, Is.EqualTo(7));
+                Assert.That(storedTeam.ThroughputHistory, Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task PutTeam_StoredThroughputHistoryZero_NegativeWithoutFixedDates_Returns400AndKeepsZero()
+        {
+            StoreThroughputHistoryDirectly(seededTeamId, 0);
+
+            var teamSetting = BuildTeamSettingDto();
+            teamSetting.Id = seededTeamId;
+            teamSetting.ThroughputHistory = -3;
+
+            client.AsTeamAdmin(seededTeamId);
+            var response = await client.PutAsJsonAsync($"/api/latest/teams/{seededTeamId}", teamSetting);
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
+                Assert.That(body, Does.Contain(ThroughputHistoryError));
+                Assert.That(LoadTeamFromDatabase(seededTeamId).ThroughputHistory, Is.Zero);
+            }
+        }
+
+        [Test]
         public async Task PutTeam_ThroughputHistoryZeroWithFixedDates_IsAccepted()
         {
             var teamSetting = BuildTeamSettingDto();
@@ -173,6 +217,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             seededTeamId = team.Id;
             seededConnectionId = connection.Id;
+        }
+
+        private void StoreThroughputHistoryDirectly(int teamId, int throughputHistory)
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+            var team = dbContext.Teams.Single(t => t.Id == teamId);
+            team.ThroughputHistory = throughputHistory;
+            dbContext.SaveChanges();
         }
 
         private int CountTeams()

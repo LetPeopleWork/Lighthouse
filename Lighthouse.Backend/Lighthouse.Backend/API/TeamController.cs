@@ -138,7 +138,8 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
-            if (!ThroughputHistoryValidator.IsValid(teamSetting))
+            var storedTeam = teamRepository.GetById(teamId);
+            if (storedTeam != null && !ThroughputHistoryValidator.IsValid(teamSetting, storedTeam.ThroughputHistory))
             {
                 return BadRequest(ThroughputHistoryValidator.ErrorMessage);
             }

@@ -498,7 +498,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var result = await subject.UpdateTeam(1, new TeamSettingDto { ThroughputHistory = 30 });
+            var result = await subject.UpdateTeam(1, new TeamSettingDto());
 
             using (Assert.EnterMultipleScope())
             {
@@ -617,6 +617,60 @@ namespace Lighthouse.Backend.Tests.API
                 var badRequest = result.Result as BadRequestObjectResult;
                 Assert.That(badRequest?.Value, Is.EqualTo("Throughput history must be at least 1 day."));
                 Assert.That(team.ThroughputHistory, Is.EqualTo(45));
+                teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task UpdateTeam_StoredThroughputHistoryZeroLeftUnchanged_ReturnsOkAndSavesOtherSetting()
+        {
+            var team = new Team { Id = 1, ThroughputHistory = 0, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ThroughputHistory = 0,
+                UseFixedDatesForThroughput = false,
+                SystemWIPLimit = 5,
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(team.SystemWIPLimit, Is.EqualTo(5));
+                Assert.That(team.ThroughputHistory, Is.Zero);
+                teamRepositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task UpdateTeam_StoredThroughputHistoryZeroChangedToNegative_ReturnsBadRequestAndKeepsTeam()
+        {
+            var team = new Team { Id = 1, ThroughputHistory = 0, DoneItemsCutoffDays = 180 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var dto = new TeamSettingDto
+            {
+                ThroughputHistory = -3,
+                UseFixedDatesForThroughput = false,
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+                var badRequest = result.Result as BadRequestObjectResult;
+                Assert.That(badRequest?.Value, Is.EqualTo("Throughput history must be at least 1 day."));
+                Assert.That(team.ThroughputHistory, Is.Zero);
                 teamRepositoryMock.Verify(x => x.Save(), Times.Never);
             }
         }
