@@ -103,6 +103,13 @@ test('rejects a repository with no Renovate policy', async (t) => {
 	onlyViolation(await findDependencyBotViolations(root), 'renovate-config-missing', RENOVATE);
 });
 
+// Treating these as missing would send the reader to create a file that is already there.
+test('a renovate.json that cannot be read fails the check instead of being reported missing', async (t) => {
+	const { root } = await tree(t, { [RENOVATE]: null });
+	await mkdir(join(root, RENOVATE));
+	await assert.rejects(findDependencyBotViolations(root), { code: 'EISDIR' });
+});
+
 test('rejects a Renovate policy that is not valid JSON', async (t) => {
 	const { root } = await tree(t, { [RENOVATE]: '{ "extends": ["config:recommended"], }\n' });
 	onlyViolation(await findDependencyBotViolations(root), 'renovate-config-unreadable', RENOVATE);
@@ -127,6 +134,11 @@ const ACTOR_CONDITIONS = [
 	{
 		name: 'reads the actor inside an expression',
 		condition: "if: ${{ github.ref == 'refs/heads/main' && github.actor != 'renovate[bot]' }}",
+	},
+	{ name: 'writes its if with a space before the colon', condition: "if : github.actor != 'renovate[bot]'" },
+	{
+		name: 'reads the actor after a quoted #',
+		condition: "if: github.event.head_commit.message != 'release #1' && github.actor != 'renovate[bot]'",
 	},
 ];
 
@@ -154,12 +166,59 @@ test('rejects an actor condition written across several lines', async (t) => {
 	onlyViolation(await findDependencyBotViolations(root), 'run-depends-on-actor', DOCKER_WORKFLOW);
 });
 
+// Editors strip the spaces from an empty line, or leave a few behind at any depth.
+for (const [name, blankLine] of [
+	['an empty line', ''],
+	['a line of stray spaces shallower than the key', '  '],
+]) {
+	test(`rejects an actor condition that continues past ${name}`, async (t) => {
+		const { root } = await tree(t, {
+			[DOCKER_WORKFLOW]: COMPLIANT[DOCKER_WORKFLOW].replace(
+				"if: github.ref == 'refs/heads/main'",
+				`if: >-\n      github.ref == 'refs/heads/main' &&\n${blankLine}\n      github.triggering_actor != 'renovate'`,
+			),
+		});
+		onlyViolation(await findDependencyBotViolations(root), 'run-depends-on-actor', DOCKER_WORKFLOW);
+	});
+}
+
 test('rejects an actor condition on a step inside a composite action', async (t) => {
 	const file = '.github/actions/package-app/action.yml';
 	const { root } = await tree(t, {
 		[file]: COMPLIANT[file].replace("if: runner.os == 'Windows'", "if: github.actor == 'huserben'"),
 	});
 	onlyViolation(await findDependencyBotViolations(root), 'run-depends-on-actor', file);
+});
+
+test('rejects an actor condition on a step aligned with extra spaces after its dash', async (t) => {
+	const file = '.github/actions/package-app/action.yml';
+	const { root } = await tree(t, {
+		[file]: "runs:\n  using: composite\n  steps:\n    -   if: github.actor == 'huserben'\n        run: echo mine\n        shell: bash\n",
+	});
+	const violation = onlyViolation(await findDependencyBotViolations(root), 'run-depends-on-actor', file);
+	assert.equal(violation.line, 4, 'the line of the offending if:');
+});
+
+test('does not read an actor condition that was commented out, key and all', async (t) => {
+	const { root } = await tree(t, {
+		[DOCKER_WORKFLOW]: COMPLIANT[DOCKER_WORKFLOW].replace(
+			"if: github.ref == 'refs/heads/main'",
+			"# if: github.actor != 'dependabot[bot]'",
+		),
+	});
+	const violations = await findDependencyBotViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
+});
+
+test('does not read a comment written with no space after its #', async (t) => {
+	const { root } = await tree(t, {
+		[DOCKER_WORKFLOW]: COMPLIANT[DOCKER_WORKFLOW].replace(
+			"if: github.ref == 'refs/heads/main'",
+			"if: github.ref == 'refs/heads/main' #was: && github.actor != 'dependabot[bot]'",
+		),
+	});
+	const violations = await findDependencyBotViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
 });
 
 test('does not read a commented-out actor condition', async (t) => {
@@ -200,6 +259,16 @@ test('does not read the text of a block under any other key as a condition', asy
 	});
 	const violations = await findDependencyBotViolations(root);
 	assert.deepEqual(violations, [], describeAll(violations));
+});
+
+test('reads a condition that follows a block in the same step', async (t) => {
+	const { root } = await tree(t, {
+		[DOCKER_WORKFLOW]: dockerWorkflowWithStep(
+			`name: Print\n        run: |${blockOf(['echo one'], 10)}\n        if: github.actor == 'me'`,
+		),
+	});
+	const violation = onlyViolation(await findDependencyBotViolations(root), 'run-depends-on-actor', DOCKER_WORKFLOW);
+	assert.equal(violation.line, 13, 'the line of the offending if:');
 });
 
 test('reads the conditions that follow a block again', async (t) => {
@@ -248,9 +317,12 @@ for (const { name, rule } of HOLDS) {
 }
 
 // A top-level ignore list has nowhere to put a reason, so it is itself a hold without one.
-test('rejects a dependency ignored outside any rule', async (t) => {
-	const { root } = await tree(t, { [RENOVATE]: renovate([TOOLCHAIN_RULE], { ignoreDeps: ['@mui/lab'] }) });
-	onlyViolation(await findDependencyBotViolations(root), 'hold-without-reason', RENOVATE);
+test('rejects a dependency ignored outside any rule, naming each one', async (t) => {
+	const { root } = await tree(t, {
+		[RENOVATE]: renovate([TOOLCHAIN_RULE], { ignoreDeps: ['@mui/lab', '@mui/x-charts'] }),
+	});
+	const violation = onlyViolation(await findDependencyBotViolations(root), 'hold-without-reason', RENOVATE);
+	assert.match(violation.message, /@mui\/lab, @mui\/x-charts/);
 });
 
 test('reports each hold without a reason, not just the first', async (t) => {
@@ -279,6 +351,12 @@ const NOT_HOLDS = [
 		rule: { description: ['Held at v7:', 'v9 removed icons we import.'], matchPackageNames: ['x'], enabled: false },
 	},
 ];
+
+test('does not ask for a reason when the policy has no packageRules at all', async (t) => {
+	const { root } = await tree(t, { [RENOVATE]: renovate(undefined) });
+	const violations = await findDependencyBotViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
+});
 
 for (const { name, rule, extra } of NOT_HOLDS) {
 	test(`does not ask for a reason on ${name}`, async (t) => {

@@ -78,6 +78,7 @@ const ACCEPTED = [
 	},
 	{ name: 'a commit and release with extra spaces around the comment', uses: `uses: actions/checkout@${SHA}   #   v6.0.2` },
 	{ name: 'a quoted commit and release', uses: `uses: 'actions/checkout@${SHA}' # v6.0.2` },
+	{ name: 'a double-quoted commit and release', uses: `uses: "actions/checkout@${SHA}" # v6.0.2` },
 	{
 		name: 'a workflow from another repository, by path',
 		uses: `uses: octo-org/shared/.github/workflows/build.yml@${SHA} # v2.1.0`,
@@ -110,8 +111,20 @@ const REJECTED = [
 	},
 	{ name: 'a shortened commit', uses: 'uses: actions/checkout@3d3c42e # v6.0.2', rule: 'action-not-pinned' },
 	{ name: 'no reference at all', uses: 'uses: actions/checkout', rule: 'action-not-pinned' },
+	{
+		name: 'a hash longer than a commit, such as a SHA-256 digest',
+		uses: `uses: actions/checkout@${SHA}${SHA.slice(0, 24)} # v6.0.2`,
+		rule: 'action-not-pinned',
+	},
+	{ name: 'a tag written with a space before the colon', uses: 'uses : actions/download-artifact@v8', rule: 'action-not-pinned' },
+	{
+		name: 'a tag on a step aligned with extra spaces after its dash',
+		uses: '  uses: actions/download-artifact@v8',
+		rule: 'action-not-pinned',
+	},
 	{ name: 'a bare commit', uses: `uses: actions/checkout@${SHA}`, rule: 'action-pin-unlabelled' },
 	{ name: 'a commit followed by an empty comment', uses: `uses: actions/checkout@${SHA} #`, rule: 'action-pin-unlabelled' },
+	{ name: 'a quoted bare commit', uses: `uses: 'actions/checkout@${SHA}'`, rule: 'action-pin-unlabelled' },
 	{
 		name: 'a bare commit on a workflow from another repository',
 		uses: `uses: octo-org/shared/.github/workflows/build.yml@${SHA}`,
@@ -131,6 +144,26 @@ for (const { name, uses, rule } of REJECTED) {
 		assert.ok(violation.message.length > 0, 'a violation must say what to do about it');
 	});
 }
+
+test('tells how to pin the action it names', async (t) => {
+	const { root } = await tree(t, { [WORKFLOW]: workflowWith(['uses: actions/upload-artifact@v7.0.1']) });
+	const [violation] = await findActionPinViolations(root);
+	assert.match(violation.message, /actions\/upload-artifact@<commit> # <release>/);
+});
+
+test('rejects a job that calls a workflow from another repository by a tag', async (t) => {
+	const { root } = await tree(t, {
+		'.github/workflows/ci.yml': `jobs:
+  shared:
+    uses: octo-org/shared/.github/workflows/build.yml@v2
+`,
+	});
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(
+		violations.map((v) => `${v.file}:${v.line} ${v.rule}`),
+		['.github/workflows/ci.yml:3 action-not-pinned'],
+	);
+});
 
 test('rejects an unpinned action inside a composite action as well', async (t) => {
 	const { root } = await tree(t, {
@@ -169,7 +202,20 @@ test('does not read a commented-out step', async (t) => {
 });
 
 // A block scalar is text however it looks: a step that writes a workflow file is not running it.
-const BLOCK_INDICATORS = ['|', '>', '|-', '>-', '|+', '>+', '|2', '>-2', '| # writes a workflow'];
+const BLOCK_INDICATORS = [
+	'|',
+	'>',
+	'|-',
+	'>-',
+	'|+',
+	'>+',
+	'|2',
+	'|2-',
+	'>-2',
+	'| # writes a workflow',
+	'>-   # a comment aligned with others',
+	'  | ',
+];
 
 const blockOf = (lines, indent) => lines.map((line) => `\n${' '.repeat(indent)}${line}`).join('');
 
@@ -196,6 +242,33 @@ test('does not read the text of a block under any other key as a step', async (t
 	assert.deepEqual(violations, [], describeAll(violations));
 });
 
+// Editors strip the spaces from an empty line, or leave a few behind at any depth.
+for (const [name, blankLine] of [
+	['an empty line', ''],
+	['a line of stray spaces shallower than the key', '  '],
+]) {
+	test(`keeps reading a block as text past ${name}`, async (t) => {
+		const block = `${blockOf(['cat <<YAML > ci.yml', 'jobs:'], 10)}\n${blankLine}${blockOf(['  - uses: actions/checkout@v4', 'YAML'], 10)}`;
+		const { root } = await tree(t, { [WORKFLOW]: workflowWith([`run: |${block}`]) });
+		const violations = await findActionPinViolations(root);
+		assert.deepEqual(violations, [], describeAll(violations));
+	});
+}
+
+test('reads the steps under a key whose comment ends in >', async (t) => {
+	const { root } = await tree(t, {
+		[WORKFLOW]: workflowWith(['uses: actions/checkout@v4']).replace(
+			'    steps:',
+			'    steps: # pin each one as owner/repo@<commit> # <release>',
+		),
+	});
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(
+		violations.map((v) => `${v.file}:${v.line} ${v.rule}`),
+		[`${WORKFLOW}:8 action-not-pinned`],
+	);
+});
+
 test('reads the steps that follow a block again', async (t) => {
 	const { root } = await tree(t, {
 		[WORKFLOW]: workflowWith([`run: |${blockOf(['echo one', '', 'echo two'], 10)}`, 'uses: actions/checkout@v4']),
@@ -215,6 +288,33 @@ test('does not read the text of a block in a file saved with Windows line ending
 		violations.map((v) => `${v.file}:${v.line} ${v.rule}`),
 		[`${WORKFLOW}:10 action-not-pinned`],
 	);
+});
+
+// The files are written in reverse, because some file systems list a folder in the order it was filled.
+test('reports files in name order, so every machine prints the same list', async (t) => {
+	const workflows = ['f.yml', 'e.yml', 'd.yml', 'c.yml', 'b.yaml', 'a.yml'].map((name) => `.github/workflows/${name}`);
+	const unpinned = Object.fromEntries(workflows.map((file) => [file, workflowWith(['uses: actions/checkout@v4'])]));
+	const { root } = await tree(t, {
+		[WORKFLOW]: null,
+		'.github/workflows/ci.yml': null,
+		[ACTION]: 'runs:\n  using: composite\n  steps:\n    - uses: actions/setup-node@v7.0.0\n',
+		...unpinned,
+	});
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(
+		violations.map((v) => v.file),
+		[ACTION, ...workflows.toReversed()],
+	);
+});
+
+// GitHub runs only .yml and .yaml files, so a renamed or documented workflow is not run.
+test('does not read files in the workflows folder that GitHub does not run', async (t) => {
+	const { root } = await tree(t, {
+		'.github/workflows/nightly.yml.disabled': workflowWith(['uses: actions/checkout@v4']),
+		'.github/workflows/README.md': '    steps:\n      - uses: actions/checkout@v4\n',
+	});
+	const violations = await findActionPinViolations(root);
+	assert.deepEqual(violations, [], describeAll(violations));
 });
 
 // The guard's own test fixtures keep bare pins on purpose; only workflows and actions are in scope.
