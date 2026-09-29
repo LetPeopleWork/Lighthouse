@@ -97,6 +97,7 @@ We support coordinated disclosure:
 
 For vulnerabilities in third-party dependencies:
 - We monitor via GitHub Dependabot alerts
+- Renovate proposes dependency updates once a release is 7 days old, and security fixes at once; each merges automatically once the required checks pass
 - We update dependencies in accordance with this policy
 - If upstream fixes are delayed, we may apply workarounds or document mitigations
 

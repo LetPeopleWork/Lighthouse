@@ -213,7 +213,7 @@ A full risk assessment is maintained separately. Summary of key risk areas:
 |-----------|----------|------------|------------|
 | Credential exposure | High | Low | Encryption at rest, secure configuration |
 | Unauthorized access | High | Low | HTTPS, user-managed access control |
-| Dependency vulnerabilities | Medium | Medium | Dependabot, regular updates |
+| Dependency vulnerabilities | Medium | Medium | Dependabot alerts; Renovate updates (7-day minimum release age, merged automatically once the required checks pass) |
 | Data integrity | Medium | Low | Database transactions, input validation |
 | Denial of service | Low | Low | Self-hosted (user manages infrastructure) |
 
@@ -255,7 +255,7 @@ Lighthouse is self-hosted software. Users accept responsibility for:
 | Token encryption | API tokens encrypted at rest with unique per-installation keys | ✅ Implemented |
 | HTTPS | TLS encryption for all connections | ✅ Implemented |
 | Input validation | API input validation and sanitization | ✅ Implemented |
-| Dependency scanning | Automated vulnerability scanning (Dependabot, OSV Scanner) | ✅ Implemented |
+| Dependency scanning | Automated vulnerability scanning (Dependabot alerts, OSV Scanner) | ✅ Implemented |
 | Code signing | Signed executables (Windows, macOS) | ✅ Implemented |
 | Container signing | Cosign signatures on Docker images | ✅ Implemented |
 | Code analysis | SonarCloud static analysis | ✅ Implemented |
@@ -342,7 +342,7 @@ See [Security Update Policy](./security-update-policy.html) for:
 
 | Test Type | Tool | Frequency |
 |-----------|------|-----------|
-| Dependency scanning | Dependabot | Continuous |
+| Dependency scanning | Dependabot alerts | Continuous |
 | SAST | SonarCloud | Each PR/commit |
 | Code review | Manual | Each PR |
 
