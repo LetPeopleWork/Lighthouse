@@ -896,6 +896,12 @@ get re-applied.
 
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
 
+### 2026-09-29 — csharpsquid:S3776 on a controller action one guard clause past the limit
+- **Symptom**: `sonar-gates` red on the backend, `new_violations = 1`: `csharpsquid:S3776` on `TeamController.UpdateTeam`, "Refactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed". Every build, test and verify job was green.
+- **Root cause**: a fix added one more inline guard, `if (storedTeam != null && !Validator.IsValid(...))`, to an action that was already a chain of validation `if`s. The `if` counts +1 and the `&&` another +1, and that tipped it from 14 to 16.
+- **Fix**: moved the guard into `private bool IsThroughputHistoryValid(int, TeamSettingDto)`, next to the existing `ValidateTeamRuleSets`, so the action now reads `if (!IsThroughputHistoryValid(...))`. The order of the checks, and so the error returned first, is unchanged.
+- **Rule going forward**: before adding a guard clause to a controller action that already runs several validations in a row (`UpdateTeam`, `UpdatePortfolio`, …), put any compound condition (`&&`/`||`, a null check plus a call) in a private `Is…Valid`/`Validate…` helper and leave a single `if (!Helper(...))` in the action; `dotnet build` never reports S3776, only the Sonar gate does.
+
 ### 2026-08-21 — a brand-new Sonar rule (S9129) failed the gate on code nobody had touched
 - **Symptom**: `sonar-gates` red on the backend with `new_violations = 6` (threshold 0), every other condition OK. All 8 reported issues were `csharpsquid:S9129` — *"Combine this `Include` call with the `ThenInclude` call that follows it"* — in `DeliveryRepository.cs`, `PortfolioRepository.cs` and `TeamRepository.cs`. The push that failed touched none of those three files.
 - **Root cause**: the rule itself was **created the same day** — `/api/rules/show?key=csharpsquid:S9129&organization=…` reports `createdAt: 2026-08-21T13:36:07+0000`. SonarCloud updates its analyzers continuously, and a new rule immediately judges any pre-existing line that falls inside the new-code period. Nothing in the commit caused it; the commit was merely the next analysis to run.
