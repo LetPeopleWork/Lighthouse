@@ -32,6 +32,9 @@ primary_jobs:
   - job-lead-reach-the-metrics-window-i-mean-in-one-click  # story-5914-metrics-time-horizon-presets (2026-09-08, #5914): named metrics windows in one click, no date arithmetic
   - job-lead-compare-this-period-against-the-one-before  # story-5914-metrics-time-horizon-presets (2026-09-08, #5914): step the same-length window back a period and re-read the same widgets
   - job-lead-size-features-from-real-children-not-a-default  # parent-from-issue-links (2026-09-18): features sized by their real children, not the Portfolio default, when the hierarchy lives in issue links
+  - job-lead-answer-when-every-initiative-lands  # epic-5806-initiatives (2026-09-29, #5806): every Initiative on one page with the date all its Features are likely done
+  - job-lead-say-whether-each-initiative-is-on-track  # epic-5806-initiatives (2026-09-29, #5806): target date per Initiative, joint likelihood, status word
+  - job-lead-name-the-strategic-level-in-our-own-words  # epic-5806-initiatives (2026-09-29, #5806): configurable term for the level above Feature, seeded "Initiative"
 
 goals:
   - Identify which workflow state(s) consume the most of the team's collective time over a
@@ -41,6 +44,9 @@ goals:
     confirm an improvement landed
   - Give leadership a one-glance answer to "is our process improving or degrading?" without
     needing to interpret per-item charts
+  - Answer "when will each strategic Initiative land, and is it on track?" on the spot, on a
+    screen clean enough to show the executive directly (epic-5806-initiatives; the executive is
+    the audience, not a Lighthouse user)
 
 frustrations:
   - Per-item charts (Work Item Aging, Time in State badge) answer "which item is stuck?",

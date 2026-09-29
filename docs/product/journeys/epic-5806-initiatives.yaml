@@ -1,0 +1,171 @@
+schema_version: 1
+feature_id: epic-5806-initiatives
+updated: 2026-09-29
+ado: "#5806 Visualize Initiatives (slices 01-04, 06); #6119 Initiative access and on-track status (slices 05, 07-10)"
+note: >
+  DISCUSS wave, 2026-09-29. "Initiative" is the seeded default of a configurable term for the level
+  above Feature (a SAFe Epic, an Initiative, an Objective, a Theme ...), possibly a different tracker
+  type per Portfolio. Full decisions, stories and proposals in
+  docs/feature/epic-5806-initiatives/feature-delta.md. Terms in braces ({initiative}, {features},
+  {portfolio}) render as the instance's configured words.
+
+journeys:
+
+  - name: answer-when-and-on-track-for-every-initiative
+    goal: >
+      An RTE preparing a steering meeting opens one page, sees every Initiative grouped by Portfolio with
+      the date all its Features are likely done and whether that meets the promised date, opens the one
+      at risk to see which Feature holds it back, and shows the same screen to the executive.
+    persona: delivery-lead-rte
+    audience: an executive or sponsor (not a Lighthouse user)
+    jobs:
+      - job-lead-answer-when-every-initiative-lands
+      - job-lead-say-whether-each-initiative-is-on-track
+      - job-lead-name-the-strategic-level-in-our-own-words
+
+    emotional_arc:
+      start: Uneasy - "They will ask about Healthy Oceans and I only have Feature dates."
+      middle: Oriented - "Every Initiative, one date each, and I can see which one is at risk."
+      end: Defensible - "85% by 12 December, at risk because of the reef survey; same screen, no slide."
+
+    steps:
+      - id: 1
+        name: Open the Initiatives page
+        action: Top navigation -> {Initiatives}
+        mockup: |
+          +-- {Initiatives} -------------------------------------------- Premium --+
+          | Every {initiative}, when all its {features} are likely done,          |
+          | and whether that is in time.        Show: [Not done v]  Updated 07:40 |
+          | {INITIATIVE}            {FEATURES}   LIKELY BY (85%)  TARGET   STATUS |
+          | -- Project Ocean Explorer ------------------------------------------- |
+          | > Healthy Oceans 2027   0 of 5 done  ${likely_by}     ${target} ${status} ${likelihood} |
+          | > Blue Planet Knowledge 0 of 4 done  ${likely_by}     [Set target] No target |
+          | -- Spans Altobelli, Orion ------------------------------------------- |
+          | > Deep Space Readiness  0 of 4 done  ${likely_by}     ${target} ${status} |
+          | ${no_initiative_count} {features} have no {initiative}.               |
+          +------------------------------------------------------------------------+
+        shared_artifacts:
+          - name: initiative_term
+            source: Terminology settings (seeded "Initiative" / "Initiatives")
+            displayed_as: "{initiative} / {Initiatives}"
+          - name: likely_by
+            source: joint "all remaining Features done" composition (DeliveryCompletionForecast), 85%
+            displayed_as: "${likely_by}"
+          - name: no_initiative_count
+            source: readable Features whose parent reference is empty
+            displayed_as: "${no_initiative_count}"
+        emotional_state: {entry: uneasy, exit: oriented}
+        failure_modes:
+          - No Premium licence - the page shows the Premium prompt, no rows
+          - Reader can read only one Portfolio - rows reached through that Portfolio (D23) or an Initiative grant (D21)
+          - Features in Portfolios the reader cannot open - counted, never named; the row's numbers still cover them (D22)
+          - Parent name not resolved by the tracker - row shows the id and "name not available"
+          - A Feature cannot be forecast - row reads "Cannot forecast" and names the Team
+        gherkin: |
+          Scenario: Every Initiative is listed once, under the Portfolio it lives in
+            Given the demo data with a Premium licence
+            When Maria opens Initiatives
+            Then "Healthy Oceans 2027" is listed under "Project Ocean Explorer"
+            And "Deep Space Readiness" is listed once, under "Spans Altobelli, Orion"
+
+      - id: 2
+        name: Set a promised date and read the status
+        action: "[Set target] on a row -> pick a date"
+        shared_artifacts:
+          - name: target
+            source: target date stored by Lighthouse per Initiative reference
+            displayed_as: "${target}"
+          - name: likelihood
+            source: joint likelihood of all remaining Features done by the target (as a Delivery computes it)
+            displayed_as: "${likelihood}"
+          - name: status
+            source: likelihood bands (D16 - On track >= 70, At risk >= 50 and < 70, Off track < 50 or target passed with work left; read from the likelihood alone, not from the 85% date)
+            displayed_as: "${status}"
+        emotional_state: {entry: oriented, exit: alert}
+        failure_modes:
+          - Reader lacks the Initiative's Admin grant (D21) - no control, API refuses; Portfolio rights do not count
+          - Target already passed with work left - Off track
+        gherkin: |
+          Scenario: Setting a target date shows how likely the Initiative is to make it
+            Given "Humans on Mars" has no target date
+            When Maria sets its target to 31 Mar 2027
+            Then the row shows the likelihood that all its Features are done by then, and a status word
+
+      - id: 3
+        name: Open the at-risk Initiative
+        action: Expand the row
+        mockup: |
+          | v Healthy Oceans 2027   0 of 5 done  ${likely_by}  31 Dec 2026  At risk 62% |
+          |     {FEATURE}                 LIKELY BY (85%)  BY 31 DEC (this one alone)    |
+          |     Coral Reef Restoration    ...              ...                           |
+          |     All 5 {features} by 31 Dec 2026: ${likelihood}                           |
+        emotional_state: {entry: alert, exit: defensible}
+        failure_modes:
+          - Features in a Portfolio the reader cannot open - counted, never named
+        gherkin: |
+          Scenario: The late Feature is visible inside the Initiative
+            Given "Healthy Oceans 2027" is At risk for 31 Dec 2026
+            When Maria expands the row
+            Then each Feature shows its own date and its own likelihood by 31 Dec 2026
+            And the last line shows the likelihood that all of them are done by then
+
+    integration_validation:
+      - artifact: likely_by
+        must_match: the 85% date of a Delivery holding the same Features
+      - artifact: likelihood
+        must_match: the likelihood of a Delivery with the same Features and date
+      - artifact: initiative_term
+        must_match_across: [navigation, page title, column headers, Feature table column, footer]
+
+  - name: share-an-initiative-with-exactly-who-needs-it
+    goal: >
+      A System Admin gives an Initiative's lead, who reads none of its Portfolios, access to that one
+      Initiative; the lead then decides who else sees it, and may set its target date.
+    persona: "System Admin (grants); Initiative lead (reads, then administers the Initiative)"
+    jobs:
+      - job-rbac-manage-users
+      - job-rbac-scoped-admin
+    emotional_arc:
+      start: Cornered - "To show Jonas one Initiative I would have to open two whole Portfolios to him."
+      middle: In control - "Viewer on Deep Space Readiness, nothing else."
+      end: Relieved - "Maria manages her Initiative's audience herself; I only see it listed in Access."
+    steps:
+      - {id: 1, name: Grant Viewer on one Initiative, action: "Settings -> Access -> Users -> edit -> scope Initiative", slice: "07"}
+      - {id: 2, name: Make the lead its Admin, action: "same, role Admin", slice: "09"}
+      - {id: 3, name: The lead shares it, action: "Initiatives page row -> Access", slice: "09"}
+      - {id: 4, name: Map a steering group, action: "Settings -> Access -> Group Mappings", slice: "08"}
+      - {id: 5, name: Review grants, action: "Settings -> Access -> Users", slice: "10"}
+    failure_modes:
+      - Initiative leaves the tracker data - grant kept, marked "not in current data", works again on return (D25)
+      - RBAC not enforced - everyone sees everything, no Initiative grants offered (D26)
+    gherkin: |
+      Scenario: A reader granted one Initiative sees exactly that Initiative
+        Given Jonas holds only a Viewer grant on "Deep Space Readiness"
+        When Jonas opens Initiatives
+        Then he sees "Deep Space Readiness" with its date covering all four of its Features
+        And its Features are shown only as a count
+
+  - name: show-the-strategic-level-in-the-demo
+    goal: >
+      The maintainer opens any demo Portfolio and every Feature that belongs to an Initiative shows it by
+      name, with different kinds of Initiative in different Portfolios.
+    persona: lighthouse-maintainer
+    jobs:
+      - job-maintainer-demo-the-strategic-level
+    emotional_arc:
+      start: Hesitant - "The column says No Parent everywhere."
+      end: Confident - "Objectives in Apollo, Themes in Orion, one spanning both Space Portfolios."
+    failure_modes:
+      - A parent id with no row in the CSV - shown by id, refresh continues
+      - Demo change breaks an unrelated E2E locator - run the full suite
+
+changelog:
+  - date: 2026-09-29
+    feature: epic-5806-initiatives
+    change: Created in DISCUSS.
+  - date: 2026-09-29
+    feature: epic-5806-initiatives
+    change: Maintainer answers - status bands 70/50 (D16), dedicated Initiative RBAC scope (D21), count-only spanning (D22); added the sharing journey.
+  - date: 2026-09-29
+    feature: epic-5806-initiatives
+    change: D23-D26 accepted (default visibility, who grants, grant lifecycle, no-RBAC behaviour); split into Epics #5806 and #6119 (D27). Step 2 (target and status) and the sharing journey belong to #6119; in #5806 the expander shows dates only.

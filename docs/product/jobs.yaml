@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-25
+updated: 2026-09-29
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -57,6 +57,7 @@ feature_context:
   - epic-4172-forecast-backtest-sweep
   - story-6053-reconstruct-over-time-history
   - story-6088-clients-dependency-updates
+  - epic-5806-initiatives
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7585,3 +7586,165 @@ jobs:
         consumer has reported a stale or vulnerable dependency, and nothing is blocked today. Current
         satisfaction 1 - nothing exists; updates happen only by hand. Gap 2 - a known, bounded fix with two
         in-house precedents; held at 2 because the job was not validated through DISCOVER.
+
+  - id: job-lead-answer-when-every-initiative-lands
+    title: Say when every Initiative lands, from one place, with a date that counts all of its Features
+    persona: delivery-lead-rte
+    feature_context: epic-5806-initiatives
+    created: 2026-09-29
+    note: >
+      NEW in epic-5806-initiatives (ADO #5806). "Initiative" is the seeded default of a configurable term
+      for the level above Feature: a SAFe Epic, an Initiative, an Objective, a Theme, whatever the
+      organisation uses, possibly a different tracker type per Portfolio. Grounded in DIVERGE
+      job-analysis.md; desk research only, no interviews (DISCOVER gate G1 not met), so scored
+      conservatively. The maintainer named the RTE / Delivery Lead as the user and the executive as the
+      audience.
+    job_story: >
+      When leadership, a sponsor or a steering meeting asks about our strategic Initiatives,
+      I want to see every Initiative in one place with the date by which all of its Features are likely
+      done,
+      so I can answer on the spot with a number I can defend, and show the same screen to the executive
+      without cleaning it up first.
+    dimensions:
+      functional: >
+        Per Initiative: its Features, how many are done, and the 85% date of all remaining Features done,
+        from the same composition Deliveries use. Grouped by Portfolio; an Initiative spanning Portfolios
+        still appears once. Features with no Initiative are counted, not hidden.
+      emotional: >
+        From "I will get back to you after I rebuild the spreadsheet" to "here it is, 85% by 12 December".
+      social: >
+        Be the person whose Initiative dates are computed from the Teams' real history, on a screen clean
+        enough to put in front of an executive.
+    forces:
+      push: >
+        The Initiative is visible only as a column, one Portfolio at a time. A date needs a hand-built
+        rule-based Delivery per Initiative, listed among the real releases.
+      pull: >
+        One page, every Initiative, a joint date correct by construction; no competitor researched gives
+        a probabilistic per-team roll-up at this level.
+      anxiety: >
+        The level may be sparse in our data; a "cannot forecast" row in front of an executive; an
+        executive anchoring on one number.
+      habit: >
+        Slides, the tracker's own roadmap views, and the Deliveries that already work.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - the question leadership asks about strategic bets; held below 5 because no
+        customer interview confirmed it. Satisfaction 1 - possible today only by building one Delivery per
+        Initiative by hand. Gap 3.
+
+  - id: job-lead-say-whether-each-initiative-is-on-track
+    title: Know which Initiatives will miss their promised date before the meeting, not in it
+    persona: delivery-lead-rte
+    feature_context: epic-5806-initiatives
+    created: 2026-09-29
+    note: >
+      NEW in epic-5806-initiatives. Initiatives carry no target date anywhere in the model; the maintainer
+      decided (2026-09-29) that the date is entered in Lighthouse, not read from the tracker, in v1.
+    job_story: >
+      When an Initiative has a date we promised,
+      I want to see how likely it is that all of its Features are done by then, as a plain status word,
+      so I know which Initiatives need a scope, order or date conversation before the steering meeting.
+    dimensions:
+      functional: >
+        A target date per Initiative, set on its row; the joint likelihood of all remaining Features done
+        by it; On track / At risk / Off track / No target / Unknown, always written next to the colour.
+      emotional: >
+        From discovering the late Initiative in the meeting to walking in already knowing.
+      social: >
+        Raise the at-risk Initiative first, with the number that says why.
+    forces:
+      push: >
+        "Is it on track?" is answered by gut feel today.
+      pull: >
+        The likelihood a Delivery already shows, applied to the Initiative and its promise.
+      anxiety: >
+        Where do the thresholds come from, and will an executive read "At risk" as a verdict on people?
+      habit: >
+        RAG colours set by hand in a status slide.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance 4 - the second of the two questions the maintainer scoped v1 to. Satisfaction 0 - no
+        Initiative carries a promised date anywhere in Lighthouse. Gap 4.
+
+  - id: job-lead-name-the-strategic-level-in-our-own-words
+    title: See the level above Feature called by the word our organisation uses
+    persona: delivery-lead-rte
+    feature_context: epic-5806-initiatives
+    created: 2026-09-29
+    note: >
+      NEW in epic-5806-initiatives. Set by config-admin under Settings -> Terminology; read by everyone.
+      Lighthouse is deliberately not SAFe-only; the maintainer chose "Initiative" as the seeded default.
+    job_story: >
+      When I show Lighthouse to our leadership,
+      I want the level above Feature to carry the word we use for it,
+      so the tool reads as ours and not as built for another methodology.
+    dimensions:
+      functional: >
+        A renamable term, singular and plural, used by the Feature table column and every surface of the
+        Initiatives page. It renames only the Feature-to-Initiative relationship.
+      emotional: >
+        No "that's not what we call it" moment in front of an executive.
+      social: >
+        Lighthouse speaks the organisation's language, whether that is SAFe, OKRs or Flight Levels.
+    forces:
+      push: >
+        The column says "Parent" and nothing renames it.
+      pull: >
+        Every other level is already renamable.
+      anxiety: >
+        Portfolios that call the level different things (one word per instance may not be enough).
+      habit: >
+        Readers translate the tool's words in their head.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - a constraint on the other two jobs more than a job of its own. Satisfaction 1 -
+        the word "Parent" is neutral but nobody's word. Gap 2.
+
+  - id: job-maintainer-demo-the-strategic-level
+    title: Tell the strategic-level story in an enterprise demo on the screen, not in words
+    persona: lighthouse-maintainer
+    feature_context: epic-5806-initiatives
+    created: 2026-09-29
+    note: >
+      NEW in epic-5806-initiatives. The maintainer's Premium goal for this Epic is enterprise deals, sold
+      through demos and sponsor conversations. Verified 2026-09-29: all five demo Portfolio CSVs have an
+      empty Parent column and the CSV connector returns no parent details, so the demo cannot show the
+      level at all.
+    job_story: >
+      When I demo Lighthouse to an enterprise sponsor,
+      I want the demo data to carry named Initiatives of different kinds across the Portfolios,
+      so the strategic-level story can be shown instead of described.
+    dimensions:
+      functional: >
+        Named Initiatives of at least three tracker types across the demo Portfolios, one spanning two
+        Portfolios, one fully done, and Features with no Initiative left in place.
+      emotional: >
+        Confident that the demo never shows a bare id or an empty column where the story should be.
+      social: >
+        The demo looks like the sponsor's own organisation, whatever model it follows.
+    forces:
+      push: >
+        Every demo Feature reads "No Parent".
+      pull: >
+        A CSV change that also helps CSV users keep their Initiatives in the file.
+      anxiety: >
+        Demo-data changes have broken unrelated end-to-end tests before.
+      habit: >
+        Describing the level verbally during the demo.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance 4 - the sale happens in the demo. Satisfaction 0 - the demo has no Initiatives.
+        Gap 4.
