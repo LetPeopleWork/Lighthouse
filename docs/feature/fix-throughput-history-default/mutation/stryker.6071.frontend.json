@@ -1,0 +1,27 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/pages/Teams/Edit/EditTeam.tsx:24-29",
+    "src/pages/Teams/Edit/EditTeam.tsx:60-71",
+    "src/pages/Portfolios/Edit/EditPortfolio.tsx:22-27",
+    "src/pages/Portfolios/Edit/EditPortfolio.tsx:39-53",
+    "src/components/Common/QuickSettings/ThroughputQuickSetting.tsx:169-172",
+    "src/components/Common/QuickSettings/ThroughputQuickSetting.tsx:329-329",
+    "src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.tsx:139-142",
+    "src/components/Common/CreateWizards/CreateTeamWizard.tsx:39-43",
+    "src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:42-42"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-6071-frontend.json" },
+  "tempDirName": ".stryker-tmp-6071"
+}

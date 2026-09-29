@@ -1,0 +1,173 @@
+{
+  "roadmap": {
+    "project_id": "fix-throughput-history-default",
+    "created_at": "2026-09-29",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "ADO Bug #6071: Lighthouse disagrees with itself about the defaults of a new Team and Portfolio. The Team entity defaults ThroughputHistory to 30 while both UI create paths send 90; Team.FeatureWIP defaults to 1 while the UI sends 0; Portfolio.PercentileHistoryInDays defaults to 90 while the UI sends 0 (and the backend fallback `?? 90` catches only null, so a stored 0 samples a zero-day window). The server also accepts a throughput history of 0 or less. Fix: one named default per setting per stack (ThroughputHistory 90, FeatureWIP 0, PercentileHistoryInDays 90), a server-side rejection of throughput history <= 0 when fixed dates are not used, and removal of the dead code the RCA found."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-09-29",
+    "notes": "Bugfix flow (/nw-bugfix Phase 3) - minimal roadmap, no DISCUSS/DESIGN/DISTILL waves for this bug. RCA and decisions D1-D4 approved by the maintainer (see rca.md, 'Maintainer decisions'). Four steps: backend defaults, backend validation, frontend defaults + quick setting, and a separate refactor step for dead code (maintainer asked for a separate commit)."
+  },
+  "ssot_inputs": {
+    "rca": "docs/feature/fix-throughput-history-default/rca.md",
+    "ado_work_item": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6071"
+  },
+  "out_of_scope": [
+    "A migration or data fix for Teams already stored with ThroughputHistory <= 0. They keep showing 'Cannot forecast' until someone sets a positive value; the new validation makes them fix it on the next save. Existing Portfolios with PercentileHistoryInDays 0 are handled by the backend fallback, not by rewriting rows (expand-only migrations).",
+    "Validation of Portfolio PercentileHistoryInDays on the server. The maintainer asked for rejection of <= 0 for Team throughput history only; the Portfolio settings form already requires >= 30.",
+    "A backend endpoint that serves defaults to the frontend. It was removed deliberately in babe81f99; each stack keeps one named constant.",
+    "Docs prose, screenshots and release notes - handled at finalize."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression tests and fix for ADO Bug 6071",
+      "description": "A new Team or Portfolio gets the same defaults whichever route creates it, and a Team cannot be saved with a throughput history of 0 or less.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Backend defaults for new Teams and Portfolios live in one named place each",
+          "description": "TDD execution. Read docs/feature/fix-throughput-history-default/rca.md first, especially 'Maintainer decisions'.\n\n**RED** - Unit tests (new or extended test class near the existing Team / Portfolio model tests under `Lighthouse.Backend/Lighthouse.Backend.Tests/Models/`): (1) `new Team().ThroughputHistory` equals `Team.DefaultThroughputHistoryDays` and that constant is 90; (2) `new Team().FeatureWIP` is 0; (3) `new Portfolio().PercentileHistoryInDays` equals `Portfolio.DefaultPercentileHistoryInDays` (90). WorkItemService test (find the existing test class covering the percentile-based default amount of work items, around `WorkItemService.cs:718`): a Portfolio with PercentileHistoryInDays 0 (and one with a negative value) samples the same 90-day window as one with null. Tests (1) and (2) and the WorkItemService 0-case must fail on current code.\n\n**GREEN** - `Models/Team.cs`: `public const int DefaultThroughputHistoryDays = 90;` used as the ThroughputHistory initialiser; FeatureWIP initialiser becomes 0 (a named constant only if it reads better; 0 means 'not set' and the forecast treats it as 1 in `SimulatedRun.cs:114`). `Models/Portfolio.cs`: `public const int DefaultPercentileHistoryInDays = 90;` used as the initialiser. `WorkItemService.cs:718`: use the constant and treat null or <= 0 as the default. Then fix every existing backend test that silently relied on the old implicit 30 / 1 (set the value explicitly in the test's arrange block, or its builder, rather than changing the assertion's meaning). Demo data (`Factories/DemoDataFactory.cs`) follows the entity default; check its tests and any demo snapshot expectations still hold and update them if they encoded 30.\n\n**COMMIT** - `fix(team): give new Teams and Portfolios one default per setting`. Body references Bug #6071 and carries `Task-Id: fix-throughput-history-default`. Comments per CLAUDE.md: rare, plain-language why, no internal references.\n\n**Quality gates:** consult docs/ci-learnings.md first. From `Lighthouse.Backend/`: `dotnet build` zero warnings; `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green (environmental failures listed in CLAUDE.md are not regressions).",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A Team created without an explicit throughput history samples 90 days, read from Team.DefaultThroughputHistoryDays",
+            "A Team created without an explicit Feature WIP has Feature WIP 0",
+            "A Portfolio created without an explicit percentile history has 90 days, read from Portfolio.DefaultPercentileHistoryInDays",
+            "A Portfolio stored with percentile history 0 or less computes its default feature size from the 90-day window",
+            "Demo data Teams get 90 days",
+            "dotnet build has zero warnings and the filtered dotnet test is green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/TeamTest.cs",
+          "scenario_name": "New Teams and Portfolios get one default per setting",
+          "red_to_green_tests": [
+            "A new Team defaults to 90 days of throughput history",
+            "A new Team defaults to Feature WIP 0",
+            "A Portfolio stored with percentile history 0 uses the default window"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/TeamTest.cs"
+          ],
+          "dependencies": [],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "Named default constants on Team and Portfolio",
+            "WorkItemService fallback covers stored 0",
+            "Backend tests updated where they relied on implicit defaults"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "The server rejects a Team throughput history of 0 or less",
+          "description": "TDD execution. Read docs/feature/fix-throughput-history-default/rca.md first.\n\n**RED** - Backend integration tests through the real HTTP pipeline (TestWebApplicationFactory; copy the setup pattern of an existing Team integration test under `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/`), new file e.g. `TeamThroughputHistoryValidationIntegrationTest.cs`: (1) POST /api/latest/teams with throughputHistory 0 and useFixedDatesForThroughput false -> 400; (2) same with -5 -> 400; (3) PUT /api/latest/teams/{id} with 0 -> 400 and the stored value is unchanged; (4) PUT with 0 but useFixedDatesForThroughput true and valid dates -> accepted (the rolling window is unused then); (5) POST with the throughputHistory property omitted from the JSON -> 400 (already true because of [JsonRequired]; this pins it so the bind-to-0 path cannot come back). Also unit tests in the existing TeamsController / TeamController test classes for the 400 on create and update. Cases 1-3 must fail on current code; 4 and 5 are guards that pass today - state that in the execution log.\n\n**GREEN** - One small shared check (e.g. a static validator next to `BaselineValidationService` / `StateMappingValidator` in the API helpers, or a method on `Team`/`TeamSettingDto` - pick what matches the surrounding code) that returns an error when `!UseFixedDatesForThroughput && ThroughputHistory <= 0`, used by `TeamsController.CreateTeam` (before the Team is built) and `TeamController` PUT (alongside the existing staleness checks). Use the configurable-term-neutral message 'Throughput history must be at least 1 day.' unless the controller already builds messages with terminology. Leave `POST /teams/validate` as is unless it is the natural place to share. Confirm the Team quick setting saves through the same PUT (so step 01-03's UI change is backed by the server).\n\n**COMMIT** - `fix(team): reject a throughput history of 0 or less`. Body references Bug #6071, carries `Task-Id: fix-throughput-history-default`.\n\n**Quality gates:** as in 01-01, plus run the new integration test class (it is not in a live-connector category).",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "Creating a Team with throughput history 0 or less and no fixed dates returns 400",
+            "Updating a Team to throughput history 0 or less and no fixed dates returns 400 and leaves the stored value unchanged",
+            "A Team that uses fixed dates is not blocked by its unused rolling-window value",
+            "A create request that omits throughputHistory returns 400",
+            "Create and update share one check; build zero warnings; filtered tests green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamThroughputHistoryValidationIntegrationTest.cs",
+          "scenario_name": "A Team cannot be saved with a throughput history of 0 or less",
+          "red_to_green_tests": [
+            "Creating a Team with throughput history 0 is rejected",
+            "Creating a Team with a negative throughput history is rejected",
+            "Updating a Team to throughput history 0 is rejected"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamThroughputHistoryValidationIntegrationTest.cs"
+          ],
+          "dependencies": ["01-01"],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "Shared throughput-history check used by create and update",
+            "Integration and unit regression tests, including the pinned 400 for an omitted field"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Frontend create paths use the same named defaults and the quick setting stops offering 0",
+          "description": "TDD execution. Read docs/feature/fix-throughput-history-default/rca.md first.\n\n**RED** - Vitest: (1) `CreateTeamWizard.test.tsx` - the settings handed on for a new Team carry throughputHistory `DEFAULT_THROUGHPUT_HISTORY_DAYS` (90) and featureWIP 0 (the existing expectation at ~line 693 already expects 90; make it assert against the constant); (2) `CreatePortfolioWizard` test - a new Portfolio carries percentileHistoryInDays `DEFAULT_PERCENTILE_HISTORY_DAYS` (90), which fails today (0); (3) `ThroughputQuickSetting` test - entering 0 shows an error and does not save; the helper text no longer mentions '0 to unset'. Tests 2 and 3 must fail on current code.\n\n**GREEN** - Export `DEFAULT_THROUGHPUT_HISTORY_DAYS = 90` and `DEFAULT_FEATURE_WIP = 0` from `src/models/Team/TeamSettings.ts`, and `DEFAULT_PERCENTILE_HISTORY_DAYS = 90` from `src/models/Portfolio/PortfolioSettings.ts`. Use them in `CreateTeamWizard.tsx` (~35/39) and `CreatePortfolioWizard.tsx` (~39). Use `DEFAULT_PERCENTILE_HISTORY_DAYS` for the display fallback in `ProjectSettings/Advanced/FeatureSizeComponent.tsx:136` instead of the literal \"90\". `ThroughputQuickSetting.tsx` ~169-173: reject values below 1 with '${throughputTerm} history must be at least 1 day'. Do NOT touch the Edit pages' hand-typed defaults - step 02-01 deletes them.\n\n**COMMIT** - `fix(team): create Teams and Portfolios with the shared defaults`. Body references Bug #6071, carries `Task-Id: fix-throughput-history-default`.\n\n**Quality gates:** consult docs/ci-learnings.md. From `Lighthouse.Frontend/`: `pnpm test` green; `pnpm build` zero errors and warnings (it runs `biome check --write` as prebuild - review what it rewrites; remove any `*/docs` symlinks first if present).",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "The Team wizard creates Teams with 90 days of throughput history and Feature WIP 0, read from named constants",
+            "The Portfolio wizard creates Portfolios with 90 days of percentile history, read from a named constant",
+            "The Team quick setting rejects a throughput history below 1 and no longer offers 0 to unset",
+            "pnpm test green; pnpm build zero errors and warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.test.tsx",
+          "scenario_name": "The UI creates Teams and Portfolios with the shared defaults",
+          "red_to_green_tests": [
+            "A new Portfolio gets 90 days of percentile history",
+            "The throughput quick setting rejects 0"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Team/TeamSettings.ts",
+            "Lighthouse.Frontend/src/models/Portfolio/PortfolioSettings.ts",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.tsx",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreatePortfolioWizard.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/FeatureSizeComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/QuickSettings/ThroughputQuickSetting.tsx"
+          ],
+          "dependencies": ["01-02"],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "Frontend default constants",
+            "Wizards and display fallback use them",
+            "Quick setting validation tightened"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Remove the dead code the RCA found",
+      "description": "Separate refactor commit, requested by the maintainer.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Delete the unused configuration export model and the Edit pages' hand-typed new-item defaults",
+          "description": "Refactor under green tests (behaviour-preserving except for the malformed-URL edge case below). Read docs/feature/fix-throughput-history-default/rca.md first.\n\n**RED** - Vitest for `EditTeam` and `EditPortfolio`: `/teams/new?cloneFrom=abc` (a non-numeric cloneFrom) renders the create wizard, like `/teams/new` without cloneFrom. Same for `/portfolios/new?cloneFrom=abc`. Fails today (it renders the settings form with hand-typed defaults).\n\n**GREEN** - In `pages/Teams/Edit/EditTeam.tsx` and `pages/Portfolios/Edit/EditPortfolio.tsx`: decide wizard-vs-form on a *valid numeric* cloneFrom (parse once), so the non-wizard path always has either a clone source or an existing id; then delete the hand-typed `defaultTeamSettings` / `defaultPortfolioSettings` objects. Delete `src/models/Configuration/ConfigurationExport.ts` (grep first: it must have no importers; remove the folder if empty). Keep every existing EditTeam/EditPortfolio test green; adjust only tests that exercised the deleted fallback.\n\n**COMMIT** - `refactor(team): drop dead default and export code found for Bug #6071`. Carries `Task-Id: fix-throughput-history-default`.\n\n**Quality gates:** `pnpm test` green; `pnpm build` zero errors and warnings.",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A new-Team or new-Portfolio URL with a malformed cloneFrom opens the create wizard",
+            "The Edit pages carry no hand-typed defaults for a new Team or Portfolio",
+            "ConfigurationExport.ts is gone and nothing imported it",
+            "pnpm test green; pnpm build zero errors and warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.test.tsx",
+          "scenario_name": "A malformed clone link opens the create wizard",
+          "red_to_green_tests": [
+            "A new Team URL with a non-numeric cloneFrom opens the wizard",
+            "A new Portfolio URL with a non-numeric cloneFrom opens the wizard"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Edit/EditPortfolio.tsx",
+            "Lighthouse.Frontend/src/models/Configuration/ConfigurationExport.ts"
+          ],
+          "dependencies": ["01-03"],
+          "estimated_hours": 1,
+          "deliverables": [
+            "Edit pages route malformed clone links to the wizard",
+            "Dead defaults and ConfigurationExport.ts deleted"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/Helpers/ThroughputHistoryValidator.cs",
+      "**/API/TeamController.cs",
+      "**/API/TeamsController.cs",
+      "**/Models/Team.cs",
+      "**/Models/Portfolio.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~Lighthouse.Backend.Tests.API.TeamControllerTest|FullyQualifiedName~Lighthouse.Backend.Tests.API.TeamsControllerTest|FullyQualifiedName~TeamThroughputHistoryValidationIntegrationTest|FullyQualifiedName~Lighthouse.Backend.Tests.Models.TeamTest|FullyQualifiedName~Lighthouse.Backend.Tests.Models.PortfolioTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
