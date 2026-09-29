@@ -7,8 +7,6 @@ import { findActionPinViolations } from './action-pins.mjs';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..');
 
-const PENDING_REAL_REPO = 'pending: the repository still pins some actions by tag, branch or bare commit';
-
 const SHA = '3d3c42e5aac5ba805825da76410c181273ba90b1';
 const OTHER_SHA = '6bed0761d9d0b3c1c1c8e6f1e9d1b3a1c5d7e9f1';
 
@@ -59,7 +57,7 @@ async function tree(t, edits = {}) {
 const describeAll = (violations) =>
 	violations.map((v) => `${v.file}:${v.line} ${v.rule}`).join('\n') || '(none)';
 
-test('every action the repository runs is pinned to a commit that names its release', { skip: PENDING_REAL_REPO }, async () => {
+test('every action the repository runs is pinned to a commit that names its release', async () => {
 	const violations = await findActionPinViolations(REPO_ROOT);
 	assert.deepEqual(violations, [], describeAll(violations));
 });

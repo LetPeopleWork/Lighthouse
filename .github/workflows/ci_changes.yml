@@ -34,14 +34,14 @@ jobs:
       github_connector: ${{ steps.check.outputs.github_connector }}
       connector_shared: ${{ steps.check.outputs.connector_shared }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
     
       - name: Find last successful workflow run
         id: last_success
         if: github.ref == 'refs/heads/main'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const workflow_id = 'ci.yml';

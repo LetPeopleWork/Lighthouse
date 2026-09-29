@@ -15,16 +15,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download server artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: ./artifacts/server
 
       - name: Download standalone artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
           path: ./artifacts/standalone
@@ -169,23 +169,23 @@ jobs:
           echo "Signing coverage OK: ${SERVER_COUNT} server file(s), ${STANDALONE_COUNT} standalone file(s)"
 
       - name: Delete unsigned server artifact
-        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118
+        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118 # v6.0.0
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
 
       - name: Upload signed server artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Lighthouse-win-x64-${{ inputs.version }}
           path: ./artifacts/server
 
       - name: Delete unsigned standalone artifact
-        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118
+        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118 # v6.0.0
         with:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
 
       - name: Upload signed standalone artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Lighthouse-win-standalone-x64-${{ inputs.version }}
           path: ./artifacts/standalone
