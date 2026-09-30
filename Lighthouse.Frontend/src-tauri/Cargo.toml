@@ -13,7 +13,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-shell = "2"
+tauri-plugin-shell = "2.3.6"
 tauri-plugin-updater = "2"
 tauri-plugin-dialog = "2"
 chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
