@@ -34,7 +34,8 @@
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.12" />
-		<PackageReference Include="Microsoft.Build" Version="18.10.1" />
+		<!-- Microsoft.TeamFoundationServer.Client floors this at 6.0.1 while Microsoft.Data.SqlClient needs 8.0.0 or later; a direct reference settles the conflict. -->
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.12" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
 		<!-- Pin transitive SQLitePCLRaw above 2.1.11 to resolve CVE-2025-6965 (GHSA-2m69-gcr7-jv3q); EFCore.Sqlite 10.0.9 still floors it at 2.1.11. -->
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
