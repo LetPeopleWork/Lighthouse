@@ -65,7 +65,7 @@ importers:
         specifier: ^5.103.2
         version: 5.103.2(react@19.3.0)
       '@tauri-apps/api':
-        specifier: ^2
+        specifier: ^2.11.1
         version: 2.11.1
       axios:
         specifier: ^1.20.0
@@ -117,7 +117,7 @@ importers:
         specifier: ^9.6.1
         version: 9.6.1(patch_hash=890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0)(@stryker-mutator/core@9.6.1(@types/node@26.6.2))(vitest@5.0.0)
       '@tauri-apps/cli':
-        specifier: ^2
+        specifier: ^2.11.5
         version: 2.11.5
       '@testing-library/dom':
         specifier: ^10.4.2
