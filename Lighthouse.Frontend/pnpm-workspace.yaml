@@ -9,7 +9,7 @@ overrides:
   form-data: ^4.0.6
   immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.9
   postcss: ^8.5.28
-  undici: ^7.28.0
+  undici: ^7.30.0
   # Mutation testing's runner accepts any vitest from 2 upward, so the resolver was free to keep an
   # older copy for it while the suite moved on. It then drove one version of the test framework while
   # every test was written for another, and said nothing was covered rather than failing.
