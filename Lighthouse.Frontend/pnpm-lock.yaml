@@ -14,7 +14,7 @@ overrides:
   postcss: ^8.5.28
   undici: ^7.30.0
   vitest: ^5.0.1
-  ws: ^8.18.0
+  ws: ^8.21.3
 
 patchedDependencies:
   '@stryker-mutator/vitest-runner@9.6.1':
