@@ -1,0 +1,189 @@
+{
+  "roadmap": {
+    "project_id": "story-6083-over-time-history-fill-on-by-default",
+    "created_at": "2026-10-01",
+    "total_steps": 3,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6083 — switch 'Fill in past days on over-time charts' (OverTimeHistoryFill) on by default. Two production moves, each with the test rework it forces in the same commit: (1) OptionalFeatureSeeder seeds the fill on, switches an existing row on exactly once, and records that it did in AppSettings under AppSettingKeys.HistoryFillSwitchedOnByDefault (Id = 0, never in AppSettingSeeder's defaults list), on fresh installs as well as upgrades, so an administrator's later off holds across every restart; (2) a database restore never makes that switch-on — the fill comes back exactly as the backup held it and stays that way after a restart — while clearing the database behaves as a new instance. Then the user-facing docs and ARCHITECTURE.md stop describing an opt-in, and the E2E suite stops assuming the fill ships off. Done when: all ten Story6083HistoryFillOnByDefaultTest cases and the three seeder unit tests (OptionalFeatureSeederTests x2, AppSettingSeederTests x1) are un-ignored and green; `grep -rn \"PendingDeliver\\|pending DELIVER\" Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083* Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding` returns zero matches; `dotnet build` has zero warnings; the backend suite is green with `--filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`; `pnpm test` and `pnpm build` are green with zero warnings. Lighthouse-Clients copy, the release-notes line, screenshot regeneration and Stryker mutation testing are separate gates the maintainer runs or approves on their own — deliberately NOT steps here.",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply here and its omission is deliberate, not an oversight. This repository is C# + NUnit 4.6 + Moq (backend) and TypeScript + Vitest + RTL / Playwright (frontend, E2E); there is no pytest-bdd, no .feature file and no Hypothesis. DISTILL recorded it (feature-delta.md, DISTILL / Reconciliation and the mandate-compliance note under Upstream findings): layer 3+ acceptance, example-only, the one finite axis (how an earlier release left the fill) expressed as an NUnit [TestCase] over an enum. The crafter authors NO new acceptance tests in this story — the ten Story6083 cases and the three seeder unit tests were written by DISTILL and sit [Ignore]d. The crafter's RED phase is un-ignoring them and watching them fail exactly as red-classification.md recorded; its GREEN phase is production code. The only existing tests the crafter edits or deletes are the ones DISTILL's Existing-test disposition table lists, each in the same commit as the production change that makes it wrong, so no commit is red."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-solution-architect (roadmap author; built against the code, not inferred)",
+    "reviewed_at": "2026-10-01",
+    "notes": "Built from feature-delta.md (DISCUSS Locked Decisions D1-D6, DISTILL Scenario list, Existing-test disposition, E2E impact, Upstream findings 1-5, Pre-requisites) and red-classification.md (11/11 MISSING_FUNCTIONALITY plus the D8 addendum). Checked against the code: (1) Scenario 11 (Clearing_the_database_leaves_the_history_fill_switched_on_like_a_new_instance) needs nothing restore-specific — the provider stand-in deletes the database and DatabaseManagementService.ClearDatabase re-migrates and re-runs every seeder, which after 01-01 seeds the fill on and writes the record. It therefore goes green in 01-01, not 01-02; it is un-ignored there and stays in 01-02 as the guard that the restore mechanism does not leak into the clear path. (2) Scenario 10 is still RED after 01-01: the restored database holds the fill off and no record, so the 01-01 seeder flips it on. That is 01-02's genuine RED. (3) DatabaseManagementService.MigrateAndSeedDatabase is shared by RestoreBackup and ClearDatabase and swallows every exception into a log line, so a record insert that collides with one already in the backup would silently abort seeding — 01-02 must insert only when absent. (4) OverTimeReconstructionSeamArchUnitTest confines the spellings OverTimeHistoryFillKey and \"OverTimeHistoryFill\" to OptionalFeatureKeys.cs, OptionalFeatureSeeder.cs and the switch; the record key HistoryFillSwitchedOnByDefault deliberately uses neither, so DatabaseManagementService may name the record without widening that allow-list. (5) The E2E cleanup hooks in PbcOverTime/PercentilesOverTime/PredictabilityOverTime.spec.ts carry no comment; the two comments that call off 'the shipped default' are the switchHistoryFill doc comment in tests/helpers/api/optionalFeatures.ts and the testWithDemoHistoryFill comment in Screenshots.spec.ts (~line 725). (6) Lighthouse.EndToEndTests has `tsc` (script `build`) and Biome 2.5.14 as devDependencies; its `prebuild` runs `biome check --write`, so 01-03 uses the read-only forms `pnpm exec tsc --noEmit` and `pnpm exec biome check ./tests`. (7) The seeder's OverTimeHistoryFill description contains no 'off by default' wording, so AC-1.5's description clause needs no edit and SeedAsync_OverTimeHistoryFill_ReadsTheWayAnAdministratorSeesIt stays as it is."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6083-over-time-history-fill-on-by-default/feature-delta.md",
+    "red_classification": "docs/feature/story-6083-over-time-history-fill-on-by-default/red-classification.md",
+    "slice": "docs/feature/story-6083-over-time-history-fill-on-by-default/slices/slice-01-history-fill-on-by-default.md",
+    "scenarios": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultScenarios.cs",
+    "specifications": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultSpecifications.cs",
+    "unit_tests": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs and AppSettingSeederTests.cs",
+    "adr": "none new — DESIGN was skipped by the maintainer; D3 in feature-delta.md stands in for it. ADR-207/208 (the fill itself) are unchanged and, as history, not edited",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6083"
+  },
+  "user_decisions": [
+    "D1 — every existing instance gets the fill on, once, on the first start-up of this release, whether its off was seeded or chosen; an admin's off after that is honoured. The release notes say so plainly.",
+    "D2 — new instances are seeded on.",
+    "D3 — 'once' is recorded by an AppSettings row the seeder writes (AppSettingKeys.HistoryFillSwitchedOnByDefault), not by an EF migration and not in AppSettingSeeder's defaults list. No schema change, no CreateMigration run.",
+    "D4 — it stays a Preview (IsPreview = true, IsPremium = false).",
+    "D5 — loading demo data neither switches it on nor off.",
+    "D6 — user-facing text uses the configurable terms (Team, Portfolio, Work Item) and the chart names as they appear.",
+    "D7 (taken autonomously at DISTILL, maintainer to confirm before finalize) — a fill row deleted by hand after the record exists comes back on, the way a new instance gets it.",
+    "D8 (taken autonomously at DISTILL, maintainer to confirm before finalize) — a restore never flips: the fill comes back as the backup held it and the record is written so a later restart does not flip it either. Clearing the database is a new instance: seeded on, record written."
+  ],
+  "out_of_scope": [
+    "Telling a deliberate off apart from a seeded off, retroactively or by recording toggles from now on (D1).",
+    "Removing the switch or the Preview badge (#6084).",
+    "Any change to how the fill works: its bounds, budget, maintenance gate, the reconciler or the filler.",
+    "A start-up warning or in-app notice that the switch flipped. The release notes carry that message.",
+    "Any EF migration (D3).",
+    "Any frontend production change. BehaviourSettingsTable renders whatever the endpoint returns.",
+    "The two-replicas-upgrading-at-once race (Upstream finding 5): pre-existing class of risk, not scenario'd.",
+    "Finalize-time and separately-gated items, not DELIVER steps: Lighthouse-Clients copy (packages/client/src/index.ts, packages/mcp-core/src/index.ts, skill/SKILL.md) and its patch release; the release-notes line on ADO #6083 (DoD 7); regenerating screenshots (docs/assets/settings/optionalfeatures.png and the features/metrics over-time widget shots); ADO state transitions; Stryker mutation testing on frozen code."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The over-time charts fill in without anyone switching it on, and an admin's off sticks",
+      "description": "Seed the fill on and make the one-time switch-on for upgraded instances, recorded so it never repeats; then stop a restore from making that switch-on; then bring the docs and the E2E suite in line. The order matters: the restore guard only has something to suppress once the seeder flips, so 01-02's RED (scenario 10) exists only after 01-01.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A new or upgraded instance has the fill on, and an admin's later off holds",
+          "description": "OptionalFeatureSeeder seeds OverTimeHistoryFill with Enabled = true; when the AppSettings record HistoryFillSwitchedOnByDefault is absent it sets an existing row's Enabled to true and writes the record (Id = 0) in the same SaveChanges; when the record is present it never touches Enabled again. The record is written on a fresh install too (the add branch), and a row deleted by hand after the record exists is re-added on (D7) because the add branch seeds the default. Un-ignore Story6083 scenarios 1-6 and 11 plus the three seeder unit tests. In the same commit, apply DISTILL's Existing-test disposition: delete SeedAsync_AddsTheOverTimeHistoryFill_OffInPreviewAndFree, drop SwitchTheFillOnTheWayAnAdministratorWould() from the ReconstructOverTimeHistoryAcceptanceTest set-up, flip the Slice09 upgrade assertion and reword its name and summaries, and bring ARCHITECTURE.md in line.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultScenarios.cs",
+          "scenario_name": "A_new_instance_has_the_history_fill_switched_on",
+          "unskips": [
+            "[Ignore(PendingDeliver)] removed :: A_new_instance_has_the_history_fill_switched_on (AC-1.1, walking skeleton)",
+            "[Ignore(PendingDeliver)] removed :: An_upgraded_instance_has_the_history_fill_switched_on_whichever_way_the_earlier_release_left_it(SwitchedOff / SwitchedOn / NotYetOffered) (AC-1.2, OUT-6083-on-after-upgrade) — one attribute, three test cases",
+            "[Ignore(PendingDeliver)] removed :: The_upgrade_switches_the_history_fill_on_and_changes_nothing_else_in_behaviour_settings (AC-1.5)",
+            "[Ignore(PendingDeliver)] removed :: An_admin_who_switches_the_history_fill_off_after_the_upgrade_keeps_it_off_across_every_restart (AC-1.3, OUT-6083-off-sticks)",
+            "[Ignore(PendingDeliver)] removed :: A_new_instance_whose_admin_switches_the_history_fill_off_keeps_it_off_across_restarts (AC-1.4)",
+            "[Ignore(PendingDeliver)] removed :: A_history_fill_setting_removed_by_hand_comes_back_on_at_the_next_restart (D7)",
+            "[Ignore(PendingDeliver)] removed :: Clearing_the_database_leaves_the_history_fill_switched_on_like_a_new_instance (D8, D2) — moved here from the restore step because clear is a fresh install and needs nothing beyond this step's seeder change",
+            "[Ignore(PendingDeliver)] removed :: OptionalFeatureSeederTests.SeedAsync_AddsTheOverTimeHistoryFill_OnInPreviewAndFree_AndRecordsThatItSwitchedItOn",
+            "[Ignore(PendingDeliver)] removed :: OptionalFeatureSeederTests.SeedAsync_RunAgainInTheSameProcessAfterTheAdministratorSwitchedTheFillOff_LeavesItOff",
+            "[Ignore(\"Story #6083 — pending DELIVER\")] removed :: AppSettingSeederTests.SeedAsync_KeepsTheRecordThatTheHistoryFillWasSwitchedOn",
+            "NOT un-ignored here :: Restoring_a_backup_from_before_this_release_brings_the_history_fill_back_off_and_a_restart_keeps_it_off. It goes RED after this step (the seeder flips the restored off to on) and 01-02 turns it green."
+          ],
+          "red_to_green_tests": [
+            "Story6083HistoryFillOnByDefaultTest :: A_new_instance_has_the_history_fill_switched_on",
+            "Story6083HistoryFillOnByDefaultTest :: An_upgraded_instance_has_the_history_fill_switched_on_whichever_way_the_earlier_release_left_it(SwitchedOff)",
+            "Story6083HistoryFillOnByDefaultTest :: An_upgraded_instance_has_the_history_fill_switched_on_whichever_way_the_earlier_release_left_it(SwitchedOn)",
+            "Story6083HistoryFillOnByDefaultTest :: An_upgraded_instance_has_the_history_fill_switched_on_whichever_way_the_earlier_release_left_it(NotYetOffered)",
+            "Story6083HistoryFillOnByDefaultTest :: The_upgrade_switches_the_history_fill_on_and_changes_nothing_else_in_behaviour_settings",
+            "Story6083HistoryFillOnByDefaultTest :: An_admin_who_switches_the_history_fill_off_after_the_upgrade_keeps_it_off_across_every_restart",
+            "Story6083HistoryFillOnByDefaultTest :: A_new_instance_whose_admin_switches_the_history_fill_off_keeps_it_off_across_restarts",
+            "Story6083HistoryFillOnByDefaultTest :: A_history_fill_setting_removed_by_hand_comes_back_on_at_the_next_restart",
+            "Story6083HistoryFillOnByDefaultTest :: Clearing_the_database_leaves_the_history_fill_switched_on_like_a_new_instance",
+            "OptionalFeatureSeederTests :: SeedAsync_AddsTheOverTimeHistoryFill_OnInPreviewAndFree_AndRecordsThatItSwitchedItOn",
+            "OptionalFeatureSeederTests :: SeedAsync_RunAgainInTheSameProcessAfterTheAdministratorSwitchedTheFillOff_LeavesItOff",
+            "AppSettingSeederTests :: SeedAsync_KeepsTheRecordThatTheHistoryFillWasSwitchedOn"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs (edit — OverTimeHistoryFill entry seeds Enabled = true; read whether the HistoryFillSwitchedOnByDefault record exists once per Seed(); in the update branch, for the fill's key only and only while the record is absent, set existing.Enabled = true; when the record is absent, add `new AppSetting { Id = 0, Key = AppSettingKeys.HistoryFillSwitchedOnByDefault, Value = <non-empty> }` before the single SaveChangesAsync; the add branch is unchanged apart from the new default. The flip lives in this file, not a new seeder: OverTimeReconstructionSeamArchUnitTest allows the fill's key only here, in the key list and in the switch. Extend the existing 'whether it is on is the operator's and is never overwritten' comment with the one exception and its why, in plain language)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultScenarios.cs (edit — remove the seven [Ignore(PendingDeliver)] markers listed in unskips; nothing else)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs (edit — remove the two [Ignore(PendingDeliver)] markers; delete SeedAsync_AddsTheOverTimeHistoryFill_OffInPreviewAndFree; delete `private const string PendingDeliver`, which then has no user (S1144). KEEP SeedAsync_OverTimeHistoryFillSwitchedOnBeforeTheUpgrade_StaysOnAndIsRedescribed, SeedAsync_OverTimeHistoryFill_ReadsTheWayAnAdministratorSeesIt and SeedAsync_CanBeCalledMultipleTimes_WithoutErrors)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/AppSettingSeederTests.cs (edit — remove the [Ignore(\"Story #6083 — pending DELIVER\")] attribute only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs (edit — delete SwitchTheFillOnTheWayAnAdministratorWould() with its doc comment ('the fill ships switched off') and its call at the end of [SetUp] (~line 182). KEEP TheFillIsSwitched and TheStoredFillSwitch; Slice09 still calls them)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice09TheFillShipsOptInScenarios.cs (edit — in An_instance_that_stores_no_fill_switch_fills_nothing_until_an_admin_switches_it_on_after_the_upgrade: ThenTheFillIsStoredSwitched(on: false) becomes on: true, delete the following `await WhenTheAdminSwitchesTheFillOn();`, rename to drop 'until an admin switches it on' (e.g. An_instance_that_stores_no_fill_switch_fills_nothing_until_the_upgrade_adds_it_switched_on) and reword its <summary> ('The upgrade then adds the switch off, and it takes an administrator to turn it on'); reword the class <summary> ('The switch ships off on a fresh instance and an upgraded one alike'). The class name stays)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice09TheFillShipsOptInSpecifications.cs (edit — reword the class doc comment 'Step definitions for Slice09 - the fill ships opt-in.' so it no longer claims an opt-in default)",
+            "ARCHITECTURE.md (edit — §6 line ~180: '(`OverTimeHistoryFill`, a Preview, seeded off)' becomes on by default, switched on once for upgraded instances, an admin's off kept, a restore bringing back what the backup held; ADR index line ~372: 'behind an opt-in behaviour setting' becomes 'behind a behaviour setting, on by default')"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The ten listed tests are un-ignored and the RED run is captured BEFORE any production edit, matching red-classification.md: every Story6083 case fails on an assertion (fill reads false and/or no record stored; the checked Givens of scenarios 4-6 fail on 'should have switched the history fill on'), and the three unit tests fail on Enabled false / no record. A setup, fixture or licence failure is a finding to report, not something to fix around.",
+            "A fresh database seeded once has OverTimeHistoryFill Enabled = true, IsPreview = true, IsPremium = false, and exactly one AppSettings row keyed HistoryFillSwitchedOnByDefault.",
+            "An existing row with no record is switched on and the record is written in the same SaveChanges; a row with the record present is never written to Enabled by the seeder, whatever its value. Repeated seeding in one process (unit test 8) leaves one record and no second flip.",
+            "The record is written with Id = 0 (or Id left unset) and is NOT added to AppSettingSeeder's numbered defaults list, so AppSettingSeeder.RemoveObsoleteSettings (Ids 9-42) can never delete it. AppSettingSeeder.cs is not edited.",
+            "The record's key is the existing AppSettingKeys.HistoryFillSwitchedOnByDefault constant; no new constant, no migration, no file under any Migrations project, CreateMigration not run.",
+            "Name and Description of the OverTimeHistoryFill row are unchanged (SeedAsync_OverTimeHistoryFill_ReadsTheWayAnAdministratorSeesIt stays green unedited); the FeatureOrdering carry-over and UsageData handling are unchanged.",
+            "OverTimeReconstructionSeamArchUnitTest is green without editing its allow-list.",
+            "Every existing-test edit is one DISTILL's disposition table assigns to this production change; no other existing test is edited to pass. In particular WhenTheAdminSwitchesTheFillOn, TheFillIsSwitched and TheStoredFillSwitch still have callers, and no unused private member is left in any touched file (unused privates fail the build; Sonar S1144).",
+            "The seeder comment says why the fill is the one row whose Enabled the seeder writes, and why only once, in plain language a stranger can follow. No internal reference ('D1', 'D3', 'AC-1.2', 'ADR-207', '#6083') appears in any production comment.",
+            "ARCHITECTURE.md no longer calls the fill opt-in or seeded off, in the same commit.",
+            "The whole PercentilesOverTime test directory is run (the set-up switch-on is gone, so every fill scenario now runs on the shipped default) and is green.",
+            "`dotnet build` zero warnings; the backend suite is green with the live-connector categories excluded, apart from the documented environmental signatures in CLAUDE.md. If a test OUTSIDE the disposition table goes red — the likely shape is a fixture that runs every seeder, opens an over-time chart and now meets a background fill it never asked for — stop and report it rather than editing it to pass; it is a gap in DISTILL's inventory, not a licence.",
+            "Scenario 10 (restore) is still [Ignore]d at the end of this step; un-ignoring it locally should show it reading on after the restore, which is 01-02's RED."
+          ],
+          "implementation_notes": "Un-ignore first, capture RED, then production, then the disposition edits until the filtered suite is green, then commit once. The scenarios and seeder tests address the setting by the literal \"OverTimeHistoryFill\" on purpose (wire identity, DISTILL / Scaffolds) — do not 'tidy' it into OptionalFeatureKeys.OverTimeHistoryFillKey. Keep the change inside AddOrUpdateCurrentFeatures' existing shape: one record lookup per Seed(), one key-specific branch in the update path, one AppSetting add — not a new mechanism or class. Targeted run while iterating (DISTILL's baseline over its narrower filter was 107 passed, 13 skipped, 0 failed; after this step expect exactly 1 skipped — scenario 10 — and one test fewer for the deleted _OffInPreviewAndFree; the filter below adds the whole PercentilesOverTime directory, so its pass count is higher): `dotnet test --filter \"FullyQualifiedName~Story6083HistoryFillOnByDefaultTest|FullyQualifiedName~OptionalFeatureSeederTests|FullyQualifiedName~AppSettingSeederTests|FullyQualifiedName~BehaviourSettings|FullyQualifiedName~OverTimeReconstructionSeamArchUnitTest|FullyQualifiedName~PercentilesOverTime|FullyQualifiedName~DatabaseManagementServiceTest\"`. Then the full filtered suite before committing: `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. In a worktree, exactly 2 Licensing failures on the gitignored valid_not_expired_license.json are environmental — copy it from the main checkout. Consult docs/ci-learnings.md before editing (CA1861 on inline new[] in assertions, NUnit2045/2056, S1144). Program.cs is NOT touched. Commit: `feat(optional-features): switch the over-time history fill on by default, once (story 6083)`"
+        },
+        {
+          "id": "01-02",
+          "name": "A restore brings the fill back as the backup held it",
+          "description": "After DatabaseManagementService.RestoreBackup puts a backup in place and re-runs migrations and every seeder, the fill keeps the Enabled value the backup held, the HistoryFillSwitchedOnByDefault record is present, and a later restart does not flip it either. ClearDatabase keeps behaving as a fresh install (seeded on, record written), and application start-up keeps flipping. The mechanism is the crafter's choice; prefer the smallest. Candidate A (recommended): the restore path — and only the restore path — inserts the record, if absent, after ApplyMigrations and before SeedDatabase, so the seeder sees an already-settled instance and never flips; e.g. MigrateAndSeedDatabase takes a flag that RestoreBackup sets and ClearDatabase does not, or RestoreBackup calls a small private step. Touches DatabaseManagementService.cs only, names the record key but not the fill's key, so the ArchUnit seam allow-list is untouched. Candidate B: an explicit 'after restore' signal the seeder reads (an overload of DatabaseConfigurator.SeedDatabase or a scoped occasion object) — touches DatabaseConfigurator.cs and OptionalFeatureSeeder.cs and probably a DI registration in Program.cs, which forces the full Integration suite; choose it only if A proves unworkable, and say why in the commit body. Un-ignore scenario 10.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultScenarios.cs",
+          "scenario_name": "Restoring_a_backup_from_before_this_release_brings_the_history_fill_back_off_and_a_restart_keeps_it_off",
+          "unskips": [
+            "[Ignore(PendingDeliver)] removed :: Restoring_a_backup_from_before_this_release_brings_the_history_fill_back_off_and_a_restart_keeps_it_off (D8) — the last Story6083 marker",
+            "Stays un-ignored and green as a regression guard (un-ignored in 01-01) :: Clearing_the_database_leaves_the_history_fill_switched_on_like_a_new_instance — proves the restore mechanism does not leak into clear"
+          ],
+          "red_to_green_tests": [
+            "Story6083HistoryFillOnByDefaultTest :: Restoring_a_backup_from_before_this_release_brings_the_history_fill_back_off_and_a_restart_keeps_it_off"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs (edit, candidate A — the restore path writes the HistoryFillSwitchedOnByDefault record with Id = 0, only when absent, between DatabaseConfigurator.ApplyMigrations and DatabaseConfigurator.SeedDatabase, inside the existing try in MigrateAndSeedDatabase; ClearDatabase does not)",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/DatabaseConfigurator.cs and Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs (edit ONLY under candidate B)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultScenarios.cs (edit — remove the last [Ignore(PendingDeliver)]; the class <summary> line 'Every scenario ships [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle.' becomes false and goes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultSpecifications.cs (edit — delete `private const string PendingDeliver`, which then has no user; Sonar S1144)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "Scenario 10 is un-ignored and its RED captured BEFORE the production edit: the restore completes and the seeders run (its AssertTheOperationRanThrough check passes), and the fill reads on after the restore where the backup held it off. If it fails anywhere else, report it.",
+            "After a restore of a backup holding the fill off and no record: the fill reads off, the record is present, and after a restart the fill still reads off. A backup that already holds the record restores without error and without a second record — the insert is conditional, because MigrateAndSeedDatabase logs and swallows any exception and a duplicate-key failure would silently skip every seeder.",
+            "ClearDatabase is unchanged in behaviour: scenario 11 stays green (fill on, record present).",
+            "Application start-up still flips: every Story6083 upgrade scenario (2, 3, 4) and unit test 8 stay green. The restore-only behaviour is reachable only from RestoreBackup; Program.cs's start-up seeding path is not altered (under candidate A, Program.cs is not touched at all).",
+            "OverTimeReconstructionSeamArchUnitTest is green without editing its allow-list: no new file names OverTimeHistoryFillKey or \"OverTimeHistoryFill\".",
+            "DatabaseManagementServiceTest stays green with no change to any existing assertion; at most a mock-wiring addition in its [SetUp] if the record write needs a service the mocked scope does not yet provide, and that need is stated in the commit body.",
+            "The production comment at the record write says why a restore must not count as an upgrade — restoring the backup taken before upgrading is how an administrator undoes filled days — in plain language, with no internal reference.",
+            "Zero [Ignore(PendingDeliver)] and no PendingDeliver constant remain in Story6083HistoryFillOnByDefaultScenarios.cs / Specifications.cs; all ten cases run and pass.",
+            "`dotnet build` zero warnings; the backend suite is green with the live-connector categories excluded; `pnpm test` and `pnpm build` green with zero warnings (no frontend production change; confirm nothing in the frontend suite asserts the fill's default)."
+          ],
+          "implementation_notes": "Prefer candidate A: one conditional insert on the restore path is the smallest mechanism and keeps the 'is this an upgrade?' question answered by data the seeder already reads. Keep RestoreBackup and ClearDatabase sharing MigrateAndSeedDatabase rather than duplicating it. Restoring a backup old enough to hold no fill row at all re-adds the row on (the seeder's add branch, D7) — that is consistent with D7 and needs no special case. Mutation-gate risk to flag at hand-back, not to act on here: Stryker skips the acceptance suite, so the restore-path lines may show survivors that only scenario 10 kills; if the later Stryker gate reports that, a DatabaseManagementServiceTest unit test is the place to close it. Targeted run: `dotnet test --filter \"FullyQualifiedName~Story6083HistoryFillOnByDefaultTest|FullyQualifiedName~DatabaseManagementServiceTest|FullyQualifiedName~OptionalFeatureSeederTests|FullyQualifiedName~AppSettingSeederTests|FullyQualifiedName~OverTimeReconstructionSeamArchUnitTest\"`, then the full filtered suite. Commit: `feat(database-management): a restore brings the history fill back as the backup held it (story 6083)`"
+        },
+        {
+          "id": "01-03",
+          "name": "The docs say on by default, and the E2E suite stops assuming off",
+          "description": "User-facing docs describe the fill as on by default, move the backup advice to before upgrading and state what a restore does; ARCHITECTURE.md was already brought in line in 01-01. In Lighthouse.EndToEndTests, exclude the two over-time widgets from the Screenshots dashboard loop (they may be mid-fill now and are shot deterministically by testWithDemoHistoryFill) and reword the two comments that call off 'the shipped default'. The cleanup hooks keep restoring off, so later specs keep the deterministic state they have today. AC-1.6's docs half; its release-notes half is a finalize item.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Story6083HistoryFillOnByDefaultScenarios.cs",
+          "scenario_name": "A_new_instance_has_the_history_fill_switched_on",
+          "unskips": [
+            "None — this step un-skips nothing and adds no test. AC-1.6 is a docs check DISTILL recorded as not automatable; the E2E edits are a list exclusion and comment rewording. The test_file names the scenario whose behaviour the rewritten pages now promise; it must stay green, and this step changes no backend code."
+          ],
+          "red_to_green_tests": [],
+          "files_to_modify": [
+            "docs/settings/configuration.md (edit — '### Fill in past days on over-time charts (Preview)', ~lines 108-122: 'With this switch off, that is all they show' / 'Switch it on and…' reframed for an on default; the 'It is a Preview, and off by default' bullet says on by default for a new instance, and that the first start-up of this release switched it on once on an upgraded instance, including one where it had been switched off, after which a System Admin's off is kept; '#### Turning it back off' keeps its content, and 'take a backup before you switch it on' becomes 'before you upgrade'; state that restoring a backup brings the fill back the way the backup held it; the {: .note} about presetting it across instances flips to switching it off, with `enabled` set to `false`. KEEP the heading text so the #fill-in-past-days-on-over-time-charts-preview anchor that predictability.md and the release notes link to keeps resolving)",
+            "docs/metrics/predictability.md (edit — '## Filling in past days (Preview)', ~lines 88-105: 'Out of the box … show only the days Lighthouse recorded' and 'Switch on … It is a Preview and it is off by default' become on by default and switchable off by a System Admin; the {: .important} backup advice becomes 'before you upgrade' and states that restoring that backup brings the history and the switch back as they were; check line ~86's 'whether filling in is switched on or off' still reads true)",
+            "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts (edit — add `metricWidget.name === MetricsWidgetNames.PercentilesOverTime` and `=== MetricsWidgetNames.PbcOverTime` (both already in MetricsPage.ts ~652-653; ids percentilesOverTime / pbcOverTime at ~848-849) to the dashboard loop's coveredElsewhere condition (~line 475); reword the comment above testWithDemoHistoryFill (~line 725, 'Filling in past days ships switched off') to say why the fixture switches it on for the shot and off afterwards)",
+            "Lighthouse.EndToEndTests/tests/helpers/api/optionalFeatures.ts (edit — reword the switchHistoryFill doc comment, ~lines 35-39: the fill is on by default; specs switch it on explicitly so they do not depend on the instance's state, and switch it off afterwards so later specs never meet a background fill they did not ask for)",
+            "Lighthouse.EndToEndTests/tests/specs/flow/PbcOverTime.spec.ts, PercentilesOverTime.spec.ts, PredictabilityOverTime.spec.ts (NOT edited — their beforeEach/afterEach hooks carry no comment and keep switching on, then off)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "`grep -rn \"off by default\\|ships switched off\\|shipped default\\|before you switch it on\" docs/settings/configuration.md docs/metrics/predictability.md ARCHITECTURE.md Lighthouse.EndToEndTests/tests` returns zero matches.",
+            "`grep -n \"opt-in\\|seeded off\" ARCHITECTURE.md` shows no line about the history fill (the unrelated 'N replicas is opt-in' and event-sink lines stay).",
+            "Both doc pages say: on by default; a System Admin can switch it off and that off is kept; an upgraded instance had it switched on once, even if it had been off; take a backup before you upgrade if you might want the unfilled history back; restoring that backup brings the fill back the way the backup held it. Only a System Admin can switch it, it is free, and it takes effect without a restart — still stated.",
+            "The '#### Turning it back off' section and the 'Fill in past days on over-time charts (Preview)' heading still exist, so in-page and cross-page anchors resolve.",
+            "Every configurable term reads as the seeded default from TerminologySeeder.cs (Team, Portfolio, Work Item, Cycle Time); never Epic, Initiative or Story. Chart names read as they appear: Percentiles Over Time, PBC Over Time.",
+            "The Screenshots dashboard loop skips both over-time widgets; the dedicated testWithDemoHistoryFill shots are unchanged.",
+            "No remaining comment in Lighthouse.EndToEndTests claims the fill ships off.",
+            "In Lighthouse.EndToEndTests: `pnpm exec tsc --noEmit` exits 0 and `pnpm exec biome check ./tests` reports zero errors and zero warnings (read-only forms; the package's prebuild is `biome check --write`).",
+            "No release-notes edit (docs/releasenotes/releasenotes.md is history plus a finalize item), no screenshot regenerated, no Lighthouse-Clients file touched.",
+            "Remove any `*/docs` symlink before running a frontend or E2E build in this step, or Biome's --write pass reformats the docs tree."
+          ],
+          "implementation_notes": "DISTILL's E2E impact asks for one full E2E run (SQLite and Postgres, including DatabaseManagement.spec.ts's restore) to confirm nothing else leans on the fill being off; on a fresh E2E database the first spec to open Predictability now meets the fill on. Run it locally once after this step (`pnpm test` in Lighthouse.EndToEndTests against a backend started with Start-DevServer.ps1 on a spare, Kestrel-overridden port — never :5169), and report any spec that turns red rather than editing it to pass. CI runs E2E twice via ci_verifysqlite / ci_verifypostgres. Regenerating the over-time widget screenshots and docs/assets/settings/optionalfeatures.png is a finalize item; when it happens, `rm` the old PNGs first (a sub-threshold diff keeps the stale image) and import the premium licence fixture. Commit: `docs(optional-features): the over-time history fill is on by default (story 6083)` — the E2E hygiene may go in the same commit or a separate `test(e2e): …` commit."
+        }
+      ]
+    }
+  ]
+}
