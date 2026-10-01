@@ -1,0 +1,120 @@
+{
+  "roadmap": {
+    "project_id": "fix-features-nav-overview-race",
+    "created_at": "2026-10-01",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "ADO Bug #6112: ManualSortingSwitch.spec.ts flakes on both SQLite and Postgres. LighthousePage.goToFeatures clicks the nav link and returns at once; the Features view is lazy-loaded and the previous page stays painted while it loads, so the URL is /features while the Overview grids are still on screen. FeaturesPage.featureRows matches any .MuiDataGrid-row and readColumn waits only for any [data-field=\"name\"] cell, which the Overview grids satisfy, so the 'before the switch' read returns [] or the demo Portfolio/Team/Connection names. Fix the page objects so a Features read can only ever see the Features grid, stop the FeatureOrdering switch leaking between specs, and make retry-hidden flakes visible in the CI job summary. Test code and CI reporting only; no production code."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-10-01",
+    "notes": "Bugfix flow (/nw-bugfix Phase 3) — minimal roadmap, no DISCUSS/DESIGN/DISTILL waves. RCA reviewed by nw-troubleshooter-reviewer and approved by the maintainer, who approved fixes A, A', C and B (D, the Postgres durability flags, declined). The defect is in E2E test code, so the regression proof is a deterministic one-off reproduction (route delay) run before and after the fix, not a new permanent spec — E2E stays a thin sanity check."
+  },
+  "ssot_inputs": {
+    "rca": "docs/feature/fix-features-nav-overview-race/rca.md",
+    "ado_work_item": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6112"
+  },
+  "out_of_scope": [
+    "Production code, including a data-testid on FeatureListDataGrid: the position-column scope achieves the same without a production edit.",
+    "Fix D (Postgres fsync/synchronous_commit flags) — not approved.",
+    "Changing Playwright retries (stays at 2 in CI) or turning on failOnFlakyTests — the real-IO connector specs legitimately depend on retries.",
+    "A new permanent regression spec — the route-delay reproduction is a one-off local proof."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Fix the Features navigation race and make flakes visible (Bug 6112)",
+      "description": "Features reads in E2E can only see the Features grid, the ManualSorting specs start from and leave the shipped FeatureOrdering default, and CI job summaries list tests that only passed on retry.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "goToFeatures waits for the Features view and featureRows only matches the Features grid",
+          "description": "Read docs/feature/fix-features-nav-overview-race/rca.md sections 1.2, 2 (Branch A), 4 (Fix A, Fix A') and 7 first.\n\n**RED phase** — reproduce the race deterministically against UNMODIFIED page objects. Temporarily add to ManualSortingSwitch.spec.ts, before the first goToFeatures, a route that holds the lazy Features chunk ~2 s (`page.route(\"**/assets/FeaturesView-*.js\", async r => { await new Promise(res => setTimeout(res, 2000)); await r.continue(); })` — confirm the actual chunk name in the built wwwroot/assets first; the fixture exposes `page`). Run the spec and confirm it fails because the 'before' read is not the Features list (record the received array). Also try the variant that delays `**/api/latest/features` instead and record its result. Record the run output as the RED evidence in the execution log.\n\n**GREEN phase** —\n- Fix A: `Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts` `goToFeatures` waits with `await expect(featuresPage.helpText).toBeVisible()` before returning (import `expect` from @playwright/test). Do NOT wait on the /api/latest/features response — ManualSortingMove calls goToFeatures while already on /features and nothing refetches.\n- Fix A': `Lighthouse.EndToEndTests/tests/models/features/FeaturesPage.ts` — scope `featureRows` to the `.MuiDataGrid-root` that has a `.MuiDataGrid-columnHeader[data-field=\"position\"]`. Check every other FeaturesPage locator that is page-wide and could match a foreign grid; scope those to the same grid where they read grid content.\n- Re-run the delayed variants: both must now pass. Then REMOVE the temporary route — it must not be committed.\n- Run every spec that calls goToFeatures or uses FeaturesPage (ManualSortingSwitch, ManualSortingMove, FeaturesView.spec, FeatureDependencies.spec; Screenshots.spec only if cheap) — all green. Run ManualSortingSwitch with `--repeat-each=10` green.\n\n**How to run E2E locally** (never against the dev instance on :5169 — the E2E teardown wipes data there): from `Lighthouse.Frontend/` run `pnpm build` (outputs into the backend wwwroot; first remove any `*/docs` symlinks the build's biome --write could follow, and `git status` afterwards to make sure the build rewrote nothing tracked). Then from `Lighthouse.Backend/Lighthouse.Backend/` start in the background (Bash run_in_background): `Kestrel__Endpoints__Http__Url=http://localhost:5199 Kestrel__Endpoints__Https__Url=https://localhost:7299 ASPNETCORE_ENVIRONMENT=Development Encryption__KeyStorePath=$HOME/.config/Lighthouse/dev-keys Database__Provider=sqlite Database__ConnectionString=\"Data Source=<scratchpad>/e2e-6112.db\" dotnet run --no-launch-profile`. Poll until http://localhost:5199 responds. Import the premium licence (the specs are @premium): `curl -s -X POST http://localhost:5199/api/latest/license/import -F file=@Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json`. Run from `Lighthouse.EndToEndTests/`: `LIGHTHOUSEURL=http://localhost:5199 pnpm exec playwright test tests/specs/features/ManualSortingSwitch.spec.ts`. Stop the backend and delete the throwaway DB when done. Never point a key store at `data-protection-keys`.\n\n**COMMIT phase** — `fix(e2e): read the Features list only once the Features view is on screen`. Body explains the race in plain language and carries `Task-Id: fix-features-nav-overview-race` and `Bug #6112`. Comments per CLAUDE.md: rare, plain-language why, no internal references (no 'Fix A', no 'Epic 5375 slice 01', no D16) — fix any such comment you touch in these two files.\n\n**Quality gates:** consult docs/ci-learnings.md first. From `Lighthouse.EndToEndTests/`: the package's lint/typecheck (biome / tsc as the package.json defines) clean.",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "With the Features chunk held back, the unmodified page objects read the wrong list (RED recorded)",
+            "With the fix, the same delayed run reads the real Features list before and after the switch",
+            "goToFeatures returns only once the Features view's own help text is visible",
+            "featureRows cannot match rows from any grid without a position column",
+            "The temporary route delay is not committed",
+            "All specs using goToFeatures/FeaturesPage are green locally; ManualSortingSwitch green with --repeat-each=10"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/features/ManualSortingSwitch.spec.ts",
+          "scenario_name": "a config admin hands the order to this instance and nothing moves",
+          "red_to_green_tests": [
+            "a config admin hands the order to this instance and nothing moves (with the Features chunk delayed)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts",
+            "Lighthouse.EndToEndTests/tests/models/features/FeaturesPage.ts"
+          ],
+          "dependencies": [],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "goToFeatures waits for the Features view",
+            "featureRows scoped to the Features grid"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "ManualSorting specs start from and leave the shipped FeatureOrdering default",
+          "description": "Read rca.md Branch C and Fix C. FeatureOrdering ships switched off (OptionalFeatureSeeder.cs, `Enabled = false`). ManualSortingMove turns it on through the UI and nothing turns it off (clearConfiguration only deletes portfolios, teams and connections), so in CI ManualSortingSwitch finds it already on and never really clicks the switch.\n\n**RED phase** — run ManualSortingMove then ManualSortingSwitch in one Playwright run (`--workers=1`, Move first) and show the switch is already on when the Switch spec reaches Settings (e.g. a temporary assertion that FeatureOrdering is off on entry, which fails). Record it.\n\n**GREEN phase** — in `Lighthouse.EndToEndTests/tests/helpers/api/optionalFeatures.ts` add an exported `switchFeatureOrdering(request, enabled)` beside `switchHistoryFill`, reusing the private `switchOptionalFeature` (key `FeatureOrdering`). In both ManualSorting specs switch it off at the start (so the Switch spec truly exercises the toggle) and off again afterwards so the next spec meets the shipped default — follow how the existing `switchHistoryFill` callers do setup/teardown (grep for them) and use the fixture's `request` the same way. Keep the 'is off on entry' check only if it reads as part of the spec's story; otherwise remove it. Run both specs in both orders, plus `--repeat-each=5` on the pair, green.\n\nUse the same local E2E recipe as step 01-01 (backend on :5199 with a throwaway SQLite DB and the premium licence; never :5169).\n\n**COMMIT phase** — `test(e2e): start and leave the manual sorting specs with Feature ordering off`. Body: why, plus `Task-Id: fix-features-nav-overview-race` and `Bug #6112`. Rewrite the header comments of the two ManualSorting specs you touch so they carry no internal references (Epic 5375 slice 02, US-02) — plain language only.\n\n**Quality gates:** docs/ci-learnings.md; E2E package lint/typecheck clean.",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "ManualSortingSwitch actually clicks the switch from off to on, whatever ran before it",
+            "Both ManualSorting specs leave FeatureOrdering switched off",
+            "The switch helper reuses the existing optional-feature helper",
+            "Both specs green in either order and repeated"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/features/ManualSortingSwitch.spec.ts",
+          "scenario_name": "a config admin hands the order to this instance and nothing moves",
+          "red_to_green_tests": [
+            "a config admin hands the order to this instance and nothing moves (run after ManualSortingMove)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/helpers/api/optionalFeatures.ts",
+            "Lighthouse.EndToEndTests/tests/specs/features/ManualSortingSwitch.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/features/ManualSortingMove.spec.ts"
+          ],
+          "dependencies": ["01-01"],
+          "estimated_hours": 0.75,
+          "deliverables": [
+            "Exported FeatureOrdering switch helper",
+            "Both ManualSorting specs reset the switch"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "CI job summaries list tests that only passed on retry",
+          "description": "Read rca.md Fix B. Playwright runs with `retries: 2` in CI and `reporter: \"html\"` (playwright.config.ts), so a test that loses twice and passes on the third attempt leaves the job green and invisible. Keep retries at 2 and do not enable failOnFlakyTests.\n\nPreferred shape (one place, covers ci_verifysqlite.yml, ci_verifypostgres.yml and ci_e2e.yml with no workflow edits): a small custom Playwright reporter in the E2E project that, in onEnd, collects tests whose outcome() is 'flaky' (and, for completeness, 'unexpected') and, when `GITHUB_STEP_SUMMARY` is set, appends a short markdown section naming each flaky test (file + title + project) and how many attempts it took; when nothing was flaky it writes one line saying so; when the env var is absent it does nothing. Register it in playwright.config.ts alongside the existing html reporter (keep html exactly as it is, including its output used by the upload-artifact steps). If you find a reason the workflow route is better, explain it in the commit body.\n\n**RED phase** — a test of the reporter's behaviour that fails before it exists. Check whether the E2E package has any unit-test runner for helper code; if it has none, drive the reporter through Playwright itself: a tiny throwaway config + spec that is flaky by construction (fails on retry 0, passes on retry 1) run with `GITHUB_STEP_SUMMARY` pointed at a scratch file, asserting the file names the flaky test. Keep whatever permanent test you add minimal; a throwaway verification recorded in the execution log is acceptable if a permanent test would need new tooling.\n\n**GREEN phase** — implement the reporter, register it, verify with the flaky-by-construction run and a normal run of one real spec (summary says nothing flaky). Make sure the reporter file is not picked up as a spec and is covered by the package's tsc/biome.\n\n**COMMIT phase** — `ci(e2e): list tests that only passed on retry in the job summary`. Body: why, `Task-Id: fix-features-nav-overview-race`, `Bug #6112`.\n\n**Quality gates:** docs/ci-learnings.md; E2E package lint/typecheck clean.",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A CI run whose tests only passed on retry names those tests in the job summary",
+            "A run with no flaky tests says so in one line",
+            "Outside GitHub Actions the reporter writes nothing",
+            "Retries stay at 2 and the html report is unchanged"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/playwright.config.ts",
+          "scenario_name": "flaky tests are listed in the CI job summary",
+          "red_to_green_tests": [
+            "a test that passes only on retry is named in the step summary"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/playwright.config.ts",
+            "Lighthouse.EndToEndTests/tests/reporters/FlakySummaryReporter.ts"
+          ],
+          "dependencies": ["01-02"],
+          "estimated_hours": 0.75,
+          "deliverables": [
+            "Flaky-test summary reporter registered for CI"
+          ]
+        }
+      ]
+    }
+  ]
+}
