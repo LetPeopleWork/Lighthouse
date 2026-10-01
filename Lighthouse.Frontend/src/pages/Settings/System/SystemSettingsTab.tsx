@@ -86,8 +86,12 @@ const SystemSettingsTab: React.FC = () => {
 	};
 
 	useEffect(() => {
-		fetchOptionalFeatures();
-		fetchLicenseStatus();
+		fetchOptionalFeatures().catch((error) => {
+			console.error("Error fetching optional features:", error);
+		});
+		fetchLicenseStatus().catch((error) => {
+			console.error("Failed to fetch license status:", error);
+		});
 	}, [fetchOptionalFeatures, fetchLicenseStatus]);
 
 	return (

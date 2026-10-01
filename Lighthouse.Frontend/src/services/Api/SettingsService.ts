@@ -32,7 +32,7 @@ export class SettingsService
 		});
 	}
 
-	async updateRefreshSettings(
+	updateRefreshSettings(
 		settingName: string,
 		refreshSettings: IRefreshSettings,
 	): Promise<void> {
@@ -41,7 +41,10 @@ export class SettingsService
 				`/appsettings/${settingName}Refresh`,
 				refreshSettings,
 			);
+		}).catch((error: unknown) => {
+			console.error("Error updating refresh settings:", error);
 		});
+		return Promise.resolve();
 	}
 
 	async getFeatureOrdering(): Promise<FeatureOrderingPolicy> {

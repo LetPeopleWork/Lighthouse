@@ -38,6 +38,7 @@ import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../../utils/navigation";
 import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
@@ -259,7 +260,9 @@ const TeamDetail: React.FC = () => {
 	fetchTeamRef.current = fetchTeam;
 
 	useEffect(() => {
-		fetchTeam();
+		fetchTeam().catch((error) => {
+			console.error("Error fetching team:", error);
+		});
 	}, [fetchTeam]);
 
 	useEffect(() => {
@@ -299,10 +302,16 @@ const TeamDetail: React.FC = () => {
 			updateTeamRefreshButton(updateStatus);
 		};
 
-		setUpTeamSubscription();
+		setUpTeamSubscription().catch((error) => {
+			console.error("Error subscribing to team updates:", error);
+		});
 
 		return () => {
-			updateSubscriptionService.unsubscribeFromTeamUpdates(teamId);
+			updateSubscriptionService
+				.unsubscribeFromTeamUpdates(teamId)
+				.catch((error) => {
+					console.error("Error cleaning up team subscription:", error);
+				});
 		};
 	}, [teamId, updateSubscriptionService]);
 
@@ -336,11 +345,17 @@ const TeamDetail: React.FC = () => {
 			);
 		};
 
-		subscribeAll();
+		subscribeAll().catch((error) => {
+			console.error("Error subscribing to forecast updates:", error);
+		});
 
 		return () => {
 			for (const portfolioId of portfolioIds) {
-				updateSubscriptionService.unsubscribeFromForecastUpdates(portfolioId);
+				updateSubscriptionService
+					.unsubscribeFromForecastUpdates(portfolioId)
+					.catch((error) => {
+						console.error("Error cleaning up forecast subscription:", error);
+					});
 			}
 		};
 	}, [portfolioSubscriptionKey, updateSubscriptionService]);
@@ -351,7 +366,9 @@ const TeamDetail: React.FC = () => {
 			// Redirect to forecasts when features tab is requested but team has no features
 			const newView = "forecasts";
 			setActiveView(newView);
-			navigate(`/teams/${id}/${newView}`, { replace: true });
+			reportFailedNavigation(
+				navigate(`/teams/${id}/${newView}`, { replace: true }),
+			);
 		}
 	}, [team, activeView, id, navigate]);
 
@@ -374,7 +391,9 @@ const TeamDetail: React.FC = () => {
 		newView: TeamViewType,
 	) => {
 		setActiveView(newView);
-		navigate(`/teams/${id}/${newView}`, { replace: true });
+		reportFailedNavigation(
+			navigate(`/teams/${id}/${newView}`, { replace: true }),
+		);
 	};
 
 	return (

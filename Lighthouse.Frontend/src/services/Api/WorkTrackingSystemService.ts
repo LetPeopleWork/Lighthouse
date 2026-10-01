@@ -108,14 +108,15 @@ export class WorkTrackingSystemService
 		});
 	}
 
-	async deleteWorkTrackingSystemConnection(
-		connectionId: number,
-	): Promise<void> {
+	deleteWorkTrackingSystemConnection(connectionId: number): Promise<void> {
 		this.withErrorHandling(async () => {
 			await this.apiService.delete(
 				`/worktrackingsystemconnections/${connectionId}`,
 			);
+		}).catch((error: unknown) => {
+			console.error("Error deleting the connection:", error);
 		});
+		return Promise.resolve();
 	}
 
 	private deserializeWorkTrackingSystemConnection(

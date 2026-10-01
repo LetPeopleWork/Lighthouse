@@ -83,7 +83,9 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 	}, [groupMappingsFetcher]);
 
 	useEffect(() => {
-		loadMappings();
+		loadMappings().catch((error) => {
+			console.error("Error loading group mappings:", error);
+		});
 	}, [loadMappings]);
 
 	const filteredMappings = mappings.filter((mapping) => {

@@ -62,9 +62,15 @@ const LogSettings: React.FC = () => {
 				await logService.getSupportedLogLevels();
 			setSupportedLogLevels(currentSupportedLogLevels);
 		};
-		fetchSupportedLogLevels();
-		fetchLogLevel();
-		refreshLogs();
+		fetchSupportedLogLevels().catch((error) => {
+			console.error("Error fetching supported log levels:", error);
+		});
+		fetchLogLevel().catch((error) => {
+			console.error("Error fetching log level:", error);
+		});
+		refreshLogs().catch((error) => {
+			console.error("Error fetching logs:", error);
+		});
 	}, [logService, refreshLogs]);
 
 	// Each ask schedules the next one only once it has come back, so a slow instance gets one
@@ -87,7 +93,9 @@ const LogSettings: React.FC = () => {
 			}
 		};
 
-		askAgain();
+		askAgain().catch((error) => {
+			console.error("Error following logs:", error);
+		});
 
 		return () => {
 			stopped = true;

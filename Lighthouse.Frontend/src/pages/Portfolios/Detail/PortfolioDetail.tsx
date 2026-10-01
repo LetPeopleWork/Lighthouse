@@ -33,6 +33,7 @@ import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../../utils/navigation";
 import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import PortfolioForecastView from "./PortfolioForecastView";
 import PortfolioMetricsView from "./PortfolioMetricsView";
@@ -294,14 +295,18 @@ const PortfolioDetail: React.FC = () => {
 	) => {
 		setActiveView(newView);
 		const tabPath = getTabPath(newView);
-		navigate(`/portfolios/${id}/${tabPath}`, { replace: true });
+		reportFailedNavigation(
+			navigate(`/portfolios/${id}/${tabPath}`, { replace: true }),
+		);
 	};
 
 	const fetchPortfolioRef = useRef(fetchPortfolio);
 	fetchPortfolioRef.current = fetchPortfolio;
 
 	useEffect(() => {
-		fetchPortfolio();
+		fetchPortfolio().catch((error) => {
+			console.error("Error fetching portfolio:", error);
+		});
 	}, [fetchPortfolio]);
 
 	useEffect(() => {
@@ -363,11 +368,27 @@ const PortfolioDetail: React.FC = () => {
 			updatePortfolioRefreshButton(forecastUpdateStatus);
 		};
 
-		setUpSubscriptions();
+		setUpSubscriptions().catch((error) => {
+			console.error("Error subscribing to portfolio updates:", error);
+		});
 
 		return () => {
-			updateSubscriptionService.unsubscribeFromFeatureUpdates(portfolioId);
-			updateSubscriptionService.unsubscribeFromForecastUpdates(portfolioId);
+			updateSubscriptionService
+				.unsubscribeFromFeatureUpdates(portfolioId)
+				.catch((error) => {
+					console.error(
+						"Error cleaning up portfolio feature subscription:",
+						error,
+					);
+				});
+			updateSubscriptionService
+				.unsubscribeFromForecastUpdates(portfolioId)
+				.catch((error) => {
+					console.error(
+						"Error cleaning up portfolio forecast subscription:",
+						error,
+					);
+				});
 		};
 	}, [portfolioId, updateSubscriptionService]);
 

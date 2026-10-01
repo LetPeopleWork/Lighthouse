@@ -71,7 +71,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			setFeatures(featureData);
 		};
 
-		fetchFeatures();
+		fetchFeatures().catch((error) => {
+			console.error("Error fetching features:", error);
+		});
 	}, [team.features, featureService]);
 
 	// Fetch features in progress
@@ -84,7 +86,9 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			setFeaturesInProgress(inProgress.map((feature) => feature.referenceId));
 		};
 
-		fetchFeaturesInProgress();
+		fetchFeaturesInProgress().catch((error) => {
+			console.error("Error fetching features in progress:", error);
+		});
 	}, [team, teamMetricsService]);
 
 	// Define columns

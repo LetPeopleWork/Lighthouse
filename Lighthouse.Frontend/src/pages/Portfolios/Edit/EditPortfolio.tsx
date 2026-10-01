@@ -12,6 +12,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../../utils/navigation";
 
 const EditPortfolio: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
@@ -74,10 +75,12 @@ const EditPortfolio: React.FC = () => {
 			savedSettings = await portfolioService.createPortfolio(updatedSettings);
 			reportUsage({ name: UsageDataEventName.PortfolioCreated });
 			await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
-			navigate(`/portfolios/${savedSettings.id}/settings`);
+			reportFailedNavigation(
+				navigate(`/portfolios/${savedSettings.id}/settings`),
+			);
 		} else {
 			savedSettings = await portfolioService.updatePortfolio(updatedSettings);
-			navigate(`/portfolios/${savedSettings.id}`);
+			reportFailedNavigation(navigate(`/portfolios/${savedSettings.id}`));
 		}
 		return savedSettings;
 	};
@@ -93,7 +96,7 @@ const EditPortfolio: React.FC = () => {
 			await portfolioService.createPortfolio(updatedSettings);
 		reportUsage({ name: UsageDataEventName.PortfolioCreated });
 		await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
-		navigate(`/portfolios/${savedSettings.id}/metrics`);
+		reportFailedNavigation(navigate(`/portfolios/${savedSettings.id}/metrics`));
 	};
 
 	if (gate.isLoading) {

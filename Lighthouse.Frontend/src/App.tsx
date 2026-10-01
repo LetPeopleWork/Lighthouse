@@ -136,7 +136,9 @@ const App: React.FC = () => {
 			}
 		};
 
-		initTauriListener();
+		initTauriListener().catch((error) => {
+			console.error("Failed to initialize Tauri event listener:", error);
+		});
 
 		return () => unlistenFn?.();
 	}, [isTauri]);

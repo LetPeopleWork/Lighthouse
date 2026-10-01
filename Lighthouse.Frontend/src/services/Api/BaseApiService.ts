@@ -18,11 +18,15 @@ export class BaseApiService {
 		this.apiService.interceptors?.response.use(assertNotHtmlResponse);
 
 		// Once the backend URL is definitively known, update the base URL
-		getBackendReadyPromise().then(() => {
-			if (this.apiService?.defaults) {
-				this.apiService.defaults.baseURL = `${getBackendUrl()}/latest`;
-			}
-		});
+		getBackendReadyPromise()
+			.then(() => {
+				if (this.apiService?.defaults) {
+					this.apiService.defaults.baseURL = `${getBackendUrl()}/latest`;
+				}
+			})
+			.catch((error: unknown) => {
+				console.error("Error updating the backend base URL:", error);
+			});
 	}
 
 	protected async withErrorHandling<T>(

@@ -44,7 +44,9 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 		};
 
 		if (portfolioId) {
-			fetchDeliveries();
+			fetchDeliveries().catch((error) => {
+				console.error("Error fetching deliveries:", error);
+			});
 		}
 	}, [portfolioId, deliveryService]);
 

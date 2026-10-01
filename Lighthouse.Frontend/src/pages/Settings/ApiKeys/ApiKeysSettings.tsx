@@ -578,7 +578,9 @@ const ApiKeysSettings: React.FC = () => {
 				onCreated={() => {
 					// Only refresh the list; the dialog stays open to show the plaintext key.
 					// It closes only when the user clicks Done (which calls onClose).
-					fetchKeys();
+					fetchKeys().catch((error) => {
+						console.error("Error fetching API keys:", error);
+					});
 				}}
 			/>
 		</Box>

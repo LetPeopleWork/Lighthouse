@@ -23,6 +23,7 @@ import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { reportFailedNavigation } from "../../../utils/navigation";
 import DataGridBase from "../DataGrid/DataGridBase";
 import type { DataGridColumn } from "../DataGrid/types";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
@@ -86,9 +87,11 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	const handleClone = useCallback(
 		(item: IFeatureOwner) => {
 			if (api === "teams") {
-				navigate(`/teams/new?cloneFrom=${item.id}`);
+				reportFailedNavigation(navigate(`/teams/new?cloneFrom=${item.id}`));
 			} else if (api === "portfolios") {
-				navigate(`/portfolios/new?cloneFrom=${item.id}`);
+				reportFailedNavigation(
+					navigate(`/portfolios/new?cloneFrom=${item.id}`),
+				);
 			}
 		},
 		[navigate, api],

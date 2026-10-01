@@ -60,7 +60,9 @@ export const useParentWorkItems = (
 			}
 		};
 
-		fetchParentWorkItems();
+		fetchParentWorkItems().catch((error) => {
+			console.error("Failed to fetch parent work items:", error);
+		});
 	}, [features, featureService]);
 
 	return parentMap;

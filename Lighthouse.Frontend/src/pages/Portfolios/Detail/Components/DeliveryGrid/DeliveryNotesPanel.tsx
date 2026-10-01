@@ -54,7 +54,9 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 	}, [deliveryService, deliveryId]);
 
 	useEffect(() => {
-		loadNotes();
+		loadNotes().catch((error) => {
+			console.error("Error loading notes:", error);
+		});
 	}, [loadNotes]);
 
 	const saveNote = async () => {

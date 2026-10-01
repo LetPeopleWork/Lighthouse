@@ -44,7 +44,9 @@ const WorkItemTypesComponent: React.FC<WorkItemTypesComponentProps> = ({
 			}
 		};
 
-		fetchWorkItemTypes();
+		fetchWorkItemTypes().catch((error) => {
+			console.error(`Failed to fetch ${workItemTerm} types:`, error);
+		});
 	}, [suggestionService, isForTeam, workItemTerm]);
 
 	return (

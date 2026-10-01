@@ -13,6 +13,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../../utils/navigation";
 
 const EditTeamPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
@@ -49,10 +50,10 @@ const EditTeamPage: React.FC = () => {
 			newSettings = await teamService.createTeam(updatedSettings);
 			reportUsage({ name: UsageDataEventName.TeamCreated });
 			await teamService.updateTeamData(newSettings.id);
-			navigate(`/teams/${newSettings.id}/settings`);
+			reportFailedNavigation(navigate(`/teams/${newSettings.id}/settings`));
 		} else {
 			newSettings = await teamService.updateTeam(updatedSettings);
-			navigate(`/teams/${newSettings.id}`);
+			reportFailedNavigation(navigate(`/teams/${newSettings.id}`));
 		}
 		return newSettings;
 	};
@@ -84,7 +85,7 @@ const EditTeamPage: React.FC = () => {
 		const newSettings = await teamService.createTeam(updatedSettings);
 		reportUsage({ name: UsageDataEventName.TeamCreated });
 		await teamService.updateTeamData(newSettings.id);
-		navigate(`/teams/${newSettings.id}/metrics`);
+		reportFailedNavigation(navigate(`/teams/${newSettings.id}/metrics`));
 	};
 
 	if (gate.isLoading) {

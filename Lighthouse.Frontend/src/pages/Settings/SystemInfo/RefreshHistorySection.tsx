@@ -37,7 +37,9 @@ const RefreshHistorySection: React.FC = () => {
 			const data = await systemInfoService.getRefreshLogs();
 			setLogs(data);
 		};
-		fetchLogs();
+		fetchLogs().catch((error) => {
+			console.error("Error fetching refresh history:", error);
+		});
 	}, [systemInfoService]);
 
 	const entityOptions: EntityOption[] = [];

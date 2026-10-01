@@ -38,6 +38,7 @@ import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useTerminology } from "../../services/TerminologyContext";
 import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../utils/navigation";
 
 const OverviewDashboard: React.FC = () => {
 	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -134,7 +135,9 @@ const OverviewDashboard: React.FC = () => {
 	}, [portfolioService, teamService, workTrackingSystemService]);
 
 	useEffect(() => {
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Error fetching overview data:", error);
+		});
 	}, [fetchData]);
 
 	const handlePortfolioDelete = (portfolio: IFeatureOwner) => {
@@ -177,8 +180,9 @@ const OverviewDashboard: React.FC = () => {
 	};
 
 	// Connection handlers
-	const handleAddConnection = async () => {
-		navigate("/connections/new");
+	const handleAddConnection = () => {
+		reportFailedNavigation(navigate("/connections/new"));
+		return Promise.resolve();
 	};
 
 	const handleDeleteConnection = useCallback(
@@ -229,21 +233,25 @@ const OverviewDashboard: React.FC = () => {
 			params.delete("filter");
 		}
 
-		navigate(
-			{
-				pathname: location.pathname,
-				search: params.toString(),
-			},
-			{ replace: true },
+		reportFailedNavigation(
+			navigate(
+				{
+					pathname: location.pathname,
+					search: params.toString(),
+				},
+				{ replace: true },
+			),
 		);
 	};
 
-	const handleAddPortfolio = async () => {
-		navigate("/portfolios/new");
+	const handleAddPortfolio = () => {
+		reportFailedNavigation(navigate("/portfolios/new"));
+		return Promise.resolve();
 	};
 
-	const handleAddTeam = async () => {
-		navigate("/teams/new");
+	const handleAddTeam = () => {
+		reportFailedNavigation(navigate("/teams/new"));
+		return Promise.resolve();
 	};
 
 	const connectionColumns: DataGridColumn<

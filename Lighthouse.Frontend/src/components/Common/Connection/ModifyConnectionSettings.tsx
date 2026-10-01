@@ -299,7 +299,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			}
 		};
 
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Error fetching connection data:", error);
+		});
 	}, [
 		getSupportedSystems,
 		getConnectionSettings,

@@ -50,7 +50,9 @@ export const TerminologyConfiguration: React.FC<
 	}, [terminologyService]);
 
 	useEffect(() => {
-		loadTerminology();
+		loadTerminology().catch((error) => {
+			console.error("Error loading terminology:", error);
+		});
 	}, [loadTerminology]);
 
 	const handleSave = async () => {

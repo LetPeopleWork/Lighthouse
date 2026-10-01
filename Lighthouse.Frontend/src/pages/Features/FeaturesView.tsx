@@ -33,7 +33,9 @@ const FeaturesView: React.FC = () => {
 	}, [featureService]);
 
 	useEffect(() => {
-		fetchFeatures();
+		fetchFeatures().catch((error) => {
+			console.error("Error fetching features:", error);
+		});
 	}, [fetchFeatures]);
 
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(

@@ -74,7 +74,9 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 		};
 
 		if (open && licenseStatus?.canUsePremiumFeatures) {
-			fetchVersion();
+			fetchVersion().catch((error) => {
+				console.error("Failed to fetch version:", error);
+			});
 		}
 	}, [open, licenseStatus?.canUsePremiumFeatures, versionService]);
 

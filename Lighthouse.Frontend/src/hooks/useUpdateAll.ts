@@ -19,13 +19,13 @@ export const useUpdateAll = (): UseUpdateAllResult => {
 	const { portfolioService, teamService, updateSubscriptionService } =
 		useContext(ApiServiceContext);
 
-	const fetchGlobalUpdateStatus = useCallback(async () => {
-		try {
-			const status = await updateSubscriptionService.getGlobalUpdateStatus();
-			setGlobalUpdateStatus(status);
-		} catch (error) {
-			console.error("Error fetching global update status:", error);
-		}
+	const fetchGlobalUpdateStatus = useCallback(() => {
+		updateSubscriptionService
+			.getGlobalUpdateStatus()
+			.then(setGlobalUpdateStatus)
+			.catch((error) => {
+				console.error("Error fetching global update status:", error);
+			});
 	}, [updateSubscriptionService]);
 
 	useEffect(() => {
@@ -42,7 +42,9 @@ export const useUpdateAll = (): UseUpdateAllResult => {
 			}
 		};
 
-		setupGlobalSubscription();
+		setupGlobalSubscription().catch((error) => {
+			console.error("Error setting up global update subscription:", error);
+		});
 
 		return () => {
 			updateSubscriptionService.unsubscribeFromAllUpdates().catch((error) => {

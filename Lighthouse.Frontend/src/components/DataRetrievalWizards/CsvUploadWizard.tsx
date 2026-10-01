@@ -95,7 +95,9 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 	const handleFileChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
 			const file = event.target.files?.[0] || null;
-			validateAndProcessFile(file);
+			validateAndProcessFile(file).catch((error) => {
+				console.error("Error reading file:", error);
+			});
 		},
 		[validateAndProcessFile],
 	);
@@ -104,7 +106,9 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 		(event: React.DragEvent<HTMLDivElement>) => {
 			event.preventDefault();
 			const file = event.dataTransfer.files[0];
-			validateAndProcessFile(file);
+			validateAndProcessFile(file).catch((error) => {
+				console.error("Error reading file:", error);
+			});
 		},
 		[validateAndProcessFile],
 	);

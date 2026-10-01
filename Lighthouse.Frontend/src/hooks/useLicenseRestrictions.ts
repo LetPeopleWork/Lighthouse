@@ -48,7 +48,9 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 			}
 		};
 
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Failed to fetch license, team, or portfolio data:", error);
+		});
 	}, [licensingService, teamService, portfolioService]);
 
 	// Premium users have no restrictions

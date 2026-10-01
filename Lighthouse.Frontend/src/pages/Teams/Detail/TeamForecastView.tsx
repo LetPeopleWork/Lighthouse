@@ -231,7 +231,13 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		}
 
 		const timer = setTimeout(() => {
-			runForecast(effectiveRemainingItems, targetDate, effectiveFilterOverride);
+			runForecast(
+				effectiveRemainingItems,
+				targetDate,
+				effectiveFilterOverride,
+			).catch((error) => {
+				console.error("Error running manual forecast:", error);
+			});
 		}, DEBOUNCE_MS);
 
 		return () => clearTimeout(timer);

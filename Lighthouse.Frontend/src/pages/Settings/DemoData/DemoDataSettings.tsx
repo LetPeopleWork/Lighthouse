@@ -59,7 +59,9 @@ const DemoDataSettings: React.FC = () => {
 			}
 		};
 
-		fetchScenarios();
+		fetchScenarios().catch((error) => {
+			console.error("Failed to fetch demo scenarios:", error);
+		});
 	}, [demoDataService]);
 
 	const handleLoadScenario = async (scenarioId: string) => {
@@ -82,7 +84,9 @@ const DemoDataSettings: React.FC = () => {
 	const handleConfirmDialogClose = (confirmed: boolean) => {
 		if (confirmed && pendingAction) {
 			if (pendingAction.scenarioId !== undefined) {
-				handleLoadScenario(pendingAction.scenarioId);
+				handleLoadScenario(pendingAction.scenarioId).catch((error) => {
+					console.error("Failed to load scenario:", error);
+				});
 			}
 		}
 		setConfirmDialogOpen(false);

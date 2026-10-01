@@ -122,7 +122,9 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 			}
 		};
 
-		bootstrap();
+		bootstrap().catch((error) => {
+			console.error("Error checking the authentication status:", error);
+		});
 
 		return () => {
 			cancelled = true;

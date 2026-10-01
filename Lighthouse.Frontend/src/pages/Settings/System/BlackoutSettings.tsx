@@ -119,7 +119,12 @@ const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({ isPremium }) => {
 	}, [fetchPeriods, fetchRules]);
 
 	useEffect(() => {
-		fetchAll();
+		fetchAll().catch((error) => {
+			console.error(
+				"Error fetching blackout periods and recurring rules:",
+				error,
+			);
+		});
 	}, [fetchAll]);
 
 	const openAddPeriod = () => {

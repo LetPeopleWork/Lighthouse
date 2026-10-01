@@ -56,7 +56,9 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 			}
 		};
 
-		fetchStates();
+		fetchStates().catch((error) => {
+			console.error("Failed to fetch states:", error);
+		});
 	}, [suggestionService]);
 
 	const handleAddOverrideChildCountState = (

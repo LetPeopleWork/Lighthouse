@@ -143,7 +143,9 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 				setLoading(false);
 			}
 		};
-		fetchSystems();
+		fetchSystems().catch((error) => {
+			console.error("Error fetching supported systems:", error);
+		});
 	}, []);
 
 	const clearValidationFeedback = () => {

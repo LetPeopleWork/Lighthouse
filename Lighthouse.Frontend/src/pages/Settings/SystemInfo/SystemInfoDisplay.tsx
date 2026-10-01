@@ -50,7 +50,9 @@ const SystemInfoDisplay: React.FC = () => {
 			const info = await systemInfoService.getSystemInfo();
 			setSystemInfo(info);
 		};
-		fetchSystemInfo();
+		fetchSystemInfo().catch((error) => {
+			console.error("Error fetching system info:", error);
+		});
 	}, [systemInfoService]);
 
 	const rows: { label: string; value: string | null; show?: boolean }[] =

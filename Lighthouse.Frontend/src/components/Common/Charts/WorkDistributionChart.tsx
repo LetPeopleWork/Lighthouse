@@ -86,7 +86,9 @@ const WorkDistributionChart: React.FC<WorkDistributionChartProps> = ({
 			}
 		};
 
-		fetchParentNames();
+		fetchParentNames().catch((error) => {
+			console.error("Failed to fetch parent work item names:", error);
+		});
 	}, [workItems, featureService]);
 
 	// Group work items by parent reference

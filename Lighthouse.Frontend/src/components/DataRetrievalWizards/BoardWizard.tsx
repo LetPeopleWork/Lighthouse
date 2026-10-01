@@ -65,7 +65,9 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 
 	useEffect(() => {
 		if (open) {
-			loadBoards();
+			loadBoards().catch((error) => {
+				console.error("Error loading boards:", error);
+			});
 		}
 	}, [open, loadBoards]);
 
@@ -95,7 +97,9 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 		(_: unknown, newValue: IBoard | null) => {
 			setSelectedBoard(newValue);
 			if (newValue) {
-				fetchBoardInformation(newValue);
+				fetchBoardInformation(newValue).catch((error) => {
+					console.error("Error fetching board information:", error);
+				});
 			} else {
 				setBoardInformation(null);
 			}

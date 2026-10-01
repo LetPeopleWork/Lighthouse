@@ -118,16 +118,22 @@ export class TeamService extends BaseApiService implements ITeamService {
 		});
 	}
 
-	async updateTeamData(teamId: number): Promise<void> {
+	updateTeamData(teamId: number): Promise<void> {
 		this.withErrorHandling(async () => {
 			await this.apiService.post<ITeam>(`/teams/${teamId}`);
+		}).catch((error: unknown) => {
+			console.error("Error requesting a team data update:", error);
 		});
+		return Promise.resolve();
 	}
 
-	async updateAllTeamData(): Promise<void> {
+	updateAllTeamData(): Promise<void> {
 		this.withErrorHandling(async () => {
 			await this.apiService.post(`/teams/update-all`);
+		}).catch((error: unknown) => {
+			console.error("Error requesting a data update for all teams:", error);
 		});
+		return Promise.resolve();
 	}
 
 	async updateForecast(teamId: number): Promise<void> {

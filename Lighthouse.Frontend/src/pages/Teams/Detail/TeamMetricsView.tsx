@@ -69,7 +69,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			}
 		};
 
-		fetchFeatures();
+		fetchFeatures().catch((error) => {
+			console.error(`Error fetching ${featuresTerm} in progress:`, error);
+		});
 	}, [team.id, teamMetricsService, featuresTerm]);
 
 	useEffect(() => {
@@ -84,7 +86,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			setFeatureWip(idealFeatureWip);
 		};
 
-		fetchFeatureWip();
+		fetchFeatureWip().catch((error) => {
+			console.error("Error fetching feature WIP:", error);
+		});
 	}, [teamService, team]);
 
 	useEffect(() => {
@@ -111,7 +115,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			}
 		};
 
-		fetchTeamSettings();
+		fetchTeamSettings().catch((error) => {
+			console.error("Error fetching team settings:", error);
+		});
 	}, [team.id, teamService]);
 
 	useEffect(() => {

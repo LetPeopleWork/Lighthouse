@@ -48,7 +48,9 @@ const RefreshSettingUpdater: React.FC<RefreshSettingUpdaterProps> = ({
 			}
 		};
 
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Error fetching refresh settings:", error);
+		});
 	}, [settingsService, settingName]);
 
 	const handleInputChange =

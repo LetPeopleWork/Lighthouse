@@ -26,7 +26,9 @@ export const useBaseUrl = (): string | null => {
 			}
 		};
 
-		fetchBaseUrl();
+		fetchBaseUrl().catch((error) => {
+			console.error("Error fetching base URL:", error);
+		});
 
 		return () => {
 			cancelled = true;

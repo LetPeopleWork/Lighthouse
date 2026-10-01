@@ -15,6 +15,7 @@ import {
 	usageDataWorkTrackingSystemFor,
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
+import { reportFailedNavigation } from "../../../utils/navigation";
 
 const EditConnectionPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
@@ -77,7 +78,7 @@ const EditConnectionPage: React.FC = () => {
 
 	const saveAndNavigate = async (connection: IWorkTrackingSystemConnection) => {
 		await saveConnectionSettings(connection);
-		navigate("/");
+		reportFailedNavigation(navigate("/"));
 	};
 
 	const validateConnectionSettings = async (

@@ -72,7 +72,9 @@ const ThirdPartyPackagesSection: React.FC = () => {
 				setLoading(false);
 			}
 		};
-		loadSbomData();
+		loadSbomData().catch((error) => {
+			console.error("Error loading package information:", error);
+		});
 	}, [systemInfoService]);
 
 	const filteredPackages = useMemo(() => {

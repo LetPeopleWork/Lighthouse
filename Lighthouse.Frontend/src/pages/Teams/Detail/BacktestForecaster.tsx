@@ -263,7 +263,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 			}
 		};
 
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Error fetching backtest data:", error);
+		});
 	}, [
 		backtestResult,
 		team,

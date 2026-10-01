@@ -210,7 +210,9 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	const handleKeyDown = (event: React.KeyboardEvent) => {
 		if (event.key === "Enter") {
 			event.preventDefault();
-			handleSave();
+			handleSave().catch((error) => {
+				console.error("Error saving throughput settings:", error);
+			});
 		} else if (event.key === "Escape") {
 			event.preventDefault();
 			handleClose();
@@ -220,7 +222,9 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 	const handleDialogClose = (_event: unknown, reason: string) => {
 		if (reason === "backdropClick") {
 			if (isDirty() && validate()) {
-				handleSave();
+				handleSave().catch((error) => {
+					console.error("Error saving throughput settings:", error);
+				});
 			} else {
 				handleClose();
 			}

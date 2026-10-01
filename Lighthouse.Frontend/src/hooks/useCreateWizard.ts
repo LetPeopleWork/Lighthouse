@@ -136,7 +136,9 @@ export function useCreateWizard<TDto>({
 				setLoading(false);
 			}
 		};
-		fetchConnections();
+		fetchConnections().catch((error) => {
+			console.error("Error fetching connections:", error);
+		});
 	}, [getConnections]);
 
 	const selectConnection = (connection: IWorkTrackingSystemConnection) => {

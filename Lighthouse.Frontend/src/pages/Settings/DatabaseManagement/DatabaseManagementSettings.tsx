@@ -62,7 +62,9 @@ const DatabaseManagementSettings: React.FC = () => {
 	}, [databaseManagementService]);
 
 	useEffect(() => {
-		fetchStatus();
+		fetchStatus().catch((error) => {
+			console.error("Failed to fetch database capability status:", error);
+		});
 	}, [fetchStatus]);
 
 	const isBlocked = status?.isOperationBlocked ?? false;

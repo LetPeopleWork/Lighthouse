@@ -59,7 +59,9 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 	}, [optionalFeatureService]);
 
 	useEffect(() => {
-		refresh();
+		refresh().catch((error) => {
+			console.error("Error reading the ordering setting:", error);
+		});
 	}, [refresh]);
 
 	const resolveMoveGate = useCallback(

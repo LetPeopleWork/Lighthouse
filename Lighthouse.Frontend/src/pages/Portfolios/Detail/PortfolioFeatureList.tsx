@@ -69,7 +69,9 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	}, [portfolio.features, featureService]);
 
 	useEffect(() => {
-		fetchFeatures();
+		fetchFeatures().catch((error) => {
+			console.error("Error fetching features:", error);
+		});
 	}, [fetchFeatures]);
 
 	// Fetch features in progress
@@ -100,7 +102,9 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 			setFeaturesInProgress(featuresByTeam);
 		};
 
-		fetchFeaturesInProgress();
+		fetchFeaturesInProgress().catch((error) => {
+			console.error("Error fetching features in progress:", error);
+		});
 	}, [portfolio.involvedTeams, teamMetricsService]);
 
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(

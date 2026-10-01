@@ -481,7 +481,12 @@ export const useDeliveryManagement = ({
 					next.add(deliveryId);
 					const delivery = deliveries.find((d) => d.id === deliveryId);
 					if (delivery) {
-						loadFeaturesForDelivery(delivery);
+						loadFeaturesForDelivery(delivery).catch((error) => {
+							console.error(
+								"Failed to load the features of a delivery:",
+								error,
+							);
+						});
 					}
 				}
 				return next;
@@ -491,11 +496,15 @@ export const useDeliveryManagement = ({
 	);
 
 	useEffect(() => {
-		fetchDeliveries();
+		fetchDeliveries().catch((error) => {
+			console.error("Failed to fetch deliveries:", error);
+		});
 	}, [fetchDeliveries]);
 
 	useEffect(() => {
-		fetchDeliverySources();
+		fetchDeliverySources().catch((error) => {
+			console.error("Error fetching delivery sources:", error);
+		});
 	}, [fetchDeliverySources]);
 
 	return {

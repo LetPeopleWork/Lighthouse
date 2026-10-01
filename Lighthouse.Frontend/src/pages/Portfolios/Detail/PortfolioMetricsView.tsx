@@ -57,7 +57,9 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			}
 		};
 
-		fetchPortfolioSettings();
+		fetchPortfolioSettings().catch((error) => {
+			console.error("Error fetching portfolio settings:", error);
+		});
 	}, [portfolio.id, portfolioService]);
 
 	return (

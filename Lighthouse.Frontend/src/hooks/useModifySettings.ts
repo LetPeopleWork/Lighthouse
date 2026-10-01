@@ -235,6 +235,11 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				pendingPayloadRef.current = null;
 				dispatchSaveRef.current(withToken(pending, tokenRef.current));
 			};
+			const refreshDependentData = () => {
+				Promise.resolve(additionalFetchRef.current?.()).catch(() => {
+					if (isLatest()) setRefreshFailed(true);
+				});
+			};
 			setSaveState("saving");
 			if (isLatest()) setRefreshFailed(false);
 			saveSettingsRef
@@ -245,9 +250,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 						applyRefreshedToken(result);
 						applyIfLatest("saved");
 						if (autoRefreshOnSave && isLatest()) {
-							Promise.resolve(additionalFetchRef.current?.()).catch(() => {
-								if (isLatest()) setRefreshFailed(true);
-							});
+							refreshDependentData();
 						}
 						maybeValidateAfterSave(payload, isLatest);
 						flushPending();
@@ -350,7 +353,9 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				setLoading(false);
 			}
 		};
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Error fetching data", error);
+		});
 		// Load once on mount; callbacks stay current via refs, so identity changes must not re-fetch.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);

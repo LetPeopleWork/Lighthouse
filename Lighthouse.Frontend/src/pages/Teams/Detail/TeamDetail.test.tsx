@@ -108,7 +108,9 @@ const renderTeamDetail = () => {
 	mockTeamService.updateTeam = vi.fn().mockResolvedValue(undefined);
 	mockTeamService.updateTeamData = vi.fn();
 	mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
-	mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+	mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi
+		.fn()
+		.mockResolvedValue(undefined);
 	mockUpdateSubscriptionService.getUpdateStatus = vi
 		.fn()
 		.mockResolvedValue(null);
@@ -230,7 +232,9 @@ describe("TeamDetail component", () => {
 
 		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithNoFeatures);
 		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
-		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi
+			.fn()
+			.mockResolvedValue(undefined);
 		mockUpdateSubscriptionService.getUpdateStatus = vi
 			.fn()
 			.mockResolvedValue(null);
@@ -268,7 +272,9 @@ describe("TeamDetail component", () => {
 
 		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithFeatures);
 		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
-		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi
+			.fn()
+			.mockResolvedValue(undefined);
 		mockUpdateSubscriptionService.getUpdateStatus = vi
 			.fn()
 			.mockResolvedValue(null);
@@ -306,7 +312,9 @@ describe("TeamDetail component", () => {
 
 		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithNoFeatures);
 		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
-		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi
+			.fn()
+			.mockResolvedValue(undefined);
 		mockUpdateSubscriptionService.getUpdateStatus = vi
 			.fn()
 			.mockResolvedValue(null);
@@ -344,7 +352,9 @@ describe("TeamDetail component", () => {
 
 		mockTeamService.getTeam = vi.fn().mockResolvedValue(teamWithNoFeatures);
 		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
-		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi
+			.fn()
+			.mockResolvedValue(undefined);
 		mockUpdateSubscriptionService.getUpdateStatus = vi
 			.fn()
 			.mockResolvedValue(null);
@@ -384,7 +394,9 @@ describe("TeamDetail component", () => {
 
 		mockTeamService.getTeam = vi.fn().mockResolvedValue(null);
 		mockUpdateSubscriptionService.subscribeToTeamUpdates = vi.fn();
-		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi.fn();
+		mockUpdateSubscriptionService.unsubscribeFromTeamUpdates = vi
+			.fn()
+			.mockResolvedValue(undefined);
 		mockUpdateSubscriptionService.getUpdateStatus = vi
 			.fn()
 			.mockResolvedValue(null);
@@ -439,7 +451,9 @@ describe("TeamDetail component", () => {
 						capturedCallback = callback;
 					},
 				);
-			mockUpdateService.unsubscribeFromTeamUpdates = vi.fn();
+			mockUpdateService.unsubscribeFromTeamUpdates = vi
+				.fn()
+				.mockResolvedValue(undefined);
 			mockUpdateService.getUpdateStatus = vi.fn().mockResolvedValue(null);
 
 			const mockApiContext = createMockApiServiceContext({
@@ -575,8 +589,12 @@ describe("TeamDetail component", () => {
 						forecastCallback = cb;
 					},
 				);
-			mockUpdateService.unsubscribeFromTeamUpdates = vi.fn();
-			mockUpdateService.unsubscribeFromForecastUpdates = vi.fn();
+			mockUpdateService.unsubscribeFromTeamUpdates = vi
+				.fn()
+				.mockResolvedValue(undefined);
+			mockUpdateService.unsubscribeFromForecastUpdates = vi
+				.fn()
+				.mockResolvedValue(undefined);
 			mockUpdateService.getUpdateStatus = vi.fn().mockResolvedValue(null);
 
 			const mockApiContext = createMockApiServiceContext({

@@ -66,7 +66,9 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 			}
 		};
 
-		fetchStates();
+		fetchStates().catch((error) => {
+			console.error("Failed to fetch states:", error);
+		});
 	}, [suggestionService, isForTeam]);
 
 	const allUsedStates = useMemo(() => {

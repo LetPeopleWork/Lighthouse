@@ -316,7 +316,9 @@ const EncryptionPanel: React.FC = () => {
 	}, [encryptionService]);
 
 	useEffect(() => {
-		readKeyState();
+		readKeyState().catch((error) => {
+			console.error("Error reading the encryption key state:", error);
+		});
 	}, [readKeyState]);
 
 	const run = async (

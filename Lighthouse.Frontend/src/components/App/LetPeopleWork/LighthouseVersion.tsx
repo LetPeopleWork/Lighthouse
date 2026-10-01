@@ -123,7 +123,9 @@ const LighthouseVersion: React.FC = () => {
 			}
 		};
 
-		fetchData();
+		fetchData().catch((error) => {
+			console.error("Error fetching version data:", error);
+		});
 	}, [versionService, shouldShowNotification]);
 
 	const handleInstallUpdate = async () => {
