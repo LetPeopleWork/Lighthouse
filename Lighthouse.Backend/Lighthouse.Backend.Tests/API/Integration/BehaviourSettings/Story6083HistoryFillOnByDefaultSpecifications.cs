@@ -15,10 +15,10 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 {
     /// <summary>
-    /// Step definitions for Story #6083. Backend-observable contract: after start-up the history fill reads
-    /// on for a new instance and for one upgraded from any earlier state; the instance keeps a record that
-    /// it switched the fill on; and once that record exists, start-up never switches the fill again, so an
-    /// administrator's off holds.
+    /// Step definitions for the history fill being on by default. Backend-observable contract: after
+    /// start-up the history fill reads on for a new instance and for one upgraded from any earlier state;
+    /// the instance keeps a record that it switched the fill on; and once that record exists, start-up
+    /// never switches the fill again, so an administrator's off holds.
     /// </summary>
     public partial class Story6083HistoryFillOnByDefaultTest : BehaviourSettingsAcceptanceTest
     {
@@ -48,10 +48,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         private void GivenTheCallerAdministersTheInstance() => TheCallerAdministersTheWholeInstance();
 
         /// <summary>
-        /// The database as a release from before this story left it: no record that anything switched the
-        /// fill on, and the setting itself switched off, switched on, or not stored at all by a release that
-        /// predates it. Written straight into the store because that is where an upgrading instance carries
-        /// it.
+        /// The database as a release from before the fill shipped on left it: no record that anything
+        /// switched the fill on, and the setting itself switched off, switched on, or not stored at all by a
+        /// release that predates it. Written straight into the store because that is where an upgrading
+        /// instance carries it.
         /// </summary>
         private void GivenTheInstanceAsAnEarlierReleaseLeftIt(HowAnEarlierReleaseLeftTheFill earlierState)
         {

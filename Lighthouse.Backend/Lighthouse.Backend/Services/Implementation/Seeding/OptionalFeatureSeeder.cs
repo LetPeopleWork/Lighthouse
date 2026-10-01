@@ -144,13 +144,21 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
 
             if (!historyFillAlreadySwitchedOn)
             {
-                context.AppSettings.Add(new AppSetting
-                {
-                    Id = 0,
-                    Key = AppSettingKeys.HistoryFillSwitchedOnByDefault,
-                    Value = "true",
-                });
+                RecordThatTheHistoryFillWasSwitchedOn(context);
             }
+        }
+
+        /// <summary>
+        /// Once this record exists, seeding leaves the history fill exactly as it is stored.
+        /// </summary>
+        internal static void RecordThatTheHistoryFillWasSwitchedOn(LighthouseAppContext context)
+        {
+            context.AppSettings.Add(new AppSetting
+            {
+                Id = 0,
+                Key = AppSettingKeys.HistoryFillSwitchedOnByDefault,
+                Value = "true",
+            });
         }
 
         /// <summary>

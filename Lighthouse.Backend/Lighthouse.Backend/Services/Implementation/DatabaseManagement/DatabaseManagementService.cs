@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -238,12 +238,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 return;
             }
 
-            context.AppSettings.Add(new AppSetting
-            {
-                Id = 0,
-                Key = AppSettingKeys.HistoryFillSwitchedOnByDefault,
-                Value = "true",
-            });
+            OptionalFeatureSeeder.RecordThatTheHistoryFillWasSwitchedOn(context);
             context.SaveChanges();
         }
 

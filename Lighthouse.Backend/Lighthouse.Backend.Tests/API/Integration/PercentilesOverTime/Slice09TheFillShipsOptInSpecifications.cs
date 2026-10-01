@@ -22,7 +22,7 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
     /// <summary>
-    /// Step definitions for Slice09 - the fill switch, and an administrator throwing it either way.
+    /// Step definitions for the fill switch, and an administrator throwing it either way.
     ///
     /// The switch is thrown the way a System Admin throws it, through the behaviour-settings endpoint;
     /// charts are opened the way a flow coach opens them, through the two series endpoints. Nothing here
