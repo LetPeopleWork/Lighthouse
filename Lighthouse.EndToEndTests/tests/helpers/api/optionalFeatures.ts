@@ -1,6 +1,7 @@
 import type { APIRequestContext } from "@playwright/test";
 
 const OVER_TIME_HISTORY_FILL_KEY = "OverTimeHistoryFill";
+const FEATURE_ORDERING_KEY = "FeatureOrdering";
 
 type OptionalFeature = {
 	id: number;
@@ -42,4 +43,16 @@ export async function switchHistoryFill(
 	enabled: boolean,
 ): Promise<void> {
 	await switchOptionalFeature(request, OVER_TIME_HISTORY_FILL_KEY, enabled);
+}
+
+/**
+ * Letting this instance own the order of Features ships switched off, and the switch outlives the
+ * spec that flips it. A spec that hands the order over should start from off, so it really clicks
+ * the switch, and switch it back off afterwards so the next spec meets the shipped default.
+ */
+export async function switchFeatureOrdering(
+	request: APIRequestContext,
+	enabled: boolean,
+): Promise<void> {
+	await switchOptionalFeature(request, FEATURE_ORDERING_KEY, enabled);
 }
