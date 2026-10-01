@@ -284,7 +284,7 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 					{activeStep === STEP_CONFIGURE && (
 						<ActionButton
 							buttonText="Next"
-							onClickHandler={async () => onNext()}
+							onClickHandler={() => Promise.resolve(onNext())}
 							buttonVariant="contained"
 							disabled={!configInputsValid || validating}
 						/>
@@ -292,7 +292,7 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 					{activeStep === STEP_NAME_CREATE && (
 						<ActionButton
 							buttonText="Create"
-							onClickHandler={async () => onCreate()}
+							onClickHandler={() => Promise.resolve(onCreate())}
 							buttonVariant="contained"
 							disabled={name.trim() === "" || saving}
 						/>

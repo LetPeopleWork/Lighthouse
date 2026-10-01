@@ -23,7 +23,7 @@ export interface AuthGuardState {
 	session?: AuthSessionStatus;
 	currentUser?: CurrentUserProfileStatus;
 	runtimeStatus?: RuntimeAuthStatus;
-	logout: () => Promise<void>;
+	logout: () => void;
 }
 
 const SESSION_CHECK_INTERVAL_MS = 60_000;
@@ -132,7 +132,7 @@ export function useAuthGuard(authService: IAuthService): AuthGuardState {
 		};
 	}, [authService, checkSession]);
 
-	const logout = useCallback(async () => {
+	const logout = useCallback(() => {
 		try {
 			wasAuthenticated.current = false;
 			if (sessionCheckTimer.current) {

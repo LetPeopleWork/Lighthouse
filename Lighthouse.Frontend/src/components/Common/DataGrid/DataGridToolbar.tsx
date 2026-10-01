@@ -120,7 +120,7 @@ const useDataGridExport = (
 	}, [getGridData, canUsePremiumFeatures]);
 
 	const handleExportToCSV = useCallback(
-		async (fileName: string) => {
+		(fileName: string) => {
 			if (!canUsePremiumFeatures) {
 				console.warn("CSV export requires premium license");
 				return;

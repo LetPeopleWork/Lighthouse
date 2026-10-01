@@ -59,9 +59,10 @@ const ValidationActions: React.FC<ValidationActionsProps> = ({
 		}
 	};
 
-	const handleSave = async () => {
+	const handleSave = () => {
 		onSave();
 		setValidationState("pending");
+		return Promise.resolve();
 	};
 
 	return (
