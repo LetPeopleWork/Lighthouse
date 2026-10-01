@@ -1,4 +1,6 @@
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -112,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                     await provider.RestoreBackup(extractDir);
 
-                    MigrateAndSeedDatabase();
+                    MigrateAndSeedDatabase(restoredFromBackup: true);
 
                     tracker.TransitionTo(operationId, DatabaseOperationState.Completed);
                     logger.LogInformation("Restore operation {OperationId} completed successfully", operationId);
@@ -170,7 +172,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                 await provider.ClearDatabase();
 
-                MigrateAndSeedDatabase();
+                MigrateAndSeedDatabase(restoredFromBackup: false);
 
                 tracker.TransitionTo(operationId, DatabaseOperationState.Completed);
                 logger.LogInformation("Clear operation {OperationId} completed successfully", operationId);
@@ -199,7 +201,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             return File.OpenRead(path);
         }
 
-        private void MigrateAndSeedDatabase()
+        private void MigrateAndSeedDatabase(bool restoredFromBackup)
         {
             using var scope = serviceProvider.CreateScope();
             var scopedProvider = scope.ServiceProvider;
@@ -209,12 +211,40 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
                 provider.RecycleConnection();
 
                 DatabaseConfigurator.ApplyMigrations(scopedProvider);
+
+                if (restoredFromBackup)
+                {
+                    MarkHistoryFillAsAlreadySwitchedOn(scopedProvider);
+                }
+
                 DatabaseConfigurator.SeedDatabase(scopedProvider);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during database migration and seeding after restore");
             }
+        }
+
+        // Seeding switches the history fill on once for an instance upgraded from a release that shipped it
+        // off. A restore must not count as such an upgrade: restoring the backup taken before upgrading is how
+        // an administrator undoes days the fill wrote, so the fill has to come back exactly as the backup held
+        // it. Recording the switch-on as done before seeding keeps the seeder's hands off it.
+        private static void MarkHistoryFillAsAlreadySwitchedOn(IServiceProvider scopedProvider)
+        {
+            var context = scopedProvider.GetRequiredService<LighthouseAppContext>();
+
+            if (context.AppSettings.Any(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault))
+            {
+                return;
+            }
+
+            context.AppSettings.Add(new AppSetting
+            {
+                Id = 0,
+                Key = AppSettingKeys.HistoryFillSwitchedOnByDefault,
+                Value = "true",
+            });
+            context.SaveChanges();
         }
 
         private static string GenerateOperationId()

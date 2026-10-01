@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     ///
     /// That only a System Admin can switch it is already held by the fill's own scenarios and is not
     /// repeated here.
-    ///
-    /// Every scenario ships [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -123,7 +121,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // how an admin undoes filled days, so a fill the backup held off must come back off, and stay off at
         // the next restart rather than being switched on as if this were an upgrade.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Restoring_a_backup_from_before_this_release_brings_the_history_fill_back_off_and_a_restart_keeps_it_off()
         {
             GivenTheCallerAdministersTheInstance();

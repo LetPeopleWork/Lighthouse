@@ -29,8 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             NotYetOffered,
         }
 
-        private const string PendingDeliver = "Story #6083 — pending DELIVER";
-
         /// <summary>
         /// The key the setting is addressed by, spelled out rather than read off the product's constant: it
         /// is the identity a browser and a script both use, and an instance upgrading into this release
