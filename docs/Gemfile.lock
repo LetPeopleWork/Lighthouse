@@ -105,7 +105,7 @@ DEPENDENCIES
   bigdecimal
   csv
   erb
-  google-protobuf (~> 4.0)
+  google-protobuf (~> 4.36, >= 4.36.2)
   jekyll (~> 4.4.1)
   just-the-docs (= 0.12.0)
   logger
