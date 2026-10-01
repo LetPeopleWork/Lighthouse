@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         /// </summary>
         private const string TheHistoryFillKey = "OverTimeHistoryFill";
 
-        private const string BackupPassword = "a password the admin chose";
+        private const string WhatTheAdminTypedToProtectTheBackup = "chosen by the admin";
 
         private HowAnEarlierReleaseLeftTheFill? whatTheBackupHeld;
 
@@ -157,8 +157,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                     return Task.CompletedTask;
                 });
 
-            using var backup = EncryptedBackupStream.Create(BackupPassword);
-            var status = await TheDatabaseManagementWith(provider).RestoreBackup(backup, BackupPassword);
+            using var backup = EncryptedBackupStream.Create(WhatTheAdminTypedToProtectTheBackup);
+            var status = await TheDatabaseManagementWith(provider).RestoreBackup(backup, WhatTheAdminTypedToProtectTheBackup);
 
             AssertTheOperationRanThrough(status, "restore");
         }
