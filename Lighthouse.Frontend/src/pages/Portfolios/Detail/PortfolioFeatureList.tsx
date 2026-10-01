@@ -21,6 +21,24 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 
+const referenceIdsInProgress = async (
+	teamMetricsService: {
+		getFeaturesInProgress(teamId: number, asOfDate: Date): Promise<IWorkItem[]>;
+	},
+	teamId: number,
+): Promise<string[]> => {
+	try {
+		const inProgress = await teamMetricsService.getFeaturesInProgress(
+			teamId,
+			new Date(),
+		);
+		return inProgress.map((feature) => feature.referenceId);
+	} catch (error) {
+		console.error(`Failed to fetch features for team ${teamId}:`, error);
+		return [];
+	}
+};
+
 interface PortfolioFeatureListProps {
 	portfolio: IPortfolio;
 }
@@ -77,29 +95,14 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	// Fetch features in progress
 	useEffect(() => {
 		const fetchFeaturesInProgress = async () => {
-			const featuresByTeam: Record<string, string[]> = {};
-
-			await Promise.all(
-				portfolio.involvedTeams.map(async (team) => {
-					try {
-						const inProgress = await teamMetricsService.getFeaturesInProgress(
-							team.id,
-							new Date(),
-						);
-						featuresByTeam[team.id] = inProgress.map(
-							(feature) => feature.referenceId,
-						);
-					} catch (error) {
-						console.error(
-							`Failed to fetch features for team ${team.id}:`,
-							error,
-						);
-						featuresByTeam[team.id] = [];
-					}
-				}),
+			const featuresByTeam = await Promise.all(
+				portfolio.involvedTeams.map(async (team) => [
+					team.id,
+					await referenceIdsInProgress(teamMetricsService, team.id),
+				]),
 			);
 
-			setFeaturesInProgress(featuresByTeam);
+			setFeaturesInProgress(Object.fromEntries(featuresByTeam));
 		};
 
 		fetchFeaturesInProgress().catch((error) => {
