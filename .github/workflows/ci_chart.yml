@@ -39,7 +39,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v3.16.3
+          version: v3.22.0
 
       - name: helm lint (default + enterprise values)
         run: |
@@ -127,7 +127,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v3.16.3
+          version: v3.22.0
 
       - name: Create kind cluster
         uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
@@ -224,7 +224,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v3.16.3
+          version: v3.22.0
 
       - name: Decide whether a new chart version needs publishing
         id: decide
@@ -267,7 +267,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v3.16.3
+          version: v3.22.0
 
       - name: Guard + package + index into docs/charts/
         # version-guard refuses to overwrite an already-published version and asserts
