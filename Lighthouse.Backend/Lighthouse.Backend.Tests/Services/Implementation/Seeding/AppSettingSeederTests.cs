@@ -129,7 +129,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         // and switches the fill on again over an administrator's off. Written here by the real seeder, so the
         // number under test is whatever start-up actually gives it.
         [Test]
-        [Ignore("Story #6083 — pending DELIVER")]
         public async Task SeedAsync_KeepsTheRecordThatTheHistoryFillWasSwitchedOn()
         {
             // Arrange

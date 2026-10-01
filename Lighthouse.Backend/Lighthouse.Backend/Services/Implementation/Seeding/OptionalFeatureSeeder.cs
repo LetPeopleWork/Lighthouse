@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                         + "the days the chart is missing, working them out in the background from the history "
                         + "Lighthouse already stores. Turning it off stops any further filling; days already "
                         + "filled stay.",
-                    Enabled = false,
+                    Enabled = true,
                     IsPreview = true,
                     IsPremium = false,
                 },
@@ -99,6 +99,9 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
 
         private async Task AddOrUpdateCurrentFeatures(List<OptionalFeature> features)
         {
+            var historyFillAlreadySwitchedOn = await context.AppSettings
+                .AnyAsync(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault);
+
             foreach (var feature in features)
             {
                 var existing = await context.OptionalFeatures
@@ -121,13 +124,32 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 else
                 {
                     // How a feature presents itself is ours and is refreshed on every upgrade; whether it
-                    // is on is the operator's and is never overwritten.
+                    // is on is the operator's and is never overwritten - with one exception. The history
+                    // fill used to ship off and now ships on, and an instance still holding the old off
+                    // mostly holds it because nobody ever looked at the switch, so it is switched on exactly
+                    // once. The record added below is what makes it once: from then on an administrator's
+                    // off is theirs and holds.
+                    if (feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey && !historyFillAlreadySwitchedOn)
+                    {
+                        existing.Enabled = true;
+                    }
+
                     existing.Name = feature.Name;
                     existing.Description = feature.Description;
                     existing.IsPreview = feature.IsPreview;
                     existing.IsPremium = feature.IsPremium;
                     logger.LogDebug("Updating OptionalFeature: {Key}", feature.Key);
                 }
+            }
+
+            if (!historyFillAlreadySwitchedOn)
+            {
+                context.AppSettings.Add(new AppSetting
+                {
+                    Id = 0,
+                    Key = AppSettingKeys.HistoryFillSwitchedOnByDefault,
+                    Value = "true",
+                });
             }
         }
 

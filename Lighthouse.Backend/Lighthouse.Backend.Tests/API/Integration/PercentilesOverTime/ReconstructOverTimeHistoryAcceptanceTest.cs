@@ -178,8 +178,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
-
-            SwitchTheFillOnTheWayAnAdministratorWould();
         }
 
         [TearDown]
@@ -205,17 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         // --- The fill switch ---
-
-        /// <summary>
-        /// Every scenario in the slices before the switch is about the fill doing its work, and the fill
-        /// ships switched off. They switch it on the way an administrator does, through the endpoint and
-        /// its guard, so that path runs under every one of them rather than being assumed by a row written
-        /// behind its back.
-        /// </summary>
-        private void SwitchTheFillOnTheWayAnAdministratorWould()
-        {
-            TheFillIsSwitched(on: true).GetAwaiter().GetResult();
-        }
 
         /// <summary>How the fill switch is stored right now: on, off, or not stored at all.</summary>
         protected bool? TheStoredFillSwitch()

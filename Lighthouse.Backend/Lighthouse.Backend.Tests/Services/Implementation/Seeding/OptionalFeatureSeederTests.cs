@@ -25,10 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         /// </summary>
         private const string OverTimeHistoryFillKey = "OverTimeHistoryFill";
 
-        private const string PendingDeliver = "Story #6083 — pending DELIVER";
-
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task SeedAsync_AddsTheOverTimeHistoryFill_OnInPreviewAndFree_AndRecordsThatItSwitchedItOn()
         {
             var subject = CreateSubject();
@@ -54,7 +51,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         // The same seeder, the same context, twice: what a second start-up in one process looks like. It must
         // see the record the first run wrote rather than adding it again or flipping the fill a second time.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task SeedAsync_RunAgainInTheSameProcessAfterTheAdministratorSwitchedTheFillOff_LeavesItOff()
         {
             // Arrange - the fill as a release from before the switch-on left it: stored off, nothing recorded.
@@ -90,27 +86,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             {
                 Assert.That(afterTheSecondRun.Enabled, Is.False, "The switch-on happens once; the administrator's off has to hold.");
                 Assert.That(recordsOfTheSwitchOn, Is.EqualTo(1), "The switch-on is recorded once, not once per run.");
-            }
-        }
-
-        [Test]
-        public async Task SeedAsync_AddsTheOverTimeHistoryFill_OffInPreviewAndFree()
-        {
-            var subject = CreateSubject();
-
-            // Act
-            await subject.Seed();
-
-            // Assert
-            var fill = DatabaseContext.OptionalFeatures.SingleOrDefault(feature => feature.Key == OverTimeHistoryFillKey);
-
-            Assert.That(fill, Is.Not.Null, "A fresh instance offers no switch for filling in past days, so no administrator can ever turn it on.");
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(fill!.Enabled, Is.False, "Filling in past days writes rows nobody can take back, so an instance only does it once an administrator has chosen to.");
-                Assert.That(fill.IsPreview, Is.True, "The fill is offered to early adopters and may still change; the list says so beside the switch.");
-                Assert.That(fill.IsPremium, Is.False, "The over-time charts are free, so the only way to fill them in cannot sit behind a licence.");
             }
         }
 

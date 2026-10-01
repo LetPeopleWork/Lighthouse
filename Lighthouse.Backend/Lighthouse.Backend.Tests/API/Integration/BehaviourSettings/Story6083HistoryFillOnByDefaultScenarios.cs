@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @walking_skeleton @driving_port @real-io @contract-shape:pure-function
         // Nobody has to know the switch exists for the charts to fill in.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_new_instance_has_the_history_fill_switched_on()
         {
             GivenTheCallerAdministersTheInstance();
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // An earlier off cannot be told apart from an off nobody chose, so every earlier state comes out on,
         // including an instance old enough never to have offered the setting at all.
         [Test]
-        [Ignore(PendingDeliver)]
         [TestCase(HowAnEarlierReleaseLeftTheFill.SwitchedOff)]
         [TestCase(HowAnEarlierReleaseLeftTheFill.SwitchedOn)]
         [TestCase(HowAnEarlierReleaseLeftTheFill.NotYetOffered)]
@@ -61,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // The upgrade hands the admin a fill that is on. It does not touch how the setting describes itself,
         // and it does not touch any other setting.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task The_upgrade_switches_the_history_fill_on_and_changes_nothing_else_in_behaviour_settings()
         {
             GivenTheCallerAdministersTheInstance();
@@ -77,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @kpi @contract-shape:unbounded-preservation
         // The switch-on happens once. An admin who disagrees with it is answered on every later start-up.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task An_admin_who_switches_the_history_fill_off_after_the_upgrade_keeps_it_off_across_every_restart()
         {
             GivenTheCallerAdministersTheInstance();
@@ -93,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @contract-shape:unbounded-preservation
         // A new instance is not an earlier release. Its admin's off is kept from the very first restart.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_new_instance_whose_admin_switches_the_history_fill_off_keeps_it_off_across_restarts()
         {
             GivenTheCallerAdministersTheInstance();
@@ -111,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // back, or the admin has nothing to switch, and it comes back on: a missing setting is added the way a
         // new instance gets it, whatever the instance remembers about an earlier switch-on.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task A_history_fill_setting_removed_by_hand_comes_back_on_at_the_next_restart()
         {
             GivenTheCallerAdministersTheInstance();
@@ -152,7 +146,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // Clearing the database leaves a new instance behind, and a new instance has the fill on, whatever the
         // instance held before.
         [Test]
-        [Ignore(PendingDeliver)]
         public async Task Clearing_the_database_leaves_the_history_fill_switched_on_like_a_new_instance()
         {
             GivenTheCallerAdministersTheInstance();

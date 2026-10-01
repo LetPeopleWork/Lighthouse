@@ -5,9 +5,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
     /// <summary>
     /// DISTILL acceptance scenarios for story 6053 - a System Admin chooses whether this instance
-    /// fills in past days. The switch ships off on a fresh instance and an upgraded one alike;
-    /// switched on, the next chart open starts filling with no restart; switched off, what was filled
-    /// stays and nothing new starts.
+    /// fills in past days. The switch now ships on, on a fresh instance and an upgraded one alike, and an
+    /// administrator can switch it off; switched on, the next chart open starts filling with no restart;
+    /// switched off, what was filled stays and nothing new starts.
     ///
     /// Numbered Slice09 because the directory numbers fixtures, not story slices, and Slice05-Slice08
     /// are taken by the story's first four.
@@ -142,12 +142,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         /// <summary>
         /// An instance that stores no switch at all - upgraded, seeders not yet run - must behave as one
-        /// switched off, or there is a window after every upgrade in which it fills unasked. The upgrade
-        /// then adds the switch off, and it takes an administrator to turn it on.
+        /// switched off, or there is a window after every upgrade in which it fills before the seeders have
+        /// had their say. The upgrade then adds the switch on, and the next chart open fills with nobody
+        /// having to touch it.
         /// </summary>
         // @us-05 @error @upgrade @real-io @contract-shape:unbounded-preservation
         [Test]
-        public async Task An_instance_that_stores_no_fill_switch_fills_nothing_until_an_admin_switches_it_on_after_the_upgrade()
+        public async Task An_instance_that_stores_no_fill_switch_fills_nothing_until_the_upgrade_switches_it_on()
         {
             var teamId = GivenATeamStillBeingRefreshed();
             GivenTheTeamFinishedOneItemADayFrom(teamId, TodayDay.AddDays(-120), TodayDay);
@@ -160,9 +161,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             WhenTheInstanceIsUpgraded();
 
-            ThenTheFillIsStoredSwitched(on: false);
+            ThenTheFillIsStoredSwitched(on: true);
 
-            await WhenTheAdminSwitchesTheFillOn();
             await WhenTheFlowCoachOpensTheCycleTimeTrend(teamId, TodayDay.AddDays(-30), TodayDay);
             await WhenTheChartHasFinishedFillingIn();
 
