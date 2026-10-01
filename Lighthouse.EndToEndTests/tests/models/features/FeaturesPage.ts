@@ -11,8 +11,20 @@ export class FeaturesPage {
 		this.page = page;
 	}
 
+	/**
+	 * Only the Features grid carries a position column. Every other page's grids have rows and a name
+	 * column too, so an unscoped row locator is satisfied by whatever page is still on screen.
+	 */
+	private get grid(): Locator {
+		return this.page.locator(".MuiDataGrid-root").filter({
+			has: this.page.locator(
+				'.MuiDataGrid-columnHeader[data-field="position"]',
+			),
+		});
+	}
+
 	get featureRows(): Locator {
-		return this.page.locator(".MuiDataGrid-row");
+		return this.grid.locator(".MuiDataGrid-row");
 	}
 
 	get helpText(): Locator {
@@ -72,7 +84,7 @@ export class FeaturesPage {
 
 	/** "#" while the tracker owns the order, the manual heading once this instance does. */
 	async getPositionColumnHeading(): Promise<string> {
-		const header = this.page.locator(
+		const header = this.grid.locator(
 			'.MuiDataGrid-columnHeader[data-field="position"] .MuiDataGrid-columnHeaderTitle',
 		);
 		return (await header.innerText()).trim();

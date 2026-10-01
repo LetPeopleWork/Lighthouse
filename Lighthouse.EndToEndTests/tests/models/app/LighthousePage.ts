@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { LoginPage } from "../auth/LoginPage";
 import { SessionExpiredPage } from "../auth/SessionExpiredPage";
 import { FeaturesPage } from "../features/FeaturesPage";
@@ -43,13 +43,17 @@ export class LighthousePage {
 		return new AddPortfolioWizard(this.page);
 	}
 
-	// Epic 5375 slice 01 — the entry between Overview and System Settings. The label is the instance's
-	// own word for its Features (D16), so the caller passes it rather than assuming "Features".
+	// The label is the instance's own word for its Features, so the caller passes it rather than
+	// assuming "Features".
 	async goToFeatures(navigationLabel: string): Promise<FeaturesPage> {
 		await this.mainNavigation
 			.getByRole("link", { name: navigationLabel })
 			.click();
-		return new FeaturesPage(this.page);
+		const featuresPage = new FeaturesPage(this.page);
+		// The view is loaded on demand and the previous page stays on screen while it loads, so the
+		// address changes before the content does. Only the view's own help text says it has arrived.
+		await expect(featuresPage.helpText).toBeVisible();
+		return featuresPage;
 	}
 
 	async goToSettings(): Promise<SettingsPage> {
@@ -166,7 +170,7 @@ export class LighthousePage {
 		return new LoginPage(this.page);
 	}
 
-	/** The name in the header. Epic 5146 D47: "it rendered" and "it rendered as me" are different results. */
+	/** The name in the header: "it rendered" and "it rendered as me" are different results. */
 	get currentUserDisplay(): Locator {
 		return this.page.getByTestId("current-user-display");
 	}
