@@ -156,22 +156,28 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	private async rejoinGroups(): Promise<void> {
-		// Every open page rejoins at the same moment after the server restarts. One call at a time per
-		// page keeps that from arriving at the hub as a burst.
-		for (const group of this.joinedGroups) {
-			try {
-				if (group === GLOBAL_UPDATES) {
-					await this.connection.invoke("SubscribeToAllUpdates"); // NOSONAR one call at a time, see above
-				} else {
-					const separator = group.lastIndexOf("_");
-					const updateType = group.slice(0, separator);
-					const id = Number(group.slice(separator + 1));
-					await this.connection.invoke("SubscribeToUpdate", updateType, id); // NOSONAR one call at a time, see above
+		await Promise.all(
+			[...this.joinedGroups].map(async (group) => {
+				try {
+					await this.rejoinGroup(group);
+				} catch (err) {
+					console.error("Error restoring a subscription after reconnect:", err);
 				}
-			} catch (err) {
-				console.error("Error restoring a subscription after reconnect:", err);
-			}
+			}),
+		);
+	}
+
+	private rejoinGroup(group: string): Promise<void> {
+		if (group === GLOBAL_UPDATES) {
+			return this.connection.invoke("SubscribeToAllUpdates");
 		}
+
+		const separator = group.lastIndexOf("_");
+		return this.connection.invoke(
+			"SubscribeToUpdate",
+			group.slice(0, separator),
+			Number(group.slice(separator + 1)),
+		);
 	}
 
 	private async ensureConnected(): Promise<void> {
