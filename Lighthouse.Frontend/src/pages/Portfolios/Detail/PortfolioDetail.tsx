@@ -188,18 +188,14 @@ const PortfolioDetail: React.FC = () => {
 		useLicenseRestrictions();
 
 	const fetchPortfolio = useCallback(async () => {
-		const fetchInvolvedTeams = async (portfolioData: IPortfolio | null) => {
-			const teamSettings: ITeamSettings[] = [];
-
-			for (const involvedTeam of portfolioData?.involvedTeams ?? []) {
-				const involvedTeamSetting = await teamService.getTeamSettings(
-					involvedTeam.id,
-				);
-				teamSettings.push(involvedTeamSetting);
-			}
-
-			return teamSettings;
-		};
+		const fetchInvolvedTeams = (
+			portfolioData: IPortfolio | null,
+		): Promise<ITeamSettings[]> =>
+			Promise.all(
+				(portfolioData?.involvedTeams ?? []).map((involvedTeam) =>
+					teamService.getTeamSettings(involvedTeam.id),
+				),
+			);
 
 		setHasNoAccess(false);
 

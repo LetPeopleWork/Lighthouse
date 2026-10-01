@@ -326,12 +326,14 @@ const TeamDetail: React.FC = () => {
 		};
 
 		const subscribeAll = async () => {
-			for (const portfolioId of portfolioIds) {
-				await updateSubscriptionService.subscribeToForecastUpdates(
-					portfolioId,
-					handleForecastUpdate,
-				);
-			}
+			await Promise.all(
+				portfolioIds.map((portfolioId) =>
+					updateSubscriptionService.subscribeToForecastUpdates(
+						portfolioId,
+						handleForecastUpdate,
+					),
+				),
+			);
 		};
 
 		subscribeAll();

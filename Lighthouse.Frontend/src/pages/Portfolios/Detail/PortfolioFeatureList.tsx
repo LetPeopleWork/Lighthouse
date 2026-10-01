@@ -77,20 +77,25 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 		const fetchFeaturesInProgress = async () => {
 			const featuresByTeam: Record<string, string[]> = {};
 
-			for (const team of portfolio.involvedTeams) {
-				try {
-					const inProgress = await teamMetricsService.getFeaturesInProgress(
-						team.id,
-						new Date(),
-					);
-					featuresByTeam[team.id] = inProgress.map(
-						(feature) => feature.referenceId,
-					);
-				} catch (error) {
-					console.error(`Failed to fetch features for team ${team.id}:`, error);
-					featuresByTeam[team.id] = [];
-				}
-			}
+			await Promise.all(
+				portfolio.involvedTeams.map(async (team) => {
+					try {
+						const inProgress = await teamMetricsService.getFeaturesInProgress(
+							team.id,
+							new Date(),
+						);
+						featuresByTeam[team.id] = inProgress.map(
+							(feature) => feature.referenceId,
+						);
+					} catch (error) {
+						console.error(
+							`Failed to fetch features for team ${team.id}:`,
+							error,
+						);
+						featuresByTeam[team.id] = [];
+					}
+				}),
+			);
 
 			setFeaturesInProgress(featuresByTeam);
 		};

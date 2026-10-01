@@ -473,7 +473,7 @@ export const tabUntilFocused = async (
 		press < mostPresses && document.activeElement !== target;
 		press++
 	) {
-		await userEvent.tab();
+		await userEvent.tab(); // NOSONAR each press moves focus and the loop stops once it lands, so presses cannot overlap
 	}
 	expect(document.activeElement, "the keyboard never reached it").toBe(target);
 };
