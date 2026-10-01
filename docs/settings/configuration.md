@@ -106,20 +106,20 @@ Owning the order requires a [Premium license](../licensing/licensing.html#licens
 Changing who owns the order changes every forecasted date, because the order is what the simulation draws from. Expect the dates on your Portfolios to be recalculated shortly after you flip the switch either way.
 
 ### Fill in past days on over-time charts (Preview)
-[Percentiles Over Time](../metrics/predictability.html#percentiles-over-time) and [PBC Over Time](../metrics/predictability.html#pbc-over-time) plot one point for every day Lighthouse recorded. With this switch off, that is all they show — so a Team added last week, or an instance that does not run every day, leaves the line short or full of holes.
+[Percentiles Over Time](../metrics/predictability.html#percentiles-over-time) and [PBC Over Time](../metrics/predictability.html#pbc-over-time) plot one point for every day Lighthouse recorded. On their own, those leave the line short or full of holes for a Team added last week, or on an instance that does not run every day.
 
-Switch it on and opening either chart works out the missing days in the background, from the Work Items Lighthouse already stores, and keeps them. [Filling in past days](../metrics/predictability.html#filling-in-past-days-preview) describes how the fill proceeds and which days it can and cannot fill.
+With this switch on, opening either chart works out the missing days in the background, from the Work Items Lighthouse already stores, and keeps them. Switch it off and the charts show only the days Lighthouse recorded. [Filling in past days](../metrics/predictability.html#filling-in-past-days-preview) describes how the fill proceeds and which days it can and cannot fill.
 
-- **It is a Preview, and off by default.** A new instance and an instance that upgrades both start with it off, so there is nothing to do to keep the charts as they were.
+- **It is a Preview, and on by default.** A new instance starts with it on, and so does one whose database was cleared. On an instance that upgraded, the first start-up of this release switched it on once — including where it had been switched off. After that, if a System Admin switches it off, it stays off, across restarts too.
 - **Only a System Admin can switch it.** It is free — no Premium license needed — and it takes effect on the next chart open, without a restart.
 - **A filled day is worked out against today's configuration** — state mappings, Cycle Time definitions, blocked rules, blackout configuration and the current set of Work Items. Where those changed since, or a Work Item was deleted or moved to a different parent, a filled day may differ from what would have been recorded on that day. If the past looks different from what you remember, let us know.
-- **Loading demo data does not switch it on.**
+- **Loading demo data leaves the switch as it is.**
 
 #### Turning it back off
-Switching it off stops any further filling. **The days already filled stay**: a filled day cannot be told apart from a recorded one, so there is nothing to single out and remove. The only way back to the history as it was is a database backup — so if you might want to undo it, [take a backup](databasemanagement.html#backup) before you switch it on.
+Switching it off stops any further filling. **The days already filled stay**: a filled day cannot be told apart from a recorded one, so there is nothing to single out and remove. The only way back to the history as it was is a database backup — so if you might want the unfilled history back, [take a backup](databasemanagement.html#backup) before you upgrade. Restoring that backup brings the fill back the way the backup held it: the history as it stood, and the switch as it was set then.
 
 {: .note}
-The switch is stored in the database, not in the configuration: no environment variable or settings file presets it. To switch it on across several instances, switch it on in each one — on this page, or with a `POST` to `/api/latest/optionalfeatures/OverTimeHistoryFill` made as a System Admin, sending back the row that a `GET` to the same address returns, with `enabled` set to `true`.
+The switch is stored in the database, not in the configuration: no environment variable or settings file presets it. To switch it off across several instances, switch it off in each one — on this page, or with a `POST` to `/api/latest/optionalfeatures/OverTimeHistoryFill` made as a System Admin, sending back the row that a `GET` to the same address returns, with `enabled` set to `false`.
 
 If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
 

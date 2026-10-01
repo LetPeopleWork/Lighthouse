@@ -474,7 +474,9 @@ testWithDemo(
 			for (const metricWidget of metrics) {
 				const coveredElsewhere =
 					metricWidget.name === MetricsWidgetNames.EstimationVsCycleTime ||
-					metricWidget.name === MetricsWidgetNames.FeatureSizePercentiles;
+					metricWidget.name === MetricsWidgetNames.FeatureSizePercentiles ||
+					metricWidget.name === MetricsWidgetNames.PercentilesOverTime ||
+					metricWidget.name === MetricsWidgetNames.PbcOverTime;
 				if (coveredElsewhere) {
 					continue;
 				}
@@ -722,8 +724,9 @@ testWithDemo(
 	},
 );
 
-// Filling in past days ships switched off. Switched on for this shot only, so the
-// over-time widgets can plot the demo owners' backdated history, and back off after.
+// The over-time widgets can only be shot reliably with filling in past days switched
+// on, whatever state the instance is in, so the fixture switches it on for the shot and
+// off afterwards, leaving later specs free of a background fill they did not ask for.
 const testWithDemoHistoryFill = testWithDemo.extend<{ historyFill: undefined }>(
 	{
 		historyFill: [
