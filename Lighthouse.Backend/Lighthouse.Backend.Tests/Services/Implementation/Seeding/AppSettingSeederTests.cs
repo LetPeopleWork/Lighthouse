@@ -124,6 +124,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             Assert.That(remainingObsolete, Is.Empty);
         }
 
+        // Retired settings are cleared by their stored number. The record that the history fill was switched on
+        // is written at runtime, so it must never land on one of those numbers, or the next start-up deletes it
+        // and switches the fill on again over an administrator's off. Written here by the real seeder, so the
+        // number under test is whatever start-up actually gives it.
+        [Test]
+        [Ignore("Story #6083 — pending DELIVER")]
+        public async Task SeedAsync_KeepsTheRecordThatTheHistoryFillWasSwitchedOn()
+        {
+            // Arrange
+            await new OptionalFeatureSeeder(DatabaseContext, Mock.Of<ILogger<OptionalFeatureSeeder>>()).Seed();
+
+            Assert.That(DatabaseContext.AppSettings.Any(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault), Is.True,
+                "Start-up recorded nothing about switching the history fill on, so there is no record for the clean-up to keep.");
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            Assert.That(DatabaseContext.AppSettings.Any(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault), Is.True,
+                "Clearing out retired settings removed the record that the history fill was switched on.");
+        }
+
         private AppSettingSeeder CreateSubject()
         {
             return new AppSettingSeeder(DatabaseContext, Mock.Of<ILogger<AppSettingSeeder>>());

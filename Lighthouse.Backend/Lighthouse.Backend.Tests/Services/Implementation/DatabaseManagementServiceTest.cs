@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
 
-            using var stream = CreateValidBackupStream("password123");
+            using var stream = EncryptedBackupStream.Create("password123");
             var status = await subject.RestoreBackup(stream, "password123");
 
             Assert.That(status.OperationType, Is.EqualTo(DatabaseOperationType.Restore));
@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
 
-            using var stream = CreateValidBackupStream("password123");
+            using var stream = EncryptedBackupStream.Create("password123");
             var status = await subject.RestoreBackup(stream, "password123");
 
             Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Completed));
@@ -234,7 +234,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
 
-            using var stream = CreateValidBackupStream("password123");
+            using var stream = EncryptedBackupStream.Create("password123");
             await subject.RestoreBackup(stream, "password123");
 
             providerMock.Verify(p => p.RecycleConnection(), Times.Once);
@@ -257,7 +257,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).Returns(Task.CompletedTask);
 
-            using var stream = CreateValidBackupStream("password123");
+            using var stream = EncryptedBackupStream.Create("password123");
             await subject.RestoreBackup(stream, "password123");
 
             Assert.That(gate.IsBlocked, Is.False);
@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
 
-            using var stream = CreateValidBackupStream("password123");
+            using var stream = EncryptedBackupStream.Create("password123");
             await subject.RestoreBackup(stream, "password123");
 
             Assert.That(gate.IsBlocked, Is.False);
@@ -279,7 +279,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
 
-            using var stream = CreateValidBackupStream("password123");
+            using var stream = EncryptedBackupStream.Create("password123");
             await subject.RestoreBackup(stream, "password123");
 
             providerMock.Verify(p => p.RecycleConnection(), Times.Never);
@@ -373,48 +373,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var status = subject.GetOperationStatus("nonexistent");
 
             Assert.That(status, Is.Null);
-        }
-
-        private static MemoryStream CreateValidBackupStream(string password)
-        {
-            var tempDir = Path.Combine(Path.GetTempPath(), $"test-backup-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(tempDir);
-
-            try
-            {
-                File.WriteAllText(Path.Combine(tempDir, "test.txt"), "test content");
-
-                var zipPath = Path.Combine(Path.GetTempPath(), $"test-{Guid.NewGuid():N}.zip");
-                System.IO.Compression.ZipFile.CreateFromDirectory(tempDir, zipPath);
-
-                var salt = System.Text.Encoding.UTF8.GetBytes("LighthouseDbBackup");
-                var key = System.Security.Cryptography.Rfc2898DeriveBytes.Pbkdf2(password, salt, 100_000, System.Security.Cryptography.HashAlgorithmName.SHA256, 32);
-
-                using var aes = System.Security.Cryptography.Aes.Create();
-                aes.Key = key;
-                aes.GenerateIV();
-
-                var encryptedPath = zipPath + ".enc";
-                using (var outputStream = File.Create(encryptedPath))
-                {
-                    outputStream.Write(aes.IV);
-                    using var cryptoStream = new System.Security.Cryptography.CryptoStream(outputStream, aes.CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write);
-                    using var inputStream = File.OpenRead(zipPath);
-                    inputStream.CopyTo(cryptoStream);
-                }
-
-                var result = new MemoryStream(File.ReadAllBytes(encryptedPath));
-
-                File.Delete(zipPath);
-                File.Delete(encryptedPath);
-
-                return result;
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir))
-                    Directory.Delete(tempDir, recursive: true);
-            }
         }
     }
 }
