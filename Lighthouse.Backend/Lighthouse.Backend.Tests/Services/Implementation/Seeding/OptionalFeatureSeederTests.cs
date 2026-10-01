@@ -142,6 +142,60 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             }
         }
 
+        // A backup from before the setting existed never filled a day, so the restore adds it off and records
+        // the switch-on as done, and the start-up seeding that follows keeps it off.
+        [Test]
+        public async Task SettleTheHistoryFillAfterARestore_BackupWithoutTheSetting_AddsItOffAndSeedingKeepsItOff()
+        {
+            // Arrange - the restored database holds neither the fill nor the record.
+            DatabaseContext.OptionalFeatures.RemoveRange(DatabaseContext.OptionalFeatures.Where(feature => feature.Key == OverTimeHistoryFillKey));
+            DatabaseContext.AppSettings.RemoveRange(DatabaseContext.AppSettings.Where(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault));
+            await DatabaseContext.SaveChangesAsync();
+
+            // Act
+            OptionalFeatureSeeder.SettleTheHistoryFillAfterARestore(DatabaseContext);
+            await CreateSubject().Seed();
+
+            // Assert
+            var fill = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OverTimeHistoryFillKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fill.Enabled, Is.False, "The backup never offered the fill, so it never filled a day, and the restore switched it on.");
+                Assert.That(fill.Name, Is.EqualTo("Fill in past days on over-time charts"), "The restored setting reads the way an administrator sees it.");
+                Assert.That(fill.IsPreview, Is.True);
+                Assert.That(fill.IsPremium, Is.False);
+                Assert.That(DatabaseContext.AppSettings.Count(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault), Is.EqualTo(1),
+                    "Without exactly one record the next start-up treats the restore as an upgrade and switches the fill on.");
+            }
+        }
+
+        // A backup that already holds the record and the fill comes back untouched: no second record, and the
+        // fill keeps the position the backup held.
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task SettleTheHistoryFillAfterARestore_BackupWithTheSettingAndTheRecord_LeavesBothAsTheBackupHeldThem(bool heldOn)
+        {
+            // Arrange
+            await CreateSubject().Seed();
+            var stored = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OverTimeHistoryFillKey);
+            stored.Enabled = heldOn;
+            await DatabaseContext.SaveChangesAsync();
+
+            // Act
+            OptionalFeatureSeeder.SettleTheHistoryFillAfterARestore(DatabaseContext);
+            await CreateSubject().Seed();
+
+            // Assert
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OverTimeHistoryFillKey).Enabled, Is.EqualTo(heldOn),
+                    "The restore should bring the fill back exactly as the backup held it.");
+                Assert.That(DatabaseContext.AppSettings.Count(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault), Is.EqualTo(1),
+                    "The backup already held the record, so a second one must not be added.");
+            }
+        }
+
         // A retired row goes whichever way the operator left it: once the switch is gone there is no
         // choice left to preserve.
         [Test]

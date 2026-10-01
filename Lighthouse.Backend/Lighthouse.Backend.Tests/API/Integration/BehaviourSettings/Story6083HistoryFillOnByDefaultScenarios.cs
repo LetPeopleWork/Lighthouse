@@ -139,6 +139,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             }
         }
 
+        // @driving_port @real-io @error @contract-shape:unbounded-preservation
+        // A backup taken before the setting existed never filled a day, so bringing it back as it was means the
+        // fill comes back off. Without a stored setting it would otherwise be added the way a new instance gets
+        // it, which is on.
+        [Test]
+        public async Task Restoring_a_backup_from_before_the_history_fill_setting_existed_leaves_it_off()
+        {
+            GivenTheCallerAdministersTheInstance();
+            GivenABackupFromBeforeTheHistoryFillSettingExisted();
+
+            await WhenTheAdminRestoresTheBackup();
+            var afterTheRestore = await WhenTheAdminReadsTheHistoryFillSetting();
+            WhenTheInstanceRestarts(times: 1);
+            var afterTheRestart = await WhenTheAdminReadsTheHistoryFillSetting();
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheHistoryFillReadsOffLikeTheBackupThatNeverOfferedIt(afterTheRestore, "after the restore");
+                ThenTheHistoryFillReadsOffLikeTheBackupThatNeverOfferedIt(afterTheRestart, "after the next restart");
+                ThenTheInstanceRemembersItSwitchedTheFillOn();
+            }
+        }
+
         // @driving_port @real-io @contract-shape:bounded-change
         // Clearing the database leaves a new instance behind, and a new instance has the fill on, whatever the
         // instance held before.

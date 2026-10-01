@@ -88,7 +88,9 @@ test("Take @screenshot of the demo data settings page", async ({
 
 test("Take @screenshot of the system configuration page", async ({
 	overviewPage,
+	request,
 }) => {
+	await switchHistoryFill(request, true);
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const systemSettings = await settingsPage.goToSystemConfiguration();
 

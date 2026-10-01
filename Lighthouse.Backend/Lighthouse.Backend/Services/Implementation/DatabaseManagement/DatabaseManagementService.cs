@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.IO.Compression;
@@ -214,7 +213,8 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
                 if (restoredFromBackup)
                 {
-                    MarkHistoryFillAsAlreadySwitchedOn(scopedProvider);
+                    // A restore is how an admin undoes filled days, so seeding must not treat it as an upgrade.
+                    OptionalFeatureSeeder.SettleTheHistoryFillAfterARestore(scopedProvider.GetRequiredService<LighthouseAppContext>());
                 }
 
                 DatabaseConfigurator.SeedDatabase(scopedProvider);
@@ -223,23 +223,6 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             {
                 logger.LogError(ex, "Error during database migration and seeding after restore");
             }
-        }
-
-        // Seeding switches the history fill on once for an instance upgraded from a release that shipped it
-        // off. A restore must not count as such an upgrade: restoring the backup taken before upgrading is how
-        // an administrator undoes days the fill wrote, so the fill has to come back exactly as the backup held
-        // it. Recording the switch-on as done before seeding keeps the seeder's hands off it.
-        private static void MarkHistoryFillAsAlreadySwitchedOn(IServiceProvider scopedProvider)
-        {
-            var context = scopedProvider.GetRequiredService<LighthouseAppContext>();
-
-            if (context.AppSettings.Any(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault))
-            {
-                return;
-            }
-
-            OptionalFeatureSeeder.RecordThatTheHistoryFillWasSwitchedOn(context);
-            context.SaveChanges();
         }
 
         private static string GenerateOperationId()

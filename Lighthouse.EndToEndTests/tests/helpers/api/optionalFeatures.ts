@@ -34,10 +34,9 @@ async function switchOptionalFeature(
 }
 
 /**
- * Filling in past over-time days is on by default, but a spec that expects a populated
- * over-time chart switches it on explicitly so it does not depend on the instance's state,
- * and switches it off afterwards so later specs never meet a background fill they did not
- * ask for.
+ * Filling in past over-time days is on by default. A spec that wants the fill switches it on
+ * explicitly and switches it off afterwards; a spec that runs before the first of those can
+ * still meet it on.
  */
 export async function switchHistoryFill(
 	request: APIRequestContext,

@@ -123,12 +123,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 }
                 else
                 {
-                    // How a feature presents itself is ours and is refreshed on every upgrade; whether it
-                    // is on is the operator's and is never overwritten - with one exception. The history
-                    // fill used to ship off and now ships on, and an instance still holding the old off
-                    // mostly holds it because nobody ever looked at the switch, so it is switched on exactly
-                    // once. The record added below is what makes it once: from then on an administrator's
-                    // off is theirs and holds.
+                    // An old off for the history fill was mostly never chosen, so it is switched on once;
+                    // the record written below makes it once, after which an administrator's off holds.
                     if (feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey && !historyFillAlreadySwitchedOn)
                     {
                         existing.Enabled = true;
@@ -149,9 +145,27 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
         }
 
         /// <summary>
-        /// Once this record exists, seeding leaves the history fill exactly as it is stored.
+        /// A restore brings the history fill back as the backup held it. A backup without the setting never
+        /// filled a day, so the setting is added off, and the record keeps seeding from switching it on.
         /// </summary>
-        internal static void RecordThatTheHistoryFillWasSwitchedOn(LighthouseAppContext context)
+        internal static void SettleTheHistoryFillAfterARestore(LighthouseAppContext context)
+        {
+            if (!context.AppSettings.Any(setting => setting.Key == AppSettingKeys.HistoryFillSwitchedOnByDefault))
+            {
+                RecordThatTheHistoryFillWasSwitchedOn(context);
+            }
+
+            if (!context.OptionalFeatures.Any(feature => feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey))
+            {
+                var fill = GetOptionalFeatures().Single(feature => feature.Key == OptionalFeatureKeys.OverTimeHistoryFillKey);
+                fill.Enabled = false;
+                context.OptionalFeatures.Add(fill);
+            }
+
+            context.SaveChanges();
+        }
+
+        private static void RecordThatTheHistoryFillWasSwitchedOn(LighthouseAppContext context)
         {
             context.AppSettings.Add(new AppSetting
             {

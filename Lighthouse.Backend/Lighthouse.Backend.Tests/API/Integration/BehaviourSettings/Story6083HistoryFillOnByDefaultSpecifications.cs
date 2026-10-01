@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
         private const string BackupPassword = "a password the admin chose";
 
-        private bool theBackupHoldsTheHistoryFillOff;
+        private HowAnEarlierReleaseLeftTheFill? whatTheBackupHeld;
 
         private readonly record struct SettingAsTheAdminReadsIt(
             string Key, bool Enabled, string Name, string Description, bool IsPreview, bool IsPremium);
@@ -128,7 +128,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         /// The backup an admin took before upgrading: the history fill stored off, and nothing recorded about a
         /// switch-on, because the release that wrote it never made one.
         /// </summary>
-        private void GivenABackupFromBeforeThisReleaseThatHeldTheHistoryFillOff() => theBackupHoldsTheHistoryFillOff = true;
+        private void GivenABackupFromBeforeThisReleaseThatHeldTheHistoryFillOff()
+            => whatTheBackupHeld = HowAnEarlierReleaseLeftTheFill.SwitchedOff;
+
+        /// <summary>
+        /// A backup taken by a release older than the setting: no history fill stored at all, and nothing
+        /// recorded about a switch-on. That instance never filled a day.
+        /// </summary>
+        private void GivenABackupFromBeforeTheHistoryFillSettingExisted()
+            => whatTheBackupHeld = HowAnEarlierReleaseLeftTheFill.NotYetOffered;
 
         // --- When ---
 
@@ -227,6 +235,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         private static void ThenTheHistoryFillReadsAsTheBackupHeldIt(SettingAsTheAdminReadsIt fill)
             => Assert.That(fill.Enabled, Is.False, "The backup held the history fill off, and the restore brought it back on.");
 
+        private static void ThenTheHistoryFillReadsOffLikeTheBackupThatNeverOfferedIt(SettingAsTheAdminReadsIt fill, string when)
+            => Assert.That(fill.Enabled, Is.False,
+                $"The backup came from before the history fill existed, so it never filled a day, and {when} the fill reads on.");
+
         private static void ThenOnlyTheHistoryFillWasSwitchedOn(
             List<SettingAsTheAdminReadsIt> before, List<SettingAsTheAdminReadsIt> after)
         {
@@ -259,13 +271,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
         private void TheBackupsDatabaseIsPutInPlace()
         {
-            Assert.That(theBackupHoldsTheHistoryFillOff, Is.True, "No backup was described, so there is nothing to restore.");
+            Assert.That(whatTheBackupHeld, Is.Not.Null, "No backup was described, so there is nothing to restore.");
 
             using var scope = Factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
 
             context.Database.EnsureDeleted();
             context.Database.Migrate();
+
+            if (whatTheBackupHeld == HowAnEarlierReleaseLeftTheFill.NotYetOffered)
+            {
+                return;
+            }
 
             context.OptionalFeatures.Add(new OptionalFeature
             {

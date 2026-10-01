@@ -89,7 +89,7 @@ When there is nothing to show for the range you picked, the chart says *"Nothing
 
 Lighthouse records this chart and [PBC Over Time](#pbc-over-time) one point a day, from the day your instance started recording. A Team added last week, or an instance that does not run every day, would leave the line short or full of holes — yet the Work Items Lighthouse already stores say what those days looked like, so Lighthouse works the missing days out from that stored history.
 
-This is **Fill in past days on over-time charts** under [Behaviour Settings](../settings/configuration.html#fill-in-past-days-on-over-time-charts-preview). It is a **Preview** and it is **on by default**. A new instance starts with it on. On an instance that upgraded, the first start-up of this release switched it on once, even where it had been switched off. A System Admin can switch it off, and that off is kept. Only a System Admin can switch it, it is free — no Premium license needed — and it takes effect without a restart.
+This is **Fill in past days on over-time charts** under [Behaviour Settings](../settings/configuration.html#fill-in-past-days-on-over-time-charts-preview). It is a **Preview** and it is **on by default**. A new instance starts with it on. On an instance that upgraded, the first start-up of the release that made it on by default switched it on once, even where it had been switched off. A System Admin can switch it off, and that off is kept. Only a System Admin can switch it, it is free — no Premium license needed — and it takes effect without a restart.
 
 How the fill proceeds:
 
@@ -102,7 +102,7 @@ How the fill proceeds:
 A filled day looks exactly like a recorded one, but it is worked out afterwards, against **today's** configuration — state mappings, Cycle Time definitions, blocked rules, blackout configuration and the current set of Work Items. Where any of those changed since, or a Work Item was deleted or moved to a different parent, a filled day may differ from what would have been recorded on that day. If the past looks different from what you remember, let us know.
 
 {: .important}
-Switching the fill off stops any further filling, but **the days already filled stay**. They cannot be told apart from recorded ones, so there is no way to single them out afterwards. If you might want your unfilled history back, [take a backup](../settings/databasemanagement.html#backup) before you upgrade. Restoring that backup brings the history and the switch back as they were when the backup was taken.
+Switching the fill off stops any further filling, but **the days already filled stay**. They cannot be told apart from recorded ones, so there is no way to single them out afterwards. If you might want your unfilled history back, [take a backup](../settings/databasemanagement.html#backup) before you upgrade. Restoring that backup brings the history and the switch back as they were when the backup was taken. A backup taken before this setting existed brings it back off.
 
 The demo data ships with a backdated history, so its charts are populated as soon as it is loaded. Loading demo data leaves the switch as it is. With the fill on, it leaves the demo's backdated days as they are and works out only the days that are still missing.
 

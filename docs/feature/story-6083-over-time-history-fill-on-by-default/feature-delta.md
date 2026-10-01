@@ -336,6 +336,16 @@ No E2E added; the backend scenarios carry the story. No spec asserts the fill is
    `SaveChanges` would then hit the `AppSettings` key and fail its start-up seed. Adding a missing optional feature
    or a default app setting has the same race today, so this story adds no new class of risk. Not scenario'd: it
    needs the multi-host Testcontainers harness, and DEVOPS was skipped.
+6. **D9 (autonomous, from adversarial review) — a backup from before the setting existed comes back off.** D8's
+   record only stops the flip of an existing row. A backup from a release older than the setting holds no
+   `OverTimeHistoryFill` row, so the seeder's add branch inserted it **on** and the restored instance started
+   filling. That instance never filled a day, so "as the backup held it" means off. Decision: **on the restore path
+   only**, a missing row is added with `Enabled = false` before the seeders run (the update branch then refreshes its
+   name and description), alongside the record. Start-up and clear are unchanged: a hand-deleted row at start-up
+   still comes back on (D7). Lives in `OptionalFeatureSeeder.SettleTheHistoryFillAfterARestore`, so the key stays
+   inside the seam allow-list (finding 4). Pinned by
+   `Restoring_a_backup_from_before_the_history_fill_setting_existed_leaves_it_off` and two
+   `OptionalFeatureSeederTests` cases (missing row; row and record already present).
 
 Mandate compliance, briefly: tests enter through driving ports only (HTTP read and toggle, seeder re-runs). Scenario
 and step names are domain language. The SUT is the production composition root (`TestWebApplicationFactory<Program>`)
