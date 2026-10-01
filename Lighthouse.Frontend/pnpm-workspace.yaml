@@ -14,7 +14,7 @@ overrides:
   # older copy for it while the suite moved on. It then drove one version of the test framework while
   # every test was written for another, and said nothing was covered rather than failing.
   vitest: ^5.0.1
-  ws: ^8.18.0
+  ws: ^8.21.3
 # Vitest 5 changed how a test is addressed by name: the parts are joined with " > " where they used
 # to be joined with a space. The mutation runner still builds the old form, so the pattern it hands
 # over matches no test, every mutant runs nothing, and the report comes back saying the suite killed
