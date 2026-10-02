@@ -1,0 +1,423 @@
+{
+  "roadmap": {
+    "project_id": "story-6131-chart-postgres-major-upgrade",
+    "created_at": "2026-10-02T12:05:49Z",
+    "total_steps": 10,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Story #6131 — the chart's bundled Postgres crosses a major version (17 → 18) by itself on a plain `helm upgrade`, `helm upgrade --reset-then-reuse-values` or a GitOps render, keeps the previous major's data untouched in `pgdata/` so `helm rollback` to 0.1.17 opens it again, and refuses every unsafe upgrade before writing anything (ADR-213 option B: two init containers from official images — `pg-old-binaries` on the upgrade-source image copies 17's bin/lib/share into an emptyDir, `pg-upgrade` on the main image decides and runs `pg_upgrade --copy` into `pgdata-<M>.partial/`, the rename to `pgdata-<M>/` is the commit, and the SHA-256 of the source `global/pg_control` in `pgdata-<M>/.lighthouse-upgrade` proves staleness). Commit a0766ed46 put the default back to `postgres:17` because main had 18 without the upgrade; step 01-01 moves it to `postgres:18-trixie` (upgrade source `postgres:17-trixie`) in the same commit that makes the upgrade work. Done when: every scenario in chart/tests/acceptance/upgrade-bundled-postgres.feature has lost its `@pending` tag and is green (kind scenarios through chart/tests/upgrade-path/run.sh in the `upgrade-path` job's `happy` and `refusals` legs, render scenarios in helm-unittest); `grep -n 'skip:' chart/tests/unit/postgres-upgrade_test.yaml` and `grep -n 'SCAFFOLD' chart/tests/upgrade-path/run.sh` return nothing; `helm lint` (default + enterprise values), `helm unittest -f 'tests/unit/*.yaml' ./chart`, shellcheck on every script and the helm-docs drift gate are green; `version-guard.sh` refuses a publish whose default Postgres major moved without the `pg-upgrade` init container; `upgrade-path` is in `publish.needs`. The `Release Notes` tag and line on ADO #6131, the chart version bump at `/release`, and the dogfood with a restored real backup are maintainer gates, deliberately NOT steps here.",
+    "paradigm_note": "EXEMPT FROM PARADIGM: Helm templates and a POSIX/bash init script have no property-test harness here; compensate with helm-unittest render properties across value combinations and kind scenarios with before/after volume hashes. The project is object-oriented, but this story adds no C# and no TypeScript, so there is no class design, no NUnit/Vitest test and no Stryker run (DEVOPS / Mutation Testing Strategy names the substitute: shellcheck, and every refusal scenario asserting the volume's sorted sha256sum listing is unchanged, which is the fault a mutant would plant). The crafter authors no new acceptance scenario: the Gherkin SSOT, the 15 helm-unittest cases (12 skipped, 3 running guards) and the 19 scaffold functions in run.sh were written by DISTILL. The crafter's RED is replacing a scaffold body (or removing a `skip:`) and watching it fail for the reason red-classification.md predicts — for the walking skeleton, the 18 pod crash-looping on `database files are incompatible with server` against the a0766ed46 chart with the image overridden to 18 — and its GREEN is the template/script change. One harness function has no scaffold and the crafter adds it: the AC-2.5 pin-back scenario (added to the feature by 8d7de4dda after run.sh was written). The crafter MAY add helm-unittest cases that widen a render property already specified (for example the image-major parser on a registry with a port), never a new behaviour. Each step's `scenario_name` is its primary scenario; every other scenario the step turns green is named, title verbatim, in its `unskips` list, and each of the 25 scenarios appears in exactly one step."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "approved_at": "pending review",
+    "notes": "Built from feature-delta.md (DISCUSS AC-1.1..1.8, AC-2.1..2.5, AC-3.1..3.5, D1-D7; DESIGN DDD-1..16, decision table, on-volume layout, component decomposition, test plan; DEVOPS upgrade-path job, validate additions, version-guard release gate, Renovate rule, K1-K3; DISTILL scenario list, open checks, upstream findings, final wave review gate action items), both slice briefs, red-classification.md, ADR-213, the feature file, postgres-upgrade_test.yaml, run.sh and docs/ci-learnings.md. Checked against the code: (1) the feature file holds 25 scenarios (DISTILL's table lists 24; the AC-2.5 pin-back scenario was added by 8d7de4dda and has no run.sh function) — each is mapped to exactly one step; (2) chart/templates/postgres-statefulset.yaml has no initContainers and sets PGDATA=/var/lib/postgresql/data/pgdata itself, so the wrapper must override PGDATA from the decision file; (3) version-guard.sh check 4 refuses an already-published version and main carries 0.1.17, which IS published — run the guard locally with a non-existent PUBLISHED_INDEX (`chart/scripts/version-guard.sh chart /nonexistent`) to reach the new check; (4) run.sh's HAPPY/REFUSALS arrays list all 19 scaffolds, so CI cannot run `run.sh CLUSTER happy` until the arrays list only implemented functions — 01-02 trims them and every later step appends; (5) render_test.yaml line 25 asserts `postgres:17` and moves with values.yaml in 01-01; (6) docs/Installation/kubernetes.md line 328 names `postgres:17` as today's default and moves in 01-01, the rest of the section is rewritten in 02-02; (7) DEVOPS placed the unclean-shutdown scenario (slice 01) in the `refusals` leg, so 01-02 creates both matrix legs, `refusals` holding only that scenario until phase 02 fills it; (8) Upstream finding 1 is decided (AC-2.5: start on the kept copy with one warning line) and is step 01-04; (9) every intermediate commit is data-safe: 01-01 refuses (one line, no write) every volume state its decision table does not handle yet, and later steps turn those states into their own rows, which is also what gives 01-02, 01-03, 01-04 and 02-03 a genuine RED.",
+    "reviewed_at": "2026-10-02"
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6131-chart-postgres-major-upgrade/feature-delta.md",
+    "red_classification": "docs/feature/story-6131-chart-postgres-major-upgrade/red-classification.md",
+    "environments": "docs/feature/story-6131-chart-postgres-major-upgrade/environments.yaml",
+    "slices": "docs/feature/story-6131-chart-postgres-major-upgrade/slices/slice-01-upgrade-17-to-18-keeping-the-old-copy.md and slice-02-refuse-safely-and-document.md",
+    "scenarios": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+    "unit_tests": "chart/tests/unit/postgres-upgrade_test.yaml",
+    "kind_harness": "chart/tests/upgrade-path/run.sh",
+    "adr": "docs/product/architecture/adr-213-bundled-postgres-crosses-a-major-in-an-init-container-from-official-images.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6131"
+  },
+  "user_decisions": [
+    "D1 — automatic by default; no value switches it on.",
+    "D2 — the previous major's data is kept untouched so helm rollback works; about 2x the data on the PVC until the operator removes it.",
+    "D3 — refuse rather than half-upgrade: every refusal before any write, one log line naming reason and way out.",
+    "D4 — automatic source major = N-1; two or more majors behind is refused with a pointer to the manual path.",
+    "D5 — Postgres 18 becomes the chart default only in the same release as the upgrade (enforced from 01-06 by the version-guard check).",
+    "D6 — chart only; the docker-compose example keeps its manual path.",
+    "D7 — the same behaviour for helm upgrade and for a GitOps tool that renders the chart; no Helm hooks.",
+    "ADR-213 option B — two init containers from official images, pg_upgrade --copy, rename as commit, pg_control hash as staleness proof.",
+    "--reuse-values keeps the old image and does no upgrade; NOTES.txt prints one line saying the bundled Postgres is behind and naming --reset-then-reuse-values (AC-1.8).",
+    "AC-2.5 (decided 2026-10-02) — pinning the image back to the previous major on the new chart starts on the kept copy with one warning line."
+  ],
+  "out_of_scope": [
+    "The docker-compose example and the binary/standalone server (D6).",
+    "External databases (postgresql.enabled=false) beyond proving they render as before.",
+    "Removing the old copy or growing the PVC automatically.",
+    "Downgrading data across majors; upgrades two or more majors apart (refused, D4).",
+    "arm64 runs (CI is amd64 only), settings made with ALTER SYSTEM (documented, not asserted), GitOps rollback by Git revert.",
+    "A digest pin on either Postgres image (not how the chart pins today).",
+    "Finalize-time and maintainer gates, not DELIVER steps: bumping Chart.yaml `version`/`appVersion` and cutting the release (/release); the `Release Notes` tag and line on ADO #6131; the dogfood on a kind cluster seeded from a real backup (DoD 3); reading K1 at 30 and 60 days; ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "A plain helm upgrade carries a bundled Postgres 17 database to 18, and a rollback opens the old copy again",
+      "description": "Slice 01. Build the mechanism and prove the walking skeleton on kind first, with the default moved to postgres:18-trixie in the same commit; then wire CI so the proof repeats on every chart change, then extend the decision table one row at a time (restart, rollback and re-upgrade, pin-back), then the --reuse-values notes line, and last the release-safety rails (version-guard, validate checks, Renovate rule, Chart.yaml note). Every volume state the decision table does not handle yet is refused with one line and no write, so no intermediate commit can damage data even though main is unreleased.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Walking skeleton: a plain helm upgrade from 0.1.17 with data comes back on Postgres 18 with every row",
+          "description": "Add the two init containers, the script ConfigMap and the start wrapper (DDD-1..8, 15, 16) and move the defaults to postgres:18-trixie / postgresql.upgrade.image postgres:17-trixie (DDD-11) in one commit. upgrade.sh handles exactly these rows of the decision table: fresh volume → `pgdata`; D = M with no `pgdata-*` → `pgdata`; D = M−1 with no `pgdata-M` (a leftover `.partial` is deleted first) → recovery if unclean (start 17 on a Unix socket only, fast stop), `initdb` into `pgdata-M.partial/` with the old cluster's checksums/encoding/locale/locale provider/bootstrap superuser, `pg_upgrade --copy`, copy `pg_hba.conf`/`pg_ident.conf`, write `.lighthouse-upgrade` (source major, system identifier, sha256 of `pgdata/global/pg_control` taken after pg_upgrade), fsync, rename → `pgdata-M`. EVERY other volume state goes through the one refusal path: one `lighthouse-postgres:` line naming what was found and that nothing was changed, the same line to the termination message, exit non-zero, before any write. Later steps turn specific states into their own rows. Implement the walking-skeleton, unclean-shutdown and fresh-install harness functions, and unskip the render tests this shape satisfies.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Operator upgrades a Lighthouse with data and finds every row on Postgres 18",
+          "unskips": [
+            "@pending removed :: Operator upgrades a Lighthouse with data and finds every row on Postgres 18 (walking skeleton, AC-1.1, AC-1.2) — run.sh upgrade_plain_helm_upgrade_keeps_every_row",
+            "@pending removed :: An old database that was stopped abruptly is still carried across (AC-1.1, DDD-7) — run.sh upgrade_after_unclean_stop_keeps_every_row (refusals group, as DEVOPS placed it)",
+            "@pending removed :: A fresh install starts an empty Postgres 18 database with no upgrade step (AC-1.4) — run.sh fresh_install_starts_18_without_upgrading",
+            "@pending removed :: The upgrade steps exist only where the chart runs the database itself (AC-1.6, both Examples rows) — helm-unittest",
+            "@pending removed :: Values from an older chart still render a working upgrade step (AC-1.8 render half) — helm-unittest",
+            "Stays green, never pending :: The database volume, where it is mounted and the health checks stay as they were — the three running guards in postgres-upgrade_test.yaml, unedited",
+            "skip removed :: the bundled database gets the two upgrade steps, old binaries first",
+            "skip removed :: by default the upgrade source is Postgres 17 and the upgrade runs the Postgres 18 image the database runs",
+            "skip removed :: a mirrored database image is the one the upgrade step runs",
+            "skip removed :: the upgrade-source image comes from its value when one is set",
+            "skip removed :: values from an older chart still render, falling back to the chart's own upgrade-source image",
+            "skip removed :: the upgrade scripts render with the bundled database",
+            "skip removed :: an external database renders neither the database nor its upgrade scripts"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-statefulset.yaml (edit — inside the existing `if .Values.postgresql.enabled`: `initContainers` `pg-old-binaries` (image from `lighthouse.postgres.upgradeImage`, runs as the postgres user) then `pg-upgrade` (image `.Values.postgresql.image`, root only to mkdir/chown, then `gosu postgres`), both mounting `data` at /var/lib/postgresql/data; emptyDirs for the old binaries and the decision file; the script ConfigMap volume; `command` on the `postgres` container pointing at start.sh. The PVC template, the `data` mount path, the probes and the container name/order stay byte-identical — the three running guards and a rollback to 0.1.17 depend on them)",
+            "chart/templates/postgres-upgrade-configmap.yaml (create — gated by `postgresql.enabled`; `copy-old-binaries.sh` (copies bin/lib/share of its own PG_MAJOR only when `pgdata/PG_VERSION` equals it, else exits 0), `upgrade.sh` (the rows in the description plus the single refusal path), `start.sh` (reads the chosen PGDATA from the decision file, exports it, execs the image's own `docker-entrypoint.sh postgres`). Majors are read at run time: data from `pgdata/PG_VERSION`, images from `PG_MAJOR` (DDD-4). Option the crafter may take: keep the scripts as real files under chart/files/ and render them with `.Files.Get`, so shellcheck and Sonar lint them as files; the ConfigMap stays the delivery mechanism)",
+            "chart/templates/_helpers.tpl (edit — `lighthouse.postgres.defaultMajor` (constant \"18\") and `lighthouse.postgres.upgradeImage` (`postgresql.upgrade.image` read nil-safely through `dig`, falling back to the constant `postgres:17-trixie`). Under --reuse-values the templates see the previous chart's values, so neither may come from `.Values` alone)",
+            "chart/values.yaml (edit — `postgresql.image: postgres:18-trixie`; new `postgresql.upgrade.image: postgres:17-trixie` with a `# --` description; change only what is now false in the `postgresql.image` comment (the dump-and-restore advice) — the full comment is 02-02's)",
+            "chart/values-enterprise.yaml (edit — `postgresql.image: postgres:18-trixie`)",
+            "chart/values.schema.json (edit — `postgresql.upgrade.image`: string, minLength 1; confirm `postgresql.upgrade: null` (unit test 5) still renders)",
+            "chart/README.md (regenerate — helm-docs 1.14.2: `helm-docs --chart-search-root chart --skip-version-footer -s file --ignore-non-descriptions`; never hand-edit)",
+            "chart/tests/unit/render_test.yaml (edit — line 25 `postgres:17` → `postgres:18-trixie`, the only edit)",
+            "chart/tests/unit/postgres-upgrade_test.yaml (edit — remove the seven `skip:` blocks listed in unskips; nothing else)",
+            "chart/tests/upgrade-path/run.sh (edit — replace the scaffold bodies of upgrade_plain_helm_upgrade_keeps_every_row, upgrade_after_unclean_stop_keeps_every_row and fresh_install_starts_18_without_upgrading; add the shared helpers later steps reuse: install 0.1.17 from docs/charts/lighthouse-0.1.17.tgz, seed a harness-owned marker row, record per-table row counts of the public schema, wait for Ready, read `server_version_num`, run psql in the pod, take a sorted sha256sum listing of the volume from a debug pod)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the five scenarios listed in unskips)",
+            "docs/Installation/kubernetes.md (edit — line 328 only: today's default is `postgres:18-trixie`; the section rewrite is 02-02's)"
+          ],
+          "dependencies": [],
+          "estimated_hours": 6,
+          "criteria": [
+            "RED captured BEFORE any template edit: the walking-skeleton function, run against the a0766ed46 chart with `--set postgresql.image=postgres:18-trixie`, fails because the 18 pod crash-loops on `database files are incompatible with server` — record that line in red-classification.md as the walking skeleton's genuine RED. A harness, image-pull or cluster failure is a finding to fix in the harness, not a RED.",
+            "On kind: 0.1.17 installed from the committed package with data and a marker row; a plain `helm upgrade ./chart` with no other flags; the Postgres pod is Ready, `SHOW server_version_num` starts with 18, the API serves `/health/ready`, every public-schema table has its recorded row count, the marker row is present, the API connects with the unchanged Secret, and `pgdata/PG_VERSION` still reads 17.",
+            "The same with the 17 server killed without a clean shutdown right before the upgrade: the log shows the recovery start/stop, then the upgrade, and the counts match.",
+            "A fresh install of the new chart initialises 18 in `pgdata/` through the unchanged official entrypoint, the log says there was nothing to upgrade, and the volume holds no `pgdata-*` directory. The existing `install-smoke` job therefore keeps passing and now exercises the no-op path.",
+            "Every volume state upgrade.sh does not handle yet is refused before any write, with exactly one `lighthouse-postgres:` line that also appears in `kubectl describe pod` as the termination message.",
+            "Postgres is never started on `pgdata-M.partial/`; the only way `pgdata-M/` comes into existence is the rename.",
+            "postgresql.enabled=false renders neither init containers nor the ConfigMap; the standalone gate, the no-lookup gate and the render-determinism gate in ci_chart.yml stay green unchanged (run their commands locally).",
+            "`helm lint ./chart` and `helm lint ./chart -f ./chart/values-enterprise.yaml --set postgresql.auth.password=ci --set oidc.clientSecret=ci` are clean; `helm unittest -f 'tests/unit/*.yaml' ./chart` is green with only the five NOTES tests still skipped; the helm-docs drift check (regenerate, then `git diff --exit-code -- chart/README.md`) is clean.",
+            "shellcheck (koalaman/shellcheck:stable) reports nothing on the three scripts and on run.sh; every conditional in a bash script uses `[[ ]]`, never `[ ]` (Sonar shelldre:S7688, ci-learnings 2026-06-28).",
+            "The three functions run green locally, each group on a fresh kind cluster: `chart/tests/upgrade-path/run.sh <cluster> happy upgrade_plain_helm_upgrade_keeps_every_row fresh_install_starts_18_without_upgrading` and `chart/tests/upgrade-path/run.sh <cluster> refusals upgrade_after_unclean_stop_keeps_every_row`.",
+            "Comments in templates and scripts are rare and explain the why in plain language for a stranger; none cites DDD-n, AC-n.n, ADR-213, D-n or a story number."
+          ],
+          "implementation_notes": "Order: write the walking-skeleton function and capture RED against today's chart, then templates and scripts, then unskip the render tests one group at a time. DESIGN measured the facts the scripts rely on (ADR-213 Context): 18's initdb turns checksums on (match the old cluster, read from `pg_controldata`); a bare initdb lacks the TCP scram rule (copy pg_hba.conf); the 0.1.17 pod usually ends unclean (a smart shutdown waits for pooled API connections). Read the bootstrap superuser (role OID 10) and template1's encoding/locale/provider from the old cluster after recovery and pass them to initdb. Pre-pull postgres:17-trixie, postgres:18-trixie and the 0.1.17 API image (26.9.24.6) on the host and `kind load docker-image` them. Use a fresh kind cluster per group locally (for example `kind create cluster --name lh-upgrade-happy`); never point anything at the dev instance on :5169. Keep the scripts plain and small enough to read; the decision table in feature-delta.md is the spec. Commit: `feat(chart): carry the bundled Postgres from 17 to 18 on helm upgrade, keeping the old copy (story 6131)`."
+        },
+        {
+          "id": "01-02",
+          "name": "A restart after the upgrade starts on the upgraded copy without upgrading again, and CI proves the upgrade on every chart change",
+          "description": "Add the decision-table row `D = M−1, pgdata-M present, marker hash matches → pgdata-M, nothing to do` (until now 01-01's catch-all refuses that state, which is this step's RED). Add the `upgrade-path` job to ci_chart.yml with the `happy` and `refusals` matrix legs and list it in `publish.needs`. Implement the harness functions for the restart, a rollback between two new-chart revisions, the other two ways of applying the chart and the kept copy, and trim run.sh's HAPPY/REFUSALS arrays to implemented functions only.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Restarting the database after an upgrade does not upgrade again",
+          "unskips": [
+            "@pending removed :: Restarting the database after an upgrade does not upgrade again (AC-1.5, K3) — run.sh restart_after_upgrade_does_not_upgrade_again",
+            "@pending removed :: Rolling back between two releases of the new chart leaves the database as it is (rollback contract point 3) — run.sh rollback_between_new_chart_revisions_changes_nothing",
+            "@pending removed :: The other ways of applying the new chart carry the data across the same way (both Examples: --reset-then-reuse-values, and AC-1.7 rendered manifests) — run.sh upgrade_with_reset_then_reuse_values_keeps_every_row and upgrade_by_rendered_manifests_keeps_every_row",
+            "@pending removed :: The previous major's data stays on the volume with exactly the pre-upgrade rows (AC-1.3) — run.sh kept_copy_holds_pre_upgrade_rows"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — upgrade.sh: the matching-marker row; copy-old-binaries.sh still runs while `pgdata/` holds 17 data, which is the restart cost the restart scenario measures)",
+            ".github/workflows/ci_chart.yml (edit — new job `upgrade-path`: runs-on ubuntu-latest, no `needs`, the same pinned checkout / setup-helm v4.3.0 / kind-action v1.15.0 steps as install-smoke, `strategy.matrix.group: [happy, refusals]` with one kind cluster per leg named after the group, `timeout-minutes: 20`, pre-pull of postgres:17-trixie, postgres:18-trixie and the 0.1.17 API image on the runner plus `kind load docker-image`, then `chart/tests/upgrade-path/run.sh <cluster> ${{ matrix.group }}`, and a failure-diagnostics step like install-smoke's (pods, describe, `logs --all-containers`). `publish.needs` becomes `[validate, install-smoke, upgrade-path, detect-publish]`. Rewrite the comments of the blocks this step touches so they cite no ADR or epic number)",
+            "chart/tests/upgrade-path/run.sh (edit — the five function bodies; HAPPY and REFUSALS list only implemented functions, in an order where each function's Given is either created by the function itself or left by the one before it; the restart measures `containerStatuses[name=postgres].state.running.startedAt − metadata.creationTimestamp` against a fresh install's in the same cluster and asserts under 5000 ms, then asserts Ready separately (upstream finding 2); the GitOps example uses `helm template | kubectl apply` in its own namespace for both the 0.1.17 install and the new chart)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the four scenarios in unskips)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_hours": 3,
+          "criteria": [
+            "RED captured before the upgrade.sh edit: the restart function fails because the restarted pod is refused by the catch-all line, with the volume untouched.",
+            "After an upgrade, deleting the Postgres pod brings it back on 18 from `pgdata-18/` with a log line saying there was nothing to upgrade, the same row counts, and a start delay less than 5 s over a fresh install's, measured the same way.",
+            "A second `helm upgrade` with an unrelated value changed, a row written on 18, then `helm rollback` to the first new-chart revision: Ready on 18, nothing to upgrade, the row present.",
+            "`helm upgrade --reset-then-reuse-values` and `helm template | kubectl apply` each carry a seeded 0.1.17 install to 18 with matching counts and marker.",
+            "The kept `pgdata/` opened with Postgres 17 (for example a throwaway 17 pod mounting the PVC after the StatefulSet is scaled to 0) opens without error and holds the recorded counts and the marker; it is compared by content, never by file hash (pg_upgrade rewrites pg_control).",
+            "`run.sh <cluster> happy` and `run.sh <cluster> refusals` (the latter still only the unclean-shutdown scenario) pass end to end locally on fresh kind clusters, each within the 15-minute budget; record the wall times in the commit body.",
+            "ci_chart.yml is valid (actionlint if available; otherwise say in the commit body that the push is the check); `upgrade-path` appears in `publish.needs`; no other job changes behaviour.",
+            "helm lint, helm unittest (five NOTES tests still skipped) and shellcheck stay green."
+          ],
+          "implementation_notes": "The two legs must not share a cluster, so a failure names its group. Docker Hub's anonymous pull limit is why the images are pulled once on the runner and loaded into kind. Do not give `--wait` a timeout shorter than the upgrade needs; the happy leg does about three installs' worth of work. After pushing, check the first real CI run against K2's query (`gh run list -R LetPeopleWork/Lighthouse --workflow ci_chart.yml --json conclusion,jobs`) and report whether it reads the upgrade-path legs as written (final-gate action item). Commit: `feat(chart): a restarted bundled Postgres stays on its upgraded copy, and CI proves the upgrade (story 6131)`."
+        },
+        {
+          "id": "01-03",
+          "name": "After a rollback to 0.1.17, upgrading again starts afresh from the 17 data",
+          "description": "Add the row `D = M−1, pgdata-M present, marker hash differs → delete pgdata-M, then upgrade`. A rollback to 0.1.17 needs no chart change (0.1.17 reads `pgdata/` where it always was), but its scenario is proven here together with the re-upgrade it sets up. Until this step the stale copy is refused by the catch-all, which is the RED.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Upgrading again after a rollback starts afresh from the Postgres 17 data",
+          "unskips": [
+            "@pending removed :: Upgrading again after a rollback starts afresh from the Postgres 17 data (AC-2.2) — run.sh upgrade_again_after_rollback_starts_afresh",
+            "@pending removed :: Rolling back after an upgrade starts Postgres 17 on the pre-upgrade data (AC-2.1) — run.sh rollback_starts_17_on_pre_upgrade_data"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — upgrade.sh: the stale-marker row; log one line saying the upgraded copy was out of date because the old major has run since, and that it is being redone)",
+            "chart/tests/upgrade-path/run.sh (edit — the two function bodies; append both to HAPPY after the restart and new-chart-rollback functions)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the two scenarios)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_hours": 1.5,
+          "criteria": [
+            "RED captured before the upgrade.sh edit: the re-upgrade after rollback is refused by the catch-all with the volume untouched (the rollback function itself already passes; record that as expected, since 0.1.17 needs nothing from this chart).",
+            "`helm rollback` to the 0.1.17 revision: Ready on 17, API ready, marker present, the row written on 18 absent.",
+            "A row written on 17 after the rollback, then a plain `helm upgrade`: Ready on 18, that row present, the row written on 18 before the rollback absent, and the log says the old copy of 18 was discarded as out of date.",
+            "`run.sh <cluster> happy` passes end to end locally on a fresh cluster before commit; helm lint, helm unittest and shellcheck stay green."
+          ],
+          "implementation_notes": "Compare the sha256 of `pgdata/global/pg_control` with the one in `.lighthouse-upgrade`; any run of 17 rewrites pg_control (measured in DESIGN), which is the whole proof. Never compare timestamps. The stale `pgdata-M` counts toward free space once 02-01's check exists, so delete it only after deciding to upgrade. Commit: `feat(chart): upgrading again after a rollback redoes the copy from the old data (story 6131)`."
+        },
+        {
+          "id": "01-04",
+          "name": "Pinning the image back after an upgrade starts on the kept copy with one warning line",
+          "description": "Add the row `D = M with a newer pgdata-N present → pgdata, and log one warning line` (AC-2.5, decided 2026-10-02): a newer Postgres N copy exists, anything written on it is not in the database now running, and removing the pin redoes the upgrade from this copy, so those writes do not come back. The newer copy is left in place; once 17 has run, 01-03's stale-marker row replaces it when the pin is removed. Before this step that state is refused by the catch-all, which is the RED. The harness function is new — run.sh has no scaffold for this scenario.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Pinning the image back after an upgrade starts on the kept copy and says what is missing",
+          "unskips": [
+            "@pending removed :: Pinning the image back after an upgrade starts on the kept copy and says what is missing (AC-2.5) — new run.sh function pin_back_after_upgrade_starts_on_kept_copy_and_warns, appended to HAPPY"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — upgrade.sh: the pin-back row and its warning line)",
+            "chart/tests/upgrade-path/run.sh (edit — add the function: pin with `--set postgresql.image=postgres:17-trixie` on the new chart, assert the warning in `kubectl logs --all-containers`, write a row on 17, remove the pin, assert the 17 row present and the earlier 18 row absent)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the scenario)"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "estimated_hours": 1.5,
+          "criteria": [
+            "RED captured before the upgrade.sh edit: the pinned pod is refused by the catch-all, volume untouched.",
+            "Pinned to 17 on the new chart after an upgrade: Ready on 17 with the pre-upgrade rows, the row written on 18 absent, exactly one warning line carrying the three facts in plain words.",
+            "Removing the pin: Ready on 18 with the row written on 17; the row written on 18 before the pin still absent.",
+            "With `postgresql.image` pinned to 17, the init containers still render and run; nothing is written to the volume beyond what Postgres 17 itself writes.",
+            "`run.sh <cluster> happy` passes end to end locally on a fresh cluster; helm lint, helm unittest and shellcheck stay green."
+          ],
+          "implementation_notes": "The docs half of AC-2.5 (a rollback to chart 0.1.17 itself cannot print this line, because that chart has no upgrade step) belongs to 02-02. Commit: `feat(chart): pinning the bundled Postgres back after an upgrade warns what is missing (story 6131)`."
+        },
+        {
+          "id": "01-05",
+          "name": "--reuse-values keeps the database on 17, and the install notes say it is behind and how to move it",
+          "description": "Add `lighthouse.postgres.imageMajor` (numeric major from the tag of `postgresql.image`, empty when there is none) and one NOTES.txt line, shown only for the bundled database when that major is lower than `lighthouse.postgres.defaultMajor`, containing the word \"behind\" and naming `helm upgrade --reset-then-reuse-values` (or a plain `helm upgrade`) as the way to move. It compares render-time strings only; no `lookup`. Prove on kind that `helm upgrade --reuse-values` from 0.1.17 stays on 17 and prints the line. Unskip the five NOTES tests together, so the three negative ones are never vacuous.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Reusing the previous values keeps the database on 17 and says how to move it",
+          "unskips": [
+            "@pending removed :: Reusing the previous values keeps the database on 17 and says how to move it (AC-1.8) — run.sh reuse_values_stays_on_17_and_says_so",
+            "@pending removed :: The install notes warn only when the database image is behind the chart's default (AC-1.8, all four Examples rows) — helm-unittest",
+            "skip removed :: the notes warn when the database image is a major behind the chart's default",
+            "skip removed :: the notes warn for a Debian-suffixed tag of the older major too",
+            "skip removed :: the notes stay quiet when the database image is the chart's default major",
+            "skip removed :: the notes stay quiet when the image carries no major to compare",
+            "skip removed :: the notes stay quiet for an external database"
+          ],
+          "files_to_modify": [
+            "chart/templates/_helpers.tpl (edit — `lighthouse.postgres.imageMajor`: the tag is the text after the last `:` that follows the last `/`, with any `@digest` dropped; its leading digits are the major; a digest-only reference or a non-numeric tag yields empty)",
+            "chart/templates/NOTES.txt (edit — the behind line, inside the bundled-database branch only)",
+            "chart/tests/unit/postgres-upgrade_test.yaml (edit — remove the five NOTES `skip:` blocks; the crafter MAY add cases for a registry with a port (`registry.example:5000/postgres:17` → shown) and a tag carrying a digest (`postgres:17@sha256:…` → shown), which widen the specified property)",
+            "chart/tests/upgrade-path/run.sh (edit — reuse_values_stays_on_17_and_says_so: own namespace and release, 0.1.17 with a marker, `helm upgrade --reuse-values ./chart`, assert Ready on 17, API ready, marker present, the line in the helm output; append to HAPPY)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the two scenarios)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "estimated_hours": 1.5,
+          "criteria": [
+            "RED captured: with the five skips removed and before the NOTES edit, the two positive tests fail on a missing \"behind\" line (the three negatives pass vacuously, as red-classification.md recorded); the kind function fails on the missing line.",
+            "The line appears for `postgres:17` and `postgres:17-trixie`, not for `postgres:18-trixie`, a digest-only reference, or `postgresql.enabled=false`; it contains \"behind\" and `--reset-then-reuse-values`.",
+            "The no-key-generation gate (no `lookup` in a template action) and the render-determinism gate stay green, run locally with the ci_chart.yml commands.",
+            "Under `--reuse-values` from 0.1.17 the pods come up on 17 with data intact, and the upgrade step takes the no-op path.",
+            "`run.sh <cluster> happy` passes end to end locally on a fresh cluster; helm lint, `helm unittest -f 'tests/unit/*.yaml' ./chart` with zero skipped tests, and shellcheck are green."
+          ],
+          "implementation_notes": "Wording is the crafter's: one line, plain language, for example `The bundled Postgres (postgres:17) is behind this chart's default major (18); run helm upgrade --reset-then-reuse-values, or a plain helm upgrade, to move it — the data is carried across.` Keep `defaultMajor` the only place 18 is written in templates. Commit: `feat(chart): the install notes say when the bundled Postgres is behind the chart's default (story 6131)`."
+        },
+        {
+          "id": "01-06",
+          "name": "Postgres 18 can only ship with the upgrade: release guard, validate checks, Renovate rule and the chart version note",
+          "description": "Close slice 01's release-safety items from the final wave review gate. version-guard.sh gains a Postgres-major check (refuse a publish when the default `postgresql.image` major in values.yaml differs from the one in the latest docs/charts/lighthouse-*.tgz and no `pg-upgrade` init container renders). The validate job gains shellcheck on the upgrade scripts, a check that the template constants in _helpers.tpl equal the values.yaml defaults, and a check that the upgrade-source major is exactly one below the main image's. renovate.json gains the rule that the upgrade-source image only ever gets minor/digest updates. Chart.yaml gets the comment for the next chart version. Record the one-off external-database render diff.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "An install with an external database renders exactly as before this story",
+          "unskips": [
+            "@pending removed :: An install with an external database renders exactly as before this story (AC-1.6) — one-off diff recorded in feature-delta.md (no permanent golden, upstream finding 5)"
+          ],
+          "files_to_modify": [
+            "chart/scripts/version-guard.sh (edit — new check placed before the no-overwrite check: read the default major from `helm show values` of the chart dir and of the highest-versioned docs/charts/lighthouse-*.tgz (sort -V); if they differ and `helm template` of the chart (dummy key and password, as the CI gates use) has no `name: pg-upgrade` init container, refuse with a line naming both majors and saying to pin postgresql.image to the published major or ship the in-chart upgrade first; a major that cannot be read fails closed. Tools: helm, awk, grep only — no yq. `[[ ]]` throughout. Rewrite the header comment so it cites no epic or ADR)",
+            ".github/workflows/ci_chart.yml (edit — validate job: shellcheck on the upgrade scripts (as files if 01-01 put them under chart/files/, else extracted from `helm template -s templates/postgres-upgrade-configmap.yaml`); the constants-equal-defaults check; the upgrade-source-major = main-major − 1 check)",
+            "renovate.json (edit — one packageRule: the upgrade-source image (`postgresql.upgrade.image`) never gets a major update, while the main `postgresql.image` still does, in the existing hand-merged Postgres group. If the helm-values manager cannot tell the two apart by key, the rule may rely on a regex custom manager for the upgrade-source line; its description says why in plain language)",
+            "chart/Chart.yaml (edit — add the `# 0.1.18:` history entry: the bundled Postgres moves to 18 and carries 17 data across by itself on `helm upgrade` or a GitOps sync, keeps the old copy for `helm rollback` (about twice the data until removed), new value `postgresql.upgrade.image`, `--reuse-values` stays on 17 and the notes say so. Do NOT change `version:` or `appVersion` — a version not yet in docs/charts/index.yaml makes the next push request a Release-gated publish; the bump is /release's)",
+            "docs/feature/story-6131-chart-postgres-major-upgrade/feature-delta.md (edit — under DISTILL / Open Checks for DELIVER, record the external-database result: the command run and the empty diff)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the scenario)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "estimated_hours": 2.5,
+          "criteria": [
+            "version-guard.sh, run locally with a non-existent index (`chart/scripts/version-guard.sh chart /nonexistent`, so the published-0.1.17 overwrite check does not stop it first): passes on the current chart (18 with pg-upgrade); passes on a scratch copy with both defaults pinned back to 17 and the init containers removed; REFUSES on a scratch copy with 18 defaults and the pg-upgrade init container removed, printing the major line. Scratch copies live in the session scratchpad, never in the repo.",
+            "The validate checks fail when shown the fault they guard (a scratch edit setting `defaultMajor` to 19, and one setting the upgrade-source default to postgres:16-trixie) and pass on the committed chart.",
+            "renovate.json passes `npx --yes --package renovate -- renovate-config-validator`; if a local `renovate --platform=local --dry-run=lookup` is feasible it shows the upgrade-source value offered no major and the main image still offered one — otherwise the commit body says the rule is unverified until Renovate's next run.",
+            "`helm template l8e ./chart --set postgresql.enabled=false` plus the external-database values, at 991edd7e9 and at this commit, differ only in the `helm.sh/chart` label lines; the diff is recorded in feature-delta.md.",
+            "Chart.yaml `version` and `appVersion` unchanged; README regenerated only if helm-docs reports a change; the helm-docs drift check, helm lint, helm unittest and shellcheck green.",
+            "No comment in the touched files cites an internal reference."
+          ],
+          "implementation_notes": "The major check sits in version-guard.sh (publish only), not in validate, on purpose: it runs exactly when a version is about to ship. With this step slice 01 is complete; hand back for the maintainer's dogfood (a kind cluster on 0.1.17 restored from a real backup, upgrade, rollback, upgrade, checked in the UI) before phase 02 starts, per the slice-01 learning hypothesis. Commit: `feat(chart): refuse to publish a Postgres major move without the in-chart upgrade (story 6131)` — the Chart.yaml note may go in a separate `docs(chart): …` commit."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "An upgrade that cannot be done safely stops before writing and says why, and the docs describe the new path",
+      "description": "Slice 02. Replace the catch-all refusal with specific refusals, each decided before any write and each asserting the volume's sorted sha256sum listing unchanged: too little room (with the size-limited tmpfs PV proven first), then the docs rewrite whose cleanup command the next scenarios run verbatim, then every major mismatch, then the interrupted upgrade. The `refusals` CI leg grows with each step.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Too little room for a second copy is refused before any write, and the upgrade proceeds by itself once the volume grows",
+          "description": "Add the space check (needed = du of `pgdata` × 1.1 + 64 MiB; free = df of the mount + the size of any stale `pgdata-M` or `.partial` that would be removed) ahead of recovery, initdb and copy, with the refusal line naming free and needed MiB and the two ways out (`postgresql.persistence.size`, or pin `postgresql.image` to the current major's image). First confirm the size-limited tmpfs static PV works on kind; only if it does not, fall back to a test-only free-space override with its own guard stopping it from shipping.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Too little room for a second copy stops the upgrade before it writes anything",
+          "unskips": [
+            "@pending removed :: Too little room for a second copy stops the upgrade before it writes anything (AC-3.1) — run.sh too_little_room_refuses_and_touches_nothing",
+            "@pending removed :: Once the volume has grown, the refused upgrade goes ahead by itself (AC-3.5, AC-3.1) — run.sh grown_volume_lets_refused_upgrade_proceed"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — upgrade.sh: the space check and its refusal line, through the existing single refusal path)",
+            "chart/tests/upgrade-path/run.sh (edit — the two bodies: `docker exec <cluster>-control-plane` mounts a tmpfs sized at run time from the seeded data so one copy fits and two do not; a static PV with hostPath, storageClassName lh-small and claimRef `<namespace>/data-l8e-lighthouse-postgres-0`; 0.1.17 installed with `postgresql.persistence.storageClass=lh-small`; fingerprint, upgrade, assert not Ready and retrying, the line in logs and in `kubectl describe pod`, fingerprint unchanged; `mount -o remount,size=<2N>m`, wait for the next back-off retry, assert 18 with matching counts. Append both to REFUSALS)",
+            ".github/workflows/ci_chart.yml (edit only if the refusals leg needs something the harness cannot do itself, for example a longer timeout; otherwise untouched)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the two scenarios)"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "estimated_hours": 3,
+          "criteria": [
+            "Before the script change, prove the harness: on kind the tmpfs PV binds to the StatefulSet's claim and `df` inside the pod reports the tmpfs size. Record in the commit body that it worked, or that the guarded fallback was needed and why.",
+            "RED captured: against 01-06's upgrade.sh the upgrade starts, runs out of room, and the scenario fails (on the fingerprint or on the missing line).",
+            "With room for one copy only: the pod sits in init back-off; one line names free MiB, needed MiB, `postgresql.persistence.size` and the pin-the-image alternative; the same line in `kubectl describe pod`; the volume's sorted sha256sum listing identical before and after.",
+            "After growing the tmpfs: the next retry upgrades with no other step; Ready on 18, counts and marker match.",
+            "`run.sh <cluster> refusals` passes end to end locally on a fresh cluster; helm lint, helm unittest and shellcheck green."
+          ],
+          "implementation_notes": "The exact byte threshold is deliberately not pinned (DISTILL completeness audit C1b); size the tmpfs with comfortable margin either side. The kind node container is privileged, so the mount is expected to work. Commit: `feat(chart): refuse a bundled Postgres upgrade the volume has no room for (story 6131)`."
+        },
+        {
+          "id": "02-02",
+          "name": "The Kubernetes docs describe the automatic upgrade, rollback, the old copy and its removal",
+          "description": "Rewrite docs/Installation/kubernetes.md § Upgrading the bundled PostgreSQL (AC-2.3 and the docs half of AC-2.5) and the `postgresql.image` / `postgresql.upgrade.image` comments in chart/values.yaml, then regenerate chart/README.md. The cleanup command sits in the docs in a form the harness extracts and runs verbatim in 02-03.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "The Kubernetes docs say where the old copy is, what it costs and how to remove it",
+          "unskips": [
+            "@pending removed :: The Kubernetes docs say where the old copy is, what it costs and how to remove it (AC-2.3) — a docs read; it becomes executable through 02-03's cleanup scenario, which runs the command from this section"
+          ],
+          "files_to_modify": [
+            "docs/Installation/kubernetes.md (edit — rewrite the section: a plain `helm upgrade` or `--reset-then-reuse-values` carries the data from the previous major by itself, `--reuse-values` keeps the old image and the notes say so; where the old copy sits (`pgdata/` on the same volume, the new one in `pgdata-18/`) and that it takes about as much room again as the database; `helm rollback` to the previous chart starts on the old copy and discards everything written since the upgrade, and upgrading again redoes the copy from it; pinning `postgresql.image` back on the new chart does the same and logs a warning, while a rollback to chart 0.1.17 itself cannot print that warning; the one cleanup command, which empties `pgdata/` and leaves the placeholder file `UPGRADED-TO-18-see-kubernetes-docs`, followed by the statement that a rollback to the previous chart is no longer possible after it; how to read a refusal (`kubectl logs <pod> --all-containers`, `kubectl describe pod`) and the ways out (grow the PVC — needs a StorageClass that allows volume expansion — or pin the image); advise `--timeout 15m` for databases above a few GB; settings made with ALTER SYSTEM are not carried across; the manual dump-and-restore path kept for data two or more majors behind, under a stable heading the refusal line links to; external databases unaffected)",
+            "chart/values.yaml (edit — the `postgresql.image` comment: the chart carries data from the previous major by itself and keeps the old copy, see the Kubernetes docs; the `postgresql.upgrade.image` comment: the previous major's official image on the same Debian release, moved together with `postgresql.image`)",
+            "chart/README.md (regenerate with helm-docs 1.14.2, flags as in ci_chart.yml)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the docs scenario)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_hours": 1.5,
+          "criteria": [
+            "The section states each of: where the old copy sits, how much room it takes, that a rollback discards what was written since the upgrade, the one cleanup command, that a rollback to the previous chart is no longer possible after it, and the pin-back warning with the note that chart 0.1.17 cannot print it.",
+            "The cleanup command is a single line in its own fenced block under a stable sub-heading, so run.sh can extract it without parsing prose; it leaves exactly the placeholder file in `pgdata/`.",
+            "The manual path for out-of-range majors has a heading whose anchor the refusal line in 02-03 links to; the manual commands no longer use `--reuse-values` to move the image.",
+            "No configurable term is involved; the page keeps `l8e` as the release name like the rest of the page.",
+            "helm-docs drift check clean; helm lint and helm unittest green."
+          ],
+          "implementation_notes": "Docs prose, so there is no RED. Keep the section task-shaped (a how-to): what happens, rollback, removing the old copy, refusals, manual path. Commit: `docs(chart): the bundled Postgres upgrades itself across a major, and how to roll back and clean up (story 6131)`."
+        },
+        {
+          "id": "02-03",
+          "name": "Every major mismatch is refused naming both majors, and fixing the cause lets the next start proceed",
+          "description": "Replace the catch-all for the remaining decision-table rows with specific refusals and the one no-op they hide: `D ≤ M−2` → refuse naming both majors and linking the manual section; `D > M` → refuse naming both majors; placeholder with `pgdata-M` present → old copy removed, nothing to do, `pgdata-M`; placeholder with only `pgdata-N`, N ≠ M → refuse naming both majors; old binaries that will not run in the main image (checked with `ldd` and a `--version` call before any write) → refuse naming the two images. After this step the catch-all fires only for a state the table does not describe at all.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Data two majors behind is refused, naming both majors and the manual path",
+          "unskips": [
+            "@pending removed :: Data two majors behind is refused, naming both majors and the manual path (AC-3.2) — run.sh two_majors_behind_refuses_and_touches_nothing",
+            "@pending removed :: Pinning the image back to the data's major lets the database start with no other step (AC-3.5, AC-3.2) — run.sh pinning_to_data_major_starts_without_other_step",
+            "@pending removed :: After the old copy is removed, a rollback refuses to start an empty database (AC-2.4, AC-2.3) — run.sh cleanup_then_rollback_refuses_empty_database, running the docs command verbatim",
+            "@pending removed :: Data newer than the image, with no kept copy of the image's major, is refused (AC-3.3) — run.sh newer_data_without_kept_copy_refuses",
+            "@pending removed :: An upgrade-source image whose programs cannot run beside the database image is refused (D3) — run.sh foreign_upgrade_source_refuses_and_touches_nothing"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — upgrade.sh: the rows above; copy-old-binaries.sh records what the main image needs to check the copied binaries)",
+            "chart/tests/upgrade-path/run.sh (edit — the five bodies; the cleanup function extracts the command from docs/Installation/kubernetes.md rather than restating it; the foreign-source function uses an image built on another OS, for example postgres:17-alpine; append to REFUSALS)",
+            ".github/workflows/ci_chart.yml (edit — the upgrade-path pre-pull adds postgres:16 and the foreign upgrade-source image)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the five scenarios)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "estimated_hours": 3,
+          "criteria": [
+            "RED captured per scenario before the script change: each refusal is caught by the catch-all line, which names neither major nor the manual path; the placeholder no-op is refused outright; the foreign source fails inside pg_upgrade or initdb rather than before writing.",
+            "16 data with the 18 image: not Ready, retrying, one line naming 16 and 18 and the manual section's URL, fingerprint unchanged. Pinning `postgresql.image=postgres:16` then starts Ready on 16 with the marker and no other step.",
+            "After the docs' cleanup command: `helm rollback` to 0.1.17 does not become Ready, its log says the data folder is not empty, and no empty Lighthouse database exists; a plain `helm upgrade` again is Ready on 18 with the recorded counts and marker.",
+            "Placeholder plus the image pinned to 17 on the new chart: not Ready, one line naming 18 as the data's major and 17 as the image's, fingerprint unchanged.",
+            "A foreign upgrade-source image: not Ready, one line saying the 17 programs cannot run beside the 18 image, fingerprint unchanged.",
+            "`run.sh <cluster> refusals` passes end to end locally on a fresh cluster; helm lint, helm unittest and shellcheck green."
+          ],
+          "implementation_notes": "Five scenarios in one step because they are one change — the rows of one decision table sharing one refusal path — and splitting them would give three or more steps with identical structure. Each refusal must be decided from reads only (PG_VERSION, the directory listing, the placeholder, PG_MAJOR, ldd); prove that with the fingerprint, not by reading the script. Commit: `feat(chart): refuse a bundled Postgres upgrade across the wrong majors, naming both (story 6131)`."
+        },
+        {
+          "id": "02-04",
+          "name": "An upgrade interrupted part-way is redone from the start and never serves a partial copy",
+          "description": "Make the interruption observable end to end: one log line when the copy starts, and at the start of every attempt a line saying a leftover `pgdata-M.partial/` was discarded before redoing the upgrade. Prove with about 300 MB of data that deleting the pod after the copy-started line leads to a full redo, never a start on the partial copy, and an intact 17 copy. Then finish the harness: no scaffold left, the `refusals` leg complete.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "An upgrade interrupted part-way is redone from the start and never serves a partial copy",
+          "unskips": [
+            "@pending removed :: An upgrade interrupted part-way is redone from the start and never serves a partial copy (AC-3.4) — run.sh interrupted_upgrade_is_redone_from_start"
+          ],
+          "files_to_modify": [
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — upgrade.sh: the copy-started and discarded-partial lines, if 01-01 did not already write them in this form)",
+            "chart/tests/upgrade-path/run.sh (edit — the body: seed about 300 MB with generate_series into a harness-owned table, upgrade, wait for the copy-started line, delete the pod, require the next start's log to report the discarded partial copy (proof the delete landed mid-copy, upstream finding 4), then Ready on 18 with matching counts and the kept 17 copy still opening with the recorded counts; append to REFUSALS; remove the `# SCAFFOLD: true` header and the `scaffold` helper once nothing calls it)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the scenario; then reword the header lines about @pending so they describe a finished suite)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_hours": 2,
+          "criteria": [
+            "RED captured: before the log-line edit the scenario cannot prove the delete landed mid-copy (no discarded-partial line) and fails on that assertion. If 01-01 already wrote both lines, record that the scenario was green on arrival and why that is not a missing RED (the behaviour came with the rename design).",
+            "Postgres is never started on `pgdata-18.partial/` (no server start in the log between the delete and the rename).",
+            "`grep -n '@pending' chart/tests/acceptance/upgrade-bundled-postgres.feature`, `grep -n 'skip:' chart/tests/unit/postgres-upgrade_test.yaml` and `grep -n 'SCAFFOLD' chart/tests/upgrade-path/run.sh` each return nothing.",
+            "`run.sh <cluster> happy` and `run.sh <cluster> refusals` each pass end to end locally on fresh clusters within 15 minutes each (record the times); helm lint, helm unittest and shellcheck green; the helm-docs drift check clean."
+          ],
+          "implementation_notes": "About 30 s of copy window at DESIGN's measured rate; if the machine is faster, grow the seed rather than racing the delete. After pushing, watch the first ci_chart.yml run on main with both legs green. Left after this step, as maintainer gates: the Release Notes tag and line on #6131, the slice-02 dogfood (follow the rewritten docs verbatim from a clean 0.1.17 install), and the version bump at /release. Commit: `feat(chart): an interrupted bundled Postgres upgrade is redone from the start (story 6131)`."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "chart/templates/",
+      "chart/scripts/",
+      "chart/files/",
+      ".github/workflows/",
+      "docs/Installation/"
+    ],
+    "test_directories": [
+      "chart/tests/unit/",
+      "chart/tests/upgrade-path/",
+      "chart/tests/acceptance/"
+    ],
+    "excluded_patterns": [
+      "docs/charts/**",
+      "chart/README.md",
+      "examples/postgres/**"
+    ]
+  }
+}
