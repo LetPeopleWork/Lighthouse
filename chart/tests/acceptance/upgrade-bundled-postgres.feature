@@ -362,7 +362,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log carries one line naming the removed Postgres 16 copy
     And that line says a rollback to the chart on Postgres 16 is no longer possible and a rollback to the chart on Postgres 17 still is
 
-  @US-04 @AC-4.9 @kpi:K3 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.9 @kpi:K3 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: Restarting the database after a second upgrade does not upgrade or remove anything
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     And the time a fresh install's database takes to start in the same cluster has been recorded
@@ -373,7 +373,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And it becomes Ready on Postgres 18
     And every Lighthouse table has the same row count as before the restart
 
-  @US-04 @AC-4.3 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.3 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: Rolling back one chart after a second upgrade starts the previous major and says what is missing
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     And a row was written on Postgres 18 after the second upgrade
@@ -394,7 +394,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log says nothing about removing a copy
     And the volume holds the placeholder, the Postgres 17 copy and the Postgres 18 copy, and nothing else
 
-  @US-04 @AC-4.5 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.5 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: Pinning the image back one major after a second upgrade starts on the kept copy with the warning
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     And a row was written on Postgres 18 after the second upgrade

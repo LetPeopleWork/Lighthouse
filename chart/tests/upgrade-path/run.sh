@@ -57,20 +57,21 @@ chart_app_version() {
   helm show chart "$1" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }'
 }
 
-# Pulls each image once into the local Docker and loads it into the kind node, so the node never pulls
-# from Docker Hub itself: its anonymous pull limit is shared by every job on a CI runner's address.
+# Pulls each image group $2 starts once into the local Docker and loads it into the kind node, so the node
+# never pulls from Docker Hub itself: its anonymous pull limit is shared by every job on a CI runner's
+# address. A group loads only its own images, because every image loaded costs its leg time.
 preload_images() {
-  local cluster="$1" image
+  local cluster="$1" group="$2" image
   local images=(
-    postgres:16
-    postgres:17
-    postgres:17-trixie
-    postgres:17-alpine
-    postgres:18-trixie
-    busybox:1.37
     "ghcr.io/letpeoplework/lighthouse:$(chart_app_version "$BEFORE_CHART")"
     "ghcr.io/letpeoplework/lighthouse:$(chart_app_version "$NEW_CHART")"
   )
+  case "$group" in
+    happy | refusals)
+      images+=(postgres:16 postgres:17 postgres:17-trixie postgres:17-alpine postgres:18-trixie busybox:1.37) ;;
+    chain)
+      images+=(postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
+  esac
   # `kind load docker-image` exports every platform of a multi-platform image and fails on the ones
   # Docker never pulled, so only the node's own platform is exported.
   local platform node
@@ -1125,7 +1126,12 @@ interrupted_cleanup_never_costs_upgraded_copy() {
 
 readonly CHAIN_NS="chain-16-17"
 readonly CHAIN_PIN_17=(--set postgresql.image=postgres:17-trixie --set postgresql.upgrade.image=postgres:16-trixie)
+# The rollback and the pin-back leave the database on the Postgres 17 copy with the Postgres 18 copy out of
+# date beside it, a volume no later Given starts from, so they clear both marks and the next scenario that
+# needs an upgraded volume builds the namespace again from the start.
 CHAIN_UPGRADED_ONCE=""
+CHAIN_UPGRADED_TWICE=""
+CHAIN_REVISION_ON_17=""
 
 scaffold() {
   local scenario="$1"
@@ -1134,6 +1140,25 @@ scaffold() {
 
 given_chain_upgraded_once() {
   [[ -n "$CHAIN_UPGRADED_ONCE" ]] || chain_first_upgrade_removes_nothing
+}
+
+given_chain_upgraded_twice() {
+  [[ -n "$CHAIN_UPGRADED_TWICE" ]] || chain_second_upgrade_keeps_every_row
+}
+
+chain_moved_back_to_17() {
+  CHAIN_UPGRADED_ONCE=""
+  CHAIN_UPGRADED_TWICE=""
+}
+
+# The warning a start on an older copy logs, once, naming the newer copy whose writes it does not have.
+assert_newer_copy_warning() {
+  local ns="$1" newer_major="$2" log warning
+  log="$(kubectl -n "$ns" logs "$POSTGRES_POD" --all-containers)"
+  warning="$(the_one_line_with "newer Postgres $newer_major copy" "$log")" \
+    || { dump_diagnostics "$ns"; fail "the database log in $ns does not carry exactly one warning about the newer copy"; }
+  echo "  $warning"
+  assert_line_says "$ns" "$warning" "pgdata-$newer_major" "not in this database"
 }
 
 volume_sha256() {
@@ -1167,6 +1192,7 @@ chain_first_upgrade_removes_nothing() {
   counts="$(public_row_counts "$ns")"
 
   upgrade_to_new_chart "$ns" "${CHAIN_PIN_17[@]}"
+  CHAIN_REVISION_ON_17="$(current_revision "$ns")"
 
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 17
@@ -1206,13 +1232,81 @@ chain_second_upgrade_keeps_every_row() {
   echo "  $line"
   grep -qF "pgdata-17 is kept" <<<"$line" || fail "the upgrade line in $ns does not say pgdata-17 is kept: $line"
   assert_note_names_source "$ns" pgdata-18 17 pgdata-17
+  CHAIN_UPGRADED_TWICE=1
 }
 
 chain_second_upgrade_removes_copy_before_last() { scaffold "Once the new copy is in place, the copy before last is removed and one rollback step is kept"; }
-chain_restart_after_second_upgrade_does_nothing() { scaffold "Restarting the database after a second upgrade does not upgrade or remove anything"; }
-chain_rollback_one_chart_starts_previous_major_and_warns() { scaffold "Rolling back one chart after a second upgrade starts the previous major and says what is missing"; }
+
+# The baseline is a restart of the fresh install, as for the first upgrade's restart.
+chain_restart_after_second_upgrade_does_nothing() {
+  local ns="$CHAIN_NS" baseline delay counts line handover
+  given_fresh_install
+  given_chain_upgraded_twice
+  counts="$(public_row_counts "$ns")"
+  restart_database "$FRESH_NS"
+  baseline="$(start_delay_ms "$FRESH_NS")"
+
+  restart_database "$ns"
+
+  line="$(the_one_line_with "nothing to upgrade and nothing to remove" "$(upgrade_log "$ns")")" \
+    || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one line saying there is nothing to upgrade or remove"; }
+  echo "  $line"
+  handover="$(kubectl -n "$ns" logs "$POSTGRES_POD" -c pg-old-binaries)"
+  if grep -qF "programs are ready" <<<"$handover"; then
+    fail "the older major's programs were handed over for a restart in $ns: $handover"
+  fi
+  delay="$(start_delay_ms "$ns")"
+  echo "  start delay: ${delay} ms after the second upgrade, ${baseline} ms on a fresh install"
+  [[ $((delay - baseline)) -lt 5000 ]] \
+    || fail "the database in $ns started ${delay} ms after its pod was created, ${baseline} ms on a fresh install"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  assert_row_counts "$ns" "$counts"
+}
+
+chain_rollback_one_chart_starts_previous_major_and_warns() {
+  local ns="$CHAIN_NS"
+  given_chain_upgraded_twice
+  write_marker_table "$ns" upgrade_path_on_18_before_rollback
+
+  helm rollback "$RELEASE" "$CHAIN_REVISION_ON_17" -n "$ns" >/dev/null
+  chain_moved_back_to_17
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata-17
+  [[ "$(marker_rows_in "$ns" upgrade_path_written_on_17)" == "1" ]] \
+    || fail "the row written on Postgres 17 before the second upgrade in $ns is missing after the rollback"
+  [[ "$(table_count "$ns" upgrade_path_on_18_before_rollback)" == "0" ]] \
+    || fail "the row written on Postgres 18 in $ns is there after the rollback to Postgres 17"
+  assert_newer_copy_warning "$ns" 18
+  wait_api_ready "$ns"
+}
 chain_upgrade_again_after_one_chart_rollback_starts_afresh() { scaffold "Upgrading again after a one-chart rollback starts afresh from the Postgres 17 copy"; }
-chain_pin_back_one_major_starts_kept_copy_and_warns() { scaffold "Pinning the image back one major after a second upgrade starts on the kept copy with the warning"; }
+
+# The docs say to delete the database pod after pinning the image. When the StatefulSet is already
+# replacing it, deleting it again changes nothing.
+chain_pin_back_one_major_starts_kept_copy_and_warns() {
+  local ns="$CHAIN_NS" old_uid
+  given_chain_upgraded_twice
+  write_marker_table "$ns" upgrade_path_on_18_before_pin
+  old_uid="$(pod_uid "$ns")"
+
+  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set postgresql.image=postgres:17-trixie >/dev/null
+  chain_moved_back_to_17
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --ignore-not-found --wait=false >/dev/null
+  wait_pod_replaced "$ns" "$old_uid"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata-17
+  assert_marker_row "$ns"
+  [[ "$(table_count "$ns" upgrade_path_on_18_before_pin)" == "0" ]] \
+    || fail "the row written on Postgres 18 in $ns is there after pinning to Postgres 17"
+  assert_newer_copy_warning "$ns" 18
+  wait_api_ready "$ns"
+}
 chain_pin_back_two_majors_refuses_and_touches_nothing() { scaffold "Pinning the image back two majors after a second upgrade is refused, naming both majors"; }
 chain_rollback_two_charts_fails_loudly() { scaffold "Rolling back two charts after a second upgrade fails loudly and never starts an empty database"; }
 chain_cleanup_removes_every_older_copy_and_reruns() { scaffold "The documented cleanup removes every copy older than the live one, and can be run again"; }
@@ -1262,6 +1356,9 @@ readonly REFUSALS=(
 readonly CHAIN=(
   chain_first_upgrade_removes_nothing
   chain_second_upgrade_keeps_every_row
+  chain_restart_after_second_upgrade_does_nothing
+  chain_rollback_one_chart_starts_previous_major_and_warns
+  chain_pin_back_one_major_starts_kept_copy_and_warns
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
@@ -1344,7 +1441,7 @@ main() {
     scenarios=("$@")
   fi
 
-  preload_images "$cluster"
+  preload_images "$cluster" "$group"
 
   local scenario index
   for scenario in "${scenarios[@]}"; do

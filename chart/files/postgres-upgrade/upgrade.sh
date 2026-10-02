@@ -340,36 +340,31 @@ volume_is_empty() {
   [[ -z "$DATA_MAJOR" && -z "$OTHER_COPIES" && ! -e "$PARTIAL" ]] && ! has_placeholder
 }
 
-data_is_this_major() {
-  [[ "$DATA_MAJOR" == "$MAJOR" && -z "$OTHER_COPIES" && ! -e "$PARTIAL" ]]
-}
-
-# The image was moved back after an upgrade: the data is this major, and the only copy beside it is a
-# newer one an upgrade made from it.
-pinned_back_after_upgrade() {
-  [[ "$DATA_MAJOR" == "$MAJOR" && ! -e "$PARTIAL" && -n "$ONLY_COPY_MAJOR" ]] \
-    && [[ "$ONLY_COPY_MAJOR" -gt "$MAJOR" ]] \
-    && grep -qx "source_major=$MAJOR" "$MOUNT/pgdata-$ONLY_COPY_MAJOR/$UPGRADE_NOTE" 2>/dev/null
-}
-
 old_data_unreadable() {
   [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && -z "$OLD_CONTROL_HASH" ]]
 }
 
-data_one_behind_beside_its_copy() {
-  [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && "$OTHER_COPIES" == "pgdata-$MAJOR" && -f "$NEW/$UPGRADE_NOTE" ]]
+# The database last ran on a copy of this image's major, and no copy newer than it is on the volume.
+live_is_this_major_alone() {
+  [[ "$LIVE_MAJOR" == "$MAJOR" && -z "$NEWER_COPY" ]]
 }
 
-# The upgraded copy is current as long as the old data has not been started since the copy was made:
-# any start of the old major rewrites its pg_control, and the hash noted at upgrade then differs.
-already_upgraded() {
-  data_one_behind_beside_its_copy && grep -qx "source_pg_control_sha256=$OLD_CONTROL_HASH" "$NEW/$UPGRADE_NOTE"
+# The database last ran on a copy of this image's major, beside a newer copy that a pin or a rollback
+# left out of date: this major has run since that copy was made from it.
+live_is_this_major_beside_newer_copy() {
+  [[ "$LIVE_MAJOR" == "$MAJOR" && -n "$NEWER_COPY" ]]
 }
 
-# Once the old major has run again it holds the newer data, so the copy made before is redone. Only
-# reached with a hash that was computed and differs from the one noted in the copy.
+# The image was moved back after an upgrade, by a pin or a rollback, and this is its first start since: the
+# database last ran on a newer copy, and the copy of this major it was made from is still on the chain.
+moved_back_to_a_copy_on_the_chain() {
+  [[ -n "$LIVE_MAJOR" && -n "$THIS_MAJOR_ON_CHAIN" ]] && [[ "$LIVE_MAJOR" -gt "$MAJOR" ]]
+}
+
+# Reached only once the rows above found the upgraded copy off the chain: the old major has run since the
+# copy was made, so it holds the newer data and the copy is redone.
 upgraded_copy_out_of_date() {
-  data_one_behind_beside_its_copy
+  [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && "$OTHER_COPIES" == "pgdata-$MAJOR" && -f "$NEW/$UPGRADE_NOTE" ]]
 }
 
 data_one_behind_without_copy() {
@@ -387,12 +382,25 @@ data_out_of_reach() {
   [[ "$DATA_MAJOR" =~ ^[0-9]+$ ]] && [[ "$DATA_MAJOR" -lt "$PREVIOUS_MAJOR" || "$DATA_MAJOR" -gt "$MAJOR" ]]
 }
 
-old_copy_removed() {
-  [[ -z "$DATA_MAJOR" && "$ONLY_COPY_MAJOR" == "$MAJOR" && ! -e "$PARTIAL" ]] && has_placeholder && [[ -n "$(copy_major "pgdata-$MAJOR")" ]]
-}
-
 only_newer_copy_left() {
   [[ -z "$DATA_MAJOR" && -n "$ONLY_COPY_MAJOR" && ! -e "$PARTIAL" ]] && [[ "$ONLY_COPY_MAJOR" -gt "$MAJOR" ]]
+}
+
+say_nothing_to_upgrade() {
+  if [[ "$LIVE_COPY" == pgdata ]]; then
+    say "nothing to upgrade: the data in pgdata is already Postgres $MAJOR"
+  elif [[ -z "$DATA_MAJOR" ]]; then
+    say "nothing to upgrade: the old copy was removed, and Postgres $MAJOR starts on $LIVE_COPY"
+  else
+    say "nothing to upgrade and nothing to remove: $LIVE_COPY is already the upgrade of the Postgres $PREVIOUS_MAJOR data in $(copy_for_major "$PREVIOUS_MAJOR"), and Postgres $MAJOR starts on it"
+  fi
+}
+
+# The newer copy is left where it is. Once this major has run, the copy it was made from no longer matches
+# the note in the newer copy, so moving the image forward again redoes the upgrade from the copy started here.
+warn_newer_copy_exists() {
+  local folder="$1" newer="$2"
+  say "warning: starting Postgres $MAJOR on $folder, but a newer Postgres ${newer#pgdata-} copy of this database exists in $newer; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back"
 }
 
 main() {
@@ -404,31 +412,28 @@ main() {
   # Every upgrade reads the copy the database last ran on, which is pgdata until an upgrade has moved on.
   read -r LIVE_COPY LIVE_MAJOR <<<"$(live_copy)"
   SOURCE="$MOUNT/$LIVE_COPY"
+  NEWER_COPY="$(copies | awk -v major="$MAJOR" '$2 > major { newest = $1 } END { print newest }')"
+  THIS_MAJOR_ON_CHAIN="$(copy_for_major "$MAJOR")"
 
   if volume_is_empty; then
     say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
     start_on "$OLD"
-  elif data_is_this_major; then
-    say "nothing to upgrade: the data in pgdata is already Postgres $MAJOR"
-    start_on "$OLD"
-  elif pinned_back_after_upgrade; then
-    # The newer copy is left where it is. Once this major has run, pgdata no longer matches the note in
-    # that copy, so moving the image forward again redoes the upgrade from pgdata.
-    say "warning: starting Postgres $MAJOR on pgdata, but a newer Postgres $ONLY_COPY_MAJOR copy of this database exists in pgdata-$ONLY_COPY_MAJOR; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back"
-    start_on "$OLD"
   elif old_data_unreadable; then
     refuse_unreadable_old_data
-  elif already_upgraded; then
-    say "nothing to upgrade: pgdata-$MAJOR is already the upgrade of the Postgres $DATA_MAJOR data in pgdata"
-    start_on "$NEW"
+  elif live_is_this_major_alone; then
+    say_nothing_to_upgrade
+    start_on "$SOURCE"
+  elif live_is_this_major_beside_newer_copy; then
+    warn_newer_copy_exists "$LIVE_COPY" "$NEWER_COPY"
+    start_on "$SOURCE"
+  elif moved_back_to_a_copy_on_the_chain; then
+    warn_newer_copy_exists "$THIS_MAJOR_ON_CHAIN" "$LIVE_COPY"
+    start_on "$MOUNT/$THIS_MAJOR_ON_CHAIN"
   elif upgraded_copy_out_of_date || data_one_behind_without_copy || live_copy_one_behind_without_copy; then
     upgrade "$LIVE_MAJOR"
     start_on "$NEW"
   elif data_out_of_reach; then
     refuse_other_major "$DATA_MAJOR" pgdata
-  elif old_copy_removed; then
-    say "nothing to upgrade: the old copy was removed, and Postgres $MAJOR starts on pgdata-$MAJOR"
-    start_on "$NEW"
   elif only_newer_copy_left; then
     refuse_other_major "$ONLY_COPY_MAJOR" "pgdata-$ONLY_COPY_MAJOR"
   else
