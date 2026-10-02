@@ -904,6 +904,13 @@ SPECIFICATION_AMBIGUITY blocker; the one open behavioural question is non-blocki
 - NOTES wording is DELIVER's, but the tests require the word "behind" and `--reset-then-reuse-values` in it.
 - Scenario 9: once, diff `helm template` with `postgresql.enabled=false` at `991edd7e9` against the slice-01
   commit (excluding the `helm.sh/chart` label) and record the empty diff here.
+  - **Result (DELIVER step 01-06, 2026-10-02): empty diff.** The chart at `991edd7e9` (extracted with
+    `git archive 991edd7e9 chart`) and the chart at the step 01-06 commit, each rendered with
+    `helm template l8e <chart> --set postgresql.enabled=false --set externalDatabase.host=my-pg.example
+    --set externalDatabase.database=lh --set externalDatabase.user=lh --set externalDatabase.password=extpass
+    --set encryption.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=`, give 226 lines each, and `diff` exits 0
+    with no output. Not even the `helm.sh/chart` label differs, because `Chart.yaml`'s `version` is still
+    0.1.17 (the bump is the release's job). One-off check, not a permanent golden.
 - Confirm the tmpfs static PV works under `helm/kind-action` first in slice 02; if not, the free-space override
   fallback needs a guard that stops it shipping.
 - First walking-skeleton run against today's chart should fail on `database files are incompatible with

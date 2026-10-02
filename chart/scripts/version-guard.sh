@@ -1,18 +1,37 @@
 #!/usr/bin/env bash
-# Chart publish guard — epic-5306 slice-04 / ADR-083.
+# Chart publish guard. Runs from publish.sh, locally and in ci_chart.yml's Release-gated publish job.
 #
-# Asserts chart-version + app-version consistency across every surface and refuses to overwrite an
-# already-published chart version (no silent overwrite). Runs locally and in ci_chart.yml's publish job.
+# Asserts chart-version + app-version consistency across every surface, refuses to ship a move of the
+# bundled Postgres to a new major unless the chart also carries the step that upgrades the data on
+# disk, and refuses to overwrite an already-published chart version (no silent overwrite).
 #
-# Usage: version-guard.sh [CHART_DIR] [PUBLISHED_INDEX]
+# Usage: version-guard.sh [CHART_DIR] [PUBLISHED_INDEX] [PUBLISHED_DIR]
 #   CHART_DIR        default: chart
 #   PUBLISHED_INDEX  default: docs/charts/index.yaml  (skipped if absent — first publish)
+#   PUBLISHED_DIR    default: docs/charts  (its highest lighthouse-*.tgz is the last published chart)
 set -euo pipefail
+shopt -s nullglob
 
 CHART_DIR="${1:-chart}"
 INDEX="${2:-docs/charts/index.yaml}"
+PUBLISHED_DIR="${3:-docs/charts}"
 
 fail() { echo "✗ publish guard: $*" >&2; exit 1; }
+
+# The major in the tag of a chart's default postgresql.image (chart directory or packaged .tgz), or
+# empty when the tag carries none. A registry port or a digest is not mistaken for the tag.
+postgres_default_major() {
+  helm show values "$1" | awk '
+    /^postgresql:/ { inside = 1; next }
+    inside && /^[^[:space:]#]/ { exit }
+    inside && /^  image:/ {
+      ref = $2; gsub(/"/, "", ref); sub(/@.*$/, "", ref); n = split(ref, parts, "/"); name = parts[n]
+      if (index(name, ":") && match(substr(name, index(name, ":") + 1), /^[0-9]+/)) {
+        print substr(name, index(name, ":") + 1, RLENGTH)
+      }
+      exit
+    }'
+}
 
 # --- single source of truth: Chart.yaml via helm ----------------------------------------------
 chart_meta="$(helm show chart "$CHART_DIR")"
@@ -35,9 +54,28 @@ grep -qF "$chart_version" "$CHART_DIR/README.md" \
 grep -qF "$app_version" "$CHART_DIR/README.md" \
   || fail "README does not reference appVersion $app_version"
 
-# --- 4. no silent overwrite of an already-published version ------------------------------------
+# --- 4. a new bundled Postgres major ships only together with the in-chart upgrade --------------
+# A new Postgres major cannot open the previous major's data, so a tenant moved onto it without the
+# upgrade step would be left with a database that does not start.
+chart_major="$(postgres_default_major "$CHART_DIR")"
+[[ -n "$chart_major" ]] || fail "could not read the Postgres major of postgresql.image in $CHART_DIR"
+published=("$PUBLISHED_DIR"/lighthouse-*.tgz)
+if [[ ${#published[@]} -gt 0 ]]; then
+  last_published="$(printf '%s\n' "${published[@]}" | sort -V | tail -n 1)"
+  published_major="$(postgres_default_major "$last_published")"
+  [[ -n "$published_major" ]] || fail "could not read the Postgres major of postgresql.image in $last_published"
+  if [[ "$chart_major" != "$published_major" ]]; then
+    render="$(helm template l8e "$CHART_DIR" --set postgresql.auth.password=ci \
+      --set encryption.key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")" \
+      || fail "could not render $CHART_DIR to look for the Postgres upgrade step"
+    grep -qE '^[[:space:]]*(- )?name: pg-upgrade$' <<<"$render" \
+      || fail "the bundled Postgres moves from major $published_major (${last_published##*/}) to major $chart_major without the in-chart upgrade (no pg-upgrade init container) — pin postgresql.image to Postgres $published_major or ship the in-chart upgrade first"
+  fi
+fi
+
+# --- 5. no silent overwrite of an already-published version ------------------------------------
 if [[ -f "$INDEX" ]] && grep -qE "version:[[:space:]]*${chart_version//./\\.}([^0-9]|$)" "$INDEX"; then
   fail "chart version $chart_version already exists in $INDEX — bump Chart.yaml version before publishing (no silent overwrite)"
 fi
 
-echo "✓ publish guard OK — chart $chart_version / app $app_version consistent across Chart.yaml, README, NOTES.txt, values-enterprise.yaml; version not yet published"
+echo "✓ publish guard OK — chart $chart_version / app $app_version consistent across Chart.yaml, README, NOTES.txt, values-enterprise.yaml; Postgres major $chart_major ships safely; version not yet published"

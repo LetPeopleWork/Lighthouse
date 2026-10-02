@@ -1,14 +1,14 @@
 name: Helm Chart
 
-# epic-5306 slice-04 — chart lifecycle (ADR-083). Standalone workflow for the new "chart" concern,
-# matching the repo's split-by-concern workflows. `validate` runs on every chart change. `publish`
-# packages + indexes into docs/charts/ and commits, so the existing pages.yml serves it (one Pages
-# source per repo). Publishing is gated on the `Release` GitHub environment — the SAME approval gate
-# as the server release (ci_release.yml) and analogous to the lighthouse-clients publish flow: a push
-# to main that carries a NOT-yet-published Chart.yaml version auto-requests publish and waits for a
-# maintainer to approve the gate (no separate manual run). `detect-publish` suppresses the gate for
-# chart edits that don't bump the version (docs/template tweaks). A `workflow_dispatch` with
-# publish=true forces a (still version-guarded) republish for backfills.
+# The chart's lifecycle, in a workflow of its own, matching the repo's split-by-concern workflows.
+# `validate` runs on every chart change. `publish` packages + indexes into docs/charts/ and commits,
+# so the existing pages.yml serves it (one Pages source per repo). Publishing is gated on the
+# `Release` GitHub environment — the SAME approval gate as the server release (ci_release.yml) and
+# analogous to the lighthouse-clients publish flow: a push to main that carries a NOT-yet-published
+# Chart.yaml version auto-requests publish and waits for a maintainer to approve the gate (no separate
+# manual run). `detect-publish` suppresses the gate for chart edits that don't bump the version
+# (docs/template tweaks). A `workflow_dispatch` with publish=true forces a (still version-guarded)
+# republish for backfills.
 
 on:
   push:
@@ -55,6 +55,36 @@ jobs:
       - name: helm unittest (incl. standalone-gate render guard)
         run: helm unittest -f 'tests/unit/*.yaml' ./chart
 
+      - name: shellcheck the database upgrade scripts and the publish guard
+        run: shellcheck chart/files/postgres-upgrade/*.sh chart/tests/upgrade-path/run.sh chart/scripts/version-guard.sh
+
+      - name: The bundled Postgres defaults agree with each other
+        # The chart's templates carry the default Postgres major and the upgrade-source image as
+        # constants, because `helm upgrade --reuse-values` renders with an older chart's values where
+        # neither setting exists. They must say what values.yaml says. And the upgrade source has to be
+        # exactly one major below the main image, since that is the only step the upgrade can make: a
+        # major bump of the main image that leaves the upgrade source behind goes red here.
+        run: |
+          set -euo pipefail
+          values=chart/values.yaml
+          helpers=chart/templates/_helpers.tpl
+          major_of() { local name="${1##*/}"; name="${name%%@*}"; [[ "$name" =~ :([0-9]+) ]] && echo "${BASH_REMATCH[1]}"; }
+          main_image="$(awk '/^postgresql:/{p=1; next} p && /^[^[:space:]#]/{exit} p && /^  image:/{print $2; exit}' "$values")"
+          upgrade_image="$(awk '/^postgresql:/{p=1; next} p && /^[^[:space:]#]/{exit} p && /^  upgrade:/{u=1; next} u && /^  [^[:space:]#]/{exit} u && /^    image:/{print $2; exit}' "$values")"
+          constant_major="$(awk '/define "lighthouse.postgres.defaultMajor"/{getline; print; exit}' "$helpers")"
+          fallback_image="$(awk '/define "lighthouse.postgres.upgradeImage"/{getline; if (match($0, /default "[^"]+"/)) print substr($0, RSTART + 9, RLENGTH - 10); exit}' "$helpers")"
+          main_major="$(major_of "$main_image" || true)"
+          upgrade_major="$(major_of "$upgrade_image" || true)"
+          [[ -n "$main_major" ]] || { echo "could not read the major of postgresql.image ($main_image) in $values"; exit 1; }
+          [[ -n "$upgrade_major" ]] || { echo "could not read the major of postgresql.upgrade.image ($upgrade_image) in $values"; exit 1; }
+          [[ "$constant_major" == "$main_major" ]] \
+            || { echo "lighthouse.postgres.defaultMajor in $helpers is '$constant_major' but postgresql.image ($main_image) is Postgres $main_major"; exit 1; }
+          [[ "$fallback_image" == "$upgrade_image" ]] \
+            || { echo "the upgrade-source fallback in $helpers is '$fallback_image' but postgresql.upgrade.image is '$upgrade_image'"; exit 1; }
+          [[ "$upgrade_major" -eq $((main_major - 1)) ]] \
+            || { echo "postgresql.upgrade.image ($upgrade_image) must be one major below postgresql.image ($main_image)"; exit 1; }
+          echo "Postgres defaults OK: main $main_image, upgrade source $upgrade_image"
+
       - name: Standalone gate — default values render exactly one API workload, postgres provider
         env:
           # Any 32 bytes will do here: the chart never looks at the value, only at whether one of the
@@ -66,7 +96,7 @@ jobs:
           deploys="$(printf '%s\n' "$render" | grep -c '^kind: Deployment' || true)"
           [ "$deploys" = "1" ] || { echo "standalone gate: expected 1 Deployment, got $deploys"; exit 1; }
           printf '%s\n' "$render" | grep -qE 'Database__Provider' || { echo "standalone gate: Database__Provider missing"; exit 1; }
-          # The provider value must be postgres and never sqlite (Postgres-only chart, ADR-080).
+          # The provider value must be postgres and never sqlite (the chart is Postgres-only).
           printf '%s\n' "$render" | grep -iE '[:=]\s*"?sqlite' && { echo "standalone gate: chart must never set provider sqlite"; exit 1; }
           printf '%s\n' "$render" | grep -A1 'Database__Provider' | grep -qi 'postgres' || { echo "standalone gate: provider is not postgres"; exit 1; }
           echo "standalone gate OK"
@@ -105,7 +135,7 @@ jobs:
           echo "render determinism gate OK"
 
       - name: config-ref drift gate (helm-docs is regenerated; README must already match)
-        # ADR-084 — the chart/README.md Values table is generated from values.yaml `# --` comments.
+        # The chart/README.md Values table is generated from values.yaml `# --` comments.
         # Regenerate with the pinned helm-docs and fail if it differs from the committed file, so a
         # renamed/added/removed values key without a regen is caught before publish (zero phantom keys).
         env:
@@ -311,7 +341,9 @@ jobs:
 
       - name: Guard + package + index into docs/charts/
         # version-guard refuses to overwrite an already-published version and asserts
-        # Chart.yaml == README == NOTES.txt == values-enterprise image.tag (appVersion).
+        # Chart.yaml == README == NOTES.txt == values-enterprise image.tag (appVersion). It also refuses a
+        # chart whose bundled Postgres default is a different major from the last published chart's
+        # unless the chart carries the step that upgrades the data on disk.
         run: ./chart/scripts/publish.sh
 
       - name: Commit the published chart (pages.yml serves docs/charts/)

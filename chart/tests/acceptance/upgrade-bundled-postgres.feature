@@ -119,7 +119,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
       | enabled  | rendered      |
       | disabled | not rendered  |
 
-  @US-01 @AC-1.6 @in-memory @env:external-db @slice-01 @contract-shape:pure-function @pending
+  @US-01 @AC-1.6 @in-memory @env:external-db @slice-01 @contract-shape:pure-function
   Scenario: An install with an external database renders exactly as before this story
     Given the chart is rendered with an external database
     When the manifests are produced

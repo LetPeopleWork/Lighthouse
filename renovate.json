@@ -54,6 +54,19 @@
       "matchDepNames": ["postgres"],
       "groupName": "Postgres",
       "automerge": false
+    },
+    {
+      "description": "The chart names two Postgres images under keys the values-file manager cannot tell apart, so both are read by the chart values managers below instead.",
+      "matchManagers": ["helm-values"],
+      "matchFileNames": ["chart/values.yaml"],
+      "matchDepNames": ["postgres"],
+      "enabled": false
+    },
+    {
+      "description": "The image the chart reads the previous Postgres major's data with during an upgrade must stay exactly one major below the bundled Postgres, so it only takes minor and digest updates. It moves up a major by hand, in the same change that moves the bundled Postgres; the chart workflow goes red if the two drift apart.",
+      "matchDepTypes": ["postgres-upgrade-source"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ],
   "customManagers": [
@@ -68,6 +81,24 @@
       ],
       "matchStrings": ["(?<depName>postgres):(?<currentValue>[0-9][0-9.]*-alpine)"],
       "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "The bundled Postgres image in the chart values (postgresql.image). It still gets major updates, in the Postgres group above.",
+      "managerFilePatterns": ["/^chart/values\\.yaml$/"],
+      "matchStrings": ["\\n  image: (?<depName>postgres):(?<currentValue>[^\\s@\"]+)"],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker",
+      "depTypeTemplate": "postgres-bundled"
+    },
+    {
+      "customType": "regex",
+      "description": "The image the bundled Postgres upgrade reads the previous major's data with (postgresql.upgrade.image). Read on its own so it can be held to minor and digest updates.",
+      "managerFilePatterns": ["/^chart/values\\.yaml$/"],
+      "matchStrings": ["\\n  upgrade:\\n(?:[ ]*#[^\\n]*\\n)*    image: (?<depName>postgres):(?<currentValue>[^\\s@\"]+)"],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker",
+      "depTypeTemplate": "postgres-upgrade-source"
     }
   ],
   "vulnerabilityAlerts": {

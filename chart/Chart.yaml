@@ -2,52 +2,54 @@ apiVersion: v2
 name: lighthouse
 description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes. Postgres-only chart that brings the whole stack up with one command.
 type: application
-# version  — the CHART version (single source of truth; ADR-083). Bumped per release.
+# version  — the CHART version (single source of truth). Bumped per release.
 # 0.1.1: API binds unprivileged ports (8080/8443) so it runs as non-root on standard clusters.
-# 0.1.2: postgresql.auth.existingSecret — read DB creds from a pre-existing Secret (operator/ESO, CC-3).
-# 0.1.3: oidc.existingSecret — read the OIDC client secret from a pre-existing Secret (ESO/OpenBao, CC-3).
+# 0.1.2: postgresql.auth.existingSecret — read DB creds from a pre-existing Secret (operator/ESO).
+# 0.1.3: oidc.existingSecret — read the OIDC client secret from a pre-existing Secret (ESO/OpenBao).
 # 0.1.4: host-mandatory ingress guard + auto-reload wiring (checksum/config + stakater/reloader watch)
 #        so an out-of-band ESO/OpenBao rotation reaches the running API without a manual restart.
 # 0.1.5: track the v26.7.3.1 release — appVersion moves off the pre-release testing image to the
 #        first tagged release carrying the scalability work; Helm/Kubernetes support is now GA.
-# 0.1.6: track the v26.7.11.4 release — rule-based blocked items (Epic 5074).
-# 0.1.7: track the v26.7.26.8 release — percentiles and PBC over time (Epic 5427).
+# 0.1.6: track the v26.7.11.4 release — rule-based blocked items.
+# 0.1.7: track the v26.7.26.8 release — percentiles and PBC over time.
 # 0.1.8: track the v26.8.1.14 release — ServiceNow connector and joint multi-team forecasts.
-# 0.1.9: track the v26.8.3.8 release — feature size and count over time in delivery metrics (Epic 5585).
-# 0.1.10: track the v26.8.8.2 release — the instance can own the order its Features are forecast in
-#         (Epic 5375).
+# 0.1.9: track the v26.8.3.8 release — feature size and count over time in delivery metrics.
+# 0.1.10: track the v26.8.8.2 release — the instance can own the order its Features are forecast in.
 # 0.1.11: app.embed.enabled — opt a tenant into the embed surface the Jira app signs viewers in
 #         through. Off everywhere until set; the chart had no way to reach the setting at all
-#         before this (Epic #5674).
+#         before this.
 # 0.1.12: track the v26.8.14.1 release — incremental work-tracking sync behind an opt-in toggle
-#         (Epic 5687) and quiet Jira write-back (Epic 5500).
+#         and quiet Jira write-back.
 # 0.1.13: encryption.key / encryption.existingSecret — the key stored credentials are encrypted with
 #         is owned by the operator or their secret store, and an install naming neither is refused at
 #         render. BREAKING for an existing install: one of the two values must now be supplied, and
 #         for a GitOps tenant the Secret has to exist before its chart version moves, or the render
-#         fails and the sync stops (Epic 5775). Also tracks the v26.8.31.7 release — Feature
-#         dependencies read and forecast (Epics 4365, 5792) and Deliveries that follow a tracker and
-#         survive being finished (Epics 5698, 5565).
+#         fails and the sync stops. Also tracks the v26.8.31.7 release — Feature dependencies read
+#         and forecast, and Deliveries that follow a tracker and survive being finished.
 # 0.1.14: track the v26.9.1.6 release — a binary install that updates from inside Lighthouse no longer
-#         refuses to start on the encryption key the product used to ship in appsettings.json (Bug 5890).
+#         refuses to start on the encryption key the product used to ship in appsettings.json.
 #         Kubernetes was never affected: the chart has always required an operator-supplied key.
-# 0.1.15: track the v26.9.9.9 release — named metrics time ranges and a window stepper (Story 5914),
-#         Work Item Age bands in the work item dialog (Story 5884), one Behaviour Settings table that
-#         Feature Ordering moved into (Story 5876), and Faster Updates on by default for new instances
-#         (Story 5912). No chart values changed.
-# 0.1.16: track the v26.9.19.10 release — the risk an in-progress Work Item misses its team's SLE
-#         (Epic 4127), a Task Manager showing what is refreshing and what is queued, with a stop
-#         (Epic 5511), strictly opt-in usage data (Epic 5733), parents read from a Jira instance's
-#         own issue links (Epic 6028), and the move off MIT to the Lighthouse Source Available
-#         License 1.0 (Epic 5874). No chart values changed: the usage-data collector is baked into
-#         the published image, and the instance-wide veto over it is a Behaviour Setting row rather
-#         than a chart value.
+# 0.1.15: track the v26.9.9.9 release — named metrics time ranges and a window stepper, Work Item
+#         Age bands in the work item dialog, one Behaviour Settings table that Feature Ordering moved
+#         into, and Faster Updates on by default for new instances. No chart values changed.
+# 0.1.16: track the v26.9.19.10 release — the risk an in-progress Work Item misses its team's SLE,
+#         a Task Manager showing what is refreshing and what is queued, with a stop, strictly opt-in
+#         usage data, parents read from a Jira instance's own issue links, and the move off MIT to
+#         the Lighthouse Source Available License 1.0. No chart values changed: the usage-data
+#         collector is baked into the published image, and the instance-wide veto over it is a
+#         Behaviour Setting row rather than a chart value.
 # 0.1.17: track the v26.9.24.6 release — a Delivery Timeline, forecasted start dates in the
 #         Features table and in write-back, and over-time charts that can fill in the days they
 #         missed, an opt-in Preview. No chart values changed: the history fill is a Behaviour
 #         Setting row, not a chart value.
+# 0.1.18: the bundled Postgres moves from 17 to 18 and carries 17 data across by itself on
+#         `helm upgrade` or a GitOps sync. The 17 copy is kept beside the upgraded one so that
+#         `helm rollback` brings it back, which takes about twice the data's space until it is removed.
+#         New value postgresql.upgrade.image (the image that reads the 17 data during the upgrade). An
+#         upgrade with `--reuse-values` keeps the old image value and stays on 17; the install notes
+#         say so.
 version: 0.1.17
-# appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
+# appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag).
 appVersion: "26.9.24.6"
 home: https://docs.lighthouse.letpeople.work
 sources:
