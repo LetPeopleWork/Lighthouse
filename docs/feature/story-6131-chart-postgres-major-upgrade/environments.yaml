@@ -1,0 +1,96 @@
+# environments.yaml — story-6131-chart-postgres-major-upgrade
+# Consumed by DISTILL for environmental realism: the acceptance scenarios are parametrized over these
+# states of the bundled Postgres volume and these ways of applying the chart. This is a chart feature, so an
+# "environment" is a cluster state plus an apply method, not an OS install target.
+
+target_environments:
+  - name: kind-clean-fresh
+    description: "Fresh install of the new chart on an empty PVC — initialises 18 in pgdata/ with no upgrade step; also the restart-time baseline for K3"
+    platform: [linux]
+    preconditions: ["kind cluster up", "postgres:17-trixie and postgres:18-trixie loaded into kind"]
+
+  - name: kind-0.1.17-with-data
+    description: "Chart 0.1.17 (docs/charts/lighthouse-0.1.17.tgz) installed, seeded with a marker row and known row counts, then upgraded with a plain helm upgrade to the new chart (17 -> 18)"
+    platform: [linux]
+    preconditions: ["kind cluster up", "0.1.17 API image 26.9.24.6 pullable", "seed script run through psql"]
+
+  - name: kind-0.1.17-sigkilled
+    description: "As kind-0.1.17-with-data, but the 0.1.17 Postgres pod ends unclean (smart shutdown outlives the grace period, or a forced delete) — the upgrade must recover the old cluster first"
+    platform: [linux]
+    preconditions: ["kind-0.1.17-with-data", "API connected, so the smart shutdown waits", "fallback: kubectl delete pod --grace-period=0 --force right after helm upgrade starts"]
+
+  - name: kind-after-rollback
+    description: "After an upgrade, helm rollback to the 0.1.17 revision; a row written on 17, then upgraded again — the old 18 copy must be detected as out of date and rebuilt"
+    platform: [linux]
+    preconditions: ["kind-0.1.17-with-data upgraded once", "a row written on 18 before the rollback"]
+
+  - name: kind-size-limited-pv
+    description: "0.1.17 installed on a static PV backed by a size-limited tmpfs in the kind node, sized so the old cluster fits and a second copy does not; then the tmpfs is remounted larger"
+    platform: [linux]
+    preconditions: ["privileged kind node (default)", "tmpfs mounted at /mnt/small in the node", "static PV with claimRef to data-l8e-lighthouse-postgres-0 and storageClassName lh-small"]
+
+  - name: kind-16-data
+    description: "0.1.17 installed with postgresql.image=postgres:16, then upgraded to the new chart — two majors behind, must refuse before writing"
+    platform: [linux]
+    preconditions: ["kind cluster up", "postgres:16 loaded into kind"]
+
+  - name: kind-newer-data-no-kept-copy
+    description: "Upgraded volume whose old copy was removed with the documented command (placeholder left), then postgresql.image pinned to postgres:17-trixie — must refuse naming both majors"
+    platform: [linux]
+    preconditions: ["kind-0.1.17-with-data upgraded once", "cleanup command run"]
+
+  - name: kind-interrupted-upgrade
+    description: "About 300 MB seeded on 0.1.17; the Postgres pod is deleted once pg-upgrade logs that the copy has started — the next start must redo the upgrade from the beginning"
+    platform: [linux]
+    preconditions: ["kind-0.1.17-with-data with a larger seed"]
+
+  - name: gitops-rendered
+    description: "Same upgrade applied as helm template | kubectl apply (how ArgoCD applies the chart on LPW tenants) — no Helm hooks, no release state"
+    platform: [linux]
+    preconditions: ["kind cluster up", "0.1.17 applied the same way first"]
+
+  - name: reuse-values
+    description: "helm upgrade --reuse-values from 0.1.17 — keeps the previous chart's postgres:17, does no upgrade, NOTES.txt prints the behind-the-default line"
+    platform: [linux]
+    preconditions: ["kind-0.1.17-with-data"]
+
+  - name: external-db
+    description: "postgresql.enabled=false — renders exactly as before the story; no StatefulSet, no init containers, no ConfigMap scripts"
+    platform: [linux]
+    preconditions: ["helm template only (render assertions)"]
+
+coexistence_matrix:
+  - tool: existing ci_chart.yml gates (helm lint, helm unittest incl. standalone gate, no-key-generation/no-lookup gate, render determinism, helm-docs drift)
+    must_not_break: true                    # new templates must pass every existing gate unchanged
+  - tool: ci_chart.yml install-smoke
+    must_not_break: true                    # fresh install now also runs the init containers' no-op path
+  - tool: ci_chart.yml publish + chart/scripts/version-guard.sh
+    must_not_break: true                    # gains the release-gate check and upgrade-path in needs; never overwrites a published version
+  - tool: Renovate (Postgres group, hand-merged chart values)
+    must_not_break: true                    # one added rule: the upgrade-source image never gets a major update
+  - tool: chart 0.1.17 on rollback
+    must_not_break: true                    # its fixed PGDATA (.../data/pgdata) must still find the untouched 17 cluster
+  - tool: external-database installs (postgresql.enabled=false)
+    must_not_break: true                    # byte-identical render
+  - tool: docker-compose example and standalone image
+    must_not_break: true                    # out of scope; untouched
+
+platform_coverage:
+  kubernetes: ["kind (CI)", "conformant self-hosted k8s", "k3s via ArgoCD (LPW tenants; platform currently torn down, unverified live)"]
+  apply_method: ["helm upgrade", "helm upgrade --reset-then-reuse-values", "helm template | kubectl apply (GitOps)"]
+  helm: ["4.3.0 (CI)", "3.x expected to behave the same; --reset-then-reuse-values needs Helm >= 3.14"]
+  postgres_images: ["postgres:18-trixie (main)", "postgres:17-trixie (upgrade source)", "postgres:16 (test only, gap refusal)"]
+  architectures:
+    amd64: "verified (DESIGN transplant run; CI runners)"
+    arm64: "UNVERIFIED — the images publish arm64 manifests built from the same Debian release, so the transplant is expected to work. Verified by running the happy leg once on an arm64 runner (ubuntu-24.04-arm) or an arm64 kind host"
+  CI: ["GitHub Actions ubuntu-latest + kind, upgrade-path job, matrix [happy, refusals]"]
+
+deployment_assumptions:
+  - "The Postgres StatefulSet stays single-replica and is replaced in place; the database is down for the copy, scaling with data size"
+  - "The upgrade runs only inside the Postgres pod (init containers); no Helm hook, no Job, no lookup — identical under helm and GitOps"
+  - "The old major's cluster stays in pgdata/ so a rollback to 0.1.17 starts on it; anything written after the upgrade is lost on rollback"
+  - "Every refusal happens before any write; the volume's sorted sha256 listing is identical before and after a refusal"
+  - "An interrupted upgrade leaves only pgdata-<major>.partial, which the next start deletes and redoes; Postgres never starts on it"
+  - "Restart of an already-upgraded pod adds under 5 s against a fresh install's start in the same cluster"
+  - "A chart release cannot move the default Postgres major without the pg-upgrade init container (version-guard.sh), and cannot publish with upgrade-path red (publish.needs)"
+  - "PVC growth on a real cluster needs a StorageClass with allowVolumeExpansion; the chart does not grow volumes"

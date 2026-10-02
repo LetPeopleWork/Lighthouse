@@ -539,3 +539,191 @@ disk, so a small PVC still looks spacious (inferred from how the provisioner wor
 uses a static PV backed by a size-limited tmpfs inside the kind node, bound to the StatefulSet's claim name.
 "Grow the PVC" becomes "enlarge the tmpfs" in the test. On a real cluster it is a PVC resize, which needs a
 StorageClass that allows volume expansion; the docs should say so.
+
+## Wave: DEVOPS / [REF] Summary
+
+Platform Architect (Apex). The deployment targets, orchestration, CI, observability posture, deployment
+strategy and branching model are fixed by the project and were not re-asked. This wave decides how the
+DESIGN is proven in CI, how the "18 only ships with the upgrade" rule is enforced, and how K1–K3 are
+measured. Environments are in `environments.yaml` next to this file; K1–K3 are appended to
+`docs/product/kpi-contracts.yaml`. Nothing in this wave contradicts DESIGN, so no Changed Assumptions entry
+was added.
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+| Environment | Who runs it | How it is reached | Verified by |
+|---|---|---|---|
+| Self-hoster's own Kubernetes, bundled Postgres | Operators | `helm upgrade` / `--reset-then-reuse-values` / `helm rollback` | The kind scenarios below; dogfood on local kind with a restored real backup |
+| LPW tenants | ArgoCD (rendered manifests) | Git revision bump of the chart | The `gitops-rendered` kind scenario. The platform is torn down, so there is no live tenant to check; the first respin after release is the first real run |
+| External database installs | Operators | Any upgrade | Render unchanged (helm-unittest plus the existing standalone gate); nothing new to deploy |
+| CI | GitHub Actions `ubuntu-latest` (amd64) + kind | `ci_chart.yml` | `upgrade-path` job |
+
+Every environment, with its preconditions, is listed in `environments.yaml`.
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline
+
+All changes go into the existing `.github/workflows/ci_chart.yml`. No new workflow file is added, because chart
+concerns already live in one workflow.
+
+**New job `upgrade-path`.** It uses the same triggers as the workflow: push to `main` on `chart/**` and the
+workflow file, `pull_request` on those paths (in practice Renovate's chart PRs), and `workflow_dispatch`. It
+runs on pull requests too, because a Renovate PR that moves either Postgres image is exactly the change it
+guards.
+
+- `runs-on: ubuntu-latest`, with the same pinned `checkout`, `setup-helm` (v4.3.0) and `kind-action`
+  (v1.15.0) steps as `install-smoke`. It has no `needs`, so it runs in parallel with `validate` and
+  `install-smoke`.
+- `strategy.matrix.group: [happy, refusals]`. Each group gets its own kind cluster, so the two run in parallel
+  and a failure names its group.
+  - `happy` (in order): install 0.1.17 and seed, upgrade, check counts, restart timing, rollback, write on 17,
+    re-upgrade, `--reuse-values` stays on 17 with the NOTES line. Then a second release in another
+    namespace goes through `helm template | kubectl apply` with the same assertions.
+  - `refusals`: no room and then grown, 16 data, newer data with the placeholder, interruption mid-copy,
+    unclean shutdown before the upgrade.
+- **The "before" chart** is `docs/charts/lighthouse-0.1.17.tgz`, installed by path. It is committed, and the
+  publish job never rewrites published packages, so the job needs no network access to the Helm repo and
+  cannot drift if the Pages site is down.
+- **The space-refusal volume.** The job runs
+  `docker exec <cluster>-control-plane sh -c 'mkdir -p /mnt/small && mount -t tmpfs -o size=<N>m tmpfs /mnt/small'`,
+  then applies a static `PersistentVolume`:
+  - `hostPath: /mnt/small`, `storageClassName: lh-small`;
+  - `claimRef` set to `<namespace>/data-l8e-lighthouse-postgres-0`;
+  - capacity equal to `postgresql.persistence.size`.
+
+  It then installs 0.1.17 with `postgresql.persistence.storageClass=lh-small`. N is chosen at run time from the
+  seeded size, so the old cluster fits and a second copy does not. `mount -o remount,size=<2N>m` "grows the
+  PVC", and the job waits for the next back-off retry to upgrade.
+  - The kind node container is privileged, so the mount is expected to work. If it does not, DELIVER falls
+    back to the guarded test-only free-space override named in DESIGN's open questions.
+- **Images.** Both kind clusters pull `postgres:16`, `postgres:17-trixie`, `postgres:18-trixie` and the 0.1.17
+  API image from their registries. The job pre-pulls them on the runner and runs `kind load docker-image`,
+  so each image is fetched once per job rather than once per node, which keeps Docker Hub's anonymous pull
+  limit out of reach.
+- **Budget:** 15 minutes per matrix leg (`timeout-minutes: 20`). `install-smoke` takes about 5 minutes today,
+  and the `happy` leg does about three installs' worth of work.
+- **Failure diagnostics** follow `install-smoke`: pods, `describe`, and `logs --all-containers`, which shows
+  the init containers' lines.
+
+**`validate` job additions** (seconds each):
+- `shellcheck` on the scripts inside the new ConfigMap, extracted with `helm template`.
+- The template constants in `_helpers.tpl` equal the `values.yaml` defaults.
+- The upgrade-source image's major is exactly one below the main image's.
+
+**Release gate (only Postgres 18 ships with the upgrade).** One more check in
+`chart/scripts/version-guard.sh`, which already runs in `publish` before anything is packaged:
+- Read the default `postgresql.image` major from `values.yaml` and from the latest package in `docs/charts/`
+  (`helm show values`).
+- If the major moved and the StatefulSet template carries no `pg-upgrade` init container, refuse with
+  "default Postgres major moved from 17 to 18 without the in-chart upgrade; pin postgresql.image to postgres:17
+  or ship story 6131 first".
+
+This is the cheapest reliable form. It costs a few lines in a script that already reads the same files, runs
+exactly when a version is about to be published, and needs no checklist to be remembered. Running it in
+`validate` instead would turn every `main` push red until this story lands, because `main` already defaults to
+18. `upgrade-path` is added to `publish.needs`, so a release cannot ship when the upgrade itself is red.
+
+**Local parity.** The repo has no chart pre-commit hook, and none is added. DELIVER runs `helm unittest`,
+`shellcheck` and the same `chart/tests/upgrade-path/*.sh` scripts against a local kind cluster before pushing.
+The scripts take the cluster name as an argument so they run unchanged locally and in CI.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts
+
+| KPI | Measured by | When | Gate |
+|---|---|---|---|
+| K1: 0 crash-loops reported on the release that moves to 18 | `gh issue list -R LetPeopleWork/Lighthouse --search "incompatible with server" --state all`, plus a manual search of the community Slack for the same phrase | 60 days after the release, checked at 30 and 60 | None automated; the maintainer reads it |
+| K2: every upgrade scenario green on every chart change | `gh run list -R LetPeopleWork/Lighthouse --workflow ci_chart.yml --json conclusion,jobs` over the window, counting `upgrade-path` legs that are not `success` on `main` | Continuous; read at DELIVER finalize and at the 60-day K1 check | `upgrade-path` is in `publish.needs`, so a red leg blocks the release |
+| K3: under 5 s added to a restart once upgraded | In the `happy` leg: Ready time of the already-upgraded pod after `kubectl delete pod`, against the Ready time of a fresh install with no upgrade due in the same cluster | Every chart change | Hard assertion in the leg (difference under 5000 ms) |
+
+## Wave: DEVOPS / [REF] Deployment Strategy and Rollback Contract
+
+- **Postgres StatefulSet**: one replica, replaced in place by the default `RollingUpdate`. The database is
+  down from the moment the old pod stops until the new one is Ready. On an upgrade that includes the copy,
+  which scales with the data size (8 s for 76 MB on disk in DESIGN's measurement). Bundled Postgres has never
+  been zero-downtime, and this keeps it that way.
+- **API Deployment**: unchanged rolling update. Pods lose the database during the window and recover on
+  their own when it returns. Nothing in the API changes.
+- **Timeouts**: `helm upgrade --wait` defaults to 5 minutes. On a large database it can time out while the
+  pod is still copying. The pod finishes regardless, and the docs advise `--timeout 15m` for databases
+  above a few GB. ArgoCD keeps reporting `Progressing` until the pod is Ready.
+- **Rollback contract**, written first:
+  1. `helm rollback <release> <revision on 0.1.17>`, or for ArgoCD, revert the chart revision in Git. Postgres
+     starts on 17 from the kept `pgdata/`. Anything written after the upgrade is not there.
+  2. Upgrading again redoes the copy from the 17 data. The old 18 copy is detected as out of date and
+     replaced.
+  3. A rollback between two revisions of the new chart changes nothing on the volume.
+  4. After the operator runs the cleanup command, a rollback to 0.1.17 is no longer possible and fails
+     loudly. The docs say so next to the command.
+  5. Proven by the `happy` leg on every chart change. That is what makes it a tested rollback rather than a
+     documented one.
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+Stryker per feature does not apply: this story adds no C# and no TypeScript, only templates, shell scripts
+and YAML. Nothing equivalent exists for Helm templates or shell. The substitute, stated so it is not a
+silent N/A:
+- `shellcheck` on every script, in `validate`.
+- The refusal scenarios act as the mutation check for the upgrade logic. Each one takes the volume's sorted
+  `sha256sum` listing before and after, and asserts it is identical. So a script that wrote anything before
+  deciding to refuse fails the job, which is the fault a mutant would plant.
+- The interruption and stale-copy scenarios do the same for the two failure modes the marker and the rename
+  exist to stop.
+- helm-unittest covers the render-time branches: gating, nil-safe fallbacks, and the NOTES line in both
+  directions.
+
+## Wave: DEVOPS / [REF] Observability
+
+No new stack. The bundled Postgres has no metrics and no alerting, and this story adds none.
+- The only signal is the container log. `pg-upgrade` writes one `lighthouse-postgres:` line per step
+  (decision, checks passed, recovery, copy started, copy finished, renamed). A refusal is one line naming the
+  reason and the fix.
+- The refusal line is also written to the termination message, so `kubectl describe pod` and ArgoCD's
+  resource view show it without reading logs.
+- `kubectl logs <pod> --all-containers` is the documented way to read the lines.
+- Self-hosters who scrape container logs get these lines with no extra setup.
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+Trunk-based on `main`, as the project already works: focused commits pushed straight to `origin main`, with
+no feature branch and no PR. `ci_chart.yml` runs on the push. Renovate's PRs are the only pull requests that
+touch the chart, and `upgrade-path` runs on them too. A chart release is the version-bump commit, and it
+publishes through the existing `Release`-gated `publish` job.
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Existing gate or tool | Effect of this story |
+|---|---|
+| `helm lint` (default + enterprise values) | Unchanged; must stay green with the new templates |
+| `helm unittest` | One new suite; existing suites, including the standalone gate, unchanged |
+| Standalone gate step (one Deployment, provider postgres) | Unchanged; the init containers are on the StatefulSet, not a Deployment |
+| No-key-generation / no-`lookup` gate | Stays green by construction; the NOTES line compares strings only. The gate scans `templates/*.yaml` and `*.tpl`, so it also covers the new ConfigMap |
+| Render determinism gate | Stays green; nothing random or time-based is rendered |
+| helm-docs drift gate | The new value needs `chart/README.md` regenerated in the same commit |
+| `install-smoke` | Unchanged; a fresh install still runs the init containers' no-op path, so it now proves that path too |
+| `publish` + `version-guard.sh` | `needs` gains `upgrade-path`; the guard gains the release-gate check |
+| Renovate Postgres group | Gains one rule: the upgrade-source image never gets a major update. Chart value changes stay hand-merged |
+| `ci_verifypostgres`, Testcontainers fixture, local dev Postgres | Unaffected; they do not use the chart |
+| docker-compose example | Unaffected; it keeps its manual path |
+
+## Wave: DEVOPS / [REF] Usage-Data Event
+
+**N/A**, for three reasons:
+- **The API cannot observe the upgrade.** It runs in the database pod's init containers before the
+  database, let alone the API, is up. The API cannot read the PVC, so it cannot tell whether its database was
+  upgraded, freshly created, or external.
+- **No consent path exists there.** The chart has no event pipe of its own, and usage data is opt-in per
+  browser and forwarded by the backend. Nothing reaches it from the cluster.
+- **The KPIs don't need it.** K1 counts reported crash-loops, and K2–K3 are measured in CI.
+
+The existing deployment-mode property already says an instance runs on `Kubernetes`. Nothing is added to
+`UsageDataEventName` or `docs/settings/usagedata.md`.
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- `docs/charts/lighthouse-0.1.17.tgz` is in the repo (checked) and stays byte-identical.
+- The 0.1.17 API image (`26.9.24.6`) and `postgres:16`, `postgres:17-trixie`, `postgres:18-trixie` are
+  pullable. The amd64 and arm64 manifests of the two trixie tags were checked in DESIGN.
+- The DESIGN components exist before the `upgrade-path` job can go green. Until then the job is added
+  together with the slice-01 code, so it is never red on `main`.
+- The release gate in `version-guard.sh` lands in slice 01. It protects any chart release cut before slice
+  02 finishes.
+- A real Lighthouse backup for the dogfood, restored with `Restore-DbBackup.ps1` into a 0.1.17 kind install.

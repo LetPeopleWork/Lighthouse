@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-29
+updated: 2026-10-02
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -1801,3 +1801,52 @@ outcomes:
     measurement_window: "slice 01, then continuous per instance"
     alerting: ["Warning report-creation-slow -> Recent problems"]
     status: designed-not-shipped
+
+  - id: OUT-6131-no-incompatible-crash-loops
+    feature: story-6131-chart-postgres-major-upgrade
+    title: No bundled install crash-loops on a Postgres major move
+    target: "0 reports of 'database files are incompatible with server' against the chart release that moves the default to postgres 18, in the 60 days after it is published"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh issue list -R LetPeopleWork/Lighthouse --state all --search "incompatible with server created:>=$RELEASE"
+      --json number,title,createdAt, keeping issues that name the chart or Kubernetes. The community Slack has no
+      query API, so the maintainer searches it by hand for the same phrase at the same check points. A report
+      against a release that does not move the major is not counted.
+    measurement_window: 60 days after the chart release that defaults to postgres 18, checked at 30 and 60 days
+    acceptance_scenarios: "none directly; the guarantee behind it is OUT-6131-upgrade-scenarios-green"
+    alerting: []
+    status: live-on-release
+
+  - id: OUT-6131-upgrade-scenarios-green
+    feature: story-6131-chart-postgres-major-upgrade
+    title: The upgrade, rollback and refusal guarantees are re-proved on every chart change
+    target: "100% of upgrade-path matrix legs (happy, refusals) on main conclude success; a release cannot publish with one red"
+    measurement_scope: vendor_repository
+    measured_by: >
+      gh run list -R LetPeopleWork/Lighthouse --workflow ci_chart.yml --branch main --json databaseId,conclusion,createdAt,
+      then gh run view <id> --json jobs, counting upgrade-path legs whose conclusion is not success. The release side
+      is enforced, not measured: upgrade-path is in the publish job's needs.
+    measurement_window: continuous; read at DELIVER finalize and at the 60-day check of OUT-6131-no-incompatible-crash-loops
+    acceptance_scenarios:
+      - file: chart/tests/acceptance/upgrade-bundled-postgres.feature
+        scenario: "all scenarios tagged @env:ci-kind-upgrade"
+        gate_type: hard
+    alerting: []
+    status: live-on-release
+
+  - id: OUT-6131-restart-overhead
+    feature: story-6131-chart-postgres-major-upgrade
+    title: An already-upgraded Postgres pod restarts almost as fast as before
+    target: "< 5 s added to the time from pod deletion to Ready, against a fresh install with no upgrade due in the same kind cluster"
+    ga_baseline: "about 2 s for two init containers, MEASURED on kind during DESIGN (2026-10-02) with trivial init containers"
+    measurement_scope: vendor_repository
+    measured_by: >
+      The happy leg of the upgrade-path job times kubectl delete pod to condition Ready for the upgraded pod and for
+      a fresh-install pod, and asserts the difference is under 5000 ms. The measured values are printed in the job log.
+    measurement_window: every chart change
+    acceptance_scenarios:
+      - file: chart/tests/acceptance/upgrade-bundled-postgres.feature
+        scenario: "Restarting an upgraded Postgres pod does not run the upgrade again"
+        gate_type: hard
+    alerting: []
+    status: live-on-release
