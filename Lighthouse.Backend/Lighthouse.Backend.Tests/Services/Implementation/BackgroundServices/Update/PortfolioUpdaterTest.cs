@@ -766,7 +766,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private static string ReadUpdateSummary(Mock loggerMock)
         {
             var summary = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Where(i => i.Arguments[0] is LogLevel.Information)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
                 .SingleOrDefault(message => message.Contains("Update completed", StringComparison.Ordinal));
 
@@ -791,7 +791,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private static List<string> ReadErrors(Mock loggerMock)
         {
             return loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
+                .Where(i => i.Arguments[0] is LogLevel.Error)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
                 .ToList();
         }

@@ -190,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Select(feature => $"{feature.Key}: {string.Join("/", EveryPercentileOf(dates, feature.Key))}")
                 .ToList();
 
-        private static List<object[]> TheErrorsLogged(Mock<ILogger<ForecastService>> logger)
+        private static List<object?[]> TheErrorsLogged(Mock<ILogger<ForecastService>> logger)
             => logger.Invocations
                 .Where(invocation => invocation.Arguments.Contains(LogLevel.Error))
                 .Select(invocation => invocation.Arguments.ToArray())

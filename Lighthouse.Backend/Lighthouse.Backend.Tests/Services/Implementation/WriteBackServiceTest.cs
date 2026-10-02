@@ -290,7 +290,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await service.WriteFieldsToWorkItems(connection, updates);
 
             var errorInvocations = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
+                .Where(i => i.Arguments[0] is LogLevel.Error)
                 .ToList();
 
             using (Assert.EnterMultipleScope())
@@ -542,7 +542,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private void AssertInformationLoggedContaining(string expected)
         {
             var messages = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Where(i => i.Arguments[0] is LogLevel.Information)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
 
             Assert.That(messages, Has.One.Contains(expected));
@@ -550,7 +550,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private List<string> WarningInvocations()
             => [.. loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Warning)
+                .Where(i => i.Arguments[0] is LogLevel.Warning)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)];
 
         private void AssertWarningLoggedContaining(string expected)

@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static string ReadWarning(Mock<ILogger<JiraWorkTrackingConnector>> loggerMock)
         {
             var warning = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Warning)
+                .Where(i => i.Arguments[0] is LogLevel.Warning)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
                 .FirstOrDefault(message => message.Contains("refused the query", StringComparison.Ordinal));
 

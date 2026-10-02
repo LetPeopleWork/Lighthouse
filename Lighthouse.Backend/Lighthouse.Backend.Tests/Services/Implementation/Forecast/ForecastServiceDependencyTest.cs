@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             Dictionary<string, Dictionary<int, int>> dates, string waiting, string waitedOn)
             => ThePercentilesLighthouseShows.All(percentile => dates[waiting][percentile] >= dates[waitedOn][percentile]);
 
-        private static List<object[]> TheErrorsLogged(Mock<ILogger<ForecastService>> logger)
+        private static List<object?[]> TheErrorsLogged(Mock<ILogger<ForecastService>> logger)
             => logger.Invocations
                 .Where(invocation => invocation.Arguments.Contains(LogLevel.Error))
                 .Select(invocation => invocation.Arguments.ToArray())

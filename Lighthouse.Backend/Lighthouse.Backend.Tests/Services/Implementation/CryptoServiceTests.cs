@@ -328,8 +328,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private List<object> WarningStates()
         {
             return [.. loggerMock.Invocations
-                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log) && (LogLevel)invocation.Arguments[0] == LogLevel.Warning)
-                .Select(invocation => invocation.Arguments[2])];
+                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log) && invocation.Arguments[0] is LogLevel.Warning)
+                .Select(invocation => invocation.Arguments[2])
+                .OfType<object>()];
         }
 
         private List<KeyValuePair<string, object?>> TheOnlyWarningsProperties()
