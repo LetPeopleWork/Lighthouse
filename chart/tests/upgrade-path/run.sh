@@ -427,20 +427,21 @@ apply_rendered() {
   helm template "$RELEASE" "$chart" -n "$ns" "${VALUES[@]}" | kubectl -n "$ns" apply -f - >/dev/null
 }
 
-# Starts Postgres 17 on a copy of pgdata taken from the volume, mounted read-only, so opening the kept
-# data cannot change a byte of it: any start of Postgres 17 on the volume itself rewrites pg_control.
+# Starts Postgres on a copy of a kept folder taken from the volume, mounted read-only, so opening the kept
+# data cannot change a byte of it: any start of Postgres on the volume itself rewrites pg_control. The
+# image defaults to Postgres 17 and the folder to pgdata, the copy a first upgrade from 17 keeps.
 open_kept_copy() {
-  local ns="$1" script overrides deadline=$((SECONDS + 300))
-  script='cp -a /volume/pgdata /copy/pgdata && chown -R postgres:postgres /copy/pgdata && chmod 0700 /copy/pgdata && exec gosu postgres postgres -D /copy/pgdata'
-  overrides="$(jq -cn --arg script "$script" --arg claim "data-$POSTGRES_POD" '{spec: {
-    containers: [{name: "postgres", image: "postgres:17-trixie", command: ["bash", "-c", $script],
+  local ns="$1" image="${2:-postgres:17-trixie}" folder="${3:-pgdata}" script overrides deadline=$((SECONDS + 300))
+  script="cp -a /volume/$folder /copy/kept && chown -R postgres:postgres /copy/kept && chmod 0700 /copy/kept && exec gosu postgres postgres -D /copy/kept"
+  overrides="$(jq -cn --arg script "$script" --arg claim "data-$POSTGRES_POD" --arg image "$image" '{spec: {
+    containers: [{name: "postgres", image: $image, command: ["bash", "-c", $script],
       volumeMounts: [{name: "data", mountPath: "/volume", readOnly: true}, {name: "copy", mountPath: "/copy"}]}],
     volumes: [{name: "data", persistentVolumeClaim: {claimName: $claim, readOnly: true}}, {name: "copy", emptyDir: {}}]}}')"
-  kubectl -n "$ns" run kept-copy --restart=Never --image=postgres:17-trixie --overrides="$overrides" >/dev/null
+  kubectl -n "$ns" run kept-copy --restart=Never --image="$image" --overrides="$overrides" >/dev/null
   until kubectl -n "$ns" exec kept-copy -c postgres -- pg_isready -q >/dev/null 2>&1; do
     if [[ $SECONDS -ge $deadline || "$(kubectl -n "$ns" get pod kept-copy -o jsonpath='{.status.phase}')" == "Failed" ]]; then
       kubectl -n "$ns" logs kept-copy >&2 || true
-      fail "Postgres 17 did not open the kept copy in $ns"
+      fail "$image did not open the kept copy $folder in $ns"
     fi
     sleep 2
   done
@@ -1119,17 +1120,94 @@ interrupted_cleanup_never_costs_upgraded_copy() {
 
 # --- group: chain (slice 03), in the order the scenarios build on each other ---------------------------
 # A Postgres 16 volume upgraded to 17 by the new chart pinned to 17, then to 18 by the chart's defaults,
-# because no Postgres 19 image exists yet. Every function below is a scaffold until slice 03 is delivered.
+# because no Postgres 19 image exists yet. Functions still written as one scaffold line are not delivered
+# yet.
 
 readonly CHAIN_NS="chain-16-17"
+readonly CHAIN_PIN_17=(--set postgresql.image=postgres:17-trixie --set postgresql.upgrade.image=postgres:16-trixie)
+CHAIN_UPGRADED_ONCE=""
 
 scaffold() {
   local scenario="$1"
   fail "SCAFFOLD: not yet implemented — $scenario"
 }
 
-chain_first_upgrade_removes_nothing() { scaffold "The first upgrade on a volume removes nothing"; }
-chain_second_upgrade_keeps_every_row() { scaffold "A volume already upgraded once moves on to the next major with every row"; }
+given_chain_upgraded_once() {
+  [[ -n "$CHAIN_UPGRADED_ONCE" ]] || chain_first_upgrade_removes_nothing
+}
+
+volume_sha256() {
+  local ns="$1" path="$2"
+  in_postgres "$ns" sha256sum "$MOUNT/$path" | cut -d' ' -f1
+}
+
+# A copy is only current while its note carries the hash of the control file of the copy it was made from,
+# so the note must name that copy's major and hash exactly.
+assert_note_names_source() {
+  local ns="$1" copy="$2" source_major="$3" source_folder="$4" note hash
+  note="$(volume_file "$ns" "$copy/.lighthouse-upgrade")"
+  hash="$(volume_sha256 "$ns" "$source_folder/global/pg_control")"
+  grep -qx "source_major=$source_major" <<<"$note" \
+    || fail "$copy in $ns carries no note saying it was upgraded from Postgres $source_major: $note"
+  grep -qx "source_pg_control_sha256=$hash" <<<"$note" \
+    || fail "the note in $copy in $ns does not carry the hash of $source_folder/global/pg_control ($hash): $note"
+}
+
+assert_nothing_removed() {
+  local ns="$1" removals
+  removals="$(upgrade_log "$ns" | grep '^lighthouse-postgres:' | grep -i 'remov' || true)"
+  [[ -z "$removals" ]] || fail "the upgrade log in $ns speaks of removing a copy: $removals"
+}
+
+# The first link of the chain: 0.1.17 on Postgres 16, then the new chart pinned to 17 with 16 as the
+# upgrade source. It must behave exactly as a first upgrade always has.
+chain_first_upgrade_removes_nothing() {
+  local ns="$CHAIN_NS" counts
+  install_with_data "$ns" --set postgresql.image=postgres:16-trixie
+  counts="$(public_row_counts "$ns")"
+
+  upgrade_to_new_chart "$ns" "${CHAIN_PIN_17[@]}"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata-17
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+  assert_upgrade_log_says "$ns" "upgrading the Postgres 16 data in pgdata to Postgres 17 in pgdata-17; pgdata is kept as it is"
+  assert_nothing_removed "$ns"
+  assert_note_names_source "$ns" pgdata-17 16 pgdata
+
+  stop_database "$ns"
+  open_kept_copy "$ns" postgres:16-trixie pgdata
+  [[ "$(public_row_counts "$ns" kept-copy)" == "$counts" ]] \
+    || fail "the kept Postgres 16 copy in $ns no longer holds the recorded row counts"
+  close_kept_copy "$ns"
+  start_database "$ns"
+  wait_postgres_ready "$ns"
+  wait_api_ready "$ns"
+  CHAIN_UPGRADED_ONCE=1
+}
+
+chain_second_upgrade_keeps_every_row() {
+  local ns="$CHAIN_NS" counts line
+  given_chain_upgraded_once
+  write_marker_table "$ns" upgrade_path_written_on_17
+  counts="$(public_row_counts "$ns")"
+
+  upgrade_to_new_chart "$ns" --reset-values
+
+  assert_carried_across "$ns" "$counts"
+  assert_data_directory "$ns" pgdata-18
+  [[ "$(marker_rows_in "$ns" upgrade_path_written_on_17)" == "1" ]] \
+    || fail "the row written on Postgres 17 in $ns did not reach Postgres 18"
+  line="$(the_one_line_with "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18" "$(upgrade_log "$ns")")" \
+    || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one line naming pgdata-17 as source and pgdata-18 as target"; }
+  echo "  $line"
+  grep -qF "pgdata-17 is kept" <<<"$line" || fail "the upgrade line in $ns does not say pgdata-17 is kept: $line"
+  assert_note_names_source "$ns" pgdata-18 17 pgdata-17
+}
+
 chain_second_upgrade_removes_copy_before_last() { scaffold "Once the new copy is in place, the copy before last is removed and one rollback step is kept"; }
 chain_restart_after_second_upgrade_does_nothing() { scaffold "Restarting the database after a second upgrade does not upgrade or remove anything"; }
 chain_rollback_one_chart_starts_previous_major_and_warns() { scaffold "Rolling back one chart after a second upgrade starts the previous major and says what is missing"; }
@@ -1153,7 +1231,7 @@ chain_cleanup_refuses_past_unreadable_copy_not_started() { scaffold "The cleanup
 chain_unremovable_leftover_never_stops_the_start() { scaffold "A copy that cannot be fully removed never stops the database starting on the new copy"; }
 
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
-# one before it. CHAIN holds only scaffolds until slice 03 is delivered.
+# one before it.
 readonly HAPPY=(
   fresh_install_starts_18_without_upgrading
   upgrade_plain_helm_upgrade_keeps_every_row
@@ -1184,27 +1262,6 @@ readonly REFUSALS=(
 readonly CHAIN=(
   chain_first_upgrade_removes_nothing
   chain_second_upgrade_keeps_every_row
-  chain_second_upgrade_removes_copy_before_last
-  chain_restart_after_second_upgrade_does_nothing
-  chain_rollback_one_chart_starts_previous_major_and_warns
-  chain_upgrade_again_after_one_chart_rollback_starts_afresh
-  chain_pin_back_one_major_starts_kept_copy_and_warns
-  chain_pin_back_two_majors_refuses_and_touches_nothing
-  chain_rollback_two_charts_fails_loudly
-  chain_cleanup_removes_every_older_copy_and_reruns
-  chain_cut_off_cleanup_is_finished_by_running_again
-  chain_interrupted_removal_is_finished_by_next_start
-  chain_interrupted_second_upgrade_removes_nothing
-  chain_too_little_room_names_cleanup_and_touches_nothing
-  chain_cleaned_volume_moves_on_and_removes_nothing
-  chain_out_of_date_copy_counts_as_older_major_and_refuses
-  chain_gap_from_a_copy_refuses_and_touches_nothing
-  chain_pin_back_after_cut_off_cleanup_keeps_pinned_data
-  chain_unreadable_live_copy_refuses_before_writing
-  chain_unfollowable_chain_is_refused_once_by_upgrade_step
-  chain_cleanup_refuses_past_unreadable_copy_not_started
-  chain_cleanup_finishes_started_removal_past_unreadable_copy
-  chain_unremovable_leftover_never_stops_the_start
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later

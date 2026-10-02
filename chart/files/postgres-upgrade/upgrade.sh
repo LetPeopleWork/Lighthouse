@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Runs as root in the database image before every start of the database. It picks the data directory the
-# server starts on and, when the data is one major behind this image, builds an upgraded copy beside it.
-# The original data stays in pgdata/, where the previous chart release looks for it, so a rollback to
-# that release still finds the database as it was before the upgrade.
+# server starts on and, when the copy the database runs on is one major behind this image, builds an
+# upgraded copy beside it. The copy it read from stays as it was, where the previous chart release looks
+# for it, so a rollback to that release still finds the database as it was before the upgrade.
 #
 # Anything it does not recognise is refused before a single byte on the volume is written: one line in
 # the log and in the pod's termination message, then a non-zero exit so the kubelet retries by itself.
 set -euo pipefail
 
-readonly MOUNT=/var/lib/postgresql/data
+# shellcheck source-path=SCRIPTDIR source=volume.sh
+source "$(dirname "${BASH_SOURCE[0]}")/volume.sh"
+
 readonly OLD="$MOUNT/pgdata"
 readonly DOCS=https://docs.lighthouse.letpeople.work/Installation/kubernetes.html
 readonly MANUAL_PATH="$DOCS#moving-data-two-or-more-majors-behind-by-hand"
@@ -52,7 +54,6 @@ readonly PREVIOUS_MAJOR=$((MAJOR - 1))
 readonly NEW="$MOUNT/pgdata-$MAJOR"
 readonly PARTIAL="$NEW.partial"
 readonly STALE="$NEW.stale"
-readonly UPGRADE_NOTE=.lighthouse-upgrade
 readonly NEW_BIN="/usr/lib/postgresql/$MAJOR/bin"
 readonly OLD_BINARIES=/old-binaries
 readonly SOURCE_OS="$OLD_BINARIES/os-release"
@@ -74,12 +75,6 @@ as_postgres() {
 
 start_on() {
   printf '%s\n' "$1" >"$DECISION"
-}
-
-data_major() {
-  if [[ -s "$OLD/PG_VERSION" ]]; then
-    cat "$OLD/PG_VERSION"
-  fi
 }
 
 # Every pgdata-* entry on the volume except an unfinished copy for this image's major, which an upgrade
@@ -110,31 +105,6 @@ newest_copy_major() {
     fi
   done
   echo "$newest"
-}
-
-has_placeholder() {
-  local path
-  for path in "$OLD"/UPGRADED-TO-*; do
-    if [[ -e "$path" ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
-copy_holds_major() {
-  [[ "$(cat "$MOUNT/pgdata-$1/PG_VERSION" 2>/dev/null)" == "$1" ]]
-}
-
-# Empty when the old data's control file is missing, empty or unreadable. Only a hash actually computed
-# may decide that the upgraded copy is out of date: an empty one matches no note, and would have the live
-# copy replaced by an upgrade of data that cannot even be opened.
-pg_control_hash() {
-  local control="$OLD/global/pg_control" hash=""
-  if [[ -f "$control" && -s "$control" && -r "$control" ]]; then
-    hash="$(sha256sum "$control" 2>/dev/null | cut -d' ' -f1)" || hash=""
-  fi
-  echo "$hash"
 }
 
 describe_volume() {
@@ -223,7 +193,7 @@ refuse_unreadable_old_data() {
 
 controldata() {
   local bin="$1" field="$2"
-  as_postgres "$bin/pg_controldata" "$OLD" | sed -n "s/^$field: *//p"
+  as_postgres "$bin/pg_controldata" "$SOURCE" | sed -n "s/^$field: *//p"
 }
 
 old_psql() {
@@ -236,20 +206,24 @@ old_psql() {
 # the old server was killed rather than stopped, that start is also its crash recovery.
 read_old_cluster_settings() {
   local old_bin="$1" from="$2"
-  if [[ "$(controldata "$old_bin" "Database cluster state")" != "shut down" || -e "$OLD/postmaster.pid" ]]; then
+  if [[ "$(controldata "$old_bin" "Database cluster state")" != "shut down" || -e "$SOURCE/postmaster.pid" ]]; then
     say "the Postgres $from data was not shut down cleanly; starting it once with Postgres $from to recover it"
   else
     say "reading the settings of the Postgres $from database"
   fi
-  as_postgres "$old_bin/pg_ctl" -D "$OLD" -w --timeout="$OLD_SERVER_WAIT_SECONDS" \
+  as_postgres "$old_bin/pg_ctl" -D "$SOURCE" -w --timeout="$OLD_SERVER_WAIT_SECONDS" \
     -o "-c listen_addresses='' -c unix_socket_directories=$SOCKET_DIR -p $OLD_PORT" start
   local template1
   SUPERUSER="$(old_psql "SELECT rolname FROM pg_authid WHERE oid = 10")"
-  template1="$(old_psql "SELECT pg_encoding_to_char(encoding), datcollate, datctype, datlocprovider,
-                                coalesce(datlocale, ''), coalesce(daticurules, '')
-                         FROM pg_database WHERE datname = 'template1'")"
+  # The locale columns differ between majors (Postgres 16 calls datlocale daticulocale), so they are read
+  # by name from the row as JSON, where a column the old major lacks reads as empty instead of failing.
+  template1="$(old_psql "SELECT pg_encoding_to_char(encoding), datcollate, datctype,
+                                coalesce(to_jsonb(d) ->> 'datlocprovider', 'c'),
+                                coalesce(to_jsonb(d) ->> 'datlocale', to_jsonb(d) ->> 'daticulocale', ''),
+                                coalesce(to_jsonb(d) ->> 'daticurules', '')
+                         FROM pg_database d WHERE datname = 'template1'")"
   IFS='|' read -r ENCODING COLLATE CTYPE PROVIDER LOCALE ICU_RULES <<<"$template1"
-  as_postgres "$old_bin/pg_ctl" -D "$OLD" -m fast -w --timeout="$OLD_SERVER_WAIT_SECONDS" stop
+  as_postgres "$old_bin/pg_ctl" -D "$SOURCE" -m fast -w --timeout="$OLD_SERVER_WAIT_SECONDS" stop
   say "the Postgres $from data is shut down cleanly"
 }
 
@@ -264,8 +238,11 @@ initdb_like_old_cluster() {
   if [[ -n "$ICU_RULES" ]]; then
     args+=(--icu-rules="$ICU_RULES")
   fi
+  # initdb turns checksums on by default from Postgres 18, which is also when it learnt to be told not to.
   if [[ "$(controldata "$old_bin" "Data page checksum version")" == "0" ]]; then
-    args+=(--no-data-checksums)
+    if [[ "$MAJOR" -ge 18 ]]; then
+      args+=(--no-data-checksums)
+    fi
   else
     args+=(--data-checksums)
   fi
@@ -280,7 +257,7 @@ kib_in() {
 # out-of-date copy is only removed once its replacement is in place, so its space does not.
 ensure_room_for_copy() {
   local from="$1" data_kib needed_kib free_kib
-  data_kib="$(kib_in "$OLD")"
+  data_kib="$(kib_in "$SOURCE")"
   needed_kib=$((data_kib * (100 + COPY_HEADROOM_PERCENT) / 100 + COPY_HEADROOM_FIXED_KIB))
   free_kib="$(df -Pk "$MOUNT" | awk 'NR == 2 { print $4 }')"
   if [[ -e "$PARTIAL" ]]; then
@@ -312,7 +289,7 @@ set_earlier_copy_aside() {
     rm -rf "$PARTIAL"
   fi
   if [[ -e "$NEW" ]]; then
-    say "pgdata-$MAJOR is out of date: Postgres $from has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata"
+    say "pgdata-$MAJOR is out of date: Postgres $from has run on $LIVE_COPY since that copy was made, so it is discarded and the upgrade redone from $LIVE_COPY"
     mv -T "$NEW" "$STALE"
   fi
 }
@@ -324,7 +301,7 @@ write_upgrade_note() {
   as_postgres tee "$PARTIAL/$UPGRADE_NOTE" >/dev/null <<EOF
 source_major=$from
 source_system_identifier=$(controldata "$old_bin" "Database system identifier")
-source_pg_control_sha256=$(pg_control_hash)
+source_pg_control_sha256=$(control_hash "$LIVE_COPY")
 EOF
 }
 
@@ -336,7 +313,7 @@ upgrade() {
   ensure_room_for_copy "$from"
 
   set_earlier_copy_aside "$from"
-  say "upgrading the Postgres $from data in pgdata to Postgres $MAJOR in pgdata-$MAJOR; pgdata is kept as it is"
+  say "upgrading the Postgres $from data in $LIVE_COPY to Postgres $MAJOR in pgdata-$MAJOR; $LIVE_COPY is kept as it is"
   mkdir "$PARTIAL"
   chown postgres:postgres "$PARTIAL"
   chmod 0700 "$PARTIAL"
@@ -344,17 +321,17 @@ upgrade() {
   read_old_cluster_settings "$old_bin" "$from"
   initdb_like_old_cluster "$old_bin"
   (cd "$SOCKET_DIR" && as_postgres "$NEW_BIN/pg_upgrade" --copy \
-    -b "$old_bin" -B "$NEW_BIN" -d "$OLD" -D "$PARTIAL" -U "$SUPERUSER" --socketdir="$SOCKET_DIR")
+    -b "$old_bin" -B "$NEW_BIN" -d "$SOURCE" -D "$PARTIAL" -U "$SUPERUSER" --socketdir="$SOCKET_DIR")
   # A cluster made by initdb alone accepts no password logins over the network, which is how Lighthouse
   # connects, so the old cluster's rules come across with the data.
-  as_postgres cp "$OLD/pg_hba.conf" "$OLD/pg_ident.conf" "$PARTIAL/"
+  as_postgres cp "$SOURCE/pg_hba.conf" "$SOURCE/pg_ident.conf" "$PARTIAL/"
 
   write_upgrade_note "$from" "$old_bin"
   sync
   mv -T "$PARTIAL" "$NEW"
   sync "$MOUNT"
   rm -rf "$STALE"
-  say "upgrade finished: Postgres $MAJOR starts on pgdata-$MAJOR, and the Postgres $from data stays in pgdata"
+  say "upgrade finished: Postgres $MAJOR starts on pgdata-$MAJOR, and the Postgres $from data stays in $LIVE_COPY"
 }
 
 # --- what the volume holds: one predicate per kind of volume, tried in the order main lists them ------
@@ -399,12 +376,19 @@ data_one_behind_without_copy() {
   [[ "$DATA_MAJOR" =~ ^[0-9]+$ && "$DATA_MAJOR" -eq "$PREVIOUS_MAJOR" && -z "$OTHER_COPIES" ]]
 }
 
+# The database runs on a copy an earlier upgrade made, one major behind this image, and no copy of this
+# major is on the volume yet. The copy's control file must be readable, or Postgres could not open it to
+# upgrade it.
+live_copy_one_behind_without_copy() {
+  [[ "$LIVE_MAJOR" == "$PREVIOUS_MAJOR" && ! -e "$NEW" && -n "$(control_hash "$LIVE_COPY")" ]]
+}
+
 data_out_of_reach() {
   [[ "$DATA_MAJOR" =~ ^[0-9]+$ ]] && [[ "$DATA_MAJOR" -lt "$PREVIOUS_MAJOR" || "$DATA_MAJOR" -gt "$MAJOR" ]]
 }
 
 old_copy_removed() {
-  [[ -z "$DATA_MAJOR" && "$ONLY_COPY_MAJOR" == "$MAJOR" && ! -e "$PARTIAL" ]] && has_placeholder && copy_holds_major "$MAJOR"
+  [[ -z "$DATA_MAJOR" && "$ONLY_COPY_MAJOR" == "$MAJOR" && ! -e "$PARTIAL" ]] && has_placeholder && [[ -n "$(copy_major "pgdata-$MAJOR")" ]]
 }
 
 only_newer_copy_left() {
@@ -413,10 +397,13 @@ only_newer_copy_left() {
 
 main() {
   settle_set_aside_copy
-  DATA_MAJOR="$(data_major)"
+  DATA_MAJOR="$(copy_major pgdata)"
   OTHER_COPIES="$(other_copies)"
   ONLY_COPY_MAJOR="$(only_copy_major "$OTHER_COPIES")"
-  OLD_CONTROL_HASH="$(pg_control_hash)"
+  OLD_CONTROL_HASH="$(control_hash pgdata)"
+  # Every upgrade reads the copy the database last ran on, which is pgdata until an upgrade has moved on.
+  read -r LIVE_COPY LIVE_MAJOR <<<"$(live_copy)"
+  SOURCE="$MOUNT/$LIVE_COPY"
 
   if volume_is_empty; then
     say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
@@ -434,8 +421,8 @@ main() {
   elif already_upgraded; then
     say "nothing to upgrade: pgdata-$MAJOR is already the upgrade of the Postgres $DATA_MAJOR data in pgdata"
     start_on "$NEW"
-  elif upgraded_copy_out_of_date || data_one_behind_without_copy; then
-    upgrade "$DATA_MAJOR"
+  elif upgraded_copy_out_of_date || data_one_behind_without_copy || live_copy_one_behind_without_copy; then
+    upgrade "$LIVE_MAJOR"
     start_on "$NEW"
   elif data_out_of_reach; then
     refuse_other_major "$DATA_MAJOR" pgdata

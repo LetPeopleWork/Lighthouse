@@ -88,3 +88,34 @@ Kind (`chain` group): each of the 23 functions (6 added after the design review)
 `✗ upgrade-path: SCAFFOLD: not yet implemented — <scenario title>`. This is a placeholder RED. The real one,
 which DESIGN predicts, is fixture step 3 on today's scripts: the defaults upgrade is refused with "the database
 runs on Postgres 17 in pgdata-17". DELIVER records that line here when it writes the fixture.
+
+### Walking skeleton, genuine RED (DELIVER step 03-01, 2026-10-02)
+
+`run.sh <cluster> chain` with the two delivered functions, on a fresh kind cluster, against `upgrade.sh` and
+`copy-old-binaries.sh` before any chain logic was written.
+
+Two runs failed earlier, in the fixture's **first** link (0.1.17 on Postgres 16, then the new chart pinned to 17
+with 16 as the upgrade source). Both are defects in the slice 01–02 upgrade step that only an upgrade *from*
+Postgres 16 reaches, since slices 01–02 only ever upgraded from 17. They are harness findings, not the RED, and
+were fixed in `upgrade.sh` before the RED run:
+
+```
+ERROR:  column "datlocale" does not exist
+/usr/lib/postgresql/17/bin/initdb: unrecognized option '--no-data-checksums'
+```
+
+- The settings query named `datlocale`, which Postgres 16 calls `daticulocale`. The columns are now read by name
+  from the row as JSON, so a column an older major lacks reads as empty.
+- `--no-data-checksums` exists only from initdb 18, the first major that turns checksums on by default. It is now
+  passed only to initdb 18 and later.
+
+The third run passed the first link and stopped in the second, the chart's defaults over `pgdata/` (16) and the
+live `pgdata-17/`. The upgrade step was refused, three restarts, with:
+
+```
+lighthouse-postgres: refusing to start Postgres 18: the database runs on Postgres 17 in pgdata-17, and this chart only upgrades the data in pgdata, which is Postgres 16; set postgresql.image back to postgres:17-trixie to start pgdata-17 again as it was, then run kubectl delete pod -n chain-16-17 l8e-lighthouse-postgres-0 so it starts again with the new values, and move it by hand: https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand. Nothing was changed
+✗ upgrade-path: the database pod in chain-16-17 is crash-looping
+```
+
+Class: MISSING_FUNCTIONALITY — the upgrade reads only `pgdata/`, the gap slice 03 closes; the line is the one
+DESIGN predicted.

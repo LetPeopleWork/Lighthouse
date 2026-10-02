@@ -328,7 +328,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
   # upgraded to 17 by the new chart pinned to 17 (upgrade source 16), then to 18 by the chart's defaults.
   # ------------------------------------------------------------------------------------------------
 
-  @US-04 @AC-4.11 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.11 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: The first upgrade on a volume removes nothing
     Given Lighthouse was installed from chart 0.1.17 with the bundled database image pinned to Postgres 16
     And it holds Lighthouse data with a known marker row
@@ -339,7 +339,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the kept Postgres 16 copy still opens with Postgres 16 and holds the recorded row counts
     And the database log says nothing about removing a copy
 
-  @US-04 @AC-4.1 @kpi:K2 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.1 @kpi:K2 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: A volume already upgraded once moves on to the next major with every row
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And a row was written on Postgres 17 after that upgrade
