@@ -405,11 +405,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void A_source_key_the_connection_never_offered_is_refused_before_Jira_is_asked()
+        public async Task A_source_key_the_connection_never_offered_is_refused_before_Jira_is_asked()
         {
             var subject = CreateSubject();
 
-            Assert.ThrowsAsync<ArgumentException>(
+            await Assert.ThrowsAsync<ArgumentException>(
                 async () => await subject.GetOptions(UnreachableJiraConnection(), "jira-sprint"),
                 "the connection has no url and no credentials, so anything that reached the network would fail differently.");
         }
@@ -776,11 +776,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void ResolveMany_refuses_a_source_key_the_connection_never_offered_before_Jira_is_asked()
+        public async Task ResolveMany_refuses_a_source_key_the_connection_never_offered_before_Jira_is_asked()
         {
             var subject = CreateSubject();
 
-            Assert.ThrowsAsync<ArgumentException>(
+            await Assert.ThrowsAsync<ArgumentException>(
                 async () => await subject.ResolveMany(UnreachableJiraConnection(), "jira-sprint", TheDatedReleaseOnItsOwn),
                 "the connection has no url and no credentials, so anything that reached the network would fail differently.");
         }

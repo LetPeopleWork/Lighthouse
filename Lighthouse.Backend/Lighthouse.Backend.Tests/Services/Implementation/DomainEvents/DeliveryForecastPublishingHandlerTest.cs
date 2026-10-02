@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         /// already written. The next round asks the Release again.
         /// </summary>
         [Test]
-        public void A_save_refused_because_somebody_was_editing_does_not_take_the_round_down()
+        public async Task A_save_refused_because_somebody_was_editing_does_not_take_the_round_down()
         {
             GivenAPortfolio();
             GivenTheRecordableDeliveries();
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Setup(repository => repository.TrySaveRecomputedDeliveries())
                 .ReturnsAsync(false);
 
-            Assert.DoesNotThrowAsync(() => subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None));
+            await Assert.DoesNotThrowAsync(() => subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None));
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         /// refresh produced is lost over a Jira nobody could write to.
         /// </summary>
         [Test]
-        public void A_publish_that_failed_outright_does_not_take_the_forecast_round_down()
+        public async Task A_publish_that_failed_outright_does_not_take_the_forecast_round_down()
         {
             GivenAPortfolio();
             GivenTheRecordableDeliveries();
@@ -144,13 +144,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Setup(service => service.PublishForPortfolio(It.IsAny<Portfolio>(), It.IsAny<RecordableDeliveries>()))
                 .ThrowsAsync(new InvalidOperationException("the connection could not be resolved"));
 
-            Assert.DoesNotThrowAsync(() => subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None));
+            await Assert.DoesNotThrowAsync(() => subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None));
         }
 
         [Test]
-        public void An_event_that_is_nothing_at_all_is_refused()
+        public async Task An_event_that_is_nothing_at_all_is_refused()
         {
-            Assert.ThrowsAsync<ArgumentNullException>(() => subject.HandleAsync(null!, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => subject.HandleAsync(null!, CancellationToken.None));
         }
 
         private Portfolio GivenAPortfolio()

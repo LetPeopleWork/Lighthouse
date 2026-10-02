@@ -25,12 +25,12 @@
   "license": "LicenseRef-Lighthouse-SAL-1.0",
   "description": "",
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.5.15",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.4",
     "cross-env": "^10.1.0",
     "typescript": "^7.0.2",
-    "wait-on": "^9.1.0"
+    "wait-on": "^9.5.1"
   },
   "dependencies": {
     "@types/pixelmatch": "^7.1.0",

@@ -106,19 +106,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed()
+        public async Task ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed()
         {
             var racing = WriterRacingAnotherCopyThatStored(ProcessBehaviorMetricType.Throughput);
 
-            Assert.DoesNotThrowAsync(racing.SaveFilledDay);
+            await Assert.DoesNotThrowAsync(racing.SaveFilledDay);
         }
 
         [Test]
-        public void ARowRefusedWhileOnlyAnotherFamilyOfThatDayIsStored_IsThrownOn()
+        public async Task ARowRefusedWhileOnlyAnotherFamilyOfThatDayIsStored_IsThrownOn()
         {
             var racing = WriterRacingAnotherCopyThatStored(ProcessBehaviorMetricType.Wip);
 
-            Assert.ThrowsAsync<DbUpdateException>(racing.SaveFilledDay);
+            await Assert.ThrowsAsync<DbUpdateException>(racing.SaveFilledDay);
         }
 
         private ProcessBehaviorSnapshotWriter WriterRacingAnotherCopyThatStored(ProcessBehaviorMetricType storedFamily)

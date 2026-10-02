@@ -203,13 +203,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // And the refusal goes the other way: a class that holds no work is named back to the coach in
         // the words the picker just put in their field (ADR-128).
         [Test]
-        public void ABoardWhoseClassHoldsNoWork_IsRefusedInTheWordsThePickerHandedOver()
+        public async Task ABoardWhoseClassHoldsNoWork_IsRefusedInTheWordsThePickerHandedOver()
         {
             var instance = AnInstanceWith(TheChangeBoard())
                 .WhereTheHierarchyHoldsNothingOf(Changes)
                 .WhereTheTableItself(Changes, HttpStatusCode.OK, holds: 118, visible: 0);
 
-            var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
+            var refusal = await Assert.ThrowsAsync<ServiceNowReadException>(
                 () => ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId));
 
             Assert.That(refusal?.Message, Does.Contain(ChangesAsItReads),
@@ -345,11 +345,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // table as empty -- literally true of the read and useless as advice, because nothing about
         // permissions or emptiness is what happened.
         [Test]
-        public void PickingABoardThatNoLongerQualifies_IsRefusedRatherThanHandedOverAsAnEmptyQuery()
+        public async Task PickingABoardThatNoLongerQualifies_IsRefusedRatherThanHandedOverAsAnEmptyQuery()
         {
             var instance = AnInstanceWith(AFreeformBoard());
 
-            var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
+            var refusal = await Assert.ThrowsAsync<ServiceNowReadException>(
                 () => ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheIncidentBoardId));
 
             using (Assert.EnterMultipleScope())
@@ -364,13 +364,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // created on the PDI without complaint — and a team pre-filled from it syncs nothing at all.
         // The class ladder ADR-124 already shipped names that case, in words already written.
         [Test]
-        public void PickingABoardWhoseWorkIsNotAKindOfWork_IsRefusedByName()
+        public async Task PickingABoardWhoseWorkIsNotAKindOfWork_IsRefusedByName()
         {
             var instance = AnInstanceWith(ABoardOnSomethingThatIsNotWork())
                 .WhereTheHierarchyHoldsNothingOf(NotAKindOfWork)
                 .WhereTheTableItself(NotAKindOfWork, HttpStatusCode.OK, holds: 2784, visible: 1);
 
-            var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
+            var refusal = await Assert.ThrowsAsync<ServiceNowReadException>(
                 () => ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId));
 
             Assert.That(refusal?.Code, Is.EqualTo("class_is_not_a_kind_of_work"));
@@ -380,11 +380,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // the same "Failed to load boards. Please try again." — advice that fixes none of them. A
         // refusal keeps the name the backend already gave it, and names the table it was refused on.
         [Test]
-        public void AnAccountThatMayNotReadBoards_IsToldSoRatherThanShownAnEmptyPicker()
+        public async Task AnAccountThatMayNotReadBoards_IsToldSoRatherThanShownAnEmptyPicker()
         {
             var instance = AnInstanceWith(TheIncidentBoard()).WhereTheBoardTableAnswers(HttpStatusCode.Forbidden);
 
-            var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
+            var refusal = await Assert.ThrowsAsync<ServiceNowReadException>(
                 () => ABoardPickerFor(instance).GetBoards(AConnection()));
 
             using (Assert.EnterMultipleScope())
@@ -398,11 +398,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC-B3 / ADR-126 decision 3, the first rung. A rejected credential is a credential problem
         // wherever it is met.
         [Test]
-        public void ACredentialTheInstanceRejects_IsToldSoWhenThePickerOpens()
+        public async Task ACredentialTheInstanceRejects_IsToldSoWhenThePickerOpens()
         {
             var instance = AnInstanceWith(TheIncidentBoard()).WhereTheBoardTableAnswers(HttpStatusCode.Unauthorized);
 
-            var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
+            var refusal = await Assert.ThrowsAsync<ServiceNowReadException>(
                 () => ABoardPickerFor(instance).GetBoards(AConnection()));
 
             Assert.That(refusal?.Code, Is.EqualTo("authentication_failed"));

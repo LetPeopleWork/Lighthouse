@@ -3,6 +3,8 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
 import type { IFeatureDependency } from "../../../models/FeatureDependency";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import type { DependencyTerms } from "../../../utils/dependencies/dependencySentences";
 import { createDependsOnColumn, createStateColumn } from "./columns";
 
@@ -252,14 +254,16 @@ const featureRow = (dependsOn: IFeatureDependency[]): Feature => {
 
 const renderGrid = (dependsOn: IFeatureDependency[] = [aDependency()]) =>
 	render(
-		<MemoryRouter>
-			<FeatureListDataGrid
-				features={[featureRow(dependsOn)]}
-				columns={[createStateColumn()]}
-				storageKey="depends-on-shared-grid"
-				hideCompletedStorageKey="depends-on-shared-grid-hide-completed"
-			/>
-		</MemoryRouter>,
+		<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={[featureRow(dependsOn)]}
+					columns={[createStateColumn()]}
+					storageKey="depends-on-shared-grid"
+					hideCompletedStorageKey="depends-on-shared-grid-hide-completed"
+				/>
+			</MemoryRouter>
+		</ApiServiceContext.Provider>,
 	);
 
 describe("the same column is read on both Feature lists, because there is only one of them", () => {

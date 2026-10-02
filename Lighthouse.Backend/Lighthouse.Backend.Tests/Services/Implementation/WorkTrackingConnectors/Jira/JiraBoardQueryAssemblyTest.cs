@@ -155,10 +155,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(HttpStatusCode.Forbidden, "403")]
         [TestCase(HttpStatusCode.NotFound, "404")]
-        public void GetBoardInformation_FilterCannotBeRead_RefusesTheBoardInsteadOfScopingItToEverything(
+        public async Task GetBoardInformation_FilterCannotBeRead_RefusesTheBoardInsteadOfScopingItToEverything(
             HttpStatusCode filterStatus, string expectedStatusInMessage)
         {
-            var refusal = Assert.ThrowsAsync<JiraReadException>(
+            var refusal = await Assert.ThrowsAsync<JiraReadException>(
                 async () => await BoardQueryFor(AFilterQuery, ASubFilterQuery, filterStatus));
 
             using (Assert.EnterMultipleScope())
@@ -171,9 +171,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void GetBoardInformation_FilterCarriesNoQuery_RefusesTheBoardTheSameWay()
+        public async Task GetBoardInformation_FilterCarriesNoQuery_RefusesTheBoardTheSameWay()
         {
-            var refusal = Assert.ThrowsAsync<JiraReadException>(
+            var refusal = await Assert.ThrowsAsync<JiraReadException>(
                 async () => await BoardQueryWhereTheFilterAnswers(
                     FilterId, ASubFilterQuery, HttpStatusCode.OK, "{\"name\":\"Board filter\"}"));
 
@@ -190,9 +190,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// failed - and none of those three can be recovered from the sentence the user sees.
         /// </summary>
         [Test]
-        public void GetBoardInformation_FilterCannotBeRead_CarriesTheCodeTheFailedRequestAndTheFieldToCorrect()
+        public async Task GetBoardInformation_FilterCannotBeRead_CarriesTheCodeTheFailedRequestAndTheFieldToCorrect()
         {
-            var refusal = Assert.ThrowsAsync<JiraReadException>(
+            var refusal = await Assert.ThrowsAsync<JiraReadException>(
                 async () => await BoardQueryFor(AFilterQuery, ASubFilterQuery, HttpStatusCode.Forbidden));
 
             using (Assert.EnterMultipleScope())
@@ -210,9 +210,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// both messages carry is wasted effort on the first of them.
         /// </summary>
         [Test]
-        public void GetBoardInformation_FilterCarriesNoQuery_SaysTheFilterCameBackWithoutOne()
+        public async Task GetBoardInformation_FilterCarriesNoQuery_SaysTheFilterCameBackWithoutOne()
         {
-            var refusal = Assert.ThrowsAsync<JiraReadException>(
+            var refusal = await Assert.ThrowsAsync<JiraReadException>(
                 async () => await BoardQueryWhereTheFilterAnswers(
                     FilterId, ASubFilterQuery, HttpStatusCode.OK, "{\"name\":\"Board filter\"}"));
 

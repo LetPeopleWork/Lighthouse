@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services
         }
 
         [Test]
-        public void Create_StartAfterEnd_ThrowsArgumentException()
+        public async Task Create_StartAfterEnd_ThrowsArgumentException()
         {
             var dto = new BlackoutPeriodDto
             {
@@ -174,7 +174,7 @@ namespace Lighthouse.Backend.Tests.Services
                 Description = "Invalid"
             };
 
-            Assert.ThrowsAsync<ArgumentException>(async () => await subject.Create(dto));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await subject.Create(dto));
 
             VerifyBlackoutConfigurationChangedPublished(Times.Never());
         }
@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Services
         }
 
         [Test]
-        public void Update_NonExistingId_ThrowsKeyNotFoundException()
+        public async Task Update_NonExistingId_ThrowsKeyNotFoundException()
         {
             var dto = new BlackoutPeriodDto
             {
@@ -235,11 +235,11 @@ namespace Lighthouse.Backend.Tests.Services
                 End = new DateOnly(2026, 2, 10)
             };
 
-            Assert.ThrowsAsync<KeyNotFoundException>(async () => await subject.Update(999, dto));
+            await Assert.ThrowsAsync<KeyNotFoundException>(async () => await subject.Update(999, dto));
         }
 
         [Test]
-        public void Update_StartAfterEnd_ThrowsArgumentException()
+        public async Task Update_StartAfterEnd_ThrowsArgumentException()
         {
             blackoutPeriods.Add(new BlackoutPeriod
             {
@@ -254,7 +254,7 @@ namespace Lighthouse.Backend.Tests.Services
                 End = new DateOnly(2026, 4, 10)
             };
 
-            Assert.ThrowsAsync<ArgumentException>(async () => await subject.Update(1, dto));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await subject.Update(1, dto));
         }
 
         [Test]
@@ -279,11 +279,11 @@ namespace Lighthouse.Backend.Tests.Services
         }
 
         [Test]
-        public void Delete_NonExistingId_ThrowsKeyNotFoundException()
+        public async Task Delete_NonExistingId_ThrowsKeyNotFoundException()
         {
             repositoryMock.Setup(r => r.Exists(999)).Returns(false);
 
-            Assert.ThrowsAsync<KeyNotFoundException>(async () => await subject.Delete(999));
+            await Assert.ThrowsAsync<KeyNotFoundException>(async () => await subject.Delete(999));
 
             VerifyBlackoutConfigurationChangedPublished(Times.Never());
         }

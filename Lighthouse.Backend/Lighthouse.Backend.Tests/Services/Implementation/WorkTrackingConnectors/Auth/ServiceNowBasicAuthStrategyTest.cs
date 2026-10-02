@@ -74,12 +74,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // request and only then failed would satisfy a test that asked no more than "did it throw", and it
         // would still have handed ServiceNow a password nobody here could read.
         [Test]
-        public void AStoredPasswordNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        public async Task AStoredPasswordNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
         {
             var subject = new ServiceNowBasicAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
             using var request = new HttpRequestMessage();
 
-            Assert.ThrowsAsync<UnreadableSecretException>(
+            await Assert.ThrowsAsync<UnreadableSecretException>(
                 () => subject.ApplyAsync(request, CreateConnection(ACredentialTheInstanceCannotRead()), CancellationToken.None));
 
             Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False,

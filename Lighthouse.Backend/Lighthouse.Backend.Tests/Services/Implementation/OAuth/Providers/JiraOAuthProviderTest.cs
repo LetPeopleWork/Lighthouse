@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
         }
 
         [Test]
-        public void ExchangeCodeAsync_TokenEndpointReturnsNon2xx_ThrowsOAuthProviderResponseException()
+        public async Task ExchangeCodeAsync_TokenEndpointReturnsNon2xx_ThrowsOAuthProviderResponseException()
         {
             const string errorBody = "{\"error\":\"invalid_grant\",\"error_description\":\"Authorization code expired\"}";
             var handler = CreateHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             var provider = CreateProvider(handler);
             var context = CreateFlowContext();
 
-            var ex = Assert.ThrowsAsync<OAuthProviderResponseException>(
+            var ex = await Assert.ThrowsAsync<OAuthProviderResponseException>(
                 () => provider.ExchangeCodeAsync("expired-code", context, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
@@ -197,7 +197,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
         }
 
         [Test]
-        public void RefreshTokenAsync_TokenEndpointReturnsNon2xx_ThrowsOAuthProviderResponseException()
+        public async Task RefreshTokenAsync_TokenEndpointReturnsNon2xx_ThrowsOAuthProviderResponseException()
         {
             const string errorBody = "{\"error\":\"invalid_token\",\"error_description\":\"Refresh token revoked\"}";
             var handler = CreateHandler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
             var provider = CreateProvider(handler);
             var refreshContext = new OAuthRefreshContext("revoked-refresh-token", "abc123", "secret");
 
-            var ex = Assert.ThrowsAsync<OAuthProviderResponseException>(
+            var ex = await Assert.ThrowsAsync<OAuthProviderResponseException>(
                 () => provider.RefreshTokenAsync(refreshContext, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())

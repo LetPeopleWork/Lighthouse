@@ -116,11 +116,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         // @driving_port @real-io @error @AC-01.5 — the other half of the blast radius: the awaitable
         // path already faults its caller, and this slice must not change that.
         [Test]
-        public void A_caller_awaiting_an_update_still_sees_the_failure_it_always_saw()
+        public async Task A_caller_awaiting_an_update_still_sees_the_failure_it_always_saw()
         {
             GivenNothingInParticular();
 
-            var awaited = WhenSomebodyAwaitsAnUpdateThatThrows();
+            var awaited = await WhenSomebodyAwaitsAnUpdateThatThrows();
 
             ThenThatCallerSawTheFailure(awaited);
         }
