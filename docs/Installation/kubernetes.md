@@ -323,6 +323,45 @@ external MCP client can auto-discover the IdP and run the browser OAuth flow. Au
 > registration (e.g. Keycloak) work out of the box; Microsoft Entra needs a pre-registered public client
 > (no DCR) and serves its metadata under the tenant path, so configure the client app explicitly there.
 
+## Upgrading the bundled PostgreSQL
+
+The chart's default `postgresql.image` moves to a new PostgreSQL major from time to time (it is `postgres:18`
+today). A PostgreSQL major cannot open the data files of the previous one, so an existing bundled database
+that is upgraded in place stops with `database files are incompatible with server` and the pod restarts in
+a loop. Nothing is lost, but nothing starts either. Choose one of the two paths below **before** you run
+`helm upgrade` with a chart whose default moved. This does not apply to an external database
+(`postgresql.enabled=false`); you upgrade that one the way your provider documents.
+
+**Stay on your current major.** Pin the image you run today, and the upgrade changes nothing about the
+database:
+
+```sh
+helm upgrade l8e letpeoplework/lighthouse --reuse-values --set postgresql.image=postgres:17
+```
+
+**Move to the new major.** Take a dump, start an empty database on the new major, and restore into it.
+The names below assume the release is called `l8e` and the default database and user `lighthouse`:
+
+```sh
+# 1. Stop Lighthouse and dump the database.
+kubectl scale deployment l8e-lighthouse-api --replicas=0
+kubectl exec l8e-lighthouse-postgres-0 -- pg_dump -U lighthouse -d lighthouse -Fc > lighthouse.dump
+
+# 2. Remove the old data volume, then upgrade. The database comes up empty on the new major.
+kubectl scale statefulset l8e-lighthouse-postgres --replicas=0
+kubectl delete pvc data-l8e-lighthouse-postgres-0
+helm upgrade l8e letpeoplework/lighthouse --reuse-values --set postgresql.image=postgres:18
+kubectl scale deployment l8e-lighthouse-api --replicas=0
+kubectl rollout status statefulset l8e-lighthouse-postgres
+
+# 3. Restore, then start Lighthouse again.
+kubectl exec -i l8e-lighthouse-postgres-0 -- pg_restore -U lighthouse -d lighthouse --clean --if-exists --no-owner < lighthouse.dump
+kubectl scale deployment l8e-lighthouse-api --replicas=1
+```
+
+Keep `lighthouse.dump` until you have checked that your teams, portfolios and forecasts are back. If you
+run more than one replica, scale the API back to that number instead of `1`.
+
 ## Uninstall
 
 ```sh
