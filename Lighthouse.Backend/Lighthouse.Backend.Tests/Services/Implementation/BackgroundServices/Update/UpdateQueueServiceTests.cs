@@ -656,17 +656,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void EnqueueAndAwaitAsync_WorkThrows_ReturnedTaskFaults()
+        public async Task EnqueueAndAwaitAsync_WorkThrows_ReturnedTaskFaults()
         {
             var subject = CreateSubject();
 
-            Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 13, _ =>
                     throw new InvalidOperationException("boom")));
         }
 
         [Test]
-        public void EnqueueAndAwaitAsync_CancellableToken_TokenCancelledWhileGated_ReturnedTaskCancels()
+        public async Task EnqueueAndAwaitAsync_CancellableToken_TokenCancelledWhileGated_ReturnedTaskCancels()
         {
             var workGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var subject = CreateSubject();
@@ -676,7 +676,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             cts.Cancel();
 
-            Assert.ThrowsAsync<TaskCanceledException>(async () => await completion,
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => await completion,
                 "Cancelling the caller's token must surface as a cancelled returned task, so a shutting-down request stops awaiting in-flight work.");
 
             workGate.SetResult(true);
@@ -700,12 +700,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void EnqueueAndAwaitAsync_CancellableToken_WorkThrows_ReturnedTaskFaults()
+        public async Task EnqueueAndAwaitAsync_CancellableToken_WorkThrows_ReturnedTaskFaults()
         {
             var subject = CreateSubject();
             using var cts = new CancellationTokenSource();
 
-            Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 33, _ =>
                     throw new InvalidOperationException("boom"), cts.Token),
                 "A cancellable-token caller must still propagate the original work fault through the cancellation-aware observer, not swallow it.");

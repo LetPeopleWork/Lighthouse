@@ -126,11 +126,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed()
+        public async Task ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed()
         {
             var racing = WriterRacingAnotherCopyThatStored(horizon: 30, refusedHorizon: 30);
 
-            Assert.DoesNotThrowAsync(racing.SaveFilledDay);
+            await Assert.DoesNotThrowAsync(racing.SaveFilledDay);
         }
 
         /// <summary>
@@ -138,11 +138,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         /// horizon of the same day being stored does not make this one present.
         /// </summary>
         [Test]
-        public void ARowRefusedWhileOnlyAnotherHorizonOfThatDayIsStored_IsThrownOn()
+        public async Task ARowRefusedWhileOnlyAnotherHorizonOfThatDayIsStored_IsThrownOn()
         {
             var racing = WriterRacingAnotherCopyThatStored(horizon: 60, refusedHorizon: 30);
 
-            Assert.ThrowsAsync<DbUpdateException>(racing.SaveFilledDay);
+            await Assert.ThrowsAsync<DbUpdateException>(racing.SaveFilledDay);
         }
 
         private PercentileSnapshotWriter WriterRacingAnotherCopyThatStored(int horizon, int refusedHorizon)
