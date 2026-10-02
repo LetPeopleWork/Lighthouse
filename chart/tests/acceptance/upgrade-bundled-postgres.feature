@@ -25,7 +25,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
   # slice-01 — US-01: an upgrade keeps every piece of data
   # ------------------------------------------------------------------------------------------------
 
-  @walking_skeleton @driving_port @US-01 @AC-1.1 @AC-1.2 @kpi:K2 @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:bounded-change @pending
+  @walking_skeleton @driving_port @US-01 @AC-1.1 @AC-1.2 @kpi:K2 @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:bounded-change
   Scenario: Operator upgrades a Lighthouse with data and finds every row on Postgres 18
     Given Lighthouse was installed from chart 0.1.17 with the bundled Postgres 17
     And it holds Lighthouse data with a known marker row
@@ -66,7 +66,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table in it has the row count recorded before the upgrade
     And the marker row is present in it
 
-  @US-01 @AC-1.1 @edge @real-io @env:kind-0.1.17-sigkilled @slice-01 @contract-shape:bounded-change @pending
+  @US-01 @AC-1.1 @edge @real-io @env:kind-0.1.17-sigkilled @slice-01 @contract-shape:bounded-change
   Scenario: An old database that was stopped abruptly is still carried across
     Given Lighthouse was installed from chart 0.1.17 with the bundled Postgres 17
     And it holds Lighthouse data with a known marker row
@@ -88,7 +88,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the upgrade output carries one line saying the bundled Postgres is behind the chart's default
     And that line names how to move it to the chart's default
 
-  @US-01 @AC-1.4 @real-io @env:kind-clean-fresh @slice-01 @contract-shape:bounded-change @pending
+  @US-01 @AC-1.4 @real-io @env:kind-clean-fresh @slice-01 @contract-shape:bounded-change
   Scenario: A fresh install starts an empty Postgres 18 database with no upgrade step
     Given an empty cluster with no earlier Lighthouse install
     When the operator installs the new chart with the bundled Postgres
@@ -107,7 +107,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And it becomes Ready on Postgres 18
     And every Lighthouse table has the same row count as before the upgrade
 
-  @US-01 @AC-1.6 @in-memory @env:external-db @slice-01 @contract-shape:pure-function @pending
+  @US-01 @AC-1.6 @in-memory @env:external-db @slice-01 @contract-shape:pure-function
   Scenario Outline: The upgrade steps exist only where the chart runs the database itself
     Given the chart is rendered with the bundled database <bundled>
     When the manifests are produced
@@ -125,7 +125,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     When the manifests are produced
     Then they are identical to the render of the same values before this story
 
-  @US-01 @AC-1.8 @edge @in-memory @env:reuse-values @slice-01 @contract-shape:pure-function @pending
+  @US-01 @AC-1.8 @edge @in-memory @env:reuse-values @slice-01 @contract-shape:pure-function
   Scenario: Values from an older chart still render a working upgrade step
     Given the chart is rendered with values that predate the upgrade-source image setting
     When the manifests are produced

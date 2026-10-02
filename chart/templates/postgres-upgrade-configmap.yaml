@@ -1,0 +1,16 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "lighthouse.postgres.upgradeScripts" . }}
+  labels:
+    {{- include "lighthouse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+data:
+  copy-old-binaries.sh: |
+    {{- .Files.Get "files/postgres-upgrade/copy-old-binaries.sh" | nindent 4 }}
+  upgrade.sh: |
+    {{- .Files.Get "files/postgres-upgrade/upgrade.sh" | nindent 4 }}
+  start.sh: |
+    {{- .Files.Get "files/postgres-upgrade/start.sh" | nindent 4 }}
+{{- end }}

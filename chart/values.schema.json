@@ -42,6 +42,12 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "image": { "type": "string", "minLength": 1 },
+        "upgrade": {
+          "type": "object",
+          "properties": {
+            "image": { "type": "string", "minLength": 1 }
+          }
+        },
         "auth": {
           "type": "object",
           "properties": {

@@ -41,7 +41,7 @@ postgresql:
   # Bundled in-chart Postgres (convenient, single-replica). For production HA, set enabled=false
   # and use externalDatabase below (managed Postgres / CloudNativePG / RDS / Azure Database).
   enabled: true
-  image: postgres:17
+  image: postgres:18-trixie
   auth:
     database: lighthouse
     username: lighthouse

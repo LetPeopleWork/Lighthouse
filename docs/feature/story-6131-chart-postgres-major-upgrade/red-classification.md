@@ -51,3 +51,19 @@ a harness error. DELIVER records that observation when it unskips the walking sk
 
 `chart/tests/unit/render_test.yaml` asserts the default database image is `postgres:18`. DDD-11 moves the
 default to `postgres:18-trixie`, so that assertion changes in the same commit as `values.yaml`.
+
+## Walking skeleton, genuine RED (DELIVER step 01-01, 2026-10-02)
+
+`upgrade_plain_helm_upgrade_keeps_every_row` run on a fresh kind cluster against the chart at `5b64dc43f`
+(before any template edit), with the upgrade given `--set postgresql.image=postgres:18-trixie` because that
+chart still defaults to `postgres:17`. Chart 0.1.17 installed, the marker row was seeded and the row counts
+recorded; after the upgrade the Postgres 18 container crash-looped and the harness stopped on its third
+restart with:
+
+```
+FATAL:  database files are incompatible with server
+DETAIL:  The data directory was initialized by PostgreSQL version 17, which is not compatible with this version 18.6 (Debian 18.6-1.pgdg13+2).
+✗ upgrade-path: the database pod in plain-upgrade is crash-looping
+```
+
+Class: MISSING_FUNCTIONALITY — the defect the story removes, not a harness, image-pull or cluster failure.

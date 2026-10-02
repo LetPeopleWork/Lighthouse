@@ -47,9 +47,13 @@ resources:
 postgresql:
   # -- Deploy a bundled in-chart Postgres StatefulSet (ADR-080). Set false to bring your own (slice-03).
   enabled: true
-  # -- Bundled Postgres image (official, vendor-neutral). A new major cannot open the previous major's
-  # data, so keep your current image or dump and restore when the default moves (see the Kubernetes docs).
-  image: postgres:17
+  # -- Bundled Postgres image (official, vendor-neutral). When it moves up one major, the database is
+  # upgraded on its next start and the previous major's data is kept beside it (see the Kubernetes docs).
+  image: postgres:18-trixie
+  upgrade:
+    # -- Image whose Postgres programs read the previous major's data during that upgrade. Must be one
+    # major below `postgresql.image` and built on the same Debian release.
+    image: postgres:17-trixie
   auth:
     # -- Database name.
     database: lighthouse

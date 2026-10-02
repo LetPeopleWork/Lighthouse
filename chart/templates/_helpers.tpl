@@ -40,6 +40,22 @@ app.kubernetes.io/component: postgres
 {{- printf "%s-postgres" (include "lighthouse.fullname" .) -}}
 {{- end -}}
 
+{{/* The Postgres major this chart's default image runs, and the image whose programs read the previous
+     major during an upgrade. Both are constants rather than values: `helm upgrade --reuse-values` renders
+     with the previous chart's values, where neither exists. */}}
+{{- define "lighthouse.postgres.defaultMajor" -}}
+18
+{{- end -}}
+
+{{- define "lighthouse.postgres.upgradeImage" -}}
+{{- dig "postgresql" "upgrade" "image" "" .Values.AsMap | default "postgres:17-trixie" -}}
+{{- end -}}
+
+{{/* ConfigMap holding the scripts the bundled Postgres pod runs to pick, and if needed upgrade, its data */}}
+{{- define "lighthouse.postgres.upgradeScripts" -}}
+{{- printf "%s-upgrade" (include "lighthouse.postgres.host" .) -}}
+{{- end -}}
+
 {{/* Secret name holding DB connection string + Postgres password */}}
 {{- define "lighthouse.secretName" -}}
 {{- printf "%s-db" (include "lighthouse.fullname" .) -}}

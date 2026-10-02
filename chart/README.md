@@ -121,7 +121,8 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | ingress.tlsSecretName | string | `""` | TLS secret name (when tls=true and you bring your own cert). |
 | resources | object | `{"limits":{"memory":"1Gi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests/limits for the API container. |
 | postgresql.enabled | bool | `true` | Deploy a bundled in-chart Postgres StatefulSet (ADR-080). Set false to bring your own (slice-03). |
-| postgresql.image | string | `"postgres:17"` | Bundled Postgres image (official, vendor-neutral). A new major cannot open the previous major's data, so keep your current image or dump and restore when the default moves (see the Kubernetes docs). |
+| postgresql.image | string | `"postgres:18-trixie"` | Bundled Postgres image (official, vendor-neutral). When it moves up one major, the database is upgraded on its next start and the previous major's data is kept beside it (see the Kubernetes docs). |
+| postgresql.upgrade.image | string | `"postgres:17-trixie"` | Image whose Postgres programs read the previous major's data during that upgrade. Must be one major below `postgresql.image` and built on the same Debian release. |
 | postgresql.auth.database | string | `"lighthouse"` | Database name. |
 | postgresql.auth.username | string | `"lighthouse"` | Database user. |
 | postgresql.auth.password | string | `""` | Database password. REQUIRED — no default (ADR-082, explicit password). Ignored when    existingSecret is set. |

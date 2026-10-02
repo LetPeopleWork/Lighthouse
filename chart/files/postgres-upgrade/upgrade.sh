@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# Runs as root in the database image before every start of the database. It picks the data directory the
+# server starts on and, when the data is one major behind this image, builds an upgraded copy beside it.
+# The original data stays in pgdata/, where the previous chart release looks for it, so a rollback to
+# that release still finds the database as it was before the upgrade.
+#
+# Anything it does not recognise is refused before a single byte on the volume is written: one line in
+# the log and in the pod's termination message, then a non-zero exit so the kubelet retries by itself.
+set -euo pipefail
+
+readonly MOUNT=/var/lib/postgresql/data
+readonly OLD="$MOUNT/pgdata"
+readonly MAJOR="$PG_MAJOR"
+readonly NEW="$MOUNT/pgdata-$MAJOR"
+readonly PARTIAL="$NEW.partial"
+readonly NEW_BIN="/usr/lib/postgresql/$MAJOR/bin"
+readonly OLD_BINARIES=/old-binaries
+readonly DECISION=/decision/pgdata
+# The old server is only ever reached over a Unix socket here, never over the network.
+readonly SOCKET_DIR=/tmp
+readonly OLD_PORT=50431
+
+say() {
+  echo "lighthouse-postgres: $*"
+}
+
+refuse() {
+  local line="lighthouse-postgres: $*"
+  echo "$line" >&2
+  printf '%s\n' "$line" >/dev/termination-log
+  exit 1
+}
+
+as_postgres() {
+  gosu postgres "$@"
+}
+
+start_on() {
+  printf '%s\n' "$1" >"$DECISION"
+}
+
+data_major() {
+  if [[ -s "$OLD/PG_VERSION" ]]; then
+    cat "$OLD/PG_VERSION"
+  fi
+}
+
+# Every pgdata-* entry on the volume except an unfinished copy for this image's major, which an upgrade
+# throws away before it starts.
+other_copies() {
+  local path
+  for path in "$MOUNT"/pgdata-*; do
+    if [[ -e "$path" && "$path" != "$PARTIAL" ]]; then
+      echo "${path##*/}"
+    fi
+  done
+}
+
+has_placeholder() {
+  local path
+  for path in "$OLD"/UPGRADED-TO-*; do
+    if [[ -e "$path" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+describe_volume() {
+  local data="$1" copies="$2" found
+  if [[ -n "$data" ]]; then
+    found="Postgres $data data in pgdata"
+  elif has_placeholder; then
+    found="no database in pgdata, only the note left when the old copy was removed"
+  else
+    found="no database in pgdata"
+  fi
+  if [[ -n "$copies" ]]; then
+    found="$found and $(echo "$copies" | paste -sd, - | sed 's/,/, /g')"
+  fi
+  if [[ -e "$PARTIAL" ]]; then
+    found="$found and an unfinished pgdata-$MAJOR.partial"
+  fi
+  echo "$found"
+}
+
+controldata() {
+  local bin="$1" field="$2"
+  as_postgres "$bin/pg_controldata" "$OLD" | sed -n "s/^$field: *//p"
+}
+
+old_psql() {
+  as_postgres "$NEW_BIN/psql" -h "$SOCKET_DIR" -p "$OLD_PORT" -U "$POSTGRES_USER" -d template1 \
+    -XAtq -v ON_ERROR_STOP=1 -c "$1"
+}
+
+# pg_upgrade only accepts a cleanly stopped source, and needs to be told the settings the old cluster was
+# created with. Both come from one start of the old server, on a Unix socket only, and a fast stop. When
+# the old server was killed rather than stopped, that start is also its crash recovery.
+read_old_cluster_settings() {
+  local old_bin="$1" from="$2"
+  if [[ "$(controldata "$old_bin" "Database cluster state")" != "shut down" || -e "$OLD/postmaster.pid" ]]; then
+    say "the Postgres $from data was not shut down cleanly; starting it once with Postgres $from to recover it"
+  else
+    say "reading the settings of the Postgres $from database"
+  fi
+  as_postgres "$old_bin/pg_ctl" -D "$OLD" -w --timeout=3600 \
+    -o "-c listen_addresses='' -c unix_socket_directories=$SOCKET_DIR -p $OLD_PORT" start
+  local template1
+  SUPERUSER="$(old_psql "SELECT rolname FROM pg_authid WHERE oid = 10")"
+  template1="$(old_psql "SELECT pg_encoding_to_char(encoding), datcollate, datctype, datlocprovider,
+                                coalesce(datlocale, ''), coalesce(daticurules, '')
+                         FROM pg_database WHERE datname = 'template1'")"
+  IFS='|' read -r ENCODING COLLATE CTYPE PROVIDER LOCALE ICU_RULES <<<"$template1"
+  as_postgres "$old_bin/pg_ctl" -D "$OLD" -m fast -w --timeout=3600 stop
+  say "the Postgres $from data is shut down cleanly"
+}
+
+initdb_like_old_cluster() {
+  local old_bin="$1"
+  local args=(-D "$PARTIAL" -U "$SUPERUSER" --encoding="$ENCODING" --lc-collate="$COLLATE" --lc-ctype="$CTYPE")
+  case "$PROVIDER" in
+    i) args+=(--locale-provider=icu --icu-locale="$LOCALE") ;;
+    b) args+=(--locale-provider=builtin --builtin-locale="$LOCALE") ;;
+    *) args+=(--locale-provider=libc) ;;
+  esac
+  if [[ -n "$ICU_RULES" ]]; then
+    args+=(--icu-rules="$ICU_RULES")
+  fi
+  if [[ "$(controldata "$old_bin" "Data page checksum version")" == "0" ]]; then
+    args+=(--no-data-checksums)
+  else
+    args+=(--data-checksums)
+  fi
+  as_postgres "$NEW_BIN/initdb" "${args[@]}"
+}
+
+upgrade() {
+  local from="$1"
+  local old_bin="$OLD_BINARIES/usr/lib/postgresql/$from/bin"
+  if [[ ! -x "$old_bin/pg_ctl" || ! -x "$old_bin/postgres" ]]; then
+    refuse "refusing to upgrade Postgres $from to $MAJOR: the upgrade-source image did not provide the Postgres $from programs; set postgresql.upgrade.image to a Postgres $from image. Nothing was changed"
+  fi
+
+  if [[ -e "$PARTIAL" ]]; then
+    say "removing pgdata-$MAJOR.partial, left by an earlier attempt that did not finish"
+    rm -rf "$PARTIAL"
+  fi
+  say "upgrading the Postgres $from data in pgdata to Postgres $MAJOR in pgdata-$MAJOR; pgdata is kept as it is"
+  mkdir "$PARTIAL"
+  chown postgres:postgres "$PARTIAL"
+  chmod 0700 "$PARTIAL"
+
+  read_old_cluster_settings "$old_bin" "$from"
+  initdb_like_old_cluster "$old_bin"
+  (cd "$SOCKET_DIR" && as_postgres "$NEW_BIN/pg_upgrade" --copy \
+    -b "$old_bin" -B "$NEW_BIN" -d "$OLD" -D "$PARTIAL" -U "$SUPERUSER" --socketdir="$SOCKET_DIR")
+  # A cluster made by initdb alone accepts no password logins over the network, which is how Lighthouse
+  # connects, so the old cluster's rules come across with the data.
+  as_postgres cp "$OLD/pg_hba.conf" "$OLD/pg_ident.conf" "$PARTIAL/"
+
+  # Every later start of the old major rewrites pg_control, so this hash tells whether the copy still
+  # matches the data it was made from.
+  as_postgres tee "$PARTIAL/.lighthouse-upgrade" >/dev/null <<EOF
+source_major=$from
+source_system_identifier=$(controldata "$old_bin" "Database system identifier")
+source_pg_control_sha256=$(sha256sum "$OLD/global/pg_control" | cut -d' ' -f1)
+EOF
+  sync
+  mv -T "$PARTIAL" "$NEW"
+  sync "$MOUNT"
+  say "upgrade finished: Postgres $MAJOR starts on pgdata-$MAJOR, and the Postgres $from data stays in pgdata"
+}
+
+main() {
+  local data copies
+  data="$(data_major)"
+  copies="$(other_copies)"
+
+  if [[ -z "$data" && -z "$copies" && ! -e "$PARTIAL" ]] && ! has_placeholder; then
+    say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
+    start_on "$OLD"
+  elif [[ "$data" == "$MAJOR" && -z "$copies" && ! -e "$PARTIAL" ]]; then
+    say "nothing to upgrade: the data in pgdata is already Postgres $MAJOR"
+    start_on "$OLD"
+  elif [[ "$data" =~ ^[0-9]+$ && "$data" -eq $((MAJOR - 1)) && -z "$copies" ]]; then
+    upgrade "$data"
+    start_on "$NEW"
+  else
+    refuse "refusing to start Postgres $MAJOR: found $(describe_volume "$data" "$copies"), which this chart cannot start on or upgrade by itself. Nothing was changed"
+  fi
+}
+
+main

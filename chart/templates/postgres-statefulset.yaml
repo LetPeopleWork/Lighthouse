@@ -17,9 +17,39 @@ spec:
       labels:
         {{- include "lighthouse.postgres.selectorLabels" . | nindent 8 }}
     spec:
+      # A new Postgres major cannot open the previous major's data. These two steps run before every
+      # start: the first hands over the previous major's programs, the second picks the data directory
+      # and, when the data is one major behind, upgrades a copy of it beside the original.
+      initContainers:
+        - name: pg-old-binaries
+          image: {{ include "lighthouse.postgres.upgradeImage" . | quote }}
+          command: ["gosu", "postgres", "bash", "/lighthouse-postgres/copy-old-binaries.sh"]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: upgrade-scripts
+              mountPath: /lighthouse-postgres
+            - name: old-binaries
+              mountPath: /old-binaries
+        - name: pg-upgrade
+          image: {{ .Values.postgresql.image | quote }}
+          command: ["bash", "/lighthouse-postgres/upgrade.sh"]
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: upgrade-scripts
+              mountPath: /lighthouse-postgres
+            - name: old-binaries
+              mountPath: /old-binaries
+            - name: upgrade-decision
+              mountPath: /decision
       containers:
         - name: postgres
           image: {{ .Values.postgresql.image | quote }}
+          command: ["bash", "/lighthouse-postgres/start.sh"]
           ports:
             - name: postgres
               containerPort: 5432
@@ -38,6 +68,10 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - name: upgrade-scripts
+              mountPath: /lighthouse-postgres
+            - name: upgrade-decision
+              mountPath: /decision
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", {{ .Values.postgresql.auth.username | quote }}, "-d", {{ .Values.postgresql.auth.database | quote }}]
@@ -46,6 +80,14 @@ spec:
             exec:
               command: ["pg_isready", "-U", {{ .Values.postgresql.auth.username | quote }}, "-d", {{ .Values.postgresql.auth.database | quote }}]
             periodSeconds: 10
+      volumes:
+        - name: upgrade-scripts
+          configMap:
+            name: {{ include "lighthouse.postgres.upgradeScripts" . }}
+        - name: old-binaries
+          emptyDir: {}
+        - name: upgrade-decision
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: data

@@ -10,8 +10,6 @@ tests:
   # --- the upgrade steps exist only where the chart runs the database itself ---------------------
 
   - it: the bundled database gets the two upgrade steps, old binaries first
-    skip:
-      reason: "pending story 6131 slice 01: the upgrade init containers are not implemented yet"
     template: templates/postgres-statefulset.yaml
     asserts:
       - lengthEqual:
@@ -25,8 +23,6 @@ tests:
           value: pg-upgrade
 
   - it: by default the upgrade source is Postgres 17 and the upgrade runs the Postgres 18 image the database runs
-    skip:
-      reason: "pending story 6131 slice 01: the upgrade init containers and the trixie image pair are not implemented yet"
     template: templates/postgres-statefulset.yaml
     asserts:
       - equal:
@@ -40,8 +36,6 @@ tests:
           value: postgres:18-trixie
 
   - it: a mirrored database image is the one the upgrade step runs
-    skip:
-      reason: "pending story 6131 slice 01: the upgrade init containers are not implemented yet"
     set:
       postgresql.image: registry.example.internal/mirror/postgres:18-trixie
     template: templates/postgres-statefulset.yaml
@@ -51,8 +45,6 @@ tests:
           value: registry.example.internal/mirror/postgres:18-trixie
 
   - it: the upgrade-source image comes from its value when one is set
-    skip:
-      reason: "pending story 6131 slice 01: postgresql.upgrade.image is not implemented yet"
     set:
       postgresql.upgrade.image: registry.example.internal/mirror/postgres:17-trixie
     template: templates/postgres-statefulset.yaml
@@ -65,8 +57,6 @@ tests:
   # setting is missing altogether and the database image is still the old one. Setting the key to null
   # removes it, which is the same shape.
   - it: values from an older chart still render, falling back to the chart's own upgrade-source image
-    skip:
-      reason: "pending story 6131 slice 01: the nil-safe upgrade-source fallback is not implemented yet"
     set:
       postgresql.upgrade: null
       postgresql.image: postgres:17
@@ -80,8 +70,6 @@ tests:
           value: postgres:17
 
   - it: the upgrade scripts render with the bundled database
-    skip:
-      reason: "pending story 6131 slice 01: the upgrade script ConfigMap does not exist yet"
     template: templates/postgres-upgrade-configmap.yaml
     asserts:
       - hasDocuments:
@@ -90,8 +78,6 @@ tests:
           of: ConfigMap
 
   - it: an external database renders neither the database nor its upgrade scripts
-    skip:
-      reason: "pending story 6131 slice 01: the upgrade script ConfigMap does not exist yet"
     set:
       postgresql.enabled: false
       externalDatabase.host: my-pg.example
