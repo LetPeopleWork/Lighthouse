@@ -25,7 +25,7 @@ reason and the way out; the Kubernetes docs describe the automatic upgrade, roll
   succeeds.
 
 ## Acceptance criteria
-AC-2.3, AC-3.1 … AC-3.5 in `../feature-delta.md`.
+AC-2.3, AC-2.4, AC-3.1 … AC-3.5 in `../feature-delta.md`.
 
 ## Dependencies
 Slice 01 (detection step and layout).
@@ -34,5 +34,6 @@ Slice 01 (detection step and layout).
 About ½–1 day. Reference class: the chart's render-time `required` guards (encryption key, ingress host).
 
 ## Dogfood
-kind cluster with a deliberately small PVC: upgrade, read the refusal, grow the PVC, watch it proceed.
+kind cluster with a deliberately small, size-enforced volume (a static PV, since kind's default storage
+ignores PVC size): upgrade, read the refusal, grow the PVC, watch it proceed.
 Then follow the rewritten docs section verbatim from a clean 0.1.17 install.

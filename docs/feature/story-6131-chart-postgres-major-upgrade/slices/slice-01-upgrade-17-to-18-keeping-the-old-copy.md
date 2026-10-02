@@ -25,7 +25,8 @@ to 18 with every row intact, and `helm rollback` opens the untouched 17 copy aga
   counts.
 
 ## Acceptance criteria
-AC-1.1 … AC-1.7, AC-2.1, AC-2.2 in `../feature-delta.md`.
+AC-1.1 … AC-1.8, AC-2.1, AC-2.2 in `../feature-delta.md`. AC-1.8 is the `NOTES.txt` line for an operator
+whose `--reuse-values` upgrade kept the old image.
 
 ## Dependencies
 Chart 0.1.17 pullable from the published repo (the "before" state). DESIGN picks the mechanism.

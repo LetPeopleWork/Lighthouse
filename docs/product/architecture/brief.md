@@ -9361,3 +9361,58 @@ in the panel. Changed: every value shows its sample size, "—" only when truly 
 notice and nothing about settings stored, slice 09 dropped (D46) · {Throughput} as total and per-day average over the
 whole window, change on the per-day average (D47) · average {Work Item Age} as window average and last day, like the
 total (D48). Value definitions: ADR-221 §7.
+
+---
+
+## System Architecture — story-6131-chart-postgres-major-upgrade
+
+Feature: story-6131-chart-postgres-major-upgrade (ADO User Story #6131). Wave: DESIGN, layer scope **chart /
+infrastructure only**, no backend or frontend code. Architect: Platform Architect, interaction mode PROPOSE;
+option chosen by the maintainer on 2026-10-02. Full design: `docs/feature/story-6131-chart-postgres-major-upgrade/feature-delta.md`.
+
+**Problem.** A Postgres major cannot open the previous major's data files. When the chart's default image
+moves (17 in chart 0.1.17, 18 on `main`), every bundled install would crash-loop on
+`database files are incompatible with server`.
+
+**Shape.** The bundled Postgres pod (ADR-080) gains two init containers and a start wrapper. Nothing runs
+outside the pod, and there is no Helm hook, so a GitOps sync behaves the same as `helm upgrade`.
+
+| Container | Image | Job |
+|---|---|---|
+| `pg-old-binaries` (init) | `postgresql.upgrade.image`, default `postgres:17-trixie` | When the data is its own major, copies its binaries into an emptyDir |
+| `pg-upgrade` (init) | the main image, default `postgres:18-trixie` | Detects majors at run time, runs the read-only refusal checks, recovers an unclean old cluster, runs `pg_upgrade --copy` into `pgdata-<major>.partial`, writes a marker, renames to `pgdata-<major>` |
+| `postgres` | the main image | A wrapper sets `PGDATA` from the decision, then runs the official entrypoint unchanged |
+
+**Why it is built this way:**
+- The old data stays in `pgdata/`, the fixed path of chart 0.1.17, so `helm rollback` starts on the
+  pre-upgrade database.
+- The new cluster only goes live by an atomic rename, so an interrupted attempt is redone from scratch.
+- The marker holds the hash of the old cluster's `pg_control`. Any later run of the old major changes that
+  hash, so an out-of-date copy is detected and rebuilt.
+- Only official images are used, and the new cluster is created by the same binaries that serve it.
+- `--reuse-values` keeps the previous chart's values, so the chart's default major lives in `_helpers.tpl`.
+  `NOTES.txt` warns when the running image's major is behind it.
+
+**Cost.** About twice the data on the PVC until the operator removes the old copy (the documented cleanup
+leaves a placeholder file so a later rollback fails loudly rather than starting empty). About 2 s on every
+pod start, measured on kind.
+
+**Proof.** A new `upgrade-path` job in `ci_chart.yml` installs the packaged 0.1.17 from `docs/charts/`, then
+on kind: upgrades it, applies it through rendered manifests, rolls it back, upgrades it again, and runs the
+refusal and interruption scenarios.
+
+### ADR References (this feature)
+
+- [ADR-213](./adr-213-bundled-postgres-crosses-a-major-in-an-init-container-from-official-images.md): the
+  bundled Postgres crosses a major in an init container, with `pg_upgrade --copy` into a sibling directory and
+  binaries only from official images. It rejects a third-party dual-binary image and dump-and-restore.
+- Cross-refs [ADR-080](./adr-080-chart-postgres-only-bundled-and-byo.md) (official image only, kept),
+  [ADR-082](./adr-082-chart-required-values-fail-fast.md) and
+  [ADR-212](./adr-212-renovate-is-the-one-dependency-bot.md) (one added rule: the upgrade-source image gets
+  no major updates).
+
+### C4
+
+System Context and Container views: **no new container at system level.** The change sits inside the
+existing bundled Postgres StatefulSet. The pod-level container view is in the feature delta.
+`c4-diagrams.md` carries no chart or Postgres-pod view, so it is unchanged.
