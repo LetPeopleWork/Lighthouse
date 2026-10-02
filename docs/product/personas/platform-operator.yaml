@@ -61,6 +61,8 @@ primary_jobs:
   # story-5877-update-queue-lanes QUEUE-STRUCTURE jobs (both flavours)
   - job-operator-keep-teams-moving-while-a-portfolio-refreshes  # story-5877 (2026-09-18, #5877): one slow entity must not stop every other entity refreshing
   - job-operator-bound-a-refresh-that-will-not-end  # story-5877 (2026-09-18, #5877): a run past a sane bound ends itself and says which bound it passed
+  # story-6131-chart-postgres-major-upgrade BUNDLED-DATABASE job (self-hoster flavour)
+  - job-operator-upgrade-bundled-database-across-major  # story-6131 (2026-10-02, #6131): a chart upgrade that moves the Postgres major keeps the data and a way back
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate

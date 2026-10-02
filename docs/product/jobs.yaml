@@ -7910,3 +7910,41 @@ jobs:
         interest, no Lighthouse interviews, so not 5. Satisfaction 2 - Nave judges per metric but with a
         moving "before" and percentage thresholds; ValueFlow freezes but states no rule; nothing researched
         does both. Gap 2 until the interview protocol in feature-delta.md produces commitments.
+  - id: job-operator-upgrade-bundled-database-across-major
+    title: Take a chart upgrade that moves the bundled Postgres major without losing data or a way back
+    persona: platform-operator
+    feature_context: story-6131-chart-postgres-major-upgrade
+    created: 2026-10-02
+    note: >
+      NEW in story-6131. Chart 0.1.17 ships postgres:17; main defaults to postgres:18, unreleased. A new
+      major cannot open the previous major's files, so today the upgrade crash-loops the bundled database.
+    job_story: >
+      When a chart release moves the bundled Postgres to a new major,
+      I want `helm upgrade` to carry my existing data across by itself and leave the old copy for a rollback,
+      so my Lighthouse comes back with all its history and I never hold back upgrades or hand-run a dump and
+      restore.
+    dimensions:
+      functional: >
+        Automatic N-1 major upgrade of the PVC data inside the chart; old copy kept so helm rollback works;
+        refuse with a named reason before writing when it cannot be done safely.
+      emotional: >
+        From "every chart upgrade might brick the database" to "upgrades just work, and I can go back".
+      social: >
+        Run self-hosted Lighthouse as a low-maintenance install a colleague can upgrade without me.
+    forces:
+      push: >
+        `database files are incompatible with server` crash-loop after an ordinary helm upgrade; the fix is
+        a hand-run pg_dump / pg_restore or pinning the image forever.
+      pull: >
+        One `helm upgrade` and the data is on the new major, with rollback still one command.
+      anxiety: >
+        Will an automatic migration corrupt or half-migrate my only copy? Will my volume run out of room?
+      habit: >
+        Pin the Postgres image and never touch it, falling behind on security fixes.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - every bundled install hits this on the release that moves the default, and the
+        failure is a full outage. Satisfaction 1 - only a documented manual dump/restore exists. Gap 3.

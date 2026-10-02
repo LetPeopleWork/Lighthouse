@@ -1,0 +1,54 @@
+schema_version: 1
+feature_id: story-6131-chart-postgres-major-upgrade
+created: 2026-10-02
+research_depth: lightweight
+persona: platform-operator
+jobs:
+  - job-operator-upgrade-bundled-database-across-major
+note: >
+  Operational journey: the "screen" is helm, kubectl and the Lighthouse UI coming back with its data.
+  Chart only; compose and external databases are out of scope.
+
+steps:
+  - id: upgrade
+    action: helm upgrade l8e letpeoplework/lighthouse --reuse-values
+    sees: Helm exits 0; the Postgres pod runs its upgrade step once
+    emotion: wary — "is my only copy of the data safe?"
+  - id: database-ready
+    action: kubectl rollout status statefulset l8e-lighthouse-postgres
+    sees: Postgres Ready on the new major (SELECT version() reports 18)
+    emotion: relieved
+  - id: data-back
+    action: open Lighthouse
+    sees: the same teams, portfolios, features and history as before the upgrade
+    emotion: confident
+  - id: rollback-if-wanted
+    action: helm rollback l8e <previous revision>
+    sees: Postgres Ready on 17 with the pre-upgrade data
+    emotion: in control — "this was never a one-way door"
+  - id: clean-up
+    action: the one cleanup command from the Kubernetes docs
+    sees: the previous major's copy gone, the space back
+    emotion: done
+
+error_paths:
+  - at: upgrade
+    cause: PVC too small for a second copy
+    sees: pod not Ready; log names free vs needed space and "grow the PVC or pin postgresql.image"
+    recovery: grow persistence.size or pin the image; the next start proceeds
+  - at: upgrade
+    cause: data two or more majors behind, or newer than the image with no kept copy
+    sees: log names both majors and links the manual section of the Kubernetes docs
+    recovery: pin the image or follow the manual dump/restore
+  - at: upgrade
+    cause: pod killed mid-upgrade
+    sees: next start redoes the upgrade from the untouched old copy
+    recovery: none needed
+
+shared_artifacts:
+  - name: PVC data-<release>-lighthouse-postgres-0
+    source: StatefulSet volumeClaimTemplates
+  - name: postgresql.image
+    source: chart/values.yaml (default) or operator override
+  - name: database credentials
+    source: chart Secret or postgresql.auth.existingSecret — unchanged by the upgrade
