@@ -63,8 +63,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "lighthouse.db.secretName" . }}
                   key: postgres-password
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
