@@ -1,6 +1,6 @@
 # Slice 06 — Reports on Portfolios
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-06 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-06 (ADO #6164) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

@@ -1,6 +1,6 @@
 # Slice 10 — Change which claims a report shows (cancellable)
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-10 · **Estimate**: ~½d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-10 (ADO #6168) · **Estimate**: ~½d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

@@ -1,6 +1,6 @@
 # Slice 01 — Reports tab: freeze a Then & Now report for a Team
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-01 · **Estimate**: ~1d (includes the migration) ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-01 (ADO #6159) · **Estimate**: ~1d (includes the migration) ·
 **Tier**: Community · **Walking skeleton**: yes · `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

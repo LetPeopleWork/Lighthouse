@@ -1,6 +1,6 @@
 # Slice 03 — "{Cycle Time} is trending down": the first verdict
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-03 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-03 (ADO #6161) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

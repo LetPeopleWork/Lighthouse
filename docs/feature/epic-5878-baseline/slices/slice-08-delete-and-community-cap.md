@@ -1,6 +1,6 @@
 # Slice 08 — Delete reports; Community's two; Premium unlimited
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-08 · **Estimate**: ~1d · **Tier**: Community cap,
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-08 (ADO #6166) · **Estimate**: ~1d · **Tier**: Community cap,
 Premium unlimited · `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

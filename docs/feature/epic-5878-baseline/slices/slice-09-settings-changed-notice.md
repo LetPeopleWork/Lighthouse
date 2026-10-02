@@ -1,6 +1,6 @@
 # Slice 09 — Settings-changed notice
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-09 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-09 (ADO #6167) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

@@ -1,6 +1,6 @@
 # Slice 05 — {Cycle Time} predictable; 85th percentile lower by 10% or more
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-05 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-05 (ADO #6163) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

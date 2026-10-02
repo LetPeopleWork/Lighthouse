@@ -1,6 +1,6 @@
 # Slice 02 — A Then window that ended in the past
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-02 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-02 (ADO #6160) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

@@ -1,6 +1,6 @@
 # Slice 04 — Pick claims: {Throughput}, {WIP}, Total {Work Item Age}
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-04 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-04 (ADO #6162) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

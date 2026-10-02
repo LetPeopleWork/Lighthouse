@@ -1,6 +1,6 @@
 # Slice 07 — Choose the Now window; days since Then ended
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-07 · **Estimate**: ~½d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-07 (ADO #6165) · **Estimate**: ~½d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal

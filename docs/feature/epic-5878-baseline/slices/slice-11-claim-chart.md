@@ -1,6 +1,6 @@
 # Slice 11 — Open the chart behind a verdict (cancellable)
 
-**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-11 · **Estimate**: ~1d · **Tier**: Community ·
+**Feature**: epic-5878-baseline · **Epic**: #5878 · **Story**: US-11 (ADO #6169) · **Estimate**: ~1d · **Tier**: Community ·
 `job_id: job-flow-coach-show-whether-flow-changed`
 
 ## Goal
