@@ -42,9 +42,13 @@ const APPIMAGE_IDENTITY: [&str; 5] = ["APPDIR", "APPIMAGE", "ARGV0", "OWD", "APP
 
 #[cfg(target_os = "linux")]
 fn without_appdir_entries(value: &OsString, appdir: &[u8]) -> Option<OsString> {
-    let kept: Vec<&[u8]> = value
-        .as_bytes()
-        .split(|byte| *byte == b':')
+    let entries: Vec<&[u8]> = value.as_bytes().split(|byte| *byte == b':').collect();
+    if !entries.iter().any(|entry| is_under(entry, appdir)) {
+        return Some(value.clone());
+    }
+
+    let kept: Vec<&[u8]> = entries
+        .into_iter()
         .filter(|entry| !entry.is_empty() && !is_under(entry, appdir))
         .collect();
 
@@ -172,6 +176,9 @@ mod tests {
             ("SSL_CERT_FILE", "/etc/ssl/cert.pem"),
             ("GTK_THEME", "Adwaita:dark"),
             ("MY_SEARCH_PATH", "/a:/b/c:/d"),
+            ("ASPNETCORE_URLS", "http://[::1]:5000"),
+            ("FOO", ":a::b:"),
+            ("EMPTY", ""),
         ];
 
         let output = inside_appimage(&unrelated);
