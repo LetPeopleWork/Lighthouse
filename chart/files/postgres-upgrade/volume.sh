@@ -136,6 +136,15 @@ copies_older_than() {
   done
 }
 
+# Whether a start on a copy of major $1 has a removal to finish: pgdata holds the placeholder and more, a
+# pgdata-<K> below the copy that copy was made from is on the volume whether it counts or not, or pgdata
+# still counts below it. The last is what a stop between the new copy's rename and its placeholder leaves, a
+# gap of milliseconds. Each is exactly what a removal with that bound would take.
+finishing_needed() {
+  local live="$1"
+  [[ -n "$(copies_older_than "$((live - 1))")" ]]
+}
+
 # Removes every copy older than major $1 and nothing else, for a database that runs on a copy of major $2.
 # A bound above that major removes nothing, so the live copy and anything newer are never touched. pgdata
 # first gets the placeholder that keeps an older chart from creating an empty database in it; then, oldest

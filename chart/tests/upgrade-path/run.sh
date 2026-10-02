@@ -305,13 +305,18 @@ container_pid() {
   echo "$pid"
 }
 
+# A shell command for the kind node that stops every process in the container of process $1.
+stop_container_of() {
+  local pid="$1"
+  echo "target=\$(readlink /proc/$pid/ns/pid); for p in /proc/[0-9]*; do if [ \"\$(readlink \$p/ns/pid 2>/dev/null)\" = \"\$target\" ]; then kill -STOP \${p#/proc/} 2>/dev/null || true; fi; done"
+}
+
 # Stops every process of the upgrade step from the kind node, pg_upgrade included, so the copy it is
 # making cannot reach its rename however long the pod takes to go.
 freeze_upgrade_step() {
   local ns="$1" pid
   pid="$(container_pid "$ns" initContainerStatuses pg-upgrade)"
-  docker exec "$(pod_field "$ns" '{.spec.nodeName}')" sh -c \
-    "target=\$(readlink /proc/$pid/ns/pid); for p in /proc/[0-9]*; do if [ \"\$(readlink \$p/ns/pid 2>/dev/null)\" = \"\$target\" ]; then kill -STOP \${p#/proc/} 2>/dev/null || true; fi; done"
+  docker exec "$(pod_field "$ns" '{.spec.nodeName}')" sh -c "$(stop_container_of "$pid")"
 }
 
 install_with_data() {
@@ -1025,15 +1030,20 @@ seed_bulk_data() {
                  SELECT g AS id, repeat(md5(g::text), 8) AS payload FROM generate_series(1, $BALLAST_ROWS) g" >/dev/null
 }
 
-# Follows the upgrade step's log until pg_upgrade starts copying the data files. It prints a step's name
-# only together with its result, so the copy's own line appears once the copy is over; the step before it
-# is the last line printed before the copy begins.
-wait_copy_started() {
+wait_upgrade_step_running() {
   local ns="$1" deadline=$((SECONDS + WAIT_SECONDS))
   until [[ -n "$(pod_field "$ns" '{.status.initContainerStatuses[?(@.name=="pg-upgrade")].state.running.startedAt}')" ]]; do
     [[ $SECONDS -lt $deadline ]] || { dump_diagnostics "$ns"; fail "the upgrade step in $ns did not start"; }
     sleep 1
   done
+}
+
+# Follows the upgrade step's log until pg_upgrade starts copying the data files. It prints a step's name
+# only together with its result, so the copy's own line appears once the copy is over; the step before it
+# is the last line printed before the copy begins.
+wait_copy_started() {
+  local ns="$1"
+  wait_upgrade_step_running "$ns"
   grep -m1 -F -- "$COPY_STARTED" < <(kubectl -n "$ns" logs -f "$POSTGRES_POD" -c pg-upgrade) \
     || { dump_diagnostics "$ns"; fail "the upgrade step in $ns ended without saying it was copying the data"; }
 }
@@ -1186,9 +1196,10 @@ assert_note_names_source() {
     || fail "the note in $copy in $ns does not carry the hash of $source_folder/global/pg_control ($hash): $note"
 }
 
+# A warning after a pin back advises removing the pin, which removes nothing.
 assert_nothing_removed() {
   local ns="$1" removals
-  removals="$(upgrade_log "$ns" | grep '^lighthouse-postgres:' | grep -i 'remov' || true)"
+  removals="$(upgrade_log "$ns" | grep '^lighthouse-postgres:' | grep -i 'remov' | grep -vF 'removing the pin on postgresql.image' || true)"
   [[ -z "$removals" ]] || fail "the upgrade log in $ns speaks of removing a copy: $removals"
 }
 
@@ -1453,7 +1464,87 @@ chain_rollback_two_charts_fails_loudly() {
 }
 chain_cleanup_removes_every_older_copy_and_reruns() { scaffold "The documented cleanup removes every copy older than the live one, and can be run again"; }
 chain_cut_off_cleanup_is_finished_by_running_again() { scaffold "A cleanup cut off part-way is finished by running it again"; }
-chain_interrupted_removal_is_finished_by_next_start() { scaffold "A removal of the copy before last cut off part-way is finished by the next start"; }
+# A Postgres 16 volume upgraded once to 17 by the new chart, in a namespace of its own. Any extra
+# arguments are a command run against the namespace while it is still on Postgres 16.
+upgrade_16_to_17_in() {
+  local ns="$1"
+  install_with_data "$ns" --set postgresql.image=postgres:16-trixie
+  if [[ $# -gt 1 ]]; then
+    "${@:2}" "$ns"
+  fi
+  upgrade_to_new_chart "$ns" "${CHAIN_PIN_17[@]}"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  wait_api_ready "$ns"
+}
+
+# Where the database volume of $1 lies on the kind node.
+node_volume_dir() {
+  local ns="$1" volume
+  volume="$(kubectl -n "$ns" get pvc "data-$POSTGRES_POD" -o jsonpath='{.spec.volumeName}')"
+  kubectl get pv "$volume" -o jsonpath='{.spec.hostPath.path}{.spec.local.path}'
+}
+
+on_node() {
+  docker exec "$(kind_node)" "$@"
+}
+
+# Waits on the kind node itself, without a fork per check, for the removal of the copy before last to write
+# its placeholder into pgdata, then stops every process of the upgrade step: the removal of a few hundred MB
+# takes well under a second, far less than one kubectl round trip.
+freeze_once_removal_starts() {
+  local ns="$1" dir pid
+  dir="$(node_volume_dir "$ns")"
+  wait_upgrade_step_running "$ns"
+  pid="$(container_pid "$ns" initContainerStatuses pg-upgrade)"
+  on_node timeout "$WAIT_SECONDS" sh -c "
+    while :; do set -- '$dir'/pgdata/UPGRADED-TO-*; [ -e \"\$1\" ] && break; done
+    kill -STOP $pid
+    $(stop_container_of "$pid")" \
+    || { dump_diagnostics "$ns"; fail "the upgrade step in $ns never began removing the copy before last"; }
+}
+
+# The one line the upgrade log carries about finishing the removal of the Postgres 16 copy. A removal cut
+# off before PG_VERSION went still names its major; one cut off after can only name the folder.
+finishing_line() {
+  local ns="$1" line
+  line="$(the_one_line_with "finished removing" "$(upgrade_log "$ns")")" \
+    || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one line saying it finished removing a copy"; }
+  [[ "$line" =~ finished\ removing\ (pgdata\ \(Postgres\ 16\)|what\ was\ left\ of\ pgdata)[,\;] ]] \
+    || fail "the finishing line in $ns names something other than the Postgres 16 copy in pgdata: $line"
+  echo "$line"
+}
+
+chain_interrupted_removal_is_finished_by_next_start() {
+  local ns="chain-interrupted-removal" counts entries log
+  upgrade_16_to_17_in "$ns" seed_bulk_data
+  write_marker_table "$ns" upgrade_path_written_on_17
+  counts="$(public_row_counts "$ns")"
+
+  upgrade_to_new_chart "$ns" --reset-values
+  freeze_once_removal_starts "$ns"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --grace-period=1 --ignore-not-found --wait >/dev/null
+
+  entries="$(on_volume "$ns" 'ls -1A /volume | tr "\n" " "; echo; ls -1A /volume/pgdata | grep -vx UPGRADED-TO-18-see-kubernetes-docs | tr "\n" " "; echo; ls /volume/pgdata/UPGRADED-TO-18-see-kubernetes-docs')"
+  echo "  cut off with: ${entries//$'\n'/ | }"
+  [[ "$entries" =~ ^pgdata\ pgdata-17\ pgdata-18\ $'\n'[^$'\n']+$'\n'/volume/pgdata/UPGRADED-TO-18-see-kubernetes-docs$ ]] \
+    || fail "the delete in $ns did not land mid-removal: the volume holds $entries"
+
+  start_database "$ns"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  log="$(upgrade_log "$ns")"
+  grep -qF -- "nothing to upgrade" <<<"$log" \
+    || { dump_diagnostics "$ns"; fail "the start after the cut-off removal in $ns did not find pgdata-18 current"; }
+  ! grep -qF -- "upgrading the Postgres" <<<"$log" || fail "the start after the cut-off removal in $ns upgraded again"
+  echo "  $(finishing_line "$ns")"
+  assert_two_copies_beside_placeholder "$ns"
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+}
 # The database is held at no replicas while the frozen pod goes, so the volume can be read as the
 # interrupted upgrade left it before the next start redoes the upgrade.
 chain_interrupted_second_upgrade_removes_nothing() {
@@ -1506,12 +1597,78 @@ chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little
 chain_cleaned_volume_moves_on_and_removes_nothing() { scaffold "A cleaned-up volume moves on to the next major and removes nothing"; }
 chain_out_of_date_copy_counts_as_older_major_and_refuses() { scaffold "A newer copy made out of date by a rollback counts as the older major and is refused as a gap"; }
 chain_gap_from_a_copy_refuses_and_touches_nothing() { scaffold "A live copy two majors behind the image is refused, naming that copy and one major per release"; }
-chain_pin_back_after_cut_off_cleanup_keeps_pinned_data() { scaffold "Pinning back after a cut-off cleanup keeps the pinned major's data however often it restarts"; }
 chain_unreadable_live_copy_refuses_before_writing() { scaffold "A live copy whose control file cannot be read is refused before the next upgrade writes anything"; }
 chain_unfollowable_chain_is_refused_once_by_upgrade_step() { scaffold "A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone"; }
 chain_cleanup_finishes_started_removal_past_unreadable_copy() { scaffold "The cleanup finishes a removal it can see had started, even past an unreadable original copy"; }
 chain_cleanup_refuses_past_unreadable_copy_not_started() { scaffold "The cleanup refuses to guess past an unreadable copy it has no sign of having started on"; }
-chain_unremovable_leftover_never_stops_the_start() { scaffold "A copy that cannot be fully removed never stops the database starting on the new copy"; }
+# The documented cleanup is cut off right after it writes the placeholder, as if the pod running it was
+# killed there: pgdata still holds PG_VERSION and every file, so it still counts as the Postgres 16 copy.
+chain_pin_back_after_cut_off_cleanup_keeps_pinned_data() {
+  local ns="chain-pin-after-cut-cleanup" old_uid restart
+  upgrade_16_to_17_in "$ns"
+  in_postgres "$ns" touch "$MOUNT/pgdata/UPGRADED-TO-17-see-kubernetes-docs"
+  old_uid="$(pod_uid "$ns")"
+
+  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set postgresql.image=postgres:16-trixie >/dev/null
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --ignore-not-found --wait=false >/dev/null
+  wait_pod_replaced "$ns" "$old_uid"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 16
+  assert_data_directory "$ns" pgdata
+  assert_newer_copy_warning "$ns" 17
+  assert_nothing_removed "$ns"
+  write_marker_table "$ns" upgrade_path_written_on_16_after_pin
+
+  for restart in 1 2; do
+    restart_database "$ns"
+    wait_postgres_ready "$ns"
+    assert_server_major "$ns" 16
+    assert_data_directory "$ns" pgdata
+    [[ "$(marker_rows_in "$ns" upgrade_path_written_on_16_after_pin)" == "1" ]] \
+      || fail "the row written on Postgres 16 in $ns is gone after restart $restart"
+    assert_nothing_removed "$ns"
+  done
+  [[ "$(volume_entries "$ns" | tr '\n' ' ')" == "pgdata pgdata-17 " ]] \
+    || fail "the volume in $ns holds $(volume_entries "$ns" | tr '\n' ' ')rather than pgdata and pgdata-17"
+  echo "  pgdata still opens on Postgres 16 with the row written after the pin; pgdata-17 is still there"
+}
+# A file marked immutable from the kind node cannot be unlinked even by root, which the upgrade step runs
+# as; the mark is taken off again before the scenario ends, so the namespace can be deleted.
+chain_unremovable_leftover_never_stops_the_start() {
+  local ns="chain-unremovable-leftover" counts leftover line
+  upgrade_16_to_17_in "$ns"
+  counts="$(public_row_counts "$ns")"
+  leftover="$(node_volume_dir "$ns")/pgdata/postgresql.conf"
+  on_node chattr +i "$leftover"
+
+  upgrade_to_new_chart "$ns" --reset-values
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+  line="$(the_one_line_with "could not be fully removed" "$(upgrade_log "$ns")")" \
+    || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one warning that a copy could not be fully removed"; }
+  echo "  $line"
+  assert_line_says "$ns" "$line" "warning: pgdata (Postgres 16) could not be fully removed" "Postgres 18 starts on pgdata-18"
+  on_node test -e "$leftover" || fail "the immutable file in $ns is gone"
+
+  restart_database "$ns"
+  wait_postgres_ready "$ns"
+  assert_data_directory "$ns" pgdata-18
+  line="$(the_one_line_with "could not be fully removed" "$(upgrade_log "$ns")")" \
+    || { dump_diagnostics "$ns"; fail "the restart in $ns did not try the removal again"; }
+  echo "  $line"
+  assert_line_says "$ns" "$line" "pgdata" "Postgres 18 starts on pgdata-18"
+
+  on_node chattr -i "$leftover"
+  restart_database "$ns"
+  wait_postgres_ready "$ns"
+  assert_data_directory "$ns" pgdata-18
+  echo "  $(finishing_line "$ns")"
+  assert_two_copies_beside_placeholder "$ns"
+}
 
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
 # one before it.
@@ -1553,6 +1710,9 @@ readonly CHAIN=(
   chain_pin_back_two_majors_refuses_and_touches_nothing
   chain_rollback_two_charts_fails_loudly
   chain_interrupted_second_upgrade_removes_nothing
+  chain_interrupted_removal_is_finished_by_next_start
+  chain_unremovable_leftover_never_stops_the_start
+  chain_pin_back_after_cut_off_cleanup_keeps_pinned_data
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later

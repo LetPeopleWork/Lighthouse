@@ -447,7 +447,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     When the operator runs the cleanup command from the Kubernetes docs again
     Then the volume holds only the placeholder and the Postgres 18 copy
 
-  @US-04 @AC-4.6 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.6 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: A removal of the copy before last cut off part-way is finished by the next start
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the original Postgres 16 copy holds about 300 MB of Lighthouse data
@@ -521,7 +521,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
 
   # --- slice-03, added after the design review ---------------------------------------------------
 
-  @US-04 @AC-4.5 @AC-4.6 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.5 @AC-4.6 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: Pinning back after a cut-off cleanup keeps the pinned major's data however often it restarts
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the documented cleanup was cut off after the placeholder was written, while the original copy still says it is Postgres 16
@@ -573,7 +573,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the cleanup fails with one line naming the original copy's control file as unreadable and saying to put it back from a backup before removing anything
     And every file on the database volume is exactly as it was before the cleanup
 
-  @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: A copy that cannot be fully removed never stops the database starting on the new copy
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And one file in the original Postgres 16 copy cannot be deleted

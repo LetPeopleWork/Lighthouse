@@ -391,31 +391,57 @@ say_nothing_to_upgrade() {
     say "nothing to upgrade: the data in pgdata is already Postgres $MAJOR"
   elif [[ -z "$source" ]]; then
     say "nothing to upgrade: the old copy was removed, and Postgres $MAJOR starts on $LIVE_COPY"
+  elif finishing_needed "$MAJOR"; then
+    say "nothing to upgrade: $LIVE_COPY is already the upgrade of the Postgres $PREVIOUS_MAJOR data in $source, and Postgres $MAJOR starts on it"
   else
     say "nothing to upgrade and nothing to remove: $LIVE_COPY is already the upgrade of the Postgres $PREVIOUS_MAJOR data in $source, and Postgres $MAJOR starts on it"
   fi
 }
 
-# Once the new copy is in place, the copy it was made from is all a rollback one chart back needs, so every
-# older copy goes. It runs after the start decision is written, so a removal that fails costs only room:
-# the database still starts on the new copy.
-remove_copy_before_last() {
-  local removed folder major names="" newest=""
-  if ! removed="$(remove_copies_older_than "$PREVIOUS_MAJOR" "$MAJOR")"; then
-    say "warning: removing the copies older than $LIVE_COPY did not finish; Postgres $MAJOR starts on pgdata-$MAJOR all the same, and what is left only takes room"
-    return 0
-  fi
+# "folder (Postgres K)" for each "folder major" line of $1, or "what was left of folder" when the major can
+# no longer be told, joined by commas.
+copy_names() {
+  local folder major names=""
   while read -r folder major; do
     [[ -n "$folder" ]] || continue
     if [[ -n "$major" ]]; then
       names="${names:+$names, }$folder (Postgres $major)"
-      newest="$major"
     else
       names="${names:+$names, }what was left of $folder"
     fi
-  done <<<"$removed"
-  [[ -n "$names" ]] || return 0
-  say "removed $names, the copy before the one this upgrade read from; a rollback to a chart on Postgres ${newest:-$((PREVIOUS_MAJOR - 1))} is no longer possible, a rollback to the chart on Postgres $PREVIOUS_MAJOR still is"
+  done <<<"$1"
+  echo "$names"
+}
+
+# Removes every copy older than the one the copy this major starts on was made from, and leaves what went in
+# REMOVED. It only ever runs after the start decision is written, so a removal that fails costs room alone:
+# one warning, the database starts on folder $1 all the same, and the next start tries again.
+remove_older_copies() {
+  local starts_on="$1" targets
+  targets="$(copies_older_than "$PREVIOUS_MAJOR" | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }')"
+  if ! REMOVED="$(remove_copies_older_than "$PREVIOUS_MAJOR" "$MAJOR")"; then
+    say "warning: $(copy_names "$targets") could not be fully removed; Postgres $MAJOR starts on $starts_on all the same, what is left only takes room, and the next start tries again"
+    return 1
+  fi
+}
+
+# Once the new copy is in place, the copy it was made from is all a rollback one chart back needs, so every
+# older copy goes.
+remove_copy_before_last() {
+  local newest
+  remove_older_copies "pgdata-$MAJOR" || return 0
+  [[ -n "$REMOVED" ]] || return 0
+  newest="$(awk 'NF == 2 { newest = $2 } END { print newest }' <<<"$REMOVED")"
+  say "removed $(copy_names "$REMOVED"), the copy before the one this upgrade read from; a rollback to a chart on Postgres ${newest:-$((PREVIOUS_MAJOR - 1))} is no longer possible, a rollback to the chart on Postgres $PREVIOUS_MAJOR still is"
+}
+
+# A removal a stop cut off part-way, or one that failed, is finished by a later start on the copy it left
+# live. Only by that start: one on a pinned-back copy keeps every folder.
+finish_earlier_removal() {
+  finishing_needed "$MAJOR" || return 0
+  remove_older_copies "$LIVE_COPY" || return 0
+  [[ -n "$REMOVED" ]] || return 0
+  say "finished removing $(copy_names "$REMOVED"), which an earlier start left behind; Postgres $MAJOR starts on $LIVE_COPY"
 }
 
 # The newer copy is left where it is. Once this major has run, the copy it was made from no longer matches
@@ -445,6 +471,7 @@ main() {
   elif live_is_this_major_alone; then
     say_nothing_to_upgrade
     start_on "$SOURCE"
+    finish_earlier_removal
   elif live_is_this_major_beside_newer_copy; then
     warn_newer_copy_exists "$LIVE_COPY" "$NEWER_COPY"
     start_on "$SOURCE"
