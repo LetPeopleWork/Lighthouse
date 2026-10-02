@@ -462,7 +462,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             return handler.Invocations
                 .Where(invocation => invocation.Method.Name == "SendAsync")
-                .Select(invocation => (HttpRequestMessage)invocation.Arguments[0])
+                .Select(invocation => invocation.Arguments[0])
+                .OfType<HttpRequestMessage>()
                 .ToList();
         }
 

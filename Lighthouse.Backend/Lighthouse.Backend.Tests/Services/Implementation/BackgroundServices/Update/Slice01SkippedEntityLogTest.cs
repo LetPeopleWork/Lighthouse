@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private IEnumerable<string> LinesAt(LogLevel level)
             => loggerMock.Invocations
-                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log) && (LogLevel)invocation.Arguments[0] == level)
+                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log) && invocation.Arguments[0] is LogLevel logged && logged == level)
                 .Select(invocation => invocation.Arguments[2]?.ToString() ?? string.Empty);
 
         private IEnumerable<string> AllLines()

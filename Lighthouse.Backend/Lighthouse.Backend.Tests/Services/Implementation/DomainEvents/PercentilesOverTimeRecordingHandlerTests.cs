@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             return context.PercentilesOverTimeSnapshots.CountAsync(s => s.MetricType == metricType);
         }
 
-        private static string? MetricFamilyOf(object state)
+        private static string? MetricFamilyOf(object? state)
         {
             if (state is not IEnumerable<KeyValuePair<string, object?>> properties)
             {

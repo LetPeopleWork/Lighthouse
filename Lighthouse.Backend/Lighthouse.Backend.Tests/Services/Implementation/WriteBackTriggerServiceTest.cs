@@ -538,7 +538,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var plan = subject.ResolveWriteBackForTeam(team);
 
             var infoInvocations = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Where(i => i.Arguments[0] is LogLevel.Information)
                 .ToList();
 
             Assert.That(infoInvocations, Has.Count.GreaterThanOrEqualTo(1));
@@ -590,7 +590,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private void AssertWarningLoggedContaining(string expected)
         {
             var warnings = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Warning)
+                .Where(i => i.Arguments[0] is LogLevel.Warning)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
 
             Assert.That(warnings, Has.One.Contains(expected));
@@ -625,7 +625,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private void AssertInformationLoggedContaining(string expected)
         {
             var messages = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Where(i => i.Arguments[0] is LogLevel.Information)
                 .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
 
             Assert.That(messages, Has.One.Contains(expected));
@@ -732,7 +732,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private void AssertSingleErrorLoggedContaining(string expected)
         {
             var errorInvocations = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
+                .Where(i => i.Arguments[0] is LogLevel.Error)
                 .ToList();
 
             Assert.That(errorInvocations, Has.Count.EqualTo(1));
