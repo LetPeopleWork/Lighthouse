@@ -280,11 +280,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(nameof(ARefusedRead), "insufficient_permissions", TestName = "ACredentialThatLosesItsRightsPartWayThrough_FailsTheSyncRatherThanEmptyingTheTeam")]
         [TestCase(nameof(ASignInPage), "unexpected_response", TestName = "ASignInPageServedPartWayThrough_FailsTheSyncRatherThanEmptyingTheTeam")]
         [TestCase(nameof(AnErrorEnvelope), "unexpected_response", TestName = "AnErrorEnvelopeServedPartWayThrough_FailsTheSyncRatherThanEmptyingTheTeam")]
-        public void AReadThatFailsPartWayThrough_ThrowsRatherThanReportingAnEmptyTeam(string breakage, string expectedCode)
+        public async Task AReadThatFailsPartWayThrough_ThrowsRatherThanReportingAnEmptyTeam(string breakage, string expectedCode)
         {
             var subject = CreateSubject(AnInstanceThatBreaksAfterTheFirstPage(breakage));
 
-            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+            var failure = await Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             Assert.That(failure?.Code, Is.EqualTo(expectedCode),
@@ -296,13 +296,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // without it the loop never ends. Both fixtures used to compute a perfect
         // Skip(offset).Take(pageSize), so neither failure was reachable.
         [Test]
-        public void AnInstanceThatIgnoresTheOffsetItWasGiven_IsCaughtRatherThanCountedTwice()
+        public async Task AnInstanceThatIgnoresTheOffsetItWasGiven_IsCaughtRatherThanCountedTwice()
         {
             var subject = CreateSubject(AnInstanceHolding(
                 FiveRecordsCarryingTheirIdentity(),
                 new InstanceBehaviour { PageSize = 2, IgnoresTheOffset = true }));
 
-            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+            var failure = await Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
@@ -318,14 +318,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // page sizes below prove the cap is derived rather than a constant.
         [TestCase(2, 4, TestName = "AnInstanceThatKeepsOfferingPagesOfTwo_IsStoppedAfterFourReads")]
         [TestCase(1, 7, TestName = "AnInstanceThatKeepsOfferingPagesOfOne_IsStoppedAfterSevenReads")]
-        public void AnInstanceThatKeepsOfferingAnotherPage_IsStoppedRatherThanReadWithoutEnd(int pageSize, int expectedReads)
+        public async Task AnInstanceThatKeepsOfferingAnotherPage_IsStoppedRatherThanReadWithoutEnd(int pageSize, int expectedReads)
         {
             var instance = AnInstanceHolding(
                 FiveRecordsOfMixedState(),
                 new InstanceBehaviour { PageSize = pageSize, NeverRunsOutOfPages = true });
             var subject = CreateSubject(instance);
 
-            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+            var failure = await Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
@@ -584,11 +584,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // A stored address that is not an address fails both paths. On the read path it must throw
         // rather than return nothing, for the same reason every other read failure does.
         [Test]
-        public void AReadAgainstAnAddressThatIsNotAnInstance_FailsRatherThanReturningNothing()
+        public async Task AReadAgainstAnAddressThatIsNotAnInstance_FailsRatherThanReturningNothing()
         {
             var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState()));
 
-            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+            var failure = await Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeam(instanceUrl: "not-an-instance"), CancellationToken.None));
 
             Assert.That(failure?.Code, Is.EqualTo("invalid_url"));
@@ -700,13 +700,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // the protection the guard exists for. The instance re-sends it with its text changed, so
         // only sys_id can recognise it.
         [Test]
-        public void ARecordSentAgainAfterItWasEdited_IsStillRecognisedAsOneAlreadyRead()
+        public async Task ARecordSentAgainAfterItWasEdited_IsStillRecognisedAsOneAlreadyRead()
         {
             var subject = CreateSubject(AnInstanceHolding(
                 FiveRecordsCarryingTheirIdentity(),
                 new InstanceBehaviour { PageSize = 2, ResendsTheFirstRecordAmended = true }));
 
-            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+            var failure = await Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState(), CancellationToken.None));
 
             Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"),

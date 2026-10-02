@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void CreateBackup_PgDumpFails_ThrowsWithStderr()
+        public async Task CreateBackup_PgDumpFails_ThrowsWithStderr()
         {
             commandRunnerMock.Setup(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new CommandResult(1, "", "pg_dump: connection to server failed"));
@@ -222,7 +222,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             try
             {
-                var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                     await subject.CreateBackup(backupDir));
 
                 Assert.That(ex!.Message, Does.Contain("pg_dump failed"));
@@ -299,14 +299,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void RestoreBackup_PgDumpFileMissing_ThrowsFileNotFound()
+        public async Task RestoreBackup_PgDumpFileMissing_ThrowsFileNotFound()
         {
             var restoreDir = Path.Combine(Path.GetTempPath(), $"test-pg-restore-{Guid.NewGuid():N}");
             Directory.CreateDirectory(restoreDir);
 
             try
             {
-                Assert.ThrowsAsync<FileNotFoundException>(async () =>
+                await Assert.ThrowsAsync<FileNotFoundException>(async () =>
                     await subject.RestoreBackup(restoreDir));
             }
             finally
@@ -332,7 +332,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             try
             {
-                var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                     await subject.RestoreBackup(restoreDir));
 
                 Assert.That(ex!.Message, Does.Contain("pg_restore failed"));
@@ -377,12 +377,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ClearDatabase_DropFails_ThrowsWithStderr()
+        public async Task ClearDatabase_DropFails_ThrowsWithStderr()
         {
             commandRunnerMock.Setup(c => c.RunAsync(It.IsAny<ProcessStartInfo>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new CommandResult(1, "", "ERROR: database is being accessed by other users"));
 
-            var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await subject.ClearDatabase());
 
             Assert.That(ex!.Message, Does.Contain("Failed to drop"));

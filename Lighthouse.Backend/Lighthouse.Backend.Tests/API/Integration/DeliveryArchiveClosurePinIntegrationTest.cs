@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             context.DeliveryClosureRecords.Add(new DeliveryClosureRecord { DeliveryId = deliveryId, ArchivedOn = Today });
 
-            Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+            await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
         }
 
         [Test]

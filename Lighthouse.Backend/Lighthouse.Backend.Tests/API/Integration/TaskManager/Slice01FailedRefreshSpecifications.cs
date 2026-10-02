@@ -64,11 +64,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             return await client.PostAsync(new Uri($"/api/latest/teams/{team.Id}", UriKind.Relative), content: null);
         }
 
-        private Exception? WhenSomebodyAwaitsAnUpdateThatThrows()
+        private async Task<Exception?> WhenSomebodyAwaitsAnUpdateThatThrows()
         {
             var queue = Factory.Services.GetRequiredService<IUpdateQueueService>();
 
-            return Assert.CatchAsync(async () => await queue.EnqueueAndAwaitAsync(
+            return await Assert.CatchAsync(async () => await queue.EnqueueAndAwaitAsync(
                 UpdateType.TeamDelete,
                 id: 4711,
                 _ => throw new InvalidOperationException("the delete could not be carried out")));
