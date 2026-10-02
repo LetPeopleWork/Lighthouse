@@ -4,7 +4,7 @@ onlyBuiltDependencies:
 overrides:
   '@babel/core': ^8.0.6
   brace-expansion: ^5.0.12
-  browserslist: ^4.29.1
+  browserslist: ^4.29.3
   fast-uri: ^4.2.1
   form-data: ^4.0.6
   immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.9
@@ -13,7 +13,7 @@ overrides:
   # Mutation testing's runner accepts any vitest from 2 upward, so the resolver was free to keep an
   # older copy for it while the suite moved on. It then drove one version of the test framework while
   # every test was written for another, and said nothing was covered rather than failing.
-  vitest: ^5.0.1
+  vitest: ^5.0.3
   ws: ^8.21.3
 # Vitest 5 changed how a test is addressed by name: the parts are joined with " > " where they used
 # to be joined with a space. The mutation runner still builds the old form, so the pattern it hands
