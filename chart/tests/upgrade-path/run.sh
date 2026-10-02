@@ -103,7 +103,7 @@ dump_diagnostics() {
 install_before_chart() {
   local ns="$1"
   fresh_namespace "$ns"
-  helm install "$RELEASE" "$BEFORE_CHART" -n "$ns" "${VALUES[@]}" --wait --timeout 10m >/dev/null \
+  helm install "$RELEASE" "$BEFORE_CHART" -n "$ns" "${VALUES[@]}" "${@:2}" --wait --timeout 10m >/dev/null \
     || { dump_diagnostics "$ns"; fail "chart 0.1.17 did not install in $ns"; }
 }
 
@@ -117,14 +117,16 @@ install_new_chart() {
 # notices a crash loop and reports its log at once.
 upgrade_to_new_chart() {
   local ns="$1"
-  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" >/dev/null
+  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" "${@:2}" >/dev/null
 }
 
 highest_restart_count() {
   local ns="$1"
-  kubectl -n "$ns" get pod "$POSTGRES_POD" \
+  # While the StatefulSet replaces the pod there is briefly none to read, which counts as no restarts
+  # rather than ending the run.
+  { kubectl -n "$ns" get pod "$POSTGRES_POD" \
     -o jsonpath='{range .status.initContainerStatuses[*]}{.restartCount}{"\n"}{end}{range .status.containerStatuses[*]}{.restartCount}{"\n"}{end}' \
-    2>/dev/null | sort -n | tail -1
+    2>/dev/null || true; } | sort -n | tail -1
 }
 
 wait_postgres_ready() {
@@ -253,7 +255,7 @@ freeze_postgres_server() {
 
 install_with_data() {
   local ns="$1"
-  install_before_chart "$ns"
+  install_before_chart "$ns" "${@:2}"
   wait_api_ready "$ns"
   seed_marker_row "$ns"
 }
@@ -609,8 +611,147 @@ upgrade_after_unclean_stop_keeps_every_row() {
   assert_upgrade_log_says "$ns" "Upgrade Complete"
 }
 
-too_little_room_refuses_and_touches_nothing() { scaffold "Too little room for a second copy stops the upgrade before it writes anything"; }
-grown_volume_lets_refused_upgrade_proceed() { scaffold "Once the volume has grown, the refused upgrade goes ahead by itself"; }
+# A volume whose size is enforced and can be changed in place: a tmpfs on the kind node, offered through a
+# PV that is bound to the StatefulSet's claim before the claim exists. The claim asks for more than the
+# tmpfs holds; a hostPath PV's capacity is only a label, so the tmpfs size is what the database sees.
+readonly SMALL_NS="small-volume"
+readonly SMALL_CLASS="lh-small"
+readonly SMALL_PV="lh-small-$SMALL_NS"
+readonly SMALL_DIR="/mnt/lh-small/$SMALL_NS"
+readonly SMALL_VALUES=(--set "postgresql.persistence.storageClass=$SMALL_CLASS")
+SMALL_COUNTS=""
+SMALL_GROWN_MIB=""
+
+kind_node() {
+  kubectl get nodes -o jsonpath='{.items[0].metadata.name}'
+}
+
+provide_small_volume() {
+  local ns="$1" node
+  node="$(kind_node)"
+  kubectl delete namespace "$ns" --ignore-not-found --wait >/dev/null
+  kubectl delete pv "$SMALL_PV" --ignore-not-found --wait >/dev/null
+  docker exec "$node" sh -c "if mountpoint -q '$SMALL_DIR'; then umount '$SMALL_DIR'; fi; mkdir -p '$SMALL_DIR' && mount -t tmpfs -o size=1024m tmpfs '$SMALL_DIR'"
+  kubectl apply -f - >/dev/null <<EOF
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: $SMALL_PV
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: $SMALL_CLASS
+  claimRef:
+    namespace: $ns
+    name: data-$POSTGRES_POD
+  hostPath:
+    path: $SMALL_DIR
+    type: Directory
+EOF
+}
+
+resize_small_volume() {
+  local mib="$1"
+  docker exec "$(kind_node)" mount -o "remount,size=${mib}m" "$SMALL_DIR"
+}
+
+mount_size_mib() {
+  local ns="$1"
+  kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- df -Pm "$MOUNT" | awk 'NR == 2 { print $2 }'
+}
+
+# Sizes the volume by the same measure the upgrade step uses: room for the data and about half a second
+# copy, and after growing, room for two second copies.
+shrink_to_one_copy() {
+  local ns="$1" data_kib used_kib used_mib needed_mib small_mib
+  data_kib="$(kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- du -sk "$MOUNT/pgdata" | cut -f1)"
+  used_kib="$(kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- df -Pk "$MOUNT" | awk 'NR == 2 { print $3 }')"
+  used_mib=$(((used_kib + 1023) / 1024))
+  needed_mib=$((data_kib * 11 / 10 / 1024 + 64))
+  small_mib=$((used_mib + needed_mib / 2))
+  SMALL_GROWN_MIB=$((used_mib + needed_mib * 2 + 64))
+  resize_small_volume "$small_mib"
+  [[ "$(mount_size_mib "$ns")" == "$small_mib" ]] \
+    || fail "the database in $ns sees a ${MOUNT} of $(mount_size_mib "$ns") MiB, expected the ${small_mib} MiB tmpfs"
+  echo "  volume: ${used_mib} MiB used, a second copy needs about ${needed_mib} MiB; sized to ${small_mib} MiB, grows to ${SMALL_GROWN_MIB} MiB"
+}
+
+stop_database() {
+  local ns="$1"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
+  kubectl -n "$ns" wait --for=delete "pod/$POSTGRES_POD" --timeout=120s >/dev/null 2>&1 || true
+}
+
+upgrade_restarts() {
+  pod_field "$1" '{.status.initContainerStatuses[?(@.name=="pg-upgrade")].restartCount}'
+}
+
+wait_upgrade_refused_twice() {
+  local ns="$1" deadline=$((SECONDS + WAIT_SECONDS))
+  local restarts=""
+  until [[ "${restarts:-0}" -ge 2 ]]; do
+    if [[ $SECONDS -ge $deadline ]]; then
+      dump_diagnostics "$ns"
+      fail "the upgrade step in $ns did not fail and retry within ${WAIT_SECONDS}s"
+    fi
+    sleep 2
+    restarts="$(upgrade_restarts "$ns")"
+  done
+}
+
+too_little_room_refuses_and_touches_nothing() {
+  local ns="$SMALL_NS" counts before after log line message
+  provide_small_volume "$ns"
+  install_with_data "$ns" "${SMALL_VALUES[@]}"
+  counts="$(public_row_counts "$ns")"
+  shrink_to_one_copy "$ns"
+  stop_database "$ns"
+  before="$(volume_fingerprint "$ns")"
+
+  upgrade_to_new_chart "$ns" "${SMALL_VALUES[@]}"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+
+  wait_upgrade_refused_twice "$ns"
+  [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] \
+    || fail "the database in $ns became Ready although its upgrade was refused"
+  log="$(upgrade_log "$ns")"
+  line="$(grep -F -- "lighthouse-postgres: refusing" <<<"$log" || true)"
+  [[ -n "$line" && "$(wc -l <<<"$line")" == "1" ]] \
+    || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one refusal line"; }
+  echo "  $line"
+  local part
+  for part in "MiB free" "need " "postgresql.persistence.size" "postgresql.image"; do
+    grep -qF -- "$part" <<<"$line" || fail "the refusal line in $ns does not say \"$part\": $line"
+  done
+  message="$(kubectl -n "$ns" describe pod "$POSTGRES_POD")"
+  grep -qF -- "$line" <<<"$message" || { dump_diagnostics "$ns"; fail "describing the database pod in $ns does not show the refusal line"; }
+  after="$(volume_fingerprint "$ns")"
+  [[ "$after" == "$before" ]] \
+    || fail "the refused upgrade changed the volume in $ns: $(diff <(echo "$before") <(echo "$after") | head -20 || true)"
+  SMALL_COUNTS="$counts"
+}
+
+given_refused_for_room() {
+  [[ -n "$SMALL_COUNTS" ]] || too_little_room_refuses_and_touches_nothing
+}
+
+grown_volume_lets_refused_upgrade_proceed() {
+  local ns="$SMALL_NS"
+  given_refused_for_room
+
+  resize_small_volume "$SMALL_GROWN_MIB"
+
+  kubectl -n "$ns" wait --for=condition=Ready "pod/$POSTGRES_POD" --timeout="${WAIT_SECONDS}s" >/dev/null \
+    || { dump_diagnostics "$ns"; fail "the database in $ns did not become Ready after the volume grew"; }
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$SMALL_COUNTS"
+  assert_marker_row "$ns"
+}
+
 two_majors_behind_refuses_and_touches_nothing() { scaffold "Data two majors behind is refused, naming both majors and the manual path"; }
 pinning_to_data_major_starts_without_other_step() { scaffold "Pinning the image back to the data's major lets the database start with no other step"; }
 cleanup_then_rollback_refuses_empty_database() { scaffold "After the old copy is removed, a rollback refuses to start an empty database"; }
@@ -636,6 +777,8 @@ readonly HAPPY=(
 
 readonly REFUSALS=(
   upgrade_after_unclean_stop_keeps_every_row
+  too_little_room_refuses_and_touches_nothing
+  grown_volume_lets_refused_upgrade_proceed
 )
 
 main() {

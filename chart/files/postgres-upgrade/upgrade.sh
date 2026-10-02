@@ -135,12 +135,34 @@ initdb_like_old_cluster() {
   as_postgres "$NEW_BIN/initdb" "${args[@]}"
 }
 
+kib_in() {
+  du -sk "$1" | cut -f1
+}
+
+# The copy is about the size of the data. The margin covers what starting the old data writes, which
+# includes crash recovery after an unclean stop, and the files a new, empty cluster brings. A leftover copy
+# for this major is thrown away before the upgrade starts, so its space counts as free.
+ensure_room_for_copy() {
+  local from="$1" needed_kib free_kib path
+  needed_kib=$(($(kib_in "$OLD") * 11 / 10 + 64 * 1024))
+  free_kib="$(df -Pk "$MOUNT" | awk 'NR == 2 { print $4 }')"
+  for path in "$NEW" "$PARTIAL"; do
+    if [[ -e "$path" ]]; then
+      free_kib=$((free_kib + $(kib_in "$path")))
+    fi
+  done
+  if [[ "$free_kib" -lt "$needed_kib" ]]; then
+    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + 1023) / 1024)) MiB, $((free_kib / 1024)) MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:$from-trixie. Nothing was changed"
+  fi
+}
+
 upgrade() {
   local from="$1"
   local old_bin="$OLD_BINARIES/usr/lib/postgresql/$from/bin"
   if [[ ! -x "$old_bin/pg_ctl" || ! -x "$old_bin/postgres" ]]; then
     refuse "refusing to upgrade Postgres $from to $MAJOR: the upgrade-source image did not provide the Postgres $from programs; set postgresql.upgrade.image to a Postgres $from image. Nothing was changed"
   fi
+  ensure_room_for_copy "$from"
 
   if [[ -e "$NEW" ]]; then
     say "pgdata-$MAJOR is out of date: Postgres $from has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata"

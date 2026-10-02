@@ -228,7 +228,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
   # slice-02 — US-03: an upgrade that cannot be done safely says why and touches nothing
   # ------------------------------------------------------------------------------------------------
 
-  @US-03 @AC-3.1 @error @real-io @env:kind-size-limited-pv @slice-02 @contract-shape:unbounded-preservation @pending
+  @US-03 @AC-3.1 @error @real-io @env:kind-size-limited-pv @slice-02 @contract-shape:unbounded-preservation
   Scenario: Too little room for a second copy stops the upgrade before it writes anything
     Given Lighthouse was installed from chart 0.1.17 on a volume with room for one copy of its data but not two
     And it holds Lighthouse data with a known marker row
@@ -240,7 +240,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And describing the database pod shows the same line
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-03 @AC-3.5 @AC-3.1 @real-io @env:kind-size-limited-pv @slice-02 @contract-shape:bounded-change @pending
+  @US-03 @AC-3.5 @AC-3.1 @real-io @env:kind-size-limited-pv @slice-02 @contract-shape:bounded-change
   Scenario: Once the volume has grown, the refused upgrade goes ahead by itself
     Given an upgrade to the new chart was refused because the volume had too little room
     When the operator grows the volume enough for a second copy
