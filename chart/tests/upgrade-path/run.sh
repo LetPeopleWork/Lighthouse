@@ -61,8 +61,10 @@ chart_app_version() {
 preload_images() {
   local cluster="$1" image
   local images=(
+    postgres:16
     postgres:17
     postgres:17-trixie
+    postgres:17-alpine
     postgres:18-trixie
     busybox:1.37
     "ghcr.io/letpeoplework/lighthouse:$(chart_app_version "$BEFORE_CHART")"
@@ -231,14 +233,27 @@ assert_upgrade_log_says() {
   grep -qF -- "$text" <<<"$log" || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not say: $text"; }
 }
 
-# A sorted sha256sum of every file on the database volume, read by a throwaway pod that mounts the claim,
-# so a refused attempt can be shown to have changed nothing.
+# Runs a shell command in a throwaway pod that mounts the database claim read-only at /volume, so the
+# volume can be read while the database pod is not running or not Ready.
+on_volume() {
+  local ns="$1" script="$2" overrides
+  overrides="$(jq -cn --arg script "$script" --arg claim "data-$POSTGRES_POD" '{spec: {
+    containers: [{name: "on-volume", image: "postgres:18-trixie", command: ["bash", "-c", $script],
+      volumeMounts: [{name: "data", mountPath: "/volume", readOnly: true}]}],
+    volumes: [{name: "data", persistentVolumeClaim: {claimName: $claim}}]}}')"
+  # Read from the finished pod's log rather than attached: a short-lived pod can finish before the attach,
+  # and the log stream kubectl falls back to then may end early.
+  kubectl -n "$ns" run on-volume --restart=Never --image=postgres:18-trixie --overrides="$overrides" >/dev/null
+  kubectl -n "$ns" wait --for=jsonpath='{.status.phase}'=Succeeded pod/on-volume --timeout=300s >/dev/null \
+    || { kubectl -n "$ns" logs on-volume >&2 || true; fail "reading the database volume in $ns failed"; }
+  kubectl -n "$ns" logs on-volume
+  kubectl -n "$ns" delete pod on-volume --wait >/dev/null
+}
+
+# A sorted sha256sum of every file on the database volume, so a refused attempt can be shown to have
+# changed nothing.
 volume_fingerprint() {
-  local ns="$1"
-  local overrides
-  overrides="$(printf '{"spec":{"containers":[{"name":"fingerprint","image":"postgres:18-trixie","command":["bash","-c","cd /volume && find . -type f -print0 | sort -z | xargs -0 -r sha256sum"],"volumeMounts":[{"name":"data","mountPath":"/volume","readOnly":true}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-%s"}}]}}' "$POSTGRES_POD")"
-  kubectl -n "$ns" run volume-fingerprint --rm -i --quiet --restart=Never \
-    --image=postgres:18-trixie --overrides="$overrides"
+  on_volume "$1" 'cd /volume && find . -type f -print0 | sort -z | xargs -0 -r sha256sum'
 }
 
 # Stops the Postgres 17 server process from the kind node, so it can neither shut down cleanly nor be
@@ -701,18 +716,10 @@ wait_upgrade_refused_twice() {
   done
 }
 
-too_little_room_refuses_and_touches_nothing() {
-  local ns="$SMALL_NS" counts before after log line message
-  provide_small_volume "$ns"
-  install_with_data "$ns" "${SMALL_VALUES[@]}"
-  counts="$(public_row_counts "$ns")"
-  shrink_to_one_copy "$ns"
-  stop_database "$ns"
-  before="$(volume_fingerprint "$ns")"
-
-  upgrade_to_new_chart "$ns" "${SMALL_VALUES[@]}"
-  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
-
+# Waits until the upgrade step has been refused and retried, checks the database is not Ready, and prints
+# the one refusal line the step logged.
+refusal_line() {
+  local ns="$1" log line
   wait_upgrade_refused_twice "$ns"
   [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] \
     || fail "the database in $ns became Ready although its upgrade was refused"
@@ -720,16 +727,51 @@ too_little_room_refuses_and_touches_nothing() {
   line="$(grep -F -- "lighthouse-postgres: refusing" <<<"$log" || true)"
   [[ -n "$line" && "$(wc -l <<<"$line")" == "1" ]] \
     || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one refusal line"; }
-  echo "  $line"
-  local part
-  for part in "MiB free" "need " "postgresql.persistence.size" "postgresql.image"; do
+  echo "$line"
+}
+
+assert_line_says() {
+  local ns="$1" line="$2" part
+  for part in "${@:3}"; do
     grep -qF -- "$part" <<<"$line" || fail "the refusal line in $ns does not say \"$part\": $line"
   done
-  message="$(kubectl -n "$ns" describe pod "$POSTGRES_POD")"
-  grep -qF -- "$line" <<<"$message" || { dump_diagnostics "$ns"; fail "describing the database pod in $ns does not show the refusal line"; }
+}
+
+assert_volume_unchanged() {
+  local ns="$1" before="$2" after
   after="$(volume_fingerprint "$ns")"
   [[ "$after" == "$before" ]] \
-    || fail "the refused upgrade changed the volume in $ns: $(diff <(echo "$before") <(echo "$after") | head -20 || true)"
+    || fail "the refused attempt changed the volume in $ns: $(diff <(echo "$before") <(echo "$after") | head -20 || true)"
+  echo "  volume fingerprint unchanged: $(sha256sum <<<"$after" | cut -c1-16)"
+}
+
+FINGERPRINT=""
+
+# Stops the database, fingerprints the volume, then applies the new chart with the given values and starts
+# the database again, so the fingerprint is taken while nothing writes to the volume.
+fingerprint_then_upgrade() {
+  local ns="$1"
+  stop_database "$ns"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+  upgrade_to_new_chart "$ns" "${@:2}"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+}
+
+too_little_room_refuses_and_touches_nothing() {
+  local ns="$SMALL_NS" counts line message
+  provide_small_volume "$ns"
+  install_with_data "$ns" "${SMALL_VALUES[@]}"
+  counts="$(public_row_counts "$ns")"
+  shrink_to_one_copy "$ns"
+
+  fingerprint_then_upgrade "$ns" "${SMALL_VALUES[@]}"
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "MiB free" "need " "postgresql.persistence.size" "postgresql.image"
+  message="$(kubectl -n "$ns" describe pod "$POSTGRES_POD")"
+  grep -qF -- "$line" <<<"$message" || { dump_diagnostics "$ns"; fail "describing the database pod in $ns does not show the refusal line"; }
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
   SMALL_COUNTS="$counts"
 }
 
@@ -752,12 +794,166 @@ grown_volume_lets_refused_upgrade_proceed() {
   assert_marker_row "$ns"
 }
 
-two_majors_behind_refuses_and_touches_nothing() { scaffold "Data two majors behind is refused, naming both majors and the manual path"; }
-pinning_to_data_major_starts_without_other_step() { scaffold "Pinning the image back to the data's major lets the database start with no other step"; }
-cleanup_then_rollback_refuses_empty_database() { scaffold "After the old copy is removed, a rollback refuses to start an empty database"; }
-newer_data_without_kept_copy_refuses() { scaffold "Data newer than the image, with no kept copy of the image's major, is refused"; }
+readonly MANUAL_PATH="https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand"
+readonly KUBERNETES_DOCS="docs/Installation/kubernetes.md"
+readonly DATA16_NS="data-16"
+readonly CLEANED_NS="old-copy-removed"
+DATA16_REFUSED=""
+CLEANED_COUNTS=""
+
+# Waits until the StatefulSet has replaced the database pod with uid $2.
+wait_pod_replaced() {
+  local ns="$1" old_uid="$2" deadline=$((SECONDS + WAIT_SECONDS))
+  until [[ "$(pod_field "$ns" '{.metadata.uid}')" != "$old_uid" && -n "$(pod_field "$ns" '{.metadata.uid}')" ]]; do
+    if [[ $SECONDS -ge $deadline ]]; then
+      dump_diagnostics "$ns"
+      fail "the database pod in $ns was not replaced within ${WAIT_SECONDS}s"
+    fi
+    sleep 2
+  done
+}
+
+# What the docs and the refusal line tell the operator to do after changing values: Kubernetes does not
+# replace a database pod stuck on a refused start. The StatefulSet must have taken the new values first, or
+# the replacement would start with the old ones.
+delete_stuck_pod() {
+  local ns="$1" deadline=$((SECONDS + 120))
+  until [[ "$(kubectl -n "$ns" get statefulset "$POSTGRES_STATEFULSET" -o jsonpath='{.status.updateRevision}')" \
+           != "$(pod_field "$ns" '{.metadata.labels.controller-revision-hash}')" ]]; do
+    [[ $SECONDS -lt $deadline ]] || fail "the StatefulSet in $ns did not take the new values"
+    sleep 1
+  done
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --wait=false >/dev/null
+}
+
+two_majors_behind_refuses_and_touches_nothing() {
+  local ns="$DATA16_NS" line
+  install_with_data "$ns" --set postgresql.image=postgres:16
+
+  fingerprint_then_upgrade "$ns"
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "Postgres 16" "Postgres 18" "$MANUAL_PATH" "kubectl delete pod -n $ns $POSTGRES_POD"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+  DATA16_REFUSED=1
+}
+
+pinning_to_data_major_starts_without_other_step() {
+  local ns="$DATA16_NS" old_uid
+  [[ -n "$DATA16_REFUSED" ]] || two_majors_behind_refuses_and_touches_nothing
+  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+
+  upgrade_to_new_chart "$ns" --set postgresql.image=postgres:16
+  delete_stuck_pod "$ns"
+
+  wait_pod_replaced "$ns" "$old_uid"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 16
+  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_marker_row "$ns"
+}
+
+# Runs the cleanup command exactly as the Kubernetes docs print it. The docs leave the namespace to the
+# reader's context, so the command runs with a copy of the kubeconfig whose context points at $ns.
+remove_old_copy_as_documented() {
+  local ns="$1" command kubeconfig status=0
+  command="$(awk '/^### Removing the old copy/ { section = 1; next }
+                  section && /^```sh$/ { block = 1; next }
+                  block && /^```$/ { exit }
+                  block { print }' "$KUBERNETES_DOCS")"
+  [[ "$command" == "kubectl exec "* ]] || fail "no cleanup command found under \"Removing the old copy\" in $KUBERNETES_DOCS"
+  kubeconfig="$(mktemp)"
+  kubectl config view --raw >"$kubeconfig"
+  KUBECONFIG="$kubeconfig" kubectl config set-context --current --namespace="$ns" >/dev/null
+  KUBECONFIG="$kubeconfig" bash -c "$command" || status=$?
+  rm -f "$kubeconfig"
+  [[ $status -eq 0 ]] || fail "the documented cleanup command failed in $ns with code $status"
+}
+
+given_old_copy_removed() {
+  [[ -n "$CLEANED_COUNTS" ]] || cleanup_then_rollback_refuses_empty_database
+}
+
+postgres_restarts() {
+  pod_field "$1" '{.status.containerStatuses[?(@.name=="postgres")].restartCount}'
+}
+
+cleanup_then_rollback_refuses_empty_database() {
+  local ns="$CLEANED_NS" counts before_revision old_uid deadline log
+  install_with_data "$ns"
+  before_revision="$(current_revision "$ns")"
+  counts="$(public_row_counts "$ns")"
+  upgrade_to_new_chart "$ns"
+  assert_carried_across "$ns" "$counts"
+
+  remove_old_copy_as_documented "$ns"
+  [[ "$(kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- ls -1A "$MOUNT/pgdata")" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
+    || fail "pgdata in $ns holds more than the placeholder after the documented cleanup"
+  restart_database "$ns"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  echo "  a restart after the cleanup starts Postgres 18 on pgdata-18"
+
+  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  helm rollback "$RELEASE" "$before_revision" -n "$ns" >/dev/null
+
+  wait_pod_replaced "$ns" "$old_uid"
+  deadline=$((SECONDS + WAIT_SECONDS))
+  until [[ "$(postgres_restarts "$ns")" -ge 1 ]] 2>/dev/null; do
+    [[ $SECONDS -lt $deadline ]] || { dump_diagnostics "$ns"; fail "Postgres 17 in $ns neither failed nor restarted after the rollback"; }
+    sleep 2
+  done
+  [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] \
+    || fail "the database in $ns became Ready after the rollback"
+  # The container restarts every few seconds, so its last run's log is read from whichever of the current
+  # and previous container still has it.
+  deadline=$((SECONDS + 120))
+  until grep -qF "exists but is not empty" <<<"${log:-}"; do
+    [[ $SECONDS -lt $deadline ]] \
+      || { dump_diagnostics "$ns"; fail "the rolled-back database log in $ns does not say the data folder is not empty"; }
+    log="$(kubectl -n "$ns" logs "$POSTGRES_POD" -c postgres 2>/dev/null || true; kubectl -n "$ns" logs "$POSTGRES_POD" -c postgres --previous 2>/dev/null || true)"
+    sleep 1
+  done
+  echo "  $(grep -F "exists but is not empty" <<<"$log" | head -1)"
+  [[ "$(on_volume "$ns" 'ls -1A /volume/pgdata')" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
+    || fail "the rollback in $ns created something in pgdata"
+
+  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  upgrade_to_new_chart "$ns"
+  delete_stuck_pod "$ns"
+
+  wait_pod_replaced "$ns" "$old_uid"
+  assert_carried_across "$ns" "$counts"
+  CLEANED_COUNTS="$counts"
+}
+
+newer_data_without_kept_copy_refuses() {
+  local ns="$CLEANED_NS" line
+  given_old_copy_removed
+
+  fingerprint_then_upgrade "$ns" --set postgresql.image=postgres:17-trixie
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing to start Postgres 17" "the data is Postgres 18"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
+
 interrupted_upgrade_is_redone_from_start() { scaffold "An upgrade interrupted part-way is redone from the start and never serves a partial copy"; }
-foreign_upgrade_source_refuses_and_touches_nothing() { scaffold "An upgrade-source image whose programs cannot run beside the database image is refused"; }
+
+foreign_upgrade_source_refuses_and_touches_nothing() {
+  local ns="foreign-source" line
+  install_with_data "$ns"
+
+  fingerprint_then_upgrade "$ns" --set postgresql.upgrade.image=postgres:17-alpine
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "the Postgres 17 programs" "cannot run beside the Postgres 18 image"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
 
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
 # one before it.
@@ -779,6 +975,11 @@ readonly REFUSALS=(
   upgrade_after_unclean_stop_keeps_every_row
   too_little_room_refuses_and_touches_nothing
   grown_volume_lets_refused_upgrade_proceed
+  two_majors_behind_refuses_and_touches_nothing
+  pinning_to_data_major_starts_without_other_step
+  cleanup_then_rollback_refuses_empty_database
+  newer_data_without_kept_copy_refuses
+  foreign_upgrade_source_refuses_and_touches_nothing
 )
 
 main() {

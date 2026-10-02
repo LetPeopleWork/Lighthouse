@@ -15,6 +15,8 @@ readonly NEW="$MOUNT/pgdata-$MAJOR"
 readonly PARTIAL="$NEW.partial"
 readonly NEW_BIN="/usr/lib/postgresql/$MAJOR/bin"
 readonly OLD_BINARIES=/old-binaries
+readonly SOURCE_OS="$OLD_BINARIES/os-release"
+readonly MANUAL_PATH=https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand
 readonly DECISION=/decision/pgdata
 # The old server is only ever reached over a Unix socket here, never over the network.
 readonly SOCKET_DIR=/tmp
@@ -29,6 +31,17 @@ refuse() {
   echo "$line" >&2
   printf '%s\n' "$line" >/dev/termination-log
   exit 1
+}
+
+# Kubernetes does not replace a database pod whose start keeps being refused when the chart's values
+# change, so a fix made through values only takes effect once this pod is deleted. The command names this
+# pod, and its namespace when the pod can read it, so it can be copied as it stands.
+delete_pod_hint() {
+  local namespace_file=/var/run/secrets/kubernetes.io/serviceaccount/namespace namespace=""
+  if [[ -r "$namespace_file" ]]; then
+    namespace=" -n $(cat "$namespace_file")"
+  fi
+  echo "then run kubectl delete pod$namespace $HOSTNAME so it starts again with the new values"
 }
 
 as_postgres() {
@@ -82,6 +95,36 @@ describe_volume() {
     found="$found and an unfinished pgdata-$MAJOR.partial"
   fi
   echo "$found"
+}
+
+os_field() {
+  sed -n "s/^$2=//p" "$1" | tr -d '"'
+}
+
+os_name() {
+  echo "$(os_field "$1" ID) $(os_field "$1" VERSION_ID)"
+}
+
+# The old programs run in this image, which only works when the upgrade-source image is built for the
+# same operating system. Older charts did not say which system that was, so a missing note checks nothing.
+ensure_old_programs_run_here() {
+  local from="$1" source here
+  [[ -f "$SOURCE_OS" ]] || return 0
+  source="$(os_name "$SOURCE_OS")"
+  here="$(os_name /etc/os-release)"
+  if [[ "$source" != "$here" ]]; then
+    refuse "refusing to upgrade Postgres $from to $MAJOR: the Postgres $from programs in postgresql.upgrade.image are built for $source and cannot run beside the Postgres $MAJOR image, built for $here; set postgresql.upgrade.image to postgres:$from-$(os_field /etc/os-release VERSION_CODENAME), $(delete_pod_hint). Nothing was changed"
+  fi
+}
+
+# Data of any major but this image's and the one before it is never touched: the chart cannot carry it
+# across, and the operator needs to know which two majors are involved to choose a way out.
+refuse_other_major() {
+  local data="$1" where="$2"
+  if [[ "$data" -lt "$MAJOR" ]]; then
+    refuse "refusing to start Postgres $MAJOR: the data in $where is Postgres $data, and this chart only upgrades data from Postgres $((MAJOR - 1)); pin postgresql.image to postgres:$data to start it again as it was, $(delete_pod_hint), and move it by hand: $MANUAL_PATH. Nothing was changed"
+  fi
+  refuse "refusing to start Postgres $MAJOR: the data is Postgres $data, in $where, which is newer than this image, and no Postgres $MAJOR copy of it is left to start on; set postgresql.image back to Postgres $data or remove the pin on it, $(delete_pod_hint). Nothing was changed"
 }
 
 controldata() {
@@ -152,15 +195,16 @@ ensure_room_for_copy() {
     fi
   done
   if [[ "$free_kib" -lt "$needed_kib" ]]; then
-    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + 1023) / 1024)) MiB, $((free_kib / 1024)) MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:$from-trixie. Nothing was changed"
+    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + 1023) / 1024)) MiB, $((free_kib / 1024)) MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:$from-trixie and $(delete_pod_hint). Nothing was changed"
   fi
 }
 
 upgrade() {
   local from="$1"
   local old_bin="$OLD_BINARIES/usr/lib/postgresql/$from/bin"
+  ensure_old_programs_run_here "$from"
   if [[ ! -x "$old_bin/pg_ctl" || ! -x "$old_bin/postgres" ]]; then
-    refuse "refusing to upgrade Postgres $from to $MAJOR: the upgrade-source image did not provide the Postgres $from programs; set postgresql.upgrade.image to a Postgres $from image. Nothing was changed"
+    refuse "refusing to upgrade Postgres $from to $MAJOR: the upgrade-source image did not provide the Postgres $from programs; set postgresql.upgrade.image to a Postgres $from image, $(delete_pod_hint). Nothing was changed"
   fi
   ensure_room_for_copy "$from"
 
@@ -220,10 +264,23 @@ newer_copy_major() {
   fi
 }
 
+# The major of the one copy on the volume, when there is exactly one.
+only_copy_major() {
+  local copies="$1"
+  if [[ "$copies" =~ ^pgdata-([0-9]+)$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+  fi
+}
+
+copy_holds_major() {
+  [[ "$(cat "$MOUNT/pgdata-$1/PG_VERSION" 2>/dev/null)" == "$1" ]]
+}
+
 main() {
-  local data copies newer
+  local data copies newer only
   data="$(data_major)"
   copies="$(other_copies)"
+  only="$(only_copy_major "$copies")"
 
   if [[ -z "$data" && -z "$copies" && ! -e "$PARTIAL" ]] && ! has_placeholder; then
     say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
@@ -246,6 +303,13 @@ main() {
     # that copy, so moving the image forward again redoes the upgrade from pgdata.
     say "warning: starting Postgres $MAJOR on pgdata, but a newer Postgres $newer copy of this database exists in pgdata-$newer; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back"
     start_on "$OLD"
+  elif [[ -z "$data" && "$only" == "$MAJOR" && ! -e "$PARTIAL" ]] && has_placeholder && copy_holds_major "$MAJOR"; then
+    say "nothing to upgrade: the old copy was removed, and Postgres $MAJOR starts on pgdata-$MAJOR"
+    start_on "$NEW"
+  elif [[ "$data" =~ ^[0-9]+$ ]] && [[ "$data" -lt $((MAJOR - 1)) || "$data" -gt "$MAJOR" ]]; then
+    refuse_other_major "$data" pgdata
+  elif [[ -z "$data" && -n "$only" && ! -e "$PARTIAL" ]] && [[ "$only" -gt "$MAJOR" ]]; then
+    refuse_other_major "$only" "pgdata-$only"
   else
     refuse "refusing to start Postgres $MAJOR: found $(describe_volume "$data" "$copies"), which this chart cannot start on or upgrade by itself. Nothing was changed"
   fi

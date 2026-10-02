@@ -7,6 +7,11 @@ set -euo pipefail
 readonly DATA_VERSION=/var/lib/postgresql/data/pgdata/PG_VERSION
 readonly TARGET=/old-binaries
 
+# Programs built for another operating system cannot run in the database image, so the upgrade step is
+# told which system this image is built on. That comes first: an image built on another system may run as
+# a user that cannot even read the data's version.
+grep -E '^(ID|VERSION_ID|VERSION_CODENAME)=' /etc/os-release >"$TARGET/os-release" || true
+
 if [[ ! -s "$DATA_VERSION" || "$(cat "$DATA_VERSION")" != "$PG_MAJOR" ]]; then
   exit 0
 fi

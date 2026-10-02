@@ -169,7 +169,11 @@ documented manual move, without opening a support ticket.
 - **AC-3.4** An upgrade interrupted part-way (pod deleted mid-copy) leaves the previous major's data
   intact. The next start either finishes the upgrade from the beginning or refuses under AC-3.1/3.2, and
   never starts Postgres on a partial copy.
-- **AC-3.5** After the operator fixes the cause (grows the PVC or pins the image), the next pod start
+- **AC-3.5** (Amended in DELIVER, 2026-10-02: a StatefulSet with the default pod policy never replaces a pod that is not
+  Ready, and that policy cannot be changed on an existing install. So a fix made by changing chart values, such as
+  pinning the image, takes effect only once the stuck pod is deleted, and every refusal line that suggests such a fix
+  says so. Growing the volume needs no delete, because the same pod retries by itself.)
+  After the operator fixes the cause (grows the PVC, or pins the image and deletes the stuck pod), the next pod start
   proceeds with no other manual step.
 
 ## Wave: DISCUSS / [REF] Out of Scope

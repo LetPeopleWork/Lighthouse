@@ -411,7 +411,10 @@ It empties `pgdata/` and leaves a single file in it, `UPGRADED-TO-18-see-kuberne
 touch `pgdata-18/`. It does nothing, and exits with code 1, when there is no upgraded copy in `pgdata-18/`
 or when a database is running on `pgdata/` (after a rollback or a pin). The placeholder file keeps a later
 rollback to chart 0.1.17 from creating a new, empty database in the emptied folder: that rollback stops
-with an error instead.
+with an error instead. The database keeps starting on `pgdata-18/` after a restart, and a plain
+`helm upgrade` to this chart starts it there again. After such a failed rollback, the `helm upgrade` alone
+is not enough: delete the stuck pod as well, with `kubectl delete pod l8e-lighthouse-postgres-0` (see
+[When an upgrade is refused](#when-an-upgrade-is-refused) for why).
 
 **After this command a rollback to the previous chart is no longer possible.** The previous major's data
 is gone, and only `pgdata-18/` remains.
@@ -421,13 +424,27 @@ is gone, and only `pgdata-18/` remains.
 When the upgrade cannot be done safely, it writes nothing to the volume. The database pod does not
 become Ready and keeps retrying by itself. Both `kubectl logs l8e-lighthouse-postgres-0 --all-containers`
 and `kubectl describe pod l8e-lighthouse-postgres-0` (as the message of the `pg-upgrade` container's last
-state) show one line starting with `lighthouse-postgres:` that says why. Fix the cause and the next retry
-goes ahead with no other step.
+state) show one line starting with `lighthouse-postgres:` that says why.
+
+How the next retry picks up the fix depends on what the fix is:
+
+- **A fix outside the chart's values**, such as growing the volume, needs no other step: the next retry
+  goes ahead by itself.
+- **A fix through the chart's values**, such as pinning `postgresql.image`, needs the database pod deleted
+  after the `helm upgrade`. Kubernetes does not replace a database pod that is stuck on a refused start,
+  so without the delete it keeps retrying with the old values:
+
+  ```sh
+  kubectl delete pod l8e-lighthouse-postgres-0
+  ```
+
+  Every refusal line that suggests a values change ends with this command, with the pod's real name and
+  namespace filled in.
 
 Too little room for the second copy:
 
 ```text
-lighthouse-postgres: refusing upgrade 17→18: need 2310 MiB, 1024 MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:17-trixie. Nothing was changed
+lighthouse-postgres: refusing upgrade 17→18: need 2310 MiB, 1024 MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:17-trixie and then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values. Nothing was changed
 ```
 
 There are two ways out:
@@ -440,34 +457,43 @@ There are two ways out:
   kubectl patch pvc data-l8e-lighthouse-postgres-0 -p '{"spec":{"resources":{"requests":{"storage":"16Gi"}}}}'
   ```
 
-- **Stay on the current major** by pinning the image the line names:
+- **Stay on the current major** by pinning the image the line names, then delete the stuck pod:
 
   ```sh
   helm upgrade l8e letpeoplework/lighthouse --reset-then-reuse-values --set postgresql.image=postgres:17-trixie
+  kubectl delete pod l8e-lighthouse-postgres-0
   ```
 
-Data the chart does not know how to start on or upgrade, such as data two majors behind, is refused with a
-line that names what it found on the volume:
+Data two or more majors behind the image is refused with a line that names both majors and links the
+manual path below:
 
 ```text
-lighthouse-postgres: refusing to start Postgres 18: found Postgres 16 data in pgdata, which this chart cannot start on or upgrade by itself. Nothing was changed
+lighthouse-postgres: refusing to start Postgres 18: the data in pgdata is Postgres 16, and this chart only upgrades data from Postgres 17; pin postgresql.image to postgres:16 to start it again as it was, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values, and move it by hand: https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand. Nothing was changed
 ```
 
-Pin `postgresql.image` to the data's major (here `postgres:16`) to start the database again as it was,
-then move it with the manual path below.
+Pin `postgresql.image` to the data's major (here `postgres:16`) and delete the stuck pod to start the
+database again as it was, then move it with the manual path below.
 
-When `postgresql.upgrade.image` does not provide the previous major's programs, the line says to set it
-to an image of that major:
+Data newer than the image, with no copy of the image's major left to start on, is refused the same way.
+That happens when the image is pinned back after the old copy was removed:
 
 ```text
-lighthouse-postgres: refusing to upgrade Postgres 17 to 18: the upgrade-source image did not provide the Postgres 17 programs; set postgresql.upgrade.image to a Postgres 17 image. Nothing was changed
+lighthouse-postgres: refusing to start Postgres 17: the data is Postgres 18, in pgdata-18, which is newer than this image, and no Postgres 17 copy of it is left to start on; set postgresql.image back to Postgres 18 or remove the pin on it, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values. Nothing was changed
+```
+
+When `postgresql.upgrade.image` does not provide the previous major's programs, or provides programs built
+for another operating system than `postgresql.image`, the line says which image to set it to:
+
+```text
+lighthouse-postgres: refusing to upgrade Postgres 17 to 18: the upgrade-source image did not provide the Postgres 17 programs; set postgresql.upgrade.image to a Postgres 17 image, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values. Nothing was changed
+lighthouse-postgres: refusing to upgrade Postgres 17 to 18: the Postgres 17 programs in postgresql.upgrade.image are built for alpine 3.24.2 and cannot run beside the Postgres 18 image, built for debian 13; set postgresql.upgrade.image to postgres:17-trixie, then run kubectl delete pod -n default l8e-lighthouse-postgres-0 so it starts again with the new values. Nothing was changed
 ```
 
 ### Moving data two or more majors behind by hand
 
 The chart only carries data from the previous major. For older data, take a dump, start an empty database
 on the new major, and restore into it. The database must be running for the dump, so pin
-`postgresql.image` to the data's major first if an upgrade was refused. The names below assume the
+`postgresql.image` to the data's major first if an upgrade was refused, and delete the stuck pod. The names below assume the
 release is called `l8e` and the default database and user `lighthouse`:
 
 ```sh

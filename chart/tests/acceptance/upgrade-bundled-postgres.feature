@@ -211,7 +211,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the bundled database becomes Ready on Postgres 18 with the row written on Postgres 17
     And the row written on Postgres 18 before the pin is still not there
 
-  @US-02 @AC-2.4 @AC-2.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:bounded-change @pending
+  @US-02 @AC-2.4 @AC-2.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:bounded-change
   Scenario: After the old copy is removed, a rollback refuses to start an empty database
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     And has removed the old copy with the command from the Kubernetes docs, verbatim
@@ -220,6 +220,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And its log says the data folder is not empty
     And no empty Lighthouse database was created
     When the operator runs a plain "helm upgrade" to the new chart again
+    And deletes the database pod still stuck on the refused start, as the Kubernetes docs say
     Then the bundled database becomes Ready on Postgres 18
     And every Lighthouse table has the same row count as before the upgrade
     And the marker row is present
@@ -248,7 +249,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table has the same row count as before the upgrade
     And the marker row is present
 
-  @US-03 @AC-3.2 @error @real-io @env:kind-16-data @slice-02 @contract-shape:unbounded-preservation @pending
+  @US-03 @AC-3.2 @error @real-io @env:kind-16-data @slice-02 @contract-shape:unbounded-preservation
   Scenario: Data two majors behind is refused, naming both majors and the manual path
     Given Lighthouse was installed from chart 0.1.17 with the bundled database image pinned to Postgres 16
     And it holds Lighthouse data with a known marker row
@@ -259,14 +260,15 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And that line points to the manual upgrade section of the Kubernetes docs
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-03 @AC-3.5 @AC-3.2 @real-io @env:kind-16-data @slice-02 @contract-shape:bounded-change @pending
+  @US-03 @AC-3.5 @AC-3.2 @real-io @env:kind-16-data @slice-02 @contract-shape:bounded-change
   Scenario: Pinning the image back to the data's major lets the database start with no other step
     Given an upgrade to the new chart was refused because the data was two majors behind
     When the operator pins the bundled database image to Postgres 16
+    And deletes the database pod still stuck on the refused start, as the refusal line says
     Then the bundled database becomes Ready on Postgres 16 with no other step from the operator
     And the marker row is present
 
-  @US-03 @AC-3.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:unbounded-preservation @pending
+  @US-03 @AC-3.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:unbounded-preservation
   Scenario: Data newer than the image, with no kept copy of the image's major, is refused
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     And has removed the old copy with the command from the Kubernetes docs, verbatim
@@ -289,7 +291,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table has the same row count as before the upgrade
     And the kept Postgres 17 copy still opens with Postgres 17 and holds the recorded row counts
 
-  @US-03 @D3 @error @real-io @env:kind-0.1.17-with-data @slice-02 @contract-shape:unbounded-preservation @pending
+  @US-03 @D3 @error @real-io @env:kind-0.1.17-with-data @slice-02 @contract-shape:unbounded-preservation
   Scenario: An upgrade-source image whose programs cannot run beside the database image is refused
     Given Lighthouse was installed from chart 0.1.17 with the bundled Postgres 17
     And it holds Lighthouse data with a known marker row
