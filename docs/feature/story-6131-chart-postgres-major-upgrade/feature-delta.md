@@ -1376,3 +1376,88 @@ New assumption:
   on a first-upgrade volume, is therefore left for the operator to rerun, as the docs already say.
 - Run time: the chain fixture costs about three installs' worth of work; DEVOPS decides whether it is a
   third matrix leg.
+
+## Wave: DEVOPS / [REF] Slice 03 — next major from an upgraded volume
+
+Platform Architect (Apex). The fixed decisions are unchanged: GitHub Actions, trunk-based on `main`, no new
+observability, usage data N/A. The DEVOPS answers above hold for slice 03 as written. This section covers
+only what slice 03 adds. Nothing in it contradicts the slice 03 DESIGN.
+
+### A third matrix leg: `chain`
+
+`upgrade-path` becomes `matrix.group: [happy, refusals, chain]`. Each leg gets its own kind cluster, as today
+(`upgrade-path-${{ matrix.group }}`), and `run.sh` gains `chain` as a third `GROUP`, with its own `CHAIN=(…)`
+list and `namespaces_of` rows.
+
+Why a leg of its own rather than more scenarios in `refusals`:
+- `refusals` already ran 591 s locally after the review fixes. A GitHub-hosted runner is usually slower
+  than a developer machine, so that leg alone may already sit near its 20-minute timeout on CI.
+- The chain fixture repeats three installs' worth of work (0.1.17 on 16, upgrade to 17, upgrade to 18). On
+  top of that come two rollbacks, a re-upgrade, an interrupted removal, a cleanup, and the 15 → 16 gap
+  fixture.
+- Added to either existing leg, that would push it past the budget.
+- A leg of its own runs in parallel, so the job's wall-clock time grows only to the slowest leg, and a red
+  chain names itself.
+
+**Scenarios in `chain`**, in the order they build on each other:
+1. Chain fixture: 0.1.17 on `postgres:16-trixie`, then the chart with `postgres:17-trixie` and upgrade
+   source `16-trixie`, then the chart's defaults.
+2. AC-4.1/4.2: rows, removal line, placeholder, `pgdata-17` kept.
+3. AC-4.9: restart, against a fresh-install baseline in the same cluster.
+4. AC-4.3 one chart back, then AC-4.4 re-upgrade.
+5. AC-4.3 two charts back, to 0.1.17: fails loudly.
+6. AC-4.3 and AC-4.5 pins to 16 (refused) and 17 (warns).
+7. AC-4.6 interrupted removal.
+8. AC-4.2 interrupted copy removes nothing.
+9. AC-4.6/4.7 cleanup and a cleaned-up volume moving on.
+10. AC-4.8 out-of-date newer copies, then the gap from a copy (15-bookworm → 16-bookworm, then the
+    defaults).
+
+**Budget:** `timeout-minutes: 20` per leg, unchanged. Target for `chain`: at most 12 minutes locally, to leave
+the same margin `happy` has. Measure the first CI run of each leg in DELIVER. If `refusals` or `chain` comes
+within 3 minutes of the timeout on CI, split it again (for example `chain` and `chain-refusals`) rather than
+raising the timeout. A longer timeout only hides a slower suite.
+
+**Images.** `preload_images` gains `postgres:16-trixie`, `postgres:15-bookworm` and `postgres:16-bookworm`.
+- Today every leg preloads the whole list, so each new image adds a pull and a node import (about 150 MB
+  each) to all three legs.
+- DELIVER makes the list depend on the group, so `happy` and `refusals` do not pay for `chain`'s images and
+  `chain` does not pay for `postgres:17-alpine` or `busybox`.
+- A preload that cannot pull still falls back to the node pulling the image, as today. The chain leg adds
+  three anonymous Docker Hub pulls per run, well inside the limit.
+
+**Diagnostics:** the existing failure step already loops over every non-system namespace, so it covers
+`chain` with no change.
+
+### Gates: no change needed
+
+Checked by reading `ci_chart.yml`, `version-guard.sh` and the templates at `bf3c441aa`:
+- **Defaults agree:** the `validate` step reads `values.yaml` and `_helpers.tpl` as files, so the chain
+  fixture's `--set postgresql.image=…` overrides never reach it. Slice 03 changes neither default.
+- **`version-guard.sh` rule 4:** the release moves the default by exactly one major above the last
+  published chart, with the upgrade-source default equal to that published major. That is still the only
+  step the upgrade makes. It only runs in `publish`, so the harness's overrides never meet it.
+- **shellcheck:** the step globs `chart/files/postgres-upgrade/*.sh` and `run.sh`, so `volume.sh` and
+  `remove-old-copies.sh` are covered with no edit.
+- **No-`lookup` and render-determinism gates:** unaffected; slice 03 changes scripts, not templates.
+- **helm-docs drift:** unaffected; no value changes.
+- **Renovate:** unaffected. `postgres:15-bookworm` and `16-bookworm` appear only in the harness, which no
+  Renovate manager parses. Like `postgres:16` and `17-alpine` today, they are test fixtures pinned by tag.
+- **`publish.needs`:** already lists `upgrade-path`. A matrix job is green only when every leg is, so
+  `chain` gates the release with no edit.
+
+### Measurement impact
+
+- **K2** (`OUT-6131-upgrade-scenarios-green`): the target now names three legs (happy, refusals, chain).
+  The `gh run view` query counts `upgrade-path` legs by conclusion, so it picks up `chain` with no change.
+- **K3** (`OUT-6131-restart-overhead`): unchanged target and method. `chain` adds a second measured restart,
+  after a chained upgrade (AC-4.9), against its own fresh-install baseline in the `chain` cluster.
+  - Slice 03 stops `pg-old-binaries` copying about 49 MB on every restart of an upgraded volume. So both
+    measurements should drop slightly against the slice 01 baseline.
+  - A rise would point at the chain walk, which only hashes a few small control files.
+- **K1:** unchanged.
+
+### Usage data
+
+Still N/A, for the same reasons as above. The removal and the chained upgrade happen in the database pod
+before the API runs, and the chart has no event pipe.

@@ -59,6 +59,22 @@ target_environments:
     platform: [linux]
     preconditions: ["helm template only (render assertions)"]
 
+
+  - name: kind-chain-16-17
+    description: "Chart 0.1.17 installed with postgresql.image=postgres:16-trixie and seeded, then upgraded by the new chart with postgresql.image=postgres:17-trixie and postgresql.upgrade.image=postgres:16-trixie (pgdata/ = 16 kept, pgdata-17/ live), then upgraded by the new chart's defaults to 18 — the second-major-move fixture for slice 03 (upgrade from pgdata-17, removal of pgdata/, rollbacks one and two charts back, pins, interrupted removal)"
+    platform: [linux]
+    preconditions: ["kind cluster up (upgrade-path-chain)", "postgres:16-trixie, postgres:17-trixie, postgres:18-trixie loaded into kind", "0.1.17 API image 26.9.24.6 pullable", "seed script run through psql"]
+
+  - name: kind-chain-cleaned
+    description: "kind-chain-16-17 after its first upgrade (pgdata/ = 16, pgdata-17/ live) with the documented cleanup run (placeholder in pgdata/ plus pgdata-17/ only), then upgraded by the new chart's defaults to 18 — nothing older than the source, so nothing is removed"
+    platform: [linux]
+    preconditions: ["kind-chain-16-17 up to its first upgrade", "remove-old-copies.sh run via the command copied from the docs"]
+
+  - name: kind-gap-from-copy
+    description: "Chart 0.1.17 installed with postgresql.image=postgres:15-bookworm, upgraded by the new chart with postgres:16-bookworm and upgrade source postgres:15-bookworm (pgdata-16/ live), then the new chart's defaults (18) — must refuse naming pgdata-16 and 16, volume byte-identical"
+    platform: [linux]
+    preconditions: ["kind cluster up (upgrade-path-chain)", "postgres:15-bookworm, postgres:16-bookworm loaded into kind (postgres:15-trixie does not exist)"]
+
 coexistence_matrix:
   - tool: existing ci_chart.yml gates (helm lint, helm unittest incl. standalone gate, no-key-generation/no-lookup gate, render determinism, helm-docs drift)
     must_not_break: true                    # new templates must pass every existing gate unchanged
@@ -79,11 +95,11 @@ platform_coverage:
   kubernetes: ["kind (CI)", "conformant self-hosted k8s", "k3s via ArgoCD (LPW tenants; platform currently torn down, unverified live)"]
   apply_method: ["helm upgrade", "helm upgrade --reset-then-reuse-values", "helm template | kubectl apply (GitOps)"]
   helm: ["4.3.0 (CI)", "3.x expected to behave the same; --reset-then-reuse-values needs Helm >= 3.14"]
-  postgres_images: ["postgres:18-trixie (main)", "postgres:17-trixie (upgrade source)", "postgres:16 (test only, gap refusal)"]
+  postgres_images: ["postgres:18-trixie (main)", "postgres:17-trixie (upgrade source)", "postgres:16 (test only, gap refusal)", "postgres:16-trixie, postgres:15-bookworm, postgres:16-bookworm (test only, slice 03 chain and gap-from-copy)"]
   architectures:
     amd64: "verified (DESIGN transplant run; CI runners)"
     arm64: "UNVERIFIED — the images publish arm64 manifests built from the same Debian release, so the transplant is expected to work. Verified by running the happy leg once on an arm64 runner (ubuntu-24.04-arm) or an arm64 kind host"
-  CI: ["GitHub Actions ubuntu-latest + kind, upgrade-path job, matrix [happy, refusals]"]
+  CI: ["GitHub Actions ubuntu-latest + kind, upgrade-path job, matrix [happy, refusals, chain]"]
 
 deployment_assumptions:
   - "The Postgres StatefulSet stays single-replica and is replaced in place; the database is down for the copy, scaling with data size"
