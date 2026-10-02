@@ -4,6 +4,40 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Forecast Reality Check
+
+A backtest answers "would this one forecast have held?". It cannot tell you whether a Team's forecasts hold *in general*, or whether the sampling window behind them is a good one — and that is the question that decides how much weight a forecast can carry.
+
+On a Team's **Forecasts** tab, press the new **Run reality check** below the backtest inputs. Lighthouse replays the Team's recent forecasts — horizons of 1, 2, 4 and 8 weeks, each forecast from 14, 30, 60 and 90 days of history plus your own setting — and holds every one at 50%, 70%, 85% and 95% against the Work Items the Team actually completed.
+
+![Forecast Reality Check](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/realitycheck.png)
+
+The answer opens on a summary: whether your sampling window held up, how often each confidence level held against the rate it should hold at, and how many forecasts landed within 10% of what was delivered. Below it, every forecast sits beside the actual, shaded by how close it came. It does not crown a "best" window — each scenario covers a different real period, so they are evidence to read side by side.
+
+The method follows Nick Brown's article [The Full Monte](https://medium.com/asos-techblog/the-full-monte-901d721b8532). Full detail: [Forecast Reality Check](https://docs.lighthouse.letpeople.work/teams/detail.html#forecast-reality-check).
+
+## Filling in Past Days is now On by Default
+
+The **Fill in past days on over-time charts** behaviour setting from the last release is now switched on by default, so Percentiles Over Time and PBC Over Time show a full line rather than only the days Lighthouse happened to record.
+
+Upgrading switches it on **once** — also on instances where it had been turned off. If you want it off, switch it off again under Behaviour Settings and it stays off from then on. Restoring a backup brings the setting back as the backup held it. It is still a Preview. Full detail: [Fill in past days](https://docs.lighthouse.letpeople.work/settings/configuration.html#fill-in-past-days-on-over-time-charts-preview).
+
+## Bugfixes and Improvements
+
+- **Adding a Data Sync Mapping for a new field works again.** The mapping and the field it targets are now saved together, instead of failing on the first save.
+- **New Teams and Portfolios get the same defaults everywhere.** A Team created through the API started with 30 days of throughput history while the UI used 90; both now use 90. A Portfolio saved with a percentile history of 0 now falls back to 90 days as well.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.9.24.6...HEAD)
+
 # Lighthouse v26.9.24.6
 
 ## Delivery Timeline

@@ -6,7 +6,7 @@
 > - [ADR-027](docs/product/architecture/adr-027-target-architecture-modular-monolith-domain-events-cqrs-lite.md) — the accepted target-architecture decision this overview realises (D1–D8 + concurrency).
 > - [`brief.md`](docs/product/architecture/brief.md) — the per-feature DESIGN deltas (component decompositions, driving/driven ports per feature). Accreted over time; consult per feature.
 > - [`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md) — C4 Context / Container / Component diagrams.
-> - `adr-001 … adr-210` — point decisions (in that folder). The index at the end maps the load-bearing ones, and says which are designed but not built.
+> - `adr-001 … adr-218` — point decisions (in that folder). The index at the end maps the load-bearing ones, and says which are designed but not built.
 >
 > **Status.** The dispatcher seam, the seven enforced module boundaries, optimistic-concurrency tokens, the config-gated cluster substrate (§2), the secret-encryption envelope and key custody (§9), and the embed surface (§11) described below are all **implemented**, not aspirational. Where something is deliberately *not* built, it says so.
 >
@@ -374,4 +374,4 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 212 | Renovate is the one dependency bot across the LetPeopleWork repositories, and a green update merges itself, bar three exceptions that wait for a maintainer (§15) |
 | 214 – 218 | The Refinement tab and sizing votes: settings are one JSON value on the Team saved through the Team settings write, in a module of their own; the need band is the manual How Many for the next Refinement read at (100 − p); an append-only sizing log keyed by a server-derived voter key; a vote is a write gated by Team read through a named requirement; stage, readiness and the hidden split are one pure resolution on read. All *Proposed* — designed, not built; §4, §6 and §10 gain their concepts when slices 01 and 11 ship |
 
-The full set (001–212 — 173–177, 181–186, 195–197 and 206 are *Proposed*, reverted or not yet built: designed, but not what the code does), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
+The full set (001–218 — 173–177, 181–186, 195–197, 206 and 214–218 are *Proposed*, reverted or not yet built: designed, but not what the code does), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
