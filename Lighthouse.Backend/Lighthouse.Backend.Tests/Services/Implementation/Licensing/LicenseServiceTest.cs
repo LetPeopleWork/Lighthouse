@@ -318,12 +318,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         [Test]
-        public void ClearLicense_NoLicense_DoesNotThrow()
+        public async Task ClearLicense_NoLicense_DoesNotThrow()
         {
             var licenseService = CreateSubject();
             licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation>());
 
-            Assert.DoesNotThrowAsync(async () => await licenseService.ClearLicense());
+            await Assert.DoesNotThrowAsync(async () => await licenseService.ClearLicense());
 
             licenseRepoMock.Verify(repo => repo.Remove(It.IsAny<int>()), Times.Never);
             licenseRepoMock.Verify(repo => repo.Save(), Times.Never);

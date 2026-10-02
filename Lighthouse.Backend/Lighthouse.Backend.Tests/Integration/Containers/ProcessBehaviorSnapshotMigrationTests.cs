@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             context.ProcessBehaviorSnapshots.Add(Snapshot(42, OwnerType.Team, new DateOnly(2026, 7, 6), 20, 12, 4));
 
-            var exception = Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync(),
+            var exception = await Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync(),
                 "unique index on (OwnerId, OwnerType, MetricType, RecordedAt) must reject duplicate rows");
             Assert.That(exception!.InnerException!.Message, Does.Contain("unique").IgnoreCase,
                 "the exception must indicate a unique constraint violation");
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 context.ProcessBehaviorSnapshots.Add(Snapshot(42, OwnerType.Team, new DateOnly(2026, 7, 6), 20, 12, 4));
 
-                var exception = Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync(),
+                var exception = await Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync(),
                     "unique index on (OwnerId, OwnerType, MetricType, RecordedAt) must reject duplicate rows");
                 Assert.That(exception!.InnerException!.Message, Does.Contain("UNIQUE").IgnoreCase,
                     "the exception must indicate a unique constraint violation");

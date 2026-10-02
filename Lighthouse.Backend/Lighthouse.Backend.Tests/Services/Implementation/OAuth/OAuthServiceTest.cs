@@ -185,19 +185,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void InitiateAsync_ConnectionNotFound_ThrowsArgumentException()
+        public async Task InitiateAsync_ConnectionNotFound_ThrowsArgumentException()
         {
             connectionRepositoryMock.Setup(r => r.GetById(99)).Returns((WorkTrackingSystemConnection?)null);
             var sut = CreateService();
 
-            var ex = Assert.ThrowsAsync<ArgumentException>(
+            var ex = await Assert.ThrowsAsync<ArgumentException>(
                 () => sut.InitiateAsync(99, CancellationToken.None));
 
             Assert.That(ex!.Message, Does.Contain("99"));
         }
 
         [Test]
-        public void InitiateAsync_ProviderNotRegistered_PropagatesOAuthProviderNotFoundException()
+        public async Task InitiateAsync_ProviderNotRegistered_PropagatesOAuthProviderNotFoundException()
         {
             const string unknownProviderKey = "nonexistent.oauth";
             var connection = CreateOAuthConnection(ConnectionId, unknownProviderKey);
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             var sut = CreateService();
 
-            Assert.ThrowsAsync<OAuthProviderNotFoundException>(
+            await Assert.ThrowsAsync<OAuthProviderNotFoundException>(
                 () => sut.InitiateAsync(ConnectionId, CancellationToken.None));
         }
 
@@ -308,14 +308,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void CompleteAsync_InvalidStateToken_PropagatesAndDoesNotPersistCredential()
+        public async Task CompleteAsync_InvalidStateToken_PropagatesAndDoesNotPersistCredential()
         {
             stateTokenIssuerMock
                 .Setup(i => i.Verify("tampered"))
                 .Throws(new OAuthStateTokenInvalidException("HMAC mismatch."));
             var sut = CreateService();
 
-            Assert.ThrowsAsync<OAuthStateTokenInvalidException>(
+            await Assert.ThrowsAsync<OAuthStateTokenInvalidException>(
                 () => sut.CompleteAsync("auth-code-123", "tampered", CancellationToken.None));
 
             credentialRepositoryMock.Verify(r => r.Add(It.IsAny<OAuthCredential>()), Times.Never);
@@ -382,7 +382,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_NoCredential_ThrowsInvalidOperationException()
+        public async Task EnsureFreshTokenAsync_NoCredential_ThrowsInvalidOperationException()
         {
             credentialRepositoryMock
                 .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
@@ -390,12 +390,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             var sut = CreateService();
 
-            Assert.ThrowsAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_RefreshFailedCredential_ThrowsOAuthCredentialNotValidException()
+        public async Task EnsureFreshTokenAsync_RefreshFailedCredential_ThrowsOAuthCredentialNotValidException()
         {
             var credential = new OAuthCredential
             {
@@ -413,7 +413,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             var sut = CreateService();
 
-            Assert.ThrowsAsync<OAuthCredentialNotValidException>(
+            await Assert.ThrowsAsync<OAuthCredentialNotValidException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
         }
 
@@ -582,7 +582,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 
             var holder = sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
 
-            Assert.ThrowsAsync<OAuthRefreshTimeoutException>(
+            await Assert.ThrowsAsync<OAuthRefreshTimeoutException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             blocker.SetResult(new OAuthTokens("plain-at-new", "plain-rt-new", timeProvider.GetUtcNow().AddHours(1)));
@@ -633,13 +633,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_ProviderRefreshFails_PersistsCredentialAsRefreshFailed()
+        public async Task EnsureFreshTokenAsync_ProviderRefreshFails_PersistsCredentialAsRefreshFailed()
         {
             var credential = ArrangeRefreshFailureScenario(credentialId: 31, out _);
 
             var sut = CreateService();
 
-            Assert.ThrowsAsync<OAuthRefreshFailedException>(
+            await Assert.ThrowsAsync<OAuthRefreshFailedException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
@@ -652,14 +652,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_ProviderRefreshFails_EmitsRefreshFailedAndStatusChangedLogEvents()
+        public async Task EnsureFreshTokenAsync_ProviderRefreshFails_EmitsRefreshFailedAndStatusChangedLogEvents()
         {
             ArrangeRefreshFailureScenario(credentialId: 37, out _);
 
             var loggerMock = new Mock<ILogger<OAuthService>>();
             var sut = CreateService(logger: loggerMock.Object);
 
-            Assert.ThrowsAsync<OAuthRefreshFailedException>(
+            await Assert.ThrowsAsync<OAuthRefreshFailedException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             loggerMock.Verify(
@@ -681,13 +681,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_ProviderRefreshFails_ThrowsOAuthRefreshFailedExceptionPreservingProviderExceptionAsInner()
+        public async Task EnsureFreshTokenAsync_ProviderRefreshFails_ThrowsOAuthRefreshFailedExceptionPreservingProviderExceptionAsInner()
         {
             ArrangeRefreshFailureScenario(credentialId: 41, out var providerException);
 
             var sut = CreateService();
 
-            var thrown = Assert.ThrowsAsync<OAuthRefreshFailedException>(
+            var thrown = await Assert.ThrowsAsync<OAuthRefreshFailedException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
@@ -727,26 +727,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_ReachesTheIdentityProviderWithNothingSent()
+        public async Task EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_ReachesTheIdentityProviderWithNothingSent()
         {
             using var identityProvider = new RequestCountingHandler();
             ArrangeRefreshThroughARealIdentityProvider(ARefreshTokenTheInstanceCannotRead(), identityProvider);
             var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
 
-            Assert.ThrowsAsync<UnreadableSecretException>(
+            await Assert.ThrowsAsync<UnreadableSecretException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             Assert.That(identityProvider.RequestCount, Is.Zero, NothingWentOut);
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_SaysTheStoredTokenCannotBeReadRatherThanThatTheAuthorisationLapsed()
+        public async Task EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_SaysTheStoredTokenCannotBeReadRatherThanThatTheAuthorisationLapsed()
         {
             using var identityProvider = new RequestCountingHandler();
             ArrangeRefreshThroughARealIdentityProvider(ARefreshTokenTheInstanceCannotRead(), identityProvider);
             var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
 
-            var thrown = Assert.ThrowsAsync<UnreadableSecretException>(
+            var thrown = await Assert.ThrowsAsync<UnreadableSecretException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             using (Assert.EnterMultipleScope())
@@ -760,13 +760,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         }
 
         [Test]
-        public void EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_LeavesTheCredentialAsItWasRatherThanRecordingARefusal()
+        public async Task EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_LeavesTheCredentialAsItWasRatherThanRecordingARefusal()
         {
             using var identityProvider = new RequestCountingHandler();
             var credential = ArrangeRefreshThroughARealIdentityProvider(ARefreshTokenTheInstanceCannotRead(), identityProvider);
             var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
 
-            Assert.ThrowsAsync<UnreadableSecretException>(
+            await Assert.ThrowsAsync<UnreadableSecretException>(
                 () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
 
             Assert.That(credential.Status, Is.EqualTo(OAuthCredentialStatus.Valid), NotARefusedCredential);

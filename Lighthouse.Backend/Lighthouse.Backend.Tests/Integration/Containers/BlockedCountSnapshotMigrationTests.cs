@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 context.BlockedCountSnapshots.Add(duplicate);
 
-                var ex = Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync(),
+                var ex = await Assert.ThrowsAsync<DbUpdateException>(async () => await context.SaveChangesAsync(),
                     "unique index on (OwnerId, OwnerType, RecordedAt) must reject duplicate rows");
                 Assert.That(ex!.InnerException!.Message, Does.Contain("UNIQUE").IgnoreCase,
                     "the exception must indicate a unique constraint violation");

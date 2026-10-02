@@ -147,12 +147,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void CreateBackup_ThrowsWhenDatabaseFileNotFound()
+        public async Task CreateBackup_ThrowsWhenDatabaseFileNotFound()
         {
             var backupDir = Path.Combine(testDbDirectory, "backup");
             Directory.CreateDirectory(backupDir);
 
-            Assert.ThrowsAsync<FileNotFoundException>(async () =>
+            await Assert.ThrowsAsync<FileNotFoundException>(async () =>
                 await subject.CreateBackup(backupDir));
         }
 
@@ -212,12 +212,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void RestoreBackup_ThrowsWhenBackupDatabaseFileNotFound()
+        public async Task RestoreBackup_ThrowsWhenBackupDatabaseFileNotFound()
         {
             var restoreDir = Path.Combine(testDbDirectory, "restore");
             Directory.CreateDirectory(restoreDir);
 
-            Assert.ThrowsAsync<FileNotFoundException>(async () =>
+            await Assert.ThrowsAsync<FileNotFoundException>(async () =>
                 await subject.RestoreBackup(restoreDir));
         }
 
