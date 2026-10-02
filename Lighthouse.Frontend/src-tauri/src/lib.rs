@@ -11,6 +11,8 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_updater::UpdaterExt;
 
+mod backend_env;
+
 const STANDALONE_DISCOVERY_LOCKFILE_NAME: &str = "standalone.lock.json";
 
 #[derive(Serialize, Deserialize)]
@@ -242,6 +244,8 @@ pub fn run() {
                 .expect("failed to get resource dir");
 
             let spawn_result = sidecar
+                .env_clear()
+                .envs(backend_env::backend_environment(std::env::vars_os()))
                 .env("Standalone", "true")
                 .env(
                     "LIGHTHOUSE_RESOURCES_DIR",
