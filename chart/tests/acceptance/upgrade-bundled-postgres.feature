@@ -37,7 +37,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the marker row is present
     And Lighthouse reaches its database with the credentials it had before, with no value added or changed
 
-  @US-01 @AC-1.1 @kpi:K2 @real-io @slice-01 @contract-shape:bounded-change @pending
+  @US-01 @AC-1.1 @kpi:K2 @real-io @slice-01 @contract-shape:bounded-change
   Scenario Outline: The other ways of applying the new chart carry the data across the same way
     Given Lighthouse was installed from chart 0.1.17 with the bundled Postgres 17, applied by <apply method>
     And it holds Lighthouse data with a known marker row
@@ -58,7 +58,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
       | apply method                                  |
       | rendering the chart and applying the result   |
 
-  @US-01 @AC-1.3 @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:unbounded-preservation @pending
+  @US-01 @AC-1.3 @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:unbounded-preservation
   Scenario: The previous major's data stays on the volume with exactly the pre-upgrade rows
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     When the kept Postgres 17 copy is opened with Postgres 17
@@ -97,7 +97,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log says there was nothing to upgrade
     And the volume holds a single copy of the database
 
-  @US-01 @AC-1.5 @kpi:K3 @edge @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:bounded-change @pending
+  @US-01 @AC-1.5 @kpi:K3 @edge @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:bounded-change
   Scenario: Restarting the database after an upgrade does not upgrade again
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     And the time a fresh install's database takes to start in the same cluster has been recorded
@@ -176,7 +176,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the row written on Postgres 17 after the rollback is present
     And the row written on Postgres 18 before the rollback is absent
 
-  @US-02 @rollback-contract @edge @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:bounded-change @pending
+  @US-02 @rollback-contract @edge @real-io @env:kind-0.1.17-with-data @slice-01 @contract-shape:bounded-change
   Scenario: Rolling back between two releases of the new chart leaves the database as it is
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     And has upgraded it once more with an unrelated setting changed

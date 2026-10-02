@@ -209,6 +209,46 @@ jobs:
           kubectl -n tenant describe pods -l app.kubernetes.io/instance=tenant || true
           kubectl -n tenant logs -l app.kubernetes.io/instance=tenant --tail=200 --all-containers || true
 
+  # Carries a seeded install of the previously published chart across the bundled Postgres major upgrade
+  # on a real cluster. Each group runs on a cluster of its own, so a red leg names the group that broke.
+  # The script pulls every image once on the runner and loads it into kind: Docker Hub limits anonymous
+  # pulls per address, and a node pulling the same images again would spend that limit twice.
+  upgrade-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [happy, refusals]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+
+      - name: Create kind cluster
+        uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
+        with:
+          cluster_name: upgrade-path-${{ matrix.group }}
+
+      - name: Upgrade path (${{ matrix.group }})
+        env:
+          GROUP: ${{ matrix.group }}
+        run: chart/tests/upgrade-path/run.sh "upgrade-path-$GROUP" "$GROUP"
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A -o wide
+          for ns in $(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}'); do
+            case "$ns" in kube-*|local-path-storage|default) continue ;; esac
+            echo "--- namespace $ns ---"
+            kubectl -n "$ns" describe pods || true
+            kubectl -n "$ns" logs -l app.kubernetes.io/instance=l8e --tail=200 --all-containers --prefix || true
+          done
+
   # Decide whether there is a new chart version to publish, so the Release gate only appears when
   # there is actually something to ship. On a push to main: "Chart.yaml version not yet in
   # docs/charts/index.yaml". On workflow_dispatch: honour the publish input (the version-guard in
@@ -245,7 +285,7 @@ jobs:
           fi
 
   publish:
-    needs: [validate, install-smoke, detect-publish]
+    needs: [validate, install-smoke, upgrade-path, detect-publish]
     if: needs.detect-publish.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     # Reuse the server release gate: publishing the chart waits for the same maintainer approval

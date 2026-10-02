@@ -172,6 +172,15 @@ EOF
   say "upgrade finished: Postgres $MAJOR starts on pgdata-$MAJOR, and the Postgres $from data stays in pgdata"
 }
 
+# The upgraded copy is current as long as the old data has not been started since the copy was made:
+# any start of the old major rewrites its pg_control, and the hash noted at upgrade then differs.
+upgraded_copy_is_current() {
+  local note="$NEW/.lighthouse-upgrade" hash
+  [[ -f "$note" ]] || return 1
+  hash="$(sha256sum "$OLD/global/pg_control" | cut -d' ' -f1)"
+  grep -qx "source_pg_control_sha256=$hash" "$note"
+}
+
 main() {
   local data copies
   data="$(data_major)"
@@ -183,6 +192,9 @@ main() {
   elif [[ "$data" == "$MAJOR" && -z "$copies" && ! -e "$PARTIAL" ]]; then
     say "nothing to upgrade: the data in pgdata is already Postgres $MAJOR"
     start_on "$OLD"
+  elif [[ "$data" == "$((MAJOR - 1))" && "$copies" == "pgdata-$MAJOR" ]] && upgraded_copy_is_current; then
+    say "nothing to upgrade: pgdata-$MAJOR is already the upgrade of the Postgres $data data in pgdata"
+    start_on "$NEW"
   elif [[ "$data" =~ ^[0-9]+$ && "$data" -eq $((MAJOR - 1)) && -z "$copies" ]]; then
     upgrade "$data"
     start_on "$NEW"

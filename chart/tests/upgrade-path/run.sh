@@ -56,8 +56,8 @@ chart_app_version() {
   helm show chart "$1" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }'
 }
 
-# Loads whatever the local Docker already holds, so a local run does not pull through the kind node. In
-# CI nothing is cached and the node pulls as usual.
+# Pulls each image once into the local Docker and loads it into the kind node, so the node never pulls
+# from Docker Hub itself: its anonymous pull limit is shared by every job on a CI runner's address.
 preload_images() {
   local cluster="$1" image
   local images=(
@@ -73,7 +73,10 @@ preload_images() {
   local platform node
   platform="$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')"
   for image in "${images[@]}"; do
-    docker image inspect "$image" >/dev/null 2>&1 || continue
+    if ! docker image inspect "$image" >/dev/null 2>&1; then
+      docker pull --quiet --platform "$platform" "$image" >/dev/null \
+        || { echo "  (could not pull $image; the node pulls it)"; continue; }
+    fi
     for node in $(kind get nodes --name "$cluster"); do
       docker save --platform "$platform" "$image" \
         | docker exec -i "$node" ctr --namespace=k8s.io images import --platform "$platform" --digests --snapshotter=overlayfs - >/dev/null \
@@ -151,10 +154,15 @@ wait_api_ready() {
   done
 }
 
+psql_on() {
+  local ns="$1" pod="$2" sql="$3"
+  kubectl -n "$ns" exec "$pod" -c postgres -- \
+    psql -U "$DB_USER" -d lighthouse -XAtq -v ON_ERROR_STOP=1 -c "$sql"
+}
+
 psql_in() {
   local ns="$1" sql="$2"
-  kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- \
-    psql -U "$DB_USER" -d lighthouse -XAtq -v ON_ERROR_STOP=1 -c "$sql"
+  psql_on "$ns" "$POSTGRES_POD" "$sql"
 }
 
 seed_marker_row() {
@@ -166,8 +174,8 @@ seed_marker_row() {
 
 # One "table|rows" line per table of the public schema, sorted, so two recordings compare as text.
 public_row_counts() {
-  local ns="$1"
-  psql_in "$ns" "SELECT table_name || '|' || (xpath('/row/c/text()',
+  local ns="$1" pod="${2:-$POSTGRES_POD}"
+  psql_on "$ns" "$pod" "SELECT table_name || '|' || (xpath('/row/c/text()',
                    query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text
                  FROM information_schema.tables
                  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -181,8 +189,8 @@ assert_row_counts() {
 }
 
 assert_marker_row() {
-  local ns="$1"
-  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_marker WHERE marker = '$MARKER'")" == "1" ]] \
+  local ns="$1" pod="${2:-$POSTGRES_POD}"
+  [[ "$(psql_on "$ns" "$pod" "SELECT count(*) FROM upgrade_path_marker WHERE marker = '$MARKER'")" == "1" ]] \
     || fail "the marker row is missing in $ns"
 }
 
@@ -259,32 +267,108 @@ assert_carried_across() {
   assert_marker_row "$ns"
 }
 
-# --- group: happy (slice 01), in the order the scenarios chain ----------------------------------------
+readonly UPGRADED_NS="plain-upgrade"
+readonly FRESH_NS="fresh-install"
 
-upgrade_plain_helm_upgrade_keeps_every_row() {
-  local ns="plain-upgrade" counts secret
-  install_with_data "$ns"
-  counts="$(public_row_counts "$ns")"
-  secret="$(secret_fingerprint "$ns")"
+# What a scenario leaves behind for the ones after it: the row counts recorded before each namespace was
+# upgraded, the Helm revision of the upgrade, and whether the fresh install exists. A scenario run on its
+# own finds none of them and makes its Given itself. The new chart may still carry the old chart's version
+# number, so the upgrade's revision is recorded rather than looked up by chart name.
+declare -A RECORDED_COUNTS=()
+UPGRADE_REVISION=""
+FRESH_INSTALLED=""
 
-  upgrade_to_new_chart "$ns"
-
-  assert_carried_across "$ns" "$counts"
-  [[ "$(secret_fingerprint "$ns")" == "$secret" ]] || fail "the database Secret in $ns changed"
-  [[ "$(volume_file "$ns" pgdata/PG_VERSION)" == "17" ]] || fail "pgdata/PG_VERSION in $ns no longer reads 17"
+given_upgraded() {
+  [[ -n "${RECORDED_COUNTS[$UPGRADED_NS]:-}" ]] || upgrade_plain_helm_upgrade_keeps_every_row
 }
 
-kept_copy_holds_pre_upgrade_rows() { scaffold "The previous major's data stays on the volume with exactly the pre-upgrade rows"; }
-restart_after_upgrade_does_not_upgrade_again() { scaffold "Restarting the database after an upgrade does not upgrade again"; }
-rollback_between_new_chart_revisions_changes_nothing() { scaffold "Rolling back between two releases of the new chart leaves the database as it is"; }
-rollback_starts_17_on_pre_upgrade_data() { scaffold "Rolling back after an upgrade starts Postgres 17 on the pre-upgrade data"; }
-upgrade_again_after_rollback_starts_afresh() { scaffold "Upgrading again after a rollback starts afresh from the Postgres 17 data"; }
-reuse_values_stays_on_17_and_says_so() { scaffold "Reusing the previous values keeps the database on 17 and says how to move it"; }
-upgrade_with_reset_then_reuse_values_keeps_every_row() { scaffold "The other ways of applying the new chart: helm upgrade --reset-then-reuse-values"; }
-upgrade_by_rendered_manifests_keeps_every_row() { scaffold "The other ways of applying the new chart: rendering the chart and applying the result"; }
+given_fresh_install() {
+  [[ -n "$FRESH_INSTALLED" ]] || fresh_install_starts_18_without_upgrading
+}
+
+pod_field() {
+  local ns="$1" path="$2"
+  kubectl -n "$ns" get pod "$POSTGRES_POD" -o jsonpath="$path" 2>/dev/null || true
+}
+
+postgres_started_at() {
+  pod_field "$1" '{.status.containerStatuses[?(@.name=="postgres")].state.running.startedAt}'
+}
+
+# Deletes the database pod and waits until the StatefulSet's replacement has started its postgres
+# container. Readiness is left to the caller.
+restart_database() {
+  local ns="$1" old_uid deadline=$((SECONDS + WAIT_SECONDS)) restarts
+  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --wait >/dev/null
+  until [[ "$(pod_field "$ns" '{.metadata.uid}')" != "$old_uid" && -n "$(postgres_started_at "$ns")" ]]; do
+    restarts="$(highest_restart_count "$ns")"
+    if [[ "${restarts:-0}" -ge 3 ]]; then
+      dump_diagnostics "$ns"
+      fail "the restarted database pod in $ns is crash-looping"
+    fi
+    if [[ $SECONDS -ge $deadline ]]; then
+      dump_diagnostics "$ns"
+      fail "the restarted database in $ns did not start within ${WAIT_SECONDS}s"
+    fi
+    sleep 1
+  done
+}
+
+# From the pod being created to its postgres container starting: the time the init containers took.
+# Both timestamps are whole seconds.
+start_delay_ms() {
+  local ns="$1" created started
+  created="$(date -d "$(pod_field "$ns" '{.metadata.creationTimestamp}')" +%s)"
+  started="$(date -d "$(postgres_started_at "$ns")" +%s)"
+  echo $(((started - created) * 1000))
+}
+
+assert_data_directory() {
+  local ns="$1" directory="$2" actual
+  actual="$(psql_in "$ns" "SHOW data_directory")"
+  [[ "$actual" == "$MOUNT/$directory" ]] || fail "the database in $ns runs on $actual, expected $MOUNT/$directory"
+}
+
+assert_upgrade_note() {
+  local ns="$1"
+  volume_file "$ns" pgdata-18/.lighthouse-upgrade | grep -qx "source_major=17" \
+    || fail "pgdata-18 in $ns carries no note saying it was upgraded from Postgres 17"
+}
+
+current_revision() {
+  local ns="$1"
+  helm history "$RELEASE" -n "$ns" -o json | jq -r '.[-1].revision'
+}
+
+apply_rendered() {
+  local ns="$1" chart="$2"
+  helm template "$RELEASE" "$chart" -n "$ns" "${VALUES[@]}" | kubectl -n "$ns" apply -f - >/dev/null
+}
+
+# Starts Postgres 17 on a copy of pgdata taken from the volume, mounted read-only, so opening the kept
+# data cannot change a byte of it: any start of Postgres 17 on the volume itself rewrites pg_control.
+open_kept_copy() {
+  local ns="$1" script overrides deadline=$((SECONDS + 300))
+  script='cp -a /volume/pgdata /copy/pgdata && chown -R postgres:postgres /copy/pgdata && chmod 0700 /copy/pgdata && exec gosu postgres postgres -D /copy/pgdata'
+  overrides="$(jq -cn --arg script "$script" --arg claim "data-$POSTGRES_POD" '{spec: {
+    containers: [{name: "postgres", image: "postgres:17-trixie", command: ["bash", "-c", $script],
+      volumeMounts: [{name: "data", mountPath: "/volume", readOnly: true}, {name: "copy", mountPath: "/copy"}]}],
+    volumes: [{name: "data", persistentVolumeClaim: {claimName: $claim, readOnly: true}}, {name: "copy", emptyDir: {}}]}}')"
+  kubectl -n "$ns" run kept-copy --restart=Never --image=postgres:17-trixie --overrides="$overrides" >/dev/null
+  until kubectl -n "$ns" exec kept-copy -c postgres -- pg_isready -q >/dev/null 2>&1; do
+    if [[ $SECONDS -ge $deadline || "$(kubectl -n "$ns" get pod kept-copy -o jsonpath='{.status.phase}')" == "Failed" ]]; then
+      kubectl -n "$ns" logs kept-copy >&2 || true
+      fail "Postgres 17 did not open the kept copy in $ns"
+    fi
+    sleep 2
+  done
+}
+
+# --- group: happy (slice 01), in the order the scenarios chain ----------------------------------------
 
 fresh_install_starts_18_without_upgrading() {
-  local ns="fresh-install"
+  local ns="$FRESH_NS"
   install_new_chart "$ns"
 
   wait_postgres_ready "$ns"
@@ -293,6 +377,116 @@ fresh_install_starts_18_without_upgrading() {
   assert_upgrade_log_says "$ns" "nothing to upgrade"
   [[ "$(volume_entries "$ns")" == "pgdata" ]] \
     || fail "the volume in $ns holds more than one copy: $(volume_entries "$ns" | tr '\n' ' ')"
+  FRESH_INSTALLED=1
+}
+
+upgrade_plain_helm_upgrade_keeps_every_row() {
+  local ns="$UPGRADED_NS" counts secret
+  install_with_data "$ns"
+  counts="$(public_row_counts "$ns")"
+  secret="$(secret_fingerprint "$ns")"
+
+  upgrade_to_new_chart "$ns"
+  UPGRADE_REVISION="$(current_revision "$ns")"
+
+  assert_carried_across "$ns" "$counts"
+  [[ "$(secret_fingerprint "$ns")" == "$secret" ]] || fail "the database Secret in $ns changed"
+  [[ "$(volume_file "$ns" pgdata/PG_VERSION)" == "17" ]] || fail "pgdata/PG_VERSION in $ns no longer reads 17"
+  RECORDED_COUNTS[$ns]="$counts"
+}
+
+# The baseline is a restart of the fresh install rather than its first start, so both measurements
+# start on an existing volume and neither includes provisioning it.
+restart_after_upgrade_does_not_upgrade_again() {
+  local ns="$UPGRADED_NS" baseline delay
+  given_fresh_install
+  given_upgraded
+  restart_database "$FRESH_NS"
+  baseline="$(start_delay_ms "$FRESH_NS")"
+
+  restart_database "$ns"
+
+  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  delay="$(start_delay_ms "$ns")"
+  echo "  start delay: ${delay} ms after the upgrade, ${baseline} ms on a fresh install"
+  [[ $((delay - baseline)) -lt 5000 ]] \
+    || fail "the database in $ns started ${delay} ms after its pod was created, ${baseline} ms on a fresh install"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  assert_row_counts "$ns" "${RECORDED_COUNTS[$ns]}"
+}
+
+rollback_between_new_chart_revisions_changes_nothing() {
+  local ns="$UPGRADED_NS"
+  given_upgraded
+  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set shutdownTimeoutSeconds=45 >/dev/null
+  wait_api_ready "$ns"
+  psql_in "$ns" "CREATE TABLE upgrade_path_written_on_18 (marker text);
+                 INSERT INTO upgrade_path_written_on_18 VALUES ('$MARKER')" >/dev/null
+
+  helm rollback "$RELEASE" "$UPGRADE_REVISION" -n "$ns" >/dev/null
+  # The changed setting reaches only the API, so the rollback leaves the database running. Restarting it
+  # is what makes the database start under the rolled-back revision.
+  restart_database "$ns"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_written_on_18 WHERE marker = '$MARKER'")" == "1" ]] \
+    || fail "the row written on Postgres 18 in $ns is gone after the rollback"
+  wait_api_ready "$ns"
+}
+
+# Comparing rows, never file hashes: pg_upgrade rewrites pg_control of the data it upgrades.
+kept_copy_holds_pre_upgrade_rows() {
+  local ns="$UPGRADED_NS" counts
+  given_upgraded
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
+  kubectl -n "$ns" wait --for=delete "pod/$POSTGRES_POD" --timeout=120s >/dev/null 2>&1 || true
+
+  open_kept_copy "$ns"
+
+  counts="$(public_row_counts "$ns" kept-copy)"
+  [[ "$counts" == "${RECORDED_COUNTS[$ns]}" ]] \
+    || fail "the kept copy in $ns differs from before the upgrade: $(diff <(echo "${RECORDED_COUNTS[$ns]}") <(echo "$counts") || true)"
+  assert_marker_row "$ns" kept-copy
+
+  kubectl -n "$ns" delete pod kept-copy --wait >/dev/null
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+  wait_postgres_ready "$ns"
+  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_server_major "$ns" 18
+}
+
+rollback_starts_17_on_pre_upgrade_data() { scaffold "Rolling back after an upgrade starts Postgres 17 on the pre-upgrade data"; }
+upgrade_again_after_rollback_starts_afresh() { scaffold "Upgrading again after a rollback starts afresh from the Postgres 17 data"; }
+reuse_values_stays_on_17_and_says_so() { scaffold "Reusing the previous values keeps the database on 17 and says how to move it"; }
+
+upgrade_with_reset_then_reuse_values_keeps_every_row() {
+  local ns="reset-then-reuse" counts
+  install_with_data "$ns"
+  counts="$(public_row_counts "$ns")"
+
+  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" --reset-then-reuse-values >/dev/null
+
+  assert_carried_across "$ns" "$counts"
+  assert_upgrade_note "$ns"
+}
+
+upgrade_by_rendered_manifests_keeps_every_row() {
+  local ns="rendered-manifests" counts
+  fresh_namespace "$ns"
+  apply_rendered "$ns" "$BEFORE_CHART"
+  wait_postgres_ready "$ns"
+  wait_api_ready "$ns"
+  seed_marker_row "$ns"
+  counts="$(public_row_counts "$ns")"
+
+  apply_rendered "$ns" "$NEW_CHART"
+
+  assert_carried_across "$ns" "$counts"
+  assert_upgrade_note "$ns"
 }
 
 # --- group: refusals (slices 01 and 02) ---------------------------------------------------------------
@@ -320,29 +514,20 @@ newer_data_without_kept_copy_refuses() { scaffold "Data newer than the image, wi
 interrupted_upgrade_is_redone_from_start() { scaffold "An upgrade interrupted part-way is redone from the start and never serves a partial copy"; }
 foreign_upgrade_source_refuses_and_touches_nothing() { scaffold "An upgrade-source image whose programs cannot run beside the database image is refused"; }
 
+# Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
+# one before it.
 readonly HAPPY=(
+  fresh_install_starts_18_without_upgrading
   upgrade_plain_helm_upgrade_keeps_every_row
-  kept_copy_holds_pre_upgrade_rows
   restart_after_upgrade_does_not_upgrade_again
   rollback_between_new_chart_revisions_changes_nothing
-  rollback_starts_17_on_pre_upgrade_data
-  upgrade_again_after_rollback_starts_afresh
-  reuse_values_stays_on_17_and_says_so
+  kept_copy_holds_pre_upgrade_rows
   upgrade_with_reset_then_reuse_values_keeps_every_row
   upgrade_by_rendered_manifests_keeps_every_row
-  fresh_install_starts_18_without_upgrading
 )
 
 readonly REFUSALS=(
   upgrade_after_unclean_stop_keeps_every_row
-  too_little_room_refuses_and_touches_nothing
-  grown_volume_lets_refused_upgrade_proceed
-  two_majors_behind_refuses_and_touches_nothing
-  pinning_to_data_major_starts_without_other_step
-  cleanup_then_rollback_refuses_empty_database
-  newer_data_without_kept_copy_refuses
-  interrupted_upgrade_is_redone_from_start
-  foreign_upgrade_source_refuses_and_touches_nothing
 )
 
 main() {
