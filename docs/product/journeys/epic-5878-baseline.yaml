@@ -1,0 +1,89 @@
+schema_version: 1
+feature_id: epic-5878-baseline
+updated: 2026-10-02
+ado: "#5878 Baseline (ValueFlow, Community)"
+note: >
+  Seeded in DISCOVER (2026-10-02) as two hypothesis journeys. No Lighthouse user has walked them. The solution
+  shape is open (see feature-delta.md, Open questions for DIVERGE), so steps describe intent, not UI. Terms in
+  braces ({team}, {portfolio}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}, {sle}) render
+  as the instance's configured words. The job ids are PROPOSED and do not exist in jobs.yaml yet; DISCUSS
+  creates or re-points them.
+
+journeys:
+
+  - name: show-what-changed-since-the-engagement-started
+    goal: >
+      A consulting flow coach fixes the {team}'s "before" (for example the 90 days up to the engagement
+      start), and weeks or months later shows the client's management today's flow against that frozen
+      "before", in numbers they trust.
+    persona: "flow-coach (consulting; pays); reader: delivery-lead-rte (client management)"
+    jobs:
+      - job-flow-coach-prove-engagement-value  # proposed
+    emotional_arc:
+      start: Exposed - "They are paying me; I need to show it worked, not just say it."
+      middle: Anchored - "The before is pinned; nobody can move it after the fact."
+      end: Vindicated - "85th percentile {cycle time} down from 21 to 12 days since we started."
+    steps:
+      - id: 1
+        name: Fix the baseline
+        action: "Pick the engagement start date; the baseline window is computed from stored history and frozen"
+        emotional_state: {entry: Exposed, exit: Anchored}
+        shared_artifacts: [baseline_window, intervention_date, baseline_values]
+        failure_modes:
+          - Window partly outside DoneItemsCutoffDays - refused or flagged, never silently partial
+          - Too few finished {work items} in the window - metric shown absent, not zero
+      - id: 2
+        name: Compare today against the baseline
+        action: "Today's values beside the frozen ones, with the change and the days since the intervention"
+        emotional_state: {entry: Hopeful, exit: Confident or Honest}
+        shared_artifacts: [baseline_values, current_values, intervention_date]
+        failure_modes:
+          - Current window still mostly before the intervention - comparison misleads (open Q4)
+          - A difference within natural variation presented as improvement (open Q7)
+      - id: 3
+        name: Put it in front of management
+        action: "Hand over a result management reads without Lighthouse open (surface open, Q5)"
+        emotional_state: {entry: Confident, exit: Vindicated}
+        shared_artifacts: [baseline_values, current_values]
+        failure_modes:
+          - Configuration changed since freezing - "before" disagrees with a fresh recompute (C5)
+
+  - name: snapshot-where-you-are-at-the-end-of-an-assessment
+    goal: >
+      A consultant embedded for a short assessment (about 4 weeks) shows where the {team} is today against
+      where it was, and leaves a frozen baseline the client can measure its own improvement against after he
+      leaves. This is the shape divergence from consultant #2 (2026-10-02). It may turn out to be a separate
+      feature.
+    persona: "flow-coach (consulting, short assessment)"
+    jobs:
+      - job-flow-coach-hand-over-a-starting-point  # proposed
+    emotional_arc:
+      start: Rushed - "Four weeks; no time for a real after."
+      middle: Grounded - "Here's where you've been; here's where you are."
+      end: Handed over - "Measure yourselves against this from now on."
+    steps:
+      - id: 1
+        name: Read the before and today
+        action: "Retroactive comparison of past windows (open Q6)"
+        emotional_state: {entry: Rushed, exit: Grounded}
+        shared_artifacts: [baseline_window, current_values]
+        failure_modes:
+          - No intervention yet - "after" is meaningless, so the comparison is past vs present only
+      - id: 2
+        name: Hand over the baseline
+        action: "Freeze a baseline at the end of the engagement for the client to compare against later"
+        emotional_state: {entry: Grounded, exit: Handed over}
+        shared_artifacts: [baseline_values]
+        failure_modes:
+          - Baseline ages out of DoneItemsCutoffDays if only recomputed (X3)
+
+shared_artifacts:
+  intervention_date: {source: "user-supplied (engagement or experiment start)", consumers: [baseline_window, days since intervention]}
+  baseline_window: {source: "derived from intervention_date and a length (e.g. 90 days), or picked; open Q2/Q3", consumers: [baseline_values]}
+  baseline_values: {source: "existing metrics services over baseline_window; frozen vs recomputed is open (Q3)", consumers: [comparison, management artefact]}
+  current_values: {source: "existing metrics services over the current window; rolling vs since-intervention is open (Q4)", consumers: [comparison, management artefact]}
+
+changelog:
+  - date: 2026-10-02
+    feature: epic-5878-baseline
+    change: Seeded in DISCOVER with two hypothesis journeys (long engagement before/after; short-assessment snapshot).

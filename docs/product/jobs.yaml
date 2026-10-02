@@ -59,6 +59,7 @@ feature_context:
   - story-6088-clients-dependency-updates
   - epic-5806-initiatives
   - epic-5510-5881-refinement
+  - epic-5878-baseline
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7854,3 +7855,56 @@ jobs:
         Importance 4 - O5 (time to give a sizing view) scored 13 in DIVERGE as a desk estimate. Satisfaction 2
         - async poker tools exist but push into inboxes Lighthouse does not have, and none uses SLE fit with
         the Team's real Work Items. Gap 2 until K4 (votes outside Refinement days) shows usage.
+
+  - id: job-flow-coach-show-whether-flow-changed
+    title: Show whether flow changed since a way-of-working change began, against a "before" that cannot move
+    persona: flow-coach
+    feature_context: epic-5878-baseline
+    created: 2026-10-02
+    note: >
+      NEW in DIVERGE of epic-5878-baseline (ADO #5878 Baseline). Changelog: created 2026-10-02 from
+      diverge/job-analysis.md. It serves both shapes, the consulting coach proving engagement value and a Team
+      testing its own change. The journey file's two proposed ids (job-flow-coach-prove-engagement-value,
+      job-flow-coach-hand-over-a-starting-point) are two circumstances of this one job, and DISCUSS should
+      re-point the journey at this id. The 4-week assessment needs no separate job (maintainer D14). A candidate
+      reader job for delivery-lead-rte (read the verdict in one look without learning flow metrics) is recorded
+      in job-analysis.md and is not an entry yet. Opportunity scores are DESK ESTIMATES by the diverger;
+      DISCOVER G1-G3 failed and the maintainer accepted the risk (D2).
+    job_story: >
+      When I (or the Team) have changed how work flows and someone asks whether it helped,
+      I want to set today's flow against a "before" that cannot move, judged by rules agreed before looking,
+      so I can say with evidence whether flow changed - and not present noise as progress.
+    dimensions:
+      functional: >
+        A frozen "Then" window (picked at creation, may end in the past, inside the done-items cutoff) set
+        against a rolling "Now" window. The comparison items are chosen from a catalog, and each carries a
+        direction of good and a rule. Process-behaviour-chart rules use limits frozen from Then, and the
+        verdicts are Holds, Does not hold, No change yet and Not enough data.
+      emotional: >
+        From exposed ("they are paying me; I have to show it worked") to vindicated, or honestly informed
+        ("Cycle Time shifted down; WIP held"). A "No change yet" must be safe to show.
+      social: >
+        The coach is seen as rigorous rather than cherry-picking; the sponsor can pass the result upward
+        without defending the method.
+    forces:
+      push: >
+        Outside ValueFlow, before/after evidence is presumably hand-built (export at kick-off, spreadsheet at
+        review; unconfirmed, DISCOVER R1). Rolling comparisons
+        (previous 1/3/6 months) move the "before". Percentage thresholds call noise an improvement.
+      pull: >
+        Lighthouse already holds the history, can rebuild a past window, and has the XmR machinery to judge
+        new data against limits from an earlier window.
+      anxiety: >
+        Will a sponsor read "No change yet" as evasion? Will the "Now" side disagree with the frozen "Then"
+        after settings change? Is the evidence that anyone outside Thrivve needs this real (DISCOVER G1)?
+      habit: >
+        A slide with two columns and hand-drawn arrows; narrating caveats out loud.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance 4 - Thrivve built and uses it (second-hand past behaviour), one consultant's stated
+        interest, no Lighthouse interviews, so not 5. Satisfaction 2 - Nave judges per metric but with a
+        moving "before" and percentage thresholds; ValueFlow freezes but states no rule; nothing researched
+        does both. Gap 2 until the interview protocol in feature-delta.md produces commitments.

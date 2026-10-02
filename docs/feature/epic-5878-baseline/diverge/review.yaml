@@ -1,0 +1,45 @@
+review_result:
+  artifact_path: "docs/feature/epic-5878-baseline/diverge/"
+  review_date: "2026-10-02"
+  reviewer: "nw-diverger-reviewer"
+  approval_status: "approved"
+  blocking_issues: []
+
+  jtbd_rigor:
+    status: "PASSED"
+    notes: "Job at strategic level (decide whether to keep, extend, or stop a change) and physical level (compare two states of one process against a yardstick fixed in advance); 6 ODI outcomes; OS2 and OS3 under-served."
+
+  research_quality:
+    status: "PASSED"
+    issues:
+      - check: "ValueFlow evidence not publicly verifiable"
+        location: "competitive-research.md §1.1"
+        remediation: "Internal demo evidence only; DISCOVER gate failures are a maintainer-accepted risk. Not blocking."
+      - check: "Nave Executive Report wording from a search snippet"
+        location: "competitive-research.md §1.2"
+        remediation: "Home page claim verified; sufficient for lightweight depth. Not blocking."
+
+  option_diversity:
+    status: "PASSED"
+    notes: "6 options on the open axes; mechanism, assumption and cost differ across all pairs; options-raw.md free of evaluative language."
+
+  taste_application:
+    status: "PASSED"
+    notes: "Weights locked before scoring (DVF 30%, T1 20%, T2 20%, T3 15%, T4 15%); full matrix; Option 3 leads under all 5 sensitivity tests; codebase evidence gathered after scoring was recorded, not re-scored."
+
+  recommendation_coherence:
+    status: "PASSED"
+    notes: "Option 3 Claims checklist (4.35) recommended; dissent Option 1 (3.90) with a pre-committed trigger; open items 7-10 answered; consistent with maintainer decisions D8-D16."
+
+  spot_checks:
+    - "XmRCalculator.Calculate(baselineValues, displayValues) exists and classifies new points against limits from another series"
+    - "Lower natural process limit clamped at zero — downward signals on low-count series only via run rules"
+    - "AdditionalFieldsHelper caps non-premium at 2 — precedent for the report cap"
+
+  recommendations:
+    - "Maintainer: 'Then & Now' vs 'Before & After'"
+    - "Maintainer: report cap 2 or 1 per owner"
+    - "Maintainer: keep C6 (percentage threshold claim) in v1 or PBC-only"
+    - "DISCUSS: address risk R-A (sponsor reaction to 'No change yet') and R-B (settings fingerprint wording)"
+    - "DESIGN: asymmetric detection on zero-clamped series"
+    - "DEVOPS: usage data event (candidate: report created)"
