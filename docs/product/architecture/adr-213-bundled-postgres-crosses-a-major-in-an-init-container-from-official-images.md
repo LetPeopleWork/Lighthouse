@@ -67,7 +67,11 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
 3. **The upgraded copy records which source it came from.** A file inside `pgdata-<major>/` holds the source
    major, its system identifier and the SHA-256 of the source's `global/pg_control`, taken after `pg_upgrade`
    finished. If the hash no longer matches, the old major has run since, for example after a rollback. The
-   copy is then out of date, so it is deleted and the upgrade is redone from the old data.
+   copy is then out of date, so the upgrade is redone from the old data. The out-of-date copy is set aside
+   as `pgdata-<major>.stale` and deleted only once the new copy has been renamed into place; a `.stale`
+   left by a stop in between is put back when nothing replaced it. A copy is only ever called out of date
+   on a hash that was actually computed: when the old data's `global/pg_control` is missing or unreadable,
+   as a removal of the old copy cut off part-way leaves it, the start is refused instead.
 4. **Majors are detected at run time, never taken from values.** The data's major comes from `PG_VERSION` on
    the volume and each image's major from its `PG_MAJOR` environment variable. A mirrored or renamed image
    therefore behaves the same as the default one.
@@ -131,3 +135,22 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
   any.
 - External databases (`postgresql.enabled=false`) render exactly as before. The whole mechanism sits inside
   the bundled StatefulSet template.
+- Every start pulls the upgrade-source image, even with nothing to upgrade, so an operator who mirrors images
+  mirrors both. Both steps need an official `postgres` image that starts as root and drops to the `postgres`
+  user, so a runtime that forbids root (OpenShift's `restricted` SCC, for one) cannot run the bundled
+  database.
+
+## Known limitation
+
+The upgrade only ever reads the data in `pgdata/`, the folder the volume was first set up with. After one
+upgrade the database runs on `pgdata-<major>/`, and `pgdata/` holds the data as it was before that upgrade.
+A later chart that moves the default image on to the next major therefore cannot carry such a volume across
+by itself: the step refuses, names `pgdata-<major>/` as where the database runs, and says to set the image
+back to that major. It never suggests the older major in `pgdata/`, which would start the database without
+everything written since the first upgrade.
+
+Before the chart moves its default image to the next major, the step has to be extended to take the newest
+`pgdata-<major>/` as the source of the upgrade. That was not done here because no image of the next major
+exists to test it against. The publish guard does not catch it: it refuses a default major more than one
+above the last published chart's, and an upgrade-source image that is not the last published major, but a
+move from 18 to 19 passes both checks. Whoever moves the default on next extends the step first.

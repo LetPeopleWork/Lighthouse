@@ -278,22 +278,39 @@ on_volume() {
   kubectl -n "$ns" delete pod on-volume --wait >/dev/null
 }
 
-# A sorted sha256sum of every file on the database volume, so a refused attempt can be shown to have
-# changed nothing.
+# The type, mode and owner of every entry on the database volume, then a sorted sha256sum of every file,
+# so a refused attempt can be shown to have changed nothing: no byte, and no folder made or handed over.
 volume_fingerprint() {
-  on_volume "$1" 'cd /volume && find . -type f -print0 | sort -z | xargs -0 -r sha256sum'
+  on_volume "$1" 'cd /volume && find . -printf "%y %m %u %g %p\n" | sort && find . -type f -print0 | sort -z | xargs -0 -r sha256sum'
 }
 
 # Stops the Postgres 17 server process from the kind node, so it can neither shut down cleanly nor be
 # restarted in place. The upgrade that follows replaces the pod; the kubelet's SIGTERM never gets an
 # answer and the grace period ends in SIGKILL, which is how a busy 0.1.17 pod usually goes down.
 freeze_postgres_server() {
-  local ns="$1" container node pid
-  container="$(kubectl -n "$ns" get pod "$POSTGRES_POD" -o jsonpath='{.status.containerStatuses[?(@.name=="postgres")].containerID}')"
-  node="$(kubectl -n "$ns" get pod "$POSTGRES_POD" -o jsonpath='{.spec.nodeName}')"
-  pid="$(docker exec "$node" crictl inspect --output go-template --template '{{.info.pid}}' "${container#containerd://}")"
-  [[ -n "$pid" ]] || fail "could not find the Postgres process of $POSTGRES_POD"
-  docker exec "$node" kill -STOP "$pid"
+  local ns="$1" pid
+  pid="$(container_pid "$ns" containerStatuses postgres)"
+  docker exec "$(pod_field "$ns" '{.spec.nodeName}')" kill -STOP "$pid"
+}
+
+# The process id, on the kind node, of the first process of container $3 in the database pod; $2 is
+# containerStatuses or initContainerStatuses.
+container_pid() {
+  local ns="$1" statuses="$2" name="$3" container pid
+  container="$(pod_field "$ns" "{.status.${statuses}[?(@.name==\"$name\")].containerID}")"
+  pid="$(docker exec "$(pod_field "$ns" '{.spec.nodeName}')" \
+    crictl inspect --output go-template --template '{{.info.pid}}' "${container#containerd://}")"
+  [[ -n "$pid" ]] || fail "could not find the $name process of $POSTGRES_POD"
+  echo "$pid"
+}
+
+# Stops every process of the upgrade step from the kind node, pg_upgrade included, so the copy it is
+# making cannot reach its rename however long the pod takes to go.
+freeze_upgrade_step() {
+  local ns="$1" pid
+  pid="$(container_pid "$ns" initContainerStatuses pg-upgrade)"
+  docker exec "$(pod_field "$ns" '{.spec.nodeName}')" sh -c \
+    "target=\$(readlink /proc/$pid/ns/pid); for p in /proc/[0-9]*; do if [ \"\$(readlink \$p/ns/pid 2>/dev/null)\" = \"\$target\" ]; then kill -STOP \${p#/proc/} 2>/dev/null || true; fi; done"
 }
 
 install_with_data() {
@@ -797,7 +814,8 @@ too_little_room_refuses_and_touches_nothing() {
 
   line="$(refusal_line "$ns")"
   echo "  $line"
-  assert_line_says "$ns" "$line" "MiB free" "need " "postgresql.persistence.size" "postgresql.image"
+  assert_line_says "$ns" "$line" "MiB free" "need " "kubectl patch pvc -n $ns data-$POSTGRES_POD" \
+    "#when-an-upgrade-is-refused" "postgresql.image"
   message="$(kubectl -n "$ns" describe pod "$POSTGRES_POD")"
   grep -qF -- "$line" <<<"$message" || { dump_diagnostics "$ns"; fail "describing the database pod in $ns does not show the refusal line"; }
   assert_volume_unchanged "$ns" "$FINGERPRINT"
@@ -883,21 +901,45 @@ pinning_to_data_major_starts_without_other_step() {
   assert_marker_row "$ns"
 }
 
-# Runs the cleanup command exactly as the Kubernetes docs print it. The docs leave the namespace to the
-# reader's context, so the command runs with a copy of the kubeconfig whose context points at $ns.
-remove_old_copy_as_documented() {
-  local ns="$1" command kubeconfig status=0
-  command="$(awk '/^### Removing the old copy/ { section = 1; next }
-                  section && /^```sh$/ { block = 1; next }
-                  block && /^```$/ { exit }
-                  block { print }' "$KUBERNETES_DOCS")"
-  [[ "$command" == "kubectl exec "* ]] || fail "no cleanup command found under \"Removing the old copy\" in $KUBERNETES_DOCS"
+# The first sh block under heading $1 of the Kubernetes docs.
+documented_block() {
+  local heading="$1"
+  awk -v heading="$heading" '$0 == heading { section = 1; next }
+                             section && /^```sh$/ { block = 1; next }
+                             block && /^```$/ { exit }
+                             block { print }' "$KUBERNETES_DOCS"
+}
+
+# Runs commands exactly as the Kubernetes docs print them, stopping at the first that fails. The docs
+# leave the namespace to the reader's context, so they run with a copy of the kubeconfig whose context
+# points at $ns.
+run_as_documented() {
+  local ns="$1" commands="$2" kubeconfig status=0
   kubeconfig="$(mktemp)"
   kubectl config view --raw >"$kubeconfig"
   KUBECONFIG="$kubeconfig" kubectl config set-context --current --namespace="$ns" >/dev/null
-  KUBECONFIG="$kubeconfig" bash -c "$command" || status=$?
+  KUBECONFIG="$kubeconfig" bash -ec "$commands" || status=$?
   rm -f "$kubeconfig"
-  [[ $status -eq 0 ]] || fail "the documented cleanup command failed in $ns with code $status"
+  [[ $status -eq 0 ]] || fail "the documented commands failed in $ns with code $status"
+}
+
+remove_old_copy_as_documented() {
+  local ns="$1" command
+  command="$(documented_block "### Removing the old copy")"
+  [[ "$command" == "kubectl exec "* ]] || fail "no cleanup command found under \"Removing the old copy\" in $KUBERNETES_DOCS"
+  run_as_documented "$ns" "$command"
+}
+
+# The docs finish a cut-off removal from a pod of its own, with the same cleanup command, because the
+# database pod does not run while its start is refused.
+finish_old_copy_removal_as_documented() {
+  local ns="$1" removal commands
+  removal="$(documented_block "### Removing the old copy")"
+  commands="$(documented_block "### When removing the old copy was cut off")"
+  [[ -n "$commands" ]] || fail "no commands found under \"When removing the old copy was cut off\" in $KUBERNETES_DOCS"
+  [[ "$commands" == *"-- ${removal#* -- }"* ]] \
+    || fail "the docs finish a cut-off removal with another command than the one that removes the old copy"
+  run_as_documented "$ns" "$commands"
 }
 
 given_old_copy_removed() {
@@ -1004,16 +1046,15 @@ interrupted_upgrade_is_redone_from_start() {
   echo "  mid-copy: $(wait_copy_started "$ns")"
   [[ -z "$(postgres_started_at "$ns")" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
   old_uid="$(pod_uid "$ns")"
-  # The upgrade step does not stop for SIGTERM, so a plain delete would give the copy its 30 s grace
-  # period to finish. One second cuts it off where it is, as a node going down would.
+  # Frozen first, so the copy stays unfinished however long the delete takes; the short grace period then
+  # ends the frozen step at once, as a node going down would.
+  freeze_upgrade_step "$ns"
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --grace-period=1 --wait >/dev/null
 
   wait_pod_replaced "$ns" "$old_uid"
   wait_postgres_ready "$ns"
   log="$(upgrade_log "$ns")"
   echo "  next start: $(grep -F -- "$DISCARDED_PARTIAL" <<<"$log" || true)"
-  # Only a copy the delete cut off before its rename is left as pgdata-18.partial. Had the copy finished,
-  # this start would find pgdata-18 already done and say so instead.
   grep -qF -- "$DISCARDED_PARTIAL" <<<"$log" \
     || { dump_diagnostics "$ns"; fail "the start after the delete in $ns did not find a partial copy, so the delete did not land mid-copy"; }
   grep -qF -- "upgrade finished" <<<"$log" || { dump_diagnostics "$ns"; fail "the upgrade in $ns was not redone to the end"; }
@@ -1044,6 +1085,38 @@ foreign_upgrade_source_refuses_and_touches_nothing() {
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 }
 
+# A removal of the old copy cut off part-way can leave pgdata saying it is Postgres 17 without the control
+# file that tells whether pgdata-18 is still current. Removing that file by hand leaves the same state.
+interrupted_cleanup_never_costs_upgraded_copy() {
+  local ns="interrupted-cleanup" counts line
+  install_with_data "$ns"
+  counts="$(public_row_counts "$ns")"
+  upgrade_to_new_chart "$ns"
+  assert_carried_across "$ns" "$counts"
+  write_marker_table "$ns" upgrade_path_written_on_18
+  counts="$(public_row_counts "$ns")"
+  in_postgres "$ns" rm "$MOUNT/pgdata/global/pg_control"
+
+  stop_database "$ns"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+  start_database "$ns"
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "pgdata/global/pg_control" "pgdata-18" "#when-removing-the-old-copy-was-cut-off"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+
+  finish_old_copy_removal_as_documented "$ns"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  assert_upgrade_log_says "$ns" "the old copy was removed"
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+}
+
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
 # one before it.
 readonly HAPPY=(
@@ -1070,7 +1143,47 @@ readonly REFUSALS=(
   newer_data_without_kept_copy_refuses
   foreign_upgrade_source_refuses_and_touches_nothing
   interrupted_upgrade_is_redone_from_start
+  interrupted_cleanup_never_costs_upgraded_copy
 )
+
+# The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
+# scenario in the run needs it and the pods of a long run do not pile up on the node.
+namespaces_of() {
+  case "$1" in
+    fresh_install_starts_18_without_upgrading) echo "$FRESH_NS" ;;
+    restart_after_upgrade_does_not_upgrade_again) echo "$FRESH_NS $UPGRADED_NS" ;;
+    upgrade_plain_helm_upgrade_keeps_every_row | rollback_between_new_chart_revisions_changes_nothing \
+      | kept_copy_holds_pre_upgrade_rows | rollback_starts_17_on_pre_upgrade_data \
+      | upgrade_again_after_rollback_starts_afresh | pin_back_after_upgrade_starts_on_kept_copy_and_warns)
+      echo "$UPGRADED_NS" ;;
+    upgrade_with_reset_then_reuse_values_keeps_every_row) echo reset-then-reuse ;;
+    upgrade_by_rendered_manifests_keeps_every_row) echo rendered-manifests ;;
+    reuse_values_stays_on_17_and_says_so) echo reuse-values ;;
+    upgrade_after_unclean_stop_keeps_every_row) echo unclean-stop ;;
+    too_little_room_refuses_and_touches_nothing | grown_volume_lets_refused_upgrade_proceed) echo "$SMALL_NS" ;;
+    two_majors_behind_refuses_and_touches_nothing | pinning_to_data_major_starts_without_other_step) echo "$DATA16_NS" ;;
+    cleanup_then_rollback_refuses_empty_database | newer_data_without_kept_copy_refuses) echo "$CLEANED_NS" ;;
+    foreign_upgrade_source_refuses_and_touches_nothing) echo foreign-source ;;
+    interrupted_upgrade_is_redone_from_start) echo interrupted-upgrade ;;
+    interrupted_cleanup_never_costs_upgraded_copy) echo interrupted-cleanup ;;
+  esac
+}
+
+# Deletes the namespaces scenario $1 used that none of the scenarios after it, $2..., uses.
+delete_namespaces_done_with() {
+  local scenario="$1" ns later needed
+  for ns in $(namespaces_of "$scenario"); do
+    needed=""
+    for later in "${@:2}"; do
+      if [[ " $(namespaces_of "$later") " == *" $ns "* ]]; then
+        needed=1
+      fi
+    done
+    if [[ -z "$needed" ]]; then
+      kubectl delete namespace "$ns" --ignore-not-found --wait=false >/dev/null
+    fi
+  done
+}
 
 main() {
   local cluster="${1:-}"
@@ -1095,11 +1208,15 @@ main() {
 
   preload_images "$cluster"
 
-  local scenario
+  local scenario index
   for scenario in "${scenarios[@]}"; do
     declare -F "$scenario" >/dev/null || fail "unknown scenario $scenario"
+  done
+  for index in "${!scenarios[@]}"; do
+    scenario="${scenarios[$index]}"
     echo "▶ $scenario"
     "$scenario"
+    delete_namespaces_done_with "$scenario" "${scenarios[@]:index+1}"
     echo "✓ $scenario"
   done
   return 0

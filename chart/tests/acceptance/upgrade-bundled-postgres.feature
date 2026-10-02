@@ -9,7 +9,8 @@
 #   D = M                               -> nothing to do
 #   D = M-1, no upgraded copy           -> upgrade into a new copy, keep the old one
 #   D = M-1, upgraded copy up to date   -> nothing to do, start on the upgraded copy
-#   D = M-1, upgraded copy out of date  -> discard it, upgrade again from the old data
+#   D = M-1, upgraded copy out of date  -> set it aside, upgrade again from the old data, then discard it
+#   D = M-1, old control file missing   -> refuse, touch nothing (cannot tell whether the copy is current)
 #   old copy removed, upgraded copy on M -> nothing to do, start on the upgraded copy
 #   D <= M-2, D > M, or no copy on M    -> refuse, touch nothing, say why and how to get out
 # Every refusal is checked before anything is written, so "touch nothing" is asserted byte for byte.
@@ -236,7 +237,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     When the operator runs a plain "helm upgrade" to the new chart with no other flags
     Then the bundled database does not become Ready, and keeps retrying by itself
     And its log carries one line naming the free space and the space needed
-    And that line says to grow the volume with "postgresql.persistence.size" or to pin "postgresql.image" to the current major
+    And that line says to grow the volume's claim with "kubectl patch pvc", naming the claim, or to pin "postgresql.image" to the current major
     And describing the database pod shows the same line
     And every file on the database volume is exactly as it was before the attempt
 
@@ -289,6 +290,20 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the bundled database becomes Ready on Postgres 18
     And every Lighthouse table has the same row count as before the upgrade
     And the kept Postgres 17 copy still opens with Postgres 17 and holds the recorded row counts
+
+  @US-03 @AC-3.4 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:unbounded-preservation
+  Scenario: An interrupted removal of the old copy never costs the upgraded copy
+    Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
+    And a row was written on Postgres 18 after the upgrade
+    And the old copy's control file is gone, as a removal of the old copy cut off part-way leaves it
+    And a fingerprint of every file on the database volume has been taken
+    When the bundled database is restarted
+    Then the bundled database does not become Ready, and keeps retrying by itself
+    And its log carries one line naming the missing control file and pointing to the Kubernetes docs on finishing the removal
+    And every file on the database volume is exactly as it was before the attempt
+    When the operator finishes removing the old copy as the Kubernetes docs say
+    Then the bundled database becomes Ready on Postgres 18
+    And every Lighthouse table has the same row count as before the restart, the row written on Postgres 18 included
 
   @US-03 @D3 @error @real-io @env:kind-0.1.17-with-data @slice-02 @contract-shape:unbounded-preservation
   Scenario: An upgrade-source image whose programs cannot run beside the database image is refused

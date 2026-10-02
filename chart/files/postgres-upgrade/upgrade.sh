@@ -10,26 +10,10 @@ set -euo pipefail
 
 readonly MOUNT=/var/lib/postgresql/data
 readonly OLD="$MOUNT/pgdata"
-readonly MAJOR="$PG_MAJOR"
-readonly PREVIOUS_MAJOR=$((MAJOR - 1))
-readonly NEW="$MOUNT/pgdata-$MAJOR"
-readonly PARTIAL="$NEW.partial"
-readonly UPGRADE_NOTE=.lighthouse-upgrade
-readonly NEW_BIN="/usr/lib/postgresql/$MAJOR/bin"
-readonly OLD_BINARIES=/old-binaries
-readonly SOURCE_OS="$OLD_BINARIES/os-release"
-readonly MANUAL_PATH=https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#moving-data-two-or-more-majors-behind-by-hand
-readonly DECISION=/decision/pgdata
-# The old server is only ever reached over a Unix socket here, never over the network.
-readonly SOCKET_DIR=/tmp
-readonly OLD_PORT=50431
-readonly OLD_SERVER_WAIT_SECONDS=3600
-readonly KIB_PER_MIB=1024
-# The copy comes out no bigger than the data, which also carries WAL the copy leaves behind. The headroom
-# on top covers what starting the old data writes, crash recovery after an unclean stop included, and the
-# files a new, empty cluster brings.
-readonly COPY_HEADROOM_PERCENT=10
-readonly COPY_HEADROOM_FIXED_KIB=$((64 * KIB_PER_MIB))
+readonly DOCS=https://docs.lighthouse.letpeople.work/Installation/kubernetes.html
+readonly MANUAL_PATH="$DOCS#moving-data-two-or-more-majors-behind-by-hand"
+readonly REFUSED_DOCS="$DOCS#when-an-upgrade-is-refused"
+readonly CUT_OFF_REMOVAL_DOCS="$DOCS#when-removing-the-old-copy-was-cut-off"
 
 say() {
   echo "lighthouse-postgres: $*"
@@ -42,16 +26,47 @@ refuse() {
   exit 1
 }
 
-# Kubernetes does not replace a database pod whose start keeps being refused when the chart's values
-# change, so a fix made through values only takes effect once this pod is deleted. The command names this
-# pod, and its namespace when the pod can read it, so it can be copied as it stands.
-delete_pod_hint() {
-  local namespace_file=/var/run/secrets/kubernetes.io/serviceaccount/namespace namespace=""
+# " -n <namespace>" when the pod can read its namespace, so a command built with it can be copied as it
+# stands.
+namespace_flag() {
+  local namespace_file=/var/run/secrets/kubernetes.io/serviceaccount/namespace
   if [[ -r "$namespace_file" ]]; then
-    namespace=" -n $(cat "$namespace_file")"
+    echo " -n $(cat "$namespace_file")"
   fi
-  echo "then run kubectl delete pod$namespace $HOSTNAME so it starts again with the new values"
 }
+
+# Kubernetes does not replace a database pod whose start keeps being refused when the chart's values
+# change, so a fix made through values only takes effect once this pod is deleted.
+delete_pod_hint() {
+  echo "then run kubectl delete pod$(namespace_flag) $HOSTNAME so it starts again with the new values"
+}
+
+# The programs this step runs sit where the official postgres images install them, and those images say
+# which major they carry in PG_MAJOR.
+if [[ ! "${PG_MAJOR:-}" =~ ^[0-9]+$ ]]; then
+  refuse "refusing to start the bundled database: postgresql.image is not an official postgres image (it does not set PG_MAJOR), and the step that picks and upgrades its data needs one; set postgresql.image to an official image such as postgres:18-trixie, $(delete_pod_hint)"
+fi
+
+readonly MAJOR="$PG_MAJOR"
+readonly PREVIOUS_MAJOR=$((MAJOR - 1))
+readonly NEW="$MOUNT/pgdata-$MAJOR"
+readonly PARTIAL="$NEW.partial"
+readonly STALE="$NEW.stale"
+readonly UPGRADE_NOTE=.lighthouse-upgrade
+readonly NEW_BIN="/usr/lib/postgresql/$MAJOR/bin"
+readonly OLD_BINARIES=/old-binaries
+readonly SOURCE_OS="$OLD_BINARIES/os-release"
+readonly DECISION=/decision/pgdata
+# The old server is only ever reached over a Unix socket here, never over the network.
+readonly SOCKET_DIR=/tmp
+readonly OLD_PORT=50431
+readonly OLD_SERVER_WAIT_SECONDS=3600
+readonly KIB_PER_MIB=1024
+# The copy comes out no bigger than the data, which also carries WAL the copy leaves behind. The headroom
+# on top covers what starting the old data writes, crash recovery after an unclean stop included, and the
+# files a new, empty cluster brings.
+readonly COPY_HEADROOM_PERCENT=10
+readonly COPY_HEADROOM_FIXED_KIB=$((64 * KIB_PER_MIB))
 
 as_postgres() {
   gosu postgres "$@"
@@ -86,6 +101,17 @@ only_copy_major() {
   fi
 }
 
+# The highest major among the pgdata-<major> copies on the volume: the one holding the newest data.
+newest_copy_major() {
+  local copy newest=""
+  for copy in $OTHER_COPIES; do
+    if [[ "$copy" =~ ^pgdata-([0-9]+)$ ]] && [[ -z "$newest" || "${BASH_REMATCH[1]}" -gt "$newest" ]]; then
+      newest="${BASH_REMATCH[1]}"
+    fi
+  done
+  echo "$newest"
+}
+
 has_placeholder() {
   local path
   for path in "$OLD"/UPGRADED-TO-*; do
@@ -100,17 +126,15 @@ copy_holds_major() {
   [[ "$(cat "$MOUNT/pgdata-$1/PG_VERSION" 2>/dev/null)" == "$1" ]]
 }
 
+# Empty when the old data's control file is missing, empty or unreadable. Only a hash actually computed
+# may decide that the upgraded copy is out of date: an empty one matches no note, and would have the live
+# copy replaced by an upgrade of data that cannot even be opened.
 pg_control_hash() {
-  sha256sum "$OLD/global/pg_control" | cut -d' ' -f1
-}
-
-# The upgraded copy is current as long as the old data has not been started since the copy was made:
-# any start of the old major rewrites its pg_control, and the hash noted at upgrade then differs.
-upgraded_copy_is_current() {
-  local note="$NEW/$UPGRADE_NOTE" hash
-  [[ -f "$note" ]] || return 1
-  hash="$(pg_control_hash)"
-  grep -qx "source_pg_control_sha256=$hash" "$note"
+  local control="$OLD/global/pg_control" hash=""
+  if [[ -f "$control" && -s "$control" && -r "$control" ]]; then
+    hash="$(sha256sum "$control" 2>/dev/null | cut -d' ' -f1)" || hash=""
+  fi
+  echo "$hash"
 }
 
 describe_volume() {
@@ -139,6 +163,20 @@ os_name() {
   echo "$(os_field "$1" ID) $(os_field "$1" VERSION_ID)"
 }
 
+# The suffix of an official postgres image tag built on the same system as this image: the Debian
+# release name, or for Alpine, which has none, its version.
+image_suffix() {
+  local codename id version
+  codename="$(os_field /etc/os-release VERSION_CODENAME)"
+  id="$(os_field /etc/os-release ID)"
+  version="$(os_field /etc/os-release VERSION_ID)"
+  if [[ -n "$codename" ]]; then
+    echo "-$codename"
+  elif [[ -n "$id" && "$version" =~ ^([0-9]+\.[0-9]+) ]]; then
+    echo "-$id${BASH_REMATCH[1]}"
+  fi
+}
+
 # The old programs run in this image, which only works when the upgrade-source image is built for the
 # same operating system. Older charts did not say which system that was, so a missing note checks nothing.
 ensure_old_programs_run_here() {
@@ -147,7 +185,7 @@ ensure_old_programs_run_here() {
   source="$(os_name "$SOURCE_OS")"
   here="$(os_name /etc/os-release)"
   if [[ "$source" != "$here" ]]; then
-    refuse "refusing to upgrade Postgres $from to $MAJOR: the Postgres $from programs in postgresql.upgrade.image are built for $source and cannot run beside the Postgres $MAJOR image, built for $here; set postgresql.upgrade.image to postgres:$from-$(os_field /etc/os-release VERSION_CODENAME), $(delete_pod_hint)"
+    refuse "refusing to upgrade Postgres $from to $MAJOR: the Postgres $from programs in postgresql.upgrade.image are built for $source and cannot run beside the Postgres $MAJOR image, built for $here; set postgresql.upgrade.image to postgres:$from$(image_suffix), $(delete_pod_hint)"
   fi
 }
 
@@ -159,13 +197,28 @@ ensure_old_programs_present() {
 }
 
 # Data of any major but this image's and the one before it is never touched: the chart cannot carry it
-# across, and the operator needs to know which two majors are involved to choose a way out.
+# across, and the operator needs to know which two majors are involved to choose a way out. A copy newer
+# than pgdata is where the database has run since an earlier upgrade, and starting pgdata again instead
+# would lose everything written since, so the way back named is then that copy's major.
 refuse_other_major() {
-  local data="$1" where="$2"
+  local data="$1" where="$2" newest
+  newest="$(newest_copy_major)"
+  if [[ "$data" -lt "$MAJOR" && -n "$newest" ]] && [[ "$newest" -gt "$data" && "$newest" -lt "$MAJOR" ]]; then
+    refuse "refusing to start Postgres $MAJOR: the database runs on Postgres $newest in pgdata-$newest, and this chart only upgrades the data in pgdata, which is Postgres $data; set postgresql.image back to postgres:$newest$(image_suffix) to start pgdata-$newest again as it was, $(delete_pod_hint), and move it by hand: $MANUAL_PATH"
+  fi
   if [[ "$data" -lt "$MAJOR" ]]; then
     refuse "refusing to start Postgres $MAJOR: the data in $where is Postgres $data, and this chart only upgrades data from Postgres $PREVIOUS_MAJOR; pin postgresql.image to postgres:$data to start it again as it was, $(delete_pod_hint), and move it by hand: $MANUAL_PATH"
   fi
   refuse "refusing to start Postgres $MAJOR: the data is Postgres $data, in $where, which is newer than this image, and no Postgres $MAJOR copy of it is left to start on; set postgresql.image back to Postgres $data or remove the pin on it, $(delete_pod_hint)"
+}
+
+# Without its control file the old data can neither be opened nor compared with the note in the upgraded
+# copy.
+refuse_unreadable_old_data() {
+  if [[ -e "$NEW" ]]; then
+    refuse "refusing to start Postgres $MAJOR: pgdata holds Postgres $DATA_MAJOR data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether pgdata-$MAJOR is still current cannot be told; finish removing the old copy as $CUT_OFF_REMOVAL_DOCS describes"
+  fi
+  refuse "refusing to upgrade Postgres $DATA_MAJOR to $MAJOR: pgdata holds Postgres $DATA_MAJOR data without a readable pgdata/global/pg_control, so Postgres $DATA_MAJOR cannot open it to upgrade it; put that file back from a backup"
 }
 
 controldata() {
@@ -223,34 +276,44 @@ kib_in() {
   du -sk "$1" | cut -f1
 }
 
-# A leftover copy for this major is thrown away before the upgrade starts, so its space counts as free.
+# A leftover unfinished copy is thrown away before the upgrade starts, so its space counts as free. An
+# out-of-date copy is only removed once its replacement is in place, so its space does not.
 ensure_room_for_copy() {
-  local from="$1" data_kib needed_kib free_kib path
+  local from="$1" data_kib needed_kib free_kib
   data_kib="$(kib_in "$OLD")"
   needed_kib=$((data_kib * (100 + COPY_HEADROOM_PERCENT) / 100 + COPY_HEADROOM_FIXED_KIB))
   free_kib="$(df -Pk "$MOUNT" | awk 'NR == 2 { print $4 }')"
-  for path in "$NEW" "$PARTIAL"; do
-    if [[ -e "$path" ]]; then
-      free_kib=$((free_kib + $(kib_in "$path")))
-    fi
-  done
+  if [[ -e "$PARTIAL" ]]; then
+    free_kib=$((free_kib + $(kib_in "$PARTIAL")))
+  fi
   if [[ "$free_kib" -lt "$needed_kib" ]]; then
-    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + KIB_PER_MIB - 1) / KIB_PER_MIB)) MiB, $((free_kib / KIB_PER_MIB)) MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:$from-trixie and $(delete_pod_hint)"
+    refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + KIB_PER_MIB - 1) / KIB_PER_MIB)) MiB, $((free_kib / KIB_PER_MIB)) MiB free; grow the volume claim itself with kubectl patch pvc$(namespace_flag) data-$HOSTNAME ($REFUSED_DOCS shows how) or pin postgresql.image to postgres:$from$(image_suffix) and $(delete_pod_hint)"
   fi
 }
 
-discard_earlier_copy() {
-  local from="$1"
+# An upgrade that redoes an out-of-date copy sets that copy aside as pgdata-M.stale until the new one is in
+# place. When a stop in between left it there, it goes back where it was unless its replacement made it,
+# so the volume is never left without the copy the database last ran on.
+settle_set_aside_copy() {
+  [[ -e "$STALE" ]] || return 0
   if [[ -e "$NEW" ]]; then
-    say "pgdata-$MAJOR is out of date: Postgres $from has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata"
-    rm -rf "$PARTIAL"
-    # Renamed before it is removed, so a stop part-way through leaves only an unfinished copy, which the
-    # next start throws away like any other.
-    mv -T "$NEW" "$PARTIAL"
-    rm -rf "$PARTIAL"
-  elif [[ -e "$PARTIAL" ]]; then
+    say "removing pgdata-$MAJOR.stale, the out-of-date copy an earlier upgrade replaced"
+    rm -rf "$STALE"
+  else
+    say "putting pgdata-$MAJOR.stale back as pgdata-$MAJOR: an earlier upgrade set it aside and stopped before its replacement was in place"
+    mv -T "$STALE" "$NEW"
+  fi
+}
+
+set_earlier_copy_aside() {
+  local from="$1"
+  if [[ -e "$PARTIAL" ]]; then
     say "removing pgdata-$MAJOR.partial, left by an earlier attempt that did not finish"
     rm -rf "$PARTIAL"
+  fi
+  if [[ -e "$NEW" ]]; then
+    say "pgdata-$MAJOR is out of date: Postgres $from has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata"
+    mv -T "$NEW" "$STALE"
   fi
 }
 
@@ -272,7 +335,7 @@ upgrade() {
   ensure_old_programs_present "$from" "$old_bin"
   ensure_room_for_copy "$from"
 
-  discard_earlier_copy "$from"
+  set_earlier_copy_aside "$from"
   say "upgrading the Postgres $from data in pgdata to Postgres $MAJOR in pgdata-$MAJOR; pgdata is kept as it is"
   mkdir "$PARTIAL"
   chown postgres:postgres "$PARTIAL"
@@ -290,6 +353,7 @@ upgrade() {
   sync
   mv -T "$PARTIAL" "$NEW"
   sync "$MOUNT"
+  rm -rf "$STALE"
   say "upgrade finished: Postgres $MAJOR starts on pgdata-$MAJOR, and the Postgres $from data stays in pgdata"
 }
 
@@ -311,17 +375,24 @@ pinned_back_after_upgrade() {
     && grep -qx "source_major=$MAJOR" "$MOUNT/pgdata-$ONLY_COPY_MAJOR/$UPGRADE_NOTE" 2>/dev/null
 }
 
+old_data_unreadable() {
+  [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && -z "$OLD_CONTROL_HASH" ]]
+}
+
 data_one_behind_beside_its_copy() {
-  [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && "$OTHER_COPIES" == "pgdata-$MAJOR" ]]
+  [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && "$OTHER_COPIES" == "pgdata-$MAJOR" && -f "$NEW/$UPGRADE_NOTE" ]]
 }
 
+# The upgraded copy is current as long as the old data has not been started since the copy was made:
+# any start of the old major rewrites its pg_control, and the hash noted at upgrade then differs.
 already_upgraded() {
-  data_one_behind_beside_its_copy && upgraded_copy_is_current
+  data_one_behind_beside_its_copy && grep -qx "source_pg_control_sha256=$OLD_CONTROL_HASH" "$NEW/$UPGRADE_NOTE"
 }
 
-# Once the old major has run again it holds the newer data, so the copy made before is redone.
+# Once the old major has run again it holds the newer data, so the copy made before is redone. Only
+# reached with a hash that was computed and differs from the one noted in the copy.
 upgraded_copy_out_of_date() {
-  data_one_behind_beside_its_copy && [[ -f "$NEW/$UPGRADE_NOTE" ]]
+  data_one_behind_beside_its_copy
 }
 
 data_one_behind_without_copy() {
@@ -341,9 +412,11 @@ only_newer_copy_left() {
 }
 
 main() {
+  settle_set_aside_copy
   DATA_MAJOR="$(data_major)"
   OTHER_COPIES="$(other_copies)"
   ONLY_COPY_MAJOR="$(only_copy_major "$OTHER_COPIES")"
+  OLD_CONTROL_HASH="$(pg_control_hash)"
 
   if volume_is_empty; then
     say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
@@ -356,6 +429,8 @@ main() {
     # that copy, so moving the image forward again redoes the upgrade from pgdata.
     say "warning: starting Postgres $MAJOR on pgdata, but a newer Postgres $ONLY_COPY_MAJOR copy of this database exists in pgdata-$ONLY_COPY_MAJOR; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back"
     start_on "$OLD"
+  elif old_data_unreadable; then
+    refuse_unreadable_old_data
   elif already_upgraded; then
     say "nothing to upgrade: pgdata-$MAJOR is already the upgrade of the Postgres $DATA_MAJOR data in pgdata"
     start_on "$NEW"

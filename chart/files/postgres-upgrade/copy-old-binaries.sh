@@ -12,7 +12,9 @@ readonly TARGET=/old-binaries
 # a user that cannot even read the data's version.
 grep -E '^(ID|VERSION_ID|VERSION_CODENAME)=' /etc/os-release >"$TARGET/os-release" || true
 
-if [[ ! -s "$DATA_VERSION" || "$(cat "$DATA_VERSION")" != "$PG_MAJOR" ]]; then
+# An image that is not an official postgres image sets no PG_MAJOR and has nothing to hand over; the
+# upgrade step then says which image to use.
+if [[ -z "${PG_MAJOR:-}" || ! -s "$DATA_VERSION" || "$(cat "$DATA_VERSION")" != "$PG_MAJOR" ]]; then
   exit 0
 fi
 
