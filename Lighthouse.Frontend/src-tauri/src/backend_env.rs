@@ -212,6 +212,20 @@ mod tests {
         );
     }
 
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn keeps_entries_that_only_share_the_mount_prefix() {
+        let output = inside_appimage(&[(
+            "LD_LIBRARY_PATH",
+            "/tmp/.mount_LighthAbc123XY/lib:$APPDIR/usr/lib/",
+        )]);
+
+        assert_eq!(
+            value_of(&output, "LD_LIBRARY_PATH"),
+            Some(&OsString::from("/tmp/.mount_LighthAbc123XY/lib"))
+        );
+    }
+
     #[test]
     fn passes_environment_through_unchanged_outside_appimage() {
         for appdir in [None, Some("")] {
