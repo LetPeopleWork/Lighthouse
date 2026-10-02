@@ -1,0 +1,188 @@
+# environments.yaml — consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# epic-5510-5881-refinement (E1 #6136, E2 #5881, E3 #5510, E4 #6137). Pure business logic inside the
+# existing application: no new container, no new external system, no new secret. The environments
+# below are therefore not deployment targets to stand up - they are the axes along which this
+# feature can behave differently, so DISTILL parametrises where it pays and nowhere else.
+#
+# Axes considered and deliberately left OUT:
+#   - operating system. Nothing here is platform-sensitive; the standalone packages run the same
+#     backend, and the verify-windows / verify-macos jobs already prove the app starts there.
+#   - licence tier. Every slice is Community (D25). Premium only enters through authentication
+#     (named votes) and Terminology renaming, both covered by their own axes below.
+#   - hosted (Kubernetes) tenant. The platform is torn down (2026-09-26); there is nothing to
+#     deploy to and no tenant-specific behaviour in this feature. Postgres covers the provider.
+
+schema_version: 1
+feature_id: epic-5510-5881-refinement
+updated: 2026-10-02
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance: SQLite, authentication off, seeded Terminology, demo data loaded
+      (Team Gravity configured with refinement states Backlog / Analysing / Next, one demo Team
+      left unconfigured). Baseline for every scenario that does not name another environment.
+    platform: [linux, macos, windows]
+    preconditions: ["Demo data seeded", "Authentication off (Community default)"]
+
+  - name: sqlite
+    description: >
+      The standalone product's provider. Where M1 (Teams.RefinementSettings) and M2
+      (SizingLogEntries) must apply at startup, and where the JSON settings column round-trips.
+    platform: [linux, macos, windows]
+    preconditions: ["SQLite provider (default)", "foreign_keys pragma on (EF default) so ON DELETE CASCADE / SET NULL fire"]
+
+  - name: postgres
+    description: >
+      The Docker / Helm provider. Same two migrations on a different provider; the cascade from
+      Teams and the SET NULL from UserProfiles are enforced by the database, which is what lets an
+      older binary delete a Team after a rollback.
+    platform: [linux]
+    preconditions: ["PostgreSQL provider", "connection string configured"]
+
+  - name: auth-off
+    description: >
+      Every Community instance (DV-5). Votes carry a self-declared name plus a client-minted voter
+      key (header X-Lighthouse-Voter-Key, stored hashed). Refusals voter-name-required and
+      voter-key-required live here only.
+    platform: [linux]
+    preconditions: ["Authentication disabled", "Browser localStorage key lighthouse:refinement:voter absent at start of each scenario that tests the name prompt"]
+
+  - name: auth-on-rbac-off
+    description: >
+      Signed-in instance with RBAC switched off: every signed-in user reads, votes and edits.
+      An unlinked API key reaches the vote endpoint here and is refused with vote-needs-a-person (403).
+    platform: [linux]
+    preconditions: ["Authentication enabled", "RBAC off", "One API key whose owner is unlinked"]
+
+  - name: auth-on-rbac-on
+    description: >
+      The RBAC matrix: Team admin, System admin, Viewer on the Team, no role, unlinked API key.
+      Viewer votes through TeamContribute; no role gets 404 on read and write (non-disclosing).
+    platform: [linux]
+    preconditions: ["Authentication enabled", "RBAC on", "Profiles for each role row of the DESIGN RBAC table"]
+
+  - name: renamed-terminology
+    description: >
+      An instance that renamed the new Refinement term (and Work Item / Team) under Settings ->
+      Terminology. The only environment that catches a hard-coded "Refinement" in the tab label,
+      the verdict banner or the "enough for" line.
+    platform: [linux]
+    preconditions: ["Terminology override for refinement / refinements (e.g. Backlog Session)", "Premium licence fixture (Terminology editing is Premium)"]
+
+  - name: refinement-day-boundary
+    description: >
+      Instance clock pinned to a cadence date and to the evening before it, in the instance time
+      zone. Refinement day vs other day decides the next Refinement date (DD-6), the verdict event
+      (fires only on a Refinement day) and the sizingMoment property of the vote and readiness events.
+    platform: [linux]
+    preconditions: ["ILighthouseClock controlled by the test", "Instance zone Europe/Zurich (all suites are pinned to it)", "A Thursday cadence on the Team under test"]
+
+  - name: usage-data-consented
+    description: >
+      A browser holding live usage-data consent on a published-release build (or with
+      UsageData:CollectorBaseUrl set). The only environment in which the five new events and the new
+      route key leave the frontend; without consent none of them is reported, which is also asserted.
+    platform: [linux]
+    preconditions: ["Consent granted in this browser", "Collector stubbed (never the real PostHog from a test)"]
+
+  - name: client-cli-mcp
+    description: >
+      Lighthouse-Clients against the API: CLI and MCP-stdio (voter key in the client config store,
+      channel Cli / Assistant) and the hosted mcp-http bridge, which refuses votes on an auth-off
+      instance (MQ-3).
+    platform: [linux]
+    preconditions: ["lighthouse-clients repository", "Client fixture tests (no live instance)"]
+
+  - name: screenshot-capture
+    description: >
+      The @screenshot run at each Epic's finalize (tab below range, above range, the vote log; one
+      per theme).
+    platform: [linux]
+    preconditions:
+      - "Premium licence fixture present (valid_not_expired_license.json is gitignored and absent in a worktree - import it from the main checkout first)"
+      - "Target PNGs deleted before the run (a diff under the pixel threshold keeps the old file)"
+      - "@auth excluded (its database wipe loses other regenerated PNGs)"
+
+scenario_axes:
+  settings_round_trip:
+    slices: ["01", "03", "04", "07", "08", "13"]
+    vary_over: [sqlite, postgres]
+    rationale: "One JSON column through a ValueConverter; the provider is the only thing that can differ."
+  migrations_apply_and_coexist:
+    slices: ["01", "11"]
+    vary_over: [sqlite, postgres]
+    rationale: "M1 and M2 apply at startup on both providers; HistoricalSchemaPatch must list Teams.RefinementSettings for the migration fixtures."
+  list_and_resolution:
+    slices: ["02", "03", "06", "08", "13", "14"]
+    vary_over: [clean]
+    rationale: "Pure resolution in memory over data already loaded; provider-independent."
+  cadence_and_verdict:
+    slices: ["04", "05"]
+    vary_over: [refinement-day-boundary]
+    rationale: "The only criteria whose answer depends on the instance day."
+  voter_identity:
+    slices: ["11", "15", "16", "17b"]
+    vary_over: [auth-off, auth-on-rbac-off, auth-on-rbac-on]
+    rationale: "Identity resolution and the refusal codes differ by authentication mode, never by provider."
+  terminology:
+    slices: ["01", "02", "05", "06"]
+    vary_over: [clean, renamed-terminology]
+    rationale: "New term introduced by this feature."
+  usage_data_emission:
+    slices: ["01", "02", "05", "11", "13", "18"]
+    vary_over: [usage-data-consented]
+    rationale: "Each event is asserted once with consent (exact name, exact property) and once without (nothing reported). Vitest in the browser layer; backend shape test for the Fits declaration."
+  clients:
+    slices: ["09", "17a", "17b"]
+    vary_over: [client-cli-mcp]
+    rationale: "Additive API shape pinned by the client's fixture tests; auth-off name required, never defaulted."
+  rate_limit:
+    slices: ["11"]
+    vary_over: [auth-off, auth-on-rbac-off]
+    rationale: "Partition by presented handle differs between a voter key (auth off) and a credential (auth on)."
+
+coexistence_matrix:
+  - tool: "Team settings autosave (PUT /teams/{teamId}, concurrency token, 409)"
+    must_not_break: true
+    note: "Refinement settings ride this write; null on the wire leaves them unchanged."
+  - tool: "WorkItemRelatedSettingsChanged"
+    must_not_break: true
+    note: "Must stay false for a refinement-only save, or the Team's Work Items are deleted and re-fetched."
+  - tool: "Manual forecast How Many"
+    must_not_break: true
+    note: "The need band calls it unchanged; parity test against the manual forecast (E9)."
+  - tool: "Recurring blackout rules"
+    must_not_break: true
+    note: "WeeklyRecurrence is extracted from them in slice 04 as a behaviour-preserving refactor; blackout tests pin it."
+  - tool: "Existing TeamTabOpened route keys and the UsageDataDisclosureTest"
+    must_not_break: true
+    note: "Route key and events are appended; the disclosure page gains one row per event, counted by the test."
+  - tool: "Existing rate-limit policies and the address ceiling on UsageDataIngest"
+    must_not_break: true
+    note: "RefinementContribution is added beside them; Program.cs edit runs the full integration suite in CI."
+  - tool: "Migration fixtures (HistoricalSchemaPatch)"
+    must_not_break: true
+    note: "Teams gains a column; the fixtures that seed Teams through the model need it listed."
+  - tool: "Demo data and every E2E that loads it"
+    must_not_break: true
+    note: "Gravity gains refinement states, a cadence and three named voters; grep Lighthouse.EndToEndTests for Gravity before pushing."
+  - tool: "Lighthouse-Clients existing commands and MCP tools"
+    must_not_break: true
+    note: "Additive fields and routes only."
+
+platform_coverage:
+  Linux: [Ubuntu 24.04]
+  macOS: [standalone package, verify job]
+  Windows: [standalone package, verify job]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "Ships in the existing artifacts: standalone packages (Linux / Windows / macOS / Tauri desktop), the Docker image, the Helm chart. No chart change: no new environment variable, port, volume or secret."
+  - "Two additive migrations applied at startup: M1 AddRefinementSettingsToTeams (slice 01), M2 AddSizingLogEntries (slice 11). Expand-only, generated with Create-Migration.ps1 for SQLite and Postgres."
+  - "Rollback to the previous release is safe: the older binary ignores the extra column and table; the database enforces the cascade and SET NULL."
+  - "Dark until a Team admin chooses refinement states: the tab stays disabled and nothing new is written."
+  - "One new configuration entry: RateLimits:Policies:RefinementContribution in appsettings.json. Without it the policy silently applies no limit."
+  - "Hosted platform torn down 2026-09-26: nothing is deployed there; the chart only needs to pick up the new image when it is respun."

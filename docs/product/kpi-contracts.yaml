@@ -1579,3 +1579,135 @@ outcomes:
     acceptance_scenarios: "none; a sampled check at the DoD check point"
     alerting: []
     status: live-on-release
+
+  # epic-5510-5881-refinement (DEVOPS 2026-10-02). Every KPI here phrased per Team or per instance in
+  # DISCUSS is measured per browser: the usage-data pipe carries no Team and no instance identity, by
+  # design (ADR-191). CLI / MCP actions never reach the pipe (no consent row), so vote KPIs count
+  # browser-cast votes only. Event integers are provisional: each slice appends the next free one.
+
+  - id: OUT-5510-K1-refinement-set-up
+    feature: epic-5510-5881-refinement
+    title: Teams name their refinement states (setup friction)
+    target: ">= 15% of browsers that opened a Team's Settings tab also report TeamRefinementConfigured, within 60 days of the E1 release. A hypothesis; DISCUSS stated it per instance, which the pipe cannot express."
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "TeamRefinementConfigured (provisional 12), name only, slice 01: sent when a Team settings save the server accepted turned refinementConfigured from false to true."
+        - "Denominator: TeamTabOpened with route TeamDetail_Settings (existing)."
+      derivation: "Distinct browsers reporting TeamRefinementConfigured / distinct browsers reporting TeamTabOpened(TeamDetail_Settings), 60-day window from the first release carrying E1."
+      surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5510-K1-refinement-set-up — Vitest: consented save false→true reports once; a later autosave does not; not consented reports nothing"
+    measurement_window: "60 days from the first published release carrying E1"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Browsers, not instances; viewers who cannot edit are in the denominator."
+
+  - id: OUT-5510-K2-refinement-tab-weekly
+    feature: epic-5510-5881-refinement
+    title: The Refinement tab is a weekly habit
+    target: ">= 50% of browsers that open the Refinement tab open it in >= 3 of 4 consecutive weeks"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "TeamTabOpened with new route key TeamDetail_Refinement (provisional 10, address /teams/:id/refinement), slice 02, existing 5-second dwell rule."
+      derivation: "Stickiness: browsers with the opening in >= 3 of 4 consecutive ISO weeks / browsers with >= 1 opening. The tab is disabled until configured, so every opening is of a configured Team."
+      surfacing: ["docs/settings/usagedata.md (sixth Team tab, eleventh address)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5510-K2-refinement-tab-weekly — Vitest on usageDataRouteKeys: /teams/7/refinement maps to TeamDetail_Refinement; backend shape test accepts it on TeamTabOpened"
+    measurement_window: "rolling 4-week windows after the E1 release"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Per browser, not per Team."
+
+  - id: OUT-5510-K3-in-range-on-refinement-day
+    feature: epic-5510-5881-refinement
+    title: Refinements are entered in range (north star)
+    target: "Share of browser-Refinement-days whose last verdict was In rises from the first-month baseline to >= 60% three months after E2"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "TeamRefinementDayVerdictShown (provisional 15), slice 05, property refinement_verdict in {Below, In, Above, None}. Sent only when the tab's answer says isRefinementDay = true, at most once per tab mount."
+      derivation: "Per (browser, calendar day): last verdict. In / (Below + In + Above); None reported apart. Baseline = first month after the E2 release."
+      surfacing: ["docs/settings/usagedata.md (verdict row + refinement_verdict field)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5510-K3-in-range-on-refinement-day — Vitest: Refinement day reports the verdict exactly; other day reports nothing; not consented reports nothing. Backend: Fits refuses the property on any other event and the event without it"
+    measurement_window: "first month after E2 (baseline), then monthly to month 3"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "A browser looking at two Teams on one day mixes them."
+
+  - id: OUT-5510-K4-votes-async-off-day
+    feature: epic-5510-5881-refinement
+    title: Votes are cast outside sessions and off the Refinement day (riskiest assumption R4)
+    target: ">= 40% of browser-cast votes with a known moment are OnOtherDay"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "TeamSizingVoteCast (provisional 13), slice 11, property sizing_moment in {NoCadence (11), OnRefinementDay, OnOtherDay (04), InLiveSession (18)}. Sent after the vote POST returned 2xx, votes only."
+      derivation: "OnOtherDay / (OnRefinementDay + OnOtherDay + InLiveSession). NoCadence counted apart (all votes before slice 04 lands, and Teams without a cadence)."
+      surfacing: ["docs/settings/usagedata.md (vote row + sizing_moment field, widened in 04 and 18)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5510-K4-votes-async-off-day — Vitest: each moment mapping (LiveSession channel, isRefinementDay true/false, no cadence); comment and take-back report nothing"
+    measurement_window: "from the release carrying slice 04, rolling 4 weeks"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "CLI / MCP votes are never counted. Re-votes count as votes."
+
+  - id: OUT-5510-K5-ready-before-the-day
+    feature: epic-5510-5881-refinement
+    title: Work Items become Ready by votes before their Refinement day
+    target: ">= 50% of vote-tipped readiness with a known moment is OnOtherDay"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "TeamSizingReadinessReached (provisional 14), slice 13, property sizing_moment. Sent by the browser whose vote response turned the row Ready by votes where the last read had it not Ready."
+      derivation: "OnOtherDay / (all minus NoCadence)."
+      surfacing: ["docs/settings/usagedata.md (readiness row)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5510-K5-ready-before-the-day — Vitest: tipping vote reports once; a vote on an already-Ready row reports nothing; readiness by stage or rule reports nothing"
+    measurement_window: "from the release carrying slice 04"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Readiness tipped by a client vote is not counted."
+
+  - id: OUT-5510-K6-stop-after-above
+    feature: epic-5510-5881-refinement
+    title: Teams that saw above range stop refining
+    target: ">= 50% of browser Refinement days with verdict Above are followed, on that browser's next reported Refinement day, by a verdict other than Above"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection: ["Derived from OUT-5510-K3's TeamRefinementDayVerdictShown series; no event of its own."]
+      derivation: "Per browser, ordered Refinement days; pairs (Above, next) -> success when next != Above."
+      surfacing: ["collector dashboard"]
+    acceptance_scenarios: "covered by OUT-5510-K3's scenarios"
+    measurement_window: "first month after E2 (baseline), then monthly"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "DISCUSS asked per Team; same browser is a directional proxy, noisy for browsers that look at several Teams."
+
+  - id: OUT-5510-K7-presenter-gateway
+    feature: epic-5510-5881-refinement
+    title: Presenting leads to async votes (gateway)
+    target: ">= 30% of browsers reporting TeamRefinementPresented report an async TeamSizingVoteCast (OnOtherDay or OnRefinementDay) within 28 days"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "TeamRefinementPresented (provisional 16), name only, slice 18, 5-second dwell."
+        - "TeamSizingVoteCast.sizing_moment (OUT-5510-K4)."
+      derivation: "Browsers that presented; of those, browsers with an async vote within 28 days of their first presentation."
+      surfacing: ["docs/settings/usagedata.md (presenter row, InLiveSession value)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5510-K7-presenter-gateway — Vitest: entering presenter mode for 5 s reports once; leaving sooner reports nothing; a vote saved while presenting carries InLiveSession"
+    measurement_window: "28 days after each first presentation, from the E4 release"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Colleagues vote from their own browsers, which nothing links to the facilitator's; this is a lower bound on the facilitator alone."
+
+  - id: OUT-5510-guardrail-below-range-share
+    feature: epic-5510-5881-refinement
+    title: The stop signal does not starve Teams
+    target: "Share of browser-Refinement-days with verdict Below stays <= its first-month value"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection: ["OUT-5510-K3's series"]
+      derivation: "Below / (Below + In + Above), monthly"
+      surfacing: ["collector dashboard"]
+    acceptance_scenarios: "covered by OUT-5510-K3's scenarios"
+    measurement_window: "monthly after E2"
+    alerting: []
+    status: designed-not-shipped

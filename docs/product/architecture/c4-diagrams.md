@@ -1494,3 +1494,143 @@ Read the graph for the two things that make it safe:
    record that goes stale is the record edge 3 stopped fetching. Pointing edge 5 at the stored set is
    ADR-141, and it is the one change here that would otherwise have shipped silently.
 
+---
+
+# C4 Architecture Diagrams — epic-5510-5881-refinement
+
+Feature: epic-5510-5881-refinement (ADO Epics #6136 Refinement tab, #5881 Refinement need, #5510 Sizing votes,
+#6137 Live sessions — slice 18 only)
+Wave: DESIGN
+Date: 2026-10-02
+Architect: Morgan (Solution Architect)
+
+## C4 Level 1 — System Context
+
+New actors, no new external system. Votes and comments never leave Lighthouse (D9); the work tracking systems are
+unchanged and are not contacted by anything in this feature.
+
+```mermaid
+C4Context
+  title System Context — Refinement (Team level)
+  Person(coach, "Flow coach", "Reads whether to refine more or stop; facilitates the Refinement")
+  Person(voter, "Team member (voter)", "Says Yes / Yes, but… / No against the SLE")
+  Person(admin, "Team admin", "Sets refinement states, stages, cadence, band, readiness")
+  Person(cliuser, "CLI / assistant user", "Asks the need and votes from a terminal or an AI assistant")
+  System(lh, "Lighthouse", "Teams, Work Items, forecasts — now the Refinement tab and the sizing log")
+  System_Ext(wts, "Work tracking system", "Jira / Azure DevOps / Linear / ServiceNow / CSV")
+  System_Ext(ph, "Usage data collector", "PostHog Cloud EU, opt-in, via the backend")
+  Rel(coach, lh, "Reads the verdict and presents the Refinement in")
+  Rel(voter, lh, "Casts sizing votes and comments in")
+  Rel(admin, lh, "Configures refinement settings in")
+  Rel(cliuser, lh, "Reads the need and casts votes through the clients against")
+  Rel(lh, wts, "Reads Work Items and states from (unchanged)")
+  Rel(lh, ph, "Forwards opted-in usage events to")
+```
+
+## C4 Level 2 — Container
+
+```mermaid
+C4Container
+  title Container — Refinement
+  Person(member, "Team member / coach / admin")
+  Person(cliuser, "CLI / assistant user")
+  Container(spa, "Lighthouse SPA", "React 18 + TypeScript", "Refinement tab, presenter mode, settings section; voter name + key in localStorage when auth is off")
+  Container(api, "Lighthouse backend", "ASP.NET Core .NET 10", "RefinementController, RefinementVotesController, Refinement module")
+  ContainerDb(db, "Relational store", "SQLite or PostgreSQL", "Teams.RefinementSettings (JSON), SizingLogEntries (append-only)")
+  Container(cli, "Lighthouse CLI", "Node, lighthouse-clients", "lh refinement get|vote|comment|take-back; voter name + key in local config")
+  Container(mcp, "Lighthouse MCP server", "Node, lighthouse-clients", "lighthouse_team_refinement_* tools")
+  System_Ext(wts, "Work tracking system")
+  Rel(member, spa, "Uses")
+  Rel(spa, api, "Reads the refinement view and appends sizing entries via", "HTTPS/JSON")
+  Rel(cliuser, cli, "Runs")
+  Rel(cliuser, mcp, "Asks through an assistant")
+  Rel(cli, api, "Calls the same refinement endpoints on", "HTTPS/JSON")
+  Rel(mcp, api, "Calls the same refinement endpoints on", "HTTPS/JSON")
+  Rel(api, db, "Reads settings, Work Items and the log from; appends entries to", "EF Core")
+  Rel(api, wts, "Syncs Work Items from (unchanged)")
+```
+
+No container is added. No SignalR edge: presenter mode is the SPA reading the same GET on one screen.
+
+## C4 Level 3 — Component: the Refinement module
+
+Earns its place: eleven components, two of which (the voter identity and the pure resolution) carry the decisions a
+reviewer will ask about — "who is this vote from?" and "why is this Work Item Ready?".
+
+```mermaid
+flowchart TB
+    subgraph API["API — driving adapters"]
+        RC["RefinementController<br/>GET view · GET log<br/><i>TeamRead</i>"]
+        RVC["RefinementVotesController<br/>POST votes · POST comments · DELETE votes/mine<br/><i>TeamContribute + rate limit</i>"]
+        TC["TeamController.UpdateTeam (existing)<br/><i>TeamWrite · carries RefinementSettings</i>"]
+    end
+
+    subgraph REF["Refinement module"]
+        VQ["IRefinementViewQuery<br/><i>read port, write-free</i>"]
+        SC["ISizingLogCommands<br/><i>write port, append only</i>"]
+        VIR["VoterIdentityResolver<br/><i>account · self-declared + key · refuse</i>"]
+        RL["RefinementList<br/><i>states → raw states → Work Items, backlog order</i>"]
+        RES["RefinementResolution<br/><i>pure: stage · readiness · open question · split</i>"]
+        SRM["StageRuleMatcher"]
+        NC["RefinementNeedCalculator"]
+        NB["NeedBand<br/><i>pure: value(p) = GetProbability(100 − p)</i>"]
+        CAL["RefinementCadenceCalendar<br/><i>pure: next date, is Refinement day</i>"]
+        SLE["SleYardstickResolver"]
+        VAL["RefinementSettingsValidator<br/><i>pure</i>"]
+    end
+
+    subgraph EXIST["Existing ports (reused)"]
+        FS["IForecastService.HowMany"]
+        TMS["ITeamMetricsService<br/>throughput status · cycle-time percentiles"]
+        BPS["IBlackoutPeriodService"]
+        RE["IRuleEvaluator&lt;WorkItem&gt;"]
+        AMR["IAuthModeResolver"]
+        CUP["ICurrentUserProfileService"]
+        RBAC["IRbacAdministrationService<br/><i>+ TeamContribute = CanReadTeam</i>"]
+        WR["WeeklyRecurrence<br/><i>extracted from the blackout rule</i>"]
+    end
+
+    subgraph STORE["Persistence"]
+        TEAM["Team.RefinementSettings (JSON)"]
+        WI["IWorkItemRepository"]
+        LOG["ISizingLogRepository<br/><i>Append + reads only</i>"]
+    end
+
+    RC -->|"composes the tab via"| VQ
+    RVC -->|"appends via"| SC
+    TC -->|"validates with"| VAL
+    TC -->|"saves"| TEAM
+    RVC -.->|"guarded by"| RBAC
+    VQ -->|"lists"| RL
+    RL -->|"reads"| WI
+    VQ -->|"reads entries from"| LOG
+    VQ -->|"resolves rows with"| RES
+    VQ -->|"matches stage rules with"| SRM
+    SRM --> RE
+    VQ -->|"asks the band from"| NC
+    NC -->|"next date from"| CAL
+    CAL --> WR
+    NC -->|"throughput from"| TMS
+    NC -->|"working-day horizon from"| BPS
+    NC -->|"one run of"| FS
+    NC -->|"reads values with"| NB
+    VQ -->|"asks the yardstick from"| SLE
+    SLE --> TMS
+    VQ -->|"knows the caller via"| VIR
+    SC -->|"derives the voter key via"| VIR
+    VIR --> AMR
+    VIR --> CUP
+    SC -->|"captures the yardstick from"| SLE
+    SC -->|"appends to"| LOG
+```
+
+Read the graph for the three things that make it safe:
+
+1. **No arrow leaves `VQ` towards a write.** The read port reaches `LOG` and `WI` only to read; the only `Append`
+   edge starts at `SC`, which only `RefinementVotesController` calls (ADR-216, E6).
+2. **Every identity goes through `VIR`, and `VIR` asks `AMR` first.** Auth off still carries a shared subject, so
+   "is there a person?" is never the question that decides the mode (ADR-216). `VIR → CUP` is taken on writes
+   only; a read derives the key from the subject claim or the presented key, so the read path touches no row.
+3. **`NB` sits between the engine and every reader of the band.** Nobody reads `GetProbability(p)` directly, which is
+   the call that would put the 85% end below the median (ADR-215, E8).
+

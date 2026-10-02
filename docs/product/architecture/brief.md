@@ -9144,3 +9144,113 @@ System Context: **no delta** — the connector is never asked for trend data; re
 **Fidelity across a configuration change is the open half of D6 and has no probe.** Reconstruction runs against *today's* state mappings, cycle-time definitions, blocked rules, blackout configuration and item set; where those changed since day D, or an item was deleted or re-parented, a reconstructed point may differ from what would have been written then — and with no flag (D6) that difference is invisible and unrecoverable. SPIKE-01 could not exercise it because nothing changed on the measured instance in the 17 days covered. Mitigated by a sentence in the metrics docs, not a flag. Also open: whether the metrics cache exposes per-key eviction (DDD-14 otherwise invalidates the owner's whole cache and costs the dashboard one recompute); the wall-clock budget's value, unmeasurable on the available fixture; and a wide cycle-time distribution, which the only available owner cannot provide because it closes most items the same day.
 
 **Two flags raised against the locked decisions rather than worked around.** Slice 03 lists "changing `BaselineValidationService` or the baseline feature's semantics" as out of scope, but the today-anchored hazard that same slice exists to confront cannot be answered without either threading the anchor or refusing pinned-baseline owners — the slice brief needs updating, not the decision. And D7's literal scope (gate reconstruction only) would make D6 false, which is why DDD-13 gates both paths and accepts a behaviour change to shipped code in the open.
+
+---
+
+## Application Architecture — epic-5510-5881-refinement (ADO Epics #6136, #5881, #5510, #6137)
+
+Feature: epic-5510-5881-refinement — a Team's **Refinement** tab that lists the Work Items in refinement, says whether
+enough are ready before the next Refinement (below / in / above, including "stop refining"), and lets Team members
+size each one against the SLE with Yes / Yes, but… / No and comments. DESIGN 2026-10-02, PROPOSE. Full design:
+`docs/feature/epic-5510-5881-refinement/feature-delta.md` → "Wave: DESIGN / …" (DSN-1..DSN-22, reuse table, data
+model, per-slice notes); decisions summary in `design/wave-decisions.md`.
+
+### Architectural pattern
+
+Unchanged: modular monolith, ports-and-adapters, OOP. **One new module, `Refinement`** (`Services.*.Refinement`,
+`API/RefinementController`, `API/RefinementVotesController`), depending down on Forecasting, Metrics,
+WorkItems/Rules, RBAC/Identity and Platform; nothing outside `API` depends on it. No new container, no external
+integration, no push channel; presenter mode needs no SignalR.
+
+### Key invariants introduced
+
+- **I1 — settings are one JSON value on the Team** (`Team.RefinementSettings`), saved through the unchanged Team
+  settings write; null on the wire leaves them unchanged; editing them never triggers the Work-Item reset
+  (`WorkItemRelatedSettingsChanged`). Members are only ever added, with defaults. (ADR-214)
+- **I2 — the tab is derived on read.** List, stage, readiness, yardstick, next Refinement date and band are computed
+  per request; nothing but settings and the log is stored. (ADR-215)
+- **I3 — the band is the manual forecast's How Many for target date = next Refinement, at `GetProbability(100 − p)`**,
+  because `HowManyForecast` sorts descending. (ADR-215)
+- **I4 — the sizing log is append-only**; current vote = latest Vote/Revocation per voter key; no update or delete
+  path exists. (ADR-216)
+- **I5 — identity is derived on the server**: `account:<sub>` with auth on (refused when the credential has no
+  person), `self:SHA-256(client key)` + required self-declared name with auth off; branch on `IAuthModeResolver`,
+  never on "profile is null". (ADR-216)
+- **I6 — the only persisting read-level write is `TeamContribute`**, which is the Team read predicate, non-disclosing,
+  rate-limited and allowlisted to `RefinementVotesController`. (ADR-217)
+- **I7 — stage, readiness and the hidden split are one pure resolution**, and the API omits the split for a caller
+  who has not voted; presenter reveal requires `TeamWrite`. (ADR-218)
+
+### Component decomposition (headline)
+
+Backend NEW: `RefinementSettings` + enums, `SizingLogEntry`, `ISizingLogRepository` (append-only),
+`IRefinementViewQuery` (read), `ISizingLogCommands` (write), `VoterIdentityResolver`, `RefinementNeedCalculator`,
+`SleYardstickResolver`, `StageRuleMatcher`, and the pure `RefinementResolution`, `NeedBand`,
+`RefinementCadenceCalendar`, `RefinementSettingsValidator`; two controllers. EXTEND: `Team`, `LighthouseAppContext`,
+`TeamSettingDto`, `TeamDto`, `TeamExtensions`, `TeamController.UpdateTeam` (one validator call),
+`RbacGuardRequirement`/`RbacGuardAttribute`/`RbacAdministrationService` (one member), rate-limit configuration,
+`TerminologySeeder`, `DemoDataFactory`. EXTRACT: `WeeklyRecurrence` from `RecurringBlackoutRuleExtensions`.
+Frontend NEW: `Refinement/*` tab components, `PresenterMode`, `SizingLogDialog`, `RefinementSettingsSection`
+(reusing `DeliveryRuleBuilder`), `useVoterIdentity`, `RefinementService`; EXTEND `TeamDetail.tsx`, `useRbac`
+(`canContributeToTeam`), `TerminologyKeys.ts`. Clients EXTEND: `lh refinement get|vote|comment|take-back`,
+`lh config voter set`, MCP `lighthouse_team_refinement_get|vote|comment|voteTakeBack`.
+
+### Driving / driven ports
+
+HTTP: `GET /teams/{teamId}/refinement` (TeamRead), `GET …/refinement/work-items/{workItemId}/log` (TeamRead),
+`POST …/votes`, `POST …/comments`, `DELETE …/votes/mine` (TeamContribute); settings on the existing
+`PUT /teams/{teamId}` (TeamWrite). Driven: `ISizingLogRepository` (new, EF); reused `IForecastService.HowMany`,
+`ITeamMetricsService`, `IBlackoutPeriodService`, `IRuleEvaluator<WorkItem>`, `IAuthModeResolver`,
+`ICurrentUserProfileService`, `IRbacAdministrationService`, `ILighthouseClock`.
+
+### Data and migrations
+
+Two additive migrations: **M1** (slice 01) `Teams.RefinementSettings` JSON column; **M2** (slice 11)
+`SizingLogEntries` with every column later slices use (comment, revocation kind, channel, captured yardstick).
+Index `(TeamId, WorkItemReferenceId, Id)`; FK to Team cascades; FK to `UserProfiles` sets null.
+
+### Reuse Analysis
+
+27 overlaps examined; 19 reused or extended, 1 extracted, 7 CREATE NEW (log entity/table/port, settings value
+objects, read composition, write commands + identity resolver, pure policies, two controllers, frontend tab).
+Full table with file:line evidence and the challenge for each CREATE NEW in the feature delta. Notable reuse
+**rejections**: the domain-event bus (no subscriber yet — `SizingEntryRecorded` named as the E4/E5 seam), SignalR
+(presenter mode is one screen), `DeliveryNote` (mutable, Portfolio-scoped — the opposite of an append-only log).
+
+### Quality attributes
+
+Performance ≤ 2 s at 300 Work Items (one Work Item query, one indexed log query, cached throughput, one How Many run).
+Consistency by construction (append-only; settings tokened). Security: named reader-write, non-disclosing 404, rate
+limit, voter keys hashed and never returned. Compatibility: additive only; Lighthouse-Clients minor bumps at 09 and
+17a/17b. **Contract testing (Pact): N/A** — no external integration; votes never reach the tracker (D9).
+
+### Architectural Enforcement (this feature)
+
+ArchUnitNET + NUnit + TypeScript: E1 module isolation; E2 append-only log (no update/delete members or calls);
+E3 purity of resolution/band/cadence/validator; E4 `TeamContribute` ≡ `TeamRead` matrix + action allowlist; E5 clock
+seam; E6 read path write-free; E7 refinement edits never reset Work Items; E8 band = `GetProbability(100 − p)`;
+E9 band parity with the manual forecast; exhaustive frontend enum maps, string-union wire enums.
+
+### ADR References (this feature)
+
+- [ADR-214](./adr-214-refinement-settings-are-one-json-valued-property-on-the-team.md) — settings placement, one JSON
+  column, saved via the Team settings write, new module. **Proposed.**
+- [ADR-215](./adr-215-the-need-band-is-the-manual-how-many-for-the-next-refinement-read-at-100-minus-p.md) — need band,
+  verdict, cadence, order, yardstick; derived on read. **Proposed.**
+- [ADR-216](./adr-216-the-sizing-log-is-append-only-and-keyed-by-a-voter-key.md) — append-only log, voter identity
+  across auth on / off / clients, channel, captured yardstick. **Proposed.**
+- [ADR-217](./adr-217-a-sizing-vote-is-a-write-gated-by-team-read-through-a-named-requirement.md) — `TeamContribute`.
+  **Proposed.**
+- [ADR-218](./adr-218-stage-readiness-and-the-hidden-split-are-one-pure-resolution-on-read.md) — DD-5 precedence,
+  readiness, open question, hidden split in the API. **Proposed.**
+- Cross-refs: ADR-027 (bus, tokens), ADR-056 (state-list placement), ADR-060 (weekly recurrence), ADR-064 (JSON
+  settings), ADR-165 (authorship), ADR-190/191 (usage data, per-browser identity), ADR-210 (descending How Many).
+
+### C4
+
+L1, L2 and L3 (the Refinement module) in `c4-diagrams.md` → "C4 Architecture Diagrams — epic-5510-5881-refinement".
+
+### Open for the maintainer
+
+MQ-1 forecast filter in the need number (default: respected, = forecasts) · MQ-2 presenter split reveal (default:
+Team admins when RBAC on) · MQ-3 mcp-http on auth-off refuses votes · MQ-4 no age on To Do rows.

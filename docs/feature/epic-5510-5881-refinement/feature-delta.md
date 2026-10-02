@@ -1116,3 +1116,828 @@ K4; no push channel (D21).
 Predecessor links: #6136 → #5881, #6136 → #5510, #5510 → #6137, #5510 → #6138. All Epics New in Options;
 all User Stories New.
 
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-10-02 · **Mode**: PROPOSE (autonomous subagent) ·
+**Scope** (maintainer, 2026-10-02): FULL for E1 (#6136, 01–02), E3 (#5510, 10–17b), E2 (#5881, 03–09); LIGHT for E4
+(#6137, slice 18 only; spike 19 = questions only); E5 (#6138) out, but not precluded.
+
+| Read | Status |
+|---|---|
+| This file: DISCOVER D1–D31, DIVERGE (D20/D21 overrides win), DISCUSS DD-1..DD-22, US-01..US-18, S-19, K1–K7, checklist, ADO mapping | ✓ (paged, all 1118 lines) |
+| `discuss/wave-decisions.md`, `wave-decisions.md` (DIVERGE), all 20 `slices/slice-*.md` | ✓ |
+| `recommendation.md` — maintainer-overrides block only (body's push trigger and "leaving refinement" count are withdrawn) | ✓ |
+| `docs/product/architecture/brief.md` (map + tail sections), `c4-diagrams.md` (map + tail), ADR index | ✓ — highest ADR in this worktree is **212**; the main checkout holds an uncommitted **213** (Story 6131), so this wave numbers from **214** |
+| ADRs read for this design: 027 (bus), 056 (state-list setting placement), 064 (JSON-valued settings), 060 (weekday + every-N-weeks), 136/165 (authorship, absent profile), 137 (embed viewer identity), 190/191 (browser-detected usage data, per-browser pseudonym), 210 (HowMany is descending) | ✓ |
+| `docs/product/journeys/epic-5510-5881-refinement.yaml`, `docs/product/jobs.yaml` (both refinement jobs), `docs/product/personas/team-member-voter.yaml` | ✓ |
+| `CLAUDE.md`, `docs/ci-learnings.md` (preflight rules: S107, S6964, CA1859, CA1869, NUnit2045, S1192) | ✓ |
+| `ARCHITECTURE.md` §4–§7 (modules, ArchUnitNET rules, bus, CQRS-lite, concurrency) | ✓ |
+| Code (targeted, cited below): `WorkTrackingSystemOptionsOwner`, `Team`, `LighthouseAppContext`, `TeamController`, `RbacGuardAttribute`, `RbacGuardRequirement`, `RbacAdministrationService`, `UserRole`, `ApiKey*`, `CurrentUserProfileService`, `DisabledAuthenticationHandler`, `AuthModeResolver`, `ForecastService`, `ForecastBase`, `HowManyForecast`, `ForecastController`, `FeatureComparer`, `WorkItemBase`, `RecurringBlackoutRule(+Extensions)`, `IRuleEvaluator`, `TerminologySeeder`, `UsageDataEventName/Shapes`, `IDomainEventDispatcher`, `useRbac.ts`, `TeamDetail.tsx`, `lighthouse-clients` CLI + MCP tool list | ✓ |
+
+---
+
+## Wave: DESIGN / [REF] Architecture summary
+
+**Style unchanged**: modular monolith, ports-and-adapters, OOP (ADR-027). This feature adds **one new module**,
+`Refinement` (namespace `Services.*.Refinement`, the eighth beside the seven in `ARCHITECTURE.md` §4), that depends
+**down** on Forecasting, Metrics, WorkItems/Rules, RBAC/Identity and Platform, and that **nothing but `API` depends on**.
+No new container, no new external system, no push channel, no SignalR (D21; presenter mode reads the same GET).
+
+Three shapes carry the whole design:
+
+1. **Settings are one JSON-valued property on the Team** (`Team.RefinementSettings`), ridden on the existing Team
+   settings write (TeamWrite, autosave, concurrency token, 409). One additive column in slice 01; every later
+   settings slice (03, 04, 07, 08, 13) extends the JSON shape with defaulted members — **no further migration**
+   ([ADR-214](../../product/architecture/adr-214-refinement-settings-are-one-json-valued-property-on-the-team.md)).
+2. **Everything on the tab is derived on read, nothing is stored but settings and the log.** List, stage, readiness,
+   the SLE yardstick, the next Refinement date and the need band are computed per request from the stored Work Items,
+   the settings and the sizing log (the "derived on read and never stored" pattern of `ARCHITECTURE.md` §6). The need
+   band **is** the manual forecast's How Many for target date = next Refinement, read at (100 − p)
+   ([ADR-215](../../product/architecture/adr-215-the-need-band-is-the-manual-how-many-for-the-next-refinement-read-at-100-minus-p.md)).
+3. **The sizing log is append-only and keyed by a voter key, never by a row** — account subject with auth on,
+   a per-browser (or per-client) random key with auth off, and a refusal when a credential belongs to no person
+   ([ADR-216](../../product/architecture/adr-216-the-sizing-log-is-append-only-and-keyed-by-a-voter-key.md)). Writing to
+   it needs only Team read, through a **named** guard requirement `TeamContribute`
+   ([ADR-217](../../product/architecture/adr-217-a-sizing-vote-is-a-write-gated-by-team-read-through-a-named-requirement.md)).
+   Stage, readiness and the hidden split are one pure resolution
+   ([ADR-218](../../product/architecture/adr-218-stage-readiness-and-the-hidden-split-are-one-pure-resolution-on-read.md)).
+
+---
+
+## Wave: DESIGN / [REF] Decisions (DSN-n)
+
+Numbered DSN to avoid clashing with DISCUSS DD-n. Options were weighed only where a real choice existed.
+
+| # | Decision | Options weighed → verdict | ADR |
+|---|---|---|---|
+| DSN-1 | **Refinement is a new module** `Services.*.Refinement` + `API/Refinement*Controller`; depends down only; nothing outside `API` depends on it. | (a) spread over Forecasting/WorkItems/Metrics; (b) **new module** ✓ — the feature has its own vocabulary, one read composition and one log; spreading it would put a vote log in a forecasting namespace. | 214 |
+| DSN-2 | **Settings = one value object `RefinementSettings` on `Team`** (not on `WorkTrackingSystemOptionsOwner` — Team level only, D2), persisted as one JSON text column through a `ValueConverter` + `ValueComparer`, exactly like `StateMappings`/`CycleTimeDefinitions` (`LighthouseAppContext.cs:583-629`). Null = "not configured". | (a) a column per setting — 6 migrations across 01/03/04/07/08/13; (b) a 1:1 `TeamRefinementSettings` table — a join on every Team load and a second concurrency root; (c) **one JSON column** ✓ — one migration, later slices add defaulted members, rides the Team's tokened write. | 214 |
+| DSN-3 | **Settings ride the existing `PUT /teams/{teamId}`** (`TeamController.UpdateTeam`, TeamWrite, `TeamSettingDto` gains a nullable `Refinement` sub-DTO). **Null on the wire = leave unchanged**, never "clear". `WorkItemRelatedSettingsChanged` must **not** look at refinement members (it deletes the Team's Work Items when true, `TeamController.cs:181-185`). | (a) **existing settings write** ✓ — autosave (ADR-029), 409 conflict, TeamWrite guard all inherited; (b) a separate `PUT …/refinement/settings` — second token, second form save path, nothing gained. | 214 |
+| DSN-4 | **Refinement states store the entries the admin picks from `ToDoStates ∪ DoingStates`** (mapped names or raw states, as `WaitStates` does, ADR-056) each with a `Stage` (default `Waiting`). Resolution to raw states through the existing `GetRawStatesForCategory`. An entry no longer in To Do ∪ Doing is **kept and flagged** (AC-1.4), never silently dropped. | — (precedent) | 214 |
+| DSN-5 | **Tab enablement fact** `refinementConfigured` (≥1 refinement state stored) is an additive field on `TeamDto`, read by `TeamDetail.tsx` like `team.features.length` (S1). | (a) a second fetch on page load; (b) **additive DTO field** ✓. | — |
+| DSN-6 | **Backlog order** = `WorkItem.Order` (the tracker's rank) compared by the existing `FeatureComparer.CompareOrderValues` ladder, tiebreak `ReferenceId` ordinal. **Correction to AC-2.1**: Team forecasts do not order Work Items; Feature manual ranking (ADR-132/187) does not apply to Work Items. See Changed Assumptions. | (a) a new comparer; (b) **the one existing order ladder** ✓. | 215 |
+| DSN-7 | **Next Refinement date** (DD-6): pure `RefinementCadence.NextAfter(today)`; weekdays + `IntervalWeeks` + anchor week, **using the same week-modulo rule as recurring blackouts**, extracted from `RecurringBlackoutRuleExtensions.Matches` into a shared pure `WeeklyRecurrence` (behaviour-preserving refactor commit; blackout tests pin it). `today` from `ILighthouseClock` (instance zone). Not blackout-shifted (US-04 note). | (a) a second copy of the modulo rule; (b) **extract and share** ✓. | 215 |
+| DSN-8 | **Need band** = one `IForecastService.HowMany` over `ITeamMetricsService.GetForecastThroughputStatus(team, RespectTeamSetting).Throughput` for the blackout-aware working days from today to the next Refinement — byte-for-byte the manual forecast's How Many path (`ForecastController.cs:104-139`). Value at user percentile *p* = `GetProbability(100 − p)` because `HowManyForecast` sorts descending (ADR-210): low = `GetProbability(50)`, high (85) = `GetProbability(15)`. Minimum-data guard = `status.HasSufficientData` (AC-5.6). | (a) a new simulation over "Work Items leaving refinement" — withdrawn (D20); (b) **manual-forecast How Many, unchanged** ✓. | 215 |
+| DSN-9 | **Verdict** `Below` (< low) / `In` (low..high inclusive) / `Above` (> high), or **no verdict** with a closed reason `NoCadence` / `InsufficientData` / `NoRefinementStates`. The wire carries facts only: `readyCount`, `low`, `high`, `lowPercentile`, `highPercentile`, `nextRefinementDate`, `horizonWorkingDays`, `isRefinementDay`, `verdict?`, `unavailableReason?`, `lineAfterPosition` (= min(high, listed count)) and `fewerListedThanHigh`. Clients compose every sentence (DD-13 still holds for wording). | — | 215 |
+| DSN-10 | **SLE yardstick**: `Sle` (range + probability) when both SLE fields > 0; else `CycleTimeFallback` = P85 of `GetCycleTimePercentilesForTeam` over the **Team's Throughput history window** (`Team.GetThroughputSettings(today)`); else `Unavailable`. **Correction to AC-10.1**: there is no server-side "metrics window" per Team (the Metrics tab window is a browser choice); the Throughput window is the one per-Team history window the server owns, and it is the window the need number already samples. | (a) a hard-coded 30/90 days; (b) **the Team's own Throughput window** ✓. | 215 |
+| DSN-11 | **Sizing log** = new append-only table `SizingLogEntries` (entity `SizingLogEntry`): `Id`, `TeamId` (FK, cascade), `WorkItemReferenceId` (string — **not** a FK to the Work Item row, which a refresh can delete and re-create), `Kind` {Vote, Comment, Revocation}, `Answer?` {Yes, YesBut, No}, `Comment?` (≤ 2,000), `VoterKey`, `VoterProfileId?` (FK, SET NULL), `VoterDisplayName` (captured at write time, ADR-165), `RecordedAt` (UTC instant), `Channel` {Web, LiveSession, Cli, Assistant}, `YardstickDays?`, `YardstickSource` {Sle, CycleTimeFallback, Unavailable}, `YardstickProbability?`. Index `(TeamId, WorkItemReferenceId, Id)`. **All columns in slice 11's one migration**, including those first used by 12/16/17b/18. | (a) a mutable "current vote" row per voter + history table — read-modify-write and a CAS to get right; (b) **append-only log, current = latest per voter** ✓ — no in-place update exists, so no lost update and no CAS (DD-9). | 216 |
+| DSN-12 | **Voter identity** resolved by one `VoterIdentityResolver` from `IAuthModeResolver.Resolve().Mode` — **never** from "profile is null" (auth off still carries the shared subject `lighthouse|auth-disabled`, `DisabledAuthenticationHandler.cs:14-22`). Auth **Enabled** → the person from `ICurrentUserProfileService` (`VoterKey = "account:" + subject`); no person (an API key whose owner is unlinked, `ApiKeyService.cs:173-185`) → **refused**, problem code `vote-needs-a-person`. Auth **Disabled** → required self-declared name (trimmed, 1–100 chars) + a client-held random **voter key** sent in header `X-Lighthouse-Voter-Key` (≥ 32 chars); stored only as `"self:" + SHA-256(key)`; missing either → **refused**, `voter-name-required` / `voter-key-required`. A voter key is never returned by any endpoint; responses carry `isMine`. | (a) name as identity — two people with one name collide and anyone typing "Ana Lima" owns Ana's votes; (b) server-minted key round-trip — an extra endpoint for no gain, the key protects nothing the auth-off instance doesn't already grant (D11); (c) **client-minted key, hashed at rest** ✓. | 216 |
+| DSN-13 | **The vote write is gated by a new, named `RbacGuardRequirement.TeamContribute`** whose predicate **is** `CanReadTeamAsync` today (one call, no second rule), refusing with **404** like a read (non-disclosing) rather than 403. Team admins edit settings via the unchanged `TeamWrite`. UI: `useRbac().canContributeToTeam(teamId)`. Plus a rate-limit policy `RefinementContribution` on the write endpoints and bounded text. | (a) reuse `TeamRead` on a POST — works, but makes "this persists" invisible and couples a future restriction to reads; (b) `TeamWrite` — contradicts C4/AC-11.4; (c) a new role — no role differs from Viewer; (d) **named requirement mapped to the read predicate** ✓. | 217 |
+| DSN-14 | **Stage, readiness, open question and the hidden split are one pure resolution** (`RefinementResolution`, static, no I/O) over facts: the row's state stage, the matching stage rule (if any), the voters' current entries and the readiness setting. Precedence DD-5: a matching **stage rule decides** the stage and the row's readiness (votes cannot lift or sink it); otherwise the **state's stage**; a row not Ready by its stage is **Ready by votes** when `yes + yesBut ≥ MinYes` and `voters ≥ MinVoters` and no veto trips; a veto (≥ Threshold of `No` or of `No ∪ YesBut`) → `NeedsDiscussion`. If several stage rules match: Ready > Being refined > Waiting. | — | 218 |
+| DSN-15 | **Current vote** = latest `Vote`/`Revocation` entry per `VoterKey` per Work Item (ordered by `Id`); `Comment` entries never change it. **Open question** = some voter's latest entry is a `Comment` and that voter has no current vote (the asker clears it by voting). Changing your mind appends; taking back appends a `Revocation` and is an **idempotent no-op** (nothing written) when there is no current vote. | — | 216, 218 |
+| DSN-16 | **Hidden split is enforced in the API**: for a caller without a current vote on a row, `split`, `myVote`'s neighbours and every comment are **omitted**; only `voteCount` and the readiness status remain (AC-14.3). The per-item log endpoint answers `{ hidden: true, voteCount }`. Presenter mode reveals splits **only to a caller who passes `TeamWrite`** (with auth off or RBAC off that is everyone). Readers can still present; they see splits where they have voted. | (a) a query flag anyone may set — makes AC-14's API guarantee false; (b) **reveal tied to TeamWrite** ✓ (maintainer to confirm, MQ-2). | 218 |
+| DSN-17 | **Channel is declared by the caller and validated as a closed enum**, never inferred: web UI sends `Web`, presenter mode sends `LiveSession`, CLI sends `Cli`, MCP sends `Assistant`. It is analytics and display, not security, and is documented as declared. It is the fact DEVOPS needs for K4/K7 and for DD-19 (c). | (a) infer from auth scheme — cannot tell a browser on auth off from the CLI on auth off; (b) **declared closed enum** ✓. | 216 |
+| DSN-18 | **No domain event is published in E1–E3.** Nothing reacts to a vote or a settings change server-side: readiness is derived on read, usage-data events are detected in the browser (ADR-190) from facts the responses already carry. The seam for E4/E5 is named: `SizingEntryRecorded` published after commit by the vote service, if and when a subscriber exists (spike 19's fan-out, E5's calibration cache). | (a) publish now with no subscriber — dead code; (b) **name the seam, don't build it** ✓ (ADR-027 bus still the default when a reaction appears). | 216 |
+| DSN-19 | **Read/write driving ports split**: `IRefinementViewQuery` (read, no repository write member reachable) and `ISizingLogCommands` (append only). Two controllers: `RefinementController` (GETs) and `RefinementVotesController` (writes) — keeps both under S107 and keeps the read path structurally write-free. | — | 216, 217 |
+| DSN-20 | **"Refinement"/"Refinements" are Terminology keys** seeded by `TerminologySeeder.AddOrUpdateTerminology` (add-or-update, no migration) and mirrored in `TerminologyKeys.ts`; introduced in slice 01 so the tab label never hard-codes the word. | — | — |
+| DSN-21 | **Clients (DD-19)**: `lh refinement get --team-id <id>`, `lh refinement vote --team-id <id> --work-item <ref> --answer yes|yes-but|no [--comment <text>] [--as <name>]`, `lh refinement comment …`, `lh refinement take-back …`, `lh config voter set --name <name>`; MCP `lighthouse_team_refinement_get`, `lighthouse_team_refinement_vote`, `lighthouse_team_refinement_comment`, `lighthouse_team_refinement_voteTakeBack` (house naming, `mcp-core/src/index.ts:718-1219`). Verdicts (a)–(d) below. | — | 216 |
+| DSN-22 | **Every vote entry captures the yardstick it was cast against** (days, source, probability) so E5 can compare "Yes" with the Work Item's eventual cycle time without re-deriving a yardstick that has since moved. Nothing else is built for E5. | — | 216 |
+
+---
+
+## Wave: DESIGN / [REF] DD-19 verdicts (client votes)
+
+| | Verdict |
+|---|---|
+| **(a) Credential → person** | **Resolve or refuse.** Auth on: a cookie session or JWT bearer carries the person's `sub`; an API key resolves to its owner's profile when `OwnerResolutionState == Resolved` (`ApiKeyService.cs:148-201`, `ApiKeyPrincipalFactory.cs:51-82`). An **unlinked** key yields a principal with no `sub`, `ICurrentUserProfileService` returns `null`, and the vote is refused with `vote-needs-a-person` (HTTP 403 — reachable only where the key can read the Team, i.e. RBAC off; with RBAC on the guard already answers 404 because `CanReadTeamAsync` needs a profile, `RbacAdministrationService.cs:215-219`). Lighthouse API keys are always created by a person, so "instance/service keys" exist only as unlinked keys; there is no other credential kind to special-case. |
+| **(b) Auth-off name on the client** | **Required, never defaulted.** CLI: `--as "<name>"`, else the value the user stored explicitly with `lh config voter set --name`; neither → the CLI refuses before calling the server. It never derives a name from the OS user, git config or hostname. MCP: a `voterName` tool argument; the tool description tells the assistant to **ask the user for their name and never infer it**. The server refuses a nameless auth-off vote anyway (`voter-name-required`), so a client bug cannot default it. Voter key: CLI and MCP-stdio mint one random key per Lighthouse URL on first vote and keep it in the client package's local config store (the client's "browser"); take-back works from the same client only. **mcp-http** (a shared hosted bridge with no per-person store) refuses votes on an auth-off instance (MQ-3). |
+| **(c) Marked in the log** | **Yes**, as `Channel = Cli` or `Assistant` (DSN-17), shown in the log view ("via the CLI" / "via an assistant", wording through the client) and available to DEVOPS as a closed-enum property. |
+| **(d) MCP wording** | The vote and comment tools' descriptions state: *"Records the USER's own sizing judgement under their name. Never call this on your own initiative or on someone else's behalf: show the user the Work Item, the answer and any comment you intend to send, and call only after they explicitly confirm."* The confirmation is the assistant's; the server has no way to verify it, which is why (a) refuses non-persons and (c) marks the channel. |
+
+---
+
+## Wave: DESIGN / [REF] Component decomposition
+
+Paths relative to `Lighthouse.Backend/Lighthouse.Backend/`, `Lighthouse.Frontend/src/`, `lighthouse-clients/packages/`.
+
+| Component | Path | Change | Slice |
+|---|---|---|---|
+| `RefinementSettings` (+ `RefinementStateSetting`, `RefinementCadence`, `RefinementBand`, `ReadinessSetting`, `VetoSetting`, `StageRules`) | `Models/Refinement/` | **NEW** value objects, defaults in initialisers | 01 (states), 03, 04, 07, 08, 13 extend |
+| Enums `RefinementStage`, `SizingAnswer`, `SizingEntryKind`, `SizingChannel`, `YardstickSource`, `RefinementVerdict`, `NeedUnavailableReason`, `RowReadiness`, `ReadySource` | `Models/Refinement/` | **NEW** (append-only ordinals) | as used |
+| `Team.RefinementSettings` | `Models/Team.cs` | **EXTEND** (nullable property) | 01 |
+| `SizingLogEntry` | `Models/Refinement/SizingLogEntry.cs` | **NEW** entity, constructor-set, no setters on identity fields | 11 |
+| `LighthouseAppContext` | `Data/` | **EXTEND**: JSON converter/comparer for `RefinementSettings`; `DbSet<SizingLogEntry>`, index, FKs | 01, 11 |
+| `WeeklyRecurrence` (pure) | `Services/Implementation/` | **EXTRACT** from `RecurringBlackoutRuleExtensions.Matches` (refactor commit) | 04 |
+| `RefinementCadenceCalendar` (pure: next date, is-refinement-day) | `Services/Implementation/Refinement/` | **NEW** | 04 |
+| `RefinementList` (query: Work Items in refinement states, backlog order) | `Services/Implementation/Refinement/` | **NEW** over `IWorkItemRepository` | 02 |
+| `RefinementResolution` (pure: stage, readiness, open question, split visibility) | `Services/Implementation/Refinement/` | **NEW** static | 13 (votes), 03 (stages), 08 (rules), 12, 14 |
+| `StageRuleMatcher` | `Services/Implementation/Refinement/` | **NEW** thin adapter over existing `IRuleEvaluator<WorkItem>` + `WorkItemFieldProvider` | 08 |
+| `RefinementNeedCalculator` | `Services/Implementation/Refinement/` | **NEW** over `IForecastService.HowMany`, `ITeamMetricsService.GetForecastThroughputStatus`, `IBlackoutPeriodService` | 05 |
+| `NeedBand` (pure: value at p = `GetProbability(100 − p)`, verdict) | `Services/Implementation/Refinement/` | **NEW** static | 05 |
+| `SleYardstickResolver` | `Services/Implementation/Refinement/` | **NEW** over `ITeamMetricsService.GetCycleTimePercentilesForTeam` | 10 |
+| `VoterIdentityResolver` | `Services/Implementation/Refinement/` | **NEW** over `IAuthModeResolver` (reads and writes) and `ICurrentUserProfileService` (**writes only**, E6) | 11 (auth off), 15 (auth on), 17b |
+| `IRefinementViewQuery` / `RefinementViewQuery` (driving, read) | `Services/{Interfaces,Implementation}/Refinement/` | **NEW** — composes the view | 02 → every slice extends |
+| `ISizingLogCommands` / `SizingLogCommands` (driving, write) | same | **NEW** — vote, comment, take back | 11, 12, 16 |
+| `ISizingLogRepository` / `SizingLogRepository` (driven) | `Services/{Interfaces,Implementation}/Repositories/` | **NEW** — `Append`, `ReadForTeam(teamId, refs)`; **no update/remove members** | 11 |
+| `RbacGuardRequirement.TeamContribute` | `Models/Authorization/` | **EXTEND** (appended member) | 11 |
+| `RbacAdministrationService.CanSatisfyRequirementAsync` | `Services/Implementation/Authorization/` | **EXTEND** — `TeamContribute => CanReadTeamAsync` | 11 |
+| `RbacGuardAttribute` | same | **EXTEND** — add `TeamContribute` to both `RequiresScope()` and `IsReadRequirement()` (`RbacGuardAttribute.cs:79-91`), so a failed check answers `NotFoundResult` (404), not `ForbidResult` | 11 |
+| `RateLimitingConfiguration.RefinementContributionPolicy` | composition root | **EXTEND** — partition by subject, else voter-key hash, else IP | 11 |
+| `TeamSettingDto.Refinement` (+ `RefinementSettingsDto`) | `API/DTO/` | **EXTEND** (nullable; null = unchanged; value-type members nullable, S6964) | 01 |
+| `RefinementSettingsValidator` (pure) | `API/Helpers/` | **NEW** — states ⊆ To Do ∪ Doing at save, stage enum, cadence N ≥ 1 + anchor when N > 1, 1 ≤ low < high ≤ 99, MinYes ≥ 1, MinVoters ≥ MinYes, veto ≥ 1, stage rules via existing `RuleSetValidation` | 01 → 13 |
+| `TeamExtensions.SyncRefinement` | `API/Helpers/` | **EXTEND** | 01 |
+| `TeamController.UpdateTeam` | `API/` | **EXTEND** (one validator call; ctor unchanged — 11 params already, no new dependency) | 01 |
+| `TeamDto.RefinementConfigured` | `API/DTO/` | **EXTEND** | 01 |
+| `RefinementController` (`GET …/refinement`, `GET …/work-items/{workItemId}/log`) | `API/` | **NEW** | 02, 12 |
+| `RefinementVotesController` (`POST …/votes`, `POST …/comments`, `DELETE …/votes/mine`) | `API/` | **NEW** | 11, 12, 16 |
+| `TerminologySeeder` | `Services/Implementation/Seeding/` | **EXTEND** (`refinement`, `refinements`) | 01 |
+| `DemoDataFactory` (+ demo vote seeding) | demo seeding | **EXTEND** — Gravity states/stages/cadence; three named voters' entries | 01, 03, 04, 11, 13 |
+| ArchUnitNET rules E1–E9 | `Lighthouse.Backend.Tests/Architecture/` | **EXTEND** | each slice that introduces the rule |
+| `TeamDetail.tsx` | `pages/Teams/Detail/` | **EXTEND** — tab between Metrics and Settings, role-specific disabled tooltip | 01 |
+| `RefinementView` (+ `RefinementHeader`, `SleQuestion`, `NeedVerdictBanner`, `RefinementList`, `RefinementRow`, `VoteControl`, `ReadinessCell`, `EnoughForLine`) | `pages/Teams/Detail/Refinement/` | **NEW** | 02, 10, 11, 13, 05, 06 |
+| `SizingLogDialog` | same | **NEW** | 12 |
+| `VoterNamePrompt` + `useVoterIdentity` (localStorage `lighthouse:refinement:voter` = `{ name, key }`, key from `crypto.randomUUID()` ×2) | `pages/…/Refinement/`, `hooks/` | **NEW** | 11 |
+| `PresenterMode` | `pages/Teams/Detail/Refinement/` | **NEW** | 18 |
+| `RefinementSettingsSection` (states with category labels, stage select, cadence, band, readiness, stage rules via existing `DeliveryRuleBuilder`) | `components/Common/Team/` | **NEW** section inside `ModifyTeamSettings` | 01 → 13 |
+| `useRbac` | `hooks/useRbac.ts` | **EXTEND** — `canContributeToTeam(teamId)` | 11 |
+| `RefinementService` + `models/Refinement/*.ts` (wire enums as **string unions**) | `services/Api/`, `models/` | **NEW** | 02 → |
+| `TerminologyKeys.ts` | `models/` | **EXTEND** | 01 |
+| Usage-data route key for the tab | frontend usage-data detection | **EXTEND** (`TeamTabOpened` + `refinement`, DD-16) | 02 |
+| `@letpeoplework/lighthouse-client` (`getTeamRefinement`, `castSizingVote`, `addSizingComment`, `takeBackSizingVote`, voter store) | `client/src/` | **EXTEND** | 09, 17a, 17b |
+| CLI group `refinement`, `config voter` | `cli/src/` | **EXTEND** | 09, 17a, 17b |
+| MCP tools `lighthouse_team_refinement_*` | `mcp-core/src/` | **EXTEND** | 09, 17a, 17b |
+
+---
+
+## Wave: DESIGN / [REF] Driving ports
+
+**HTTP** (all under `api/v1/teams/{teamId:int}/…` and `api/latest/teams/{teamId:int}/…`):
+
+| Verb + path | Guard | Purpose | Slice |
+|---|---|---|---|
+| `PUT /teams/{teamId}` (existing) | `TeamWrite` | carries `refinement` settings | 01 → 13 |
+| `GET /teams/{teamId}` (existing) | `TeamRead` | adds `refinementConfigured` | 01 |
+| `GET /teams/{teamId}/settings` (existing) | `TeamRead` | adds `refinement` (for the settings form) | 01 |
+| `GET /teams/{teamId}/refinement[?presenting=true]` | `TeamRead` | the whole tab: list, stages, readiness, tallies, yardstick, cadence facts, need | 02 → 18 |
+| `GET /teams/{teamId}/refinement/work-items/{workItemId}/log` | `TeamRead` | the log for one listed Work Item, oldest first; `{hidden:true, voteCount}` until the caller votes (14) | 12 |
+| `POST /teams/{teamId}/refinement/work-items/{workItemId}/votes` | `TeamContribute` + rate limit | `{ answer, comment?, channel, voterName? }`; returns the updated row | 11, 12, 17b, 18 |
+| `POST /teams/{teamId}/refinement/work-items/{workItemId}/comments` | `TeamContribute` + rate limit | `{ comment, channel, voterName? }` | 12, 17b |
+| `DELETE /teams/{teamId}/refinement/work-items/{workItemId}/votes/mine` | `TeamContribute` + rate limit | appends a `Revocation`; no-op if no current vote | 16, 17b |
+
+Auth-off identity travels as header `X-Lighthouse-Voter-Key` on every refinement GET and write (it decides `isMine` and
+the hidden split) plus `voterName` in write bodies. Auth on: both are ignored. A vote on a Work Item that is not
+currently listed → **409** `work-item-not-in-refinement` (DD-1 limits votes to Work Items in refinement states).
+
+**UI routes**: Team → `refinement` tab (`/teams/:id/refinement`); Settings → *Refinement* section; Present (full screen,
+same route, state in the URL query so a reload keeps the position).
+
+**CLI / MCP**: DSN-21.
+
+## Wave: DESIGN / [REF] Driven ports and adapters
+
+| Port | Adapter | New? |
+|---|---|---|
+| `ISizingLogRepository` (append, read by team + refs) | EF Core over `SizingLogEntries` (SQLite + Postgres) | **NEW** |
+| `IRepository<Team>`, `IWorkItemRepository` | existing EF | reused |
+| `IForecastService.HowMany` | existing Monte Carlo | reused, unchanged (D20) |
+| `ITeamMetricsService.GetForecastThroughputStatus`, `GetCycleTimePercentilesForTeam` | existing (cached) | reused |
+| `IBlackoutPeriodService` (working-day horizon) | existing | reused |
+| `IRuleEvaluator<WorkItem>` + `WorkItemFieldProvider` | existing rule engine (ADR-012/013) | reused |
+| `IAuthModeResolver`, `ICurrentUserProfileService` | existing | reused |
+| `IRbacAdministrationService` | existing | extended (one requirement) |
+| `ILighthouseClock` | existing | reused |
+
+**No external integration is added** — no tracker is contacted (votes stay in Lighthouse, D9), so **contract testing (Pact):
+N/A**. The Lighthouse-Clients ↔ Lighthouse API is an internal cross-repo contract; its additive shape is pinned by the
+client's existing fixture tests, not by Pact.
+
+**Earned Trust**: no new substrate dependency. The one adapter added is an EF table on the existing providers, already
+probed by the startup migration path (ADR-077). The probe this feature does owe is on **its own invariant**: E2 below
+proves at test time that nothing can update or delete a log entry, instead of trusting that nobody will.
+
+---
+
+## Wave: DESIGN / [REF] Technology choices
+
+**None new.** .NET 10 / EF Core (both providers) / ASP.NET Core rate limiting (already in use) / React 18 + MUI / the
+Lighthouse-Clients TypeScript packages. All OSS already in the tree; no licence change. Rejected on purpose: SignalR
+for presenter mode (a shared screen needs no push; DD-20), a scheduler or queue (nothing is precomputed), a second
+Monte Carlo engine.
+
+---
+
+## Wave: DESIGN / [REF] Reuse analysis (HARD GATE)
+
+| Existing component (evidence) | Overlap | Verdict |
+|---|---|---|
+| `WorkTrackingSystemOptionsOwner` / `Team` (`Models/WorkTrackingSystemOptionsOwner.cs:6-58`, `Models/Team.cs:3-50`) | where settings live | **EXTEND** `Team` (not the owner base: Team level only, D2) |
+| JSON-valued settings (`LighthouseAppContext.cs:583-629`, ADR-064) | storage shape | **EXTEND the pattern** — one more converted property |
+| `ToDoStates` / `DoingStates` / `GetRawStatesForCategory` (`WorkTrackingSystemOptionsOwner.cs:27-36, 90-110`; ADR-056 `WaitStates`) | refinement-state selection and resolution | **REUSE** as-is |
+| Team settings write (`TeamController.cs:120-202`, `TeamExtensions.cs:78-105`), autosave (ADR-029), concurrency token (ADR-027) | settings save | **EXTEND** (one nullable DTO member, one validator call) |
+| `WorkItemRelatedSettingsChanged` (`WorkTrackingSystemOptionsOwnerExtensions.cs:15`) | would wipe Work Items | **REUSE, guarded** — must ignore refinement members (E7) |
+| `WorkItemRuleSet` / `IRuleEvaluator<WorkItem>` / `RuleSetValidation` (`Services/Interfaces/WorkItemRules/IRuleEvaluator.cs`, `API/Helpers/RuleSetValidation.cs`) and `DeliveryRuleBuilder` (the editor `FlowMetricsConfigurationComponent.tsx:32` uses for blocked rules) | stage rules (08) | **REUSE** engine, validation and editor (C7) |
+| `ForecastService.HowMany` (`ForecastService.cs:33-53`), `HowManyForecast` descending comparer (`HowManyForecast.cs:7`), manual-forecast horizon (`ForecastController.cs:104-139`) | need number | **REUSE** unchanged (D20) |
+| `ITeamMetricsService.GetForecastThroughputStatus` (`ITeamMetricsService.cs:19`) incl. `HasSufficientData` | throughput + minimum-data guard | **REUSE** (AC-5.6) |
+| `ITeamMetricsService.GetCycleTimePercentilesForTeam` (`ITeamMetricsService.cs:63`) | SLE fallback P85 | **REUSE** |
+| SLE fields (`WorkTrackingSystemOptionsOwner.cs:38-40`) | yardstick | **REUSE** |
+| `RecurringBlackoutRule` weekday + `IntervalWeeks` + anchor (`RecurringBlackoutRuleExtensions.cs:26-37`, ADR-060) | cadence | **EXTRACT** `WeeklyRecurrence`, share |
+| `FeatureComparer.CompareOrderValues` (`Models/FeatureComparer.cs:28`) | backlog order | **REUSE** |
+| `WorkItemBase.WorkItemAge` (`WorkItemBase.cs:98-113`) | age column | **REUSE** (Doing rows only) |
+| `TerminologySeeder` add-or-update (`TerminologySeeder.cs:23-60`), `TerminologyKeys.ts` | "Refinement" term | **EXTEND** |
+| Disabled-tab pattern (`TeamDetail.tsx:506-507`), Settings/Access gating (`TeamDetail.tsx:122-125`) | tab | **REUSE** pattern |
+| `UsageDataEventName.TeamTabOpened` (`UsageDataEventName.cs:12`, `UsageDataEventShapes.cs:30`) | tab-open event | **REUSE** + route key (DD-16) |
+| `RbacGuardRequirement` / `RbacGuardAttribute` / `CanSatisfyRequirementAsync` (`RbacGuardRequirement.cs:3-14`, `RbacGuardAttribute.cs:44-77`, `RbacAdministrationService.cs:341-367`) | read-permission write | **EXTEND** (one member, mapped to `CanReadTeamAsync`) |
+| `useRbac` (`hooks/useRbac.ts:29-89`) | UI gating | **EXTEND** (`canContributeToTeam`) |
+| `ApiKeyService` owner resolution (`ApiKeyService.cs:148-201`), `ApiKeyPrincipalFactory` (`:51-82`), `CurrentUserProfileService` (`:14-56`) | client credential → person | **REUSE** — the `Unlinked` state *is* "belongs to no person" |
+| `IAuthModeResolver` (`AuthModeResolver.cs:9-71`) | auth-on vs auth-off | **REUSE** — the only trustworthy mode probe |
+| `DeliveryNote` authorship (ADR-165: FK SET NULL + name captured at write) | voter attribution | **REUSE the pattern** |
+| ADR-191 per-browser identity (localStorage token, digest at rest) | auth-off voter | **REUSE the pattern** (not the consent table — different purpose, different retention) |
+| ASP.NET rate limiting named policies (`ApiKeyController.cs:25`, `UsageDataController.cs:45`) | abuse bound on a reader write | **EXTEND** (one policy) |
+| `IDomainEventDispatcher` (ADR-027) | reactions to votes/settings | **NOT USED YET** — no subscriber exists (DSN-18) |
+| SignalR `UpdateNotificationHub` (ADR-075) | presenter mode | **NOT NEEDED** — confirmed: one screen, one browser, the same GET |
+| Lighthouse-Clients command/tool patterns (`cli/src/index.ts:1114-1167`, `mcp-core/src/index.ts:718-1219`), `config output set` precedent | CLI/MCP | **EXTEND** |
+| `DemoDataFactory` (S8) | demo settings + votes | **EXTEND** |
+
+**CREATE NEW, each challenged:**
+
+| CREATE NEW | Why no existing component serves |
+|---|---|
+| `SizingLogEntry` + `SizingLogEntries` table + `ISizingLogRepository` | Nothing stores per-person judgements about a Work Item. `DeliveryNote` is free text against a Delivery, mutable (edit/withdraw) and Portfolio-scoped — the opposite of an append-only, voter-keyed log (C10). |
+| `RefinementSettings` value objects | No Team setting expresses stages, cadence, band or readiness. It is a new property on an existing aggregate, not a new aggregate. |
+| `RefinementViewQuery` (read composition) | No read composes list + stage + readiness + need for a Team; extending `ForecastController` or `TeamMetricsController` would put a vote log behind a forecasting or metrics route. |
+| `SizingLogCommands`, `VoterIdentityResolver` | No write path has an identity that is "account or self-declared key or refuse"; ADR-165's two branches cover account vs nothing, not a self-declared voter. |
+| `RefinementResolution`, `NeedBand`, `RefinementCadenceCalendar`, `RefinementSettingsValidator` (pure) | New rules (DD-3/5/6/7, DD-21); each is a static function with no state to share. `ReadinessPolicy`-like logic exists nowhere. |
+| `RefinementController`, `RefinementVotesController` | Adding to `TeamController` (already 11 ctor params, `TeamController.cs:27-38`) would trip S107 and mix a reader write into an admin controller. |
+| Frontend `Refinement/*`, `RefinementSettingsSection`, `useVoterIdentity`, `RefinementService` | No tab, list, vote control or voter identity exists; the rule editor and disabled-tab pattern are reused inside them. |
+| `TeamContribute` requirement | Reusing `TeamRead` on a POST would work and was rejected only because it hides that the action persists (ADR-217). It adds a name, not a rule. |
+
+---
+
+## Wave: DESIGN / [REF] Data model and migration plan
+
+```
+Teams                                    (existing table)
+  + RefinementSettings  TEXT NULL        -- JSON; null = not configured            [slice 01 migration]
+
+RefinementSettings (JSON shape, all members defaulted on read)
+  States[]     { State, Stage = Waiting }                                          [01; Stage from 03]
+  Cadence?     { Weekdays[], IntervalWeeks = 1, AnchorWeek? (Monday) }             [04]
+  Band         { LowPercentile = 50, HighPercentile = 85 }                         [05 uses defaults; 07 edits]
+  Readiness    { MinYes = 3, MinVoters = 3, Veto? { Threshold >= 1, Counts = No | NoOrYesBut } }   [13]
+  StageRules   { Waiting?, BeingRefined?, Ready? }  -- each a WorkItemRuleSet       [08]
+
+SizingLogEntries                          (new table)                               [slice 11 migration]
+  Id                    PK identity
+  TeamId                FK -> Teams ON DELETE CASCADE
+  WorkItemReferenceId   TEXT NOT NULL
+  Kind                  INT  (Vote=0, Comment=1, Revocation=2)
+  Answer                INT  NULL (Yes=0, YesBut=1, No=2)          -- required iff Kind=Vote
+  Comment               TEXT NULL (<= 2000)
+  VoterKey              TEXT NOT NULL ("account:<sub>" | "self:<sha256 hex>")
+  VoterProfileId        INT  NULL FK -> UserProfiles ON DELETE SET NULL
+  VoterDisplayName      TEXT NOT NULL (captured at write time)
+  RecordedAt            timestamp (UTC instant)
+  Channel               INT  (Web=0, LiveSession=1, Cli=2, Assistant=3)
+  YardstickDays         INT  NULL
+  YardstickSource       INT  (Sle=0, CycleTimeFallback=1, Unavailable=2)
+  YardstickProbability  INT  NULL
+  INDEX (TeamId, WorkItemReferenceId, Id)
+```
+
+| Slice | Migration | Notes |
+|---|---|---|
+| 01 | **M1** `AddRefinementSettingsToTeams` — one nullable column | via `CreateMigration` (SQLite + Postgres); build migration DLLs first (memory: HintPath trap) |
+| 02, 03, 04, 05, 06, 07, 08, 10, 13 | **none** | JSON members added with defaults; a missing member deserialises to its initialiser |
+| 11 | **M2** `AddSizingLogEntries` — the whole table, every column | 12/14/15/16/17b/18 then need no migration |
+| 12, 14, 15, 16, 17a, 17b, 18 | **none** | |
+
+**Two migrations, both additive** (expand-only). JSON evolution rule for DELIVER: members are only ever **added**
+with a default; renaming or removing one is a contract change that needs its own ADR. The JSON is written by one
+converter with fixed options and read back by the same, so case sensitivity is not a hazard; any code that parses it
+elsewhere uses `PropertyNameCaseInsensitive = true` from a cached `static readonly` options field (CA1869).
+
+---
+
+## Wave: DESIGN / [REF] RBAC model — the read-permission write
+
+| Who | Read tab / log | Vote / comment / take back own | Edit refinement settings | Presenter reveals splits |
+|---|---|---|---|---|
+| Auth off (every Community instance) | yes | yes — self-declared name + browser key | yes | yes |
+| Auth on, RBAC off | every signed-in user | every signed-in user (own account) | every signed-in user | yes |
+| Auth on, RBAC on — Team admin / System admin | yes | yes | yes (`TeamWrite`) | yes (`TeamWrite`) |
+| Auth on, RBAC on — Viewer on the Team | yes | **yes (`TeamContribute`)** | no | no (sees splits where they voted) |
+| Auth on, RBAC on — no role | **404** | **404** (non-disclosing) | 404 | — |
+| Auth on, RBAC off — unlinked API key | yes | **403 `vote-needs-a-person`** | yes | — |
+| Auth on, RBAC on — unlinked API key | 404 (`CanReadTeamAsync` returns false without a profile, `RbacAdministrationService.cs:215-219`) | 404 | 404 | — |
+
+The write is safe because (1) it can only **append an entry attributed to the caller** — there is no endpoint that
+names another voter, and the voter key is derived server-side from the session or the presented key, never accepted
+as an identity field; (2) it changes **no Work Item, no setting and nothing in the tracker** (D9); (3) it is bounded —
+rate-limited per caller, text-capped, and only on Work Items currently in a refinement state; (4) it is visible —
+every entry carries who, when and through which channel. Embedded sessions (ADR-137) vote as the signed-in viewer;
+the accepted embed-nonce risk (memory `project_embed_nonce_unbound_accepted_risk`) already grants a hijacker
+everything the viewer can do, and voting adds no capability beyond that.
+
+## Wave: DESIGN / [REF] Identity model — auth on / auth off / client
+
+| Situation | Voter key | Display name | Take back from | `isMine` / hidden split keyed by |
+|---|---|---|---|---|
+| Browser, auth on | `account:<sub>` | profile display name at write time | any session of the same account | account |
+| Browser, auth off | `self:SHA-256(browser key)` | self-declared, per browser, editable (later entries carry the new name; earlier keep theirs) | that browser | browser key |
+| CLI / MCP-stdio, auth on | `account:<sub>` of the key owner or bearer subject | owner's display name | any channel of the same account | account |
+| CLI / MCP-stdio, auth off | `self:SHA-256(client key)` | `--as` / stored name / `voterName` — required | that client config | client key |
+| Unlinked API key, auth on | — | — | — | **vote refused** |
+| mcp-http, auth off | — | — | — | **vote refused** (MQ-3) |
+
+Switching an instance from auth off to auth on leaves earlier `self:` entries as they were; the same person voting
+again under their account is a new voter. Recorded, not hidden: it can double-count a person on Work Items that sat
+in refinement across the switch. Clearing browser storage likewise makes a new voter (ADR-191 point 4's reasoning).
+
+---
+
+## Wave: DESIGN / [REF] Per-slice design notes (delivery order)
+
+| Order | Slice | Design notes |
+|---|---|---|
+| 1 | **01** states setting | M1. `RefinementSettings.States` + validator (⊆ To Do ∪ Doing at save; stale entries kept and flagged on read). `RefinementSettingsSection` with category labels and the Doing note. `TeamDto.RefinementConfigured`; tab + role tooltip (`useRbac().isTeamAdmin`). Terminology keys `refinement`/`refinements` land **here** (slice brief allowed it), so the tab label is never hard-coded. Guard tests: TeamWrite; `WorkItemRelatedSettingsChanged` ignores refinement (E7); null DTO member leaves settings unchanged. Demo: Gravity `Backlog`/`Analysing`/`Next`; one demo Team unconfigured. |
+| 2 | **02** list | `RefinementController GET`, `RefinementViewQuery` (list only), `RefinementList` ordered by DSN-6. Row: id + url, name, state, category, Work Item Age for Doing rows. Empty state. `TeamTabOpened` route key. E2E walking skeleton through a POM on demo Gravity. 300-item render budget. |
+| 3 | **10** yardstick | `SleYardstickResolver` (DSN-10); facts `{source, days?, probability?}`; client builds the question. |
+| 4 | **11** cast a vote | M2. `RefinementVotesController POST votes`, `SizingLogCommands`, `VoterIdentityResolver` (auth-off path), `TeamContribute`, rate-limit policy, `useVoterIdentity` + `VoterNamePrompt`, `VoteControl` + tally cell (`voteCount`, own vote marked). Writes `Channel=Web` and the current yardstick. Unknown/unlisted Work Item → 409. Response = the updated row (feeds the browser-detected "vote cast" event). |
+| 5 | **13** readiness | `Readiness` JSON member + validator (MinYes ≥ 1, MinVoters ≥ MinYes, veto ≥ 1). `RefinementResolution` vote path only (no stages yet: every row's stage counts as Waiting). Row status Ready / n more Yes / n more votes / Needs discussion; heading `readyByVotesCount`. Demo votes: Jonas Weber, Ana Lima, Mo Okafor. |
+| 6 | **03** stages | `States[].Stage`; `RefinementResolution` adds the state-stage step; `readyCount` = stage-Ready ∪ vote-Ready (no double count); "no state is marked Ready" hint fact `noReadySource` when no Ready stage, no Ready rule. |
+| 7 | **04** cadence | Extract `WeeklyRecurrence` (refactor commit first, blackout tests green), `RefinementCadenceCalendar`; facts `nextRefinementDate`, `isRefinementDay`; `NoCadence` reason. Fixed-date unit tests from the slice brief. |
+| 8 | **05** need + verdict | `RefinementNeedCalculator` + `NeedBand` (DSN-8/9), defaults 50/85. Parity test against the manual forecast (E9). One banner component, three states, exhaustive `Record<RefinementVerdict, …>`. |
+| 9 | **06** line | `lineAfterPosition`, `fewerListedThanHigh` already on the wire from 05 — this slice is UI only (non-colour highlight + line row). |
+| 10 | **12** comments | `POST comments`, comment on votes, `GET log`, open-question flag (DSN-15), `SizingLogDialog`. No migration. |
+| 11 | **07** band setting | `Band` editable; validator 1 ≤ low < high ≤ 99 naming both values. |
+| 12 | **15** account votes | `VoterIdentityResolver` auth-on path + unlinked-key refusal; no name prompt when `authenticationEnabled`. RBAC matrix test (E4). |
+| 13 | **14** hidden split | `RefinementResolution` split visibility + API omission (view and log); presenter reveal rule prepared (DSN-16) though presenter ships in 18. Cancellable: removing it is deleting one predicate. |
+| 14 | **08** stage rules | `StageRules` JSON + `StageRuleMatcher` + `DeliveryRuleBuilder` reuse; DSN-14 precedence; rules only over listed Work Items (AC-8.3). |
+| 15 | **16** take back | `DELETE votes/mine` → `Revocation`; idempotent no-op; only own (by voter key). |
+| 16 | **09** clients: need | client `getTeamRefinement`; `lh refinement get`; `lighthouse_team_refinement_get`; client composes sentences with the instance's Terminology. Lighthouse-Clients minor + changeset; `pnpm release:version` before the release run. |
+| 17 | **17a** clients: votes read | Additive fields only; client sends its voter key header (if it has one) so hiding applies to it. |
+| 18 | **17b** clients: cast | `lh refinement vote/comment/take-back`, `lh config voter set`, MCP vote/comment/take-back tools with DD-19 (d) wording; voter key store; channel `Cli`/`Assistant`; mcp-http refuses auth-off votes. Minor bump (may share 17a's release). |
+| 19 | **18** presenter (LIGHT) | `PresenterMode` over the same GET with `presenting=true`; walks highlighted not-Ready rows in list order; writes only the facilitator's own entries with `Channel=LiveSession`; no endpoint can name another voter (structural, DD-20); keyboard-operable. No SignalR, no session entity. |
+| — | **19** spike (questions only) | See below. |
+
+### What spike 19 must answer (not designed here)
+
+1. **Identity on the wire**: can an auth-off browser join a hub at all — the shared `lighthouse|auth-disabled` subject
+   passes `[Authorize]`, so per-participant identity must ride as the same `self:` voter key this design already uses;
+   is that enough to keep one participant from acting as another inside a session?
+2. **Session entity or not**: does a remote session need a stored session (facilitator, participants, current Work
+   Item), or can it stay a broadcast of "facilitator moved to Work Item X" over the existing log (DD-1: no rounds)?
+3. **Fan-out**: is a per-Team SignalR group on the existing hub + Redis backplane (ADR-075) sufficient on multi-replica
+   hosted, and does it need the `SizingEntryRecorded` event (DSN-18) as its trigger?
+4. **Attack surface**: with auth on, does a hub group per Team leak Team existence to non-readers (must be
+   non-disclosing like the 404s here)? With auth off, nothing new is exposed (D11) — confirm.
+5. **Go / no-go** and the ADR draft for E4's next DISCUSS.
+
+---
+
+## Wave: DESIGN / [REF] Architectural enforcement
+
+ArchUnitNET (existing under `Lighthouse.Backend.Tests/Architecture/`), the TypeScript compiler, and plain NUnit/Vitest
+pins where ArchUnitNET cannot express the rule.
+
+- **E1** — Nothing outside `API` and the composition root depends on `Services.*.Refinement`; `Refinement` does not
+  depend on WorkTracking-Integration or Portfolio/Delivery.
+- **E2** — `ISizingLogRepository` declares no member whose name starts with `Update`, `Remove`, `Delete`; no type
+  calls `ExecuteUpdate*`/`ExecuteDelete*` or `Remove` on `SizingLogEntries` (reflection + ArchUnitNET call check). The
+  append-only invariant, proved rather than trusted.
+- **E3** — `RefinementResolution`, `NeedBand`, `RefinementCadenceCalendar`, `WeeklyRecurrence`,
+  `RefinementSettingsValidator` are `static` and reference nothing in `Services.Implementation` (pure contract shape).
+- **E4** — `TeamContribute` evaluates identically to `TeamRead` for every role × RBAC on/off × auth mode (parameterised
+  matrix); every controller action carrying `TeamContribute` lives in `RefinementVotesController` (allowlist test, so a
+  second read-permission write cannot appear unnoticed).
+- **E5** — no `DateTime.UtcNow`/`Today` in the feature; days from `ILighthouseClock` (existing
+  `CalendarDayAnchorSeamArchUnitTest`).
+- **E6** — `IRefinementViewQuery`'s implementation has no dependency on `ISizingLogCommands`,
+  `ISizingLogRepository.Append` or any repository `Save` (read path write-free). On reads, `VoterIdentityResolver`
+  derives the caller's key from the principal's subject claim (auth on) or the presented key (auth off) **without**
+  calling `ICurrentUserProfileService`, whose get-or-create touches the profile row; only writes resolve the profile
+  (for `VoterProfileId` and the display name).
+- **E7** — changing any refinement member leaves `WorkItemRelatedSettingsChanged` false (unit test over every member).
+- **E8** — `NeedBand.ValueAt(p) == forecast.GetProbability(100 − p)` and `low ≤ high` for any 1 ≤ low < high ≤ 99
+  (property test on fixed distributions).
+- **E9** — for a Team and a cadence, the band equals the manual forecast's How Many values for target date = next
+  Refinement (parity test through both public paths).
+- **Frontend** — exhaustive `Record<…>` maps for verdict, readiness, stage, channel, unavailable reason (no `default:`);
+  wire enums modelled as string unions (memory: enums are strings out); no hard-coded renameable term; no component
+  fetches `/api/latest/authorization/my-summary` (existing lint/test).
+
+---
+
+## Wave: DESIGN / [REF] Quality attributes
+
+| Attribute | Strategy |
+|---|---|
+| Performance (≤ 2 s at 300 Work Items, K-guardrail) | One GET: Team, refinement Work Items (one query by Team + raw states), log entries for those refs (one indexed query), cached throughput and cycle-time percentiles, one How Many run (trials × ≤ ~30 days, milliseconds). No N+1: resolution runs in memory. DISTILL adds a 300-row timing check. |
+| Reliability / consistency | Settings: tokened write, 409 on conflict. Log: append-only, latest-by-`Id` — two concurrent writes from one voter both land and the later `Id` wins deterministically; no read-modify-write anywhere, so no CAS is needed. |
+| Security | Named reader-write requirement, non-disclosing 404, rate limit, text caps, identity never accepted from the body with auth on, voter keys hashed at rest and never returned, React-escaped comment rendering. |
+| Maintainability / testability | Pure resolution, band, cadence and validator; thin services over existing ports; two controllers. |
+| Compatibility | Additive DTO fields and routes only; old clients unaffected; client minor bumps (09, 17a/17b). |
+| Usability | One verdict component, same size for all three states (C5); terminology via `getTerm`; keyboard-operable presenter mode. |
+| Observability | Structured log on refused votes (reason code, never the key or name). Usage events are DEVOPS's, fed by response facts. |
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| AC-2.1 "the same backlog order the Team's forecasts use" | `WorkItem.Order` via `FeatureComparer.CompareOrderValues`, tiebreak `ReferenceId` | Team forecasts order no Work Items; the comparer is the one order ladder that exists. Manual Feature ranking does not apply. |
+| AC-2.2 "age" on every row | Work Item Age on Doing rows; To Do rows show none | `WorkItemAge` is defined for started work only (`WorkItemBase.cs:100`); inventing a "waiting age" is a new metric (MQ-4). |
+| AC-10.1 "over the Team's metrics window" | over the Team's **Throughput history window** | No server-side metrics window exists; the Metrics tab window is a browser choice. |
+| AC-5.1 "same history window and settings as its forecasts" vs D20 "total Throughput" | Same as forecasts **including** the Team's forecast filter when set (Premium) | "Total" in D20 contrasted with "leaving refinement", not with the forecast filter; the band then equals the manual forecast for that date (MQ-1). |
+| AC-11.2 / DD-10 "name per browser" | Name **plus a random per-browser voter key**; "mine" and take-back bind to the key | A name alone lets anyone take back anyone's vote and merges two people with one name. |
+| AC-14.2 "no admin bypass except presenter mode" | Presenter reveal requires `TeamWrite` (everyone when auth/RBAC off) | A presenter flag anyone may set would make the API guarantee of AC-14 false (MQ-2). |
+| US-09 / US-17b working names (`lighthouse teams refinement 3`, `get_team_refinement`, `vote_on_work_item`, `--yes-but "…"`) | `lh refinement get --team-id 3`, `lighthouse_team_refinement_get`, `lighthouse_team_refinement_vote`, `--answer yes-but --comment "…"` | House naming of the shipped CLI/MCP. |
+| US-15 hypothesis "if TeamRead cannot carry a write, RBAC needs a new requirement" | It can, and a **named** requirement `TeamContribute` is added anyway, mapped to the read predicate | Makes the persisting action visible and allowlisted (ADR-217). No new role. |
+| DISCUSS checklist "EF migrations owed 01, 11, 13, 03, 04, 07, 08" | **Two** migrations: 01 and 11 | JSON-valued settings (ADR-214) and an all-columns log table. |
+| DD-11 "comment-only marks open question" (no end condition) | Open while the asker has no current vote | Needed a rule that clears; voting is the natural answer to one's own question. |
+| DD-5 (rule vs votes, overlapping rules) | A matching rule decides stage **and** readiness; overlapping rules: Ready > Being refined > Waiting | DD-5 left both unstated. |
+
+Story/AC edits are listed in `design/upstream-changes.md` for DISTILL to apply.
+
+---
+
+## Wave: DESIGN / [REF] Open items for DISTILL / DELIVER
+
+1. DISTILL adds the missing error paths flagged at DoR (½-day stories) — the refusal codes above
+   (`vote-needs-a-person`, `voter-name-required`, `voter-key-required`, `work-item-not-in-refinement`) are the error
+   paths for 11/15/17b.
+2. DISTILL: the 300-row timing check and the band/manual-forecast parity check (E9) are acceptance-level, not unit.
+3. DELIVER 17b: confirm the client package's local config store is shared by CLI and MCP-stdio before relying on it
+   for the voter key; if not, each keeps its own (two voters for one person, documented).
+4. DELIVER 17b: confirm mcp-http's auth model; if it can run against an auth-off instance, it refuses votes (MQ-3).
+5. DELIVER 01: `ARCHITECTURE.md` gains the eighth module, the sizing log as a third persistence shape beside
+   snapshots and closure pins ("an append-only log keyed by voter"), and the reader-write rule in §10 — owed in the
+   same change, per the keep-it-current rule.
+6. DEVOPS: usage events against K1–K7 from the facts exposed here (`verdict`, `isRefinementDay`, row readiness in the
+   write response, `channel`).
+
+## Wave: DESIGN / [REF] Maintainer questions (only the maintainer can decide)
+
+- **MQ-1** Does the need number respect the Team's forecast filter (default here, = forecasts) or always use
+  unfiltered Throughput?
+- **MQ-2** Presenter mode reveals splits only to Team admins when RBAC is on (default here), or to any presenter?
+- **MQ-3** Votes through the hosted MCP bridge (mcp-http) on an auth-off instance: refused (default here)?
+- **MQ-4** To Do rows: no age (default here), or a "waiting since" day?
+
+## Wave: DESIGN / [REF] ADRs
+
+[ADR-214](../../product/architecture/adr-214-refinement-settings-are-one-json-valued-property-on-the-team.md) ·
+[ADR-215](../../product/architecture/adr-215-the-need-band-is-the-manual-how-many-for-the-next-refinement-read-at-100-minus-p.md) ·
+[ADR-216](../../product/architecture/adr-216-the-sizing-log-is-append-only-and-keyed-by-a-voter-key.md) ·
+[ADR-217](../../product/architecture/adr-217-a-sizing-vote-is-a-write-gated-by-team-read-through-a-named-requirement.md) ·
+[ADR-218](../../product/architecture/adr-218-stage-readiness-and-the-hidden-split-are-one-pure-resolution-on-read.md).
+C4: `docs/product/architecture/c4-diagrams.md` → "C4 Architecture Diagrams — epic-5510-5881-refinement".
+
+## Wave: DESIGN / [REF] Contract shapes (effect isolation)
+
+Every NEW or EXTENDED component the crafter will touch, classified so the assertion each test must make is known in
+advance.
+
+| Component | Change | Contract shape | Universe and declared change | Assertion mechanism |
+|---|---|---|---|---|
+| `RefinementResolution`, `NeedBand`, `RefinementCadenceCalendar`, `WeeklyRecurrence`, `RefinementSettingsValidator` | NEW / EXTRACT | pure function | none (return only) | E3 (static, no `Services.Implementation` refs) + table/property tests on return values |
+| `IRefinementViewQuery` / `RefinementList` / `RefinementNeedCalculator` / `SleYardstickResolver` / `StageRuleMatcher` | NEW | pure read over ports (no writes) | universe: Team, Work Items, log, metrics cache; Δ = ∅ | E6 (no write member reachable) + test asserts DB row counts unchanged after a GET |
+| `VoterIdentityResolver` | NEW | pure on reads; bounded-change on writes | writes: at most the caller's `UserProfiles` row (existing get-or-create touch) | E6 + test: read path makes no `ICurrentUserProfileService` call |
+| `ISizingLogCommands` / `ISizingLogRepository` | NEW | bounded-change, append-only | universe: `SizingLogEntries` of one Team; Δ = exactly one new row (zero on idempotent take-back); nothing else | E2 (no update/delete members or calls) + test: row count +1, every other table unchanged |
+| `TeamController.UpdateTeam` + `TeamExtensions.SyncRefinement` | EXTEND | bounded-change | universe: the one `Teams` row; Δ = `RefinementSettings` column (plus existing settings); Work Items untouched when only refinement changed | E7 + test: Team's Work Item count unchanged after a refinement-only save |
+| `RbacGuardRequirement.TeamContribute` / `RbacGuardAttribute` / `CanSatisfyRequirementAsync` | EXTEND | pure decision | none | E4 matrix |
+| `LighthouseAppContext` (converter, `DbSet`) | EXTEND | configuration | schema Δ = M1, M2 only | migration review; JSON round-trip test |
+| Frontend `useVoterIdentity` | NEW | bounded-change | universe: one `localStorage` key `lighthouse:refinement:voter` | Vitest: no other key written |
+| Client voter store (CLI/MCP-stdio) | EXTEND | bounded-change | universe: the voter entry for one Lighthouse URL in the client config | client tests: other config entries unchanged |
+
+## Wave: DESIGN / [REF] Peer review
+
+**Reviewer**: `nw-solution-architect-reviewer`, iteration 1, 2026-10-02 · **Verdict**: **approved** · critical 0 ·
+high 0 · medium 2 · low 2. Spot-checks it ran against code: `HowManyForecast` descending comparer,
+`DisabledAuthenticationHandler` shared subject, `RbacGuardAttribute` 404/403 split, percentile mapping.
+
+| Finding | Severity | Resolution |
+|---|---|---|
+| Contract shapes scattered across E1–E9 rather than one table | medium | Added "Contract shapes (effect isolation)" above |
+| `RbacGuardAttribute` change for non-disclosure not explicit | medium | Component row now says: add `TeamContribute` to `RequiresScope()` and `IsReadRequirement()` |
+| `VoterIdentityResolver` dependencies not split by read/write | low | Component row now says `ICurrentUserProfileService` is used by writes only |
+| ADR-214 names a migration build-order trap without stating it | low | ADR-214 Context now states it (HintPath DLL, build the backend first) |
+
+Iteration 2 not needed: no critical or high findings. Priority validation recorded by the reviewer: Q1 *unclear*
+(problem evidence is community desk signals, not Lighthouse-user interviews — DISCOVER G1 partial, carried, not a
+DESIGN defect), Q2 adequate, Q3 correct, Q4 partial (performance guardrail to be measured in DISTILL).
+
+---
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-02 · **Mode**: autonomous subagent, documents only.
+
+**The nine decisions were not asked; this is brownfield and each one is already settled project-wide.** Re-asking
+would invite an answer that contradicts the project. Each is read from its source:
+
+| # | Decision | Answer for this feature | Source |
+|---|---|---|---|
+| 1 | Deployment target | What Lighthouse already ships: standalone packages (Linux / Windows / macOS, Tauri desktop), the Docker image, the Helm chart for hosted. **The hosted platform is torn down (2026-09-26); nothing is deployed there now** | `ci.yml` package/docker/chart jobs; memory *Platform torn down on Infomaniak* |
+| 2 | Container orchestration | Unchanged: single container standalone; Kubernetes via the chart when the platform is respun. No chart change | `ci_chart.yml` |
+| 3 | CI/CD platform | GitHub Actions, the existing workflows; **extend, never add** | `.github/workflows/` (29 files); maintainer rule *consolidate CI* |
+| 4 | Existing infrastructure | Yes — all of it reused; no new component | DESIGN "Technology choices: none new" |
+| 5 | Observability | Structured logging + the in-process warning sink (*Recent problems*) + the opt-in usage-data pipe (browser detects, backend forwards to PostHog EU) | ADR-185, ADR-190/191 |
+| 6 | Deployment strategy | The existing calver release (`/release`; a `waiting` run on main is the deploy approval); Recreate on hosted; startup migrations | memory *How to cut a release*; ADR-077 |
+| 7 | Continuous learning | **The usage-data catalogue**, extended one feature at a time. Progressive exposure is per Team, built in: the tab stays disabled and nothing new is written until a Team admin chooses refinement states. No feature flag, no A/B | `CLAUDE.md` § DEVOPS usage-data rule |
+| 8 | Branching | Trunk-based on `main`, no branches or PRs | `CLAUDE.md`; memory *trunk-based on main* |
+| 9 | Mutation testing | `per-feature`, kill rate ≥ 80% — unchanged, not rewritten | `CLAUDE.md` § Mutation Testing Strategy |
+
+**Prior-wave reading**
+
+✓ This file: DISCUSS (DD-1..DD-22, K1–K7 + guardrails, checklist, ADO mapping), DESIGN (DSN-1..22, data model,
+migration plan M1/M2, RBAC, identity, per-slice notes, quality attributes, open items, MQ-1..4)
+✓ `design/wave-decisions.md`, `design/upstream-changes.md`, `discuss/wave-decisions.md`
+✓ ADR-214..218 (217 §5 for the rate-limit policy, 216 for `Channel`)
+✓ `Models/UsageData/UsageDataEventName.cs` (last member `TeamForecastRealityCheckRun = 11`), `UsageDataEventShapes.cs`,
+`UsageDataRouteKey.cs` (last `PortfolioDetail_Access = 9`), `UsageDataRoutePatterns.cs`, `UsageDataEventReported.cs`,
+`PostHogUsageDataPublisher.cs` (wire property names), frontend `models/UsageData/UsageData.ts`,
+`services/UsageData/usageDataRouteKeys.ts`, `SystemSettingsTab.tsx` (`OptionalFeatureToggled` emission)
+✓ `docs/settings/usagedata.md`; `UsageDataDisclosureTest` (counts the page's rows against the enum)
+✓ `CLAUDE.md`, `docs/ci-learnings.md` (CA1869, S6964, S107, Program.cs force-full, migration DLL build order,
+Stryker config traps, demo-data global effect, Europe/Zurich pin)
+✓ House style: `story-6055-activity-names-the-work` DEVOPS sections + its `environments.yaml`
+✓ `docs/product/kpi-contracts.yaml` (exists; append-only; `measurement_scope` vocabulary)
+✓ `Program.cs` rate limiter (`ConfigureRateLimiting`, `WhatOneAddressMayHandIn`, middleware order), `RateLimitingConfiguration.cs`,
+`appsettings.json` `RateLimits`; `Create-Migration.ps1`; `HistoricalSchemaPatch.cs`; `ExpandOnlyMigrationGuard.cs`;
+`ci.yml` job graph incl. `ci_verifyauth.yml`
+
+**Contradictions with DESIGN: one** — ADR-217's rate-limit partition "by subject" cannot work where the limiter
+sits in the pipeline. See *Rate limiting* below and `devops/upstream-changes.md`.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `docs/feature/epic-5510-5881-refinement/environments.yaml` (environments, `scenario_axes` per slice,
+coexistence matrix, deployment assumptions).
+
+| Environment | Why it exists here |
+|---|---|
+| `clean` | Baseline: SQLite, auth off, demo data (Gravity configured, one Team unconfigured) |
+| `sqlite` / `postgres` | M1 and M2 apply at startup on both providers; JSON settings round-trip; DB-level cascade / SET NULL |
+| `auth-off` | Every Community instance: self-declared name + client-minted voter key; `voter-name-required`, `voter-key-required` |
+| `auth-on-rbac-off` | Every signed-in user votes; unlinked API key → 403 `vote-needs-a-person` |
+| `auth-on-rbac-on` | The RBAC matrix: Viewer votes via `TeamContribute`; no role → 404 on read and write |
+| `renamed-terminology` | New term "Refinement"; catches a hard-coded label |
+| `refinement-day-boundary` | Instance-zone clock on/just before a cadence date: next date, verdict event, `sizingMoment` |
+| `usage-data-consented` | The only environment in which the new events leave the browser; also asserts none without consent |
+| `client-cli-mcp` | CLI / MCP-stdio voter store and channel; mcp-http refuses auth-off votes |
+| `screenshot-capture` | Finalize screenshots; premium licence fixture, delete-before-regenerate |
+
+Deliberately excluded: operating system (nothing platform-sensitive), licence tier (all Community; Premium enters only
+via auth and Terminology, which are axes), hosted tenant (platform torn down; Postgres covers the provider).
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**No workflow change. No new job, runner, secret or workflow.** The feature passes through what exists:
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` (`path-classifier.sh`) | Flags backend and frontend. **Slice 11 edits `Program.cs`** (rate-limit policy, DI) → `connector_shared=true` → the full live-connector `Integration` category runs (~258 extra tests, shared Linear key, unauthenticated GitHub pair can flake). A red backend skips `sonar-gates`. Expect it; do not debug it as a regression |
+| Backend | `ci_backend.yml` | `dotnet build` zero warnings; NUnit unit + WebApplicationFactory acceptance tests (RBAC matrix E4, append-only E2, settings write E7, band parity E9, migration fixtures incl. `HistoricalSchemaPatch`); ArchUnitNET rules E1–E9; `ExpandOnlyMigrationGuard` over M1/M2 |
+| Frontend | `ci_frontend.yml` | Vitest (RefinementView, VoteControl, useVoterIdentity, usage-data emission per event, route key); `pnpm build` (`tsc -b`, Biome `--write` in prebuild) |
+| E2E (compile) | `ci_e2e.yml` | Compiles the suite only |
+| Verify SQLite / Postgres | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | **Where E2E runs, twice.** Two walking skeletons only (thin-sanity rule): **E1** Gravity's Refinement tab lists its Work Items in backlog order, the unconfigured Team's tab is disabled with the role tooltip; **E3** enter a self-declared name, cast a vote, see the tally, and Ready once the seeded voters plus this one meet MinYes. Verdict, cadence, stages, rules, hidden split, presenter: below E2E (Vitest + backend acceptance) |
+| Verify auth | `ci_verifyauth.yml` | **No new `@auth` spec.** Auth-on identity (slice 15) is pinned by backend acceptance tests over the RBAC matrix; a browser leg would add a Keycloak run for a resolver already proven below it |
+| Quality gate | `ci_sonar_gates.yml` | No new issue of any severity. Pre-apply: S6964 (nullable value types on `RefinementSettingsDto`/vote body), S107 (controllers split per DSN-19; `TeamController` ctor unchanged), CA1869 (JSON options for the settings converter cached `static readonly`), CA1859, CA1861/NUnit2045 in new tests, S1192 in DISTILL scaffolds |
+| Package / Docker / Chart | existing jobs | Unchanged. No chart value added |
+| Release | `ci_release.yml` via `/release` | Calver; `waiting` on main = deploy approval |
+
+**Local gates** (CI parity, `CLAUDE.md` § Quality Gates): `pnpm test`, `pnpm build`, backend build + filtered
+`dotnet test` (connector categories excluded). In a worktree, copy the premium licence fixture first (2 Licensing
+failures otherwise). Generate migrations with `Create-Migration.ps1`, then rebuild each migrations csproj
+`--no-incremental` and the solution `--no-incremental` before verifying (`PendingModelChangesWarning` trap).
+
+**Lighthouse-Clients** (separate repo, own CI): slice 09 → **minor**; 17a + 17b → **minor** (may share one release).
+Changeset per slice; **`pnpm release:version` + commit + push before the release workflow** (manual bump, memory
+*Clients release manual version bump*). New endpoints and fields are additive; existing client response shapes do not
+change, so older clients keep working against a newer server, and a newer client against an older server gets 404
+on the refinement routes (the client says the instance is too old rather than crashing — DELIVER 09 asserts it).
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+**Rule applied** (`CLAUDE.md`): name-only first; a property only when a KPI cannot be counted without it, and only a
+closed enum. **What the pipe can and cannot see decides the honest answer per KPI**: every event reaches PostHog
+under a **per-browser** pseudonym (ADR-191) with **no instance id and no Team id** — permanently, by design
+(`docs/settings/usagedata.md` § *Counting browsers, not installations*). So any KPI phrased per *Team* or per
+*instance* is measured per *browser* or not at all. And **CLI / MCP votes are invisible**: the pipe starts in a
+consenting browser; a client has no consent row, so nothing a client does is ever reported.
+
+### New vocabulary (appended, never renumbered)
+
+**Integers are assigned in delivery order (DD-22), so each slice appends the next number when it lands.** The integers
+below assume no other feature appends first; if one does, DELIVER takes the next free integer — the *name* is the
+contract, the number is not.
+
+| Event (`UsageDataEventName`) | Int | Carries | Emitting slice (DELIVER step) | Fires (browser, after the server accepted) |
+|---|---|---|---|---|
+| `TeamTabOpened` + route key **`TeamDetail_Refinement = 10`** (`/teams/:id/refinement`) | 0 (existing) | route (existing) | **02** (DESIGN; the first slice whose tab shows anything) | Existing 5-second dwell rule; `usageDataRouteKeys.ts` gains `["refinement", …]`, `UsageDataRoutePatterns` gains the address |
+| **`TeamRefinementConfigured`** | **12** | nothing | **01** | The Team settings save the server accepted turned `refinementConfigured` from false to true. Not on every autosave |
+| **`TeamSizingVoteCast`** | **13** | `sizingMoment` | **11** | The vote POST returned 2xx and the entry was a **vote** (not a comment, not a take-back). Re-votes count |
+| **`TeamSizingReadinessReached`** | **14** | `sizingMoment` | **13** | The vote response's row turned Ready **by votes** where the tab's last read had it not Ready (the tipping vote, in the tipping browser only) |
+| **`TeamRefinementDayVerdictShown`** | **15** | `refinementVerdict` | **05** | The tab's GET answered with `isRefinementDay = true`; at most once per tab mount. **Never on other days** — K3 and K6 ask only about Refinement days, so the day itself needs no property |
+| **`TeamRefinementPresented`** | **16** | nothing | **18** | Presenter mode entered (dwell 5 s, same rule as tab openings) |
+
+**Two new closed enums** (each a new nullable part on `UsageDataEventReported`, declared in `UsageDataEventShapes`
+with *IsCarriedExactlyWhenDeclared*, a new `snake_case` property in `PostHogUsageDataPublisher.WhatEachMessageCarries`,
+a string-union mirror in `UsageData.ts`, and a row in the disclosure page's field table):
+
+| Enum | Values (ordinal = slice that first can produce it) | Wire property | Carried by |
+|---|---|---|---|
+| `UsageDataSizingMoment` | `NoCadence = 0` (11) · `OnRefinementDay = 1`, `OnOtherDay = 2` (04) · `InLiveSession = 3` (18) | `sizing_moment` | `TeamSizingVoteCast`, `TeamSizingReadinessReached` |
+| `UsageDataRefinementVerdict` | `Below = 0`, `In = 1`, `Above = 2`, `None = 3` (05; `None` = no verdict: insufficient data) | `refinement_verdict` | `TeamRefinementDayVerdictShown` |
+
+`sizingMoment` is derived in the browser from facts already on the wire: `channel == LiveSession` → `InLiveSession`;
+else the tab's last `isRefinementDay` (`true` → `OnRefinementDay`, `false` → `OnOtherDay`); no cadence → `NoCadence`.
+**One property instead of two** (`{refinementDay, otherDay}` × `{liveSession, async}` as DISCUSS sketched): a live
+session is by definition not async, so the four values cover every cell K4/K5/K7 read, with one closed enum.
+`Cli` / `Assistant` never appear — they never reach a browser.
+
+### KPI → instrument
+
+| KPI | Instrument | Computed in PostHog | As specified? |
+|---|---|---|---|
+| **K1** setup (≥15% within 60 d of E1) | `TeamRefinementConfigured` | distinct browsers sending it ÷ distinct browsers sending `TeamTabOpened` route `TeamDetail_Settings`, 60 days from the E1 release | **Not as specified** — "instances with ≥1 Team" has no identity in the pipe. **Proxy**: browsers that could configure (opened a Team's Settings) vs browsers that did. Target kept as a hypothesis; re-read against the first month |
+| **K2** WAU (≥50% of Teams in ≥3 of 4 weeks) | `TeamTabOpened` / `TeamDetail_Refinement` | stickiness: browsers with the opening in ≥3 of 4 consecutive ISO weeks ÷ browsers with ≥1 opening | **Not per Team**. **Proxy**: per browser. The tab is disabled until configured, so every opening is of a configured Team |
+| **K3** north star (in range on a Refinement day, → ≥60%) | `TeamRefinementDayVerdictShown.refinement_verdict` | per (browser, day): last verdict; share `In` ÷ (`Below`+`In`+`Above`); `None` reported apart. Baseline = first month after E2 | **Per browser-day, not per Team.** A browser that looks at two Teams on one day mixes them; accepted noise |
+| **K4** riskiest (≥40% of votes async and off-day) | `TeamSizingVoteCast.sizing_moment` | `OnOtherDay` ÷ (`OnRefinementDay` + `OnOtherDay` + `InLiveSession`); `NoCadence` excluded and shown apart | **Yes, for browser-cast votes.** Unreadable before slice 04 (every vote is `NoCadence` while 11/13 precede 04 per DD-22) — the volume clock still starts at 11. CLI/MCP votes uncounted |
+| **K5** (≥50% Ready before the day) | `TeamSizingReadinessReached.sizing_moment` | `OnOtherDay` ÷ (all minus `NoCadence`) | **Yes, for readiness tipped by a browser vote.** Readiness tipped by a client vote, or reached through a state/rule change, is not this KPI and not counted. Readable from slice 04 |
+| **K6** (≥50% stop after *above*) | derived from K3's series | per browser: each Refinement day whose last verdict was `Above`; success if the browser's next Refinement-day verdict is not `Above` | **Not as specified** — "same Team at its next Refinement" needs Team identity. **Proxy**: same browser, next Refinement day it reported. Noisy for browsers that look at several Teams; read as directional |
+| **K7** gateway (≥30% of presenting Teams get async votes in 4 weeks) | `TeamRefinementPresented` + `TeamSizingVoteCast.sizing_moment` | browsers that presented ÷ of those, browsers that cast an `OnOtherDay`/`OnRefinementDay` vote within 28 days | **Not as specified** — colleagues vote from *their* browsers, which nothing links to the facilitator's. **Proxy**: does the facilitator's own browser go on to vote async. Lower bound only |
+| Guardrail: *below range* share not above first month | K3 series, `Below` share | same as K3 | Yes (per browser-day) |
+| Guardrail: ≤2 s at 300 Work Items | DISTILL 300-row timing check | CI | Not telemetry |
+| Guardrail: existing forecasts unchanged | band/manual-forecast parity test (E9) + no shared setting touched (E7) | CI | Not telemetry |
+
+**Smuggling refused, explicitly**: no Team id, Work Item id, vote count, voter count, band number, percentile, cadence or
+channel string travels. Counts are derived in PostHog from event *occurrences*, never sent.
+
+**Per-slice disclosure duty** (`docs/settings/usagedata.md`, same DELIVER step that emits): 01 adds the
+*refinement set up* row (and the "eight of twelve carry nothing" sentence becomes nine of thirteen); 02 adds the
+sixth Team tab and the eleventh address; 11 adds the vote row and the `sizing_moment` field row (value `NoCadence`
+only); 04 widens `sizing_moment`'s value list; 13 adds the readiness row; 05 adds the verdict row and the
+`refinement_verdict` field row; 18 adds the presenter row and `InLiveSession`. `UsageDataDisclosureTest` fails the
+build if a row is missing. `kpi-contracts.yaml` updated (seven `OUT-5510-*` entries + guardrail).
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy and Rollback
+
+**Rollback first.** Every slice is additive; the rollback contract is the same for all of them:
+
+| What | Rollback | Why it is safe |
+|---|---|---|
+| Code | `git revert` of the slice's commits, then the ordinary release path; or install the previous release | One artifact carries backend + frontend; no mixed-version window inside an instance |
+| **M1** `AddRefinementSettingsToTeams` (slice 01) — one nullable `TEXT` column on `Teams` | **None.** Leave it. An older binary does not map the column; EF updates only changed columns, so its Team saves never touch it | Expand-only; values reappear intact on re-upgrade |
+| **M2** `AddSizingLogEntries` (slice 11) — new table, every column, FK `TeamId` → `Teams` **ON DELETE CASCADE**, `VoterProfileId` → `UserProfiles` **ON DELETE SET NULL**, index `(TeamId, WorkItemReferenceId, Id)` | **None.** Leave it | The FK actions are **database-level** constraints (EF emits them into the migration), so an older binary deleting a Team or a profile neither fails on the FK nor orphans rows. DELIVER 11 asserts the constraint exists on both providers, not only the EF model's `OnDelete` |
+| JSON settings shape | Members only ever **added** with defaults (DESIGN); a missing member reads as its initialiser, an unknown member is ignored by an older reader | No rename/remove without its own ADR |
+| `Down()` | Never run in production | `ExpandOnlyMigrationGuard` checks `Up` for Drop/Rename |
+
+**Rollback rehearsal (owed, DELIVER 01 and 11)**: start the previous published release's Docker image against a
+database migrated by the slice (SQLite file + Postgres), open a Team, save its settings, delete a Team carrying log
+rows. Expected: starts, healthy (`MigrationsAppliedHealthCheck` checks *pending*, and the older binary has none), no
+error. One manual check per migration, recorded in the slice's deliver notes. It is the only part of this plan that is
+otherwise an assumption.
+
+**Migration generation (DELIVER 01, 11)**: `Lighthouse.Backend/Create-Migration.ps1 -MigrationName …` (SQLite +
+Postgres); then the ordered `--no-incremental` rebuild (migration DLLs are HintPath refs). **`HistoricalSchemaPatch`**:
+slice 01 adds `new("Teams", "RefinementSettings", "TEXT", "AddRefinementSettingsToTeams")` — every migration fixture
+that seeds Teams through the current model otherwise dies with *no column named RefinementSettings*. M2 needs no entry
+(no fixture seeds the new table). Postgres concurrent startup is already covered by `ConcurrentStartupMigrationTests`.
+
+**Rollout**: the existing release path. Exposure is progressive by construction — per Team, the tab is disabled and
+nothing is written until a Team admin chooses refinement states, and votes need a listed Work Item. **Hosted**: none
+now (platform torn down); when respun, Recreate picks up the image, no chart change.
+
+---
+
+## Wave: DEVOPS / [REF] Rate Limiting (vote, comment, take-back)
+
+**Extend the existing limiter; no new infrastructure.** One named policy beside the six that exist:
+
+- `RateLimitingConfiguration.RefinementContributionPolicy = "RefinementContribution"`, on `POST …/votes`,
+  `POST …/comments`, `DELETE …/votes/mine` via `[EnableRateLimiting]`.
+- `appsettings.json` → `RateLimits:Policies:RefinementContribution: { PermitLimit: 30, WindowSeconds: 60, QueueLimit: 0 }`.
+  30/min per voter is ~10× the DISCUSS pace hypothesis (5 votes in < 2 min) and still bounds a script.
+  **An unconfigured policy silently applies no limit** (`AddFixedWindowPolicy` → `GetNoLimiter("unconfigured")`), so
+  DELIVER 11 adds a test that the shipped `appsettings.json` configures it, beside the 429 test in `S6_RateLimitingTests`.
+- **Partition key — corrected from ADR-217**: `app.UseRateLimiter()` runs **before** `UseAuthentication()`
+  (`Program.cs:225-228`), so `HttpContext.User` carries no subject when the partition is chosen; "by subject" would
+  fall through to the address for every caller. Use the existing presented-handle pattern of `UsageDataIngest`
+  instead: SHA-256 of the first present of `X-Lighthouse-Voter-Key` (auth off), the `X-Api-Key` header, the
+  `Authorization` header, the authentication cookie value; else the remote address. A handle is presented, not
+  proved — so **extend `WhatOneAddressMayHandIn`** to apply the address ceiling (`PermitLimit × BrowsersOneAddressMaySpeakFor`
+  = 600/min) to this policy as well, which bounds a caller minting a new voter key per request. Moving
+  `UseRateLimiter` after authentication would also work but changes every existing policy; not proposed.
+- `RateLimits:Enabled = false` switches it off with everything else — unchanged semantics.
+
+Accepted residual: on an auth-off instance a caller minting voter keys can add up to the address ceiling of
+distinct "voters" per minute. Auth off already grants every reader everything (D11); entries are visible and attributed
+to their declared name.
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+**Unchanged stack; four log lines added, no metric, no dashboard.**
+
+| Event | Level | Structured fields | Never logged |
+|---|---|---|---|
+| Vote/comment/take-back refused `vote-needs-a-person` (unlinked API key, RBAC off) | **Warning** — operator-actionable (link the key's owner); surfaces in *Recent problems*; bounded by the rate limit | `Reason`, `TeamId`, `Channel` | key id, key name |
+| Refused `voter-name-required` / `voter-key-required` | Information (a client bug or a cleared browser; not operator-actionable) | `Reason`, `TeamId`, `Channel` | — |
+| Refused `work-item-not-in-refinement` (409) | Information (the Work Item left refinement between read and vote; normal) | `Reason`, `TeamId`, `Channel` | Work Item reference |
+| Entry appended | Debug | `TeamId`, `Kind`, `Channel` | — |
+
+**Never in any log line**: the self-declared name, the voter key or its hash, the account subject/email, the comment
+text, the answer. Message templates with named placeholders (no interpolation); a catch that logs passes the exception
+first (S6667). Rate-limit rejections stay unlogged, as for every existing policy (429 + `Retry-After`).
+No log on the GET path (it runs on every tab view). The tab itself is the observability surface for the derived
+read; DISTILL's 300-row timing check guards its latency.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**`per-feature`, ≥ 80%** — the project setting, not re-decided. Run **once per Epic at finalize, last, on frozen
+code** (E1, E3, E2, E4 in delivery order), recorded under `docs/feature/epic-5510-5881-refinement/mutation/`.
+
+- **Backend (Stryker.NET)**, whole files only (.NET Stryker ignores line spans): `Models/Refinement/*`,
+  `Services/Implementation/Refinement/*` (`RefinementResolution`, `NeedBand`, `RefinementCadenceCalendar`,
+  `VoterIdentityResolver`, `SizingLogCommands`, …), `WeeklyRecurrence`, `RefinementSettingsValidator`,
+  `TeamExtensions` refinement sync if split into its own file. **Not** `RbacAdministrationService` / `RbacGuardAttribute`
+  / `Program.cs` whole-file (shared, large; the `TeamContribute` arm is pinned by the E4 RBAC matrix instead — stated
+  in `results.md`, not hidden in the number).
+- **Exclude the acceptance suite** (WebApplicationFactory hosts: 80 min vs 3) — unit tests only.
+- **Frontend (StrykerJS)**: `pages/Teams/Detail/Refinement/*`, `useVoterIdentity`, `useRbac` (`canContributeToTeam`),
+  the usage-data detection additions (moment/verdict mapping, tipping detection). Copy literals: pin against the literal
+  (StrykerJS does not mutate JSX text).
+- Config files: `stryker-<id>.*.json` matches the report ignore pattern — **force-add** and say so in the commit; copy
+  the vitest runner config to `Lighthouse.Frontend/` to run.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based on `main`**, unchanged: every commit runs the full workflow set. Slice boundary ritual: a focused commit
+per step, push at slice end only when green, wait for CI, then ADO Active → Resolved. Never push red (skip a
+not-yet-passing acceptance test). This worktree branch (`worktree-declarative-crafting-beacon`) lands by push to `main`
+when the maintainer says so; no autonomous rebase.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Full table in `environments.yaml`. What must keep working while this ships:
+
+| Must not break | Why it is at risk |
+|---|---|
+| Team settings autosave, 409 on conflict | Refinement settings ride the same write; null = unchanged |
+| `WorkItemRelatedSettingsChanged` | A refinement-only save must not delete and re-fetch the Team's Work Items (E7) |
+| Manual forecast How Many | Called unchanged by the need band; parity test |
+| Recurring blackout rules | `WeeklyRecurrence` extracted from them (slice 04, refactor commit first) |
+| Existing usage-data events, route keys, the disclosure test | Appended to, never renumbered |
+| Existing rate-limit policies + the UsageDataIngest address ceiling | The ceiling's applicability widens to one more policy |
+| Migration fixtures | `HistoricalSchemaPatch` entry for `Teams.RefinementSettings` |
+| Demo data consumers (every E2E) | Gravity gains states, cadence, three named voters — grep E2E for Gravity first |
+| Team tab order and the Settings tab | Refinement inserted between Metrics and Settings |
+| Lighthouse-Clients commands / MCP tools | Additive only |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites from DESIGN
+
+| DESIGN constraint | Platform answer |
+|---|---|
+| DSN-2 / ADR-214 one JSON column, M1 | Expand-only; `HistoricalSchemaPatch` entry; rollback = leave the column |
+| DSN-11 / ADR-216 append-only table, M2 | Expand-only; DB-level cascade / SET NULL asserted; rollback = leave the table |
+| DSN-13 / ADR-217 `TeamContribute` + rate limit | Policy `RefinementContribution` 30/60 s; partition by presented handle (correction) + address ceiling |
+| DSN-17 channel enum | Mapped to `sizingMoment` in the browser; `Cli`/`Assistant` unreachable by usage data |
+| DSN-18 no domain event | Usage events are browser-detected from response facts — consistent |
+| Quality attributes: "structured log on refused votes (reason code, never key or name)" | Four lines, levels above |
+| MQ-1..MQ-4 | No platform consequence either way |
+
+---
+
+## Wave: DEVOPS / [REF] Handoff
+
+**To** `nw-acceptance-designer` (DISTILL): `environments.yaml` (`scenario_axes` per slice); the event table above
+(each emitting slice gets two Vitest scenarios — consented: exact name + exact property; not consented: nothing — plus
+a backend `Fits` shape test per new part); the refusal log assertions (level + no name/key in the rendered message);
+the rate-limit configured-and-429 test; the M2 FK-constraint assertion; `HistoricalSchemaPatch` entry in slice 01.
+Tags: `@kpi-OUT-5510-*` per `kpi-contracts.yaml`.
+
+**Per-wave peer review: not run** (documents-only subagent; coordinator's call). No novel deployment target, no new
+CI framework, no observability rewrite.
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Was | Now | Why |
+|---|---|---|
+| ADR-217 / DSN-13 "partitioned by subject, else voter-key hash, else IP" | By presented handle (voter key, API key, bearer, cookie), else IP; plus the address ceiling | The limiter runs before authentication (`Program.cs:225-228`) — no subject exists yet. `devops/upstream-changes.md` |
+| DISCUSS K4 "vote cast with `{refinementDay, otherDay}` and, from E4, `{liveSession, async}`" | One closed enum `sizingMoment` {NoCadence, OnRefinementDay, OnOtherDay, InLiveSession} | Live is never async; one property covers every cell |
+| DISCUSS K3 "verdict property `{below, in, above, none}` on a 'need shown' event" | `TeamRefinementDayVerdictShown` fires on Refinement days only | K3 and K6 read Refinement days only; fewer events, no day property |
+| K1, K2, K3, K6, K7 phrased per Team / instance | Per browser (proxies above) | The pipe has no Team or instance identity, by design |
+| K4/K5 count all votes | Browser-cast votes only | Clients have no consent; nothing they do is reported |
+
