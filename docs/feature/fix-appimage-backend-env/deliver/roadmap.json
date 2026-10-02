@@ -1,0 +1,136 @@
+{
+  "roadmap": {
+    "project_id": "fix-appimage-backend-env",
+    "created_at": "2026-10-02",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "The Linux standalone AppImage starts its .NET backend on hosts whose OpenSSL is newer than the bundled libcrypto. The Tauri shell hands the backend sidecar an environment with every AppImage-injected library and module path removed, so the backend resolves system libraries only. CI runs the new Rust tests and fails when the AppImage bundles libssl. Acceptance: the new unit tests are RED without the function and GREEN with it; the shell builds with zero warnings; the swapped-in fixed binary, launched through the broken image's AppRun on a CachyOS host with OpenSSL 3.6.5, reaches the backend's 'Now listening on' line."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the precedent of bug-6054: a small fix whose two sites are fully prescribed)",
+    "reviewed_at": "2026-10-02",
+    "notes": "No architect dispatch. The approved RCA (nw-troubleshooter, 2026-10-02) is the design. Its two load-bearing claims were verified by the orchestrator against captured evidence: the backend's captured environment carries LD_LIBRARY_PATH=$APPDIR/usr/lib/:…, and the same extracted backend logs 'Now listening on' once that path is removed. tauri-plugin-shell 2.4.0's Command has env_clear/envs but no env_remove, hence clear-then-set."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/fix-appimage-backend-env/feature-delta.md",
+    "rca_source": "Inline in /nw-bugfix Phase 1 (nw-troubleshooter, 2026-10-02), verified by orchestrator"
+  },
+  "user_decisions": [
+    "D1: the backend gets a clean environment (APPDIR entries removed from every variable, AppImage identity variables dropped). No Tauri CLI pin.",
+    "D2: CI runs the Rust unit tests, and fails when the AppImage bundles libssl.so*. A bundled libcrypto alone is accepted.",
+    "D3: no error dialog when the backend dies; no Tauri CLI pin."
+  ],
+  "out_of_scope": [
+    "An error dialog or timeout when the backend dies before reporting its URL (lib.rs Terminated arm).",
+    "Pinning or reverting @tauri-apps/cli / tauri.",
+    "Stripping libcrypto from the AppImage, or repacking and re-signing it."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The backend never sees the AppImage's library paths",
+      "description": "A pure function computes the backend's environment from the parent's, and the sidecar spawn uses it. Then CI keeps it from regressing.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Spawn the backend with the AppImage paths stripped from its environment",
+          "description": "New module src-tauri/src/backend_env.rs with `pub fn backend_environment(parent: impl IntoIterator<Item = (OsString, OsString)>) -> Vec<(OsString, OsString)>`, unit-tested in the same file, and wired into the sidecar spawn in lib.rs.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src-tauri/src/backend_env.rs (#[cfg(test)] mod tests)",
+          "scenario_name": "Inside an AppImage the backend inherits no APPDIR path; outside one its environment is passed through untouched",
+          "red_to_green_tests": [
+            "backend_env::tests::strips_appimage_entries_from_ld_library_path",
+            "backend_env::tests::restores_path_and_xdg_data_dirs_to_host_values",
+            "backend_env::tests::removes_appimage_identity_and_module_vars",
+            "backend_env::tests::keeps_unrelated_user_configuration",
+            "backend_env::tests::passes_environment_through_unchanged_outside_appimage"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src-tauri/src/backend_env.rs (new)",
+            "Lighthouse.Frontend/src-tauri/src/lib.rs (edit: `mod backend_env;` and the sidecar spawn chain)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "When APPDIR is absent or empty, the output equals the input, order preserved.",
+            "When APPDIR is set: APPDIR, APPIMAGE, ARGV0, OWD and APPIMAGE_UUID are dropped. Every other variable is split on ':' and keeps only entries that are non-empty and neither equal APPDIR nor start with APPDIR + '/'; the kept entries are rejoined with ':' in their original order. A variable left with no entries is omitted.",
+            "LD_LIBRARY_PATH='$APPDIR/usr/lib/:$APPDIR/lib64/:' (the trailing colon is what AppRun actually produces) is omitted entirely. '/opt/x:$APPDIR/usr/lib/:' becomes '/opt/x'.",
+            "PATH='$APPDIR/usr/bin/:/usr/local/bin:/usr/bin' becomes '/usr/local/bin:/usr/bin'. XDG_DATA_DIRS keeps the host entries in order.",
+            "GIO_MODULE_DIR='$APPDIR//usr/lib/gio/modules' (double slash, as the GTK hook writes it), GTK_PATH, GDK_PIXBUF_MODULE_FILE and GTK_DATA_PREFIX='$APPDIR' are all absent from the output.",
+            "HOME, DOTNET_ROOT, Lighthouse__Foo, SSL_CERT_FILE, GTK_THEME, and a ':'-separated value with no APPDIR entry all pass through byte-for-byte.",
+            "Byte-level handling via std::os::unix::ffi::OsStrExt/OsStringExt, so a non-UTF-8 value never panics. On non-Linux targets the function returns its input unchanged (cfg), and the crate still compiles on Windows and macOS.",
+            "lib.rs spawns with `.env_clear().envs(backend_env::backend_environment(std::env::vars_os()))` BEFORE the existing `.env(\"Standalone\", \"true\")` and `.env(\"LIGHTHOUSE_RESOURCES_DIR\", …)` calls, so those two still apply.",
+            "RED is captured first: the tests run against a stub that returns the input unchanged, and the APPDIR cases fail on assertions, not on compile errors.",
+            "`cargo test --lib` and `cargo clippy --all-targets -- -D warnings` (if clippy is installed) pass, and `cargo build` has zero warnings."
+          ],
+          "implementation_notes": "tauri-build needs `../dist` and `binaries/Lighthouse.Backend-x86_64-unknown-linux-gnu` to exist before the crate compiles. If they are missing, create placeholders locally (an empty dist/index.html, and an empty executable file for the sidecar). Do NOT commit them: confirm both paths are gitignored, and if they are not, leave them out of des-commit's owned paths. Match lib.rs style. Comments only where the why cannot be read from the code. One comment is warranted on the function: the AppImage launcher prepends its own library path, and a bundled libcrypto paired with the host's newer libssl makes .NET abort. Never cite an internal reference such as D1 or the RCA. Commit message: `fix(standalone): start the backend without the AppImage's library paths`, with a body that explains the libcrypto/libssl mismatch and the Tauri CLI 2.12.1 trigger."
+        },
+        {
+          "id": "01-02",
+          "name": "CI runs the shell's unit tests and refuses an AppImage that bundles libssl",
+          "description": "Two steps in .github/workflows/ci_package-linux-standalone.yml, after 'Build Tauri AppImage' (the tauri-build prerequisites exist only after that step).",
+          "agent": "nw-software-crafter",
+          "test_file": ".github/workflows/ci_package-linux-standalone.yml",
+          "scenario_name": "A Linux standalone build fails when the shell's tests fail or when the AppImage bundles libssl",
+          "files_to_modify": [
+            ".github/workflows/ci_package-linux-standalone.yml (edit)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "A step runs `cargo test --manifest-path Lighthouse.Frontend/src-tauri/Cargo.toml --lib` after the AppImage build step, using the toolchain the job already installs.",
+            "A step extracts the built AppImage (`--appimage-extract`, in a temp dir) and fails with a clear ::error:: message if squashfs-root contains any `libssl.so*`. It prints any bundled libcrypto.so* as an informational line and does not fail on it.",
+            "The check is validated locally: run its shell body against the extracted v26.10.2.25 image at /tmp/claude-1000/-storage-repos-Lighthouse/6504de07-b177-451c-87e2-fbc07906f111/scratchpad/new/squashfs-root (expect PASS: libcrypto present, no libssl), and against a scratch copy with a dummy libssl.so.3 added (expect FAIL).",
+            "No new workflow file; the existing job is extended. YAML stays valid (run actionlint if available, otherwise parse it with python yaml).",
+            "Consult docs/ci-learnings.md and apply any rule that concerns workflows."
+          ],
+          "implementation_notes": "Read the job first so the AppImage path and working directory match the existing 'Find and rename AppImage' step. RED for this step is the local run of the check against the dummy-libssl copy, which must fail. Commit message: `ci(standalone): run the shell's unit tests and reject an AppImage that bundles libssl`."
+        },
+        {
+          "id": "01-03",
+          "name": "Leave variables with no AppImage entry byte-for-byte untouched",
+          "description": "Review revision. Inside an AppImage the rule drops empty ':'-entries from EVERY variable, so a value containing '::' or a leading/trailing ':' is corrupted even when nothing in it is under APPDIR: ASPNETCORE_URLS=http://[::1]:5000 becomes http://[:1]:5000. A variable is rewritten only when at least one of its entries is under APPDIR; otherwise it passes through unchanged, empty value included.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src-tauri/src/backend_env.rs (#[cfg(test)] mod tests)",
+          "scenario_name": "Inside an AppImage a variable with no APPDIR entry reaches the backend exactly as it was",
+          "red_to_green_tests": [
+            "backend_env::tests::keeps_unrelated_user_configuration (extended with ASPNETCORE_URLS=http://[::1]:5000, a value with leading and trailing ':', and an empty value)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src-tauri/src/backend_env.rs (edit)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "ASPNETCORE_URLS='http://[::1]:5000', FOO=':a::b:' and EMPTY='' all pass through byte-for-byte inside an AppImage.",
+            "A variable with at least one APPDIR entry is still rewritten as before: APPDIR entries and empty entries dropped, omitted when nothing is left.",
+            "All existing tests stay green; cargo build has zero warnings; clippy is clean."
+          ],
+          "implementation_notes": "Commit message: `fix(standalone): pass through variables that hold no AppImage path unchanged`."
+        },
+        {
+          "id": "01-04",
+          "name": "Pin that a sibling path sharing APPDIR's prefix is kept",
+          "description": "Mutation survivor: replacing && with || in is_under goes unnoticed, because no test has an entry that shares APPDIR's prefix without being under it. Test only.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src-tauri/src/backend_env.rs (#[cfg(test)] mod tests)",
+          "scenario_name": "Inside an AppImage an entry that merely shares the mount's name prefix is kept",
+          "red_to_green_tests": [
+            "backend_env::tests::keeps_entries_that_only_share_the_mount_prefix"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src-tauri/src/backend_env.rs (edit, tests only)"
+          ],
+          "dependencies": ["01-03"],
+          "criteria": [
+            "With APPDIR=/tmp/.mount_LighthAbc123, LD_LIBRARY_PATH='/tmp/.mount_LighthAbc123XY/lib:$APPDIR/usr/lib/' becomes '/tmp/.mount_LighthAbc123XY/lib'.",
+            "The test fails against the && -> || mutant (show it by applying the mutant temporarily, then revert) and passes on the real code.",
+            "cargo-mutants on backend_env.rs then leaves no missed mutant except the two on the non-Linux passthrough, which is compiled out on Linux."
+          ],
+          "implementation_notes": "Commit message: `test(standalone): pin that a path sharing the AppImage mount's prefix is kept`."
+        }
+      ]
+    }
+  ]
+}
