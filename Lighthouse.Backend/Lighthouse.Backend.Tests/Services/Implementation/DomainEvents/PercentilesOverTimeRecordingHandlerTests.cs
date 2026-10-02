@@ -328,7 +328,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         // refresh path and emits a structured recording-failed Error log.
         // -----------------------------------------------------------------
         [Test]
-        public void TeamDataRefreshed_MetricsReadThrows_DoesNotRethrow_AndLogsStructuredError()
+        public async Task TeamDataRefreshed_MetricsReadThrows_DoesNotRethrow_AndLogsStructuredError()
         {
             var team = CreateTeam(1);
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
@@ -339,7 +339,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
                 "a recording failure must not break the refresh path — the dispatcher swallows nothing for us");
 
@@ -349,7 +349,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
-        public void PortfolioFeaturesRefreshed_RepositoryThrows_DoesNotRethrow_AndLogsStructuredError()
+        public async Task PortfolioFeaturesRefreshed_RepositoryThrows_DoesNotRethrow_AndLogsStructuredError()
         {
             var portfolio = CreatePortfolio(7);
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
@@ -365,7 +365,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context, throwingRepo.Object);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None));
 
             VerifyRecordingFailureLoggedWithPercentilesFamily(
@@ -431,7 +431,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
-        public void TeamDataRefreshed_SaveThrows_DoesNotRethrow_AndLogsStructuredError()
+        public async Task TeamDataRefreshed_SaveThrows_DoesNotRethrow_AndLogsStructuredError()
         {
             var team = CreateTeam(1);
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
@@ -445,7 +445,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context, refusingRepo.Object);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None));
 
             VerifyRecordingFailureLoggedWithPercentilesFamily(
@@ -717,7 +717,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
                 "a failing age read must not break the refresh path");
 

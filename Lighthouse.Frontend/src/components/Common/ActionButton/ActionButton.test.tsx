@@ -80,13 +80,10 @@ describe("ActionButton component", () => {
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
 		expect(button).toBeDisabled();
 
-		// Wait for the handler to complete
-		await waitFor(
-			() => {
-				expect(mockHandler).toHaveBeenCalledTimes(1);
-			},
-			{ timeout: 200 },
-		);
+		// The button stays busy for at least 300ms; letting the test end before
+		// that would update state after the test environment is torn down.
+		await waitFor(() => expect(button).toBeEnabled(), { timeout: 1000 });
+		expect(mockHandler).toHaveBeenCalledTimes(1);
 	});
 
 	it("applies the correct button variant", () => {
