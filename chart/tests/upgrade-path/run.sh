@@ -1145,6 +1145,12 @@ chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little
 chain_cleaned_volume_moves_on_and_removes_nothing() { scaffold "A cleaned-up volume moves on to the next major and removes nothing"; }
 chain_out_of_date_copy_counts_as_older_major_and_refuses() { scaffold "A newer copy made out of date by a rollback counts as the older major and is refused as a gap"; }
 chain_gap_from_a_copy_refuses_and_touches_nothing() { scaffold "A live copy two majors behind the image is refused, naming that copy and one major per release"; }
+chain_pin_back_after_cut_off_cleanup_keeps_pinned_data() { scaffold "Pinning back after a cut-off cleanup keeps the pinned major's data however often it restarts"; }
+chain_unreadable_live_copy_refuses_before_writing() { scaffold "A live copy whose control file cannot be read is refused before the next upgrade writes anything"; }
+chain_unfollowable_chain_is_refused_once_by_upgrade_step() { scaffold "A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone"; }
+chain_cleanup_finishes_started_removal_past_unreadable_copy() { scaffold "The cleanup finishes a removal it can see had started, even past an unreadable original copy"; }
+chain_cleanup_refuses_past_unreadable_copy_not_started() { scaffold "The cleanup refuses to guess past an unreadable copy it has no sign of having started on"; }
+chain_unremovable_leftover_never_stops_the_start() { scaffold "A copy that cannot be fully removed never stops the database starting on the new copy"; }
 
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
 # one before it. CHAIN holds only scaffolds until slice 03 is delivered.
@@ -1193,6 +1199,12 @@ readonly CHAIN=(
   chain_cleaned_volume_moves_on_and_removes_nothing
   chain_out_of_date_copy_counts_as_older_major_and_refuses
   chain_gap_from_a_copy_refuses_and_touches_nothing
+  chain_pin_back_after_cut_off_cleanup_keeps_pinned_data
+  chain_unreadable_live_copy_refuses_before_writing
+  chain_unfollowable_chain_is_refused_once_by_upgrade_step
+  chain_cleanup_refuses_past_unreadable_copy_not_started
+  chain_cleanup_finishes_started_removal_past_unreadable_copy
+  chain_unremovable_leftover_never_stops_the_start
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
@@ -1228,6 +1240,12 @@ namespaces_of() {
     chain_cleaned_volume_moves_on_and_removes_nothing) echo chain-cleaned ;;
     chain_out_of_date_copy_counts_as_older_major_and_refuses) echo chain-out-of-date ;;
     chain_gap_from_a_copy_refuses_and_touches_nothing) echo chain-gap-from-copy ;;
+    chain_pin_back_after_cut_off_cleanup_keeps_pinned_data) echo chain-pin-after-cut-cleanup ;;
+    chain_unreadable_live_copy_refuses_before_writing) echo chain-unreadable-live ;;
+    chain_unfollowable_chain_is_refused_once_by_upgrade_step | chain_cleanup_refuses_past_unreadable_copy_not_started)
+      echo chain-unreadable-original ;;
+    chain_cleanup_finishes_started_removal_past_unreadable_copy) echo chain-cleanup-past-unreadable ;;
+    chain_unremovable_leftover_never_stops_the_start) echo chain-unremovable-leftover ;;
   esac
 }
 

@@ -472,15 +472,18 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table has the same row count as before the upgrade
     And only then is the Postgres 16 copy removed
 
-  @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.2 @error @real-io @env:kind-chain-size-limited-pv @slice-03 @contract-shape:unbounded-preservation @pending
   Scenario: Too little room for the next copy refuses, naming the cleanup as a way out
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17, on a volume with room for two copies of its data but not three
     And a fingerprint of every file on the database volume has been taken
     When the operator runs a plain "helm upgrade" to the new chart with its default Postgres 18
     Then the bundled database does not become Ready, and keeps retrying by itself
     And its log carries one line naming the free space and the space needed
-    And that line names the command that removes the older copies as one way to free the room
+    And that line points to the Kubernetes docs on removing old copies while the database is stopped, as one way to free the room
     And every file on the database volume is exactly as it was before the attempt
+    When the operator removes the copies older than the Postgres 17 copy as that docs section says
+    Then the next retry upgrades to Postgres 18 with no other step from the operator
+    And every Lighthouse table has the same row count as before the upgrade
 
   @US-04 @AC-4.7 @real-io @env:kind-chain-cleaned @slice-03 @contract-shape:bounded-change @pending
   Scenario: A cleaned-up volume moves on to the next major and removes nothing
@@ -515,6 +518,75 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And its log carries one line naming the Postgres 16 copy as the data the database runs on and Postgres 18 as the image's major
     And that line says to upgrade through each chart release that moved the major, one at a time, or to follow the manual path
     And every file on the database volume is exactly as it was before the attempt
+
+  # --- slice-03, added after the design review ---------------------------------------------------
+
+  @US-04 @AC-4.5 @AC-4.6 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  Scenario: Pinning back after a cut-off cleanup keeps the pinned major's data however often it restarts
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And the documented cleanup was cut off after the placeholder was written, while the original copy still says it is Postgres 16
+    When the operator pins the bundled database image to Postgres 16 and deletes the database pod, as the Kubernetes docs say
+    Then the bundled database becomes Ready on Postgres 16, on the original copy, with the warning naming the newer Postgres 17 copy
+    When the operator writes a row on Postgres 16
+    And the bundled database is restarted twice
+    Then the original copy still opens with Postgres 16 and holds that row
+    And the database log says nothing about removing a copy
+    And the Postgres 17 copy is still on the volume
+
+  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  Scenario: A live copy whose control file cannot be read is refused before the next upgrade writes anything
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And the Postgres 17 copy's control file cannot be read
+    And a fingerprint of every file on the database volume has been taken
+    When the operator runs a plain "helm upgrade" to the new chart with its default Postgres 18
+    Then the bundled database does not become Ready, and keeps retrying by itself
+    And its log carries one line naming the Postgres 17 copy, saying Postgres 17 cannot open it without that file, and to put the file back from a backup
+    And every file on the database volume is exactly as it was before the attempt
+
+  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  Scenario: A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And the original copy's control file cannot be read, with no sign that a removal had started there
+    And a fingerprint of every file on the database volume has been taken
+    When the operator runs a plain "helm upgrade" to the new chart with its default Postgres 18
+    Then the bundled database does not become Ready, and keeps retrying by itself
+    And the step that hands over the older major's programs finished without error and handed nothing over
+    And the database log and the pod's description carry one refusal line, naming the original copy and saying to put its control file back from a backup
+    And every file on the database volume is exactly as it was before the attempt
+
+  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  Scenario: The cleanup finishes a removal it can see had started, even past an unreadable original copy
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And a cleanup was cut off after the placeholder was written into the original copy
+    And the original copy's control file cannot be read
+    And the bundled database refuses to start, pointing to the Kubernetes docs on a cut-off removal
+    When the operator runs the cleanup while the database is stopped, as the Kubernetes docs say
+    Then the volume holds only the placeholder and the Postgres 17 copy
+    And after the database is started again it becomes Ready on Postgres 17 with every row it had
+
+  @US-04 @AC-4.6 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  Scenario: The cleanup refuses to guess past an unreadable copy it has no sign of having started on
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And the original copy's control file cannot be read, with no sign that a removal had started there
+    And a fingerprint of every file on the database volume has been taken
+    When the operator runs the cleanup while the database is stopped, as the Kubernetes docs say
+    Then the cleanup fails with one line naming the original copy's control file as unreadable and saying to put it back from a backup before removing anything
+    And every file on the database volume is exactly as it was before the cleanup
+
+  @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  Scenario: A copy that cannot be fully removed never stops the database starting on the new copy
+    Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
+    And one file in the original Postgres 16 copy cannot be deleted
+    And the row count of every Lighthouse table has been recorded
+    When the operator runs a plain "helm upgrade" to the new chart with its default Postgres 18
+    Then the bundled database becomes Ready on Postgres 18
+    And every Lighthouse table has the same row count as before the upgrade
+    And its log carries one warning line saying the Postgres 16 copy could not be fully removed
+    When the bundled database is restarted
+    Then its log shows the removal was tried again
+    And the bundled database becomes Ready on Postgres 18
+    When that file can be deleted again and the bundled database is restarted
+    Then the original folder holds only the placeholder
 
   @US-04 @AC-4.10 @in-memory @slice-03 @contract-shape:pure-function @pending
   Scenario: The Kubernetes docs say what a second upgrade keeps, removes and costs

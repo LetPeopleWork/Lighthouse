@@ -84,7 +84,7 @@ A trap found on the way: `isNotNullOrEmpty` on a path that does not exist **pass
 presence check written with it would have been green against the current templates. The key checks use
 `matchRegex` on the shebang instead, which fails with `unknown path`.
 
-Kind (`chain` group): each of the 17 functions exits 1 with
+Kind (`chain` group): each of the 23 functions (6 added after the design review) exits 1 with
 `✗ upgrade-path: SCAFFOLD: not yet implemented — <scenario title>`. This is a placeholder RED. The real one,
 which DESIGN predicts, is fixture step 3 on today's scripts: the defaults upgrade is refused with "the database
 runs on Postgres 17 in pgdata-17". DELIVER records that line here when it writes the fixture.

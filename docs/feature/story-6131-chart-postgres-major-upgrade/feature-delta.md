@@ -1578,7 +1578,8 @@ Two wording points, neither a contradiction:
 
 ### Scenario list
 
-18 scenarios, all `@US-04 @slice-03 @pending`, all with `@contract-shape:`. Error or edge: 11 of 18 (61 %).
+24 scenarios, all `@US-04 @slice-03 @pending`, all with `@contract-shape:`. Error or edge: 17 of 24 (71 %).
+Scenarios 19–24 were added after the slice 03 design review (S3R-1, -3, -4, -5, -6).
 Harness function = `run.sh` `chain` group.
 
 | # | Scenario | AC / tags | Env | Harness function |
@@ -1601,9 +1602,21 @@ Harness function = `run.sh` `chain` group.
 | 16 | A newer copy made out of date by a rollback counts as the older major and is refused as a gap | `@AC-4.8 @error` | kind-chain-16-17 | `chain_out_of_date_copy_counts_as_older_major_and_refuses` |
 | 17 | A live copy two majors behind the image is refused, naming that copy and one major per release | `@AC-4.8 @AC-4.10 @error` | kind-gap-from-copy | `chain_gap_from_a_copy_refuses_and_touches_nothing` |
 | 18 | The Kubernetes docs say what a second upgrade keeps, removes and costs | `@AC-4.10 @in-memory` | none (prose) | docs read |
+| 19 | Pinning back after a cut-off cleanup keeps the pinned major's data however often it restarts (S3R-1) | `@AC-4.5 @AC-4.6 @edge` | kind-chain-16-17 | `chain_pin_back_after_cut_off_cleanup_keeps_pinned_data` |
+| 20 | A live copy whose control file cannot be read is refused before the next upgrade writes anything (S3R-3) | `@AC-4.8 @error` | kind-chain-16-17 | `chain_unreadable_live_copy_refuses_before_writing` |
+| 21 | A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone (S3R-5) | `@AC-4.8 @error` | kind-chain-16-17 | `chain_unfollowable_chain_is_refused_once_by_upgrade_step` |
+| 22 | The cleanup refuses to guess past an unreadable copy it has no sign of having started on (S3R-4) | `@AC-4.6 @error` | kind-chain-16-17 | `chain_cleanup_refuses_past_unreadable_copy_not_started` |
+| 23 | The cleanup finishes a removal it can see had started, even past an unreadable original copy (S3R-4) | `@AC-4.6 @error` | kind-chain-16-17 | `chain_cleanup_finishes_started_removal_past_unreadable_copy` |
+| 24 | A copy that cannot be fully removed never stops the database starting on the new copy (S3R-6) | `@AC-4.2 @error` | kind-chain-16-17 | `chain_unremovable_leftover_never_stops_the_start` |
 
-Every AC-4.1..4.11 has a scenario. Scenarios 1–17 are `@real-io`. Every refusal (8, 14, 16, 17) asserts the
-volume fingerprint unchanged, and scenario 9 asserts the two remaining copies unchanged.
+Scenario 14's expected outcome changed with the review (S3R-10). Its line no longer names the cleanup
+command; it points to the docs section on removing old copies while the database is stopped. The scenario
+now also follows that section and asserts that the next retry upgrades. It runs on `kind-chain-size-limited-pv`.
+
+Every AC-4.1..4.11 has a scenario. Scenarios 1–17 and 19–24 are `@real-io`. Every refusal (8, 14, 16, 17,
+20, 21, 22) asserts the volume fingerprint unchanged, and scenario 9 asserts the two remaining copies unchanged.
+Scenarios 21 and 22 share one namespace (`chain-unreadable-original`): the refused start first, then the
+cleanup on the same volume.
 
 ### Test placement
 
@@ -1627,7 +1640,7 @@ volume fingerprint unchanged, and scenario 9 asserts the two remaining copies un
 
 ### Scaffolds
 
-- `run.sh`: a `scaffold()` helper and 17 one-line `chain_*` functions, each `fail`ing with
+- `run.sh`: a `scaffold()` helper and 23 one-line `chain_*` functions, each `fail`ing with
   `SCAFFOLD: not yet implemented — <scenario title>`. `bash -n` and shellcheck (koalaman/shellcheck:stable)
   are clean. CI is not wired; DELIVER adds `chain` to the matrix.
 - `postgres-upgrade_test.yaml`:
