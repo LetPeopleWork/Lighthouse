@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             refresh.RuleService.RecomputeRuleBasedDeliveries(refresh.Portfolio, refresh.Deliveries);
 
-            Assert.ThrowsAsync<DbUpdateConcurrencyException>(
+            await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
                 () => refresh.DeliveryRepository.Save(),
                 "The refresh is holding a Delivery from before it was retired. Its write has to be refused, " +
                 "or retiring a Delivery is only a request that nothing changes it rather than a guarantee.");
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             refresh.Portfolio.Name = "Renamed by the rest of the refresh";
             var portfolioRepository = refreshScope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
 
-            Assert.DoesNotThrowAsync(() => portfolioRepository.Save(),
+            await Assert.DoesNotThrowAsync(() => portfolioRepository.Save(),
                 "A refresh that lost a Delivery to somebody else still has the rest of its work to finish.");
 
             var featureNames = await FeatureNamesOf(seeded.DeliveryId);

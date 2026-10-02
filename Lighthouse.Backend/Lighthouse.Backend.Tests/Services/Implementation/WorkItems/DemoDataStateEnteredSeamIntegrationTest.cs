@@ -112,8 +112,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 $"{owner} pace bands must rise monotonically across percentiles, reflecting cumulative age at state exit.");
         }
 
-        private static bool IsMonotonicallyRising(AgeInStatePercentilesDto band)
+        private static bool IsMonotonicallyRising(AgeInStatePercentilesDto? band)
         {
+            if (band is null)
+            {
+                return false;
+            }
+
             var orderedByPercentile = band.Percentiles.OrderBy(p => p.Percentile).Select(p => p.Value).ToList();
             return orderedByPercentile.Zip(orderedByPercentile.Skip(1), (lower, higher) => higher >= lower).All(rising => rising);
         }

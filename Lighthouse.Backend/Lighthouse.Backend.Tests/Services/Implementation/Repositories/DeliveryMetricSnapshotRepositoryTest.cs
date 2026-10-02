@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 RecordedAt = new DateTime(2026, 5, 25, 18, 0, 0, DateTimeKind.Utc),
             });
 
-            var exception = Assert.ThrowsAsync<DbUpdateException>(async () => await DatabaseContext.SaveChangesAsync());
+            var exception = await Assert.ThrowsAsync<DbUpdateException>(async () => await DatabaseContext.SaveChangesAsync());
             Assert.That(exception!.InnerException!.Message, Does.Contain("UNIQUE").IgnoreCase);
         }
 

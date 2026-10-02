@@ -209,12 +209,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // A sentence of nothing but spaces is not a sentence, and showing it would tell the reader their
         // source refused for no reason it was willing to name.
         [Test]
-        public void A_message_that_is_only_whitespace_is_no_reason_at_all()
+        public async Task A_message_that_is_only_whitespace_is_no_reason_at_all()
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
             jira.RefuseWritesWith(HttpStatusCode.BadRequest, "{\"message\":\"   \"}");
 
-            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+            await Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
         }
 
         /// <summary>
@@ -257,12 +257,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         [TestCase(HttpStatusCode.TooManyRequests, TestName = "Jira asking to be asked again later")]
         [TestCase(HttpStatusCode.RequestTimeout, TestName = "A request Jira ran out of time on")]
-        public void A_Jira_asking_for_a_moment_is_not_an_answer_about_the_credential(HttpStatusCode status)
+        public async Task A_Jira_asking_for_a_moment_is_not_an_answer_about_the_credential(HttpStatusCode status)
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
             jira.RefuseWritesWith(status, "{}");
 
-            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+            await Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
         }
 
         /// <summary>
@@ -317,12 +317,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("{\"errorMessages\":[],\"errors\":{}}", TestName = "Jira's error shape with nothing in either half")]
         [TestCase("[]", TestName = "A body that parses but is a list rather than an answer")]
         [TestCase("\"nope\"", TestName = "A body that parses but is a bare string")]
-        public void A_rejection_Jira_gave_no_reason_for_is_not_a_permission_report(string body)
+        public async Task A_rejection_Jira_gave_no_reason_for_is_not_a_permission_report(string body)
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
             jira.RefuseWritesWith(HttpStatusCode.BadRequest, body);
 
-            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+            await Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
         }
 
         /// <summary>
@@ -331,20 +331,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// and the caller treats it the way it treats a source it could not reach.
         /// </summary>
         [Test]
-        public void A_Jira_that_fell_over_is_not_an_answer_about_the_credential()
+        public async Task A_Jira_that_fell_over_is_not_an_answer_about_the_credential()
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
             jira.RefuseWritesWith(HttpStatusCode.InternalServerError, "{}");
 
-            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+            await Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
         }
 
         [Test]
-        public void A_source_this_connection_does_not_offer_is_refused_without_asking_Jira_anything()
+        public async Task A_source_this_connection_does_not_offer_is_refused_without_asking_Jira_anything()
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
 
-            Assert.ThrowsAsync<ArgumentException>(() => jira.Connector.PublishAsync(
+            await Assert.ThrowsAsync<ArgumentException>(() => jira.Connector.PublishAsync(
                 jira.Portfolio.WorkTrackingSystemConnection,
                 new DeliveryForecastPublication("jira-relase", TheRelease, TheBlock)));
 

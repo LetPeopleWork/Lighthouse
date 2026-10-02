@@ -125,37 +125,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void PatAuthStrategy_ApplyAsync_AStoredPatNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        public async Task PatAuthStrategy_ApplyAsync_AStoredPatNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
         {
             var strategy = new PatAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
             var connection = CreateAdoConnection(ACredentialTheInstanceCannotRead());
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://dev.azure.com/org");
 
-            Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
+            await Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
 
             Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False, NothingWentOut);
         }
 
         [Test]
-        public void JiraCloudBasicAuthStrategy_ApplyAsync_AStoredApiTokenNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        public async Task JiraCloudBasicAuthStrategy_ApplyAsync_AStoredApiTokenNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
         {
             var strategy = new JiraCloudBasicAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
             var connection = CreateJiraConnection(AuthenticationMethodKeys.JiraCloud, includeUsername: true, ACredentialTheInstanceCannotRead());
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
 
-            Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
+            await Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
 
             Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False, NothingWentOut);
         }
 
         [Test]
-        public void LinearApiKeyAuthStrategy_ApplyAsync_AStoredApiKeyNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        public async Task LinearApiKeyAuthStrategy_ApplyAsync_AStoredApiKeyNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
         {
             var strategy = new LinearApiKeyAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
             var connection = CreateLinearConnection(ACredentialTheInstanceCannotRead());
             using var request = new HttpRequestMessage(HttpMethod.Post, LinearWorkTrackingOptionNames.ApiUrl);
 
-            Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
+            await Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
 
             Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False, NothingWentOut);
         }
@@ -235,7 +235,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void OAuthBearerAuthStrategy_ApplyAsync_PropagatesOAuthCredentialNotValidException()
+        public async Task OAuthBearerAuthStrategy_ApplyAsync_PropagatesOAuthCredentialNotValidException()
         {
             var oauthServiceMock = new Mock<IOAuthService>();
             oauthServiceMock
@@ -245,12 +245,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var connection = CreateOAuthConnection(7);
             var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
 
-            Assert.ThrowsAsync<OAuthCredentialNotValidException>(
+            await Assert.ThrowsAsync<OAuthCredentialNotValidException>(
                 () => strategy.ApplyAsync(request, connection, CancellationToken.None));
         }
 
         [Test]
-        public void OAuthBearerAuthStrategy_ApplyAsync_PropagatesOAuthRefreshFailedException()
+        public async Task OAuthBearerAuthStrategy_ApplyAsync_PropagatesOAuthRefreshFailedException()
         {
             var oauthServiceMock = new Mock<IOAuthService>();
             oauthServiceMock
@@ -260,7 +260,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var connection = CreateOAuthConnection(7);
             var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
 
-            Assert.ThrowsAsync<OAuthRefreshFailedException>(
+            await Assert.ThrowsAsync<OAuthRefreshFailedException>(
                 () => strategy.ApplyAsync(request, connection, CancellationToken.None));
         }
 
