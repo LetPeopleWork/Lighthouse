@@ -31,6 +31,19 @@
       "automerge": false
     },
     {
+      "description": "Lighthouse stays on .NET 10 until .NET 11 is generally available and the Npgsql provider supports it. The move happens in one change that retargets every project, the SDK pins, the images and these packages together, and removes this rule. Before that, the floating 11.0 image tag carries release candidates, and piecemeal package majors would leave the backend half-migrated.",
+      "matchPackageNames": [
+        "mcr.microsoft.com/dotnet/**",
+        "Microsoft.AspNetCore.**",
+        "Microsoft.EntityFrameworkCore**",
+        "Npgsql.EntityFrameworkCore.PostgreSQL",
+        "System.Configuration.ConfigurationManager",
+        "System.Drawing.Common",
+        "System.Security.Cryptography.Xml"
+      ],
+      "allowedVersions": "<11"
+    },
+    {
       "description": "A chart value change also needs chart/README.md regenerated with helm-docs and a new chart version, and the chart workflow is not a required check, so a maintainer takes these by hand.",
       "matchManagers": ["helm-values"],
       "automerge": false
