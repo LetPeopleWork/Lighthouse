@@ -275,11 +275,17 @@ readonly FRESH_NS="fresh-install"
 # own finds none of them and makes its Given itself. The new chart may still carry the old chart's version
 # number, so the upgrade's revision is recorded rather than looked up by chart name.
 declare -A RECORDED_COUNTS=()
+BEFORE_REVISION=""
 UPGRADE_REVISION=""
+ROLLED_BACK=""
 FRESH_INSTALLED=""
 
 given_upgraded() {
   [[ -n "${RECORDED_COUNTS[$UPGRADED_NS]:-}" ]] || upgrade_plain_helm_upgrade_keeps_every_row
+}
+
+given_rolled_back() {
+  [[ -n "$ROLLED_BACK" ]] || rollback_starts_17_on_pre_upgrade_data
 }
 
 given_fresh_install() {
@@ -383,6 +389,7 @@ fresh_install_starts_18_without_upgrading() {
 upgrade_plain_helm_upgrade_keeps_every_row() {
   local ns="$UPGRADED_NS" counts secret
   install_with_data "$ns"
+  BEFORE_REVISION="$(current_revision "$ns")"
   counts="$(public_row_counts "$ns")"
   secret="$(secret_fingerprint "$ns")"
 
@@ -459,8 +466,46 @@ kept_copy_holds_pre_upgrade_rows() {
   assert_server_major "$ns" 18
 }
 
-rollback_starts_17_on_pre_upgrade_data() { scaffold "Rolling back after an upgrade starts Postgres 17 on the pre-upgrade data"; }
-upgrade_again_after_rollback_starts_afresh() { scaffold "Upgrading again after a rollback starts afresh from the Postgres 17 data"; }
+table_count() {
+  local ns="$1" table="$2"
+  psql_in "$ns" "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table'"
+}
+
+rollback_starts_17_on_pre_upgrade_data() {
+  local ns="$UPGRADED_NS"
+  given_upgraded
+  psql_in "$ns" "CREATE TABLE upgrade_path_before_rollback (marker text);
+                 INSERT INTO upgrade_path_before_rollback VALUES ('$MARKER')" >/dev/null
+
+  helm rollback "$RELEASE" "$BEFORE_REVISION" -n "$ns" >/dev/null
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  wait_api_ready "$ns"
+  assert_marker_row "$ns"
+  [[ "$(table_count "$ns" upgrade_path_before_rollback)" == "0" ]] \
+    || fail "the row written on Postgres 18 in $ns is still there after the rollback to Postgres 17"
+  ROLLED_BACK=1
+}
+
+upgrade_again_after_rollback_starts_afresh() {
+  local ns="$UPGRADED_NS"
+  given_rolled_back
+  psql_in "$ns" "CREATE TABLE upgrade_path_after_rollback (marker text);
+                 INSERT INTO upgrade_path_after_rollback VALUES ('$MARKER')" >/dev/null
+
+  upgrade_to_new_chart "$ns"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_upgrade_log_says "$ns" "out of date"
+  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_after_rollback WHERE marker = '$MARKER'")" == "1" ]] \
+    || fail "the row written on Postgres 17 after the rollback in $ns did not reach Postgres 18"
+  [[ "$(table_count "$ns" upgrade_path_before_rollback)" == "0" ]] \
+    || fail "the row written on Postgres 18 before the rollback in $ns came back"
+  assert_marker_row "$ns"
+  wait_api_ready "$ns"
+}
 reuse_values_stays_on_17_and_says_so() { scaffold "Reusing the previous values keeps the database on 17 and says how to move it"; }
 
 upgrade_with_reset_then_reuse_values_keeps_every_row() {
@@ -522,6 +567,8 @@ readonly HAPPY=(
   restart_after_upgrade_does_not_upgrade_again
   rollback_between_new_chart_revisions_changes_nothing
   kept_copy_holds_pre_upgrade_rows
+  rollback_starts_17_on_pre_upgrade_data
+  upgrade_again_after_rollback_starts_afresh
   upgrade_with_reset_then_reuse_values_keeps_every_row
   upgrade_by_rendered_manifests_keeps_every_row
 )

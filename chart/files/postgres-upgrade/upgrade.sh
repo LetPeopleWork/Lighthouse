@@ -142,7 +142,14 @@ upgrade() {
     refuse "refusing to upgrade Postgres $from to $MAJOR: the upgrade-source image did not provide the Postgres $from programs; set postgresql.upgrade.image to a Postgres $from image. Nothing was changed"
   fi
 
-  if [[ -e "$PARTIAL" ]]; then
+  if [[ -e "$NEW" ]]; then
+    say "pgdata-$MAJOR is out of date: Postgres $from has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata"
+    rm -rf "$PARTIAL"
+    # Renamed before it is removed, so a stop part-way through leaves only an unfinished copy, which the
+    # next start throws away like any other.
+    mv -T "$NEW" "$PARTIAL"
+    rm -rf "$PARTIAL"
+  elif [[ -e "$PARTIAL" ]]; then
     say "removing pgdata-$MAJOR.partial, left by an earlier attempt that did not finish"
     rm -rf "$PARTIAL"
   fi
@@ -194,6 +201,10 @@ main() {
     start_on "$OLD"
   elif [[ "$data" == "$((MAJOR - 1))" && "$copies" == "pgdata-$MAJOR" ]] && upgraded_copy_is_current; then
     say "nothing to upgrade: pgdata-$MAJOR is already the upgrade of the Postgres $data data in pgdata"
+    start_on "$NEW"
+  elif [[ "$data" == "$((MAJOR - 1))" && "$copies" == "pgdata-$MAJOR" && -f "$NEW/.lighthouse-upgrade" ]]; then
+    # Once the old major has run again it holds the newer data, so the copy made before is redone.
+    upgrade "$data"
     start_on "$NEW"
   elif [[ "$data" =~ ^[0-9]+$ && "$data" -eq $((MAJOR - 1)) && -z "$copies" ]]; then
     upgrade "$data"

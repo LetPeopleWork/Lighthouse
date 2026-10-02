@@ -157,7 +157,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
   # slice-01 — US-02: rolling back brings the old database back
   # ------------------------------------------------------------------------------------------------
 
-  @US-02 @AC-2.1 @kpi:K2 @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change @pending
+  @US-02 @AC-2.1 @kpi:K2 @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change
   Scenario: Rolling back after an upgrade starts Postgres 17 on the pre-upgrade data
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
     And a row was written on Postgres 18 after the upgrade
@@ -167,7 +167,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the marker row is present
     And the row written on Postgres 18 is absent
 
-  @US-02 @AC-2.2 @kpi:K2 @edge @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change @pending
+  @US-02 @AC-2.2 @kpi:K2 @edge @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change
   Scenario: Upgrading again after a rollback starts afresh from the Postgres 17 data
     Given the operator has rolled back from the new chart to chart 0.1.17
     And a row was written on Postgres 17 after the rollback
