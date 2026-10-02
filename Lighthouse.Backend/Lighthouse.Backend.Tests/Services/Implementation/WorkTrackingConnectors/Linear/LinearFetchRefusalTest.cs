@@ -113,12 +113,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // "nothing went out" are two different facts here as much as they are on the strategies. A client
         // built from a key nobody could read would carry that unreadable value on every request it makes.
         [Test]
-        public void GetWorkItemsForTeam_AStoredApiKeyNobodyCanRead_StopsWithoutSendingAnythingToLinear()
+        public async Task GetWorkItemsForTeam_AStoredApiKeyNobodyCanRead_StopsWithoutSendingAnythingToLinear()
         {
             var requestsSentToLinear = new List<HttpRequestMessage>();
             var subject = ALinearWhoseCryptoHoldsOnlyTheActiveKey(AHandlerRecordingInto(requestsSentToLinear));
 
-            Assert.ThrowsAsync<UnreadableSecretException>(
+            await Assert.ThrowsAsync<UnreadableSecretException>(
                 () => subject.GetWorkItemsForTeam(ATeamOnLinear(ACredentialTheInstanceCannotRead()), CancellationToken.None));
 
             Assert.That(requestsSentToLinear, Is.Empty,
