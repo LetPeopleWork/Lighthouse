@@ -1,6 +1,5 @@
 suite: bundled Postgres crosses a major version (story 6131)
-# Render-level checks for chart/tests/acceptance/upgrade-bundled-postgres.feature. Tests marked `skip`
-# describe templates that do not exist yet; DELIVER removes each `skip` in the commit that makes it pass.
+# Render-level checks for chart/tests/acceptance/upgrade-bundled-postgres.feature.
 # The encryption guard refuses to render without a key, and helm-unittest renders every template before
 # selecting the one under test, so the suite carries a dummy key.
 set:
@@ -131,8 +130,6 @@ tests:
   # The exact wording is DELIVER's; it has to say "behind" and name --reset-then-reuse-values.
 
   - it: the notes warn when the database image is a major behind the chart's default
-    skip:
-      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
     set:
       postgresql.upgrade: null
       postgresql.image: postgres:17
@@ -144,8 +141,6 @@ tests:
           pattern: --reset-then-reuse-values
 
   - it: the notes warn for a Debian-suffixed tag of the older major too
-    skip:
-      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
     set:
       postgresql.image: postgres:17-trixie
     template: templates/NOTES.txt
@@ -154,8 +149,6 @@ tests:
           pattern: (?i)\bbehind\b
 
   - it: the notes stay quiet when the database image is the chart's default major
-    skip:
-      reason: "pending story 6131 slice 01: the default image moves to postgres:18-trixie with the upgrade"
     set:
       postgresql.image: postgres:18-trixie
     template: templates/NOTES.txt
@@ -164,8 +157,6 @@ tests:
           pattern: (?i)\bbehind\b
 
   - it: the notes stay quiet when the image carries no major to compare
-    skip:
-      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
     set:
       postgresql.image: postgres@sha256:0000000000000000000000000000000000000000000000000000000000000000
     template: templates/NOTES.txt
@@ -174,8 +165,6 @@ tests:
           pattern: (?i)\bbehind\b
 
   - it: the notes stay quiet for an external database
-    skip:
-      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
     set:
       postgresql.enabled: false
       postgresql.image: postgres:17
@@ -186,4 +175,20 @@ tests:
     template: templates/NOTES.txt
     asserts:
       - notMatchRegexRaw:
+          pattern: (?i)\bbehind\b
+
+  - it: the notes warn when the image comes from a registry with a port
+    set:
+      postgresql.image: registry.example:5000/postgres:17
+    template: templates/NOTES.txt
+    asserts:
+      - matchRegexRaw:
+          pattern: (?i)\bbehind\b
+
+  - it: the notes warn when the older tag is pinned to a digest
+    set:
+      postgresql.image: postgres:17@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    template: templates/NOTES.txt
+    asserts:
+      - matchRegexRaw:
           pattern: (?i)\bbehind\b

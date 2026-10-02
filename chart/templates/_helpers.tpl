@@ -47,6 +47,15 @@ app.kubernetes.io/component: postgres
 18
 {{- end -}}
 
+{{/* The major in the bundled database image's tag, or empty when the reference has no numeric tag (a digest
+     only, say). The registry may carry a port, so the tag is looked for in the last path segment only. */}}
+{{- define "lighthouse.postgres.imageMajor" -}}
+{{- $name := regexReplaceAll "@.*$" (toString .Values.postgresql.image) "" | splitList "/" | last -}}
+{{- if contains ":" $name -}}
+{{- regexFind "^[0-9]+" (regexReplaceAll "^.*:" $name "") -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "lighthouse.postgres.upgradeImage" -}}
 {{- dig "postgresql" "upgrade" "image" "" .Values.AsMap | default "postgres:17-trixie" -}}
 {{- end -}}

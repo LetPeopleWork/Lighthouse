@@ -77,7 +77,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And every Lighthouse table has the same row count as before the upgrade
     And the marker row is present
 
-  @US-01 @AC-1.8 @edge @real-io @env:reuse-values @slice-01 @contract-shape:bounded-change @pending
+  @US-01 @AC-1.8 @edge @real-io @env:reuse-values @slice-01 @contract-shape:bounded-change
   Scenario: Reusing the previous values keeps the database on 17 and says how to move it
     Given Lighthouse was installed from chart 0.1.17 with the bundled Postgres 17
     And it holds Lighthouse data with a known marker row
@@ -132,7 +132,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     Then the upgrade source falls back to the chart's own Postgres 17 image
     And the upgrade step itself runs the database image the operator configured
 
-  @US-01 @AC-1.8 @in-memory @env:reuse-values @slice-01 @contract-shape:pure-function @pending
+  @US-01 @AC-1.8 @in-memory @env:reuse-values @slice-01 @contract-shape:pure-function
   Scenario Outline: The install notes warn only when the database image is behind the chart's default
     Given the chart is rendered with the bundled database image set to <image>
     When the install notes are produced

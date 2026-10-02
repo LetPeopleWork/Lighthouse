@@ -547,7 +547,25 @@ pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
   wait_api_ready "$ns"
 }
 
-reuse_values_stays_on_17_and_says_so() { scaffold "Reusing the previous values keeps the database on 17 and says how to move it"; }
+# --reuse-values keeps the 0.1.17 image value, so the database stays on 17 and only the notes speak up.
+reuse_values_stays_on_17_and_says_so() {
+  local ns="reuse-values" output line
+  install_with_data "$ns"
+
+  output="$(helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" --reuse-values)"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  wait_api_ready "$ns"
+  assert_marker_row "$ns"
+  line="$(grep -F -- "behind" <<<"$output" || true)"
+  [[ -n "$line" && "$(wc -l <<<"$line")" == "1" ]] \
+    || fail "the upgrade output in $ns does not carry exactly one line saying the database is behind"
+  echo "  $line"
+  grep -qF -- "--reset-then-reuse-values" <<<"$line" \
+    || fail "the behind line in $ns does not say how to move the database: $line"
+}
 
 upgrade_with_reset_then_reuse_values_keeps_every_row() {
   local ns="reset-then-reuse" counts
@@ -613,6 +631,7 @@ readonly HAPPY=(
   upgrade_with_reset_then_reuse_values_keeps_every_row
   upgrade_by_rendered_manifests_keeps_every_row
   pin_back_after_upgrade_starts_on_kept_copy_and_warns
+  reuse_values_stays_on_17_and_says_so
 )
 
 readonly REFUSALS=(
