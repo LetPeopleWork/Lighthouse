@@ -1,0 +1,203 @@
+suite: bundled Postgres crosses a major version (story 6131)
+# Render-level checks for chart/tests/acceptance/upgrade-bundled-postgres.feature. Tests marked `skip`
+# describe templates that do not exist yet; DELIVER removes each `skip` in the commit that makes it pass.
+# The encryption guard refuses to render without a key, and helm-unittest renders every template before
+# selecting the one under test, so the suite carries a dummy key.
+set:
+  encryption.key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  postgresql.auth.password: testpass
+tests:
+  # --- the upgrade steps exist only where the chart runs the database itself ---------------------
+
+  - it: the bundled database gets the two upgrade steps, old binaries first
+    skip:
+      reason: "pending story 6131 slice 01: the upgrade init containers are not implemented yet"
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 2
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: pg-old-binaries
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: pg-upgrade
+
+  - it: by default the upgrade source is Postgres 17 and the upgrade runs the Postgres 18 image the database runs
+    skip:
+      reason: "pending story 6131 slice 01: the upgrade init containers and the trixie image pair are not implemented yet"
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: postgres:17-trixie
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: postgres:18-trixie
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: postgres:18-trixie
+
+  - it: a mirrored database image is the one the upgrade step runs
+    skip:
+      reason: "pending story 6131 slice 01: the upgrade init containers are not implemented yet"
+    set:
+      postgresql.image: registry.example.internal/mirror/postgres:18-trixie
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: registry.example.internal/mirror/postgres:18-trixie
+
+  - it: the upgrade-source image comes from its value when one is set
+    skip:
+      reason: "pending story 6131 slice 01: postgresql.upgrade.image is not implemented yet"
+    set:
+      postgresql.upgrade.image: registry.example.internal/mirror/postgres:17-trixie
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: registry.example.internal/mirror/postgres:17-trixie
+
+  # `helm upgrade --reuse-values` hands the new templates the previous chart's values, so the upgrade
+  # setting is missing altogether and the database image is still the old one. Setting the key to null
+  # removes it, which is the same shape.
+  - it: values from an older chart still render, falling back to the chart's own upgrade-source image
+    skip:
+      reason: "pending story 6131 slice 01: the nil-safe upgrade-source fallback is not implemented yet"
+    set:
+      postgresql.upgrade: null
+      postgresql.image: postgres:17
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: postgres:17-trixie
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: postgres:17
+
+  - it: the upgrade scripts render with the bundled database
+    skip:
+      reason: "pending story 6131 slice 01: the upgrade script ConfigMap does not exist yet"
+    template: templates/postgres-upgrade-configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+
+  - it: an external database renders neither the database nor its upgrade scripts
+    skip:
+      reason: "pending story 6131 slice 01: the upgrade script ConfigMap does not exist yet"
+    set:
+      postgresql.enabled: false
+      externalDatabase.host: my-pg.example
+      externalDatabase.database: lh
+      externalDatabase.user: lh
+      externalDatabase.password: extpass
+    templates:
+      - templates/postgres-statefulset.yaml
+      - templates/postgres-upgrade-configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # --- what a rollback to chart 0.1.17 relies on stays as it was ---------------------------------
+  # Chart 0.1.17 finds its data through this claim, this mount path and these checks. These pass on
+  # today's templates and are left running, so the upgrade work cannot move them unnoticed.
+
+  - it: the database keeps the volume claim and size of chart 0.1.17
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: data
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 8Gi
+
+  - it: the database container keeps its name and mount path
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: postgres
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /var/lib/postgresql/data
+
+  - it: the database keeps the readiness and liveness checks of chart 0.1.17
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command
+          value: ["pg_isready", "-U", "lighthouse", "-d", "lighthouse"]
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.exec.command
+          value: ["pg_isready", "-U", "lighthouse", "-d", "lighthouse"]
+
+  # --- the install notes say when the database image is behind the chart's default ---------------
+  # The exact wording is DELIVER's; it has to say "behind" and name --reset-then-reuse-values.
+
+  - it: the notes warn when the database image is a major behind the chart's default
+    skip:
+      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
+    set:
+      postgresql.upgrade: null
+      postgresql.image: postgres:17
+    template: templates/NOTES.txt
+    asserts:
+      - matchRegexRaw:
+          pattern: (?i)\bbehind\b
+      - matchRegexRaw:
+          pattern: --reset-then-reuse-values
+
+  - it: the notes warn for a Debian-suffixed tag of the older major too
+    skip:
+      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
+    set:
+      postgresql.image: postgres:17-trixie
+    template: templates/NOTES.txt
+    asserts:
+      - matchRegexRaw:
+          pattern: (?i)\bbehind\b
+
+  - it: the notes stay quiet when the database image is the chart's default major
+    skip:
+      reason: "pending story 6131 slice 01: the default image moves to postgres:18-trixie with the upgrade"
+    set:
+      postgresql.image: postgres:18-trixie
+    template: templates/NOTES.txt
+    asserts:
+      - notMatchRegexRaw:
+          pattern: (?i)\bbehind\b
+
+  - it: the notes stay quiet when the image carries no major to compare
+    skip:
+      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
+    set:
+      postgresql.image: postgres@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    template: templates/NOTES.txt
+    asserts:
+      - notMatchRegexRaw:
+          pattern: (?i)\bbehind\b
+
+  - it: the notes stay quiet for an external database
+    skip:
+      reason: "pending story 6131 slice 01: the behind-the-default line in NOTES.txt is not implemented yet"
+    set:
+      postgresql.enabled: false
+      postgresql.image: postgres:17
+      externalDatabase.host: my-pg.example
+      externalDatabase.database: lh
+      externalDatabase.user: lh
+      externalDatabase.password: extpass
+    template: templates/NOTES.txt
+    asserts:
+      - notMatchRegexRaw:
+          pattern: (?i)\bbehind\b

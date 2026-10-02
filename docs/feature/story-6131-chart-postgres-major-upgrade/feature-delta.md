@@ -263,7 +263,7 @@ user-visible (the refusal line), so it is not infrastructure-only.
 | 1 | Problem stated in user terms | Elevator pitches, the ADO description and the crash-loop signature |
 | 2 | User/persona identified | `platform-operator`, self-hoster flavour |
 | 3 | Job traced | `job-operator-upgrade-bundled-database-across-major`, added to `jobs.yaml` |
-| 4 | Testable ACs | 15 ACs, each observable via kubectl, helm or the API on kind |
+| 4 | Testable ACs | 17 ACs, each observable via kubectl, helm or the API on kind |
 | 5 | Right-sized | Scope assessment PASS; 2 slices of ≤1 day each |
 | 6 | Dependencies known | Pre-requisites; the release gate is D5 |
 | 7 | Out of scope explicit | Listed above |
@@ -727,3 +727,204 @@ The existing deployment-mode property already says an instance runs on `Kubernet
 - The release gate in `version-guard.sh` lands in slice 01. It protects any chart release cut before slice
   02 finishes.
 - A real Lighthouse backup for the dogfood, restored with `Restore-DbBackup.ps1` into a 0.1.17 kind install.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+Reconciliation passed — 0 contradictions. DISCUSS D1–D7, DESIGN DDD-1..16 with its four Changed Assumptions
+(already folded into AC-1.1, AC-1.3, AC-1.8, AC-2.3, AC-3.1), and DEVOPS (environments, `upgrade-path` job,
+release gate, K1–K3 instruments) agree. Differences that are refinements, not contradictions:
+
+- AC-3.1 names `persistence.size`; DESIGN's refusal line names the full key `postgresql.persistence.size`. The
+  scenario asserts the full key.
+- DEVOPS puts the unclean-shutdown case in the `refusals` leg, but its behaviour (DDD-7) is part of AC-1.1 and
+  slice 01: a 0.1.17 pod usually ends unclean, so the walking skeleton cannot pass without it. Tagged
+  `@slice-01`, run in the `refusals` leg as DEVOPS placed it.
+- DISCUSS WS Strategy says "no new walking skeleton"; the first real-I/O upgrade scenario plays that role and
+  carries `@walking_skeleton @driving_port`.
+
+## Wave: DISTILL / [REF] Scenario List with Tags
+
+SSOT: `chart/tests/acceptance/upgrade-bundled-postgres.feature`. 24 scenarios (two outlines: 2 and 4 rows,
+plus the 2-row render outline). Every scenario also carries `@contract-shape:<…>`. All `@pending` except the
+render guard marked ✓.
+
+| # | Scenario | Tags | Harness / suite |
+|---|---|---|---|
+| 1 | Operator upgrades a Lighthouse with data and finds every row on Postgres 18 | `@walking_skeleton @driving_port @US-01 @AC-1.1 @AC-1.2 @kpi:K2 @real-io @env:kind-0.1.17-with-data @slice-01` | `happy` |
+| 2 | The other ways of applying the new chart carry the data across the same way (outline: `--reset-then-reuse-values`; rendered manifests `@AC-1.7 @env:gitops-rendered`) | `@US-01 @AC-1.1 @kpi:K2 @real-io @slice-01` | `happy` |
+| 3 | The previous major's data stays on the volume with exactly the pre-upgrade rows | `@US-01 @AC-1.3 @real-io @env:kind-0.1.17-with-data @slice-01` | `happy` |
+| 4 | An old database that was stopped abruptly is still carried across | `@US-01 @AC-1.1 @edge @real-io @env:kind-0.1.17-sigkilled @slice-01` | `refusals` |
+| 5 | Reusing the previous values keeps the database on 17 and says how to move it | `@US-01 @AC-1.8 @edge @real-io @env:reuse-values @slice-01` | `happy` |
+| 6 | A fresh install starts an empty Postgres 18 database with no upgrade step | `@US-01 @AC-1.4 @real-io @env:kind-clean-fresh @slice-01` | `happy` |
+| 7 | Restarting the database after an upgrade does not upgrade again | `@US-01 @AC-1.5 @kpi:K3 @edge @real-io @env:kind-0.1.17-with-data @slice-01` | `happy` |
+| 8 | The upgrade steps exist only where the chart runs the database itself (outline) | `@US-01 @AC-1.6 @in-memory @env:external-db @slice-01` | helm-unittest |
+| 9 | An install with an external database renders exactly as before this story | `@US-01 @AC-1.6 @in-memory @env:external-db @slice-01` | one-off diff (see Open checks) |
+| 10 | Values from an older chart still render a working upgrade step | `@US-01 @AC-1.8 @edge @in-memory @env:reuse-values @slice-01` | helm-unittest |
+| 11 | The install notes warn only when the database image is behind the chart's default (outline, 4 rows) | `@US-01 @AC-1.8 @in-memory @env:reuse-values @slice-01` | helm-unittest |
+| 12 ✓ | The database volume, where it is mounted and the health checks stay as they were | `@US-01 @AC-1.6 @AC-2.1 @in-memory @env:kind-0.1.17-with-data @slice-01` | helm-unittest, green now |
+| 13 | Rolling back after an upgrade starts Postgres 17 on the pre-upgrade data | `@US-02 @AC-2.1 @kpi:K2 @real-io @env:kind-after-rollback @slice-01` | `happy` |
+| 14 | Upgrading again after a rollback starts afresh from the Postgres 17 data | `@US-02 @AC-2.2 @kpi:K2 @edge @real-io @env:kind-after-rollback @slice-01` | `happy` |
+| 15 | Rolling back between two releases of the new chart leaves the database as it is | `@US-02 @rollback-contract @edge @real-io @env:kind-0.1.17-with-data @slice-01` | `happy` |
+| 16 | The Kubernetes docs say where the old copy is, what it costs and how to remove it | `@US-02 @AC-2.3 @in-memory @slice-02` | docs read (no env: it is prose) |
+| 17 | After the old copy is removed, a rollback refuses to start an empty database | `@US-02 @AC-2.4 @AC-2.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02` | `refusals` |
+| 18 | Too little room for a second copy stops the upgrade before it writes anything | `@US-03 @AC-3.1 @error @real-io @env:kind-size-limited-pv @slice-02` | `refusals` |
+| 19 | Once the volume has grown, the refused upgrade goes ahead by itself | `@US-03 @AC-3.5 @AC-3.1 @real-io @env:kind-size-limited-pv @slice-02` | `refusals` |
+| 20 | Data two majors behind is refused, naming both majors and the manual path | `@US-03 @AC-3.2 @error @real-io @env:kind-16-data @slice-02` | `refusals` |
+| 21 | Pinning the image back to the data's major lets the database start with no other step | `@US-03 @AC-3.5 @AC-3.2 @real-io @env:kind-16-data @slice-02` | `refusals` |
+| 22 | Data newer than the image, with no kept copy of the image's major, is refused | `@US-03 @AC-3.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02` | `refusals` |
+| 23 | An upgrade interrupted part-way is redone from the start and never serves a partial copy | `@US-03 @AC-3.4 @error @real-io @env:kind-interrupted-upgrade @slice-02` | `refusals` |
+| 24 | An upgrade-source image whose programs cannot run beside the database image is refused | `@US-03 @D3 @error @real-io @env:kind-0.1.17-with-data @slice-02` | `refusals` |
+
+Error/edge: 12 of 24 (50 %). Every AC of US-01..03 has at least one scenario; AC-1.1 has four. Scenario 24 has no
+AC of its own: it is the fourth refusal DDD-6 declares, the one a mirrored or Alpine upgrade-source image hits.
+Scenario 15 is the DEVOPS rollback contract's point 3. Every refusal asserts the volume's file fingerprint is
+unchanged, which DEVOPS uses as the mutation-testing substitute.
+
+## Wave: DISTILL / [REF] WS Strategy
+
+One walking skeleton, scenario 1, `@walking_skeleton @driving_port`: 0.1.17 with data → plain `helm upgrade` →
+same rows on 18 and Lighthouse ready. It runs the real chart, real images and a real PVC on kind; nothing is
+faked. Litmus: an operator reading it says "yes, that is the upgrade I want to just work". It cannot be green
+at hand-off, because the behaviour it proves does not exist yet; the hand-off commit is still green because
+nothing executes `.feature` files and the harness is not wired into CI until slice 01 ships with it.
+
+## Wave: DISTILL / [REF] Test Placement
+
+- Scenarios: `chart/tests/acceptance/upgrade-bundled-postgres.feature`, beside the three existing chart
+  features (epic-5306 precedent: Gherkin as SSOT, executed by helm-unittest and shell steps).
+- Render checks: `chart/tests/unit/postgres-upgrade_test.yaml`, picked up by the existing
+  `helm unittest -f 'tests/unit/*.yaml'` glob. Pending tests use helm-unittest's own `skip: { reason }`
+  (verified on 1.1.1; the field predates 1.1); a skipped test may name a template that does not exist yet.
+- Kind harness: `chart/tests/upgrade-path/run.sh CLUSTER GROUP [SCENARIO...]`, the path DESIGN's component
+  table names. One function per `@real-io` scenario, grouped as DEVOPS's `happy` / `refusals` matrix.
+
+## Wave: DISTILL / [REF] Driving-port Coverage
+
+| Driving port (DESIGN) | Scenarios |
+|---|---|
+| `helm upgrade` (plain) | 1, 4, 7, 14, 17, 18, 20, 23, 24 |
+| `helm upgrade --reset-then-reuse-values` | 2 (row 1) |
+| `helm upgrade --reuse-values` | 5 |
+| `helm rollback` | 13, 15, 17 |
+| `helm template \| kubectl apply` (GitOps) | 2 (row 2) |
+| `helm install` (fresh) | 6 |
+| Pod restart (deletion, rollout, back-off retry) | 7, 19, 21, 23 |
+| Rendered manifests / `NOTES.txt` | 5, 8, 10, 11, 12 |
+| `kubectl logs --all-containers` / `describe pod` (observable surface) | 6, 7, 15, 17, 18, 20, 22, 23, 24 |
+
+No uncovered entry point.
+
+## Wave: DISTILL / [REF] Adapter Coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| Data volume, local-path PVC | YES | 1–7, 13–17, 20–24 |
+| Data volume, size-enforced (tmpfs static PV) | YES | 18, 19 |
+| Old-major binaries (emptyDir from the upgrade-source image) | YES | every upgrade; 24 for a foreign image |
+| Decision hand-off (emptyDir file → wrapper) | YES | 1 (serves 18 from the new copy), 13 (17 from the old), 7 (no re-upgrade) |
+| Operator feedback (log + termination message) | YES | 18 asserts both; 17, 20, 22, 24 the log |
+| Official image entrypoint, unchanged | YES | 6 (fresh install initialises as today) |
+| Image registry pull (`postgres:16`, `17-trixie`, `18-trixie`, API image) | YES | pre-pulled on the runner, `kind load docker-image`; a cold-node pull is outside the 5 s budget by design |
+| Helm CLI / kubectl | YES | every `@real-io` scenario |
+
+No "NO — MISSING" rows.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+- `chart/tests/upgrade-path/run.sh` — `# SCAFFOLD: true`; 19 scenario functions, each `fail`s with
+  `SCAFFOLD: not yet implemented — <scenario title>`. Shellcheck-clean, `[[ ]]` throughout (Sonar
+  `shelldre:S7688`). Not referenced by `ci_chart.yml`.
+- `chart/tests/unit/postgres-upgrade_test.yaml` — 12 tests skipped with a `pending story 6131 slice 0N: …`
+  reason, 3 regression guards running.
+- No production template, value or CI job was touched. Language/policy notes: this is a Helm/bash
+  deliverable, so the Python-pilot artifacts (state-delta port, PBT, Mandate-12 domain types) do not apply, as
+  `docs/architecture/atdd-infrastructure-policy.md` already records for this repo. Two rows were appended to
+  that policy (Helm CLI driving port; bundled Postgres volume as a real driven port).
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN driving ports and decision table as above; ADR-213.
+- DEVOPS `environments.yaml`: every `@env:` tag names one of its environments. The docs scenario (16) has none,
+  because it reads prose.
+- `docs/charts/lighthouse-0.1.17.tgz` present and byte-identical; images pullable; Helm v4.3.0;
+  helm-unittest v1.1.2 in CI.
+
+## Wave: DISTILL / [REF] Completeness Audit
+
+13 of 15 → COMPLETE. Fails: C1b (the space threshold is not pinned to the byte — a tmpfs inside a kind node
+cannot be sized that finely; the major partitions 16/17/18 and newer-than-image are covered), C6c (no scenario
+asserts that only the four declared refusal lines can appear; each refusal asserts the volume untouched, which
+is the property that matters). C7c is N/A (single-replica StatefulSet, no concurrency claim). No
+SPECIFICATION_AMBIGUITY blocker; the one open behavioural question is non-blocking (Upstream findings, 1).
+
+## Wave: DISTILL / [REF] Upstream Findings
+
+1. **Pinning the image back after an upgrade silently drops post-upgrade writes.** The decision table's
+   "D = M (also covers an image pinned back to the old major)" means a new-chart install with
+   `postgresql.image=postgres:17-trixie`, before cleanup, starts on the kept 17 copy with no log line, and
+   everything written on 18 disappears — a rollback the operator did not ask for. No AC covers it. Question for
+   the maintainer (DESIGN): log one line naming the newer copy it is ignoring, refuse, or accept and document?
+   Not blocking: no scenario depends on the answer.
+2. **AC-1.5 / K3 as written would flake.** Both `readinessProbe`s run every 10 s with no initial delay, so
+   time-to-Ready is quantised to the probe period and a 5 s difference is noise. Scenario 7 measures the time
+   from pod creation to the `postgres` container starting (`containerStatuses[].state.running.startedAt` minus
+   `metadata.creationTimestamp`), which is exactly the cost this story adds, and then asserts Ready separately.
+3. **AC-1.5 cost source.** `pg-old-binaries` copies about 49 MB on every start while `pgdata/` holds 17 data,
+   which is every restart after an upgrade until the operator cleans up. Expected to stay inside 5 s; scenario 7
+   is where it shows if not.
+4. **AC-3.4 depends on catching the copy in flight.** The harness must prove the delete landed mid-copy, not
+   after it: wait for the "copy started" line, delete, then require the next start's log to report a discarded
+   partial copy. Without that proof the scenario can pass on a completed upgrade. 300 MB gives roughly 30 s of
+   window at DESIGN's measured rate.
+5. **AC-1.6 "renders exactly as before" has no permanent golden.** Every render carries
+   `helm.sh/chart: lighthouse-<version>`, so a stored snapshot breaks on each release bump. The permanent guard
+   is scenario 8 (no upgrade machinery when disabled) plus the existing suites; scenario 9 is a one-off diff in
+   DELIVER (Open checks).
+6. **AC-2.3 is prose.** It becomes executable through scenario 17, which runs the cleanup command copied
+   verbatim from the docs. DELIVER needs the command in the docs in a form the harness can extract.
+7. **K1 is manual** (issues and Slack, 30 and 60 days after release) and has no scenario.
+8. **Not tested, by decision:** arm64 (runners are amd64); `ALTER SYSTEM` settings (the chart sets none —
+   documented, not asserted, per DESIGN's open question); GitOps rollback by Git revert (only `helm rollback` is
+   exercised; the rendered path shares the same pod behaviour).
+
+## Wave: DISTILL / [REF] Open Checks for DELIVER
+
+- Wire `chart/tests/upgrade-path/run.sh` into the `upgrade-path` job with the slice-01 code, never before, so
+  `main` is never red; add it to `publish.needs`.
+- Remove each `@pending` tag and each helm-unittest `skip` in the commit that makes it green; unskip the three
+  "notes stay quiet" tests together with the two positive NOTES tests — alone they pass vacuously.
+- Update `chart/tests/unit/render_test.yaml`'s `postgres:18` assertion to `postgres:18-trixie` with `values.yaml`.
+- NOTES wording is DELIVER's, but the tests require the word "behind" and `--reset-then-reuse-values` in it.
+- Scenario 9: once, diff `helm template` with `postgresql.enabled=false` at `991edd7e9` against the slice-01
+  commit (excluding the `helm.sh/chart` label) and record the empty diff here.
+- Confirm the tmpfs static PV works under `helm/kind-action` first in slice 02; if not, the free-space override
+  fallback needs a guard that stops it shipping.
+- First walking-skeleton run against today's chart should fail on `database files are incompatible with
+  server`; record that as its genuine RED (see `red-classification.md`).
+- Shell in the new ConfigMap and harness: `[[ ]]` only; run shellcheck locally
+  (`docker run --rm -v "$PWD:/mnt:ro" koalaman/shellcheck:stable …`) before pushing.
+- Answer Upstream finding 1 before slice 02 closes, since it decides whether a further refusal or log line exists.
+
+## Wave: DISTILL / [REF] Final Wave Review Gate
+
+| Reviewer | Wave | Verdict | Disposition |
+|---|---|---|---|
+| Product owner | DISCUSS | approved, 0 findings | The DoR table said 15 ACs; corrected to 17 |
+| Solution architect | DESIGN | approved, 0 findings | Its claim that pinning the image back is loss-free is wrong; see the decision for the maintainer below |
+| Platform architect | DEVOPS | rejected, 3 blockers | All three are implementation not written yet (the `upgrade-path` job, `publish.needs`, the version-guard check). By the reviewer's own account they belong to slice 01, so they are DELIVER action items, not design defects |
+| Acceptance designer | DISTILL | approved, 0 findings | AC coverage and the interruption scenario were spot-checked by hand, and both hold |
+
+DELIVER action items carried from the review: wire `upgrade-path` into `ci_chart.yml` and `publish.needs`; add the
+Postgres-major check to `version-guard.sh`; unskip every pending test in `postgres-upgrade_test.yaml`; check K2's
+`gh run` query against the first real run; add the Renovate rule that keeps the upgrade-source image to minor updates.
+
+Decisions for the maintainer before DELIVER:
+
+1. **Pinning the image back on the new chart.** After an upgrade, `postgresql.image: postgres:17-trixie` on the new
+   chart starts Postgres on the kept 17 copy, the same as a rollback, and everything written on 18 is not in it. No
+   log line says so today. The choices are to start on the 17 copy with one warning line, to refuse while a current
+   18 copy exists (the operator then removes `pgdata-18` deliberately), or to document it only.
+2. **The release gate before slice 01 lands.** The version-guard check that enforces "Postgres 18 ships only with
+   the upgrade" arrives with slice 01. Until then nothing stops a chart release cut from `main` defaulting to 18. It
+   can land on its own now, because it only runs when a version is published and leaves `main` green, or the next
+   `/release` re-pins `postgres:17` by hand.
