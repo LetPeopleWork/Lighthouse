@@ -24,6 +24,7 @@ readonly DB_SECRET="$RELEASE-lighthouse-db"
 readonly DB_USER="lighthouse"
 readonly MOUNT="/var/lib/postgresql/data"
 readonly WAIT_SECONDS=600
+readonly CRASH_LOOP_RESTARTS=3
 
 # The install and every upgrade take exactly these values, so an upgrade never carries a value the
 # install did not have.
@@ -43,6 +44,14 @@ fail() {
 }
 
 # --- shared steps ------------------------------------------------------------------------------------
+
+# Prints the one line of $2 that carries text $1, and fails when there is none or more than one.
+the_one_line_with() {
+  local text="$1" input="$2" lines
+  lines="$(grep -F -- "$text" <<<"$input" || true)"
+  [[ -n "$lines" && "$(wc -l <<<"$lines")" == "1" ]] || return 1
+  echo "$lines"
+}
 
 chart_app_version() {
   helm show chart "$1" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }'
@@ -123,18 +132,27 @@ highest_restart_count() {
     2>/dev/null || true; } | sort -n | tail -1
 }
 
+# Fails with the pod's diagnostics once the database pod in $1 has crash-looped, or once deadline $2 has
+# passed.
+fail_if_crash_looping_or_late() {
+  local ns="$1" deadline="$2" crash_looping="$3" late="$4" restarts
+  restarts="$(highest_restart_count "$ns")"
+  if [[ "${restarts:-0}" -ge "$CRASH_LOOP_RESTARTS" ]]; then
+    dump_diagnostics "$ns"
+    fail "$crash_looping"
+  fi
+  if [[ $SECONDS -ge $deadline ]]; then
+    dump_diagnostics "$ns"
+    fail "$late"
+  fi
+}
+
 wait_postgres_ready() {
-  local ns="$1" deadline=$((SECONDS + WAIT_SECONDS)) restarts
+  local ns="$1" deadline=$((SECONDS + WAIT_SECONDS))
   until kubectl -n "$ns" rollout status "statefulset/$POSTGRES_STATEFULSET" --timeout=10s >/dev/null 2>&1; do
-    restarts="$(highest_restart_count "$ns")"
-    if [[ "${restarts:-0}" -ge 3 ]]; then
-      dump_diagnostics "$ns"
-      fail "the database pod in $ns is crash-looping"
-    fi
-    if [[ $SECONDS -ge $deadline ]]; then
-      dump_diagnostics "$ns"
-      fail "the database in $ns did not become Ready within ${WAIT_SECONDS}s"
-    fi
+    fail_if_crash_looping_or_late "$ns" "$deadline" \
+      "the database pod in $ns is crash-looping" \
+      "the database in $ns did not become Ready within ${WAIT_SECONDS}s"
   done
   kubectl -n "$ns" wait --for=condition=Ready "pod/$POSTGRES_POD" --timeout="${WAIT_SECONDS}s" >/dev/null
 }
@@ -148,6 +166,11 @@ wait_api_ready() {
     [[ $SECONDS -lt $deadline ]] || fail "the API in $ns does not serve /health/ready"
     sleep 3
   done
+}
+
+in_postgres() {
+  local ns="$1"
+  kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- "${@:2}"
 }
 
 psql_on() {
@@ -184,9 +207,22 @@ assert_row_counts() {
   [[ "$after" == "$before" ]] || fail "row counts in $ns changed: $(diff <(echo "$before") <(echo "$after") || true)"
 }
 
+# A table of its own holding this run's marker, so whether a write made at one point survives can be
+# checked later by name.
+write_marker_table() {
+  local ns="$1" table="$2"
+  psql_in "$ns" "CREATE TABLE $table (marker text);
+                 INSERT INTO $table VALUES ('$MARKER')" >/dev/null
+}
+
+marker_rows_in() {
+  local ns="$1" table="$2" pod="${3:-$POSTGRES_POD}"
+  psql_on "$ns" "$pod" "SELECT count(*) FROM $table WHERE marker = '$MARKER'"
+}
+
 assert_marker_row() {
   local ns="$1" pod="${2:-$POSTGRES_POD}"
-  [[ "$(psql_on "$ns" "$pod" "SELECT count(*) FROM upgrade_path_marker WHERE marker = '$MARKER'")" == "1" ]] \
+  [[ "$(marker_rows_in "$ns" upgrade_path_marker "$pod")" == "1" ]] \
     || fail "the marker row is missing in $ns"
 }
 
@@ -204,12 +240,12 @@ secret_fingerprint() {
 
 volume_file() {
   local ns="$1" path="$2"
-  kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- cat "$MOUNT/$path"
+  in_postgres "$ns" cat "$MOUNT/$path"
 }
 
 volume_entries() {
   local ns="$1"
-  kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- ls -1A "$MOUNT"
+  in_postgres "$ns" ls -1A "$MOUNT"
 }
 
 upgrade_log() {
@@ -306,6 +342,25 @@ pod_field() {
   kubectl -n "$ns" get pod "$POSTGRES_POD" -o jsonpath="$path" 2>/dev/null || true
 }
 
+pod_uid() {
+  pod_field "$1" '{.metadata.uid}'
+}
+
+assert_not_ready() {
+  local ns="$1" message="$2"
+  [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] || fail "$message"
+}
+
+stop_database() {
+  local ns="$1"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
+  kubectl -n "$ns" wait --for=delete "pod/$POSTGRES_POD" --timeout=120s >/dev/null 2>&1 || true
+}
+
+start_database() {
+  kubectl -n "$1" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+}
+
 postgres_started_at() {
   pod_field "$1" '{.status.containerStatuses[?(@.name=="postgres")].state.running.startedAt}'
 }
@@ -313,19 +368,13 @@ postgres_started_at() {
 # Deletes the database pod and waits until the StatefulSet's replacement has started its postgres
 # container. Readiness is left to the caller.
 restart_database() {
-  local ns="$1" old_uid deadline=$((SECONDS + WAIT_SECONDS)) restarts
-  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  local ns="$1" old_uid deadline=$((SECONDS + WAIT_SECONDS))
+  old_uid="$(pod_uid "$ns")"
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --wait >/dev/null
-  until [[ "$(pod_field "$ns" '{.metadata.uid}')" != "$old_uid" && -n "$(postgres_started_at "$ns")" ]]; do
-    restarts="$(highest_restart_count "$ns")"
-    if [[ "${restarts:-0}" -ge 3 ]]; then
-      dump_diagnostics "$ns"
-      fail "the restarted database pod in $ns is crash-looping"
-    fi
-    if [[ $SECONDS -ge $deadline ]]; then
-      dump_diagnostics "$ns"
-      fail "the restarted database in $ns did not start within ${WAIT_SECONDS}s"
-    fi
+  until [[ "$(pod_uid "$ns")" != "$old_uid" && -n "$(postgres_started_at "$ns")" ]]; do
+    fail_if_crash_looping_or_late "$ns" "$deadline" \
+      "the restarted database pod in $ns is crash-looping" \
+      "the restarted database in $ns did not start within ${WAIT_SECONDS}s"
     sleep 1
   done
 }
@@ -378,6 +427,10 @@ open_kept_copy() {
     fi
     sleep 2
   done
+}
+
+close_kept_copy() {
+  kubectl -n "$1" delete pod kept-copy --wait >/dev/null
 }
 
 # --- group: happy (slice 01), in the order the scenarios chain ----------------------------------------
@@ -438,8 +491,7 @@ rollback_between_new_chart_revisions_changes_nothing() {
   given_upgraded
   helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set shutdownTimeoutSeconds=45 >/dev/null
   wait_api_ready "$ns"
-  psql_in "$ns" "CREATE TABLE upgrade_path_written_on_18 (marker text);
-                 INSERT INTO upgrade_path_written_on_18 VALUES ('$MARKER')" >/dev/null
+  write_marker_table "$ns" upgrade_path_written_on_18
 
   helm rollback "$RELEASE" "$UPGRADE_REVISION" -n "$ns" >/dev/null
   # The changed setting reaches only the API, so the rollback leaves the database running. Restarting it
@@ -449,7 +501,7 @@ rollback_between_new_chart_revisions_changes_nothing() {
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   assert_upgrade_log_says "$ns" "nothing to upgrade"
-  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_written_on_18 WHERE marker = '$MARKER'")" == "1" ]] \
+  [[ "$(marker_rows_in "$ns" upgrade_path_written_on_18)" == "1" ]] \
     || fail "the row written on Postgres 18 in $ns is gone after the rollback"
   wait_api_ready "$ns"
 }
@@ -458,8 +510,7 @@ rollback_between_new_chart_revisions_changes_nothing() {
 kept_copy_holds_pre_upgrade_rows() {
   local ns="$UPGRADED_NS" counts
   given_upgraded
-  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
-  kubectl -n "$ns" wait --for=delete "pod/$POSTGRES_POD" --timeout=120s >/dev/null 2>&1 || true
+  stop_database "$ns"
 
   open_kept_copy "$ns"
 
@@ -468,8 +519,8 @@ kept_copy_holds_pre_upgrade_rows() {
     || fail "the kept copy in $ns differs from before the upgrade: $(diff <(echo "${RECORDED_COUNTS[$ns]}") <(echo "$counts") || true)"
   assert_marker_row "$ns" kept-copy
 
-  kubectl -n "$ns" delete pod kept-copy --wait >/dev/null
-  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+  close_kept_copy "$ns"
+  start_database "$ns"
   wait_postgres_ready "$ns"
   assert_upgrade_log_says "$ns" "nothing to upgrade"
   assert_server_major "$ns" 18
@@ -483,8 +534,7 @@ table_count() {
 rollback_starts_17_on_pre_upgrade_data() {
   local ns="$UPGRADED_NS"
   given_upgraded
-  psql_in "$ns" "CREATE TABLE upgrade_path_before_rollback (marker text);
-                 INSERT INTO upgrade_path_before_rollback VALUES ('$MARKER')" >/dev/null
+  write_marker_table "$ns" upgrade_path_before_rollback
 
   helm rollback "$RELEASE" "$BEFORE_REVISION" -n "$ns" >/dev/null
 
@@ -500,15 +550,14 @@ rollback_starts_17_on_pre_upgrade_data() {
 upgrade_again_after_rollback_starts_afresh() {
   local ns="$UPGRADED_NS"
   given_rolled_back
-  psql_in "$ns" "CREATE TABLE upgrade_path_after_rollback (marker text);
-                 INSERT INTO upgrade_path_after_rollback VALUES ('$MARKER')" >/dev/null
+  write_marker_table "$ns" upgrade_path_after_rollback
 
   upgrade_to_new_chart "$ns"
 
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   assert_upgrade_log_says "$ns" "out of date"
-  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_after_rollback WHERE marker = '$MARKER'")" == "1" ]] \
+  [[ "$(marker_rows_in "$ns" upgrade_path_after_rollback)" == "1" ]] \
     || fail "the row written on Postgres 17 after the rollback in $ns did not reach Postgres 18"
   [[ "$(table_count "$ns" upgrade_path_before_rollback)" == "0" ]] \
     || fail "the row written on Postgres 18 before the rollback in $ns came back"
@@ -518,8 +567,7 @@ upgrade_again_after_rollback_starts_afresh() {
 pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
   local ns="$UPGRADED_NS" log warning
   given_upgraded
-  psql_in "$ns" "CREATE TABLE upgrade_path_before_pin (marker text);
-                 INSERT INTO upgrade_path_before_pin VALUES ('$MARKER')" >/dev/null
+  write_marker_table "$ns" upgrade_path_before_pin
 
   helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set postgresql.image=postgres:17-trixie >/dev/null
   echo "  pinned to Postgres 17 at revision $(current_revision "$ns")"
@@ -531,16 +579,14 @@ pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
   [[ "$(table_count "$ns" upgrade_path_before_pin)" == "0" ]] \
     || fail "the row written on Postgres 18 in $ns is there after pinning to Postgres 17"
   log="$(kubectl -n "$ns" logs "$POSTGRES_POD" --all-containers)"
-  warning="$(grep -F -- "newer Postgres 18 copy" <<<"$log" || true)"
-  [[ -n "$warning" && "$(wc -l <<<"$warning")" == "1" ]] \
+  warning="$(the_one_line_with "newer Postgres 18 copy" "$log")" \
     || { dump_diagnostics "$ns"; fail "the database log in $ns does not carry exactly one warning about the newer copy"; }
   echo "  $warning"
   if ! grep -qF "not in this database" <<<"$warning" || ! grep -qF "redoes the upgrade from this copy" <<<"$warning"; then
     fail "the warning in $ns does not say what is missing and what removing the pin does: $warning"
   fi
   wait_api_ready "$ns"
-  psql_in "$ns" "CREATE TABLE upgrade_path_during_pin (marker text);
-                 INSERT INTO upgrade_path_during_pin VALUES ('$MARKER')" >/dev/null
+  write_marker_table "$ns" upgrade_path_during_pin
 
   upgrade_to_new_chart "$ns"
   echo "  pin removed at revision $(current_revision "$ns")"
@@ -548,7 +594,7 @@ pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   assert_upgrade_log_says "$ns" "out of date"
-  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_during_pin WHERE marker = '$MARKER'")" == "1" ]] \
+  [[ "$(marker_rows_in "$ns" upgrade_path_during_pin)" == "1" ]] \
     || fail "the row written on Postgres 17 during the pin in $ns did not reach Postgres 18"
   [[ "$(table_count "$ns" upgrade_path_before_pin)" == "0" ]] \
     || fail "the row written on Postgres 18 before the pin in $ns came back"
@@ -568,8 +614,7 @@ reuse_values_stays_on_17_and_says_so() {
   assert_upgrade_log_says "$ns" "nothing to upgrade"
   wait_api_ready "$ns"
   assert_marker_row "$ns"
-  line="$(grep -F -- "behind" <<<"$output" || true)"
-  [[ -n "$line" && "$(wc -l <<<"$line")" == "1" ]] \
+  line="$(the_one_line_with "behind" "$output")" \
     || fail "the upgrade output in $ns does not carry exactly one line saying the database is behind"
   echo "  $line"
   grep -qF -- "--reset-then-reuse-values" <<<"$line" \
@@ -666,15 +711,15 @@ resize_small_volume() {
 
 mount_size_mib() {
   local ns="$1"
-  kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- df -Pm "$MOUNT" | awk 'NR == 2 { print $2 }'
+  in_postgres "$ns" df -Pm "$MOUNT" | awk 'NR == 2 { print $2 }'
 }
 
 # Sizes the volume by the same measure the upgrade step uses: room for the data and about half a second
 # copy, and after growing, room for two second copies.
 shrink_to_one_copy() {
   local ns="$1" data_kib used_kib used_mib needed_mib small_mib
-  data_kib="$(kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- du -sk "$MOUNT/pgdata" | cut -f1)"
-  used_kib="$(kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- df -Pk "$MOUNT" | awk 'NR == 2 { print $3 }')"
+  data_kib="$(in_postgres "$ns" du -sk "$MOUNT/pgdata" | cut -f1)"
+  used_kib="$(in_postgres "$ns" df -Pk "$MOUNT" | awk 'NR == 2 { print $3 }')"
   used_mib=$(((used_kib + 1023) / 1024))
   needed_mib=$((data_kib * 11 / 10 / 1024 + 64))
   small_mib=$((used_mib + needed_mib / 2))
@@ -683,12 +728,6 @@ shrink_to_one_copy() {
   [[ "$(mount_size_mib "$ns")" == "$small_mib" ]] \
     || fail "the database in $ns sees a ${MOUNT} of $(mount_size_mib "$ns") MiB, expected the ${small_mib} MiB tmpfs"
   echo "  volume: ${used_mib} MiB used, a second copy needs about ${needed_mib} MiB; sized to ${small_mib} MiB, grows to ${SMALL_GROWN_MIB} MiB"
-}
-
-stop_database() {
-  local ns="$1"
-  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
-  kubectl -n "$ns" wait --for=delete "pod/$POSTGRES_POD" --timeout=120s >/dev/null 2>&1 || true
 }
 
 upgrade_restarts() {
@@ -713,11 +752,9 @@ wait_upgrade_refused_twice() {
 refusal_line() {
   local ns="$1" log line
   wait_upgrade_refused_twice "$ns"
-  [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] \
-    || fail "the database in $ns became Ready although its upgrade was refused"
+  assert_not_ready "$ns" "the database in $ns became Ready although its upgrade was refused"
   log="$(upgrade_log "$ns")"
-  line="$(grep -F -- "lighthouse-postgres: refusing" <<<"$log" || true)"
-  [[ -n "$line" && "$(wc -l <<<"$line")" == "1" ]] \
+  line="$(the_one_line_with "lighthouse-postgres: refusing" "$log")" \
     || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one refusal line"; }
   echo "$line"
 }
@@ -746,7 +783,7 @@ fingerprint_then_upgrade() {
   stop_database "$ns"
   FINGERPRINT="$(volume_fingerprint "$ns")"
   upgrade_to_new_chart "$ns" "${@:2}"
-  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+  start_database "$ns"
 }
 
 too_little_room_refuses_and_touches_nothing() {
@@ -796,7 +833,7 @@ CLEANED_COUNTS=""
 # Waits until the StatefulSet has replaced the database pod with uid $2.
 wait_pod_replaced() {
   local ns="$1" old_uid="$2" deadline=$((SECONDS + WAIT_SECONDS))
-  until [[ "$(pod_field "$ns" '{.metadata.uid}')" != "$old_uid" && -n "$(pod_field "$ns" '{.metadata.uid}')" ]]; do
+  until [[ "$(pod_uid "$ns")" != "$old_uid" && -n "$(pod_uid "$ns")" ]]; do
     if [[ $SECONDS -ge $deadline ]]; then
       dump_diagnostics "$ns"
       fail "the database pod in $ns was not replaced within ${WAIT_SECONDS}s"
@@ -834,7 +871,7 @@ two_majors_behind_refuses_and_touches_nothing() {
 pinning_to_data_major_starts_without_other_step() {
   local ns="$DATA16_NS" old_uid
   [[ -n "$DATA16_REFUSED" ]] || two_majors_behind_refuses_and_touches_nothing
-  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  old_uid="$(pod_uid "$ns")"
 
   upgrade_to_new_chart "$ns" --set postgresql.image=postgres:16
   delete_stuck_pod "$ns"
@@ -880,7 +917,7 @@ cleanup_then_rollback_refuses_empty_database() {
   assert_carried_across "$ns" "$counts"
 
   remove_old_copy_as_documented "$ns"
-  [[ "$(kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- ls -1A "$MOUNT/pgdata")" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
+  [[ "$(in_postgres "$ns" ls -1A "$MOUNT/pgdata")" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
     || fail "pgdata in $ns holds more than the placeholder after the documented cleanup"
   restart_database "$ns"
   wait_postgres_ready "$ns"
@@ -888,7 +925,7 @@ cleanup_then_rollback_refuses_empty_database() {
   assert_data_directory "$ns" pgdata-18
   echo "  a restart after the cleanup starts Postgres 18 on pgdata-18"
 
-  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  old_uid="$(pod_uid "$ns")"
   helm rollback "$RELEASE" "$before_revision" -n "$ns" >/dev/null
 
   wait_pod_replaced "$ns" "$old_uid"
@@ -897,8 +934,7 @@ cleanup_then_rollback_refuses_empty_database() {
     [[ $SECONDS -lt $deadline ]] || { dump_diagnostics "$ns"; fail "Postgres 17 in $ns neither failed nor restarted after the rollback"; }
     sleep 2
   done
-  [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] \
-    || fail "the database in $ns became Ready after the rollback"
+  assert_not_ready "$ns" "the database in $ns became Ready after the rollback"
   # The container restarts every few seconds, so its last run's log is read from whichever of the current
   # and previous container still has it.
   deadline=$((SECONDS + 120))
@@ -912,7 +948,7 @@ cleanup_then_rollback_refuses_empty_database() {
   [[ "$(on_volume "$ns" 'ls -1A /volume/pgdata')" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
     || fail "the rollback in $ns created something in pgdata"
 
-  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  old_uid="$(pod_uid "$ns")"
   upgrade_to_new_chart "$ns"
   delete_stuck_pod "$ns"
 
@@ -967,7 +1003,7 @@ interrupted_upgrade_is_redone_from_start() {
   upgrade_to_new_chart "$ns"
   echo "  mid-copy: $(wait_copy_started "$ns")"
   [[ -z "$(postgres_started_at "$ns")" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
-  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  old_uid="$(pod_uid "$ns")"
   # The upgrade step does not stop for SIGTERM, so a plain delete would give the copy its 30 s grace
   # period to finish. One second cuts it off where it is, as a node going down would.
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --grace-period=1 --wait >/dev/null
@@ -993,7 +1029,7 @@ interrupted_upgrade_is_redone_from_start() {
   open_kept_copy "$ns"
   [[ "$(public_row_counts "$ns" kept-copy)" == "$counts" ]] || fail "the kept Postgres 17 copy in $ns differs from before the upgrade"
   assert_marker_row "$ns" kept-copy
-  kubectl -n "$ns" delete pod kept-copy --wait >/dev/null
+  close_kept_copy "$ns"
 }
 
 foreign_upgrade_source_refuses_and_touches_nothing() {

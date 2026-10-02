@@ -47,6 +47,10 @@ app.kubernetes.io/component: postgres
 18
 {{- end -}}
 
+{{- define "lighthouse.postgres.upgradeImage" -}}
+{{- dig "postgresql" "upgrade" "image" "" .Values.AsMap | default "postgres:17-trixie" -}}
+{{- end -}}
+
 {{/* The major in the bundled database image's tag, or empty when the reference has no numeric tag (a digest
      only, say). The registry may carry a port, so the tag is looked for in the last path segment only. */}}
 {{- define "lighthouse.postgres.imageMajor" -}}
@@ -54,10 +58,6 @@ app.kubernetes.io/component: postgres
 {{- if contains ":" $name -}}
 {{- regexFind "^[0-9]+" (regexReplaceAll "^.*:" $name "") -}}
 {{- end -}}
-{{- end -}}
-
-{{- define "lighthouse.postgres.upgradeImage" -}}
-{{- dig "postgresql" "upgrade" "image" "" .Values.AsMap | default "postgres:17-trixie" -}}
 {{- end -}}
 
 {{/* ConfigMap holding the scripts the bundled Postgres pod runs to pick, and if needed upgrade, its data */}}

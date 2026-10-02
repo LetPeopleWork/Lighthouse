@@ -26,8 +26,9 @@ postgres_default_major() {
     inside && /^[^[:space:]#]/ { exit }
     inside && /^  image:/ {
       ref = $2; gsub(/"/, "", ref); sub(/@.*$/, "", ref); n = split(ref, parts, "/"); name = parts[n]
-      if (index(name, ":") && match(substr(name, index(name, ":") + 1), /^[0-9]+/)) {
-        print substr(name, index(name, ":") + 1, RLENGTH)
+      colon = index(name, ":")
+      if (colon && match(substr(name, colon + 1), /^[0-9]+/)) {
+        print substr(name, colon + 1, RLENGTH)
       }
       exit
     }'
