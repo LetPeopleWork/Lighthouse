@@ -75,6 +75,11 @@ target_environments:
     platform: [linux]
     preconditions: ["kind cluster up (upgrade-path-chain)", "postgres:15-bookworm, postgres:16-bookworm loaded into kind (postgres:15-trixie does not exist)"]
 
+  - name: kind-chain-size-limited-pv
+    description: "The kind-chain-16-17 fixture built on the size-limited tmpfs static PV of kind-size-limited-pv, sized so the first upgrade (16 -> 17) fits and the volume holds two copies but not three; the second upgrade (17 -> 18) must refuse before writing, naming the cleanup via the stopped-database docs section as a way out, and go ahead on the next retry once the copies older than pgdata-17 are removed that way"
+    platform: [linux]
+    preconditions: ["kind cluster up (upgrade-path-chain)", "privileged kind node (default)", "tmpfs mounted in the node and a static PV with claimRef to data-l8e-lighthouse-postgres-0 and storageClassName lh-small", "postgres:16-trixie, postgres:17-trixie, postgres:18-trixie loaded into kind"]
+
 coexistence_matrix:
   - tool: existing ci_chart.yml gates (helm lint, helm unittest incl. standalone gate, no-key-generation/no-lookup gate, render determinism, helm-docs drift)
     must_not_break: true                    # new templates must pass every existing gate unchanged

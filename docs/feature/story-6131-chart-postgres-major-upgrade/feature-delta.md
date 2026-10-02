@@ -228,7 +228,10 @@ then to 18 by the chart's defaults. In the ACs, N is the major the database runs
 - **AC-4.3** After AC-4.1, rollbacks behave as follows:
   - **One chart back:** `helm rollback` to the revision of the chart that defaulted to N starts Postgres N
     on `pgdata-N/`, without what was written on N+1. That chart has the upgrade step, so the pod logs the
-    same one-line warning as AC-2.5, naming `pgdata-(N+1)`.
+    same one-line warning as AC-2.5, naming `pgdata-(N+1)`. Slices 01–03 ship in one chart release (decided
+    2026-10-02), so every chart that defaults to a major past 17 carries this step, and "one chart back" always
+    reaches it. A build carrying only the slice 01–02 step was never released. If one were rolled back to, it
+    would refuse with its catch-all line and change nothing.
   - **Two charts back, to chart 0.1.17 or any chart without the upgrade step:** Postgres does not start,
     because its `initdb` refuses the non-empty `pgdata/` that holds only the placeholder. It never starts an
     empty database.
@@ -1121,6 +1124,8 @@ taken after `pg_upgrade` has finished with it. `write_upgrade_note` hashes `L` i
 
 ### Retention: the copy before last goes once the new copy is in place
 
+(Revised 2026-10-02 after the slice 03 design review, findings S3R-1..S3R-8.)
+
 **Rule.** After a successful upgrade from `L` (major `Lm`) into `pgdata-M`, every copy older than `L` is
 removed. "Successful" means after the rename of `pgdata-M.partial` and the `sync` that follows it. What
 stays is the source and the new copy, about twice the data.
@@ -1129,31 +1134,73 @@ stays is the source and the new copy, about twice the data.
 source is `pgdata/` and nothing is older than it. So nothing is removed, and a rollback to 0.1.17 still
 starts on the pre-upgrade database (AC-4.11).
 
-**One implementation.** The removal is `remove_copies_older_than <major>` in `volume.sh`. It is the same
-function the documented cleanup (`remove-old-copies.sh`) calls with the live major. The order is fixed:
-1. When `pgdata/` is among the copies to remove and holds no placeholder yet, write the placeholder
-   `UPGRADED-TO-<live major>-see-kubernetes-docs` and sync it.
+**One removal function, with one contract.** `remove_copies_older_than <bound> <live major>` in `volume.sh`
+is the only code that deletes a copy. The automatic removal, the finishing step and the documented cleanup
+all call it.
+
+What it may remove, and nothing else:
+- a `pgdata-K` folder, counting or not, with K below `<bound>`;
+- the contents of `pgdata/` other than the placeholder, but only when `pgdata/` counts with a
+  `PG_VERSION` major below `<bound>`, or when it does not count and already holds the placeholder. A
+  `pgdata/` that does not count and has no placeholder is never touched, because nothing shows that a
+  removal ever started there.
+
+What it guarantees:
+- It refuses (removes nothing) when `<bound>` is above `<live major>`. So the live copy and anything newer
+  are never touched, whoever calls it.
+- The automatic callers, the post-upgrade removal and the finishing step, always pass `<bound>` =
+  `<live major>` − 1. They therefore never touch the live copy, the copy it was made from, or any copy at or
+  above that major.
+- Only the operator's cleanup command passes `<bound>` = `<live major>`, and so also removes the copy the
+  live one was made from. That is the one removal that costs the one-chart-back rollback, and it only ever
+  happens on request.
+
+The order is fixed:
+1. When `pgdata/` is going to be removed and holds no placeholder yet, write
+   `UPGRADED-TO-<live major>-see-kubernetes-docs` into it and sync. The name comes from the second argument.
 2. Then, oldest copy first: delete `PG_VERSION`, sync, delete the rest. `pgdata/` is emptied down to the
    placeholder; a `pgdata-K` folder goes entirely.
-3. Then one log line, for example: `lighthouse-postgres: removed pgdata (Postgres 16), the copy before the
-   one this upgrade read from; a rollback to a chart on Postgres 16 is no longer possible, a rollback to
-   the chart on Postgres 17 still is`.
+3. One log line naming each removed folder and its major. For the automatic removal it reads, for example:
+   `lighthouse-postgres: removed pgdata (Postgres 16), the copy before the one this upgrade read from; a
+   rollback to a chart on Postgres 16 is no longer possible, a rollback to the chart on Postgres 17 still is`.
+
+**When the removal runs, and what a failure does.**
+- **After a successful upgrade:** `upgrade.sh` first writes the start decision (`pgdata-M`), then calls
+  `remove_copies_older_than (M − 1) M`.
+- **Finishing step:** only in the decision-table row "`Lm` = M, no copy newer than M", after the start
+  decision is written, and only when its trigger holds (below).
+- **Never** in a pin-back row, the "`Lm` = M, a copy newer than M exists" row, or any refusal row. A
+  refusal still changes nothing, and a database started on a pinned-back copy keeps every folder.
+- A removal that fails (a full disk for the sync, a permission error) logs one warning line and the step
+  still exits 0. The decision is already written, so the database starts on the right copy. Leftovers only
+  cost space, and the next start tries again.
+
+**Finishing-step trigger.** One condition with three parts, all measured against `Lm − 1`. Run
+`remove_copies_older_than (Lm − 1) Lm` when any of these holds:
+- `pgdata/` holds the placeholder and anything else besides it;
+- any `pgdata-K` folder, counting or not, has K below `Lm − 1`;
+- `pgdata/` counts with a `PG_VERSION` major below `Lm − 1`.
+
+On a volume where none holds, nothing runs. The third part closes the gap DISTILL found: a pod killed after
+the new copy's commit but before the placeholder leaves `pgdata/` counting at `Lm − 2`, and the next start
+removes it. The second part finishes half-removed folders below the bound (AC-4.6). A first-upgrade volume
+meets none of the three, because its `pgdata/` is `Lm − 1`.
 
 **Cut-off removal.** Every intermediate state is one the decision table handles:
 - The placeholder is written but `pgdata/PG_VERSION` is still there: `pgdata/` still counts. The chain runs
-  16 → 17 → 18, the live copy is 18, the pod starts on `pgdata-18`, and the finishing step (below) removes
-  `pgdata/`.
+  16 → 17 → 18, the live copy is 18, the pod starts on `pgdata-18`, and the finishing step removes `pgdata/`
+  (it counts at 16, below 17).
 - `PG_VERSION` is gone and other files remain: `pgdata/` no longer counts. The base is the lowest counting
-  `pgdata-K`, and the finishing step clears the rest.
-- An older `pgdata-K` is half-removed: it does not count, and the finishing step removes it.
-
-**Finishing step.** In the "nothing to do, `Lm` = M" row, and only when `pgdata/` holds a placeholder, the
-step calls `remove_copies_older_than (Lm − 1)` before starting. It removes leftovers below the copy the live
-one was made from: `pgdata/` contents other than the placeholder, and any `pgdata-K` folder (counting or
-not) with K below `Lm − 1`.
-- On every other volume it finds nothing.
-- A first-upgrade volume has no placeholder, so it never runs there and its `pgdata/` is never touched.
-- It never runs on a refusal or pin-back row, so a refusal still changes nothing.
+  `pgdata-K`, and the finishing step clears the rest, because the placeholder is there.
+- An older `pgdata-K` is half-removed: it does not count, and the finishing step removes it if K is below
+  `Lm − 1`. A half-removed `pgdata-(Lm−1)` can only come from the operator's cleanup, and rerunning the
+  cleanup finishes it.
+- A cleanup cut between the placeholder and `PG_VERSION` on a first-upgrade volume (`pgdata/` 17 counting
+  with a placeholder, `pgdata-18` live): `pgdata/` is `Lm − 1`, so no automatic step touches it.
+  - If the operator then pins the image back to 17, the pod starts on `pgdata/` with the warning.
+  - From then on `pgdata/` is the live copy, and every removal's bound is below it.
+  - The writes made on 17 stay safe however often it restarts. This is the case review finding S3R-1
+    raised, now closed by the contract rather than by the trigger.
 
 **Room check: remove after the copy, not before (chosen).**
 - The check stays as slice 01 built it: free space must hold one new copy of the source (`du` of `L` ×
@@ -1162,30 +1209,38 @@ not) with K below `Lm − 1`.
 - Removing the oldest copy first would cap that peak at two copies. But if the upgrade then failed, was
   refused by `pg_upgrade`, or was interrupted, the operator would have lost the older rollback for an
   upgrade that never happened. It would also break the promise that a refused upgrade changes nothing.
-- An operator whose volume cannot hold the third copy for that moment gets the room refusal. When older
-  copies exist, that line also names `remove-old-copies.sh`, so freeing the space early is the operator's
-  explicit choice.
+- When the room check refuses and older copies exist, the line names the cleanup as a way out. The
+  `postgres` container is not running while its start is refused, so the line points to the docs section
+  that runs the cleanup from a pod of its own. That is the same sequence the docs already give for a
+  cut-off cleanup: scale the StatefulSet to 0, run `remove-old-copies.sh` in a pod that mounts the volume
+  and the scripts ConfigMap, delete that pod, scale back to 1. Example line:
+  `lighthouse-postgres: refusing upgrade 17→18: need 900 MiB, 700 MiB free; grow the volume claim …, or
+  remove the copies older than pgdata-17 as https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#removing-old-copies-while-the-database-is-stopped
+  describes. Nothing was changed`.
 
 ### Generalised decision table (`pg-upgrade`)
 
 M is the image's `PG_MAJOR`. L is the live copy (folder `Ld`, major `Lm`). The base is computed as above.
+The rows are tried in this order.
 
 | Volume state | Action | `PGDATA` |
 |---|---|---|
 | No copy, no placeholder, no `pgdata-*` | Fresh install | `pgdata` |
 | Placeholder and no copy counts | Refuse, naming what was found (unchanged) | none |
 | Copies but no base | Refuse (unchanged catch-all) | none |
-| A link of the chain cannot be hashed while a newer copy counts | Refuse: removal cut off, or a damaged copy; points to the cut-off section | none |
-| `Lm` = M, no copy newer than M | Nothing to do; finishing step when a placeholder exists | `Ld` |
-| `Lm` = M, a copy newer than M exists (out of date after a pin or rollback) | Start with the AC-2.5 warning naming the newest such copy; finishing step when a placeholder exists | `Ld` |
+| A link of the chain cannot be hashed while a newer copy counts | Refuse. When that link is `pgdata/` and holds the placeholder: a removal was cut off, so point to the cut-off section. Otherwise: "put that file back from a backup", naming the folder | none |
+| `Lm` = M, no copy newer than M | Write the decision, then the finishing step when its trigger holds | `Ld` |
+| `Lm` = M, a copy newer than M exists (out of date after a pin or rollback) | Start with the AC-2.5 warning naming the newest such copy. Nothing is removed | `Ld` |
 | `Lm` > M, the chain holds a copy of M (pinned back or rolled back one chart, first start) | Start on the chain's M copy with the AC-2.5 warning naming `Ld`. Nothing is removed. That start cuts the chain, so the next start falls in the row above | the M copy |
-| `Lm` = M−1, `pgdata-M` absent | Upgrade from `Ld` into `pgdata-M`, then `remove_copies_older_than Lm` | `pgdata-M` |
-| `Lm` = M−1, `pgdata-M` counts (out of date, since it is off the chain) | Set it aside as `.stale`, upgrade from `Ld`, remove the stale copy once the new one is in place (unchanged mechanism), then `remove_copies_older_than Lm` | `pgdata-M` |
+| `Lm` = M−1, `Ld/global/pg_control` missing or unreadable | Refuse before any write: "refusing to upgrade Postgres `Lm` to M: `Ld` holds Postgres `Lm` data without a readable `Ld`/global/pg_control, so Postgres `Lm` cannot open it to upgrade it; put that file back from a backup" | none |
+| `Lm` = M−1, `pgdata-M` absent | Upgrade from `Ld` into `pgdata-M`, write the decision, then `remove_copies_older_than (M−1) M` | `pgdata-M` |
+| `Lm` = M−1, `pgdata-M` counts (out of date, since it is off the chain) | Set it aside as `.stale`, upgrade from `Ld`, remove the stale copy once the new one is in place (unchanged mechanism), write the decision, then `remove_copies_older_than (M−1) M` | `pgdata-M` |
 | `Lm` ≤ M−2 | Refuse, naming `Ld` and `Lm`. If out-of-date newer copies exist, say they are out of date because Postgres `Lm` ran after they were made. Point to "one major per chart release" and the manual path | none |
 | `Lm` > M, no copy of M on the chain (two charts back after a second upgrade, or pinned to a removed major) | Refuse with the AC-3.3 line, naming `Lm` in `Ld` and M | none |
 
 Rows that no longer exist on their own: "already upgraded" is now the first of the `Lm` = M rows; "old copy
-removed" is now base selection.
+removed" is now base selection. The unreadable-source row generalises today's second branch of
+`refuse_unreadable_old_data` from `pgdata/` to whichever copy is live.
 
 `settle_set_aside_copy` is unchanged and runs first. It concerns only `pgdata-M.stale`, and a `.stale` or
 `.partial` of another major is ignored until an image of that major runs.
@@ -1198,28 +1253,45 @@ system identifier. Log lines name the folders, for example
 **Rollback two charts back** after a second upgrade (volume: placeholder, `pgdata-N`, `pgdata-(N+1)`):
 - To chart 0.1.17, or any chart without the step: the image's entrypoint runs `initdb` on `pgdata/`, which
   refuses a non-empty folder. The pod crash-loops loudly and never starts an empty database.
-- To a chart with the step: the last table row applies, so it is refused with the AC-3.3 line and nothing
-  is changed.
+- To a chart with the slice-03 step: the last table row applies, so it is refused with the AC-3.3 line and
+  nothing is changed.
+- Slices 01–03 ship in one chart release (the maintainer's decision), so no released chart carries the
+  slice 01–02 step without slice 03. As an aside, a build with only that older step would fall through to
+  its catch-all ("found … which this chart cannot start on or upgrade by itself") and change nothing.
 
 ### One implementation of the chain, used by three scripts
 
-`chart/files/postgres-upgrade/volume.sh` (CREATE NEW, sourced, no side effects of its own) holds `copies`,
-`base`, `live_copy`, `copy_for_major` and `remove_copies_older_than`. Three scripts use it:
+`chart/files/postgres-upgrade/volume.sh` (CREATE NEW, sourced, no side effects when sourced) holds
+`copies`, `base`, `live_copy`, `copy_for_major`, `finishing_needed` and
+`remove_copies_older_than <bound> <live major>`. Three scripts use it:
 
-- `upgrade.sh` (EXTEND): decides, upgrades, and does the post-commit removal and the finishing step.
-- `copy-old-binaries.sh` (EXTEND): hands over its programs when the **live copy's** major is its own
-  `PG_MAJOR`. Today's rule looks only at `pgdata/`, which misses `pgdata-17` and also copies about 49 MB on
-  every restart while the kept 17 copy is in `pgdata/`. Under the new rule an already-upgraded volume copies
-  nothing on restart. It runs as the `postgres` user in the upgrade-source image, which can read every copy
-  and its `pg_control`. It sees the volume before `settle_set_aside_copy` runs, and a `.stale` is never a
-  copy, so the binaries decision comes out the same.
-- `remove-old-copies.sh` (CREATE NEW): the documented cleanup.
-  - It finds the live copy and calls `remove_copies_older_than <live major>`.
+- **`upgrade.sh` (EXTEND):** decides, upgrades, writes the decision, then runs the post-upgrade removal or
+  the finishing step as above.
+- **`copy-old-binaries.sh` (EXTEND):** hands over its programs when the **live copy's** major is its own
+  `PG_MAJOR`.
+  - Today's rule looks only at `pgdata/`. That misses `pgdata-17`, and it also copies about 49 MB on every
+    restart while the kept 17 copy is in `pgdata/`. Under the new rule an already-upgraded volume copies
+    nothing on restart.
+  - When the volume cannot be decided (no base, an unhashable link, anything the decision table would
+    refuse), it hands nothing over and exits 0. Every refusal line is left to `pg-upgrade`, which runs next
+    and refuses with the full reason. Two init containers never report the same problem twice, or
+    differently.
+  - It runs as the `postgres` user in the upgrade-source image, which can read every copy and its
+    `pg_control`. It sees the volume before `settle_set_aside_copy` runs, and a `.stale` is never a copy,
+    so the binaries decision comes out the same.
+- **`remove-old-copies.sh` (CREATE NEW):** the documented cleanup.
+  - It finds the live copy and calls `remove_copies_older_than <live major> <live major>`.
   - It refuses (exit 1, nothing removed) when the live copy is `pgdata/`, or when `postmaster.pid` exists in
     a copy it would remove.
+  - **An unhashable link:** when the walk stops at a link whose `pg_control` cannot be read, the script
+    takes the newest counting copy as live only when that link is `pgdata/` and `pgdata/` holds the
+    placeholder, which shows a removal had started there. Otherwise it refuses: "`<folder>`/global/pg_control
+    is unreadable, so which copy is current cannot be told; put that file back from a backup before
+    removing anything". Nothing is removed.
   - The docs command becomes
     `kubectl exec l8e-lighthouse-postgres-0 -c postgres -- bash /lighthouse-postgres/remove-old-copies.sh`.
-  - The cut-off fallback pod also mounts the scripts ConfigMap.
+    The stopped-database variant runs the same script in a pod that mounts the volume and the scripts
+    ConfigMap.
 
   After a second upgrade the automatic removal has already left one older copy (the source), so the manual
   command only matters for removing that one early, or after a first upgrade.
@@ -1250,9 +1322,25 @@ system identifier. Log lines name the folders, for example
   0.1.17) or is refused (on a chart with the step), with both lines quoted.
 - **"Removing the old copy":** the automatic removal on a second upgrade and its log line, and the
   `remove-old-copies.sh` command.
-- **"When removing the old copy was cut off":** the next start finishes it.
+- **New subsection "Removing old copies while the database is stopped"** (anchor
+  `#removing-old-copies-while-the-database-is-stopped`): scale to 0, run `remove-old-copies.sh` in a pod that
+  mounts the volume and the scripts ConfigMap, delete that pod, scale to 1. The room refusal links here, and
+  the cut-off section reuses it.
+- **"When removing the old copy was cut off":**
+  - the next start finishes an automatic removal;
+  - rerunning the documented command finishes a manual cleanup, including one cut between the placeholder
+    and `PG_VERSION` on a first-upgrade volume;
+  - a damaged `pg_control` needs a backup.
 - **"When an upgrade is refused":** the gap line now says to step through each chart release that moved the
   major.
+- **New: "After an upgrade, refresh the planner statistics"** (maintainer's decision, review finding S3R-9):
+  - `pg_upgrade` does not carry all planner statistics across. Extended statistics never come across, and a
+    source older than Postgres 18 brings none at all. Until statistics are rebuilt, queries can choose poor
+    plans.
+  - The docs give the one command to run once the pod is Ready:
+    `kubectl exec l8e-lighthouse-postgres-0 -c postgres -- vacuumdb -U lighthouse --all --analyze-in-stages --missing-stats-only`.
+    Where `--missing-stats-only` is not supported, drop that flag.
+  - The chart runs no automatic step for this.
 
 ### Test plan (kind, `upgrade-path` harness)
 
@@ -1508,7 +1596,7 @@ Harness function = `run.sh` `chain` group.
 | 11 | A cleanup cut off part-way is finished by running it again | `@AC-4.6 @error` | kind-chain-16-17 | `chain_cut_off_cleanup_is_finished_by_running_again` |
 | 12 | A removal of the copy before last cut off part-way is finished by the next start | `@AC-4.6 @AC-4.2 @error` | kind-chain-16-17 | `chain_interrupted_removal_is_finished_by_next_start` |
 | 13 | A second upgrade interrupted during the copy removes nothing and is redone | `@AC-4.2 @error` | kind-chain-16-17 | `chain_interrupted_second_upgrade_removes_nothing` |
-| 14 | Too little room for the next copy refuses, naming the cleanup as a way out | `@AC-4.2 @error` | kind-chain-16-17 (+ tmpfs PV) | `chain_too_little_room_names_cleanup_and_touches_nothing` |
+| 14 | Too little room for the next copy refuses, naming the cleanup as a way out | `@AC-4.2 @error` | kind-chain-size-limited-pv | `chain_too_little_room_names_cleanup_and_touches_nothing` |
 | 15 | A cleaned-up volume moves on to the next major and removes nothing | `@AC-4.7` | kind-chain-cleaned | `chain_cleaned_volume_moves_on_and_removes_nothing` |
 | 16 | A newer copy made out of date by a rollback counts as the older major and is refused as a gap | `@AC-4.8 @error` | kind-chain-16-17 | `chain_out_of_date_copy_counts_as_older_major_and_refuses` |
 | 17 | A live copy two majors behind the image is refused, naming that copy and one major per release | `@AC-4.8 @AC-4.10 @error` | kind-gap-from-copy | `chain_gap_from_a_copy_refuses_and_touches_nothing` |
@@ -1595,6 +1683,22 @@ volume fingerprint unchanged, and scenario 9 asserts the two remaining copies un
   17 first.
 - Answer Upstream finding 1 before slice 03 closes.
 
+- Added by the slice 03 design review (2026-10-02). Each is a scenario DELIVER writes in the `chain` group,
+  pending until green:
+  - **S3R-1:** on a first-upgrade volume, cut a cleanup after the placeholder is written while
+    `pgdata/PG_VERSION` is still there. Pin the image back to 17, write a row, restart twice. Assert that
+    `pgdata/` still opens on 17 with the row.
+  - **S3R-3:** a chain volume whose live copy's `global/pg_control` is unreadable, under the next chart, is
+    refused with the "put that file back from a backup" line naming that copy. Volume byte-identical.
+  - **S3R-4:** `remove-old-copies.sh` meets an unhashable link that is not a placeholder-marked `pgdata/`.
+    It refuses with the backup line and removes nothing.
+  - **S3R-6:** a removal that fails (make one leftover file unremovable, for example with `chattr +i` in
+    the kind node, or as a root-owned file the script cannot delete) logs one warning and the database
+    still starts on the new copy.
+- Scenario 14 (chain room refusal) runs on the new environment `kind-chain-size-limited-pv`. It asserts that
+  the refusal line links to `#removing-old-copies-while-the-database-is-stopped`, and that following that
+  section lets the next retry go ahead.
+
 ### Slice 03 DISTILL findings — dispositions (orchestrator, AFK, 2026-10-02)
 
 - **Three copies kept for good if the pod dies between the rename and the placeholder.** Decided: the finishing
@@ -1605,3 +1709,45 @@ volume fingerprint unchanged, and scenario 9 asserts the two remaining copies un
   documented command finishes a manual cleanup cut off on a first-upgrade volume or a damaged control file.
 - **The chain room refusal needs the size-limited volume under the chain fixture.** DELIVER combines the two in the
   `chain` leg; it is the first scenario to split out if that leg runs long.
+
+### Slice 03 design and scenario reviews — dispositions (Platform Architect, 2026-10-02)
+
+The design body above was revised in place. These entries say where each finding went.
+
+- **S3R-1 (HIGH), unbounded removal of `pgdata/` and finishing on pin-back:** fixed in the contract of
+  `remove_copies_older_than <bound> <live major>`.
+  - It never removes a copy at or above the bound, and never anything when the bound is above the live
+    major. Automatic callers always pass live − 1.
+  - `pgdata/` is cleared only when it counts below the bound, or does not count and holds the placeholder.
+  - The finishing step runs only in the "`Lm` = M, no newer copy" row, never on pin-back or refusal rows.
+  - Scenario added to the open checks.
+- **S3R-2, half-removed leftovers:** the single finishing trigger includes any `pgdata-K` (counting or not)
+  below `Lm − 1`, and a placeholder-marked `pgdata/`.
+- **S3R-3, unreadable live source:** new decision-table row before the upgrade rows; refuses before any
+  write. Scenario added.
+- **S3R-4, cleanup on an unhashable link:** specified under `remove-old-copies.sh`. It goes ahead only for a
+  placeholder-marked `pgdata/` and otherwise refuses with the backup line. Scenario added.
+- **S3R-5, binaries hand-over on a volume that cannot be decided:** `copy-old-binaries.sh` hands nothing over
+  and exits 0; every refusal line is `pg-upgrade`'s.
+- **S3R-6, order and failure:** the decision is written before any removal, and a failed removal is one
+  warning plus exit 0. Scenario added.
+- **S3R-7, releases:** slices 01–03 ship together, so "one chart back" always has the slice 03 step. Said in
+  AC-4.3 and ADR-213; the older-step behaviour is an aside in the design.
+- **S3R-8, placeholder name:** the function takes the live major as its second argument.
+- **S3R-9, planner statistics:** recorded in ADR-213's consequences and in the docs list. There is no
+  automatic step.
+- **S3R-10, room refusal while stopped:** the line links a new "while the database is stopped" docs section
+  built on the existing fallback-pod sequence.
+- **S3R-11, ADR-213 items:** Decision items 1, 2, 3 and 7 and the consequences now say what slice 03 changes.
+- **Scenario review, chain room refusal environment:** `kind-chain-size-limited-pv` added to
+  `environments.yaml`, sized for two copies but not three; scenario 14 runs on it.
+- **Scenario review, docs-reading scenario 18:** stays prose, on the same precedent as slice 02's docs
+  scenario 16. It becomes executable through the cleanup scenarios (10, 11), which run the command copied
+  verbatim from the docs, and through scenario 14, which follows the linked stopped-database section.
+- **Earlier DISTILL disposition, "finishing step runs with or without a placeholder":** kept, and made
+  precise by the trigger's third part (a counting `pgdata/` below `Lm − 1`). A first-upgrade volume's
+  `pgdata/` is exactly `Lm − 1`, so it is never touched.
+
+**Maintainer decisions open: none new.** The review's two decisions (S3R-7, S3R-9) were taken by the
+orchestrator. If the maintainer prefers removing the oldest copy *before* the copy, to cap the room needed at
+two copies, that reverses the room-check choice above; it is not recommended.

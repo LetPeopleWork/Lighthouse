@@ -54,7 +54,9 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
 1. **Two init containers in the bundled Postgres pod do the upgrade. Nothing runs outside the pod.**
    - `pg-old-binaries` runs the upgrade-source image (`postgresql.upgrade.image`, default
      `postgres:17-trixie`). When the data on the volume is its own major, it copies its `bin`, `lib` and
-     `share` trees into an emptyDir and records its OS release. Otherwise it exits at once.
+     `share` trees into an emptyDir and records its OS release. Otherwise it exits at once. *Slice 03:* "the
+     data" becomes the live copy (see the last section), and a volume it cannot read hands nothing over and
+     leaves every refusal to `pg-upgrade`.
    - `pg-upgrade` runs the **main** Postgres image, so the new cluster is created by the same binaries that
      will serve it, with the same C library and collation rules. It decides what to do, and when an upgrade
      is due it runs `pg_upgrade --copy` against the copied binaries.
@@ -64,6 +66,8 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
    `pgdata-<major>.partial/` and becomes live only by being renamed to `pgdata-<major>/` after `pg_upgrade`
    succeeds. A rename on one filesystem is atomic, so an interrupted attempt leaves at most a `.partial`
    directory, which the next attempt deletes and redoes. Postgres is never started on a partial copy.
+   *Slice 03:* the source of an upgrade is the live copy, which may itself be a `pgdata-<major>/`. After a
+   second or later upgrade, copies older than that source are removed automatically.
 3. **The upgraded copy records which source it came from.** A file inside `pgdata-<major>/` holds the source
    major, its system identifier and the SHA-256 of the source's `global/pg_control`, taken after `pg_upgrade`
    finished. If the hash no longer matches, the old major has run since, for example after a rollback. The
@@ -71,7 +75,9 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
    as `pgdata-<major>.stale` and deleted only once the new copy has been renamed into place; a `.stale`
    left by a stop in between is put back when nothing replaced it. A copy is only ever called out of date
    on a hash that was actually computed: when the old data's `global/pg_control` is missing or unreadable,
-   as a removal of the old copy cut off part-way leaves it, the start is refused instead.
+   as a removal of the old copy cut off part-way leaves it, the start is refused instead. *Slice 03:* the
+   hash is of the control file of whichever copy the upgrade read from, and the notes chain from `pgdata/`
+   upwards to the live copy.
 4. **Majors are detected at run time, never taken from values.** The data's major comes from `PG_VERSION` on
    the volume and each image's major from its `PG_MAJOR` environment variable. A mirrored or renamed image
    therefore behaves the same as the default one.
@@ -84,7 +90,10 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
    of `template1`, and the bootstrap superuser. `pg_hba.conf` and `pg_ident.conf` are copied across.
 7. **Removing the old copy leaves a placeholder.** The documented cleanup empties `pgdata/` and leaves one
    file in it. A rollback to 0.1.17 then fails loudly (its `initdb` refuses a non-empty directory) instead of
-   starting an empty database. The new chart treats the placeholder as "old copy removed".
+   starting an empty database. The new chart treats the placeholder as "old copy removed". *Slice 03:* one
+   function removes copies, for the documented cleanup and the automatic removal alike. Its order is the
+   placeholder first, then `PG_VERSION` first in each copy, oldest first. It never touches the live copy,
+   and the automatic callers never touch the copy the live one was made from.
 8. **The image pair is pinned to one Debian release.** The defaults become `postgres:18-trixie` and
    `postgres:17-trixie`, because the floating major tags could move to a new Debian release at different
    times. The upgrade source gets minor and digest updates from Renovate, but never a major one. A CI step
@@ -123,7 +132,14 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
 - A chart release can move the default Postgres major. Existing installs come up on the new major after a
   plain `helm upgrade` or a GitOps sync, and a rollback still opens the old data.
 - The volume holds about twice the data until the operator removes the old copy. The docs give the size and
-  the one command.
+  the one command. *Slice 03:* after a second or later upgrade the copy before last is removed
+  automatically, so the volume holds about twice the data after any upgrade, and briefly three copies while
+  one runs. A rollback one chart back always works; two charts back fails loudly or is refused.
+- `pg_upgrade` does not carry every planner statistic across: extended statistics never, and a source older
+  than Postgres 18 brings none. Queries can choose poor plans until statistics are rebuilt. The docs give
+  `vacuumdb --all --analyze-in-stages --missing-stats-only` to run once the upgraded pod is Ready (without
+  `--missing-stats-only` where it is not supported). The chart runs no automatic step for this, because an
+  analyze of a large database on every upgrade would lengthen the start for every install, small or large.
 - Every start of the bundled Postgres pod runs two short init containers, about 2 s on kind. The first start
   on a node also pulls the upgrade-source image.
 - `--reuse-values` from 0.1.17 keeps `postgres:17` and does no upgrade. `NOTES.txt` prints a line when the
@@ -164,6 +180,8 @@ Slice 03 also changes how long old copies are kept (maintainer's choice, 2026-10
   loudly (a chart without the upgrade step meets the placeholder file) or is refused (a chart with the
   step finds no copy of its major). It never starts an empty or out-of-date database.
 - The first upgrade removes nothing, because nothing is older than its source.
+- Slices 01–03 ship in one chart release, so every chart defaulting past 17 carries the slice 03 step, and
+  a one-chart-back rollback always meets it.
 
 What remains is the rule that each chart release moves the bundled Postgres by one major. An install that
 skipped a release which moved the major has to upgrade to that release first. The refusal for a gap of two
