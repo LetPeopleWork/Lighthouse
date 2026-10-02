@@ -1100,3 +1100,19 @@ for auth-off, the read-permission write, `HowManyForecast` high-end mapping, whe
 list (same comparer as forecasts), and client-vote identity (DD-19 a–d: credential → person or refuse; required
 auth-off name on the client; marking client-cast votes; MCP tool wording). DEVOPS: K1–K7 events. R4 is measured by
 K4; no push channel (D21).
+
+---
+
+## Wave: DISCUSS / [REF] ADO mapping (2026-10-02)
+
+| Epic | ADO | Slices → User Stories |
+|---|---|---|
+| E1 Refinement tab: see the Work Items in refinement | #6136 | 01 #6139 · 02 #6140 |
+| E2 Refinement need: refine enough, then stop | #5881 (retitled) | 03 #6141 · 04 #6142 · 05 #6143 · 06 #6144 · 07 #6145 · 08 #6146 · 09 #6147 |
+| E3 Sizing votes against the SLE | #5510 (retitled) | 10 #6148 · 11 #6149 · 12 #6150 · 13 #6151 · 14 #6152 · 15 #6153 · 16 #6154 · 17a #6155 · 17b #6156 |
+| E4 Live Refinement sessions | #6137 | 18 #6157 · 19 #6158 |
+| E5 Sizing calibration (Premium) | #6138 | not sliced |
+
+Predecessor links: #6136 → #5881, #6136 → #5510, #5510 → #6137, #5510 → #6138. All Epics New in Options;
+all User Stories New.
+
