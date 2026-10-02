@@ -131,6 +131,12 @@ choice is one command.
 - **AC-2.4** After the old copy has been removed with that command, a rollback to the previous chart
   does not start an empty database: Postgres refuses to start on the non-empty folder, and the new chart
   still starts on its upgraded data.
+- **AC-2.5** On the new chart, pinning `postgresql.image` back to the previous major after an upgrade
+  starts Postgres on the kept old copy, just as a rollback does, and the database log carries one warning
+  line. The line says the newer copy exists, that anything written on it is not in the database now
+  running, and that removing the pin redoes the upgrade from this copy, so those writes do not come
+  back (the same rule as AC-2.2: once the old major has run, it is the source of truth). A rollback to chart 0.1.17 itself cannot print
+  this line, because that chart has no upgrade step; the docs say so (maintainer's choice, 2026-10-02).
 
 ### US-03: An upgrade that cannot be done safely says why, and touches nothing
 `job_id: job-operator-upgrade-bundled-database-across-major`
@@ -401,7 +407,8 @@ M is the main image's `PG_MAJOR`. D is the data major in `pgdata/PG_VERSION`.
 | Volume state | Action | `PGDATA` |
 |---|---|---|
 | No `pgdata/PG_VERSION`, no placeholder, no `pgdata-*` | Fresh install, nothing to do | `pgdata` |
-| D = M | Nothing to do (also covers an image pinned back to the old major) | `pgdata` |
+| D = M, no newer `pgdata-N` | Nothing to do | `pgdata` |
+| D = M, a newer `pgdata-N` present (image pinned back after an upgrade) | Start on the kept copy and log one warning: the newer copy exists, its writes are not in this database, removing the pin redoes the upgrade from this copy (AC-2.5). The newer copy is left in place, so its hash check later marks it stale | `pgdata` |
 | D = M−1, `pgdata-M` present, hash matches | Already upgraded, nothing to do | `pgdata-M` |
 | D = M−1, `pgdata-M` present, hash differs | Old major has run since: delete `pgdata-M`, then upgrade | `pgdata-M` |
 | D = M−1, no `pgdata-M` | Checks, then recovery if unclean, `initdb` into `.partial` with the old cluster's settings, `pg_upgrade --copy`, copy `pg_hba`/`pg_ident`, write marker, `fsync`, rename | `pgdata-M` |
@@ -920,7 +927,8 @@ Postgres-major check to `version-guard.sh`; unskip every pending test in `postgr
 
 Decisions for the maintainer before DELIVER:
 
-1. **Pinning the image back on the new chart.** After an upgrade, `postgresql.image: postgres:17-trixie` on the new
+1. **Pinning the image back on the new chart.** DECIDED 2026-10-02: start on the 17 copy with one warning line
+   (AC-2.5, decision table). Original question: After an upgrade, `postgresql.image: postgres:17-trixie` on the new
    chart starts Postgres on the kept 17 copy, the same as a rollback, and everything written on 18 is not in it. No
    log line says so today. The choices are to start on the 17 copy with one warning line, to refuse while a current
    18 copy exists (the operator then removes `pgdata-18` deliberately), or to document it only.

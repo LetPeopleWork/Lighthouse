@@ -199,6 +199,18 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And it gives one command that removes the old copy
     And it says that after that command a rollback to the previous chart is no longer possible
 
+  @US-02 @AC-2.5 @edge @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change @pending
+  Scenario: Pinning the image back after an upgrade starts on the kept copy and says what is missing
+    Given Lighthouse was upgraded from chart 0.1.17 to the new chart and runs on Postgres 18
+    And a row was written on Postgres 18 after the upgrade
+    When the operator pins the bundled database image to Postgres 17 on the new chart
+    Then the bundled database becomes Ready on Postgres 17 with the pre-upgrade rows
+    And the row written on Postgres 18 is not there
+    And its log carries one warning line saying a newer Postgres 18 copy exists, its writes are not in this database, and removing the pin redoes the upgrade from this copy
+    When the operator writes a row on Postgres 17 and removes the pin
+    Then the bundled database becomes Ready on Postgres 18 with the row written on Postgres 17
+    And the row written on Postgres 18 before the pin is still not there
+
   @US-02 @AC-2.4 @AC-2.3 @error @real-io @env:kind-newer-data-no-kept-copy @slice-02 @contract-shape:bounded-change @pending
   Scenario: After the old copy is removed, a rollback refuses to start an empty database
     Given the operator has upgraded a Lighthouse with data from chart 0.1.17 to the new chart
