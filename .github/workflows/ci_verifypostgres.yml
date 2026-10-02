@@ -70,7 +70,7 @@ jobs:
 
       - name: Run Postgres
         run: |
-          docker run -d --name lighthouse-postgres -e POSTGRES_DB=lighthouse -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17.2-alpine
+          docker run -d --name lighthouse-postgres -e POSTGRES_DB=lighthouse -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:18-alpine
 
           # Wait for PostgreSQL to be ready
           echo "Waiting for PostgreSQL to start..."

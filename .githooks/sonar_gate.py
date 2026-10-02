@@ -21,9 +21,11 @@ INFRA_MARKERS = ("not activated", "not configured", "not enabled")
 # still blocks.
 ACKNOWLEDGED_SECRETS = {
     # The client secret of the example Keycloak realm in examples/keycloak/realm-export.json,
-    # which ci_verifyauth.yml starts on localhost:38080 for the auth E2E jobs. The realm is
-    # created from that export inside the CI container and grants nothing outside it.
+    # which ci_verifyauth.yml starts on localhost:38080 for the auth E2E jobs, and which local
+    # development points at from appsettings.Development.json. The realm is created from that
+    # export inside a local or CI container and grants nothing outside it.
     ("ci_verifyauth.yml", "vTa*****************************"),
+    ("appsettings.Development.json", "vTa*****************************"),
     # The usage-data collector's project key. It is write-only: it can hand events to that one
     # project and cannot read, list or change anything, which is why the vendor intends this kind
     # of key to be published in client code. Every instance that reports usage data needs it, so

@@ -172,6 +172,15 @@ This creates a Docker volume named *lighthouse-data* (`-v lighthouse-data:/app/d
 
 In a similar way, you can adjust the provider and connection string postgres. If you want to host your postgres database as well in a docker container, we provide a [docker-compose.yml](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/postgres/docker-compose.yml) that you can use as inspiration. It sets up two containers, one for postgres and one for Lighthouse itself, configured to store the data in postgres. Both keep their data in Docker volumes, and the Lighthouse container is given `Encryption__KeyStorePath` so it has a durable place for the key that encrypts your credentials — without one it refuses to start rather than fall back to the key published with the product.
 
+The example runs PostgreSQL 18 and keeps its data in a volume mounted at `/var/lib/postgresql`, where the
+PostgreSQL 18 image expects it. If you started from an earlier version of this file, your volume holds data
+from an older PostgreSQL major, which PostgreSQL 18 cannot open. Either keep the image you have
+(`postgres:17.2-alpine`, with the volume still at `/var/lib/postgresql/data`), or move your data across:
+`docker compose exec -T postgres pg_dump -U postgres -d lighthouse -Fc > lighthouse.dump` while the old
+container still runs, then switch to the new file with a fresh volume, start only the database with `docker compose up -d postgres`,
+and restore with `docker compose exec -T postgres pg_restore -U postgres -d lighthouse --clean --if-exists < lighthouse.dump`
+before you start Lighthouse again.
+
 ## Encryption Key
 In order to connect to Jira, Azure DevOps, etc., sensitive information (tokens) are needed. While we need to store them (as otherwise the continuous updating will not work), we don't want to keep those values in clear text.
 

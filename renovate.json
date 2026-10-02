@@ -34,6 +34,27 @@
       "description": "A chart value change also needs chart/README.md regenerated with helm-docs and a new chart version, and the chart workflow is not a required check, so a maintainer takes these by hand.",
       "matchManagers": ["helm-values"],
       "automerge": false
+    },
+    {
+      "description": "Every Postgres pin moves in one pull request a maintainer merges: a new major cannot open the previous major's data, and the tests, CI, local development and the shipped examples should all run the version the chart ships.",
+      "matchDatasources": ["docker"],
+      "matchDepNames": ["postgres"],
+      "groupName": "Postgres",
+      "automerge": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Postgres images named in code and scripts Renovate does not parse: the Testcontainers fixture, the CI database, the local development command and the migration script.",
+      "managerFilePatterns": [
+        "/(^|/)PostgresContainerFixture\\.cs$/",
+        "/(^|/)ci_verifypostgres\\.yml$/",
+        "/(^|/)appsettings\\.Development\\.json$/",
+        "/(^|/)Create-Migration\\.ps1$/"
+      ],
+      "matchStrings": ["(?<depName>postgres):(?<currentValue>[0-9][0-9.]*-alpine)"],
+      "datasourceTemplate": "docker"
     }
   ],
   "vulnerabilityAlerts": {

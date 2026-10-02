@@ -47,8 +47,9 @@ resources:
 postgresql:
   # -- Deploy a bundled in-chart Postgres StatefulSet (ADR-080). Set false to bring your own (slice-03).
   enabled: true
-  # -- Bundled Postgres image (official, vendor-neutral).
-  image: postgres:17
+  # -- Bundled Postgres image (official, vendor-neutral). A new major cannot open the previous major's
+  # data, so keep your current image or dump and restore when the default moves (see the Kubernetes docs).
+  image: postgres:18
   auth:
     # -- Database name.
     database: lighthouse
