@@ -13,7 +13,7 @@ overrides:
   immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.9
   postcss: ^8.5.28
   undici: ^8.11.2
-  vitest: ^5.0.1
+  vitest: ^5.0.3
   ws: ^8.21.3
 
 patchedDependencies:
@@ -150,11 +150,11 @@ importers:
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.2(@types/node@26.6.2))
       '@vitest/coverage-v8':
-        specifier: ^5.0.1
+        specifier: ^5.0.3
         version: 5.0.3(vitest@5.0.3)
       '@vitest/spy':
-        specifier: 5.0.1
-        version: 5.0.1
+        specifier: 5.0.3
+        version: 5.0.3
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -171,7 +171,7 @@ importers:
         specifier: ^8.3.1
         version: 8.3.2(@types/node@26.6.2)
       vitest:
-        specifier: ^5.0.1
+        specifier: ^5.0.3
         version: 5.0.3(@types/node@26.6.2)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.1)(vite@8.3.2(@types/node@26.6.2))
       vitest-sonar-reporter:
         specifier: ^3.0.0
@@ -1178,7 +1178,7 @@ packages:
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@stryker-mutator/core': 10.0.0
-      vitest: ^5.0.1
+      vitest: ^5.0.3
 
   '@svar-ui/comments-locales@2.6.1':
     resolution: {integrity: sha512-jouLSwt0rPp2818bHftsb37aU8ERsyBney8XVUHhnWrsIaGJy/0TSOCw6YqN3cae6SQBd6KBO+P1+hBcDEsmUg==}
@@ -1399,7 +1399,7 @@ packages:
     engines: {node: '>=22', npm: '>=6', yarn: '>=1'}
     peerDependencies:
       '@testing-library/dom': '>=10 <11'
-      vitest: ^5.0.1
+      vitest: ^5.0.3
     peerDependenciesMeta:
       vitest:
         optional: true
@@ -1676,7 +1676,7 @@ packages:
     resolution: {integrity: sha512-+klsyz7BvT1vCU28Zkfzms1Ia78XD0V41U3FUtRaa3S+vOr/EXvK1O6BvVD7l1RzEjm6SONR2aybOvDDf9u0mQ==}
     peerDependencies:
       '@vitest/browser': 5.0.3
-      vitest: ^5.0.1
+      vitest: ^5.0.3
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -1699,9 +1699,6 @@ packages:
         optional: true
       vite:
         optional: true
-
-  '@vitest/spy@5.0.1':
-    resolution: {integrity: sha512-rbto/mF/SGERxEgYOek7Xm6B9b+y+mVoo+f4b2LymYO8zM1b7uB5nHuhVMTP2hxdzgxvGiZYGxGIaMvL5y180Q==}
 
   '@vitest/spy@5.0.3':
     resolution: {integrity: sha512-XhFysQTB8AZ+P4gMi+Lpo99vg2AZi0qKpaB9yXQl37+CaMEAPO3iH/wGVnSyL5MPERiLezpqTVtrR6UZH5GCXg==}
@@ -3078,7 +3075,7 @@ packages:
     resolution: {integrity: sha512-QRT5m9Z/3Kt0WVDVcFHm5LC9Ba89yDP4twlX2QUAJ9PdqfJBkLAh/kXj7m6U3i0k6GxnIEiwCc295bmAYokmZg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     peerDependencies:
-      vitest: ^5.0.1
+      vitest: ^5.0.3
 
   vitest@5.0.3:
     resolution: {integrity: sha512-xMw97S3rjdtj5dkVat7jCsqWBpvchs3RlpQctUqwJD0KkERk40vz2fJ77lDwW/Vzh/pk18eItYAzkodhSes3jQ==}
@@ -4708,8 +4705,6 @@ snapshots:
       magic-string: 1.3.1
     optionalDependencies:
       vite: 8.3.2(@types/node@26.6.2)
-
-  '@vitest/spy@5.0.1': {}
 
   '@vitest/spy@5.0.3': {}
 
