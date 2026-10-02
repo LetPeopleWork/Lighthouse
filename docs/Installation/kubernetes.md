@@ -325,37 +325,166 @@ external MCP client can auto-discover the IdP and run the browser OAuth flow. Au
 
 ## Upgrading the bundled PostgreSQL
 
-The chart's default `postgresql.image` moves to a new PostgreSQL major from time to time (it is `postgres:18-trixie`
-today). A PostgreSQL major cannot open the data files of the previous one, so an existing bundled database
-that is upgraded in place stops with `database files are incompatible with server` and the pod restarts in
-a loop. Nothing is lost, but nothing starts either. Choose one of the two paths below **before** you run
-`helm upgrade` with a chart whose default moved. This does not apply to an external database
-(`postgresql.enabled=false`); you upgrade that one the way your provider documents.
+The chart's default `postgresql.image` moves to a new PostgreSQL major from time to time (it is
+`postgres:18-trixie` today). A PostgreSQL major cannot open the data files of the previous one, so the
+chart carries the data across by itself: before the database starts on the new major, a step in the
+database pod upgrades a copy of the data and keeps the original beside it. This does not apply to an
+external database (`postgresql.enabled=false`); you upgrade that one the way your provider documents.
 
-**Stay on your current major.** Pin the image you run today, and the upgrade changes nothing about the
-database:
+### What happens on `helm upgrade`
+
+A plain `helm upgrade`, or one with `--reset-then-reuse-values`, moves the image and carries data from the
+previous major across. There is nothing to do before or after it:
 
 ```sh
-helm upgrade l8e letpeoplework/lighthouse --reuse-values --set postgresql.image=postgres:17
+helm upgrade l8e letpeoplework/lighthouse --reset-then-reuse-values --wait --timeout 15m
 ```
 
-**Move to the new major.** Take a dump, start an empty database on the new major, and restore into it.
-The names below assume the release is called `l8e` and the default database and user `lighthouse`:
+The copy is made while the database pod starts, so that start takes longer than usual. Above a few GB of
+data, give `--wait` the `--timeout 15m` shown here rather than Helm's default of five minutes. Read what
+the upgrade did with `kubectl logs l8e-lighthouse-postgres-0 -c pg-upgrade`:
+
+```text
+lighthouse-postgres: upgrading the Postgres 17 data in pgdata to Postgres 18 in pgdata-18; pgdata is kept as it is
+lighthouse-postgres: upgrade finished: Postgres 18 starts on pgdata-18, and the Postgres 17 data stays in pgdata
+```
+
+**`--reuse-values` keeps the old image.** Helm then carries over the previous chart's `postgresql.image`
+as well, so the database stays on its current major and nothing is upgraded. The install notes say so:
+
+```text
+NOTE: The bundled Postgres (postgres:17) is behind this chart's default major (18); run helm upgrade --reset-then-reuse-values, or a plain helm upgrade, to move it - the data is carried across.
+```
+
+Settings made inside the database with `ALTER SYSTEM` are not carried across. Apply them again on the
+new major.
+
+### Where the old copy is and what it costs
+
+Both copies sit on the same data volume (`data-l8e-lighthouse-postgres-0`):
+
+- `pgdata/` holds the previous major's data exactly as it was before the upgrade. It is kept so that a
+  rollback still finds it.
+- `pgdata-18/` holds the upgraded database, the one Lighthouse uses from now on.
+
+The old copy takes about as much room again as the database itself, so the volume holds roughly twice
+the data until you remove it. The upgrade checks for that room before it writes anything (see
+[When an upgrade is refused](#when-an-upgrade-is-refused)).
+
+### Rolling back
+
+`helm rollback` to the revision of the previous chart (chart 0.1.17 or earlier; `helm history l8e` lists
+the revisions) starts the old major on `pgdata/`, the database as it was before the upgrade.
+**Everything written since the upgrade is discarded**: it lives only in `pgdata-18/`, which the old major
+cannot open. Upgrading again afterwards redoes the copy from `pgdata/`, so what was written between the
+rollback and the new upgrade comes across, and what was written before the rollback still does not. The
+upgrade log says:
+
+```text
+lighthouse-postgres: pgdata-18 is out of date: Postgres 17 has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata
+```
+
+A rollback between two revisions of the new chart changes nothing about the database.
+
+Pinning the image back on the new chart, for example with
+`--reset-then-reuse-values --set postgresql.image=postgres:17-trixie`, does the same as a rollback: the
+database starts on `pgdata/` without what was written on 18, and removing the pin redoes the upgrade from
+it. The database pod logs one warning about it:
+
+```text
+lighthouse-postgres: warning: starting Postgres 17 on pgdata, but a newer Postgres 18 copy of this database exists in pgdata-18; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back
+```
+
+A rollback to chart 0.1.17 itself cannot print that warning: that chart has no upgrade step and does not
+know the newer copy exists.
+
+### Removing the old copy
+
+Once you are sure you will not roll back, free the room the old copy takes. Run this while the database
+pod is running on 18:
+
+```sh
+kubectl exec l8e-lighthouse-postgres-0 -c postgres -- sh -c 'cd /var/lib/postgresql/data/pgdata && test -s ../pgdata-18/PG_VERSION && test ! -e postmaster.pid && find . -mindepth 1 -delete && touch UPGRADED-TO-18-see-kubernetes-docs'
+```
+
+It empties `pgdata/` and leaves a single file in it, `UPGRADED-TO-18-see-kubernetes-docs`; it does not
+touch `pgdata-18/`. It does nothing, and exits with code 1, when there is no upgraded copy in `pgdata-18/`
+or when a database is running on `pgdata/` (after a rollback or a pin). The placeholder file keeps a later
+rollback to chart 0.1.17 from creating a new, empty database in the emptied folder: that rollback stops
+with an error instead.
+
+**After this command a rollback to the previous chart is no longer possible.** The previous major's data
+is gone, and only `pgdata-18/` remains.
+
+### When an upgrade is refused
+
+When the upgrade cannot be done safely, it writes nothing to the volume. The database pod does not
+become Ready and keeps retrying by itself. Both `kubectl logs l8e-lighthouse-postgres-0 --all-containers`
+and `kubectl describe pod l8e-lighthouse-postgres-0` (as the message of the `pg-upgrade` container's last
+state) show one line starting with `lighthouse-postgres:` that says why. Fix the cause and the next retry
+goes ahead with no other step.
+
+Too little room for the second copy:
+
+```text
+lighthouse-postgres: refusing upgrade 17→18: need 2310 MiB, 1024 MiB free; grow the volume (postgresql.persistence.size) or pin postgresql.image to postgres:17-trixie. Nothing was changed
+```
+
+There are two ways out:
+
+- **Grow the volume.** This needs a StorageClass that allows volume expansion
+  (`allowVolumeExpansion: true`). Kubernetes does not let a StatefulSet change the size of a claim it has
+  already made, so grow the claim itself:
+
+  ```sh
+  kubectl patch pvc data-l8e-lighthouse-postgres-0 -p '{"spec":{"resources":{"requests":{"storage":"16Gi"}}}}'
+  ```
+
+- **Stay on the current major** by pinning the image the line names:
+
+  ```sh
+  helm upgrade l8e letpeoplework/lighthouse --reset-then-reuse-values --set postgresql.image=postgres:17-trixie
+  ```
+
+Data the chart does not know how to start on or upgrade, such as data two majors behind, is refused with a
+line that names what it found on the volume:
+
+```text
+lighthouse-postgres: refusing to start Postgres 18: found Postgres 16 data in pgdata, which this chart cannot start on or upgrade by itself. Nothing was changed
+```
+
+Pin `postgresql.image` to the data's major (here `postgres:16`) to start the database again as it was,
+then move it with the manual path below.
+
+When `postgresql.upgrade.image` does not provide the previous major's programs, the line says to set it
+to an image of that major:
+
+```text
+lighthouse-postgres: refusing to upgrade Postgres 17 to 18: the upgrade-source image did not provide the Postgres 17 programs; set postgresql.upgrade.image to a Postgres 17 image. Nothing was changed
+```
+
+### Moving data two or more majors behind by hand
+
+The chart only carries data from the previous major. For older data, take a dump, start an empty database
+on the new major, and restore into it. The database must be running for the dump, so pin
+`postgresql.image` to the data's major first if an upgrade was refused. The names below assume the
+release is called `l8e` and the default database and user `lighthouse`:
 
 ```sh
 # 1. Stop Lighthouse and dump the database.
 kubectl scale deployment l8e-lighthouse-api --replicas=0
-kubectl exec l8e-lighthouse-postgres-0 -- pg_dump -U lighthouse -d lighthouse -Fc > lighthouse.dump
+kubectl exec l8e-lighthouse-postgres-0 -c postgres -- pg_dump -U lighthouse -d lighthouse -Fc > lighthouse.dump
 
-# 2. Remove the old data volume, then upgrade. The database comes up empty on the new major.
+# 2. Remove the old data volume, then upgrade without a postgresql.image pin, so the chart's default
+#    applies. values.yaml is the file you install with. The database comes up empty on the new major.
 kubectl scale statefulset l8e-lighthouse-postgres --replicas=0
 kubectl delete pvc data-l8e-lighthouse-postgres-0
-helm upgrade l8e letpeoplework/lighthouse --reuse-values --set postgresql.image=postgres:18
+helm upgrade l8e letpeoplework/lighthouse --reset-values -f values.yaml
 kubectl scale deployment l8e-lighthouse-api --replicas=0
 kubectl rollout status statefulset l8e-lighthouse-postgres
 
 # 3. Restore, then start Lighthouse again.
-kubectl exec -i l8e-lighthouse-postgres-0 -- pg_restore -U lighthouse -d lighthouse --clean --if-exists --no-owner < lighthouse.dump
+kubectl exec -i l8e-lighthouse-postgres-0 -c postgres -- pg_restore -U lighthouse -d lighthouse --clean --if-exists --no-owner < lighthouse.dump
 kubectl scale deployment l8e-lighthouse-api --replicas=1
 ```
 

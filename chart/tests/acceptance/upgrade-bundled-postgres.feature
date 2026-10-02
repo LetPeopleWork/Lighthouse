@@ -190,7 +190,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
   # slice-02 — US-02: removing the old copy, and what the docs promise about it
   # ------------------------------------------------------------------------------------------------
 
-  @US-02 @AC-2.3 @in-memory @slice-02 @contract-shape:pure-function @pending
+  @US-02 @AC-2.3 @in-memory @slice-02 @contract-shape:pure-function
   Scenario: The Kubernetes docs say where the old copy is, what it costs and how to remove it
     Given the Kubernetes installation docs
     When the operator reads the section on upgrading the bundled Postgres
