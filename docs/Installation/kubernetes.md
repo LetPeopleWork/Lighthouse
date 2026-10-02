@@ -325,7 +325,7 @@ external MCP client can auto-discover the IdP and run the browser OAuth flow. Au
 
 ## Upgrading the bundled PostgreSQL
 
-The chart's default `postgresql.image` moves to a new PostgreSQL major from time to time (it is `postgres:18`
+The chart's default `postgresql.image` moves to a new PostgreSQL major from time to time (it is `postgres:17`
 today). A PostgreSQL major cannot open the data files of the previous one, so an existing bundled database
 that is upgraded in place stops with `database files are incompatible with server` and the pod restarts in
 a loop. Nothing is lost, but nothing starts either. Choose one of the two paths below **before** you run

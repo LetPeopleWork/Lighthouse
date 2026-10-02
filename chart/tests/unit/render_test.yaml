@@ -22,7 +22,7 @@ tests:
           of: StatefulSet
       - equal:
           path: spec.template.spec.containers[0].image
-          value: postgres:18
+          value: postgres:17
 
   - it: bundled Postgres is absent when disabled (BYO path)
     set:
