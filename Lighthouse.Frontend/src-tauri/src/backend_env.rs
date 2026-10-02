@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-#[cfg(target_os = "linux")]
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 
 /// The environment to start the backend with, derived from Tauri's own.
@@ -9,7 +8,6 @@ use std::os::unix::ffi::{OsStrExt, OsStringExt};
 /// libssl and .NET aborts on startup. So inside an AppImage, a variable listing a path under the
 /// mount loses those entries and its empty ones (an empty entry means the working directory), and
 /// is dropped once nothing is left. The runtime's own variables go too; the rest pass untouched.
-#[cfg(target_os = "linux")]
 pub fn backend_environment(
     parent: impl IntoIterator<Item = (OsString, OsString)>,
 ) -> Vec<(OsString, OsString)> {
@@ -32,18 +30,9 @@ pub fn backend_environment(
     }
 }
 
-#[cfg(not(target_os = "linux"))]
-pub fn backend_environment(
-    parent: impl IntoIterator<Item = (OsString, OsString)>,
-) -> Vec<(OsString, OsString)> {
-    parent.into_iter().collect()
-}
-
-#[cfg(target_os = "linux")]
 const APPIMAGE_RUNTIME_VARIABLES: [&str; 5] =
     ["APPDIR", "APPIMAGE", "ARGV0", "OWD", "APPIMAGE_UUID"];
 
-#[cfg(target_os = "linux")]
 fn without_appdir_entries(value: OsString, appdir: &[u8]) -> Option<OsString> {
     let entries: Vec<&[u8]> = value.as_bytes().split(|byte| *byte == b':').collect();
     if !entries.iter().any(|entry| is_under(entry, appdir)) {
@@ -62,7 +51,6 @@ fn without_appdir_entries(value: OsString, appdir: &[u8]) -> Option<OsString> {
     }
 }
 
-#[cfg(target_os = "linux")]
 fn is_under(entry: &[u8], appdir: &[u8]) -> bool {
     entry == appdir || (entry.starts_with(appdir) && entry.get(appdir.len()) == Some(&b'/'))
 }
@@ -79,10 +67,8 @@ mod tests {
             .collect()
     }
 
-    #[cfg(target_os = "linux")]
     const APPDIR: &str = "/tmp/.mount_LighthAbc123";
 
-    #[cfg(target_os = "linux")]
     fn inside_appimage(pairs: &[(&str, &str)]) -> Vec<(OsString, OsString)> {
         let mut parent = env(&[("APPDIR", APPDIR)]);
         parent.extend(pairs.iter().map(|(key, value)| {
@@ -94,7 +80,6 @@ mod tests {
         backend_environment(parent)
     }
 
-    #[cfg(target_os = "linux")]
     fn value_of<'a>(output: &'a [(OsString, OsString)], key: &str) -> Option<&'a OsString> {
         output
             .iter()
@@ -102,7 +87,6 @@ mod tests {
             .map(|(_, value)| value)
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn strips_appimage_entries_from_ld_library_path() {
         let only_appimage =
@@ -116,7 +100,6 @@ mod tests {
         );
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn restores_path_and_xdg_data_dirs_to_host_values() {
         let output = inside_appimage(&[
@@ -137,7 +120,6 @@ mod tests {
         );
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn removes_appimage_identity_and_module_vars() {
         let output = inside_appimage(&[
@@ -169,7 +151,6 @@ mod tests {
         }
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn keeps_unrelated_user_configuration() {
         let unrelated = [
@@ -191,7 +172,6 @@ mod tests {
         }
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn keeps_non_utf8_bytes_in_kept_entries() {
         use std::os::unix::ffi::OsStringExt;
@@ -213,7 +193,6 @@ mod tests {
         );
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn keeps_entries_that_only_share_the_mount_prefix() {
         let output = inside_appimage(&[(

@@ -11,6 +11,7 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_updater::UpdaterExt;
 
+#[cfg(target_os = "linux")]
 mod backend_env;
 
 const STANDALONE_DISCOVERY_LOCKFILE_NAME: &str = "standalone.lock.json";
@@ -243,9 +244,15 @@ pub fn run() {
                 .resource_dir()
                 .expect("failed to get resource dir");
 
-            let spawn_result = sidecar
+            // Only the AppImage leaks its bundled libraries into the backend. Elsewhere the
+            // backend inherits Tauri's environment as is: rebuilding it on Windows would drop
+            // the hidden per-drive working-directory variables.
+            #[cfg(target_os = "linux")]
+            let sidecar = sidecar
                 .env_clear()
-                .envs(backend_env::backend_environment(std::env::vars_os()))
+                .envs(backend_env::backend_environment(std::env::vars_os()));
+
+            let spawn_result = sidecar
                 .env("Standalone", "true")
                 .env(
                     "LIGHTHOUSE_RESOURCES_DIR",
