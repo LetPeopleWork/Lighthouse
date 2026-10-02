@@ -48,9 +48,9 @@ jobs:
             --set postgresql.auth.password=ci --set oidc.clientSecret=ci
 
       - name: Install helm-unittest plugin
-        # v1.0.3 is the last release whose plugin.yaml predates the helm-v4-only `platformHooks`
-        # field, so it loads + registers the `unittest` command on helm v3 (v1.1.x does not).
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.0.3 || helm plugin list
+        # Helm 4 refuses a plugin installed from a git source unless verification is skipped,
+        # because the source publishes no provenance file to verify against.
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.1.2 --verify=false
 
       - name: helm unittest (incl. standalone-gate render guard)
         run: helm unittest -f 'tests/unit/*.yaml' ./chart
