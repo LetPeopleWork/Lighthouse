@@ -12,9 +12,6 @@ importers:
 
   .:
     dependencies:
-      '@types/pixelmatch':
-        specifier: ^7.1.0
-        version: 7.1.0
       '@types/pngjs':
         specifier: ^6.0.5
         version: 6.0.5
@@ -136,10 +133,6 @@ packages:
 
   '@types/node@26.6.4':
     resolution: {integrity: sha512-ldVPDCzj7fsaGZrLB0NuHuTvJcsNasysBAqMolr/cgxrLd1xbqxIr3XJiPnHHJUCxj5sNF1vnRj9aWnrVh5Jcg==}
-
-  '@types/pixelmatch@7.1.0':
-    resolution: {integrity: sha512-0QezS/yQirZ++KVOHu3a49ZB3zeRxGh3PRd9z9+FUNO+14N3oL0vibN3ADEaIvSeY8hsdChi09U6fjTcTcqowQ==}
-    deprecated: This is a stub types definition. pixelmatch provides its own type definitions, so you do not need this installed.
 
   '@types/pngjs@6.0.5':
     resolution: {integrity: sha512-0k5eKfrA83JOZPppLtS2C7OUtyNAl2wKNxfyYl9Q5g9lPkgBl/9hNyAu6HuEH2J4XmIv2znEpkDd0SaZVxW6iQ==}
@@ -515,10 +508,6 @@ snapshots:
   '@types/node@26.6.4':
     dependencies:
       undici-types: 8.9.0
-
-  '@types/pixelmatch@7.1.0':
-    dependencies:
-      pixelmatch: 7.2.0
 
   '@types/pngjs@6.0.5':
     dependencies:
