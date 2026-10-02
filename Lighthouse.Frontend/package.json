@@ -48,7 +48,7 @@
 		"zod": "^4.6.5"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.14",
+		"@biomejs/biome": "2.5.15",
 		"@stryker-mutator/core": "^10.0.0",
 		"@stryker-mutator/typescript-checker": "^10.0.0",
 		"@stryker-mutator/vitest-runner": "^10.0.0",
