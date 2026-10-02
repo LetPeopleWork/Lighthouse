@@ -3,87 +3,121 @@ feature_id: epic-5878-baseline
 updated: 2026-10-02
 ado: "#5878 Baseline (ValueFlow, Community)"
 note: >
-  Seeded in DISCOVER (2026-10-02) as two hypothesis journeys. No Lighthouse user has walked them. The solution
-  shape is open (see feature-delta.md, Open questions for DIVERGE), so steps describe intent, not UI. Terms in
-  braces ({team}, {portfolio}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}, {sle}) render
-  as the instance's configured words. The job ids are PROPOSED and do not exist in jobs.yaml yet; DISCUSS
-  creates or re-points them.
+  Seeded in DISCOVER (2026-10-02) as two hypothesis journeys; refined in DISCUSS (2026-10-02) to the converged
+  DIVERGE direction (Option 3, "Claims checklist"): a Reports tab on Teams and Portfolios, the "Then & Now" template,
+  a frozen Then window and a rolling Now judged by claims. No Lighthouse user has walked them yet. Terms in braces
+  ({team}, {portfolio}, {feature}, {work items}, {cycle time}, {throughput}, {wip}, {work item age}, {sle}) render
+  as the instance's configured words. No user-facing "Baseline" (it names the PBC setting). Decisions D17-D35 and
+  slices 01-11 live in docs/feature/epic-5878-baseline/feature-delta.md.
 
 journeys:
 
   - name: show-what-changed-since-the-engagement-started
     goal: >
-      A consulting flow coach fixes the {team}'s "before" (for example the 90 days up to the engagement
-      start), and weeks or months later shows the client's management today's flow against that frozen
-      "before", in numbers they trust.
-    persona: "flow-coach (consulting; pays); reader: delivery-lead-rte (client management)"
+      A flow coach freezes the {team}'s or {portfolio}'s "Then" (for example the 90 days up to an engagement start
+      or a change of working agreement) and, weeks later, shows the sponsor today's flow against it as claims that
+      hold or do not hold, judged by rules fixed before looking.
+    persona: "flow-coach (consulting or internal; Team/Portfolio Admin); reader: delivery-lead-rte (Viewer)"
     jobs:
-      - job-flow-coach-prove-engagement-value  # proposed
+      - job-flow-coach-show-whether-flow-changed
     emotional_arc:
       start: Exposed - "They are paying me; I need to show it worked, not just say it."
-      middle: Anchored - "The before is pinned; nobody can move it after the fact."
-      end: Vindicated - "85th percentile {cycle time} down from 21 to 12 days since we started."
+      middle: Anchored - "Then is frozen; nobody can move it after the fact."
+      end: Vindicated or honestly informed - "{cycle time} is trending down; {wip} held; {throughput} no change yet."
     steps:
       - id: 1
-        name: Fix the baseline
-        action: "Pick the engagement start date; the baseline window is computed from stored history and frozen"
+        name: Freeze Then
+        action: "{team} or {portfolio} -> Reports -> Create Report -> Then & Now -> Then length and end date -> claims (C1-C4 preselected) -> Create"
         emotional_state: {entry: Exposed, exit: Anchored}
-        shared_artifacts: [baseline_window, intervention_date, baseline_values]
+        shared_artifacts: [then_window, then_series, settings_snapshot, report_count]
         failure_modes:
-          - Window partly outside DoneItemsCutoffDays - refused or flagged, never silently partial
-          - Too few finished {work items} in the window - metric shown absent, not zero
+          - Then reaches past DoneItemsCutoffDays - refused, naming the earliest allowed start, never silently partial
+          - Then end date in the future - cannot be picked
+          - Community owner already holds 2 reports (any template) - Create Report disabled with the reason
+          - Reader without Write - no Create Report; empty state says an Admin can create one
+        integration_checkpoint: Then values on the report equal the Metrics tab for the same dates at creation
+        gherkin: |
+          Scenario: A coach freezes a Then that ended at the engagement start
+            Given Team Lightspeed's engagement started on 1 Aug 2026
+            When Elena creates a Then & Now report with a Then of 90 days ending 31 Jul 2026
+            Then the report shows "Then: 90 days to 31 Jul 2026 - frozen"
       - id: 2
-        name: Compare today against the baseline
-        action: "Today's values beside the frozen ones, with the change and the days since the intervention"
-        emotional_state: {entry: Hopeful, exit: Confident or Honest}
-        shared_artifacts: [baseline_values, current_values, intervention_date]
+        name: Read Then and Now
+        action: "Open the report; pick the Now length; read the claims with Then -> Now values"
+        emotional_state: {entry: Hopeful, exit: Confident or honestly informed}
+        shared_artifacts: [then_window, then_series, now_window, now_values, settings_snapshot]
         failure_modes:
-          - Current window still mostly before the intervention - comparison misleads (open Q4)
-          - A difference within natural variation presented as improvement (open Q7)
+          - Now still overlaps Then - Now is clipped to start after Then; with nothing left every trend claim reads No change yet
+          - Routine variation presented as change - verdicts use limits from the frozen Then series; a lone point is not a trend
+          - Too few finished {work items} - Not enough data with the reason, never a zero
+          - Settings changed since creation - one header notice; Then stays frozen
+          - Lower limit at zero - the downward claim says a fall shows mainly as a run below the Then average
+        integration_checkpoint: The Now window in the header is the window the verdicts were judged on
+        gherkin: |
+          Scenario: A sustained fall in Cycle Time holds
+            Given Team Lightspeed's Then average Cycle Time is 9 days
+            And the last 8 Work Items finished in Now all took less than 9 days
+            When Elena opens the report
+            Then "Cycle Time is trending down" reads Holds
       - id: 3
-        name: Put it in front of management
-        action: "Hand over a result management reads without Lighthouse open (surface open, Q5)"
-        emotional_state: {entry: Confident, exit: Vindicated}
-        shared_artifacts: [baseline_values, current_values]
+        name: Show the sponsor
+        action: "The sponsor (Viewer) opens the same report in Lighthouse; optionally expands a claim to see its chart"
+        emotional_state: {entry: Sceptical, exit: Oriented in one look}
+        shared_artifacts: [then_window, now_values]
         failure_modes:
-          - Configuration changed since freezing - "before" disagrees with a fresh recompute (C5)
+          - Sponsor reads "No change yet" as evasion (R-A) - values stay on the row; C6 offers the familiar percentage
+          - Sponsor needs it outside Lighthouse - out of scope in v1 (PDF/email later, D13)
+        integration_checkpoint: A Viewer sees exactly what the coach sees, without write actions
+        gherkin: |
+          Scenario: A reader sees reports but cannot create one
+            Given Martin is a Viewer on Team Lightspeed
+            When Martin opens the Reports tab
+            Then he sees the report and no Create Report button
 
-  - name: snapshot-where-you-are-at-the-end-of-an-assessment
+  - name: hand-over-a-starting-point-at-the-end-of-an-assessment
     goal: >
-      A consultant embedded for a short assessment (about 4 weeks) shows where the {team} is today against
-      where it was, and leaves a frozen baseline the client can measure its own improvement against after he
-      leaves. This is the shape divergence from consultant #2 (2026-10-02). It may turn out to be a separate
-      feature.
-    persona: "flow-coach (consulting, short assessment)"
+      A consultant ending a short (about 4-week) assessment freezes a Then that ends today and hands the report to
+      the client, who later reads a rolling Now against it. Covered by the same feature (D14), not a separate one.
+    persona: "flow-coach (consulting, short assessment); later reader: the client's Team or delivery-lead-rte"
     jobs:
-      - job-flow-coach-hand-over-a-starting-point  # proposed
+      - job-flow-coach-show-whether-flow-changed
     emotional_arc:
       start: Rushed - "Four weeks; no time for a real after."
-      middle: Grounded - "Here's where you've been; here's where you are."
+      middle: Grounded - "Here is where you are, frozen."
       end: Handed over - "Measure yourselves against this from now on."
     steps:
       - id: 1
-        name: Read the before and today
-        action: "Retroactive comparison of past windows (open Q6)"
+        name: Freeze Then at hand-over
+        action: "Create Report -> Then & Now -> Then ends today"
         emotional_state: {entry: Rushed, exit: Grounded}
-        shared_artifacts: [baseline_window, current_values]
+        shared_artifacts: [then_window, then_series, settings_snapshot]
         failure_modes:
-          - No intervention yet - "after" is meaningless, so the comparison is past vs present only
+          - Nothing of Now lies after Then yet - every trend claim reads No change yet with "Now begins after <date>"
+        integration_checkpoint: The report states plainly that Now has not begun
       - id: 2
-        name: Hand over the baseline
-        action: "Freeze a baseline at the end of the engagement for the client to compare against later"
-        emotional_state: {entry: Grounded, exit: Handed over}
-        shared_artifacts: [baseline_values]
+        name: The client reads Now later
+        action: "Weeks later the client opens the report and picks a Now length"
+        emotional_state: {entry: Curious, exit: Informed}
+        shared_artifacts: [now_window, now_values, settings_snapshot]
         failure_modes:
-          - Baseline ages out of DoneItemsCutoffDays if only recomputed (X3)
+          - Then ages past DoneItemsCutoffDays - irrelevant, Then is frozen; deleting warns it can no longer be rebuilt
+          - Client changed settings after the hand-over - header notice
 
 shared_artifacts:
-  intervention_date: {source: "user-supplied (engagement or experiment start)", consumers: [baseline_window, days since intervention]}
-  baseline_window: {source: "derived from intervention_date and a length (e.g. 90 days), or picked; open Q2/Q3", consumers: [baseline_values]}
-  baseline_values: {source: "existing metrics services over baseline_window; frozen vs recomputed is open (Q3)", consumers: [comparison, management artefact]}
-  current_values: {source: "existing metrics services over the current window; rolling vs since-intervention is open (Q4)", consumers: [comparison, management artefact]}
+  then_window: {source: "the stored report (length + end date, picked at creation)", consumers: [header, default name, days since Then ended, Now clipping, delete warning]}
+  then_series: {source: "frozen at creation for every applicable claim, with the values shown on the row and Then's signal state", consumers: [claim rows, verdict limits, claim chart]}
+  now_window: {source: "page address (per view), clipped to start after then_window", consumers: [header, verdicts, row values]}
+  now_values: {source: "existing metrics services over now_window, today's settings", consumers: [claim rows, verdicts]}
+  settings_snapshot: {source: "frozen at creation ({work item} types, state mapping, query, blackout days)", consumers: [settings-changed notice]}
+  report_count: {source: "stored reports of the owner, all templates", consumers: [Create Report enablement, Community cap message]}
 
 changelog:
   - date: 2026-10-02
     feature: epic-5878-baseline
     change: Seeded in DISCOVER with two hypothesis journeys (long engagement before/after; short-assessment snapshot).
+  - date: 2026-10-02
+    feature: epic-5878-baseline
+    change: >
+      DISCUSS - both journeys re-pointed to job-flow-coach-show-whether-flow-changed; intervention date replaced by
+      the Then end date; steps aligned with the Reports tab, Then & Now template, claims and verdicts; reader step
+      added; short assessment re-shaped as a hand-over (D14); shared artifacts rewritten.
