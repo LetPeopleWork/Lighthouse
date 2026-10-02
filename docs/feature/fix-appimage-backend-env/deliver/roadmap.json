@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "fix-appimage-backend-env",
     "created_at": "2026-10-02",
-    "total_steps": 4,
+    "total_steps": 5,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "The Linux standalone AppImage starts its .NET backend on hosts whose OpenSSL is newer than the bundled libcrypto. The Tauri shell hands the backend sidecar an environment with every AppImage-injected library and module path removed, so the backend resolves system libraries only. CI runs the new Rust tests and fails when the AppImage bundles libssl. Acceptance: the new unit tests are RED without the function and GREEN with it; the shell builds with zero warnings; the swapped-in fixed binary, launched through the broken image's AppRun on a CachyOS host with OpenSSL 3.6.5, reaches the backend's 'Now listening on' line."
@@ -129,6 +129,26 @@
             "cargo-mutants on backend_env.rs then leaves no missed mutant except the two on the non-Linux passthrough, which is compiled out on Linux."
           ],
           "implementation_notes": "Commit message: `test(standalone): pin that a path sharing the AppImage mount's prefix is kept`."
+        },
+        {
+          "id": "01-05",
+          "name": "Rebuild the backend's environment on Linux only",
+          "description": "Review finding: env_clear() plus re-adding vars_os() runs on Windows and macOS too, where it was never compiled or run. On Windows, rebuilding the environment block can drop the hidden per-drive '=C:' variables. On those platforms the sidecar must inherit its environment exactly as before.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src-tauri/src/backend_env.rs (#[cfg(test)] mod tests)",
+          "scenario_name": "Only Linux spawns the backend from a rebuilt environment; other platforms inherit it untouched",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src-tauri/src/lib.rs (edit: spawn chain)",
+            "Lighthouse.Frontend/src-tauri/src/backend_env.rs (edit: drop the non-Linux passthrough, gate the module on Linux)"
+          ],
+          "dependencies": ["01-04"],
+          "criteria": [
+            "On Linux the spawn chain is unchanged in effect: env_clear, then envs(backend_environment(vars_os())), then the two explicit env calls.",
+            "On non-Linux targets the sidecar command never calls env_clear or envs; only the two explicit env calls apply, as before the fix.",
+            "No dead code on any target: the non-Linux passthrough function goes, and the module (or its use) is gated on target_os = linux. passes_environment_through_unchanged_outside_appimage stays and still runs on Linux.",
+            "cargo test --lib (7 tests), cargo build with zero warnings, clippy -D warnings and fmt --check are all clean on Linux. Show by reasoning over the cfg attributes that the non-Linux build has no unused imports or items."
+          ],
+          "implementation_notes": "Commit message: `fix(standalone): rebuild the backend's environment on Linux only`."
         }
       ]
     }

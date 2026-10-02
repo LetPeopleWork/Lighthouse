@@ -35,13 +35,14 @@ The Tauri shell now spawns the backend sidecar from a cleared environment built 
 - A variable with at least one `:`-entry under the mount has those entries and its empty entries removed, and is left out when nothing remains.
 - Every other variable passes through byte for byte.
 - Tauri's own process keeps its environment, so the updater still sees `APPIMAGE`.
+- Only Linux rebuilds the sidecar's environment. On Windows and macOS the backend inherits Tauri's environment unchanged, as before the fix, because rebuilding it on Windows can drop the hidden per-drive working-directory variables.
 
 CI (`ci_package-linux-standalone.yml`) now runs `cargo test --lib` after the AppImage build, extracts the image, and fails when it bundles `libssl.so*`. A bundled `libcrypto.so*` is only reported as a notice.
 
 ## Wave: DELIVER / [REF] Files Modified
 
 - `Lighthouse.Frontend/src-tauri/src/backend_env.rs`: new; the environment rule and 7 unit tests.
-- `Lighthouse.Frontend/src-tauri/src/lib.rs`: `mod backend_env;`, and `.env_clear().envs(backend_environment(vars_os()))` on the sidecar spawn.
+- `Lighthouse.Frontend/src-tauri/src/lib.rs`: a Linux-gated `mod backend_env;`, and on Linux `.env_clear().envs(backend_environment(vars_os()))` on the sidecar spawn.
 - `.github/workflows/ci_package-linux-standalone.yml`: Rust unit tests, and the bundled-libssl check.
 
 ## Wave: DELIVER / [REF] Quality Gates
@@ -52,12 +53,13 @@ CI (`ci_package-linux-standalone.yml`) now runs `cargo test --lib` after the App
 | Build / lint | `cargo build` has zero warnings; `cargo clippy --all-targets -D warnings` and `cargo fmt --check` are clean. |
 | CI check | Run locally: PASS on the real v26.10.2.25 image (libcrypto reported, no libssl); FAIL on a copy with a dummy `libssl.so.3`. actionlint is clean. |
 | Live verification | The fixed shell binary was swapped into the broken v26.10.2.25 image and launched through its own `AppRun` on CachyOS (OpenSSL 3.6.5), with HOME pointed at a scratch directory. There was no libssl error and the backend logged `Now listening on`. The unmodified image aborts with SIGABRT. |
-| Adversarial review | Approved. An orchestrator probe found that a value containing `::` was corrupted (`ASPNETCORE_URLS=http://[::1]:5000` became `http://[:1]:5000`); fixed in step 01-03. |
-| Mutation (cargo-mutants) | 19/21 caught (90.5%). The 2 survivors mutate the non-Linux passthrough, which is compiled out on Linux. All Linux-reachable mutants are killed. Survivor `&&`→`||` in `is_under` was killed by step 01-04. |
-| DES integrity | `des-verify-integrity`: all 4 steps have complete traces. |
+| Refactor (L1-L6) | One behaviour-preserving commit: the doc comment now states the rule exactly, the runtime-variable constant was renamed, and a pass-through no longer clones. |
+| Adversarial review | Round 1 approved; an orchestrator probe then found that a value containing `::` was corrupted (`ASPNETCORE_URLS=http://[::1]:5000` became `http://[:1]:5000`), fixed in step 01-03. Round 2 (final code) approved. Of its open points, the trailing-slash APPDIR and the resolved-path mismatch were ruled out against a captured real AppRun environment; the env rebuild on Windows/macOS was fixed by making it Linux-only (step 01-05). Running the unit tests only on `main`, after the build, is accepted as the job's existing shape. |
+| Mutation (cargo-mutants) | Final code: 19/19 caught (100%). The earlier survivor `&&`→`||` in `is_under` was killed by step 01-04, and the non-Linux passthrough that produced the other two survivors was deleted in step 01-05. |
+| DES integrity | `des-verify-integrity`: all 5 steps have complete traces. |
 
 ## Wave: DELIVER / [REF] Known Gaps
 
 - The `--appimage-extract` and `realpath` lines of the CI check run for the first time on the next `main` build. Only the scan body was exercised locally.
-- Not compiled for Windows or macOS locally (no rustup cross targets). The non-Linux path is a cfg-gated passthrough that uses `std::ffi::OsString` only.
+- Not compiled for Windows or macOS locally (no rustup cross targets). On those targets the whole module and the environment rebuild are compiled out, so the spawn chain there is exactly what it was before the fix.
 - The backend's `RUNPATH=$ORIGIN/../lib` still lets a future bundled `libssl` override the host's OpenSSL. The CI check exists to catch exactly that.
