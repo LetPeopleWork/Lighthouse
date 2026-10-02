@@ -2,8 +2,8 @@
   "roadmap": {
     "project_id": "story-6131-chart-postgres-major-upgrade",
     "created_at": "2026-10-02T12:05:49Z",
-    "total_steps": 10,
-    "total_phases": 2,
+    "total_steps": 17,
+    "total_phases": 3,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "deliverable_type": "application",
@@ -12,7 +12,7 @@
   },
   "validation": {
     "status": "approved",
-    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewer": "pending re-review for phase 03 (phases 01-02 were approved by nw-acceptance-designer-reviewer and are delivered)",
     "approved_at": "pending review",
     "notes": "Built from feature-delta.md (DISCUSS AC-1.1..1.8, AC-2.1..2.5, AC-3.1..3.5, D1-D7; DESIGN DDD-1..16, decision table, on-volume layout, component decomposition, test plan; DEVOPS upgrade-path job, validate additions, version-guard release gate, Renovate rule, K1-K3; DISTILL scenario list, open checks, upstream findings, final wave review gate action items), both slice briefs, red-classification.md, ADR-213, the feature file, postgres-upgrade_test.yaml, run.sh and docs/ci-learnings.md. Checked against the code: (1) the feature file holds 25 scenarios (DISTILL's table lists 24; the AC-2.5 pin-back scenario was added by 8d7de4dda and has no run.sh function) — each is mapped to exactly one step; (2) chart/templates/postgres-statefulset.yaml has no initContainers and sets PGDATA=/var/lib/postgresql/data/pgdata itself, so the wrapper must override PGDATA from the decision file; (3) version-guard.sh check 4 refuses an already-published version and main carries 0.1.17, which IS published — run the guard locally with a non-existent PUBLISHED_INDEX (`chart/scripts/version-guard.sh chart /nonexistent`) to reach the new check; (4) run.sh's HAPPY/REFUSALS arrays list all 19 scaffolds, so CI cannot run `run.sh CLUSTER happy` until the arrays list only implemented functions — 01-02 trims them and every later step appends; (5) render_test.yaml line 25 asserts `postgres:17` and moves with values.yaml in 01-01; (6) docs/Installation/kubernetes.md line 328 names `postgres:17` as today's default and moves in 01-01, the rest of the section is rewritten in 02-02; (7) DEVOPS placed the unclean-shutdown scenario (slice 01) in the `refusals` leg, so 01-02 creates both matrix legs, `refusals` holding only that scenario until phase 02 fills it; (8) Upstream finding 1 is decided (AC-2.5: start on the kept copy with one warning line) and is step 01-04; (9) every intermediate commit is data-safe: 01-01 refuses (one line, no write) every volume state its decision table does not handle yet, and later steps turn those states into their own rows, which is also what gives 01-02, 01-03, 01-04 and 02-03 a genuine RED.",
     "reviewed_at": "2026-10-02"
@@ -397,6 +397,259 @@
             "`run.sh <cluster> happy` and `run.sh <cluster> refusals` each pass end to end locally on fresh clusters within 15 minutes each (record the times); helm lint, helm unittest and shellcheck green; the helm-docs drift check clean."
           ],
           "implementation_notes": "About 30 s of copy window at DESIGN's measured rate; if the machine is faster, grow the seed rather than racing the delete. After pushing, watch the first ci_chart.yml run on main with both legs green. Left after this step, as maintainer gates: the Release Notes tag and line on #6131, the slice-02 dogfood (follow the rewritten docs verbatim from a clean 0.1.17 install), and the version bump at /release. Commit: `feat(chart): an interrupted bundled Postgres upgrade is redone from the start (story 6131)`."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "A volume this chart has already upgraded moves on to the next major the same way",
+      "description": "Slice 03 (US-04, AC-4.1..4.11), added by the maintainer after phases 01-02 were delivered. The upgrade stops reading only `pgdata/`: a sourced, side-effect-free library `chart/files/postgres-upgrade/volume.sh` reads the volume as a chain of copies (`copies`, `base`, `live_copy`, `copy_for_major`, `finishing_needed`, `remove_copies_older_than <bound> <live major>`), and `upgrade.sh`, `copy-old-binaries.sh` and the new `remove-old-copies.sh` all decide through it. Order: the chain walking skeleton first (a 16 → 17 → 18 second upgrade keeps every row; RED is today's refusal naming pgdata-17), then the start rows that follow the live copy (restart, rollback/pin one back) with the `chain` CI leg, then retention after a successful upgrade, then the finishing step and failure tolerance, then the refusals measured against the live copy, then the cleanup script, and last the docs and the room line that links them. Every volume state the new rows do not handle yet still falls to the existing refusals or the catch-all (one line, no write), so no intermediate commit can damage data. Proved one major lower, because no Postgres 19 image exists: 0.1.17 on `postgres:16-trixie`, the new chart with `postgresql.image=postgres:17-trixie` and `postgresql.upgrade.image=postgres:16-trixie`, then the chart's defaults. EXEMPT FROM PARADIGM: Helm templates and a POSIX/bash init script have no property-test harness here; compensate with helm-unittest render properties across value combinations and kind scenarios with before/after volume hashes.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Walking skeleton: a volume already upgraded once from 16 to 17 moves on to 18 with every row",
+          "description": "Create `volume.sh` with the read-only half of the live-copy model (`copies`: `pgdata/` and every `pgdata-<K>` whose `PG_VERSION` is present and reads K, never a `.partial` or `.stale`; `base`; the chain step through `.lighthouse-upgrade` `source_major` and the source `pg_control` hash; `live_copy`; `copy_for_major`). `upgrade.sh` sources it and gains the row `Lm = M−1, pgdata-M absent → upgrade from Ld into pgdata-M`: room check on `du` of `Ld`, recovery and settings read from `Ld`, `pg_upgrade -d Ld`, `pg_hba.conf`/`pg_ident.conf` from `Ld`, and the note's hash and system identifier taken from `Ld` (on a first upgrade `Ld` is `pgdata/`, so the result is exactly today's). Log lines name the folders (`upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18; pgdata-17 is kept as it is`). `copy-old-binaries.sh` sources it and hands its programs over when the LIVE copy's major is its own `PG_MAJOR` (S3-6). The ConfigMap gains the `volume.sh` key. Nothing is removed yet; all other rows keep today's behaviour, so a restart after the second upgrade is still refused by today's rows — 03-02's RED.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "A volume already upgraded once moves on to the next major with every row",
+          "unskips": [
+            "@pending removed :: A volume already upgraded once moves on to the next major with every row (AC-4.1, K2, walking skeleton of slice 03) — run.sh chain_second_upgrade_keeps_every_row",
+            "@pending removed :: The first upgrade on a volume removes nothing (AC-4.11) — run.sh chain_first_upgrade_removes_nothing (the chain fixture's first link; it asserts the first-upgrade behaviour stays exactly today's)"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/volume.sh (create — sourced library, no side effects when sourced, `#!/usr/bin/env bash` shebang so the slice-03 render test can match it later; the read-only chain functions only in this step)",
+            "chart/files/postgres-upgrade/upgrade.sh (edit — source volume.sh; the live-copy upgrade row; `upgrade()` works on `Ld` instead of `$OLD`; `write_upgrade_note` hashes `Ld/global/pg_control`; folder names in the log lines. Existing rows otherwise unchanged)",
+            "chart/files/postgres-upgrade/copy-old-binaries.sh (edit — source volume.sh; hand over when the live copy's major equals `PG_MAJOR`)",
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — add the `volume.sh` key with `.Files.Get`, mounted with the other scripts so `source` finds it by the same path in every container)",
+            "chart/tests/upgrade-path/run.sh (edit — the two function bodies plus the chain fixture helpers (0.1.17 on postgres:16-trixie, upgrade with the 17/16 pair, upgrade to the defaults with `--reset-values`); CHAIN lists only these two functions, in fixture order)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the two scenarios)",
+            "docs/feature/story-6131-chart-postgres-major-upgrade/red-classification.md (edit — record the walking skeleton's genuine RED in its slice-03 section)"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "estimated_hours": 4,
+          "criteria": [
+            "RED captured BEFORE any script edit: on a fresh kind cluster, the chain fixture's third link (the chart's defaults over pgdata/ 16 + live pgdata-17) is refused with today's line saying the database runs on Postgres 17 in pgdata-17; the line is recorded in red-classification.md. A harness or image-pull failure is a harness finding, not the RED.",
+            "Second upgrade on kind: Ready on 18, API ready, every public-schema table at its recorded count, the marker and the row written on 17 present, and one log line naming pgdata-17 as source and pgdata-18 as target and saying pgdata-17 is kept; `pgdata-18/.lighthouse-upgrade` holds `source_major=17` and the sha256 of `pgdata-17/global/pg_control`.",
+            "First link: the 16 → 17 upgrade writes the note with the hash of `pgdata/global/pg_control`, keeps pgdata/ opening on 16 with the recorded counts, and logs nothing about removing a copy (AC-4.11).",
+            "`volume.sh` has no side effects when sourced (sourcing it in an empty shell creates, deletes and prints nothing) and is the only place that decides what counts as a copy.",
+            "No regression in phases 01-02: `run.sh <cluster> happy` and `run.sh <cluster> refusals` both pass end to end locally on fresh clusters; `run.sh <cluster> chain` passes with its two functions.",
+            "helm lint (default + enterprise values), `helm unittest -f 'tests/unit/*.yaml' ./chart` (the two slice-03 tests still skipped) and shellcheck on `chart/files/postgres-upgrade/*.sh` and run.sh are clean; `[[ ]]` only (Sonar shelldre:S7688); comments explain the why in plain words and cite no S3-n, AC-4.n, ADR-213 or story number."
+          ],
+          "implementation_notes": "The note format does not change, so every note slices 01-02 wrote, and every 0.1.17 volume (a chain of one), reads correctly with no migration. The current `upgrade.sh` names `$OLD` in many places (recovery, settings, pg_upgrade -d, pg_hba copy, room check, set_earlier_copy_aside's message); move each to the live copy, not just the pg_upgrade argument. Pre-pull postgres:16-trixie for the local chain cluster (the per-group preload list itself lands in 03-02). Commit: `feat(chart): an already-upgraded bundled Postgres moves on to the next major from the copy it runs on (story 6131)`."
+        },
+        {
+          "id": "03-02",
+          "name": "Every start follows the live copy: a restart stays put, and one chart back or one major back starts on the kept copy with the warning; the chain leg runs in CI",
+          "description": "Generalise the start rows of the decision table onto the live copy (generalised table in feature-delta.md, DESIGN / Slice 03): `Lm = M, no copy newer than M → Ld` (the restart row; the 'already upgraded' and 'old copy removed' rows become this row and base selection); `Lm = M, a copy newer than M exists → Ld` with the AC-2.5 warning naming the newest such copy; `Lm > M, the chain holds a copy of M → that copy` with the AC-2.5 warning naming `Ld` (one chart back, or pinned one major back; that start cuts the chain, so the next start falls in the row above). None of these rows removes anything. Before this step all three states are refused by today's rows, which is the RED. Wire `chain` into the `upgrade-path` matrix and make the image preload depend on the group.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Restarting the database after a second upgrade does not upgrade or remove anything",
+          "unskips": [
+            "@pending removed :: Restarting the database after a second upgrade does not upgrade or remove anything (AC-4.9, K3) — run.sh chain_restart_after_second_upgrade_does_nothing",
+            "@pending removed :: Rolling back one chart after a second upgrade starts the previous major and says what is missing (AC-4.3 first bullet) — run.sh chain_rollback_one_chart_starts_previous_major_and_warns",
+            "@pending removed :: Pinning the image back one major after a second upgrade starts on the kept copy with the warning (AC-4.5) — run.sh chain_pin_back_one_major_starts_kept_copy_and_warns"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/upgrade.sh (edit — the three start rows above, tried in the generalised table's order; today's `pinned_back_after_upgrade`, `already_upgraded` and `old_copy_removed` predicates give way to them)",
+            ".github/workflows/ci_chart.yml (edit — `upgrade-path` `strategy.matrix.group: [happy, refusals, chain]`; the cluster name already follows the group; `timeout-minutes` stays 20; `publish.needs` already lists the job, so the new leg gates the release with no further edit)",
+            "chart/tests/upgrade-path/run.sh (edit — `preload_images` takes the group and loads only that group's images (happy and refusals keep today's lists; chain gets postgres:16-trixie, postgres:17-trixie, postgres:18-trixie and the two API images); the three function bodies; CHAIN lists only implemented functions in an order where each Given is made by the function or left by the one before — the one-chart rollback leaves the volume rolled back, so a later function that needs a second-upgrade volume rebuilds it until 03-03's re-upgrade function sits between them)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the three scenarios)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_hours": 3,
+          "criteria": [
+            "RED captured before the upgrade.sh edit: the restart after the second upgrade, the one-chart rollback and the pin to postgres:17-trixie are each refused by today's rows (pgdata/ read as 16 data), volume untouched.",
+            "Restart after the second upgrade: the log says nothing to upgrade and nothing to remove, `pg-old-binaries` handed nothing over, the `postgres` container starts less than 5000 ms later than the fresh-install baseline in the same cluster (pod creation to `state.running.startedAt`, then Ready asserted separately), Ready on 18 with the counts unchanged.",
+            "`helm rollback` to the revision on 17: Ready on 17 on `pgdata-17`, the row written on 17 before the second upgrade present, the row written on 18 absent, one warning line naming pgdata-18 and saying its writes are not in this database.",
+            "Pinned to postgres:17-trixie on the new chart, after deleting the pod as the docs say: Ready on 17 on `pgdata-17` with the warning naming pgdata-18; the 18 row not there.",
+            "No row added in this step writes to the volume beyond the decision file; every phase 01-02 scenario that reaches these rows on a first-upgrade volume (restart, pin-back, rollback) keeps its asserted log text or a reworded line that still carries what it asserts.",
+            "`run.sh <cluster> happy`, `refusals` and `chain` each pass end to end locally on fresh clusters; record each leg's wall time — `chain` must stay at or under 12 minutes locally. helm lint, helm unittest (two slice-03 tests still skipped) and shellcheck clean.",
+            "After pushing, the first CI run shows three `upgrade-path` legs green; note whether `happy` or `refusals` came within 3 minutes of the 20-minute timeout (DEVOPS rule: split, never raise the timeout)."
+          ],
+          "implementation_notes": "Upgrade-path legs are independent clusters; the matrix change is the only CI edit because run.sh owns the preload. The phase 01-02 rows these replace are where the slice 01-02 log texts come from — grep run.sh for each asserted phrase before rewording a line. Commit: `feat(chart): every bundled Postgres start follows the copy the database last ran on, and CI runs the chain (story 6131)`."
+        },
+        {
+          "id": "03-03",
+          "name": "Once a second upgrade is in place, the copy before last is removed and one rollback step is kept",
+          "description": "Add `remove_copies_older_than <bound> <live major>` to `volume.sh`, the only code that deletes a copy, with DESIGN's contract: removes a `pgdata-K` (counting or not) with K below the bound, and the contents of `pgdata/` other than the placeholder only when `pgdata/` counts below the bound or does not count and already holds the placeholder; removes nothing when the bound is above the live major; order fixed — write `UPGRADED-TO-<live major>-see-kubernetes-docs` into `pgdata/` and sync before anything is deleted, then oldest copy first, `PG_VERSION` first, sync, the rest; one log line naming each removed folder and its major and saying which rollback is gone and which still works. `upgrade.sh` writes the start decision after a successful upgrade (after the rename and sync), then calls `remove_copies_older_than (M−1) M`. Also add the two rows retention makes reachable: `Lm = M−1, pgdata-M counts (off the chain) → set aside as .stale, upgrade from Ld, then the same removal`; `Lm > M, no copy of M on the chain → refuse with the AC-3.3 line naming Lm in Ld and M`.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Once the new copy is in place, the copy before last is removed and one rollback step is kept",
+          "unskips": [
+            "@pending removed :: Once the new copy is in place, the copy before last is removed and one rollback step is kept (AC-4.2) — run.sh chain_second_upgrade_removes_copy_before_last",
+            "@pending removed :: Upgrading again after a one-chart rollback starts afresh from the Postgres 17 copy (AC-4.4) — run.sh chain_upgrade_again_after_one_chart_rollback_starts_afresh",
+            "@pending removed :: Pinning the image back two majors after a second upgrade is refused, naming both majors (AC-4.5, AC-4.3 third bullet, AC-4.8) — run.sh chain_pin_back_two_majors_refuses_and_touches_nothing",
+            "@pending removed :: Rolling back two charts after a second upgrade fails loudly and never starts an empty database (AC-4.3 second bullet) — run.sh chain_rollback_two_charts_fails_loudly",
+            "@pending removed :: A second upgrade interrupted during the copy removes nothing and is redone (AC-4.2, removal only after commit) — run.sh chain_interrupted_second_upgrade_removes_nothing"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/volume.sh (edit — `remove_copies_older_than` with the contract and order above)",
+            "chart/files/postgres-upgrade/upgrade.sh (edit — decision written before the removal; the post-upgrade removal call; the stale-copy row on the live copy; the newer-than-image-without-copy row naming `Ld`. Existing first-upgrade behaviour unchanged: its source is `pgdata/`, nothing is older, nothing removed)",
+            "chart/tests/upgrade-path/run.sh (edit — the five function bodies; the interrupted-copy function seeds about 300 MB, waits for the copy-started line, deletes the pod, and requires the next start to report a discarded `.partial` before asserting; CHAIN restored to the DISTILL order for everything implemented)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the five scenarios)"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "estimated_hours": 4,
+          "criteria": [
+            "RED captured before the script edits: after the second upgrade `pgdata/` still holds the 16 data (scenario 3 fails on the placeholder assertion); the 16 pin starts Postgres 16 on `pgdata/` instead of being refused; the rollback to 0.1.17 becomes Ready on 16 instead of failing; the interrupted-copy scenario fails its 'only then is the Postgres 16 copy removed' assertion.",
+            "After the second upgrade: `pgdata/` holds only `UPGRADED-TO-18-see-kubernetes-docs`, the volume holds exactly the 17 and 18 copies besides it, pgdata-17 opens on 17 with its rows, and one line names the removed `pgdata (Postgres 16)` and says a rollback to the chart on 16 is no longer possible while one to the chart on 17 still is.",
+            "Re-upgrade after the one-chart rollback: redone from pgdata-17 (the out-of-date pgdata-18 set aside and dropped once the new one is in place), the 17 row present, the 18 row absent, nothing logged about removing a copy, and exactly placeholder + 17 + 18 left.",
+            "Pinned to postgres:16-trixie: not Ready, retrying, one line saying the data is Postgres 18 in pgdata-18, newer than the image, no Postgres 16 copy is left, set the image back to 18 or remove the pin then delete the pod; volume fingerprint unchanged.",
+            "Rollback to 0.1.17: not Ready, its log says the data folder is not empty, no empty database created, the 17 and 18 copies unchanged; a plain upgrade again (and deleting the stuck pod) is Ready on 18 with the recorded counts.",
+            "An upgrade that fails, is refused or is interrupted removes nothing (the interrupted-copy scenario proves it on kind); the removal only ever runs after the rename and sync.",
+            "`remove_copies_older_than` with a bound above the live major removes nothing — demonstrate once against a scratch directory tree in the session scratchpad (not the repo), alongside the kind runs.",
+            "`run.sh <cluster> happy`, `refusals` and `chain` pass end to end locally; helm lint, helm unittest and shellcheck clean."
+          ],
+          "implementation_notes": "The room check is unchanged: it needs room for one new copy of the source, since the older copy is still there while the copy is made (the volume briefly holds three copies). The automatic caller always passes bound = live major − 1 = M − 1, so it can never touch the live copy or the copy it was made from. Commit: `feat(chart): a second bundled Postgres upgrade removes the copy before last once the new one is in place (story 6131)`."
+        },
+        {
+          "id": "03-04",
+          "name": "A removal cut off part-way, or one that cannot finish, never stops the database starting on the new copy",
+          "description": "Add the finishing step to the `Lm = M, no copy newer than M` row only, after the start decision is written, when `finishing_needed` holds — any of: `pgdata/` holds the placeholder and anything else; any `pgdata-K` (counting or not) with K below `Lm − 1`; `pgdata/` counts with a major below `Lm − 1` (this third part also closes the commit-to-placeholder gap the DISTILL dispositions decided to fix without a placeholder). It calls `remove_copies_older_than (Lm − 1) Lm`, never on a pin-back or refusal row. Make every removal failure (a full disk for the sync, a file that cannot be deleted) one warning line with exit 0 from the step, because the decision is already written and leftovers only cost space; the next start tries again.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "A removal of the copy before last cut off part-way is finished by the next start",
+          "unskips": [
+            "@pending removed :: A removal of the copy before last cut off part-way is finished by the next start (AC-4.6, AC-4.2) — run.sh chain_interrupted_removal_is_finished_by_next_start",
+            "@pending removed :: A copy that cannot be fully removed never stops the database starting on the new copy (AC-4.2, S3R-6) — run.sh chain_unremovable_leftover_never_stops_the_start",
+            "@pending removed :: Pinning back after a cut-off cleanup keeps the pinned major's data however often it restarts (AC-4.5, AC-4.6, S3R-1) — run.sh chain_pin_back_after_cut_off_cleanup_keeps_pinned_data; the guard on this step's trigger: a first-upgrade volume whose `pgdata/` (17, counting, placeholder written) is `Lm − 1` is never touched, and after a pin to 17 it is the live copy"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/volume.sh (edit — `finishing_needed` with the three-part trigger; `remove_copies_older_than` reports failure to its caller instead of aborting)",
+            "chart/files/postgres-upgrade/upgrade.sh (edit — the finishing step in the one row; removal failures become one warning line and the step exits 0)",
+            "chart/tests/upgrade-path/run.sh (edit — the three function bodies; the interrupted-removal function seeds about 300 MB into pgdata/ before the second upgrade, waits for the placeholder file to appear, deletes the pod, and asserts the next start serves pgdata-18 and logs that it finished removing the 16 copy; append the three to CHAIN)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the three scenarios)"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "estimated_hours": 3.5,
+          "criteria": [
+            "FIRST, before writing the unremovable-leftover scenario, establish how to make one leftover file undeletable on the kind local-path volume and record the answer in the commit body. `upgrade.sh` runs the removal as root, so a root-owned file or directory does NOT stop it; candidates are `chattr +i` on the file from inside the kind node (needs the node filesystem under /var/local-path-provisioner to support the immutable flag) or a read-only bind mount over a directory inside the old copy from the node (`rm` then fails on the mount point). Use whichever works, and clear it at the end of the function so the namespace can be deleted.",
+            "RED captured before the script edits: after the pod is deleted mid-removal the next start leaves the half-removed 16 copy in place (no finishing line); with an undeletable leftover the pod fails its start instead of starting on pgdata-18.",
+            "Interrupted removal: the next start serves pgdata-18, Postgres is never started on the half-removed copy, its log says it finished removing the 16 copy, the volume holds placeholder + 17 + 18 and nothing else, and the counts match.",
+            "Undeletable leftover: one warning line, Ready on 18 on pgdata-18 with every row; the leftover still there; after it is made deletable again, the next restart finishes the removal.",
+            "Pin back after a cut-off cleanup on a first-upgrade volume (placeholder written, `pgdata/PG_VERSION` still there): pinned to 17, a row written, two restarts — `pgdata/` still opens on 17 with that row, and no start logged a removal.",
+            "The finishing step never runs on a pin-back or refusal row (the pin-back scenarios from 03-02 still log no removal).",
+            "`run.sh <cluster> happy`, `refusals` and `chain` pass end to end locally; helm lint, helm unittest and shellcheck clean."
+          ],
+          "implementation_notes": "The window between the new copy's commit and the placeholder is milliseconds, so it has no scenario; the trigger's third part is what covers it, and the code comment says why in one plain line. Commit: `feat(chart): the next start finishes a cut-off removal, and a removal that fails never stops the database (story 6131)`."
+        },
+        {
+          "id": "03-05",
+          "name": "Refusals are measured against the copy the database runs on, and an undecidable volume is refused once, by the upgrade step",
+          "description": "Generalise the refusal rows onto the live copy: `Lm ≤ M−2 → refuse naming Ld and Lm`, saying when out-of-date newer copies exist that they are out of date because Postgres `Lm` ran after they were made, and pointing to 'one major per chart release' and the manual path (AC-4.8, AC-4.10 last bullet); a link of the chain whose `pg_control` cannot be hashed while a newer copy counts → refuse, pointing to the cut-off docs section when that link is a placeholder-marked `pgdata/`, otherwise 'put that file back from a backup' naming the folder; `Lm = M−1` with `Ld/global/pg_control` missing or unreadable → refuse before any write naming `Ld`. `copy-old-binaries.sh` hands nothing over and exits 0 whenever the volume cannot be decided, so every refusal line comes from `pg-upgrade` alone (S3R-5). Add the bookworm image pair for the gap fixture.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "A live copy two majors behind the image is refused, naming that copy and one major per release",
+          "unskips": [
+            "@pending removed :: A live copy two majors behind the image is refused, naming that copy and one major per release (AC-4.8, AC-4.10) — run.sh chain_gap_from_a_copy_refuses_and_touches_nothing (0.1.17 on postgres:15-bookworm, the chart on 16-bookworm with upgrade source 15-bookworm, then the defaults)",
+            "@pending removed :: A newer copy made out of date by a rollback counts as the older major and is refused as a gap (AC-4.8 third bullet) — run.sh chain_out_of_date_copy_counts_as_older_major_and_refuses",
+            "@pending removed :: A live copy whose control file cannot be read is refused before the next upgrade writes anything (AC-4.8, S3R-3) — run.sh chain_unreadable_live_copy_refuses_before_writing",
+            "@pending removed :: A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone (AC-4.8, S3R-5) — run.sh chain_unfollowable_chain_is_refused_once_by_upgrade_step (first of the two functions sharing namespace chain-unreadable-original)"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/upgrade.sh (edit — the three refusal rows on the live copy, through the existing single refusal path; `refuse_other_major` and `refuse_unreadable_old_data` generalised from `pgdata/` to the folder in question)",
+            "chart/files/postgres-upgrade/copy-old-binaries.sh (edit — hand nothing over and exit 0 on any volume the decision table would refuse)",
+            "chart/tests/upgrade-path/run.sh (edit — the four function bodies; the chain preload list gains postgres:15-bookworm and postgres:16-bookworm (postgres:15-trixie does not exist); append to CHAIN)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the four scenarios)"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "estimated_hours": 3,
+          "criteria": [
+            "RED captured per scenario before the script edits: the gap from a copy and the out-of-date-copy refusal carry today's wording, which names pgdata/ (or the wrong major) and says nothing about one major per release or about the out-of-date copy; the unreadable live copy is not refused before writing (or is refused naming the wrong folder); `pg-old-binaries` reports its own problem, or hands over programs, on the undecidable volume.",
+            "Gap from a copy: not Ready, retrying, one line naming pgdata-16 and Postgres 16, saying the chart moves one major per release and pointing to the manual path; volume fingerprint unchanged. The refusal happens before the operating-system check (the bookworm pair never reaches it).",
+            "Out-of-date newer copy (first upgrade, rollback to 0.1.17 so 16 ran, then the defaults): refused as two majors behind, naming pgdata and 16, and saying pgdata-17 is out of date because Postgres 16 ran after it was made; it never offers pgdata-17 as a way back; fingerprint unchanged.",
+            "Unreadable live copy under the next chart: refused with the backup line naming that copy, before any write; fingerprint unchanged.",
+            "Unfollowable chain: exactly one refusal line in `kubectl logs --all-containers`, from `pg-upgrade`; `pg-old-binaries` exits 0 having handed nothing over; fingerprint unchanged.",
+            "The phase 02 refusals (two majors behind, newer without a kept copy, unreadable old data, interrupted cleanup) still pass with their asserted text.",
+            "`run.sh <cluster> happy`, `refusals` and `chain` pass end to end locally; record the chain leg's wall time — if it nears 12 minutes, split the chain-room, out-of-date and gap scenarios into a `chain-refusals` leg now (open check). helm lint, helm unittest and shellcheck clean."
+          ],
+          "implementation_notes": "Each refusal must be decided from reads only (PG_VERSION, directory listing, the placeholder, notes, pg_control hashes, PG_MAJOR); prove it with the fingerprint. The four scenarios are one change: the refusal rows of one table, read through one library. Commit: `feat(chart): bundled Postgres refusals name the copy the database runs on (story 6131)`."
+        },
+        {
+          "id": "03-06",
+          "name": "The documented cleanup removes every copy older than the live one through the same removal, and can be rerun",
+          "description": "Create `remove-old-copies.sh`, which sources `volume.sh`, finds the live copy and calls `remove_copies_older_than <live major> <live major>` — the one removal that also takes the copy the live one was made from, so it runs only on request. It refuses (exit 1, nothing removed) when the live copy is `pgdata/`, when `postmaster.pid` exists in a copy it would remove, and when the chain walk stops at an unhashable link — except that a placeholder-marked `pgdata/` shows a removal had started there, so the newest counting copy is then taken as live (S3R-4). Add it to the ConfigMap, unskip both slice-03 render tests, and swap the cleanup command in docs/Installation/kubernetes.md for `kubectl exec l8e-lighthouse-postgres-0 -c postgres -- bash /lighthouse-postgres/remove-old-copies.sh` and its stopped-database variant (the cleanup scenarios extract the command from the docs verbatim, so the command line moves with the behaviour; the section prose is 03-07's).",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "The documented cleanup removes every copy older than the live one, and can be run again",
+          "unskips": [
+            "@pending removed :: The documented cleanup removes every copy older than the live one, and can be run again (AC-4.6) — run.sh chain_cleanup_removes_every_older_copy_and_reruns",
+            "@pending removed :: A cleanup cut off part-way is finished by running it again (AC-4.6) — run.sh chain_cut_off_cleanup_is_finished_by_running_again (cut-off state built by hand, DISTILL upstream finding 4; the next start does not finish it, the rerun does)",
+            "@pending removed :: A cleaned-up volume moves on to the next major and removes nothing (AC-4.7) — run.sh chain_cleaned_volume_moves_on_and_removes_nothing",
+            "@pending removed :: The cleanup refuses to guess past an unreadable copy it has no sign of having started on (AC-4.6, S3R-4) — run.sh chain_cleanup_refuses_past_unreadable_copy_not_started (second function on namespace chain-unreadable-original)",
+            "@pending removed :: The cleanup finishes a removal it can see had started, even past an unreadable original copy (AC-4.6, S3R-4) — run.sh chain_cleanup_finishes_started_removal_past_unreadable_copy",
+            "skip removed :: the upgrade scripts include the shared volume chain and the cleanup command",
+            "skip removed :: the upgrade step, the old-programs step and the cleanup all read the volume through the same script"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/remove-old-copies.sh (create — `#!/usr/bin/env bash`, sources volume.sh, the refusals and the single removal call above; one line per outcome)",
+            "chart/templates/postgres-upgrade-configmap.yaml (edit — add the `remove-old-copies.sh` key)",
+            "chart/tests/unit/postgres-upgrade_test.yaml (edit — remove the two slice-03 `skip:` blocks; nothing else)",
+            "docs/Installation/kubernetes.md (edit — only the cleanup command in 'Removing the old copy' and the stopped-pod command in 'When removing the old copy was cut off' become the script call; each stays a single line in its own fenced block so the harness extraction keeps working)",
+            "chart/tests/upgrade-path/run.sh (edit — the five function bodies; if the slice-02 functions extract the command with a pattern tied to today's inline `sh -c`, widen the extraction so both the slice-02 and slice-03 cleanup scenarios read the new line; append to CHAIN)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the five scenarios)"
+          ],
+          "dependencies": [
+            "03-05"
+          ],
+          "estimated_hours": 3.5,
+          "criteria": [
+            "RED captured: with the two skips removed and before the script exists, both render tests fail on the missing `remove-old-copies.sh` key (the `matchRegex` on the shebang cannot pass vacuously, DISTILL upstream finding 5); the chain cleanup function fails because today's documented command clears only `pgdata/` and leaves pgdata-17.",
+            "On a second-upgrade volume the docs command leaves only the placeholder and pgdata-18; run again it succeeds and removes nothing; after a restart, Ready on 18 with every row.",
+            "Cut-off cleanup (placeholder written, pgdata-17's `PG_VERSION` removed by hand): a restart is Ready on 18 and never starts on the half-removed copy, and rerunning the docs command leaves placeholder + 18.",
+            "Cleaned first-upgrade volume (placeholder + pgdata-17) moves on to 18 with matching counts, logs nothing about removing a copy, and ends as placeholder + 17 + 18.",
+            "Unhashable link that is not a placeholder-marked `pgdata/`: exit 1 with the 'put that file back from a backup' line, nothing removed (fingerprint unchanged). Placeholder-marked `pgdata/` with an unreadable `pg_control`: the cleanup goes ahead and finishes the removal.",
+            "The slice-02 scenarios that run the docs cleanup command (rollback after cleanup refuses an empty database; newer data with no kept copy; interrupted cleanup never costs the upgraded copy) still pass in the `refusals` leg with the new command — on a first-upgrade volume the result is exactly today's.",
+            "`helm unittest -f 'tests/unit/*.yaml' ./chart` green with zero skipped tests; `run.sh <cluster> happy`, `refusals` and `chain` pass end to end locally; helm lint and shellcheck clean."
+          ],
+          "implementation_notes": "Only the operator's cleanup passes bound = live major; every automatic caller passes live − 1 — that asymmetry is the whole safety argument, so the script's one comment says it in plain words. Commit: `feat(chart): the documented cleanup removes every copy older than the live one, through the same removal (story 6131)`."
+        },
+        {
+          "id": "03-07",
+          "name": "The room refusal points to a stopped-database cleanup, and the Kubernetes docs say what a second upgrade keeps, removes and costs",
+          "description": "With the behaviour in place, write the docs. The room refusal (unchanged threshold: one new copy of the live copy) gains, when copies older than the live one exist, a pointer to the new docs section `#removing-old-copies-while-the-database-is-stopped` as a way to free the room (S3R-10). Rewrite the sections DESIGN lists under 'Docs to change in DELIVER', update the values comments, regenerate the README, and mark ADR-213's known limitation resolved with the retention rule. Finish the harness: no scaffold left.",
+          "agent": "nw-software-crafter",
+          "test_file": "chart/tests/acceptance/upgrade-bundled-postgres.feature",
+          "scenario_name": "Too little room for the next copy refuses, naming the cleanup as a way out",
+          "unskips": [
+            "@pending removed :: Too little room for the next copy refuses, naming the cleanup as a way out (AC-4.2, S3R-10) — run.sh chain_too_little_room_names_cleanup_and_touches_nothing, on kind-chain-size-limited-pv: the tmpfs static PV sized at run time for two copies but not three, under the chain fixture; it follows the new docs section and asserts the next retry upgrades",
+            "@pending removed :: The Kubernetes docs say what a second upgrade keeps, removes and costs (AC-4.10) — a docs read; executable through the cleanup scenarios of 03-06 and the room scenario above, which run commands copied from these sections"
+          ],
+          "files_to_modify": [
+            "chart/files/postgres-upgrade/upgrade.sh (edit — the room refusal line adds the docs URL with the `#removing-old-copies-while-the-database-is-stopped` anchor when copies older than the live one exist; unchanged otherwise, so the slice-02 room scenario keeps its text)",
+            "docs/Installation/kubernetes.md (edit — 'Where the old copy is and what it costs': about twice the data after any upgrade, briefly room for one more copy while an upgrade runs; 'Rolling back': one chart back always works, two charts back after a second upgrade fails loudly on 0.1.17 or is refused on a chart with the step, both lines quoted; 'Removing the old copy': the automatic removal on a second upgrade with its log line, and `remove-old-copies.sh` for removing the one remaining older copy earlier; NEW 'Removing old copies while the database is stopped' (that exact heading, so the anchor matches): scale the StatefulSet to 0, run `remove-old-copies.sh` in a pod that mounts the volume and the scripts ConfigMap, delete that pod, scale to 1; 'When removing the old copy was cut off': the next start finishes an automatic removal, rerunning the command finishes a manual cleanup (including one cut between the placeholder and `PG_VERSION` on a first-upgrade volume), a damaged `pg_control` needs a backup; 'When an upgrade is refused': the gap line says to step through each chart release that moved the major; NEW 'After an upgrade, refresh the planner statistics' with `kubectl exec l8e-lighthouse-postgres-0 -c postgres -- vacuumdb -U lighthouse --all --analyze-in-stages --missing-stats-only`, dropping the flag where unsupported, and no automatic step)",
+            "chart/values.yaml (edit — the `postgresql.image` / `postgresql.upgrade.image` comments: the chart moves the data one major per release from whichever copy it runs on, keeps one older copy for a one-chart rollback and removes the one before it)",
+            "chart/README.md (regenerate — helm-docs 1.14.2, `helm-docs --chart-search-root chart --skip-version-footer -s file --ignore-non-descriptions`; never hand-edit)",
+            "docs/product/architecture/adr-213-bundled-postgres-crosses-a-major-in-an-init-container-from-official-images.md (edit — the known-limitation section marked resolved by slice 03, recording the retention rule; leave the rest as DESIGN revised it)",
+            "chart/tests/upgrade-path/run.sh (edit — the room function body on the chain size-limited PV; append to CHAIN; delete the `scaffold` helper and reword the chain banner comment so it no longer says the functions are scaffolds)",
+            "chart/tests/acceptance/upgrade-bundled-postgres.feature (edit — remove @pending from the two scenarios; reword the header lines that describe pending slice-03 work)"
+          ],
+          "dependencies": [
+            "03-06"
+          ],
+          "estimated_hours": 3,
+          "criteria": [
+            "First prove the composed environment: on kind the tmpfs static PV under the chain fixture fits the 16 → 17 first upgrade (two copies) but not the second (three); record the sizes in the commit body.",
+            "RED captured before the upgrade.sh edit: the chain room refusal's line lacks the stopped-database docs link.",
+            "Chain room refusal: not Ready, retrying, one line with free and needed space and the docs URL ending `#removing-old-copies-while-the-database-is-stopped`; fingerprint unchanged; following that docs section verbatim (scale to 0, cleanup pod, delete it, scale to 1) lets the next retry upgrade to 18 with matching counts.",
+            "The docs section states each item of AC-4.10 and of DESIGN's 'Docs to change in DELIVER' list; the new heading's generated anchor is exactly `removing-old-copies-while-the-database-is-stopped`; the cleanup and stopped-database commands are single lines in their own fenced blocks.",
+            "No configurable term is involved; the page keeps `l8e` as the release name; plain language, no internal references (no S3-n, AC-4.n, DDD-n) in the docs or in code comments.",
+            "`grep -n '@pending' chart/tests/acceptance/upgrade-bundled-postgres.feature`, `grep -n 'skip:' chart/tests/unit/postgres-upgrade_test.yaml` and `grep -n 'SCAFFOLD' chart/tests/upgrade-path/run.sh` each return nothing.",
+            "helm-docs drift check clean (`git diff --exit-code -- chart/README.md` after regenerating); helm lint, helm unittest and shellcheck clean; `run.sh <cluster> happy`, `refusals` and `chain` each pass end to end locally on fresh clusters, `chain` within 12 minutes (if not, split it into `chain` and `chain-refusals` legs — scenarios 14, 16, 17 first — rather than raising the timeout)."
+          ],
+          "implementation_notes": "Upstream finding 1 of the slice-03 DISTILL wave is answered by 03-04's trigger (third part), so nothing is left open for it here; say so in feature-delta.md only if the finishing step was implemented differently. Also worth one clause in DISCUSS Out of Scope ('the previous major's copy is still never removed automatically; the one before it is'), per DISTILL reconciliation — optional, docs-only. Left after this step as maintainer gates: the slice-03 dogfood in the slice brief, the Release Notes line covering the automatic removal and the planner-statistics advice, and the version bump at /release. Commit: `docs(chart): what a second bundled Postgres upgrade keeps, removes and costs, and how to free room while stopped (story 6131)` — the upgrade.sh line change may go in a separate `feat(chart): …` commit before it."
         }
       ]
     }
