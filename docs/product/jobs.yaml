@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-09-29
+updated: 2026-10-02
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -58,6 +58,7 @@ feature_context:
   - story-6053-reconstruct-over-time-history
   - story-6088-clients-dependency-updates
   - epic-5806-initiatives
+  - epic-5510-5881-refinement
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7748,3 +7749,63 @@ jobs:
       rationale: >
         Importance 4 - the sale happens in the demo. Satisfaction 0 - the demo has no Initiatives.
         Gap 4.
+
+  - id: job-flow-coach-refine-just-enough
+    title: Keep just enough right-sized Work Items ready for the next replenishment, and discuss only the doubted ones
+    persona: flow-coach
+    feature_context: epic-5510-5881-refinement
+    created: 2026-10-02
+    note: >
+      NEW in DIVERGE of epic-5510-5881-refinement (ADO #5510 Sizing Poker, #5881 Refinement Need Chart; one
+      workspace, to be split at DISCUSS). The elevated job behind both requests. The physical function is
+      COUNT (match preparation to the pull rate) plus TRIAGE (spend discussion only where someone doubts
+      the Work Item fits the SLE). The count is the senior function: it decides whether any voting is
+      needed at all. The journey file's two proposed ids (job-flow-coach-size-the-ready-queue,
+      job-flow-coach-shorten-refinement) are the two ends of this one job; DISCUSS should point the
+      journey at this id. Opportunity scores are DESK ESTIMATES by the diverger, not survey data (DISCOVER
+      G2 PARTIAL). A candidate voter job (team-member-voter: give a sizing view in seconds from where I
+      already am) is recorded in diverge/job-analysis.md and should become a persona at DISCUSS.
+      Team level only (D2). Votes stay in Lighthouse (D9).
+    job_story: >
+      When the next replenishment is coming up,
+      I want to know how many right-sized Work Items the Team will likely pull and which candidates someone
+      doubts fit our SLE,
+      so I can spend refinement effort only where it changes the outcome - enough to keep the Team
+      supplied, and no more.
+    dimensions:
+      functional: >
+        A count of Work Items needed before the next replenishment, with a lower AND an upper bound,
+        computed from the rate Work Items actually leave refinement (so Work Items that never pass through
+        refinement do not inflate it); and, only when below range, a Yes / Yes, but... / No view per
+        candidate against the Team SLE (fallback: 85th percentile of the default cycle time, with a hint).
+      emotional: >
+        From weary guessing ("refine ten more, just in case") to restrained confidence ("we discussed
+        three, and we stop here - we are at the top of the range").
+      social: >
+        The coach is seen as protecting the Team's time; the product owner can decline to refine more with
+        evidence; a voter can raise a doubt without being anchored.
+    forces:
+      push: >
+        Refinement runs long from both ends: every Work Item is discussed whether or not anyone doubts it,
+        and the top of the backlog is refined again because nobody knows how many are needed. The
+        incumbent heuristic (ready for the next two sprints) only ever says "more".
+      pull: >
+        Lighthouse already holds the Work Items, the Throughput, the SLE and the state-transition history,
+        so it can both count and triage - no researched product does both, and none says "stop".
+      anxiety: >
+        Will anyone vote outside a meeting (R4 - competitor evidence says async needs a push into an inbox,
+        which Lighthouse lacks)? Will setting up refinement states be worth it (R1)? Is the count honest
+        when Throughput includes Work Items that skip refinement (R2 - designed out by counting
+        departures from refinement)?
+      habit: >
+        A recurring refinement meeting that walks the backlog top-down; Planning Poker with points; a fixed
+        ready buffer.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance 4 - behavioural community signals (weekly tool-seeking posts, forwarding, unprompted MVP
+        registration, a 60+ comment backlog thread), but zero interviews with Lighthouse users, so not 5.
+        Satisfaction 2 - poker tools serve the triage end with points, not SLE fit, and nothing serves the
+        stop end. Gap 2, held there until R3/R4 evidence exists.

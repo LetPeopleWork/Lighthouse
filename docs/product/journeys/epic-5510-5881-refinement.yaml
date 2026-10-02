@@ -1,0 +1,66 @@
+schema_version: 1
+feature_id: epic-5510-5881-refinement
+updated: 2026-10-02
+ado: "#5510 Sizing Poker; #5881 Refinement Need Chart (one workspace, to be split at DISCUSS)"
+note: >
+  DISCOVER seed, 2026-10-02 (light, desk research only). Team level only. Steps are hypotheses
+  to be shaped in DIVERGE/DISCUSS, not decisions. Terms in braces ({work items}, {team}, {sle},
+  {throughput}) render as the instance's configured words. Evidence and gates are in
+  docs/feature/epic-5510-5881-refinement/feature-delta.md.
+
+journeys:
+
+  - name: know-how-many-to-refine-before-replenishment
+    goal: >
+      Before the next replenishment, a flow coach sees how many {work items} the {team} is likely to
+      finish, how many are already refined, and therefore how many more need refining - or that
+      refining should stop because the ready queue is already above the range.
+    persona: "flow-coach (secondary: product-owner chooses which {work items})"
+    jobs:
+      - job-flow-coach-size-the-ready-queue  # proposed, not yet in the persona file
+    emotional_arc:
+      start: Guessing - "Let's refine the top ten again, just in case."
+      middle: Oriented - "We'll likely finish 9 a week; 5 are ready; 2 replenishments a week."
+      end: Restrained - "Refine about 4 for Thursday - and nothing more, we're at the top of the range."
+    steps:
+      - {id: 1, name: Open the Refinement tab, action: "Team -> Refinement (disabled with a hint until refinement states are configured)"}
+      - {id: 2, name: Read the need, action: "Forecast of {work items} done by next replenishment vs already refined; band with lower AND upper bound"}
+      - {id: 3, name: Pick the next ones, action: "List of {work items} waiting for refinement, in backlog order"}
+    shared_artifacts:
+      - name: forecast_done
+        source: team Monte Carlo (ForecastService.HowMany over {throughput})
+      - name: refined_count
+        source: "{work items} in the refined-waiting-to-be-pulled state(s) or rule"
+    failure_modes:
+      - No refinement states configured - tab disabled, tooltip says where to set them
+      - Too little {throughput} history - existing minimum-data guard message
+      - "{throughput} includes {work items} that never pass refinement - count biased high (open, R2)"
+      - A refinement state left unmapped - its {work items} vanish silently
+
+  - name: size-work-items-against-the-sle-async-first
+    goal: >
+      Team members say, per {work item}, whether it is doable within the {team}'s {sle}
+      (Yes / Yes, but... / No) and why, ahead of the meeting, so the session discusses only the
+      {work items} someone doubts.
+    persona: "flow-coach (facilitates); team member (votes - candidate persona team-member-voter)"
+    jobs:
+      - job-flow-coach-shorten-refinement  # proposed, not yet in the persona file
+    emotional_arc:
+      start: Weary - "Another hour going through every ticket."
+      middle: Focused - "Eight are green, two have a 'Yes, but' and one is a No."
+      end: Relieved - "We talked about three {work items} and sliced one."
+    steps:
+      - {id: 1, name: Open or join a session, action: "Hosted link/code with deadline (async), facilitator-driven (live remote), or one shared screen (in person / standalone)"}
+      - {id: 2, name: Vote, action: "Doable within {sle} days? Yes / Yes, but... (state the condition) / No; comment"}
+      - {id: 3, name: Review, action: "Overview: ready (meets the readiness rule) vs needs discussion"}
+      - {id: 4, name: Discuss only the doubted, action: "Slice, check conditions, or accept"}
+    failure_modes:
+      - "{team} has no {sle} - behaviour undecided (open Q1; 85th percentile fallback proposed)"
+      - Auth off - every caller is one subject; voter names self-declared or per-browser
+      - Hosted voter without an account cannot reach the authorised push channel
+      - Too few voters for the readiness rule - stays "needs discussion"
+
+changelog:
+  - date: 2026-10-02
+    feature: epic-5510-5881-refinement
+    change: Seeded in DISCOVER (light) with two hypothesis journeys.
