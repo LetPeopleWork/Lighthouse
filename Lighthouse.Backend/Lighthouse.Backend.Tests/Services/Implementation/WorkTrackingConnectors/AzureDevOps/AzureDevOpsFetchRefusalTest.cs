@@ -114,12 +114,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// asserted the same way.
         /// </summary>
         [Test]
-        public void GetWorkItemsForTeam_ByReferenceId_CarriesTheSameFieldListVerdictTheConnectionScreenShows()
+        public async Task GetWorkItemsForTeam_ByReferenceId_CarriesTheSameFieldListVerdictTheConnectionScreenShows()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
             ado.RejectTheFieldLookup = true;
 
-            var refusal = Assert.ThrowsAsync<AzureDevOpsReadException>(
+            var refusal = await Assert.ThrowsAsync<AzureDevOpsReadException>(
                 async () => await subject.GetWorkItemsForTeam(team, [$"{TheOnlyItem}"], CancellationToken.None));
 
             using (Assert.EnterMultipleScope())

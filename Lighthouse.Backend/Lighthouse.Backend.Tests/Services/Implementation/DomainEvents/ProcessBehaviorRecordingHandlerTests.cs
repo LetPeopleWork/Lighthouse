@@ -644,7 +644,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         // the structured Error names the ProcessBehavior FAMILY.
         // -----------------------------------------------------------------
         [Test]
-        public void TeamDataRefreshed_ChartReadThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
+        public async Task TeamDataRefreshed_ChartReadThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
         {
             var team = CreateTeam(1);
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
@@ -656,7 +656,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
                 "a recording failure must not break the refresh path — the handler owns its own observability");
 
@@ -666,7 +666,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
-        public void PortfolioFeaturesRefreshed_RepositoryThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
+        public async Task PortfolioFeaturesRefreshed_RepositoryThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
         {
             var portfolio = CreatePortfolio(7);
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
@@ -680,7 +680,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context, throwingRepo.Object);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None));
 
             VerifyRecordingFailureLoggedWithProcessBehaviorFamily(
@@ -693,7 +693,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         // the outer handler — and it must be reported under the same family, or a persistence outage
         // becomes an unalerted silent data gap.
         [Test]
-        public void TeamDataRefreshed_SnapshotFlushThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
+        public async Task TeamDataRefreshed_SnapshotFlushThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
         {
             var team = CreateTeam(1);
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
@@ -710,7 +710,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             using var context = CreateContext();
             var subject = CreateSubject(context, throwingRepo.Object);
 
-            Assert.DoesNotThrowAsync(
+            await Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
                 "a flush failure must not break the refresh path either");
 

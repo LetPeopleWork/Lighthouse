@@ -62,42 +62,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ARefusalOfARowThatIsNotStored_IsThrownOn_AndTheRowStillLeavesTheStagingArea()
+        public async Task ARefusalOfARowThatIsNotStored_IsThrownOn_AndTheRowStillLeavesTheStagingArea()
         {
             var refused = StagedRow(30);
 
-            Assert.ThrowsAsync<DbUpdateException>(
+            await Assert.ThrowsAsync<DbUpdateException>(
                 () => LostRaceTolerantSave.SaveAsync(() => SaveRefusingFirst(refused), _ => false));
             Assert.That(refused.State, Is.EqualTo(EntityState.Detached),
                 "A refused row left staged is retried by the next day's save and fails that day too.");
         }
 
         [Test]
-        public void ARefusalWhereOnlySomeRowsAreNowStored_IsThrownOn()
+        public async Task ARefusalWhereOnlySomeRowsAreNowStored_IsThrownOn()
         {
             var stored = StagedRow(30);
             var notStored = StagedRow(60);
 
-            Assert.ThrowsAsync<DbUpdateException>(() => LostRaceTolerantSave.SaveAsync(
+            await Assert.ThrowsAsync<DbUpdateException>(() => LostRaceTolerantSave.SaveAsync(
                 () => SaveRefusingFirst(stored, notStored),
                 entity => ReferenceEquals(entity, stored.Entity)));
         }
 
         [Test]
-        public void ARefusalOfARowBeingChangedRatherThanAdded_IsThrownOn_EvenWhenTheRowIsStored()
+        public async Task ARefusalOfARowBeingChangedRatherThanAdded_IsThrownOn_EvenWhenTheRowIsStored()
         {
             var row = new PercentilesOverTimeSnapshot { Id = 12, OwnerId = 1, Horizon = 30 };
             var changed = context.Attach(row);
             changed.State = EntityState.Modified;
 
-            Assert.ThrowsAsync<DbUpdateException>(
+            await Assert.ThrowsAsync<DbUpdateException>(
                 () => LostRaceTolerantSave.SaveAsync(() => SaveRefusingFirst(changed), _ => true));
         }
 
         [Test]
-        public void ARefusalNamingNoRow_IsThrownOn()
+        public async Task ARefusalNamingNoRow_IsThrownOn()
         {
-            Assert.ThrowsAsync<DbUpdateException>(
+            await Assert.ThrowsAsync<DbUpdateException>(
                 () => LostRaceTolerantSave.SaveAsync(() => SaveRefusingFirst(), _ => true));
         }
 
