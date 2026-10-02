@@ -947,3 +947,29 @@ Decisions for the maintainer before DELIVER:
    the upgrade" arrives with slice 01. Until then nothing stops a chart release cut from `main` defaulting to 18. It
    can land on its own now, because it only runs when a version is published and leaves `main` green, or the next
    `/release` re-pins `postgres:17` by hand.
+
+## Wave: DELIVER / [REF] Demo Evidence
+
+Dogfood on a throwaway kind cluster, 2026-10-02, driven by the harness helpers in
+`chart/tests/upgrade-path/run.sh`, with the Lighthouse demo data rather than seeded rows. Chart 0.1.17 was
+installed from `docs/charts/lighthouse-0.1.17.tgz`, and all nine demo scenarios were loaded through
+`POST /api/latest/demo/scenarios/{id}/load` and left to refresh for five minutes. That gave 44 tables and
+20,467 rows. The API was scaled to 0 around every comparison, so nothing wrote between two readings.
+
+| Step | Result |
+|---|---|
+| Plain `helm upgrade` to the new chart | Ready on Postgres 18; every table's row count identical; teams and portfolios served unchanged by `/api/latest/teams` and `/api/latest/portfolios` |
+| A row written on 18, then `helm rollback` to the 0.1.17 revision | Ready on Postgres 17 with the pre-upgrade row counts; the row written on 18 is gone, as the docs say |
+| Plain `helm upgrade` again | Ready on 18; log: `lighthouse-postgres: pgdata-18 is out of date: Postgres 17 has run on pgdata since that copy was made, so it is discarded and the upgrade redone from pgdata`, then `upgrade finished: Postgres 18 starts on pgdata-18, and the Postgres 17 data stays in pgdata` |
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+- AC-3.5 was amended during step 02-03. A StatefulSet with the default `OrderedReady` pod policy never
+  replaces a pod that is not Ready, and the policy cannot be changed on an existing install. So a fix made by
+  changing chart values after a refusal reaches the database only once the stuck pod is deleted. Every refusal
+  line that suggests such a fix now ends with the exact `kubectl delete pod -n <namespace> <pod>` command, and
+  the docs say it once under "When an upgrade is refused". Growing the volume needs no delete. Recreating the
+  StatefulSet with the `Parallel` policy was rejected, because it would itself be a disruptive migration of
+  every install. This was decided autonomously while the maintainer was away; it is flagged for review.
+- After the documented cleanup command, the volume holds only the placeholder and `pgdata-18`. Step 02-02
+  found that this state had no row of its own and was refused on the next restart; step 02-03 added the row.
