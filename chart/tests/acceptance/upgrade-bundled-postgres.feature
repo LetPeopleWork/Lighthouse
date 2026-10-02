@@ -1,8 +1,7 @@
 # Acceptance SSOT — story-6131-chart-postgres-major-upgrade (slices 01-02)
 # Executable via: helm-unittest (render assertions, @in-memory) in chart/tests/unit/, and the kind harness
 # chart/tests/upgrade-path/run.sh (@real-io), which the upgrade-path job in ci_chart.yml runs in two groups:
-# `happy` and `refusals`. Every scenario but one render guard is @pending until DELIVER implements its slice;
-# DELIVER removes @pending from a scenario in the same commit that turns its check green.
+# `happy` and `refusals`. Every scenario here runs; none is held back.
 #
 # State machine of the bundled database volume, as the upgrade step sees it on every pod start
 # (M = the image's major, D = the major of the data the volume was first initialised with):
@@ -278,7 +277,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And its log carries one line naming Postgres 18 as the data's major and Postgres 17 as the image's
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-03 @AC-3.4 @error @real-io @env:kind-interrupted-upgrade @slice-02 @contract-shape:bounded-change @pending
+  @US-03 @AC-3.4 @error @real-io @env:kind-interrupted-upgrade @slice-02 @contract-shape:bounded-change
   Scenario: An upgrade interrupted part-way is redone from the start and never serves a partial copy
     Given Lighthouse was installed from chart 0.1.17 with the bundled Postgres 17
     And it holds about 300 MB of Lighthouse data with a known marker row

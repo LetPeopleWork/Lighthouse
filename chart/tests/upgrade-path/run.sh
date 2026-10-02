@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# SCAFFOLD: true
-#
 # Kind harness for chart/tests/acceptance/upgrade-bundled-postgres.feature. One function per @real-io
-# scenario, named after it. A function that still fails with "SCAFFOLD: not yet implemented" belongs to a
-# scenario that is still @pending in the feature file.
+# scenario, named after it.
 #
 # The same script runs locally and in CI, so the cluster is an argument rather than an assumption. Every
 # scenario gets a namespace of its own, so scenarios sharing a cluster never see each other's volume.
@@ -43,11 +40,6 @@ readonly MARKER
 fail() {
   echo "✗ upgrade-path: $*" >&2
   exit 1
-}
-
-scaffold() {
-  local scenario="$1"
-  fail "SCAFFOLD: not yet implemented — $scenario"
 }
 
 # --- shared steps ------------------------------------------------------------------------------------
@@ -941,7 +933,68 @@ newer_data_without_kept_copy_refuses() {
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 }
 
-interrupted_upgrade_is_redone_from_start() { scaffold "An upgrade interrupted part-way is redone from the start and never serves a partial copy"; }
+readonly BALLAST_ROWS=1000000
+readonly COPY_STARTED="Restoring database schemas in the new cluster"
+readonly DISCARDED_PARTIAL="removing pgdata-18.partial, left by an earlier attempt that did not finish"
+
+# About 300 MB in a table of the harness's own, so copying it and syncing the copy to disk take long
+# enough for the pod to be deleted before the finished copy is renamed into place.
+seed_bulk_data() {
+  local ns="$1"
+  psql_in "$ns" "CREATE TABLE upgrade_path_ballast AS
+                 SELECT g AS id, repeat(md5(g::text), 8) AS payload FROM generate_series(1, $BALLAST_ROWS) g" >/dev/null
+}
+
+# Follows the upgrade step's log until pg_upgrade starts copying the data files. It prints a step's name
+# only together with its result, so the copy's own line appears once the copy is over; the step before it
+# is the last line printed before the copy begins.
+wait_copy_started() {
+  local ns="$1" deadline=$((SECONDS + WAIT_SECONDS))
+  until [[ -n "$(pod_field "$ns" '{.status.initContainerStatuses[?(@.name=="pg-upgrade")].state.running.startedAt}')" ]]; do
+    [[ $SECONDS -lt $deadline ]] || { dump_diagnostics "$ns"; fail "the upgrade step in $ns did not start"; }
+    sleep 1
+  done
+  grep -m1 -F -- "$COPY_STARTED" < <(kubectl -n "$ns" logs -f "$POSTGRES_POD" -c pg-upgrade) \
+    || { dump_diagnostics "$ns"; fail "the upgrade step in $ns ended without saying it was copying the data"; }
+}
+
+interrupted_upgrade_is_redone_from_start() {
+  local ns="interrupted-upgrade" counts old_uid log
+  install_with_data "$ns"
+  seed_bulk_data "$ns"
+  counts="$(public_row_counts "$ns")"
+
+  upgrade_to_new_chart "$ns"
+  echo "  mid-copy: $(wait_copy_started "$ns")"
+  [[ -z "$(postgres_started_at "$ns")" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
+  old_uid="$(pod_field "$ns" '{.metadata.uid}')"
+  # The upgrade step does not stop for SIGTERM, so a plain delete would give the copy its 30 s grace
+  # period to finish. One second cuts it off where it is, as a node going down would.
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --grace-period=1 --wait >/dev/null
+
+  wait_pod_replaced "$ns" "$old_uid"
+  wait_postgres_ready "$ns"
+  log="$(upgrade_log "$ns")"
+  echo "  next start: $(grep -F -- "$DISCARDED_PARTIAL" <<<"$log" || true)"
+  # Only a copy the delete cut off before its rename is left as pgdata-18.partial. Had the copy finished,
+  # this start would find pgdata-18 already done and say so instead.
+  grep -qF -- "$DISCARDED_PARTIAL" <<<"$log" \
+    || { dump_diagnostics "$ns"; fail "the start after the delete in $ns did not find a partial copy, so the delete did not land mid-copy"; }
+  grep -qF -- "upgrade finished" <<<"$log" || { dump_diagnostics "$ns"; fail "the upgrade in $ns was not redone to the end"; }
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  [[ "$(volume_entries "$ns" | tr '\n' ' ')" == "pgdata pgdata-18 " ]] \
+    || fail "the volume in $ns holds $(volume_entries "$ns" | tr '\n' ' ')after the redone upgrade"
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+
+  stop_database "$ns"
+  open_kept_copy "$ns"
+  [[ "$(public_row_counts "$ns" kept-copy)" == "$counts" ]] || fail "the kept Postgres 17 copy in $ns differs from before the upgrade"
+  assert_marker_row "$ns" kept-copy
+  kubectl -n "$ns" delete pod kept-copy --wait >/dev/null
+}
 
 foreign_upgrade_source_refuses_and_touches_nothing() {
   local ns="foreign-source" line
@@ -980,6 +1033,7 @@ readonly REFUSALS=(
   cleanup_then_rollback_refuses_empty_database
   newer_data_without_kept_copy_refuses
   foreign_upgrade_source_refuses_and_touches_nothing
+  interrupted_upgrade_is_redone_from_start
 )
 
 main() {
