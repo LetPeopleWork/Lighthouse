@@ -140,17 +140,31 @@ What was measured during DESIGN (Docker 29.8, Helm v4.3.0, a throwaway kind clus
   user, so a runtime that forbids root (OpenShift's `restricted` SCC, for one) cannot run the bundled
   database.
 
-## Known limitation
+## Known limitation — resolved once slice 03 is delivered
 
-The upgrade only ever reads the data in `pgdata/`, the folder the volume was first set up with. After one
-upgrade the database runs on `pgdata-<major>/`, and `pgdata/` holds the data as it was before that upgrade.
-A later chart that moves the default image on to the next major therefore cannot carry such a volume across
-by itself: the step refuses, names `pgdata-<major>/` as where the database runs, and says to set the image
-back to that major. It never suggests the older major in `pgdata/`, which would start the database without
-everything written since the first upgrade.
+Until slice 03 is delivered, the upgrade only reads the data in `pgdata/`, the folder the volume was first
+set up with. A chart that moves the default image on to the next major would therefore refuse every volume
+this chart has already upgraded once, whose database runs on `pgdata-<major>/`. The publish guard does not
+catch that: a move from 18 to 19 passes both of its checks. The chart must not move its default past 18
+before slice 03 is delivered.
 
-Before the chart moves its default image to the next major, the step has to be extended to take the newest
-`pgdata-<major>/` as the source of the upgrade. That was not done here because no image of the next major
-exists to test it against. The publish guard does not catch it: it refuses a default major more than one
-above the last published chart's, and an upgrade-source image that is not the last published major, but a
-move from 18 to 19 passes both checks. Whoever moves the default on next extends the step first.
+Slice 03 takes the upgrade's source from the copy the database last ran on. Every upgraded copy carries a
+note with the hash of the control file of the copy it was made from, and any start of that older copy
+rewrites the file. So following the notes from `pgdata/` upwards, for as long as each hash still matches,
+ends at the copy that ran last. That copy is upgraded into `pgdata-<next major>/`. No image of a next major
+exists yet, so the behaviour is proved on a 16 → 17 → 18 chain.
+
+Slice 03 also changes how long old copies are kept (maintainer's choice, 2026-10-02):
+- Once a second or later upgrade has put its new copy in place, it removes every copy older than the one
+  it upgraded from. It does this in the same order as the documented cleanup, so an interrupted removal is
+  finished on the next start.
+- The volume therefore holds about twice the data after any upgrade, and briefly three copies while one
+  runs.
+- A rollback to the previous chart always works. A rollback two charts back after a second upgrade fails
+  loudly (a chart without the upgrade step meets the placeholder file) or is refused (a chart with the
+  step finds no copy of its major). It never starts an empty or out-of-date database.
+- The first upgrade removes nothing, because nothing is older than its source.
+
+What remains is the rule that each chart release moves the bundled Postgres by one major. An install that
+skipped a release which moved the major has to upgrade to that release first. The refusal for a gap of two
+majors says so, and the publish guard keeps every release to one major above the last.

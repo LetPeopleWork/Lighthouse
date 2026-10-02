@@ -176,6 +176,103 @@ documented manual move, without opening a support ticket.
   After the operator fixes the cause (grows the PVC, or pins the image and deletes the stuck pod), the next pod start
   proceeds with no other manual step.
 
+### US-04: A volume this chart has already upgraded moves on to the next major the same way
+`job_id: job-operator-upgrade-bundled-database-across-major`
+
+(Added 2026-10-02 as slice 03, at the maintainer's request. Retention is the maintainer's choice of the same
+day: after a second upgrade, the copy before last is dropped.) As a self-hoster whose bundled database was
+already carried from one major to the next by this chart, I want the next chart release that moves the
+default image again to carry it across the same way, so the automatic upgrade is not a one-time trick that
+leaves me stuck at the second major move.
+
+#### Elevator Pitch
+Before: after one automatic upgrade the database runs on `pgdata-18/`, but the upgrade step only ever reads
+`pgdata/`. A chart that moves the default to 19 refuses every such volume and tells the operator to set the
+image back to 18 and move the data by hand.
+After: run `helm upgrade l8e letpeoplework/lighthouse --reset-then-reuse-values` → the `pg-upgrade` log shows
+three lines:
+- `upgrading the Postgres 18 data in pgdata-18 to Postgres 19 in pgdata-19; pgdata-18 is kept as it is`
+- `upgrade finished`
+- a line saying the Postgres 17 copy in `pgdata/` was removed, and that a rollback two charts back is no
+  longer possible.
+
+The Postgres pod is Ready on the new major, with every row written on either earlier major.
+Decision enabled: the operator takes every chart release that moves the Postgres major the same way,
+however many have come before. One step of rollback is always kept, and the volume never needs more than
+about twice the data once an upgrade has finished.
+
+No image of Postgres 19 exists yet, so each AC is proved one major lower: a Postgres 16 volume is upgraded
+to 17 by the chart with `postgresql.image=postgres:17-trixie` and `postgresql.upgrade.image=postgres:16-trixie`,
+then to 18 by the chart's defaults. In the ACs, N is the major the database runs on after the first upgrade
+(17 in the test), and N+1 is the next chart's default (18 in the test).
+
+#### Acceptance Criteria
+- **AC-4.1** A volume holding the kept Postgres N−1 data in `pgdata/` and the live Postgres N copy in
+  `pgdata-N/` is upgraded by a plain `helm upgrade` (or `--reset-then-reuse-values`) to a chart defaulting
+  to N+1. The upgrade reads `pgdata-N/`, the copy the database actually ran on, and builds `pgdata-(N+1)/`.
+  Every row present before the upgrade is there afterwards, including rows written on N after the first
+  upgrade. The log names the source and target folders.
+- **AC-4.2** Once the new copy is in place, the step removes every copy older than the one it upgraded
+  from, so the volume keeps the source and the new copy, about twice the data.
+  - `pgdata/` is emptied down to the placeholder file `UPGRADED-TO-<N+1>-see-kubernetes-docs`, written before
+    anything is deleted. Any older `pgdata-K/` is removed whole.
+  - `pgdata-N/` still opens on N with its rows.
+  - The removal starts only after the new copy has been renamed into place and synced to disk. An upgrade
+    that fails, is refused or is interrupted removes nothing.
+  - The log carries one line naming each removed folder and its major, and saying that a rollback to the
+    chart before last (the one defaulting to N−1) is no longer possible, while a rollback to the chart
+    defaulting to N still is.
+  - The room check is unchanged: it needs room for one new copy of the source, because the older copy is
+    still on the volume while the copy is made. When it refuses and older copies exist, the line also names
+    the cleanup command as a way out.
+- **AC-4.3** After AC-4.1, rollbacks behave as follows:
+  - **One chart back:** `helm rollback` to the revision of the chart that defaulted to N starts Postgres N
+    on `pgdata-N/`, without what was written on N+1. That chart has the upgrade step, so the pod logs the
+    same one-line warning as AC-2.5, naming `pgdata-(N+1)`.
+  - **Two charts back, to chart 0.1.17 or any chart without the upgrade step:** Postgres does not start,
+    because its `initdb` refuses the non-empty `pgdata/` that holds only the placeholder. It never starts an
+    empty database.
+  - **Two charts back, to a chart that has the step:** that chart's image major has no copy left, so it is
+    refused with the AC-3.3 line: "refusing to start Postgres N−1: the data is Postgres N+1, in
+    pgdata-(N+1), which is newer than this image, and no Postgres N−1 copy of it is left to start on; set
+    postgresql.image back to Postgres N+1 or remove the pin on it, then run kubectl delete pod …". Nothing
+    is changed.
+- **AC-4.4** Upgrading again after a one-chart-back rollback redoes the copy from `pgdata-N/`. It never
+  reuses the out-of-date `pgdata-(N+1)/`, and a row written on N after the rollback is present on N+1.
+  Nothing older than `pgdata-N/` is left, so nothing more is removed.
+- **AC-4.5** On the chart defaulting to N+1, pinning `postgresql.image` back to N starts Postgres on
+  `pgdata-N/` with the AC-2.5 warning, exactly as after the first upgrade. Pinning back to N−1 is refused
+  as in the last bullet of AC-4.3.
+- **AC-4.6** A removal cut off part-way (the pod deleted during it) is never mistaken for a database. On the
+  next start, the step serves the new copy and finishes the removal. The documented cleanup command uses the
+  same removal and the same order: placeholder first, then `PG_VERSION` first in each copy, oldest copy
+  first. It removes every copy older than the live one, and can be rerun after being cut off.
+- **AC-4.7** A cleaned-up volume (the placeholder plus `pgdata-N/` only) moves on to N+1 by a plain
+  `helm upgrade`, the same as AC-4.1. Nothing older than the source exists, so nothing is removed.
+- **AC-4.8** The refusals stay correct when the database runs on a `pgdata-K/` copy, and each still leaves
+  the volume byte-identical:
+  - A live copy two or more majors behind the image is refused, naming that copy's folder and major (in
+    the test, a Postgres 16 copy in `pgdata-16/` made from 15, under the 18 chart).
+  - A live copy newer than the image, with no copy of the image's major left, is refused naming both
+    majors.
+  - Data whose newer copies are out of date (the older major ran after they were made) is treated as data
+    of the older major. The line never offers an out-of-date copy as the way back.
+- **AC-4.9** Restarting the pod after AC-4.1 does not upgrade again, and adds under 5 s to the start (K3),
+  the same as after a first upgrade.
+- **AC-4.10** `docs/Installation/kubernetes.md`:
+  - **Rollback section:** after a second upgrade only one chart back is possible, and what a rollback two
+    back does.
+  - **Cleanup section:** the automatic removal on a second upgrade, with its log line. The manual command is
+    still how to remove the one remaining older copy earlier.
+  - **"What it costs":** about twice the data after any upgrade, and briefly room for one more copy while
+    an upgrade runs.
+  - **Skipped releases:** the automatic upgrade moves one major per chart release. An operator who skipped a
+    release that moved the major upgrades to that release first, then to the next. The refusal line for a
+    gap of two majors says the same.
+- **AC-4.11** The first upgrade on a volume (0.1.17's 17 in `pgdata/` → 18 in `pgdata-18/`, slices 01–02) is
+  unchanged. Nothing is older than its source `pgdata/`, so nothing is removed, and a rollback to 0.1.17
+  still starts on the pre-upgrade database.
+
 ## Wave: DISCUSS / [REF] Out of Scope
 
 - The docker-compose example and the binary/standalone server (D6). Their manual paths stay documented in
@@ -235,6 +332,7 @@ the old copy* → *start on the new major* → *roll back if wanted* → *clean 
 |---|---|---|
 | `slice-01-upgrade-17-to-18-keeping-the-old-copy` | US-01, US-02 | "An upgrade inside the chart can carry a real Lighthouse database 17 → 18 and still let a rollback open the old copy". If it fails, the automatic route is wrong and D5 pins 17 for good. |
 | `slice-02-refuse-safely-and-document` | US-03, docs, chart version | "Every unsafe case can be detected before anything is written". If it fails, the guard rails need a design rethink before release. |
+| `slice-03-next-major-from-an-upgraded-volume` | US-04 | "The upgrade step can take its source from a copy it made itself, not only from `pgdata/`, and every rollback and refusal still holds". If it fails on the 16 → 17 → 18 chain, the chart must not move its default past 18 until the volume model is rethought. |
 
 Order: slice 01 first, because it carries the highest uncertainty (mechanism, rollback layout, GitOps
 parity). Slice 02 builds on its detection step. Each slice ends green on the kind suite and is
@@ -973,3 +1071,308 @@ installed from `docs/charts/lighthouse-0.1.17.tgz`, and all nine demo scenarios 
   every install. This was decided autonomously while the maintainer was away; it is flagged for review.
 - After the documented cleanup command, the volume holds only the placeholder and `pgdata-18`. Step 02-02
   found that this state had no row of its own and was refused on the next restart; step 02-03 added the row.
+
+## Wave: DESIGN / [REF] Slice 03 — next major from an upgraded volume
+
+Platform Architect, PROPOSE. Scope: `chart/files/postgres-upgrade/*`, the docs rollback and cleanup
+sections, the harness, and ADR-213's known-limitation section. No template, value or CI gate changes
+shape. Retention is the maintainer's choice (2026-10-02): after a successful upgrade, every copy older than
+the source is removed.
+
+### Today's gap, as the code stands at `93b7efe7c`
+
+- `upgrade.sh` takes the data major from `pgdata/PG_VERSION` only (`data_major`), and hashes only
+  `pgdata/global/pg_control` (`pg_control_hash`).
+- On a volume holding `pgdata/` (16) and a live `pgdata-17/`, a chart defaulting to 18 lands in
+  `data_out_of_reach`. `refuse_other_major` then refuses and says to set the image back to 17.
+- `copy-old-binaries.sh` hands over its programs only when `pgdata/PG_VERSION` is its own major, so the 17
+  programs would never be handed over for that volume either.
+
+### Volume model: the live copy
+
+The volume is read as a chain. Every copy except the first was made from the one just below it by an
+upgrade.
+
+- **Copies.** `pgdata/` and every directory named exactly `pgdata-<K>`. A `.partial` or `.stale` directory is
+  never a copy.
+  - A copy counts only if its `PG_VERSION` is present (for `pgdata-K`, it must read `K`).
+  - Every removal deletes `PG_VERSION` first, so a copy that is half-removed already does not count.
+- **Base.** `pgdata/` if it counts. Otherwise, when `pgdata/` holds the placeholder, the lowest-major
+  `pgdata-K` that counts. A volume with copies but neither a base nor a placeholder is refused, as today's
+  catch-all row does.
+- **Chain step.** From copy C (major c), the next link is `pgdata-(c+1)`, provided:
+  - it counts;
+  - it has `.lighthouse-upgrade`, and the note's `source_major` is `c`;
+  - the note's `source_pg_control_sha256` equals the hash of `C/global/pg_control`, computed and non-empty.
+
+  When `pgdata-(c+1)` counts but `C`'s `pg_control` cannot be read, the volume is refused. This generalises
+  today's `refuse_unreadable_old_data`: whether the newer copy is current cannot be told.
+- **Live copy L** is the last link of the chain. It is the copy the database last ran on: any start of an
+  older link rewrites that link's `pg_control`, which cuts the chain there.
+- **Out-of-date copies** are copies that count but are not on the chain. They are never started, never
+  offered as a way back, and are replaced when an upgrade rebuilds that major.
+
+The note format does not change. The source folder is the copy holding `source_major`, and each major lives
+in at most one folder, because `pgdata-K` is only ever made by an upgrade into K. So every note written by
+slices 01–02, and every 0.1.17 volume (a chain of one), reads correctly with no migration.
+
+The **source hash** in a new note is the hash of the `pg_control` of the copy the upgrade read from (`L`),
+taken after `pg_upgrade` has finished with it. `write_upgrade_note` hashes `L` instead of `pgdata/`.
+
+### Retention: the copy before last goes once the new copy is in place
+
+**Rule.** After a successful upgrade from `L` (major `Lm`) into `pgdata-M`, every copy older than `L` is
+removed. "Successful" means after the rename of `pgdata-M.partial` and the `sync` that follows it. What
+stays is the source and the new copy, about twice the data.
+
+**The first upgrade is unchanged.** On a slice 01–02 volume, or 0.1.17's 17 in `pgdata/` going to 18, the
+source is `pgdata/` and nothing is older than it. So nothing is removed, and a rollback to 0.1.17 still
+starts on the pre-upgrade database (AC-4.11).
+
+**One implementation.** The removal is `remove_copies_older_than <major>` in `volume.sh`. It is the same
+function the documented cleanup (`remove-old-copies.sh`) calls with the live major. The order is fixed:
+1. When `pgdata/` is among the copies to remove and holds no placeholder yet, write the placeholder
+   `UPGRADED-TO-<live major>-see-kubernetes-docs` and sync it.
+2. Then, oldest copy first: delete `PG_VERSION`, sync, delete the rest. `pgdata/` is emptied down to the
+   placeholder; a `pgdata-K` folder goes entirely.
+3. Then one log line, for example: `lighthouse-postgres: removed pgdata (Postgres 16), the copy before the
+   one this upgrade read from; a rollback to a chart on Postgres 16 is no longer possible, a rollback to
+   the chart on Postgres 17 still is`.
+
+**Cut-off removal.** Every intermediate state is one the decision table handles:
+- The placeholder is written but `pgdata/PG_VERSION` is still there: `pgdata/` still counts. The chain runs
+  16 → 17 → 18, the live copy is 18, the pod starts on `pgdata-18`, and the finishing step (below) removes
+  `pgdata/`.
+- `PG_VERSION` is gone and other files remain: `pgdata/` no longer counts. The base is the lowest counting
+  `pgdata-K`, and the finishing step clears the rest.
+- An older `pgdata-K` is half-removed: it does not count, and the finishing step removes it.
+
+**Finishing step.** In the "nothing to do, `Lm` = M" row, and only when `pgdata/` holds a placeholder, the
+step calls `remove_copies_older_than (Lm − 1)` before starting. It removes leftovers below the copy the live
+one was made from: `pgdata/` contents other than the placeholder, and any `pgdata-K` folder (counting or
+not) with K below `Lm − 1`.
+- On every other volume it finds nothing.
+- A first-upgrade volume has no placeholder, so it never runs there and its `pgdata/` is never touched.
+- It never runs on a refusal or pin-back row, so a refusal still changes nothing.
+
+**Room check: remove after the copy, not before (chosen).**
+- The check stays as slice 01 built it: free space must hold one new copy of the source (`du` of `L` ×
+  1.1 + 64 MiB). The older copy is already on the volume, so nothing more is needed.
+- At the moment the copy finishes the volume holds three copies, briefly, and then drops back to two.
+- Removing the oldest copy first would cap that peak at two copies. But if the upgrade then failed, was
+  refused by `pg_upgrade`, or was interrupted, the operator would have lost the older rollback for an
+  upgrade that never happened. It would also break the promise that a refused upgrade changes nothing.
+- An operator whose volume cannot hold the third copy for that moment gets the room refusal. When older
+  copies exist, that line also names `remove-old-copies.sh`, so freeing the space early is the operator's
+  explicit choice.
+
+### Generalised decision table (`pg-upgrade`)
+
+M is the image's `PG_MAJOR`. L is the live copy (folder `Ld`, major `Lm`). The base is computed as above.
+
+| Volume state | Action | `PGDATA` |
+|---|---|---|
+| No copy, no placeholder, no `pgdata-*` | Fresh install | `pgdata` |
+| Placeholder and no copy counts | Refuse, naming what was found (unchanged) | none |
+| Copies but no base | Refuse (unchanged catch-all) | none |
+| A link of the chain cannot be hashed while a newer copy counts | Refuse: removal cut off, or a damaged copy; points to the cut-off section | none |
+| `Lm` = M, no copy newer than M | Nothing to do; finishing step when a placeholder exists | `Ld` |
+| `Lm` = M, a copy newer than M exists (out of date after a pin or rollback) | Start with the AC-2.5 warning naming the newest such copy; finishing step when a placeholder exists | `Ld` |
+| `Lm` > M, the chain holds a copy of M (pinned back or rolled back one chart, first start) | Start on the chain's M copy with the AC-2.5 warning naming `Ld`. Nothing is removed. That start cuts the chain, so the next start falls in the row above | the M copy |
+| `Lm` = M−1, `pgdata-M` absent | Upgrade from `Ld` into `pgdata-M`, then `remove_copies_older_than Lm` | `pgdata-M` |
+| `Lm` = M−1, `pgdata-M` counts (out of date, since it is off the chain) | Set it aside as `.stale`, upgrade from `Ld`, remove the stale copy once the new one is in place (unchanged mechanism), then `remove_copies_older_than Lm` | `pgdata-M` |
+| `Lm` ≤ M−2 | Refuse, naming `Ld` and `Lm`. If out-of-date newer copies exist, say they are out of date because Postgres `Lm` ran after they were made. Point to "one major per chart release" and the manual path | none |
+| `Lm` > M, no copy of M on the chain (two charts back after a second upgrade, or pinned to a removed major) | Refuse with the AC-3.3 line, naming `Lm` in `Ld` and M | none |
+
+Rows that no longer exist on their own: "already upgraded" is now the first of the `Lm` = M rows; "old copy
+removed" is now base selection.
+
+`settle_set_aside_copy` is unchanged and runs first. It concerns only `pgdata-M.stale`, and a `.stale` or
+`.partial` of another major is ignored until an image of that major runs.
+
+Everything `upgrade()` does to the source is done to `Ld`: the room check (`du` of `Ld`), recovery and
+settings read, `pg_upgrade -d Ld`, the copy of `pg_hba.conf` and `pg_ident.conf`, and the note's hash and
+system identifier. Log lines name the folders, for example
+`upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18; pgdata-17 is kept as it is`.
+
+**Rollback two charts back** after a second upgrade (volume: placeholder, `pgdata-N`, `pgdata-(N+1)`):
+- To chart 0.1.17, or any chart without the step: the image's entrypoint runs `initdb` on `pgdata/`, which
+  refuses a non-empty folder. The pod crash-loops loudly and never starts an empty database.
+- To a chart with the step: the last table row applies, so it is refused with the AC-3.3 line and nothing
+  is changed.
+
+### One implementation of the chain, used by three scripts
+
+`chart/files/postgres-upgrade/volume.sh` (CREATE NEW, sourced, no side effects of its own) holds `copies`,
+`base`, `live_copy`, `copy_for_major` and `remove_copies_older_than`. Three scripts use it:
+
+- `upgrade.sh` (EXTEND): decides, upgrades, and does the post-commit removal and the finishing step.
+- `copy-old-binaries.sh` (EXTEND): hands over its programs when the **live copy's** major is its own
+  `PG_MAJOR`. Today's rule looks only at `pgdata/`, which misses `pgdata-17` and also copies about 49 MB on
+  every restart while the kept 17 copy is in `pgdata/`. Under the new rule an already-upgraded volume copies
+  nothing on restart. It runs as the `postgres` user in the upgrade-source image, which can read every copy
+  and its `pg_control`. It sees the volume before `settle_set_aside_copy` runs, and a `.stale` is never a
+  copy, so the binaries decision comes out the same.
+- `remove-old-copies.sh` (CREATE NEW): the documented cleanup.
+  - It finds the live copy and calls `remove_copies_older_than <live major>`.
+  - It refuses (exit 1, nothing removed) when the live copy is `pgdata/`, or when `postmaster.pid` exists in
+    a copy it would remove.
+  - The docs command becomes
+    `kubectl exec l8e-lighthouse-postgres-0 -c postgres -- bash /lighthouse-postgres/remove-old-copies.sh`.
+  - The cut-off fallback pod also mounts the scripts ConfigMap.
+
+  After a second upgrade the automatic removal has already left one older copy (the source), so the manual
+  command only matters for removing that one early, or after a first upgrade.
+
+### `start.sh`, `PGDATA` and the templates
+
+- `start.sh`, the StatefulSet, the values, the schema, `NOTES.txt` and `_helpers.tpl` are unchanged.
+  `PGDATA` can now be any `pgdata-K`, which the wrapper already handles.
+- The ConfigMap gains two keys (`volume.sh`, `remove-old-copies.sh`). The existing shellcheck step covers
+  them.
+- The docs' `SHOW data_directory` advice already covers a live `pgdata-K`.
+
+### Publish guard and the known limitation
+
+- `version-guard.sh` rule 4 is unchanged and still right. A release moves the default by exactly one major
+  above the last published chart, and the upgrade-source default is the last published major. That is the
+  only step the upgrade makes, now from any live copy.
+- ADR-213's known-limitation section is rewritten as "resolved once slice 03 is delivered". It also records
+  the retention rule.
+- What remains is D4's rule, not a limitation of the volume model: one major per chart release. An operator
+  who skipped a release that moved the major steps through it, and the gap refusal says so.
+
+### Docs to change in DELIVER (`docs/Installation/kubernetes.md`)
+
+- **"Where the old copy is and what it costs":** about twice the data after any upgrade, briefly room for
+  one more copy while an upgrade runs.
+- **"Rolling back":** one chart back always works. Two charts back after a second upgrade fails loudly (on
+  0.1.17) or is refused (on a chart with the step), with both lines quoted.
+- **"Removing the old copy":** the automatic removal on a second upgrade and its log line, and the
+  `remove-old-copies.sh` command.
+- **"When removing the old copy was cut off":** the next start finishes it.
+- **"When an upgrade is refused":** the gap line now says to step through each chart release that moved the
+  major.
+
+### Test plan (kind, `upgrade-path` harness)
+
+**Chain fixture.** These are real clusters and real images, using today's scripts for the first step:
+1. `helm install` chart 0.1.17 (`docs/charts/lighthouse-0.1.17.tgz`) with `postgresql.image=postgres:16-trixie`.
+   Seed the marker row and record the row counts.
+2. `helm upgrade ./chart --set postgresql.image=postgres:17-trixie --set postgresql.upgrade.image=postgres:16-trixie`.
+   The current step upgrades 16 in `pgdata/` into `pgdata-17/`. Nothing is removed (first upgrade,
+   AC-4.11). Write row R17.
+3. `helm upgrade ./chart --reset-values` with the chart's defaults:
+   - **RED today:** refused with "the database runs on Postgres 17 in pgdata-17". This is the genuine RED
+     for `red-classification.md`.
+   - **GREEN after slice 03:** upgrade from `pgdata-17` into `pgdata-18`. Marker, counts and R17 are present.
+     `pgdata/` holds only `UPGRADED-TO-18-see-kubernetes-docs`, `pgdata-17` still opens on 17, and the
+     removal log line is present (AC-4.1, 4.2).
+
+**Scenarios on the fixture:**
+- Restart: no second upgrade, no removal, `pg-old-binaries` copies nothing, start-time difference under 5 s
+  (AC-4.9).
+- `helm rollback` to the revision from step 2: Postgres 17 on `pgdata-17` with the warning naming
+  `pgdata-18`, and the row written on 18 is absent. Write R17b, then upgrade again: redone from `pgdata-17`,
+  R17b present, nothing removed (AC-4.3 first bullet, AC-4.4).
+- Rollback to the revision from step 1 (0.1.17 on 16): the pod does not become Ready, its log shows
+  `initdb` refusing the non-empty `pgdata`, and no database is created (AC-4.3 second bullet).
+- Pin `postgresql.image=postgres:16-trixie` on the chart: refused with the newer-than-image line naming 18
+  and 16, volume byte-identical (AC-4.3 third bullet, AC-4.5).
+- Pin `postgresql.image=postgres:17-trixie` (upgrade source 16-trixie): starts on `pgdata-17` with the
+  warning (AC-4.5).
+- **Interruption during the removal:**
+  - Seed `pgdata/` large enough (about 300 MB), and delete the pod once the removal has started (the
+    harness waits for the placeholder file to appear).
+  - The next start serves `pgdata-18` and its log reports the finishing removal. End state: placeholder,
+    `pgdata-17`, `pgdata-18` (AC-4.6).
+- **Interruption during the copy** of the second upgrade: nothing is removed, and the next start redoes it
+  (AC-4.2, removal only after commit).
+- `remove-old-copies.sh` via the command extracted verbatim from the docs: only the placeholder and
+  `pgdata-18` remain. Then a plain upgrade path from a cleaned-up first-upgrade volume (step 2 plus cleanup,
+  then the defaults) removes nothing (AC-4.7).
+
+**Gap from a copy (AC-4.8, first bullet):**
+- 0.1.17 with `postgres:15-bookworm`, then the chart with `postgres:16-bookworm` and upgrade source
+  `15-bookworm`, then the chart's defaults.
+- Refused naming `pgdata-16` and 16, volume byte-identical. The bookworm pair is needed only because
+  `postgres:15-trixie` does not exist. The refusal happens before the operating-system check.
+
+**Out-of-date newer copy (AC-4.8, third bullet):**
+- Use a first-upgrade chain (step 2), roll back to 0.1.17 so that 16 runs, then upgrade to the defaults.
+- Refused as two majors behind, naming `pgdata` and 16, with the line saying `pgdata-17` is out of date;
+  volume byte-identical.
+
+**The override does not trip any check.** I checked this by reading the code; nothing was run.
+- The "Postgres defaults agree" step in `ci_chart.yml` reads `values.yaml` and `_helpers.tpl` as files.
+  It never renders, so `--set` overrides cannot reach it.
+- No template `fail`s on the image major.
+- `version-guard.sh` only runs in `publish`.
+- The one visible effect is the `NOTES.txt` "behind" line for 17 < 18, which is correct.
+
+**New harness parts:** a `chain` group, and three environments for DEVOPS to add to `environments.yaml`:
+`kind-chain-16-17`, `kind-chain-cleaned`, `kind-gap-from-copy`. helm-unittest: the ConfigMap carries
+`volume.sh` and `remove-old-copies.sh`.
+
+### Changed Assumptions (slice 03)
+
+**S3-1. The upgrade source is the live copy, not `pgdata/`.**
+ADR-213, Known limitation (before this wave): "The upgrade only ever reads the data in `pgdata/`, the
+folder the volume was first set up with." DESIGN, Decision Table: "M is the main image's `PG_MAJOR`. D is
+the data major in `pgdata/PG_VERSION`."
+New assumption: the source is the live copy, the end of the chain of notes. `pgdata/` is only the chain's
+base.
+
+**S3-2. The note's source hash belongs to the copy the upgrade read from.**
+DESIGN, On-Volume Layout: "`.lighthouse-upgrade`              source major, system identifier, sha256 of
+pgdata/global/pg_control".
+New assumption: the hash is of `<source copy>/global/pg_control`, which is `pgdata/` only for a first
+upgrade. The format is unchanged, so existing notes stay valid.
+
+**S3-3. Old copies are removed automatically, but only the ones older than the source.**
+DISCUSS, Out of Scope: "Removing the previous major's copy automatically. The operator removes it with the
+documented command." ADR-213 Consequences: "The volume holds about twice the data until the operator
+removes the old copy."
+New assumption (maintainer, 2026-10-02):
+- The previous major's copy, the one a one-chart-back rollback needs, is still never removed
+  automatically.
+- What is removed automatically is everything older than it, after a successful second (or later)
+  upgrade. The volume therefore holds about twice the data after any upgrade.
+- A rollback two charts back is no longer possible after a second upgrade; it fails loudly or is refused.
+- The first upgrade removes nothing.
+
+**S3-4. The cleanup removes every copy older than the live one, through the same function.**
+AC-2.3: "That command empties the old folder but leaves a placeholder file in it". DESIGN DDD-10: "The
+documented cleanup empties `pgdata/` and leaves one placeholder file in it".
+New assumption: `remove-old-copies.sh` and the automatic removal both call `remove_copies_older_than`. The
+order is the placeholder first, then `PG_VERSION` first in each copy, oldest copy first. On a
+first-upgrade volume the result is exactly today's.
+
+**S3-5. Pinning back starts on the copy of the pinned major, wherever it is.**
+AC-2.5: "pinning `postgresql.image` back to the previous major after an upgrade starts Postgres on the kept
+old copy, just as a rollback does".
+New assumption: on the copy of the pinned major on the chain, `pgdata/` or `pgdata-K`. When that copy was
+removed by a second upgrade, the pin is refused.
+
+**S3-6. Old programs are handed over only when the live copy needs them.**
+DISTILL upstream finding 3: "`pg-old-binaries` copies about 49 MB on every start while `pgdata/` holds 17
+data, which is every restart after an upgrade until the operator cleans up."
+New assumption: it copies only when the live copy is the upgrade source's major.
+
+**S3-7. Room is measured on the copy being upgraded; the peak is briefly three copies.**
+DESIGN DDD-9: "Space needed = `du` of `pgdata` × 1.1 + 64 MiB". Docs: "the volume holds roughly twice the
+data until you remove it".
+New assumption:
+- `du` of the live copy.
+- During a second upgrade the volume briefly holds three copies, because the oldest goes only after the
+  new copy is committed; it then drops back to two.
+- The room refusal names the cleanup as a way out when older copies exist.
+
+### Open questions
+
+- Whether `pg_upgrade` from an already-upgraded cluster behaves the same is not measured. It should: the
+  source is an ordinary cluster. The chain fixture is the proof.
+- The finishing step only runs when a placeholder exists. A manual cleanup cut off after the placeholder,
+  on a first-upgrade volume, is therefore left for the operator to rerun, as the docs already say.
+- Run time: the chain fixture costs about three installs' worth of work; DEVOPS decides whether it is a
+  third matrix leg.
