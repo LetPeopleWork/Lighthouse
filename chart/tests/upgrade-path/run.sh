@@ -1131,7 +1131,10 @@ readonly CHAIN_PIN_17=(--set postgresql.image=postgres:17-trixie --set postgresq
 # needs an upgraded volume builds the namespace again from the start.
 CHAIN_UPGRADED_ONCE=""
 CHAIN_UPGRADED_TWICE=""
+CHAIN_ROLLED_BACK_ONE_CHART=""
+CHAIN_REVISION_ON_16=""
 CHAIN_REVISION_ON_17=""
+CHAIN_COUNTS_ON_17=""
 
 scaffold() {
   local scenario="$1"
@@ -1146,9 +1149,14 @@ given_chain_upgraded_twice() {
   [[ -n "$CHAIN_UPGRADED_TWICE" ]] || chain_second_upgrade_keeps_every_row
 }
 
+given_chain_rolled_back_one_chart() {
+  [[ -n "$CHAIN_ROLLED_BACK_ONE_CHART" ]] || chain_rollback_one_chart_starts_previous_major_and_warns
+}
+
 chain_moved_back_to_17() {
   CHAIN_UPGRADED_ONCE=""
   CHAIN_UPGRADED_TWICE=""
+  CHAIN_ROLLED_BACK_ONE_CHART=""
 }
 
 # The warning a start on an older copy logs, once, naming the newer copy whose writes it does not have.
@@ -1184,11 +1192,41 @@ assert_nothing_removed() {
   [[ -z "$removals" ]] || fail "the upgrade log in $ns speaks of removing a copy: $removals"
 }
 
+# What an upgrade from a copy leaves once the copy before last is gone: the copy it read from, the copy it
+# built, and in pgdata only the placeholder that keeps an older chart from creating an empty database there.
+assert_two_copies_beside_placeholder() {
+  local ns="$1" entries
+  entries="$(volume_entries "$ns" | tr '\n' ' ')"
+  [[ "$entries" == "pgdata pgdata-17 pgdata-18 " ]] \
+    || fail "the volume in $ns holds ${entries}rather than pgdata, pgdata-17 and pgdata-18"
+  entries="$(in_postgres "$ns" ls -1A "$MOUNT/pgdata" | tr '\n' ' ')"
+  [[ "$entries" == "UPGRADED-TO-18-see-kubernetes-docs " ]] \
+    || fail "pgdata in $ns holds ${entries}rather than only the placeholder saying the data was upgraded to Postgres 18"
+}
+
+# The one line the upgrade log carries about removing the Postgres 16 copy, checked for what it says about
+# rolling back.
+removal_line() {
+  local ns="$1" line
+  line="$(the_one_line_with "removed pgdata (Postgres 16)" "$(upgrade_log "$ns")")" \
+    || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one line naming the removed pgdata (Postgres 16)"; }
+  assert_line_says "$ns" "$line" "a rollback to a chart on Postgres 16 is no longer possible" \
+    "a rollback to the chart on Postgres 17 still is"
+  echo "$line"
+}
+
+# The type, mode, owner and content of every file of the two copies the database can still run on.
+copies_fingerprint() {
+  on_volume "$1" 'cd /volume && find pgdata-17 pgdata-18 -printf "%y %m %u %g %p\n" | sort && find pgdata-17 pgdata-18 -type f -print0 | sort -z | xargs -0 -r sha256sum'
+}
+
 # The first link of the chain: 0.1.17 on Postgres 16, then the new chart pinned to 17 with 16 as the
 # upgrade source. It must behave exactly as a first upgrade always has.
 chain_first_upgrade_removes_nothing() {
   local ns="$CHAIN_NS" counts
   install_with_data "$ns" --set postgresql.image=postgres:16-trixie
+  CHAIN_REVISION_ON_16="$(current_revision "$ns")"
+  CHAIN_ROLLED_BACK_ONE_CHART=""
   counts="$(public_row_counts "$ns")"
 
   upgrade_to_new_chart "$ns" "${CHAIN_PIN_17[@]}"
@@ -1220,6 +1258,7 @@ chain_second_upgrade_keeps_every_row() {
   given_chain_upgraded_once
   write_marker_table "$ns" upgrade_path_written_on_17
   counts="$(public_row_counts "$ns")"
+  CHAIN_COUNTS_ON_17="$counts"
 
   upgrade_to_new_chart "$ns" --reset-values
 
@@ -1235,7 +1274,21 @@ chain_second_upgrade_keeps_every_row() {
   CHAIN_UPGRADED_TWICE=1
 }
 
-chain_second_upgrade_removes_copy_before_last() { scaffold "Once the new copy is in place, the copy before last is removed and one rollback step is kept"; }
+# The kept copy is opened while the database runs on pgdata-18: nothing runs on pgdata-17, and the copy is
+# taken from a read-only mount.
+chain_second_upgrade_removes_copy_before_last() {
+  local ns="$CHAIN_NS"
+  given_chain_upgraded_twice
+
+  assert_two_copies_beside_placeholder "$ns"
+  echo "  $(removal_line "$ns")"
+  open_kept_copy "$ns" postgres:17-trixie pgdata-17
+  [[ "$(public_row_counts "$ns" kept-copy)" == "$CHAIN_COUNTS_ON_17" ]] \
+    || fail "the kept Postgres 17 copy in $ns no longer holds the rows it had before the second upgrade"
+  [[ "$(marker_rows_in "$ns" upgrade_path_written_on_17 kept-copy)" == "1" ]] \
+    || fail "the kept Postgres 17 copy in $ns lacks the row written on Postgres 17"
+  close_kept_copy "$ns"
+}
 
 # The baseline is a restart of the fresh install, as for the first upgrade's restart.
 chain_restart_after_second_upgrade_does_nothing() {
@@ -1282,8 +1335,34 @@ chain_rollback_one_chart_starts_previous_major_and_warns() {
     || fail "the row written on Postgres 18 in $ns is there after the rollback to Postgres 17"
   assert_newer_copy_warning "$ns" 18
   wait_api_ready "$ns"
+  CHAIN_ROLLED_BACK_ONE_CHART=1
 }
-chain_upgrade_again_after_one_chart_rollback_starts_afresh() { scaffold "Upgrading again after a one-chart rollback starts afresh from the Postgres 17 copy"; }
+
+# Redone from pgdata-17, the upgrade leaves the same volume as the second upgrade did, so the scenarios
+# after it start from it as from that upgrade.
+chain_upgrade_again_after_one_chart_rollback_starts_afresh() {
+  local ns="$CHAIN_NS"
+  given_chain_rolled_back_one_chart
+  write_marker_table "$ns" upgrade_path_on_17_after_rollback
+
+  upgrade_to_new_chart "$ns" --reset-values
+  CHAIN_ROLLED_BACK_ONE_CHART=""
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  assert_upgrade_log_says "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
+  assert_upgrade_log_says "$ns" "pgdata-18 is out of date"
+  [[ "$(marker_rows_in "$ns" upgrade_path_on_17_after_rollback)" == "1" ]] \
+    || fail "the row written on Postgres 17 after the rollback in $ns did not reach Postgres 18"
+  [[ "$(table_count "$ns" upgrade_path_on_18_before_rollback)" == "0" ]] \
+    || fail "the row written on Postgres 18 before the rollback in $ns came back"
+  assert_marker_row "$ns"
+  assert_nothing_removed "$ns"
+  assert_two_copies_beside_placeholder "$ns"
+  wait_api_ready "$ns"
+  CHAIN_UPGRADED_TWICE=1
+}
 
 # The docs say to delete the database pod after pinning the image. When the StatefulSet is already
 # replacing it, deleting it again changes nothing.
@@ -1307,12 +1386,122 @@ chain_pin_back_one_major_starts_kept_copy_and_warns() {
   assert_newer_copy_warning "$ns" 18
   wait_api_ready "$ns"
 }
-chain_pin_back_two_majors_refuses_and_touches_nothing() { scaffold "Pinning the image back two majors after a second upgrade is refused, naming both majors"; }
-chain_rollback_two_charts_fails_loudly() { scaffold "Rolling back two charts after a second upgrade fails loudly and never starts an empty database"; }
+# The refusal line says to set the image back and delete the pod; doing so ends the scenario, so the volume is
+# on Postgres 18 again for the scenarios after it.
+chain_pin_back_two_majors_refuses_and_touches_nothing() {
+  local ns="$CHAIN_NS" line old_uid
+  given_chain_upgraded_twice
+
+  fingerprint_then_upgrade "$ns" --set postgresql.image=postgres:16-trixie
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing to start Postgres 16" \
+    "the data is Postgres 18, in pgdata-18, which is newer than this image" \
+    "no Postgres 16 copy of it is left to start on" \
+    "set postgresql.image back to Postgres 18 or remove the pin on it" \
+    "kubectl delete pod -n $ns $POSTGRES_POD"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+
+  old_uid="$(pod_uid "$ns")"
+  upgrade_to_new_chart "$ns" --reset-values
+  delete_stuck_pod "$ns"
+  wait_pod_replaced "$ns" "$old_uid"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+}
+
+chain_rollback_two_charts_fails_loudly() {
+  local ns="$CHAIN_NS" counts copies deadline log old_uid
+  given_chain_upgraded_twice
+  counts="$(public_row_counts "$ns")"
+  stop_database "$ns"
+  copies="$(copies_fingerprint "$ns")"
+
+  helm rollback "$RELEASE" "$CHAIN_REVISION_ON_16" -n "$ns" >/dev/null
+  start_database "$ns"
+
+  wait_pod_replaced "$ns" ""
+  deadline=$((SECONDS + WAIT_SECONDS))
+  until [[ "$(postgres_restarts "$ns")" -ge 1 ]] 2>/dev/null; do
+    [[ $SECONDS -lt $deadline ]] || { dump_diagnostics "$ns"; fail "Postgres 16 in $ns neither failed nor restarted after the rollback to chart 0.1.17"; }
+    sleep 2
+  done
+  assert_not_ready "$ns" "the database in $ns became Ready after the rollback to chart 0.1.17"
+  deadline=$((SECONDS + 120))
+  until grep -qF "exists but is not empty" <<<"${log:-}"; do
+    [[ $SECONDS -lt $deadline ]] \
+      || { dump_diagnostics "$ns"; fail "the rolled-back database log in $ns does not say the data folder is not empty"; }
+    log="$(kubectl -n "$ns" logs "$POSTGRES_POD" -c postgres 2>/dev/null || true; kubectl -n "$ns" logs "$POSTGRES_POD" -c postgres --previous 2>/dev/null || true)"
+    sleep 1
+  done
+  echo "  $(grep -F "exists but is not empty" <<<"$log" | head -1)"
+  [[ "$(on_volume "$ns" 'ls -1A /volume/pgdata')" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
+    || fail "the rollback to chart 0.1.17 in $ns created something in pgdata"
+  [[ "$(copies_fingerprint "$ns")" == "$copies" ]] \
+    || fail "the rollback to chart 0.1.17 in $ns changed pgdata-17 or pgdata-18"
+  echo "  pgdata-17 and pgdata-18 unchanged: $(sha256sum <<<"$copies" | cut -c1-16)"
+
+  old_uid="$(pod_uid "$ns")"
+  upgrade_to_new_chart "$ns" --reset-values
+  delete_stuck_pod "$ns"
+
+  wait_pod_replaced "$ns" "$old_uid"
+  assert_carried_across "$ns" "$counts"
+  assert_data_directory "$ns" pgdata-18
+}
 chain_cleanup_removes_every_older_copy_and_reruns() { scaffold "The documented cleanup removes every copy older than the live one, and can be run again"; }
 chain_cut_off_cleanup_is_finished_by_running_again() { scaffold "A cleanup cut off part-way is finished by running it again"; }
 chain_interrupted_removal_is_finished_by_next_start() { scaffold "A removal of the copy before last cut off part-way is finished by the next start"; }
-chain_interrupted_second_upgrade_removes_nothing() { scaffold "A second upgrade interrupted during the copy removes nothing and is redone"; }
+# The database is held at no replicas while the frozen pod goes, so the volume can be read as the
+# interrupted upgrade left it before the next start redoes the upgrade.
+chain_interrupted_second_upgrade_removes_nothing() {
+  local ns="chain-interrupted-copy" counts_on_16 counts entries log finished removed
+  install_with_data "$ns" --set postgresql.image=postgres:16-trixie
+  seed_bulk_data "$ns"
+  counts_on_16="$(public_row_counts "$ns")"
+  upgrade_to_new_chart "$ns" "${CHAIN_PIN_17[@]}"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  wait_api_ready "$ns"
+  counts="$(public_row_counts "$ns")"
+
+  upgrade_to_new_chart "$ns" --reset-values
+  echo "  mid-copy: $(wait_copy_started "$ns")"
+  [[ -z "$(postgres_started_at "$ns")" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
+  freeze_upgrade_step "$ns"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
+  kubectl -n "$ns" delete pod "$POSTGRES_POD" --grace-period=1 --wait >/dev/null
+
+  entries="$(on_volume "$ns" 'cat /volume/pgdata/PG_VERSION; ls -1A /volume | tr "\n" " "')"
+  [[ "$entries" == $'16\npgdata pgdata-17 pgdata-18.partial ' ]] \
+    || fail "the interrupted upgrade in $ns left $entries rather than the Postgres 16 pgdata, pgdata-17 and an unfinished pgdata-18.partial"
+  open_kept_copy "$ns" postgres:16-trixie pgdata
+  [[ "$(public_row_counts "$ns" kept-copy)" == "$counts_on_16" ]] \
+    || fail "the original Postgres 16 copy in $ns no longer holds the recorded row counts after the interrupted upgrade"
+  close_kept_copy "$ns"
+  echo "  after the interruption pgdata still opens on Postgres 16 with every row"
+
+  start_database "$ns"
+  wait_postgres_ready "$ns"
+  log="$(upgrade_log "$ns")"
+  grep -qF -- "$DISCARDED_PARTIAL" <<<"$log" \
+    || { dump_diagnostics "$ns"; fail "the start after the delete in $ns did not find a partial copy, so the delete did not land mid-copy"; }
+  grep -qF -- "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18" <<<"$log" \
+    || { dump_diagnostics "$ns"; fail "the next start in $ns did not begin the upgrade again from pgdata-17"; }
+  assert_server_major "$ns" 18
+  assert_data_directory "$ns" pgdata-18
+  wait_api_ready "$ns"
+  assert_row_counts "$ns" "$counts"
+  assert_marker_row "$ns"
+  finished="$(grep -nF "upgrade finished" <<<"$log" | cut -d: -f1 || true)"
+  removed="$(grep -nF "removed pgdata (Postgres 16)" <<<"$log" | cut -d: -f1 || true)"
+  [[ -n "$finished" && -n "$removed" ]] && [[ "$removed" -gt "$finished" ]] \
+    || { dump_diagnostics "$ns"; fail "the Postgres 16 copy in $ns was not removed after the redone upgrade finished"; }
+  echo "  $(sed -n "${removed}p" <<<"$log")"
+  assert_two_copies_beside_placeholder "$ns"
+}
 chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little room for the next copy refuses, naming the cleanup as a way out"; }
 chain_cleaned_volume_moves_on_and_removes_nothing() { scaffold "A cleaned-up volume moves on to the next major and removes nothing"; }
 chain_out_of_date_copy_counts_as_older_major_and_refuses() { scaffold "A newer copy made out of date by a rollback counts as the older major and is refused as a gap"; }
@@ -1356,9 +1545,14 @@ readonly REFUSALS=(
 readonly CHAIN=(
   chain_first_upgrade_removes_nothing
   chain_second_upgrade_keeps_every_row
+  chain_second_upgrade_removes_copy_before_last
   chain_restart_after_second_upgrade_does_nothing
   chain_rollback_one_chart_starts_previous_major_and_warns
+  chain_upgrade_again_after_one_chart_rollback_starts_afresh
   chain_pin_back_one_major_starts_kept_copy_and_warns
+  chain_pin_back_two_majors_refuses_and_touches_nothing
+  chain_rollback_two_charts_fails_loudly
+  chain_interrupted_second_upgrade_removes_nothing
 )
 
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later

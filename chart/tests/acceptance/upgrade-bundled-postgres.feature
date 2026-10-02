@@ -352,7 +352,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the row written on Postgres 17 is present
     And the database log names the Postgres 17 copy it upgraded from and the Postgres 18 copy it built, and says the Postgres 17 copy is kept
 
-  @US-04 @AC-4.2 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.2 @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: Once the new copy is in place, the copy before last is removed and one rollback step is kept
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     When the operator looks at the database volume and the database log
@@ -383,7 +383,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the row written on Postgres 18 is absent
     And its log carries one warning line naming the newer Postgres 18 copy and saying its writes are not in this database
 
-  @US-04 @AC-4.4 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.4 @edge @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: Upgrading again after a one-chart rollback starts afresh from the Postgres 17 copy
     Given the operator has rolled back one chart, from Postgres 18 to the revision on Postgres 17
     And a row was written on Postgres 17 after the rollback
@@ -404,7 +404,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the row written on Postgres 18 is not there
     And its log carries one warning line naming the newer Postgres 18 copy
 
-  @US-04 @AC-4.5 @AC-4.3 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.5 @AC-4.3 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: Pinning the image back two majors after a second upgrade is refused, naming both majors
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     And a fingerprint of every file on the database volume has been taken
@@ -415,7 +415,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And that line says no Postgres 16 copy is left to start on, and to set the image back to Postgres 18 or remove the pin, then delete the pod
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-04 @AC-4.3 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.3 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: Rolling back two charts after a second upgrade fails loudly and never starts an empty database
     Given Lighthouse was upgraded from Postgres 16 to 17, then by a plain "helm upgrade" to Postgres 18
     When the operator runs "helm rollback" to the chart 0.1.17 revision
@@ -459,7 +459,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the volume holds the placeholder, the Postgres 17 copy and the Postgres 18 copy, and nothing else
     And every Lighthouse table has the same row count as before the upgrade
 
-  @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change @pending
+  @US-04 @AC-4.2 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:bounded-change
   Scenario: A second upgrade interrupted during the copy removes nothing and is redone
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And it holds about 300 MB of Lighthouse data with a known marker row

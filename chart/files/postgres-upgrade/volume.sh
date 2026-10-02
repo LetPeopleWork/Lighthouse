@@ -107,3 +107,65 @@ live_copy() {
 copy_for_major() {
   chain | awk -v major="$1" '$2 == major { print $1 }'
 }
+
+# Whether pgdata holds anything besides the note a removal of the old copy leaves behind.
+pgdata_beyond_placeholder() {
+  [[ -n "$(find "$MOUNT/pgdata" -mindepth 1 -maxdepth 1 ! -name 'UPGRADED-TO-*' -print -quit 2>/dev/null)" ]]
+}
+
+# The folders a removal with bound $1 takes, as "major folder" lines, oldest first. A pgdata-<K> goes
+# whether it counts or not, since a half-removed one no longer does. pgdata goes when it counts below the
+# bound, or when it no longer counts but holds the placeholder, which shows a removal had started there; its
+# major is then 0, as it can no longer be told. A pgdata holding neither is never touched: nothing shows it
+# was ever a copy.
+copies_older_than() {
+  local bound="$1" major path folder
+  major="$(copy_major pgdata)"
+  if [[ -n "$major" ]]; then
+    if [[ "$major" -lt "$bound" ]]; then
+      echo "$major pgdata"
+    fi
+  elif has_placeholder && pgdata_beyond_placeholder; then
+    echo "0 pgdata"
+  fi
+  for path in "$MOUNT"/pgdata-*; do
+    folder="${path##*/}"
+    if [[ -d "$path" && "$folder" =~ ^pgdata-([0-9]+)$ ]] && [[ "${BASH_REMATCH[1]}" -lt "$bound" ]]; then
+      echo "${BASH_REMATCH[1]} $folder"
+    fi
+  done
+}
+
+# Removes every copy older than major $1 and nothing else, for a database that runs on a copy of major $2.
+# A bound above that major removes nothing, so the live copy and anything newer are never touched. pgdata
+# first gets the placeholder that keeps an older chart from creating an empty database in it; then, oldest
+# first, each folder loses PG_VERSION before anything else, so one cut off part-way no longer counts as a
+# copy. Prints one "folder major" line per folder removed, the major left out when it can no longer be told.
+remove_copies_older_than() {
+  local bound="$1" live="$2" targets key folder dir
+  [[ "$bound" =~ ^[0-9]+$ && "$live" =~ ^[0-9]+$ ]] || return 1
+  [[ "$bound" -le "$live" ]] || return 1
+  targets="$(copies_older_than "$bound" | sort -n)"
+  if grep -q ' pgdata$' <<<"$targets" && ! has_placeholder; then
+    dir="$MOUNT/pgdata"
+    install -m 0600 -o "$(stat -c %u "$dir")" -g "$(stat -c %g "$dir")" /dev/null \
+      "$dir/UPGRADED-TO-$live-see-kubernetes-docs" || return 1
+    sync || return 1
+  fi
+  while read -r key folder; do
+    [[ -n "$folder" ]] || continue
+    dir="$MOUNT/$folder"
+    rm -f "$dir/PG_VERSION" || return 1
+    sync || return 1
+    if [[ "$folder" == pgdata ]]; then
+      find "$dir" -mindepth 1 -maxdepth 1 ! -name 'UPGRADED-TO-*' -exec rm -rf {} + || return 1
+    else
+      rm -rf "$dir" || return 1
+    fi
+    if [[ "$key" == 0 ]]; then
+      echo "$folder"
+    else
+      echo "$folder $key"
+    fi
+  done <<<"$targets"
+}
