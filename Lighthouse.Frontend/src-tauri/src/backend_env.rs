@@ -6,7 +6,9 @@ use std::os::unix::ffi::{OsStrExt, OsStringExt};
 ///
 /// The AppImage launcher prepends its mount to LD_LIBRARY_PATH and friends. The image ships
 /// a libcrypto without a matching libssl, so the backend would pair it with the host's newer
-/// libssl and .NET aborts on startup. Inside an AppImage every entry under the mount is dropped.
+/// libssl and .NET aborts on startup. So inside an AppImage, a variable listing a path under the
+/// mount loses those entries and its empty ones (an empty entry means the working directory), and
+/// is dropped once nothing is left. The runtime's own variables go too; the rest pass untouched.
 #[cfg(target_os = "linux")]
 pub fn backend_environment(
     parent: impl IntoIterator<Item = (OsString, OsString)>,
@@ -22,9 +24,9 @@ pub fn backend_environment(
         None => parent,
         Some(appdir) => parent
             .into_iter()
-            .filter(|(key, _)| !APPIMAGE_IDENTITY.iter().any(|identity| key == identity))
+            .filter(|(key, _)| !APPIMAGE_RUNTIME_VARIABLES.iter().any(|name| key == name))
             .filter_map(|(key, value)| {
-                without_appdir_entries(&value, &appdir).map(|value| (key, value))
+                without_appdir_entries(value, &appdir).map(|value| (key, value))
             })
             .collect(),
     }
@@ -38,13 +40,14 @@ pub fn backend_environment(
 }
 
 #[cfg(target_os = "linux")]
-const APPIMAGE_IDENTITY: [&str; 5] = ["APPDIR", "APPIMAGE", "ARGV0", "OWD", "APPIMAGE_UUID"];
+const APPIMAGE_RUNTIME_VARIABLES: [&str; 5] =
+    ["APPDIR", "APPIMAGE", "ARGV0", "OWD", "APPIMAGE_UUID"];
 
 #[cfg(target_os = "linux")]
-fn without_appdir_entries(value: &OsString, appdir: &[u8]) -> Option<OsString> {
+fn without_appdir_entries(value: OsString, appdir: &[u8]) -> Option<OsString> {
     let entries: Vec<&[u8]> = value.as_bytes().split(|byte| *byte == b':').collect();
     if !entries.iter().any(|entry| is_under(entry, appdir)) {
-        return Some(value.clone());
+        return Some(value);
     }
 
     let kept: Vec<&[u8]> = entries
@@ -196,10 +199,8 @@ mod tests {
         let mut raw = b"/opt/caf\xe9:".to_vec();
         raw.extend_from_slice(APPDIR.as_bytes());
         raw.extend_from_slice(b"/usr/lib");
-        let parent = vec![
-            (OsString::from("APPDIR"), OsString::from(APPDIR)),
-            (OsString::from("LD_LIBRARY_PATH"), OsString::from_vec(raw)),
-        ];
+        let mut parent = env(&[("APPDIR", APPDIR)]);
+        parent.push((OsString::from("LD_LIBRARY_PATH"), OsString::from_vec(raw)));
 
         let output = backend_environment(parent);
 
