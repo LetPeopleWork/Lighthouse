@@ -67,3 +67,24 @@ DETAIL:  The data directory was initialized by PostgreSQL version 17, which is n
 ```
 
 Class: MISSING_FUNCTIONALITY — the defect the story removes, not a harness, image-pull or cluster failure.
+
+## Slice 03 (DISTILL, 2026-10-02, at `d1fb6e061`)
+
+Hand-off state: `helm unittest -f 'tests/unit/*.yaml' ./chart` → 7 suites passed, 90 tests passed, 2 skipped,
+0 failed. Unskipped on a scratch copy (`skip:` blocks stripped), `postgres-upgrade_test.yaml` → 20 tests, 2 failed,
+18 passed.
+
+| Test | Result | Class | Why |
+|---|---|---|---|
+| the upgrade scripts include the shared volume chain and the cleanup command | FAIL | MISSING_FUNCTIONALITY | `unknown path data["volume.sh"]`, `unknown path data["remove-old-copies.sh"]` — neither key is in the ConfigMap yet |
+| the upgrade step, the old-programs step and the cleanup all read the volume through the same script | FAIL | MISSING_FUNCTIONALITY | `upgrade.sh` and `copy-old-binaries.sh` render but source no `volume.sh`; `remove-old-copies.sh` does not exist |
+| the database container can reach the cleanup script the docs tell the operator to run | pass | regression guard, **not skipped** | the `postgres` container already mounts the scripts at `/lighthouse-postgres`; the docs command depends on it |
+
+A trap found on the way: `isNotNullOrEmpty` on a path that does not exist **passes** in helm-unittest 1.1.1, so a
+presence check written with it would have been green against the current templates. The key checks use
+`matchRegex` on the shebang instead, which fails with `unknown path`.
+
+Kind (`chain` group): each of the 17 functions exits 1 with
+`✗ upgrade-path: SCAFFOLD: not yet implemented — <scenario title>`. This is a placeholder RED. The real one,
+which DESIGN predicts, is fixture step 3 on today's scripts: the defaults upgrade is refused with "the database
+runs on Postgres 17 in pgdata-17". DELIVER records that line here when it writes the fixture.

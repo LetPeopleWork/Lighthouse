@@ -1461,3 +1461,147 @@ Checked by reading `ci_chart.yml`, `version-guard.sh` and the templates at `bf3c
 
 Still N/A, for the same reasons as above. The removal and the chained upgrade happen in the database pod
 before the API runs, and the chart has no event pipe.
+
+## Wave: DISTILL / [REF] Slice 03 — next major from an upgraded volume
+
+### Reconciliation
+
+Reconciliation passed — 0 contradictions between slice 03's DISCUSS (US-04, AC-4.1..4.11), DESIGN (live-copy
+model, retention, generalised decision table, S3-1..S3-7) and DEVOPS (`chain` leg, images, gates unchanged),
+or between those and slices 01–02 as delivered. S3-1..S3-7 are deliberate and AC-4.x is written against them.
+Two wording points, neither a contradiction:
+- DISCUSS Out of Scope still lists "Removing the previous major's copy automatically". After S3-3 that stays
+  true: the previous major's copy (the one-chart-back rollback) is still never removed. The copy *before* it
+  is. Worth one clarifying clause in that list.
+- AC-4.3's third bullet speaks of a rollback "two charts back, to a chart that has the step". The chain fixture
+  has no such revision: its revision two back is 0.1.17. A pin to Postgres 16 on the new chart lands on the same
+  decision-table row, so the pin scenario covers both bullets.
+
+**Slice 01–02 scenarios whose expected outcome changes: none.** I checked each against S3-1..S3-7:
+- Slice 01–02 scenarios only ever reach a first upgrade, where the source is `pgdata/` and nothing is removed
+  (AC-4.11). The refusal lines they assert keep the parts they check.
+- The room refusal names the cleanup only when older copies exist, and on those volumes none do.
+- "An interrupted removal of the old copy never costs the upgraded copy" builds its state by hand: `pg_control`
+  is gone, `PG_VERSION` is present and there is no placeholder. The new removal order cannot produce that state.
+  It is still the "link cannot be hashed while a newer copy counts" row, so it is still refused, and the line
+  still points to the cut-off docs anchor. The only thing at risk is the docs section that anchor names
+  (Upstream findings, 2).
+- The file header was updated for slice 03; no scenario was touched.
+
+### Scenario list
+
+18 scenarios, all `@US-04 @slice-03 @pending`, all with `@contract-shape:`. Error or edge: 11 of 18 (61 %).
+Harness function = `run.sh` `chain` group.
+
+| # | Scenario | AC / tags | Env | Harness function |
+|---|---|---|---|---|
+| 1 | The first upgrade on a volume removes nothing | `@AC-4.11` | kind-chain-16-17 | `chain_first_upgrade_removes_nothing` |
+| 2 | A volume already upgraded once moves on to the next major with every row | `@AC-4.1 @kpi:K2` | kind-chain-16-17 | `chain_second_upgrade_keeps_every_row` |
+| 3 | Once the new copy is in place, the copy before last is removed and one rollback step is kept | `@AC-4.2` | kind-chain-16-17 | `chain_second_upgrade_removes_copy_before_last` |
+| 4 | Restarting the database after a second upgrade does not upgrade or remove anything | `@AC-4.9 @kpi:K3 @edge` | kind-chain-16-17 | `chain_restart_after_second_upgrade_does_nothing` |
+| 5 | Rolling back one chart after a second upgrade starts the previous major and says what is missing | `@AC-4.3` | kind-chain-16-17 | `chain_rollback_one_chart_starts_previous_major_and_warns` |
+| 6 | Upgrading again after a one-chart rollback starts afresh from the Postgres 17 copy | `@AC-4.4 @edge` | kind-chain-16-17 | `chain_upgrade_again_after_one_chart_rollback_starts_afresh` |
+| 7 | Pinning the image back one major after a second upgrade starts on the kept copy with the warning | `@AC-4.5 @edge` | kind-chain-16-17 | `chain_pin_back_one_major_starts_kept_copy_and_warns` |
+| 8 | Pinning the image back two majors after a second upgrade is refused, naming both majors | `@AC-4.5 @AC-4.3 @AC-4.8 @error` | kind-chain-16-17 | `chain_pin_back_two_majors_refuses_and_touches_nothing` |
+| 9 | Rolling back two charts after a second upgrade fails loudly and never starts an empty database | `@AC-4.3 @error` | kind-chain-16-17 | `chain_rollback_two_charts_fails_loudly` |
+| 10 | The documented cleanup removes every copy older than the live one, and can be run again | `@AC-4.6` | kind-chain-16-17 | `chain_cleanup_removes_every_older_copy_and_reruns` |
+| 11 | A cleanup cut off part-way is finished by running it again | `@AC-4.6 @error` | kind-chain-16-17 | `chain_cut_off_cleanup_is_finished_by_running_again` |
+| 12 | A removal of the copy before last cut off part-way is finished by the next start | `@AC-4.6 @AC-4.2 @error` | kind-chain-16-17 | `chain_interrupted_removal_is_finished_by_next_start` |
+| 13 | A second upgrade interrupted during the copy removes nothing and is redone | `@AC-4.2 @error` | kind-chain-16-17 | `chain_interrupted_second_upgrade_removes_nothing` |
+| 14 | Too little room for the next copy refuses, naming the cleanup as a way out | `@AC-4.2 @error` | kind-chain-16-17 (+ tmpfs PV) | `chain_too_little_room_names_cleanup_and_touches_nothing` |
+| 15 | A cleaned-up volume moves on to the next major and removes nothing | `@AC-4.7` | kind-chain-cleaned | `chain_cleaned_volume_moves_on_and_removes_nothing` |
+| 16 | A newer copy made out of date by a rollback counts as the older major and is refused as a gap | `@AC-4.8 @error` | kind-chain-16-17 | `chain_out_of_date_copy_counts_as_older_major_and_refuses` |
+| 17 | A live copy two majors behind the image is refused, naming that copy and one major per release | `@AC-4.8 @AC-4.10 @error` | kind-gap-from-copy | `chain_gap_from_a_copy_refuses_and_touches_nothing` |
+| 18 | The Kubernetes docs say what a second upgrade keeps, removes and costs | `@AC-4.10 @in-memory` | none (prose) | docs read |
+
+Every AC-4.1..4.11 has a scenario. Scenarios 1–17 are `@real-io`. Every refusal (8, 14, 16, 17) asserts the
+volume fingerprint unchanged, and scenario 9 asserts the two remaining copies unchanged.
+
+### Test placement
+
+- Scenarios: appended to `chart/tests/acceptance/upgrade-bundled-postgres.feature` under a slice-03 banner.
+- Kind: `chart/tests/upgrade-path/run.sh`, new `chain` group. It has a `CHAIN` array, `namespaces_of` rows
+  (shared namespace `chain-16-17` for the chained scenarios, one namespace each for the rest) and `chain` in
+  `main()`. `HAPPY` and `REFUSALS` are untouched, and neither lists a scaffold.
+- Render: `chart/tests/unit/postgres-upgrade_test.yaml`, two skipped tests plus one guard that runs now.
+
+### Adapter coverage
+
+| Driven adapter | `@real-io` scenario |
+|---|---|
+| Data volume holding a chain of copies (local-path PVC) | 1–13, 15–17 |
+| Size-enforced volume (tmpfs static PV) under a chain | 14 |
+| Old-major programs, handed over only when the live copy needs them (S3-6) | 2 (handed over), 4 (not handed over on restart) |
+| Shared removal (`volume.sh` through `upgrade.sh` and `remove-old-copies.sh`) | 3, 10, 11, 12; render test for the shared sourcing |
+| Operator feedback (log and termination message) | 2, 3, 5, 7, 8, 14, 16, 17 |
+| Bookworm image pair (`postgres:15-bookworm`, `16-bookworm`) | 17 |
+| Helm CLI: upgrade, rollback, pin by `--set` | all; rollback in 5, 9, 16 |
+
+### Scaffolds
+
+- `run.sh`: a `scaffold()` helper and 17 one-line `chain_*` functions, each `fail`ing with
+  `SCAFFOLD: not yet implemented — <scenario title>`. `bash -n` and shellcheck (koalaman/shellcheck:stable)
+  are clean. CI is not wired; DELIVER adds `chain` to the matrix.
+- `postgres-upgrade_test.yaml`:
+  - skipped with `pending story 6131 slice 03: …`: the ConfigMap carries `volume.sh` and
+    `remove-old-copies.sh`; `upgrade.sh`, `copy-old-binaries.sh` and `remove-old-copies.sh` all source
+    `volume.sh`;
+  - running now: the `postgres` container mounts the scripts at `/lighthouse-postgres`, which the docs
+    cleanup command needs.
+- `red-classification.md`: slice 03 section appended.
+
+### Upstream findings
+
+1. **A cut between the commit and the placeholder leaves three copies for good.** The removal writes the
+   placeholder first, and the finishing step runs only when a placeholder exists. So a pod killed after the
+   rename and sync of the new copy, but before the placeholder is written, leaves `pgdata/` (N−1) counting,
+   with the chain N−1 → N → N+1. No later start removes it, and AC-4.2's "about twice the data" is silently
+   not met. It is recoverable with `remove-old-copies.sh`.
+   - Possible fix (DESIGN's call): let the finishing step run without a placeholder. Its bound,
+     `remove_copies_older_than (Lm − 1)`, already leaves a first-upgrade volume's `pgdata/` alone, because
+     that copy is `Lm − 1`.
+   - The window is milliseconds, so no kind scenario can hit it reliably. It is not covered, and not blocking.
+2. **The cut-off docs section has two audiences.** DESIGN rewrites "When removing the old copy was cut off"
+   as "the next start finishes it". That holds for the automatic removal and for a cleanup cut after
+   `PG_VERSION` went. It does not hold in two cases, and the section must still give the rerun instruction for
+   both:
+   - a cleanup cut between the placeholder and `PG_VERSION` on a first-upgrade volume (DESIGN's own open
+     question);
+   - the damaged-`pg_control` state the slice-02 refusal points at.
+3. **Scenario 14 needs an environment DEVOPS did not list.** It is the room refusal on a chain volume: the
+   tmpfs static PV from `kind-size-limited-pv` under the `kind-chain-16-17` fixture. Sizing must fit two
+   copies but not three, and the first upgrade must still fit. DELIVER composes the two. If the budget is
+   tight, this is the first scenario to move to a `chain-refusals` leg.
+4. **Scenario 11 builds its cut-off state by hand.** It removes `PG_VERSION` of `pgdata-17` after the
+   placeholder exists, because cutting `kubectl exec` mid-cleanup does not reliably stop the server-side
+   process. This is the same compromise the slice-02 interrupted-cleanup scenario made.
+   - Per DESIGN, the next start does **not** finish this one. `pgdata-17` is not below `Lm − 1 = 17`, so the
+     rerun of the command is what clears it. The scenario asserts exactly that.
+5. **A presence assertion that cannot fail.** helm-unittest's `isNotNullOrEmpty` passes on a missing path, so
+   the new key checks use `matchRegex` on the shebang (see `red-classification.md`).
+
+### Open checks for DELIVER
+
+- Wire `chain` into the `upgrade-path` matrix and make `preload_images` depend on the group, with the slice 03
+  code. Remove `@pending` and the helm-unittest `skip` in the commit that greens each one.
+- Record the genuine RED of fixture step 3 on today's scripts ("runs on Postgres 17 in pgdata-17") in
+  `red-classification.md`.
+- Scenario 12 waits for the placeholder to appear before deleting the pod. Scenario 13 waits for the "copy
+  started" line, and must prove the delete landed mid-copy (the next start reports a discarded `.partial`).
+- Scenario 4 reuses the K3 measurement from slice 01: pod creation to the `postgres` container start, against
+  a fresh-install baseline restart in the same cluster. It also asserts that `pg-old-binaries` handed nothing
+  over (S3-6).
+- Measure the `chain` leg against the 12-minute local target. If it is close, split out scenarios 14, 16 and
+  17 first.
+- Answer Upstream finding 1 before slice 03 closes.
+
+### Slice 03 DISTILL findings — dispositions (orchestrator, AFK, 2026-10-02)
+
+- **Three copies kept for good if the pod dies between the rename and the placeholder.** Decided: the finishing
+  step runs whenever the chain holds copies older than the live copy's source, with or without a placeholder. Its
+  bound (only copies below live major − 1) already leaves a first-upgrade volume alone. DELIVER implements it in
+  the shared removal function; no extra scenario, since the window is milliseconds.
+- **Cut-off cleanup docs.** Both instructions stay: the next start finishes an automatic removal, and rerunning the
+  documented command finishes a manual cleanup cut off on a first-upgrade volume or a damaged control file.
+- **The chain room refusal needs the size-limited volume under the chain fixture.** DELIVER combines the two in the
+  `chain` leg; it is the first scenario to split out if that leg runs long.

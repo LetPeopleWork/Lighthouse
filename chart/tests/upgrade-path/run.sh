@@ -7,7 +7,7 @@
 #
 # Usage: run.sh CLUSTER GROUP [SCENARIO...]
 #   CLUSTER   name of an existing kind cluster (kind create cluster --name CLUSTER)
-#   GROUP     happy | refusals — the two legs of the CI matrix, each on its own cluster
+#   GROUP     happy | refusals | chain — the legs of the CI matrix, each on its own cluster
 #   SCENARIO  optional subset of the group's scenario functions, run in the order given
 #
 # The "before" chart is the committed package, so no network access to the Helm repo is needed.
@@ -1117,8 +1117,37 @@ interrupted_cleanup_never_costs_upgraded_copy() {
   assert_marker_row "$ns"
 }
 
+# --- group: chain (slice 03), in the order the scenarios build on each other ---------------------------
+# A Postgres 16 volume upgraded to 17 by the new chart pinned to 17, then to 18 by the chart's defaults,
+# because no Postgres 19 image exists yet. Every function below is a scaffold until slice 03 is delivered.
+
+readonly CHAIN_NS="chain-16-17"
+
+scaffold() {
+  local scenario="$1"
+  fail "SCAFFOLD: not yet implemented — $scenario"
+}
+
+chain_first_upgrade_removes_nothing() { scaffold "The first upgrade on a volume removes nothing"; }
+chain_second_upgrade_keeps_every_row() { scaffold "A volume already upgraded once moves on to the next major with every row"; }
+chain_second_upgrade_removes_copy_before_last() { scaffold "Once the new copy is in place, the copy before last is removed and one rollback step is kept"; }
+chain_restart_after_second_upgrade_does_nothing() { scaffold "Restarting the database after a second upgrade does not upgrade or remove anything"; }
+chain_rollback_one_chart_starts_previous_major_and_warns() { scaffold "Rolling back one chart after a second upgrade starts the previous major and says what is missing"; }
+chain_upgrade_again_after_one_chart_rollback_starts_afresh() { scaffold "Upgrading again after a one-chart rollback starts afresh from the Postgres 17 copy"; }
+chain_pin_back_one_major_starts_kept_copy_and_warns() { scaffold "Pinning the image back one major after a second upgrade starts on the kept copy with the warning"; }
+chain_pin_back_two_majors_refuses_and_touches_nothing() { scaffold "Pinning the image back two majors after a second upgrade is refused, naming both majors"; }
+chain_rollback_two_charts_fails_loudly() { scaffold "Rolling back two charts after a second upgrade fails loudly and never starts an empty database"; }
+chain_cleanup_removes_every_older_copy_and_reruns() { scaffold "The documented cleanup removes every copy older than the live one, and can be run again"; }
+chain_cut_off_cleanup_is_finished_by_running_again() { scaffold "A cleanup cut off part-way is finished by running it again"; }
+chain_interrupted_removal_is_finished_by_next_start() { scaffold "A removal of the copy before last cut off part-way is finished by the next start"; }
+chain_interrupted_second_upgrade_removes_nothing() { scaffold "A second upgrade interrupted during the copy removes nothing and is redone"; }
+chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little room for the next copy refuses, naming the cleanup as a way out"; }
+chain_cleaned_volume_moves_on_and_removes_nothing() { scaffold "A cleaned-up volume moves on to the next major and removes nothing"; }
+chain_out_of_date_copy_counts_as_older_major_and_refuses() { scaffold "A newer copy made out of date by a rollback counts as the older major and is refused as a gap"; }
+chain_gap_from_a_copy_refuses_and_touches_nothing() { scaffold "A live copy two majors behind the image is refused, naming that copy and one major per release"; }
+
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
-# one before it.
+# one before it. CHAIN holds only scaffolds until slice 03 is delivered.
 readonly HAPPY=(
   fresh_install_starts_18_without_upgrading
   upgrade_plain_helm_upgrade_keeps_every_row
@@ -1146,6 +1175,26 @@ readonly REFUSALS=(
   interrupted_cleanup_never_costs_upgraded_copy
 )
 
+readonly CHAIN=(
+  chain_first_upgrade_removes_nothing
+  chain_second_upgrade_keeps_every_row
+  chain_second_upgrade_removes_copy_before_last
+  chain_restart_after_second_upgrade_does_nothing
+  chain_rollback_one_chart_starts_previous_major_and_warns
+  chain_upgrade_again_after_one_chart_rollback_starts_afresh
+  chain_pin_back_one_major_starts_kept_copy_and_warns
+  chain_pin_back_two_majors_refuses_and_touches_nothing
+  chain_rollback_two_charts_fails_loudly
+  chain_cleanup_removes_every_older_copy_and_reruns
+  chain_cut_off_cleanup_is_finished_by_running_again
+  chain_interrupted_removal_is_finished_by_next_start
+  chain_interrupted_second_upgrade_removes_nothing
+  chain_too_little_room_names_cleanup_and_touches_nothing
+  chain_cleaned_volume_moves_on_and_removes_nothing
+  chain_out_of_date_copy_counts_as_older_major_and_refuses
+  chain_gap_from_a_copy_refuses_and_touches_nothing
+)
+
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
 # scenario in the run needs it and the pods of a long run do not pile up on the node.
 namespaces_of() {
@@ -1166,6 +1215,19 @@ namespaces_of() {
     foreign_upgrade_source_refuses_and_touches_nothing) echo foreign-source ;;
     interrupted_upgrade_is_redone_from_start) echo interrupted-upgrade ;;
     interrupted_cleanup_never_costs_upgraded_copy) echo interrupted-cleanup ;;
+    chain_first_upgrade_removes_nothing | chain_second_upgrade_keeps_every_row \
+      | chain_second_upgrade_removes_copy_before_last | chain_rollback_one_chart_starts_previous_major_and_warns \
+      | chain_upgrade_again_after_one_chart_rollback_starts_afresh | chain_pin_back_one_major_starts_kept_copy_and_warns \
+      | chain_pin_back_two_majors_refuses_and_touches_nothing | chain_rollback_two_charts_fails_loudly \
+      | chain_cleanup_removes_every_older_copy_and_reruns | chain_cut_off_cleanup_is_finished_by_running_again)
+      echo "$CHAIN_NS" ;;
+    chain_restart_after_second_upgrade_does_nothing) echo "$FRESH_NS $CHAIN_NS" ;;
+    chain_interrupted_removal_is_finished_by_next_start) echo chain-interrupted-removal ;;
+    chain_interrupted_second_upgrade_removes_nothing) echo chain-interrupted-copy ;;
+    chain_too_little_room_names_cleanup_and_touches_nothing) echo chain-small-volume ;;
+    chain_cleaned_volume_moves_on_and_removes_nothing) echo chain-cleaned ;;
+    chain_out_of_date_copy_counts_as_older_major_and_refuses) echo chain-out-of-date ;;
+    chain_gap_from_a_copy_refuses_and_touches_nothing) echo chain-gap-from-copy ;;
   esac
 }
 
@@ -1200,7 +1262,8 @@ main() {
   case "$group" in
     happy) scenarios=("${HAPPY[@]}") ;;
     refusals) scenarios=("${REFUSALS[@]}") ;;
-    *) fail "unknown group $group (happy | refusals)" ;;
+    chain) scenarios=("${CHAIN[@]}") ;;
+    *) fail "unknown group $group (happy | refusals | chain)" ;;
   esac
   if [[ $# -gt 0 ]]; then
     scenarios=("$@")

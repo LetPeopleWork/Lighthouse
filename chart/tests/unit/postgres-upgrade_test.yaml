@@ -76,6 +76,46 @@ tests:
       - isKind:
           of: ConfigMap
 
+  - it: the upgrade scripts include the shared volume chain and the cleanup command
+    skip:
+      reason: "pending story 6131 slice 03: volume.sh and remove-old-copies.sh are not in the scripts ConfigMap yet"
+    template: templates/postgres-upgrade-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data["volume.sh"]
+          pattern: ^#!/usr/bin/env bash
+      - matchRegex:
+          path: data["remove-old-copies.sh"]
+          pattern: ^#!/usr/bin/env bash
+
+  # The automatic removal after a second upgrade and the documented cleanup must remove copies the same
+  # way and in the same order, and both steps must read the volume the same way, so all of them source the
+  # one script that knows how the copies chain.
+  - it: the upgrade step, the old-programs step and the cleanup all read the volume through the same script
+    skip:
+      reason: "pending story 6131 slice 03: no script sources volume.sh yet"
+    template: templates/postgres-upgrade-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data["upgrade.sh"]
+          pattern: (?m)^\s*(source|\.) .*volume\.sh
+      - matchRegex:
+          path: data["copy-old-binaries.sh"]
+          pattern: (?m)^\s*(source|\.) .*volume\.sh
+      - matchRegex:
+          path: data["remove-old-copies.sh"]
+          pattern: (?m)^\s*(source|\.) .*volume\.sh
+
+  # The documented cleanup runs inside the database container, so that container has to see the scripts.
+  - it: the database container can reach the cleanup script the docs tell the operator to run
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: upgrade-scripts
+            mountPath: /lighthouse-postgres
+
   - it: an external database renders neither the database nor its upgrade scripts
     set:
       postgresql.enabled: false
