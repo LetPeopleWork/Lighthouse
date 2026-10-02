@@ -144,6 +144,32 @@ jobs:
             echo "WARN: No AppImage updater sig found"
           fi
 
+      - name: Run Tauri shell unit tests
+        run: cargo test --manifest-path Lighthouse.Frontend/src-tauri/Cargo.toml --lib
+
+      - name: Reject an AppImage that bundles libssl
+        shell: bash
+        env:
+          APPIMAGE: ${{ steps.find-appimage.outputs.appimage_path }}
+        run: |
+          APPIMAGE_PATH="$(realpath "$APPIMAGE")"
+          chmod +x "$APPIMAGE_PATH"
+          cd "$RUNNER_TEMP"
+          "$APPIMAGE_PATH" --appimage-extract > /dev/null
+          EXTRACTED="$RUNNER_TEMP/squashfs-root"
+
+          # The backend's RUNPATH points into the AppImage's lib directory, so a bundled
+          # libssl would replace the host's OpenSSL. A bundled libcrypto alone cannot reach it.
+          find "$EXTRACTED" -name 'libcrypto.so*' | while read -r LIB; do
+            echo "::notice::AppImage bundles ${LIB#"$EXTRACTED"/}"
+          done
+          LIBSSL=$(find "$EXTRACTED" -name 'libssl.so*')
+          if [ -n "$LIBSSL" ]; then
+            echo "::error::AppImage bundles libssl, which the backend would load in place of the host's OpenSSL: ${LIBSSL//"$EXTRACTED"\//}"
+            exit 1
+          fi
+          echo "No libssl bundled in the AppImage"
+
       - name: Upload Linux standalone artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
