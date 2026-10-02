@@ -193,14 +193,910 @@ Full text: `recommendation.md` · artifacts: `diverge/` · decisions DV-1..DV-8:
   one verdict: below, in or above range before the next replenishment. Votes (Yes / Yes, but… / No, with a comment) are
   solicited only for the gap, sit on the Work Item (no rounds) and are due at the D17 cadence date. The in-person
   presenter view comes first among live modes.
-- **Need number**: `HowMany` over commitment-point Throughput, meaning Work Items leaving refinement per day. This
-  designs R2 out. Both bounds come from one run.
-- **Open question 2, answered with evidence**: async voting works where the request is pushed into an inbox with a deadline.
-  Lighthouse has no outbound channel. The risk is accepted with a pre-committed trigger: if usage data shows votes only
-  inside live sessions, build push next.
+- **Need number**: ~~`HowMany` over commitment-point Throughput, meaning Work Items leaving refinement per day.~~
+  **Overridden by D20**: total Team Throughput, existing `HowMany` unchanged. Both bounds come from one run.
+- **Open question 2**: ~~async voting needs a push into an inbox; build push next if votes stay inside live sessions.~~
+  **Overridden by D21**: async is pull — votes live in Lighthouse, readiness moves a Work Item on; no push channel.
 - **Open question 1, Premium proposals**:
   - Lead lever: sizing calibration (votes compared with outcomes against the SLE).
   - Named, accountable votes come with authentication, which is already Premium.
   - Candidate: a cross-Team overview.
   - Rejected: live sessions as Premium, history caps, voter caps.
 - **Persona**: create `team-member-voter` at DISCUSS.
+
+---
+
+## Wave: DISCUSS / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Luna (`nw-product-owner`) · **Date**: 2026-10-02 · **Mode**: autonomous subagent; per-wave peer review
+skipped by the coordinator (to be decided by the maintainer). Config: user-facing, brownfield walking skeleton,
+JTBD on (every story carries a `job_id`), density lean.
+
+| Read | Status |
+|---|---|
+| `feature-delta.md` DISCOVER + DIVERGE (D1–D31 settled, not re-opened) | ✓ |
+| `recommendation.md` (the maintainer overrides at the top win over the body) | ✓ |
+| `wave-decisions.md` (DIVERGE DV-1..DV-8) | ✓ |
+| `diverge/job-analysis.md` | ✓ |
+| `diverge/competitive-research.md`, including the SLE Poker Planning addendum | ✓ (§1 skimmed, I1–I6 and addendum read) |
+| `diverge/options-raw.md` | ✓ skimmed (outline only) |
+| `diverge/taste-evaluation.md` | ⊘ not read; the recommendation's §2 summary was enough |
+| `docs/product/jobs.yaml` (`job-flow-coach-refine-just-enough`) | ✓ |
+| `docs/product/journeys/epic-5510-5881-refinement.yaml` | ✓ |
+| House style: epic-4172 "Project DISCUSS Checklist", epic-5375 DISCUSS sections and slice-01 brief | ✓ |
+| `CLAUDE.md` (terminology, comments, usage data, no silent N/A) | ✓ |
+| Brownfield code: `TeamDetail.tsx` tabs, `WorkTrackingSystemOptionsOwner`, `ForecastService.HowMany`, `UsageDataEventName`/`UsageDataEventShapes`, `TerminologyKeys.ts`, `DemoDataFactory` + demo Team CSVs | ✓ (targeted reads, below) |
+
+---
+
+## Wave: DISCUSS / [REF] Current-State Surface Inventory (brownfield)
+
+| # | What exists | Where | Consequence |
+|---|---|---|---|
+| S1 | A Team tab that is **disabled with a tooltip** until a precondition holds (the Features tab when the Team has no Features) | `TeamDetail.tsx:491-509` | The Refinement tab copies this exact pattern; no new component. |
+| S2 | Tabs today: Features, Forecasts, Metrics, Settings (TeamAdmin only), Access (TeamAdmin, RBAC on) | `TeamDetail.tsx:510-515`, `:122-124` | "Editors" = whoever sees Settings (`rbac.isTeamAdmin`). Readers see no Settings tab, so their disabled-tab tooltip must not tell them to go there. |
+| S3 | Mapped states per Team: `ToDoStates`, `DoingStates` (+ Done); SLE fields default `0` | `WorkTrackingSystemOptionsOwner.cs:27-42` | Refinement states are a subset of To Do ∪ Doing (C8); SLE missing is common (X1). |
+| S4 | A per-Team rule set, `BlockedRuleSetJson`, with an editor in `FlowMetricsConfigurationComponent` | `WorkTrackingSystemOptionsOwner.cs:50` | Stage rules (US-08) reuse the same `WorkItemRuleSet` shape and editor (C7). |
+| S5 | `ForecastService.HowMany(throughput, days)` → `HowManyForecast` | `ForecastService.cs:33` | The need number is this call, unchanged (D20). |
+| S6 | `TeamTabOpened` already exists and carries the page's route key | `UsageDataEventName.cs:12`, `UsageDataEventShapes.cs:30` | "Refinement tab opened" needs a new **route key**, not a new event name. |
+| S7 | Terminology keys exist for Work Item, Team, SLE, Throughput, cycle time, WIP, blocked; none for Refinement | `TerminologyKeys.ts:5-26` | "Refinement" is a new key + seeder row (D26). |
+| S8 | Demo Teams map To Do = `Backlog`, Doing = `Next`, `Analysing`, `Implementation`, …; SLE 85% / 7 days | `DemoDataFactory.cs:47-56` | Demo data already carries natural refinement states (`Backlog` waiting, `Analysing` being refined, `Next` ready) — e.g. Team Gravity GR-051 *Advanced reporting module* (Analysing), GR-058 *User activity tracking* (Next), GR-073 *Configuration management* (Backlog). Only Team **settings** need seeding, no CSV change. Note `Next`/`Analysing` are **Doing** states, which is X2 in the flesh. |
+| S9 | Only SignalR hub is `[Authorize]`, refresh status only | X4 | Live remote sessions start with a spike (slice 19). |
+
+---
+
+## Wave: DISCUSS / [REF] Persona IDs
+
+| Persona | Role here |
+|---|---|
+| `flow-coach` | Primary. Reads the need, decides refine-more vs stop, facilitates the Refinement. |
+| `team-member-voter` | **NEW** (`docs/product/personas/team-member-voter.yaml`). Gives a sizing view on a Work Item; often a reader (Viewer) or, on Community, an anonymous caller with a self-declared name. |
+| `config-admin` | Team admin who sets refinement states, cadence, band and readiness. |
+| `product-owner` | Owns backlog order; the highlighted "next N" are in that order. |
+
+## Wave: DISCUSS / [REF] JTBD One-Liners
+
+- `job-flow-coach-refine-just-enough` (existing, DIVERGE): keep just enough right-sized Work Items ready for the next Refinement, and discuss only the doubted ones.
+- `job-team-member-give-sizing-view` (**NEW**, `jobs.yaml`): when I'm asked whether a Work Item fits our SLE, give my view in seconds from where I already am, so I don't sit through discussion of Work Items I don't doubt.
+
+---
+
+## Wave: DISCUSS / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| Votes are solicited **only for the shortfall** when the gauge is below range (DIVERGE Option 4, recommendation §0, DV-2) | **Votes are always open** on every Work Item in a refinement state, at any time. The need number only **highlights** the next N Work Items in backlog order, with an "enough for ‹date›" line in the list. The gauge and its verdict, including the loud "stop refining", stay. | Maintainer decision 2026-10-02 (DD-1). |
+| The count runs on Work Items **leaving** refinement (recommendation §1 finding 3; job functional dimension) | Total Team Throughput, `HowMany` unchanged | Already overridden in D20 / DV-3; the job text in `jobs.yaml` is corrected in this wave. |
+| Journey step "open or join a session via link/code with deadline" (DISCOVER journey) | No sessions, links, codes or deadlines for async; the Refinement tab **is** the place to vote | D14, D21, DD-1. |
+| Journey job ids `job-flow-coach-size-the-ready-queue` / `job-flow-coach-shorten-refinement` | Re-pointed to `job-flow-coach-refine-just-enough` (+ the voter job) | DIVERGE note. |
+| "Replenishment" as the deadline word | "Refinement" (configurable term) and dates | D26. |
+
+---
+
+## Wave: DISCUSS / [REF] Locked Decisions
+
+- [DD-1] **Votes always open** on every Work Item in a refinement state, whatever its stage and whatever the verdict; the need number highlights the next N in backlog order with an "enough for ‹date›" line (see: maintainer 2026-10-02; supersedes Option 4 gating).
+- [DD-2] **Band low end defaults to the median (50%)**, high end to 85% (D28). Below the median it is more likely than not that the ready Work Items run out before the next Refinement; above the 85% end there is only a 15% chance the Team pulls that many. A higher low end would narrow the band towards "always refine more" (C6) (see: D28 asks DISCUSS to settle).
+- [DD-3] **Verdict** compares the *ready* count with the band: below (< low), in (low..high inclusive), above (> high). Copy weights "stop" exactly like "refine more" (same component, same size, same position) (see: C5).
+- [DD-4] **The "enough for ‹date›" line sits after the Nth Work Item, N = the band's high end**, counted in backlog order over every Work Item in a refinement state (ready or not). Work Items above the line are highlighted; below it reads "not needed before ‹date›" (see: DD-1).
+- [DD-5] **Where "ready" comes from, in order**: (1) an optional stage rule that matches the Work Item decides; (2) otherwise the stage of its state (each refinement state is tagged *Waiting* / *Being refined* / *Ready*, default *Waiting*); (3) a Work Item not Ready by (1) or (2) becomes Ready when its votes meet the readiness setting. One rule set serves both D15 (sub-state split) and D16 (rule overrides the vote outcome) (see: D15, D16).
+- [DD-6] **Next Refinement date**: the first cadence date strictly after today, in the instance's time zone; on a Refinement day the count already looks to the following one, because today's session is the moment to top up. "Every N weeks" needs a starting week, set with the cadence (see: D27).
+- [DD-7] **"Yes, but…" counts as a Yes** towards the minimum Yes votes; the optional veto counts No and/or "Yes, but…" as the Team configures (see: D16, D30).
+- [DD-8] ~~Readiness defaults: minimum Yes 2, minimum voters 2, veto off.~~ **Superseded by DD-21.** Minimum Yes may be set to 1 but never 0 (D30) — still holds.
+- [DD-9] **Vote log**: every vote, comment and revocation is an entry; the current view is the latest entry per voter per Work Item. Changing your mind adds an entry, never overwrites one (see: C10).
+- [DD-10] **Identity**: auth on → the signed-in account, no name field. Auth off (every Community instance, DV-5) → a self-declared name held per browser, sent with each vote, shown but not verified. Revocation only from the same account / same browser (see: D11, D14, X3, ADR-191 precedent).
+- [DD-11] **No fourth "can't tell yet" answer.** A comment without a vote is allowed; it marks the Work Item "open question" in the list and counts for nothing. Rationale: in a sync poker round the "unclear" card triggers talk; async, a written question does that better, and a fourth card would dilute "green means somebody looked" (D30). **Confirmed by DD-17.**
+- [DD-12] **Others' votes hidden until you cast yours** on that Work Item (the tally shows "3 votes" without the split). Carried from the DIVERGE recommendation (anchoring, O4); built as its own small slice so it can be dropped. Presenter mode is exempt — the room sees everything.
+- [DD-13] ~~Clients (CLI/MCP) are read-only.~~ **Superseded by DD-19** (clients may vote). What still holds: facts on the wire; the client composes the sentence (epic-4172 precedent).
+- [DD-14] **Refinement settings live in a new "Refinement" section of the Team's Settings tab** (editors = Team admins); everything else is on the Refinement tab, readable by anyone with Team read.
+- [DD-15] **Tab order**: Features · Forecasts · Metrics · **Refinement** · Settings · Access. Disabled tooltip differs by role: editors "Choose refinement states in Settings → Refinement"; readers "A Team admin needs to choose refinement states first".
+- [DD-16] **Usage data**: tab opening reuses `TeamTabOpened` with a new route key; other events are designed in DEVOPS against the KPIs below.
+- [DD-17] **No "can't tell yet" answer** — DD-11 confirmed as proposed (see: maintainer answer 2026-10-02; resolves Q1).
+- [DD-18] **Epic split accepted**: E1 its own new Epic; #5881 retitled for E2; #5510 retitled for E3; E4 and E5 new. The maintainer applies it in ADO (see: maintainer answer 2026-10-02; resolves Q2).
+- [DD-19] **Clients may vote.** The CLI and MCP can cast a vote (Yes / Yes, but… with condition / No, plus a comment, and a comment-only question per DD-11), and can take one back once slice 16 exists. Identity follows the UI rules (DD-10): auth on → the account behind the client's credential; auth off → a self-declared name the client supplies. Voting is a write, so it is a Lighthouse-Clients **minor** bump. Hidden split (DD-12) applies to the client caller exactly as to a browser. **DESIGN must decide**: (a) whether the client credential resolves to a *person* — if an API key belongs to the instance or a service rather than to a user, a vote under it has no voter and must be refused, not attributed; (b) where the auth-off name lives on the client side (flag, config file, MCP tool argument) and that it is required, never defaulted; (c) whether a client-cast vote is marked as such in the log (recommended, so a reader can tell; also a candidate closed-enum property for DEVOPS); (d) that the MCP tool's description says the vote is the *user's* judgement, so an assistant asks before casting. The tension with D30 ("green means somebody looked") is accepted by the maintainer and mitigated only by (a) and (d) (see: maintainer answer 2026-10-02; supersedes DD-13; resolves Q3).
+- [DD-20] **Presenter mode never records votes on anyone else's behalf.** It is a shared-screen view of the Refinement tab, one Work Item at a time, splits visible (DD-12 exemption). Auth on: the only vote or comment it can save is the facilitator's own, under their account; colleagues vote from their own devices; anything the room concludes is captured as a comment by the facilitator. Auth off: the same — the facilitator's browser votes under its own self-declared name, nothing more; no per-vote name entry for others. Votes and comments saved while presenter mode is open are marked as cast in a live session (K4, K7) (see: maintainer answer 2026-10-02; resolves Q4).
+- [DD-21] **Readiness defaults: minimum Yes 3, veto off; minimum voters defaults to 3.** Minimum voters is kept as a separate setting (D16) but may never be set below minimum Yes — a lower value would be dead, because 3 Yes already means 3 voters. It only bites when raised above minimum Yes (e.g. 3 Yes out of at least 4 voters) (see: maintainer answer 2026-10-02; supersedes DD-8's defaults; resolves Q5).
+- [DD-22] **Voting first after the walking skeleton**: order 01 → 02 → 10 → 11 → 13 → 03 → 04 → 05 → … . Slice 13 ships standalone — rows show Ready / n more Yes needed / Needs discussion and the heading counts vote-ready Work Items; when 03 lands, state-stage readiness joins the same count, and when 05 lands the verdict picks the count up. No slice in E3 waits for E2 (see: maintainer answer 2026-10-02).
+
+---
+
+## Wave: DISCUSS / [REF] Scope Assessment
+
+**OVERSIZED — split proposed (maintainer to confirm in ADO; nothing changed there).** Signals: ~18 stories (>10);
+≥4 areas with their own behaviour (Team settings, forecasting, a new vote log with identity, live sessions); effort
+~16–18 days (>2 weeks); at least three independently shippable outcomes (see the list; know whether to refine; votes
+make Work Items ready; run a session in the room). Four of five signals fire.
+
+Split into **four Epics shipped in order E1 → (E2 ∥ E3) → E4**, plus one Premium Epic for later (E5). Each slice is
+≤1 day **except slice 11 (~1.5 days)**: a new vote log, its migration, the vote endpoint with self-declared identity
+and the vote control are the smallest thing a voter can use; cutting it further leaves a slice nobody can see. It is
+called out here rather than disguised.
+
+### Epic rewrite — ACCEPTED by the maintainer 2026-10-02 (DD-18); ADO not changed by this wave
+
+| Epic | Title (term-neutral) | Goal | Slices | Tier | Depends on | ADO |
+|---|---|---|---|---|---|---|
+| E1 | **Refinement tab: see the Work Items in refinement** | Anyone opens a Team's Refinement tab and sees every Work Item in its refinement states, in backlog order | 01–02 | Community | — | **New Epic** |
+| E2 | **Refinement need: refine enough, then stop** | Before the next Refinement, the tab says below / in / above range and marks the Work Items needed by then | 03–09 | Community | E1 | **#5881 kept, retitled** (was "Refinement Need Chart" — it is a verdict and a line, not a chart); ICE 60 stays; `ValueFlow` tag kept |
+| E3 | **Sizing votes against the SLE** | Team members say Yes / Yes, but… / No per Work Item, any time, and enough votes make it Ready | 10–17b | Community (named votes come with Premium auth) | E1; 13 feeds E2's ready count | **#5510 kept, retitled** (was "Sizing Poker"); ICE 90, `Community` tag stay |
+| E4 | **Live Refinement sessions** | The Team runs its Refinement on one shared screen, later remotely | 18–19 | Community | E3 | **New Epic**, Options, after E3 |
+| E5 | **Sizing calibration** | "Of the Work Items you voted Yes, 82% finished within the SLE" | none yet | Premium | E3 + ≥ several weeks of votes | **New Epic**, Options, not sliced (D22) |
+
+Alternative if the maintainer prefers fewer Epics: fold E1 into #5881 as its first two slices (#5510 then depends
+on #5881's first two Stories). The proposal keeps E1 separate because both #5510 and #5881 stand on it and it is
+the only part both need.
+
+---
+
+## Wave: DISCUSS / [REF] Story Map & Slices
+
+**Backbone (flow coach + voter)**: *set up refinement* → *see what is in refinement* → *know whether to refine more
+or stop* → *give / collect sizing views* → *see what is ready* → *run the Refinement*.
+
+| Set up | See | Know | Vote | Ready | Run |
+|---|---|---|---|---|---|
+| **01 refinement states** | **02 list in backlog order** | 05 need + verdict | 11 cast a vote | 13 readiness rule | 18 presenter mode |
+| 03 stages | | 06 "enough for" line | 10 SLE yardstick | 08 stage rules | 19 remote spike |
+| 04 cadence | | 09 CLI/MCP need | 12 "Yes, but…" + comments | 17a CLI/MCP read votes | |
+| | | | 17b CLI/MCP cast a vote | | |
+| 07 band setting | | | 14 hidden until cast | | |
+| | | | 15 with an account · 16 revoke | | |
+
+**Walking skeleton = 01 + 02** (brownfield: existing Team page, settings, tab pattern S1, demo states S8). It
+crosses settings → persistence → tab enablement → list, which every later slice stands on. "Know", "Vote" and "Run"
+are deliberately not on the skeleton line: the skeleton proves Teams can name their refinement states and that the
+list is the right home, which is R1 (setup friction), the cheapest fatal assumption.
+
+| # | Slice | Epic | Est. | Learning hypothesis — disproves … if it fails |
+|---|---|---|---|---|
+| 01 | Refinement states in Team Settings; tab disabled-with-tooltip → enabled | E1 | 1d | "Teams can name their refinement states from their mapped states" — if on the dev instance or demo Teams the states that mean refinement are unmapped or shared with delivery, rules (08) are needed from day one |
+| 02 | Refinement tab lists the Work Items in backlog order; "Refinement" term | E1 | 1d | "A list in backlog order is the right home" — if a real Team's To Do state is the whole 300-item backlog, the list is noise and stages (03) must come before anything else |
+| 03 | Tag each refinement state Waiting / Being refined / Ready; ready count | E2 | ½d | "States already make the split" (D15) — if the dogfood Team has no state meaning Ready, 08 becomes a prerequisite of 05 |
+| 04 | Refinement cadence (weekdays, every N weeks, starting week) → "Next Refinement: Thu 8 Oct" | E2 | 1d | "Weekdays + every N weeks expresses real cadences" — if Teams refine "first Tuesday of the month" or ad hoc, D27's model fails |
+| 05 | Need number, band (median–85%), verdict below / in / above incl. "stop" | E2 | 1d | "HowMany over total Throughput gives a band narrow enough to act on" — if a 1-week band on real data spans e.g. 2–14, the verdict is always "in range" and says nothing |
+| 06 | Highlight the next N and draw "enough for ‹date›" in the list | E2 | ½d | "A line in the list is read as the answer" — if the dogfood coach still asks "so how many do we refine?", the verdict sentence must carry the number of Work Items to refine |
+| 07 | Band percentiles as a Team setting | E2 | ½d | "50/85 suits most Teams" — if every dogfood Team changes it in week one, the defaults are wrong |
+| 08 | Optional stage rules (reuse the rule editor); a Ready rule overrides votes | E2 | 1d | "The blocked-items rule editor is usable for stages" — if setting a Ready rule takes a config admin more than five minutes, it needs presets |
+| 09 | CLI/MCP: need facts + list (Lighthouse-Clients minor bump) | E2 | 1d | "Facts on the wire let a client state the verdict honestly" — if the client must re-derive the band, the API shape is wrong |
+| 10 | The SLE yardstick on the tab; fallback 85th pct of the default cycle time + hint | E3 | ½d | "Every Team has an SLE or accepts the fallback" — if dev-instance fallbacks are ≥ 30 days, the question "doable within 30 days?" is meaningless and the hint must be louder |
+| 11 | Cast a vote (Yes / Yes, but… / No) from the list, auth off with a self-declared name | E3 | **1½d** | "A vote costs seconds from the list" — if voting on 5 Work Items takes a dogfood voter > 2 minutes, a focused voting mode is needed |
+| 12 | Condition for "Yes, but…", comments, open questions; the log per Work Item | E3 | 1d | "Comments carry the conditions" (D5) — if "Yes, but…" votes arrive without a condition most of the time, the condition must be mandatory |
+| 13 | Readiness setting (min Yes 3, min voters, veto); votes make Work Items Ready; standalone ready count, picked up by 03/05 when they land (DD-22) | E3 | 1d | "Votes can stand in for 'ready'" — if the vote-ready count and the state-ready count disagree wildly on the dogfood Team, DD-5 order is wrong |
+| 14 | Others' votes hidden until you cast yours | E3 | ½d | "Anchoring matters async" — if no dogfood voter notices, the slice is cancellable |
+| 15 | Votes under the signed-in account (auth on) | E3 | ½d | "Readers vote with their own account through RBAC" — if TeamRead cannot carry a write, RBAC needs a new requirement |
+| 16 | Take back my vote | E3 | ½d | Lower priority; disproves "people need to revoke rather than re-vote" if no one uses it in a month |
+| 17a | CLI/MCP: read tallies + readiness | E3 | ½d | Same as 09, for votes |
+| 17b | CLI/MCP: cast a vote (and take it back once 16 exists), identity per DD-19 (Lighthouse-Clients minor bump) | E3 | 1d | "A vote cast from a terminal or assistant is still a person's judgement" — if dogfood client votes arrive that the named voter does not recognise, DD-19 (d) is not enough and client voting needs a confirmation step |
+| 18 | Presenter mode: one shared screen, one Work Item at a time; only the facilitator's own vote/comment is saved (DD-20) | E4 | 1d | "A shared screen is enough to make the room discuss only the doubted" — if the dogfood session still walks every Work Item, the gateway story is wrong |
+| 19 | Spike: remote facilitated session (push channel, auth-off subject) | E4 | ≤1d timebox | Learning only: can an auth-off browser join a hub session without weakening tenant security (R5, X4) |
+
+Briefs: `slices/slice-NN-*.md`.
+
+### Prioritisation rationale
+
+Order (maintainer, DD-22): **01 → 02 → 10 → 11 → 13 → 03 → 04 → 05 → 06 → 12 → 07 → 15 → 14 → 08 → 16 → 09 → 17a → 17b → 18 → 19.**
+
+- **01, 02 first**: the walking skeleton and R1 (setup friction, score 16) — fatal if Teams won't name states.
+- **10, 11, 13 next — voting first**: R4 (async votes, score 17) is the riskiest bet and needs weeks of usage
+  data, so its clock starts right after the skeleton — R4 is measured by K4; no push channel (D21). 10 is the
+  question's yardstick (half a day); 13 turns votes into Ready and ships standalone (DD-22).
+- **03–05 then**: the count and the "stop" verdict (O2, top outcome 14). 03 is the verdict's precondition; vote-ready
+  Work Items from 13 are already there to be counted when 05 lands.
+- **06, 12, 07** add precision once the core loop exists; **15** before **14** because auth-on readers must be
+  able to vote at all before anchoring is polished; **14 and 16** are cancellable.
+- **08** is late because D15 says most Teams' states already make the split — 03's hypothesis decides whether it moves up.
+- **09, 17a, 17b** clients after the UI shapes settle; 17a and 17b can share one client minor release.
+- **18, 19** last: live sessions are the gateway (D8) but async ships first.
+
+### Slice taste tests
+
+| Test | Verdict |
+|---|---|
+| 4+ new components in one slice? | Pass — the largest (11) adds a vote control, a name prompt and a tally cell. |
+| Every slice depends on a new abstraction? | Pass — the vote log is born in 11, its first consumer. |
+| Disproves a pre-commitment? | Pass — 03 disproves D15's premise, 04 D27's, 05 D20's usefulness, 11 R4's cost side. |
+| Synthetic-data-only slices? | Pass — each is dogfooded on the dev instance (`:5169`, real history) or Team Gravity's real-shaped demo states; demo data seeds settings, never accepts a slice on its own. |
+| Two slices alike except scale? | Pass — 09/17a are one read slice per Epic by design; 17b is a write, not the same slice again. |
+
+---
+
+## Wave: DISCUSS / [REF] Journey
+
+SSOT: `docs/product/journeys/epic-5510-5881-refinement.yaml` (refined this wave: two journeys, voter journey added,
+jobs re-pointed). Emotional arc for the coach: **guessing → oriented → restrained** ("refine 2 to 5 more for Thu 8 Oct,
+and nothing beyond the line"); for the voter: **interrupted → quick → heard** ("three clicks, my 'Yes, but…' says
+why").
+
+```
+Team › Refinement                                   Next Refinement: Thu 8 Oct
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 3 ready — below the range of 5–8 Work Items Team Gravity is likely to    │
+│ pull before Thu 8 Oct.  Refine 2 to 5 more.                              │
+│ SLE: 85% within 7 days                                                   │
+├──────────────────────────────────────────────────────────────────────────┤
+│ # │ Work Item                       │ State     │ Stage        │ Votes     │
+│ 1 │ GR-058 User activity tracking   │ Next      │ Ready        │ ✓ ready   │
+│ 2 │ GR-059 Advanced search filters  │ Next      │ Ready        │ ✓ ready   │
+│ 3 │ GR-051 Advanced reporting module│ Analysing │ Being refined│ 1 more Yes│
+│ … │                                 │           │              │           │
+│ 8 │ GR-073 Configuration management │ Backlog   │ Waiting      │ Vote      │
+│ ───────── enough for Thu 8 Oct (85%) ── not needed before then ───────── │
+│ 9 │ GR-074 Load testing framework   │ Backlog   │ Waiting      │ Vote      │
+└──────────────────────────────────────────────────────────────────────────┘
+Above range: "11 ready — above the range of 5–8. Stop refining: nothing more is needed before Thu 8 Oct."
+```
+
+---
+
+## Wave: DISCUSS / [REF] User Stories
+
+<!-- markdownlint-disable MD024 -->
+
+System constraints (all stories): Team level only (D2) · every user-facing word through Terminology (Work Item, Team,
+SLE, Throughput, cycle time, Refinement) · no write-back (D9) · works hosted, standalone and auth off (C2, C3) · all
+UI gating via `useRbac()`; nothing fetches `/api/latest/authorization/my-summary` directly · Community unless stated (D25)
+· migrations expand-only, via `CreateMigration`.
+
+### US-01 — Choose the refinement states (slice 01)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `config-admin` (Sofia Keller, Team admin of Team Gravity)
+
+**Problem**: Sofia's Team refines Work Items in `Backlog`, `Analysing` and `Next`, but Lighthouse has no idea which
+states mean refinement, and two of them are Doing states that already count in WIP.
+
+#### Elevator Pitch
+Before: no Team knows which of its states mean refinement; there is no Refinement tab.
+After: Team Gravity → **Settings → Refinement** → ticks `Backlog` (To Do), `Analysing` (Doing), `Next` (Doing), saves → sees the **Refinement** tab next to Metrics turn from disabled to enabled.
+Decision enabled: which of the Team's states the Refinement view (and later the need number) counts.
+
+**Examples**: (1) Sofia ticks Backlog, Analysing, Next — saved, tab enabled. (2) Team Zenith has none ticked — tab
+disabled; Sofia sees "Choose refinement states in Settings → Refinement", reader Jonas Weber sees "A Team admin needs
+to choose refinement states first". (3) Sofia later unmaps `Analysing` from Doing — the Refinement section warns
+"Analysing is no longer mapped; its Work Items cannot appear".
+
+```gherkin
+Scenario: A Team admin turns the Refinement tab on by naming refinement states
+  Given Team Gravity maps To Do "Backlog" and Doing "Next", "Analysing"
+  When Sofia selects "Backlog", "Analysing" and "Next" under Settings → Refinement and saves
+  Then the Refinement tab of Team Gravity is enabled for every reader
+
+Scenario: Only mapped states can be chosen, each labelled with its category
+  Given Team Gravity maps "Done" as Done and has an unmapped state "Icebox"
+  When Sofia opens Settings → Refinement
+  Then she can choose from "Backlog (To Do)", "Next (Doing)", "Analysing (Doing)" only
+
+Scenario: The disabled tab tells each reader what is missing
+  Given Team Zenith has no refinement states
+  When Jonas, a Viewer, hovers the Refinement tab
+  Then it is disabled and reads "A Team admin needs to choose refinement states first"
+```
+
+**AC**: AC-1.1 Settings → Refinement offers only To Do and Doing mapped states, each with its category. AC-1.2 Saved
+selection survives reload and a Team refresh. AC-1.3 Tab disabled with role-specific tooltip (DD-15) while none
+selected; enabled otherwise. AC-1.4 A selected state that later becomes unmapped is flagged in the section, never
+silently dropped. AC-1.5 A Doing state carries the note "already counts in {WIP} and {cycle time}". AC-1.6 Only Team
+admins can save (server-guarded; UI via `useRbac()`).
+**KPI**: K1. **Tech**: additive setting on the Team; DESIGN picks a storage shape that 03 (stage per state) extends without a destructive migration.
+
+### US-02 — See every Work Item in refinement, in backlog order (slice 02)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `flow-coach` (Priya Raman, coach of Team Gravity)
+
+**Problem**: Priya prepares the Refinement by scrolling the tracker's backlog; she cannot see in one place what is
+in refinement and in what order it will be pulled.
+
+#### Elevator Pitch
+Before: the Refinement tab does not exist.
+After: Team Gravity → **Refinement** tab → sees GR-058, GR-059, GR-051 … GR-073 in backlog order, each with state, category and age, headed "14 Work Items in Refinement".
+Decision enabled: which Work Items to bring to the next Refinement.
+
+**Examples**: (1) Gravity: 14 Work Items, GR-058 first. (2) A Team renamed "Refinement" to "Replenishment" sees that
+word on the tab and heading. (3) A Team whose refinement states hold no Work Items sees "No Work Items in Refinement
+states right now".
+
+```gherkin
+Scenario: The coach sees what is in refinement in pull order
+  Given Team Gravity's refinement states hold 14 Work Items
+  When Priya opens the Refinement tab
+  Then she sees 14 Work Items in backlog order, GR-058 "User activity tracking" first, each with state and category
+
+Scenario: The Team's own word for Refinement is used
+  Given Terminology renames "Refinement" to "Replenishment"
+  When Priya opens Team Gravity
+  Then the tab and heading say "Replenishment"
+
+Scenario: An empty refinement is stated, not shown as an error
+  Given Team Zenith's refinement states hold no Work Items
+  When Priya opens its Refinement tab
+  Then she reads that no Work Items are in Refinement states right now
+```
+
+**AC**: AC-2.1 Lists exactly the Work Items in the Team's refinement states, in the same backlog order the Team's
+forecasts use. AC-2.2 Each row: id + link to the work tracking system, name, state, category, age. AC-2.3 "Refinement"
+is a Terminology key with seeded default "Refinement" (singular/plural), used for tab, heading, tooltip. AC-2.4
+Readable by anyone with Team read. AC-2.5 Renders and stays responsive with 300 Work Items. AC-2.6 Demo data: Team Gravity
+ships with refinement states `Backlog`, `Analysing`, `Next`; at least one other demo Team ships without any, so the
+disabled tab can be shown and tested.
+**KPI**: K1, K2. **Tech**: tab-open reuses `TeamTabOpened` with a new route key (S6).
+
+### US-03 — Say which refinement states mean Ready (slice 03)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `config-admin`
+
+**Problem**: The need number has to know how many Work Items are already ready; Sofia's `Next` state means "refined,
+waiting to be pulled" but Lighthouse cannot tell.
+
+#### Elevator Pitch
+Before: every refinement state looks alike.
+After: Settings → Refinement → sets `Next` = Ready, `Analysing` = Being refined, `Backlog` = Waiting → the Refinement tab shows a Stage column and "2 ready".
+Decision enabled: whether the Team's own states already say what is ready, or a rule is needed.
+
+**Examples**: (1) Gravity: Next = Ready → 2 ready. (2) A Team with one state `Refinement` leaves it Waiting → 0 ready,
+tab says "No state is marked Ready". (3) Sofia marks two states Ready → both counted.
+
+```gherkin
+Scenario: The ready count follows the Team's states
+  Given Team Gravity's "Next" is marked Ready and holds GR-058 and GR-059
+  When Priya opens the Refinement tab
+  Then it says 2 Work Items are ready and shows each Work Item's stage
+
+Scenario: New refinement states start as Waiting
+  When Sofia adds "Backlog" as a refinement state
+  Then its stage is Waiting until she changes it
+
+Scenario: A Team without a Ready state is told so
+  Given no refinement state of Team Pulsar is marked Ready and no rule exists
+  When Priya opens its Refinement tab
+  Then it reads that no state is marked Ready yet, with a link for Team admins
+```
+
+**AC**: AC-3.1 Each refinement state carries exactly one stage, default Waiting. AC-3.2 Ready count = Work Items whose
+stage resolves to Ready, added to the vote-ready Work Items slice 13 already counts (DD-5, DD-22). AC-3.3 Stage shown per row. AC-3.4 Expand-only storage change.
+**KPI**: K1. **Tech**: depends on 01.
+
+### US-04 — Set the Refinement cadence (slice 04)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `config-admin`
+
+**Problem**: "How many do we need" only has an answer relative to *when* the Team next refines.
+
+#### Elevator Pitch
+Before: Lighthouse does not know when the Team refines.
+After: Settings → Refinement → Cadence: Thursday, every 1 week → Refinement tab header reads "Next Refinement: Thu 8 Oct".
+Decision enabled: the horizon every count on the tab is measured against.
+
+**Examples**: (1) Thursdays weekly, today Fri 2 Oct → Thu 8 Oct. (2) Tuesdays every 2 weeks from week of 6 Oct → Tue 6
+Oct, then Tue 20 Oct. (3) Today is Thu 8 Oct (a Refinement day) → next is Thu 15 Oct (DD-6). (4) No cadence → no date,
+hint "Set a Refinement cadence to see how many Work Items are needed".
+
+```gherkin
+Scenario: The next Refinement date follows the cadence
+  Given Team Gravity refines on Thursdays every week and today is Friday 2 October 2026
+  When Priya opens the Refinement tab
+  Then it reads "Next Refinement: Thu 8 Oct"
+
+Scenario: On a Refinement day the tab looks to the following one
+  Given today is Thursday 8 October 2026
+  Then the next Refinement shown is Thu 15 Oct
+
+Scenario: Without a cadence the list stays and the number is replaced by a hint
+  Given Team Pulsar has refinement states but no cadence
+  When Priya opens its Refinement tab
+  Then she sees the list and votes and a hint to set the Refinement cadence, but no need number
+```
+
+**AC**: AC-4.1 Cadence = one or more weekdays + every N weeks (N ≥ 1) + starting week when N > 1. AC-4.2 Next date per
+DD-6 in the instance time zone. AC-4.3 No cadence → D29 behaviour. AC-4.4 Editors only.
+**KPI**: K1. **Tech**: blackout days are not skipped in v1 (a Refinement on a holiday is the Team's call) — flagged for DESIGN.
+
+### US-05 — Know whether to refine more or stop (slice 05)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `flow-coach`
+
+**Problem**: Priya's Team "refines ten more, just in case"; nothing tells her when enough is enough.
+
+#### Elevator Pitch
+Before: the Refinement tab is a list.
+After: Refinement tab → sees "3 ready — below the range of 5–8 Work Items Team Gravity is likely to pull before Thu 8 Oct. Refine 2 to 5 more." — or, at 11 ready, "Stop refining: nothing more is needed before Thu 8 Oct."
+Decision enabled: refine more, or stop and spend the meeting elsewhere.
+
+**Examples**: (1) 3 ready, band 5–8 → below, "Refine 2 to 5 more". (2) 6 ready → in range, "Nothing more needs refining
+before Thu 8 Oct". (3) 11 ready → above, "Stop refining" at the same weight. (4) Team with 9 days of Throughput history →
+the existing minimum-data message instead of a number.
+
+```gherkin
+Scenario: Below range asks for a bounded number of Work Items
+  Given Team Gravity has 3 ready Work Items and is likely to pull 5 to 8 before Thu 8 Oct
+  When Priya opens the Refinement tab
+  Then she reads that 3 are ready, below the range of 5–8, and that 2 to 5 more should be refined
+
+Scenario: Above range says stop as loudly as refine more
+  Given Team Gravity has 11 ready Work Items and a range of 5–8
+  When Priya opens the Refinement tab
+  Then she reads "Stop refining" in the same place and style as the below-range message
+
+Scenario: Too little Throughput history gives the familiar guard, not a number
+  Given Team Lightspeed has less Throughput history than forecasts require
+  When Priya opens the Refinement tab
+  Then she sees the minimum-data message forecasts already use, and the list
+```
+
+**AC**: AC-5.1 One `HowMany` run over the Team's Throughput (same history window and settings as its forecasts) for
+the days until the next Refinement. AC-5.2 Low end = 50% value; high end = count exceeded with 15% likelihood (DD-2).
+AC-5.3 Verdict per DD-3, boundaries inclusive in range. AC-5.4 Below/in/above share one component and size (C5). AC-5.5
+The API returns facts (counts, band, date, verdict enum), never a sentence. AC-5.6 Minimum-data guard reused. AC-5.7 The ready count includes the vote-ready Work Items of
+slice 13, which ships earlier (DD-22).
+**KPI**: K3. **Tech**: careful with `HowManyForecast` semantics — its "85%" is the *conservative* (low) count.
+
+### US-06 — See which Work Items are needed before the next Refinement (slice 06)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `product-owner` (Marco Bianchi)
+
+#### Elevator Pitch
+Before: the verdict says "refine 2 to 5 more" but not which ones.
+After: Refinement tab → the first 8 Work Items in backlog order are highlighted and a line reads "enough for Thu 8 Oct (85%)"; below it "not needed before then".
+Decision enabled: which Work Items to refine next, and which to leave alone.
+
+**Examples**: (1) High end 8 → line after GR-073 (#8). (2) Only 5 Work Items in refinement, high end 8 → all highlighted,
+line at the bottom reading "fewer Work Items in Refinement than may be needed". (3) No cadence → no line.
+
+```gherkin
+Scenario: The line marks the Work Items needed before the next Refinement
+  Given the range before Thu 8 Oct is 5–8
+  When Marco opens the Refinement tab
+  Then the first 8 Work Items in backlog order are highlighted and a line reads "enough for Thu 8 Oct"
+
+Scenario: Too few Work Items in refinement is said at the line
+  Given only 5 Work Items are in refinement states and the high end is 8
+  Then all 5 are highlighted and the line says fewer are in Refinement than may be needed
+```
+
+**AC**: AC-6.1 N = high end (DD-4), counted over all refinement Work Items. AC-6.2 Line absent when no number. AC-6.3
+Highlight is not colour-only (accessible).
+**KPI**: K3.
+
+### US-07 — Tune the band to the Team's risk appetite (slice 07)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `config-admin`
+
+#### Elevator Pitch
+Before: the band is fixed at 50–85%.
+After: Settings → Refinement → band 50% / 95% → the tab's range for Thu 8 Oct widens from 5–8 to 5–10.
+Decision enabled: how much running-dry risk the Team accepts.
+
+**Examples**: (1) 50/85 default. (2) 30/85 → low end drops. (3) Low ≥ high → refused with "the low end must be below
+the high end".
+
+```gherkin
+Scenario: A wider band moves the stop line
+  Given Team Gravity's band is changed to 50% and 95%
+  When Priya opens the Refinement tab
+  Then the range and the "enough for" line use the new percentiles
+
+Scenario: An inverted band is refused
+  When Sofia sets the low end to 90% and the high end to 85%
+  Then saving is refused with a message naming both values
+```
+
+**AC**: AC-7.1 Percentiles 1–99, low < high. AC-7.2 Defaults 50/85. AC-7.3 Editors only.
+
+### US-08 — Split refinement stages by rule (slice 08)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `config-admin`
+
+**Problem**: Team Pulsar has one state, `Refinement`, and marks ready Work Items with the tag `ready`.
+
+#### Elevator Pitch
+Before: Pulsar cannot show anything as Ready.
+After: Settings → Refinement → Ready rule "Tags contains ready" → the tab shows 4 Ready and the verdict uses them.
+Decision enabled: use the Team's own markers without changing its workflow.
+
+```gherkin
+Scenario: A rule marks Work Items Ready without a dedicated state
+  Given Team Pulsar's Ready rule is "Tags contains ready" and 4 Work Items carry it
+  When Priya opens the Refinement tab
+  Then 4 Work Items are Ready
+
+Scenario: A Ready rule overrides the vote outcome for the Work Items it matches
+  Given PU-112 carries the tag "ready" and has one No vote under a veto of 1 No
+  Then PU-112 is Ready
+```
+
+**AC**: AC-8.1 One optional rule per stage, same `WorkItemRuleSet` limits and editor as blocked rules. AC-8.2 DD-5
+precedence. AC-8.3 Rules only ever narrow to Work Items already in refinement states.
+
+### US-09 — Ask the refinement need from the CLI or an assistant (slice 09)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `flow-coach`
+
+#### Elevator Pitch
+Before: the need is only on the web page.
+After: `lighthouse teams refinement 3` (and the MCP tool `get_team_refinement`) → prints "Team Gravity · next Refinement Thu 8 Oct · 3 ready · range 5–8 · below — refine 2 to 5 more", then the list with the line.
+Decision enabled: same as US-05, from the terminal or an assistant.
+
+```gherkin
+Scenario: The CLI states the verdict the web page states
+  Given Team Gravity is below range with 3 ready and a range of 5–8
+  When Priya runs the refinement command for Team Gravity
+  Then it prints the next Refinement date, the ready count, the range and "refine 2 to 5 more"
+
+Scenario: The CLI says why there is no number
+  Given Team Pulsar has no cadence
+  Then the command prints the list and that a Refinement cadence is needed for a number
+```
+
+**AC**: AC-9.1 Uses the same endpoint as the tab. AC-9.2 Client composes the sentence from facts, using the
+instance's Terminology. AC-9.3 Lighthouse-Clients minor version + changeset. Command names to DESIGN.
+
+### US-10 — See the yardstick votes are cast against (slice 10)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter` (Jonas Weber, developer, Team Gravity)
+
+#### Elevator Pitch
+Before: "fits our SLE" means whatever each voter remembers.
+After: Refinement tab → header reads "Doable within 7 days? (our SLE, 85%)"; on a Team without an SLE: "Doable within 12 days? (85th percentile of {cycle time} — set an SLE to replace this)".
+Decision enabled: the voter answers against the same number as everyone else.
+
+```gherkin
+Scenario: The Team's SLE is the yardstick
+  Given Team Gravity's SLE is 85% within 7 days
+  When Jonas opens the Refinement tab
+  Then the question reads "Doable within 7 days?"
+
+Scenario: Without an SLE the fallback is shown and named as a fallback
+  Given Team Meridian has no SLE and its default cycle time's 85th percentile is 12 days
+  Then the question reads "Doable within 12 days?" with a hint to set an SLE
+
+Scenario: No SLE and no finished Work Items
+  Given Team Equinox has no SLE and no finished Work Items
+  Then the question asks without a number and the hint says why
+```
+
+**AC**: AC-10.1 Fallback = 85th percentile of the Team's **default** cycle time only (D24), over the Team's metrics
+window. AC-10.2 Hint links Team admins to the SLE setting. AC-10.3 Terms via Terminology.
+
+### US-11 — Cast a sizing vote from the list (slice 11)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter` · ~1½ days (called out)
+
+**Problem**: Jonas has no doubt about most Work Items but sits through all of them in the meeting.
+
+#### Elevator Pitch
+Before: views only exist in the meeting.
+After: Refinement tab → on GR-073 clicks **Yes**, first time types his name "Jonas Weber" → the row shows "1 vote", his own vote marked; the next vote needs no name.
+Decision enabled: say "this fits" in seconds, so the meeting can skip GR-073.
+
+**Examples**: (1) Jonas votes Yes on GR-073 on Tue 6 Oct, auth off, name once per browser. (2) Ana Lima votes No on
+GR-051 from her own browser. (3) Jonas changes GR-073 to "Yes, but…" — a new log entry, latest counts (DD-9).
+(4) A Work Item that left refinement keeps its votes in the log but is no longer listed.
+
+```gherkin
+Scenario: A reader votes in seconds without an account on a Community instance
+  Given authentication is off and Jonas has never voted from this browser
+  When Jonas chooses Yes on GR-073 and enters the name "Jonas Weber"
+  Then GR-073 shows 1 vote and the name is remembered for his next vote
+
+Scenario: Changing one's mind adds to the log
+  Given Jonas voted Yes on GR-073
+  When he chooses "Yes, but…"
+  Then his current vote is "Yes, but…" and both entries remain in the log
+
+Scenario: Votes are open whatever the verdict says
+  Given Team Gravity is above range
+  When Ana votes on GR-074, below the "enough for" line
+  Then her vote is accepted
+```
+
+**AC**: AC-11.1 Three answers on every Work Item in a refinement state, any time (DD-1). AC-11.2 Auth off: name per
+browser, required once, editable (DD-10). AC-11.3 Append-only log (DD-9). AC-11.4 Readers may vote (TeamRead); Team
+admins too. AC-11.5 ≤ 2 interactions per vote once the name is set. AC-11.6 New vote log aggregate + migration
+(expand-only).
+**KPI**: K4, K5.
+
+### US-12 — Say the condition behind "Yes, but…" (slice 12)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter`
+
+#### Elevator Pitch
+Before: a "Yes, but…" says nothing about the "but".
+After: chooses "Yes, but…" on GR-051, types "only if the PDF export moves to its own Work Item" → the row shows a comment marker; opening it shows every vote and comment in order.
+Decision enabled: the Team discusses the condition, not the whole Work Item.
+
+```gherkin
+Scenario: A "Yes, but…" carries its condition
+  When Ana chooses "Yes, but…" on GR-051 with "only if the PDF export moves to its own Work Item"
+  Then the condition is shown with her vote in GR-051's log
+
+Scenario: A question without a vote flags the Work Item
+  When Jonas comments "Which API version?" on GR-054 without voting
+  Then GR-054 is marked as having an open question and his comment counts as no vote
+```
+
+**AC**: AC-12.1 Comment optional on every answer; prompted (not forced) for "Yes, but…". AC-12.2 Comment-only entry
+allowed (DD-11). AC-12.3 Log ordered oldest first, with names and dates.
+
+### US-13 — See which Work Items the votes make Ready (slice 13)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `flow-coach` (setting by `config-admin`)
+
+#### Elevator Pitch
+Before: votes are just counts.
+After: Settings → Refinement → readiness at its default "3 Yes", plus a veto at 1 No → Refinement tab shows GR-073 "Ready", GR-051 "2 more Yes needed", GR-054 "Needs discussion (1 No)", and the heading reads "1 ready by votes".
+Decision enabled: which Work Items the meeting must discuss (and, once slice 05 exists, whether the Team still needs to refine more).
+
+```gherkin
+Scenario: Enough Yes votes make a Work Item Ready
+  Given readiness needs 3 Yes and GR-073 has Yes from Jonas and Mo and "Yes, but…" from Ana
+  When Priya opens the Refinement tab
+  Then GR-073 is Ready and counted in the ready total
+
+Scenario: A veto sends a Work Item to discussion
+  Given the veto is 1 No and Ana voted No on GR-054
+  Then GR-054 reads "Needs discussion"
+
+Scenario: Missing votes are named, to be raised in the Team's rituals
+  Given GR-051 has 1 Yes
+  Then it reads "2 more Yes needed"
+```
+
+**AC**: AC-13.1 Setting per DD-7/DD-21: defaults 3 Yes, min voters 3, veto off; min Yes ≥ 1; min voters never below
+min Yes. AC-13.2 Ready resolution per DD-5 (before slice 03/08 exist, votes alone decide). AC-13.3 Status per row:
+Ready / n more needed / Needs discussion. AC-13.4 Ships standalone: the heading counts vote-ready Work Items; once
+slice 05 exists its verdict uses the same count (DD-22) — that AC belongs to 05, not here.
+**KPI**: K5.
+
+### US-14 — Vote without being anchored (slice 14)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter`
+
+#### Elevator Pitch
+Before: Jonas sees "2 No" before forming his own view.
+After: Refinement tab → GR-051 shows "3 votes" until Jonas votes; after his vote the split appears.
+Decision enabled: an independent view.
+
+```gherkin
+Scenario: The split is hidden until you vote
+  Given GR-051 has 3 votes and Jonas has not voted on it
+  Then he sees "3 votes" without the split
+  When he votes Yes
+  Then he sees the split and the comments
+```
+
+**AC**: AC-14.1 Per Work Item, per voter (account or browser). AC-14.2 Team admins see the same (no bypass) except in
+presenter mode. AC-14.3 Readiness status stays visible (it reveals no split). Cancellable per hypothesis.
+
+### US-15 — Vote under my own account (slice 15)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter` on a Premium instance with auth on
+
+#### Elevator Pitch
+Before: with auth on, a vote cannot carry who cast it.
+After: signed in as Jonas (Viewer on Team Gravity) → votes Yes on GR-073 → the log shows "Jonas Weber" from his account; no name prompt.
+Decision enabled: accountable votes the Team can follow up.
+
+```gherkin
+Scenario: A signed-in reader votes under their account
+  Given authentication is on and Jonas holds Viewer on Team Gravity
+  When he votes Yes on GR-073
+  Then the vote is recorded under his account name without a prompt
+
+Scenario: Someone without Team read cannot vote
+  Given Lena holds no role on Team Gravity
+  Then she cannot see Team Gravity's Refinement tab or vote through the API
+```
+
+**AC**: AC-15.1 Identity from the session only (D14, no guest links). AC-15.2 TeamRead suffices for the vote write —
+a deliberate read-permission write, flagged for DESIGN. AC-15.3 Names visible to the Team (Premium by platform, P2).
+
+### US-16 — Take back my vote (slice 16, lower priority)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter`
+
+#### Elevator Pitch
+Before: a mistaken vote can only be changed, not removed.
+After: on GR-073 clicks **Take back** → his vote no longer counts; the log shows "Jonas Weber took back his vote, Tue 6 Oct".
+Decision enabled: withdraw a view given too early.
+
+```gherkin
+Scenario: A taken-back vote stops counting and stays in the log
+  Given Jonas voted Yes on GR-073
+  When he takes it back
+  Then GR-073 no longer counts his vote and the log records the revocation
+
+Scenario: Only the voter can take a vote back
+  Given Ana's vote on GR-073 came from another browser
+  Then Jonas is offered no way to take it back
+```
+
+### US-17a — Read votes and readiness from the CLI or an assistant (slice 17a)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `flow-coach`
+
+#### Elevator Pitch
+Before: the refinement command (US-09) shows no votes.
+After: `lighthouse teams refinement 3` → each line ends with "Ready" / "1 more Yes needed" / "Needs discussion"; the MCP tool returns the same.
+Decision enabled: which Work Items to put on the meeting agenda, without opening the browser.
+
+```gherkin
+Scenario: The command lists what needs discussion
+  Given GR-054 needs discussion and GR-073 is Ready
+  When Priya runs the refinement command
+  Then GR-054 is listed as needing discussion and GR-073 as Ready
+
+Scenario: Hidden splits stay hidden in the client too
+  Given the client's voter has not voted on GR-051
+  Then it returns the count and readiness of GR-051, not the split
+```
+
+**AC**: AC-17a.1 Read path only; additive response fields. AC-17a.2 DD-12 applies to the client caller. AC-17a.3 May
+share one minor client release with 17b.
+
+### US-17b — Cast a sizing vote from the CLI or an assistant (slice 17b)
+
+`job_id: job-team-member-give-sizing-view` · persona `team-member-voter`
+
+#### Elevator Pitch
+Before: a vote needs the browser.
+After: `lighthouse teams refinement vote 3 GR-051 --yes-but "only if the PDF export moves to its own Work Item" --as "Ana Lima"` (auth off) → prints "Recorded: Ana Lima — Yes, but… on GR-051. GR-051: 2 more Yes needed"; the MCP tool `vote_on_work_item` does the same after the assistant confirms with Ana. With auth on, no `--as`: the vote carries the account behind the client's credential.
+Decision enabled: give a sizing view from the terminal or the assistant already open, without switching to the browser.
+
+```gherkin
+Scenario: A voter casts a "Yes, but…" with its condition from the CLI
+  Given authentication is off and Ana supplies the name "Ana Lima"
+  When she casts "Yes, but…" on GR-051 with the condition "only if the PDF export moves to its own Work Item"
+  Then GR-051's log shows Ana Lima's "Yes, but…" with the condition, marked as cast from a client
+
+Scenario: Without a name the client refuses to vote on an auth-off instance
+  Given authentication is off
+  When a vote is sent without a voter name
+  Then it is refused with a message asking for the name, and nothing is recorded
+
+Scenario: A credential that belongs to no person cannot vote
+  Given authentication is on and the client's credential is not tied to a user account
+  When a vote is sent
+  Then it is refused and the message says votes need a personal account
+
+Scenario: A vote can be taken back from the client once taking back exists
+  Given slice 16 has shipped and Ana's vote on GR-051 came from her client identity
+  When she takes it back through the client
+  Then GR-051 no longer counts it and the log records the revocation
+```
+
+**AC**: AC-17b.1 Yes / Yes, but… (condition) / No, optional comment, comment-only question (DD-11, DD-19); comments
+need slice 12. AC-17b.2 Identity per DD-19: auth on → the person behind the credential, refused if none; auth off →
+required self-declared name, never defaulted. AC-17b.3 Same endpoint, permission (Team read) and log as the UI.
+AC-17b.4 Take back only if slice 16 exists. AC-17b.5 Lighthouse-Clients minor bump + changeset. Open for DESIGN: DD-19
+(a)–(d).
+
+### US-18 — Run the Refinement on one shared screen (slice 18)
+
+`job_id: job-flow-coach-refine-just-enough` · persona `flow-coach`
+
+**Problem**: Teams that do Planning Poker in a room today won't start with async; they need a way in.
+
+#### Elevator Pitch
+Before: the room scrolls the Refinement tab together and loses its place.
+After: Refinement tab → **Present** → full-screen, one Work Item at a time, starting with the highlighted ones that are not Ready, splits and comments visible; Priya adds the room's conclusion as a comment ("Split: PDF export becomes its own Work Item") and moves on.
+Decision enabled: the room discusses only the Work Items that are not Ready.
+
+```gherkin
+Scenario: The room walks only the Work Items that are not Ready
+  Given GR-073 is Ready and GR-051 and GR-054 are not
+  When Priya starts presenter mode for Team Gravity
+  Then it shows GR-051, then GR-054, and skips GR-073
+
+Scenario: The facilitator captures the room's conclusion as a comment, never as others' votes
+  Given authentication is on and Priya is presenting
+  When the room agrees to split GR-051
+  Then Priya can save her own vote and a comment, and there is no way to record a vote for Jonas or Ana
+
+Scenario: Presenter mode works standalone with authentication off
+  Given a standalone instance with authentication off
+  Then presenter mode works without anyone else connecting, and saves only the presenting browser's own vote or comment
+```
+
+**AC**: AC-18.1 Saves only the facilitator's own vote/comment — account (auth on) or the browser's self-declared name
+(auth off); no on-behalf recording (DD-20). AC-18.2 Splits visible (DD-12 exemption). AC-18.3 Same log; entries saved
+while presenting are marked live (K4, K7). AC-18.4 Keyboard-only operable.
+
+### Spike S-19 — Remote facilitated session (slice 19, ≤1 day, timeboxed)
+
+Learning objective: can an auth-off browser (shared subject) and an auth-on account join a live session hub without
+weakening tenant security (R5, X4), and what identity each carries. Output: an ADR-ready note for E4's next DISCUSS.
+Not DoR-gated (spike).
+
+---
+
+## Wave: DISCUSS / [REF] Outcome KPIs
+
+Objective: Teams refine just enough — they stop when the range is reached, and doubted Work Items are the only ones
+discussed. **North star: K3** (share of Refinements entered in range). **DEVOPS turns each "Measured by" into a
+usage-data event** (name-only preferred, closed-enum properties only; append to `UsageDataEventName`, never renumber).
+
+| # | Who | Does what | Target | Baseline | Measured by | Type |
+|---|---|---|---|---|---|---|
+| K1 | Opted-in instances with ≥1 Team | configure refinement states for ≥1 Team (R1 setup) | ≥15% within 60 days of E1 | 0 | event "refinement states saved" (name-only) ÷ instances reporting | Leading |
+| K2 | Teams with refinement states | open the Refinement tab in ≥3 of 4 consecutive weeks | ≥50% | 0 | `TeamTabOpened` + new Refinement route key | Leading (WAU) |
+| K3 | Teams with a cadence and a number | view the tab with verdict *in range* on a Refinement day | from first-month baseline to ≥60% after 3 months | first month after E2 | verdict property `{below, in, above, none}` on a "need shown" event | Leading (north star) |
+| K4 | Votes cast | are cast **outside** a live session and **not** on a Refinement day (R4 — measured by K4; no push channel (D21)) | ≥40% of votes | 0 (MVP: ~0%, D19) | "vote cast" with closed enums `{refinementDay, otherDay}` and, from E4, `{liveSession, async}` | Leading (riskiest) |
+| K5 | Work Items that become Ready by votes | reach Ready **before** their Refinement day (no meeting time spent) | ≥50% | 0 | "readiness reached" with `{beforeRefinementDay, onRefinementDay}` (readable once a cadence exists, slice 04; slice 13 ships first, DD-22) | Leading |
+| K6 | Teams that saw *above range* | do **not** see *above range* again at the next Refinement (they stopped) | ≥50% | first month | derived from K3's verdict series | Leading |
+| K7 | Teams using presenter mode | also have votes outside sessions within 4 weeks (gateway works) | ≥30% | 0 | K4's `liveSession` property per instance | Leading (E4) |
+
+Guardrails: tab renders ≤2 s at 300 Work Items; existing forecasts unchanged (no shared setting altered); *below range*
+share does not rise above its first-month value (the stop signal must not starve Teams). Qualitative until data
+arrives: dogfood on the dev instance + 5 Mom Test conversations (R3) — owed by the maintainer, not a build step.
+
+---
+
+## Wave: DISCUSS / [REF] Out of Scope (first versions)
+
+Portfolio level (D2) · cross-Team overview (D23) · sizing calibration (E5, Premium, D22) · write-back (D9) · push,
+reminders, inboxes, deadlines (D21) · guest links with auth on (D14) · story points / estimation numbers · a choice of
+cycle-time definition for the fallback (D24) · recording votes on someone else's behalf, presenter mode included (DD-20) ·
+client votes under a credential that belongs to no person (DD-19) · rounds or session entities for async
+(DD-1) · blackout-aware cadence dates (US-04 note).
+
+---
+
+## Wave: DISCUSS / [REF] Project DISCUSS Checklist
+
+No silent N/A — every item answered.
+
+| Item | Answer |
+|---|---|
+| **RBAC impact** | **New, and one of it is unusual.** Settings (states, stages, cadence, band, readiness, rules) = Team admin, server-guarded, UI via `useRbac().isTeamAdmin` like the Settings tab. Tab, list, need, comments and **votes = Team read**: the vote endpoint is a *write gated by a read permission* — a first; DESIGN must state it explicitly rather than reach for an edit requirement. Auth off: no RBAC, everyone votes, identity self-declared (DD-10). Auth on + RBAC off: every signed-in user. No component fetches `/api/latest/authorization/my-summary` directly. |
+| **Lighthouse-Clients CLI/MCP** | **Owed, including a write (DD-19).** Slice 09 (read need, minor bump), 17a (read votes, minor bump) and **17b (cast and take back a vote — a write, minor bump)**; 17a + 17b may share one release. Changesets in `lighthouse-clients`; `pnpm release:version` before the release run. New endpoints and fields are additive (no existing client response shape changes). The client's identity handling (credential → person; required self-declared name with auth off) is a DESIGN decision listed under DD-19. |
+| **Website / marketing surface** | **Owed at finalize of E2 and E3**: letpeople.work/sizing-poker today points at the standalone MVP — once E3 ships, decide with the maintainer whether that page points to Lighthouse. Feature list on the site: Community feature, not Premium. Website lives in a separate repo; not read this wave; confirm before editing copy. |
+| **Docs + screenshots** | **Owed per Epic at finalize**, not batched: a new docs page "Refinement" (tab, need, votes), a Team Settings section, Terminology entry; `@screenshot` one per theme for the tab below range, above range, and the vote log. Docs wait for user confirmation. |
+| **Demo data** | **Owed in slice 01/02**: Team Gravity (and one more) gets refinement states `Backlog`/`Analysing`/`Next` (S8) and, in 04, a Thursday cadence; one demo Team stays unconfigured for the disabled-tab E2E. **Slice 11/13**: seed a handful of votes with self-declared names (Jonas Weber, Ana Lima, Mo Okafor — three, so the default of 3 Yes can be met) so the screenshots and the E2E walking skeleton show readiness. No CSV state changes needed. |
+| **Terminology** | **New term "Refinement"** (singular/plural, seeded default "Refinement"), D26. Every string uses Work Item, Team, SLE, Throughput, cycle time, WIP, Refinement via `getTerm`; never "Story", "Epic", "Sprint". Renaming is Premium automatically (Terminology editing is Premium). |
+| **Usage-data event** | **Wanted (D18)**: tab opening = existing `TeamTabOpened` + new route key; DEVOPS designs the rest against K1, K3–K7 — at least "refinement states saved", "need shown" `{below,in,above,none}`, "vote cast" `{refinementDay,otherDay}` (+ `{liveSession,async}` from E4), "readiness reached" `{before…, on…}`. Each emitted in the DELIVER slice that first makes it usable and listed in `docs/settings/usagedata.md`. |
+| **EF migrations** | **Owed**: 01 (refinement states), 11 (vote log — new table), 13 (readiness), 03 (stages, extend 01's shape), 04 (cadence), 07 (band), 08 (rules) — in delivery order (DD-22). All additive, via `CreateMigration`, expand-only. DESIGN may batch settings columns into fewer migrations. |
+| **Premium gating** | None built (D25). Named votes = Premium through auth; calibration = E5. |
+| **ADO** | Proposed split above; maintainer applies it. One Story per slice once confirmed. |
+
+---
+
+## Wave: DISCUSS / [REF] DoR Validation
+
+| # | DoR item | Status | Evidence |
+|---|---|---|---|
+| 1 | Problem clear, domain language | PASS | US-01–05, 08, 11, 18 state the problem through Priya, Sofia or Jonas; for the half-day stories the Elevator Pitch's *Before* line carries it. No "implement X" titles. |
+| 2 | Persona specific | PASS | `flow-coach`, `config-admin`, `product-owner`, **new** `team-member-voter` with Team Gravity context. |
+| 3 | 3+ domain examples, real data | PASS (US-01–05, 11) / PARTIAL elsewhere | Demo Team Gravity Work Items (GR-051/058/073), dates from Fri 2 Oct 2026. Smaller stories (06–09, 12–17a) carry 2–3 scenarios as examples — acceptable for ½-day slices, flagged. |
+| 4 | UAT G/W/T, 3–7 | PASS / PARTIAL | US-01–05, 10, 11, 13, 18: 3 each; US-17b: 4. US-06, 07, 08, 09, 12, 15, 16, 17a: 2 each (½-day slices); US-14: 1. Below the 3 minimum — **flagged**: DISTILL to add the error path per story. |
+| 5 | AC from UAT | PASS | AC-n.m per story trace to scenarios. |
+| 6 | Right-sized | PASS with one exception | All ≤1 day except slice 11 (1½d), called out in Scope Assessment. Slice 17 split into 17a (½d, read) and 17b (1d, cast/take back) to stay within the bar after DD-19. |
+| 7 | Technical notes | PASS | Brownfield inventory S1–S9; HowMany semantics; read-permission write; storage shape. |
+| 8 | Dependencies tracked | PASS | Epic order E1 → E3 first, E2 alongside → E4 (DD-22); 13 decoupled from 05; 17b's take-back depends on 16, its comments on 12; spike 19 for X4/R5. |
+| 9 | Outcome KPIs | PASS | K1–K7 with targets, baselines, measurement; guardrails. |
+
+**DoR status: PASSED with two flagged gaps** (thin UAT on ½-day stories, slice 11 size). Peer review not run
+(coordinator's call).
+
+---
+
+## Wave: DISCUSS / [REF] Maintainer Questions
+
+All five answered by the maintainer on 2026-10-02.
+
+1. ~~**Q1 — "Can't tell yet"**~~ — **Resolved (DD-17)**: no fourth answer; DD-11 as proposed.
+2. ~~**Q2 — Epic split**~~ — **Resolved (DD-18)**: E1 own Epic, #5881 → E2, #5510 → E3, E4 and E5 new.
+3. ~~**Q3 — Voting from CLI/MCP**~~ — **Resolved (DD-19)**: clients may vote and take back; slice 17 split into 17a/17b.
+4. ~~**Q4 — Presenter mode with auth on**~~ — **Resolved (DD-20)**: no on-behalf votes; the facilitator writes a comment.
+5. ~~**Q5 — Readiness defaults**~~ — **Resolved (DD-21)**: 3 Yes, no veto (min voters 3).
+
+Also applied: voting first after the walking skeleton (DD-22). Nothing open for the maintainer; DD-19 (a)–(d) are
+DESIGN's to decide.
+
+---
+
+## Wave: DISCUSS / [REF] Handoff
+
+To DESIGN (`nw-solution-architect`): this section + `slices/` + `discuss/wave-decisions.md` + journey SSOT. Open for
+DESIGN: storage shape for refinement settings (one owner, expand-only), the vote log aggregate and its identity field
+for auth-off, the read-permission write, `HowManyForecast` high-end mapping, where backlog order comes from for the
+list (same comparer as forecasts), and client-vote identity (DD-19 a–d: credential → person or refuse; required
+auth-off name on the client; marking client-cast votes; MCP tool wording). DEVOPS: K1–K7 events. R4 is measured by
+K4; no push channel (D21).

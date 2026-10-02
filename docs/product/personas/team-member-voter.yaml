@@ -1,0 +1,47 @@
+schema_version: 1
+id: team-member-voter
+created: 2026-10-02
+created_in_feature: epic-5510-5881-refinement
+
+display_name: Team Member (Voter)
+aliases:
+  - developer
+  - tester
+  - team-member
+
+short_description: >
+  A member of one Team who gives a sizing view on Work Items in refinement - "doable within our SLE?" -
+  Yes / Yes, but... / No, with a comment. Usually holds only read access (Viewer) or, on a Community
+  instance, no account at all (authentication off, self-declared name per browser).
+
+primary_jobs:
+  - job-team-member-give-sizing-view  # epic-5510-5881-refinement (2026-10-02, #5510): give a sizing view in seconds from where I already am
+
+goals:
+  - Say "this fits" about the Work Items I have no doubt about, without sitting through their discussion
+  - Raise a doubt, or the condition under which a Work Item fits, without being anchored or talked over
+  - Spend seconds per vote, not a meeting
+
+frustrations:
+  - Refinement meetings walk every Work Item top-down, including the obvious ones
+  - Planning Poker asks for points, not whether the Work Item fits the SLE
+  - Hearing the loudest estimate first
+
+mental_model:
+  - The SLE is the yardstick; a Work Item either fits it, fits it under a condition, or does not
+  - A vote is like a review approval - enough approvals and it is ready, one strong objection and it is discussed
+  - Votes are given when there is a moment, not on a schedule (pull, no reminders)
+
+vocabulary:
+  - >-
+    "Yes, but..." - fits the SLE under a stated condition (e.g. "only if the PDF export moves to its own Work Item")
+  - >-
+    "ready" - enough votes for the Team's readiness setting, or the Team's own Ready state/rule
+
+related_personas:
+  - flow-coach (facilitates the Refinement, reads the need number; often also votes)
+  - product-owner (owns backlog order; decides which Work Items reach refinement)
+
+not_this_persona:
+  - Team admin configuring refinement (config-admin)
+  - Anyone outside the Team (no Team read, cannot vote)

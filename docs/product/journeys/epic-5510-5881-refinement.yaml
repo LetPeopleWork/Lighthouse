@@ -1,66 +1,175 @@
 schema_version: 1
 feature_id: epic-5510-5881-refinement
 updated: 2026-10-02
-ado: "#5510 Sizing Poker; #5881 Refinement Need Chart (one workspace, to be split at DISCUSS)"
+ado: "#5510 Sizing Poker; #5881 Refinement Need Chart (DISCUSS proposes a split into E1-E5; see feature-delta.md)"
 note: >
-  DISCOVER seed, 2026-10-02 (light, desk research only). Team level only. Steps are hypotheses
-  to be shaped in DIVERGE/DISCUSS, not decisions. Terms in braces ({work items}, {team}, {sle},
-  {throughput}) render as the instance's configured words. Evidence and gates are in
-  docs/feature/epic-5510-5881-refinement/feature-delta.md.
+  Seeded in DISCOVER, shaped in DISCUSS (2026-10-02). Team level only. Terms in braces ({work items},
+  {team}, {sle}, {throughput}, {cycle time}, {refinement}) render as the instance's configured words.
+  Decisions D1-D31 (DISCOVER/DIVERGE) and DD-1..DD-16 (DISCUSS) live in
+  docs/feature/epic-5510-5881-refinement/feature-delta.md. Gherkin per step is embedded below; full UAT per
+  story is in the feature-delta User Stories section.
 
 journeys:
 
-  - name: know-how-many-to-refine-before-replenishment
+  - name: know-how-many-to-refine-before-the-next-refinement
     goal: >
-      Before the next replenishment, a flow coach sees how many {work items} the {team} is likely to
-      finish, how many are already refined, and therefore how many more need refining - or that
-      refining should stop because the ready queue is already above the range.
-    persona: "flow-coach (secondary: product-owner chooses which {work items})"
+      Before the next {refinement}, a flow coach sees how many {work items} are ready, the range the {team}
+      is likely to pull by then, and therefore whether to refine more or stop - with the {work items}
+      needed by then highlighted in backlog order.
+    persona: "flow-coach (secondary: product-owner orders the backlog; config-admin sets it up)"
     jobs:
-      - job-flow-coach-size-the-ready-queue  # proposed, not yet in the persona file
+      - job-flow-coach-refine-just-enough
     emotional_arc:
       start: Guessing - "Let's refine the top ten again, just in case."
-      middle: Oriented - "We'll likely finish 9 a week; 5 are ready; 2 replenishments a week."
-      end: Restrained - "Refine about 4 for Thursday - and nothing more, we're at the top of the range."
+      middle: Oriented - "3 ready; we'll likely pull 5 to 8 before Thursday."
+      end: Restrained - "Refine 2 to 5 more for Thu 8 Oct, and nothing below the line."
     steps:
-      - {id: 1, name: Open the Refinement tab, action: "Team -> Refinement (disabled with a hint until refinement states are configured)"}
-      - {id: 2, name: Read the need, action: "Forecast of {work items} done by next replenishment vs already refined; band with lower AND upper bound"}
-      - {id: 3, name: Pick the next ones, action: "List of {work items} waiting for refinement, in backlog order"}
-    shared_artifacts:
-      - name: forecast_done
-        source: team Monte Carlo (ForecastService.HowMany over {throughput})
-      - name: refined_count
-        source: "{work items} in the refined-waiting-to-be-pulled state(s) or rule"
-    failure_modes:
-      - No refinement states configured - tab disabled, tooltip says where to set them
-      - Too little {throughput} history - existing minimum-data guard message
-      - "{throughput} includes {work items} that never pass refinement - count biased high (open, R2)"
-      - A refinement state left unmapped - its {work items} vanish silently
+      - id: 1
+        name: Set up refinement
+        action: "Team -> Settings -> Refinement: refinement states (mapped To Do/Doing only) with a stage each, cadence, band"
+        emotional_state: {entry: Sceptical, exit: Done in minutes}
+        shared_artifacts: [refinement_states, refinement_stage, refinement_cadence, band_percentiles]
+        failure_modes:
+          - A refinement state later unmapped - flagged in the section, never silently dropped
+          - No state marked Ready and no rule - hint, ready count 0
+        gherkin: |
+          Scenario: A Team admin turns the Refinement tab on by naming refinement states
+            Given Team Gravity maps To Do "Backlog" and Doing "Next", "Analysing"
+            When Sofia selects all three under Settings -> Refinement and saves
+            Then the Refinement tab of Team Gravity is enabled for every reader
+      - id: 2
+        name: Open the Refinement tab
+        action: "Team -> Refinement (disabled with a role-specific tooltip until refinement states exist)"
+        emotional_state: {entry: Curious, exit: Oriented}
+        shared_artifacts: [refinement_term, next_refinement_date]
+        failure_modes:
+          - No refinement states - tab disabled; editors pointed to Settings, readers told a Team admin must act
+          - No cadence - list and votes shown, no number, hint to set the cadence (D29)
+        gherkin: |
+          Scenario: The next Refinement date follows the cadence
+            Given Team Gravity refines on Thursdays every week and today is Friday 2 October 2026
+            When Priya opens the Refinement tab
+            Then it reads "Next Refinement: Thu 8 Oct"
+      - id: 3
+        name: Read the verdict
+        action: "Verdict below / in / above range; 'stop refining' as loud as 'refine more'"
+        emotional_state: {entry: Oriented, exit: Restrained}
+        shared_artifacts: [ready_count, need_band, next_refinement_date]
+        failure_modes:
+          - Too little {throughput} history - existing minimum-data guard message
+          - Band too wide to act on with real data (slice 05 hypothesis)
+        gherkin: |
+          Scenario: Above range says stop as loudly as refine more
+            Given Team Gravity has 11 ready Work Items and a range of 5-8 before Thu 8 Oct
+            When Priya opens the Refinement tab
+            Then she reads "Stop refining" in the same place and style as the below-range message
+      - id: 4
+        name: Pick the next ones
+        action: "List in backlog order; first N (N = high end) highlighted; line 'enough for Thu 8 Oct'"
+        emotional_state: {entry: Restrained, exit: Decided}
+        shared_artifacts: [need_band, refinement_list_order]
+        failure_modes:
+          - Fewer Work Items in refinement than the high end - said at the line
+        gherkin: |
+          Scenario: The line marks the Work Items needed before the next Refinement
+            Given the range before Thu 8 Oct is 5-8
+            When Marco opens the Refinement tab
+            Then the first 8 Work Items in backlog order are highlighted and a line reads "enough for Thu 8 Oct"
 
-  - name: size-work-items-against-the-sle-async-first
+  - name: size-work-items-against-the-sle-any-time
     goal: >
-      Team members say, per {work item}, whether it is doable within the {team}'s {sle}
-      (Yes / Yes, but... / No) and why, ahead of the meeting, so the session discusses only the
-      {work items} someone doubts.
-    persona: "flow-coach (facilitates); team member (votes - candidate persona team-member-voter)"
+      Team members say, per {work item}, whether it is doable within the {team}'s {sle} (Yes / Yes, but... /
+      No, with a comment), whenever they have a moment, so the {refinement} discusses only the {work items}
+      someone doubts. Votes are always open (DD-1); nobody is pushed (D21).
+    persona: "team-member-voter (votes); flow-coach (reads readiness, facilitates; presenter mode later)"
     jobs:
-      - job-flow-coach-shorten-refinement  # proposed, not yet in the persona file
+      - job-team-member-give-sizing-view
+      - job-flow-coach-refine-just-enough
     emotional_arc:
-      start: Weary - "Another hour going through every ticket."
-      middle: Focused - "Eight are green, two have a 'Yes, but' and one is a No."
-      end: Relieved - "We talked about three {work items} and sliced one."
+      start: Interrupted - "Another hour going through every ticket."
+      middle: Quick - "Three clicks; Yes on two, 'Yes, but...' on one with the condition."
+      end: Heard - "We talked about the one with a No, and sliced it."
     steps:
-      - {id: 1, name: Open or join a session, action: "Hosted link/code with deadline (async), facilitator-driven (live remote), or one shared screen (in person / standalone)"}
-      - {id: 2, name: Vote, action: "Doable within {sle} days? Yes / Yes, but... (state the condition) / No; comment"}
-      - {id: 3, name: Review, action: "Overview: ready (meets the readiness rule) vs needs discussion"}
-      - {id: 4, name: Discuss only the doubted, action: "Slice, check conditions, or accept"}
-    failure_modes:
-      - "{team} has no {sle} - behaviour undecided (open Q1; 85th percentile fallback proposed)"
-      - Auth off - every caller is one subject; voter names self-declared or per-browser
-      - Hosted voter without an account cannot reach the authorised push channel
-      - Too few voters for the readiness rule - stays "needs discussion"
+      - id: 1
+        name: See the yardstick
+        action: "Refinement tab header: 'Doable within 7 days? (our SLE, 85%)' or the labelled fallback"
+        emotional_state: {entry: Unsure what fits means, exit: Same number as everyone}
+        shared_artifacts: [sle_yardstick]
+        failure_modes:
+          - No SLE - 85th percentile of the default {cycle time}, labelled, with a hint
+          - No SLE and no finished {work items} - question without a number, hint says why
+        gherkin: |
+          Scenario: Without an SLE the fallback is shown and named as a fallback
+            Given Team Meridian has no SLE and its default cycle time's 85th percentile is 12 days
+            Then the question reads "Doable within 12 days?" with a hint to set an SLE
+      - id: 2
+        name: Vote
+        action: "On any Work Item in refinement, from the tab or the CLI/MCP (DD-19): Yes / Yes, but... (condition) / No; comment optional; auth off -> self-declared name (once per browser, required on the client)"
+        emotional_state: {entry: Interrupted, exit: Quick}
+        shared_artifacts: [voter_identity, vote_log]
+        failure_modes:
+          - Auth off - identity is a self-declared per-browser name, shown not verified
+          - Auth on without Team read - no tab, 403 on the API
+          - Others' split hidden until own vote (anchoring)
+        gherkin: |
+          Scenario: A reader votes in seconds without an account on a Community instance
+            Given authentication is off and Jonas has never voted from this browser
+            When Jonas chooses Yes on GR-073 and enters the name "Jonas Weber"
+            Then GR-073 shows 1 vote and the name is remembered for his next vote
+      - id: 3
+        name: See what is ready
+        action: "Per row: Ready / 'n more Yes needed' / 'Needs discussion'; ready count feeds the verdict"
+        emotional_state: {entry: Quick, exit: Heard}
+        shared_artifacts: [readiness_setting, ready_count]
+        failure_modes:
+          - Too few voters - stays "n more needed"; raised in the Team's own rituals (pull, D21)
+          - A Ready rule matches - the rule decides, votes do not (DD-5)
+        gherkin: |
+          Scenario: Enough Yes votes make a Work Item Ready and move the verdict
+            Given readiness needs 3 Yes (the default) and GR-073 has Yes from Jonas and Mo and "Yes, but..." from Ana
+            When Priya opens the Refinement tab
+            Then GR-073 is Ready and counted in the ready total
+      - id: 4
+        name: Discuss only the doubted (live, later)
+        action: "Presenter mode on one shared screen, one Work Item at a time, skipping Ready ones; only the facilitator's own vote/comment is saved (E4, DD-20)"
+        emotional_state: {entry: Focused, exit: Relieved}
+        shared_artifacts: [vote_log]
+        failure_modes:
+          - Remote participants need a push channel - spike first (X4, R5)
+        gherkin: |
+          Scenario: The room walks only the Work Items that are not Ready
+            Given GR-073 is Ready and GR-051 and GR-054 are not
+            When Priya starts presenter mode for Team Gravity
+            Then it shows GR-051, then GR-054, and skips GR-073, and Priya can save only her own vote or a comment
+
+shared_artifacts:
+  refinement_states: {source: "Team setting (Settings -> Refinement), subset of mapped ToDoStates/DoingStates", consumers: [list, ready count, need number]}
+  refinement_stage: {source: "stage per refinement state + optional stage rules (WorkItemRuleSet)", consumers: [list Stage column, ready count]}
+  refinement_cadence: {source: "Team setting - weekdays + every N weeks + starting week", consumers: [next_refinement_date]}
+  next_refinement_date: {source: "derived from refinement_cadence, instance time zone (DD-6)", consumers: [tab header, verdict sentence, enough-for line, CLI/MCP]}
+  band_percentiles: {source: "Team setting, default 50/85 (DD-2)", consumers: [need_band]}
+  need_band: {source: "ForecastService.HowMany over Team Throughput until next_refinement_date", consumers: [verdict, enough-for line, CLI/MCP]}
+  ready_count: {source: "DD-5 resolution - stage rule, then state stage, then votes meeting readiness", consumers: [verdict, CLI/MCP]}
+  refinement_list_order: {source: "same backlog-order comparer the Team's forecasts use", consumers: [list, enough-for line]}
+  sle_yardstick: {source: "Team SLE, else 85th percentile of the default cycle time (D7, D24)", consumers: [vote question]}
+  voter_identity: {source: "auth on - session account; auth off - self-declared name per browser (DD-10)", consumers: [vote log, hidden split]}
+  vote_log: {source: "append-only vote/comment/revocation entries (DD-9)", consumers: [tally, readiness, log view, presenter mode]}
+  readiness_setting: {source: "Team setting - min Yes >= 1 (default 3), min voters (default 3, never below min Yes), optional veto (default off) (DD-7, DD-21)", consumers: [row status, ready_count]}
+  refinement_term: {source: "Terminology key 'refinement' (seeded 'Refinement', D26)", consumers: [tab, headings, tooltips, hints, docs]}
 
 changelog:
   - date: 2026-10-02
     feature: epic-5510-5881-refinement
     change: Seeded in DISCOVER (light) with two hypothesis journeys.
+  - date: 2026-10-02
+    feature: epic-5510-5881-refinement
+    change: >
+      DISCUSS - jobs re-pointed to job-flow-coach-refine-just-enough and the new job-team-member-give-sizing-view;
+      "replenishment" replaced by the configurable {refinement}; async session links, codes and deadlines removed
+      (D14, D21, DD-1 votes always open); steps carry emotional states, failure modes and embedded Gherkin; shared
+      artifacts registered with their single source.
+  - date: 2026-10-02
+    feature: epic-5510-5881-refinement
+    change: >
+      DISCUSS, maintainer answers - readiness default 3 Yes (DD-21); clients may vote (DD-19); presenter mode saves
+      only the facilitator's own vote or comment (DD-20).

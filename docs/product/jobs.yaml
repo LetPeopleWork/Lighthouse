@@ -7774,10 +7774,12 @@ jobs:
       supplied, and no more.
     dimensions:
       functional: >
-        A count of Work Items needed before the next replenishment, with a lower AND an upper bound,
-        computed from the rate Work Items actually leave refinement (so Work Items that never pass through
-        refinement do not inflate it); and, only when below range, a Yes / Yes, but... / No view per
-        candidate against the Team SLE (fallback: 85th percentile of the default cycle time, with a hint).
+        A count of Work Items needed before the next Refinement, with a lower AND an upper bound,
+        computed with the existing HowMany Monte Carlo over total Team Throughput (D20, DISCUSS correction
+        2026-10-02 - the "rate leaving refinement" basis was withdrawn); and a Yes / Yes, but... / No view
+        per Work Item against the Team SLE (fallback: 85th percentile of the default cycle time, with a
+        hint), open on every Work Item in refinement at any time (DISCUSS DD-1, 2026-10-02 - no longer
+        only when below range).
       emotional: >
         From weary guessing ("refine ten more, just in case") to restrained confidence ("we discussed
         three, and we stop here - we are at the top of the range").
@@ -7809,3 +7811,46 @@ jobs:
         registration, a 60+ comment backlog thread), but zero interviews with Lighthouse users, so not 5.
         Satisfaction 2 - poker tools serve the triage end with points, not SLE fit, and nothing serves the
         stop end. Gap 2, held there until R3/R4 evidence exists.
+
+  - id: job-team-member-give-sizing-view
+    title: Give a sizing view on a Work Item in seconds, from where I already am
+    persona: team-member-voter
+    feature_context: epic-5510-5881-refinement
+    created: 2026-10-02
+    note: >
+      NEW in DISCUSS of epic-5510-5881-refinement (ADO #5510 Sizing Poker). Changelog: created 2026-10-02 from
+      the candidate voter job in diverge/job-analysis.md section 3, which DIVERGE recommended turning into a
+      persona (DV-7). Distinct from job-flow-coach-refine-just-enough because its success measure is the cost
+      per vote and where the ask reaches the voter, not the meeting length or the ready-queue size. Votes are
+      pull-based (D21) and always open (DD-1). On Community the voter has no account (auth off, self-declared
+      name per browser). Scores are desk estimates, not survey data.
+    job_story: >
+      When I am asked whether a Work Item fits our SLE,
+      I want to give my view in seconds, from where I already am,
+      so I don't have to sit through discussion of Work Items I have no doubt about.
+    dimensions:
+      functional: >
+        Yes / Yes, but... / No against the Team SLE (or its labelled fallback), with an optional comment
+        that carries the condition, on any Work Item in refinement, at any time, in at most two
+        interactions once my name is known.
+      emotional: >
+        From interrupted ("another hour on tickets I don't doubt") to heard ("my 'Yes, but...' says why").
+      social: >
+        I can raise a doubt without being anchored by the first estimate or talked over in the room.
+    forces:
+      push: >
+        Refinement meetings walk every Work Item top-down; poker tools ask for points, not SLE fit.
+      pull: >
+        Lighthouse already shows the Team's Work Items and SLE; a vote needs no copy-paste.
+      anxiety: >
+        Will anyone read my vote before the meeting, or will it be repeated there anyway?
+      habit: >
+        Giving views only when asked, in the meeting.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance 4 - O5 (time to give a sizing view) scored 13 in DIVERGE as a desk estimate. Satisfaction 2
+        - async poker tools exist but push into inboxes Lighthouse does not have, and none uses SLE fit with
+        the Team's real Work Items. Gap 2 until K4 (votes outside Refinement days) shows usage.
