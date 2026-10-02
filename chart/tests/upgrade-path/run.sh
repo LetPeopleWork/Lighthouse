@@ -506,6 +506,47 @@ upgrade_again_after_rollback_starts_afresh() {
   assert_marker_row "$ns"
   wait_api_ready "$ns"
 }
+pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
+  local ns="$UPGRADED_NS" log warning
+  given_upgraded
+  psql_in "$ns" "CREATE TABLE upgrade_path_before_pin (marker text);
+                 INSERT INTO upgrade_path_before_pin VALUES ('$MARKER')" >/dev/null
+
+  helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set postgresql.image=postgres:17-trixie >/dev/null
+  echo "  pinned to Postgres 17 at revision $(current_revision "$ns")"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  assert_data_directory "$ns" pgdata
+  assert_marker_row "$ns"
+  [[ "$(table_count "$ns" upgrade_path_before_pin)" == "0" ]] \
+    || fail "the row written on Postgres 18 in $ns is there after pinning to Postgres 17"
+  log="$(kubectl -n "$ns" logs "$POSTGRES_POD" --all-containers)"
+  warning="$(grep -F -- "newer Postgres 18 copy" <<<"$log" || true)"
+  [[ -n "$warning" && "$(wc -l <<<"$warning")" == "1" ]] \
+    || { dump_diagnostics "$ns"; fail "the database log in $ns does not carry exactly one warning about the newer copy"; }
+  echo "  $warning"
+  if ! grep -qF "not in this database" <<<"$warning" || ! grep -qF "redoes the upgrade from this copy" <<<"$warning"; then
+    fail "the warning in $ns does not say what is missing and what removing the pin does: $warning"
+  fi
+  wait_api_ready "$ns"
+  psql_in "$ns" "CREATE TABLE upgrade_path_during_pin (marker text);
+                 INSERT INTO upgrade_path_during_pin VALUES ('$MARKER')" >/dev/null
+
+  upgrade_to_new_chart "$ns"
+  echo "  pin removed at revision $(current_revision "$ns")"
+
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 18
+  assert_upgrade_log_says "$ns" "out of date"
+  [[ "$(psql_in "$ns" "SELECT count(*) FROM upgrade_path_during_pin WHERE marker = '$MARKER'")" == "1" ]] \
+    || fail "the row written on Postgres 17 during the pin in $ns did not reach Postgres 18"
+  [[ "$(table_count "$ns" upgrade_path_before_pin)" == "0" ]] \
+    || fail "the row written on Postgres 18 before the pin in $ns came back"
+  assert_marker_row "$ns"
+  wait_api_ready "$ns"
+}
+
 reuse_values_stays_on_17_and_says_so() { scaffold "Reusing the previous values keeps the database on 17 and says how to move it"; }
 
 upgrade_with_reset_then_reuse_values_keeps_every_row() {
@@ -571,6 +612,7 @@ readonly HAPPY=(
   upgrade_again_after_rollback_starts_afresh
   upgrade_with_reset_then_reuse_values_keeps_every_row
   upgrade_by_rendered_manifests_keeps_every_row
+  pin_back_after_upgrade_starts_on_kept_copy_and_warns
 )
 
 readonly REFUSALS=(

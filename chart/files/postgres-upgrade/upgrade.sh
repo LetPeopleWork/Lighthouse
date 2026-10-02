@@ -188,8 +188,18 @@ upgraded_copy_is_current() {
   grep -qx "source_pg_control_sha256=$hash" "$note"
 }
 
+# The major of the copy an upgrade made from this image's major, when that copy is the only one on the
+# volume: the image was moved back after an upgrade.
+newer_copy_major() {
+  local copies="$1"
+  if [[ "$copies" =~ ^pgdata-([0-9]+)$ && "${BASH_REMATCH[1]}" -gt "$MAJOR" ]] \
+    && grep -qx "source_major=$MAJOR" "$MOUNT/$copies/.lighthouse-upgrade" 2>/dev/null; then
+    echo "${BASH_REMATCH[1]}"
+  fi
+}
+
 main() {
-  local data copies
+  local data copies newer
   data="$(data_major)"
   copies="$(other_copies)"
 
@@ -209,6 +219,11 @@ main() {
   elif [[ "$data" =~ ^[0-9]+$ && "$data" -eq $((MAJOR - 1)) && -z "$copies" ]]; then
     upgrade "$data"
     start_on "$NEW"
+  elif [[ "$data" == "$MAJOR" && ! -e "$PARTIAL" ]] && newer="$(newer_copy_major "$copies")" && [[ -n "$newer" ]]; then
+    # The newer copy is left where it is. Once this major has run, pgdata no longer matches the note in
+    # that copy, so moving the image forward again redoes the upgrade from pgdata.
+    say "warning: starting Postgres $MAJOR on pgdata, but a newer Postgres $newer copy of this database exists in pgdata-$newer; what was written on that copy is not in this database, and removing the pin on postgresql.image redoes the upgrade from this copy, so those writes do not come back"
+    start_on "$OLD"
   else
     refuse "refusing to start Postgres $MAJOR: found $(describe_volume "$data" "$copies"), which this chart cannot start on or upgrade by itself. Nothing was changed"
   fi

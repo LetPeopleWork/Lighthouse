@@ -199,7 +199,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And it gives one command that removes the old copy
     And it says that after that command a rollback to the previous chart is no longer possible
 
-  @US-02 @AC-2.5 @edge @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change @pending
+  @US-02 @AC-2.5 @edge @real-io @env:kind-after-rollback @slice-01 @contract-shape:bounded-change
   Scenario: Pinning the image back after an upgrade starts on the kept copy and says what is missing
     Given Lighthouse was upgraded from chart 0.1.17 to the new chart and runs on Postgres 18
     And a row was written on Postgres 18 after the upgrade
