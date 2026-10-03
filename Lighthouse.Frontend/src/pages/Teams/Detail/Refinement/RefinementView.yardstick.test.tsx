@@ -190,7 +190,7 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		[
 			SLE_75_WITHIN_7,
 			"Doable within 7 days?",
