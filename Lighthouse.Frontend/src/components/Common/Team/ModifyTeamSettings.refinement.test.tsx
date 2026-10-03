@@ -147,15 +147,16 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(
 			await screen.findByRole("heading", { name: "Refinement" }),
 		).toBeVisible();
-		expect(
-			screen.getByRole("checkbox", { name: "Backlog (To Do)" }),
-		).toBeVisible();
-		expect(
-			screen.getByRole("checkbox", { name: "Next (Doing)" }),
-		).toBeVisible();
-		expect(
-			screen.getByRole("checkbox", { name: "Analysing (Doing)" }),
-		).toBeVisible();
+		for (const option of [
+			"Backlog (To Do)",
+			"Next (Doing)",
+			"Analysing (Doing)",
+		]) {
+			expect(
+				screen.getByRole("checkbox", { name: option }),
+			).toBeInTheDocument();
+			expect(screen.getByText(option)).toBeVisible();
+		}
 		expect(screen.queryByRole("checkbox", { name: /^Done/ })).toBeNull();
 	});
 
@@ -218,7 +219,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip("flags a chosen state the Team no longer maps", async () => {
+	it("flags a chosen state the Team no longer maps", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings(
 				{
@@ -240,7 +241,7 @@ describe("The Refinement section of a Team's settings", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// Never silently dropped: the next edit to the section still carries the flagged state.
-	it.skip("keeps a flagged state chosen when another state is ticked", async () => {
+	it("keeps a flagged state chosen when another state is ticked", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings(
 				{
@@ -263,7 +264,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-02 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip("says the Team's own word for Refinement as the section's title and in the flag", async () => {
+	it("says the Team's own word for Refinement as the section's title and in the flag", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
