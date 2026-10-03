@@ -70,9 +70,11 @@ spec:
               mountPath: /lighthouse-postgres
             - name: upgrade-decision
               mountPath: /decision
+          # Over TCP, as Lighthouse connects: while the image sets up an empty database, a temporary server
+          # listens on the Unix socket alone and stops again moments later.
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", {{ .Values.postgresql.auth.username | quote }}, "-d", {{ .Values.postgresql.auth.database | quote }}]
+              command: ["pg_isready", "-h", "127.0.0.1", "-U", {{ .Values.postgresql.auth.username | quote }}, "-d", {{ .Values.postgresql.auth.database | quote }}]
             periodSeconds: 10
           livenessProbe:
             exec:

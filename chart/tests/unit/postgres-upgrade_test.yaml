@@ -127,8 +127,8 @@ tests:
           count: 0
 
   # --- what a rollback to chart 0.1.17 relies on stays as it was ---------------------------------
-  # Chart 0.1.17 finds its data through this claim, this mount path and these checks. These pass on
-  # today's templates and are left running, so the upgrade work cannot move them unnoticed.
+  # Chart 0.1.17 finds its data through this claim and this mount path, and is kept alive by this check.
+  # These are left running, so the upgrade work cannot move them unnoticed.
 
   - it: the database keeps the volume claim and size of chart 0.1.17
     template: templates/postgres-statefulset.yaml
@@ -152,12 +152,14 @@ tests:
             name: data
             mountPath: /var/lib/postgresql/data
 
-  - it: the database keeps the readiness and liveness checks of chart 0.1.17
+  # While the official image sets up an empty database, a temporary server listens on the Unix socket alone,
+  # so a socket check would call the database ready before Lighthouse, which connects over TCP, can reach it.
+  - it: the database is ready once it accepts connections over TCP, and keeps the liveness check of chart 0.1.17
     template: templates/postgres-statefulset.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.exec.command
-          value: ["pg_isready", "-U", "lighthouse", "-d", "lighthouse"]
+          value: ["pg_isready", "-h", "127.0.0.1", "-U", "lighthouse", "-d", "lighthouse"]
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.exec.command
           value: ["pg_isready", "-U", "lighthouse", "-d", "lighthouse"]
