@@ -353,6 +353,9 @@ readonly FRESH_NS="fresh-install"
 # upgraded, the Helm revision of the upgrade, and whether the fresh install exists. A scenario run on its
 # own finds none of them and makes its Given itself. The new chart may still carry the old chart's version
 # number, so the upgrade's revision is recorded rather than looked up by chart name.
+#
+# A Given runs its scenario inside an if, never on the right of ||: bash ignores set -e in a function called
+# there, so every check in that scenario that relies on it would pass whatever happened.
 declare -A RECORDED_COUNTS=()
 BEFORE_REVISION=""
 UPGRADE_REVISION=""
@@ -360,20 +363,24 @@ ROLLED_BACK=""
 FRESH_INSTALLED=""
 
 given_upgraded() {
-  [[ -n "${RECORDED_COUNTS[$UPGRADED_NS]:-}" ]] || upgrade_plain_helm_upgrade_keeps_every_row
+  if [[ -z "${RECORDED_COUNTS[$UPGRADED_NS]:-}" ]]; then upgrade_plain_helm_upgrade_keeps_every_row; fi
 }
 
 given_rolled_back() {
-  [[ -n "$ROLLED_BACK" ]] || rollback_starts_17_on_pre_upgrade_data
+  if [[ -z "$ROLLED_BACK" ]]; then rollback_starts_17_on_pre_upgrade_data; fi
 }
 
 given_fresh_install() {
-  [[ -n "$FRESH_INSTALLED" ]] || fresh_install_starts_18_without_upgrading
+  if [[ -z "$FRESH_INSTALLED" ]]; then fresh_install_starts_18_without_upgrading; fi
 }
 
+# The field at jsonpath $2 of the database pod, empty while there is no pod or the field is not set. Any
+# other failure to read it fails, so a check that wants the field empty cannot pass because kubectl failed.
 pod_field() {
-  local ns="$1" path="$2"
-  kubectl -n "$ns" get pod "$POSTGRES_POD" -o jsonpath="$path" 2>/dev/null || true
+  local ns="$1" path="$2" value
+  value="$(kubectl -n "$ns" get pod "$POSTGRES_POD" --ignore-not-found -o jsonpath="$path")" \
+    || fail "could not read $path of $POSTGRES_POD in $ns"
+  echo "$value"
 }
 
 pod_uid() {
@@ -381,8 +388,16 @@ pod_uid() {
 }
 
 assert_not_ready() {
-  local ns="$1" message="$2"
-  [[ "$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" != "True" ]] || fail "$message"
+  local ns="$1" message="$2" ready
+  ready="$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" || fail "$message: its state could not be read"
+  [[ "$ready" != "True" ]] || fail "$message"
+}
+
+# Fails when Postgres has started in the database pod of $1 while the upgrade step should still be copying.
+assert_postgres_not_started() {
+  local ns="$1" started
+  started="$(postgres_started_at "$ns")" || fail "whether Postgres started in $ns could not be read"
+  [[ -z "$started" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
 }
 
 stop_database() {
@@ -468,7 +483,7 @@ close_kept_copy() {
   kubectl -n "$1" delete pod kept-copy --wait >/dev/null
 }
 
-# --- group: happy (slice 01), in the order the scenarios chain ----------------------------------------
+# --- group: happy, in the order the scenarios chain ---------------------------------------------------
 
 fresh_install_starts_18_without_upgrading() {
   local ns="$FRESH_NS"
@@ -683,7 +698,7 @@ upgrade_by_rendered_manifests_keeps_every_row() {
   assert_upgrade_note "$ns"
 }
 
-# --- group: refusals (slices 01 and 02) ---------------------------------------------------------------
+# --- group: refusals ------------------------------------------------------------------------------------
 
 upgrade_after_unclean_stop_keeps_every_row() {
   local ns="unclean-stop" counts
@@ -858,7 +873,7 @@ too_little_room_refuses_and_touches_nothing() {
 }
 
 given_refused_for_room() {
-  [[ -n "$SMALL_COUNTS" ]] || too_little_room_refuses_and_touches_nothing
+  if [[ -z "$SMALL_COUNTS" ]]; then too_little_room_refuses_and_touches_nothing; fi
 }
 
 grown_volume_lets_refused_upgrade_proceed() {
@@ -924,7 +939,7 @@ two_majors_behind_refuses_and_touches_nothing() {
 
 pinning_to_data_major_starts_without_other_step() {
   local ns="$DATA16_NS" old_uid
-  [[ -n "$DATA16_REFUSED" ]] || two_majors_behind_refuses_and_touches_nothing
+  if [[ -z "$DATA16_REFUSED" ]]; then two_majors_behind_refuses_and_touches_nothing; fi
   old_uid="$(pod_uid "$ns")"
 
   upgrade_to_new_chart "$ns" --set postgresql.image=postgres:16
@@ -991,7 +1006,7 @@ finish_old_copy_removal_as_documented() {
 }
 
 given_old_copy_removed() {
-  [[ -n "$CLEANED_COUNTS" ]] || cleanup_then_rollback_refuses_empty_database
+  if [[ -z "$CLEANED_COUNTS" ]]; then cleanup_then_rollback_refuses_empty_database; fi
 }
 
 postgres_restarts() {
@@ -1098,14 +1113,15 @@ wait_copy_started() {
 }
 
 interrupted_upgrade_is_redone_from_start() {
-  local ns="interrupted-upgrade" counts old_uid log
+  local ns="interrupted-upgrade" counts old_uid log copying
   install_with_data "$ns"
   seed_bulk_data "$ns"
   counts="$(public_row_counts "$ns")"
 
   upgrade_to_new_chart "$ns"
-  echo "  mid-copy: $(wait_copy_started "$ns")"
-  [[ -z "$(postgres_started_at "$ns")" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
+  copying="$(wait_copy_started "$ns")"
+  echo "  mid-copy: $copying"
+  assert_postgres_not_started "$ns"
   old_uid="$(pod_uid "$ns")"
   # Frozen first, so the copy stays unfinished however long the delete takes; the short grace period then
   # ends the frozen step at once, as a node going down would.
@@ -1178,7 +1194,7 @@ interrupted_cleanup_never_costs_upgraded_copy() {
   assert_marker_row "$ns"
 }
 
-# --- group: chain (slice 03), in the order the scenarios build on each other ---------------------------
+# --- group: chain, in the order the scenarios build on each other --------------------------------------
 # A Postgres 16 volume upgraded to 17 by the new chart pinned to 17, then to 18 by the chart's defaults,
 # because no Postgres 19 image exists yet.
 
@@ -1196,15 +1212,15 @@ CHAIN_REVISION_ON_17=""
 CHAIN_COUNTS_ON_17=""
 
 given_chain_upgraded_once() {
-  [[ -n "$CHAIN_UPGRADED_ONCE" ]] || chain_first_upgrade_removes_nothing
+  if [[ -z "$CHAIN_UPGRADED_ONCE" ]]; then chain_first_upgrade_removes_nothing; fi
 }
 
 given_chain_upgraded_twice() {
-  [[ -n "$CHAIN_UPGRADED_TWICE" ]] || chain_second_upgrade_keeps_every_row
+  if [[ -z "$CHAIN_UPGRADED_TWICE" ]]; then chain_second_upgrade_keeps_every_row; fi
 }
 
 given_chain_rolled_back_one_chart() {
-  [[ -n "$CHAIN_ROLLED_BACK_ONE_CHART" ]] || chain_rollback_one_chart_starts_previous_major_and_warns
+  if [[ -z "$CHAIN_ROLLED_BACK_ONE_CHART" ]]; then chain_rollback_one_chart_starts_previous_major_and_warns; fi
 }
 
 forget_chain_volume() {
@@ -1241,8 +1257,9 @@ assert_note_names_source() {
 }
 
 assert_nothing_removed() {
-  local ns="$1" removals
-  removals="$(upgrade_log "$ns" | grep '^lighthouse-postgres:' | grep -i 'remov' || true)"
+  local ns="$1" log removals
+  log="$(upgrade_log "$ns")" || fail "the upgrade log in $ns could not be read"
+  removals="$(grep '^lighthouse-postgres:' <<<"$log" | grep -i 'remov' || true)"
   [[ -z "$removals" ]] || fail "the upgrade log in $ns speaks of removing a copy: $removals"
 }
 
@@ -1330,11 +1347,12 @@ chain_second_upgrade_keeps_every_row() {
 # The kept copy is opened while the database runs on pgdata-18: nothing runs on pgdata-17, and the copy is
 # taken from a read-only mount.
 chain_second_upgrade_removes_copy_before_last() {
-  local ns="$CHAIN_NS"
+  local ns="$CHAIN_NS" line
   given_chain_upgraded_twice
 
   assert_two_copies_beside_placeholder "$ns"
-  echo "  $(removal_line "$ns")"
+  line="$(removal_line "$ns")"
+  echo "  $line"
   open_kept_copy "$ns" postgres:17-trixie pgdata-17
   [[ "$(public_row_counts "$ns" kept-copy)" == "$CHAIN_COUNTS_ON_17" ]] \
     || fail "the kept Postgres 17 copy in $ns no longer holds the rows it had before the second upgrade"
@@ -1541,7 +1559,7 @@ assert_started_without_upgrading() {
 # the second upgrade left is in pgdata, and pgdata-17 has lost PG_VERSION, its first file to go. A start does
 # not finish what only the cleanup takes, so pgdata-17 is still there until the cleanup runs again.
 chain_cut_off_cleanup_is_finished_by_running_again() {
-  local ns="$CHAIN_NS" counts
+  local ns="$CHAIN_NS" counts output
   given_chain_upgraded_twice
   counts="$(public_row_counts "$ns")"
   in_postgres "$ns" test -e "$MOUNT/pgdata/UPGRADED-TO-18-see-kubernetes-docs" \
@@ -1560,7 +1578,8 @@ chain_cut_off_cleanup_is_finished_by_running_again() {
   [[ "$(volume_entries "$ns" | tr '\n' ' ')" == "pgdata pgdata-17 pgdata-18 " ]] \
     || fail "the start after the cut-off cleanup in $ns left $(volume_entries "$ns" | tr '\n' ' ')rather than the half-removed pgdata-17 for the cleanup"
 
-  echo "  $(remove_old_copy_as_documented "$ns")"
+  output="$(remove_old_copy_as_documented "$ns")"
+  echo "  $output"
   assert_placeholder_beside "$ns" UPGRADED-TO-18-see-kubernetes-docs pgdata-18
 }
 
@@ -1615,7 +1634,7 @@ finishing_line() {
 }
 
 chain_interrupted_removal_is_finished_by_next_start() {
-  local ns="chain-interrupted-removal" counts entries
+  local ns="chain-interrupted-removal" counts entries line
   upgrade_16_to_17_in "$ns" seed_bulk_data
   write_marker_table "$ns" upgrade_path_written_on_17
   counts="$(public_row_counts "$ns")"
@@ -1635,7 +1654,8 @@ chain_interrupted_removal_is_finished_by_next_start() {
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
   assert_started_without_upgrading "$ns" "the cut-off removal"
-  echo "  $(finishing_line "$ns")"
+  line="$(finishing_line "$ns")"
+  echo "  $line"
   assert_two_copies_beside_placeholder "$ns"
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$counts"
@@ -1645,7 +1665,7 @@ chain_interrupted_removal_is_finished_by_next_start() {
 # The database is held at no replicas while the frozen pod goes, so the volume can be read as the
 # interrupted upgrade left it before the next start redoes the upgrade.
 chain_interrupted_second_upgrade_removes_nothing() {
-  local ns="chain-interrupted-copy" counts_on_16 counts entries log finished removed
+  local ns="chain-interrupted-copy" counts_on_16 counts entries log finished removed copying
   install_with_data "$ns" --set postgresql.image=postgres:16-trixie
   seed_bulk_data "$ns"
   counts_on_16="$(public_row_counts "$ns")"
@@ -1656,8 +1676,9 @@ chain_interrupted_second_upgrade_removes_nothing() {
   counts="$(public_row_counts "$ns")"
 
   upgrade_to_new_chart "$ns" --reset-values
-  echo "  mid-copy: $(wait_copy_started "$ns")"
-  [[ -z "$(postgres_started_at "$ns")" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
+  copying="$(wait_copy_started "$ns")"
+  echo "  mid-copy: $copying"
+  assert_postgres_not_started "$ns"
   freeze_upgrade_step "$ns"
   kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --grace-period=1 --wait >/dev/null
@@ -1742,9 +1763,10 @@ chain_too_little_room_names_cleanup_and_touches_nothing() {
 }
 
 chain_cleaned_volume_moves_on_and_removes_nothing() {
-  local ns="chain-cleaned" counts
+  local ns="chain-cleaned" counts output
   upgrade_16_to_17_in "$ns"
-  echo "  $(remove_old_copy_as_documented "$ns")"
+  output="$(remove_old_copy_as_documented "$ns")"
+  echo "  $output"
   assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17
   counts="$(public_row_counts "$ns")"
 
@@ -1887,7 +1909,7 @@ chain_cleanup_finishes_started_removal_past_unreadable_copy() {
 # failed cleanup, so the pod they started it in is still there.
 chain_cleanup_refuses_past_unreadable_copy_not_started() {
   local ns="chain-unreadable-original" commands output status=0 line
-  kubectl get namespace "$ns" >/dev/null 2>&1 || chain_unfollowable_chain_is_refused_once_by_upgrade_step
+  if ! kubectl get namespace "$ns" >/dev/null 2>&1; then chain_unfollowable_chain_is_refused_once_by_upgrade_step; fi
   stop_database "$ns"
   FINGERPRINT="$(volume_fingerprint "$ns")"
   commands="$(stopped_database_cleanup_as_documented)"
@@ -1966,7 +1988,8 @@ chain_unremovable_leftover_never_stops_the_start() {
   restart_database "$ns"
   wait_postgres_ready "$ns"
   assert_data_directory "$ns" pgdata-18
-  echo "  $(finishing_line "$ns")"
+  line="$(finishing_line "$ns")"
+  echo "  $line"
   assert_two_copies_beside_placeholder "$ns"
 }
 
@@ -2119,16 +2142,17 @@ main() {
 
   preload_images "$cluster" "$group"
 
-  local scenario index
+  local scenario index started
   for scenario in "${scenarios[@]}"; do
     declare -F "$scenario" >/dev/null || fail "unknown scenario $scenario"
   done
   for index in "${!scenarios[@]}"; do
     scenario="${scenarios[$index]}"
+    started=$SECONDS
     echo "▶ $scenario"
     "$scenario"
     delete_namespaces_done_with "$scenario" "${scenarios[@]:index+1}"
-    echo "✓ $scenario"
+    echo "✓ $scenario ($((SECONDS - started)) s)"
   done
   return 0
 }
