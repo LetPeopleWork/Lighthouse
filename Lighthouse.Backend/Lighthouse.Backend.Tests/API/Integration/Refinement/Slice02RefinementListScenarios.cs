@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // @driving_port @real-io @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task The_coach_sees_every_Work_Item_in_refinement_in_backlog_order()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
@@ -112,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task An_empty_refinement_is_stated_not_answered_as_an_error()
         {
             var zenith = await GivenZenithRefinesInBacklogButHoldsNothingThere();
@@ -130,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:pure-function
         // The tab is disabled for such a Team, but an old link or a client can still ask.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_Team_nobody_set_up_answers_that_it_has_no_refinement_states_and_lists_nothing()
         {
             var zenith = GivenZenithWithNoRefinementStatesHoldingBacklogWork();
@@ -175,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         // Not even whether the Team exists is given away to somebody who cannot read it.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Somebody_without_a_role_on_the_Team_is_told_the_tab_does_not_exist()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
@@ -189,7 +185,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Asking_for_the_Refinement_tab_of_a_Team_that_does_not_exist_is_not_found()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();
@@ -204,7 +199,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         // Opening the tab is a read: it stores nothing, changes nothing and answers the same twice.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Opening_the_tab_changes_nothing_about_the_Team_or_its_Work_Items()
         {
             var gravity = await GivenGravityRefinesInBacklogAnalysingAndNextAndItsTrackerHoldsWorkInEveryState();

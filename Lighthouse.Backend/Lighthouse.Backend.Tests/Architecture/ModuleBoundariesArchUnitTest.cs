@@ -13,16 +13,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ServiceLayerPattern = @"^Lighthouse\.Backend\.Services($|\..*)";
         private const string SharedKernelPattern = @"^Lighthouse\.Backend\.Models($|\..*)";
 
-        private const string WorkTrackingIntegrationPattern =
+        internal const string WorkTrackingIntegrationPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)";
         private const string WorkItemsSyncPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)";
         private const string ForecastingPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)";
-        private const string PortfolioDeliveryPattern =
+        internal const string PortfolioDeliveryPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)";
         private const string RbacIdentityPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(Auth|Authorization|Licensing)($|\..*)";
+        internal const string RefinementPattern =
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
         private const string PlatformPersistencePattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth))($|\..*)";
 
@@ -42,6 +44,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly GivenTypesConjunctionWithDescription RbacIdentityModule =
             Types().That().ResideInNamespaceMatching(RbacIdentityPattern).As("RBAC/Identity");
+
+        private static readonly GivenTypesConjunctionWithDescription RefinementModule =
+            Types().That().ResideInNamespaceMatching(RefinementPattern).As("Refinement");
 
         private static readonly GivenTypesConjunctionWithDescription PlatformPersistenceModule =
             Types().That().ResideInNamespaceMatching(PlatformPersistencePattern).As("Platform/Persistence");
@@ -97,6 +102,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(PortfolioDeliveryModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RbacIdentityModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(PlatformPersistenceModule.GetObjects(Architecture), Is.Not.Empty);
+                Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
             }
         }
     }
