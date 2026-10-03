@@ -22,6 +22,7 @@ copy_major() {
   if [[ "$version" =~ ^[0-9]+$ ]] && [[ "$folder" == pgdata || "$folder" == "pgdata-$version" ]]; then
     echo "$version"
   fi
+  return $?
 }
 
 # One "folder major" line per copy, oldest major first. An unfinished or set-aside folder never counts.
@@ -36,6 +37,7 @@ copies() {
       fi
     fi
   done | sort -k2,2n
+  return $?
 }
 
 # Whether pgdata holds the note a removal of the old copy leaves behind.
@@ -52,11 +54,13 @@ has_placeholder() {
 # Empty when the control file of folder $1 is missing, empty or unreadable. Only a hash actually computed
 # may tie a newer copy to the one it was made from: an empty one matches no note.
 control_hash() {
-  local control="$MOUNT/$1/global/pg_control" hash=""
-  if [[ -n "$1" && -f "$control" && -s "$control" && -r "$control" ]]; then
+  local folder="$1"
+  local control="$MOUNT/$folder/global/pg_control" hash=""
+  if [[ -n "$folder" && -f "$control" && -s "$control" && -r "$control" ]]; then
     hash="$(sha256sum "$control" 2>/dev/null | cut -d' ' -f1)" || hash=""
   fi
   echo "$hash"
+  return
 }
 
 # The first copy of the chain, as "folder major": pgdata when it counts, otherwise, once a removal has
@@ -69,6 +73,7 @@ base() {
   elif has_placeholder; then
     copies | awk 'NR == 1'
   fi
+  return $?
 }
 
 # The copy made from folder $1 (major $2), when it is still current: it counts, and its note names this
@@ -82,6 +87,7 @@ next_link() {
     && grep -qx "source_pg_control_sha256=$hash" "$MOUNT/$next/$UPGRADE_NOTE" 2>/dev/null; then
     echo "$next"
   fi
+  return $?
 }
 
 # Every copy on the chain, as "folder major" lines from the base up.
@@ -97,16 +103,20 @@ chain() {
     major=$((major + 1))
     echo "$folder $major"
   done
+  return $?
 }
 
 # The copy the database last ran on, as "folder major"; nothing when the volume holds no chain.
 live_copy() {
   chain | tail -n 1
+  return $?
 }
 
 # The copies of a major above $1, as "folder major" lines, oldest first.
 copies_newer_than() {
-  copies | awk -v major="$1" '$2 > major'
+  local major="$1"
+  copies | awk -v major="$major" '$2 > major'
+  return $?
 }
 
 # Whether the copy the database last ran on can be upgraded to major $1: it is one major behind, Postgres can
@@ -119,16 +129,20 @@ live_copy_upgradable_to() {
   [[ -n "$major" && "$major" == "$((target - 1))" && -n "$(control_hash "$folder")" ]] || return 1
   [[ ! -e "$MOUNT/pgdata-$target" ]] \
     || [[ -f "$MOUNT/pgdata-$target/$UPGRADE_NOTE" && -n "$(copy_major "pgdata-$target")" ]]
+  return $?
 }
 
 # The folder on the chain that holds major $1, if any.
 copy_for_major() {
-  chain | awk -v major="$1" '$2 == major { print $1 }'
+  local major="$1"
+  chain | awk -v major="$major" '$2 == major { print $1 }'
+  return $?
 }
 
 # Whether pgdata holds anything besides the note a removal of the old copy leaves behind.
 pgdata_beyond_placeholder() {
   [[ -n "$(find "$MOUNT/pgdata" -mindepth 1 -maxdepth 1 ! -name 'UPGRADED-TO-*' -print -quit 2>/dev/null)" ]]
+  return $?
 }
 
 # The folders a removal with bound $1 takes, as "folder major" lines, oldest first. A pgdata-<K> goes
@@ -154,12 +168,13 @@ copies_older_than() {
       fi
     done
   } | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }'
+  return $?
 }
 
 # "folder (Postgres K)" for each "folder major" line of $1, or "what was left of folder" when the major can
 # no longer be told, joined by commas.
 copy_names() {
-  local folder major names=""
+  local lines="$1" folder major names=""
   while read -r folder major; do
     [[ -n "$folder" ]] || continue
     if [[ -n "$major" ]]; then
@@ -167,8 +182,9 @@ copy_names() {
     else
       names="${names:+$names, }what was left of $folder"
     fi
-  done <<<"$1"
+  done <<<"$lines"
   echo "$names"
+  return
 }
 
 # Whether a start on a copy of major $1 has a removal to finish: pgdata holds the placeholder and more, a
@@ -178,6 +194,7 @@ copy_names() {
 finishing_needed() {
   local live="$1"
   [[ -n "$(copies_older_than "$((live - 1))")" ]]
+  return $?
 }
 
 # Removes every copy older than major $1 and nothing else, for a database that runs on a copy of major $2.
@@ -208,4 +225,5 @@ remove_copies_older_than() {
     fi
     echo "$folder${major:+ $major}"
   done <<<"$targets"
+  return $?
 }

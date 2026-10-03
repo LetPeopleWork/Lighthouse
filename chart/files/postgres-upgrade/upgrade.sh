@@ -18,6 +18,7 @@ readonly STOPPED_CLEANUP_DOCS="$DOCS#removing-old-copies-while-the-database-is-s
 
 say() {
   echo "lighthouse-postgres: $*"
+  return
 }
 
 refuse() {
@@ -34,12 +35,14 @@ namespace_flag() {
   if [[ -r "$namespace_file" ]]; then
     echo " -n $(cat "$namespace_file")"
   fi
+  return $?
 }
 
 # Kubernetes does not replace a database pod whose start keeps being refused when the chart's values
 # change, so a fix made through values only takes effect once this pod is deleted.
 delete_pod_hint() {
   echo "then run kubectl delete pod$(namespace_flag) $HOSTNAME so it starts again with the new values"
+  return
 }
 
 # The programs this step runs sit where the official postgres images install them, and those images say
@@ -70,10 +73,13 @@ readonly COPY_HEADROOM_FIXED_KIB=$((64 * KIB_PER_MIB))
 
 as_postgres() {
   gosu postgres "$@"
+  return $?
 }
 
 start_on() {
-  printf '%s\n' "$1" >"$DECISION"
+  local directory="$1"
+  printf '%s\n' "$directory" >"$DECISION"
+  return $?
 }
 
 # Every pgdata-* entry on the volume except an unfinished copy for this image's major, which an upgrade
@@ -85,6 +91,7 @@ other_copies() {
       echo "${path##*/}"
     fi
   done
+  return $?
 }
 
 # The major of the one copy on the volume, when there is exactly one.
@@ -93,15 +100,20 @@ only_copy_major() {
   if [[ "$copies" =~ ^pgdata-([0-9]+)$ ]]; then
     echo "${BASH_REMATCH[1]}"
   fi
+  return $?
 }
 
 # The folders of $1 joined as one phrase, and whether they take "is" or "are".
 folder_list() {
-  echo "$1" | paste -sd, - | sed 's/,/, /g'
+  local folders="$1"
+  echo "$folders" | paste -sd, - | sed 's/,/, /g'
+  return $?
 }
 
 is_or_are() {
-  if [[ "$(wc -w <<<"$1")" -gt 1 ]]; then echo are; else echo is; fi
+  local folders="$1"
+  if [[ "$(wc -w <<<"$folders")" -gt 1 ]]; then echo are; else echo is; fi
+  return
 }
 
 describe_volume() {
@@ -120,14 +132,19 @@ describe_volume() {
     found="$found and an unfinished pgdata-$MAJOR.partial"
   fi
   echo "$found"
+  return
 }
 
 os_field() {
-  sed -n "s/^$2=//p" "$1" | tr -d '"'
+  local file="$1" field="$2"
+  sed -n "s/^$field=//p" "$file" | tr -d '"'
+  return $?
 }
 
 os_name() {
-  echo "$(os_field "$1" ID) $(os_field "$1" VERSION_ID)"
+  local file="$1"
+  echo "$(os_field "$file" ID) $(os_field "$file" VERSION_ID)"
+  return
 }
 
 # The suffix of an official postgres image tag built on the same system as this image: the Debian
@@ -142,6 +159,7 @@ image_suffix() {
   elif [[ -n "$id" && "$version" =~ ^([0-9]+\.[0-9]+) ]]; then
     echo "-$id${BASH_REMATCH[1]}"
   fi
+  return $?
 }
 
 # The old programs run in this image, which only works when the upgrade-source image is built for the
@@ -154,6 +172,7 @@ ensure_old_programs_run_here() {
   if [[ "$source" != "$here" ]]; then
     refuse "refusing to upgrade Postgres $from to $MAJOR: the Postgres $from programs in postgresql.upgrade.image are built for $source and cannot run beside the Postgres $MAJOR image, built for $here; set postgresql.upgrade.image to postgres:$from$(image_suffix), $(delete_pod_hint)"
   fi
+  return $?
 }
 
 ensure_old_programs_present() {
@@ -161,6 +180,7 @@ ensure_old_programs_present() {
   if [[ ! -x "$old_bin/pg_ctl" || ! -x "$old_bin/postgres" ]]; then
     refuse "refusing to upgrade Postgres $from to $MAJOR: the upgrade-source image did not provide the Postgres $from programs; set postgresql.upgrade.image to a Postgres $from image, $(delete_pod_hint)"
   fi
+  return $?
 }
 
 # Data newer than this image is never touched when no copy of this image's major is left to start on.
@@ -197,11 +217,14 @@ refuse_unreadable_live_copy() {
 controldata() {
   local bin="$1" field="$2"
   as_postgres "$bin/pg_controldata" "$SOURCE" | sed -n "s/^$field: *//p"
+  return $?
 }
 
 old_psql() {
+  local sql="$1"
   as_postgres "$NEW_BIN/psql" -h "$SOCKET_DIR" -p "$OLD_PORT" -U "$POSTGRES_USER" -d template1 \
-    -XAtq -v ON_ERROR_STOP=1 -c "$1"
+    -XAtq -v ON_ERROR_STOP=1 -c "$sql"
+  return $?
 }
 
 # pg_upgrade only accepts a cleanly stopped source, and needs to be told the settings the old cluster was
@@ -228,6 +251,7 @@ read_old_cluster_settings() {
   IFS='|' read -r ENCODING COLLATE CTYPE PROVIDER LOCALE ICU_RULES <<<"$template1"
   as_postgres "$old_bin/pg_ctl" -D "$SOURCE" -m fast -w --timeout="$OLD_SERVER_WAIT_SECONDS" stop
   say "the Postgres $from data is shut down cleanly"
+  return $?
 }
 
 initdb_like_old_cluster() {
@@ -250,10 +274,13 @@ initdb_like_old_cluster() {
     args+=(--data-checksums)
   fi
   as_postgres "$NEW_BIN/initdb" "${args[@]}"
+  return $?
 }
 
 kib_in() {
-  du -sk "$1" | cut -f1
+  local path="$1"
+  du -sk "$path" | cut -f1
+  return $?
 }
 
 # Copies older than the one the upgrade reads from only serve a rollback further back, so removing them is
@@ -265,6 +292,7 @@ older_copies_hint() {
   if [[ -n "$older" ]]; then
     echo "; or remove $(copy_names "$older"), older than $LIVE_COPY, while the database is stopped, as $STOPPED_CLEANUP_DOCS shows"
   fi
+  return $?
 }
 
 # A leftover unfinished copy is thrown away before the upgrade starts, so its space counts as free. An
@@ -280,6 +308,7 @@ ensure_room_for_copy() {
   if [[ "$free_kib" -lt "$needed_kib" ]]; then
     refuse "refusing upgrade $from→$MAJOR: need $(((needed_kib + KIB_PER_MIB - 1) / KIB_PER_MIB)) MiB, $((free_kib / KIB_PER_MIB)) MiB free; grow the volume claim itself with kubectl patch pvc$(namespace_flag) data-$HOSTNAME ($REFUSED_DOCS shows how) or pin postgresql.image to postgres:$from$(image_suffix) and $(delete_pod_hint)$(older_copies_hint)"
   fi
+  return $?
 }
 
 # An upgrade that redoes an out-of-date copy sets that copy aside as pgdata-M.stale until the new one is in
@@ -294,6 +323,7 @@ settle_set_aside_copy() {
     say "putting pgdata-$MAJOR.stale back as pgdata-$MAJOR: an earlier upgrade set it aside and stopped before its replacement was in place"
     mv -T "$STALE" "$NEW"
   fi
+  return $?
 }
 
 set_earlier_copy_aside() {
@@ -306,6 +336,7 @@ set_earlier_copy_aside() {
     say "pgdata-$MAJOR is out of date: Postgres $from has run on $LIVE_COPY since that copy was made, so it is discarded and the upgrade redone from $LIVE_COPY"
     mv -T "$NEW" "$STALE"
   fi
+  return $?
 }
 
 # Every later start of the old major rewrites pg_control, so this hash tells whether the copy still
@@ -317,6 +348,7 @@ source_major=$from
 source_system_identifier=$(controldata "$old_bin" "Database system identifier")
 source_pg_control_sha256=$(control_hash "$LIVE_COPY")
 EOF
+  return $?
 }
 
 upgrade() {
@@ -346,39 +378,46 @@ upgrade() {
   sync "$MOUNT"
   rm -rf "$STALE"
   say "upgrade finished: Postgres $MAJOR starts on pgdata-$MAJOR, and the Postgres $from data stays in $LIVE_COPY"
+  return $?
 }
 
 # --- what the volume holds: one predicate per kind of volume, tried in the order main lists them ------
 
 volume_is_empty() {
   [[ -z "$DATA_MAJOR" && -z "$OTHER_COPIES" && ! -e "$PARTIAL" ]] && ! has_placeholder
+  return $?
 }
 
 # The walk up the copies stopped at the live copy because its control file cannot be read, while a newer copy
 # counts.
 live_copy_unhashable_below_newer_copy() {
   [[ -n "$LIVE_MAJOR" && -z "$LIVE_CONTROL_HASH" && -n "$NEWER_THAN_LIVE" ]]
+  return $?
 }
 
 # The database last ran on a copy of this image's major, and no copy newer than it is on the volume.
 live_is_this_major_alone() {
   [[ "$LIVE_MAJOR" == "$MAJOR" && -z "$NEWER_COPY" ]]
+  return $?
 }
 
 # The database last ran on a copy of this image's major, beside a newer copy that a pin or a rollback
 # left out of date: this major has run since that copy was made from it.
 live_is_this_major_beside_newer_copy() {
   [[ "$LIVE_MAJOR" == "$MAJOR" && -n "$NEWER_COPY" ]]
+  return $?
 }
 
 # The image was moved back after an upgrade, by a pin or a rollback, and this is its first start since: the
 # database last ran on a newer copy, and the copy of this major it was made from is still on the chain.
 moved_back_to_a_copy_on_the_chain() {
   [[ -n "$LIVE_MAJOR" && -n "$THIS_MAJOR_ON_CHAIN" ]] && [[ "$LIVE_MAJOR" -gt "$MAJOR" ]]
+  return $?
 }
 
 live_copy_one_behind_unreadable() {
   [[ "$LIVE_MAJOR" == "$PREVIOUS_MAJOR" && -z "$LIVE_CONTROL_HASH" ]]
+  return $?
 }
 
 # The database last ran on a copy one major behind this image. Either no copy of this major is on the volume
@@ -386,20 +425,24 @@ live_copy_one_behind_unreadable() {
 # and holds the newer data.
 live_copy_one_behind() {
   live_copy_upgradable_to "$MAJOR"
+  return $?
 }
 
 live_copy_two_or_more_behind() {
   [[ -n "$LIVE_MAJOR" ]] && [[ "$LIVE_MAJOR" -lt "$PREVIOUS_MAJOR" ]]
+  return $?
 }
 
 # The database last ran on a copy newer than this image, and the chain holds no copy of this image's major
 # to start on: two charts back after a second upgrade, or a pin to a major whose copy was removed.
 live_newer_without_copy_of_this_major() {
   [[ -n "$LIVE_MAJOR" && -z "$THIS_MAJOR_ON_CHAIN" ]] && [[ "$LIVE_MAJOR" -gt "$MAJOR" ]]
+  return $?
 }
 
 only_newer_copy_left() {
   [[ -z "$DATA_MAJOR" && -n "$ONLY_COPY_MAJOR" && ! -e "$PARTIAL" ]] && [[ "$ONLY_COPY_MAJOR" -gt "$MAJOR" ]]
+  return $?
 }
 
 say_nothing_to_upgrade() {
@@ -414,6 +457,7 @@ say_nothing_to_upgrade() {
   else
     say "nothing to upgrade and nothing to remove: $LIVE_COPY is already the upgrade of the Postgres $PREVIOUS_MAJOR data in $source, and Postgres $MAJOR starts on it"
   fi
+  return $?
 }
 
 # Removes every copy older than the one the copy this major starts on was made from, and leaves what went in
@@ -426,6 +470,7 @@ remove_older_copies() {
     say "warning: $(copy_names "$targets") could not be fully removed; Postgres $MAJOR starts on $starts_on all the same, what is left only takes room, and the next start tries again"
     return 1
   fi
+  return $?
 }
 
 # Once the new copy is in place, the copy it was made from is all a rollback one chart back needs, so every
@@ -436,6 +481,7 @@ remove_copy_before_last() {
   [[ -n "$REMOVED" ]] || return 0
   newest="$(awk 'NF == 2 { newest = $2 } END { print newest }' <<<"$REMOVED")"
   say "removed $(copy_names "$REMOVED"), the copy before the one this upgrade read from; a rollback to a chart on Postgres ${newest:-$((PREVIOUS_MAJOR - 1))} is no longer possible, a rollback to the chart on Postgres $PREVIOUS_MAJOR still is"
+  return $?
 }
 
 # A removal a stop cut off part-way, or one that failed, is finished by a later start on the copy it left
@@ -445,6 +491,7 @@ finish_earlier_removal() {
   remove_older_copies "$LIVE_COPY" || return 0
   [[ -n "$REMOVED" ]] || return 0
   say "finished removing $(copy_names "$REMOVED"), which an earlier start left behind; Postgres $MAJOR starts on $LIVE_COPY"
+  return $?
 }
 
 # The newer copy is left where it is. Once this major has run, the copy it was made from no longer matches
@@ -452,6 +499,7 @@ finish_earlier_removal() {
 warn_newer_copy_exists() {
   local folder="$1" newer="$2"
   say "warning: starting Postgres $MAJOR on $folder, but a newer Postgres ${newer#pgdata-} copy of this database exists in $newer; what was written on that copy is not in this database, and moving to Postgres ${newer#pgdata-} again redoes the upgrade from this copy, so those writes do not come back"
+  return $?
 }
 
 main() {
@@ -501,6 +549,7 @@ main() {
   else
     refuse "refusing to start Postgres $MAJOR: found $(describe_volume), which this chart cannot start on or upgrade by itself"
   fi
+  return $?
 }
 
 main

@@ -21,12 +21,14 @@ fail() { echo "✗ publish guard: $*" >&2; exit 1; }
 # A chart's default postgresql.image ($2 = image) or postgresql.upgrade.image ($2 = upgrade), from a
 # chart directory or a packaged .tgz.
 postgres_default_image() {
-  helm show values "$1" | awk -v key="$2" '
+  local chart="$1" key="$2"
+  helm show values "$chart" | awk -v key="$key" '
     /^postgresql:/ { inside = 1; next }
     inside && /^[^[:space:]#]/ { exit }
     inside && /^  [^[:space:]#]/ { section = $1 }
     inside && key == "image" && /^  image:/ { print $2; exit }
     inside && key == "upgrade" && section == "upgrade:" && /^    image:/ { print $2; exit }' | tr -d '"'
+  return $?
 }
 
 # The major in an image reference's tag, or empty when the tag carries none. A registry port or a digest
@@ -37,10 +39,13 @@ tag_major() {
   if [[ "$name" == *:* && "${name#*:}" =~ ^([0-9]+) ]]; then
     echo "${BASH_REMATCH[1]}"
   fi
+  return $?
 }
 
 postgres_default_major() {
-  tag_major "$(postgres_default_image "$1" image)"
+  local chart="$1"
+  tag_major "$(postgres_default_image "$chart" image)"
+  return $?
 }
 
 # --- single source of truth: Chart.yaml via helm ----------------------------------------------

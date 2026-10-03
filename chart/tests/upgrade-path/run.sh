@@ -26,6 +26,8 @@ readonly DB_USER="lighthouse"
 readonly MOUNT="/var/lib/postgresql/data"
 readonly WAIT_SECONDS=600
 readonly CRASH_LOOP_RESTARTS=3
+readonly NOTHING_TO_UPGRADE="nothing to upgrade"
+readonly UPGRADING_17_TO_18="upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
 
 # The install and every upgrade take exactly these values, so an upgrade never carries a value the
 # install did not have.
@@ -52,10 +54,13 @@ the_one_line_with() {
   lines="$(grep -F -- "$text" <<<"$input" || true)"
   [[ -n "$lines" && "$(wc -l <<<"$lines")" == "1" ]] || return 1
   echo "$lines"
+  return
 }
 
 chart_app_version() {
-  helm show chart "$1" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }'
+  local chart="$1"
+  helm show chart "$chart" | awk '/^appVersion:/ { gsub(/"/, "", $2); print $2; exit }'
+  return $?
 }
 
 # Pulls each image group $2 starts once into the local Docker and loads it into the kind node, so the node
@@ -74,6 +79,7 @@ preload_images() {
       images+=(postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
     chain-refusals)
       images+=(postgres:15-bookworm postgres:16-bookworm postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
+    *) ;;
   esac
   # `kind load docker-image` exports every platform of a multi-platform image and fails on the ones
   # Docker never pulled, so only the node's own platform is exported.
@@ -90,12 +96,14 @@ preload_images() {
         || echo "  (could not preload $image; the node pulls it)"
     done
   done
+  return $?
 }
 
 fresh_namespace() {
   local ns="$1"
   kubectl delete namespace "$ns" --ignore-not-found --wait >/dev/null
   kubectl create namespace "$ns" >/dev/null
+  return $?
 }
 
 dump_diagnostics() {
@@ -105,6 +113,7 @@ dump_diagnostics() {
   kubectl -n "$ns" describe pod "$POSTGRES_POD" >&2 || true
   kubectl -n "$ns" logs "$POSTGRES_POD" --all-containers --tail=80 >&2 || true
   kubectl -n "$ns" logs "$POSTGRES_POD" -c postgres --previous --tail=40 >&2 || true
+  return $?
 }
 
 install_before_chart() {
@@ -112,12 +121,14 @@ install_before_chart() {
   fresh_namespace "$ns"
   helm install "$RELEASE" "$BEFORE_CHART" -n "$ns" "${VALUES[@]}" "${@:2}" --wait --timeout 10m >/dev/null \
     || { dump_diagnostics "$ns"; fail "chart 0.1.17 did not install in $ns"; }
+  return $?
 }
 
 install_new_chart() {
   local ns="$1"
   fresh_namespace "$ns"
   helm install "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" >/dev/null
+  return $?
 }
 
 # No --wait: a database that crash-loops would hold Helm for its whole timeout, and the wait below
@@ -125,6 +136,7 @@ install_new_chart() {
 upgrade_to_new_chart() {
   local ns="$1"
   helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" "${@:2}" >/dev/null
+  return $?
 }
 
 highest_restart_count() {
@@ -134,6 +146,7 @@ highest_restart_count() {
   { kubectl -n "$ns" get pod "$POSTGRES_POD" \
     -o jsonpath='{range .status.initContainerStatuses[*]}{.restartCount}{"\n"}{end}{range .status.containerStatuses[*]}{.restartCount}{"\n"}{end}' \
     2>/dev/null || true; } | sort -n | tail -1
+  return $?
 }
 
 # Fails with the pod's diagnostics once the database pod in $1 has crash-looped, or once deadline $2 has
@@ -149,6 +162,7 @@ fail_if_crash_looping_or_late() {
     dump_diagnostics "$ns"
     fail "$late"
   fi
+  return $?
 }
 
 wait_postgres_ready() {
@@ -159,6 +173,7 @@ wait_postgres_ready() {
       "the database in $ns did not become Ready within ${WAIT_SECONDS}s"
   done
   kubectl -n "$ns" wait --for=condition=Ready "pod/$POSTGRES_POD" --timeout="${WAIT_SECONDS}s" >/dev/null
+  return $?
 }
 
 wait_api_ready() {
@@ -170,22 +185,26 @@ wait_api_ready() {
     [[ $SECONDS -lt $deadline ]] || fail "the API in $ns does not serve /health/ready"
     sleep 3
   done
+  return $?
 }
 
 in_postgres() {
   local ns="$1"
   kubectl -n "$ns" exec "$POSTGRES_POD" -c postgres -- "${@:2}"
+  return $?
 }
 
 psql_on() {
   local ns="$1" pod="$2" sql="$3"
   kubectl -n "$ns" exec "$pod" -c postgres -- \
     psql -U "$DB_USER" -d lighthouse -XAtq -v ON_ERROR_STOP=1 -c "$sql"
+  return $?
 }
 
 psql_in() {
   local ns="$1" sql="$2"
   psql_on "$ns" "$POSTGRES_POD" "$sql"
+  return $?
 }
 
 seed_marker_row() {
@@ -193,6 +212,7 @@ seed_marker_row() {
   psql_in "$ns" "CREATE TABLE upgrade_path_marker (marker text PRIMARY KEY);
                  INSERT INTO upgrade_path_marker VALUES ('$MARKER');
                  CREATE TABLE upgrade_path_bulk AS SELECT g AS id, md5(g::text) AS payload FROM generate_series(1, 20000) g;" >/dev/null
+  return $?
 }
 
 # One "table|rows" line per table of the public schema, sorted, so two recordings compare as text.
@@ -203,12 +223,14 @@ public_row_counts() {
                  FROM information_schema.tables
                  WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
                  ORDER BY table_name"
+  return $?
 }
 
 assert_row_counts() {
   local ns="$1" before="$2" after
   after="$(public_row_counts "$ns")"
   [[ "$after" == "$before" ]] || fail "row counts in $ns changed: $(diff <(echo "$before") <(echo "$after") || true)"
+  return $?
 }
 
 # A table of its own holding this run's marker, so whether a write made at one point survives can be
@@ -217,44 +239,52 @@ write_marker_table() {
   local ns="$1" table="$2"
   psql_in "$ns" "CREATE TABLE $table (marker text);
                  INSERT INTO $table VALUES ('$MARKER')" >/dev/null
+  return $?
 }
 
 marker_rows_in() {
   local ns="$1" table="$2" pod="${3:-$POSTGRES_POD}"
   psql_on "$ns" "$pod" "SELECT count(*) FROM $table WHERE marker = '$MARKER'"
+  return $?
 }
 
 assert_marker_row() {
   local ns="$1" pod="${2:-$POSTGRES_POD}"
   [[ "$(marker_rows_in "$ns" upgrade_path_marker "$pod")" == "1" ]] \
     || fail "the marker row is missing in $ns"
+  return $?
 }
 
 assert_server_major() {
   local ns="$1" major="$2" version
   version="$(psql_in "$ns" "SHOW server_version_num")"
   [[ "$version" == "$major"* ]] || fail "the database in $ns runs $version, expected Postgres $major"
+  return $?
 }
 
 secret_fingerprint() {
   local ns="$1"
   kubectl -n "$ns" get secret "$DB_SECRET" \
     -o jsonpath='{.data}' | sha256sum
+  return $?
 }
 
 volume_file() {
   local ns="$1" path="$2"
   in_postgres "$ns" cat "$MOUNT/$path"
+  return $?
 }
 
 volume_entries() {
   local ns="$1"
   in_postgres "$ns" ls -1A "$MOUNT"
+  return $?
 }
 
 upgrade_log() {
   local ns="$1"
   kubectl -n "$ns" logs "$POSTGRES_POD" -c pg-upgrade
+  return $?
 }
 
 assert_upgrade_log_says() {
@@ -263,6 +293,7 @@ assert_upgrade_log_says() {
   # cut off would fail the check.
   log="$(upgrade_log "$ns")"
   grep -qF -- "$text" <<<"$log" || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not say: $text"; }
+  return $?
 }
 
 # Prints the one line of the upgrade log in $1 that carries text $2, and fails with the pod's diagnostics,
@@ -271,6 +302,7 @@ the_one_upgrade_log_line() {
   local ns="$1" text="$2" what="$3"
   the_one_line_with "$text" "$(upgrade_log "$ns")" \
     || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one line $what"; }
+  return $?
 }
 
 # Runs a shell command in a throwaway pod that mounts the database claim read-only at /volume, so the
@@ -288,12 +320,15 @@ on_volume() {
     || { kubectl -n "$ns" logs on-volume >&2 || true; fail "reading the database volume in $ns failed"; }
   kubectl -n "$ns" logs on-volume
   kubectl -n "$ns" delete pod on-volume --wait >/dev/null
+  return $?
 }
 
 # The type, mode and owner of every entry on the database volume, then a sorted sha256sum of every file,
 # so a refused attempt can be shown to have changed nothing: no byte, and no folder made or handed over.
 volume_fingerprint() {
-  on_volume "$1" 'cd /volume && find . -printf "%y %m %u %g %p\n" | sort && find . -type f -print0 | sort -z | xargs -0 -r sha256sum'
+  local ns="$1"
+  on_volume "$ns" 'cd /volume && find . -printf "%y %m %u %g %p\n" | sort && find . -type f -print0 | sort -z | xargs -0 -r sha256sum'
+  return $?
 }
 
 # Stops the Postgres 17 server process from the kind node, so it can neither shut down cleanly nor be
@@ -303,6 +338,7 @@ freeze_postgres_server() {
   local ns="$1" pid
   pid="$(container_pid "$ns" containerStatuses postgres)"
   docker exec "$(pod_field "$ns" '{.spec.nodeName}')" kill -STOP "$pid"
+  return $?
 }
 
 # The process id, on the kind node, of the first process of container $3 in the database pod; $2 is
@@ -314,6 +350,7 @@ container_pid() {
     crictl inspect --output go-template --template '{{.info.pid}}' "${container#containerd://}")"
   [[ -n "$pid" ]] || fail "could not find the $name process of $POSTGRES_POD"
   echo "$pid"
+  return
 }
 
 # A shell command for the kind node that freezes the whole container of process $1 through its cgroup: one
@@ -322,6 +359,7 @@ container_pid() {
 freeze_container_of() {
   local pid="$1"
   echo "echo 1 > \"/sys/fs/cgroup\$(sed -n 's/^0:://p' /proc/$pid/cgroup)/cgroup.freeze\""
+  return
 }
 
 # Stops every process of the upgrade step from the kind node, pg_upgrade included, so the copy it is
@@ -330,6 +368,7 @@ freeze_upgrade_step() {
   local ns="$1" pid
   pid="$(container_pid "$ns" initContainerStatuses pg-upgrade)"
   docker exec "$(pod_field "$ns" '{.spec.nodeName}')" sh -c "$(freeze_container_of "$pid")"
+  return $?
 }
 
 install_with_data() {
@@ -337,6 +376,7 @@ install_with_data() {
   install_before_chart "$ns" "${@:2}"
   wait_api_ready "$ns"
   seed_marker_row "$ns"
+  return $?
 }
 
 assert_carried_across() {
@@ -346,6 +386,7 @@ assert_carried_across() {
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$counts"
   assert_marker_row "$ns"
+  return $?
 }
 
 readonly UPGRADED_NS="plain-upgrade"
@@ -366,14 +407,17 @@ FRESH_INSTALLED=""
 
 given_upgraded() {
   if [[ -z "${RECORDED_COUNTS[$UPGRADED_NS]:-}" ]]; then upgrade_plain_helm_upgrade_keeps_every_row; fi
+  return $?
 }
 
 given_rolled_back() {
   if [[ -z "$ROLLED_BACK" ]]; then rollback_starts_17_on_pre_upgrade_data; fi
+  return $?
 }
 
 given_fresh_install() {
   if [[ -z "$FRESH_INSTALLED" ]]; then fresh_install_starts_18_without_upgrading; fi
+  return $?
 }
 
 # The field at jsonpath $2 of the database pod, empty while there is no pod or the field is not set. Any
@@ -383,16 +427,20 @@ pod_field() {
   value="$(kubectl -n "$ns" get pod "$POSTGRES_POD" --ignore-not-found -o jsonpath="$path")" \
     || fail "could not read $path of $POSTGRES_POD in $ns"
   echo "$value"
+  return
 }
 
 pod_uid() {
-  pod_field "$1" '{.metadata.uid}'
+  local ns="$1"
+  pod_field "$ns" '{.metadata.uid}'
+  return $?
 }
 
 assert_not_ready() {
   local ns="$1" message="$2" ready
   ready="$(pod_field "$ns" '{.status.conditions[?(@.type=="Ready")].status}')" || fail "$message: its state could not be read"
   [[ "$ready" != "True" ]] || fail "$message"
+  return $?
 }
 
 # Fails when Postgres has started in the database pod of $1 while the upgrade step should still be copying.
@@ -400,20 +448,26 @@ assert_postgres_not_started() {
   local ns="$1" started
   started="$(postgres_started_at "$ns")" || fail "whether Postgres started in $ns could not be read"
   [[ -z "$started" ]] || fail "Postgres started in $ns while the upgrade step was still copying"
+  return $?
 }
 
 stop_database() {
   local ns="$1"
   kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=0 >/dev/null
   kubectl -n "$ns" wait --for=delete "pod/$POSTGRES_POD" --timeout=120s >/dev/null 2>&1 || true
+  return $?
 }
 
 start_database() {
-  kubectl -n "$1" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+  local ns="$1"
+  kubectl -n "$ns" scale statefulset "$POSTGRES_STATEFULSET" --replicas=1 >/dev/null
+  return $?
 }
 
 postgres_started_at() {
-  pod_field "$1" '{.status.containerStatuses[?(@.name=="postgres")].state.running.startedAt}'
+  local ns="$1"
+  pod_field "$ns" '{.status.containerStatuses[?(@.name=="postgres")].state.running.startedAt}'
+  return $?
 }
 
 # Deletes the database pod and waits until the StatefulSet's replacement has started its postgres
@@ -428,6 +482,7 @@ restart_database() {
       "the restarted database in $ns did not start within ${WAIT_SECONDS}s"
     sleep 1
   done
+  return $?
 }
 
 # From the pod being created to its postgres container starting: the time the init containers took.
@@ -437,28 +492,33 @@ start_delay_ms() {
   created="$(date -d "$(pod_field "$ns" '{.metadata.creationTimestamp}')" +%s)"
   started="$(date -d "$(postgres_started_at "$ns")" +%s)"
   echo $(((started - created) * 1000))
+  return
 }
 
 assert_data_directory() {
   local ns="$1" directory="$2" actual
   actual="$(psql_in "$ns" "SHOW data_directory")"
   [[ "$actual" == "$MOUNT/$directory" ]] || fail "the database in $ns runs on $actual, expected $MOUNT/$directory"
+  return $?
 }
 
 assert_upgrade_note() {
   local ns="$1"
   volume_file "$ns" pgdata-18/.lighthouse-upgrade | grep -qx "source_major=17" \
     || fail "pgdata-18 in $ns carries no note saying it was upgraded from Postgres 17"
+  return $?
 }
 
 current_revision() {
   local ns="$1"
   helm history "$RELEASE" -n "$ns" -o json | jq -r '.[-1].revision'
+  return $?
 }
 
 apply_rendered() {
   local ns="$1" chart="$2"
   helm template "$RELEASE" "$chart" -n "$ns" "${VALUES[@]}" | kubectl -n "$ns" apply -f - >/dev/null
+  return $?
 }
 
 # Starts Postgres on a copy of a kept folder taken from the volume, mounted read-only, so opening the kept
@@ -479,10 +539,13 @@ open_kept_copy() {
     fi
     sleep 2
   done
+  return $?
 }
 
 close_kept_copy() {
-  kubectl -n "$1" delete pod kept-copy --wait >/dev/null
+  local ns="$1"
+  kubectl -n "$ns" delete pod kept-copy --wait >/dev/null
+  return $?
 }
 
 # --- group: happy, in the order the scenarios chain ---------------------------------------------------
@@ -494,10 +557,11 @@ fresh_install_starts_18_without_upgrading() {
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   wait_api_ready "$ns"
-  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_upgrade_log_says "$ns" "$NOTHING_TO_UPGRADE"
   [[ "$(volume_entries "$ns")" == "pgdata" ]] \
     || fail "the volume in $ns holds more than one copy: $(volume_entries "$ns" | tr '\n' ' ')"
   FRESH_INSTALLED=1
+  return $?
 }
 
 upgrade_plain_helm_upgrade_keeps_every_row() {
@@ -514,6 +578,7 @@ upgrade_plain_helm_upgrade_keeps_every_row() {
   [[ "$(secret_fingerprint "$ns")" == "$secret" ]] || fail "the database Secret in $ns changed"
   [[ "$(volume_file "$ns" pgdata/PG_VERSION)" == "17" ]] || fail "pgdata/PG_VERSION in $ns no longer reads 17"
   RECORDED_COUNTS[$ns]="$counts"
+  return $?
 }
 
 # The baseline is a restart of the fresh install rather than its first start, so both measurements
@@ -527,7 +592,7 @@ restart_after_upgrade_does_not_upgrade_again() {
 
   restart_database "$ns"
 
-  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_upgrade_log_says "$ns" "$NOTHING_TO_UPGRADE"
   delay="$(start_delay_ms "$ns")"
   echo "  start delay: ${delay} ms after the upgrade, ${baseline} ms on a fresh install"
   [[ $((delay - baseline)) -lt 5000 ]] \
@@ -536,6 +601,7 @@ restart_after_upgrade_does_not_upgrade_again() {
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
   assert_row_counts "$ns" "${RECORDED_COUNTS[$ns]}"
+  return $?
 }
 
 rollback_between_new_chart_revisions_changes_nothing() {
@@ -552,10 +618,11 @@ rollback_between_new_chart_revisions_changes_nothing() {
 
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
-  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_upgrade_log_says "$ns" "$NOTHING_TO_UPGRADE"
   [[ "$(marker_rows_in "$ns" upgrade_path_written_on_18)" == "1" ]] \
     || fail "the row written on Postgres 18 in $ns is gone after the rollback"
   wait_api_ready "$ns"
+  return $?
 }
 
 # Comparing rows, never file hashes: pg_upgrade rewrites pg_control of the data it upgrades.
@@ -574,13 +641,15 @@ kept_copy_holds_pre_upgrade_rows() {
   close_kept_copy "$ns"
   start_database "$ns"
   wait_postgres_ready "$ns"
-  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_upgrade_log_says "$ns" "$NOTHING_TO_UPGRADE"
   assert_server_major "$ns" 18
+  return $?
 }
 
 table_count() {
   local ns="$1" table="$2"
   psql_in "$ns" "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table'"
+  return $?
 }
 
 rollback_starts_17_on_pre_upgrade_data() {
@@ -597,6 +666,7 @@ rollback_starts_17_on_pre_upgrade_data() {
   [[ "$(table_count "$ns" upgrade_path_before_rollback)" == "0" ]] \
     || fail "the row written on Postgres 18 in $ns is still there after the rollback to Postgres 17"
   ROLLED_BACK=1
+  return $?
 }
 
 upgrade_again_after_rollback_starts_afresh() {
@@ -615,6 +685,7 @@ upgrade_again_after_rollback_starts_afresh() {
     || fail "the row written on Postgres 18 before the rollback in $ns came back"
   assert_marker_row "$ns"
   wait_api_ready "$ns"
+  return $?
 }
 
 pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
@@ -653,6 +724,7 @@ pin_back_after_upgrade_starts_on_kept_copy_and_warns() {
     || fail "the row written on Postgres 18 before the pin in $ns came back"
   assert_marker_row "$ns"
   wait_api_ready "$ns"
+  return $?
 }
 
 # --reuse-values keeps the 0.1.17 image value, so the database stays on 17 and only the notes speak up.
@@ -664,7 +736,7 @@ reuse_values_stays_on_17_and_says_so() {
 
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 17
-  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_upgrade_log_says "$ns" "$NOTHING_TO_UPGRADE"
   wait_api_ready "$ns"
   assert_marker_row "$ns"
   line="$(the_one_line_with "behind" "$output")" \
@@ -672,6 +744,7 @@ reuse_values_stays_on_17_and_says_so() {
   echo "  $line"
   grep -qF -- "--reset-then-reuse-values" <<<"$line" \
     || fail "the behind line in $ns does not say how to move the database: $line"
+  return $?
 }
 
 upgrade_with_reset_then_reuse_values_keeps_every_row() {
@@ -683,6 +756,7 @@ upgrade_with_reset_then_reuse_values_keeps_every_row() {
 
   assert_carried_across "$ns" "$counts"
   assert_upgrade_note "$ns"
+  return $?
 }
 
 upgrade_by_rendered_manifests_keeps_every_row() {
@@ -698,6 +772,7 @@ upgrade_by_rendered_manifests_keeps_every_row() {
 
   assert_carried_across "$ns" "$counts"
   assert_upgrade_note "$ns"
+  return $?
 }
 
 # --- group: refusals ------------------------------------------------------------------------------------
@@ -714,6 +789,7 @@ upgrade_after_unclean_stop_keeps_every_row() {
   assert_upgrade_log_says "$ns" "was not shut down cleanly"
   assert_upgrade_log_says "$ns" "automatic recovery in progress"
   assert_upgrade_log_says "$ns" "Upgrade Complete"
+  return $?
 }
 
 # A volume whose size is enforced and can be changed in place: a tmpfs on the kind node, offered through a
@@ -727,12 +803,15 @@ SMALL_GROWN_MIB=""
 
 kind_node() {
   kubectl get nodes -o jsonpath='{.items[0].metadata.name}'
+  return $?
 }
 
 # The tmpfs of namespace $1's volume on the kind node; each namespace has its own, so two scenarios on
 # small volumes can share a cluster.
 small_dir() {
-  echo "/mnt/lh-small/$1"
+  local ns="$1"
+  echo "/mnt/lh-small/$ns"
+  return
 }
 
 provide_small_volume() {
@@ -760,22 +839,26 @@ spec:
     path: $dir
     type: Directory
 EOF
+  return $?
 }
 
 resize_small_volume() {
   local ns="$1" mib="$2"
   docker exec "$(kind_node)" mount -o "remount,size=${mib}m" "$(small_dir "$ns")"
+  return $?
 }
 
 mount_size_mib() {
   local ns="$1"
   in_postgres "$ns" df -Pm "$MOUNT" | awk 'NR == 2 { print $2 }'
+  return $?
 }
 
 volume_used_mib() {
   local ns="$1" used_kib
   used_kib="$(in_postgres "$ns" df -Pk "$MOUNT" | awk 'NR == 2 { print $3 }')"
   echo $(((used_kib + 1023) / 1024))
+  return
 }
 
 # The room the upgrade step asks for to copy folder $2, by its own measure, in MiB.
@@ -783,6 +866,7 @@ copy_needs_mib() {
   local ns="$1" folder="$2" data_kib
   data_kib="$(in_postgres "$ns" du -sk "$MOUNT/$folder" | cut -f1)"
   echo $((data_kib * 11 / 10 / 1024 + 64))
+  return
 }
 
 # Sizes the volume by the same measure the upgrade step uses: room for the data and about half a second
@@ -797,10 +881,13 @@ shrink_to_one_copy() {
   [[ "$(mount_size_mib "$ns")" == "$small_mib" ]] \
     || fail "the database in $ns sees a ${MOUNT} of $(mount_size_mib "$ns") MiB, expected the ${small_mib} MiB tmpfs"
   echo "  volume: ${used_mib} MiB used, a second copy needs about ${needed_mib} MiB; sized to ${small_mib} MiB, grows to ${SMALL_GROWN_MIB} MiB"
+  return
 }
 
 upgrade_restarts() {
-  pod_field "$1" '{.status.initContainerStatuses[?(@.name=="pg-upgrade")].restartCount}'
+  local ns="$1"
+  pod_field "$ns" '{.status.initContainerStatuses[?(@.name=="pg-upgrade")].restartCount}'
+  return $?
 }
 
 wait_upgrade_refused_twice() {
@@ -814,6 +901,7 @@ wait_upgrade_refused_twice() {
     sleep 2
     restarts="$(upgrade_restarts "$ns")"
   done
+  return $?
 }
 
 # Waits until the upgrade step has been refused and retried, checks the database is not Ready, and prints
@@ -826,6 +914,7 @@ refusal_line() {
   line="$(the_one_line_with "lighthouse-postgres: refusing" "$log")" \
     || { dump_diagnostics "$ns"; fail "the upgrade log in $ns does not carry exactly one refusal line"; }
   echo "$line"
+  return
 }
 
 assert_line_says() {
@@ -833,6 +922,7 @@ assert_line_says() {
   for part in "${@:3}"; do
     grep -qF -- "$part" <<<"$line" || fail "the refusal line in $ns does not say \"$part\": $line"
   done
+  return $?
 }
 
 assert_volume_unchanged() {
@@ -841,6 +931,7 @@ assert_volume_unchanged() {
   [[ "$after" == "$before" ]] \
     || fail "the refused attempt changed the volume in $ns: $(diff <(echo "$before") <(echo "$after") | head -20 || true)"
   echo "  volume fingerprint unchanged: $(sha256sum <<<"$after" | cut -c1-16)"
+  return
 }
 
 FINGERPRINT=""
@@ -853,6 +944,7 @@ fingerprint_then_upgrade() {
   FINGERPRINT="$(volume_fingerprint "$ns")"
   upgrade_to_new_chart "$ns" "${@:2}"
   start_database "$ns"
+  return $?
 }
 
 too_little_room_refuses_and_touches_nothing() {
@@ -872,10 +964,12 @@ too_little_room_refuses_and_touches_nothing() {
   grep -qF -- "$line" <<<"$message" || { dump_diagnostics "$ns"; fail "describing the database pod in $ns does not show the refusal line"; }
   assert_volume_unchanged "$ns" "$FINGERPRINT"
   SMALL_COUNTS="$counts"
+  return $?
 }
 
 given_refused_for_room() {
   if [[ -z "$SMALL_COUNTS" ]]; then too_little_room_refuses_and_touches_nothing; fi
+  return $?
 }
 
 grown_volume_lets_refused_upgrade_proceed() {
@@ -891,6 +985,7 @@ grown_volume_lets_refused_upgrade_proceed() {
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$SMALL_COUNTS"
   assert_marker_row "$ns"
+  return $?
 }
 
 readonly DOCS_PAGE="https://docs.lighthouse.letpeople.work/Installation/kubernetes.html"
@@ -911,6 +1006,7 @@ wait_pod_replaced() {
     fi
     sleep 2
   done
+  return $?
 }
 
 # What the docs and the refusal line tell the operator to do after changing values: Kubernetes does not
@@ -924,6 +1020,7 @@ delete_stuck_pod() {
     sleep 1
   done
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --wait=false >/dev/null
+  return $?
 }
 
 two_majors_behind_refuses_and_touches_nothing() {
@@ -937,6 +1034,7 @@ two_majors_behind_refuses_and_touches_nothing() {
   assert_line_says "$ns" "$line" "Postgres 16" "Postgres 18" "$MANUAL_PATH" "kubectl delete pod -n $ns $POSTGRES_POD"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
   DATA16_REFUSED=1
+  return $?
 }
 
 pinning_to_data_major_starts_without_other_step() {
@@ -950,8 +1048,9 @@ pinning_to_data_major_starts_without_other_step() {
   wait_pod_replaced "$ns" "$old_uid"
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 16
-  assert_upgrade_log_says "$ns" "nothing to upgrade"
+  assert_upgrade_log_says "$ns" "$NOTHING_TO_UPGRADE"
   assert_marker_row "$ns"
+  return $?
 }
 
 # The first sh block under heading $1 of the Kubernetes docs.
@@ -961,6 +1060,7 @@ documented_block() {
                              section && /^```sh$/ { block = 1; next }
                              block && /^```$/ { exit }
                              block { print }' "$KUBERNETES_DOCS"
+  return $?
 }
 
 # Runs commands exactly as the Kubernetes docs print them, stopping at the first that fails, and returns
@@ -980,6 +1080,7 @@ run_as_documented() {
   local ns="$1" status=0
   try_as_documented "$@" || status=$?
   [[ $status -eq 0 ]] || fail "the documented commands failed in $ns with code $status"
+  return $?
 }
 
 remove_old_copy_as_documented() {
@@ -987,6 +1088,7 @@ remove_old_copy_as_documented() {
   command="$(documented_block "### Removing the old copy")"
   [[ "$command" == "kubectl exec "* ]] || fail "no cleanup command found under \"Removing the old copy\" in $KUBERNETES_DOCS"
   run_as_documented "$ns" "$command"
+  return $?
 }
 
 # The docs remove old copies from a pod of its own, with the same cleanup command, when the database pod
@@ -999,14 +1101,18 @@ stopped_database_cleanup_as_documented() {
   [[ "$commands" == *"-- ${removal#* -- }"* ]] \
     || fail "the docs remove old copies while the database is stopped with another command than the one that removes the old copy"
   echo "$commands"
+  return
 }
 
 given_old_copy_removed() {
   if [[ -z "$CLEANED_COUNTS" ]]; then cleanup_then_rollback_refuses_empty_database; fi
+  return $?
 }
 
 postgres_restarts() {
-  pod_field "$1" '{.status.containerStatuses[?(@.name=="postgres")].restartCount}'
+  local ns="$1"
+  pod_field "$ns" '{.status.containerStatuses[?(@.name=="postgres")].restartCount}'
+  return $?
 }
 
 # After $3, a rollback to chart 0.1.17, its Postgres $2 finds pgdata holding only the placeholder and fails
@@ -1032,6 +1138,7 @@ assert_rolled_back_postgres_fails_on_placeholder() {
   echo "  $(grep -F "exists but is not empty" <<<"$log" | head -1)"
   [[ "$(on_volume "$ns" 'ls -1A /volume/pgdata')" == "UPGRADED-TO-18-see-kubernetes-docs" ]] \
     || fail "$rollback in $ns created something in pgdata"
+  return $?
 }
 
 cleanup_then_rollback_refuses_empty_database() {
@@ -1064,6 +1171,7 @@ cleanup_then_rollback_refuses_empty_database() {
   wait_pod_replaced "$ns" "$old_uid"
   assert_carried_across "$ns" "$counts"
   CLEANED_COUNTS="$counts"
+  return $?
 }
 
 newer_data_without_kept_copy_refuses() {
@@ -1076,6 +1184,7 @@ newer_data_without_kept_copy_refuses() {
   echo "  $line"
   assert_line_says "$ns" "$line" "refusing to start Postgres 17" "the data is Postgres 18"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 readonly BALLAST_ROWS=1000000
@@ -1088,6 +1197,7 @@ seed_bulk_data() {
   local ns="$1"
   psql_in "$ns" "CREATE TABLE upgrade_path_ballast AS
                  SELECT g AS id, repeat(md5(g::text), 8) AS payload FROM generate_series(1, $BALLAST_ROWS) g" >/dev/null
+  return $?
 }
 
 wait_upgrade_step_running() {
@@ -1096,6 +1206,7 @@ wait_upgrade_step_running() {
     [[ $SECONDS -lt $deadline ]] || { dump_diagnostics "$ns"; fail "the upgrade step in $ns did not start"; }
     sleep 1
   done
+  return $?
 }
 
 # Follows the upgrade step's log until pg_upgrade starts copying the data files. It prints a step's name
@@ -1106,6 +1217,7 @@ wait_copy_started() {
   wait_upgrade_step_running "$ns"
   grep -m1 -F -- "$COPY_STARTED" < <(kubectl -n "$ns" logs -f "$POSTGRES_POD" -c pg-upgrade) \
     || { dump_diagnostics "$ns"; fail "the upgrade step in $ns ended without saying it was copying the data"; }
+  return $?
 }
 
 interrupted_upgrade_is_redone_from_start() {
@@ -1144,6 +1256,7 @@ interrupted_upgrade_is_redone_from_start() {
   [[ "$(public_row_counts "$ns" kept-copy)" == "$counts" ]] || fail "the kept Postgres 17 copy in $ns differs from before the upgrade"
   assert_marker_row "$ns" kept-copy
   close_kept_copy "$ns"
+  return $?
 }
 
 foreign_upgrade_source_refuses_and_touches_nothing() {
@@ -1156,6 +1269,7 @@ foreign_upgrade_source_refuses_and_touches_nothing() {
   echo "  $line"
   assert_line_says "$ns" "$line" "the Postgres 17 programs" "cannot run beside the Postgres 18 image"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # Moves the control file of folder $2 off the database volume of $1, to a place on the kind node it can be put
@@ -1163,11 +1277,13 @@ foreign_upgrade_source_refuses_and_touches_nothing() {
 set_control_file_aside() {
   local ns="$1" folder="$2"
   on_node mv "$(node_volume_dir "$ns")/$folder/global/pg_control" "/tmp/$ns-$folder-pg_control"
+  return $?
 }
 
 put_control_file_back() {
   local ns="$1" folder="$2"
   on_node mv "/tmp/$ns-$folder-pg_control" "$(node_volume_dir "$ns")/$folder/global/pg_control"
+  return $?
 }
 
 # The start was refused because the control file of $3, a Postgres $4 copy, cannot be read below the newer
@@ -1178,6 +1294,7 @@ assert_unreadable_control_refusal() {
     "$newer" "put that file back from a backup"
   ! grep -qF -- "#when-removing-the-old-copy-was-cut-off" <<<"$line" \
     || fail "the refusal line in $ns points to finishing a removal: $line"
+  return $?
 }
 
 # Runs the cleanup while the database is stopped, as the docs show, and checks that it refuses: code 1, one
@@ -1199,6 +1316,7 @@ assert_stopped_cleanup_refuses() {
     "put that file back from a backup before removing anything" "Nothing was removed"
   kubectl -n "$ns" delete pod pgdata-cleanup --ignore-not-found --wait >/dev/null
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # pgdata loses its control file while the database runs on pgdata-18. Every removal takes a copy's PG_VERSION
@@ -1233,6 +1351,7 @@ unreadable_original_copy_beside_upgraded_copy_is_refused() {
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$counts"
   assert_marker_row "$ns"
+  return $?
 }
 
 # After a rollback to chart 0.1.17, Postgres 17 runs on pgdata again, so pgdata holds the newest rows and
@@ -1270,6 +1389,7 @@ rolled_back_copy_without_control_file_keeps_its_rows() {
     || fail "the row written on Postgres 17 after the rollback in $ns is no longer in pgdata"
   close_kept_copy "$ns"
   echo "  pgdata still opens on Postgres 17 with the row written after the rollback"
+  return
 }
 
 # --- group: chain, in the order the scenarios build on each other --------------------------------------
@@ -1291,20 +1411,24 @@ CHAIN_COUNTS_ON_17=""
 
 given_chain_upgraded_once() {
   if [[ -z "$CHAIN_UPGRADED_ONCE" ]]; then chain_first_upgrade_removes_nothing; fi
+  return $?
 }
 
 given_chain_upgraded_twice() {
   if [[ -z "$CHAIN_UPGRADED_TWICE" ]]; then chain_second_upgrade_keeps_every_row; fi
+  return $?
 }
 
 given_chain_rolled_back_one_chart() {
   if [[ -z "$CHAIN_ROLLED_BACK_ONE_CHART" ]]; then chain_rollback_one_chart_starts_previous_major_and_warns; fi
+  return $?
 }
 
 forget_chain_volume() {
   CHAIN_UPGRADED_ONCE=""
   CHAIN_UPGRADED_TWICE=""
   CHAIN_ROLLED_BACK_ONE_CHART=""
+  return $?
 }
 
 # The warning a start on an older copy logs, once, naming the newer copy whose writes it does not have.
@@ -1315,11 +1439,13 @@ assert_newer_copy_warning() {
     || { dump_diagnostics "$ns"; fail "the database log in $ns does not carry exactly one warning about the newer copy"; }
   echo "  $warning"
   assert_line_says "$ns" "$warning" "pgdata-$newer_major" "not in this database"
+  return $?
 }
 
 volume_sha256() {
   local ns="$1" path="$2"
   in_postgres "$ns" sha256sum "$MOUNT/$path" | cut -d' ' -f1
+  return $?
 }
 
 # A copy is only current while its note carries the hash of the control file of the copy it was made from,
@@ -1332,6 +1458,7 @@ assert_note_names_source() {
     || fail "$copy in $ns carries no note saying it was upgraded from Postgres $source_major: $note"
   grep -qx "source_pg_control_sha256=$hash" <<<"$note" \
     || fail "the note in $copy in $ns does not carry the hash of $source_folder/global/pg_control ($hash): $note"
+  return $?
 }
 
 assert_nothing_removed() {
@@ -1339,6 +1466,7 @@ assert_nothing_removed() {
   log="$(upgrade_log "$ns")" || fail "the upgrade log in $ns could not be read"
   removals="$(grep '^lighthouse-postgres:' <<<"$log" | grep -i 'remov' || true)"
   [[ -z "$removals" ]] || fail "the upgrade log in $ns speaks of removing a copy: $removals"
+  return $?
 }
 
 # What an upgrade from a copy leaves once the copy before last is gone: the copy it read from, the copy it
@@ -1351,6 +1479,7 @@ assert_two_copies_beside_placeholder() {
   entries="$(in_postgres "$ns" ls -1A "$MOUNT/pgdata" | tr '\n' ' ')"
   [[ "$entries" == "UPGRADED-TO-18-see-kubernetes-docs " ]] \
     || fail "pgdata in $ns holds ${entries}rather than only the placeholder saying the data was upgraded to Postgres 18"
+  return $?
 }
 
 # The one line the upgrade log carries about removing the Postgres 16 copy, checked for what it says about
@@ -1361,11 +1490,14 @@ removal_line() {
   assert_line_says "$ns" "$line" "a rollback to a chart on Postgres 16 is no longer possible" \
     "a rollback to the chart on Postgres 17 still is"
   echo "$line"
+  return
 }
 
 # The type, mode, owner and content of every file of the two copies the database can still run on.
 copies_fingerprint() {
-  on_volume "$1" 'cd /volume && find pgdata-17 pgdata-18 -printf "%y %m %u %g %p\n" | sort && find pgdata-17 pgdata-18 -type f -print0 | sort -z | xargs -0 -r sha256sum'
+  local ns="$1"
+  on_volume "$ns" 'cd /volume && find pgdata-17 pgdata-18 -printf "%y %m %u %g %p\n" | sort && find pgdata-17 pgdata-18 -type f -print0 | sort -z | xargs -0 -r sha256sum'
+  return $?
 }
 
 # The first link of the chain: 0.1.17 on Postgres 16, then the new chart pinned to 17 with 16 as the
@@ -1399,6 +1531,7 @@ chain_first_upgrade_removes_nothing() {
   wait_postgres_ready "$ns"
   wait_api_ready "$ns"
   CHAIN_UPGRADED_ONCE=1
+  return $?
 }
 
 chain_second_upgrade_keeps_every_row() {
@@ -1414,12 +1547,13 @@ chain_second_upgrade_keeps_every_row() {
   assert_data_directory "$ns" pgdata-18
   [[ "$(marker_rows_in "$ns" upgrade_path_written_on_17)" == "1" ]] \
     || fail "the row written on Postgres 17 in $ns did not reach Postgres 18"
-  line="$(the_one_upgrade_log_line "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18" \
+  line="$(the_one_upgrade_log_line "$ns" "$UPGRADING_17_TO_18" \
     "naming pgdata-17 as source and pgdata-18 as target")"
   echo "  $line"
   grep -qF "pgdata-17 is kept" <<<"$line" || fail "the upgrade line in $ns does not say pgdata-17 is kept: $line"
   assert_note_names_source "$ns" pgdata-18 17 pgdata-17
   CHAIN_UPGRADED_TWICE=1
+  return $?
 }
 
 # The kept copy is opened while the database runs on pgdata-18: nothing runs on pgdata-17, and the copy is
@@ -1437,6 +1571,7 @@ chain_second_upgrade_removes_copy_before_last() {
   [[ "$(marker_rows_in "$ns" upgrade_path_written_on_17 kept-copy)" == "1" ]] \
     || fail "the kept Postgres 17 copy in $ns lacks the row written on Postgres 17"
   close_kept_copy "$ns"
+  return $?
 }
 
 # The baseline is a restart of the fresh install, as for the first upgrade's restart.
@@ -1464,6 +1599,7 @@ chain_restart_after_second_upgrade_does_nothing() {
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
   assert_row_counts "$ns" "$counts"
+  return $?
 }
 
 chain_rollback_one_chart_starts_previous_major_and_warns() {
@@ -1484,6 +1620,7 @@ chain_rollback_one_chart_starts_previous_major_and_warns() {
   assert_newer_copy_warning "$ns" 18
   wait_api_ready "$ns"
   CHAIN_ROLLED_BACK_ONE_CHART=1
+  return $?
 }
 
 # Redone from pgdata-17, the upgrade leaves the same volume as the second upgrade did, so the scenarios
@@ -1499,7 +1636,7 @@ chain_upgrade_again_after_one_chart_rollback_starts_afresh() {
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
-  assert_upgrade_log_says "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
+  assert_upgrade_log_says "$ns" "$UPGRADING_17_TO_18"
   assert_upgrade_log_says "$ns" "pgdata-18 is out of date"
   [[ "$(marker_rows_in "$ns" upgrade_path_on_17_after_rollback)" == "1" ]] \
     || fail "the row written on Postgres 17 after the rollback in $ns did not reach Postgres 18"
@@ -1510,6 +1647,7 @@ chain_upgrade_again_after_one_chart_rollback_starts_afresh() {
   assert_two_copies_beside_placeholder "$ns"
   wait_api_ready "$ns"
   CHAIN_UPGRADED_TWICE=1
+  return $?
 }
 
 # Pins the database image to $2 and deletes the database pod, as the docs say to after pinning, then waits
@@ -1520,6 +1658,7 @@ pin_image_and_replace_pod() {
   helm upgrade "$RELEASE" "$NEW_CHART" -n "$ns" "${VALUES[@]}" --set postgresql.image="$image" >/dev/null
   kubectl -n "$ns" delete pod "$POSTGRES_POD" --ignore-not-found --wait=false >/dev/null
   wait_pod_replaced "$ns" "$old_uid"
+  return $?
 }
 
 chain_pin_back_one_major_starts_kept_copy_and_warns() {
@@ -1538,6 +1677,7 @@ chain_pin_back_one_major_starts_kept_copy_and_warns() {
     || fail "the row written on Postgres 18 in $ns is there after pinning to Postgres 17"
   assert_newer_copy_warning "$ns" 18
   wait_api_ready "$ns"
+  return $?
 }
 
 # The refusal line says to set the image back and delete the pod; doing so ends the scenario, so the volume is
@@ -1564,6 +1704,7 @@ chain_pin_back_two_majors_refuses_and_touches_nothing() {
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
+  return $?
 }
 
 chain_rollback_two_charts_fails_loudly() {
@@ -1589,6 +1730,7 @@ chain_rollback_two_charts_fails_loudly() {
   wait_pod_replaced "$ns" "$old_uid"
   assert_carried_across "$ns" "$counts"
   assert_data_directory "$ns" pgdata-18
+  return $?
 }
 
 # The volume holds pgdata with only placeholder $2 in it, beside the copies $3..., and nothing else.
@@ -1598,6 +1740,7 @@ assert_placeholder_beside() {
   [[ "$entries" == "$expected" ]] || fail "the volume in $ns holds ${entries}rather than $expected"
   entries="$(in_postgres "$ns" ls -1A "$MOUNT/pgdata" | tr '\n' ' ')"
   [[ "$entries" == "$placeholder " ]] || fail "pgdata in $ns holds ${entries}rather than only $placeholder"
+  return $?
 }
 
 chain_cleanup_removes_every_older_copy_and_reruns() {
@@ -1622,15 +1765,17 @@ chain_cleanup_removes_every_older_copy_and_reruns() {
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$counts"
   assert_marker_row "$ns"
+  return $?
 }
 
 # The start after $2 found pgdata-18 current: it upgraded nothing and started on pgdata-18 as it was.
 assert_started_without_upgrading() {
   local ns="$1" what="$2" log
   log="$(upgrade_log "$ns")"
-  grep -qF -- "nothing to upgrade" <<<"$log" \
+  grep -qF -- "$NOTHING_TO_UPGRADE" <<<"$log" \
     || { dump_diagnostics "$ns"; fail "the start after $what in $ns did not start on pgdata-18 as it was"; }
   ! grep -qF -- "upgrading the Postgres" <<<"$log" || fail "the start after $what in $ns upgraded again"
+  return $?
 }
 
 # The cleanup is cut off as a removal leaves it once it has started on the Postgres 17 copy: the placeholder
@@ -1659,6 +1804,7 @@ chain_cut_off_cleanup_is_finished_by_running_again() {
   output="$(remove_old_copy_as_documented "$ns")"
   echo "  $output"
   assert_placeholder_beside "$ns" UPGRADED-TO-18-see-kubernetes-docs pgdata-18
+  return $?
 }
 
 # A Postgres 16 volume upgraded once to 17 by the new chart, in a namespace of its own. Any extra
@@ -1673,6 +1819,7 @@ upgrade_16_to_17_in() {
   wait_postgres_ready "$ns"
   assert_server_major "$ns" 17
   wait_api_ready "$ns"
+  return $?
 }
 
 # Where the database volume of $1 lies on the kind node.
@@ -1680,10 +1827,12 @@ node_volume_dir() {
   local ns="$1" volume
   volume="$(kubectl -n "$ns" get pvc "data-$POSTGRES_POD" -o jsonpath='{.spec.volumeName}')"
   kubectl get pv "$volume" -o jsonpath='{.spec.hostPath.path}{.spec.local.path}'
+  return $?
 }
 
 on_node() {
   docker exec "$(kind_node)" "$@"
+  return $?
 }
 
 # Waits on the kind node itself, without a fork per check, for the removal of the copy before last to write
@@ -1701,6 +1850,7 @@ freeze_once_removal_starts() {
     while :; do set -- '$dir'/pgdata/UPGRADED-TO-*; [ -e \"\$1\" ] && break; done
     echo 1 > \"\$freeze\"" \
     || { dump_diagnostics "$ns"; fail "the upgrade step in $ns never began removing the copy before last"; }
+  return $?
 }
 
 # The one line the upgrade log carries about finishing the removal of the Postgres 16 copy. A removal cut
@@ -1711,6 +1861,7 @@ finishing_line() {
   [[ "$line" =~ finished\ removing\ (pgdata\ \(Postgres\ 16\)|what\ was\ left\ of\ pgdata)[,\;] ]] \
     || fail "the finishing line in $ns names something other than the Postgres 16 copy in pgdata: $line"
   echo "$line"
+  return
 }
 
 chain_interrupted_removal_is_finished_by_next_start() {
@@ -1740,6 +1891,7 @@ chain_interrupted_removal_is_finished_by_next_start() {
   wait_api_ready "$ns"
   assert_row_counts "$ns" "$counts"
   assert_marker_row "$ns"
+  return $?
 }
 
 # The database is held at no replicas while the frozen pod goes, so the volume can be read as the
@@ -1777,7 +1929,7 @@ chain_interrupted_second_upgrade_removes_nothing() {
   log="$(upgrade_log "$ns")"
   grep -qF -- "$DISCARDED_PARTIAL" <<<"$log" \
     || { dump_diagnostics "$ns"; fail "the start after the delete in $ns did not find a partial copy, so the delete did not land mid-copy"; }
-  grep -qF -- "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18" <<<"$log" \
+  grep -qF -- "$UPGRADING_17_TO_18" <<<"$log" \
     || { dump_diagnostics "$ns"; fail "the next start in $ns did not begin the upgrade again from pgdata-17"; }
   assert_server_major "$ns" 18
   assert_data_directory "$ns" pgdata-18
@@ -1790,6 +1942,7 @@ chain_interrupted_second_upgrade_removes_nothing() {
     || { dump_diagnostics "$ns"; fail "the Postgres 16 copy in $ns was not removed after the redone upgrade finished"; }
   echo "  $(sed -n "${removed}p" <<<"$log")"
   assert_two_copies_beside_placeholder "$ns"
+  return $?
 }
 
 readonly CHAIN_SMALL_NS="chain-small-volume"
@@ -1810,6 +1963,7 @@ shrink_below_next_copy() {
   [[ "$(mount_size_mib "$ns")" == "$small_mib" ]] \
     || fail "the database in $ns sees a ${MOUNT} of $(mount_size_mib "$ns") MiB, expected the ${small_mib} MiB tmpfs"
   echo "  volume: the first upgrade needed ${first_needed_mib} MiB in all; now ${used} MiB used, the Postgres 16 copy takes ${old_mib} MiB and the next copy needs about ${needed} MiB; sized to ${small_mib} MiB"
+  return
 }
 
 chain_too_little_room_names_cleanup_and_touches_nothing() {
@@ -1838,8 +1992,9 @@ chain_too_little_room_names_cleanup_and_touches_nothing() {
 
   assert_carried_across "$ns" "$counts"
   assert_data_directory "$ns" pgdata-18
-  assert_upgrade_log_says "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
+  assert_upgrade_log_says "$ns" "$UPGRADING_17_TO_18"
   assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17 pgdata-18
+  return $?
 }
 
 chain_cleaned_volume_moves_on_and_removes_nothing() {
@@ -1854,9 +2009,10 @@ chain_cleaned_volume_moves_on_and_removes_nothing() {
 
   assert_carried_across "$ns" "$counts"
   assert_data_directory "$ns" pgdata-18
-  assert_upgrade_log_says "$ns" "upgrading the Postgres 17 data in pgdata-17 to Postgres 18 in pgdata-18"
+  assert_upgrade_log_says "$ns" "$UPGRADING_17_TO_18"
   assert_nothing_removed "$ns"
   assert_placeholder_beside "$ns" UPGRADED-TO-17-see-kubernetes-docs pgdata-17 pgdata-18
+  return $?
 }
 
 # Postgres 16 running again on pgdata after the rollback rewrites its pg_control, so pgdata-17 no longer
@@ -1883,6 +2039,7 @@ chain_out_of_date_copy_counts_as_older_major_and_refuses() {
     fail "the refusal line in $ns offers the out-of-date pgdata-17 as a way back: $line"
   fi
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # The bookworm pair stands in for a Postgres 15 to 16 upgrade by the new chart, because there is no
@@ -1902,6 +2059,7 @@ chain_gap_from_a_copy_refuses_and_touches_nothing() {
   assert_line_says "$ns" "$line" "refusing to start Postgres 18" "Postgres 16 in pgdata-16" \
     "one major per chart release" "one at a time" "$MANUAL_PATH" "kubectl delete pod -n $ns $POSTGRES_POD"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # The database runs on pgdata-17, so its control file is taken away from the kind node while it is stopped:
@@ -1921,6 +2079,7 @@ chain_unreadable_live_copy_refuses_before_writing() {
     "pgdata-17 holds Postgres 17 data without a readable pgdata-17/global/pg_control" \
     "Postgres 17 cannot open it" "put that file back from a backup"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # The log of every container of the database pod. kubectl logs --all-containers fails outright while the
@@ -1930,6 +2089,7 @@ every_container_log() {
   for container in $(pod_field "$ns" '{.spec.initContainers[*].name} {.spec.containers[*].name}'); do
     kubectl -n "$ns" logs "$POSTGRES_POD" -c "$container" 2>/dev/null || true
   done
+  return $?
 }
 
 # Without pgdata's control file the note in pgdata-17 cannot be checked, so whether the database last ran on
@@ -1954,6 +2114,7 @@ chain_unfollowable_chain_is_refused_once_by_upgrade_step() {
   exit_code="$(pod_field "$ns" '{.status.initContainerStatuses[?(@.name=="pg-old-binaries")].state.terminated.exitCode}')"
   [[ "$exit_code" == "0" ]] || fail "the step handing over the older programs in $ns ended with code ${exit_code:-none} rather than 0"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # A placeholder in pgdata beside a PG_VERSION that still makes pgdata count is no sign of a removal: every
@@ -1974,6 +2135,7 @@ chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder() {
   assert_volume_unchanged "$ns" "$FINGERPRINT"
 
   assert_stopped_cleanup_refuses "$ns" pgdata
+  return $?
 }
 
 # Starts from the volume the refusal before it left: pgdata without its control file beside pgdata-17, and the
@@ -1982,6 +2144,7 @@ chain_cleanup_refuses_past_unreadable_copy_not_started() {
   local ns="chain-unreadable-original"
   if ! kubectl get namespace "$ns" >/dev/null 2>&1; then chain_unfollowable_chain_is_refused_once_by_upgrade_step; fi
   assert_stopped_cleanup_refuses "$ns" pgdata
+  return $?
 }
 
 # pgdata-17 has lost PG_VERSION, so it no longer counts as a copy and the walk up the copies ends at pgdata,
@@ -2004,6 +2167,7 @@ chain_newer_copy_that_no_longer_counts_is_never_set_aside() {
     || fail "the log of the step handing over the older programs in $ns could not be read"
   [[ -z "$handover" ]] || fail "the step handing over the older programs in $ns logged: $handover"
   assert_volume_unchanged "$ns" "$FINGERPRINT"
+  return $?
 }
 
 # The documented cleanup is cut off right after it writes the placeholder, as if the pod running it was
@@ -2033,6 +2197,7 @@ chain_pin_back_after_cut_off_cleanup_keeps_pinned_data() {
   [[ "$(volume_entries "$ns" | tr '\n' ' ')" == "pgdata pgdata-17 " ]] \
     || fail "the volume in $ns holds $(volume_entries "$ns" | tr '\n' ' ')rather than pgdata and pgdata-17"
   echo "  pgdata still opens on Postgres 16 with the row written after the pin; pgdata-17 is still there"
+  return
 }
 
 # A file marked immutable from the kind node cannot be unlinked even by root, which the upgrade step runs
@@ -2071,6 +2236,7 @@ chain_unremovable_leftover_never_stops_the_start() {
   line="$(finishing_line "$ns")"
   echo "  $line"
   assert_two_copies_beside_placeholder "$ns"
+  return $?
 }
 
 # Only scenarios that are implemented, in an order where each one's Given is made by itself or left by
@@ -2144,7 +2310,8 @@ readonly CHAIN_CLEANUP=(
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
 # scenario in the run needs it and the pods of a long run do not pile up on the node.
 namespaces_of() {
-  case "$1" in
+  local scenario="$1"
+  case "$scenario" in
     fresh_install_starts_18_without_upgrading) echo "$FRESH_NS" ;;
     restart_after_upgrade_does_not_upgrade_again) echo "$FRESH_NS $UPGRADED_NS" ;;
     upgrade_plain_helm_upgrade_keeps_every_row | rollback_between_new_chart_revisions_changes_nothing \
@@ -2182,7 +2349,9 @@ namespaces_of() {
     chain_cleanup_refuses_past_unreadable_copy_even_with_placeholder) echo chain-cleanup-past-unreadable ;;
     chain_newer_copy_that_no_longer_counts_is_never_set_aside) echo chain-uncounted-copy ;;
     chain_unremovable_leftover_never_stops_the_start) echo chain-unremovable-leftover ;;
+    *) ;;
   esac
+  return $?
 }
 
 # Deletes the namespaces scenario $1 used that none of the scenarios after it, $2..., uses.
@@ -2199,6 +2368,7 @@ delete_namespaces_done_with() {
       kubectl delete namespace "$ns" --ignore-not-found --wait=false >/dev/null
     fi
   done
+  return $?
 }
 
 main() {
