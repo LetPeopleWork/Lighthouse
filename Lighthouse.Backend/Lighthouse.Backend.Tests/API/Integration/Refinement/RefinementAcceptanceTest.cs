@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public abstract class RefinementAcceptanceTest
     {
-        protected const string PendingSlice01 = "Epic #6136 slice 01 (#6139) - pending DELIVER";
-
         protected const string Backlog = "Backlog";
 
         protected const string Next = "Next";
@@ -43,6 +41,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected const string Implementation = "Implementation";
 
         protected const string Done = "Done";
+
+        protected const string Refining = "Refining";
+
+        protected const string Grooming = "Grooming";
+
+        /// <summary>Gravity's Doing states once its admin has taken Analysing out of them.</summary>
+        protected static readonly string[] DoingWithoutAnalysing = [Next, Implementation];
 
         /// <summary>A Wednesday morning in the instance's zone, so every day below is fixed.</summary>
         protected static readonly DateTimeOffset Today = new(2026, 10, 7, 9, 0, 0, TimeSpan.Zero);
@@ -107,6 +112,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// </summary>
         protected TeamUnderTest ATeamMappedLikeGravity(string name = "Team Gravity")
             => SeedTeam(name, [Backlog], [Next, Analysing, Implementation], [Done], []);
+
+        /// <summary>A Team whose tracker states Analysing and Grooming are both mapped to its Doing state "Refining".</summary>
+        protected TeamUnderTest TeamOrbitMappingAnalysingAndGroomingAsRefining()
+            => SeedTeam(
+                "Team Orbit",
+                [Backlog],
+                [Refining, Implementation],
+                [Done],
+                [new StateMapping { Name = Refining, States = [Analysing, Grooming] }]);
 
         protected TeamUnderTest SeedTeam(
             string name,
@@ -209,6 +223,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected void TheCallerOnlyReadsTheTeam(TeamUnderTest team) => Client.AsTeamViewer(team.TeamId);
 
         protected void TheCallerHasNoRoleOnTheTeam() => Client.AsViewer();
+
+        // --- What the admin has already saved ---
+
+        /// <summary>The Team's admin has saved these refinement states, and the save was accepted.</summary>
+        protected async Task<TeamUnderTest> TheAdminHasChosen(TeamUnderTest team, params string[] states)
+        {
+            TheCallerAdministersTheTeam(team);
+
+            using var save = await SaveTheTeamSettingsChoosing(team, states);
+            Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"The admin's choice of refinement states was not saved, so nothing that follows can build on it. {await save.Content.ReadAsStringAsync()}");
+
+            return team;
+        }
+
+        /// <summary>The Team's admin has saved Gravity's Doing states without Analysing, and the save was accepted.</summary>
+        protected async Task<TeamUnderTest> TheAdminHasTakenAnalysingOutOfDoing(TeamUnderTest team)
+        {
+            TheCallerAdministersTheTeam(team);
+
+            using var save = await SaveTheTeamSettingsWithDoingStates(team, DoingWithoutAnalysing);
+            Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"The admin could not take {Analysing} out of Doing, so the scenario describes a Team that still maps it. {await save.Content.ReadAsStringAsync()}");
+
+            return team with { DoingStates = [.. DoingWithoutAnalysing] };
+        }
 
         // --- Driving ports ---
 

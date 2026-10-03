@@ -9,15 +9,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
     /// Step definitions for the Refinement tab's list. Every Given that names refinement states puts them
-    /// there the way slice 01 does - the admin saves the Team settings - so the list is only ever fed by
-    /// the production write, never by a hand-written setting.
+    /// there the way an admin does - by saving the Team settings - so the list is only ever fed by the
+    /// production write, never by a hand-written setting.
     /// </summary>
     public partial class Slice02RefinementListTest
     {
-        private const string Grooming = "Grooming";
-
-        private const string Refining = "Refining";
-
         private const string ReportingFeature = "GR-010";
 
         private const string NoParent = "";
@@ -29,17 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static readonly TimeSpan TwoSeconds = TimeSpan.FromSeconds(2);
 
         // --- Given ---
-
-        private async Task<TeamUnderTest> TheAdminHasChosen(TeamUnderTest team, params string[] states)
-        {
-            TheCallerAdministersTheTeam(team);
-
-            using var save = await SaveTheTeamSettingsChoosing(team, states);
-            Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The admin's choice of refinement states was not saved, so the tab has nothing to list from. {await save.Content.ReadAsStringAsync()}");
-
-            return team;
-        }
 
         /// <summary>
         /// Gravity's tracker ranks GR-040 first, but it is being implemented, not refined; GR-001 is done.
@@ -91,12 +76,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private async Task<TeamUnderTest> GivenOrbitRefinesInItsRefiningMappingAndHoldsWorkInBothMappedStates()
         {
-            var orbit = SeedTeam(
-                "Team Orbit",
-                [Backlog],
-                [Refining, Implementation],
-                [Done],
-                [new StateMapping { Name = Refining, States = [Analysing, Grooming] }]);
+            var orbit = TeamOrbitMappingAnalysingAndGroomingAsRefining();
 
             SeedWorkItems(orbit,
             [
@@ -222,15 +202,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => await AskForTheRefinementTab(teamId);
 
         private async Task<TeamUnderTest> WhenTheAdminTakesAnalysingOutOfDoing(TeamUnderTest team)
-        {
-            TheCallerAdministersTheTeam(team);
-
-            using var save = await SaveTheTeamSettingsWithDoingStates(team, Next, Implementation);
-            Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The admin could not take {Analysing} out of Doing. {await save.Content.ReadAsStringAsync()}");
-
-            return team with { DoingStates = [Next, Implementation] };
-        }
+            => await TheAdminHasTakenAnalysingOutOfDoing(team);
 
         private async Task<(JsonElement Tab, TimeSpan Elapsed)> WhenTheCoachOpensTheRefinementTabAgainAndItIsTimed(TeamUnderTest team)
         {

@@ -9,8 +9,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// tracker, its state and the Work Item it belongs to; no row carries an age or a category. An empty
     /// refinement and a Team nobody set up are both stated, never answered as an error.
     ///
-    /// Every scenario starts where slice 01 ends: the admin has chosen the refinement states through the
-    /// Team settings write. Driving port: the Refinement tab's read. Step definitions live in
+    /// Every scenario starts once the admin has chosen the refinement states through the Team settings
+    /// write. Driving port: the Refinement tab's read. Step definitions live in
     /// Slice02RefinementListSpecifications.cs.
     /// </summary>
     [TestFixture]

@@ -12,10 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public partial class Slice01RefinementStatesTest
     {
-        private const string Refining = "Refining";
-
-        private const string Grooming = "Grooming";
-
         private const string Icebox = "Icebox";
 
         // --- Given ---
@@ -23,38 +19,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private TeamUnderTest GivenTeamGravityWithNoRefinementStates() => ATeamMappedLikeGravity();
 
         private async Task<TeamUnderTest> GivenGravitysAdminHasChosen(params string[] states)
-        {
-            var gravity = ATeamMappedLikeGravity();
-            TheCallerAdministersTheTeam(gravity);
+            => await TheAdminHasChosen(ATeamMappedLikeGravity(), states);
 
-            using var save = await SaveTheTeamSettingsChoosing(gravity, states);
-            Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The admin's first choice of refinement states was not saved, so nothing after it can be about changing them. {await save.Content.ReadAsStringAsync()}");
-
-            return gravity;
-        }
-
-        private TeamUnderTest GivenATeamThatMapsAnalysingAndGroomingAsRefining()
-            => SeedTeam(
-                "Team Orbit",
-                [Backlog],
-                [Refining, Implementation],
-                [Done],
-                [new StateMapping { Name = Refining, States = [Analysing, Grooming] }]);
+        private TeamUnderTest GivenATeamThatMapsAnalysingAndGroomingAsRefining() => TeamOrbitMappingAnalysingAndGroomingAsRefining();
 
         private async Task<TeamUnderTest> GivenGravitysChosenAnalysingStoppedBeingMappedWithOnlyBacklogChosen()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog);
-            return await GivenTheAdminStoppedMappingAnalysing(gravity);
-        }
-
-        private async Task<TeamUnderTest> GivenTheAdminStoppedMappingAnalysing(TeamUnderTest gravity)
-        {
-            using var unmapping = await WhenTheAdminStopsMappingAnalysing(gravity);
-            Assert.That(unmapping.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"The admin could not stop mapping {Analysing}, so the scenario describes a Team that still maps it. {await unmapping.Content.ReadAsStringAsync()}");
-
-            return gravity with { DoingStates = [Next, Implementation] };
+            return await TheAdminHasTakenAnalysingOutOfDoing(gravity);
         }
 
         /// <summary>
@@ -85,10 +57,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => await SaveTheTeamSettingsLeavingRefinementOut(team);
 
         private async Task<HttpResponseMessage> WhenTheAdminStopsMappingAnalysing(TeamUnderTest team)
-            => await SaveTheTeamSettingsWithDoingStates(team, Next, Implementation);
+            => await SaveTheTeamSettingsWithDoingStates(team, DoingWithoutAnalysing);
 
         private async Task<HttpResponseMessage> WhenTheAdminStopsMappingAnalysingWhileStillChoosingIt(TeamUnderTest team)
-            => await SaveTheTeamSettingsChoosing(team with { DoingStates = [Next, Implementation] }, Backlog, Analysing, Next);
+            => await SaveTheTeamSettingsChoosing(team with { DoingStates = [.. DoingWithoutAnalysing] }, Backlog, Analysing, Next);
 
         // --- Then ---
 
