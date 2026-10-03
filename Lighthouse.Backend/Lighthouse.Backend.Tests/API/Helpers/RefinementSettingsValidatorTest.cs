@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         private const string Icebox = "Icebox";
 
+        private static readonly string[] NothingStored = [];
+
         private static TeamSettingDto SettingsChoosing(params string[] chosen)
         {
             return new TeamSettingDto
@@ -41,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [TestCase(" Implementation ")]
         public void A_To_Do_or_Doing_entry_is_accepted(string chosen)
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(chosen));
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(chosen), NothingStored);
 
             Assert.That(errors, Is.Empty);
         }
@@ -51,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [TestCase(Analysing)]
         public void A_state_outside_To_Do_and_Doing_is_refused_by_name(string chosen)
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, chosen));
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, chosen), NothingStored);
 
             Assert.That(errors, Is.EqualTo(new List<string>
             {
@@ -62,7 +64,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [Test]
         public void Every_refused_state_is_named()
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Done, Backlog, Icebox));
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Done, Backlog, Icebox), NothingStored);
 
             using (Assert.EnterMultipleScope())
             {
@@ -78,7 +80,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             var settings = SettingsChoosing(Icebox);
             settings.ToDoStates = [Backlog, Icebox];
 
-            var errors = RefinementSettingsValidator.ValidateSettings(settings);
+            var errors = RefinementSettingsValidator.ValidateSettings(settings, NothingStored);
 
             Assert.That(errors, Is.Empty);
         }
@@ -86,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         [Test]
         public void Choosing_no_state_is_accepted()
         {
-            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing());
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(), NothingStored);
 
             Assert.That(errors, Is.Empty);
         }
@@ -97,9 +99,30 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             var settings = SettingsChoosing();
             settings.Refinement = null;
 
-            var errors = RefinementSettingsValidator.ValidateSettings(settings);
+            var errors = RefinementSettingsValidator.ValidateSettings(settings, NothingStored);
 
             Assert.That(errors, Is.Empty);
+        }
+
+        [TestCase(Icebox)]
+        [TestCase("icebox")]
+        [TestCase(" Icebox ")]
+        public void A_stored_state_that_stopped_being_mapped_is_accepted_when_sent_again(string resent)
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, resent), [Icebox]);
+
+            Assert.That(errors, Is.Empty);
+        }
+
+        [Test]
+        public void A_newly_added_state_outside_To_Do_and_Doing_is_refused_next_to_a_kept_stored_one()
+        {
+            var errors = RefinementSettingsValidator.ValidateSettings(SettingsChoosing(Backlog, Icebox, Done), [Backlog, Icebox]);
+
+            Assert.That(errors, Is.EqualTo(new List<string>
+            {
+                $"'{Done}' cannot be a refinement state: only the Team's To Do and Doing states can be chosen.",
+            }));
         }
     }
 }

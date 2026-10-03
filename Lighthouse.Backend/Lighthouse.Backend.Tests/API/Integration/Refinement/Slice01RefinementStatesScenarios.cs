@@ -144,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task A_chosen_state_that_stops_being_mapped_is_kept_and_flagged_never_dropped()
         {
             var gravity = await GivenGravitysAdminHasChosen(Backlog, Analysing, Next);
@@ -164,7 +163,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // The settings form saves every section together, so it sends the flagged state back with the rest.
         // Refusing that would block every later edit to the Team until the admin noticed the flag.
         [Test]
-        [Ignore(PendingSlice01)]
         public async Task Saving_again_with_the_flagged_state_still_chosen_keeps_it_flagged_instead_of_refusing_the_save()
         {
             var gravity = await GivenGravitysChosenAnalysingStoppedBeingMapped();

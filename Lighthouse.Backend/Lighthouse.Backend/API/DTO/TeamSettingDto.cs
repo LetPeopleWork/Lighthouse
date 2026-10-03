@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.API.DTO
             DoneItemsCutoffDays = team.DoneItemsCutoffDays;
             ForecastFilterRuleSetJson = team.ForecastFilterRuleSetJson;
             ConcurrencyToken = team.ConcurrencyToken;
-            Refinement = team.RefinementSettings is null ? null : new RefinementSettingsDto(team.RefinementSettings);
+            Refinement = team.RefinementSettings is null ? null : new RefinementSettingsDto(team.RefinementSettings, team);
 
             if (team.WorkTrackingSystemConnection != null)
             {

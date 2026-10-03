@@ -138,13 +138,16 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stateMappingValidation.Errors);
             }
 
-            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting);
+            var storedTeam = teamRepository.GetById(teamId);
+
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(
+                teamSetting, storedTeam?.RefinementSettings?.States.Select(chosen => chosen.State) ?? []);
             if (refinementErrors.Count > 0)
             {
                 return BadRequest(refinementErrors);
             }
 
-            if (!IsThroughputHistoryValid(teamId, teamSetting))
+            if (!IsThroughputHistoryValid(storedTeam, teamSetting))
             {
                 return BadRequest(ThroughputHistoryValidator.ErrorMessage);
             }
@@ -159,7 +162,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Blocked staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
             }
 
-            var ruleSetError = ValidateTeamRuleSets(teamId, teamSetting);
+            var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);
             if (ruleSetError != null)
             {
                 return BadRequest(ruleSetError);
@@ -229,15 +232,13 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
         }
 
-        private bool IsThroughputHistoryValid(int teamId, TeamSettingDto teamSetting)
+        private static bool IsThroughputHistoryValid(Team? storedTeam, TeamSettingDto teamSetting)
         {
-            var storedTeam = teamRepository.GetById(teamId);
             return storedTeam == null || ThroughputHistoryValidator.IsValid(teamSetting, storedTeam.ThroughputHistory);
         }
 
-        private string? ValidateTeamRuleSets(int teamId, TeamSettingDto teamSetting)
+        private string? ValidateTeamRuleSets(Team? team, TeamSettingDto teamSetting)
         {
-            var team = teamRepository.GetById(teamId);
             if (team == null)
             {
                 return null;
