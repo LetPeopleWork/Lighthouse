@@ -34,8 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected const string PendingSlice01 = "Epic #6136 slice 01 (#6139) - pending DELIVER";
 
-        protected const string PendingSlice02 = "Epic #6136 slice 02 (#6140) - pending DELIVER";
-
         protected const string Backlog = "Backlog";
 
         protected const string Next = "Next";

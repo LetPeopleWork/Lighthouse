@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
         [TestCase(UsageDataRouteKey.TeamDetail_Metrics, "/teams/:id/metrics")]
         [TestCase(UsageDataRouteKey.TeamDetail_Settings, "/teams/:id/settings")]
         [TestCase(UsageDataRouteKey.TeamDetail_Access, "/teams/:id/access")]
+        [TestCase(UsageDataRouteKey.TeamDetail_Refinement, "/teams/:id/refinement")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Features, "/portfolios/:id/features")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Metrics, "/portfolios/:id/metrics")]
         [TestCase(UsageDataRouteKey.PortfolioDetail_Deliveries, "/portfolios/:id/deliveries")]

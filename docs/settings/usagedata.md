@@ -37,7 +37,7 @@ The complete list of events:
 
 | Event | When it is sent | What travels with it |
 |---|---|---|
-| A Team tab was opened | Somebody opened a tab on a Team page **and was still on it five seconds later** | Which of the five Team tabs it was. **Never which Team** |
+| A Team tab was opened | Somebody opened a tab on a Team page **and was still on it five seconds later** | Which of the six Team tabs it was. **Never which Team** |
 | A Portfolio tab was opened | Somebody opened a tab on a Portfolio page **and was still on it five seconds later** | Which of the five Portfolio tabs it was. **Never which Portfolio** |
 | A Team was created | Somebody finished creating a Team | Nothing. **Not its name, not its identifier** |
 | A Team was deleted | Somebody confirmed deleting a Team | Nothing. **Not its name, not its identifier** |
@@ -74,7 +74,7 @@ Every event carries these, attached by **your** server rather than by your brows
 | Field | What it is | Example |
 |---|---|---|
 | Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
-| Which tab was opened | **Only on the two tab openings above.** One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other eleven events this field is not empty — it is not there at all | `/teams/:id/metrics` |
+| Which tab was opened | **Only on the two tab openings above.** One of eleven addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other eleven events this field is not empty — it is not there at all | `/teams/:id/metrics` |
 | Which setting was switched | **Only on a setting being switched.** A fixed word this product publishes for the setting, and there is one: `FeatureOrder`, for *Let Lighthouse own the order of your Features*. **Never the key the setting is stored under, and never its name as you see it on screen.** On the other twelve events this field is not empty — it is not there at all | `FeatureOrder` |
 | Which way it was switched | **Only on a setting being switched.** `true` when the setting is now on, `false` when it is now off. On the other twelve events this field is not `false` — it is not there at all | `true`, `false` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
@@ -90,12 +90,13 @@ That number never leaves your browser. What the browser records is not a shorten
 fixed label chosen from a closed list, so there is no address present to shorten and nothing to
 accidentally get wrong.
 
-Your server turns that label into the address this product publishes for it. There are ten of those,
-and this is all of them:
+Your server turns that label into the address this product publishes for it. There are eleven of
+those, and this is all of them:
 
 `/teams/:id/features`, `/teams/:id/forecasts`, `/teams/:id/metrics`, `/teams/:id/settings`,
-`/teams/:id/access`, `/portfolios/:id/features`, `/portfolios/:id/metrics`,
-`/portfolios/:id/deliveries`, `/portfolios/:id/settings`, `/portfolios/:id/access`
+`/teams/:id/access`, `/teams/:id/refinement`, `/portfolios/:id/features`,
+`/portfolios/:id/metrics`, `/portfolios/:id/deliveries`, `/portfolios/:id/settings`,
+`/portfolios/:id/access`
 
 The `:id` is written that way in Lighthouse's own source. It is not a real identifier that something
 stripped on the way out — there was never a real one there to strip.
@@ -122,7 +123,7 @@ Nothing about your work, and nothing about you:
 - No free text of any kind, and no address your browser was at. What your browser posts to your own
   server has **no field capable of carrying free text** — only choices from closed lists and bounded
   numbers — so this is a property of its shape rather than a rule somebody has to remember. The only
-  address-shaped thing that travels onward is one of the ten published above, which Lighthouse wrote
+  address-shaped thing that travels onward is one of the eleven published above, which Lighthouse wrote
   down about itself
 - **No IP address.** The message explicitly carries an instruction not to record one, and the
   collector is configured to discard it as well

@@ -17,8 +17,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5510-5881-refinement")]
     public class TeamRefinementUsageEventsTests : UsageDataCollectorObservationTest
     {
-        private const string PendingSlice02 = "Epic #6136 slice 02 (#6140) - pending DELIVER";
-
         private const string TeamRefinementConfigured = "TeamRefinementConfigured";
 
         private const string TheLastEventNamedBeforeThisFeature = "TeamForecastRealityCheckRun";
@@ -107,7 +105,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task A_browser_that_agreed_reports_opening_the_Refinement_tab_as_a_Team_tab_opening_naming_that_tab()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -125,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingSlice02)]
         public void The_usage_data_page_lists_the_Refinement_tab_among_the_addresses_it_publishes()
         {
             var page = File.ReadAllText(Path.Combine(RepositoryRoot(), UsageDataPage.Replace('/', Path.DirectorySeparatorChar)));
