@@ -384,7 +384,9 @@ D37–D44 are the maintainer's answers to Q1–Q7 (2026-10-03). Superseded decis
   predictable) anywhere (D39).
 - [D33] **Usage data** (DEVOPS designs): tab opens reuse `TeamTabOpened` / `PortfolioTabOpened` with new route keys;
   name-only candidates for creation, deletion and the cap refusal (see Checklist). Editing a report gets no event of
-  its own: no KPI needs one.
+  its own: no KPI needs one. *Superseded in part by DEVOPS (maintainer, 2026-10-03)*: three events — `ReportCreated`
+  and `ReportOpened`, both carrying the closed enum `report_template`, and `ReportDeleted`, name-only; **no cap-refusal
+  event**. See `## Wave: DEVOPS / [REF] Monitoring Contracts`.
 - [D34] **Release safety**: slices 01–07 are safe on trunk before the cap (08) — D29's lapse rule already covers
   owners holding more than 2 reports. Release notes, docs and website copy wait until slice 08 is in. The release is
   cut after slice 10, because D43 and D44 make Edit report part of v1.
@@ -1009,7 +1011,7 @@ Scenario: The header says how long ago Then ended
 **AC**: AC-7.1 Now length at creation: default = Then length; Then's presets plus custom ≥ 14 days, inside
 `DoneItemsCutoffDays` (D43). AC-7.2 Saved on the report, not in the page address; viewers have no control. AC-7.3 Now
 is never clipped (D38). AC-7.4 The header shows both windows and days since Then ended (D35).
-**KPI**: K3.
+**KPI**: ~~K3~~ (dropped, maintainer 2026-10-03).
 
 ### US-08 — Delete reports, within Community's two (slice 08)
 
@@ -1117,7 +1119,7 @@ Scenario: Readers cannot edit a report
 rules), shown metrics (at least one) (D44). AC-10.3 Then's window and frozen data are never editable; nothing is
 recomputed. AC-10.4 Metrics not captured cannot be ticked (D27). AC-10.5 The change is stored and seen by every
 reader.
-**KPI**: K2, K3.
+**KPI**: K2 (~~K3~~ dropped, maintainer 2026-10-03).
 
 ### US-11 — Dropped 2026-10-03 (was: open the chart behind a verdict)
 
@@ -1182,14 +1184,17 @@ tab and its PBCs unchanged (no shared setting altered).
 Objective: coaches and Teams freeze a "before" in Lighthouse and come back to it to show whether flow changed.
 **North star: K2.** DEVOPS turns each "Measured by" into a usage-data design (name-only preferred). Re-checked
 2026-10-03 against D39: none of K1–K5 counted verdicts, so all still measure real behaviour; K3 moves from "viewed
-with" to "saved with", because Now is now stored on the report.
+with" to "saved with", because Now is now stored on the report. **K3 dropped by the maintainer on 2026-10-03**
+(DEVOPS found it unmeasurable through usage data: a creation property would miss every change made through Edit
+report). Measurement as designed in DEVOPS: per-browser proxies for K1, K2, G1 (accepted by the maintainer
+2026-10-03); K4 an upper-bound proxy only.
 
 | # | Who | Does what | Target | Baseline | Measured by | Type |
 |---|---|---|---|---|---|---|
 | K1 | Opted-in instances with ≥ 1 Team | create ≥ 1 report | ≥ 10% within 90 days of release | 0 | name-only "report created" ÷ instances reporting | Leading (activation) |
 | K2 | Instances that created a report | open a Reports tab again on ≥ 2 later days, ≥ 7 days after their first report | ≥ 40% | 0 | `TeamTabOpened`/`PortfolioTabOpened` with the Reports route keys, per instance, against the first "report created" | Leading (north star: the yardstick is used) |
-| K3 | Reports created | are saved with a Now shorter than Then (at creation or through Edit report) | informational; ≥ 20% would confirm D14's 4-week shape | 0 | DEVOPS decides: a closed enum (shorter / same / longer) on "report created", or drop K3 if that is not worth a property | Leading (learning) |
-| K4 | Community instances that created a report | hit the 2-report cap within 90 days | learning: ≥ 15% = the cap is a real Premium lever | 0 | name-only "report creation refused at cap" | Leading (land-and-expand) |
+| ~~K3~~ | ~~Reports created~~ | ~~are saved with a Now shorter than Then (at creation or through Edit report)~~ | — | — | **Dropped (maintainer 2026-10-03)** — not measured | — |
+| K4 | Community instances that created a report | hit the 2-report cap within 90 days | learning: ≥ 15% = the cap is a real Premium lever | 0 | ~~name-only "report creation refused at cap"~~ *superseded by DEVOPS*: no cap event (maintainer 2026-10-03); upper-bound proxy only — Community browsers with ≥ 2 `ReportCreated` | Leading (land-and-expand) |
 | K5 | Consultants in the interview protocol | show a Then & Now report to client management and report what followed | ≥ 2 within 90 days | 0 | maintainer conversation log (DISCOVER R1, R2) | Qualitative |
 
 Guardrails: G1 reports deleted within 1 day of creation ≤ 20% of created (re-rolling to cherry-pick, or confusion;
@@ -1215,7 +1220,7 @@ No silent N/A — every item answered.
 sample size, the "—" cases, that Now uses today's settings while Then stays as frozen, the cap, Edit report); `docs/teams/detail.md` and `docs/portfolios/detail.md` (new tab); `docs/licensing/licensing.md` (2 reports Community); `docs/settings/rbac.md`; the Team/Portfolio delete wording (D42). `@screenshot` one per theme: a Team report with green, red and "—" values, and the create dialog. Docs wait for the maintainer's confirmation. |
 | **Demo data** | **Checked in slice 03 and again at finalize; no CSV change planned.** Demo history is relative to load day and short (S11). Team Lightspeed (≈100 days) must give a 30-day Then and a Now with at least one visible change and a non-zero beyond-limits count for the screenshot; adjust its CSV only if it does not. The Portfolios stay thin on purpose, showing "—". No pre-seeded report — the E2E creates one, and a seeded report would freeze on load day. |
 | **Terminology** | **No new key.** "Report", "Then", "Now", "Then & Now" are product words, not a tracker's noun (D32); a key can be added later, additively. Every panel title and label uses {Cycle Time}, {Throughput}, {WIP}, {Work Item Age}, {Work Item(s)}, {Feature(s)}, {Team}, {Portfolio}. |
-| **Usage-data event** | **Wanted (D33), designed in DEVOPS.** Tab opens: existing `TeamTabOpened` / `PortfolioTabOpened` with new route keys `TeamDetail_Reports`, `PortfolioDetail_Reports` (K2). New name-only candidates appended to `UsageDataEventName` (next free integer on `main`, never renumber): report created (K1), report deleted (G1), report creation refused at cap (K4). K3 may justify one closed-enum property on "report created" (Now shorter / same / longer than Then); DEVOPS decides or drops K3. Editing gets no event (D33). Emitted in the slice that first makes each usable (01, 08), listed in `docs/settings/usagedata.md`. |
+| **Usage-data event** | **Wanted (D33), designed in DEVOPS.** Tab opens: existing `TeamTabOpened` / `PortfolioTabOpened` with new route keys `TeamDetail_Reports`, `PortfolioDetail_Reports` (K2). New name-only candidates appended to `UsageDataEventName` (next free integer on `main`, never renumber): report created (K1), report deleted (G1), report creation refused at cap (K4). K3 may justify one closed-enum property on "report created" (Now shorter / same / longer than Then); DEVOPS decides or drops K3. Editing gets no event (D33). *Superseded by DEVOPS (maintainer, 2026-10-03)*: `ReportCreated` and `ReportOpened` carry closed enum `report_template` {ThenAndNow} (slice 01); `ReportDeleted` name-only (slice 08); no cap-refusal event; K3 dropped. Emitted in the slice that first makes each usable (01, 08), listed in `docs/settings/usagedata.md`. |
 | **EF migrations** | **Owed in slice 01**: new report storage (owner, template key, name, Then window, Now length, created date, selection, frozen per-metric values with sample sizes and unrounded limits; no settings snapshot, D46), additive, cascade with its owner (D42). Later slices store inside that shape; DESIGN confirms no further migration. Expand-only, `CreateMigration`, all providers. |
 | **Premium gating** | **Count cap only (D29)**: Community 2 reports per owner across all templates, Premium unlimited, lapse keeps everything readable and deletable. Metrics, panels, windows and editing are never gated (DV-7). |
 | **ADO** | Epic #5878 stays; Stories #6159–#6169 exist, one per slice. After this revision #6161, #6162, #6163, #6165 and #6168 need retitling and #6169 closing — the maintainer's call, not touched by this wave. After DESIGN: #6167 (slice
@@ -1750,10 +1755,362 @@ To `nw-platform-architect`: this DESIGN section, ADR-219..222, `design/wave-deci
   tab-open events (the report view's nested route should map to the same key or its own — DEVOPS decides);
   name-only candidates "report created" (K1), "report deleted" (G1), "report creation refused at cap" (K4); K3's
   closed enum (Now shorter / same / longer than Then) or drop. Append to `UsageDataEventName` with the next integer on
-  `main`.
+  `main`. *Answered in DEVOPS (maintainer, 2026-10-03)*: three events, no cap event, K3 dropped.
 - **Pipeline**: no new job. One migration on both providers (the Postgres verify run covers cascade). `Program.cs`
   registration triggers the full backend Integration suite. Stryker per feature, both stacks, run last on frozen code.
 - **External integrations / contract tests**: none — N/A.
 - **Operational**: no new configuration, no background work, no new secret.
 - **Outcome collision check**: `nwave-ai outcomes check-delta docs/feature/epic-5878-baseline/feature-delta.md` was
   **not run** (no shell in this session); the coordinator runs it.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-03 · **Mode**: autonomous subagent, documents only.
+
+**The nine decisions were not asked; this is brownfield and each is already settled project-wide.** Same answers as
+the Refinement precedent (`epic-5510-5881-refinement`), re-read for this feature:
+
+| # | Decision | Answer for this feature | Source |
+|---|---|---|---|
+| 1 | Deployment target | What Lighthouse already ships: standalone packages (Linux / Windows / macOS, Tauri desktop), the Docker image, the Helm chart. **The hosted platform is torn down (2026-09-26); nothing is deployed there now** | `ci.yml` package/docker/chart jobs |
+| 2 | Container orchestration | Unchanged. No chart change: no new environment variable, port, volume or secret | DESIGN "Operational: no new configuration" |
+| 3 | CI/CD platform | The existing GitHub Actions workflows; **no workflow added or edited** | `.github/workflows/` |
+| 4 | Existing infrastructure | All reused; no new component | DESIGN "Technology choices: none new" |
+| 5 | Observability | Structured logging + the in-process warning sink (*Recent problems*) + the opt-in usage-data pipe (browser detects, backend forwards to PostHog EU) | ADR-185, ADR-190/191 |
+| 6 | Deployment strategy | Calver release (`/release`; a `waiting` run on main is the deploy approval); migrations applied at startup; rollback = previous release, migrations left in place (expand-only) | memory *How to cut a release*; ADR-077 |
+| 7 | Continuous learning | **The usage-data catalogue**, three events and two route keys appended here. Exposure is per owner by construction: nothing is written until an admin creates a report. No feature flag, no A/B | `CLAUDE.md` § DEVOPS usage-data rule |
+| 8 | Branching | Trunk-based on `main` | `CLAUDE.md` |
+| 9 | Mutation testing | `per-feature`, kill rate ≥ 80%, once per Epic at finalize, acceptance suite excluded — `CLAUDE.md` already says so; not edited | `CLAUDE.md` § Mutation Testing Strategy |
+
+**Prior-wave reading**
+
+| Read | Status |
+|---|---|
+| This file: DISCUSS Outcome KPIs (K1–K5, G1–G3), Locked Decisions D33/D34/D15/D29/D42, Project DISCUSS Checklist (usage-data row), Story Map, WS strategy + NFRs, Handoff | ✓ |
+| This file: every `## Wave: DESIGN / …` section (DD1–DD25, components, driving/driven ports, storage + migration plan, contract shapes, seams for 5882/5935, enforcement E1–E10, quality attributes, open questions, Handoff to DEVOPS) | ✓ |
+| `design/wave-decisions.md`, `design/upstream-changes.md`, `discuss/wave-decisions.md` | ✓ |
+| Precedent: `epic-5510-5881-refinement/devops/wave-decisions.md`, its `environments.yaml`, its `## Wave: DEVOPS / …` sections | ✓ |
+| `Models/UsageData/UsageDataEventName.cs` (last `TeamForecastRealityCheckRun = 11`, same on this checkout's `main` at `289afca46`), `UsageDataRouteKey.cs` (last `PortfolioDetail_Access = 9`), `UsageDataRoutePatterns.cs`, `UsageDataEventShapes.cs` (`IsCarriedExactlyWhenDeclared`), `UsageDataEventReported.cs`, `UsageDataOptionalFeature.cs` (usage data's own list, not the product's keys) | ✓ |
+| `PostHogUsageDataPublisher.cs` (wire properties `work_tracking_system`, `optional_feature`, `licence_tier`) | ✓ |
+| Frontend `services/UsageData/usageDataRouteKeys.ts` (`/teams/:id/:tab?` matcher), `usageDataEvents.ts` (5-second dwell), `usageDataReporter.ts` (exhaustive `Record` mapping), `ForecastRealityCheck.tsx` (emission after a 2xx) | ✓ |
+| `docs/settings/usagedata.md` (event table, field table, "ten addresses", per-instance facts incl. licence tier) | ✓ |
+| `docs/product/kpi-contracts.yaml` (exists; append-only; `measurement_scope` vocabulary) | ✓ |
+| `docs/ci-learnings.md` (EF migrations section, migration DLL build order, `PendingModelChanges` verify recipe) | ✓ (relevant sections) |
+| `HistoricalSchemaPatch.cs` (patches **columns** on seeded tables, not tables) | ✓ |
+| `RateLimitingConfiguration.cs` + `[EnableRateLimiting]` sites | ✓ |
+| ADR-219..222 | ⊘ not re-read; DESIGN's sections carry their platform-relevant content |
+
+**Contradictions with DESIGN: none.** One addition DESIGN did not state — v1 must tolerate rows it cannot read,
+because v1 is the release that 5935 and 5882 roll back to (see *Deployment Strategy and Rollback*). It adds a
+behaviour, changes none, so there is no `devops/upstream-changes.md`.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `docs/feature/epic-5878-baseline/environments.yaml` (environments, `scenario_axes` per slice,
+coexistence matrix, deployment assumptions).
+
+| Environment | Why it exists here |
+|---|---|
+| `clean` | Baseline: SQLite, auth off, no licence (Community), demo data loaded (Team Lightspeed ≈ 100 days of history) |
+| `sqlite` / `postgres` | The one migration (new `Reports` table, two cascading FKs, exactly-one-owner CHECK) applies at startup on both; DB-level cascade on owner delete; payload JSON round-trip |
+| `auth-off` | Every Community instance: everyone may create, edit, delete (permissive) |
+| `auth-on-rbac-on` | Team/Portfolio Admin writes; Viewer reads only (403 on writes, no Create/Edit/Delete in the UI); no role → 404; another owner's route → 404 |
+| `licence-community` / `licence-premium` / `licence-lapsed` | The cap (slice 08): 2 per owner, unlimited, lapsed keeps > 2 readable and deletable but blocks creation |
+| `renamed-terminology` | Panel titles and labels use {Cycle Time}, {Throughput}, {WIP}, {Work Item Age}, {Team}, {Portfolio} tokens (E10) |
+| `instance-day-boundary` | Windows are inclusive instance-zone days from `ILighthouseClock.Today` (DD13): Then ending today, the cutoff edge, a clock either side of midnight in Europe/Zurich |
+| `usage-data-consented` | The only environment in which the three new events and two route keys leave the browser; also asserts none without consent |
+| `screenshot-capture` | Finalize screenshots (one per theme); premium licence fixture, delete-before-regenerate |
+
+**Deliberately left out**: operating system (nothing platform-sensitive; the verify-windows / verify-macos jobs prove
+the app starts); `auth-on-rbac-off` (the same permissive branch of the existing Read/Write guards as auth off, already
+pinned project-wide; one backend acceptance test, no axis); work tracking system kind (reports read stored history,
+never a connector); hosted tenant (platform torn down; Postgres covers the provider); Lighthouse-Clients (D15).
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**No workflow change. No new job, runner, secret or workflow.** The feature passes through what exists:
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` (`path-classifier.sh`) | Flags backend and frontend. **Slice 01 registers the Reports module in `Program.cs`** → `connector_shared=true` → the full live-connector `Integration` category runs (shared Linear key, unauthenticated GitHub pair can rate-limit). Expect it; do not debug it as a regression. A red backend skips `sonar-gates` |
+| Backend | `ci_backend.yml` | `dotnet build` zero warnings; NUnit unit + WebApplicationFactory acceptance tests (RBAC on every write, cross-owner 404, cap, window policy, parity E6, payload round-trip E7, cascade E8, bounded-change row counts); ArchUnitNET E1–E5; `ExpandOnlyMigrationGuard` over the one migration |
+| Frontend | `ci_frontend.yml` | Vitest (panels pure, registry exhaustive, reason-code maps, dialogs, usage-data emission per event, route keys); `pnpm build` (`tsc -b`, Biome `--write` in prebuild) |
+| E2E (compile) | `ci_e2e.yml` | Compiles the suite only |
+| Verify SQLite / Postgres | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | **Where E2E runs, twice.** One walking skeleton (thin-sanity rule), slice 01: through a Page Object on demo Team Lightspeed, open Reports, create a 30-day report, see the {Cycle Time} panel. Everything else — Portfolio, cap, edit, delete, the "—" cases — sits below E2E |
+| Verify auth | `ci_verifyauth.yml` | **No new `@auth` spec.** The RBAC matrix is pinned by backend acceptance tests; a browser leg would add a Keycloak run for guards already proven below it |
+| Quality gate | `ci_sonar_gates.yml` | No new issue of any severity. Pre-apply (`docs/ci-learnings.md`): S6964 nullable value types on request DTOs, no `[JsonRequired]` on anything a stored client may omit, CA1869 cached `JsonSerializerOptions` for the payload converter, CA1859, S107 (two controllers, DD18), S3776, CA1861/NUnit2045 in new tests, Zod `.nullable()` |
+| Package / Docker / Chart | existing jobs | Unchanged. No chart value added |
+| Release | `ci_release.yml` via `/release` | Calver; cut after slice 10 (D34); `waiting` on main = deploy approval |
+
+**Local gates** (CI parity, `CLAUDE.md` § Quality Gates): `pnpm test`, `pnpm build`, backend build + filtered
+`dotnet test` (connector categories excluded). In a worktree, copy the premium licence fixture first (2 Licensing
+failures otherwise; the cap tests in slice 08 need it). Generate the migration with `Create-Migration.ps1`, then
+rebuild each migrations csproj `--no-incremental` and the solution `--no-incremental`, then verify with a throwaway
+SQLite start grepping for `PendingModelChanges` (Kestrel keys overridden, never port 5169).
+
+**Lighthouse-Clients: N/A, because the maintainer excluded CLI/MCP (D15).** Every endpoint is additive and no existing
+response shape changes, so no client release is forced.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+**Maintainer's instruction (2026-10-03)**: "Track report events: created (with what template), opened, deleted."
+**Project rule** (`CLAUDE.md`): name-only first; a property only when a KPI cannot be counted without it, only a closed
+enum, never free text, ids or counts. **What the pipe can see decides the honest answer per KPI**: every event reaches
+PostHog under a **per-browser** pseudonym with **no instance id, no Team id, no Portfolio id, no report id** — by
+design (`docs/settings/usagedata.md` § *Counting browsers, not installations*). The server attaches per-instance
+facts to every event, among them **licence tier** (`Community` / `Premium`) and deployment mode. So a KPI phrased per
+*instance* is measured per *browser* (precedent DVO-3), and a KPI that needs to pair two events about *the same report*
+can pair them only as "same browser, close in time".
+
+### New vocabulary (appended, never renumbered)
+
+**The name is the contract; the integer is whatever is next on `main` when the slice lands.** Today the next free
+event integer is 12 and the next free route key is 10. The Refinement epic has named its own events (provisionally
+12–16) and `TeamDetail_Refinement` (provisionally 10) the same way; neither feature reserves numbers — whichever slice
+lands first takes the next one. The integers below assume Reports lands first.
+
+| Event (`UsageDataEventName`) | Int (provisional) | Carries | Emitting slice (DELIVER step) | Fires (browser, after the server accepted) | KPI served |
+|---|---|---|---|---|---|
+| `TeamTabOpened` + route key **`TeamDetail_Reports`** (`/teams/:id/reports`) | 0 (existing) / key 10 | route (existing) | **01** | Existing 5-second dwell rule; `usageDataRouteKeys.ts` gains `["reports", …]`, `UsageDataRoutePatterns` gains the address | K1 funnel step (saw the tab → created); Team vs Portfolio split |
+| `PortfolioTabOpened` + route key **`PortfolioDetail_Reports`** (`/portfolios/:id/reports`) | 1 (existing) / key 11 | route (existing) | **06** | Same | Same, for Portfolios |
+| **`ReportCreated`** | **12** | `report_template` | **01** | `POST …/reports` returned 201, from the create dialog. Never on a refused create (window, cap) | K1, K2 (cohort start), G1 (denominator) |
+| **`ReportOpened`** | **13** | `report_template` | **01** (Team), Portfolio from **06** with no extra step — the view is shared | The report view's `GET …/reports/{id}` returned 2xx **and the view stayed mounted 5 s** (same constant as tab openings); at most once per mount — a refetch after an edit does not fire again | K2 (north star) |
+| **`ReportDeleted`** | **14** | nothing | **08** | `DELETE …/reports/{id}` returned 204, from the report's delete dialog. **Not** when reports go with their Team or Portfolio (that is `TeamDeleted` / `PortfolioDeleted`, D42) | G1 |
+
+**The report view's own route maps to no route key.** The existing matcher is `/teams/:id/:tab?`, which does not match
+`/teams/7/reports/42`, so opening a report reports no tab opening — `ReportOpened` says it. Pinned by a Vitest case
+(`/teams/7/reports` → `TeamDetail_Reports`; `/teams/7/reports/42` → nothing). This answers DESIGN's "same key or its
+own": neither — the event is the report's, the key is the list's, and they never double-count.
+
+**Tab openings are kept, not redundant**: the tab opening counts the *list* being looked at (did people find Reports),
+`ReportOpened` counts a *report* being read (is the yardstick used). A deep link — 5882 will email one — lands on the
+report without passing the tab, so only `ReportOpened` sees it.
+
+**One new closed enum** (a new nullable part on `UsageDataEventReported`, declared in `UsageDataEventShapes` with
+`IsCarriedExactlyWhenDeclared` for `ReportCreated` and `ReportOpened`, a new `snake_case` property in
+`PostHogUsageDataPublisher.WhatEachMessageCarries`, a string-union mirror in `UsageData.ts`, a row in the disclosure
+page's field table):
+
+| Enum | Values | Wire property | Carried by |
+|---|---|---|---|
+| `UsageDataReportTemplate` | `ThenAndNow = 0` (slice 01). 5935's Signal template, and any later template, **appends** a value in the slice that ships it | `report_template` | `ReportCreated`, `ReportOpened` |
+
+Usage data's own list, not the product's `TemplateKey` strings (the `UsageDataOptionalFeature` precedent): the browser
+maps `templateKey` through an exhaustive `Record<ReportTemplateKey, UsageDataReportTemplate>` (the
+`asSomethingWeDisclose` pattern in `usageDataReporter.ts`), so a new template fails to compile until somebody decides
+what it discloses — it never starts travelling unannounced.
+
+**`ReportOpened` carries `report_template` too, from the start (maintainer, 2026-10-03).** Symmetry with
+`ReportCreated`: the event's shape does not change when Signals (5935) arrives, so K2 and any later per-template
+reading run over one unbroken series. The value comes from the read's `templateKey` through the same exhaustive map.
+This is a deliberate exception to "name-only first", decided by the maintainer; in v1 the value is always
+`ThenAndNow`.
+
+**No owner-kind property, and no Team-/Portfolio- prefixed names.** No KPI splits by owner kind. The split, where
+anyone wants it, is readable from the two route keys. Three owner-agnostic names follow from DESIGN's single module and
+shared tab.
+
+### KPI → instrument
+
+| KPI | Instrument | Computed in PostHog (or elsewhere) | As specified? |
+|---|---|---|---|
+| **K1** activation (≥ 10% of opted-in instances with ≥ 1 Team create ≥ 1 report within 90 days) | `ReportCreated` | distinct browsers sending `ReportCreated` ÷ distinct browsers sending any `TeamTabOpened` or `PortfolioTabOpened`, 90 days from the release; funnel view adds `TeamDetail_Reports` / `PortfolioDetail_Reports` as the middle step | **Proxy, per browser — accepted by the maintainer 2026-10-03.** Instances have no identity in the pipe. Viewers who cannot create sit in the denominator, so it reads low; target kept as a hypothesis |
+| **K2** north star (≥ 40% of creators open Reports again on ≥ 2 later days, ≥ 7 days after their first report) | `ReportCreated` (cohort) + `ReportOpened` | per browser: first `ReportCreated` day d₀; success when `ReportOpened` falls on ≥ 2 distinct calendar days ≥ d₀ + 7 | **Proxy, per browser, and a lower bound — accepted by the maintainer 2026-10-03.** The creating coach's browser only; a Viewer reading the report in their own browser (Martin) is real use the KPI cannot attribute. **Instrument changed** from DISCUSS's tab openings to `ReportOpened` (see Changed Assumptions) |
+| **K4** land-and-expand (≥ 15% of Community creators hit the 2-report cap within 90 days) | none exact; proxy from `ReportCreated` + `licence_tier` | proxy: Community browsers with ≥ 2 `ReportCreated` within 90 days ÷ Community browsers with ≥ 1 | **An upper bound, not a count.** The cap is per owner; the pipe has no owner, and deletes free a slot, so two creations may be two Teams that never met the cap. No fourth event (maintainer 2026-10-03): read the proxy only as "at most this many" |
+| **K5** consultants show a report to client management (≥ 2 in 90 days) | maintainer conversation log (DISCOVER R1, R2) | — | Qualitative, unchanged; no telemetry |
+| **G1** reports deleted within 1 day of creation ≤ 20% of created | `ReportDeleted` + `ReportCreated` | per browser: `ReportDeleted` within 24 h after a `ReportCreated` from the same browser ÷ `ReportCreated` | **Proxy — accepted by the maintainer 2026-10-03.** Without a report id, a delete cannot be paired with *its* create; a same-day delete of an older report counts too, so the proxy reads high — safe for a ceiling guardrail. Readable from slice 08 |
+| **G2** open ≤ 2 s, create ≤ 10 s | slice 01 timing on the dev instance's busiest Team (manual, DELIVER); DISTILL timing check; the `ElapsedMs` field of the *report created* log line, Warning above 10 s (Observability) | per instance, in the log and *Recent problems* | Not telemetry. In the field it is the operator's signal, not ours |
+| **G3** no report shows 0 where data is absent; Metrics tab PBCs unchanged | DISTILL boundary scenarios (the five "—" codes, DD12) + E5 byte-identical `Calculate` + E6 parity | CI | Not telemetry |
+
+**Smuggling refused, explicitly**: no report name, report id, owner id, metric value, window length, shown-metric
+list, sample size or count travels. The template is the only property, carried by `ReportCreated` and `ReportOpened`, and it is a closed enum.
+
+**Per-slice disclosure duty** (`docs/settings/usagedata.md`, the same DELIVER step that emits; `UsageDataDisclosureTest`
+fails the build if a row is missing):
+
+- **01**: rows *A report was created* (with "which template — only *Then & Now*; never its name, never which Team or
+  Portfolio, never its dates or numbers") and *A report was opened* (five-second rule; which template, as for creation); field row
+  *Which report template* (only on a report being created or opened; value `ThenAndNow`); the Team tab count and the address
+  list gain *Reports*; the "only on …" sentences of the existing field rows get their event counts updated.
+- **06**: the Portfolio tab count and the address list gain *Reports*.
+- **08**: row *A report was deleted* ("only when somebody deletes a report itself — reports that go with their Team or
+  Portfolio are not reported again").
+
+`kpi-contracts.yaml`: `OUT-5878-*` entries appended (K1, K2, K4, G1, G2; K3 dropped).
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy and Rollback
+
+**Rollback first.** Every slice is additive; one contract for all of them:
+
+| What | Rollback | Why it is safe |
+|---|---|---|
+| Code | `git revert` of the slice's commits, then the ordinary release path; or install the previous release | One artifact carries backend + frontend; no mixed-version window inside an instance |
+| **The one migration** (slice 01): new table `Reports`, FKs `TeamId` → `Teams` and `PortfolioId` → `Portfolios`, both **ON DELETE CASCADE**, indexed; exactly-one-owner CHECK | **None.** Leave the table | An older binary does not map it and never queries it. The cascade is a **database** constraint (emitted into the migration), so an older binary deleting a Team or Portfolio removes its reports instead of failing on the FK. DELIVER 01 asserts the constraint on both providers, not only the EF model's `OnDelete` |
+| Payload JSON | Members only ever **added**, nullable; absent = "Not captured" (DD2, D27) | An older reader ignores unknown members — so the payload converter must **not** set `UnmappedMemberHandling.Disallow` |
+| `Down()` | Never run in production | `ExpandOnlyMigrationGuard` checks `Up` for Drop/Rename |
+
+**Forward tolerance — ships in v1 because v1 is the "previous release" later.** When 5935 adds a Signal template, or
+5882 adds members, and an instance rolls back to v1, the v1 binary meets rows it cannot fully read. That binary is the
+one being built now; it cannot be patched afterwards. So slice 01 makes the v1 read path tolerant:
+
+- a row whose `TemplateKey` v1 does not know is **listed** (name, created date) and **counts toward the cap** — the
+  cap is across templates (D29) — and stays **deletable**; opening it answers a closed refusal code (e.g.
+  `template-not-supported`, status as DELIVER chooses), **never a 500**;
+- a payload member v1 does not know is ignored; a `PayloadSchemaVersion` above v1's is read for the members v1 knows;
+- one Warning log line per unreadable row read (Observability), so an operator sees why a report will not open.
+
+DISTILL: one acceptance scenario each — a seeded row with an unknown template key; a payload carrying an extra member.
+
+**Rollback rehearsal (owed, DELIVER 01)**: start the previous published release's Docker image against a database
+migrated by slice 01 (SQLite file + Postgres) that holds reports; open a Team, delete a Team that has reports.
+Expected: starts, healthy (`MigrationsAppliedHealthCheck` checks *pending*; the older binary has none), the reports go
+with the Team, no error. One manual check, recorded in the slice's deliver notes.
+
+**Migration generation (DELIVER 01)**: `Lighthouse.Backend/Create-Migration.ps1 -MigrationName AddReports` (SQLite +
+Postgres; the script needs a full solution build first), then the ordered `--no-incremental` rebuild (migration DLLs
+are HintPath refs). **The CHECK constraint is not a problem on SQLite here**: SQLite cannot add a constraint to an
+existing table, but this is a new table, so EF writes the CHECK inline in `CREATE TABLE`. DESIGN's fallback (factory
+plus a test) is only needed if `Create-Migration.ps1` output proves otherwise.
+
+**`HistoricalSchemaPatch`: no entry.** It patches *columns* that a later migration adds to tables the migration
+fixtures seed (Teams, Portfolios, Deliveries). Slice 01 adds a *table* that no fixture seeds and no column to Teams or
+Portfolios (the FKs live on `Reports`). DELIVER 01 confirms by running the fixtures that call it. If slice 01 ends up
+adding any column to `Teams` or `Portfolios` after all, it must add the entry.
+
+**Rollout**: the existing release path, cut after slice 10 (D34); slices 01–07 are safe on trunk before the cap.
+Exposure is progressive by construction: nothing is written until an admin creates a report. **Hosted**: none now;
+when respun, Recreate picks up the image, no chart change.
+
+---
+
+## Wave: DEVOPS / [REF] Rate Limiting
+
+**N/A, because Lighthouse rate-limits only anonymous and credential surfaces, and these are authenticated writes.**
+The six existing policies guard login, API keys, bootstrap, embed sessions and usage-data consent/ingest. No
+authenticated domain write has one, including costlier ones than these: the manual forecast, the forecast reality
+check, a manual refresh. Report writes need `TeamWrite` / `PortfolioWrite` with auth on. With auth off, whoever reaches
+the instance can already do everything, and the Community cap bounds the rows at 2 per owner.
+
+Accepted residual: a create costs up to the 10 s budget of CPU (four captures over ≤ 365 days, DD20). An editor on a
+Premium instance looping creates can load the instance, exactly as looping manual forecasts can today. If that ever
+matters, the remedy is project-wide (a policy for expensive authenticated operations), not a Reports-only one.
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+**Unchanged stack; five log lines, no metric, no dashboard.** Message templates with named placeholders, no
+interpolation; a catch that logs passes the exception first (S6667).
+
+| Event | Level | Structured fields | Never logged |
+|---|---|---|---|
+| Report created | **Information**; **Warning** (`report-creation-slow`, surfaces in *Recent problems*) when `ElapsedMs` > 10 000 — G2's field signal and DD20's trigger for cheaper captures | `ReportId`, `OwnerKind`, `OwnerId`, `TemplateKey`, `ThenLengthDays`, `NowLengthDays`, `ElapsedMs` | name, any captured value, limit or sample size |
+| Create refused (window policy codes; `report-cap-reached`) | Information — a user error or a stale UI (the UI disables Create at the cap), not operator-actionable | `Reason`, `OwnerKind`, `OwnerId`, `TemplateKey` | name, requested dates |
+| Report deleted (its own delete; not the owner cascade) | Information — irreversible, and the one thing an operator may be asked about later | `ReportId`, `OwnerKind`, `OwnerId`, `TemplateKey` | name |
+| Report edited | Debug | `ReportId`, `OwnerKind`, `OwnerId` | name (old or new), shown keys |
+| A stored report cannot be read (unknown template key, payload that fails to deserialize) | **Warning** — operator-actionable (a rollback across a template, or a corrupt row); at most once per read of that report | `ReportId`, `TemplateKey`, `PayloadSchemaVersion` | payload content |
+
+**Never in any log line**: the report name, metric values, limits, sample sizes, the window dates the user typed. The
+read path logs nothing on success (it runs on every view). A stale edit's 409 is logged by the existing
+concurrency filter, as for every other entity.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**`per-feature`, ≥ 80%** — the project setting, not re-decided, `CLAUDE.md` not edited. Run **once per Epic at
+finalize (after slice 10), last, on frozen code**, recorded under `docs/feature/epic-5878-baseline/mutation/`.
+
+- **Backend (Stryker.NET)**, whole files only (.NET Stryker ignores line spans): `Models/Reports/*`,
+  `Services/Implementation/Reports/**` (templates, the four `*ReportMetric`, `ReportMetricCatalog`,
+  `ReportWindowPolicy`, `BeyondLimits`, `ReportCapPolicy`, the two series adapters, `ReportQueries`, `ReportCommands`),
+  `XmRCalculator.cs` (extended, small). **Not** `BaseMetricsService.cs` / the metrics services whole-file (large,
+  shared; the extracted reads are pinned by parity E6 instead — stated in `results.md`, not hidden in the number),
+  not the controllers (thin; covered by acceptance tests), not `Program.cs`.
+- **Exclude the acceptance suite** (WebApplicationFactory hosts: 80 min vs 3) — unit tests only.
+- **Frontend (StrykerJS)**: `pages/Common/Reports/**` (panels, `thenNowComparison`, `reportPanelRegistry`,
+  `reportWindowPresets`, dialogs), the usage-data additions (template mapping, report-opened dwell). Copy literals:
+  pin against the literal (StrykerJS does not mutate JSX text).
+- Config files `stryker-<id>.*.json` match the report ignore pattern — **force-add** and say so in the commit.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based on `main`**, unchanged. Slice boundary ritual: a focused commit per step, push at slice end only when
+green, wait for CI, then ADO Active → Resolved. Never push red (skip a not-yet-passing acceptance test). This worktree
+branch lands by push to `main` when the maintainer says so; no autonomous rebase.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Full table in `environments.yaml`. What must keep working while this ships:
+
+| Must not break | Why it is at risk |
+|---|---|
+| Metrics tab values and PBCs | `XmRCalculator.Limits` extracted (E5: `Calculate` byte-identical); cycle-time selection extracted from `BaseMetricsService`; two private series made public (parity E6) |
+| Team / Portfolio delete | Gains "and its N reports"; the DB cascade must remove reports on both providers |
+| Existing usage-data events, route keys, the disclosure test | Appended to, never renumbered; the matcher's existing tabs unchanged; `/teams/new` still maps to nothing |
+| Team / Portfolio tab order | Reports inserted after Metrics |
+| Migration fixtures | No `HistoricalSchemaPatch` entry needed (new table only); confirmed in DELIVER 01 |
+| Demo data consumers (every E2E) | No CSV change planned; if slice 03 adjusts Lightspeed's CSV, grep `Lighthouse.EndToEndTests` for Lightspeed first |
+| Live-connector Integration run on the `Program.cs` slice | Runs in full on slice 01; shared Linear key |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites from DESIGN
+
+| DESIGN constraint | Platform answer |
+|---|---|
+| DD2/DD3 one table, two cascading FKs, one migration | Expand-only; DB-level cascade asserted on both providers; CHECK inline on a new table; rollback = leave the table |
+| DD2 additive payload | Unknown members ignored (no `Disallow`); unknown template keys tolerated in v1 (forward tolerance) |
+| DD17 cap, `creationBlockedByCap` | K4 read as an upper-bound proxy (no cap event); a server-side refused create logged at Information |
+| DD18 RBAC, no new requirement | `auth-off` + `auth-on-rbac-on` axes; no `@auth` E2E |
+| DD20 in-request create ≤ 10 s | `ElapsedMs` on the created log line, Warning above budget |
+| DD22 linkable report route | Maps to no route key; `ReportOpened` covers it |
+| DD23 no domain event | Usage events are browser-detected from 2xx responses — consistent |
+| "Usage data route keys / event enum: EXTEND (DEVOPS)" | Three events, one enum, two keys, above |
+| DESIGN open question: SQLite CHECK via `CreateMigration` | Expected to work (new table); fallback unchanged |
+| DESIGN open question: HTTP status for `report-cap-reached` | Unchanged — DELIVER follows the existing premium refusals; no platform consequence |
+
+---
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL
+
+**To** `nw-acceptance-designer`: `environments.yaml` (`scenario_axes` per slice); the event table above — each emitting
+slice gets two Vitest scenarios (consented: exact name, and for `ReportCreated` and `ReportOpened` exact `report_template`; not
+consented: nothing), plus `ReportOpened`'s dwell (leaving within 5 s reports nothing; a refetch after edit does not
+report again), the route-key cases (`/teams/7/reports` → key; `/teams/7/reports/42` → nothing), the owner-cascade case
+(deleting a Team reports `TeamDeleted`, never `ReportDeleted`), and a backend `Fits` shape test for `report_template`
+(refused on any other event; `ReportCreated` and `ReportOpened` refused without it); the forward-tolerance scenarios (unknown template
+key, extra payload member); the log assertions (levels above; no name in the rendered message); the DB-level cascade
+assertion on both providers. Tags: `@kpi-OUT-5878-*` per `kpi-contracts.yaml`.
+
+**Per-wave peer review: not run** (documents-only subagent; the coordinator's call). No novel deployment target, no
+new CI framework, no observability rewrite.
+
+**Outcome collision check** (`nwave-ai outcomes check-delta`): not run here; still owed by the coordinator.
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| D33: "name-only candidates for creation, deletion and the cap refusal"; Checklist: "New name-only candidates … report created (K1)" | `ReportCreated` carries a closed enum `report_template` {ThenAndNow} from the start | The maintainer's instruction of 2026-10-03 ("created (with what template)"). Designed so 5935 and later templates append values |
+| D33 / Checklist: no "report opened" event; K2 "measured by `TeamTabOpened`/`PortfolioTabOpened` with the Reports route keys" | New `ReportOpened` carrying `report_template` (maintainer: symmetry with `ReportCreated`); K2 counted on it | The maintainer asked for it; it also sees deep links (5882) that never pass the tab, and it does not count looking at an empty list as using the yardstick |
+| D33 / Checklist: "report creation refused at cap" (K4) | **Not added.** K4 has an upper-bound proxy only | The maintainer chose three events only (2026-10-03) |
+| Checklist: "K3 may justify one closed-enum property on 'report created' … DEVOPS decides or drops K3" | No property; **K3 dropped** (maintainer 2026-10-03) | A property at creation would miss every Now length changed through Edit report, which has no event (D33) |
+| DESIGN: "the report view's nested route should map to the same key or its own — DEVOPS decides" | Neither; it maps to no key | `ReportOpened` is the report's event; the key stays the list's; no double count |
+| K1, K2, K4, G1 phrased per instance or per report | Per browser (proxies above) | The pipe has no instance, owner or report identity, by design |

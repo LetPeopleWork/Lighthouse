@@ -1,0 +1,189 @@
+# environments.yaml - consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# epic-5878-baseline (Epic #5878, Then & Now report; Stories #6159-#6168). One new module inside the
+# existing application: no new container, no new external system, no new secret, no new configuration.
+# The environments below are not deployment targets to stand up - they are the axes along which this
+# feature can behave differently, so DISTILL parametrises where it pays and nowhere else.
+#
+# Axes considered and deliberately left OUT:
+#   - operating system. Nothing here is platform-sensitive; the verify-windows / verify-macos jobs
+#     already prove the app starts there.
+#   - auth on with RBAC off. The same permissive branch of the existing Read/Write guards as auth off;
+#     one backend acceptance test pins it, no axis.
+#   - work tracking system kind. Reports read stored history through the metrics services, never a
+#     connector.
+#   - hosted (Kubernetes) tenant. The platform is torn down (2026-09-26); Postgres covers the provider.
+#   - Lighthouse-Clients (CLI / MCP). Excluded by the maintainer (D15).
+
+schema_version: 1
+feature_id: epic-5878-baseline
+updated: 2026-10-03
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance: SQLite, authentication off, no licence (Community), seeded Terminology, demo
+      data loaded (Team Lightspeed with about 100 days of history, thin Portfolios). No pre-seeded
+      report. Baseline for every scenario that does not name another environment.
+    platform: [linux, macos, windows]
+    preconditions: ["Demo data seeded", "Authentication off", "No licence file"]
+
+  - name: sqlite
+    description: >
+      The standalone product's provider. Where the AddReports migration applies at startup, the
+      exactly-one-owner CHECK sits inline in CREATE TABLE, and ON DELETE CASCADE from Teams and
+      Portfolios must fire.
+    platform: [linux, macos, windows]
+    preconditions: ["SQLite provider (default)", "foreign_keys pragma on (Microsoft.Data.Sqlite default) so ON DELETE CASCADE fires"]
+
+  - name: postgres
+    description: >
+      The Docker / Helm provider. Same migration; the cascade is a database constraint, which is what
+      lets an older binary delete a Team or Portfolio after a rollback.
+    platform: [linux]
+    preconditions: ["PostgreSQL provider", "connection string configured"]
+
+  - name: auth-off
+    description: >
+      Every Community instance without sign-in: everyone may create, edit and delete reports
+      (permissive), as DISCUSS's RBAC row states.
+    platform: [linux]
+    preconditions: ["Authentication disabled"]
+
+  - name: auth-on-rbac-on
+    description: >
+      The RBAC matrix: Team / Portfolio Admin and System Admin write; Viewer reads only (403 on
+      create, edit incl. Now length, delete; no Create/Edit/Delete in the UI); no role gets 404 on
+      read and write; a report reached through another owner's route is 404.
+    platform: [linux]
+    preconditions: ["Authentication enabled", "RBAC on", "Profiles for Team Admin, Portfolio Admin, System Admin, Viewer, no role"]
+
+  - name: licence-community
+    description: "No licence. 2 reports per owner across all templates; the list envelope says creationBlockedByCap at 2."
+    platform: [linux]
+    preconditions: ["No licence file"]
+
+  - name: licence-premium
+    description: "Valid Premium licence. Unlimited reports."
+    platform: [linux]
+    preconditions: ["Premium licence fixture present (valid_not_expired_license.json is gitignored and absent in a worktree - import it from the main checkout first)"]
+
+  - name: licence-lapsed
+    description: >
+      A Premium licence that expired while an owner held more than 2 reports: all stay readable and
+      deletable, creation is blocked until the count is below 2.
+    platform: [linux]
+    preconditions: ["Expired licence fixture", "Owner seeded with 3 reports"]
+
+  - name: renamed-terminology
+    description: >
+      Cycle Time, Throughput, WIP, Work Item Age, Work Item, Team and Portfolio renamed under
+      Settings -> Terminology. The only environment that catches a hard-coded metric word in a panel
+      title, a label or a "—" reason. No new Terminology key (D32).
+    platform: [linux]
+    preconditions: ["Terminology overrides for the metric and owner terms", "Premium licence fixture (Terminology editing is Premium)"]
+
+  - name: instance-day-boundary
+    description: >
+      Instance clock controlled by the test, zone Europe/Zurich: Then ending today, a Then starting
+      exactly at today minus DoneItemsCutoffDays, exactly 14 inclusive days, and a clock either side
+      of local midnight. Windows are computed on the server from ILighthouseClock.Today, never the
+      viewer's clock.
+    platform: [linux]
+    preconditions: ["ILighthouseClock controlled by the test", "Instance zone Europe/Zurich (all suites are pinned to it)"]
+
+  - name: usage-data-consented
+    description: >
+      A browser holding live usage-data consent on a published-release build (or with
+      UsageData:CollectorBaseUrl set). The only environment in which ReportCreated, ReportOpened,
+      ReportDeleted and the two Reports route keys leave the frontend; without consent none of them is
+      reported, which is also asserted.
+    platform: [linux]
+    preconditions: ["Consent granted in this browser", "Collector stubbed (never the real PostHog from a test)"]
+
+  - name: screenshot-capture
+    description: >
+      The @screenshot run at the Epic's finalize: a Team report with green, red and "—" values, and the
+      create dialog; one per theme.
+    platform: [linux]
+    preconditions:
+      - "Premium licence fixture present (import from the main checkout in a worktree)"
+      - "Target PNGs deleted before the run (a diff under the pixel threshold keeps the old file)"
+      - "@auth excluded (its database wipe loses other regenerated PNGs)"
+
+scenario_axes:
+  migration_and_cascade:
+    slices: ["01", "06", "08"]
+    vary_over: [sqlite, postgres]
+    rationale: "The table, its CHECK and the two cascading FKs apply at startup on both providers; deleting a Team (01) or Portfolio (06) removes its reports at the database; the owner-delete dialog's count (08)."
+  payload_round_trip:
+    slices: ["01", "05"]
+    vary_over: [sqlite, postgres]
+    rationale: "One JSON text column; 01 is the first shape, 05 the largest. A slice-01-shaped document reads into the current type (E7); an extra unknown member is ignored."
+  forward_tolerance:
+    slices: ["01"]
+    vary_over: [clean]
+    rationale: "A seeded row with an unknown template key is listed, counted toward the cap, deletable, and opening it gives a closed refusal, never a 500 - v1 is the release later templates roll back to."
+  rbac_writes:
+    slices: ["01", "06", "08", "10"]
+    vary_over: [auth-off, auth-on-rbac-on]
+    rationale: "Create (01, 06), delete (08), edit incl. Now length (10): permissive with auth off, Admin-only with RBAC on, 404 across owners."
+  cap:
+    slices: ["08"]
+    vary_over: [licence-community, licence-premium, licence-lapsed]
+    rationale: "The only licence-sensitive behaviour (D29); metrics, panels, windows and editing are never gated."
+  windows:
+    slices: ["01", "02", "07"]
+    vary_over: [instance-day-boundary]
+    rationale: "Inclusive instance-zone days, the 14-day minimum, the cutoff edge, Now length at creation."
+  terminology:
+    slices: ["01", "03", "04", "05", "06"]
+    vary_over: [clean, renamed-terminology]
+    rationale: "Each panel introduces metric words; 06 introduces Portfolio and Feature wording."
+  usage_data_emission:
+    slices: ["01", "06", "08"]
+    vary_over: [usage-data-consented]
+    rationale: "01: ReportCreated and ReportOpened (after 5 s dwell), both with report_template=ThenAndNow, TeamDetail_Reports; /teams/7/reports/42 maps to no key. 06: PortfolioDetail_Reports. 08: ReportDeleted; deleting the owner reports TeamDeleted / PortfolioDeleted, never ReportDeleted. Each asserted once with consent (exact name, exact property) and once without (nothing reported). Backend Fits test for report_template on exactly those two events."
+  demo_data:
+    slices: ["01", "03"]
+    vary_over: [clean]
+    rationale: "E2E walking skeleton on Lightspeed (01); one demo Team must yield a non-zero beyond-limits count for the screenshot (03)."
+
+coexistence_matrix:
+  - tool: "Metrics tab values and process behaviour charts"
+    must_not_break: true
+    note: "XmRCalculator.Limits extracted with Calculate byte-identical (E5); the cycle-time selection and two private series made public; parity with the Metrics endpoints (E6)."
+  - tool: "Team and Portfolio delete"
+    must_not_break: true
+    note: "The confirmation gains 'and its N reports'; the database cascade removes them on both providers."
+  - tool: "Existing usage-data events, route keys and the UsageDataDisclosureTest"
+    must_not_break: true
+    note: "Three events, one enum, two route keys appended; the disclosure page gains rows counted by the test; /teams/new still maps to nothing."
+  - tool: "Team and Portfolio tab order"
+    must_not_break: true
+    note: "Reports inserted after Metrics."
+  - tool: "Migration fixtures (HistoricalSchemaPatch)"
+    must_not_break: true
+    note: "No entry expected (new table, no column on Teams or Portfolios); DELIVER 01 runs the fixtures to confirm."
+  - tool: "Demo data and every E2E that loads it"
+    must_not_break: true
+    note: "No CSV change planned; if slice 03 adjusts Lightspeed, grep Lighthouse.EndToEndTests for Lightspeed before pushing."
+  - tool: "Live-connector Integration suite"
+    must_not_break: true
+    note: "Slice 01's Program.cs registration runs it in full in CI (shared Linear key); a red there is not this feature's regression until shown."
+
+platform_coverage:
+  Linux: [Ubuntu 24.04]
+  macOS: [standalone package, verify job]
+  Windows: [standalone package, verify job]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "Ships in the existing artifacts: standalone packages (Linux / Windows / macOS / Tauri desktop), the Docker image, the Helm chart. No chart change: no new environment variable, port, volume, secret or configuration entry."
+  - "One additive migration applied at startup: AddReports (slice 01). Expand-only, generated with Create-Migration.ps1 for SQLite and Postgres. No further migration in slices 02-10."
+  - "Rollback to the previous release is safe: the older binary ignores the Reports table; the database cascades it with its owner."
+  - "v1 tolerates rows it cannot read (unknown template key, unknown payload members), because v1 is the release later templates roll back to."
+  - "Dark until an admin creates a report: nothing new is written before that."
+  - "Released after slice 10 (D34); slices 01-07 are safe on trunk before the cap."
+  - "Hosted platform torn down 2026-09-26: nothing is deployed there; the chart only needs the new image when it is respun."

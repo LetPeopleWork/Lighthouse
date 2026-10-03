@@ -1711,3 +1711,93 @@ outcomes:
     measurement_window: "monthly after E2"
     alerting: []
     status: designed-not-shipped
+
+  # epic-5878-baseline, Then & Now report (DEVOPS 2026-10-03). Three events by the maintainer's
+  # instruction: ReportCreated and ReportOpened (both report_template), ReportDeleted, plus the Reports route
+  # keys on the existing tab openings. The pipe carries no instance, owner or report identity, so
+  # every KPI phrased per instance or per report is measured per browser. Event integers are
+  # provisional: each slice appends the next free one. K5 is qualitative (maintainer conversation
+  # log) and has no contract here. K3 was dropped by the maintainer on 2026-10-03.
+
+  - id: OUT-5878-K1-report-created
+    feature: epic-5878-baseline
+    title: Browsers that look at Teams or Portfolios create a report (activation)
+    target: ">= 10% of browsers that report any Team or Portfolio tab opening also report ReportCreated within 90 days of the release. A hypothesis; DISCUSS stated it per instance, which the pipe cannot express."
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportCreated (provisional 12), slice 01, property report_template in {ThenAndNow}: sent after POST .../reports returned 201."
+        - "Denominator: TeamTabOpened / PortfolioTabOpened, any route (existing). Funnel middle step: route TeamDetail_Reports (slice 01) / PortfolioDetail_Reports (slice 06)."
+      derivation: "Distinct browsers reporting ReportCreated / distinct browsers reporting any Team or Portfolio tab opening, 90 days from the release that carries slice 10."
+      surfacing: ["docs/settings/usagedata.md rows (slice 01)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5878-K1-report-created - Vitest: consented create reports ReportCreated with report_template ThenAndNow exactly once; a refused create reports nothing; not consented reports nothing. Backend: Fits refuses report_template on any event but ReportCreated and ReportOpened, and either of those without it"
+    measurement_window: "90 days from the release carrying slice 10"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Per-browser proxy accepted by the maintainer 2026-10-03. Browsers, not instances; Viewers who cannot create are in the denominator, so it reads low."
+
+  - id: OUT-5878-K2-reports-reopened
+    feature: epic-5878-baseline
+    title: Creators come back to their reports (north star)
+    target: ">= 40% of browsers that created a report report ReportOpened on >= 2 distinct days, each >= 7 days after that browser's first ReportCreated"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportOpened (provisional 13), property report_template in {ThenAndNow}, slice 01: the report view's read returned 2xx and the view stayed mounted 5 s; once per mount. Portfolio reports from slice 06 through the shared view."
+        - "ReportCreated (OUT-5878-K1) for the cohort start."
+      derivation: "Per browser: d0 = day of first ReportCreated; success when ReportOpened falls on >= 2 distinct calendar days >= d0 + 7."
+      surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5878-K2-reports-reopened - Vitest: staying 5 s on a report reports ReportOpened with report_template ThenAndNow once; leaving sooner reports nothing; a refetch after an edit does not report again; /teams/7/reports/42 maps to no route key"
+    measurement_window: "from the release carrying slice 10, cohorts by first-creation week"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Per-browser proxy accepted by the maintainer 2026-10-03. Lower bound: a Viewer reading the report in their own browser is real use that nothing links to the creator."
+
+  - id: OUT-5878-K4-community-cap-reached
+    feature: epic-5878-baseline
+    title: Community creators reach the 2-report cap (land-and-expand)
+    target: ">= 15% of Community creators reach the cap within 90 days, read against an upper-bound proxy"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportCreated with the server-attached licence_tier = Community. No cap event exists (maintainer 2026-10-03: three events only)."
+      derivation: "UPPER BOUND, not a count: Community browsers with >= 2 ReportCreated within 90 days / Community browsers with >= 1."
+      surfacing: ["collector dashboard"]
+    acceptance_scenarios: "covered by OUT-5878-K1's scenarios"
+    measurement_window: "90 days from the release carrying slice 10"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Upper bound: the cap is per owner and deletes free a slot, so two creations may be two Teams that never met the cap."
+
+  - id: OUT-5878-guardrail-quick-deletes
+    feature: epic-5878-baseline
+    title: Reports are not re-rolled (G1)
+    target: "ReportDeleted within 24 h after a ReportCreated from the same browser <= 20% of ReportCreated"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportDeleted (provisional 14), name only, slice 08: DELETE .../reports/{id} returned 204. Never sent when reports go with their Team or Portfolio."
+        - "ReportCreated (OUT-5878-K1)."
+      derivation: "Per browser: deletes within 24 h after a create / creates, monthly."
+      surfacing: ["docs/settings/usagedata.md row (slice 08)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-5878-guardrail-quick-deletes - Vitest: a confirmed delete reports ReportDeleted once; cancelling reports nothing; deleting the Team reports TeamDeleted and never ReportDeleted"
+    measurement_window: "monthly from the release carrying slice 10"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Per-browser proxy accepted by the maintainer 2026-10-03. No report id, so a same-day delete of an older report also counts; reads high, which is the safe side for a ceiling."
+
+  - id: OUT-5878-guardrail-timing
+    feature: epic-5878-baseline
+    title: Creating stays within 10 s and opening within 2 s (G2)
+    target: "create <= 10 s for 90 days over 365 days of history; open <= 2 s"
+    measurement_scope: per_instance
+    measurement_plan:
+      data_collection:
+        - "Information log 'report created' with ElapsedMs; Warning report-creation-slow above 10 000 ms, visible under Recent problems."
+        - "Slice 01 timing on the dev instance's busiest Team (manual, recorded in deliver notes); DISTILL timing check."
+      derivation: "Operator reads Recent problems; maintainer reads slice 01's recorded timings."
+      surfacing: ["Recent problems", "slice 01 deliver notes"]
+    acceptance_scenarios: "@kpi-OUT-5878-guardrail-timing - backend: a create over budget logs the Warning with ElapsedMs and no report name"
+    measurement_window: "slice 01, then continuous per instance"
+    alerting: ["Warning report-creation-slow -> Recent problems"]
+    status: designed-not-shipped

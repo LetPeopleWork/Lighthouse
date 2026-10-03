@@ -54,6 +54,8 @@ since D43/D44); no slice is cancellable any more.
 - **D32** Words: "Reports", "Then & Now", "Then", "Now", "{Cycle Time}: Then & Now"; no "Baseline"; no verdict
   words; no new Terminology key.
 - **D33** Usage data via new route keys + name-only candidates (DEVOPS designs); editing gets no event.
+  *Superseded in part by DEVOPS (maintainer, 2026-10-03)*: `ReportCreated` and `ReportOpened` carry closed enum
+  `report_template`; `ReportDeleted` name-only; no cap-refusal event.
 - **D34** Slices 01–07 safe on trunk before the cap; release notes/docs/website wait for slice 08; release after 10.
 - **D35** No intervention-date field; header shows both windows and days since Then ended.
 - **D36** One foundation for Epics 5878/5882/5935: templates are flavors of Reports. 5878 lays the report model, the
@@ -101,8 +103,8 @@ since D43/D44); no slice is cancellable any more.
   Age} panels · 06 Portfolio · 07 Now length at creation + days since · 08 delete + cap + lapse + owner deletion ·
   ~~09 settings notice~~ dropped (D46) · 10 Edit report · ~~11 claim chart~~ dropped.
 - **KPIs**: north star K2 (≥ 40% of report-creating instances return to Reports ≥ 7 days later); K1 activation
-  ≥ 10% in 90 days; K3 reports saved with a Now shorter than Then (informational); K4 cap hits (land-and-expand
-  learning); K5 qualitative (2 consultants show it to management); guardrails G1 (re-roll deletes ≤ 20%), G2 (≤ 2 s
+  ≥ 10% in 90 days; ~~K3 reports saved with a Now shorter than Then~~ (dropped, maintainer 2026-10-03); K4 cap hits
+  (land-and-expand learning; measured only as an upper-bound proxy); K5 qualitative (2 consultants show it to management); guardrails G1 (re-roll deletes ≤ 20%), G2 (≤ 2 s
   open, ≤ 10 s create), G3 (never 0 for absent data). Re-checked against D39: none counted verdicts.
 
 ## Constraints Established

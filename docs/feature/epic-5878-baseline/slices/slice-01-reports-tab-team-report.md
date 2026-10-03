@@ -28,8 +28,9 @@ create.
   saved length ending today, may overlap Then (D38).
 - Every percentile with its sample size ("· 3 Work Items"); "—" with a reason only when no {Work Item} finished in
   the window; change and % then show "—" (D45).
-- Usage data: route key `TeamDetail_Reports` on the existing `TeamTabOpened` (DEVOPS confirms); "report created"
-  event if DEVOPS has designed it by then.
+- Usage data: route key `TeamDetail_Reports` on the existing `TeamTabOpened`; `ReportCreated` (after the 201) and
+  `ReportOpened` (after the read's 2xx and 5 s on the view, once per mount), both carrying `report_template` =
+  `ThenAndNow` (DEVOPS). Listed in `docs/settings/usagedata.md` in the same step.
 
 ## OUT
 

@@ -96,6 +96,6 @@ SSOT updated: `brief.md` (`## Application Architecture — epic-5878-baseline`),
 
 ## Handoff
 
-DEVOPS: usage-data route keys and events (D33, K1/K3/K4/G1), one migration on both providers, `Program.cs`
+DEVOPS: usage-data route keys and events (D33, K1/K4/G1; K3 dropped in DEVOPS), one migration on both providers, `Program.cs`
 registration triggers the full Integration suite, no new job or configuration. Outcome collision check **not run**
 (no shell); the coordinator runs `nwave-ai outcomes check-delta docs/feature/epic-5878-baseline/feature-delta.md`.

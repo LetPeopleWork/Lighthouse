@@ -22,7 +22,8 @@ reports, and its confirmation says so.
 - Lapse: every report stays viewable and deletable; create blocked until the count is below 2.
 - Owner deletion: the existing {Team} / {Portfolio} delete confirmation adds "and its 2 reports" (the actual count,
   only when there is at least one); the reports cascade with the owner (D42).
-- Usage data: "report deleted" and "report creation refused at cap" if DEVOPS designed them (K4, G1).
+- Usage data: `ReportDeleted`, name-only, after the 204 of a report's own delete; never fired when reports go with
+  their Team or Portfolio (DEVOPS; G1). No cap-refusal event (maintainer 2026-10-03).
 
 ## OUT
 
