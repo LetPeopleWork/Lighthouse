@@ -176,6 +176,46 @@ describe("The Refinement tab asks one question against one number", () => {
 	});
 
 	// @us-10 @slice-10 @boundary @contract-shape:pure-function
+	it.each([
+		[
+			"a source it does not know",
+			{ source: "Somethingelse" as never, days: null, probability: null },
+		],
+		["an SLE of no days", { source: "Sle", days: 0, probability: 85 }],
+		[
+			"a fallback without days",
+			{ source: "CycleTimeFallback", days: null, probability: 85 },
+		],
+	] as [string, IYardstick][])(
+		"treats %s as having no number",
+		async (_, yardstick) => {
+			const { user } = renderWithTheYardstick(yardstick);
+
+			expect(await theQuestion("Doable within our SLE?")).toBeVisible();
+			expect(
+				await theTooltipShownFor(
+					user,
+					"No SLE is set and no Work Items have finished yet",
+				),
+			).toHaveTextContent("No SLE is set and no Work Items have finished yet");
+		},
+	);
+
+	// @us-10 @slice-10 @contract-shape:pure-function
+	it("lets a screen reader hear the tooltip once, as the icon's name", async () => {
+		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
+		const tooltip = "SLE 75% of work items in 7 days or less";
+		await theQuestion("Doable within 7 days?");
+
+		await theTooltipShownFor(user, tooltip);
+
+		const icon = screen.getByRole("button", { name: tooltip });
+		expect(icon).toHaveAccessibleName(tooltip);
+		expect(icon).not.toHaveAttribute("aria-describedby");
+		expect(icon).toHaveAccessibleDescription("");
+	});
+
+	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("asks nothing once nothing is in refinement any more", async () => {
 		renderWithTheYardstick(SLE_75_WITHIN_7);
 		expect(await theQuestion("Doable within 7 days?")).toBeVisible();

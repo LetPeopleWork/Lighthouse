@@ -6,6 +6,20 @@ import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 
 type GetTerm = (key: string) => string;
 
+const NO_NUMBER: IYardstick = {
+	source: "Unavailable",
+	days: null,
+	probability: null,
+};
+
+// Anything the browser cannot turn into a number of days is shown as no number, never as "null days".
+const withANumberOrNone = (yardstick: IYardstick): IYardstick =>
+	(yardstick.source === "Sle" || yardstick.source === "CycleTimeFallback") &&
+	yardstick.days !== null &&
+	yardstick.days > 0
+		? yardstick
+		: NO_NUMBER;
+
 const inDays = (days: number | null): string =>
 	days === 1 ? "1 day" : `${days} days`;
 
@@ -36,12 +50,13 @@ const YardstickQuestion: React.FC<Readonly<YardstickQuestionProps>> = ({
 	yardstick,
 	getTerm,
 }) => {
-	const tooltip = yardstickTooltip(yardstick, getTerm);
+	const shown = withANumberOrNone(yardstick);
+	const tooltip = yardstickTooltip(shown, getTerm);
 
 	return (
 		<Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-			<Typography>{yardstickQuestion(yardstick, getTerm)}</Typography>
-			<Tooltip title={tooltip} describeChild>
+			<Typography>{yardstickQuestion(shown, getTerm)}</Typography>
+			<Tooltip title={tooltip}>
 				<IconButton size="small" aria-label={tooltip}>
 					<InfoOutlinedIcon fontSize="small" />
 				</IconButton>
