@@ -20,35 +20,12 @@ refuse() {
   exit 1
 }
 
-newer_copies_than() {
-  copies | awk -v major="$1" '$2 > major'
-}
-
-removal_started_in_pgdata() {
-  local major="$1"
-  has_placeholder \
-    || { [[ "${PG_MAJOR:-}" =~ ^[0-9]+$ && "$major" == "$((PG_MAJOR - 1))" && -e "$MOUNT/pgdata-$PG_MAJOR" ]]; }
-}
-
-names_of() {
-  local folder major names=""
-  while read -r folder major; do
-    [[ -n "$folder" ]] || continue
-    if [[ -n "$major" ]]; then
-      names="${names:+$names, }$folder (Postgres $major)"
-    else
-      names="${names:+$names, }what was left of $folder"
-    fi
-  done <<<"$1"
-  echo "$names"
-}
-
 read -r live_folder live_major <<<"$(live_copy)"
-if [[ -n "$live_major" && -z "$(control_hash "$live_folder")" && -n "$(newer_copies_than "$live_major")" ]]; then
-  if [[ "$live_folder" != pgdata ]] || ! removal_started_in_pgdata "$live_major"; then
+if [[ -n "$live_major" && -z "$(control_hash "$live_folder")" && -n "$(copies_newer_than "$live_major")" ]]; then
+  if [[ "$live_folder" != pgdata ]] || ! removal_started_in_pgdata "${PG_MAJOR:-}"; then
     refuse "$live_folder/global/pg_control is unreadable, so which copy is current cannot be told; put that file back from a backup before removing anything"
   fi
-  read -r live_folder live_major <<<"$(newer_copies_than "$live_major" | tail -n 1)"
+  read -r live_folder live_major <<<"$(copies_newer_than "$live_major" | tail -n 1)"
 fi
 
 if [[ -z "$live_folder" ]]; then
@@ -58,7 +35,7 @@ if [[ "$live_folder" == pgdata ]]; then
   refuse "the database runs on pgdata, the copy the volume was first set up with, so no copy is older than it"
 fi
 
-targets="$(copies_older_than "$live_major" | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }')"
+targets="$(copies_older_than "$live_major")"
 while read -r folder _; do
   if [[ -n "$folder" && -e "$MOUNT/$folder/postmaster.pid" ]]; then
     refuse "$folder holds a postmaster.pid, so a database may be running on it; stop that database first"
@@ -70,7 +47,7 @@ if [[ -z "$targets" ]]; then
   exit 0
 fi
 if ! removed="$(remove_copies_older_than "$live_major" "$live_major")"; then
-  say "$(names_of "$targets") could not be fully removed; run this again to finish removing them" >&2
+  say "$(copy_names "$targets") could not be fully removed; run this again to finish removing them" >&2
   exit 1
 fi
-say "removed $(names_of "$removed"); the database runs on $live_folder (Postgres $live_major), and a rollback to a chart on an older Postgres is no longer possible"
+say "removed $(copy_names "$removed"); the database runs on $live_folder (Postgres $live_major), and a rollback to a chart on an older Postgres is no longer possible"

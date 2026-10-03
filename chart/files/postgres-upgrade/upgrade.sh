@@ -11,7 +11,6 @@ set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=volume.sh
 source "$(dirname "${BASH_SOURCE[0]}")/volume.sh"
 
-readonly OLD="$MOUNT/pgdata"
 readonly DOCS=https://docs.lighthouse.letpeople.work/Installation/kubernetes.html
 readonly MANUAL_PATH="$DOCS#moving-data-two-or-more-majors-behind-by-hand"
 readonly REFUSED_DOCS="$DOCS#when-an-upgrade-is-refused"
@@ -185,13 +184,12 @@ refuse_gap() {
 }
 
 # The walk up the copies stopped at the live copy because its control file cannot be read, so whether a newer
-# copy is still current cannot be told. A placeholder in pgdata shows a removal of the old copy had started
-# there. So does pgdata one major behind beside a copy of this image's major, which is what a removal written
-# before the placeholder existed leaves when it is cut off.
+# copy is still current cannot be told. Where pgdata shows a removal of the old copy had started, finishing
+# that removal is the way out; anywhere else only a backup is.
 refuse_unhashable_link() {
   local newer
   newer="$(folder_list "$NEWER_THAN_LIVE")"
-  if [[ "$LIVE_COPY" == pgdata ]] && { has_placeholder || [[ "$LIVE_MAJOR" == "$PREVIOUS_MAJOR" && -e "$NEW" ]]; }; then
+  if [[ "$LIVE_COPY" == pgdata ]] && removal_started_in_pgdata "$MAJOR"; then
     refuse "refusing to start Postgres $MAJOR: pgdata holds Postgres $LIVE_MAJOR data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether $newer is still current cannot be told; finish removing the old copy as $CUT_OFF_REMOVAL_DOCS describes"
   fi
   refuse "refusing to start Postgres $MAJOR: $LIVE_COPY holds Postgres $LIVE_MAJOR data without a readable $LIVE_COPY/global/pg_control, so whether the newer $newer $(is_or_are "$NEWER_THAN_LIVE") still current cannot be told; put that file back from a backup"
@@ -268,7 +266,7 @@ kib_in() {
 # a pod of its own while the database is stopped.
 older_copies_hint() {
   local older
-  older="$(copies_to_name "$LIVE_MAJOR")"
+  older="$(copies_older_than "$LIVE_MAJOR")"
   if [[ -n "$older" ]]; then
     echo "; or remove $(copy_names "$older"), older than $LIVE_COPY, while the database is stopped, as $STOPPED_CLEANUP_DOCS shows"
   fi
@@ -423,32 +421,12 @@ say_nothing_to_upgrade() {
   fi
 }
 
-# The copies a removal with bound $1 takes, oldest first, as the "folder major" lines copy_names reads.
-copies_to_name() {
-  copies_older_than "$1" | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }'
-}
-
-# "folder (Postgres K)" for each "folder major" line of $1, or "what was left of folder" when the major can
-# no longer be told, joined by commas.
-copy_names() {
-  local folder major names=""
-  while read -r folder major; do
-    [[ -n "$folder" ]] || continue
-    if [[ -n "$major" ]]; then
-      names="${names:+$names, }$folder (Postgres $major)"
-    else
-      names="${names:+$names, }what was left of $folder"
-    fi
-  done <<<"$1"
-  echo "$names"
-}
-
 # Removes every copy older than the one the copy this major starts on was made from, and leaves what went in
 # REMOVED. It only ever runs after the start decision is written, so a removal that fails costs room alone:
 # one warning, the database starts on folder $1 all the same, and the next start tries again.
 remove_older_copies() {
   local starts_on="$1" targets
-  targets="$(copies_to_name "$PREVIOUS_MAJOR")"
+  targets="$(copies_older_than "$PREVIOUS_MAJOR")"
   if ! REMOVED="$(remove_copies_older_than "$PREVIOUS_MAJOR" "$MAJOR")"; then
     say "warning: $(copy_names "$targets") could not be fully removed; Postgres $MAJOR starts on $starts_on all the same, what is left only takes room, and the next start tries again"
     return 1
@@ -490,17 +468,17 @@ main() {
   read -r LIVE_COPY LIVE_MAJOR <<<"$(live_copy)"
   SOURCE="$MOUNT/$LIVE_COPY"
   LIVE_CONTROL_HASH="$(control_hash "$LIVE_COPY")"
-  NEWER_COPY="$(copies | awk -v major="$MAJOR" '$2 > major { newest = $1 } END { print newest }')"
+  read -r NEWER_COPY _ <<<"$(copies_newer_than "$MAJOR" | tail -n 1)"
   # Every copy newer than the live one is off the chain: its note no longer matches, or cannot be checked.
   NEWER_THAN_LIVE=""
   if [[ -n "$LIVE_MAJOR" ]]; then
-    NEWER_THAN_LIVE="$(copies | awk -v major="$LIVE_MAJOR" '$2 > major { print $1 }')"
+    NEWER_THAN_LIVE="$(copies_newer_than "$LIVE_MAJOR" | cut -d' ' -f1)"
   fi
   THIS_MAJOR_ON_CHAIN="$(copy_for_major "$MAJOR")"
 
   if volume_is_empty; then
     say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
-    start_on "$OLD"
+    start_on "$MOUNT/pgdata"
   elif live_copy_unhashable_below_newer_copy; then
     refuse_unhashable_link
   elif live_is_this_major_alone; then

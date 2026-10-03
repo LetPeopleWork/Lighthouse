@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # How the steps that read the database volume tell which folder is a copy of the database and which copy
-# the database runs on. Sourced, never run: it only defines names, so sourcing it changes nothing.
+# the database runs on, and how they remove and name the older ones. Sourced, never run: it only defines
+# names, so sourcing it changes nothing.
 #
 # Every copy but the first was made from the one just below it by an upgrade, which leaves a note in the
 # new copy naming the major it came from and the hash of that copy's pg_control. Following those notes
@@ -103,6 +104,11 @@ live_copy() {
   chain | tail -n 1
 }
 
+# The copies of a major above $1, as "folder major" lines, oldest first.
+copies_newer_than() {
+  copies | awk -v major="$1" '$2 > major'
+}
+
 # Whether the copy the database last ran on can be upgraded to major $1: it is one major behind, Postgres can
 # open it, and a copy of major $1 already on the volume was made by an upgrade, so it is only out of date.
 live_copy_upgradable_to() {
@@ -122,27 +128,56 @@ pgdata_beyond_placeholder() {
   [[ -n "$(find "$MOUNT/pgdata" -mindepth 1 -maxdepth 1 ! -name 'UPGRADED-TO-*' -print -quit 2>/dev/null)" ]]
 }
 
-# The folders a removal with bound $1 takes, as "major folder" lines, oldest first. A pgdata-<K> goes
+# Whether pgdata shows that a removal of the old copy had started there, for an image of major $1: it holds
+# the placeholder, or it still counts one major below that image beside a copy of the image's major, which is
+# what a removal written before the placeholder existed leaves when it is cut off.
+removal_started_in_pgdata() {
+  local image_major="$1"
+  if has_placeholder; then
+    return 0
+  fi
+  [[ "$image_major" =~ ^[0-9]+$ ]] \
+    && [[ "$(copy_major pgdata)" == "$((image_major - 1))" && -e "$MOUNT/pgdata-$image_major" ]]
+}
+
+# The folders a removal with bound $1 takes, as "folder major" lines, oldest first. A pgdata-<K> goes
 # whether it counts or not, since a half-removed one no longer does. pgdata goes when it counts below the
 # bound, or when it no longer counts but holds the placeholder, which shows a removal had started there; its
-# major is then 0, as it can no longer be told. A pgdata holding neither is never touched: nothing shows it
-# was ever a copy.
+# major is then left out, as it can no longer be told, and it goes first. A pgdata holding neither is never
+# touched: nothing shows it was ever a copy.
 copies_older_than() {
   local bound="$1" major path folder
-  major="$(copy_major pgdata)"
-  if [[ -n "$major" ]]; then
-    if [[ "$major" -lt "$bound" ]]; then
-      echo "$major pgdata"
+  {
+    major="$(copy_major pgdata)"
+    if [[ -n "$major" ]]; then
+      if [[ "$major" -lt "$bound" ]]; then
+        echo "$major pgdata"
+      fi
+    elif has_placeholder && pgdata_beyond_placeholder; then
+      echo "0 pgdata"
     fi
-  elif has_placeholder && pgdata_beyond_placeholder; then
-    echo "0 pgdata"
-  fi
-  for path in "$MOUNT"/pgdata-*; do
-    folder="${path##*/}"
-    if [[ -d "$path" && "$folder" =~ ^pgdata-([0-9]+)$ ]] && [[ "${BASH_REMATCH[1]}" -lt "$bound" ]]; then
-      echo "${BASH_REMATCH[1]} $folder"
+    for path in "$MOUNT"/pgdata-*; do
+      folder="${path##*/}"
+      if [[ -d "$path" && "$folder" =~ ^pgdata-([0-9]+)$ ]] && [[ "${BASH_REMATCH[1]}" -lt "$bound" ]]; then
+        echo "${BASH_REMATCH[1]} $folder"
+      fi
+    done
+  } | sort -n | awk '{ print $2, ($1 == 0 ? "" : $1) }'
+}
+
+# "folder (Postgres K)" for each "folder major" line of $1, or "what was left of folder" when the major can
+# no longer be told, joined by commas.
+copy_names() {
+  local folder major names=""
+  while read -r folder major; do
+    [[ -n "$folder" ]] || continue
+    if [[ -n "$major" ]]; then
+      names="${names:+$names, }$folder (Postgres $major)"
+    else
+      names="${names:+$names, }what was left of $folder"
     fi
-  done
+  done <<<"$1"
+  echo "$names"
 }
 
 # Whether a start on a copy of major $1 has a removal to finish: pgdata holds the placeholder and more, a
@@ -160,17 +195,17 @@ finishing_needed() {
 # first, each folder loses PG_VERSION before anything else, so one cut off part-way no longer counts as a
 # copy. Prints one "folder major" line per folder removed, the major left out when it can no longer be told.
 remove_copies_older_than() {
-  local bound="$1" live="$2" targets key folder dir
+  local bound="$1" live="$2" targets folder major dir
   [[ "$bound" =~ ^[0-9]+$ && "$live" =~ ^[0-9]+$ ]] || return 1
   [[ "$bound" -le "$live" ]] || return 1
-  targets="$(copies_older_than "$bound" | sort -n)"
-  if grep -q ' pgdata$' <<<"$targets" && ! has_placeholder; then
+  targets="$(copies_older_than "$bound")"
+  if grep -q '^pgdata ' <<<"$targets" && ! has_placeholder; then
     dir="$MOUNT/pgdata"
     install -m 0600 -o "$(stat -c %u "$dir")" -g "$(stat -c %g "$dir")" /dev/null \
       "$dir/UPGRADED-TO-$live-see-kubernetes-docs" || return 1
     sync || return 1
   fi
-  while read -r key folder; do
+  while read -r folder major; do
     [[ -n "$folder" ]] || continue
     dir="$MOUNT/$folder"
     rm -f "$dir/PG_VERSION" || return 1
@@ -180,10 +215,6 @@ remove_copies_older_than() {
     else
       rm -rf "$dir" || return 1
     fi
-    if [[ "$key" == 0 ]]; then
-      echo "$folder"
-    else
-      echo "$folder $key"
-    fi
+    echo "$folder${major:+ $major}"
   done <<<"$targets"
 }
