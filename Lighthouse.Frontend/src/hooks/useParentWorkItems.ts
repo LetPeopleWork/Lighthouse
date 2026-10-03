@@ -14,7 +14,7 @@ export interface ParentWorkItem {
  * @returns Map of reference IDs to parent work item details
  */
 export const useParentWorkItems = (
-	features: IFeature[],
+	features: ReadonlyArray<Pick<IFeature, "parentWorkItemReference">>,
 ): Map<string, ParentWorkItem> => {
 	const { featureService } = useContext(ApiServiceContext);
 	const [parentMap, setParentMap] = useState<Map<string, ParentWorkItem>>(

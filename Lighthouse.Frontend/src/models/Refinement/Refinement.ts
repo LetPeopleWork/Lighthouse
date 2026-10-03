@@ -7,17 +7,13 @@ export interface IRefinementSettings {
 	states: IRefinementStateSetting[];
 }
 
-/** The category a refinement row's state belongs to. Sent as the name, never a number. */
-export type RefinementRowCategory = "ToDo" | "Doing";
-
 export interface IRefinementRow {
 	referenceId: string;
 	name: string;
 	url: string | null;
 	state: string;
-	stateCategory: RefinementRowCategory;
-	/** Work Item Age in days for a Doing row; null for a To Do row, which has not started. */
-	workItemAge: number | null;
+	/** The parent's reference, or an empty string when the Work Item has no parent. */
+	parentReferenceId: string;
 }
 
 export interface IRefinementView {

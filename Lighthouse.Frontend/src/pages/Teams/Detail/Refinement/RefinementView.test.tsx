@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IFeature } from "../../../../models/Feature";
 import type {
 	IRefinementRow,
 	IRefinementView,
@@ -8,18 +9,23 @@ import { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IRefinementService } from "../../../../services/Api/RefinementService";
-import { createMockApiServiceContext } from "../../../../tests/MockApiServiceProvider";
+import {
+	createMockApiServiceContext,
+	createMockFeatureService,
+} from "../../../../tests/MockApiServiceProvider";
 import RefinementView from "./RefinementView";
 
 /**
- * What the coach reads on the Refinement tab: a heading counting the Work Items in refinement, and one
- * row per Work Item in the order the server answered - which is backlog order, worked out there, so the
- * tab must not reorder it. Each row links to the tracker and says the state and its category; a Doing
- * row says how old the Work Item is, a To Do row does not. Every renameable word comes from Terminology.
+ * What the coach reads on the Refinement tab: a heading counting the Work Items in refinement, and a
+ * grid with one row per Work Item in the order the server answered - which is backlog order, worked
+ * out there, so the tab must not reorder it. Each row names the Work Item as one link to the tracker,
+ * shows its parent and its state, and nothing about its age or category. Every renameable word comes
+ * from Terminology.
  */
 
-const { terms } = vi.hoisted(() => ({
+const { terms, mockUseLicenseRestrictions } = vi.hoisted(() => ({
 	terms: { current: {} as Record<string, string> },
+	mockUseLicenseRestrictions: vi.fn(),
 }));
 
 vi.mock("../../../../services/TerminologyContext", () => ({
@@ -29,6 +35,10 @@ vi.mock("../../../../services/TerminologyContext", () => ({
 		error: null,
 		refetchTerminology: () => {},
 	}),
+}));
+
+vi.mock("../../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: mockUseLicenseRestrictions,
 }));
 
 // Spelled out: the keys join the shared list together with the words the server seeds for them.
@@ -48,25 +58,30 @@ const aRow = (
 	referenceId: string,
 	name: string,
 	state: string,
-	workItemAge: number | null,
+	parentReferenceId = "",
 ): IRefinementRow => ({
 	referenceId,
 	name,
 	url: `https://tracker.example/browse/${referenceId}`,
 	state,
-	stateCategory: workItemAge === null ? "ToDo" : "Doing",
-	workItemAge,
+	parentReferenceId,
 });
 
 const gravitysRefinement: IRefinementView = {
 	refinementConfigured: true,
 	workItems: [
-		aRow("GR-058", "User activity tracking", "Next", 2),
-		aRow("GR-059", "Advanced search filters", "Next", 3),
-		aRow("GR-051", "Advanced reporting module", "Analysing", 4),
-		aRow("GR-073", "Configuration management", "Backlog", null),
+		aRow("GR-058", "User activity tracking", "Next", "GR-010"),
+		aRow("GR-059", "Advanced search filters", "Next", "GR-010"),
+		aRow("GR-051", "Advanced reporting module", "Analysing", "GR-010"),
+		aRow("GR-073", "Configuration management", "Backlog"),
 	],
 };
+
+const payments = {
+	referenceId: "GR-010",
+	name: "Payments",
+	url: "https://tracker.example/browse/GR-010",
+} as IFeature;
 
 const teamGravity = () => {
 	const team = new Team();
@@ -79,40 +94,53 @@ const renderTheRefinementTab = (answer: IRefinementView) => {
 	const refinementService: IRefinementService = {
 		getRefinement: vi.fn().mockResolvedValue(answer),
 	};
+	const featureService = createMockFeatureService();
+	featureService.getFeaturesByReferences = vi
+		.fn()
+		.mockResolvedValue([payments]);
 
 	render(
 		<ApiServiceContext.Provider
-			value={createMockApiServiceContext({ refinementService })}
+			value={createMockApiServiceContext({ refinementService, featureService })}
 		>
 			<RefinementView team={teamGravity()} />
 		</ApiServiceContext.Provider>,
 	);
 
-	return { refinementService };
+	return { refinementService, featureService };
 };
 
+const theGridRows = () =>
+	screen
+		.getAllByRole("row")
+		.filter((row) => within(row).queryAllByRole("gridcell").length > 0);
+
 const theRowOf = async (referenceId: string) => {
-	const link = await screen.findByRole("link", { name: referenceId });
-	const row = link.closest('[role="row"], tr');
+	const name = await screen.findByText(new RegExp(`^${referenceId}: `));
+	const row = name.closest('[role="row"]');
 	if (row === null) {
-		throw new Error(`${referenceId} is not shown inside a row`);
+		throw new Error(`${referenceId} is not shown inside a grid row`);
 	}
 	return row as HTMLElement;
 };
 
 const theListedReferenceIds = () =>
-	screen
-		.getAllByRole("link")
-		.map((link) => link.textContent?.trim())
-		.filter((text) => text?.startsWith("GR-"));
+	theGridRows().map(
+		(row) => within(row).getAllByRole("link")[0].textContent?.split(":")[0],
+	);
 
 describe("The Refinement tab lists the Work Items in refinement", () => {
 	beforeEach(() => {
+		localStorage.clear();
 		terms.current = { ...defaultTerms };
+		mockUseLicenseRestrictions.mockReturnValue({
+			licenseStatus: { canUsePremiumFeatures: true },
+			isLoading: false,
+		});
 	});
 
 	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
-	it("asks for this Team's refinement and counts what it holds in the heading", async () => {
+	it("asks for this Team's refinement and counts what it holds in the heading above a grid", async () => {
 		const { refinementService } = renderTheRefinementTab(gravitysRefinement);
 
 		expect(
@@ -121,13 +149,23 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 			}),
 		).toBeVisible();
 		expect(refinementService.getRefinement).toHaveBeenCalledWith(7);
+		expect(screen.getByRole("grid")).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: "Work Item Name" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: "Parent" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: "State" }),
+		).toBeInTheDocument();
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
 	it("shows the Work Items in the order they came, which is backlog order", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
-		await screen.findByRole("link", { name: "GR-058" });
+		await theRowOf("GR-058");
 
 		expect(theListedReferenceIds()).toEqual([
 			"GR-058",
@@ -138,39 +176,60 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @contract-shape:pure-function
-	it("links each Work Item to the tracker and names it, its state and its category", async () => {
+	it("names each Work Item as one link to the tracker and shows its state", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
 		const analysing = await theRowOf("GR-051");
 		const backlog = await theRowOf("GR-073");
 
 		expect(
-			within(analysing).getByRole("link", { name: "GR-051" }),
+			within(analysing).getByRole("link", {
+				name: "GR-051: Advanced reporting module",
+			}),
 		).toHaveAttribute("href", "https://tracker.example/browse/GR-051");
-		expect(analysing).toHaveTextContent("Advanced reporting module");
 		expect(analysing).toHaveTextContent("Analysing");
-		expect(analysing).toHaveTextContent("Doing");
-		expect(backlog).toHaveTextContent("Configuration management");
+		expect(
+			within(backlog).getByRole("link", {
+				name: "GR-073: Configuration management",
+			}),
+		).toHaveAttribute("href", "https://tracker.example/browse/GR-073");
 		expect(backlog).toHaveTextContent("Backlog");
-		expect(backlog).toHaveTextContent("To Do");
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it("says how old a Doing Work Item is and gives a To Do Work Item no age", async () => {
-		renderTheRefinementTab(gravitysRefinement);
+	// @us-02 @slice-02 @contract-shape:pure-function
+	it("links the parent when the Work Item has one and says No Parent when it has none", async () => {
+		const { featureService } = renderTheRefinementTab(gravitysRefinement);
 
 		const analysing = await theRowOf("GR-051");
 		const backlog = await theRowOf("GR-073");
 
-		expect(analysing).toHaveTextContent("4 days");
-		expect(backlog).not.toHaveTextContent(/days?/);
+		expect(
+			await within(analysing).findByRole("link", { name: "GR-010: Payments" }),
+		).toHaveAttribute("href", "https://tracker.example/browse/GR-010");
+		expect(backlog).toHaveTextContent("No Parent");
+		expect(within(backlog).getAllByRole("link")).toHaveLength(1);
+		expect(featureService.getFeaturesByReferences).toHaveBeenCalledWith([
+			"GR-010",
+		]);
+	});
+
+	// @us-02 @slice-02 @boundary @contract-shape:pure-function
+	it("shows no age and no category for any Work Item", async () => {
+		renderTheRefinementTab(gravitysRefinement);
+
+		await theRowOf("GR-051");
+
+		expect(screen.queryByText("Work Item Age")).toBeNull();
+		expect(screen.queryByText("Category")).toBeNull();
+		expect(screen.queryByText(/\bdays?\b/)).toBeNull();
+		expect(screen.queryByText(/^(To Do|Doing)$/)).toBeNull();
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("counts a single Work Item in the singular", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
-			workItems: [aRow("GR-073", "Configuration management", "Backlog", null)],
+			workItems: [aRow("GR-073", "Configuration management", "Backlog")],
 		});
 
 		expect(
@@ -181,18 +240,19 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:pure-function
-	it("states that nothing is in refinement right now instead of showing an empty list or an error", async () => {
+	it("states that nothing is in refinement right now instead of showing an empty grid or an error", async () => {
 		renderTheRefinementTab({ refinementConfigured: true, workItems: [] });
 
 		expect(
 			await screen.findByText("No Work Items in Refinement states right now"),
 		).toBeVisible();
 		expect(screen.queryByRole("alert")).toBeNull();
+		expect(screen.queryByRole("grid")).toBeNull();
 		expect(screen.queryByRole("link")).toBeNull();
 	});
 
 	// @us-02 @slice-02 @boundary @contract-shape:pure-function
-	it("says the Team's own words in the heading and in the empty state", async () => {
+	it("says the Team's own words in the heading and the name column", async () => {
 		terms.current = {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
@@ -208,6 +268,9 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 				name: "4 Tickets in Replenishment",
 			}),
 		).toBeVisible();
+		expect(
+			screen.getByRole("columnheader", { name: "Ticket Name" }),
+		).toBeInTheDocument();
 		expect(screen.queryByText(/refinement/i)).toBeNull();
 		expect(screen.queryByText(/work items?/i)).toBeNull();
 	});
@@ -228,17 +291,13 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 
 	// @us-02 @slice-02 @boundary @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
 	// Three hundred is the size of a whole backlog sitting in one To Do state; the heading has to count all
-	// of them and the list has to start where the backlog starts, whatever the list does to stay fast.
+	// of them and the grid has to start where the backlog starts. The grid only draws the rows in view,
+	// so this reads the first row rather than counting rows on the page.
 	it("handles three hundred Work Items, counting all of them and starting at the top of the backlog", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
 			workItems: Array.from({ length: 300 }, (_, index) =>
-				aRow(
-					`GR-${1000 + index}`,
-					`Refinement candidate ${index}`,
-					"Backlog",
-					null,
-				),
+				aRow(`GR-${1000 + index}`, `Refinement candidate ${index}`, "Backlog"),
 			),
 		});
 
@@ -247,6 +306,7 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 				name: "300 Work Items in Refinement",
 			}),
 		).toBeVisible();
+		await theRowOf("GR-1000");
 		expect(theListedReferenceIds()[0]).toBe("GR-1000");
 	});
 });
