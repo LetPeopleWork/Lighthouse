@@ -35,9 +35,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => await GravityRefinesSixWorkItemsNobodyHasVotedOn(sleProbability: 85, sleRange: 7);
 
         private async Task<TeamUnderTest> GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays()
-            => await GivenMeridianWithAHalfSetSleAndCycleTimes85thPercentileOfTwelveDays(0, 0);
+            => await MeridianWithAnSleAndCycleTimes85thPercentileOfTwelveDays(0, 0);
+
+        private async Task<TeamUnderTest> GivenMeridianExpects75PercentWithinTenDaysAndItsCycleTimes85thPercentileIsTwelveDays()
+            => await MeridianWithAnSleAndCycleTimes85thPercentileOfTwelveDays(75, 10);
 
         private async Task<TeamUnderTest> GivenMeridianWithAHalfSetSleAndCycleTimes85thPercentileOfTwelveDays(int probability, int days)
+            => await MeridianWithAnSleAndCycleTimes85thPercentileOfTwelveDays(probability, days);
+
+        private async Task<TeamUnderTest> MeridianWithAnSleAndCycleTimes85thPercentileOfTwelveDays(int probability, int days)
         {
             var meridian = await GravityRefinesSixWorkItemsNobodyHasVotedOn(probability, days, TeamMeridian);
 
@@ -74,10 +80,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private async Task<TeamUnderTest> WhenTheAdminSetsTheSleTo75PercentWithinTenDays(TeamUnderTest team)
             => await TheAdminHasSetTheSle(team, probability: 75, days: 10);
 
+        private async Task<TeamUnderTest> WhenTheAdminClearsTheSle(TeamUnderTest team)
+            => await TheAdminHasSetTheSle(team, probability: 0, days: 0);
+
         // --- Then ---
 
         private static void ThenTheYardstickIs(JsonElement tab, string source, int? days, int? probability)
             => Assert.That(YardstickIn(tab), Is.EqualTo(new YardstickReading(source, days, probability)));
+
+        private static void ThenTheSameWorkItemsAreListed(JsonElement before, JsonElement after)
+            => Assert.That(RowsIn(after), Is.Not.Empty.And.EqualTo(RowsIn(before)));
 
         private static void ThenBothAreShownTheSameYardstick(JsonElement first, JsonElement second)
             => Assert.That(YardstickIn(second), Is.EqualTo(YardstickIn(first)).And.EqualTo(new YardstickReading(TheCycleTimeFallback, 12, 85)));

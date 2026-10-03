@@ -119,11 +119,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         public async Task Setting_an_SLE_replaces_the_fallback_on_the_next_read()
         {
             var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            var before = await WhenJonasOpensTheRefinementTab(meridian);
+            ThenTheYardstickIs(before, TheCycleTimeFallback, days: 12, probability: 85);
 
             var withSle = await WhenTheAdminSetsTheSleTo75PercentWithinTenDays(meridian);
-            var tab = await WhenJonasOpensTheRefinementTab(withSle);
+            var after = await WhenJonasOpensTheRefinementTab(withSle);
 
-            ThenTheYardstickIs(tab, TheSle, days: 10, probability: 75);
+            ThenTheYardstickIs(after, TheSle, days: 10, probability: 75);
+            ThenTheSameWorkItemsAreListed(before, after);
+        }
+
+        // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
+        [Test]
+        public async Task Clearing_the_SLE_brings_the_fallback_back_on_the_next_read()
+        {
+            var meridian = await GivenMeridianExpects75PercentWithinTenDaysAndItsCycleTimes85thPercentileIsTwelveDays();
+            var before = await WhenJonasOpensTheRefinementTab(meridian);
+            ThenTheYardstickIs(before, TheSle, days: 10, probability: 75);
+
+            var withoutSle = await WhenTheAdminClearsTheSle(meridian);
+            var after = await WhenJonasOpensTheRefinementTab(withoutSle);
+
+            ThenTheYardstickIs(after, TheCycleTimeFallback, days: 12, probability: 85);
+            ThenTheSameWorkItemsAreListed(before, after);
         }
 
         // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
