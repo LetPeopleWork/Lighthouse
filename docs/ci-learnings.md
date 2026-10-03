@@ -256,6 +256,16 @@ get re-applied.
 
 ## Formatting & linting
 
+### 2026-10-03 — Sonar lints chart shell scripts with more shelldre rules than S7688
+- **Symptom**: backend `sonar-gates` `new_violations = 40` after the bundled-Postgres upgrade landed, all on `chart/files/postgres-upgrade/{volume,upgrade}.sh`, `chart/tests/upgrade-path/run.sh` and `chart/scripts/version-guard.sh`: `shelldre:S7679` "Assign this positional parameter to a local variable" (24), `shelldre:S7682` "Add an explicit return statement at the end of the function" (12), `shelldre:S131` "Add a default case (*)" (2), `shelldre:S1192` duplicated literal (2). shellcheck was clean on every one of them.
+- **Root cause**: the same shell analyzer behind the `[[ ]]` rule (see the S7688 entry under SonarCloud — Backend) enforces these too, and only on new lines, so a script that has been clean for months fails the gate the first time a function in it is rewritten.
+- **Fix** — each one keeps the script's output and exit statuses exactly as they were:
+  - **S7679**: `local name="$1"` (a name that says what it is) as the function's first line, then use the name. A `$1` inside a single-quoted awk program is awk's field, not the function's argument — leave it. `"$@"`, `$*` and `${@:2}` were not flagged.
+  - **S7682**: end the function with `return $?` right after its last command — it hands back whatever that command returned, so a predicate ending in `[[ … ]]`, `grep -q` or a pipeline still answers the same, also under `set -e`. Two exceptions shellcheck 0.9.0 forces: after a final `echo`/`printf` use a bare `return` (same status; `return $?` there is SC2320), and add nothing after a call that always exits, such as `refuse`/`fail` (SC2317, unreachable).
+  - **S131**: add `*) ;;` — a `case` with no match already did nothing and returned 0. Where an unknown value must be refused, refuse it where it enters (as `run.sh`'s `main` does for the group), not in every `case` that reads it later.
+  - **S1192**: one `readonly` constant beside the other script constants, used at every occurrence of that literal in the file, not only the ones Sonar counted.
+- **Rule going forward**: in any committed bash script, write every function with named locals for its arguments and an explicit final `return` (`return $?`, or bare `return` after an `echo`), give every `case` a `*)` branch, and lift a literal used three or more times into a constant. Check with the CI shellcheck (0.9.0) afterwards — its SC2320/SC2317 decide which form of `return` goes where.
+
 ### 2026-10-03 — `printf "$big" | grep -q` under `pipefail` fails whenever grep finds its match early
 - **Symptom**: `ci_chart.yml` `validate`, standalone render gate: `printf: write error: Broken pipe` followed by `standalone gate: Database__Provider missing`, for a render that does contain `Database__Provider`.
 - **Root cause**: `grep -q` exits at its first match. If `printf` is still writing the rest of the input, it dies of SIGPIPE, and `set -o pipefail` turns that into a failed pipeline, so the `||` branch reports the match as missing. It only bites once the input is larger than what fits in the pipe before grep exits, which is why it appeared when the chart's ConfigMap started carrying the upgrade scripts.
