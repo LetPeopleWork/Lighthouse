@@ -30,6 +30,7 @@ import WaitStatesEditor from "../StateMappings/WaitStatesEditor";
 import StatesList from "../StatesList/StatesList";
 import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
+import RefinementSettingsSection from "./RefinementSettingsSection";
 
 interface ModifyTeamSettingsProps {
 	title: string;
@@ -253,6 +254,13 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onChange={(nextDefinitions) =>
 								updateSettings("cycleTimeDefinitions", nextDefinitions)
 							}
+						/>
+
+						<RefinementSettingsSection
+							toDoStates={teamSettings.toDoStates || []}
+							doingStates={teamSettings.doingStates || []}
+							chosenStates={teamSettings.refinement?.states ?? []}
+							onChange={(states) => updateSettings("refinement", { states })}
 						/>
 
 						<FlowMetricsConfigurationComponent

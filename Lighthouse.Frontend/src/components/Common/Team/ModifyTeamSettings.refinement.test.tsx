@@ -141,7 +141,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip("offers only the Team's To Do and Doing states, each labelled with its category", async () => {
+	it("offers only the Team's To Do and Doing states, each labelled with its category", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
 		expect(
@@ -160,7 +160,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip("notes that a Doing state already counts in WIP and Cycle Time", async () => {
+	it("notes that a Doing state already counts in WIP and Cycle Time", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
 		await screen.findByRole("checkbox", { name: "Backlog (To Do)" });
@@ -171,7 +171,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip("saves the ticked states as the Team's refinement states", async () => {
+	it("saves the ticked states as the Team's refinement states", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
 		await userEvent.click(
@@ -190,7 +190,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip("shows the states already chosen as ticked", async () => {
+	it("shows the states already chosen as ticked", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ states: [{ state: "Backlog", isMapped: true }] }),
 		);
@@ -204,7 +204,7 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
-	it.skip("saves no refinement states once the last one is unticked", async () => {
+	it("saves no refinement states once the last one is unticked", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ states: [{ state: "Backlog", isMapped: true }] }),
 		);
