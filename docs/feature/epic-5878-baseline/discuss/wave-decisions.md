@@ -47,6 +47,9 @@ slice 09; slices 10 and 11 are cancellable follow-ups.
 - **D33** Usage data via new route keys + name-only candidates (DEVOPS designs).
 - **D34** Slices 01–07 safe on trunk before the cap; release notes/docs/website wait for slice 08.
 - **D35** No intervention-date field; header shows days since Then ended.
+- **D36** One foundation for Epics 5878/5882/5935: templates are flavors of Reports; one rule engine (D16) for
+  Then & Now and future Signals (live, optionally snapshotted); no Signals tab; PDF/email/schedule per report, any
+  template, with 5882; reuse chart components; no app-level page in v1; cap 2 across all templates incl. signals.
 
 ## Requirements Summary
 

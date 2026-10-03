@@ -372,6 +372,15 @@ Numbering continues after D16 (DIVERGE). "Provisional" = autonomous call pending
 - [D34] **Release safety**: slices 01–07 are safe on trunk before the cap (08) — D29's lapse rule already covers
   owners holding more than 2 reports. Release notes, docs and website copy wait until slice 08 is in.
 - [D35] **No intervention date.** The header reads "Then: 90 days to 31 Jul 2026 — frozen · 63 days since Then ended".
+- [D36] **One reporting foundation for Epics 5878, 5882 and 5935** (maintainer 2026-10-03). Reports is the shared
+  home; a template is a flavor on it. Then & Now asks "how did we improve?" (frozen Then against a live Now); a
+  future Signal asks "should we act?" (live, optionally snapshotted on a cadence). Both sit on the same report model,
+  the same view and **one** rule engine: D16's claim catalog is that engine, not a Then & Now-only one. 5935 gets no
+  separate Signals tab (the tab may be renamed later, e.g. "Reports and Signals"; deferred). PDF / email and
+  schedule / delivery come with 5882 and apply to **every** report, whatever its template, so they stay out of the
+  template; none of it is built here. Charts reuse the existing chart components (5882 renders them server-side).
+  No app-level Reports page in v1; a later cross-owner listing of viewable reports is not to be blocked. The cap
+  (D29) stays at 2 across all templates, signals included: it is meant to get tight.
 
 ---
 
@@ -1072,4 +1081,6 @@ To DESIGN (`nw-solution-architect`): this section, `slices/`, `discuss/wave-deci
 DESIGN: report storage shape for both owner kinds (expand-only, cascade, D26 contents); the claim-definition registry
 and rule-kind classes (DV-5); freezing the Then series and recomputing limits from it (S3); keeping Then limits
 independent of the owner's PBC Baseline (S4); the settings snapshot contents (D31); calendar-day windows (Bug #5567);
-creation time budget (≤ 10 s). DEVOPS: K1–K5, G1 events and route keys (Checklist).
+creation time budget (≤ 10 s); and D36 — shape the report model, the claim/rule registry and the Reports view so
+a live Signal template (5935) and per-report PDF / email / schedule (5882) land without reshaping them: template-
+specific payload (frozen and live), one rule engine, delivery outside the template. DEVOPS: K1–K5, G1 events and route keys (Checklist).
