@@ -17,12 +17,12 @@ readonly TARGET=/old-binaries
 grep -E '^(ID|VERSION_ID|VERSION_CODENAME)=' /etc/os-release >"$TARGET/os-release" || true
 
 # An image that is not an official postgres image sets no PG_MAJOR and has nothing to hand over; the
-# upgrade step then says which image to use. A copy whose control file cannot be read cannot be upgraded
-# either.
-read -r live_folder live_major <<<"$(live_copy)"
-if [[ -z "${PG_MAJOR:-}" || "$live_major" != "$PG_MAJOR" || -z "$(control_hash "$live_folder")" ]]; then
+# upgrade step then says which image to use. Programs are only handed over for the one volume the upgrade
+# step goes on to upgrade, by the same rule it decides with.
+if [[ ! "${PG_MAJOR:-}" =~ ^[0-9]+$ ]] || ! live_copy_upgradable_to "$((PG_MAJOR + 1))"; then
   exit 0
 fi
+read -r live_folder _ <<<"$(live_copy)"
 
 mkdir -p "$TARGET/usr/lib/postgresql" "$TARGET/usr/share/postgresql"
 cp -a "/usr/lib/postgresql/$PG_MAJOR" "$TARGET/usr/lib/postgresql/"

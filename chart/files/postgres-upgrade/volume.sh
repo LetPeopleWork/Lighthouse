@@ -103,6 +103,15 @@ live_copy() {
   chain | tail -n 1
 }
 
+# Whether the copy the database last ran on can be upgraded to major $1: it is one major behind, Postgres can
+# open it, and a copy of major $1 already on the volume was made by an upgrade, so it is only out of date.
+live_copy_upgradable_to() {
+  local target="$1" folder major
+  read -r folder major <<<"$(live_copy)"
+  [[ -n "$major" && "$major" == "$((target - 1))" && -n "$(control_hash "$folder")" ]] \
+    && [[ ! -e "$MOUNT/pgdata-$target" || -f "$MOUNT/pgdata-$target/$UPGRADE_NOTE" ]]
+}
+
 # The folder on the chain that holds major $1, if any.
 copy_for_major() {
   chain | awk -v major="$1" '$2 == major { print $1 }'

@@ -7,7 +7,7 @@
 #
 # Usage: run.sh CLUSTER GROUP [SCENARIO...]
 #   CLUSTER   name of an existing kind cluster (kind create cluster --name CLUSTER)
-#   GROUP     happy | refusals | chain — the legs of the CI matrix, each on its own cluster
+#   GROUP     happy | refusals | chain | chain-refusals — the legs of the CI matrix, each on its own cluster
 #   SCENARIO  optional subset of the group's scenario functions, run in the order given
 #
 # The "before" chart is the committed package, so no network access to the Helm repo is needed.
@@ -71,6 +71,8 @@ preload_images() {
       images+=(postgres:16 postgres:17 postgres:17-trixie postgres:17-alpine postgres:18-trixie busybox:1.37) ;;
     chain)
       images+=(postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
+    chain-refusals)
+      images+=(postgres:15-bookworm postgres:16-bookworm postgres:16-trixie postgres:17-trixie postgres:18-trixie) ;;
   esac
   # `kind load docker-image` exports every platform of a multi-platform image and fails on the ones
   # Docker never pulled, so only the node's own platform is exported.
@@ -1595,10 +1597,105 @@ chain_interrupted_second_upgrade_removes_nothing() {
 }
 chain_too_little_room_names_cleanup_and_touches_nothing() { scaffold "Too little room for the next copy refuses, naming the cleanup as a way out"; }
 chain_cleaned_volume_moves_on_and_removes_nothing() { scaffold "A cleaned-up volume moves on to the next major and removes nothing"; }
-chain_out_of_date_copy_counts_as_older_major_and_refuses() { scaffold "A newer copy made out of date by a rollback counts as the older major and is refused as a gap"; }
-chain_gap_from_a_copy_refuses_and_touches_nothing() { scaffold "A live copy two majors behind the image is refused, naming that copy and one major per release"; }
-chain_unreadable_live_copy_refuses_before_writing() { scaffold "A live copy whose control file cannot be read is refused before the next upgrade writes anything"; }
-chain_unfollowable_chain_is_refused_once_by_upgrade_step() { scaffold "A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone"; }
+# Postgres 16 running again on pgdata after the rollback rewrites its pg_control, so pgdata-17 no longer
+# matches the note it was made with and pgdata is where the newest data is.
+chain_out_of_date_copy_counts_as_older_major_and_refuses() {
+  local ns="chain-out-of-date" before_revision line
+  install_with_data "$ns" --set postgresql.image=postgres:16-trixie
+  before_revision="$(current_revision "$ns")"
+  upgrade_to_new_chart "$ns" "${CHAIN_PIN_17[@]}"
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 17
+  helm rollback "$RELEASE" "$before_revision" -n "$ns" >/dev/null
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 16
+  assert_data_directory "$ns" pgdata
+
+  fingerprint_then_upgrade "$ns" --reset-values
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing to start Postgres 18" "Postgres 16 in pgdata, 2 majors behind Postgres 18" \
+    "pgdata-17 is out of date because Postgres 16 ran after it was made" "one major per chart release" "$MANUAL_PATH"
+  if grep -qE 'postgres:17|start pgdata-17' <<<"$line"; then
+    fail "the refusal line in $ns offers the out-of-date pgdata-17 as a way back: $line"
+  fi
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
+
+# The bookworm pair stands in for a Postgres 15 to 16 upgrade by the new chart, because there is no
+# postgres:15-trixie image.
+chain_gap_from_a_copy_refuses_and_touches_nothing() {
+  local ns="chain-gap-from-copy" line
+  install_with_data "$ns" --set postgresql.image=postgres:15-bookworm
+  upgrade_to_new_chart "$ns" --set postgresql.image=postgres:16-bookworm --set postgresql.upgrade.image=postgres:15-bookworm
+  wait_postgres_ready "$ns"
+  assert_server_major "$ns" 16
+  assert_data_directory "$ns" pgdata-16
+
+  fingerprint_then_upgrade "$ns" --reset-values
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing to start Postgres 18" "Postgres 16 in pgdata-16" \
+    "one major per chart release" "one at a time" "$MANUAL_PATH" "kubectl delete pod -n $ns $POSTGRES_POD"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
+
+# The database runs on pgdata-17, so its control file is taken away from the kind node while it is stopped:
+# a running server would rewrite it on its way down.
+chain_unreadable_live_copy_refuses_before_writing() {
+  local ns="chain-unreadable-live" line
+  upgrade_16_to_17_in "$ns"
+  stop_database "$ns"
+  on_node rm "$(node_volume_dir "$ns")/pgdata-17/global/pg_control"
+  FINGERPRINT="$(volume_fingerprint "$ns")"
+  upgrade_to_new_chart "$ns" --reset-values
+  start_database "$ns"
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "refusing to upgrade Postgres 17 to 18" \
+    "pgdata-17 holds Postgres 17 data without a readable pgdata-17/global/pg_control" \
+    "Postgres 17 cannot open it" "put that file back from a backup"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
+
+# The log of every container of the database pod. kubectl logs --all-containers fails outright while the
+# postgres container has never started, which is the case on every refused start.
+every_container_log() {
+  local ns="$1" container
+  for container in $(pod_field "$ns" '{.spec.initContainers[*].name} {.spec.containers[*].name}'); do
+    kubectl -n "$ns" logs "$POSTGRES_POD" -c "$container" 2>/dev/null || true
+  done
+}
+
+# Without pgdata's control file the note in pgdata-17 cannot be checked, so whether the database last ran on
+# pgdata or on pgdata-17 cannot be told. No placeholder is there to show a removal had started.
+chain_unfollowable_chain_is_refused_once_by_upgrade_step() {
+  local ns="chain-unreadable-original" line all_logs handover exit_code
+  upgrade_16_to_17_in "$ns"
+  in_postgres "$ns" rm "$MOUNT/pgdata/global/pg_control"
+
+  fingerprint_then_upgrade "$ns" --reset-values
+
+  line="$(refusal_line "$ns")"
+  echo "  $line"
+  assert_line_says "$ns" "$line" "pgdata holds Postgres 16 data without a readable pgdata/global/pg_control" \
+    "pgdata-17" "put that file back from a backup"
+  ! grep -qF -- "#when-removing-the-old-copy-was-cut-off" <<<"$line" \
+    || fail "the refusal line in $ns points to finishing a removal no sign shows had started: $line"
+  all_logs="$(every_container_log "$ns")"
+  the_one_line_with "refusing" "$all_logs" >/dev/null \
+    || { dump_diagnostics "$ns"; fail "the logs of every container in $ns do not carry exactly one refusal line"; }
+  grep -qF -- "$line" <<<"$(kubectl -n "$ns" describe pod "$POSTGRES_POD")" \
+    || { dump_diagnostics "$ns"; fail "describing the database pod in $ns does not show the refusal line"; }
+  handover="$(kubectl -n "$ns" logs "$POSTGRES_POD" -c pg-old-binaries)"
+  [[ -z "$handover" ]] || fail "the step handing over the older programs in $ns logged: $handover"
+  exit_code="$(pod_field "$ns" '{.status.initContainerStatuses[?(@.name=="pg-old-binaries")].state.terminated.exitCode}')"
+  [[ "$exit_code" == "0" ]] || fail "the step handing over the older programs in $ns ended with code ${exit_code:-none} rather than 0"
+  assert_volume_unchanged "$ns" "$FINGERPRINT"
+}
 chain_cleanup_finishes_started_removal_past_unreadable_copy() { scaffold "The cleanup finishes a removal it can see had started, even past an unreadable original copy"; }
 chain_cleanup_refuses_past_unreadable_copy_not_started() { scaffold "The cleanup refuses to guess past an unreadable copy it has no sign of having started on"; }
 # The documented cleanup is cut off right after it writes the placeholder, as if the pod running it was
@@ -1715,6 +1812,15 @@ readonly CHAIN=(
   chain_pin_back_after_cut_off_cleanup_keeps_pinned_data
 )
 
+# The slice 03 refusals, each on a volume of its own, in a leg of their own so neither chain leg comes near
+# the CI job's time limit.
+readonly CHAIN_REFUSALS=(
+  chain_out_of_date_copy_counts_as_older_major_and_refuses
+  chain_gap_from_a_copy_refuses_and_touches_nothing
+  chain_unreadable_live_copy_refuses_before_writing
+  chain_unfollowable_chain_is_refused_once_by_upgrade_step
+)
+
 # The namespaces each scenario uses, its Givens included, so a namespace is deleted as soon as no later
 # scenario in the run needs it and the pods of a long run do not pile up on the node.
 namespaces_of() {
@@ -1789,7 +1895,8 @@ main() {
     happy) scenarios=("${HAPPY[@]}") ;;
     refusals) scenarios=("${REFUSALS[@]}") ;;
     chain) scenarios=("${CHAIN[@]}") ;;
-    *) fail "unknown group $group (happy | refusals | chain)" ;;
+    chain-refusals) scenarios=("${CHAIN_REFUSALS[@]}") ;;
+    *) fail "unknown group $group (happy | refusals | chain | chain-refusals)" ;;
   esac
   if [[ $# -gt 0 ]]; then
     scenarios=("$@")

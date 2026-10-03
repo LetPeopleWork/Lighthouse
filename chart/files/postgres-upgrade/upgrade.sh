@@ -96,15 +96,13 @@ only_copy_major() {
   fi
 }
 
-# The highest major among the pgdata-<major> copies on the volume: the one holding the newest data.
-newest_copy_major() {
-  local copy newest=""
-  for copy in $OTHER_COPIES; do
-    if [[ "$copy" =~ ^pgdata-([0-9]+)$ ]] && [[ -z "$newest" || "${BASH_REMATCH[1]}" -gt "$newest" ]]; then
-      newest="${BASH_REMATCH[1]}"
-    fi
-  done
-  echo "$newest"
+# The folders of $1 joined as one phrase, and whether they take "is" or "are".
+folder_list() {
+  echo "$1" | paste -sd, - | sed 's/,/, /g'
+}
+
+is_or_are() {
+  if [[ "$(wc -w <<<"$1")" -gt 1 ]]; then echo are; else echo is; fi
 }
 
 describe_volume() {
@@ -117,7 +115,7 @@ describe_volume() {
     found="no database in pgdata"
   fi
   if [[ -n "$OTHER_COPIES" ]]; then
-    found="$found and $(echo "$OTHER_COPIES" | paste -sd, - | sed 's/,/, /g')"
+    found="$found and $(folder_list "$OTHER_COPIES")"
   fi
   if [[ -e "$PARTIAL" ]]; then
     found="$found and an unfinished pgdata-$MAJOR.partial"
@@ -166,29 +164,40 @@ ensure_old_programs_present() {
   fi
 }
 
-# Data of any major but this image's and the one before it is never touched: the chart cannot carry it
-# across, and the operator needs to know which two majors are involved to choose a way out. A copy newer
-# than pgdata is where the database has run since an earlier upgrade, and starting pgdata again instead
-# would lose everything written since, so the way back named is then that copy's major.
-refuse_other_major() {
-  local data="$1" where="$2" newest
-  newest="$(newest_copy_major)"
-  if [[ "$data" -lt "$MAJOR" && -n "$newest" ]] && [[ "$newest" -gt "$data" && "$newest" -lt "$MAJOR" ]]; then
-    refuse "refusing to start Postgres $MAJOR: the database runs on Postgres $newest in pgdata-$newest, and this chart only upgrades the data in pgdata, which is Postgres $data; set postgresql.image back to postgres:$newest$(image_suffix) to start pgdata-$newest again as it was, $(delete_pod_hint), and move it by hand: $MANUAL_PATH"
-  fi
-  if [[ "$data" -lt "$MAJOR" ]]; then
-    refuse "refusing to start Postgres $MAJOR: the data in $where is Postgres $data, and this chart only upgrades data from Postgres $PREVIOUS_MAJOR; pin postgresql.image to postgres:$data to start it again as it was, $(delete_pod_hint), and move it by hand: $MANUAL_PATH"
-  fi
+# Data newer than this image is never touched when no copy of this image's major is left to start on.
+refuse_newer_without_copy() {
+  local data="$1" where="$2"
   refuse "refusing to start Postgres $MAJOR: the data is Postgres $data, in $where, which is newer than this image, and no Postgres $MAJOR copy of it is left to start on; set postgresql.image back to Postgres $data or remove the pin on it, $(delete_pod_hint)"
 }
 
-# Without its control file the old data can neither be opened nor compared with the note in the upgraded
-# copy.
-refuse_unreadable_old_data() {
-  if [[ -e "$NEW" ]]; then
-    refuse "refusing to start Postgres $MAJOR: pgdata holds Postgres $DATA_MAJOR data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether pgdata-$MAJOR is still current cannot be told; finish removing the old copy as $CUT_OFF_REMOVAL_DOCS describes"
+# Each chart release that moves the image's major carries the data one major, from the copy the database runs
+# on, so a copy further behind has to go through those releases first. A newer copy the older major has run
+# past since it was made holds older data than the live copy, so it is never offered as a way back.
+refuse_gap() {
+  local out_of_date=""
+  if [[ "$(is_or_are "$NEWER_THAN_LIVE")" == are ]]; then
+    out_of_date="; $(folder_list "$NEWER_THAN_LIVE") are out of date because Postgres $LIVE_MAJOR ran after they were made"
+  elif [[ -n "$NEWER_THAN_LIVE" ]]; then
+    out_of_date="; $NEWER_THAN_LIVE is out of date because Postgres $LIVE_MAJOR ran after it was made"
   fi
-  refuse "refusing to upgrade Postgres $DATA_MAJOR to $MAJOR: pgdata holds Postgres $DATA_MAJOR data without a readable pgdata/global/pg_control, so Postgres $DATA_MAJOR cannot open it to upgrade it; put that file back from a backup"
+  refuse "refusing to start Postgres $MAJOR: the database runs on Postgres $LIVE_MAJOR in $LIVE_COPY, $((MAJOR - LIVE_MAJOR)) majors behind Postgres $MAJOR, and the automatic upgrade moves one major per chart release, so this chart only upgrades data from Postgres $PREVIOUS_MAJOR$out_of_date; pin postgresql.image to postgres:$LIVE_MAJOR to start $LIVE_COPY again as it was, $(delete_pod_hint), then upgrade through each chart release that moved the major, one at a time, or move it by hand: $MANUAL_PATH"
+}
+
+# The walk up the copies stopped at the live copy because its control file cannot be read, so whether a newer
+# copy is still current cannot be told. A placeholder in pgdata shows a removal of the old copy had started
+# there. So does pgdata one major behind beside a copy of this image's major, which is what a removal written
+# before the placeholder existed leaves when it is cut off.
+refuse_unhashable_link() {
+  local newer
+  newer="$(folder_list "$NEWER_THAN_LIVE")"
+  if [[ "$LIVE_COPY" == pgdata ]] && { has_placeholder || [[ "$LIVE_MAJOR" == "$PREVIOUS_MAJOR" && -e "$NEW" ]]; }; then
+    refuse "refusing to start Postgres $MAJOR: pgdata holds Postgres $LIVE_MAJOR data without a readable pgdata/global/pg_control, which is what a removal of the old copy cut off part-way leaves, so whether $newer is still current cannot be told; finish removing the old copy as $CUT_OFF_REMOVAL_DOCS describes"
+  fi
+  refuse "refusing to start Postgres $MAJOR: $LIVE_COPY holds Postgres $LIVE_MAJOR data without a readable $LIVE_COPY/global/pg_control, so whether the newer $newer $(is_or_are "$NEWER_THAN_LIVE") still current cannot be told; put that file back from a backup"
+}
+
+refuse_unreadable_live_copy() {
+  refuse "refusing to upgrade Postgres $LIVE_MAJOR to $MAJOR: $LIVE_COPY holds Postgres $LIVE_MAJOR data without a readable $LIVE_COPY/global/pg_control, so Postgres $LIVE_MAJOR cannot open it to upgrade it; put that file back from a backup"
 }
 
 controldata() {
@@ -340,8 +349,10 @@ volume_is_empty() {
   [[ -z "$DATA_MAJOR" && -z "$OTHER_COPIES" && ! -e "$PARTIAL" ]] && ! has_placeholder
 }
 
-old_data_unreadable() {
-  [[ "$DATA_MAJOR" == "$PREVIOUS_MAJOR" && -z "$OLD_CONTROL_HASH" ]]
+# The walk up the copies stopped at the live copy because its control file cannot be read, while a newer copy
+# counts.
+live_copy_unhashable_below_newer_copy() {
+  [[ -n "$LIVE_MAJOR" && -z "$LIVE_CONTROL_HASH" && -n "$NEWER_THAN_LIVE" ]]
 }
 
 # The database last ran on a copy of this image's major, and no copy newer than it is on the volume.
@@ -361,23 +372,25 @@ moved_back_to_a_copy_on_the_chain() {
   [[ -n "$LIVE_MAJOR" && -n "$THIS_MAJOR_ON_CHAIN" ]] && [[ "$LIVE_MAJOR" -gt "$MAJOR" ]]
 }
 
+live_copy_one_behind_unreadable() {
+  [[ "$LIVE_MAJOR" == "$PREVIOUS_MAJOR" && -z "$LIVE_CONTROL_HASH" ]]
+}
+
 # The database last ran on a copy one major behind this image. Either no copy of this major is on the volume
 # yet, or the one there is out of date: it is off the chain, so the older major has run since it was made
-# and holds the newer data. The live copy's control file must be readable, or Postgres could not open it to
-# upgrade it.
+# and holds the newer data.
 live_copy_one_behind() {
-  [[ "$LIVE_MAJOR" == "$PREVIOUS_MAJOR" && -n "$(control_hash "$LIVE_COPY")" ]] \
-    && [[ ! -e "$NEW" || -f "$NEW/$UPGRADE_NOTE" ]]
+  live_copy_upgradable_to "$MAJOR"
+}
+
+live_copy_two_or_more_behind() {
+  [[ -n "$LIVE_MAJOR" ]] && [[ "$LIVE_MAJOR" -lt "$PREVIOUS_MAJOR" ]]
 }
 
 # The database last ran on a copy newer than this image, and the chain holds no copy of this image's major
 # to start on: two charts back after a second upgrade, or a pin to a major whose copy was removed.
 live_newer_without_copy_of_this_major() {
   [[ -n "$LIVE_MAJOR" && -z "$THIS_MAJOR_ON_CHAIN" ]] && [[ "$LIVE_MAJOR" -gt "$MAJOR" ]]
-}
-
-data_out_of_reach() {
-  [[ "$DATA_MAJOR" =~ ^[0-9]+$ ]] && [[ "$DATA_MAJOR" -lt "$PREVIOUS_MAJOR" || "$DATA_MAJOR" -gt "$MAJOR" ]]
 }
 
 only_newer_copy_left() {
@@ -456,18 +469,23 @@ main() {
   DATA_MAJOR="$(copy_major pgdata)"
   OTHER_COPIES="$(other_copies)"
   ONLY_COPY_MAJOR="$(only_copy_major "$OTHER_COPIES")"
-  OLD_CONTROL_HASH="$(control_hash pgdata)"
   # Every upgrade reads the copy the database last ran on, which is pgdata until an upgrade has moved on.
   read -r LIVE_COPY LIVE_MAJOR <<<"$(live_copy)"
   SOURCE="$MOUNT/$LIVE_COPY"
+  LIVE_CONTROL_HASH="$(control_hash "$LIVE_COPY")"
   NEWER_COPY="$(copies | awk -v major="$MAJOR" '$2 > major { newest = $1 } END { print newest }')"
+  # Every copy newer than the live one is off the chain: its note no longer matches, or cannot be checked.
+  NEWER_THAN_LIVE=""
+  if [[ -n "$LIVE_MAJOR" ]]; then
+    NEWER_THAN_LIVE="$(copies | awk -v major="$LIVE_MAJOR" '$2 > major { print $1 }')"
+  fi
   THIS_MAJOR_ON_CHAIN="$(copy_for_major "$MAJOR")"
 
   if volume_is_empty; then
     say "nothing to upgrade: the volume holds no database yet, so Postgres $MAJOR creates one in pgdata"
     start_on "$OLD"
-  elif old_data_unreadable; then
-    refuse_unreadable_old_data
+  elif live_copy_unhashable_below_newer_copy; then
+    refuse_unhashable_link
   elif live_is_this_major_alone; then
     say_nothing_to_upgrade
     start_on "$SOURCE"
@@ -478,16 +496,18 @@ main() {
   elif moved_back_to_a_copy_on_the_chain; then
     warn_newer_copy_exists "$THIS_MAJOR_ON_CHAIN" "$LIVE_COPY"
     start_on "$MOUNT/$THIS_MAJOR_ON_CHAIN"
+  elif live_copy_one_behind_unreadable; then
+    refuse_unreadable_live_copy
   elif live_copy_one_behind; then
     upgrade "$LIVE_MAJOR"
     start_on "$NEW"
     remove_copy_before_last
+  elif live_copy_two_or_more_behind; then
+    refuse_gap
   elif live_newer_without_copy_of_this_major; then
-    refuse_other_major "$LIVE_MAJOR" "$LIVE_COPY"
-  elif data_out_of_reach; then
-    refuse_other_major "$DATA_MAJOR" pgdata
+    refuse_newer_without_copy "$LIVE_MAJOR" "$LIVE_COPY"
   elif only_newer_copy_left; then
-    refuse_other_major "$ONLY_COPY_MAJOR" "pgdata-$ONLY_COPY_MAJOR"
+    refuse_newer_without_copy "$ONLY_COPY_MAJOR" "pgdata-$ONLY_COPY_MAJOR"
   else
     refuse "refusing to start Postgres $MAJOR: found $(describe_volume), which this chart cannot start on or upgrade by itself"
   fi

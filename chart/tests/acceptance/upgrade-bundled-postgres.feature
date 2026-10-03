@@ -1,9 +1,9 @@
 # Acceptance SSOT — story-6131-chart-postgres-major-upgrade (slices 01-03)
 # Executable via: helm-unittest (render assertions, @in-memory) in chart/tests/unit/, and the kind harness
 # chart/tests/upgrade-path/run.sh (@real-io), which the upgrade-path job in ci_chart.yml runs in groups:
-# `happy` and `refusals` for slices 01-02, `chain` for slice 03. Every slice 01-02 scenario runs. The slice 03
-# scenarios are @pending until DELIVER implements them; it removes @pending from a scenario in the same commit
-# that turns its check green.
+# `happy` and `refusals` for slices 01-02, `chain` and `chain-refusals` for slice 03. Every slice 01-02
+# scenario runs. The slice 03 scenarios are @pending until DELIVER implements them; it removes @pending from a
+# scenario in the same commit that turns its check green.
 #
 # State machine of the bundled database volume, as the upgrade step sees it on every pod start
 # (M = the image's major, D = the major of the data the volume was first initialised with):
@@ -496,7 +496,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log says nothing about removing a copy
     And the volume holds the placeholder, the Postgres 17 copy and the Postgres 18 copy, and nothing else
 
-  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: A newer copy made out of date by a rollback counts as the older major and is refused as a gap
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the operator then rolled back to the chart 0.1.17 revision, so Postgres 16 ran again
@@ -508,7 +508,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And that line does not offer the Postgres 17 copy as a way back
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-04 @AC-4.8 @AC-4.10 @error @real-io @env:kind-gap-from-copy @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.8 @AC-4.10 @error @real-io @env:kind-gap-from-copy @slice-03 @contract-shape:unbounded-preservation
   Scenario: A live copy two majors behind the image is refused, naming that copy and one major per release
     Given Lighthouse was installed from chart 0.1.17 with the bundled database image pinned to Postgres 15
     And it was upgraded once by the new chart from Postgres 15 to Postgres 16
@@ -533,7 +533,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And the database log says nothing about removing a copy
     And the Postgres 17 copy is still on the volume
 
-  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: A live copy whose control file cannot be read is refused before the next upgrade writes anything
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the Postgres 17 copy's control file cannot be read
@@ -543,7 +543,7 @@ Feature: An upgrade that moves the bundled Postgres to a new major carries the d
     And its log carries one line naming the Postgres 17 copy, saying Postgres 17 cannot open it without that file, and to put the file back from a backup
     And every file on the database volume is exactly as it was before the attempt
 
-  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation @pending
+  @US-04 @AC-4.8 @error @real-io @env:kind-chain-16-17 @slice-03 @contract-shape:unbounded-preservation
   Scenario: A volume whose chain of copies cannot be followed is refused once, by the upgrade step alone
     Given Lighthouse was upgraded once by the new chart from Postgres 16 to Postgres 17
     And the original copy's control file cannot be read, with no sign that a removal had started there
