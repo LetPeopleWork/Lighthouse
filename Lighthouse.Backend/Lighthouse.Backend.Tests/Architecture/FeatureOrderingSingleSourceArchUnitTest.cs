@@ -1,6 +1,7 @@
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Refinement;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -19,12 +20,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Id tie-break, so Features the tracker had ranked alike came back in whatever sequence the " +
             "store happened to hand over. Reaching for a comparer directly reopens that. If a new path " +
             "genuinely needs one, take IFeatureOrdering instead; if it truly cannot, amend ADR-134 first " +
-            "and then this test.";
+            "and then this test. The refinement list is the one exception: it ranks Work Items, not Features, " +
+            "by the same ladder, and IFeatureOrdering only takes Features.";
 
         [Test]
         public void NoProductionTypeButTheOrderingSeamDependsOnTheSourceOrderComparer()
         {
-            Classes().That().AreNot(typeof(FeatureOrdering)).And().AreNot(typeof(FeatureComparer))
+            Classes().That().AreNot(typeof(FeatureOrdering)).And().AreNot(typeof(FeatureComparer)).And().AreNot(typeof(RefinementList))
                 .Should().NotDependOnAny(typeof(FeatureComparer))
                 .Because(Because)
                 .Check(Architecture);

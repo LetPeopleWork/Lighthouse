@@ -6,6 +6,10 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
     /// <summary>The Work Items a Team holds in its refinement states, in the tracker's backlog order.</summary>
     public sealed class RefinementList(IWorkItemRepository workItemRepository)
     {
+        // Trackers rank with numbers or with text; Features are put in backlog order the same way, so the
+        // two lists never disagree about which item comes first.
+        private static readonly Comparer<string> BacklogRank = Comparer<string>.Create(FeatureComparer.CompareOrderValues);
+
         public List<WorkItem> For(Team team)
         {
             var states = StatesHoldingRefinementWork(team);
@@ -17,8 +21,8 @@ namespace Lighthouse.Backend.Services.Implementation.Refinement
             return [.. workItemRepository
                 .GetAllByPredicate(item => item.TeamId == team.Id && states.Contains(item.State))
                 .AsEnumerable()
-                .OrderBy(item => item.Order, StringComparer.Ordinal)
-                .ThenBy(item => item.Id)];
+                .OrderBy(item => item.Order, BacklogRank)
+                .ThenBy(item => item.ReferenceId, StringComparer.Ordinal)];
         }
 
         // A chosen state the Team no longer maps is left out: the settings already warn that its Work Items

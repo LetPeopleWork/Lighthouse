@@ -70,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Work_Items_the_tracker_ranks_equally_are_listed_by_id()
         {
             var gravity = await GivenGravityRefinesInBacklogWithTwoWorkItemsRankedEqually();
@@ -84,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         // A tracker that ranks 9 above 10 must not see 10 first because "1" sorts before "9" as text.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Numeric_ranks_are_compared_as_numbers_not_as_text()
         {
             var gravity = await GivenGravityRefinesInBacklogWithWorkRankedNineAndTen();
@@ -222,7 +220,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // The guardrail is a tab that renders within two seconds at 300 Work Items; the answer it renders
         // from must leave room for the rendering, so it is held to the same budget on its own.
         [Test]
-        [Ignore(PendingSlice02)]
         public async Task Three_hundred_Work_Items_in_refinement_come_back_in_backlog_order_within_two_seconds()
         {
             var gravity = await GivenGravityHoldsThreeHundredWorkItemsInItsRefinementStates();
