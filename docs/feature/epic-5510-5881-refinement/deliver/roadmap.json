@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5510-5881-refinement",
     "created_at": "2026-10-03",
-    "total_steps": 20,
+    "total_steps": 22,
     "total_phases": 2,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
@@ -419,6 +419,61 @@
             "01-10"
           ],
           "implementation_notes": "EXEMPT FROM PARADIGM: React/RTL example-based reporter-call assertions. DEVOPS: TeamRefinementConfigured = 12, name-only, 'not on every autosave'. Enums serialise as strings outbound - the frontend mirror is TeamRefinementConfigured: \"TeamRefinementConfigured\" in the UsageDataEventName object in UsageDataService.ts, never a numeric value. Report through useUsageDataReporter (consent is the reporter's, pinned once for every event by the existing reporter tests). Compare the refinementConfigured fact before and after the accepted save; the backend half shipped at 01-05 so the server can read the name. Listing on docs/settings/usagedata.md already done at 01-05. Commit: feat(usage-data): the Team page reports a Team's refinement being set up (story 6139)."
+        },
+        {
+          "id": "01-12",
+          "name": "Refinement states are picked like wait states: suggestions in, chips shown",
+          "description": "Maintainer review of slice 01 (2026-10-03): no checkbox list. Settings -> Refinement uses the same add-from-suggestions + chips control as the state-mapping editors (ItemListManager, as WaitStatesEditor does). Suggestions are the Team's To Do and Doing states (mapped names included); each chosen state shows as a chip; a chosen state that is no longer mapped stays a chip and is flagged; the Doing note and the Team's own word for Refinement survive.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx",
+          "scenario_name": "Settings -> Refinement scenarios re-expressed for the chips control (maintainer UI change)",
+          "criteria": [
+            "Settings -> Refinement offers the Team's To Do and Doing states (including mapping names) as suggestions to add, and shows every chosen state as a chip, like the wait-states editor",
+            "Done and unmapped states are not suggested; adding one is not possible from the control",
+            "Adding a state saves it as a refinement state; removing the last chip saves none",
+            "A chosen state that is no longer mapped stays chosen and is flagged with its Work Items cannot appear, in the instance's words",
+            "The note that Doing states already count in WIP and Cycle Time is still shown, in the instance's words",
+            "The section title uses the instance's word for Refinement"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/RefinementSettingsSection.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx"
+          ],
+          "dependencies": [
+            "01-08"
+          ],
+          "implementation_notes": "Maintainer-directed UI change after reviewing slice 01: replace the checkbox list with the existing ItemListManager control the state-mapping editors use (see WaitStatesEditor.tsx). The 8 cases in ModifyTeamSettings.refinement.test.tsx are re-expressed for the new control (same intent per case, interaction through the chips control instead of checkboxes); this is an authorised test rewrite, not a weakening."
+        },
+        {
+          "id": "01-13",
+          "name": "A refinement state that stops being To Do or Doing is removed, not flagged",
+          "description": "Maintainer decision 2026-10-03 (slice 01 review): instead of keeping and flagging a chosen state the Team no longer maps, remove it. The only way a state stops being To Do/Doing is an admin editing To Do, Doing or the state mappings in the same Settings form, so the removal happens in front of the person who caused it. Server: a Team settings save prunes refinement states that are not among the saved To Do/Doing states; a stale client re-sending such a state is pruned, not refused; a state newly added that is not To Do/Doing is still refused. isMapped leaves the wire. Frontend: the chip disappears as soon as its state is no longer offered, and no flag is shown.",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice01RefinementStatesScenarios.cs",
+          "scenario_name": "A_chosen_state_that_stops_being_mapped_is_removed (re-expressed from kept_and_flagged) + frontend chips cases 7-9 re-expressed",
+          "criteria": [
+            "When a Team admin's save makes a chosen refinement state no longer a To Do or Doing state, the saved Team no longer lists it among its refinement states",
+            "A save that re-sends such a state (a stale form) succeeds and the state is still removed",
+            "A newly chosen state that is not To Do or Doing is still refused with 400 naming it",
+            "The settings read carries no isMapped; the Settings section shows no 'no longer mapped' flag and drops the chip as soon as the state is not offered",
+            "Refinement changes still never mark Work-Item-related settings as changed"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/RefinementSettingsValidator.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/RefinementSettingsDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/TeamSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/RefinementSettingsValidatorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice01RefinementStatesScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice01RefinementStatesSpecifications.cs",
+            "Lighthouse.Frontend/src/components/Common/Team/RefinementSettingsSection.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx",
+            "Lighthouse.Frontend/src/models/Refinement/Refinement.ts"
+          ],
+          "dependencies": [
+            "01-12"
+          ],
+          "implementation_notes": "Maintainer-directed behaviour change; the kept-and-flagged scenarios are re-expressed as removed (authorised rewrite). Reverses DISTILL DST-2/DST-3 and the 01-03 flag."
         }
       ]
     },
