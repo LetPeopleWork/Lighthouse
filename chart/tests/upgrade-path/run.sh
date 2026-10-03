@@ -316,10 +316,12 @@ container_pid() {
   echo "$pid"
 }
 
-# A shell command for the kind node that stops every process in the container of process $1.
-stop_container_of() {
+# A shell command for the kind node that freezes the whole container of process $1 through its cgroup: one
+# write stops every process in it at once, children included. Stopping them one by one leaves the children
+# of a step running while the others are still being found, long enough for a removal to finish.
+freeze_container_of() {
   local pid="$1"
-  echo "target=\$(readlink /proc/$pid/ns/pid); for p in /proc/[0-9]*; do if [ \"\$(readlink \$p/ns/pid 2>/dev/null)\" = \"\$target\" ]; then kill -STOP \${p#/proc/} 2>/dev/null || true; fi; done"
+  echo "echo 1 > \"/sys/fs/cgroup\$(sed -n 's/^0:://p' /proc/$pid/cgroup)/cgroup.freeze\""
 }
 
 # Stops every process of the upgrade step from the kind node, pg_upgrade included, so the copy it is
@@ -327,7 +329,7 @@ stop_container_of() {
 freeze_upgrade_step() {
   local ns="$1" pid
   pid="$(container_pid "$ns" initContainerStatuses pg-upgrade)"
-  docker exec "$(pod_field "$ns" '{.spec.nodeName}')" sh -c "$(stop_container_of "$pid")"
+  docker exec "$(pod_field "$ns" '{.spec.nodeName}')" sh -c "$(freeze_container_of "$pid")"
 }
 
 install_with_data() {
@@ -1685,17 +1687,19 @@ on_node() {
 }
 
 # Waits on the kind node itself, without a fork per check, for the removal of the copy before last to write
-# its placeholder into pgdata, then stops every process of the upgrade step: the removal of a few hundred MB
-# takes well under a second, far less than one kubectl round trip.
+# its placeholder into pgdata, then freezes the upgrade step: the removal of a few hundred MB takes well under
+# a second, far less than one kubectl round trip. The freeze file is found before the wait, so the freeze
+# itself is a single write.
 freeze_once_removal_starts() {
   local ns="$1" dir pid
   dir="$(node_volume_dir "$ns")"
   wait_upgrade_step_running "$ns"
   pid="$(container_pid "$ns" initContainerStatuses pg-upgrade)"
   on_node timeout "$WAIT_SECONDS" sh -c "
+    freeze=/sys/fs/cgroup\$(sed -n 's/^0:://p' /proc/$pid/cgroup)/cgroup.freeze
+    [ -w \"\$freeze\" ] || { echo \"no cgroup freeze file for process $pid\" >&2; exit 1; }
     while :; do set -- '$dir'/pgdata/UPGRADED-TO-*; [ -e \"\$1\" ] && break; done
-    kill -STOP $pid
-    $(stop_container_of "$pid")" \
+    echo 1 > \"\$freeze\"" \
     || { dump_diagnostics "$ns"; fail "the upgrade step in $ns never began removing the copy before last"; }
 }
 
