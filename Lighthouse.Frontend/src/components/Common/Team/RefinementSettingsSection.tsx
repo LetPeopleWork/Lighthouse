@@ -1,4 +1,3 @@
-import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect } from "react";
@@ -55,7 +54,6 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 		save(chosen.filter((name) => name !== state));
 
 	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
-	const doingNote = `A Doing state already counts in ${getTerm(TERMINOLOGY_KEYS.WIP)} and ${getTerm(TERMINOLOGY_KEYS.CYCLE_TIME)}`;
 
 	return (
 		<InputGroup title={refinementTerm}>
@@ -68,11 +66,6 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 					suggestions={suggestions}
 					isLoading={false}
 				/>
-				{doingStates.length > 0 && (
-					<Typography variant="body2" color="text.secondary">
-						{doingNote}
-					</Typography>
-				)}
 			</Grid>
 		</InputGroup>
 	);

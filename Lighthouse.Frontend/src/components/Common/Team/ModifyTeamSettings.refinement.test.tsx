@@ -15,8 +15,8 @@ import ModifyTeamSettings from "./ModifyTeamSettings";
  * The Refinement section of a Team's settings, exercised through the settings form a Team admin
  * actually uses, so what is checked is what the form's autosave sends. States are picked the way wait
  * states are: the Team's To Do and Doing states are suggested and every chosen state shows as a chip.
- * The section says a Doing state already counts in WIP and cycle time. A chosen state stops being one
- * the moment the form no longer has it as To Do or Doing: its chip goes and the save leaves it out.
+ * A chosen state stops being one the moment the form no longer has it as To Do or Doing: its chip goes
+ * and the save leaves it out.
  *
  * Sections the refinement choice does not depend on are stood in for, as the form's own tests do. The
  * states list stand-in can only take a Doing state away, which is all these cases need from it.
@@ -211,14 +211,12 @@ describe("The Refinement section of a Team's settings", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it("notes that a Doing state already counts in WIP and Cycle Time", async () => {
+	it("shows no note about Doing states", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
 		await theStateInput();
 
-		expect(
-			screen.getByText("A Doing state already counts in WIP and Cycle Time"),
-		).toBeVisible();
+		expect(screen.queryByText(/already counts in/i)).not.toBeInTheDocument();
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
